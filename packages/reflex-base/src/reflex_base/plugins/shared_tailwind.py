@@ -1,16 +1,35 @@
-"""Tailwind CSS configuration types for Reflex plugins."""
+"""Tailwind CSS configuration types and helpers shared by the Tailwind plugins."""
 
 import dataclasses
 import logging
 from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any, Literal, NotRequired, TypedDict
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any, ClassVar, Literal, NotRequired, TypedDict
 
 from typing_extensions import Unpack
+
+from reflex_base.constants.base import Dirs
+from reflex_base.constants.compiler import Ext, PageNames
 
 from .base import Plugin as PluginBase
 
 logger = logging.getLogger(__name__)
+
+
+class TailwindConstants(SimpleNamespace):
+    """Tailwind constants shared by every Tailwind version."""
+
+    # The Tailwind config.
+    CONFIG = "tailwind.config.js"
+    # Default Tailwind content paths
+    CONTENT = [f"./{Dirs.PAGES}/**/*.{{js,ts,jsx,tsx}}", "./utils/**/*.{js,ts,jsx,tsx}"]
+    # Relative tailwind style path to root stylesheet in Dirs.STYLES.
+    ROOT_STYLE_PATH = "./tailwind.css"
+    # The default tailwind css.
+    TAILWIND_CSS = "@import url('./tailwind.css');"
+
 
 TailwindPluginImport = TypedDict(
     "TailwindPluginImport",
@@ -170,6 +189,81 @@ export default {{
 """
 
 
+def compile_config(config: TailwindConfig):
+    """Compile the Tailwind config.
+
+    Args:
+        config: The Tailwind config.
+
+    Returns:
+        The compiled Tailwind config.
+    """
+    return TailwindConstants.CONFIG, tailwind_config_js_template(
+        **config,
+        default_content=TailwindConstants.CONTENT,
+    )
+
+
+def compile_root_style_with(
+    template: str, radix_import: str, include_radix_themes: bool
+) -> tuple[str, str]:
+    """Compile a Tailwind root style from a version-specific template.
+
+    Args:
+        template: The root style template with a `{radix_import}` placeholder.
+        radix_import: The Radix stylesheet import line for this Tailwind version.
+        include_radix_themes: Whether to include the Radix stylesheet import.
+
+    Returns:
+        The root style path and the compiled root style.
+    """
+    return str(Path(Dirs.STYLES) / TailwindConstants.ROOT_STYLE_PATH), template.format(
+        radix_import=radix_import if include_radix_themes else ""
+    )
+
+
+def _index_of_element_that_has(haystack: list[str], needle: str) -> int | None:
+    return next(
+        (i for i, line in enumerate(haystack) if needle in line),
+        None,
+    )
+
+
+def add_tailwind_to_css_file(
+    css_file_content: str, *, include_radix_themes: bool = True
+) -> str:
+    """Add tailwind to the css file.
+
+    Args:
+        css_file_content: The content of the css file.
+        include_radix_themes: Whether the root stylesheet already imports Radix.
+
+    Returns:
+        The modified css file content.
+    """
+    from reflex.compiler.compiler import RADIX_THEMES_STYLESHEET
+
+    if TailwindConstants.TAILWIND_CSS.splitlines()[0] in css_file_content:
+        return css_file_content
+    if include_radix_themes and RADIX_THEMES_STYLESHEET in css_file_content:
+        return css_file_content.replace(
+            f"@import url('{RADIX_THEMES_STYLESHEET}');",
+            TailwindConstants.TAILWIND_CSS,
+        )
+
+    lines = css_file_content.splitlines()
+    insert_at = next(
+        (
+            index + 1
+            for index, line in enumerate(lines)
+            if "__reflex_style_reset.css" in line
+        ),
+        1,
+    )
+    lines.insert(insert_at, TailwindConstants.TAILWIND_CSS)
+    return "\n".join(lines)
+
+
 @dataclasses.dataclass
 class TailwindPlugin(PluginBase):
     """Plugin for Tailwind CSS."""
@@ -181,6 +275,32 @@ class TailwindPlugin(PluginBase):
             ],
         )
     )
+
+    _version_packages: ClassVar[tuple[str, ...]] = ()
+
+    @staticmethod
+    def _compile_root_style(include_radix_themes: bool = True) -> tuple[str, str]:
+        """Compile the root style for this Tailwind version.
+
+        Args:
+            include_radix_themes: Whether to include the Radix stylesheet import.
+
+        Raises:
+            NotImplementedError: Tailwind version plugins must override this.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def _add_tailwind_to_postcss_config(postcss_file_content: str) -> str:
+        """Add this Tailwind version to the postcss config.
+
+        Args:
+            postcss_file_content: The content of the postcss config file.
+
+        Raises:
+            NotImplementedError: Tailwind version plugins must override this.
+        """
+        raise NotImplementedError
 
     def get_frontend_development_dependencies(self, **context) -> list[str]:
         """Get the packages required by the plugin.
@@ -194,9 +314,34 @@ class TailwindPlugin(PluginBase):
         config = self.get_config()
 
         return [
-            plugin if isinstance(plugin, str) else plugin.get("name")
-            for plugin in config.get("plugins", [])
-        ] + config.get("presets", [])
+            *(
+                plugin if isinstance(plugin, str) else plugin.get("name")
+                for plugin in config.get("plugins", [])
+            ),
+            *config.get("presets", []),
+            *self._version_packages,
+        ]
+
+    def pre_compile(self, **context):
+        """Pre-compile the plugin.
+
+        Args:
+            context: The context for the plugin.
+        """
+        context["add_save_task"](compile_config, self.get_unversioned_config())
+        include_radix_themes = context["radix_themes_plugin"].enabled
+
+        context["add_save_task"](self._compile_root_style, include_radix_themes)
+        context["add_modify_task"](
+            Dirs.POSTCSS_JS, self._add_tailwind_to_postcss_config
+        )
+        context["add_modify_task"](
+            str(Path(Dirs.STYLES) / (PageNames.STYLESHEET_ROOT + Ext.CSS)),
+            lambda content: add_tailwind_to_css_file(
+                content,
+                include_radix_themes=include_radix_themes,
+            ),
+        )
 
     def get_config(self) -> TailwindConfig:
         """Get the Tailwind CSS configuration.
