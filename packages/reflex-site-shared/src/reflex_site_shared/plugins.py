@@ -25,6 +25,7 @@ _PUBLIC_ASSETS = (
     "icons/search.svg",
     "components/marketing-date.jsx",
     "homepage/lib/use-isomorphic-layout-effect.ts",
+    "components/search-query.mjs",
 )
 
 

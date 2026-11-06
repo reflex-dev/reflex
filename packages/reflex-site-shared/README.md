@@ -110,6 +110,13 @@ Add `defer` to a `python demo exec` fence to mount a heavy preview once it is wi
 
 Wrap expensive libraries with `rx.NoSSRComponent` so their JavaScript is also imported only when the preview mounts.
 
+### Component search
+
+The shared search matches complete `rx.*` identifiers to words in documentation
+titles: `rx.button` searches for `button`, `rx.radio_group` for `radio group`,
+and `rx.alert_dialog.root` for `alert dialog root`. The input keeps the original
+text. Ordinary search phrases are sent unchanged.
+
 ## Marketing footer
 
 Use the marketing site's responsive five-column directory footer in another
