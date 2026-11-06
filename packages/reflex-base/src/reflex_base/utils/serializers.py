@@ -673,17 +673,40 @@ def _serialize_sqlalchemy_model(
                 result[attr.key] = value
                 continue
 
+            def _serialize_related(item: Any) -> Any:
+                if id(item) in seen:
+                    item_state = sqlalchemy.inspect(item)
+                    if item_state.has_identity:
+                        return {
+                            col.key: val
+                            for col, val in zip(
+                                item_state.mapper.primary_key,
+                                item_state.identity,
+                                strict=False,
+                            )
+                        }
+                    return None
+
+                item_serializer = get_serializer(type(item))
+                if (
+                    item_serializer is not None
+                    and item_serializer is not serialize_sqlalchemy_base
+                ):
+                    return item_serializer(item)
+
+                return _serialize_sqlalchemy_model(item, seen)
+
             if value is None:
                 result[attr.key] = None
             elif relationship.uselist:
-                result[attr.key] = [
-                    _serialize_sqlalchemy_model(item, seen)
-                    if id(item) not in seen
-                    else None
-                    for item in value
-                ]
-            elif id(value) not in seen:
-                result[attr.key] = _serialize_sqlalchemy_model(value, seen)
+                if isinstance(value, Mapping):
+                    result[attr.key] = {
+                        key: _serialize_related(item) for key, item in value.items()
+                    }
+                else:
+                    result[attr.key] = [_serialize_related(item) for item in value]
+            else:
+                result[attr.key] = _serialize_related(value)
 
         return result
     finally:

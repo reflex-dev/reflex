@@ -294,3 +294,169 @@ def test_automigration(
     # drop remaining tables
     assert migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 6
+
+
+def test_serialize_sqlalchemy_cyclic_custom_serializer():
+    """Test that custom serializers on related models are called, and cycles are broken safely."""
+    from reflex_base.utils.serializers import serialize, serializer
+    from sqlalchemy import ForeignKey
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Parent(Base):
+        __tablename__ = "test_parent"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        children: Mapped[list["Child"]] = relationship(back_populates="parent")
+
+    class Child(Base):
+        __tablename__ = "test_child"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("test_parent.id"))
+        parent: Mapped["Parent"] = relationship(back_populates="children")
+
+    @serializer
+    def serialize_child(child: Child) -> dict:
+        return {
+            "custom_child_id": child.id,
+            "has_parent": child.parent is not None,
+        }
+
+    parent = Parent(id=1)
+    child = Child(id=2, parent=parent)
+    parent.children = [child]
+
+    result = serialize(parent)
+
+    assert isinstance(result, dict)
+    assert result["id"] == 1
+    assert isinstance(result["children"], list)
+    assert len(result["children"]) == 1
+    assert result["children"][0]["custom_child_id"] == 2
+    assert result["children"][0]["has_parent"] is True
+
+    child_result = serialize(child)
+
+    assert isinstance(child_result, dict)
+    assert child_result["custom_child_id"] == 2
+
+
+def test_serialize_sqlalchemy_keyed_dict_relationship():
+    """Test that dictionary-based and list-based relationships are serialized correctly."""
+    from reflex_base.utils.serializers import serialize
+    from sqlalchemy import ForeignKey
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+    from sqlalchemy.orm.collections import attribute_keyed_dict
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Parent(Base):
+        __tablename__ = "test_parent_keyed"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+        dict_children: Mapped[dict[str, "DictChild"]] = relationship(
+            "DictChild",
+            collection_class=attribute_keyed_dict("name"),
+            back_populates="parent",
+        )
+
+        list_children: Mapped[list["ListChild"]] = relationship(
+            "ListChild",
+            back_populates="parent",
+        )
+
+    class DictChild(Base):
+        __tablename__ = "test_dict_child"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str] = mapped_column()
+        parent_id: Mapped[int] = mapped_column(ForeignKey("test_parent_keyed.id"))
+        parent: Mapped["Parent"] = relationship(
+            "Parent", back_populates="dict_children"
+        )
+
+    class ListChild(Base):
+        __tablename__ = "test_list_child"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_id: Mapped[int] = mapped_column(ForeignKey("test_parent_keyed.id"))
+        parent: Mapped["Parent"] = relationship(
+            "Parent", back_populates="list_children"
+        )
+
+    parent = Parent(id=1)
+
+    dict_child = DictChild(id=10, name="Alice", parent=parent)
+    parent.dict_children["Alice"] = dict_child
+
+    ListChild(id=20, parent=parent)
+
+    result = serialize(parent)
+
+    assert isinstance(result, dict)
+    assert result["id"] == 1
+    assert isinstance(result["dict_children"], dict)
+    assert "Alice" in result["dict_children"]
+    assert isinstance(result["dict_children"]["Alice"], dict)
+    assert result["dict_children"]["Alice"]["name"] == "Alice"
+    assert result["dict_children"]["Alice"]["id"] == 10
+    assert isinstance(result["list_children"], list)
+    assert len(result["list_children"]) == 1
+    assert isinstance(result["list_children"][0], dict)
+    assert result["list_children"][0]["id"] == 20
+
+
+def test_serialize_sqlalchemy_unloaded_relationship():
+    """Test that unloaded relationships are omitted during serialization without triggering a load."""
+    from reflex_base.utils.serializers import serialize
+    from sqlalchemy import ForeignKey, create_engine
+    from sqlalchemy.orm import (
+        DeclarativeBase,
+        Mapped,
+        Session,
+        mapped_column,
+        relationship,
+    )
+    from sqlalchemy.orm.collections import attribute_keyed_dict
+
+    class Base(DeclarativeBase):
+        pass
+
+    class UnloadedParent(Base):
+        __tablename__ = "test_unloaded_parent"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+        dict_children: Mapped[dict[str, "UnloadedChild"]] = relationship(
+            "UnloadedChild",
+            collection_class=attribute_keyed_dict("name"),
+        )
+
+    class UnloadedChild(Base):
+        __tablename__ = "test_unloaded_child"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str] = mapped_column()
+        parent_id: Mapped[int] = mapped_column(ForeignKey("test_unloaded_parent.id"))
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        parent = UnloadedParent(id=1)
+        child = UnloadedChild(id=10, name="Alice", parent_id=1)
+        session.add_all([parent, child])
+        session.commit()
+
+    with Session(engine) as session:
+        loaded_parent = session.get(UnloadedParent, 1)
+        assert loaded_parent is not None
+
+        from sqlalchemy import inspect
+
+        assert "dict_children" in inspect(loaded_parent).unloaded
+
+        result = serialize(loaded_parent)
+
+        assert isinstance(result, dict)
+        assert result["id"] == 1
+        assert "dict_children" not in result
+        assert "dict_children" in inspect(loaded_parent).unloaded
