@@ -1,0 +1,1 @@
+`reflex db init` and `reflex db makemigrations` now evaluate every page before comparing the models, so a model that a page imports lazily is no longer missed, and dropped from the generated revision, once a previous `reflex run` has written the stateful-pages marker.
