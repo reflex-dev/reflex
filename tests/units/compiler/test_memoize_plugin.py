@@ -442,7 +442,9 @@ def test_moment_all_locales_import_deduplicates_real_memo_imports() -> None:
     )
     assert "moment/min/locales" not in side_effect_imports
     assert '"moment/locale/fr"' not in memo_code
-    app_root_code = compile_app_root(Fragment.create(), shared_imports=shared_imports)[1]
+    app_root_code = compile_app_root(Fragment.create(), shared_imports=shared_imports)[
+        1
+    ]
     assert 'import "moment/min/locales"' in app_root_code
 
 

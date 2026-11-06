@@ -45,6 +45,7 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_moment.moment import MOMENT_LIBRARY
 from reflex_components_radix.plugin import RadixThemesPlugin
 from rich.progress import Progress
 
@@ -631,7 +632,7 @@ def _compile_memo_components(
             shared_imports,
             {
                 "": [ImportVar(tag=_MOMENT_ALL_LOCALES_IMPORT)],
-                "moment@2.31.0": [ImportVar(tag="moment", is_default=True)],
+                MOMENT_LIBRARY: [ImportVar(tag="moment", is_default=True)],
             },
         )
 
