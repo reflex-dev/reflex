@@ -124,6 +124,7 @@ def _forget_app() -> None:
 @pytest.fixture
 def project(
     tmp_working_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
     forked_registration_context: RegistrationContext,
     model_registry: type[ModelRegistry],
 ) -> Generator[Path, None, None]:
@@ -142,6 +143,8 @@ def project(
     (tmp_working_dir / APP_NAME).mkdir()
     (tmp_working_dir / APP_NAME / "__init__.py").touch()
     sys.modules.pop("rxconfig", None)
+    # The db commands set the skip-compile flag for their process.
+    monkeypatch.delenv(environment.REFLEX_SKIP_COMPILE.name, raising=False)
     _registered_models.clear()
     _registered_models.update(ModelRegistry.models)
     _write_app(tmp_working_dir, "sqlmodel", COLUMNS["sqlmodel"][0])
@@ -563,7 +566,7 @@ def test_migrate_helpers_run_alembic(project: Path, caplog: pytest.LogCaptureFix
     assert Model.migrate(autogenerate=True) is True
     assert len(_versions(project)) == 2
     assert _rows() == []
-    # The helper never touches the compile flag.
+    # Unlike the commands, the helper never touches the compile flag.
     assert environment.REFLEX_SKIP_COMPILE.getenv() is None
     prerequisites.check_schema_up_to_date()
     assert "schema changes" not in caplog.text
