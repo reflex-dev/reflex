@@ -171,6 +171,8 @@ def test_json_mode_adds_trace_ids(monkeypatch, capsys, otel_sdk):
     for record in (json.loads(out), json.loads(err)):
         assert record["trace_id"] == f"{span_context.trace_id:032x}"
         assert record["span_id"] == f"{span_context.span_id:016x}"
+        assert record["trace_flags"] == f"{span_context.trace_flags:02x}"
+        assert record["trace_flags"] in {"01", "03"}
 
 
 def test_console_print_json_mode_adds_trace_ids(monkeypatch, capsys, otel_sdk):
@@ -194,6 +196,7 @@ def test_json_mode_omits_trace_ids_outside_span(monkeypatch, capsys, otel_sdk):
     record = json.loads(capsys.readouterr().out)
     assert "trace_id" not in record
     assert "span_id" not in record
+    assert "trace_flags" not in record
 
 
 def test_json_mode_omits_trace_ids_when_tracing_disabled(monkeypatch, capsys):
@@ -205,6 +208,7 @@ def test_json_mode_omits_trace_ids_when_tracing_disabled(monkeypatch, capsys):
     record = json.loads(capsys.readouterr().out)
     assert "trace_id" not in record
     assert "span_id" not in record
+    assert "trace_flags" not in record
 
 
 def test_configure_idempotent():

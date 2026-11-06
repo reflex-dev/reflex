@@ -1,0 +1,1 @@
+JSON log records (`REFLEX_LOG_JSON=true`) emitted inside an OpenTelemetry span now also include `trace_flags`, the span's W3C trace flags as two hex digits, so a record from an unsampled span can be told apart from one that was sampled.
