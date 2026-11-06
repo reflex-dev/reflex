@@ -28,6 +28,7 @@ from reflex_base.event import (
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     EventHandlerArgTypeMismatchError,
     EventHandlerTypeError,
     EventHandlerValueError,
@@ -294,31 +295,53 @@ class BackendTriggerState(BaseState):
 
 
 @pytest.mark.parametrize(
-    ("value", "match"),
+    "value",
     [
-        (BackendTriggerState._secret, r"Invalid event chain: Field\(default=42"),
-        ([BackendTriggerState._secret], r"Invalid event: Field\(default=42"),
-        (lambda: BackendTriggerState._secret, r"-> Field\(default=42"),
+        BackendTriggerState._secret,
+        [BackendTriggerState._secret],
+        lambda: BackendTriggerState._secret,
     ],
+    ids=["chain", "list", "lambda"],
 )
-def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
-    """Binding a backend var as an event trigger reports its repr, not a format error.
+def test_backend_var_event_trigger_raises_format_error(value: Any):
+    """Binding a backend var as an event trigger raises the backend var format error.
 
     Args:
         value: The misused event trigger value.
-        match: The expected error message pattern.
     """
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
         EventChain.create(value=value, args_spec=lambda: ())
 
 
-def test_backend_var_upload_progress_reports_repr():
-    """A backend var passed as on_upload_progress reports its repr."""
+@pytest.mark.parametrize(
+    "action", [rx.toast, rx.console_log], ids=["toast", "console_log"]
+)
+def test_backend_var_event_action_raises_format_error(action: Callable[[Any], Any]):
+    """A backend var passed to an event action raises the backend var format error.
+
+    Args:
+        action: The event action given the backend var.
+    """
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
+        str(Var.create(action(BackendTriggerState._secret)))
+
+
+def test_backend_var_upload_progress_raises_format_error():
+    """A backend var passed as on_upload_progress raises the backend var format error."""
     upload = rx.upload_files(
         upload_id="u",
         on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
     )
-    with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
         upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
 
 
@@ -1713,3 +1736,95 @@ def test_event_sequence():
     assert event_sequence(events_user_list) is events_user_list
     assert event_sequence("abc") == ["abc"]
     assert event_sequence(b"ab") == [b"ab"]
+
+
+def test_decentralized_event_actions_are_registered():
+    """The registered handler of a decentralized event carries its event actions."""
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    @event(stop_propagation=True)
+    def e(s: S):
+        s.field = "foo"
+
+    assert isinstance(e, EventHandler)
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(e)
+    ]
+    assert registered.handler is e
+    assert registered.handler.event_actions == {"stopPropagation": True}
+    assert registered.states == (S,)
+
+
+def test_rx_event_stateless_registers_globally():
+    """A function with no state parameter registers as a stateless handler."""
+
+    @event
+    def ping(x: str) -> str:
+        return x
+
+    assert isinstance(ping, EventHandler)
+    assert ping.state is None
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(ping)
+    ]
+    assert registered.handler is ping
+    assert registered.states == ()
+    spec = ping("1")
+    assert isinstance(spec, EventSpec)
+    [ev] = Event.from_event_type(spec)
+    assert ev.name == format.format_event_handler(ping)
+    assert ev.payload == {"x": "1"}
+    _ = rx.input(on_change=ping)
+
+
+def test_rx_event_stateless_with_generic_annotation():
+    """A stateless handler may annotate its first parameter with a generic alias."""
+
+    @event
+    def summarize(items: list[int], label: str | None = None) -> int:
+        return sum(items)
+
+    assert isinstance(summarize, EventHandler)
+    assert summarize.state is None
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(summarize)
+    ]
+    assert registered.states == ()
+
+
+def test_event_handler_and_spec_expose_wrapped_function() -> None:
+    """EventHandler and EventSpec expose the decorated function as __wrapped__."""
+
+    class WrappedState(BaseState):
+        @rx.event
+        def handle(self, value: int):
+            pass
+
+    handler = WrappedState.handle
+    assert isinstance(handler, EventHandler)
+    assert handler.__wrapped__ is handler.fn
+    assert handler.__wrapped__.__name__ == "handle"
+    assert handler(1).__wrapped__ is handler.fn
+
+
+def test_rx_event_on_a_non_state_class_method_still_calls_it() -> None:
+    """@rx.event on a method of a class that is not a state warns and stays a method."""
+    from unittest.mock import patch
+
+    from reflex_base.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class Helper:
+            @rx.event
+            def compute(self, x: int) -> int:
+                return x * 2
+
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "@rx.event on a method of a class that is not a state"
+    )
+    assert isinstance(Helper.compute, EventHandler)
+    assert Helper().compute(3) == 6  # pyright: ignore [reportArgumentType]

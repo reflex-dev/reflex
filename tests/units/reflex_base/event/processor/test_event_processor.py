@@ -26,7 +26,7 @@ from reflex_base.event.processor.event_processor import (
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
-from reflex.event import Event, EventHandler
+from reflex.event import Event, EventHandler, EventSpec
 from tests.units.conftest import active_tracer
 
 # Module-level log so event handlers can record what happened.
@@ -673,10 +673,10 @@ async def test_processor_reports_blocking_sync_handler(
         await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
 
     assert "_blocking_sync_handler" in caplog.text
-    assert "blocked the event loop" in caplog.text
-    duration = re.search(r"blocked the event loop for (\d+\.\d+)s", caplog.text)
-    assert duration is not None
-    assert float(duration.group(1)) >= 0.1
+    # The probe that times the block lands up to a polling gap into it, so only
+    # the report of a total is checked here; test_blocking checks its length
+    # with a handler that blocks once a probe is queued.
+    assert re.search(r"blocked the event loop for \d+\.\d+s in total", caplog.text)
     # The stack of the event task ends at the blocking line, without loop frames.
     assert "Blocking stack (most recent call last):" in caplog.text
     assert "time.sleep(0.12)" in caplog.text
@@ -1901,3 +1901,59 @@ async def test_top_level_event_under_local_span_names_no_parent_event(
         == top.attributes[otel.ATTR_EVENT_TXID]
         == future.txid
     )
+
+
+async def test_bare_handler_return_value_resolves_future(
+    mock_event_processor: EventProcessor,
+    token: str,
+):
+    """A bare handler's return value resolves its future.
+
+    A returned EventSpec is a description of an event, not work for the base
+    processor to run, so the handler it names must not be executed.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+    """
+
+    def _returns_value() -> int:
+        return 7
+
+    async def _returns_spec() -> EventSpec:  # noqa: RUF029
+        return logging_event("not run")
+
+    value_event = EventHandler(fn=_returns_value)
+    spec_event = EventHandler(fn=_returns_spec)
+    RegistrationContext.register_event_handler(value_event)
+    RegistrationContext.register_event_handler(spec_event)
+    async with mock_event_processor as ep:
+        value_future = await ep.enqueue(token, Event.from_event_type(value_event())[0])
+        assert await value_future == 7
+        spec_future = await ep.enqueue(token, Event.from_event_type(spec_event())[0])
+        spec = await spec_future
+        assert isinstance(spec, EventSpec)
+    assert _CALL_LOG == []
+
+
+async def test_bare_handler_returned_future_is_awaited(
+    mock_event_processor: EventProcessor,
+    token: str,
+):
+    """A bare handler returning a Future still has it awaited; only event specs are not.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+    """
+
+    def _returns_future() -> asyncio.Future[int]:
+        future: asyncio.Future[int] = asyncio.get_running_loop().create_future()
+        asyncio.get_running_loop().call_soon(future.set_result, 11)
+        return future
+
+    future_event = EventHandler(fn=_returns_future)
+    RegistrationContext.register_event_handler(future_event)
+    async with mock_event_processor as ep:
+        event_future = await ep.enqueue(token, Event.from_event_type(future_event())[0])
+        assert await event_future == 11

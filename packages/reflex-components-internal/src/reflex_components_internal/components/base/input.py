@@ -8,7 +8,13 @@ from reflex_components_core.el.elements.inline import Span
 from reflex_components_core.el.elements.typography import Div
 
 from reflex.components.component import Component, ComponentNamespace
-from reflex.event import EventHandler, passthrough_event_spec, set_focus, set_value
+from reflex.event import (
+    EventHandler,
+    IndividualEventType,
+    passthrough_event_spec,
+    set_focus,
+    set_value,
+)
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import Var, get_unique_variable_name
 from reflex_components_internal.components.base_ui import PACKAGE_NAME, BaseUIComponent
@@ -83,7 +89,7 @@ class HighLevelInput(InputBaseComponent):
     show_clear_button: ClassVar[bool]
 
     # Events to fire when the clear button is clicked.
-    clear_events: Var[list[EventHandler]]
+    clear_events: Var[list[IndividualEventType[()]]]
 
     _el_input_props = {
         "default_value",
@@ -169,7 +175,9 @@ class HighLevelInput(InputBaseComponent):
         )
 
     @staticmethod
-    def _create_clear_button(id: str, clear_events: list[EventHandler]) -> Button:
+    def _create_clear_button(
+        id: str, clear_events: list[IndividualEventType[()]]
+    ) -> Button:
         """Create the clear button component.
 
         Returns:
