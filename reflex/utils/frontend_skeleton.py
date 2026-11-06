@@ -320,13 +320,15 @@ def _copy_if_exists(src: Path, dest: Path, prune: bool = True) -> bool:
             return True
         return False
 
-    if dest.exists() and dest.read_bytes() == src.read_bytes():
+    contents = src.read_bytes()
+    if dest.exists() and dest.read_bytes() == contents:
         return False
 
     changed = dest.exists()
     path_ops.mkdir(dest.parent)
     logger.debug(f"Copying {src} to {dest}")
-    path_ops.cp(src, dest)
+    with path_ops.atomic_write(dest, "wb") as dest_file:
+        dest_file.write(contents)
     return changed
 
 
@@ -373,7 +375,8 @@ def sync_root_package_json_to_web() -> bool:
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)
-    output_path.write_text(rendered)
+    with path_ops.atomic_write(output_path) as output_file:
+        output_file.write(rendered)
     return changed
 
 
@@ -399,10 +402,7 @@ def sync_web_lockfile_to_root(filename: str):
     web = get_web_lockfile_path(filename)
     if not web.exists():
         return
-    root = get_root_lockfile_path(filename)
-    path_ops.mkdir(root.parent)
-    logger.debug(f"Copying {web} to {root}")
-    path_ops.cp(web, root)
+    _copy_if_exists(web, get_root_lockfile_path(filename), prune=False)
 
 
 def sync_web_lockfiles_to_root():
@@ -451,6 +451,12 @@ def _read_persisted_package_json() -> dict:
 
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
+    with path_ops.file_lock(get_web_dir()):
+        _initialize_web_directory()
+
+
+def _initialize_web_directory():
+    """Initialize the web directory while its lock is held."""
     logger.info("Initializing the web directory.")
 
     web_dir = get_web_dir()
@@ -606,14 +612,16 @@ def update_package_json_overrides() -> bool:
 
     package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
     logger.debug(f"Applying framework overrides to {package_json_path}")
-    package_json_path.write_text(json.dumps(package_json))
+    with path_ops.atomic_write(package_json_path) as package_json_file:
+        json.dump(package_json, package_json_file)
     return True
 
 
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    output_path.write_text(_compile_package_json())
+    with path_ops.atomic_write(output_path) as output_file:
+        output_file.write(_compile_package_json())
 
 
 def _compile_vite_config(config: Config):
