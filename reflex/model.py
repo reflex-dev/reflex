@@ -308,7 +308,8 @@ if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
 
         backup = migrations.update_legacy_env()
         if backup is not None:
-            logger.info(migrations.UPDATED_ENV_MESSAGE.format(backup=backup))
+            # A warning: it changes a file, from a process that may show nothing less.
+            logger.warning(migrations.UPDATED_ENV_MESSAGE.format(backup=backup))
         # Pending scripts are applied first: autogenerate needs the database at head.
         migrations.run("upgrade", "head")
         if autogenerate:

@@ -1146,10 +1146,19 @@ def db_init():
     if environment.ALEMBIC_CONFIG.get().exists():
         with _alembic_errors():
             backup = migrations.update_legacy_env()
+            env_py = migrations.script_directory() / "env.py"
         if backup is not None:
             logger.info(
                 f"{migrations.UPDATED_ENV_MESSAGE.format(backup=backup)} "
                 "Existing revisions are kept."
+            )
+            return
+        if not env_py.exists():
+            # Written afresh, so that an env.py edited by hand can be replaced
+            # with the current template by moving it aside.
+            migrations.install_env()
+            logger.info(
+                f"Created {env_py} from the template. Existing revisions are kept."
             )
             return
         logger.error(
@@ -1181,6 +1190,9 @@ def migrate():
     """Apply migration scripts to the database (alembic upgrade head)."""
     from reflex.utils import migrations, prerequisites
 
+    # Evaluate every page without writing the frontend, so that the schema check
+    # afterwards compares models that pages or plugin route hooks import lazily.
+    prerequisites.get_compiled_app(dry_run=True)
     if not prerequisites.check_db_initialized():
         return
     with _alembic_errors():

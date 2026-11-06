@@ -332,15 +332,16 @@ def get_compiled_app(
     Returns:
         The compiled app based on the default config.
     """
-    app, app_module = get_and_validate_app(
-        reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
-    )
+    app, app_module = get_and_validate_app(reload=reload)
     app._compile(
         prerender_routes=prerender_routes,
         dry_run=dry_run,
         use_rich=use_rich,
         trigger=trigger,
     )
+    # After the compile, so that models the pages import lazily are compared too.
+    if check_if_schema_up_to_date:
+        check_schema_up_to_date()
     return app_module
 
 
@@ -836,11 +837,15 @@ def check_db_initialized() -> bool:
     """Check if the database migrations are initialized.
 
     Returns:
-        True if the migration environment exists and loads the app (or if the
-        database is not used).
+        True if the database is configured and the migration environment exists.
     """
     if get_config().db_url is None:
-        return True
+        logger.error(
+            "db_url is not configured in rxconfig.py, so there is no database to "
+            "migrate.",
+            extra={"dedupe": True},
+        )
+        return False
     if not environment.ALEMBIC_CONFIG.get().exists():
         logger.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first.",

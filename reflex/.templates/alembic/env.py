@@ -9,7 +9,6 @@ commands and the ``alembic`` command line run it.
 
 from __future__ import annotations
 
-import logging
 from logging.config import fileConfig
 from typing import TYPE_CHECKING, Literal
 
@@ -21,7 +20,7 @@ from reflex_base.config import get_config
 from reflex_base.environment import environment
 
 from reflex.model import ModelRegistry, get_engine
-from reflex.utils.migrations import load_app
+from reflex.utils.migrations import invoked_by_reflex, load_app
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -33,12 +32,9 @@ if TYPE_CHECKING:
 # access to the values within the .ini file in use.
 config = context.config
 
-# Apply the logging settings in alembic.ini when alembic runs on its own. Under
-# the reflex CLI, or in an app that set up logging, handlers are already attached.
-if (
-    config.config_file_name is not None
-    and not logging.getLogger("reflex").hasHandlers()
-):
+# Apply the logging settings in alembic.ini when the `alembic` command line runs
+# env.py. Under `reflex db` and `migrate()` the process keeps its own logging.
+if config.config_file_name is not None and not invoked_by_reflex():
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # Importing the app registers the models. `reflex db makemigrations` evaluates

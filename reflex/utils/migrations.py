@@ -7,6 +7,8 @@ command line works on a Reflex app exactly as `reflex db` does.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import logging
 import shutil
 from pathlib import Path
@@ -35,6 +37,20 @@ UPDATED_ENV_MESSAGE = (
 # start a second alembic run inside the one already in progress.
 _loading_app = False
 
+# True while `run` executes an alembic command, so env.py can tell `reflex db`
+# and `migrate()` apart from the `alembic` command line.
+_in_run = False
+
+
+def invoked_by_reflex() -> bool:
+    """Whether the alembic command now running was started by `run`.
+
+    Returns:
+        True under `reflex db` and `migrate()`, False under the `alembic`
+        command line.
+    """
+    return _in_run
+
 
 def run(*args: str) -> None:
     """Run an alembic command line against the app's alembic.ini.
@@ -47,6 +63,8 @@ def run(*args: str) -> None:
     Args:
         *args: The alembic command and its options, e.g. ``"upgrade", "head"``.
     """
+    global _in_run
+
     if _loading_app:
         logger.debug(
             f"Skipping alembic {' '.join(args)}: an alembic run is loading the app."
@@ -54,15 +72,19 @@ def run(*args: str) -> None:
         return
     import alembic.config
 
-    alembic.config.main(
-        argv=[
-            "--raiseerr",
-            "--config",
-            str(environment.ALEMBIC_CONFIG.get()),
-            *args,
-        ],
-        prog="alembic",
-    )
+    _in_run = True
+    try:
+        alembic.config.main(
+            argv=[
+                "--raiseerr",
+                "--config",
+                str(environment.ALEMBIC_CONFIG.get()),
+                *args,
+            ],
+            prog="alembic",
+        )
+    finally:
+        _in_run = False
 
 
 def load_app() -> None:
@@ -83,12 +105,28 @@ def load_app() -> None:
 def init() -> None:
     """Run `alembic init` with its stock template, then install the reflex env.py.
 
-    Quiet, because alembic's closing advice to edit the connection settings in
-    alembic.ini does not apply: env.py takes the database URL from rxconfig.py.
+    Without alembic's output: it names each template file even with --quiet, and
+    its closing advice to edit the connection settings in alembic.ini does not
+    apply, as env.py takes the database URL from rxconfig.py.
     """
     directory = environment.ALEMBIC_CONFIG.get().parent / "alembic"
-    run("--quiet", "init", str(directory))
-    shutil.copy(TEMPLATE_ENV_PY, directory / "env.py")
+    with contextlib.redirect_stdout(io.StringIO()):
+        run("init", str(directory))
+    install_env()
+
+
+def install_env() -> Path:
+    """Write the reflex env.py template into the script directory.
+
+    Returns:
+        The path of the written env.py.
+
+    Raises:
+        CommandError: If alembic.ini names no script directory or it is missing.
+    """
+    env_py = script_directory() / "env.py"
+    shutil.copy(TEMPLATE_ENV_PY, env_py)
+    return env_py
 
 
 def script_directory() -> Path:
@@ -138,7 +176,7 @@ def update_legacy_env() -> Path | None:
     env_py = script_directory() / "env.py"
     backup = env_py.with_name("env.old")
     env_py.replace(backup)
-    shutil.copy(TEMPLATE_ENV_PY, env_py)
+    install_env()
     return backup
 
 
