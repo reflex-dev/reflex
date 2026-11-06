@@ -707,6 +707,22 @@ class EventHandler(EventActionsMixin):
             removal_version="1.0",
         )
 
+    @overload
+    def __get__(self, instance: None, owner: type | None = None) -> Self: ...
+
+    @overload
+    def __get__(
+        self, instance: "BaseState", owner: type | None = None
+    ) -> Callable[..., Any]: ...
+
+    # Only a state binds its handlers. Anywhere else, e.g. in a component or
+    # dataclass field, a stored handler reads back as the handler itself. The
+    # exception, a stateless handler declared as a method of a plain class
+    # (deprecated), binds like a method; `rx.event` types that as an
+    # EventCallback, so it does not reach these overloads.
+    @overload
+    def __get__(self, instance: object, owner: type | None = None) -> Self: ...
+
     def __get__(self, instance: Any, owner: type | None = None) -> Any:
         """Get the handler on class access, or its function bound to a state.
 
