@@ -2630,6 +2630,11 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
         # Create a mocked redis client instead of skipping.
         state_manager = StateManagerRedis(redis=mock_redis())
 
+    # Leases are only taken once the lock updates subscription is confirmed.
+    # Best effort: a Redis that rejects CONFIG never confirms it.
+    with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+        await state_manager._ensure_lock_task_subscribed()
+
     yield state_manager
 
     await state_manager.close()
