@@ -1,12 +1,18 @@
 """Integration tests for the Moment component."""
 
 from collections.abc import Generator
+from typing import Any, cast
 
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.testing import AppHarness
+
+
+def _browser_logs(driver: WebDriver) -> list[dict[str, str]]:
+    """Return browser logs from Selenium's Chromium-specific driver API."""
+    return cast(Any, driver).get_log("browser")
 
 
 def MomentApp():
@@ -17,6 +23,8 @@ def MomentApp():
 
     class State(rx.State):
         """State used to wait for the browser connection before asserting output."""
+
+        locale: str = "fr"
 
     @rx.memo
     def memoized_provider_moment():
@@ -57,6 +65,12 @@ def MomentApp():
                 format="dddd D MMMM YYYY",
                 locale="fr",
                 id="moment-french",
+            ),
+            rx.moment(
+                "2024-03-14T15:09:26",
+                format="dddd D MMMM YYYY",
+                locale=State.locale,
+                id="moment-reactive-locale",
             ),
             rx.moment_provider(
                 rx.box(
@@ -100,8 +114,22 @@ def MomentApp():
             rx.link("Plain page", href="/plain", id="provider-plain-link"),
         )
 
+    def literal_locale():
+        """Render a literal-locale Moment from an independently loaded route.
+
+        Returns:
+            The literal-locale Moment component.
+        """
+        return rx.moment(
+            "2024-03-14T15:09:26",
+            format="dddd D MMMM YYYY",
+            locale="fr",
+            id="literal-route-date",
+        )
+
     app.add_page(plain, route="/plain")
     app.add_page(provider, route="/provider")
+    app.add_page(literal_locale, route="/literal")
 
 
 @pytest.fixture(scope="module")
@@ -127,7 +155,9 @@ def driver(moment_app: AppHarness) -> Generator[WebDriver, None, None]:
     Yields:
         The browser driver connected to the Moment app.
     """
-    driver = moment_app.frontend()
+    driver = moment_app.frontend(
+        driver_option_capabilities={"goog:loggingPrefs": {"browser": "ALL"}}
+    )
     try:
         token = AppHarness.poll_for_or_raise_timeout(
             lambda: driver.find_element(By.ID, "token")
@@ -167,6 +197,12 @@ def test_moment_locales_are_isolated(driver: WebDriver) -> None:
     )
     AppHarness.expect(
         lambda: (
+            driver.find_element(By.ID, "moment-reactive-locale").text
+            == "jeudi 14 mars 2024"
+        )
+    )
+    AppHarness.expect(
+        lambda: (
             driver.find_element(By.ID, "moment-provider-locale").text
             == "jeudi 14 mars 2024"
         )
@@ -177,6 +213,12 @@ def test_moment_locales_are_isolated(driver: WebDriver) -> None:
             == "jeudi 14 mars 2024"
         )
     )
+    locale_warnings = [
+        entry["message"]
+        for entry in _browser_logs(driver)
+        if "defineLocale" in entry["message"]
+    ]
+    assert locale_warnings == []
     driver.find_element(By.ID, "plain-link").click()
     AppHarness.expect(
         lambda: (
@@ -236,3 +278,29 @@ def test_moment_provider_locale_does_not_leak(
     AppHarness.expect(
         lambda: driver.find_element(By.ID, "plain-relative").text.endswith("ago")
     )
+
+
+def test_literal_locale_route_works_after_direct_load(
+    moment_app: AppHarness, driver: WebDriver
+) -> None:
+    """Reactive locales in other routes must not remove direct-route locales."""
+    assert moment_app.frontend_url is not None
+    driver.get(moment_app.frontend_url.rstrip("/") + "/literal")
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "literal-route-date").text
+            == "jeudi 14 mars 2024"
+        )
+    )
+    driver.get(moment_app.frontend_url.rstrip("/") + "/")
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-reactive-locale").text
+            == "jeudi 14 mars 2024"
+        )
+    )
+    assert not [
+        entry["message"]
+        for entry in _browser_logs(driver)
+        if "defineLocale" in entry["message"]
+    ]
