@@ -25,6 +25,36 @@ class _HandlerState(State):
     @event
     def four(self, index: int, value: str, flag: bool, count: float) -> None: ...
 
+    @event
+    def five(self, a: int, b: str, c: bool, d: float, e: bytes) -> None: ...
+
+    @event
+    def six(self, a: int, b: str, c: bool, d: float, e: bytes, f: int) -> None: ...
+
+    @event
+    def seven(
+        self, a: int, b: str, c: bool, d: float, e: bytes, f: int, g: str
+    ) -> None: ...
+
+    @event
+    def eight(
+        self, a: int, b: str, c: bool, d: float, e: bytes, f: int, g: str, h: bool
+    ) -> None: ...
+
+    @event
+    def nine(
+        self,
+        a: int,
+        b: str,
+        c: bool,
+        d: float,
+        e: bytes,
+        f: int,
+        g: str,
+        h: bool,
+        i: float,
+    ) -> None: ...
+
 
 _index: Var[int] = Var("index")
 
@@ -35,6 +65,12 @@ assert_type(_HandlerState.one(_index), EventCallback[()])
 assert_type(_HandlerState.two(_index, "a"), EventCallback[()])
 assert_type(_HandlerState.three(1, "a", True), EventCallback[()])
 assert_type(_HandlerState.four(1, "a", True, 1.5), EventCallback[()])
+assert_type(_HandlerState.five(_index, "a", True, 1.5, b""), EventCallback[()])
+assert_type(_HandlerState.six(1, "a", True, 1.5, b"", _index), EventCallback[()])
+assert_type(_HandlerState.seven(1, "a", True, 1.5, b"", _index, "b"), EventCallback[()])
+assert_type(
+    _HandlerState.eight(_index, "a", True, 1.5, b"", 2, "b", False), EventCallback[()]
+)
 
 # Called with the leading arguments, it still takes the rest, e.g. from the event.
 assert_type(_HandlerState.two(_index), EventCallback[str])
@@ -42,6 +78,15 @@ assert_type(_HandlerState.three(_index), EventCallback[str, bool])
 assert_type(_HandlerState.three(1, "a"), EventCallback[bool])
 assert_type(_HandlerState.four(_index), EventCallback[str, bool, float])
 assert_type(_HandlerState.four(1, "a", True), EventCallback[float])
+assert_type(_HandlerState.five(1, "a"), EventCallback[bool, float, bytes])
+assert_type(_HandlerState.seven(1, "a", True, 1.5), EventCallback[bytes, int, str])
+assert_type(_HandlerState.seven(1, "a", True, 1.5, b""), EventCallback[int, str])
+assert_type(_HandlerState.six(1, "a", True, 1.5, b""), EventCallback[int])
+assert_type(_HandlerState.seven(1, "a", True, 1.5, b"", 2), EventCallback[str])
+assert_type(_HandlerState.eight(1, "a", True, 1.5, b"", 2, "b"), EventCallback[bool])
+assert_type(
+    _HandlerState.nine(1, "a", True, 1.5, b"", 2, "b", False), EventCallback[float]
+)
 
 # A handler is a callable of its arguments, so it can be passed where one is expected.
 _one: Callable[[int], Any] = _HandlerState.one
