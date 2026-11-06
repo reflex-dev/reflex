@@ -159,7 +159,7 @@ class EventLoopBlockingMonitor:
             subject = None
             while not responsive.wait(interval):
                 if self._stop.is_set():
-                    return
+                    break
                 elapsed = time.perf_counter() - started
                 if (
                     subject is None
@@ -178,7 +178,9 @@ class EventLoopBlockingMonitor:
                         scope,
                         stack.rstrip(),
                     )
-            if subject is not None:
+            # A stop that lands as the loop responds still gets the total; one
+            # that lands while the loop is blocked has no total to report.
+            if subject is not None and responsive.is_set():
                 logger.warning(
                     "%s blocked the event loop for %.3fs in total.",
                     subject,

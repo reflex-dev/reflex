@@ -1523,11 +1523,17 @@ class FileUpload:
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
-        upload_files_var = Var(
-            _js_expr="filesById",
-            _var_type=dict[str, Any],
-            _var_data=VarData.merge(get_upload_files_context_var_data()),
-        ).to(ObjectVar)[LiteralVar.create(upload_id)]
+        # Read the selection from refs; keep only the provider wrap, not the context hook.
+        upload_files_var = (
+            Var("__upload_files")
+            ._as_ref()
+            ._replace(
+                merge_var_data=VarData(
+                    app_wraps=get_upload_files_context_var_data().app_wraps
+                )
+            )
+            .to(ObjectVar, dict[str, Any])[LiteralVar.create(upload_id)]
+        )
         spec_args = [
             (
                 Var(_js_expr="files"),

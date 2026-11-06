@@ -258,10 +258,15 @@ class StateProxy(wrapt.ObjectProxy):
             parent_state = (
                 await self._self_parent_state_proxy.__aenter__()
             ).__wrapped__
-            super().__setattr__(
-                "__wrapped__",
-                await parent_state.get_state(self._self_substate_token.cls),
-            )
+            try:
+                super().__setattr__(
+                    "__wrapped__",
+                    await parent_state.get_state(self._self_substate_token.cls),
+                )
+            except (Exception, asyncio.CancelledError):
+                # The parent holds the state lock, and __aexit__ will not be called when __aenter__ raises.
+                await self._self_parent_state_proxy.__aexit__(*sys.exc_info())
+                raise
             self._self_entered_context = True
             return self
         current_task = asyncio.current_task()

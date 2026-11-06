@@ -1256,6 +1256,7 @@ with reflex._shutdown_signals() as begin_cleanup:
             time.sleep(1)
     finally:
         begin_cleanup()
+        print(wrapper.pid, flush=True)
         # The wrapper exits at once; the server holds the stop until the deadline.
         stop_process_tree(wrapper, timeout=60)
 """
@@ -1278,7 +1279,12 @@ def test_shutdown_signals_force_exit_kills_an_orphaned_descendant(tmp_path):
         server = int(_read_line(proc))
         assert _read_line(proc) == "ready\n"
         proc.send_signal(signal.SIGTERM)
-        # By now the wrapper is gone and the server is no longer found below the run.
+        # The cleanup has begun once the wrapper is reported, so the repeat
+        # window is measured from here rather than from the signal, which a
+        # busy runner may deliver late.
+        wrapper = int(_read_line(proc))
+        _assert_gone(wrapper, "the cleanup did not stop the wrapper")
+        # Now the server is no longer found below the run.
         time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.2)
         assert proc.poll() is None
         proc.send_signal(signal.SIGTERM)

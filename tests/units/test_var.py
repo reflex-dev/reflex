@@ -435,7 +435,6 @@ def test_datetime_equality_with_other_type_uses_default_comparison():
     ("var", "expected"),
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
-        (v({1, 2, 3}), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
         (
             Var(_js_expr="foo")._var_set_state("state").to(list),

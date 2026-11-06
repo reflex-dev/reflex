@@ -39,6 +39,7 @@ NUMBER_T = TypeVarExt(
 
 if TYPE_CHECKING:
     from .sequence import ArrayVar
+    from .set import SetVar
 
 
 def raise_unsupported_operand_types(
@@ -132,7 +133,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     def __mul__(self, other: number_types | boolean_types) -> NumberVar: ...
 
     @overload
-    def __mul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
+    def __mul__(self, other: list | tuple | set | ArrayVar | SetVar) -> ArrayVar: ...
 
     def __mul__(self, other: Any):
         """Multiply two numbers.
@@ -144,9 +145,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
             The number multiplication operation.
         """
         from .sequence import ArrayVar, LiteralArrayVar
+        from .set import SetVar
 
-        if isinstance(other, (list, tuple, ArrayVar)):
-            if isinstance(other, ArrayVar):
+        if isinstance(other, (list, tuple, ArrayVar, SetVar)):
+            if isinstance(other, (ArrayVar, SetVar)):
                 return other * self
             return LiteralArrayVar.create(other) * self
 
@@ -159,7 +161,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     def __rmul__(self, other: number_types | boolean_types) -> NumberVar: ...
 
     @overload
-    def __rmul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
+    def __rmul__(self, other: list | tuple | set | ArrayVar | SetVar) -> ArrayVar: ...
 
     def __rmul__(self, other: Any):
         """Multiply two numbers.
@@ -171,9 +173,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
             The number multiplication operation.
         """
         from .sequence import ArrayVar, LiteralArrayVar
+        from .set import SetVar
 
-        if isinstance(other, (list, tuple, ArrayVar)):
-            if isinstance(other, ArrayVar):
+        if isinstance(other, (list, tuple, ArrayVar, SetVar)):
+            if isinstance(other, (ArrayVar, SetVar)):
                 return other * self
             return LiteralArrayVar.create(other) * self
 
