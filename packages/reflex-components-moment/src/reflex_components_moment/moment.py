@@ -16,8 +16,6 @@ from reflex_base.event import EventHandler, passthrough_event_spec
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 
-MOMENT_LIBRARY = "moment@2.31.0"
-
 
 @dataclasses.dataclass(frozen=True)
 class MomentDelta:
@@ -66,7 +64,7 @@ def _locale_timezone_imports(
     imports: ImportDict = {}
     if (module := _locale_module(locale)) is not None:
         imports[""] = module
-        imports[MOMENT_LIBRARY] = ImportVar(tag="moment", is_default=True)
+        imports["moment@2.31.0"] = ImportVar(tag="moment", is_default=True)
     if timezone is not None:
         imports["moment-timezone@0.6.5"] = ""
     return imports
@@ -92,7 +90,7 @@ class MomentProvider(Component):
 
     tag: str | None = "MomentProvider"
     library: str | None = "react-moment@2.0.2"
-    lib_dependencies: list[str] = [MOMENT_LIBRARY]
+    lib_dependencies: list[str] = ["moment@2.31.0"]
 
     pool: Var[bool] = field(doc="Use one timer for all descendant Moment components.")
     interval: Var[int] = field(doc="The interval in milliseconds for the pooled timer.")
@@ -134,7 +132,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     tag: str | None = "Moment"
     is_default = True
     library: str | None = "react-moment@2.0.2"
-    lib_dependencies: list[str] = [MOMENT_LIBRARY]
+    lib_dependencies: list[str] = ["moment@2.31.0"]
 
     interval: Var[int] = field(
         doc="How often the date update (how often time update / 0 to disable)."

@@ -45,7 +45,6 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
-from reflex_components_moment.moment import MOMENT_LIBRARY
 from reflex_components_radix.plugin import RadixThemesPlugin
 from rich.progress import Progress
 
@@ -626,13 +625,20 @@ def _compile_memo_components(
     if shared_imports is not None and any(
         _has_moment_all_locales_import(imports) for imports in all_import_dicts
     ):
+        moment_library = next(
+            library
+            for imports in all_import_dicts
+            for library, import_vars in imports.items()
+            if library.startswith("moment@")
+            and any(import_var.tag == "moment" for import_var in import_vars)
+        )
         for imports in all_import_dicts:
             _remove_moment_locale_side_effects(imports)
         _extend_imports_in_place(
             shared_imports,
             {
                 "": [ImportVar(tag=_MOMENT_ALL_LOCALES_IMPORT)],
-                MOMENT_LIBRARY: [ImportVar(tag="moment", is_default=True)],
+                moment_library: [ImportVar(tag="moment", is_default=True)],
             },
         )
 

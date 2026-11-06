@@ -109,7 +109,11 @@ def MomentApp():
         )
 
     def literal_locale():
-        """Render a literal-locale Moment from an independently loaded route."""
+        """Render a literal-locale Moment from an independently loaded route.
+
+        Returns:
+            The literal-locale Moment component.
+        """
         return rx.moment(
             "2024-03-14T15:09:26",
             format="dddd D MMMM YYYY",
