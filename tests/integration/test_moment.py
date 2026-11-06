@@ -1,12 +1,18 @@
 """Integration tests for the Moment component."""
 
 from collections.abc import Generator
+from typing import Any, cast
 
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.testing import AppHarness
+
+
+def _browser_logs(driver: WebDriver) -> list[dict[str, str]]:
+    """Return browser logs from Selenium's Chromium-specific driver API."""
+    return cast(Any, driver).get_log("browser")
 
 
 def MomentApp():
@@ -209,7 +215,7 @@ def test_moment_locales_are_isolated(driver: WebDriver) -> None:
     )
     locale_warnings = [
         entry["message"]
-        for entry in driver.get_log("browser")
+        for entry in _browser_logs(driver)
         if "defineLocale" in entry["message"]
     ]
     assert locale_warnings == []
@@ -295,6 +301,6 @@ def test_literal_locale_route_works_after_direct_load(
     )
     assert not [
         entry["message"]
-        for entry in driver.get_log("browser")
+        for entry in _browser_logs(driver)
         if "defineLocale" in entry["message"]
     ]
