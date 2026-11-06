@@ -2706,6 +2706,10 @@ async def test_redis_client_cancel_mid_send_always_ends_task():
                 await asyncio.sleep(0.01)
             await redis.connection_pool.release(connection)
             assert done, f"cancellation lost at loop offset {offset}"
+            assert task.cancelled(), (
+                f"task failed instead of being cancelled at loop offset {offset}: "
+                f"{task.exception()!r}"
+            )
     finally:
         await redis.aclose(close_connection_pool=True)
 
