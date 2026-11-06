@@ -665,9 +665,9 @@ def _serialize_sqlalchemy_model(
         if dataclasses.is_dataclass(m):
             mapped_attrs = set(state.attrs.keys())
             result.update({
-                field.name: getattr(m, field.name)
+                field.name: m.__dict__[field.name]
                 for field in dataclasses.fields(m)
-                if field.name not in mapped_attrs
+                if field.name not in mapped_attrs and field.name in m.__dict__
             })
 
         for attr in state.attrs:

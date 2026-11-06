@@ -703,3 +703,30 @@ def test_serialize_sqlalchemy_dataclass_unmapped_fields():
     assert isinstance(result, dict)
     assert result["id"] == 1
     assert result["display_label"] == "Somil"
+
+
+def test_serialize_sqlalchemy_dataclass_uninitialized_field():
+    """Uninitialized unmapped dataclass fields should be skipped."""
+    import dataclasses
+
+    from reflex_base.utils.serializers import serialize
+    from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+    class Base(MappedAsDataclass, DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_uninitialized"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        display_label: str = ""
+        computed_label: str = dataclasses.field(init=False)
+
+    user = User(id=1)
+
+    result = serialize(user)
+
+    assert isinstance(result, dict)
+    assert result["id"] == 1
+    assert result["display_label"] == ""
+    assert "computed_label" not in result
