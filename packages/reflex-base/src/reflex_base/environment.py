@@ -731,6 +731,14 @@ class EnvironmentVariables:
     # This env var stores the execution mode of the app
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
+    # Signing keys for session cookies, newest first, separated by commas.
+    REFLEX_SESSION_SECRET: EnvVar[str | None] = env_var(None)
+
+    # Rollout mode for session-bound client tokens.
+    REFLEX_SESSION_TOKEN_MODE: EnvVar[Literal["off", "warn", "enforce"]] = env_var(
+        "warn"
+    )
+
     # Whether to keep React's development-build owner-stack capture in dev mode.
     # Reflex disables it by default because the per-element Error() capture
     # dominates dev-mode render CPU on large pages; enable it to restore full
