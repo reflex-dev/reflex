@@ -49,6 +49,9 @@ class FormField(FormComponent):
 
     alias = "RadixFormField"
 
+    # Radix passes the field's name to the control its ``FormControl`` renders.
+    _is_form_field = True
+
     name: Var[str] = field(
         doc="The name of the form field, that is passed down to the control and used to match with validation messages."
     )
@@ -88,6 +91,10 @@ class FormControl(FormComponent):
     tag = "Control"
 
     alias = "RadixFormControl"
+
+    # Renders an input, or its child with ``as_child``, named by the enclosing
+    # ``FormField`` unless the control or its child carries a ``name``.
+    _is_form_field_control = True
 
     @classmethod
     def create(cls, *children, **props):

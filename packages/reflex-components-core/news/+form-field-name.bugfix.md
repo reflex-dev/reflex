@@ -1,0 +1,1 @@
+A control rendered by `rx.form.control` inside a named `rx.form.field` now counts as submitting under the field's `name`, so compiling the form no longer warns that it is only submitted by its `id`, and the name fills a required field of a `TypedDict` submit handler.

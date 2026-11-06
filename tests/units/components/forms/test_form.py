@@ -328,6 +328,87 @@ def test_form_without_form_data_handler_does_not_warn(caplog):
     assert "unsubmitted_input" not in caplog.text
 
 
+@pytest.mark.parametrize(
+    "control",
+    [
+        lambda: rx.form.control(rx.input(id="field_input"), as_child=True),
+        # Without a child, the form control renders the input itself.
+        lambda: rx.form.control(id="field_control"),
+        lambda: rx.form.control(
+            rx.debounce_input(rx.input(id="field_debounced", on_change=rx.console_log)),
+            as_child=True,
+        ),
+        lambda: rx.form.control(
+            rx.input(id="named_control_input"), name="other", as_child=True
+        ),
+    ],
+)
+def test_on_submit_does_not_warn_for_controls_named_by_form_field(control, caplog):
+    """A form control submits under the name of its form field."""
+    with caplog.at_level(logging.WARNING):
+        Form.create(
+            rx.form.field(
+                rx.flex(rx.form.label("Field"), control()),
+                name="field",
+            ),
+            on_submit=_SubmitState.on_submit,
+        )
+    assert "`name`" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("control", "control_id"),
+    [
+        # Only a form control takes the form field's name.
+        (
+            lambda: rx.form.field(rx.checkbox(id="stray_checkbox"), name="field"),
+            "stray_checkbox",
+        ),
+        (
+            lambda: rx.form.field(
+                rx.form.control(rx.input(id="unnamed_field_input"), as_child=True)
+            ),
+            "unnamed_field_input",
+        ),
+        (lambda: rx.form.control(id="bare_control"), "bare_control"),
+    ],
+)
+def test_on_submit_warns_for_controls_not_named_by_a_form_field(
+    control, control_id, caplog
+):
+    """A form field names nothing but the controls its form controls render."""
+    with caplog.at_level(logging.WARNING):
+        Form.create(control(), on_submit=_SubmitState.on_submit)
+    assert repr(control_id) in caplog.text
+
+
+def test_on_submit_typed_dict_accepts_form_field_name():
+    """A form field's name fills a TypedDict field for the control it names."""
+
+    class EmailData(TypedDict):
+        email: str
+
+    class EmailState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: EmailData):
+            pass
+
+    def email_form(field_name: str | Var) -> Component:
+        return Form.create(
+            rx.form.field(
+                rx.form.control(rx.input(type="email"), as_child=True),
+                name=field_name,
+            ),
+            on_submit=EmailState.on_submit,
+        )
+
+    email_form("email")
+    # A dynamic field name could resolve to "email" at runtime.
+    email_form(Var(_js_expr="dynamic_name", _var_type=str))
+    with pytest.raises(EventHandlerValueError, match="email"):
+        email_form("wrong_field")
+
+
 def test_on_submit_accepts_typed_dict_with_unresolvable_field_types():
     """A field type that cannot be resolved, as under TYPE_CHECKING, still compiles."""
 
