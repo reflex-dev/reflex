@@ -95,11 +95,14 @@ export const uploadFiles = async (
       if (xhr.status >= 200 && xhr.status < 300) {
         // The streamed response has no Content-Length, so no progress event
         // reports it as complete. Handle it once more now that it is, so the
-        // last chunks are applied and any chunk that does not parse is logged.
-        eventHandler({
-          event: { target: { responseText: xhr.responseText } },
-          progress: 1,
-        });
+        // last chunks are applied and a chunk that does not parse is logged.
+        // An empty body has no chunks, so there is nothing to handle.
+        if (xhr.responseText.trim()) {
+          eventHandler({
+            event: { target: { responseText: xhr.responseText } },
+            progress: 1,
+          });
+        }
         resolve({
           data: xhr.responseText,
           status: xhr.status,
