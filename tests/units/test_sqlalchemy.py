@@ -190,7 +190,6 @@ def test_declarative_base_serializer_handles_loaded_and_unloaded_attributes():
         )
         assert loaded_team is not None
 
-        # The instance should remain serializable after detachment.
         session.expunge_all()
 
     assert (
@@ -200,26 +199,20 @@ def test_declarative_base_serializer_handles_loaded_and_unloaded_attributes():
 
     payload = json.loads(json_dumps(loaded_team))
 
-    # Loaded scalar attributes are included, including nullable values.
     assert payload["name"] == "Avengers"
     assert payload["nickname"] is None
 
-    # The loaded relationship is serialized recursively.
     assert [hero["name"] for hero in payload["heroes"]] == ["Thor"]
 
-    # The deferred attribute must not trigger a database load.
     assert "private_note" not in payload
 
     with Session(engine) as session:
         unloaded_team = session.scalar(select(SerializerTeam))
         assert unloaded_team is not None
 
-        # Expired and unloaded attributes must both be omitted.
         session.expire(unloaded_team, ["name"])
         session.expunge(unloaded_team)
 
-    # This also verifies that serialization of a detached instance does
-    # not raise DetachedInstanceError.
     unloaded_payload = json.loads(json_dumps(unloaded_team))
 
     assert "name" not in unloaded_payload
