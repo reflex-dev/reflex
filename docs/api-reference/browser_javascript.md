@@ -147,6 +147,8 @@ The other direction works too: Javascript can dispatch an event to the backend
 and receive the values its handler yields or returns. `addEvents` returns a
 result stream: `await` it for the handler's last value, or iterate it with
 `for await` for each value as it arrives. It rejects if the handler raises.
+Events the handler yields or returns are chained as usual rather than sent to
+the stream, and the stream does not wait for them.
 
 Event names include the state's module, so build the Javascript from Python:
 `rx.Var.create(TableState.load_rows(2))` renders the `ReflexEvent(...)` to pass.

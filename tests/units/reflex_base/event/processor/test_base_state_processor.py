@@ -5449,3 +5449,46 @@ async def test_stop_reports_requests_cancelled_by_the_shutdown(
     cancelled = {"done": True, "cancelled": True}
     assert _records(wire_log, "first") == [{"id": "first", **cancelled}]
     assert _records(wire_log, "second") == [{"id": "second", **cancelled}]
+
+
+async def test_request_cancelled_while_sending_its_completion_still_completes(
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A cancellation landing while the done record is being sent is still reported.
+
+    Args:
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    sending_done = asyncio.Event()
+    records: list[Mapping[str, Any]] = []
+
+    async def emit_result_impl(
+        token: str,
+        results: Sequence[Mapping[str, Any]],
+        delta: Mapping[str, Mapping[str, Any]] | None = None,
+    ) -> None:
+        if any(record.get("done") and "cancelled" not in record for record in results):
+            sending_done.set()
+            await asyncio.Event().wait()
+        records.extend(results)
+
+    root = real_base_state_processor._root_context
+    assert root is not None
+    real_base_state_processor._root_context = dataclasses.replace(
+        root, emit_result_impl=emit_result_impl
+    )
+
+    @event
+    def stateless_answer() -> int:
+        return 42
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(stateless_answer())[0], request_id="r"
+        )
+        await sending_done.wait()
+        future.cancel()
+        await processor.join(5)
+    assert records == [{"id": "r", "done": True, "cancelled": True}]

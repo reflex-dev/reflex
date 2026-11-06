@@ -921,24 +921,24 @@ class EventProcessor:
         """
         ctx = entry.ctx
         request_id = cast("str", ctx.request_id)
-        # Whether the request was still open when the run ended: the final
-        # delta may have carried the completion already.
-        completing = False
+        # A request counts as completed only once its record was sent: a
+        # cancellation landing during the send is then still reported by
+        # _report_cancelled_request (the frontend ignores a second record).
+        # The final delta may have carried the completion already.
         try:
             result = await self._execute_event(
                 entry=entry, registered_handler=registered_handler
             )
             if not ctx.result_sent:
-                completing = True
-                ctx.mark_result_sent()
                 await ctx.emit_result(_done_record(request_id, result))
+                ctx.mark_result_sent()
         except Exception as ex:
             # A completion that failed to send fails the request the same way
             # the handler would.
-            if completing or not ctx.result_sent:
-                ctx.mark_result_sent()
+            if not ctx.result_sent:
                 try:
                     await ctx.emit_result(_error_record(request_id, ex))
+                    ctx.mark_result_sent()
                 except Exception:
                     logger.exception(
                         f"Error reporting the failure of request {request_id}:"
