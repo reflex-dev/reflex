@@ -641,6 +641,26 @@ def serialize_sqlmodel(m: _serializer_types.SQLModel) -> dict[str, Any]:
     return {**fields, **relationships}
 
 
+def serialize_sqlalchemy_base(m: _serializer_types.DeclarativeBase) -> dict[str, Any]:
+    """Serialize a SQLAlchemy DeclarativeBase instance.
+
+    Omit unloaded attributes and relationships to prevent DetachedInstanceError
+    and MissingGreenlet exceptions.
+
+    Args:
+        m: The DeclarativeBase instance to serialize.
+
+    Returns:
+        The loaded model fields and relationships.
+    """
+    import sqlalchemy
+
+    state = sqlalchemy.inspect(m)
+    return {
+        attr.key: attr.value for attr in state.attrs if attr.key not in state.unloaded
+    }
+
+
 def _prepare_serializers_for_fork() -> None:
     """Finish Plotly JSON initialization before forking a process using it."""
     for name in ("Figure", "Template"):
@@ -666,6 +686,7 @@ _OPTIONAL_SERIALIZERS = {
     "Figure": serialize_figure,
     "Template": serialize_template,
     "Image": serialize_image,
+    "DeclarativeBase": serialize_sqlalchemy_base,
     "SQLModel": serialize_sqlmodel,
 }
 _OPTIONAL_SERIALIZER_TYPES = {
@@ -674,6 +695,7 @@ _OPTIONAL_SERIALIZER_TYPES = {
     "Template": dict,
     "Image": str,
     "SQLModel": dict[str, Any],
+    "DeclarativeBase": dict[str, Any],
 }
 _OPTIONAL_SERIALIZER_MODULES = {
     "DataFrame": ("pandas", "pandas.core.frame"),
@@ -681,6 +703,7 @@ _OPTIONAL_SERIALIZER_MODULES = {
     "Template": ("plotly.graph_objs.layout._template",),
     "Image": ("PIL.Image",),
     "SQLModel": ("sqlmodel.main",),
+    "DeclarativeBase": ("sqlalchemy.orm", "sqlalchemy.orm.decl_api"),
 }
 _OPTIONAL_SERIALIZER_ORDER = {
     name: len(_INITIAL_SERIALIZER_TYPES) + index

@@ -74,7 +74,8 @@ with Session(engine) as session:
     session.add(Team(id=1, name="Avengers", heroes=[Hero(id=2, name="Thor", team_id=1)]))
     session.commit()
     teams = list(session.exec(select(Team).options(selectinload(Team.heroes))))
-
+assert serializers.get_serializer(SQLModel) is serializers.serialize_sqlmodel
+assert serializers.get_serializer(Team) is serializers.serialize_sqlmodel
 CUSTOM_REGISTRATION
 
 if COMPATIBILITY_IMPORT:
@@ -131,6 +132,112 @@ def custom(value: CUSTOM_TYPE) -> dict:
         .replace("COMPATIBILITY_IMPORT", repr(compatibility_import))
         .replace("CUSTOM_ENABLED", repr(custom_type is not None)),
         timeout=30,
+    )
+
+
+def test_declarative_base_relationships_from_cold_state() -> None:
+    """DeclarativeBase models serialize loaded relationships from a cold process."""
+    pytest.importorskip("sqlalchemy")
+
+    _run_script(
+        """
+import json
+from typing import Any
+
+import reflex as rx
+from sqlalchemy import ForeignKey, create_engine, select
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    Session,
+    mapped_column,
+    relationship,
+    selectinload,
+)
+
+from reflex_base.utils import serializers
+from reflex_base.utils.format import json_dumps
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Team(Base):
+    __tablename__ = "team"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    private_note: Mapped[str] = mapped_column(deferred=True)
+    heroes: Mapped[list["Hero"]] = relationship()
+
+
+class Hero(Base):
+    __tablename__ = "hero"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    team_id: Mapped[int] = mapped_column(ForeignKey("team.id"))
+
+
+engine = create_engine("sqlite://")
+Base.metadata.create_all(engine)
+
+with Session(engine) as session:
+    session.add(
+        Team(
+            id=1,
+            name="Avengers",
+            private_note="Internal note",
+            heroes=[Hero(id=2, name="Thor", team_id=1)],
+        )
+    )
+    session.commit()
+
+    teams = list(
+        session.scalars(
+            select(Team).options(selectinload(Team.heroes))
+        )
+    )
+    session.expunge_all()
+
+assert serializers.get_serializer(Team) is serializers.serialize_sqlalchemy_base
+assert serializers.get_serializer_type(Team) == dict[str, Any]
+
+app = rx.App()
+
+
+class State(rx.State):
+    teams: list[Team] = []
+
+    @rx.event
+    def load(self):
+        self.teams = teams
+
+
+state = State(_reflex_internal_init=True)
+State.load.fn(state)
+
+payload = json_dumps(state.get_delta())
+decoded = json.loads(payload)
+
+assert "Avengers" in payload
+assert "Thor" in payload
+assert "private_note" not in payload
+
+# An unloaded relationship must be omitted even after the instance
+# has been detached from its session.
+with Session(engine) as session:
+    unloaded_team = session.scalar(select(Team))
+    assert unloaded_team is not None
+    session.expunge(unloaded_team)
+
+detached_payload = json.loads(json_dumps(unloaded_team))
+assert "heroes" not in detached_payload
+assert "private_note" not in detached_payload
+
+engine.dispose()
+"""
     )
 
 

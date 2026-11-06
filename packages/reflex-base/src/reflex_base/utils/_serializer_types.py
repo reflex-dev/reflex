@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from PIL.Image import Image as Image
     from plotly.graph_objects import Figure as Figure
     from plotly.graph_objs.layout import Template as Template
+    from sqlalchemy.orm import DeclarativeBase as DeclarativeBase
     from sqlmodel import SQLModel as SQLModel
 
 _TYPE_MODULES = {
@@ -16,6 +17,7 @@ _TYPE_MODULES = {
     "Figure": "plotly.graph_objects",
     "Template": "plotly.graph_objs.layout",
     "SQLModel": "sqlmodel",
+    "DeclarativeBase": "sqlalchemy.orm",
 }
 
 
