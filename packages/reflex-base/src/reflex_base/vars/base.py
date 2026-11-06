@@ -647,6 +647,30 @@ class VarData:
         )
 
 
+def _resolve_global_var(serialized_data: str) -> Var | None:
+    """Resolve encoded marker content to its global var.
+
+    Args:
+        serialized_data: The text between the marker tags.
+
+    Returns:
+        The registered global var, or None if the content is not a
+        registered hash.
+    """
+    if not serialized_data:
+        return None
+    if not (
+        serialized_data.isdecimal()
+        or (serialized_data[0] == "-" and serialized_data[1:].isdecimal())
+    ):
+        return None
+    try:
+        return _global_vars.get(int(serialized_data))
+    except ValueError:
+        # A decimal string too long for int() to convert.
+        return None
+
+
 def _decode_var_immutable(value: str) -> tuple[VarData | None, str]:
     """Decode the state name from a formatted var.
 
@@ -663,23 +687,43 @@ def _decode_var_immutable(value: str) -> tuple[VarData | None, str]:
             return None, value
 
         offset = 0
+        pos = 0
 
         # Find all tags.
-        while m := _decode_var_pattern.search(value):
+        while m := _decode_var_pattern.search(value, pos):
             start, end = m.span()
-            value = value[:start] + value[end:]
 
             serialized_data = m.group(1)
 
-            if serialized_data.isnumeric() or (
-                serialized_data[0] == "-" and serialized_data[1:].isnumeric()
-            ):
-                # This is a global immutable var.
-                var = _global_vars[int(serialized_data)]
+            var = _resolve_global_var(serialized_data)
+            marker_start = start
+            if var is None:
+                # The content holds no closing tag, so a real marker nested in
+                # the user's text can only end at this match's closing tag:
+                # check its last opening tag once instead of rescanning.
+                nested_start = serialized_data.rfind(constants.REFLEX_VAR_OPENING_TAG)
+                if nested_start != -1:
+                    var = _resolve_global_var(
+                        serialized_data[
+                            (nested_start + len(constants.REFLEX_VAR_OPENING_TAG)) :
+                        ]
+                    )
+                    if var is not None:
+                        marker_start = (
+                            start + len(constants.REFLEX_VAR_OPENING_TAG) + nested_start
+                        )
+            if var is not None:
+                # Strip only the marker; the user's own text around it stays.
+                value = value[:marker_start] + value[end:]
+                pos = marker_start
                 var_data = var._get_all_var_data()
 
                 if var_data is not None:
                     var_datas.append(var_data)
+                offset += end - start
+                continue
+            # Pure user text: leave it be and scan on after the closing tag.
+            pos = end
             offset += end - start
 
     return VarData.merge(*var_datas) if var_datas else None, value

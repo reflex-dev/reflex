@@ -26,7 +26,7 @@ from .base import (
     LiteralVar,
     Var,
     VarData,
-    _global_vars,
+    _resolve_global_var,
     cached_property_no_lock,
     figure_out_type,
     get_unique_variable_name,
@@ -1588,24 +1588,48 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
             offset = 0
 
             # Find all tags
-            while m := _decode_var_pattern.search(value):
+            pos = 0
+            while m := _decode_var_pattern.search(value, pos):
                 start, end = m.span()
 
-                strings_and_vals.append(value[:start])
+                strings_and_vals.append(value[pos:start])
 
                 serialized_data = m.group(1)
 
-                if serialized_data.isnumeric() or (
-                    serialized_data[0] == "-" and serialized_data[1:].isnumeric()
-                ):
-                    # This is a global immutable var.
-                    var = _global_vars[int(serialized_data)]
-                    strings_and_vals.append(var)
-                    value = value[(end + len(var._js_expr)) :]
-
+                var = _resolve_global_var(serialized_data)
+                nested_start = -1
+                if var is None:
+                    # The content holds no closing tag, so a real marker nested
+                    # in the user's text can only end at this match's closing
+                    # tag: check its last opening tag once instead of
+                    # rescanning the match.
+                    nested_start = serialized_data.rfind(REFLEX_VAR_OPENING_TAG)
+                    if nested_start != -1:
+                        var = _resolve_global_var(
+                            serialized_data[
+                                (nested_start + len(REFLEX_VAR_OPENING_TAG)) :
+                            ]
+                        )
+                if var is not None:
+                    if nested_start == -1:
+                        strings_and_vals.append(var)
+                    else:
+                        # The opening tag and the text before the nested marker
+                        # are the user's; keep them verbatim.
+                        strings_and_vals.extend([
+                            m.group(0)[: len(REFLEX_VAR_OPENING_TAG) + nested_start],
+                            var,
+                        ])
+                    # Skip past the closing tag and the var's own expression.
+                    pos = end + len(var._js_expr)
+                    offset += end - start
+                    continue
+                # Pure user text: keep the whole match verbatim.
+                strings_and_vals.append(m.group(0))
+                pos = end
                 offset += end - start
 
-            strings_and_vals.append(value)
+            strings_and_vals.append(value[pos:])
 
             filtered_strings_and_vals = [
                 s for s in strings_and_vals if isinstance(s, Var) or s
@@ -1613,7 +1637,12 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
             if len(filtered_strings_and_vals) == 1:
                 only_string = filtered_strings_and_vals[0]
                 if isinstance(only_string, str):
-                    return LiteralVar.create(only_string).to(StringVar, _var_type)
+                    return LiteralStringVar(
+                        _js_expr=json.dumps(only_string),
+                        _var_type=_var_type,
+                        _var_data=_var_data,
+                        _var_value=only_string,
+                    )
                 return only_string.to(StringVar, only_string._var_type)
 
             if len(
@@ -1623,11 +1652,12 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
                     if isinstance(s, (str, LiteralStringVar))
                 ]
             ) == len(filtered_strings_and_vals):
-                return LiteralStringVar.create(
-                    "".join(
-                        s._var_value if isinstance(s, LiteralStringVar) else s
-                        for s in literal_strings
-                    ),
+                joined_value = "".join(
+                    s._var_value if isinstance(s, LiteralStringVar) else s
+                    for s in literal_strings
+                )
+                return LiteralStringVar(
+                    _js_expr=json.dumps(joined_value),
                     _var_type=_var_type,
                     _var_data=VarData.merge(
                         _var_data,
@@ -1637,6 +1667,7 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
                             if isinstance(s, Var)
                         ),
                     ),
+                    _var_value=joined_value,
                 )
 
             concat_result = ConcatVarOperation.create(

@@ -1,0 +1,1 @@
+Strings containing literal `<reflex.Var>` tag text no longer hang or crash the app while compiling a string prop, and the text is no longer stripped from the rendered output: tag content that is not an encoded var is now kept verbatim.
