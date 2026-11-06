@@ -1,9 +1,9 @@
 """Inferred types for `reflex_base.event` that are part of the public contract."""
 
 from collections.abc import Callable
-from typing import Any, assert_type
+from typing import Any, ClassVar, assert_type
 
-from reflex_base.event import EventCallback, EventSpec, EventType, event
+from reflex_base.event import EventCallback, EventHandler, EventSpec, EventType, event
 from reflex_base.vars.base import Var
 
 from reflex.state import State
@@ -67,9 +67,15 @@ class _State(State):
 
 class _Holder:
     on_name: EventCallback[str] | None = None
+    on_submit: EventHandler
+    on_either: EventHandler | EventCallback[()]
 
 
-def _reads(state: _State, holder: _Holder) -> None:
+class _HandlerHolderState(State):
+    on_submit: ClassVar[EventHandler]
+
+
+def _reads(state: _State, holder: _Holder, handler_state: _HandlerHolderState) -> None:
     # Read through its state class, a handler is the callback event triggers take.
     assert_type(_State.set_name, EventCallback[str])
     # Read through an instance of that state, it is the function bound to it.
@@ -77,3 +83,10 @@ def _reads(state: _State, holder: _Holder) -> None:
     # Stored anywhere else, e.g. a component or dataclass field, it stays the
     # callback: only a state instance binds it.
     assert_type(holder.on_name, EventCallback[str] | None)
+    assert_type(holder.on_submit, EventHandler)
+    assert_type(holder.on_either, EventHandler | EventCallback[()])
+    _event_prop(holder.on_either)
+    # A handler read through an instance of a state is bound to it, so it is
+    # whatever function it wraps.
+    assert_type(_HandlerHolderState.on_submit, EventHandler)
+    assert_type(handler_state.on_submit, Callable[..., Any])
