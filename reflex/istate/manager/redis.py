@@ -296,9 +296,6 @@ class StateManagerRedis(StateManager):
         if self._oplock_enabled and self.oplock_hold_time_ms >= lock_expiration:
             msg = f"The opportunistic lock hold time({self.oplock_hold_time_ms}) must be less than the lock expiration time({lock_expiration})."
             raise InvalidLockWarningThresholdError(msg)
-        with contextlib.suppress(RuntimeError):
-            asyncio.get_running_loop()  # Check if we're in an event loop.
-            self._ensure_lock_task()
 
     def _get_required_state_classes(
         self,
