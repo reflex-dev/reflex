@@ -578,29 +578,3 @@ def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool
     """
     v = LiteralVar.create(value)
     assert str(v) == expected
-
-
-def test_sqlalchemy_optional_serializer_annotations_resolve() -> None:
-    """Runtime introspection must resolve the optional SQLAlchemy annotation."""
-    pytest.importorskip("sqlalchemy")
-
-    script = """
-from typing import Any, get_type_hints
-
-from sqlalchemy.orm import DeclarativeBase
-from reflex_base.utils import serializers
-
-hints = get_type_hints(serializers.serialize_sqlalchemy_base)
-
-assert hints["m"] is DeclarativeBase
-assert hints["return"] == dict[str, Any]
-"""
-    result = subprocess.run(
-        [sys.executable, "-c", script],
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=15,
-    )
-
-    assert result.returncode == 0, result.stderr

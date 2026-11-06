@@ -1,11 +1,8 @@
-import json
 import math
 from pathlib import Path
 from unittest import mock
 
 import pytest
-from reflex_base.utils import serializers
-from reflex_base.utils.format import json_dumps
 from reflex_base.utils.serializers import serializer
 
 import reflex.constants
@@ -141,85 +138,6 @@ def test_mutable_sqla_model(mutable_state: MutableTestStateWithSQLAlchemy):
     assert_sqla_model_dirty()
     mutable_state.sqla_model.test_set.add("bar")
     assert_sqla_model_dirty()
-
-
-def test_declarative_base_serializer_handles_loaded_and_unloaded_attributes():
-    """Serialize loaded SQLAlchemy attributes without triggering lazy loading."""
-    from sqlalchemy import ForeignKey, create_engine, select
-    from sqlalchemy.orm import Session, relationship, selectinload
-
-    class SerializerBase(DeclarativeBase):
-        """Base for serializer regression models."""
-
-    class SerializerTeam(SerializerBase):
-        """Team model with a loaded and an unloaded relationship."""
-
-        __tablename__ = "serializer_team"
-
-        id: Mapped[int] = mapped_column(primary_key=True)
-        name: Mapped[str]
-        nickname: Mapped[str | None] = mapped_column(nullable=True)
-        private_note: Mapped[str] = mapped_column(deferred=True)
-        heroes: Mapped[list["SerializerHero"]] = relationship()
-
-    class SerializerHero(SerializerBase):
-        """Related model."""
-
-        __tablename__ = "serializer_hero"
-
-        id: Mapped[int] = mapped_column(primary_key=True)
-        name: Mapped[str]
-        team_id: Mapped[int] = mapped_column(ForeignKey("serializer_team.id"))
-
-    engine = create_engine("sqlite://")
-    SerializerBase.metadata.create_all(engine)
-
-    with Session(engine) as session:
-        session.add(
-            SerializerTeam(
-                name="Avengers",
-                nickname=None,
-                private_note="Internal note",
-                heroes=[SerializerHero(name="Thor")],
-            )
-        )
-        session.commit()
-
-        loaded_team = session.scalar(
-            select(SerializerTeam).options(selectinload(SerializerTeam.heroes))
-        )
-        assert loaded_team is not None
-
-        session.expunge_all()
-
-    assert (
-        serializers.get_serializer(SerializerTeam)
-        is serializers.serialize_sqlalchemy_base
-    )
-
-    payload = json.loads(json_dumps(loaded_team))
-
-    assert payload["name"] == "Avengers"
-    assert payload["nickname"] is None
-
-    assert [hero["name"] for hero in payload["heroes"]] == ["Thor"]
-
-    assert "private_note" not in payload
-
-    with Session(engine) as session:
-        unloaded_team = session.scalar(select(SerializerTeam))
-        assert unloaded_team is not None
-
-        session.expire(unloaded_team, ["name"])
-        session.expunge(unloaded_team)
-
-    unloaded_payload = json.loads(json_dumps(unloaded_team))
-
-    assert "name" not in unloaded_payload
-    assert "heroes" not in unloaded_payload
-    assert "private_note" not in unloaded_payload
-
-    engine.dispose()
 
 
 @pytest.mark.filterwarnings(

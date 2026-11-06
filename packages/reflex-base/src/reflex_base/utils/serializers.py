@@ -641,14 +641,15 @@ def serialize_sqlmodel(m: _serializer_types.SQLModel) -> dict[str, Any]:
     return {**fields, **relationships}
 
 
-def serialize_sqlalchemy_base(m: _serializer_types.DeclarativeBase) -> dict[str, Any]:
-    """Serialize a SQLAlchemy DeclarativeBase instance.
-
-    Omit unloaded attributes and relationships to prevent DetachedInstanceError
-    and MissingGreenlet exceptions.
+def _serialize_sqlalchemy_model(
+    m: _serializer_types.DeclarativeBase,
+    seen: set[int],
+) -> dict[str, Any]:
+    """Serialize a SQLAlchemy model while avoiding relationship cycles.
 
     Args:
-        m: The DeclarativeBase instance to serialize.
+        m: The SQLAlchemy model instance.
+        seen: Object identities on the current serialization path.
 
     Returns:
         The loaded model fields and relationships.
@@ -656,9 +657,51 @@ def serialize_sqlalchemy_base(m: _serializer_types.DeclarativeBase) -> dict[str,
     import sqlalchemy
 
     state = sqlalchemy.inspect(m)
-    return {
-        attr.key: attr.value for attr in state.attrs if attr.key not in state.unloaded
-    }
+    seen.add(id(m))
+
+    try:
+        result = {}
+
+        for attr in state.attrs:
+            if attr.key in state.unloaded:
+                continue
+
+            relationship = state.mapper.relationships.get(attr.key)
+            value = attr.value
+
+            if relationship is None:
+                result[attr.key] = value
+                continue
+
+            if value is None:
+                result[attr.key] = None
+            elif relationship.uselist:
+                result[attr.key] = [
+                    _serialize_sqlalchemy_model(item, seen)
+                    if id(item) not in seen
+                    else None
+                    for item in value
+                ]
+            elif id(value) not in seen:
+                result[attr.key] = _serialize_sqlalchemy_model(value, seen)
+
+        return result
+    finally:
+        seen.remove(id(m))
+
+
+def serialize_sqlalchemy_base(
+    m: _serializer_types.DeclarativeBase,
+) -> dict[str, Any]:
+    """Serialize loaded SQLAlchemy attributes without following relationship cycles.
+
+    Args:
+        m: The DeclarativeBase instance.
+
+    Returns:
+        The loaded model fields and relationships.
+    """
+    return _serialize_sqlalchemy_model(m, set())
 
 
 def _prepare_serializers_for_fork() -> None:
