@@ -4,6 +4,7 @@ from reflex_site_shared.components.marketing_button import button
 
 from reflex_docs.pages.docs import database, enterprise, getting_started
 from reflex_docs.pages.docs.library import library
+from reflex_docs.pages.docs_landing.views.layout import FOCUS, SECTION, section_heading
 from reflex_docs.pages.library_previews import core_components_dict
 
 
@@ -14,31 +15,33 @@ def docs_item(
         rx.el.div(
             ui.icon(
                 icon,
-                class_name="size-6 group-hover:text-primary-hover group-hover:dark:text-muted-foreground",
+                class_name="size-5 shrink-0 text-foreground",
                 stroke_width=1.5,
+                aria_hidden=True,
             ),
-            rx.el.span(
+            rx.el.h3(
                 title,
-                class_name="text-foreground text-xl font-[575] group-hover:text-primary-hover group-hover:dark:text-muted-foreground",
+                class_name="font-heading text-xl font-normal leading-7 tracking-[-0.025em] text-foreground",
             ),
             rx.el.div(
                 "Enterprise-only",
-                class_name="text-foreground text-xs font-medium bg-background px-2.5 h-7 border-b border rounded-lg border-border-subtle flex justify-center items-center ml-1",
+                class_name="w-fit rounded-full border border-border px-2.5 py-1 text-xs font-normal text-muted-foreground",
             )
             if enterprise_only
             else None,
             ui.icon(
                 "ArrowRight01Icon",
-                class_name="size-4 ml-auto group-hover:text-primary-hover group-hover:dark:text-muted-foreground",
+                class_name="ml-auto size-4 shrink-0 text-muted-foreground",
+                aria_hidden=True,
             ),
-            class_name="flex row items-center gap-3 h-8",
+            class_name="flex flex-wrap items-center gap-x-3 gap-y-2",
         ),
         rx.el.p(
             description,
-            class_name="text-muted-foreground text-sm font-[475]",
+            class_name="text-sm font-normal leading-6 text-muted-foreground",
         ),
         to=href,
-        class_name="flex flex-col gap-2 py-8 pr-8 relative group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:max-w-[21rem] w-full max-lg:text-start hover:bg-[linear-gradient(243deg,var(--muted)_0%,var(--background)_100%)]",
+        class_name=f"group flex min-w-0 flex-col gap-3 rounded-[20px] border border-border-subtle p-6 text-left transition-colors hover:bg-muted motion-reduce:transition-none {FOCUS}",
     )
 
 
@@ -69,7 +72,7 @@ def links_section() -> rx.Component:
             "Manage and interact with your data seamlessly using Reflex’s straightforward models and querying approach.",
             database.overview.path,
         ),
-        class_name="flex flex-col border-r border-y border-border-subtle divide-y divide-border-subtle",
+        class_name="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2",
     )
 
 
@@ -85,9 +88,11 @@ def component_link(name: str, href: str) -> rx.Component:
     """
     return rx.el.a(
         rx.el.span(name),
-        ui.icon("ArrowRight01Icon", class_name="ml-auto size-4 shrink-0"),
+        ui.icon(
+            "ArrowRight01Icon", class_name="ml-auto size-4 shrink-0", aria_hidden=True
+        ),
         to=f"/library/{href.strip('/')}/",
-        class_name="flex min-h-9 w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        class_name="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-normal leading-6 text-foreground transition-colors hover:bg-background motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     )
 
 
@@ -95,28 +100,33 @@ def components_section() -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.div(
-                ui.icon("MenuSquareIcon", class_name="size-6", stroke_width=1.5),
-                rx.el.span(
-                    "Component Library",
-                    class_name="text-foreground text-xl font-[575] group-hover:text-primary-hover",
+                ui.icon(
+                    "MenuSquareIcon",
+                    class_name="size-5",
+                    stroke_width=1.5,
+                    aria_hidden=True,
                 ),
-                class_name="flex row items-center gap-3 h-8",
+                rx.el.h3(
+                    "Component Library",
+                    class_name="font-heading text-2xl font-normal tracking-[-0.025em] text-foreground",
+                ),
+                class_name="flex items-center gap-3",
             ),
             rx.el.p(
                 "Build your app with our comprehensive collection of UI components and features.",
-                class_name="text-muted-foreground text-sm font-[475] max-w-[16.5rem]",
+                class_name="max-w-sm text-sm font-normal leading-6 text-muted-foreground",
             ),
             rx.el.a(
                 button(
                     "Browse All Components",
-                    variant="outline",
+                    variant="ghost",
                     native_button=False,
-                    class_name="font-[525] w-fit text-foreground",
+                    class_name="!border-0 !bg-background !font-normal !text-foreground !shadow-none hover:!bg-accent-hover",
                 ),
                 to=library.path,
-                class_name="w-fit mt-4",
+                class_name=f"mt-3 w-fit rounded-full {FOCUS}",
             ),
-            class_name="flex flex-col gap-2 max-lg:text-start",
+            class_name="flex flex-col items-start gap-3",
         ),
         rx.el.div(
             rx.el.div(
@@ -133,7 +143,7 @@ def components_section() -> rx.Component:
                 component_link("Forms", core_components_dict["forms"]["path"]),
                 component_link("Layout", core_components_dict["layout"]["path"]),
                 component_link("Media", core_components_dict["media"]["path"]),
-                class_name="flex flex-col gap-2",
+                class_name="flex min-w-0 flex-col gap-1",
             ),
             rx.el.div(
                 component_link("Other", core_components_dict["other"]["path"]),
@@ -145,43 +155,23 @@ def components_section() -> rx.Component:
                 component_link(
                     "Typography", core_components_dict["typography"]["path"]
                 ),
-                class_name="flex flex-col gap-2",
+                class_name="flex min-w-0 flex-col gap-1",
             ),
-            class_name="grid grid-cols-1 lg:grid-cols-2 lg:gap-28 gap-10 mt-auto",
+            class_name="grid grid-cols-1 gap-1 border-t border-border pt-5 sm:grid-cols-2 sm:gap-x-4",
         ),
-        class_name="flex flex-col gap-4 lg:px-8 pt-8 max-lg:pr-8 pb-6 h-auto w-full flex-1 border-r border-border-subtle border-y",
+        class_name="flex min-w-0 flex-col gap-7 rounded-[20px] bg-muted p-6 sm:p-8",
     )
 
 
 def framework() -> rx.Component:
     return rx.el.section(
-        rx.el.div(
-            rx.el.h2(
-                "Framework",
-                class_name="text-foreground text-3xl font-medium",
-            ),
-            rx.el.p(
-                "Learn how to build applications with Reflex Framework.",
-                class_name="text-muted-foreground text-sm font-[475]",
-            ),
-            class_name="flex flex-col gap-4",
+        section_heading(
+            "Framework", "Learn how to build applications with Reflex Framework."
         ),
         rx.el.div(
-            rx.el.div(
-                class_name="absolute bottom-0 -left-24 w-24 h-px bg-gradient-to-r from-transparent to-current text-border-subtle"
-            ),
-            rx.el.div(
-                class_name="absolute top-0 -left-24 w-24 h-px bg-gradient-to-r from-transparent to-current text-border-subtle"
-            ),
-            rx.el.div(
-                class_name="absolute bottom-0 -right-24 w-24 h-px bg-gradient-to-l from-transparent to-current text-border-subtle"
-            ),
-            rx.el.div(
-                class_name="absolute right-0 -top-24 h-24 w-px bg-gradient-to-b from-transparent to-current text-border-subtle"
-            ),
             links_section(),
             components_section(),
-            class_name="flex flex-col lg:flex-row relative",
+            class_name="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[1.1fr_1fr]",
         ),
-        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12 mx-auto w-full justify-start pt-10 lg:pt-24 lg:mb-24 mb-10 overflow-hidden",
+        class_name=SECTION,
     )

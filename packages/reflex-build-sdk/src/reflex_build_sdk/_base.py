@@ -119,10 +119,10 @@ def _retry_after(response: Response) -> float | None:
         except (TypeError, ValueError):
             return None
         if retry_at.tzinfo is None:
-            retry_at = retry_at.replace(tzinfo=datetime.timezone.utc)
+            retry_at = retry_at.replace(tzinfo=datetime.UTC)
         # A date already past means retry now.
         delay = max(
-            (retry_at - datetime.datetime.now(datetime.timezone.utc)).total_seconds(),
+            (retry_at - datetime.datetime.now(datetime.UTC)).total_seconds(),
             0.0,
         )
     return delay if 0 <= delay <= _MAX_RETRY_AFTER else None

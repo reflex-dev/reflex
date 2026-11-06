@@ -110,7 +110,7 @@ class Cron:
     """
 
     def __init__(
-        self, expression: str, tz: str | datetime.tzinfo = datetime.timezone.utc
+        self, expression: str, tz: str | datetime.tzinfo = datetime.UTC
     ) -> None:
         """Parse an expression, rejecting one that is malformed or never fires.
 
@@ -137,7 +137,7 @@ class Cron:
         # and either field when both name particular days.
         self.both_days = fields[2].startswith("*") or fields[4].startswith("*")
         try:
-            self(datetime.datetime.now(datetime.timezone.utc))
+            self(datetime.datetime.now(datetime.UTC))
         except ValueError:
             msg = f"{expression!r} never fires."
             raise ValueError(msg) from None
@@ -198,7 +198,7 @@ class Cron:
                         if hour == cursor.hour and minute < cursor.minute:
                             continue
                         fires = cursor.replace(hour=hour, minute=minute).astimezone(
-                            datetime.timezone.utc
+                            datetime.UTC
                         )
                         # A repeated hour can put a later clock time at an earlier
                         # moment; those have already fired.

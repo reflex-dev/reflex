@@ -189,8 +189,7 @@ class DependencyTracker:
             return
         if instruction.argval == "get_var_value":
             # Special case: arbitrary var access requested.
-            if sys.version_info >= (3, 11):
-                self._get_var_value_positions = instruction.positions
+            self._get_var_value_positions = instruction.positions
             self.scan_status = ScanStatus.GETTING_VAR
             return
 

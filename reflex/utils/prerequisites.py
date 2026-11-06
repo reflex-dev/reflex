@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from os import getcwd
 from pathlib import Path
 from types import ModuleType
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from packaging import version
 from reflex_base import constants
@@ -472,6 +472,20 @@ def _redis_pool_limits() -> tuple[int, float] | None:
     return max_connections, timeout
 
 
+def _redis_client_kwargs() -> dict[str, Any]:
+    """Keyword arguments every redis client Reflex builds is created with.
+
+    Returns:
+        The retry policy and no socket timeout.
+    """
+    from redis.exceptions import RedisError
+
+    # A socket timeout makes redis-py send every command through
+    # asyncio.wait_for. On Python 3.11 wait_for drops a cancellation that lands
+    # as the send completes, so a cancelled task can run on forever (#7026).
+    return {"retry_on_error": [RedisError], "socket_timeout": None}
+
+
 def get_redis() -> Redis | None:
     """Get the asynchronous redis client.
 
@@ -483,23 +497,17 @@ def get_redis() -> Redis | None:
     """
     try:
         from redis.asyncio import BlockingConnectionPool, Redis
-        from redis.exceptions import RedisError
     except ImportError:
         logger.debug("Redis package not installed.")
         return None
     if (redis_url := parse_redis_url()) is None:
         return None
+    kwargs = _redis_client_kwargs()
     if (limits := _redis_pool_limits()) is None:
-        return Redis.from_url(
-            redis_url,
-            retry_on_error=[RedisError],
-        )
+        return Redis.from_url(redis_url, **kwargs)
     max_connections, timeout = limits
     pool = BlockingConnectionPool.from_url(
-        redis_url,
-        max_connections=max_connections,
-        timeout=timeout,
-        retry_on_error=[RedisError],
+        redis_url, max_connections=max_connections, timeout=timeout, **kwargs
     )
     return Redis.from_pool(pool)
 
@@ -512,15 +520,11 @@ def get_redis_sync() -> RedisSync | None:
     """
     try:
         from redis import Redis as RedisSync
-        from redis.exceptions import RedisError
     except ImportError:
         logger.debug("Redis package not installed.")
         return None
     if (redis_url := parse_redis_url()) is not None:
-        return RedisSync.from_url(
-            redis_url,
-            retry_on_error=[RedisError],
-        )
+        return RedisSync.from_url(redis_url, **_redis_client_kwargs())
     return None
 
 

@@ -192,16 +192,12 @@ async def test_get(client: AsyncReflexBuild, mock_api: MockAPI):
                     pause_reason=None,
                     reflex_version="0.9.11",
                     python_version="3.13",
-                    created_at=datetime.datetime(
-                        2026, 9, 16, 10, tzinfo=datetime.timezone.utc
-                    ),
+                    created_at=datetime.datetime(2026, 9, 16, 10, tzinfo=datetime.UTC),
                     vm_type_name="c1m1",
                     vm_type_cpu=1.0,
                     vm_type_ram=1.0,
                     deployed_by=user,
-                    updated_at=datetime.datetime(
-                        2026, 9, 16, 11, tzinfo=datetime.timezone.utc
-                    ),
+                    updated_at=datetime.datetime(2026, 9, 16, 11, tzinfo=datetime.UTC),
                     updated_by=user,
                 ),
             )
@@ -361,7 +357,7 @@ async def test_audit_logs(client: AsyncReflexBuild, mock_api: MockAPI):
     (log,) = await client.projects.audit_logs(PROJECT_ID, limit=1)
     assert log == AuditLogEntry(
         id=uuid.UUID(ROLE_ID),
-        timestamp=datetime.datetime(2026, 9, 16, 12, tzinfo=datetime.timezone.utc),
+        timestamp=datetime.datetime(2026, 9, 16, 12, tzinfo=datetime.UTC),
         action="ADD_USER",
         action_label="Add User",
         summary="dev@example.com added a member",

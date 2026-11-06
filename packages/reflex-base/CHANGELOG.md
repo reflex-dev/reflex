@@ -1,3 +1,130 @@
+## v0.10.1 (2026-10-26)
+
+### Deprecations
+
+- `VarData(position=...)` and `Hooks.HookPosition` are deprecated and ignored: hooks render in declaration order. Remove the `position` argument; to place a hook after another one, put the one it reads in its `VarData(hooks=...)`. ([#7586](https://github.com/reflex-dev/reflex/issues/7586))
+- `reflex_base.utils.format.format_data_editor_column` is deprecated and will be removed in 1.0; `rx.data_editor` applies the column defaults itself. ([#7607](https://github.com/reflex-dev/reflex/issues/7607))
+
+### Features
+
+- Add the experimental `react_compiler` configuration option, also available as `REFLEX_REACT_COMPILER`, to opt in to automatic React component memoization. ([#7234](https://github.com/reflex-dev/reflex/issues/7234))
+- Event props and the events an event handler returns accept any sequence of events, e.g. a tuple or a variable typed `list[EventSpec]`, not only a list literal. The new `reflex_base.event.event_sequence` helper returns such a value as a sequence of events, wrapping a single event in a list. ([#7402](https://github.com/reflex-dev/reflex/issues/7402))
+- The compiled context module exports `stateSchema`, a hash of the state tree the frontend was built for, and the frontend sends it in the socket.io CONNECT `auth` payload under the `state_schema` key. The backend answers a mismatch with the new `state_mismatch` socket event; in production, the frontend then reloads once per cooldown window or shows a "new version available" banner, while in development it only warns in the console. ([#7553](https://github.com/reflex-dev/reflex/issues/7553))
+- Add `reflex_base.vars.get_leaf_vars`, which returns the vars a var reads by unwrapping var operations, casts, literal containers and function bodies, for example to list a derived var's dependencies in a React hook's dependency array. ([#7606](https://github.com/reflex-dev/reflex/issues/7606))
+- Add the `trusted_proxy_hops` configuration option for safely resolving client IPs from trusted proxy headers. ([#7614](https://github.com/reflex-dev/reflex/issues/7614))
+
+### Bug Fixes
+
+- `TypedDict` form data honors `Required` and `NotRequired`, including inside `Annotated`, in modules using `from __future__ import annotations`: a `NotRequired` field no longer needs a matching form control. ([#7386](https://github.com/reflex-dev/reflex/issues/7386))
+- An event handler stored outside a state, e.g. in a component or dataclass field, now type-checks as the handler instead of a bound function, and a handler read through a state instance is typed as a function returning `Any`. ([#7401](https://github.com/reflex-dev/reflex/issues/7401))
+- `LiteralObjectVar.create` is typed to take any value that serializes to a mapping, such as a dataclass, as it does at runtime, not only a mapping. ([#7403](https://github.com/reflex-dev/reflex/issues/7403))
+- The CDN fallback for an unbundled sub-path dynamic import now puts the sub-path before jsdelivr's `/+esm`, so it resolves instead of returning 404. ([#7405](https://github.com/reflex-dev/reflex/issues/7405))
+- ty now reads an optional model, dataclass or mapping field (`rx.Field[X | None]`) on the state class as `ObjectVar[X]`, as pyright already did, instead of `ObjectVar[X | None]`. ([#7413](https://github.com/reflex-dev/reflex/issues/7413))
+- Cancel pending hydration and page-load event chains when their client disconnects. ([#7415](https://github.com/reflex-dev/reflex/issues/7415))
+- Calling an upload handler with `rx.upload_files(...)` or `rx.upload_files_chunk(...)` as its only argument, as the upload docs show, now type-checks under pyright and ty, for a handler taking `list[rx.UploadFile]` or `rx.UploadChunkIterator`. ([#7419](https://github.com/reflex-dev/reflex/issues/7419))
+- Frontend updates and events now keep working when a backend update names a substate the compiled frontend does not know. Reflex skips that substate and reports it once per connection. ([#7435](https://github.com/reflex-dev/reflex/issues/7435))
+- Fix a blank page with `Maximum call stack size exceeded` in apps with thousands of state classes. State is now read from one shared store, so the React provider tree no longer grows with the number of states. ([#7441](https://github.com/reflex-dev/reflex/issues/7441))
+- Raise descriptive errors when page or compile contexts are accessed outside compilation. ([#7517](https://github.com/reflex-dev/reflex/issues/7517))
+- Make `StringVar` length, indexing, and slicing count Unicode code points so operations do not split valid surrogate pairs. On a `None` string these operations now behave as if it were empty. ([#7518](https://github.com/reflex-dev/reflex/issues/7518))
+- A frontend error event that carries no `Error` object, such as the benign `ResizeObserver loop` notification, no longer throws inside `window.onerror` and is now reported to `handle_frontend_exception`. ([#7544](https://github.com/reflex-dev/reflex/issues/7544))
+- Editing one tab no longer leaves other `sync=True` browser storage vars that share its storage `name` stale in other tabs; every such var is now synced, not only the last one declared. ([#7545](https://github.com/reflex-dev/reflex/issues/7545))
+- A state var annotation that names an undefined symbol, such as `items: list[Item] = []` under `from __future__ import annotations`, raises `NameError: name 'Item' is not defined` again instead of an unrelated `TypeError` or `AttributeError`. This also covers vars without a default, backend vars, and Python 3.14 annotations without the `__future__` import. ([#7547](https://github.com/reflex-dev/reflex/issues/7547))
+- Report a hydrate message that exceeds the server's message size limit, with its size and the limit, instead of sending it and retrying. Reduce browser storage data and reload to recover. ([#7551](https://github.com/reflex-dev/reflex/issues/7551))
+- On POSIX, `reflex run --json` forwards SIGINT to its child process, so supervisors that signal only the Reflex PID can stop the app cleanly. ([#7558](https://github.com/reflex-dev/reflex/issues/7558))
+- Raising a negative number or a negated var to a power, such as `(-State.x) ** 2`, now compiles to valid JavaScript instead of failing the frontend build with "A unary expression with the '-' operator cannot be used as the left operand of an exponentiation expression". ([#7565](https://github.com/reflex-dev/reflex/issues/7565))
+- Write the Tailwind `important` option to the generated `tailwind.config.js` under the `important` key. It was emitted as `importants`, so Tailwind ignored it. ([#7573](https://github.com/reflex-dev/reflex/issues/7573))
+- A background task that re-enters an expired session now rehydrates the loaded states. The browser drops their stale values and keeps its route and browser storage; its next event runs the current page's on_load. ([#7585](https://github.com/reflex-dev/reflex/issues/7585))
+- Component hooks render in the order they are declared and merged, so a hook always comes after the hooks it reads. Before, a component whose prop and `add_hooks` Var read the same state could render a hook before the state declaration it reads and fail with a `ReferenceError`. A hook that reads state must carry it: return `rx.Var(f"const x = {State.value}")` from `add_hooks`, not a plain string built with `str(State.value)`. ([#7586](https://github.com/reflex-dev/reflex/issues/7586))
+- Passing a plain `dict` to `format_prop` no longer raises `AttributeError`; the dict is JSON-encoded like any other literal. ([#7587](https://github.com/reflex-dev/reflex/issues/7587))
+- Resolve Pydantic v2 model field types without emitting deprecation warnings, while retaining Pydantic v1 compatibility. ([#7592](https://github.com/reflex-dev/reflex/issues/7592))
+- Retry with backoff and show the connection error when the server or a proxy closes the connection before it is established, for example when browser storage makes the hydrate message too large, instead of reconnecting in a tight loop. ([#7605](https://github.com/reflex-dev/reflex/issues/7605))
+- Event handler arguments hinted as an `rx.Model` no longer emit a `PydanticDeprecatedSince20` warning for every key of the payload. ([#7636](https://github.com/reflex-dev/reflex/issues/7636))
+- Upgrade the default Bun version to 1.4.4, which removes compromised emSign certificate authorities from its bundled trust store. ([#7639](https://github.com/reflex-dev/reflex/issues/7639))
+
+### Performance
+
+- Add the `REFLEX_BACKEND_START_METHOD` environment variable to choose how production backend workers are started (`fork`, `spawn`, or `forkserver`). ([#7079](https://github.com/reflex-dev/reflex/issues/7079))
+- Unchanged objects and arrays in state updates now keep their previous identity on the frontend, so memoized components skip re-rendering them, and an update that changes nothing no longer re-renders at all. ([#7273](https://github.com/reflex-dev/reflex/issues/7273))
+- A running background event handler no longer keeps the state tree it was dispatched with alive once it has entered `async with self`. With the Redis state manager, every long-running background task used to hold an extra copy of the session's state. ([#7447](https://github.com/reflex-dev/reflex/issues/7447))
+
+### Documentation
+
+- Document the supported `BaseStateMeta` contract for custom state metaclasses, including the `state_root` and `mixin` class keywords and the reserved `_reflex_state_root` attribute. ([#7626](https://github.com/reflex-dev/reflex/issues/7626))
+
+### Miscellaneous
+
+- Update generated apps to React 19.3.1, Vite 8.3.4, PostCSS 8.5.30, and postcss-import 17.0.1. ([#7645](https://github.com/reflex-dev/reflex/issues/7645))
+
+
+## v0.10.0 (2026-10-08)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+- Assigning over a state var's field through its state class raises `TypeError`; change its default with the field's `set_default` instead, such as `State.__fields__["count"].set_default(10)`. ([#7516](https://github.com/reflex-dev/reflex/issues/7516))
+- Mutable values provided as state var defaults are deep-copied when assigned at class creation time or passed to `set_default`, so later changes to the original object no longer reach new sessions. A module-level list filled in after the `class` statement, such as `options: list[str] = OPTIONS` followed by `OPTIONS.append(...)`, now starts every session empty: fill it before the class is defined, or declare `default_factory=lambda: list(OPTIONS)`. ([#7519](https://github.com/reflex-dev/reflex/issues/7519))
+- Formatting a backend var as a string, e.g. `width=f"{State._size}px"`, now raises `BackendVarFormatError` (a `VarTypeError`) instead of embedding its default value. The error names the fix: read its default with `State._size.default_value()`, declare a constant shared by all sessions as `ClassVar[...]`, or use a regular state var for a value the UI shows and updates. ([#7456](https://github.com/reflex-dev/reflex/issues/7456), [#7496](https://github.com/reflex-dev/reflex/issues/7496))
+- `reflex_base.utils.types.is_backend_base_variable` and `RESERVED_BACKEND_VAR_NAMES` are removed: whether a state var is a backend var is now a property of its `Field` in `get_fields()`. By convention, fields named with a leading `_` are backend vars. `is_mutable_type` moved to `reflex_base.utils.types` (still importable from `reflex.istate.proxy`). ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
+- `PageContext.get()` and `CompileContext.get()` now raise `LookupError` instead of `RuntimeError` when no context is active, the same as every other `BaseContext` subclass. Compiler plugins that catch `RuntimeError` around these calls should catch `LookupError`. ([#6553](https://github.com/reflex-dev/reflex/issues/6553))
+- Remove `reflex_base.constants.CustomComponents`, which only the removed `reflex component` CLI used. ([#6425](https://github.com/reflex-dev/reflex/issues/6425))
+
+### Features
+
+#### State vars
+
+- `Field` is now the descriptor holding a state var's value, and `EventHandler` binds to the state that declares it when accessed on a state instance. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
+- Add `Field.set_default` to change a state var's default, given exactly one of `default` or `default_factory`, such as `State.__fields__["items"].set_default(["a"])`. ([#7519](https://github.com/reflex-dev/reflex/issues/7519))
+- A double-underscore state attribute (a name-mangled `__private` name or a dunder) can now be a backend var by declaring it with an explicit `rx.field()` value, e.g. `__counter: rx.Field[int] = rx.field(0)`. Without one it stays a plain class attribute, like in 0.9.x. ([#7465](https://github.com/reflex-dev/reflex/issues/7465))
+
+#### Configuration
+
+- `SQLALCHEMY_POOL_TIMEOUT`, `REFLEX_BACKEND_COLD_START_TIMEOUT`, `REFLEX_SOCKET_INTERVAL` and `REFLEX_SOCKET_TIMEOUT` are `timedelta` settings, so they accept a unit suffix such as `REFLEX_SOCKET_TIMEOUT=2m`. A bare number is still read as seconds, so existing values keep their meaning. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
+- `REFLEX_AUTO_RELOAD_COOLDOWN`, `REFLEX_OPLOCK_HOLD_TIME` and `REFLEX_STATE_MANAGER_DISK_DEBOUNCE` replace `REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS`, `REFLEX_OPLOCK_HOLD_TIME_MS` and `REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS`, and take a duration such as `250ms` or `5m`. The old names still work and keep counting the unit in their name, with a deprecation warning; they are removed in 1.0. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
+- Add the `REFLEX_REDIS_MAX_CONNECTIONS` and `REFLEX_REDIS_POOL_TIMEOUT` environment variables for bounding each asynchronous Redis client's connection pool. A configured cap must be at least 3 to leave room for the token manager's two pub/sub listeners and ordinary commands; the pool wait defaults to 2 seconds and must be above 0 and shorter than the state-lock lifetime. ([#7179](https://github.com/reflex-dev/reflex/issues/7179))
+
+#### Other
+
+- Add `Var.deep_equals()` for structural comparison of nested frontend values. ([#7208](https://github.com/reflex-dev/reflex/issues/7208))
+- Add `reflex_base.utils.log.supervise_output()`, which runs a command with its stdout and stderr on pipes and writes every line it and its descendants print as a JSON record; lines that already are JSON log records pass through unchanged. Output that a descendant writes after the command exits is forwarded for at most a few seconds. ([#7350](https://github.com/reflex-dev/reflex/issues/7350))
+
+### Bug Fixes
+
+#### Vars and compilation
+
+- Negative-step slices of array and string Vars now match Python at a `-1` bound (e.g. `State.items[-1::-1]` no longer renders an empty list), and a Var step (e.g. `State.items[::State.step]`) no longer raises `RecursionError`. ([#7326](https://github.com/reflex-dev/reflex/issues/7326))
+- `Var._replace(_var_data=...)` no longer raises `TypeError: dataclasses.replace() got multiple values for keyword argument '_var_data'`. ([#7256](https://github.com/reflex-dev/reflex/issues/7256))
+- A state that mixes in `abc.ABC` or another `ABCMeta` class (`class MyMixin(ABC, rx.State, mixin=True)`) no longer fails with a `StateValueError` claiming `_abc_impl` is reserved by `BaseState`. ([#7339](https://github.com/reflex-dev/reflex/issues/7339))
+- Calling an event handler of up to four arguments on the state class with its arguments, plain or as Vars, and passing such a handler where a callable of its arguments is expected now type-check under ty, as they already did under pyright. Calls of handlers with five or more arguments can still be misreported by ty. ([#7414](https://github.com/reflex-dev/reflex/issues/7414))
+- Auto-memoized `@rx.memo` wrapper names no longer repeat the wrapped memo component's tag. ([#7004](https://github.com/reflex-dev/reflex/issues/7004))
+- Pages in apps with many substates no longer intermittently fail to server-render with a 500 such as `SyntaxError: Invalid regular expression: /[^a-z-]/: Stack overflow`. ([#7369](https://github.com/reflex-dev/reflex/issues/7369))
+- Form submissions retain ID-backed controls with unset values while omitting IDs from non-controls. ([#7227](https://github.com/reflex-dev/reflex/issues/7227))
+
+#### Events and uploads
+
+- Flatten nested client event lists before dispatch and keep processing queued events after one event fails. ([#7319](https://github.com/reflex-dev/reflex/issues/7319))
+- Events sent while a buffered upload is in flight are no longer chained to it: an uploading client that disconnects no longer cancels other clients' events, the upload's response no longer waits for them, and navigating during an upload cancels the previous page's unfinished `on_load` handlers again. Concurrent buffered uploads no longer hang or end each other's responses early, and state changes made after an upload's response has ended, such as by events a backend exception handler chains after the upload handler fails, now reach the client instead of being silently dropped. ([#7357](https://github.com/reflex-dev/reflex/issues/7357))
+- `sync=True` `rx.LocalStorage` vars no longer bounce between open tabs forever when the value changes while other tabs are loading, or in several tabs at once: a tab no longer writes a value it sent to the backend back over a newer one another tab stored meanwhile. ([#7505](https://github.com/reflex-dev/reflex/issues/7505))
+- `rx.download(data=State.var)` percent-encodes the JSON it puts in the `data:` URL, so a `#` or `%` in the data no longer truncates or corrupts the downloaded file. ([#7325](https://github.com/reflex-dev/reflex/issues/7325))
+- OpenTelemetry spans of top-level events enqueued during an HTTP request (a chunked upload, or a custom API route calling `app.event_processor.enqueue`) no longer carry a `reflex.event.parent_txid` naming the event processor's root context; only chained events name the event that produced them. ([#7358](https://github.com/reflex-dev/reflex/issues/7358))
+
+#### Other
+
+- Deprecation warnings no longer point at a pseudo-location such as `<string>` or `<frozen importlib._bootstrap>` when the deprecated call runs inside generated or frozen code; the location now names the first real user file. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
+
+### Performance
+
+- Speed up first page loads by opening the websocket before React mounts and hydrating the page in the same round trip as the connect. ([#7064](https://github.com/reflex-dev/reflex/issues/7064))
+- Lower the CPU cost of every backend event: cached computed var reads, field reads and writes, event dispatch and the JSON encoding of state deltas are faster. A computed var returning a value of the wrong type is now logged once per computed value instead of on every read, and `EventHandler.is_background` and `EventHandler.supersedes` are read once per handler, so mark the function before the handler is first used. ([#7370](https://github.com/reflex-dev/reflex/issues/7370))
+- Building Vars (operations, comparisons, `rx.cond`, `rx.foreach`) is up to twice as fast, so pages that derive many Vars compile faster; the generated code is unchanged. ([#7370](https://github.com/reflex-dev/reflex/issues/7370))
+- Reading a cached computed var no longer re-validates its return type, and in production mode state var assignments and computed var results check only the outer type instead of walking every element. The type checks only log errors, so this changes no behavior beyond fewer element-level log messages in production. ([#7353](https://github.com/reflex-dev/reflex/issues/7353))
+- Reduce event-queue overhead when prepending events and processing events with a connected socket. ([#7053](https://github.com/reflex-dev/reflex/issues/7053))
+- Compile memoized components faster by reusing unchanged memo bodies instead of rendering them again. ([#7123](https://github.com/reflex-dev/reflex/issues/7123))
+
+### Miscellaneous
+
+- Update generated apps to React 19.3, Vite 8.3.2, Socket.IO client 4.8.4, Autoprefixer 10.6.1, and PostCSS 8.5.29. Update the bundled Bun runtime to 1.4.2. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
+
+
 ## v0.9.12 (2026-09-21)
 
 ### Features
@@ -48,7 +175,7 @@
 - `ComputedVar` now records a key for the value an uncached (`cache=False`) var last sent to each client, so `BaseState.get_delta` can leave the var out of the delta when a recomputation produces the same value. ([#6946](https://github.com/reflex-dev/reflex/issues/6946))
 - Load pandas, Plotly, and Pillow serializers on demand and avoid importing SQLAlchemy for generic type helpers, reducing startup time and memory when these integrations are unused. ([#7049](https://github.com/reflex-dev/reflex/issues/7049))
 - The event processor now refreshes only the router vars whose backing `router_data` keys actually changed, so a navigation no longer rebuilds and re-sends the connection-scoped session and header data. `ROUTER_VARS` names the per-field router vars that replaced the single `router` var on the root state. ([#7068](https://github.com/reflex-dev/reflex/issues/7068))
-- Add the opt-in `frontend_lazy_bundled_libraries` config setting to load optional dynamic-component libraries on first use, reducing JavaScript loaded by ordinary pages. React and the shared runtime remain immediately available. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
+- Add the opt-in `frontend_lazy_bundled_libraries` config setting to defer optional dynamic-component libraries until first use. React and the shared runtime remain immediately available. The setting does not guarantee fewer JavaScript bytes or requests for every application. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
 - Allow unused memoized components to be removed from shared frontend bundles. Render readable code before Shiki loads, and highlight blocks as they approach the viewport. Changed highlighting options immediately restore the readable fallback until new highlighting succeeds. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
 - Speed up compilation by reading only the props a component sets, caching literal Var dispatch by value type, and trimming render and app-wrap bookkeeping. Tags now render through `render(children)`: `CommonTag` holds the generic protocol shared by every tag class, and `Tag` overrides it with a direct fast path. ([#7121](https://github.com/reflex-dev/reflex/issues/7121))
 - Share one event chain per handler and trigger across call sites, and reuse memoized event wrappers by chain identity during compilation. ([#7122](https://github.com/reflex-dev/reflex/issues/7122))

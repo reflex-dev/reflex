@@ -3,11 +3,11 @@ import os
 import frontmatter
 import reflex as rx
 import reflex_components_internal as ui
-from reflex_site_shared.components.marquee import marquee
 from reflex_site_shared.integrations import get_integration_logo_url
 
 from reflex_docs.pages.docs import ai_builder as ai_builder_pages
 from reflex_docs.pages.docs_landing.views.artwork import artwork
+from reflex_docs.pages.docs_landing.views.layout import SECTION, section_heading
 from reflex_docs.pages.docs_landing.views.mcp_artwork import mcp_artwork
 
 
@@ -76,41 +76,42 @@ def card(
     enterprise_only: bool = False,
 ) -> rx.Component:
     """Render a linked guide with a matching editorial illustration panel."""
-    return rx.el.div(
+    return rx.el.a(
+        rx.el.div(
+            rx.el.div(content, class_name="flex w-full max-w-[18rem] justify-center"),
+            class_name="hidden h-44 items-center justify-center overflow-hidden border-b border-border-subtle bg-muted px-6 sm:flex",
+            aria_hidden=True,
+        ),
         rx.el.div(
             rx.el.div(
                 rx.el.h3(
                     title,
-                    class_name="docs-ai-card-title text-xl font-book tracking-tight",
+                    class_name="font-heading text-2xl font-normal leading-8 tracking-[-0.025em]",
                 ),
                 rx.el.span(
                     "Enterprise-only",
-                    class_name="w-fit rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-muted-foreground",
+                    class_name="w-fit rounded-full border border-border px-2.5 py-1 text-xs font-normal text-muted-foreground",
                 )
                 if enterprise_only
                 else None,
-                ui.icon(
-                    "ArrowUpRight01Icon",
-                    size=18,
-                    aria_hidden=True,
-                    class_name="ml-auto shrink-0",
-                ),
-                class_name="flex w-full items-center gap-3 text-foreground",
+                class_name="flex w-full flex-wrap items-center gap-x-3 gap-y-2 text-foreground",
             ),
             rx.el.p(
                 description,
                 class_name="text-sm font-normal leading-6 text-muted-foreground",
             ),
-            class_name="flex flex-1 flex-col items-start gap-3 p-7 sm:p-8",
+            rx.el.span(
+                "Read the guide",
+                ui.icon("ArrowRight01Icon", size=16, aria_hidden=True),
+                class_name="mt-auto inline-flex items-center gap-2 pt-4 text-sm font-normal text-foreground",
+            ),
+            class_name="flex flex-1 flex-col items-start gap-3 p-6 sm:p-7",
         ),
-        rx.el.div(content, class_name="docs-ai-card-art", aria_hidden=True),
-        rx.el.a(
-            href=href,
-            aria_label=title,
-            class_name="docs-ai-card-link absolute inset-0 rounded-panel focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-foreground",
-        ),
+        href=href,
+        aria_label=title,
         data_tone=tone,
-        class_name="docs-ai-card flex min-w-0 flex-col overflow-hidden rounded-panel border border-border bg-background relative text-left transition-colors hover:border-border-strong",
+        style={"--ai-accent": "var(--foreground)", "--ai-tint": "var(--accent)"},
+        class_name="group flex min-w-0 flex-col overflow-hidden rounded-[20px] border border-border-subtle bg-background text-left transition-colors hover:bg-muted hover:border-border motion-reduce:transition-none focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-ring",
     )
 
 
@@ -127,53 +128,35 @@ def integration_icon_marquee(integration_name: str) -> rx.Component:
         ),
         ui.avatar.fallback(
             integration_name[0],
-            class_name="text-foreground text-base font-semibold uppercase size-full",
+            class_name="text-foreground text-base font-normal uppercase size-full",
             unstyled=True,
         ),
         unstyled=True,
-        class_name="docs-ai-integration flex size-14 shrink-0 items-center justify-center rounded-xl border border-border bg-background mx-2",
+        class_name="flex aspect-square w-full items-center justify-center rounded-xl border border-border-subtle bg-background",
     )
 
 
 @rx.memo
 def integrations_marquee() -> rx.Component:
+    """Show a quiet sample of integration marks without continuous motion.
+
+    Returns:
+        A decorative grid of supported integration logos.
+    """
     integration_names = [
         next(iter(item.values()))["name"] for item in get_integration_path()
     ]
     return rx.el.div(
-        marquee(
-            *[integration_icon_marquee(name) for name in reversed(integration_names)],
-            direction="left",
-            gradient=False,
-            class_name="h-auto w-full overflow-hidden",
-            speed=25,
-            pause_on_hover=False,
-        ),
-        marquee(
-            *[integration_icon_marquee(name) for name in integration_names],
-            direction="right",
-            gradient=False,
-            class_name="h-auto w-full overflow-hidden",
-            speed=25,
-            pause_on_hover=False,
-        ),
-        class_name="docs-ai-integrations flex w-full flex-col gap-4",
+        *[integration_icon_marquee(name) for name in sorted(integration_names)[:8]],
+        class_name="grid w-full max-w-[228px] grid-cols-4 gap-3",
     )
 
 
 def ai_builder_section() -> rx.Component:
     return rx.el.section(
         rx.el.div(
-            rx.el.div(
-                rx.el.h2(
-                    "AI Builder",
-                    class_name="text-foreground text-3xl font-medium tracking-tight",
-                ),
-                rx.el.p(
-                    "Learn how to build applications with Reflex AI.",
-                    class_name="text-muted-foreground text-sm font-normal",
-                ),
-                class_name="flex flex-col gap-4",
+            section_heading(
+                "AI Builder", "Learn how to build applications with Reflex AI."
             ),
             rx.el.div(
                 card(
@@ -201,9 +184,9 @@ def ai_builder_section() -> rx.Component:
                     tone="mint",
                     enterprise_only=True,
                 ),
-                class_name="grid grid-cols-1 lg:grid-cols-3 gap-6",
+                class_name="grid grid-cols-1 gap-4 md:grid-cols-3",
             ),
-            class_name="flex flex-col gap-10 max-lg:text-center relative max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12 mx-auto",
+            class_name=SECTION,
         ),
-        class_name="bg-muted w-full lg:pt-24 lg:pb-24 pb-10 max-lg:pt-10",
+        class_name="w-full border-b border-border-subtle bg-background",
     )

@@ -19,9 +19,9 @@ name: Release from changelog
 # r/pre-* or r/hotfix/** (the Dispatch release workflow
 # materializes alphas on r/pre-* branches).
 #
-# Lockstep packages that pin their siblings exactly publish strictly after
-# every other package in the batch; detect fails closed if a lockstep
-# invariant is broken.
+# Lockstep packages that pin their siblings exactly publish in a second leg,
+# after the rest of the batch, and only once the siblings they pin are tagged;
+# detect fails closed if a lockstep invariant is broken.
 #
 # workflow_dispatch exists so the Dispatch release workflow can trigger a
 # check on a branch it just pushed (pushes made with GITHUB_TOKEN do not fire
@@ -58,8 +58,8 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
-          version: "0.12.5"
-          python-version: "3.14.7"
+          version: "0.13.6"
+          python-version: "3.14.10"
       - id: detect
         env:
           REF_NAME: ${{ github.ref_name }}

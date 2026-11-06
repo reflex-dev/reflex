@@ -87,10 +87,10 @@ class Measured(Workflow):
     async def work(self):
         """Do the step's work, recording who did it and when."""
         self.worker = os.getpid()
-        self.started_at = datetime.datetime.now(datetime.timezone.utc)
+        self.started_at = datetime.datetime.now(datetime.UTC)
         if STEP_MS:
             await asyncio.sleep(STEP_MS / 1000)
-        self.finished_at = datetime.datetime.now(datetime.timezone.utc)
+        self.finished_at = datetime.datetime.now(datetime.UTC)
         self.status = "done"
 
 
@@ -158,7 +158,7 @@ async def reset(dormant: int) -> None:
         )
         await conn.run_sync(Base.metadata.create_all)
     if dormant:
-        far = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=30)
+        far = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=30)
         await insert_runs(db, Plain, dormant, far, batch=5000)
     await db.dispose()
 
@@ -464,9 +464,7 @@ async def measure(
         await asyncio.sleep(WARMUP)
 
         db = engine()
-        due = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
-            seconds=1
-        )
+        due = datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=1)
         await insert_runs(db, cls, runs, due, spread=spread)
         # Bulk inserts leave the planner with no statistics, and without them the
         # claim falls back to a sequential scan: 6.5ms against 0.3ms on 100k rows.
@@ -478,7 +476,7 @@ async def measure(
         await asyncio.sleep(
             max(
                 0.0,
-                (due - datetime.datetime.now(datetime.timezone.utc)).total_seconds(),
+                (due - datetime.datetime.now(datetime.UTC)).total_seconds(),
             )
         )
         before = cpu_ticks()

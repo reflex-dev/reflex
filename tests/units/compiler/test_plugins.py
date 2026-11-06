@@ -33,6 +33,7 @@ from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
 from reflex.compiler.plugins import (
     ApplyStylePlugin,
+    ClientStateScopePlugin,
     DefaultCollectorPlugin,
     DefaultPagePlugin,
     default_page_plugins,
@@ -622,32 +623,50 @@ def test_context_lifecycle_and_cleanup() -> None:
         root_component=Fragment.create(),
     )
 
-    with pytest.raises(LookupError):
+    with pytest.raises(LookupError, match=r"CompileContext\.get.*compilation"):
         CompileContext.get()
     with pytest.raises(RuntimeError, match="must be entered"):
         compile_ctx.ensure_context_attached()
 
     with compile_ctx:
         assert CompileContext.get() is compile_ctx
-        with pytest.raises(LookupError):
+        with pytest.raises(LookupError, match=r"PageContext\.get.*page compilation"):
             PageContext.get()
         with page_ctx:
             assert CompileContext.get() is compile_ctx
             assert PageContext.get() is page_ctx
             page_ctx.ensure_context_attached()
-        with pytest.raises(LookupError):
+        with pytest.raises(LookupError, match=r"PageContext\.get.*page compilation"):
             PageContext.get()
         assert CompileContext.get() is compile_ctx
 
-    with pytest.raises(LookupError):
+    with pytest.raises(LookupError, match=r"CompileContext\.get.*compilation"):
         CompileContext.get()
 
     with pytest.raises(ValueError, match="boom"), compile_ctx:
         msg = "boom"
         raise ValueError(msg)
 
-    with pytest.raises(LookupError):
+    with pytest.raises(LookupError, match=r"CompileContext\.get.*compilation"):
         CompileContext.get()
+
+
+@pytest.mark.parametrize(
+    ("context_class", "activity"),
+    [
+        (PageContext, "page compilation"),
+        (CompileContext, "compilation"),
+    ],
+)
+def test_compilation_context_get_outside_compile_raises_descriptive_error(
+    context_class: type[PageContext] | type[CompileContext], activity: str
+) -> None:
+    """Context access outside compilation explains when the context is available."""
+    with pytest.raises(
+        LookupError,
+        match=rf"{context_class.__name__}\.get\(\).*{activity}",
+    ):
+        context_class.get()
 
 
 def test_page_context_default_factories_are_isolated() -> None:
@@ -920,11 +939,14 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
 
     plugins = default_page_plugins(style=page_style())
 
-    assert len(plugins) == 4
+    assert len(plugins) == 5
     assert isinstance(plugins[0], DefaultPagePlugin)
     assert isinstance(plugins[1], ApplyStylePlugin)
-    assert isinstance(plugins[2], DefaultCollectorPlugin)
-    assert isinstance(plugins[3], MemoizeStatefulPlugin)
+    # Scopes the page from the collected hooks, so it runs its compile_page
+    # before the collector collapses the imports it adds.
+    assert isinstance(plugins[2], ClientStateScopePlugin)
+    assert isinstance(plugins[3], DefaultCollectorPlugin)
+    assert isinstance(plugins[4], MemoizeStatefulPlugin)
 
 
 def test_compile_context_collects_artifacts_from_leave_replacement_plugins() -> None:

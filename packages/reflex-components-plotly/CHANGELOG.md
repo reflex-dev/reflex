@@ -1,3 +1,14 @@
+## v0.10.0 (2026-10-08)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Bug Fixes
+
+- Normalize string Plotly layout titles to the `{"title": {"text": "..."}}` format required by Plotly.js. ([#7226](https://github.com/reflex-dev/reflex/issues/7226))
+
+
 ## v0.9.7 (2026-09-21)
 
 ### Bug Fixes

@@ -205,13 +205,11 @@ class Runner:
             # found it, so a timer set before the suspend has as long left after
             # it, and the wait would be served late by however long the machine
             # was away.
-            until = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+            until = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
                 seconds=seconds
             )
             while not wake.is_set() and not self.stopping:
-                left = (
-                    until - datetime.datetime.now(datetime.timezone.utc)
-                ).total_seconds()
+                left = (until - datetime.datetime.now(datetime.UTC)).total_seconds()
                 if left <= 0:
                     break
                 # asyncio's own TimeoutError, only the builtin from 3.11 on.
@@ -350,7 +348,7 @@ class Runner:
             for cls, pk, held in holding:
                 try:
                     await release(self.runtime, cls, pk, held)
-                except asyncio.CancelledError:  # noqa: PERF203  # once per cancelled row, at shutdown
+                except asyncio.CancelledError:  # once per cancelled row, at shutdown
                     raise
                 except Exception:
                     # One row the database will not take back is no reason to
@@ -364,7 +362,7 @@ class Runner:
             await asyncio.wait_for(hand_back(), GIVE_BACK.total_seconds())
         except asyncio.CancelledError:
             raise
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(
                 "reflex_workflow ran out of time giving back %d lease(s)", len(holding)
             )

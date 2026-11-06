@@ -72,7 +72,7 @@ async def test_an_approval_days_later_records_one_bill(running):
     assert row is not None
     assert row.waiting_for == "decide"
     assert row.wake_at is not None
-    week = datetime.datetime.now(datetime.timezone.utc) + APPROVAL_DEADLINE
+    week = datetime.datetime.now(datetime.UTC) + APPROVAL_DEADLINE
     assert abs((row.wake_at - week).total_seconds()) < 60
 
     invoice = Invoice.by(Invoice.upload_id == upload_id)

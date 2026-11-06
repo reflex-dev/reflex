@@ -63,21 +63,30 @@ def HmrApp():
     app.add_page(counter_page, route="/counter")
 
 
-@pytest.fixture(scope="module")
-def hmr_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    """Run the HMR test app in development mode.
+@pytest.fixture(
+    scope="module", params=[False, True], ids=["compiler-off", "compiler-on"]
+)
+def hmr_app(
+    tmp_path_factory: pytest.TempPathFactory, request: pytest.FixtureRequest
+) -> Generator[AppHarness, None, None]:
+    """Run the HMR app in development with React Compiler off and on.
 
     Args:
         tmp_path_factory: Pytest temporary path factory.
+        request: Pytest fixture request containing the compiler flag.
 
     Yields:
         The running application harness.
     """
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("hmr_app"),
-        app_source=HmrApp,
-    ) as harness:
-        yield harness
+    name = f"hmrapp_{int(request.param)}"
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("REFLEX_REACT_COMPILER", str(request.param))
+        with AppHarness.create(
+            root=tmp_path_factory.mktemp(name),
+            app_name=name,
+            app_source=HmrApp,
+        ) as harness:
+            yield harness
 
 
 def _find_module(directory: Path, marker: str) -> Path:
@@ -250,3 +259,43 @@ def test_route_loaded_during_held_provider_refresh_uses_mounted_provider(
     finally:
         page.close()
         context.write_text(original)
+
+
+def test_generated_component_refresh_preserves_state(
+    hmr_app: AppHarness, page: Page
+) -> None:
+    """Refreshing a compiled component preserves its state and surrounding input.
+
+    Args:
+        hmr_app: Running application harness.
+        page: Playwright page driving the application.
+    """
+    assert hmr_app.frontend_url is not None
+    component = _find_module(hmr_app.app_path / ".web" / "app_components", "hmr-ui-v0")
+    original = component.read_text()
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(f"{hmr_app.frontend_url.rstrip('/')}/counter")
+    expect(page.locator("#hmr-version")).to_have_text("hmr-ui-v0")
+    page.get_by_role("button", name="Increment", exact=True).click()
+    expect(page.locator("#count")).to_have_text("1")
+    page.locator("#focus-target").fill("preserve across component refresh")
+    time_origin = page.evaluate("performance.timeOrigin")
+
+    try:
+        _replace_once(component, "hmr-ui-v0", "hmr-ui-v1")
+        expect(page.locator("#hmr-version")).to_have_text("hmr-ui-v1", timeout=10_000)
+        expect(page.locator("#count")).to_have_text("1")
+        expect(page.locator("#focus-target")).to_have_value(
+            "preserve across component refresh"
+        )
+        assert page.evaluate("performance.timeOrigin") == time_origin
+
+        page.get_by_role("button", name="Increment", exact=True).click()
+        expect(page.locator("#count")).to_have_text("2")
+        page.get_by_role("button", name="Focus input", exact=True).click()
+        expect(page.locator("#focus-target")).to_be_focused()
+        assert not errors
+    finally:
+        page.close()
+        component.write_text(original)

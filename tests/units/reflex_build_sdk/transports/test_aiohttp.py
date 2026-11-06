@@ -159,9 +159,6 @@ async def test_stalled_upload_times_out(server: TestServer):
     await asyncio.sleep(0)
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11), reason="tasks count cancellations from Python 3.11"
-)
 @pytest.mark.parametrize("caller_cancels", [False, True])
 async def test_watchdog_leaves_caller_cancellation(caller_cancels: bool):
     async def cancelled() -> bool:
@@ -275,7 +272,7 @@ class _FailingSession:
         ),
         (aiohttp.ConnectionTimeoutError("connect"), False, True),
         (aiohttp.ServerTimeoutError("read"), True, True),
-        (asyncio.TimeoutError(), True, True),
+        (TimeoutError(), True, True),
         (aiohttp.ServerDisconnectedError(), True, False),
         (aiohttp.ClientPayloadError("payload"), True, False),
     ],

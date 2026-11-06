@@ -15,7 +15,7 @@ from collections.abc import (
     MutableMapping,
 )
 from pathlib import Path, PureWindowsPath
-from typing import TYPE_CHECKING, Any, BinaryIO, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, Self, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.registry import RegistrationContext
@@ -28,7 +28,6 @@ from starlette.exceptions import HTTPException
 from starlette.formparsers import MultiPartException, _user_safe_decode
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
-from typing_extensions import Self
 
 if TYPE_CHECKING:
     from reflex_base.utils.types import ASGIApp, Receive, Scope, Send

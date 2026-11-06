@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import copy
 import dataclasses
 import datetime
 import enum
 import functools
+import gc
 import inspect
 import io
 import json
@@ -13,14 +15,17 @@ import logging
 import math
 import os
 import pickle
+import subprocess
 import sys
 import threading
 from collections import namedtuple
 from collections.abc import AsyncGenerator, Callable, Mapping
+from hashlib import md5
+from pathlib import Path
 from textwrap import dedent
 from types import MethodType, ModuleType
-from typing import Any, ClassVar, Literal, TypeVar, cast
-from unittest.mock import AsyncMock, Mock
+from typing import Any, ClassVar, ForwardRef, Literal, TypeVar, cast
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -33,6 +38,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventHandler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
@@ -60,7 +66,7 @@ from reflex.istate.data import (
     URLData,
     _FrozenDictStrStr,
 )
-from reflex.istate.delta import _suppress_delta_recording
+from reflex.istate.delta import Delta, _suppress_delta_recording
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -69,10 +75,17 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
 from reflex.state import (
     BaseState,
-    Delta,
     ImmutableStateError,
     OnLoadInternalState,
     State,
+    StateUpdate,
+    _apply_client_storage_vars,
+    _frontend_schema,
+    _get_client_storage_delta,
+    _load_events_for_page,
+    _override_base_method,
+    all_base_state_classes,
+    is_serializable,
     state_snapshot_hashes,
 )
 from reflex.testing import chdir
@@ -93,7 +106,10 @@ CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2500 if CI else 300
 LOCK_WARNING_THRESHOLD = 1000 if CI else 100
 LOCK_WARN_SLEEP = 1.5 if CI else 0.15
-LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
+# Must outlast LOCK_EXPIRATION by a clear margin: redis times the expiration on
+# its own clock, so sleeping exactly as long leaves only the few milliseconds of
+# round trips between the lock and the save to decide whether it expired.
+LOCK_EXPIRE_SLEEP = 3.0 if CI else 0.4
 
 
 formatted_router_vars = {
@@ -118,7 +134,6 @@ formatted_router_vars = {
         "origin": "",
         "upgrade": "",
         "connection": "",
-        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",
@@ -320,6 +335,65 @@ def test_state() -> TestState:
         A test state.
     """
     return TestState()  # pyright: ignore [reportCallIssue]
+
+
+@pytest.mark.parametrize("method", ["dict", "get_delta"])
+def test_router_cookies_not_sent_to_frontend(test_state: TestState, method: str):
+    """Initial state and deltas omit cookies while preserving server access.
+
+    Args:
+        test_state: A state.
+        method: The state serialization entry point.
+    """
+    test_state.router = RouterData.from_router_data({
+        RouteVar.HEADERS: {"cookie": "session=secret", "user-agent": "browser"},
+    })
+
+    payload = json.loads(json_dumps(getattr(test_state, method)()))
+    headers = payload[test_state.get_full_name()]["rx_router_headers" + FIELD_MARKER]
+
+    assert "cookie" not in headers
+    assert headers["raw_headers"] == {"user-agent": "browser"}
+    assert "secret" not in json_dumps(payload)
+    assert test_state.router.headers.cookie == "session=secret"
+
+
+def test_load_events_do_not_copy_router_data(app_module_mock):
+    """On-load events leave routing in the server context without copying headers.
+
+    Args:
+        app_module_mock: The mock module holding the app.
+    """
+    app = app_module_mock.app = App(_state=State)
+    script = rx.call_script("window.loaded = true")
+    app.add_page(
+        lambda: "hello",
+        route="/",
+        on_load=[script, TestState.set_num1(1)],
+    )
+    router_data: dict[str, Any] = {
+        RouteVar.PATH: "/",
+        RouteVar.ORIGIN: "https://example.com/",
+        RouteVar.QUERY: {"name": "test"},
+        RouteVar.HEADERS: {"cookie": "session=secret", "user-agent": "browser"},
+    }
+    state = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.router_data = router_data
+    state.router = RouterData.from_router_data(router_data)
+    load_events = _load_events_for_page(state)
+    assert load_events is not None
+    assert len(load_events) == 3
+    frontend_event, backend_event, _ = load_events
+    assert isinstance(frontend_event, Event)
+    assert isinstance(backend_event, Event)
+    assert frontend_event.router_data == {}
+    assert backend_event.router_data == {}
+    payload = json.loads(json_dumps(StateUpdate(events=[frontend_event])))
+
+    assert "secret" not in json_dumps(payload)
+    assert payload["events"][0]["payload"] == Event.from_event_type(script)[0].payload
+    assert state.router_data is router_data
+    assert router_data[RouteVar.HEADERS]["cookie"] == "session=secret"
 
 
 @pytest.fixture
@@ -1797,16 +1871,13 @@ async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
     assert await aus._get_resolved_delta() == {}
 
 
-# Withholding an async var can only close the wrapper coroutine; the getter
-# coroutine it holds is then collected unawaited, which a filter cannot reach
-# and this test is not about.
-@pytest.mark.filterwarnings(
-    "ignore:coroutine '.*_awaitable_result' was never awaited:RuntimeWarning",
-)
 @pytest.mark.parametrize("mode", ["dropped", "replaced"])
 @pytest.mark.parametrize("is_async", [False, True])
 async def test_uncached_var_withheld_by_delta_override_is_resent(
-    mode: str, is_async: bool, monkeypatch: pytest.MonkeyPatch
+    mode: str,
+    is_async: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    recwarn: pytest.WarningsRecorder,
 ):
     """An uncached var withheld by a `get_delta` override is sent once released.
 
@@ -1820,6 +1891,7 @@ async def test_uncached_var_withheld_by_delta_override_is_resent(
         mode: Whether the override drops the key or replaces its value.
         is_async: Whether the uncached var is an async one.
         monkeypatch: Pytest monkeypatch fixture.
+        recwarn: Fixture capturing warnings from withheld coroutines.
     """
 
     class WithheldState(BaseState):
@@ -1903,6 +1975,8 @@ async def test_uncached_var_withheld_by_delta_override_is_resent(
     if mode == "replaced":
         restored[full_name][key] = "secret-1"
     assert await state._get_resolved_delta() == restored
+    gc.collect()
+    assert not [warning for warning in recwarn if warning.category is RuntimeWarning]
 
 
 async def test_uncached_computed_var_recorded_only_once_delivered():
@@ -2555,6 +2629,11 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     if not isinstance(state_manager, StateManagerRedis):
         # Create a mocked redis client instead of skipping.
         state_manager = StateManagerRedis(redis=mock_redis())
+
+    # Leases are only taken once the lock updates subscription is confirmed.
+    # Best effort: a Redis that rejects CONFIG never confirms it.
+    with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+        await state_manager._ensure_lock_task_subscribed()
 
     yield state_manager
 
@@ -4460,12 +4539,9 @@ def test_router_var_dep_does_not_warn_for_the_var_form(
     """
     # `console.deprecate` logs and dedupes rather than printing, so record the
     # calls instead of scraping output.
-    from reflex import state as state_module
-
     deprecations: list[str] = []
     monkeypatch.setattr(
-        state_module.console,
-        "deprecate",
+        "reflex.state.console.deprecate",
         lambda *, feature_name, **kwargs: deprecations.append(feature_name),
     )
 
@@ -5518,6 +5594,404 @@ class AppObjectState(BaseState):
     _value: Any = None
 
 
+class DefaultSchemaState(BaseState):
+    """A pickleable state used to verify compatibility after default changes."""
+
+    value: Field[int] = field(default=1)
+
+
+@pytest.mark.parametrize("default", [2, 3, lambda: 4])
+def test_default_change_preserves_serialized_state(default: Any):
+    """Changing a default preserves the schema and previously serialized values.
+
+    Args:
+        default: The new default value or factory.
+    """
+    state = DefaultSchemaState(value=99)
+    data = state._serialize()
+    schema = DefaultSchemaState._to_schema()
+    defaults = (
+        {"default": dataclasses.MISSING, "default_factory": default}
+        if callable(default)
+        else {"default": default}
+    )
+    try:
+        with patch.multiple(DefaultSchemaState.get_fields()["value"], **defaults):
+            DefaultSchemaState._to_schema.cache_clear()
+            assert DefaultSchemaState._to_schema() == schema
+            restored = BaseState._deserialize(data)
+            assert isinstance(restored, DefaultSchemaState)
+            assert restored.value == 99
+            assert DefaultSchemaState().value == (
+                default() if callable(default) else default
+            )
+    finally:
+        DefaultSchemaState._to_schema.cache_clear()
+
+
+def test_state_schema_depends_on_names_and_types():
+    """Names and declared types affect compatibility; defaults do not."""
+
+    class First(BaseState):
+        value: int = 1
+
+    class DifferentDefault(BaseState):
+        value: int = 2
+
+    class DifferentType(BaseState):
+        value: str = "1"
+
+    class DifferentName(BaseState):
+        other: int = 1
+
+    schema = First._to_schema()
+    assert DifferentDefault._to_schema() == schema
+    assert DifferentType._to_schema() != schema
+    assert DifferentName._to_schema() != schema
+
+
+@pytest.mark.parametrize("type_name", ["builtins.int", "builtins.str"])
+def test_deserialize_previous_schema_format(type_name: str):
+    """Accept compatible hashes from the previous schema format only.
+
+    Args:
+        type_name: The type stored in the previous schema.
+    """
+    previous_fields = [
+        (
+            name,
+            type_name
+            if name == "value"
+            else f"{declared.type_.__module__}.{declared.type_.__qualname__}",
+            declared.default if is_serializable(declared.default) else None,
+        )
+        for name, declared in DefaultSchemaState.get_fields().items()
+        if name in DefaultSchemaState.base_vars
+    ]
+    legacy_schema = md5(pickle.dumps(sorted(previous_fields))).hexdigest()
+    data = pickle.dumps((legacy_schema, DefaultSchemaState(value=99)))
+    if type_name == "builtins.int":
+        restored = BaseState._deserialize(data)
+        assert isinstance(restored, DefaultSchemaState)
+        assert restored.value == 99
+    else:
+        with pytest.raises(StateSchemaMismatchError):
+            BaseState._deserialize(data)
+
+
+class FrontendSchemaRoot(BaseState):
+    """Root of a tree whose frontend schema the tests below hash."""
+
+    value: Field[int] = field(default=1)
+
+
+class FrontendSchemaChild(FrontendSchemaRoot):
+    """A substate with a base var, a computed var and an event handler."""
+
+    name: Field[str] = field(default="")
+
+    @computed_var
+    def shout(self) -> str:
+        """The name, shouted.
+
+        Returns:
+            The upper-cased name.
+        """
+        return self.name.upper()
+
+    @rx.event
+    def bump(self):
+        """Do nothing: only the handler's name reaches the frontend."""
+
+
+_FRONTEND_SCHEMA_SCRIPT = """
+import reflex as rx
+from reflex.state import BaseState
+
+class Root(BaseState):
+    value: int = 1
+
+class Child(Root):
+    name: str = ""
+
+    @rx.var
+    def shout(self) -> str:
+        return self.name.upper()
+
+    @rx.event
+    def bump(self):
+        pass
+
+print(Root._to_frontend_schema())
+"""
+
+
+def test_frontend_schema_is_stable_across_processes(tmp_path: Path):
+    """The same state tree hashes to the same value in two fresh interpreters.
+
+    Args:
+        tmp_path: pytest fixture for a temporary directory.
+    """
+    script = tmp_path / "frontend_schema.py"
+    script.write_text(_FRONTEND_SCHEMA_SCRIPT)
+    hashes = [
+        subprocess.run(
+            [sys.executable, str(script)],
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=tmp_path,
+        ).stdout.strip()
+        for _ in range(2)
+    ]
+    assert hashes[0] == hashes[1]
+    # A hash is one fixed-size token: the frontend sends it on every connect.
+    assert len(hashes[0]) == 32
+
+
+def _frontend_schema_with(*patches: contextlib.AbstractContextManager) -> str:
+    """Hash the FrontendSchemaRoot tree while the given patches apply.
+
+    Args:
+        patches: Context managers that change the tree in place.
+
+    Returns:
+        The frontend schema hash under those changes.
+    """
+    with contextlib.ExitStack() as stack:
+        for p in patches:
+            stack.enter_context(p)
+        _frontend_schema.cache_clear()
+        try:
+            return FrontendSchemaRoot._to_frontend_schema()
+        finally:
+            _frontend_schema.cache_clear()
+
+
+def test_frontend_schema_ignores_defaults():
+    """A changed default keeps the compiled frontend compatible."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    assert FrontendSchemaRoot._to_frontend_schema() is schema
+
+    name_field = FrontendSchemaChild.get_fields()["name"]
+    assert (
+        _frontend_schema_with(patch.multiple(name_field, default="changed")) == schema
+    )
+    assert (
+        _frontend_schema_with(
+            patch.multiple(
+                name_field,
+                default=dataclasses.MISSING,
+                default_factory=lambda: "factory",
+            )
+        )
+        == schema
+    )
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "state_renamed",
+        "state_moved",
+        "var_added",
+        "var_renamed",
+        "var_retyped",
+        "computed_var_added",
+        "computed_var_renamed",
+        "computed_var_retyped",
+        "event_handler_added",
+        "event_handler_renamed",
+    ],
+)
+def test_frontend_schema_changes_with_tree_vars_and_handlers(change: str):
+    """Each change the compiled frontend depends on changes the hash.
+
+    Args:
+        change: The change applied to the state tree.
+    """
+    child = FrontendSchemaChild
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    name_field = child.get_fields()["name"]
+    shout = child.computed_vars["shout"]
+
+    def renamed(mapping: Mapping[str, Any], old: str, new: str):
+        """Patch ``mapping`` with key ``old`` renamed to ``new``.
+
+        Args:
+            mapping: The class-level dict to patch.
+            old: The key to rename.
+            new: Its new name.
+
+        Returns:
+            The patch context manager.
+        """
+        values = {k: v for k, v in mapping.items() if k != old}
+        return patch.dict(mapping, {**values, new: mapping[old]}, clear=True)
+
+    patches: list[contextlib.AbstractContextManager] = {
+        "state_renamed": [
+            patch.object(child, "get_full_name", classmethod(lambda cls: "renamed"))
+        ],
+        "state_moved": [
+            patch.object(child, "get_full_name", classmethod(lambda cls: "other.child"))
+        ],
+        "var_added": [
+            patch.dict(child.base_vars, {"extra": child.base_vars["name"]}),
+            patch.dict(child.get_fields(), {"extra": name_field}),
+        ],
+        "var_renamed": [
+            renamed(child.base_vars, "name", "renamed"),
+            renamed(child.get_fields(), "name", "renamed"),
+        ],
+        "var_retyped": [patch.multiple(name_field, type_=int)],
+        "computed_var_added": [patch.dict(child.computed_vars, {"extra": shout})],
+        "computed_var_renamed": [renamed(child.computed_vars, "shout", "renamed")],
+        "computed_var_retyped": [
+            patch.dict(child.computed_vars, {"shout": shout._replace(_var_type=int)})
+        ],
+        "event_handler_added": [
+            patch.dict(child.event_handlers, {"extra": child.event_handlers["bump"]})
+        ],
+        "event_handler_renamed": [renamed(child.event_handlers, "bump", "renamed")],
+    }[change]
+    assert _frontend_schema_with(*patches) != schema
+    # The tree is back as it was once the patches are gone.
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def test_frontend_schema_changes_when_state_added():
+    """Defining a new substate invalidates the cached hash without a manual clear."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+
+    class FrontendSchemaAdded(FrontendSchemaRoot):
+        pass
+
+    try:
+        assert FrontendSchemaRoot._to_frontend_schema() != schema
+    finally:
+        _forget_state(FrontendSchemaAdded)
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def _forget_state(state: type[BaseState]) -> None:
+    """Remove a substate defined by a test from the registry and the caches.
+
+    Args:
+        state: The substate to forget.
+    """
+    context = RegistrationContext.get()
+    parent = state.get_parent_state()
+    assert parent is not None
+    context.get_substates(parent).discard(state)
+    context.base_states.pop(state.get_full_name(), None)
+    all_base_state_classes.pop(state.get_full_name(), None)
+    _frontend_schema.cache_clear()
+
+
+def test_frontend_schema_is_per_registration_context():
+    """Apps in one process run on forked contexts: each hashes its own tree."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    token = RegistrationContext.set(RegistrationContext.get().fork())
+    try:
+
+        class FrontendSchemaForked(FrontendSchemaRoot):
+            pass
+
+        forked = FrontendSchemaRoot._to_frontend_schema()
+        assert forked != schema
+        assert FrontendSchemaRoot._to_frontend_schema() == forked
+    finally:
+        RegistrationContext.reset(token)
+    # The original context never saw the forked state, cached or not.
+    assert FrontendSchemaRoot._to_frontend_schema() == schema
+
+
+def test_frontend_schema_leaves_out_backend_vars():
+    """Backend-only vars never reach the frontend, so they do not affect the hash."""
+    schema = FrontendSchemaRoot._to_frontend_schema()
+    backend_shout = FrontendSchemaChild.computed_vars["shout"]._replace(backend=True)
+    assert (
+        _frontend_schema_with(
+            patch.dict(FrontendSchemaChild.computed_vars, {"_hidden": backend_shout})
+        )
+        == schema
+    )
+
+
+@pytest.mark.parametrize("value", ["", "dark"])
+@pytest.mark.parametrize(
+    "var_name",
+    [
+        "cookie",
+        "local",
+        "session",
+        "field_cookie",
+        "field_local",
+        "field_session",
+        "optional",
+        "storage_union",
+        "plain",
+    ],
+)
+async def test_storage_annotations_accept_browser_strings(
+    var_name: str,
+    value: str,
+    caplog: pytest.LogCaptureFixture,
+    clean_registration_context: RegistrationContext,
+):
+    """Browser strings satisfy storage annotations during hydration and later writes.
+
+    Args:
+        var_name: The browser storage var to update.
+        value: The value sent by the browser.
+        caplog: Captured log records.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class StorageAnnotationState(State):
+        cookie: rx.Cookie = rx.Cookie("light", name="cookie", path="/settings")
+        local: rx.LocalStorage = rx.LocalStorage("light", name="local", sync=True)
+        session: rx.SessionStorage = rx.SessionStorage("light", name="session")
+        field_cookie: rx.Field[rx.Cookie] = rx.field(rx.Cookie("light"))
+        field_local: rx.Field[rx.LocalStorage] = rx.field(rx.LocalStorage("light"))
+        field_session: rx.Field[rx.SessionStorage] = rx.field(
+            rx.SessionStorage("light")
+        )
+        plain: str = rx.LocalStorage("light", name="plain")
+        optional: rx.Field[rx.LocalStorage | None] = rx.field(rx.LocalStorage("light"))
+        storage_union: rx.Cookie | rx.SessionStorage = rx.Cookie("light")
+
+    root = State()
+    state = await root.get_state(StorageAnnotationState)
+    declared = StorageAnnotationState.get_fields()[var_name].default
+    assert isinstance(declared, (rx.Cookie, rx.LocalStorage, rx.SessionStorage))
+    options = declared.options()
+
+    with caplog.at_level(logging.ERROR):
+        applied = await _apply_client_storage_vars(
+            root,
+            {
+                f"{StorageAnnotationState.get_full_name()}.{var_name}{FIELD_MARKER}": value
+            },
+        )
+        assert applied == [(state, var_name)]
+        assert getattr(state, var_name) == value
+        assert var_name in state.dirty_vars
+        assert not caplog.records
+
+        setattr(state, var_name, "changed")
+        assert getattr(state, var_name) == "changed"
+        assert not caplog.records
+
+        setattr(state, var_name, 42)
+        assert len(caplog.records) == 1
+        assert "Expected field" in caplog.records[0].getMessage()
+
+    assert StorageAnnotationState.get_fields()[var_name].default is declared
+    assert declared.options() == options
+
+
 @pytest.mark.parametrize(
     "breakage",
     [
@@ -6546,6 +7020,26 @@ def test_composite_var_dep_tracks_fields_in_every_state():
         state_cls._potentially_dirty_states.discard(consumer_name)
 
 
+def test_getstate_holds_only_the_fields_of_the_state():
+    """A pickle holds the state's own fields and nothing for older workers.
+
+    Workers of the previous release cannot load a state of this one, so the
+    empty entries once added for them are gone.
+    """
+
+    class OwnFieldsState(BaseState):
+        count: int = 0
+        _secret: str = ""
+
+    state = OwnFieldsState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.count = 2
+
+    pickled = state.__getstate__()
+    assert pickled["count"] == 2
+    assert pickled["_secret"] == ""
+    assert not {"dirty_vars", "dirty_substates", "_backend_vars"} & pickled.keys()
+
+
 def test_setstate_migrates_older_pickles():
     """Older pickles kept backend vars in a dict of their own and the dirty sets."""
 
@@ -6776,3 +7270,560 @@ def test_cached_computed_var_timestamp_is_only_stored_with_an_interval():
     # The cache and the interval timestamp survive a trip through redis.
     restored = BaseState._deserialize(state._serialize())
     assert restored.__dict__ == state.__dict__
+
+
+def test_private_attribute_is_assignable(clean_registration_context):
+    """A name-mangled private attribute is a plain attribute, not a backend var.
+
+    Assigning it from a handler neither raises nor marks the state dirty.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class PrivateState(BaseState):
+        __counter: int = 0  # pyright: ignore[reportGeneralTypeIssues]
+        __declared: rx.Field[int] = rx.field(0)  # pyright: ignore[reportGeneralTypeIssues]
+
+        def bump(self):
+            self.__counter += 1
+            self.__declared += 1
+
+    counter, declared = "_PrivateState__counter", "_PrivateState__declared"
+    assert counter not in PrivateState.get_fields()
+    assert PrivateState.get_fields()[declared]._backend
+    state = PrivateState()  # pyright: ignore[reportCallIssue]
+    state.bump()
+    assert getattr(state, counter) == 1
+    assert getattr(state, declared) == 1
+    assert state.dirty_vars == {declared}
+
+
+def test_private_attribute_of_underscored_class_and_mixin_is_assignable(
+    clean_registration_context,
+):
+    """Private names mangled with another prefix than the state's own are assignable.
+
+    Python strips the leading underscores of the class name when mangling, and
+    a mixin method mangles with the mixin's name.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class PrivateMixin(BaseState, mixin=True):
+        def bump_mixin(self):
+            self.__from_mixin = 1
+
+    class _PrivateState(PrivateMixin, BaseState):
+        def bump(self):
+            self.__own = 2
+
+    state = _PrivateState()  # pyright: ignore[reportCallIssue]
+    state.bump()
+    state.bump_mixin()
+    assert vars(state)["_PrivateState__own"] == 2
+    assert vars(state)["_PrivateMixin__from_mixin"] == 1
+    assert not state.dirty_vars
+
+
+def test_undeclared_double_underscore_name_is_rejected(clean_registration_context):
+    """Only dunders and names a class of the state mangles are plain attributes.
+
+    A name like ``_x__y`` has the form of ``__y`` mangled by a class ``x``, but
+    no class of the state has that name, so it is an undeclared var.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class GuardMixin(BaseState, mixin=True):
+        def bump_mixin(self):
+            self.__from_mixin = 1
+
+    def make_state() -> type[BaseState]:
+        class GuardState(GuardMixin, BaseState):
+            def bump(self):
+                self.__scratch = 1
+                self.__marker__ = 2
+
+        return GuardState
+
+    # A second local class with the same name is renamed, but its methods
+    # mangle with the name it was defined with.
+    make_state()
+    state_cls = make_state()
+    assert state_cls.__name__ != "GuardState"
+    state = state_cls()  # pyright: ignore[reportCallIssue]
+    state.bump()  # pyright: ignore[reportAttributeAccessIssue]
+    state.bump_mixin()  # pyright: ignore[reportAttributeAccessIssue]
+    assert vars(state)["_GuardState__scratch"] == 1
+    assert vars(state)["_GuardMixin__from_mixin"] == 1
+    assert vars(state)["__marker__"] == 2
+    state._BaseState__private = 3  # pyright: ignore[reportAttributeAccessIssue]
+    for name in ("_x__y", "_sneaky__name", "_GuardStat__y", "_GuardState_y__z"):
+        with pytest.raises(SetUndefinedStateVarError):
+            setattr(state, name, 1)
+    assert not state.dirty_vars
+
+
+_NO_DEFAULT = object()
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "default"),
+    [
+        ("items", "list[MissingItem]", []),
+        ("items", "dict[str, MissingItem]", {}),
+        ("items", "MissingItem | None", None),
+        ("items", "list[MissingItem]", _NO_DEFAULT),
+        ("items", "dict[str, MissingItem]", _NO_DEFAULT),
+        ("items", "MissingItem | None", _NO_DEFAULT),
+        ("items", "MissingItem", _NO_DEFAULT),
+        ("items", "MissingItem", None),
+        ("items", list[ForwardRef("MissingItem")], []),
+        ("_items", "list[MissingItem]", []),
+    ],
+    ids=[
+        "list",
+        "dict",
+        "optional",
+        "list-no-default",
+        "dict-no-default",
+        "optional-no-default",
+        "bare-no-default",
+        "bare-none-default",
+        "nested-forward-ref",
+        "backend",
+    ],
+)
+def test_var_annotation_with_undefined_name_raises_name_error(
+    name: str, annotation: Any, default: Any
+) -> None:
+    """An annotation naming an undefined symbol raises a NameError naming it.
+
+    With postponed annotations the unresolved annotation used to reach var
+    typing as a ForwardRef and fail with an unrelated TypeError or
+    AttributeError, whether or not the var has a default. On Python 3.14 an
+    annotation is evaluated lazily, and an undefined name inside a generic
+    stays a nested ForwardRef.
+
+    Args:
+        name: The name of the var.
+        annotation: The annotation, which names a symbol that does not exist.
+        default: The default value of the var, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if default is not _NO_DEFAULT:
+        namespace[name] = default
+
+    with pytest.raises(NameError, match="MissingItem"):
+        type("UndefinedNameState", (BaseState,), namespace)
+
+
+@pytest.mark.parametrize(
+    ("name", "annotation", "value"),
+    [
+        ("cache", "ClassVar[MissingItem]", _NO_DEFAULT),
+        ("__client", "MissingItem | None", None),
+        ("total", "MissingItem", property(lambda self: 0)),
+    ],
+    ids=["classvar", "private", "descriptor"],
+)
+def test_non_var_annotation_with_undefined_name_is_allowed(
+    name: str, annotation: str, value: Any
+) -> None:
+    """An annotation that declares no var is not resolved, so its symbol may be undefined.
+
+    A symbol imported only under TYPE_CHECKING is undefined at runtime.
+
+    Args:
+        name: The name of the attribute.
+        annotation: The annotation, which names a symbol that does not exist.
+        value: The value of the attribute, or _NO_DEFAULT for none.
+    """
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": {name: annotation},
+    }
+    if value is not _NO_DEFAULT:
+        namespace[name] = value
+
+    state = type("UndefinedNonVarState", (BaseState,), namespace)
+
+    assert name not in state.get_fields()
+
+
+async def test_hydration_replay_preserves_shared_cleanup_marks(
+    monkeypatch: pytest.MonkeyPatch, clean_registration_context: RegistrationContext
+):
+    """A single shared cleanup records snapshot and correction writes for fanout.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+    clean_calls = 0
+
+    class StorageState(rx.SharedState):
+        value: str = rx.LocalStorage("")
+        snapshot_write: str = "initial"
+
+        @_override_base_method
+        def get_delta(self):
+            """Normalize a backend storage value before returning its delta.
+
+            Returns:
+                The base delta.
+            """
+            if "value" in self.dirty_vars and self.value == "stale":
+                self.value = "fresh"
+            return super().get_delta()
+
+        @_override_base_method
+        def _clean(self):
+            """Count the cleanup calls that capture shared fanout marks."""
+            nonlocal clean_calls
+            clean_calls += 1
+            super()._clean()
+
+    root = State.get_root_state()(_reflex_internal_init=True)
+    storage = await root.get_state(StorageState)
+    storage.snapshot_write = "snapshot"
+    storage.value = "stale"
+    storage._previous_dirty_vars = set()
+    await _get_client_storage_delta(root, [(storage, "value")])
+    assert clean_calls == 1
+    assert storage.value == "fresh"
+    assert storage._previous_dirty_vars >= {"snapshot_write", "value"}
+    assert not storage.dirty_vars
+
+
+def test_rx_event_handler_bound_at_class_creation() -> None:
+    """A decorated method is an EventHandler bound to its class when the body runs."""
+
+    class BoundState(BaseState):
+        @rx.event
+        def handle(self, value: int):
+            pass
+
+    handler = BoundState.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is BoundState
+    assert handler._type_hints == {"value": int}
+    assert BoundState.event_handlers["handle"] is handler
+    registered = RegistrationContext.get().event_handlers[
+        f"{BoundState.get_full_name()}.handle"
+    ]
+    assert registered.handler is handler
+    assert registered.states == (BoundState,)
+
+
+def test_mixin_decorated_handler_copied_per_state() -> None:
+    """A mixin's decorated handler is bound to the mixin; each state gets its own copy."""
+
+    class CopyMixin(BaseState, mixin=True):
+        @rx.event(background=True, stop_propagation=True)
+        async def work(self):
+            pass
+
+    class UsesCopyMixinA(CopyMixin, State):
+        pass
+
+    class UsesCopyMixinB(CopyMixin, State):
+        pass
+
+    template = CopyMixin.__dict__["work"]
+    assert isinstance(template, EventHandler)
+    assert template.state is CopyMixin
+    handler_a = UsesCopyMixinA.event_handlers["work"]
+    handler_b = UsesCopyMixinB.event_handlers["work"]
+    assert handler_a.state is UsesCopyMixinA
+    assert handler_b.state is UsesCopyMixinB
+    assert len({template.fn, handler_a.fn, handler_b.fn}) == 3
+    for handler in (handler_a, handler_b):
+        assert handler.is_background
+        assert handler.event_actions == {"stopPropagation": True}
+
+
+def test_aliased_handler_keeps_its_state() -> None:
+    """Assigning another state's handler in a class body does not rebind it."""
+
+    class OwnerState(BaseState):
+        @rx.event
+        def handle(self):
+            pass
+
+    class AliasState(BaseState):
+        alias = OwnerState.handle
+
+    owner_handler = OwnerState.__dict__["handle"]
+    assert isinstance(owner_handler, EventHandler)
+    assert owner_handler.state is OwnerState
+    assert AliasState.__dict__["alias"] is owner_handler
+    assert "alias" not in AliasState.event_handlers
+
+
+def _logged(fn):
+    """Wrap a method the way an auth decorator stacked above @rx.event does.
+
+    Args:
+        fn: The decorated method (an EventHandler when stacked above @rx.event).
+
+    Returns:
+        The wrapper, which calls ``fn`` with the instance like a plain method.
+    """
+
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        return fn(self, *args, **kwargs)
+
+    return wrapper
+
+
+def test_wrapper_above_rx_event_is_deprecated_and_still_runs() -> None:
+    """A decorator above @rx.event warns and keeps working as the plain method it wraps."""
+    from reflex_base.utils import console as base_console
+
+    from reflex.utils import console
+
+    with (
+        patch.object(console, "deprecate", wraps=console.deprecate) as state_deprecate,
+        patch.object(
+            base_console, "deprecate", wraps=base_console.deprecate
+        ) as event_deprecate,
+    ):
+
+        class WrappedState(BaseState):
+            x: int = 0
+
+            @_logged
+            @rx.event
+            def inc(self, by: int):
+                self.x += by
+
+            @_logged
+            @rx.event(background=True)
+            async def bg(self):
+                pass
+
+        assert (
+            state_deprecate.call_args.kwargs["feature_name"]
+            == "Decorators above @rx.event"
+        )
+        handler = WrappedState.inc
+        assert isinstance(handler, EventHandler)
+        assert handler.state is WrappedState
+        assert format.format_event_handler(handler).endswith(".inc")
+        assert WrappedState.event_handlers["inc"] is handler
+        # The payload coercion still sees the method's annotations.
+        assert handler._get_type_hints()["by"] is int
+        assert handler.fn.__module__ == __name__
+        assert WrappedState.bg.is_background  # pyright: ignore [reportAttributeAccessIssue]
+        state = WrappedState()
+        # The wrapper calls the inner handler with the instance, like on main.
+        handler.fn(state, 2)
+        assert state.x == 2
+        assert (
+            event_deprecate.call_args.kwargs["feature_name"]
+            == "Calling an event handler with a state instance"
+        )
+
+
+def test_stacked_wrappers_above_rx_event_still_run() -> None:
+    """Decorators stacked above @rx.event are found through the whole __wrapped__ chain."""
+    from reflex.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class StackedState(BaseState):
+            x: int = 0
+
+            @_logged
+            @_logged
+            @rx.event
+            def inc(self, by: int):
+                self.x += by
+
+        assert (
+            mock_deprecate.call_args.kwargs["feature_name"]
+            == "Decorators above @rx.event"
+        )
+        handler = StackedState.inc
+        assert isinstance(handler, EventHandler)
+        assert format.format_event_handler(handler).endswith(".inc")
+        state = StackedState()
+        handler.fn(state, 3)
+        assert state.x == 3
+
+
+def test_decorated_handler_shadowing_builtin_raises() -> None:
+    """A decorated handler that shadows a State method is rejected like a plain one."""
+    with pytest.raises(NameError, match="shadows a builtin State method"):
+
+        class ShadowState(BaseState):
+            @rx.event
+            def reset(self):
+                pass
+
+
+def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> None:
+    """@rx.event on a staticmethod or classmethod warns and leaves it as it is."""
+    from reflex_base.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class StaticState(BaseState):
+            @rx.event
+            @staticmethod
+            def helper(value: int) -> int:
+                return value * 2
+
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "@rx.event on a staticmethod or classmethod"
+    )
+    assert isinstance(StaticState.__dict__["helper"], staticmethod)
+    assert StaticState.helper(2) == 4
+
+
+def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:
+    """A state whose base flips the mixin flag on (like ``rx.SharedState``) owns its handlers.
+
+    The metaclass first marks a class declared on mixins alone as a mixin and
+    the base's ``__init_subclass__`` flips it, so binding must not depend on
+    that flag.
+    """
+
+    class FlippingMixin(BaseState, mixin=True):
+        def __init_subclass__(cls, **kwargs):
+            kwargs["mixin"] = False
+            cls._mixin = False
+            super().__init_subclass__(**kwargs)
+
+    class FromFlippingMixin(FlippingMixin):
+        @rx.event
+        def handle(self):
+            pass
+
+    assert not FromFlippingMixin._mixin
+    handler = FromFlippingMixin.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is FromFlippingMixin
+    assert FromFlippingMixin.event_handlers["handle"] is handler
+
+
+async def test_shared_storage_name_syncs_siblings(
+    clean_registration_context: RegistrationContext,
+):
+    """A write to a var sharing a storage name sets the synced vars with that name.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class SharedFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedPlain(State):
+        value: str = rx.LocalStorage("", name="shared")
+
+    class OtherName(State):
+        value: str = rx.LocalStorage("", name="other", sync=True)
+
+    key = "value" + FIELD_MARKER
+    root = State()
+    first = await root.get_state(SharedFirst)
+    first.value = "new"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "new"
+    assert delta[SharedSecond.get_full_name()][key] == "new"
+    assert SharedPlain.get_full_name() not in delta
+    assert OtherName.get_full_name() not in delta
+
+    # An unsynced var's write raises the storage event too, so it syncs them.
+    plain = await root.get_state(SharedPlain)
+    plain.value = "plain"
+    delta = await root._get_resolved_delta()
+    root._clean()
+    assert delta[SharedFirst.get_full_name()][key] == "plain"
+    assert delta[SharedSecond.get_full_name()][key] == "plain"
+
+    # An unchanged sibling is not sent again.
+    first.value = "plain"
+    assert await root._get_resolved_delta() == {
+        SharedFirst.get_full_name(): {key: "plain"}
+    }
+    root._clean()
+
+    # A name no other var shares sets nothing else.
+    other = await root.get_state(OtherName)
+    other.value = "alone"
+    assert await root._get_resolved_delta() == {
+        OtherName.get_full_name(): {key: "alone"}
+    }
+
+
+@pytest.mark.parametrize("second_sync", [True, False])
+async def test_shared_storage_name_keeps_event_writes(
+    clean_registration_context: RegistrationContext,
+    second_sync: bool,
+):
+    """Vars sharing a storage name that one event writes keep their own values.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+        second_sync: Whether the second var syncs.
+    """
+
+    class WrittenFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class WrittenSecond(State):
+        value: str = rx.LocalStorage("", name="shared", sync=second_sync)
+
+    root = State()
+    first = await root.get_state(WrittenFirst)
+    second = await root.get_state(WrittenSecond)
+    first.value = "one"
+    second.value = "two"
+    await root._get_resolved_delta()
+    assert (first.value, second.value) == ("one", "two")
+
+
+async def test_shared_storage_name_conflicting_writes_pick_by_name(
+    clean_registration_context: RegistrationContext,
+):
+    """Conflicting writes to one storage name set the other synced vars in name order.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class ZWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class AWriter(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class MSibling(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    root = State()
+    (await root.get_state(ZWriter)).value = "z"
+    (await root.get_state(AWriter)).value = "a"
+    await root._get_resolved_delta()
+    assert (await root.get_state(MSibling)).value == "a"

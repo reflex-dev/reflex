@@ -11,6 +11,99 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.mark.parametrize("width", [390, 1440])
+def test_spline_preview_waits_for_visibility_and_idle(page: Page, width: int):
+    """Load the 3D preview only near the viewport, after the browser becomes idle."""
+    page.set_viewport_size({"width": width, "height": 600})
+    page.add_init_script("""
+        window.previewIdleCallbacks = new Map();
+        let nextId = 0;
+        window.requestIdleCallback = callback => {
+            const id = ++nextId;
+            window.previewIdleCallbacks.set(id, callback);
+            return id;
+        };
+        window.cancelIdleCallback = id => window.previewIdleCallbacks.delete(id);
+    """)
+    scripts = []
+    scenes = []
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.on(
+        "request",
+        lambda request: (
+            scripts.append(request.url)
+            if request.resource_type == "script" and request.url.startswith(PREVIEW_URL)
+            else None
+        ),
+    )
+    page.on(
+        "request",
+        lambda request: (
+            scenes.append(request.url) if "scene.splinecode" in request.url else None
+        ),
+    )
+    page.goto(f"{PREVIEW_URL}/docs/wrapping-react/overview/", wait_until="networkidle")
+    preview = page.locator(".docs-demo-preview").first
+    pending = "window.previewIdleCallbacks.size"
+    # Beyond the viewport and the observer's 200px margin.
+    assert preview.bounding_box()["y"] >= 800
+    assert page.evaluate(pending) == 0
+    initial_scripts = len(scripts)
+
+    preview.scroll_into_view_if_needed()
+    page.wait_for_function(f"{pending} > 0")
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_function(f"{pending} === 0")
+
+    preview.scroll_into_view_if_needed()
+    page.wait_for_function(f"{pending} > 0")
+    tabs = page.locator('[role="tablist"]').first
+    tabs.get_by_role("tab", name="Code", exact=True).click()
+    page.wait_for_function(f"{pending} === 0")
+    expect(
+        page.get_by_text("class Spline(rx.NoSSRComponent):", exact=False)
+    ).to_be_visible()
+    tabs.get_by_role("tab", name="View", exact=True).click()
+    preview.scroll_into_view_if_needed()
+    page.wait_for_function(f"{pending} > 0")
+    assert scenes == []
+    assert len(scripts) == initial_scripts
+
+    with page.expect_response("**/scene.splinecode") as scene:
+        page.evaluate("""() => {
+            for (const [id, callback] of window.previewIdleCallbacks) {
+                window.previewIdleCallbacks.delete(id);
+                callback({didTimeout: false, timeRemaining: () => 50});
+            }
+        }""")
+    assert scene.value.ok
+    expect(page.locator(".docs-demo-preview canvas")).to_be_visible()
+    # The deferred import fetched the wrapper's chunk only after the idle callback.
+    assert len(scripts) > initial_scripts
+
+    # A loaded preview remounts without waiting for idle time again.
+    tabs.get_by_role("tab", name="Code", exact=True).click()
+    tabs.get_by_role("tab", name="View", exact=True).click()
+    expect(page.locator(".docs-demo-preview canvas")).to_be_visible()
+    assert page.evaluate(pending) == 0
+    assert errors == []
+
+
+@pytest.mark.parametrize("idle_callback", [True, False])
+def test_spline_preview_loads_automatically(page: Page, idle_callback: bool):
+    """Scrolling loads the preview with native idle callbacks or their fallback."""
+    page.set_viewport_size({"width": 390, "height": 600})
+    if not idle_callback:
+        page.add_init_script("delete window.requestIdleCallback")
+    page.goto(f"{PREVIEW_URL}/docs/wrapping-react/overview/", wait_until="networkidle")
+    expect(page.locator(".docs-demo-preview canvas")).to_have_count(0)
+    with page.expect_response("**/scene.splinecode") as scene:
+        page.locator(".docs-demo-preview").first.scroll_into_view_if_needed()
+    assert scene.value.ok
+    expect(page.locator(".docs-demo-preview canvas")).to_be_visible()
+
+
 @pytest.mark.parametrize("width", [320, 375, 768, 1440])
 @pytest.mark.parametrize("route", ["/docs/", "/docs/getting-started/introduction/"])
 def test_editorial_header_stays_in_viewport(page: Page, width: int, route: str):
@@ -58,6 +151,33 @@ def test_article_theme_preserves_live_example_styles_and_events(page: Page):
     before = int(value.inner_text())
     demo.get_by_role("button", name="Increment", exact=True).click()
     expect(value).to_have_text(str(before + 1))
+
+
+@pytest.mark.parametrize("width", [320, 390])
+def test_wide_demo_starts_inside_its_scroll_container(page: Page, width: int):
+    """A fixed-width example must not lose its left edge on a narrow screen."""
+    page.set_viewport_size({"width": width, "height": 900})
+    page.goto(f"{PREVIEW_URL}/docs/library/media/video/", wait_until="networkidle")
+    preview = page.locator(".docs-demo-preview")
+    video = preview.locator("youtube-video")
+    expect(video).to_be_attached()
+    assert video.bounding_box()["x"] >= preview.bounding_box()["x"]
+    assert preview.evaluate("el => el.scrollWidth > el.clientWidth")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [320, 390])
+def test_long_component_names_wrap_inside_the_reading_column(page: Page, width: int):
+    """API identifiers must not create a second horizontal page scroller."""
+    page.set_viewport_size({"width": width, "height": 900})
+    page.goto(
+        f"{PREVIEW_URL}/docs/library/overlay/dropdown-menu/", wait_until="networkidle"
+    )
+    column = page.locator(".docs-reading-column")
+    assert column.evaluate("el => el.scrollWidth <= el.clientWidth")
+    assert page.locator(".docs-heading").evaluate_all(
+        "els => els.every(el => el.getBoundingClientRect().right <= innerWidth - 20)"
+    )
 
 
 def test_low_level_form_example_has_valid_inline_result_markup(page: Page):
@@ -121,10 +241,20 @@ def test_navbar_controls_fit_and_search_opens(page: Page, width: int):
         assert bounds["x"] >= 0
         assert bounds["x"] + bounds["width"] <= width + 1
     search = page.get_by_role("button", name="Search Reflex", exact=True)
+    expect(search).to_have_css("border-radius", "8px")
     if width < 1280:
         expect(search.locator("svg")).to_have_css("width", "16px")
     search.click()
     expect(page.get_by_role("dialog")).to_be_visible()
+    if width <= 640:
+        search_input = page.get_by_role("combobox")
+        assert search_input.evaluate("""async input => {
+            await document.fonts.ready;
+            const placeholder = getComputedStyle(input, "::placeholder");
+            const context = document.createElement("canvas").getContext("2d");
+            context.font = `${placeholder.fontWeight} ${placeholder.fontSize} ${placeholder.fontFamily}`;
+            return context.measureText(input.placeholder).width <= input.clientWidth;
+        }""")
     page.keyboard.press("Escape")
     expect(page.get_by_role("dialog")).to_have_count(0)
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
@@ -144,7 +274,27 @@ def test_announcement_dismissal_and_search_shortcuts(page: Page):
         expect(page.get_by_role("dialog")).to_have_count(0)
 
 
-@pytest.mark.parametrize("width", [375, 1440])
+def test_feedback_fields_have_visible_focus_in_forced_colors(page: Page):
+    """System colors must leave a keyboard focus indicator on both feedback fields."""
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.emulate_media(forced_colors="active")
+    page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    page.get_by_role("button", name="Send feedback", exact=True).click()
+    form = page.locator(".docs-feedback-content")
+    expect(form.get_by_role("button", name="Send feedback")).to_have_css(
+        "border-radius", "8px"
+    )
+    feedback = form.get_by_role("textbox", name="Feedback", exact=True)
+    email = form.get_by_role("textbox", name="Contact email (optional)")
+    page.keyboard.press("Tab")
+    for field, surface in ((feedback, feedback), (email, email.locator(".."))):
+        field.focus()
+        expect(field).to_be_focused()
+        expect(surface).to_have_css("outline-style", "solid")
+        expect(surface).to_have_css("outline-width", "2px")
+
+
+@pytest.mark.parametrize("width", [320, 375, 1440])
 def test_footer_links_newsletter_and_theme(page: Page, width: int):
     """Marketing footer links, native email validation, and theme controls work."""
     page.set_viewport_size({"width": width, "height": 1000})
@@ -153,18 +303,59 @@ def test_footer_links_newsletter_and_theme(page: Page, width: int):
     expect(footer.get_by_role("link", name="Blog", exact=False)).to_have_attribute(
         "href", "https://reflex.dev/blog/"
     )
+    expect(footer.get_by_role("heading", name="Industries", exact=True)).to_be_visible()
+    expect(footer.get_by_role("link", name="Workflows", exact=True)).to_have_attribute(
+        "href", "https://reflex.dev/workflows/"
+    )
     email = footer.get_by_label("Email address", exact=True)
-    footer.get_by_role("button", name="Subscribe to updates", exact=True).click()
+    expect(email.locator("..")).to_have_css("border-radius", "8px")
+    expect(email.locator("..")).to_have_css(
+        "height", "36px" if width >= 1024 else "44px"
+    )
+    subscribe = footer.get_by_role("button", name="Subscribe to updates", exact=True)
+    expect(subscribe).to_have_css("border-radius", "8px")
+    subscribe.click()
     assert email.evaluate("el => el.validity.valueMissing")
     expect(email).to_be_focused()
     before = page.locator("header").evaluate(
         "el => getComputedStyle(el).backgroundColor"
     )
-    dark = footer.get_by_role("button", name="Toggle dark color mode", exact=True)
+    theme = footer.get_by_role("group", name="Color theme")
+    expect(theme).to_have_css("border-radius", "8px")
+    dark = theme.get_by_role("button", name="Toggle dark color mode", exact=True)
+    expect(dark).to_have_css("border-radius", "8px")
     dark.click()
     expect(dark).to_have_attribute("aria-pressed", "true")
     expect(page.locator("header")).not_to_have_css("background-color", before)
     expect(page.locator("header")).to_have_css("background-image", "none")
+    expect(subscribe).to_have_css("background-color", "rgb(245, 245, 245)")
+    secondary = page.locator(".docs-hero .docs-action-secondary > div")
+    expect(secondary).to_have_css("background-color", "rgb(29, 29, 29)")
+    expect(secondary).to_have_css("box-shadow", "rgb(57, 57, 57) 0px 0px 0px 1px inset")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [320, 390, 1440])
+def test_landing_actions_match_marketing_homepage(page: Page, width: int):
+    """Keep both action pairs compact with visible focus and room to wrap."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.add_init_script("localStorage.setItem('theme', 'light')")
+    page.goto(f"{PREVIEW_URL}/docs/")
+    for section, label in (
+        (".docs-hero", "Explore Framework"),
+        (".docs-cta", "Try for free"),
+    ):
+        link = page.locator(section).get_by_role("link", name=label, exact=True)
+        expect(link.locator("..")).to_have_css("gap", "8px")
+        surface = link.locator(":scope > div")
+        expect(surface).to_have_css("height", "42px")
+        expect(surface).to_have_css("padding-inline-start", "16px")
+        expect(surface).to_have_css("font-size", "15px")
+        link.focus()
+        expect(link).to_have_css("outline-style", "solid")
+    secondary = page.locator(".docs-hero .docs-action-secondary > div")
+    secondary.hover()
+    expect(secondary).to_have_css("background-color", "rgb(249, 249, 249)")
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 

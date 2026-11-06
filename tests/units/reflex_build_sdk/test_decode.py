@@ -58,14 +58,12 @@ class Node:
         (
             datetime.datetime,
             "2026-09-16T10:00:00Z",
-            datetime.datetime(2026, 9, 16, 10, tzinfo=datetime.timezone.utc),
+            datetime.datetime(2026, 9, 16, 10, tzinfo=datetime.UTC),
         ),
         (
             datetime.datetime,
             "2026-09-16T10:00:00.123456+00:00",
-            datetime.datetime(
-                2026, 9, 16, 10, 0, 0, 123456, tzinfo=datetime.timezone.utc
-            ),
+            datetime.datetime(2026, 9, 16, 10, 0, 0, 123456, tzinfo=datetime.UTC),
         ),
         (datetime.date, "2026-09-16", datetime.date(2026, 9, 16)),
         (Color, "red", Color.RED),

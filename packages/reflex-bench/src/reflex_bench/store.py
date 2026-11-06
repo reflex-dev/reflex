@@ -149,9 +149,7 @@ def autosave_name(doc: ResultDoc, counter: int) -> str:
     subject = doc["subjects"]["A"]
     sha = (subject["commit"] or "nogit")[:7]
     dirty = "_dirty" if subject["dirty"] else ""
-    started = datetime.fromisoformat(
-        doc["invocation"]["started_at"].replace("Z", "+00:00")
-    )
+    started = datetime.fromisoformat(doc["invocation"]["started_at"])
     return f"{counter:04d}_{sha}{dirty}_{started.strftime('%Y%m%dT%H%M%S')}.json"
 
 

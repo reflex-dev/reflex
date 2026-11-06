@@ -230,9 +230,7 @@ def test_retry_after_seconds(retry_after: str, expected: float):
 
 
 def test_retry_after_http_date():
-    retry_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
-        seconds=30
-    )
+    retry_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=30)
     header = email.utils.format_datetime(retry_at, usegmt=True)
     delay = _retry_delay("GET", status_code=429, headers={"retry-after": header})
     assert delay is not None

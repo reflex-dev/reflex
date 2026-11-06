@@ -11,7 +11,7 @@ from croniter import croniter
 from cronsim import CronSim
 from reflex_workflow import Cron
 
-UTC = datetime.timezone.utc
+UTC = datetime.UTC
 PACIFIC = zoneinfo.ZoneInfo("America/Los_Angeles")
 
 # Terms drawn to build random expressions, per field.
