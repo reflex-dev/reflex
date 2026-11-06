@@ -1,0 +1,1 @@
+`get_state()` accepts a state mixin and returns the state it was mixed into, so shared handlers can reach it without naming the concrete class: `await self.get_state(AuthMixin)`. A `BaseStateToken` whose `cls` is a mixin addresses that state in the state manager too. Both raise `StateValueError` when no state, or more than one unrelated state, uses the mixin.
