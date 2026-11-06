@@ -1,0 +1,1 @@
+Compiling an app with `enable_state=False` now raises the "at least one subclass of `rx.State` must be defined" error for state reads that end up in memoized components, `rx.memo` functions, app wraps or the hydrate fallback, not just those left in the page.
