@@ -1126,7 +1126,11 @@ def get_config(reload: bool = False) -> Config:
         # Serialize check/load/set so threads sharing a context load once.
         with _load_config_lock:
             if ctx._config is None:
-                ctx._set_config(_get_config())
+                config = _get_config()
+                if _config_import_depth:
+                    # Cache only once the outer rxconfig.py import succeeds.
+                    return config
+                ctx._set_config(config)
     return ctx.config
 
 

@@ -1158,6 +1158,39 @@ def test_rx_asset_after_config_in_rxconfig_uses_it(
     assert sys.modules["rxconfig"].ASSET.startswith("/sub/favicon.ico")
 
 
+def test_rxconfig_failing_after_a_read_is_not_cached(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A config read during an rxconfig.py import that then fails is not cached.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "favicon.ico").write_bytes(b"")
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+            config = rx.Config(app_name="fails_after_read")
+            ASSET = rx.asset("favicon.ico")
+            raise RuntimeError("rxconfig failed")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        for _ in range(2):
+            with pytest.raises(RuntimeError, match="rxconfig failed"):
+                reflex_base.config.get_config()
+
+
 def test_rx_asset_before_config_in_rxconfig_raises(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
