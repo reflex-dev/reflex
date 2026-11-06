@@ -231,14 +231,19 @@ let requestCounter = 0;
 const pending = new Map();
 
 /**
- * Register a stream for a request about to be sent, under a new id.
- * @param {ResultStream} stream The stream receiving the request's results.
- * @returns {string} The request id to send with the event.
+ * A new request id to send with an event.
+ * @returns {string} The id.
  */
-export const registerRequest = (stream) => {
-  const id = `${REQUEST_ID_PREFIX}:${(requestCounter++).toString(36)}`;
+export const newRequestId = () =>
+  `${REQUEST_ID_PREFIX}:${(requestCounter++).toString(36)}`;
+
+/**
+ * Route the results of a request that was sent to its stream.
+ * @param {string} id The request id the event was sent with.
+ * @param {ResultStream} stream The stream receiving the request's results.
+ */
+export const registerRequest = (id, stream) => {
   pending.set(id, stream);
-  return id;
 };
 
 /**

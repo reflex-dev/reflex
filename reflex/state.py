@@ -3171,13 +3171,14 @@ class StateUpdate:
     # Events to be added to the event queue.
     events: list[Event] = dataclasses.field(default_factory=list)
 
-    # Records answering frontend requests: a value a handler yielded or
-    # returned, its completion or its failure, each keyed by the request id.
-    # Applied after the delta and before the events.
-    results: Sequence[Mapping[str, Any]] = dataclasses.field(default_factory=list)
-
     # Deprecated: previously indicated whether the event processing is complete.
     final: bool | None = dataclasses.field(default=None, repr=False)
+
+    # Records answering frontend requests: a value a handler yielded or
+    # returned, its completion or its failure, each keyed by the request id.
+    # Applied after the delta and before the events. After `final`, so the
+    # positional signature is unchanged.
+    results: Sequence[Mapping[str, Any]] = dataclasses.field(default_factory=list)
 
     def __post_init__(self):
         """Warn if the deprecated `final` attribute is supplied."""

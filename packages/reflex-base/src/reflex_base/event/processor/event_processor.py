@@ -442,10 +442,12 @@ class EventProcessor:
             if not future.done():
                 future.cancel()
         self._futures.clear()
-        if self._result_tasks:
-            # Let the cancelled requests' completions go out before the loop
-            # that runs them goes away.
-            await asyncio.gather(*self._result_tasks, return_exceptions=True)
+        # A future's done callbacks run on the next loop iteration, so yield
+        # once for the cancelled requests' reports to be created, then let
+        # them go out before the loop that runs them goes away.
+        await asyncio.sleep(0)
+        while self._result_tasks:
+            await asyncio.gather(*tuple(self._result_tasks), return_exceptions=True)
         if self._blocking_monitor is not None:
             self._blocking_monitor.stop()
             self._blocking_monitor = None

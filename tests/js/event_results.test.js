@@ -9,10 +9,18 @@ import {
   applyResults,
   debouncedResult,
   failPendingRequests,
+  newRequestId,
   recordThrottled,
   registerRequest,
   throttledResult,
 } from "$/utils/event_results";
+
+/** Register a stream under a new request id, as a successful send does. */
+const register = (stream) => {
+  const id = newRequestId();
+  registerRequest(id, stream);
+  return id;
+};
 
 /** Collect every value a stream yields with `for await`. */
 const collect = async (stream) => {
@@ -141,8 +149,8 @@ describe("result routing", () => {
   test("routes values, completion and failure by request id", async () => {
     const ok = new ResultStream();
     const bad = new ResultStream();
-    const okId = registerRequest(ok);
-    const badId = registerRequest(bad);
+    const okId = register(ok);
+    const badId = register(bad);
     expect(okId).not.toBe(badId);
 
     applyResults([
@@ -165,7 +173,7 @@ describe("result routing", () => {
 
   test("a cancelled request completes with its values", async () => {
     const stream = new ResultStream();
-    const id = registerRequest(stream);
+    const id = register(stream);
     applyResults([
       { id, value: 1 },
       { id, done: true, cancelled: true },
@@ -177,8 +185,8 @@ describe("result routing", () => {
   test("a disconnect fails every pending request", async () => {
     const a = new ResultStream();
     const b = new ResultStream();
-    const aId = registerRequest(a);
-    registerRequest(b);
+    const aId = register(a);
+    register(b);
     failPendingRequests(new Error("disconnected"));
     await expect(a).rejects.toThrow("disconnected");
     await expect(b).rejects.toThrow("disconnected");

@@ -22,6 +22,7 @@ import {
   applyResults,
   debouncedResult,
   failPendingRequests,
+  newRequestId,
   recordThrottled,
   registerRequest,
   throttledResult,
@@ -780,13 +781,18 @@ export const applyEvent = async (event, socket, navigate, params) => {
     recordSentStorageValues(routed_event);
     const stream = event[RESULT_STREAM];
     if (stream !== undefined) {
-      // From here the backend's result records reach the stream by this id.
-      delete event[RESULT_STREAM];
-      routed_event.id = registerRequest(stream);
+      routed_event.id = newRequestId();
     }
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(routed_event);
     socket.emit("event", encodeFormDataArgs(routed_event));
+    if (stream !== undefined) {
+      // Sent: from here the backend's result records reach the stream by its
+      // id. Registered only now (no record can arrive before), so a send that
+      // throws leaves the stream on the event for processEvent to fail.
+      delete event[RESULT_STREAM];
+      registerRequest(routed_event.id, stream);
+    }
   }
 };
 
@@ -1683,9 +1689,11 @@ export const useEventLoop = (
           streams.push(stream);
           return { ...event, [RESULT_STREAM]: stream };
         });
-        // A failed dispatch fails the event's stream and still rejects here,
-        // so it is reported as an unhandled rejection as before.
-        queueEvents(sent, socket, false, navigate, params);
+        // A failed dispatch fails the event's stream; log it too, so it
+        // stays visible when nobody awaits the stream.
+        queueEvents(sent, socket, false, navigate, params).catch((error) =>
+          console.error("Error dispatching events:", error),
+        );
         return ResultStream.merge(streams);
       },
       event_actions,

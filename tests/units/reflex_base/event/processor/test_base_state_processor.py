@@ -5415,3 +5415,37 @@ async def test_yielding_a_bound_handler_still_raises_type_error(
             await future
     assert len(captured) == 1
     assert [record.keys() for record in _records(wire_log, "r")] == [{"id", "error"}]
+
+
+async def test_stop_reports_requests_cancelled_by_the_shutdown(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """A request the shutdown cancels is completed before stop() returns.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+    gate = asyncio.Event()
+
+    class ShutdownState(State):
+        @event
+        async def wait(self):
+            await gate.wait()
+
+    real_base_state_processor.graceful_shutdown_timeout = 0
+    async with real_base_state_processor as processor:
+        for request_id in ("first", "second"):
+            await processor.enqueue(
+                token,
+                Event.from_event_type(ShutdownState.wait())[0],
+                request_id=request_id,
+            )
+    cancelled = {"done": True, "cancelled": True}
+    assert _records(wire_log, "first") == [{"id": "first", **cancelled}]
+    assert _records(wire_log, "second") == [{"id": "second", **cancelled}]

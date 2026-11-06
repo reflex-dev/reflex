@@ -399,3 +399,21 @@ test("an event object dispatched twice gets a request and a result for each", as
   connection.receive({ results: [{ id: ids[1], value: 2, done: true }] });
   assert.equal(await stream, 2);
 });
+
+test("a send that throws fails the event's stream instead of leaving it open", async (t) => {
+  const connection = await createConnection(t);
+  const logged = t.mock.method(console, "error", () => {});
+  const emit = connection.socket.emit;
+  connection.socket.emit = () => {
+    throw new Error("encode failed");
+  };
+  const stream = connection.addEvents([{ name: "known.load" }]);
+  connection.socket.emit = emit;
+  await assert.rejects(stream, /encode failed/);
+  // The failure is logged as well, for a stream nobody awaits.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.deepEqual(
+    logged.mock.calls.map((call) => call.arguments[1].message),
+    ["encode failed"],
+  );
+});

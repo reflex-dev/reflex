@@ -5551,6 +5551,20 @@ async def test_on_event_forwards_the_request_id():
 
 
 @pytest.mark.asyncio
+async def test_on_event_without_request_id_keeps_the_legacy_enqueue_call():
+    """An enqueue override predating request ids still receives id-less events."""
+    ns, _ = _request_id_namespace()
+    seen: list[Event] = []
+
+    async def legacy_enqueue(token, event):  # noqa: RUF029
+        seen.append(event)
+
+    ns.app.event_processor.enqueue = legacy_enqueue  # pyright: ignore[reportAttributeAccessIssue]
+    await ns.on_event("sid", {"name": "state.h"})
+    assert [event.name for event in seen] == ["state.h"]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("request_id", [7, "", "x" * 65, ["a"]])
 async def test_on_event_rejects_a_malformed_request_id(request_id: Any):
     """A request id that is not a short non-empty string is a malformed event.

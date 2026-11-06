@@ -150,7 +150,7 @@ can be passed to a React prop that expects an async callback. See
 ```md alert info
 # Rules for values sent to the frontend
 
-- Events are still chained: an `Event`, an event handler, or a list of them is queued, not sent. A list that mixes events with other values raises a `TypeError`.
+- Events are still events, not values: a backend event, event handler, or a list of them is queued, and a frontend-only event like `rx.redirect` is sent to the browser to run. A list that mixes events with other values raises a `TypeError`, and so does a coroutine the handler did not await.
 - An empty list is a value, not an empty list of events.
 - An `async` generator cannot `return` a value; `yield` the last one instead.
 - The stream ends when the handler finishes. It does not include values from the events the handler chains, and does not wait for them.

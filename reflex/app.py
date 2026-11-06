@@ -2611,11 +2611,20 @@ class EventNamespace(AsyncNamespace):
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
+        # Without an id, call enqueue as before, so an override that predates
+        # request ids keeps working for frontends that send none. The
+        # coroutine runs (and captures its trace context) where it is awaited.
+        processor = self.app.event_processor
+        enqueue = (
+            processor.enqueue(token, event)
+            if request_id is None
+            else processor.enqueue(token, event, request_id=request_id)
+        )
         if not otel.enabled:
-            await self.app.event_processor.enqueue(token, event, request_id=request_id)
+            await enqueue
             return
         with otel.remote_context(fields):
-            await self.app.event_processor.enqueue(token, event, request_id=request_id)
+            await enqueue
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.

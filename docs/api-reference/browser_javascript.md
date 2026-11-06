@@ -152,9 +152,12 @@ Event names include the state's module, so build the Javascript from Python:
 `rx.Var.create(TableState.load_rows(2))` renders the `ReflexEvent(...)` to pass.
 
 ```python
-rx.call_script(
-    f"addEvents([{rx.Var.create(TableState.load_rows(2))}])"
-    ".then((rows) => console.log(rows))"
+rx.button(
+    "Load rows",
+    on_click=rx.call_script(
+        f"addEvents([{rx.Var.create(TableState.load_rows(2))}])"
+        ".then((rows) => console.log(rows))"
+    ),
 )
 ```
 

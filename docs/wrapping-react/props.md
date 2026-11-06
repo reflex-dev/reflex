@@ -164,9 +164,11 @@ class EventHandlerComponent(MyBaseComponent):
 
 Some props expect a callback that returns a promise resolving with data, such
 as `loadOptions` on an async select, or a datasource's `getRows`. Pass an
-event handler that returns the data. An event trigger made of one event handler
-returns its result stream, and awaiting that resolves with the handler's last
-value, so the component receives what the handler returned.
+event handler that returns the data as a value that is not an event. An event
+trigger made of one event handler returns its result stream, and awaiting that
+resolves with the handler's last value, so the component receives what the
+handler returned. A handler that returns events instead chains them and gives
+the component nothing.
 
 ```python
 def load_options_spec(input_value: rx.Var[str]) -> tuple[rx.Var[str]]:
