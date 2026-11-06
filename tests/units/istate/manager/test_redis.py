@@ -1198,7 +1198,10 @@ async def test_set_state_saves_tree_in_one_round_trip(
             await state_manager_redis.set_state(
                 token,
                 state,
-                lock_id=await redis.get(state_manager_redis._lock_key(token)),
+                lock_id=cast(
+                    "bytes | None",
+                    await redis.get(state_manager_redis._lock_key(token)),
+                ),
             )
         finally:
             redis.eval = real_eval  # pyright: ignore[reportAttributeAccessIssue]
