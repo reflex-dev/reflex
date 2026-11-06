@@ -524,6 +524,67 @@ def _cors_allowed_origins() -> list[str] | None:
     return [f"{parts.scheme}://{host}:{port}"]
 
 
+def _unwrap_handler_fn(handler_fn: Callable) -> Callable:
+    """Return the function a handler wraps, looking through callable instances.
+
+    ``functools.wraps`` copies the annotations of the wrapped function onto the
+    wrapper but keeps the wrapper's own signature and ``__globals__``, so both
+    the signature checks and the annotation lookups have to run against the
+    function the handler wraps.
+
+    A callable instance is not necessarily decorated by ``functools.wraps``: a
+    class-based decorator usually sets ``__wrapped__`` on itself and forwards
+    through an unannotated ``__call__(*args, **kwargs)``, so its own
+    ``__wrapped__`` has to be followed before falling back to ``__call__``.
+
+    Args:
+        handler_fn: The handler to unwrap.
+
+    Returns:
+        The unwrapped function behind the handler.
+    """
+    if not inspect.isroutine(handler_fn):
+        unwrapped = inspect.unwrap(handler_fn)
+        if inspect.isroutine(unwrapped):
+            return unwrapped
+        # A plain callable instance keeps the signature and globals on __call__.
+        handler_fn = unwrapped.__call__  # pyright: ignore[reportAttributeAccessIssue]
+    return inspect.unwrap(handler_fn)
+
+
+def _resolve_handler_annotation(annotation: Any, handler_fn: Callable) -> Any:
+    """Resolve an annotation string in the handler's own module namespace.
+
+    Annotations are strings under ``from __future__ import annotations`` and for
+    quoted forward references, so they must be evaluated where the handler was
+    defined rather than in this module. Decorated handlers are unwrapped first,
+    because ``functools.wraps`` copies the annotations onto the wrapper but keeps
+    the wrapper's ``__globals__``, which points at the module of the decorator.
+
+    Args:
+        annotation: The annotation to resolve.
+        handler_fn: The handler the annotation belongs to.
+
+    Returns:
+        The evaluated annotation, or the annotation unchanged when it is not a
+        string.
+    """
+    if not isinstance(annotation, str):
+        return annotation
+    handler_fn = _unwrap_handler_fn(handler_fn)
+    namespace = getattr(handler_fn, "__globals__", None)
+    if namespace is None:
+        namespace = globals()
+    # A quoted forward reference under ``from __future__ import annotations`` is stored
+    # with the quotes, so a single evaluation yields the bare name instead of the type.
+    # Resolve until the result is no longer a string, guarding against cyclic aliases.
+    seen: set[str] = set()
+    while isinstance(annotation, str) and annotation not in seen:
+        seen.add(annotation)
+        annotation = eval(annotation, namespace)
+    return annotation
+
+
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
@@ -2092,15 +2153,28 @@ class App(MiddlewareMixin, LifespanMixin):
                 msg = f"Provided custom {handler_domain} exception handler `{fn_name_}` is not a function."
                 raise ValueError(msg)
 
+            if inspect.isclass(handler_fn):
+                # A class is callable, but calling it instantiates the handler
+                # instead of handling the exception, so its ``__call__`` must not
+                # be mistaken for the handler itself.
+                msg = (
+                    f"Provided custom {handler_domain} exception handler `{fn_name_}` is a class."
+                    " Please provide a function or an instance of a callable class instead."
+                )
+                raise ValueError(msg)
+
             # Allow named functions only as lambda functions cannot be introspected
             if fn_name_ == "<lambda>":
                 msg = f"Provided custom {handler_domain} exception handler `{fn_name_}` is a lambda function. Please use a named function instead."
                 raise ValueError(msg)
 
             # Check if the function has the necessary annotations and types in the right order
-            argspec = inspect.getfullargspec(handler_fn)
+            # A decorator keeps its own signature and only copies the annotations, so
+            # introspect the function the handler wraps.
+            inspect_fn = _unwrap_handler_fn(handler_fn)
+            argspec = inspect.getfullargspec(inspect_fn)
             arg_annotations = {
-                k: eval(v) if isinstance(v, str) else v
+                k: _resolve_handler_annotation(v, inspect_fn)
                 for k, v in argspec.annotations.items()
                 if k not in ["args", "kwargs", "return"]
             }
@@ -2125,11 +2199,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Check if the return type is valid for backend exception handler
             if handler_domain == "backend":
-                sig = inspect.signature(self.backend_exception_handler)
-                return_type = (
-                    eval(sig.return_annotation)
-                    if isinstance(sig.return_annotation, str)
-                    else sig.return_annotation
+                backend_handler = _unwrap_handler_fn(self.backend_exception_handler)
+                sig = inspect.signature(backend_handler)
+                return_type = _resolve_handler_annotation(
+                    sig.return_annotation, backend_handler
                 )
 
                 valid = bool(

@@ -33,7 +33,7 @@ from pytest_mock import MockerFixture
 from reflex_base import otel
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.event import Event
+from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
@@ -99,6 +99,7 @@ from reflex.state import (
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
+from tests.units.exception_handler_helpers import logged
 
 from .conftest import active_tracer, chdir, metric_points
 from .states import GenState
@@ -3881,6 +3882,191 @@ custom_exception_handlers = {
     "partial": functools.partial(valid_custom_handler, logger="test"),
     "method": DummyExceptionHandler().handle,
 }
+
+
+class CustomAppError(Exception):
+    """An exception class defined outside reflex.app."""
+
+
+def custom_exception_handler_with_custom_error(exception: CustomAppError):
+    """Custom exception handler annotated with an application exception.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def test_exception_handler_annotation_resolves_outside_reflex_app():
+    """String annotations resolve in the handler's module, not reflex.app."""
+    rx.App(
+        frontend_exception_handler=custom_exception_handler_with_custom_error,
+        backend_exception_handler=custom_exception_handler_with_custom_error,
+    )
+
+
+class ClassBasedDecorator:
+    """Decorator that keeps ``__wrapped__`` on itself and forwards through ``__call__``."""
+
+    def __init__(self, fn):
+        """Mirror the function's metadata onto the decorator instance.
+
+        Args:
+            fn: The function to wrap.
+        """
+        functools.update_wrapper(self, fn)
+
+    def __call__(self, *args, **kwargs):
+        """Call the wrapped function.
+
+        Args:
+            *args: Positional arguments for the wrapped function.
+            **kwargs: Keyword arguments for the wrapped function.
+
+        Returns:
+            The value returned by the wrapped function.
+        """
+        return self.__wrapped__(*args, **kwargs)
+
+
+class ClassCustomExceptionHandler:
+    """Handler provided as a class instead of a function or an instance."""
+
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+def test_exception_handler_unwraps_class_based_decorator():
+    """A decorator instance forwards to its function through ``__wrapped__``."""
+    handler = ClassBasedDecorator(custom_exception_handler_with_custom_error)
+    rx.App(frontend_exception_handler=handler, backend_exception_handler=handler)
+
+
+def test_exception_handler_rejects_class():
+    """A class is rejected instead of being unwrapped to its ``__call__``."""
+    with pytest.raises(ValueError, match="is a class"):
+        rx.App(frontend_exception_handler=ClassCustomExceptionHandler)
+
+
+@logged
+def decorated_custom_exception_handler(exception: CustomAppError):
+    """Handler decorated in another module.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+def quoted_custom_exception_handler(exception: "CustomAppError"):  # noqa: UP037  # the quotes are the case under test
+    """Handler with an explicitly quoted forward reference.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+
+
+class CallableCustomExceptionHandler:
+    """Handler provided as a callable instance."""
+
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+class DecoratedCallableCustomExceptionHandler:
+    """Handler provided as a callable instance whose ``__call__`` is decorated."""
+
+    @logged
+    def __call__(self, exception: CustomAppError):
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+@pytest.mark.parametrize(
+    "handler_fn",
+    [
+        pytest.param(decorated_custom_exception_handler, id="decorated"),
+        pytest.param(quoted_custom_exception_handler, id="quoted"),
+        pytest.param(CallableCustomExceptionHandler(), id="callable_instance"),
+        pytest.param(
+            DecoratedCallableCustomExceptionHandler(),
+            id="decorated_callable_instance",
+        ),
+    ],
+)
+def test_exception_handler_annotation_resolves_in_handler_module(handler_fn):
+    """Annotations resolve for decorated, quoted and callable-instance handlers.
+
+    Args:
+        handler_fn: The exception handler to validate.
+    """
+    rx.App(frontend_exception_handler=handler_fn, backend_exception_handler=handler_fn)
+
+
+def backend_exception_handler_with_invalid_string_return_annotation(
+    exception: CustomAppError,
+) -> int:
+    """Backend handler whose string return annotation resolves to an invalid type.
+
+    Args:
+        exception: The exception to handle.
+
+    Returns:
+        int: The wrong return type.
+    """
+    print("Custom Backend Exception")
+    print(exception)
+    return 0
+
+
+class BackendCallableExceptionHandlerWithStringReturnAnnotation:
+    """Backend handler whose decorated ``__call__`` has a string return annotation."""
+
+    @logged
+    def __call__(self, exception: CustomAppError) -> EventSpec | None:
+        """Handle the exception.
+
+        Args:
+            exception: The exception to handle.
+        """
+        print("Custom Backend Exception")
+        print(exception)
+
+
+def test_backend_exception_handler_return_annotation_is_resolved():
+    """A string return annotation is resolved before it is validated."""
+    rx.App(
+        backend_exception_handler=BackendCallableExceptionHandlerWithStringReturnAnnotation()
+    )
+
+
+def test_backend_exception_handler_rejects_invalid_resolved_return_annotation():
+    """An invalid return annotation is rejected after resolution."""
+    with pytest.raises(ValueError, match="has the wrong return type"):
+        rx.App(
+            backend_exception_handler=backend_exception_handler_with_invalid_string_return_annotation
+        )
 
 
 @pytest.mark.parametrize(
