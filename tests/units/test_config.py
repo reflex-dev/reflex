@@ -1127,12 +1127,41 @@ def test_get_config_keeps_caller_owned_cwd_entry(
     assert sys.path.count(cwd) == caller_owned
 
 
-def test_get_config_inside_rxconfig_does_not_reload_it(
+def test_rx_asset_after_config_in_rxconfig_uses_it(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
-    """rxconfig.py can call rx.asset, which reads the config, without recursing.
+    """rx.asset below `config = rx.Config(...)` in rxconfig.py reads that config.
 
-    The stand-in config rx.asset sees mid-import must not be cached on the context.
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "favicon.ico").write_bytes(b"")
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+            config = rx.Config(app_name="asset_in_config", frontend_path="/sub")
+            ASSET = rx.asset("favicon.ico")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "asset_in_config"
+    assert sys.modules["rxconfig"].ASSET.startswith("/sub/favicon.ico")
+
+
+def test_rx_asset_before_config_in_rxconfig_raises(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """rx.asset above `config = rx.Config(...)` in rxconfig.py raises ConfigError.
 
     Args:
         tmp_path: The pytest tmp_path fixture.
@@ -1155,17 +1184,17 @@ def test_get_config_inside_rxconfig_does_not_reload_it(
     )
     monkeypatch.chdir(tmp_path)
 
-    with RegistrationContext() as ctx:
-        assert reflex_base.config._get_config().app_name == "asset_in_config"
-        assert ctx._config is None
-        assert reflex_base.config.get_config().app_name == "asset_in_config"
-    assert sys.modules["rxconfig"].ASSET.startswith("/favicon.ico")
+    with (
+        RegistrationContext(),
+        pytest.raises(ConfigError, match=r"before `config = rx\.Config"),
+    ):
+        reflex_base.config.get_config()
 
 
-def test_get_config_inside_rxconfig_keeps_state_auto_setters(
+def test_module_imported_by_rxconfig_reads_its_config(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
-    """The stand-in config built mid-import does not reset state_auto_setters.
+    """Modules rxconfig.py imports before assigning `config` read that config.
 
     Args:
         tmp_path: The pytest tmp_path fixture.
@@ -1174,43 +1203,34 @@ def test_get_config_inside_rxconfig_keeps_state_auto_setters(
     """
     from reflex_base.registry import RegistrationContext
 
-    (tmp_path / "assets").mkdir()
-    (tmp_path / "assets" / "favicon.ico").write_bytes(b"")
+    readers = ("config_reading_module", "second_config_reading_module")
+    for name in readers:
+        (tmp_path / f"{name}.py").write_text(
+            textwrap.dedent(
+                """
+                from reflex_base.config import get_config
+
+                FRONTEND_PATH = get_config().frontend_path
+                """
+            )
+        )
     (tmp_path / "rxconfig.py").write_text(
         textwrap.dedent(
             """
             import reflex as rx
 
-            config = rx.Config(app_name="asset_in_config", state_auto_setters=True)
-            ASSET = rx.asset("favicon.ico")
+            import config_reading_module
+            import second_config_reading_module
+            config = rx.Config(app_name="reads_config", frontend_path="/sub")
             """
         )
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
 
     with RegistrationContext():
-        reflex_base.config._get_config()
-        assert reflex_base.config.get_state_auto_setters() is True
-
-
-def test_get_config_stand_in_failure_keeps_state_auto_setters(
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """A stand-in config that fails validation does not leave its value published.
-
-    Args:
-        monkeypatch: The pytest monkeypatch fixture.
-    """
-    monkeypatch.setenv("REFLEX_STATE_MANAGER_MODE", "redis")
-    monkeypatch.delenv("REFLEX_REDIS_URL", raising=False)
-    monkeypatch.delenv("REDIS_URL", raising=False)
-    monkeypatch.setattr(reflex_base.config, "_loading_config", True)
-    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", True)
-
-    with pytest.raises(ConfigError):
-        reflex_base.config._get_config()
-    assert reflex_base.config._state_auto_setters is True
+        assert reflex_base.config.get_config().app_name == "reads_config"
+    for name in readers:
+        assert sys.modules[name].FRONTEND_PATH == "/sub"
 
 
 def test_get_config_accepts_explicit_project_root(
@@ -1254,6 +1274,8 @@ def clean_config_modules() -> Generator[None, None, None]:
         "failed_only_helper",
         "initial_dep_module",
         "later_dep_module",
+        "config_reading_module",
+        "second_config_reading_module",
     )
     try:
         yield

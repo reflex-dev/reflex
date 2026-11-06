@@ -949,8 +949,8 @@ def _record_imports() -> Iterator[_ImportRecorder]:
 # Protect sys.path from concurrent modification during config loading.
 _load_config_lock = threading.RLock()
 
-# Set while rxconfig.py is importing, guarded by _load_config_lock.
-_loading_config = False
+# Nesting depth of rxconfig.py imports, guarded by _load_config_lock.
+_config_import_depth = 0
 
 # Cached state_auto_setters so State-class creation never re-enters get_config().
 _state_auto_setters: bool | None = None
@@ -975,6 +975,25 @@ def get_state_auto_setters() -> bool:
     return False
 
 
+def _rxconfig_body_is_reading(module: ModuleType | None) -> bool:
+    """Whether rxconfig.py's own top-level code is reading the config.
+
+    A nested import of rxconfig.py runs its top-level code again, so a read from
+    there would recurse forever. A module that rxconfig.py imports does not run
+    again, so a nested import can serve its read.
+
+    Args:
+        module: The rxconfig module that is importing.
+
+    Returns:
+        Whether the innermost module-level frame on the stack runs rxconfig.py.
+    """
+    frame = sys._getframe(1)
+    while frame is not None and frame.f_code.co_name != "<module>":
+        frame = frame.f_back
+    return frame is not None and frame.f_globals is getattr(module, "__dict__", None)
+
+
 def _get_config(project_root: Path | None = None) -> Config:
     """Import rxconfig.py fresh from the project root and return its config.
 
@@ -992,20 +1011,25 @@ def _get_config(project_root: Path | None = None) -> Config:
     Returns:
         The app config.
     """
-    global _config_module_deps_root, _loading_config, _state_auto_setters
+    global _config_module_deps_root, _config_import_depth
 
     project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
-        if _loading_config:
-            # rxconfig.py read the config while importing (e.g. via rx.asset);
-            # importing it again would recurse, so use the env and defaults.
-            # Building it must not replace the state_auto_setters value a
-            # Config already created in rxconfig.py published.
-            state_auto_setters = _state_auto_setters
-            try:
-                return Config(app_name="", _skip_plugins_checks=True)
-            finally:
-                _state_auto_setters = state_auto_setters
+        if _config_import_depth:
+            # rxconfig.py, or a module it imports, read the config mid-import.
+            module = sys.modules.get(constants.Config.MODULE)
+            config = getattr(module, "config", None)
+            if config is not None:
+                return config
+            if _rxconfig_body_is_reading(module):
+                msg = (
+                    "rxconfig.py read the config (for example with rx.asset) before"
+                    " `config = rx.Config(...)` ran. Move that call below the config"
+                    " assignment, or into the app module."
+                )
+                raise ConfigError(msg)
+            # A module rxconfig.py imports read it: import rxconfig.py once more,
+            # nested. That module is already in sys.modules and does not run again.
         # A fresh str object, so the exact inserted entry can be removed by
         # identity: rxconfig.py may itself add or remove equal cwd entries,
         # which removal by value could confuse with caller-owned ones.
@@ -1030,11 +1054,11 @@ def _get_config(project_root: Path | None = None) -> Config:
             if PathFinder.find_spec(constants.Config.MODULE, [cwd]) is None:
                 return Config(app_name="", _skip_plugins_checks=True)
             with _record_imports() as recorder:
-                _loading_config = True
+                _config_import_depth += 1
                 try:
                     rxconfig = importlib.import_module(constants.Config.MODULE)
                 finally:
-                    _loading_config = False
+                    _config_import_depth -= 1
                     # Record even on failure so a later load from another root
                     # evicts what this one imported. Nothing is evicted here:
                     # Python already drops a module whose execution failed, and
@@ -1102,11 +1126,7 @@ def get_config(reload: bool = False) -> Config:
         # Serialize check/load/set so threads sharing a context load once.
         with _load_config_lock:
             if ctx._config is None:
-                config = _get_config()
-                if _loading_config:
-                    # Don't cache the stand-in returned while rxconfig.py imports.
-                    return config
-                ctx._set_config(config)
+                ctx._set_config(_get_config())
     return ctx.config
 
 
