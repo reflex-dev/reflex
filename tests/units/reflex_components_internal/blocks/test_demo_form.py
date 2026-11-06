@@ -41,11 +41,11 @@ def test_demo_form_dialog_renders_given_trigger() -> None:
 def test_demo_form_appends_a_tuple_of_submit_events() -> None:
     """A tuple of extra submit events is appended like a list of them."""
     form = demo_form(on_submit=(rx.console_log("first"), rx.console_log("second")))
-    # the form's submit handler is a hook that dispatches its events
-    hooks = "".join(str(hook) for hook in form._get_all_hooks())
+    rendered = str(form)
 
-    assert '"first"' in hooks
-    assert '"second"' in hooks
+    assert '"first"' in rendered
+    assert '"second"' in rendered
+    assert rendered.index('"first"') < rendered.index('"second"')
 
 
 def test_demo_form_standalone_retains_its_layout() -> None:
