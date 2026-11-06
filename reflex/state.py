@@ -14,7 +14,7 @@ import operator
 import pickle
 import re
 import sys
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from datetime import timedelta
 from hashlib import md5
 from types import FunctionType
@@ -3170,6 +3170,11 @@ class StateUpdate:
 
     # Events to be added to the event queue.
     events: list[Event] = dataclasses.field(default_factory=list)
+
+    # Records answering frontend requests: a value a handler yielded or
+    # returned, its completion or its failure, each keyed by the request id.
+    # Applied after the delta and before the events.
+    results: Sequence[Mapping[str, Any]] = dataclasses.field(default_factory=list)
 
     # Deprecated: previously indicated whether the event processing is complete.
     final: bool | None = dataclasses.field(default=None, repr=False)

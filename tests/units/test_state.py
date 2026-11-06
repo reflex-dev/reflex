@@ -2402,7 +2402,7 @@ async def test_state_with_invalid_yield(
     token: str,
     mock_base_state_event_processor: BaseStateEventProcessor,
 ):
-    """Test that an error is thrown when a state yields an invalid value.
+    """A yielded value is a result, but events mixed with other values still raise.
 
     Args:
         token: A token.
@@ -2410,15 +2410,23 @@ async def test_state_with_invalid_yield(
     """
 
     class StateWithInvalidYield(BaseState):
-        """A state that yields an invalid value."""
+        """A state that yields a result and an invalid value."""
+
+        def result_handler(self):
+            """Yield a plain value, which is a result.
+
+            Yields:
+                a result value.
+            """
+            yield 1
 
         def invalid_handler(self):
             """Invalid handler.
 
             Yields:
-                an invalid value.
+                an event mixed with a plain value.
             """
-            yield 1
+            yield [StateWithInvalidYield.result_handler, 1]
 
     captured_exceptions: list[Exception] = []
 
@@ -2427,12 +2435,14 @@ async def test_state_with_invalid_yield(
 
     mock_base_state_event_processor.backend_exception_handler = capture_exception
 
-    event = Event(
-        name=f"{StateWithInvalidYield.get_full_name()}.invalid_handler",
-        payload={},
-    )
     async with mock_base_state_event_processor as processor:
-        await processor.enqueue(token, event)
+        for name in ("result_handler", "invalid_handler"):
+            future = await processor.enqueue(
+                token,
+                Event(name=f"{StateWithInvalidYield.get_full_name()}.{name}"),
+            )
+            with contextlib.suppress(TypeError):
+                await future
 
     assert len(captured_exceptions) == 1
     assert isinstance(captured_exceptions[0], TypeError)
@@ -7822,3 +7832,12 @@ async def test_shared_storage_name_conflicting_writes_pick_by_name(
     (await root.get_state(AWriter)).value = "a"
     await root._get_resolved_delta()
     assert (await root.get_state(MSibling)).value == "a"
+
+
+def test_state_update_serializes_results_only_when_present():
+    """Result records ride a state update and are left off when there are none."""
+    assert json.loads(json_dumps(StateUpdate(delta={"s": {"x": 1}}))) == {
+        "delta": {"s": {"x": 1}}
+    }
+    records = [{"id": "a:1", "value": 42}, {"id": "a:1", "done": True}]
+    assert json.loads(json_dumps(StateUpdate(results=records))) == {"results": records}

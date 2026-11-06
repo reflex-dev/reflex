@@ -17,6 +17,15 @@ import {
   getClientStore,
   setClientState,
 } from "$/utils/client_state";
+import {
+  ResultStream,
+  applyResults,
+  debouncedResult,
+  failPendingRequests,
+  recordThrottled,
+  registerRequest,
+  throttledResult,
+} from "$/utils/event_results";
 import debounce from "$/utils/helpers/debounce";
 import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
@@ -48,6 +57,10 @@ const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
+
+// The ResultStream an event dispatched through addEvents reports to, until
+// the event is sent (then the request id routes results to it instead).
+const RESULT_STREAM = Symbol("reflex.result_stream");
 
 // Global variable to hold the token.
 let token;
@@ -765,6 +778,12 @@ export const applyEvent = async (event, socket, navigate, params) => {
       params,
     );
     recordSentStorageValues(routed_event);
+    const stream = event[RESULT_STREAM];
+    if (stream !== undefined) {
+      // From here the backend's result records reach the stream by this id.
+      delete event[RESULT_STREAM];
+      routed_event.id = registerRequest(stream);
+    }
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(routed_event);
     socket.emit("event", encodeFormDataArgs(routed_event));
@@ -906,7 +925,13 @@ export const processEvent = async (socket, navigate, params) => {
     } else {
       await applyEvent(event, socket, navigate, params);
     }
+  } catch (error) {
+    event[RESULT_STREAM]?.fail(error);
+    throw error;
   } finally {
+    // An event handled without reaching the backend (frontend-only events,
+    // uploads) has no results to wait for.
+    event[RESULT_STREAM]?.close();
     // Continue draining queued events even if this dispatch fails.
     if (event_queue.length > 0) {
       await processEvent(socket, navigate, params);
@@ -1181,7 +1206,7 @@ export const connect = async (
       if (keepOnLoad) {
         keepOnLoad = false;
       } else {
-        event_queue.splice(i, 1);
+        event_queue.splice(i, 1)[0][RESULT_STREAM]?.close();
       }
     }
     // Drain any initial events from the queue.
@@ -1207,6 +1232,12 @@ export const connect = async (
   socket.current.on("connect_error", retryConnect);
 
   socket.current.on("disconnect", (reason, details) => {
+    // Results emitted while disconnected are never delivered.
+    failPendingRequests(
+      new Error(
+        `Disconnected from the backend (${reason}) before the event finished.`,
+      ),
+    );
     // A transport closed before the namespace connected is a failed attempt,
     // e.g. a CONNECT packet over the server or a proxy message size limit.
     if (socket.current.wait_connect) {
@@ -1295,6 +1326,9 @@ export const connect = async (
         }
         applyClientStorageDelta(client_storage, delta);
       }
+      if (update.results) {
+        applyResults(update.results);
+      }
       if (update.events && update.events.length > 0) {
         queueEvents(update.events, socket, false, navigate, params).catch(
           reportStateUpdateError,
@@ -1348,7 +1382,9 @@ export const ReflexEvent = (
  * @param {Array<any>|any} args The event args.
  * @param {string|null} action_key A stable key for debounce/throttle tracking.
  * @param {Function|null} temporal_handler Returns whether temporal actions may run.
- * @returns The target result, if it runs immediately.
+ * @returns The target result. A debounced call gets the stream of the dispatch
+ *   its window ends with, a throttled-out one the stream of the last dispatch
+ *   while it is open, and a skipped one a stream already completed.
  */
 export const applyEventActions = (
   target,
@@ -1370,22 +1406,29 @@ export const applyEventActions = (
     _e.stopPropagation();
   }
   if (event_actions?.temporal && temporal_handler && !temporal_handler()) {
-    return;
+    return ResultStream.completed();
   }
 
   const invokeTarget = () => target(...args);
   const resolved_action_key = action_key ?? target.toString();
 
+  let throttle_key;
   if (event_actions?.throttle) {
+    throttle_key = `${resolved_action_key}__${event_actions.throttle}`;
     if (!throttle(resolved_action_key, event_actions.throttle)) {
-      return;
+      return throttledResult(throttle_key);
     }
   }
-  if (event_actions?.debounce) {
-    debounce(resolved_action_key, invokeTarget, event_actions.debounce);
-    return;
-  }
-  return invokeTarget();
+  const result = event_actions?.debounce
+    ? debouncedResult(
+        `${resolved_action_key}__${event_actions.debounce}`,
+        (run) => debounce(resolved_action_key, run, event_actions.debounce),
+        invokeTarget,
+      )
+    : invokeTarget();
+  return throttle_key === undefined
+    ? result
+    : recordThrottled(throttle_key, result);
 };
 
 /**
@@ -1631,7 +1674,15 @@ export const useEventLoop = (
     }
 
     return applyEventActions(
-      () => queueEvents(_events, socket, false, navigate, params),
+      () => {
+        const streams = _events.map(
+          (event) => (event[RESULT_STREAM] = new ResultStream()),
+        );
+        // A failed dispatch fails the event's stream and still rejects here,
+        // so it is reported as an unhandled rejection as before.
+        queueEvents(_events, socket, false, navigate, params);
+        return ResultStream.merge(streams);
+      },
       event_actions,
       args,
       _events.map((e) => e.name).join("+++"),

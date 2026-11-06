@@ -45,6 +45,48 @@ def test_fork_inherits_token(mock_root_event_context: EventContext):
     assert child.token == mock_root_event_context.token
 
 
+def test_fork_does_not_inherit_request_id(mock_root_event_context: EventContext):
+    """A request id belongs to the forked event only; events it chains report nothing.
+
+    Args:
+        mock_root_event_context: The root event context fixture.
+    """
+    child = mock_root_event_context.fork(request_id="ab:1")
+    assert child.request_id == "ab:1"
+    assert child.fork().request_id is None
+    assert not child.result_sent
+    child.mark_result_sent()
+    assert child.result_sent
+    assert not child.fork().result_sent
+
+
+async def test_emit_result_sends_records_after_the_delta(
+    mock_root_event_context: EventContext, emitted_deltas: list
+):
+    """emit_result hands records and the preceding delta to emit_result_impl.
+
+    Without a result channel the records are dropped and the delta still goes out.
+
+    Args:
+        mock_root_event_context: The root event context fixture.
+        emitted_deltas: List to capture emitted deltas.
+    """
+    emit_result_impl = mock.AsyncMock()
+    ctx = dataclasses.replace(
+        mock_root_event_context, emit_result_impl=emit_result_impl
+    ).fork(token="tok")
+    delta = {"state": {"x": 1}}
+    await ctx.emit_result({"id": "a", "value": 1}, delta=delta)
+    emit_result_impl.assert_awaited_once_with("tok", ({"id": "a", "value": 1},), delta)
+    assert not emitted_deltas
+
+    bare = mock_root_event_context.fork(token="tok")
+    assert bare.emit_result_impl is None
+    await bare.emit_result({"id": "a", "value": 1}, delta=delta)
+    await bare.emit_result({"id": "a", "done": True})
+    assert emitted_deltas == [("tok", delta)]
+
+
 async def test_emit_delta(mock_root_event_context: EventContext, emitted_deltas: list):
     """emit_delta records the delta via emit_delta_impl.
 

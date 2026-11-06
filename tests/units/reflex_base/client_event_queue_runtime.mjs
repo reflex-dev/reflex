@@ -1,4 +1,13 @@
+import fs from "node:fs";
 import { SourceTextModule, SyntheticModule } from "node:vm";
+
+// Dependency-free frontend modules state.js imports, evaluated for real.
+const REAL_MODULES = {
+  "$/utils/event_results": new URL(
+    "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/event_results.js",
+    import.meta.url,
+  ),
+};
 
 /** Evaluate the complete frontend module with isolated dependency stubs. */
 export async function createQueueRuntime(
@@ -73,6 +82,12 @@ export { event_queue };
   );
   const linked = new Map();
   await module.link((specifier) => {
+    if (!linked.has(specifier) && specifier in REAL_MODULES) {
+      linked.set(
+        specifier,
+        new SourceTextModule(fs.readFileSync(REAL_MODULES[specifier], "utf8")),
+      );
+    }
     if (!linked.has(specifier)) {
       const exports = dependencies[specifier];
       if (!exports)

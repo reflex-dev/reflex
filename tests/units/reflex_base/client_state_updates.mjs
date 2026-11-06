@@ -75,8 +75,20 @@ async function createConnection(
     stateSchema: FRONTEND_SCHEMA,
     isDevMode,
   };
+  // Every ref the event loop creates, so its socket ref can share this socket.
+  const refs = [];
   const runtime = await createQueueRuntime(source, {
     dependencies: {
+      react: {
+        useCallback: (callback) => callback,
+        useEffect: () => {},
+        useRef: (value) => {
+          const ref = { current: value };
+          refs.push(ref);
+          return ref;
+        },
+        useState: (value) => [value, () => {}],
+      },
       "test:browser": {
         window: {
           clearTimeout,
@@ -118,7 +130,13 @@ async function createConnection(
     navigate,
     params,
   );
+  // The real addEvents, sending on this connection: its first ref is the socket.
+  const firstRef = refs.length;
+  const [addEvents] = runtime.useEventLoop(dispatch);
+  refs[firstRef].current = socketRef.current;
   return {
+    addEvents,
+    disconnect: (reason) => handlers.get("disconnect")(reason),
     sent,
     saved,
     warn,
@@ -304,4 +322,60 @@ test("a mismatch in dev only warns", async (t) => {
   assert.equal(c.reloads.length, 0);
   assert.equal(c.banner(), undefined);
   assert.equal(c.session.has(LAST_RELOADED_KEY), false);
+});
+
+/** The events sent to the backend, by name. */
+const sentEvent = (connection, name) =>
+  connection.sent.find(
+    (message) => message.name === "event" && message.value.name === name,
+  ).value;
+
+test("a dispatched event receives its results by request id, after the delta", async (t) => {
+  const log = [];
+  const connection = await createConnection(t, {
+    known: (delta) => log.push(["delta", delta]),
+  });
+  const stream = connection.addEvents([{ name: "known.load" }]);
+  stream.pipe({
+    push: (value) => log.push(["value", value]),
+    close: () => log.push(["done"]),
+    fail: () => log.push(["failed"]),
+  });
+  const { id } = sentEvent(connection, "known.load");
+  assert.match(id, /^[a-z0-9]+:[a-z0-9]+$/);
+  connection.addEvents([{ name: "known.other" }]);
+  assert.notEqual(sentEvent(connection, "known.other").id, id);
+
+  connection.receive({ results: [{ id: "stale:0", value: "ignored" }] });
+  connection.receive({ results: [{ id, value: 1 }] });
+  connection.receive({
+    delta: { known: { n: 2 } },
+    results: [{ id, value: 2, done: true }],
+  });
+  assert.deepEqual(log, [
+    ["value", 1],
+    ["delta", { n: 2 }],
+    ["value", 2],
+    ["done"],
+  ]);
+  assert.equal(await stream, 2);
+});
+
+test("a frontend-only event completes at once without values", async (t) => {
+  const connection = await createConnection(t);
+  const stream = connection.addEvents([
+    { name: "_call_function", payload: { function: () => 1 } },
+  ]);
+  assert.equal(await stream, undefined);
+  assert.deepEqual(stream.values, []);
+});
+
+test("a disconnect fails the requests still waiting for results", async (t) => {
+  const connection = await createConnection(t);
+  const stream = connection.addEvents([{ name: "known.load" }]);
+  const { id } = sentEvent(connection, "known.load");
+  connection.receive({ results: [{ id, value: "partial" }] });
+  connection.disconnect("io server disconnect");
+  await assert.rejects(stream, /Disconnected from the backend/);
+  assert.deepEqual(stream.values, ["partial"]);
 });
