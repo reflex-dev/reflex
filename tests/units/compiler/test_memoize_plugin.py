@@ -412,7 +412,7 @@ def test_special_form_memo_wrappers_render_structural_body(
 
 def test_moment_all_locales_import_deduplicates_real_memo_imports() -> None:
     """A reactive Moment locale removes specific locale imports across memo modules."""
-    from reflex.compiler.compiler import compile_memo_components
+    from reflex.compiler.compiler import compile_app_root, compile_memo_components
 
     ctx, page_ctx = _compile_single_page(
         lambda: Fragment.create(
@@ -420,10 +420,12 @@ def test_moment_all_locales_import_deduplicates_real_memo_imports() -> None:
             rx.moment("2024-03-14", locale=SpecialFormMemoState.locale),
         )
     )
+    shared_imports: dict[str, list[ImportVar]] = {}
 
     memo_files, memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
         page_imports=page_ctx.frontend_imports,
+        shared_imports=shared_imports,
     )
     memo_code = "\n".join(code for _, code in memo_files)
     side_effect_imports = [
@@ -432,11 +434,16 @@ def test_moment_all_locales_import_deduplicates_real_memo_imports() -> None:
         for import_var in imports.get("", [])
     ]
 
-    assert "moment/min/locales" in side_effect_imports
+    assert "moment/min/locales" in [
+        import_var.tag for import_var in shared_imports.get("", [])
+    ]
     assert not any(
         (tag or "").startswith("moment/locale/") for tag in side_effect_imports
     )
+    assert "moment/min/locales" not in side_effect_imports
     assert '"moment/locale/fr"' not in memo_code
+    app_root_code = compile_app_root(Fragment.create(), shared_imports=shared_imports)[1]
+    assert 'import "moment/min/locales"' in app_root_code
 
 
 def test_moment_literal_locale_keeps_narrow_import() -> None:
@@ -444,10 +451,12 @@ def test_moment_literal_locale_keeps_narrow_import() -> None:
     from reflex.compiler.compiler import compile_memo_components
 
     ctx, page_ctx = _compile_single_page(lambda: rx.moment("2024-03-14", locale="fr"))
+    shared_imports: dict[str, list[ImportVar]] = {}
 
     _memo_files, memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
         page_imports=page_ctx.frontend_imports,
+        shared_imports=shared_imports,
     )
     side_effect_imports = [
         import_var.tag
@@ -457,6 +466,7 @@ def test_moment_literal_locale_keeps_narrow_import() -> None:
 
     assert "moment/locale/fr" in side_effect_imports
     assert "moment/min/locales" not in side_effect_imports
+    assert shared_imports == {}
 
 
 def test_foreach_snapshot_memo_applies_component_styles() -> None:

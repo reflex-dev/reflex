@@ -108,8 +108,18 @@ def MomentApp():
             rx.link("Plain page", href="/plain", id="provider-plain-link"),
         )
 
+    def literal_locale():
+        """Render a literal-locale Moment from an independently loaded route."""
+        return rx.moment(
+            "2024-03-14T15:09:26",
+            format="dddd D MMMM YYYY",
+            locale="fr",
+            id="literal-route-date",
+        )
+
     app.add_page(plain, route="/plain")
     app.add_page(provider, route="/provider")
+    app.add_page(literal_locale, route="/literal")
 
 
 @pytest.fixture(scope="module")
@@ -258,3 +268,29 @@ def test_moment_provider_locale_does_not_leak(
     AppHarness.expect(
         lambda: driver.find_element(By.ID, "plain-relative").text.endswith("ago")
     )
+
+
+def test_literal_locale_route_works_after_direct_load(
+    moment_app: AppHarness, driver: WebDriver
+) -> None:
+    """Reactive locales in other routes must not remove direct-route locales."""
+    assert moment_app.frontend_url is not None
+    driver.get(moment_app.frontend_url.rstrip("/") + "/literal")
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "literal-route-date").text
+            == "jeudi 14 mars 2024"
+        )
+    )
+    driver.get(moment_app.frontend_url.rstrip("/") + "/")
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-reactive-locale").text
+            == "jeudi 14 mars 2024"
+        )
+    )
+    assert not [
+        entry["message"]
+        for entry in driver.get_log("browser")
+        if "defineLocale" in entry["message"]
+    ]
