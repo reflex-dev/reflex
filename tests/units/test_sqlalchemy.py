@@ -485,3 +485,26 @@ def test_serialize_sqlalchemy_unloaded_relationship():
         assert result["id"] == 1
         assert "dict_children" not in result
         assert "dict_children" in inspect(loaded_parent).unloaded
+
+
+def test_unserialized_property_on_sqlalchemy_dataclass():
+    """Test that plain properties on SQLAlchemy dataclasses are flagged."""
+    from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+    from reflex.utils.types import is_unserialized_property
+
+    class Base(MappedAsDataclass, DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_property"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        first_name: Mapped[str]
+        last_name: Mapped[str]
+
+        @property
+        def double(self) -> str:
+            return f"{self.first_name} {self.last_name}"
+
+    assert is_unserialized_property(User, "double")
