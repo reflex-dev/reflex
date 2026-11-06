@@ -144,7 +144,7 @@ def test_declarative_base_serializer_handles_bidirectional_relationships():
     assert payload["id"] == 1
     assert len(payload["children"]) == 1
     assert payload["children"][0]["id"] == 2
-    assert "parent" not in payload["children"][0]
+    assert payload["children"][0]["parent"] == {"id": 1}
 
     engine.dispose()
 

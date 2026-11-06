@@ -298,7 +298,8 @@ def test_automigration(
 
 def test_serialize_sqlalchemy_cyclic_custom_serializer():
     """Test that custom serializers on related models are called, and cycles are broken safely."""
-    from reflex_base.utils.serializers import serialize, serializer
+    from reflex_base.utils import serializers
+    from reflex_base.utils.serializers import serialize
     from sqlalchemy import ForeignKey
     from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -316,30 +317,54 @@ def test_serialize_sqlalchemy_cyclic_custom_serializer():
         parent_id: Mapped[int] = mapped_column(ForeignKey("test_parent.id"))
         parent: Mapped["Parent"] = relationship(back_populates="children")
 
-    @serializer
-    def serialize_child(child: Child) -> dict:
-        return {
-            "custom_child_id": child.id,
-            "has_parent": child.parent is not None,
-        }
+    original_serializers = serializers.SERIALIZERS.copy()
+    original_serializer_types = serializers.SERIALIZER_TYPES.copy()
 
-    parent = Parent(id=1)
-    child = Child(id=2, parent=parent)
-    parent.children = [child]
+    try:
 
-    result = serialize(parent)
+        @serializers.serializer
+        def serialize_child(child: Child) -> dict:
+            return {
+                "custom_child_id": child.id,
+                "has_parent": child.parent is not None,
+            }
 
-    assert isinstance(result, dict)
-    assert result["id"] == 1
-    assert isinstance(result["children"], list)
-    assert len(result["children"]) == 1
-    assert result["children"][0]["custom_child_id"] == 2
-    assert result["children"][0]["has_parent"] is True
+        parent = Parent(id=1)
+        child = Child(id=2, parent=parent)
+        parent.children = [child]
 
-    child_result = serialize(child)
+        result = serialize(parent)
 
-    assert isinstance(child_result, dict)
-    assert child_result["custom_child_id"] == 2
+        assert isinstance(result, dict)
+        assert result["id"] == 1
+        assert isinstance(result["children"], list)
+        assert len(result["children"]) == 1
+        assert result["children"][0]["custom_child_id"] == 2
+        assert result["children"][0]["has_parent"] is True
+
+        child_result = serialize(child)
+
+        assert isinstance(child_result, dict)
+        assert child_result["custom_child_id"] == 2
+
+        serializers.SERIALIZERS.pop(Child)
+        serializers.SERIALIZER_TYPES.pop(Child, None)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+
+        result = serialize(parent)
+
+        assert isinstance(result, dict)
+        assert isinstance(result["children"], list)
+        assert result["children"][0]["parent"] is None
+
+    finally:
+        serializers.SERIALIZERS.clear()
+        serializers.SERIALIZERS.update(original_serializers)
+        serializers.SERIALIZER_TYPES.clear()
+        serializers.SERIALIZER_TYPES.update(original_serializer_types)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
 
 
 def test_serialize_sqlalchemy_keyed_dict_relationship():
