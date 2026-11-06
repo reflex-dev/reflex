@@ -386,16 +386,42 @@ def _file_input(page: Page, upload_id: str | None = None):
 
 
 def _upload_done(page: Page) -> None:
+    """Wait until the app reports that the upload finished.
+
+    Args:
+        page: Playwright page.
+    """
     expect(page.locator("#upload_done")).to_have_value("true", timeout=30_000)
 
 
 def _progress(page: Page, selector: str) -> list[dict]:
+    """Read the upload progress events that the page shows.
+
+    Args:
+        page: Playwright page.
+        selector: Selector of the element that lists the events, one per paragraph.
+
+    Returns:
+        The progress events, in display order.
+    """
     return [
         json.loads(line) for line in page.locator(f"{selector} > p").all_text_contents()
     ]
 
 
 def _wait_for_progress_to_stop(page: Page, selector: str) -> list[dict]:
+    """Wait until the progress events stay the same for 3 seconds.
+
+    Args:
+        page: Playwright page.
+        selector: Selector of the element that lists the events.
+
+    Returns:
+        The final progress events.
+
+    Raises:
+        TimeoutError: If the events still change after 20 seconds.
+    """
     previous = _progress(page, selector)
     stable = 0
     deadline = time.monotonic() + 20
@@ -411,6 +437,16 @@ def _wait_for_progress_to_stop(page: Page, selector: str) -> list[dict]:
 
 
 def _write_file(tmp_path: Path, name: str, contents: str) -> Path:
+    """Write a text file to upload.
+
+    Args:
+        tmp_path: Directory for the file.
+        name: File name.
+        contents: File contents.
+
+    Returns:
+        Path of the new file.
+    """
     target = tmp_path / name
     target.write_text(contents)
     return target

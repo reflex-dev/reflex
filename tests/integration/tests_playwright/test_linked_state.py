@@ -295,6 +295,16 @@ def tab_factory(
 def _linked_page(
     harness: AppHarness, tab_factory: Callable[[], Page], url: str
 ) -> Page:
+    """Open a new tab at a URL and wait for it to hydrate.
+
+    Args:
+        harness: Harness for the linked state app.
+        tab_factory: Opens a new tab.
+        url: Path to open, relative to the frontend URL.
+
+    Returns:
+        The new tab.
+    """
     page = tab_factory()
     assert harness.frontend_url is not None
     page.goto(f"{harness.frontend_url}{url}")
@@ -303,6 +313,13 @@ def _linked_page(
 
 
 def _submit(page: Page, selector: str, value: str) -> None:
+    """Fill an input and press Enter to submit its form.
+
+    Args:
+        page: Playwright page.
+        selector: Selector of the input.
+        value: Text to submit.
+    """
     field = page.locator(selector)
     field.fill(value)
     field.press("Enter")
@@ -413,6 +430,16 @@ def test_linked_state(linked_state: AppHarness, tab_factory: Callable[[], Page])
 def _open_linked_page(
     harness: AppHarness, tab_factory: Callable[[], Page], token: str
 ) -> Page:
+    """Open the room page for a token and check its initial shared state.
+
+    Args:
+        harness: Harness for the linked state app.
+        tab_factory: Opens a new tab.
+        token: Token of the room to open.
+
+    Returns:
+        The new tab.
+    """
     page = _linked_page(harness, tab_factory, f"room/{token}")
     expect(page.locator("#counter-button")).to_have_text("0")
     expect(page.locator("#linked-to")).to_have_text(token)

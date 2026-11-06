@@ -19,6 +19,14 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 
 
 def _large_state_app_template(var_count: int) -> str:
+    """Build the source of an app whose state has `var_count` vars.
+
+    Args:
+        var_count: Number of vars in the state, `var0` included.
+
+    Returns:
+        The app source.
+    """
     var_part = "\n    ".join(
         f'var{i}: str = "{i}" * 10000' for i in range(1, var_count)
     )

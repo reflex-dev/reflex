@@ -251,11 +251,25 @@ def _set_state_value(page: Page, state_var: str, value: str, *, sub_sub=False):
 
 
 def _expect_displayed_values(page: Page, values: dict[str, str]) -> None:
+    """Wait until each element shows its expected text.
+
+    Args:
+        page: Playwright page.
+        values: Expected text by element id.
+    """
     for element_id, value in values.items():
         expect(page.locator(f"#{element_id}")).to_have_text(value)
 
 
 def _wait_for_token(page: Page) -> str:
+    """Wait for the page to hydrate and show its client token.
+
+    Args:
+        page: Playwright page.
+
+    Returns:
+        The client token.
+    """
     token = page.locator("#token")
     expect(token).to_have_value(re.compile(r".+"), timeout=30_000)
     return token.input_value()
