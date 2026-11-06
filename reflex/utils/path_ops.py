@@ -17,6 +17,7 @@ import threading
 import unicodedata
 from collections.abc import Iterator
 from pathlib import Path
+from typing import NamedTuple
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
@@ -28,7 +29,8 @@ else:
 
 logger = logging.getLogger(__name__)
 _LOCKS_DIR = "locks"
-# Resolved paths locked by the current thread, so nested locks reenter.
+# Resolved paths entered by the current thread, mapped to whether the OS lock
+# was acquired, so nested locks reenter and report the outer outcome.
 _held_locks = threading.local()
 # Open lock descriptors, closed in forked children that inherit them.
 _lock_descriptors: set[int] = set()
@@ -39,7 +41,7 @@ def _forget_inherited_locks() -> None:
     for descriptor in _lock_descriptors:
         os.close(descriptor)
     _lock_descriptors.clear()
-    _held_locks.paths = set()
+    _held_locks.paths = {}
 
 
 if sys.platform != "win32":
@@ -311,8 +313,18 @@ def _lock_descriptor(descriptor: int) -> None:
         fcntl.flock(descriptor, fcntl.LOCK_EX)
 
 
+class FileLockHandle(NamedTuple):
+    """What ``file_lock`` yields while its block runs."""
+
+    path: Path
+    """The resolved target path."""
+
+    acquired: bool
+    """Whether this thread holds the OS lock, directly or through an outer block."""
+
+
 @contextlib.contextmanager
-def file_lock(path: str | Path) -> Iterator[Path]:
+def file_lock(path: str | Path) -> Iterator[FileLockHandle]:
     """Lock a file or directory across processes, or proceed unlocked if unavailable.
 
     The lock is a sidecar in Reflex's per-user data directory, so it never
@@ -324,15 +336,17 @@ def file_lock(path: str | Path) -> Iterator[Path]:
         path: The file or directory to lock.
 
     Yields:
-        The resolved target path. Callers must still write atomically because
-        read-only lock directories and unsupported locks use an unlocked fallback.
+        The resolved target path and whether the lock is held. Callers must still
+        write atomically because read-only lock directories and unsupported locks
+        use an unlocked fallback; work that needs exclusive access checks
+        ``acquired`` and skips itself without it.
     """
     target = Path(path).resolve()
-    held: set[Path] | None = getattr(_held_locks, "paths", None)
+    held: dict[Path, bool] | None = getattr(_held_locks, "paths", None)
     if held is None:
-        held = _held_locks.paths = set()
+        held = _held_locks.paths = {}
     if target in held:
-        yield target
+        yield FileLockHandle(target, held[target])
         return
     owner_pid = os.getpid()
     lock_fd = None
@@ -347,13 +361,13 @@ def file_lock(path: str | Path) -> Iterator[Path]:
             locked = True
         except OSError as error:
             logger.debug(f"Cannot lock {target}; proceeding unlocked: {error}")
-        held.add(target)
-        yield target
+        held[target] = locked
+        yield FileLockHandle(target, locked)
     finally:
         # A forked child leaving an inherited block owns neither the lock nor
         # the descriptor; its parent releases both.
         if os.getpid() == owner_pid:
-            held.discard(target)
+            held.pop(target, None)
             if lock_fd is not None:
                 _lock_descriptors.discard(lock_fd)
                 if locked and sys.platform == "win32":
@@ -402,7 +416,8 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> N
         file_path: the path to the JSON file.
         update_dict: object to update json.
     """
-    with file_lock(file_path) as fp:
+    with file_lock(file_path) as lock:
+        fp = lock.path
         fp.parent.mkdir(parents=True, exist_ok=True)
         # An absent or empty file represents an empty JSON object.
         json_object: dict[str, object] = {}

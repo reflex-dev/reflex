@@ -698,11 +698,11 @@ def test_file_lock_releases_after_body_error(tmp_path: Path):
     target = tmp_path / "reflex.json"
     with pytest.raises(OSError, match="body error"), path_ops.file_lock(target):
         _assert_json_lock_held(target)
-        assert target.resolve() in path_ops._held_locks.paths
+        assert path_ops._held_locks.paths == {target.resolve(): True}
         msg = "body error"
         raise OSError(msg)
 
-    assert path_ops._held_locks.paths == set()
+    assert path_ops._held_locks.paths == {}
     path_ops.update_json_file(target, {"after_error": True})
     assert json.loads(target.read_text(encoding="utf-8")) == {"after_error": True}
 
@@ -737,6 +737,28 @@ def test_file_lock_serializes_processes_and_reenters_in_thread(tmp_path: Path):
         if child.pid is not None:
             _join_process(child)
     assert child.exitcode == 0
+
+
+def test_file_lock_reports_whether_the_lock_is_held(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The handle says whether the OS lock is held, and nested blocks inherit it."""
+    with path_ops.file_lock(tmp_path) as outer, path_ops.file_lock(tmp_path) as inner:
+        assert outer == path_ops.FileLockHandle(tmp_path.resolve(), True)
+        assert inner.acquired
+
+    def lock_file(*args):
+        """Simulate an unavailable OS lock."""
+        raise OSError(errno.EACCES, "lock is unavailable")
+
+    if sys.platform == "win32":
+        monkeypatch.setattr(msvcrt, "locking", lock_file)
+    else:
+        monkeypatch.setattr(fcntl, "flock", lock_file)
+    with path_ops.file_lock(tmp_path) as outer, path_ops.file_lock(tmp_path) as inner:
+        assert outer == path_ops.FileLockHandle(tmp_path.resolve(), False)
+        assert not inner.acquired
+    assert path_ops._held_locks.paths == {}
 
 
 def test_file_lock_other_thread_waits(tmp_path: Path):
