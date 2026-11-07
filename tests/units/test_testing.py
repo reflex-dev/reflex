@@ -260,6 +260,183 @@ def test_app_harness_reload_forgets_states_of_every_app_module(tmp_path, monkeyp
     assert widget_state not in rx.State.get_substates()
 
 
+def test_app_harness_preserves_newly_imported_shared_module_states(
+    tmp_path, monkeypatch
+):
+    """A shared module's top-level states remain registered for the next app.
+
+    App-owned and dynamically-created states must not leak into the base context.
+
+    Args:
+        tmp_path: pytest temporary directory
+        monkeypatch: pytest monkeypatch fixture
+    """
+    import reflex as rx
+    from reflex.state import reload_state_module
+
+    base = RegistrationContext()
+    monkeypatch.setattr(AppHarness, "_base_registration_context", base)
+    app_package = "harnessapp"
+    monkeypatch.setitem(sys.modules, app_package, ModuleType(app_package))
+    app_module = ModuleType(f"{app_package}.main")
+    monkeypatch.setitem(sys.modules, app_module.__name__, app_module)
+
+    active = base.fork()
+    token = RegistrationContext.set(active)
+    modules_before_app_load = set(sys.modules)
+    shared_module_name = "shared_state_package.states"
+    shared_module = ModuleType(shared_module_name)
+    monkeypatch.setitem(sys.modules, shared_module_name, shared_module)
+    shared_module.__dict__["rx"] = rx
+    exec(
+        "class SharedState(rx.State):\n"
+        "    count: int = 0\n"
+        "    def increment(self):\n"
+        "        self.count += 1\n",
+        shared_module.__dict__,
+    )
+    shared_state = shared_module.__dict__["SharedState"]
+
+    app_states_module = ModuleType(f"{app_package}.states")
+    monkeypatch.setitem(sys.modules, app_states_module.__name__, app_states_module)
+    app_states_module.__dict__["rx"] = rx
+    exec(
+        "class AppState(rx.State):\n"
+        "    count: int = 0\n"
+        "    @rx.var(cache=False)\n"
+        "    def computed(self) -> int:\n"
+        "        return self.count\n",
+        app_states_module.__dict__,
+    )
+    app_state = app_states_module.__dict__["AppState"]
+
+    dynamic_state = type(
+        "DynamicState",
+        (rx.State,),
+        {"__module__": shared_module_name},
+    )
+    harness = AppHarness(
+        app_name=app_package,
+        app_source=None,
+        app_path=tmp_path,
+        app_module_path=tmp_path / "harnessapp.py",
+        app_module=app_module,
+        _registry_token=token,
+    )
+    harness._modules_before_app_load = modules_before_app_load
+
+    monkeypatch.setitem(sys.modules, "psutil", mock.Mock())
+    try:
+        harness.stop()
+
+        assert base.base_states[shared_state.get_full_name()] is shared_state
+        assert any(
+            registered.handler is shared_state.event_handlers["increment"]
+            for registered in base.event_handlers.values()
+        )
+        assert app_state.get_full_name() not in base.base_states
+        assert dynamic_state.get_full_name() not in base.base_states
+    finally:
+        # The external module remains in the base registry only for this test.
+        active_token = RegistrationContext.set(active)
+        reload_state_module(shared_module_name)
+        reload_state_module(app_states_module.__name__)
+        RegistrationContext.reset(active_token)
+
+
+def test_app_harness_restarts_multi_module_app_without_reimporting_states(
+    tmp_path, harness_mocks, monkeypatch
+):
+    """Restarting an app restores cached state submodules without re-importing them."""
+    import reflex as rx
+    from reflex.state import all_base_state_classes
+
+    app_package = "restartable_harness_app"
+    harness_mocks.config.module = f"{app_package}.main"
+    base = RegistrationContext()
+    monkeypatch.setattr(AppHarness, "_base_registration_context", base)
+    monkeypatch.setattr(AppHarness, "_cached_app_state_modules", {})
+    monkeypatch.setattr(reflex_cli, "_init", lambda **kwargs: None)
+
+    package_module = ModuleType(app_package)
+    package_module.__path__ = []
+    package_module.__dict__["rx"] = rx
+    app_module = ModuleType(f"{app_package}.main")
+    state_module = ModuleType(f"{app_package}.states")
+    state_module.__dict__["rx"] = rx
+    monkeypatch.setitem(sys.modules, app_package, package_module)
+    monkeypatch.setitem(sys.modules, app_module.__name__, app_module)
+    monkeypatch.setitem(sys.modules, state_module.__name__, state_module)
+
+    app_info = reflex.utils.prerequisites.AppInfo(
+        app=mock.Mock(_state_manager=None), module=app_module
+    )
+
+    def load_or_check_app(*args, **kwargs):
+        if not hasattr(package_module, "AppState"):
+            exec(
+                "class AppState(rx.State):\n"
+                "    count: int = 0\n"
+                "    @rx.var(cache=False)\n"
+                "    def computed(self) -> int:\n"
+                "        return self.count\n",
+                package_module.__dict__,
+            )
+            state_module.__dict__["AppState"] = package_module.AppState
+            exec(
+                "class ChildState(AppState):\n"
+                "    @rx.event\n"
+                "    def increment(self):\n"
+                "        self.count += 1\n",
+                state_module.__dict__,
+            )
+        else:
+            app_state = package_module.AppState
+            child_state = state_module.ChildState
+            context = RegistrationContext.get()
+            assert context.base_states[app_state.get_full_name()] is app_state
+            assert context.base_states[child_state.get_full_name()] is child_state
+            assert any(
+                handler.handler is child_state.event_handlers["increment"]
+                for handler in context.event_handlers.values()
+            )
+            assert all_base_state_classes[app_state.get_full_name()] is None
+            assert app_state.get_name() in rx.State._always_dirty_substates
+        return app_info
+
+    harness_mocks.get_and_validate_app.side_effect = load_or_check_app
+    outer_context = RegistrationContext.ensure_context()
+    first = AppHarness.create(
+        root=tmp_path / "restartable_app",
+        app_name=app_package,
+        app_source="import reflex as rx\napp = rx.App()",
+    )
+    first.app_module_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        first._initialize_app()
+        app_state = package_module.AppState
+        child_state = state_module.ChildState
+        context = RegistrationContext.get()
+        assert context.base_states[app_state.get_full_name()] is app_state
+        assert context.base_states[child_state.get_full_name()] is child_state
+    finally:
+        if RegistrationContext.get() is not outer_context:
+            first.stop()
+
+    restarted = AppHarness.create(
+        root=tmp_path / "restartable_app",
+        app_name=app_package,
+        app_source="import reflex as rx\napp = rx.App()",
+    )
+    restarted.app_module_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        restarted._initialize_app()
+    finally:
+        if RegistrationContext.get() is not outer_context:
+            restarted.stop()
+        assert RegistrationContext.get() is outer_context
+
+
 def _harness_state(module: str) -> type:
     """Define a state class whose ``__module__`` is the given module.
 
