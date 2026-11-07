@@ -337,9 +337,11 @@ class DedupePlugin(Plugin):
 ```
 
 The encoder runs once per update, after the backend is done comparing and
-merging deltas, so it never has to survive a diff. The compiled initial state
-goes through it as well, as an update whose `delta` is the initial state, and
-the decoders undo it before the frontend first reads it. Plugins encode in
+merging deltas, so it never has to survive a diff. It receives the values as
+the backend holds them, before serialization (`Event` objects, models,
+components), and the deprecated `final` when it is set. The compiled initial
+state goes through it as well, as an update whose `delta` is the initial state,
+and the decoders undo it before the frontend first reads it. Plugins encode in
 configuration order and decode in reverse order.
 
 A decoder takes the received update and returns the decoded one,
@@ -355,6 +357,15 @@ export default function decode({ dedupe_shared, ...update }) {
 ```
 
 A decoded delta may hold one object in several places, or contain cycles.
+
+A decoder has to follow two rules:
+
+- Return new objects for whatever changed, and never mutate an object it
+  returned for an earlier update. The frontend compares values by identity, so
+  an object changed in place counts as unchanged and nothing re-renders.
+- Never throw. The decoders also run when the compiled context module loads
+  the initial state, in the browser and while prerendering, and an exception
+  there keeps the app from loading.
 
 ### Looking Up Configured Plugins
 

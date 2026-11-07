@@ -258,9 +258,10 @@ class Plugin:
         ``delta``. An empty field is not sent, so an update may carry only
         ``events``. Plugins encode in configuration order. A plugin may replace
         values and add fields of its own, which the decoder from
-        ``get_state_update_decoder`` reverses in the browser. The update's
-        values may be shared with other updates, so replace them rather than
-        mutating them.
+        ``get_state_update_decoder`` reverses in the browser. The values are
+        not serialized yet (``Event`` objects, models, components), and the
+        deprecated ``final`` is passed when set. The update's values may be
+        shared with other updates, so replace them rather than mutating them.
 
         Args:
             update: The update's fields.
@@ -277,7 +278,11 @@ class Plugin:
         decoded one, synchronously, before any of its delta is applied and
         before the compiled initial state is first read. Decoders run in
         reverse configuration order. A decoded delta may share objects or
-        contain cycles.
+        contain cycles. Return new objects for what changed and never mutate
+        one returned for an earlier update: the frontend compares by identity,
+        so a mutated object counts as unchanged. A decoder must not throw, as
+        the initial state is decoded when the app's context module loads,
+        prerendering included.
 
         Args:
             context: The context for the plugin.
