@@ -1404,6 +1404,127 @@ def test_mark_dirty_computed_vars_walks_chain_from_vars_with_dependents() -> Non
     assert state.dirty_vars == {"b", "standalone"}
 
 
+class _DoublerMixin:
+    """A plain mixin whose method reads a field the using state declares."""
+
+    def doubled(self) -> int:
+        """Double the `base` field of the state using this mixin.
+
+        Returns:
+            Twice the base.
+        """
+        return self.base * 2  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def _escalator_via_super() -> type[Any]:
+    """Build a state whose computed var reads a field through super().
+
+    Returns:
+        The state class.
+    """
+
+    class SuperEscalatorState(_DoublerMixin, BaseState):
+        base: int = 0
+        bonus: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            return super().doubled() + self.bonus
+
+    return SuperEscalatorState
+
+
+def _escalator_via_nested_function() -> type[Any]:
+    """Build a state whose computed var reads a field through a nested function.
+
+    Returns:
+        The state class.
+    """
+
+    class NestedEscalatorState(BaseState):
+        base: int = 0
+        bonus: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            def scaled(st) -> int:
+                return st.base * 2
+
+            return scaled(self) + self.bonus
+
+    return NestedEscalatorState
+
+
+def _escalator_via_alias() -> type[Any]:
+    """Build a state whose computed var reads a field through an alias of self.
+
+    Returns:
+        The state class.
+    """
+
+    class AliasedEscalatorState(BaseState):
+        base: int = 0
+        bonus: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            st = self
+            return st.base * 2 + self.bonus
+
+    return AliasedEscalatorState
+
+
+def _escalator_untrackable() -> type[Any]:
+    """Build a state whose computed var reads a field in an untrackable way.
+
+    Returns:
+        The state class.
+    """
+
+    class EscapingEscalatorState(BaseState):
+        base: int = 0
+        bonus: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            return getattr(self, "base") * 2 + self.bonus  # noqa: B009
+
+    return EscapingEscalatorState
+
+
+@pytest.mark.parametrize(
+    "state_factory",
+    [
+        _escalator_via_super,
+        _escalator_via_nested_function,
+        _escalator_via_alias,
+        _escalator_untrackable,
+    ],
+    ids=["super", "nested_function", "alias", "untrackable"],
+)
+def test_computed_var_invalidated_through_indirect_state_reads(
+    state_factory: Callable[[], type[Any]],
+) -> None:
+    """A computed var that reaches state indirectly recomputes when that state changes.
+
+    Args:
+        state_factory: Builds the state class exercising one indirect form.
+    """
+    state_cls = state_factory()
+    state = state_cls()
+    cvar = state_cls.computed_vars["total"]
+
+    assert state.total == 0
+    assert cvar._cache_attr in vars(state)
+
+    state.base = 5
+
+    # The edge exists, so the cached value is gone before the var is read again.
+    assert cvar._cache_attr not in vars(state)
+    assert state.total == 10
+    assert "total" + FIELD_MARKER in state.get_delta()[state.get_full_name()]
+
+
 def test_dirty_computed_var_from_var(interdependent_state: InterdependentState) -> None:
     """Set Var that ComputedVar depends on, expect recalculation.
 

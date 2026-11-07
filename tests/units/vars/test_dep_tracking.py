@@ -621,3 +621,414 @@ def test_dependencies_with_computed_var():
     # Should track the computed var, not its dependencies
     expected_deps = {StateWithComputedVar.get_full_name(): {"computed_value"}}
     assert tracker.dependencies == expected_deps
+
+
+def _reads_state_and_more(state, extra=None):
+    """Read a field through a parameter, from outside the state class.
+
+    Args:
+        state: The state to read from.
+        extra: An unrelated argument.
+
+    Returns:
+        The count and the extra.
+    """
+    return state.count + (extra or 0)
+
+
+class _PlainThing:
+    """An object that is not state, with an attribute to read."""
+
+    field = 1
+
+
+class SuperParentState(State):
+    """Parent state exposing a method and a property to its substates."""
+
+    value: int = 0
+
+    def parent_method(self) -> int:
+        """Double the value.
+
+        Returns:
+            Twice the value.
+        """
+        return self.value * 2
+
+    @property
+    def parent_property(self) -> int:
+        """The value plus one.
+
+        Returns:
+            One more than the value.
+        """
+        return self.value + 1
+
+
+class SuperChildState(SuperParentState):
+    """Substate whose methods reach the parent through super()."""
+
+    other: int = 0
+
+    def func_with_super_call(self) -> int:
+        """Reach the parent's method through super().
+
+        Returns:
+            The parent's result plus this state's own field.
+        """
+        return super().parent_method() + self.other
+
+    def func_with_super_attr(self) -> int:
+        """Reach the parent's property through super().
+
+        Returns:
+            The parent's property plus this state's own field.
+        """
+        return super().parent_property + self.other
+
+
+def test_super_method_call_dependencies():
+    """Test tracking dependencies through a method called on super()."""
+    tracker = DependencyTracker(SuperChildState.func_with_super_call, SuperChildState)
+
+    expected_deps = {SuperChildState.get_full_name(): {"value", "other"}}
+    assert tracker.dependencies == expected_deps
+    assert not tracker.unresolved
+
+
+def test_super_property_dependencies():
+    """Test tracking dependencies through a property accessed on super()."""
+    tracker = DependencyTracker(SuperChildState.func_with_super_attr, SuperChildState)
+
+    expected_deps = {SuperChildState.get_full_name(): {"value", "other"}}
+    assert tracker.dependencies == expected_deps
+    assert not tracker.unresolved
+
+
+def test_super_recursion_marks_unresolved():
+    """A super() call that resolves back to the method being scanned stops, widening instead."""
+
+    class CyclicOverride(SuperParentState):
+        extra: int = 0
+
+        def parent_method(self) -> int:
+            """Add the extra to the parent's value.
+
+            Returns:
+                The parent value plus the extra.
+            """
+            return super().parent_method() + self.extra
+
+        def func_calling_override(self) -> int:
+            """Call the overriding method.
+
+            Returns:
+                The overridden result.
+            """
+            return self.parent_method()
+
+    tracker = DependencyTracker(CyclicOverride.func_calling_override, CyclicOverride)
+
+    assert tracker.unresolved == {CyclicOverride}
+    # Widening is up to _deps(); the analysis itself still reports what it found.
+    assert CyclicOverride.get_full_name() in tracker.dependencies
+
+
+def test_nested_function_argument_dependencies():
+    """Test tracking dependencies in a nested function called with the state."""
+
+    def func_with_nested_arg(self: DependencyTestState):
+        def inner(st):
+            return st.count
+
+        return inner(self)
+
+    tracker = DependencyTracker(func_with_nested_arg, DependencyTestState)
+
+    expected_deps = {DependencyTestState.get_full_name(): {"count"}}
+    assert tracker.dependencies == expected_deps
+    assert not tracker.unresolved
+
+
+def test_nested_lambda_argument_dependencies():
+    """Test tracking dependencies in a lambda called with the state."""
+
+    def func_with_lambda_arg(self: DependencyTestState):
+        scaled = lambda st: st.count * 2  # noqa: E731
+
+        return scaled(self)
+
+    tracker = DependencyTracker(func_with_lambda_arg, DependencyTestState)
+
+    expected_deps = {DependencyTestState.get_full_name(): {"count"}}
+    assert tracker.dependencies == expected_deps
+    assert not tracker.unresolved
+
+
+def test_nested_function_argument_with_fetched_state_dependencies():
+    """A nested function called with a fetched state tracks that state's fields."""
+
+    async def func_with_nested_arg(self: DependencyTestState):
+        other = await self.get_state(AnotherTestState)
+
+        def inner(st):
+            return st.value
+
+        return inner(other)
+
+    tracker = DependencyTracker(func_with_nested_arg, DependencyTestState)
+
+    assert tracker.dependencies == {AnotherTestState.get_full_name(): {"value"}}
+    assert not tracker.unresolved
+
+
+def test_aliased_self_dependencies():
+    """Test tracking dependencies through a local alias of self."""
+
+    def func_with_alias(self: DependencyTestState):
+        st = self
+        return st.count
+
+    tracker = DependencyTracker(func_with_alias, DependencyTestState)
+
+    expected_deps = {DependencyTestState.get_full_name(): {"count"}}
+    assert tracker.dependencies == expected_deps
+    assert not tracker.unresolved
+
+
+def func_returning_self_untouched(self: DependencyTestState):
+    """Hold self in a local without reading through it.
+
+    Returns:
+        A constant.
+    """
+    st = self  # noqa: F841
+    return 1
+
+
+def test_aliased_self_without_reads_has_no_dependencies():
+    """Aliasing self is not a dependency; reading through the alias is."""
+    tracker = DependencyTracker(func_returning_self_untouched, DependencyTestState)
+
+    assert not tracker.dependencies
+    assert not tracker.unresolved
+
+
+def func_with_module_level_helper(self: DependencyTestState):
+    """Read the state through a module level helper.
+
+    Args:
+        self: The state.
+
+    Returns:
+        The helper's result.
+    """
+    return _reads_state_and_more(self)
+
+
+def func_with_module_level_helper_and_extra_arg(self: DependencyTestState, extra: int):
+    """Read the state through a module level helper, passing another argument too.
+
+    Args:
+        self: The state.
+        extra: An unrelated argument.
+
+    Returns:
+        The helper's result.
+    """
+    return _reads_state_and_more(self, extra)
+
+
+def func_with_module_level_helper_by_keyword(self: DependencyTestState):
+    """Read the state through a module level helper called by keyword.
+
+    Args:
+        self: The state.
+
+    Returns:
+        The helper's result.
+    """
+    return _reads_state_and_more(state=self)
+
+
+def func_with_getattr(self: DependencyTestState):
+    """Read a field whose name is computed.
+
+    Returns:
+        The field value.
+    """
+    return getattr(self, "count")  # noqa: B009
+
+
+def func_with_self_in_container(self: DependencyTestState):
+    """Read a field through the state boxed in a list.
+
+    Returns:
+        The field value.
+    """
+    return [self][0].count
+
+
+def func_returning_self(self: DependencyTestState):
+    """Hand the state itself back to the caller.
+
+    Returns:
+        The state.
+    """
+    return self
+
+
+def func_comparing_self(self: DependencyTestState, other):
+    """Compare the state against another object.
+
+    Args:
+        self: The state.
+        other: Another object.
+
+    Returns:
+        Whether the two are the same object.
+    """
+    return self is other
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        func_with_module_level_helper,
+        func_with_module_level_helper_and_extra_arg,
+        func_with_module_level_helper_by_keyword,
+        func_with_getattr,
+        func_with_self_in_container,
+        func_returning_self,
+        func_comparing_self,
+    ],
+    ids=[
+        "helper(self)",
+        "helper(self, extra)",
+        "helper(st=self)",
+        "getattr(self, ...)",
+        "[self][0].count",
+        "return self",
+        "self is other",
+    ],
+)
+def test_state_leaving_the_analysis_is_unresolved(func):
+    """A state value consumed as a value, not read through, cannot be followed.
+
+    Args:
+        func: The function whose state reads escape the analysis.
+    """
+    tracker = DependencyTracker(func, DependencyTestState)
+
+    assert tracker.unresolved == {DependencyTestState}
+
+
+def func_with_plain_locals(self: DependencyTestState, thing: _PlainThing):
+    """Read nothing but locals, a comprehension, and a plain object's attribute.
+
+    Args:
+        self: The state.
+        thing: An object that is not state.
+
+    Returns:
+        A number.
+    """
+    total = 3
+    names = ["a", "b"]
+    return (
+        total + len(names) + thing.field + sum(1 for name in names if len(name) > total)
+    )
+
+
+def func_with_self_and_self_comparison(self: DependencyTestState):
+    """Compare two fields of the same state.
+
+    Returns:
+        Whether the fields are equal.
+    """
+    return self.count == self.name
+
+
+def func_with_container_of_field_values(self: DependencyTestState):
+    """Build a container out of field values.
+
+    Returns:
+        The container.
+    """
+    return [self.count, self.name, {"n": self.items}]
+
+
+def func_with_class_name(self: DependencyTestState):
+    """Read the state's class name, which is not state data.
+
+    Returns:
+        The class name.
+    """
+    return self.__class__.__name__
+
+
+async def func_with_get_state_and_call(self: DependencyTestState):
+    """Read another state and pass its field to a function.
+
+    Returns:
+        The other state's value, doubled.
+    """
+    other = await self.get_state(AnotherTestState)
+    return len(other.text) + max(1, other.value)
+
+
+def func_with_lambda_passed_as_argument(self: DependencyTestState):
+    """Sort state fields with a lambda that is an argument, not a stored function.
+
+    Returns:
+        How many items there are, plus the shortest one's length.
+    """
+    ordered = sorted(self.items, key=lambda item: len(item))
+    return len(ordered) + self.count
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        func_with_plain_locals,
+        func_with_self_and_self_comparison,
+        func_with_container_of_field_values,
+        func_with_class_name,
+        func_with_get_state_and_call,
+        func_with_lambda_passed_as_argument,
+    ],
+    ids=[
+        "locals_and_object",
+        "self.field == self.field",
+        "container_of_values",
+        "__class__.__name__",
+        "get_state_and_calls",
+        "lambda_as_argument",
+    ],
+)
+def test_ordinary_getters_are_not_marked_unresolved(func):
+    """Reading values, rather than the state itself, keeps the dependency set precise.
+
+    Args:
+        func: The function to analyse.
+    """
+    tracker = DependencyTracker(func, DependencyTestState)
+
+    assert not tracker.unresolved
+
+
+def test_ordinary_getters_keep_their_dependencies():
+    """The forms covered above still report exactly the fields they read."""
+    assert DependencyTracker(
+        func_with_self_and_self_comparison, DependencyTestState
+    ).dependencies == {DependencyTestState.get_full_name(): {"count", "name"}}
+    assert DependencyTracker(
+        func_with_container_of_field_values, DependencyTestState
+    ).dependencies == {DependencyTestState.get_full_name(): {"count", "name", "items"}}
+    assert not DependencyTracker(func_with_class_name, DependencyTestState).dependencies
+    assert DependencyTracker(
+        func_with_get_state_and_call, DependencyTestState
+    ).dependencies == {AnotherTestState.get_full_name(): {"text", "value"}}
+    assert DependencyTracker(
+        func_with_lambda_passed_as_argument, DependencyTestState
+    ).dependencies == {DependencyTestState.get_full_name(): {"count", "items"}}

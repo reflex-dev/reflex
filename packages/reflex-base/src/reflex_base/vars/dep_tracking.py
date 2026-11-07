@@ -104,6 +104,9 @@ class DependencyTracker:
     state_cls: type[BaseState] = dataclasses.field()
 
     dependencies: dict[str, set[str]] = dataclasses.field(default_factory=dict)
+    # States whose data left the analysis, so which of their vars are read is not
+    # known; ComputedVar._deps() widens the dependency set for them.
+    unresolved: set[type[BaseState]] = dataclasses.field(default_factory=set)
 
     scan_status: ScanStatus = dataclasses.field(default=ScanStatus.SCANNING)
     top_of_stack: str | None = dataclasses.field(default=None)
@@ -111,14 +114,78 @@ class DependencyTracker:
     tracked_locals: dict[str, type[BaseState] | ModuleType] = dataclasses.field(
         default_factory=dict
     )
+    local_functions: dict[str, CodeType] = dataclasses.field(default_factory=dict)
 
     _getting_state_class: type[BaseState] | ModuleType | None = dataclasses.field(
         default=None
     )
     _get_var_value_positions: dis.Positions | None = dataclasses.field(default=None)
     _last_import_name: str | None = dataclasses.field(default=None)
+    # Code objects already on this recursion path, so one that resolves back stops.
+    _seen: set[CodeType] = dataclasses.field(default_factory=set)
+    # A state in the lower slot of a two-value load, seen only by an op taking both.
+    _state_below: type[BaseState] | None = dataclasses.field(default=None)
+    # A locally defined function a call is about to make.
+    _pending_callee: CodeType | None = dataclasses.field(default=None)
+    # A code object between being loaded and being stored as a function.
+    _pending_function: CodeType | None = dataclasses.field(default=None)
+    # Whether a super object is being built from the state: through 3.11 the call
+    # building it is not an escape.
+    _pending_super: bool = dataclasses.field(default=False)
 
     INVALID_NAMES: ClassVar[list[str]] = ["parent_state", "substates", "get_substate"]
+
+    LOCAL_LOAD_OPS: ClassVar[frozenset[str]] = frozenset({
+        "LOAD_FAST",
+        "LOAD_DEREF",
+        "LOAD_FAST_BORROW",
+        "LOAD_FAST_CHECK",
+        "LOAD_FAST_AND_CLEAR",
+    })
+
+    DOUBLE_LOAD_OPS: ClassVar[frozenset[str]] = frozenset({
+        "LOAD_FAST_LOAD_FAST",
+        "LOAD_FAST_BORROW_LOAD_FAST_BORROW",
+        "STORE_FAST_LOAD_FAST",
+    })
+
+    CALL_OPS: ClassVar[frozenset[str]] = frozenset({
+        "CALL",
+        "CALL_KW",
+        "CALL_FUNCTION_EX",
+    })
+
+    # Instructions that consume the stack value as a value instead of reading an
+    # attribute off it: a state reaching one may have been read whole.
+    ESCAPING_OPS: ClassVar[frozenset[str]] = CALL_OPS | frozenset({
+        "BUILD_LIST",
+        "BUILD_TUPLE",
+        "BUILD_SET",
+        "BUILD_MAP",
+        "BUILD_STRING",
+        "LIST_EXTEND",
+        "SET_UPDATE",
+        "DICT_UPDATE",
+        "DICT_MERGE",
+        "LIST_APPEND",
+        "SET_ADD",
+        "MAP_ADD",
+        "STORE_ATTR",
+        "STORE_SUBSCR",
+        "STORE_DEREF",
+        "STORE_GLOBAL",
+        "STORE_NAME",
+        "BINARY_SUBSCR",
+        "BINARY_OP",
+        "COMPARE_OP",
+        "IS_OP",
+        "CONTAINS_OP",
+        "UNPACK_SEQUENCE",
+        "UNPACK_EX",
+        "FORMAT_VALUE",
+        "RETURN_VALUE",
+        "YIELD_VALUE",
+    })
 
     def __post_init__(self):
         """After initializing, populate the dependencies dict."""
@@ -129,10 +196,23 @@ class DependencyTracker:
             # unbox EventHandler
             self.func = cast(FunctionType, self.func.fn)  # pyright: ignore[reportAttributeAccessIssue,reportFunctionMemberAccess]
 
-        if isinstance(self.func, FunctionType):
+        code: CodeType | None = None
+        if isinstance(self.func, CodeType):
+            code = self.func
+        elif isinstance(self.func, FunctionType):
+            code = self.func.__code__
             with contextlib.suppress(AttributeError, IndexError):
                 # the first argument to the function is the name of "self" arg
-                self.tracked_locals[self.func.__code__.co_varnames[0]] = self.state_cls
+                self.tracked_locals[code.co_varnames[0]] = self.state_cls
+
+        if code is not None:
+            if code in self._seen:
+                # Already analyzing this code up the chain, so only its state
+                # as a whole bounds what it reads.
+                self.unresolved.add(self.state_cls)
+                return
+            # Own the set, so a nested tracker cannot extend its parent's path.
+            self._seen = {*self._seen, code}
 
         self._populate_dependencies()
 
@@ -144,6 +224,129 @@ class DependencyTracker:
         """
         for state_name, dep_name in tracker.dependencies.items():
             self.dependencies.setdefault(state_name, set()).update(dep_name)
+        self.unresolved.update(tracker.unresolved)
+
+    def _track_nested(
+        self,
+        func: FunctionType | CodeType,
+        state_cls: type[BaseState],
+        tracked_locals: dict[str, type[BaseState] | ModuleType] | None = None,
+    ) -> None:
+        """Analyze a callable reached from this one, merging in what it learned.
+
+        Args:
+            func: The function or code object to analyze.
+            state_cls: The state its "self" argument, if it takes one, refers to.
+            tracked_locals: The locals of the nested scope; a copy of this
+                tracker's by default, so an alias bound there stays out of siblings.
+        """
+        self._merge_deps(
+            type(self)(
+                func=func,
+                state_cls=state_cls,
+                tracked_locals=(
+                    dict(self.tracked_locals)
+                    if tracked_locals is None
+                    else tracked_locals
+                ),
+                local_functions=dict(self.local_functions),
+                _seen=self._seen,
+            )
+        )
+
+    def get_tracked_state(self, local_name: str | None) -> type[BaseState] | None:
+        """Get the state a local name tracked in the current scope refers to.
+
+        Args:
+            local_name: The name of the local variable to fetch.
+
+        Returns:
+            The BaseState subclass the local refers to, or None if the name is
+            untracked or refers to an imported module instead.
+        """
+        from reflex.state import BaseState
+
+        value = self.tracked_locals.get(local_name) if local_name else None
+        if isinstance(value, type) and issubclass(value, BaseState):
+            return value
+        return None
+
+    def load_attr_or_method(
+        self,
+        name: str,
+        positions: dis.Positions | None = None,
+        target_state: type[BaseState] | None = None,
+    ) -> None:
+        """Handle loading an attribute or method from the object on top of the stack.
+
+        This method directly tracks attributes and recursively merges
+        dependencies from analyzing the dependencies of any methods called.
+
+        Args:
+            name: The attribute or method being loaded.
+            positions: Where the load appears in the source, for `get_var_value`.
+            target_state: The state it is loaded from; whatever the top of the
+                stack refers to, if not given.
+
+        Raises:
+            VarValueError: if the attribute is an disallowed name or attribute
+                does not reference a BaseState.
+        """
+        from .base import ComputedVar
+
+        if name in self.INVALID_NAMES:
+            msg = f"Cached var {self!s} cannot access arbitrary state via `{name}`."
+            raise VarValueError(msg)
+        if name == "get_state":
+            # Special case: arbitrary state access requested.
+            self.scan_status = ScanStatus.GETTING_STATE
+            return
+        if name == "get_var_value":
+            # Special case: arbitrary var access requested.
+            self._get_var_value_positions = positions
+            self.scan_status = ScanStatus.GETTING_VAR
+            return
+
+        # Reset status back to SCANNING after attribute is accessed.
+        self.scan_status = ScanStatus.SCANNING
+        if target_state is None:
+            if not self.top_of_stack:
+                return
+            target_obj = self.get_tracked_local(self.top_of_stack)
+            try:
+                target_state = assert_base_state(
+                    target_obj,
+                    local_name=self.top_of_stack,
+                )
+            except VarValueError:
+                # If the target state is not a BaseState, we cannot track dependencies on it.
+                return
+        # Look up the raw descriptor first via inspect.getattr_static so we can detect
+        # property-like descriptors (e.g. HybridProperty) that override __get__ to return
+        # something other than themselves when accessed via the class.
+        try:
+            static_obj = inspect.getattr_static(target_state, name)
+        except AttributeError:
+            static_obj = None
+
+        if isinstance(static_obj, property) and not isinstance(static_obj, ComputedVar):
+            # recurse into property fget functions
+            ref_obj = static_obj.fget
+        else:
+            try:
+                ref_obj = getattr(target_state, name)
+            except AttributeError:
+                # Not found on this state class, maybe it is a dynamic attribute that will be picked up later.
+                ref_obj = None
+        if isinstance(ref_obj, type) and name not in target_state.vars:
+            # A class reached through the state (`self.__class__`): no state data
+            # to depend on, and no getter body to analyze.
+            return
+        if callable(ref_obj):
+            # recurse into callable attributes
+            self._track_nested(cast(FunctionType, ref_obj), target_state)
+        elif is_dependency(target_state, name):
+            self.dependencies.setdefault(target_state.get_full_name(), set()).add(name)
 
     def get_tracked_local(self, local_name: str) -> type[BaseState] | ModuleType:
         """Get the value of a local name tracked in the current function scope.
@@ -164,71 +367,6 @@ class DependencyTracker:
             msg = f"{local_name!r} is not tracked in the current scope."
             raise UntrackedLocalVarError(msg) from ke
         return local_value
-
-    def load_attr_or_method(self, instruction: dis.Instruction) -> None:
-        """Handle loading an attribute or method from the object on top of the stack.
-
-        This method directly tracks attributes and recursively merges
-        dependencies from analyzing the dependencies of any methods called.
-
-        Args:
-            instruction: The dis instruction to process.
-
-        Raises:
-            VarValueError: if the attribute is an disallowed name or attribute
-                does not reference a BaseState.
-        """
-        from .base import ComputedVar
-
-        if instruction.argval in self.INVALID_NAMES:
-            msg = f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
-            raise VarValueError(msg)
-        if instruction.argval == "get_state":
-            # Special case: arbitrary state access requested.
-            self.scan_status = ScanStatus.GETTING_STATE
-            return
-        if instruction.argval == "get_var_value":
-            # Special case: arbitrary var access requested.
-            self._get_var_value_positions = instruction.positions
-            self.scan_status = ScanStatus.GETTING_VAR
-            return
-
-        # Reset status back to SCANNING after attribute is accessed.
-        self.scan_status = ScanStatus.SCANNING
-        if not self.top_of_stack:
-            return
-        target_obj = self.get_tracked_local(self.top_of_stack)
-        try:
-            target_state = assert_base_state(target_obj, local_name=self.top_of_stack)
-        except VarValueError:
-            # If the target state is not a BaseState, we cannot track dependencies on it.
-            return
-        # Look up the raw descriptor first via inspect.getattr_static so we can detect
-        # property-like descriptors (e.g. HybridProperty) that override __get__ to return
-        # something other than themselves when accessed via the class.
-        try:
-            static_obj = inspect.getattr_static(target_state, instruction.argval)
-        except AttributeError:
-            static_obj = None
-
-        if isinstance(static_obj, property) and not isinstance(static_obj, ComputedVar):
-            # recurse into property fget functions
-            ref_obj = static_obj.fget
-        else:
-            try:
-                ref_obj = getattr(target_state, instruction.argval)
-            except AttributeError:
-                # Not found on this state class, maybe it is a dynamic attribute that will be picked up later.
-                ref_obj = None
-        if callable(ref_obj):
-            # recurse into callable attributes
-            self._merge_deps(
-                type(self)(func=cast(FunctionType, ref_obj), state_cls=target_state)
-            )
-        elif is_dependency(target_state, instruction.argval):
-            self.dependencies.setdefault(target_state.get_full_name(), set()).add(
-                instruction.argval
-            )
 
     def _get_globals(self) -> dict[str, Any]:
         """Get the globals of the function.
@@ -331,7 +469,7 @@ class DependencyTracker:
             self.scan_status = ScanStatus.SCANNING
         elif instruction.opname in ("LOAD_ATTR", "LOAD_METHOD"):
             # Attribute access on an inline `get_state`, not assigned to a variable.
-            self.load_attr_or_method(instruction)
+            self.load_attr_or_method(instruction.argval, instruction.positions)
 
     def _eval_var(self, positions: dis.Positions) -> Var:
         """Evaluate instructions from the wrapped function to get the Var object.
@@ -406,6 +544,28 @@ class DependencyTracker:
                 self.dependencies.setdefault(state_name, set()).update(field_names)
             self.scan_status = ScanStatus.SCANNING
 
+    def _packing_closure(
+        self, instructions: tuple[dis.Instruction, ...], index: int
+    ) -> bool:
+        """Whether the instruction at index builds a nested function's closure.
+
+        A state captured in a closure is not lost: the nested function is analyzed
+        with the same locals.
+
+        Args:
+            instructions: The disassembly being scanned.
+            index: Where the instruction sits in it.
+
+        Returns:
+            True if the built container becomes a function's closure.
+        """
+        for following in instructions[index + 1 : index + 6]:
+            if following.opname in ("MAKE_FUNCTION", "SET_FUNCTION_ATTRIBUTE"):
+                return True
+            if following.opname in self.ESCAPING_OPS:
+                return False
+        return False
+
     def _populate_dependencies(self) -> None:
         """Update self.dependencies based on the disassembly of self.func.
 
@@ -414,7 +574,8 @@ class DependencyTracker:
         Recursively called when the function makes a method call on "self" or
         define comprehensions or nested functions that may reference "self".
         """
-        for instruction in dis.get_instructions(self.func):
+        instructions = tuple(dis.get_instructions(self.func))
+        for index, instruction in enumerate(instructions):
             if self.scan_status == ScanStatus.GETTING_STATE:
                 self.handle_getting_state(instruction)
             elif self.scan_status == ScanStatus.GETTING_STATE_POST_AWAIT:
@@ -422,14 +583,7 @@ class DependencyTracker:
             elif self.scan_status == ScanStatus.GETTING_VAR:
                 self.handle_getting_var(instruction)
             elif (
-                instruction.opname
-                in (
-                    "LOAD_FAST",
-                    "LOAD_DEREF",
-                    "LOAD_FAST_BORROW",
-                    "LOAD_FAST_CHECK",
-                    "LOAD_FAST_AND_CLEAR",
-                )
+                instruction.opname in self.LOCAL_LOAD_OPS
                 and instruction.argval in self.tracked_locals
             ):
                 # bytecode loaded the class instance to the top of stack, next load instruction
@@ -437,36 +591,102 @@ class DependencyTracker:
                 self.top_of_stack = instruction.argval
                 self.scan_status = ScanStatus.GETTING_ATTR
             elif (
-                instruction.opname
-                in (
-                    "LOAD_FAST_LOAD_FAST",
-                    "LOAD_FAST_BORROW_LOAD_FAST_BORROW",
-                    "STORE_FAST_LOAD_FAST",
-                )
+                instruction.opname in self.DOUBLE_LOAD_OPS
                 and instruction.argval[-1] in self.tracked_locals
             ):
                 # Double LOAD_FAST family instructions load multiple values onto the stack,
                 # the last value in the argval list is the top of the stack.
                 self.top_of_stack = instruction.argval[-1]
                 self.scan_status = ScanStatus.GETTING_ATTR
+                self._state_below = self.get_tracked_state(instruction.argval[0])
+            elif (
+                instruction.opname in self.DOUBLE_LOAD_OPS
+                and (below := self.get_tracked_state(instruction.argval[0])) is not None
+            ):
+                # The state sits below the top of the stack, out of reach of an
+                # attribute load.
+                self._state_below = below
+            elif instruction.opname == "LOAD_GLOBAL" and instruction.argval == "super":
+                # A super object is about to be built from this state; through 3.11
+                # that is a plain call, not an escape.
+                self._pending_super = True
+            elif instruction.opname == "LOAD_SUPER_ATTR":
+                # super() was handed this state, so its attribute is read through it.
+                self._pending_super = False
+                self.load_attr_or_method(
+                    instruction.argval,
+                    instruction.positions,
+                    self.state_cls,
+                )
+                self.top_of_stack = None
             elif self.scan_status == ScanStatus.GETTING_ATTR and instruction.opname in (
                 "LOAD_ATTR",
                 "LOAD_METHOD",
             ):
-                self.load_attr_or_method(instruction)
+                self._pending_super = False
+                self.load_attr_or_method(instruction.argval, instruction.positions)
                 self.top_of_stack = None
+            elif (
+                instruction.opname in self.LOCAL_LOAD_OPS
+                and (local_function := self.local_functions.get(instruction.argval))
+                is not None
+            ):
+                # A locally defined function is on the stack, so a call can bind
+                # its parameters to a state.
+                self._pending_callee = local_function
+            elif (
+                self.scan_status == ScanStatus.GETTING_ATTR
+                and instruction.opname == "CALL"
+                and instruction.arg == 1
+                and self._pending_callee is not None
+                and self._pending_callee.co_argcount
+                and (arg_state := self.get_tracked_state(self.top_of_stack)) is not None
+            ):
+                # `helper(self)`: the state reaches the callee through its first
+                # parameter.
+                callee = self._pending_callee
+                self._pending_callee = None
+                self.scan_status = ScanStatus.SCANNING
+                self.top_of_stack = None
+                self._track_nested(
+                    callee,
+                    arg_state,
+                    tracked_locals={
+                        **self.tracked_locals,
+                        callee.co_varnames[0]: arg_state,
+                    },
+                )
+            elif instruction.opname in self.CALL_OPS and self._pending_super:
+                # Through 3.11 `super()` is a plain `super(__class__, self)` call.
+                # Leave the state pending, so the attribute load after it charges to
+                # it, and skip the escape.
+                self._pending_super = False
+                self._state_below = None
+            elif instruction.opname in self.ESCAPING_OPS:
+                escaped = (
+                    self.get_tracked_state(self.top_of_stack)
+                    if self.scan_status == ScanStatus.GETTING_ATTR
+                    else None
+                ) or self._state_below
+                if self.scan_status == ScanStatus.GETTING_ATTR:
+                    self.scan_status = ScanStatus.SCANNING
+                    self.top_of_stack = None
+                if escaped is not None and not self._packing_closure(
+                    instructions, index
+                ):
+                    # The state itself, not a value read from it, was consumed.
+                    self.unresolved.add(escaped)
+                self._pending_super = False
+                self._pending_callee = None
+                self._pending_function = None
+                self._state_below = None
             elif instruction.opname == "LOAD_CONST" and isinstance(
                 instruction.argval, CodeType
             ):
                 # recurse into nested functions / comprehensions, which can reference
                 # instance attributes from the outer scope
-                self._merge_deps(
-                    type(self)(
-                        func=instruction.argval,
-                        state_cls=self.state_cls,
-                        tracked_locals=self.tracked_locals,
-                    )
-                )
+                self._pending_function = instruction.argval
+                self._track_nested(instruction.argval, self.state_cls)
             elif instruction.opname == "IMPORT_NAME":
                 if instruction.argval is None:
                     continue
@@ -506,3 +726,20 @@ class DependencyTracker:
                     self.top_of_stack
                 )
                 self.top_of_stack = None
+            elif instruction.opname == "STORE_FAST":
+                if self._pending_function is not None:
+                    # The value stored is a function defined in this scope.
+                    self.local_functions[instruction.argval] = self._pending_function
+                    self._pending_function = None
+                elif (
+                    self.scan_status == ScanStatus.GETTING_ATTR
+                    and (aliased := self.get_tracked_state(self.top_of_stack))
+                    is not None
+                ):
+                    # `alias = self`: keep tracking reads through the alias.
+                    self.tracked_locals[instruction.argval] = aliased
+                    self.scan_status = ScanStatus.SCANNING
+                    self.top_of_stack = None
+                self._pending_callee = None
+                # A stored value stands on its own, not a super bound for a load.
+                self._pending_super = False

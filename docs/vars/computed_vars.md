@@ -100,6 +100,59 @@ the default `cache=True`) that only depends on `counter_a`, so it only gets reco
 when `counter_a` changes. Similarly `last_counter_b_update` only depends on `counter_b`,
 and thus is updated only when `counter_b` changes.
 
+## Var Dependencies
+
+A cached computed var is recomputed when one of the vars it depends on changes.
+Reflex works out those dependencies on its own by reading the code of the getter,
+which covers most getters: fields read on `self`, including through `super()`, an
+alias, or a method call, fields read inside a comprehension or a nested function,
+and vars of another state fetched with `await self.get_state(...)`.
+
+When you know the dependencies better than the getter's code shows them, name them
+with `deps=`. The entries are added to whatever the automatic analysis finds:
+
+```python
+class CartState(rx.State):
+    items: list[int] = []
+    coupon: str = ""
+
+    @rx.var(deps=["items"])
+    def subtotal(self) -> int:
+        return sum(self.items)
+```
+
+To use exactly the list you wrote and skip the automatic analysis, add
+`auto_deps=False`:
+
+```python
+class CartState(rx.State):
+    items: list[int] = []
+
+    @rx.var(deps=["items"], auto_deps=False)
+    def subtotal(self) -> int:
+        # Recomputed only when `items` changes, whatever else the getter reads.
+        return sum(self.items)
+```
+
+A string entry names a var on the state the computed var is defined on. To depend on
+a var owned by another state, pass the var itself instead of a string:
+
+```python
+class CartState(rx.State):
+    @rx.var(deps=[UserInfoState.coupon], auto_deps=False)
+    def discounted_total(self) -> float: ...
+```
+
+Neither argument is accepted with `cache=False`, since a var that recomputes on every
+update needs no dependency list.
+
+A getter that reaches the state in a way the analysis cannot follow — one that reads
+fields through `getattr(self, name)`, or hands `self` to a function defined outside
+the state — does not get a guessed, too-narrow list. Instead the var is recomputed on
+any change to that state, including changes to the fields it inherits from a state
+above it, and a warning names it so you can narrow the list back down with `deps=` and
+`auto_deps=False`.
+
 ## Async Computed Vars
 
 Async computed vars allow you to use asynchronous operations in your computed vars.
