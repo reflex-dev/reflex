@@ -1,0 +1,1 @@
+Automatic computed var dependency tracking follows `super()` calls, a nested function called with `self`, and an alias of `self`, and now reports the state reads it cannot follow instead of returning a dependency set that silently leaves them out.

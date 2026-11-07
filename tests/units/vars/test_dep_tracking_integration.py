@@ -2,8 +2,16 @@
 
 from __future__ import annotations
 
+import logging
+
+import pytest
+from reflex_base import constants
+
 import reflex as rx
-from reflex.state import State
+from reflex.state import BaseState, State
+
+_INCOMPLETE_DEPS_MARK = "cannot follow"
+"""Substring of the warning raised when auto-tracking has to widen a computed var."""
 
 
 class IntegrationTestState(State):
@@ -244,3 +252,288 @@ def test_error_handling_in_dependency_tracking():
 
     expected_deps = {StateWithError.get_full_name(): {"value"}}
     assert deps == expected_deps
+
+
+def test_super_computed_var_dependencies():
+    """A getter reaching the parent through super() depends on what the parent reads."""
+
+    class SuperVarParent(State):
+        base: int = 0
+
+        def doubled(self) -> int:
+            return self.base * 2
+
+    class SuperVarState(SuperVarParent):
+        bonus: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            return super().doubled() + self.bonus
+
+    computed = SuperVarState.computed_vars["total"]
+
+    assert computed._deps(objclass=SuperVarState) == {
+        SuperVarState.get_full_name(): {"base", "bonus"}
+    }
+
+
+def test_explicit_super_start_class_computed_var_dependencies():
+    """A getter naming super()'s starting class depends on the implementation it reaches."""
+
+    class ExplicitSuperParent(State):
+        base: int = 0
+
+        def doubled(self) -> int:
+            return self.base * 2
+
+    class ExplicitSuperMiddle(ExplicitSuperParent):
+        skipped: int = 0
+
+        def doubled(self) -> int:
+            return self.skipped
+
+    class ExplicitSuperState(ExplicitSuperMiddle):
+        bonus: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            return super(ExplicitSuperMiddle, self).doubled() + self.bonus
+
+    computed = ExplicitSuperState.computed_vars["total"]
+
+    # `skipped` belongs to the override this super() names, so it runs past.
+    assert computed._deps(objclass=ExplicitSuperState) == {
+        ExplicitSuperState.get_full_name(): {"base", "bonus"}
+    }
+
+
+def test_nested_argument_computed_var_dependencies():
+    """A getter that hands itself to a nested function tracks the fields it reads."""
+
+    class NestedArgState(State):
+        base: int = 0
+        bonus: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            def scaled(st) -> int:
+                return st.base * 2
+
+            return scaled(self) + self.bonus
+
+    computed = NestedArgState.computed_vars["total"]
+
+    assert computed._deps(objclass=NestedArgState) == {
+        NestedArgState.get_full_name(): {"base", "bonus"}
+    }
+
+
+def test_aliased_self_computed_var_dependencies():
+    """A getter that aliases self tracks the fields read through the alias."""
+
+    class AliasedSelfState(State):
+        base: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            st = self
+            return st.base * 2
+
+    computed = AliasedSelfState.computed_vars["total"]
+
+    assert computed._deps(objclass=AliasedSelfState) == {
+        AliasedSelfState.get_full_name(): {"base"}
+    }
+
+
+def test_untrackable_getter_depends_on_the_whole_state(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """When the getter cannot be followed, every var of its state invalidates it, once warned."""
+    with caplog.at_level(logging.WARNING, logger="reflex_base.vars.base"):
+        # A BaseState root: widened edges here must not land on the shared tree.
+        class EscapingState(BaseState):
+            base: int = 0
+            bonus: int = 0
+
+            @rx.var
+            def total(self) -> int:
+                return getattr(self, "base") + self.bonus  # noqa: B009
+
+    deps = EscapingState.computed_vars["total"]._deps(objclass=EscapingState)
+
+    assert deps == {
+        # The routing fields count too: a getter this unfollowable may have read them.
+        EscapingState.get_full_name(): {"base", "bonus", *constants.ROUTER_VARS}
+    }
+    assert len([r for r in caplog.records if _INCOMPLETE_DEPS_MARK in r.message]) == 1
+
+
+def test_widening_covers_the_client_vars_read_through_self() -> None:
+    """A getter that could have read the routing or hydration of its own state waits for them."""
+
+    # A substate of the app root, home of the client vars; no computed var of its own.
+    class WidenedFrameState(State):
+        base: int = 0
+
+    def getter(self) -> int:
+        return 0
+
+    widened = rx.var(getter)._widen_deps(WidenedFrameState, {}, (WidenedFrameState,))
+
+    names = widened[WidenedFrameState.get_full_name()]
+    assert "base" in names
+    assert set(constants.ROUTER_VARS) <= names
+    assert "is_hydrated" in names
+    # `router` is a switchboard over those fields rather than a var with a field of
+    # its own, so naming it would read back as the deprecated deps=["router"].
+    assert names == set(WidenedFrameState.vars) - {
+        constants.ROUTER,
+        constants.ROUTER_DATA,
+    }
+
+
+def test_widening_for_another_state_leaves_out_the_client_vars() -> None:
+    """Only a state read through `self` can have been read through the client vars."""
+
+    class WidenedClientState(State):
+        base: int = 0
+
+    class WidenedOtherState(BaseState):
+        value: int = 0
+
+    def getter(self) -> int:
+        return 0
+
+    widened = rx.var(getter)._widen_deps(WidenedClientState, {}, (WidenedOtherState,))
+
+    names = widened[WidenedOtherState.get_full_name()]
+    assert names == {"value"}
+    assert names.isdisjoint(BaseState._NON_DATA_VAR_NAMES)
+
+
+def test_widened_router_deps_are_not_the_deprecated_string(caplog) -> None:
+    """Widening depends on the routing fields themselves, so no deprecation is read back."""
+    with caplog.at_level(logging.WARNING):
+        # A BaseState root, so its routing vars are its own and the edges it registers
+        # stay inside this test instead of marking up the shared app tree.
+        class WidenedRouterState(BaseState):
+            base: int = 0
+
+            @rx.var
+            def total(self) -> int:
+                return getattr(self, "base")  # noqa: B009
+
+    deps = WidenedRouterState.computed_vars["total"]._deps(objclass=WidenedRouterState)
+    assert constants.ROUTER_PAGE in deps[WidenedRouterState.get_full_name()]
+
+    # The edge lands on the state the routing field is defined on, which for a var
+    # reading `self` is the state whose data escaped the analysis.
+    assert (
+        WidenedRouterState.get_full_name(),
+        "total",
+    ) in WidenedRouterState._var_dependencies[constants.ROUTER_PAGE]
+    assert not [r for r in caplog.records if 'deps=["router"]' in r.message]
+
+
+def test_widening_includes_the_backend_fields() -> None:
+    """Widening covers the fields that stay off the frontend, since they dirty all the same."""
+
+    class WidenedBackendState(BaseState):
+        _hidden: int = 0
+        shown: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            return getattr(self, "_hidden") + self.shown  # noqa: B009
+
+    deps = WidenedBackendState.computed_vars["total"]._deps(
+        objclass=WidenedBackendState
+    )
+
+    # Neither field is readable from the getter's bytecode, so both must invalidate.
+    assert deps == {
+        WidenedBackendState.get_full_name(): {
+            "_hidden",
+            "shown",
+            *constants.ROUTER_VARS,
+        }
+    }
+
+
+def test_incomplete_deps_warning_is_not_repeated(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The warning about widened dependencies is raised once per computed var.
+
+    Args:
+        caplog: The captured log records.
+    """
+    with caplog.at_level(logging.WARNING, logger="reflex_base.vars.base"):
+
+        class TwiceWarnedState(BaseState):
+            base: int = 0
+
+            @rx.var
+            def total(self) -> int:
+                return getattr(self, "base")  # noqa: B009
+
+    computed = TwiceWarnedState.computed_vars["total"]
+    for _ in range(3):
+        computed._deps(objclass=TwiceWarnedState)
+
+    assert len([r for r in caplog.records if _INCOMPLETE_DEPS_MARK in r.message]) == 1
+
+
+def test_ordinary_computed_vars_are_not_widened_or_warned(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Getters the tracker understands keep their exact dependency set and stay quiet."""
+    with caplog.at_level(logging.WARNING, logger="reflex_base.vars.base"):
+
+        class QuietState(State):
+            base: int = 0
+            flag: bool = True
+            other: int = 1
+
+            @rx.var
+            def total(self) -> int:
+                return self.base if self.flag else self.other
+
+    assert not [r for r in caplog.records if _INCOMPLETE_DEPS_MARK in r.message]
+    assert QuietState.computed_vars["total"]._deps(objclass=QuietState) == {
+        QuietState.get_full_name(): {"base", "flag", "other"}
+    }
+
+
+def test_explicit_deps_are_never_widened() -> None:
+    """auto_deps=False means the deps the author wrote, exactly."""
+
+    class ExplicitDepState(State):
+        base: int = 0
+        other: int = 0
+
+        @rx.var(deps=["base"], auto_deps=False)
+        def total(self) -> int:
+            return getattr(self, "base") + self.other  # noqa: B009
+
+    assert ExplicitDepState.computed_vars["total"]._deps(objclass=ExplicitDepState) == {
+        ExplicitDepState.get_full_name(): {"base"}
+    }
+
+
+def test_uncached_computed_var_registers_no_dependencies() -> None:
+    """cache=False vars recompute on access, so they are not registered as dependents."""
+
+    # A BaseState root, so its always-dirty var does not mark up the shared tree.
+    class UncachedEscapeState(BaseState):
+        base: int = 0
+
+        @rx.var(cache=False)
+        def total(self) -> int:
+            return getattr(self, "base")  # noqa: B009
+
+    assert all(
+        "total" not in {cvar_name for _, cvar_name in dependents}
+        for dependents in UncachedEscapeState._var_dependencies.values()
+    )

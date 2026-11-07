@@ -2600,6 +2600,10 @@ def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
     return isinstance(obj, FakeComputedVarBaseClass)
 
 
+_warned_incomplete_deps: set[str] = set()
+"""Computed vars already warned about, keyed by var and widened-upon state."""
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -3067,6 +3071,78 @@ class ComputedVar(Var[RETURN_TYPE]):
                 f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
             )
 
+    def _widen_deps(
+        self,
+        objclass: type[BaseState],
+        deps: dict[str, set[str]],
+        state_classes: Iterable[type[BaseState]],
+    ) -> dict[str, set[str]]:
+        """Depend on every var of the given states, because tracking could not follow some.
+
+        Args:
+            objclass: the class obj this ComputedVar is attached to.
+            deps: the dependencies found so far, which are copied, not mutated.
+            state_classes: the states whose data left the dependency analysis.
+
+        Returns:
+            A new dict of dependencies, guaranteed to recompute this var however
+            those states were read.
+        """
+        from reflex.state import BaseState
+
+        widened = {state_name: set(names) for state_name, names in deps.items()}
+        for state_cls in state_classes:
+            names = set(state_cls.vars)
+            # A backend field is off `vars` but dirties its state all the same, so it
+            # has to invalidate this var too; the framework's own bookkeeping among
+            # them is not the app's data.
+            names |= {
+                name
+                for name, field in state_cls.__fields__.items()
+                if field._backend and not name.startswith("_reflex_internal")
+            }
+            # Client vars describe the session, and are owned above this state.
+            names -= BaseState._NON_DATA_VAR_NAMES
+            if issubclass(objclass, state_cls):
+                # Routing and hydration are read through `self`, so an unfollowable
+                # read of this state may have read them too, wherever it sits in the
+                # tree. Name the router's fields rather than the `router` switchboard:
+                # it has no field of its own, so naming it would read back as the
+                # deprecated deps=["router"].
+                names |= {
+                    name
+                    for name in (*constants.ROUTER_VARS, "is_hydrated")
+                    if name in state_cls.vars
+                }
+                # This var, or an ancestor's copy of it, would only retrigger itself.
+                names.discard(self._name)
+            widened.setdefault(state_cls.get_full_name(), set()).update(names)
+        return widened
+
+    def _warn_incomplete_deps(
+        self,
+        objclass: type[BaseState],
+        state_classes: Iterable[type[BaseState]],
+    ) -> None:
+        """Warn that this var recomputes on more than it reads, once per state.
+
+        Args:
+            objclass: the class obj this ComputedVar is attached to.
+            state_classes: the states whose data left the dependency analysis.
+        """
+        for state_cls in state_classes:
+            key = f"{objclass.get_full_name()}.{self._name}.{state_cls.get_full_name()}"
+            if key in _warned_incomplete_deps:
+                continue
+            _warned_incomplete_deps.add(key)
+            logger.warning(
+                f"Computed var '{objclass.__name__}.{self._name}' reads "
+                f"'{state_cls.__name__}' in a way dependency tracking cannot follow, "
+                f"so any change to {state_cls.__name__} recomputes it. "
+                "Set auto_deps=False and provide accurate deps=['var1', 'var2'] "
+                "to keep the dependency set narrow."
+            )
+
     def _deps(
         self,
         objclass: type[BaseState],
@@ -3107,16 +3183,21 @@ class ComputedVar(Var[RETURN_TYPE]):
                 return d
 
         try:
-            return DependencyTracker(
-                func=obj, state_cls=objclass, dependencies=d
-            ).dependencies
+            tracker = DependencyTracker(func=obj, state_cls=objclass, dependencies=d)
         except Exception as e:
             logger.warning(
                 "Failed to automatically determine dependencies for computed var "
                 f"{objclass.__name__}.{self._name}: {e}. "
                 "Set auto_deps=False and provide accurate deps=['var1', 'var2'] to suppress this warning."
             )
-            return d
+            # The analysis proved nothing, so no dependency it found can be trusted.
+            return self._widen_deps(objclass, d, (objclass,))
+
+        if tracker.unresolved:
+            self._warn_incomplete_deps(objclass, tracker.unresolved)
+            return self._widen_deps(objclass, tracker.dependencies, tracker.unresolved)
+
+        return tracker.dependencies
 
     def mark_dirty(self, instance: BaseState) -> None:
         """Mark this ComputedVar as dirty.

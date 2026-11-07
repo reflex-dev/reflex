@@ -595,6 +595,15 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
 
+    # Vars the framework keeps about the client, not the app's data (hydration,
+    # routing); excluded when widening a computed var's deps over its state's vars.
+    _NON_DATA_VAR_NAMES: ClassVar[frozenset[str]] = frozenset({
+        "is_hydrated",
+        constants.ROUTER,
+        constants.ROUTER_DATA,
+        *constants.ROUTER_VARS,
+    })
+
     # Vars on this class sent to the client, and computed vars that expire on
     # an interval; recomputed with the dependency dicts, i.e. at class creation
     # and after any var is added.
