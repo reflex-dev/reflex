@@ -803,6 +803,92 @@ def test_super_resolves_from_the_class_the_caller_is_defined_in():
     assert not tracker.unresolved
 
 
+def test_explicit_super_start_class_skips_the_class_it_names():
+    """`super(Below, self)` runs the implementation after Below, not after the caller."""
+
+    class MiddleState(SuperParentState):
+        extra: int = 0
+
+        def parent_method(self) -> int:
+            """Read this class's own field, which the explicit super() skips.
+
+            Returns:
+                The extra.
+            """
+            return self.extra
+
+    class ExplicitSuperState(MiddleState):
+        def func_naming_the_class_to_skip(self) -> int:
+            """Reach past the class in between by naming it to super().
+
+            Returns:
+                The parent's result.
+            """
+            return super(MiddleState, self).parent_method()
+
+    tracker = DependencyTracker(
+        ExplicitSuperState.func_naming_the_class_to_skip, ExplicitSuperState
+    )
+
+    assert tracker.dependencies == {ExplicitSuperState.get_full_name(): {"value"}}
+    assert not tracker.unresolved
+
+
+def test_unresolvable_super_start_class_is_unresolved():
+    """A super() whose starting class cannot be named cannot say which member runs."""
+
+    class OpaqueSuperState(SuperParentState):
+        def func_naming_a_non_ancestor(self) -> int:
+            """Name something that is none of this state's ancestors.
+
+            Returns:
+                Whatever the implementation it reaches returns.
+            """
+            # Never runs: what it would reach is what the analysis cannot say.
+            return super(_PlainThing, self).parent_method()  # pyright: ignore[reportArgumentType]
+
+    tracker = DependencyTracker(
+        OpaqueSuperState.func_naming_a_non_ancestor, OpaqueSuperState
+    )
+
+    assert tracker.dependencies == {}
+    assert tracker.unresolved == {OpaqueSuperState}
+
+
+def test_super_start_class_held_by_a_local_is_unresolved():
+    """A super() whose starting class sits in a local cannot be named from bytecode."""
+
+    class MiddleOperandState(SuperParentState):
+        extra: int = 0
+
+        def parent_method(self) -> int:
+            """Read this class's own field, which the explicit super() skips.
+
+            Returns:
+                The extra.
+            """
+            return self.extra
+
+    class LocalOperandState(MiddleOperandState):
+        def func_naming_a_local_class(self) -> int:
+            """Reach the parent through a class held in a local variable.
+
+            Returns:
+                Whatever the implementation it reaches returns.
+            """
+            middle = MiddleOperandState
+            return super(middle, self).parent_method()
+
+    tracker = DependencyTracker(
+        LocalOperandState.func_naming_a_local_class, LocalOperandState
+    )
+
+    # The compiler hands the class and the state over in one instruction, whose two
+    # names this cannot tell apart from any other pair of locals.
+    assert tracker.dependencies == {}
+    assert tracker.unresolved == {LocalOperandState}
+
+
 def test_self_recursion_marks_unresolved():
     """A method that calls itself cannot be scanned to a bound, so it widens."""
 

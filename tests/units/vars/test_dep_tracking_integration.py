@@ -277,6 +277,36 @@ def test_super_computed_var_dependencies():
     }
 
 
+def test_explicit_super_start_class_computed_var_dependencies():
+    """A getter naming super()'s starting class depends on the implementation it reaches."""
+
+    class ExplicitSuperParent(State):
+        base: int = 0
+
+        def doubled(self) -> int:
+            return self.base * 2
+
+    class ExplicitSuperMiddle(ExplicitSuperParent):
+        skipped: int = 0
+
+        def doubled(self) -> int:
+            return self.skipped
+
+    class ExplicitSuperState(ExplicitSuperMiddle):
+        bonus: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            return super(ExplicitSuperMiddle, self).doubled() + self.bonus
+
+    computed = ExplicitSuperState.computed_vars["total"]
+
+    # `skipped` belongs to the override this super() names, so it runs past.
+    assert computed._deps(objclass=ExplicitSuperState) == {
+        ExplicitSuperState.get_full_name(): {"base", "bonus"}
+    }
+
+
 def test_nested_argument_computed_var_dependencies():
     """A getter that hands itself to a nested function tracks the fields it reads."""
 

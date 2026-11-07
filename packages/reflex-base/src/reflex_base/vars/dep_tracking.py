@@ -22,6 +22,10 @@ if TYPE_CHECKING:
 
 CellEmpty = object()
 
+# Whether reading a member off super() has its own opcode, which decides what a
+# LOAD_ATTR while a super() is being built loads: that member, or an operand of it.
+_SUPER_MEMBER_HAS_OWN_OPCODE = sys.version_info >= (3, 12)
+
 
 def get_cell_value(cell: CellType) -> Any:
     """Get the value of a cell object.
@@ -157,6 +161,12 @@ class DependencyTracker:
     # Whether a super object is being built from the state: through 3.11 the call
     # building it is not an escape, and the load after it is a super() load.
     _pending_super: bool = dataclasses.field(default=False)
+    # The class an explicit `super(X, self)` names, which the search starts after
+    # instead of after the caller. None for the implicit operand of `super()`.
+    _super_start: type[Any] | None = dataclasses.field(default=None)
+    # The class the pending super() starts after is one this cannot name, so which
+    # implementation it reaches is not known.
+    _super_opaque: bool = dataclasses.field(default=False)
     # The class whose body is being scanned, which is what a super() call inside it
     # resolves after — not the state itself, whose overrides super() skips.
     _home_cls: type[Any] | None = dataclasses.field(default=None, repr=False)
@@ -389,6 +399,38 @@ class DependencyTracker:
         elif is_dependency(target_state, name):
             self.dependencies.setdefault(target_state.get_full_name(), set()).add(name)
 
+    def _reset_super_pending(self) -> None:
+        """Forget the super() whose load has just been handled, operand and all."""
+        self._pending_super = False
+        self._super_start = None
+        self._super_opaque = False
+
+    def _note_super_operand(self, instruction: dis.Instruction) -> None:
+        """Record the class an explicit `super(X, self)` is being handed.
+
+        Args:
+            instruction: The load building that class.
+        """
+        from reflex.state import BaseState
+
+        name = instruction.argval
+        if not isinstance(name, str):
+            self._super_opaque = True
+            return
+        if instruction.opname == "LOAD_DEREF" and name == "__class__":
+            # The implicit operand of a zero-argument super(), which is the caller's
+            # own class: what the search starts after when no class is named.
+            return
+        candidate = (
+            self._get_closure()
+            if instruction.opname == "LOAD_DEREF"
+            else self._get_globals()
+        ).get(name)
+        if isinstance(candidate, type) and issubclass(candidate, BaseState):
+            self._super_start = candidate
+        else:
+            self._super_opaque = True
+
     def _load_super_attr(self, name: str, positions: dis.Positions | None) -> None:
         """Read a member off the super object being built from this state.
 
@@ -400,18 +442,24 @@ class DependencyTracker:
             name: The member loaded through super().
             positions: Where the load appears in the source, for `get_var_value`.
         """
+        start = self._super_start or self._home_cls
+        opaque = self._super_opaque
+        self._reset_super_pending()
         mro = self.state_cls.__mro__
-        home = self._home_cls
-        # super() runs the first implementation after the class the caller's body is
-        # in, not whatever the state class overrides it with, though what that reads
-        # is still the state's own data.
-        after = mro[mro.index(home) + 1 :] if home is not None and home in mro else ()
+        # super() runs the first implementation after the class it starts from: the
+        # caller's own class, or the one an explicit super(X, self) names to step over
+        # the ones in between. What that implementation reads is still the state's data.
+        after = (
+            mro[mro.index(start) + 1 :]
+            if not opaque and start is not None and start in mro
+            else ()
+        )
         for cls in after:
             if name in cls.__dict__:
                 self.load_attr_or_method(name, positions, self.state_cls, cls)
                 return
-        # Either the caller's class is not resolvable or super() finds nothing, so
-        # which implementation would run is more than this can say.
+        # Either the class super() starts after is not resolvable or it finds nothing,
+        # so which implementation would run is more than this can say.
         self.scan_status = ScanStatus.SCANNING
         self.unresolved.add(self.state_cls)
 
@@ -675,6 +723,7 @@ class DependencyTracker:
             elif (
                 instruction.opname in self.DOUBLE_LOAD_OPS
                 and instruction.argval[-1] in self.tracked_locals
+                and not self._pending_super
             ):
                 # Double LOAD_FAST family instructions load multiple values onto the stack,
                 # the last value in the argval list is the top of the stack.
@@ -694,21 +743,31 @@ class DependencyTracker:
                 self._pending_super = True
             elif instruction.opname == "LOAD_SUPER_ATTR":
                 # super() was handed this state, so its attribute is read through it.
-                self._pending_super = False
                 self._load_super_attr(instruction.argval, instruction.positions)
                 self.top_of_stack = None
+            elif (
+                self._pending_super
+                and instruction.opname.startswith("LOAD_")
+                and (
+                    _SUPER_MEMBER_HAS_OWN_OPCODE
+                    or instruction.opname not in ("LOAD_ATTR", "LOAD_METHOD")
+                )
+            ):
+                # Part of the arguments to `super(X, self)`, which say where its search
+                # starts. Where a super() member has its own opcode, a load here can
+                # only be operand material.
+                self._note_super_operand(instruction)
             elif self.scan_status == ScanStatus.GETTING_ATTR and instruction.opname in (
                 "LOAD_ATTR",
                 "LOAD_METHOD",
             ):
                 # Through 3.11 the load right after `super(__class__, self)` reads
                 # off the super object, not off the state itself.
-                pending_super = self._pending_super
-                self._pending_super = False
-                if pending_super:
+                if self._pending_super:
                     self._load_super_attr(instruction.argval, instruction.positions)
                 else:
                     self.load_attr_or_method(instruction.argval, instruction.positions)
+                self._reset_super_pending()
                 self.top_of_stack = None
             elif (
                 instruction.opname in self.LOCAL_LOAD_OPS
@@ -759,7 +818,7 @@ class DependencyTracker:
                 ):
                     # The state itself, not a value read from it, was consumed.
                     self.unresolved.add(escaped)
-                self._pending_super = False
+                self._reset_super_pending()
                 self._pending_callee = None
                 self._pending_function = None
                 self._state_below = None
@@ -829,4 +888,4 @@ class DependencyTracker:
                         self.top_of_stack = None
                 self._pending_callee = None
                 # A stored value stands on its own, not a super bound for a load.
-                self._pending_super = False
+                self._reset_super_pending()

@@ -1460,6 +1460,35 @@ def _escalator_via_super_past_override() -> type[Any]:
     return OverridingEscalatorState
 
 
+def _escalator_via_super_past_named_class() -> type[Any]:
+    """Build a state whose super() names the class whose override it steps over.
+
+    Returns:
+        The state class.
+    """
+
+    class OverridingMiddleState(_DoublerMixin, BaseState):
+        skipped: int = 0
+
+        def doubled(self) -> int:
+            """Read a field the explicit super() leaves behind.
+
+            Returns:
+                The skipped field.
+            """
+            return self.skipped
+
+    class NamedEscalatorState(OverridingMiddleState):
+        base: int = 0
+        bonus: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            return super(OverridingMiddleState, self).doubled() + self.bonus
+
+    return NamedEscalatorState
+
+
 def _escalator_via_nested_function() -> type[Any]:
     """Build a state whose computed var reads a field through a nested function.
 
@@ -1523,6 +1552,7 @@ def _escalator_untrackable() -> type[Any]:
     [
         _escalator_via_super,
         _escalator_via_super_past_override,
+        _escalator_via_super_past_named_class,
         _escalator_via_nested_function,
         _escalator_via_alias,
         _escalator_untrackable,
@@ -1530,6 +1560,7 @@ def _escalator_untrackable() -> type[Any]:
     ids=[
         "super",
         "super_past_override",
+        "super_past_named_class",
         "nested_function",
         "alias",
         "untrackable",
