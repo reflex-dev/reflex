@@ -428,7 +428,9 @@ def test_emit_update(benchmark: BenchmarkFixture):
     )
     namespace = cast(
         EventNamespace,
-        SimpleNamespace(_token_manager=token_manager, emit=emit),
+        SimpleNamespace(
+            _token_manager=token_manager, _state_update_encoders=(), emit=emit
+        ),
     )
     update = StateUpdate(delta={"state": {"value": 1}})
 
