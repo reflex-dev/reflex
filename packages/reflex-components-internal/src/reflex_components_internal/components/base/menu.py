@@ -787,12 +787,14 @@ class HighLevelMenu(MenuRoot):
             The menu component.
         """
         # Extract props for different parts
-        item_props = {k: props.pop(k) for k in cls._item_props & props.keys()}
-        trigger_props = {k: props.pop(k) for k in cls._trigger_props & props.keys()}
-        positioner_props = {
-            k: props.pop(k) for k in cls._positioner_props & props.keys()
+        item_props = {k: props.pop(k) for k in list(props) if k in cls._item_props}
+        trigger_props = {
+            k: props.pop(k) for k in list(props) if k in cls._trigger_props
         }
-        portal_props = {k: props.pop(k) for k in cls._portal_props & props.keys()}
+        positioner_props = {
+            k: props.pop(k) for k in list(props) if k in cls._positioner_props
+        }
+        portal_props = {k: props.pop(k) for k in list(props) if k in cls._portal_props}
 
         trigger = props.pop("trigger", None)
         items = props.pop("items", [])

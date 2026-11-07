@@ -115,8 +115,10 @@ class HighLevelAvatar(AvatarRoot):
             The component.
         """
         # Extract props for each subcomponent
-        image_props = {k: props.pop(k) for k in cls._image_props & props.keys()}
-        fallback_props = {k: props.pop(k) for k in cls._fallback_props & props.keys()}
+        image_props = {k: props.pop(k) for k in list(props) if k in cls._image_props}
+        fallback_props = {
+            k: props.pop(k) for k in list(props) if k in cls._fallback_props
+        }
 
         return AvatarRoot.create(
             AvatarImage.create(**image_props),

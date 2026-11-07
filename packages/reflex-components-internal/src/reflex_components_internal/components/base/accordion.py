@@ -211,9 +211,11 @@ class HighLevelAccordion(AccordionRoot):
             The accordion component with all necessary subcomponents.
         """
         # Extract props for different parts
-        item_props = {k: props.pop(k) for k in cls._item_props & props.keys()}
-        trigger_props = {k: props.pop(k) for k in cls._trigger_props & props.keys()}
-        panel_props = {k: props.pop(k) for k in cls._panel_props & props.keys()}
+        item_props = {k: props.pop(k) for k in list(props) if k in cls._item_props}
+        trigger_props = {
+            k: props.pop(k) for k in list(props) if k in cls._trigger_props
+        }
+        panel_props = {k: props.pop(k) for k in list(props) if k in cls._panel_props}
 
         if isinstance(items, Var):
             accordion_items = foreach(

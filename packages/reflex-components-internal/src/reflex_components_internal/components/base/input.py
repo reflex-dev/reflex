@@ -138,7 +138,7 @@ class HighLevelInput(InputBaseComponent):
             The component.
         """
         # Extract and prepare input props
-        input_props = {k: props.pop(k) for k in cls._el_input_props & props.keys()}
+        input_props = {k: props.pop(k) for k in list(props) if k in cls._el_input_props}
 
         # Extract component props
         icon = props.pop("icon", "")

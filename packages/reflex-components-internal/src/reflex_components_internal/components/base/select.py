@@ -594,13 +594,15 @@ class HighLevelSelect(SelectRoot):
             The select component.
         """
         # Extract props for different parts
-        trigger_props = {k: props.pop(k) for k in cls._trigger_props & props.keys()}
-        value_props = {k: props.pop(k) for k in cls._value_props & props.keys()}
-        items_props = {k: props.pop(k) for k in cls._items_props & props.keys()}
-        positioner_props = {
-            k: props.pop(k) for k in cls._positioner_props & props.keys()
+        trigger_props = {
+            k: props.pop(k) for k in list(props) if k in cls._trigger_props
         }
-        portal_props = {k: props.pop(k) for k in cls._portal_props & props.keys()}
+        value_props = {k: props.pop(k) for k in list(props) if k in cls._value_props}
+        items_props = {k: props.pop(k) for k in list(props) if k in cls._items_props}
+        positioner_props = {
+            k: props.pop(k) for k in list(props) if k in cls._positioner_props
+        }
+        portal_props = {k: props.pop(k) for k in list(props) if k in cls._portal_props}
 
         # Get extracted values with defaults
         size = trigger_props.get("size", "md")

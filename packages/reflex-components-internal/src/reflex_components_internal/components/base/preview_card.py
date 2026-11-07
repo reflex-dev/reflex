@@ -255,9 +255,9 @@ class HighLevelPreviewCard(PreviewCardRoot):
         """
         # Extract props for different parts
         positioner_props = {
-            k: props.pop(k) for k in cls._positioner_props & props.keys()
+            k: props.pop(k) for k in list(props) if k in cls._positioner_props
         }
-        portal_props = {k: props.pop(k) for k in cls._portal_props & props.keys()}
+        portal_props = {k: props.pop(k) for k in list(props) if k in cls._portal_props}
 
         trigger = props.pop("trigger", None)
         content = props.pop("content", None)

@@ -304,11 +304,13 @@ class HighLevelTooltip(TooltipRoot):
             content = props.pop("content")
 
         # Extract props for different parts
-        root_props = {k: props.pop(k) for k in cls._root_props & props.keys()}
-        trigger_props = {k: props.pop(k) for k in cls._trigger_props & props.keys()}
-        portal_props = {k: props.pop(k) for k in cls._portal_props & props.keys()}
+        root_props = {k: props.pop(k) for k in list(props) if k in cls._root_props}
+        trigger_props = {
+            k: props.pop(k) for k in list(props) if k in cls._trigger_props
+        }
+        portal_props = {k: props.pop(k) for k in list(props) if k in cls._portal_props}
         positioner_props = {
-            k: props.pop(k) for k in cls._positioner_props & props.keys()
+            k: props.pop(k) for k in list(props) if k in cls._positioner_props
         }
 
         # Set default values

@@ -198,7 +198,9 @@ class HighLevelScrollArea(ScrollAreaRoot):
             The scroll area component.
         """
         # Extract props for different parts
-        scrollbar_props = {k: props.pop(k) for k in cls._scrollbar_props & props.keys()}
+        scrollbar_props = {
+            k: props.pop(k) for k in list(props) if k in cls._scrollbar_props
+        }
 
         return ScrollAreaRoot.create(
             ScrollAreaViewport.create(
