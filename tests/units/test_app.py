@@ -1648,6 +1648,46 @@ async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
 
 
 @pytest.mark.asyncio
+async def test_upload_streams_the_updates_the_plugins_encode(
+    mocker: MockerFixture, token: str
+):
+    """The updates an upload streams back are encoded like the ones emitted.
+
+    Args:
+        mocker: The mock fixture.
+        token: A client token.
+    """
+    config = rx.Config(
+        app_name="testing", plugins=[_TaggingCodec()], _skip_plugins_checks=True
+    )
+    mocker.patch("reflex.state.get_config", return_value=config)
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+    form_data = FormData([("files", UploadFile(filename="a.jpg", file=io.BytesIO()))])
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    async def enqueue_stream_delta(_token, _event):  # noqa: RUF029
+        yield {"state": {"ok": True}}
+
+    request_mock.form = form
+    app = Mock(event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta))
+
+    streaming_response = await upload(app)(request_mock)
+    assert isinstance(streaming_response, StreamingResponse)
+    updates = []
+    async for chunk in streaming_response.body_iterator:
+        assert isinstance(chunk, str)
+        updates.append(json.loads(chunk))
+
+    assert updates == [{"delta": {"state": {"ok": True}}, "tagged": True}]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],

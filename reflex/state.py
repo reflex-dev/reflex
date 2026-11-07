@@ -3220,6 +3220,23 @@ def _encode_state_update(
     return update
 
 
+def _sendable_state_update(
+    update: StateUpdate, encoders: Sequence[Plugin]
+) -> StateUpdate | dict[str, Any]:
+    """Get a state update as it is sent to the browser.
+
+    Args:
+        update: The update.
+        encoders: The plugins encoding it, from ``_state_update_encoders``.
+
+    Returns:
+        The update's fields encoded by the encoders, or the update itself without any.
+    """
+    if not encoders:
+        return update
+    return _encode_state_update(serialize_state_update(update), encoders)
+
+
 @serializer(to=dict)
 def serialize_state_update(update: StateUpdate) -> dict:
     """Serialize a StateUpdate to a dictionary.

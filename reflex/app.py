@@ -99,10 +99,9 @@ from reflex.state import (
     BaseState,
     State,
     StateUpdate,
-    _encode_state_update,
+    _sendable_state_update,
     _state_update_encoders,
     all_base_state_classes,
-    serialize_state_update,
 )
 from reflex.utils import (
     codespaces,
@@ -2525,13 +2524,7 @@ class EventNamespace(AsyncNamespace):
             return
         # Encoded where it is sent, so an update forwarded above is encoded by the
         # instance holding the socket.
-        payload = (
-            _encode_state_update(
-                serialize_state_update(update), self._state_update_encoders
-            )
-            if self._state_update_encoders
-            else update
-        )
+        payload = _sendable_state_update(update, self._state_update_encoders)
         # Await the emit directly: wrapping it in a task does not unblock the
         # caller (awaiting the task blocks just the same) and only adds task
         # creation/scheduling overhead on every update.
