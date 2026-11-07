@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from reflex_base.utils.exceptions import VarValueError
 from reflex_base.vars.dep_tracking import (
@@ -887,6 +889,108 @@ def test_super_start_class_held_by_a_local_is_unresolved():
     # names this cannot tell apart from any other pair of locals.
     assert tracker.dependencies == {}
     assert tracker.unresolved == {LocalOperandState}
+
+
+def test_super_start_class_taken_from_a_tracked_local_is_unresolved():
+    """A super() whose class arrives in a combined load with the argument cannot be resolved."""
+
+    class PairingMiddleState(SuperParentState):
+        extra: int = 0
+
+        @property
+        def parent_property(self) -> int:
+            """Read this class's own field, which the explicit super() may skip.
+
+            Returns:
+                One more than the extra.
+            """
+            return self.extra + 1
+
+    class PairingSuperState(PairingMiddleState):
+        def func_pairing_the_operand(self, sibling) -> int:
+            """Build super() from a name the tracker follows back to this state.
+
+            Args:
+                sibling: Another instance, handed to super() as the argument.
+
+            Returns:
+                Whatever the implementation it reaches returns.
+            """
+            st = self
+            # Could not run as written: super() takes a class, and the tracker's
+            # tracked local stands in for one.
+            return super(st, sibling).parent_property  # pyright: ignore[reportArgumentType,reportAttributeAccessIssue]
+
+    tracker = DependencyTracker(
+        PairingSuperState.func_pairing_the_operand, PairingSuperState
+    )
+
+    # Which class the combined load names is not knowable, so the middle class's
+    # override must not be taken for the implementation that runs.
+    assert tracker.dependencies == {}
+    assert tracker.unresolved == {PairingSuperState}
+
+
+def test_nested_call_of_a_nested_call_binds_the_inner_callee():
+    """`extract(make(self))` binds the state to `make`, the callee that takes it."""
+
+    class NestedChainState(State):
+        count: int = 0
+        other: int = 0
+
+        def func_with_nested_calls(self) -> int:
+            """Read a field through a nested function handed to another one.
+
+            Returns:
+                The counted amount plus this state's own field.
+            """
+
+            def make_record(st) -> dict:
+                return {"amount": st.count * 2}
+
+            def extract(rec) -> int:
+                return int(rec["amount"])
+
+            return extract(make_record(self)) + self.other
+
+    tracker = DependencyTracker(
+        NestedChainState.func_with_nested_calls, NestedChainState
+    )
+
+    # The callee of a call is the last function loaded before it, which is the inner
+    # one; the outer call has no state argument to bind.
+    assert tracker.dependencies == {
+        NestedChainState.get_full_name(): {"count", "other"}
+    }
+    assert not tracker.unresolved
+
+
+def test_nested_function_called_by_keyword_is_unresolved():
+    """A state passed by keyword cannot be bound to a parameter, so the var widens."""
+
+    class NestedKeywordState(State):
+        count: int = 0
+
+        def func_with_a_keyword_call(self) -> int:
+            """Hand this state to a nested function under a keyword.
+
+            Returns:
+                Whatever that function read.
+            """
+
+            def scaled(unused: int = 0, st: Any = None) -> int:
+                return st.count
+
+            return scaled(st=self)
+
+    tracker = DependencyTracker(
+        NestedKeywordState.func_with_a_keyword_call, NestedKeywordState
+    )
+
+    # A keyword call compiles to CALL_KW, which is not followed: what it read is not
+    # known, so every field of the state invalidates the var.
+    assert tracker.dependencies == {}
+    assert tracker.unresolved == {NestedKeywordState}
 
 
 def test_self_recursion_marks_unresolved():

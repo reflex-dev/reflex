@@ -181,6 +181,9 @@ class DependencyTracker:
         "LOAD_FAST_AND_CLEAR",
     })
 
+    # Instructions reading a member off whatever is below them on the stack.
+    MEMBER_LOAD_OPS: ClassVar[frozenset[str]] = frozenset({"LOAD_ATTR", "LOAD_METHOD"})
+
     DOUBLE_LOAD_OPS: ClassVar[frozenset[str]] = frozenset({
         "LOAD_FAST_LOAD_FAST",
         "LOAD_FAST_BORROW_LOAD_FAST_BORROW",
@@ -688,6 +691,28 @@ class DependencyTracker:
                 return False
         return False
 
+    @staticmethod
+    def _call_takes_keywords(
+        instructions: tuple[dis.Instruction, ...], index: int
+    ) -> bool:
+        """Whether the call at index names any of its arguments.
+
+        Through 3.11 a keyword call ends in a plain CALL whose operand counts every
+        argument, so the operand alone cannot tell `helper(self)` from
+        `helper(st=self)`; the names the compiler loads for it can.
+
+        Args:
+            instructions: The disassembly being scanned.
+            index: Where the call sits in it.
+
+        Returns:
+            True if this call passes its arguments by keyword.
+        """
+        return any(
+            previous.opname == "KW_NAMES"
+            for previous in instructions[max(index - 2, 0) : index]
+        )
+
     def _populate_dependencies(self) -> None:
         """Update self.dependencies based on the disassembly of self.func.
 
@@ -733,6 +758,7 @@ class DependencyTracker:
             elif (
                 instruction.opname in self.DOUBLE_LOAD_OPS
                 and (below := self.get_tracked_state(instruction.argval[0])) is not None
+                and not self._pending_super
             ):
                 # The state sits below the top of the stack, out of reach of an
                 # attribute load.
@@ -750,24 +776,24 @@ class DependencyTracker:
                 and instruction.opname.startswith("LOAD_")
                 and (
                     _SUPER_MEMBER_HAS_OWN_OPCODE
-                    or instruction.opname not in ("LOAD_ATTR", "LOAD_METHOD")
+                    or instruction.opname not in self.MEMBER_LOAD_OPS
                 )
             ):
                 # Part of the arguments to `super(X, self)`, which say where its search
                 # starts. Where a super() member has its own opcode, a load here can
                 # only be operand material.
                 self._note_super_operand(instruction)
-            elif self.scan_status == ScanStatus.GETTING_ATTR and instruction.opname in (
-                "LOAD_ATTR",
-                "LOAD_METHOD",
+            elif self._pending_super and instruction.opname in self.MEMBER_LOAD_OPS:
+                # On 3.11 the member loads off the super object with a plain attribute
+                # load. The zero-argument form builds super from the frame rather than
+                # from a loaded state, so no attribute-pending status precedes it.
+                self._load_super_attr(instruction.argval, instruction.positions)
+                self.top_of_stack = None
+            elif (
+                self.scan_status == ScanStatus.GETTING_ATTR
+                and instruction.opname in self.MEMBER_LOAD_OPS
             ):
-                # Through 3.11 the load right after `super(__class__, self)` reads
-                # off the super object, not off the state itself.
-                if self._pending_super:
-                    self._load_super_attr(instruction.argval, instruction.positions)
-                else:
-                    self.load_attr_or_method(instruction.argval, instruction.positions)
-                self._reset_super_pending()
+                self.load_attr_or_method(instruction.argval, instruction.positions)
                 self.top_of_stack = None
             elif (
                 instruction.opname in self.LOCAL_LOAD_OPS
@@ -784,9 +810,11 @@ class DependencyTracker:
                 and self._pending_callee is not None
                 and self._pending_callee.co_argcount
                 and (arg_state := self.get_tracked_state(self.top_of_stack)) is not None
+                and not self._call_takes_keywords(instructions, index)
             ):
                 # `helper(self)`: the state reaches the callee through its first
-                # parameter.
+                # parameter. A call naming its arguments binds them by name instead,
+                # which is more than the operand shows, so it falls to the escape check.
                 callee = self._pending_callee
                 self._pending_callee = None
                 self.scan_status = ScanStatus.SCANNING
