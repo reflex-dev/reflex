@@ -465,7 +465,17 @@ def test_state_update_without_a_delta_is_encoded_without_one(mocker: MockerFixtu
     received: list[dict[str, Any]] = []
 
     class _RecordingCodec(rx.plugins.Plugin):
+        """Records the updates it receives and leaves them unchanged."""
+
         def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+            """Record the update.
+
+            Args:
+                update: The update's fields.
+
+            Returns:
+                The update, unchanged.
+            """
             received.append(update)
             return update
 

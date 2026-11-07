@@ -775,6 +775,14 @@ def test_compile_contexts_encodes_the_initial_state_for_the_decoders(
 
     # The backend diffs first hydrates against the values, not their encoding.
     def hashes(compiled: str) -> str:
+        """Get the line of a compiled context that exports the initial state hashes.
+
+        Args:
+            compiled: The compiled context module.
+
+        Returns:
+            The ``initialStateHashes`` export line.
+        """
         return compiled[compiled.index("export const initialStateHashes") :].split(
             "\n"
         )[0]
