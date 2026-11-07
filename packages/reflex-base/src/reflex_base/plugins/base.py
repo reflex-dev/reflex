@@ -252,10 +252,10 @@ class Plugin:
     def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
         """Encode a state update on its way to the browser.
 
-        Runs once per update, on the fields that are sent (``delta``,
-        ``events``), after the backend is done comparing and merging deltas,
-        and at compile time on the initial state as an update with only a
-        ``delta``. An empty field is not sent, so an update may carry only
+        Runs once per update, where it is sent, on the fields that are sent
+        (``delta``, ``events``), after the backend is done comparing and
+        merging deltas, and at compile time on the initial state as an update
+        with only a ``delta``. An empty field is not sent, so an update may carry only
         ``events``. Plugins encode in configuration order. A plugin may replace
         values and add fields of its own, which the decoder from
         ``get_state_update_decoder`` reverses in the browser. The values are
@@ -277,8 +277,10 @@ class Plugin:
         The module's default export takes a received update and returns the
         decoded one, synchronously, before any of its delta is applied and
         before the compiled initial state is first read. Decoders run in
-        reverse configuration order. A decoded delta may share objects or
-        contain cycles. Return new objects for what changed and never mutate
+        reverse configuration order. A decoder leaving one object in several
+        places, or a cycle, lists the substates holding them in the update's
+        ``shared_substates``; the frontend merges only those keeping each
+        object one. Return new objects for what changed and never mutate
         one returned for an earlier update: the frontend compares by identity,
         so a mutated object counts as unchanged. A decoder must not throw, as
         the initial state is decoded when the app's context module loads,

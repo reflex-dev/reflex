@@ -32,9 +32,10 @@ def test_state_update_wire_serialization(
         rows: Payload size parameter.
         benchmark: The CodSpeed benchmark fixture.
     """
-    delta = {"performance_state": {"payload": make_payload(kind, rows)}}
-    # a new update per call, as an update encodes its fields once and keeps them
-    encoded = benchmark(lambda: json_dumps(StateUpdate(delta=delta)))
+    update = StateUpdate(
+        delta={"performance_state": {"payload": make_payload(kind, rows)}}
+    )
+    encoded = benchmark(lambda: json_dumps(update))
     assert encoded
 
 
@@ -44,9 +45,8 @@ def test_state_update_dataclass_serialization(benchmark: BenchmarkFixture):
     Args:
         benchmark: The CodSpeed benchmark fixture.
     """
-    delta = {"performance_state": {"payload": list(range(10_000))}}
-    # a new update per call, as an update encodes its fields once and keeps them
-    result = benchmark(lambda: serialize_state_update(StateUpdate(delta=delta)))
+    update = StateUpdate(delta={"performance_state": {"payload": list(range(10_000))}})
+    result = benchmark(lambda: serialize_state_update(update))
     assert result["delta"]
 
 

@@ -80,12 +80,15 @@ from reflex.state import (
     State,
     StateUpdate,
     _apply_client_storage_vars,
+    _encode_state_update,
     _frontend_schema,
     _get_client_storage_delta,
     _load_events_for_page,
     _override_base_method,
+    _state_update_encoders,
     all_base_state_classes,
     is_serializable,
+    serialize_state_update,
     state_snapshot_hashes,
 )
 from reflex.testing import chdir
@@ -359,7 +362,7 @@ def test_router_cookies_not_sent_to_frontend(test_state: TestState, method: str)
 
 
 class _NestingCodec(rx.plugins.Plugin):
-    """Nests every var's value under the plugin's name and counts its encodings."""
+    """Nests every var's value under the plugin's name."""
 
     def __init__(self, name: str):
         """Name the codec.
@@ -368,7 +371,6 @@ class _NestingCodec(rx.plugins.Plugin):
             name: The key the values are nested under.
         """
         self.name = name
-        self.calls = 0
 
     def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
         """Nest the delta's values, and mark the update with a field of its own.
@@ -379,7 +381,6 @@ class _NestingCodec(rx.plugins.Plugin):
         Returns:
             The encoded update.
         """
-        self.calls += 1
         delta = {
             state: {var: {self.name: value} for var, value in values.items()}
             for state, values in update["delta"].items()
@@ -387,81 +388,38 @@ class _NestingCodec(rx.plugins.Plugin):
         return {**update, "delta": delta, self.name: True}
 
 
-def _configure_codecs(mocker: MockerFixture, *codecs: rx.plugins.Plugin) -> None:
-    """Configure plugins for the state updates serialized in a test.
-
-    Args:
-        mocker: The mock fixture.
-        codecs: The plugins to configure.
-    """
-    config = rx.Config(
-        app_name="testing", plugins=list(codecs), _skip_plugins_checks=True
-    )
-    mocker.patch("reflex.state.get_config", return_value=config)
-
-
-def test_state_update_is_encoded_once_by_every_plugin_in_order(
+def test_plugins_overriding_the_hook_encode_in_configuration_order(
     mocker: MockerFixture,
 ):
-    """Plugins encode an update in configuration order, once however often it is sent.
+    """Only plugins overriding ``encode_state_update`` encode, in configuration order.
 
     Args:
         mocker: The mock fixture.
     """
     first, second = _NestingCodec("first"), _NestingCodec("second")
-    _configure_codecs(mocker, first, second)
-    update = StateUpdate(delta={"state": {"value": 1}}, events=[])
-
-    sent = [json.loads(json_dumps(update)) for _ in range(2)]
-
-    assert (
-        sent
-        == [
-            {
-                "delta": {"state": {"value": {"second": {"first": 1}}}},
-                "first": True,
-                "second": True,
-            }
-        ]
-        * 2
+    config = rx.Config(
+        app_name="testing",
+        plugins=[first, rx.plugins.Plugin(), second],
+        _skip_plugins_checks=True,
     )
-    assert (first.calls, second.calls) == (1, 1)
-    # The update keeps the values it was created with.
-    assert update.delta == {"state": {"value": 1}}
-
-
-@pytest.mark.parametrize("sent_before_forwarding", [False, True])
-def test_state_update_is_forwarded_as_sent(
-    mocker: MockerFixture, sent_before_forwarding: bool
-):
-    """A pickled update is sent as the original would be, encoded once in all.
-
-    Args:
-        mocker: The mock fixture.
-        sent_before_forwarding: Whether the original was encoded before pickling.
-    """
-    codec = _NestingCodec("codec")
-    _configure_codecs(mocker, codec)
+    mocker.patch("reflex.state.get_config", return_value=config)
     update = StateUpdate(delta={"state": {"value": 1}})
-    if sent_before_forwarding:
-        json_dumps(update)
 
-    forwarded = pickle.loads(pickle.dumps(update))
+    encoders = _state_update_encoders()
+    encoded = _encode_state_update(serialize_state_update(update), encoders)
 
-    assert json.loads(json_dumps(forwarded)) == {
-        "delta": {"state": {"value": {"codec": 1}}},
-        "codec": True,
+    assert encoders == (first, second)
+    assert encoded == {
+        "delta": {"state": {"value": {"second": {"first": 1}}}},
+        "first": True,
+        "second": True,
     }
-    assert forwarded.delta == {"state": {"value": 1}}
-    assert codec.calls == 1
+    # Serializing the update leaves the encoding to where it is sent.
+    assert json.loads(json_dumps(update)) == {"delta": {"state": {"value": 1}}}
 
 
-def test_state_update_without_a_delta_is_encoded_without_one(mocker: MockerFixture):
-    """An update with only events reaches the encoders without a ``delta`` field.
-
-    Args:
-        mocker: The mock fixture.
-    """
+def test_state_update_without_a_delta_is_encoded_without_one():
+    """An update with only events reaches the encoders without a ``delta`` field."""
     received: list[dict[str, Any]] = []
 
     class _RecordingCodec(rx.plugins.Plugin):
@@ -479,13 +437,12 @@ def test_state_update_without_a_delta_is_encoded_without_one(mocker: MockerFixtu
             received.append(update)
             return update
 
-    _configure_codecs(mocker, _RecordingCodec())
-    event = Event(name="state.handler")
+    update = StateUpdate(events=[Event(name="state.handler")])
 
-    sent = json.loads(json_dumps(StateUpdate(events=[event])))
+    encoded = _encode_state_update(serialize_state_update(update), (_RecordingCodec(),))
 
-    assert [list(update) for update in received] == [["events"]]
-    assert list(sent) == ["events"]
+    assert [list(fields) for fields in received] == [["events"]]
+    assert list(encoded) == ["events"]
 
 
 def test_load_events_do_not_copy_router_data(app_module_mock):

@@ -4994,6 +4994,51 @@ async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace
     await event_namespace._token_manager.disconnect_all()
 
 
+class _TaggingCodec(rx.plugins.Plugin):
+    """Marks every update it encodes."""
+
+    def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+        """Mark the update.
+
+        Args:
+            update: The update's fields.
+
+        Returns:
+            The update with a field of the plugin's own.
+        """
+        return {**update, "tagged": True}
+
+
+@pytest.mark.parametrize("encoders", [(), (_TaggingCodec(),)], ids=["none", "one"])
+async def test_emit_update_sends_the_update_the_plugins_encode(
+    event_namespace_with_processor_mock: EventNamespace,
+    encoders: tuple[rx.plugins.Plugin, ...],
+):
+    """An update is encoded where it is sent, and sent as is without encoders.
+
+    Args:
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+        encoders: The plugins encoding the update.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace._token_manager
+    manager.token_to_socket["token"] = SocketRecord(
+        instance_id=manager.instance_id, sid="sid"
+    )
+    namespace._state_update_encoders = encoders
+    namespace.emit = AsyncMock()
+    update = StateUpdate(delta={"state": {"value": 1}})
+
+    await namespace.emit_update(update, "token")
+
+    [call] = namespace.emit.await_args_list
+    sent = call.args[1]
+    if encoders:
+        assert sent == {"delta": {"state": {"value": 1}}, "tagged": True}
+    else:
+        assert sent is update
+
+
 @pytest.mark.parametrize("owner", ["current", "replacement", "remote", "missing"])
 async def test_disconnect_only_cancels_current_local_socket(
     event_namespace_with_processor_mock: EventNamespace,

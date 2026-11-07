@@ -44,6 +44,7 @@ from reflex_base.event import (
     EventSpec,
     call_script,
 )
+from reflex_base.plugins import Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicComponentInvalidSignatureError,
@@ -3185,34 +3186,37 @@ class StateUpdate:
                 removal_version="1.0",
             )
 
-    @functools.cached_property
-    def _encoded(self) -> dict[str, Any]:
-        """The fields sent to the browser, encoded once however often they are sent.
-
-        Returns:
-            The set fields, encoded by the configured plugins.
-        """
-        return _encode_state_update({
-            name: value
-            for name in _STATE_UPDATE_FIELDS
-            if (value := getattr(self, name))
-        })
-
 
 _STATE_UPDATE_FIELDS = tuple(field.name for field in dataclasses.fields(StateUpdate))
 
 
-def _encode_state_update(update: dict[str, Any]) -> dict[str, Any]:
-    """Encode a state update with every configured plugin, in order.
+def _state_update_encoders() -> tuple[Plugin, ...]:
+    """Get the configured plugins that encode state updates.
+
+    Returns:
+        The plugins overriding ``Plugin.encode_state_update``, in configuration order.
+    """
+    return tuple(
+        plugin
+        for plugin in get_config().plugins
+        if type(plugin).encode_state_update is not Plugin.encode_state_update
+    )
+
+
+def _encode_state_update(
+    update: dict[str, Any], encoders: Sequence[Plugin]
+) -> dict[str, Any]:
+    """Encode a state update's fields with each encoder, in order.
 
     Args:
         update: The update's fields.
+        encoders: The plugins encoding it, from ``_state_update_encoders``.
 
     Returns:
         The encoded update.
     """
-    for plugin in get_config().plugins:
-        update = plugin.encode_state_update(update)
+    for encoder in encoders:
+        update = encoder.encode_state_update(update)
     return update
 
 
@@ -3226,7 +3230,9 @@ def serialize_state_update(update: StateUpdate) -> dict:
     Returns:
         The serialized StateUpdate.
     """
-    return update._encoded
+    return {
+        name: value for name in _STATE_UPDATE_FIELDS if (value := getattr(update, name))
+    }
 
 
 def code_uses_state_contexts(javascript_code: str) -> bool:

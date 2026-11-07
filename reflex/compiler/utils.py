@@ -53,7 +53,12 @@ from reflex.istate.storage import (
     LocalStorage,
     SessionStorage,
 )
-from reflex.state import BaseState, _encode_state_update, cache_initial_snapshot
+from reflex.state import (
+    BaseState,
+    _encode_state_update,
+    _state_update_encoders,
+    cache_initial_snapshot,
+)
 from reflex.utils import path_ops
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -295,7 +300,7 @@ def _compile_initial_state(
         return serializers.serialize(value)
 
     initial_state = compile_state(state)
-    update = _encode_state_update({"delta": initial_state})
+    update = _encode_state_update({"delta": initial_state}, _state_update_encoders())
     if not state_update_decoders:
         return initial_state, format.json_dumps(
             update["delta"], default=serialize_initial_value

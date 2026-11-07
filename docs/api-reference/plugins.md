@@ -336,8 +336,9 @@ class DedupePlugin(Plugin):
         return [(Path("utils/dedupe.js"), DECODER_SOURCE)]
 ```
 
-The encoder runs once per update, after the backend is done comparing and
-merging deltas, so it never has to survive a diff. It receives the values as
+The encoder runs once per update, where it is sent: after the backend is done
+comparing and merging deltas, on the instance holding the browser's
+connection, so it never has to survive a diff. It receives the values as
 the backend holds them, before serialization (`Event` objects, models,
 components), and the deprecated `final` when it is set. The compiled initial
 state goes through it as well, as an update whose `delta` is the initial state,
@@ -352,11 +353,15 @@ export default function decode({ dedupe_shared, ...update }) {
   if (dedupe_shared === undefined) {
     return update;
   }
-  return { ...update, delta: restore(update.delta, dedupe_shared) };
+  const delta = restore(update.delta, dedupe_shared);
+  return { ...update, delta, shared_substates: Object.keys(delta) };
 }
 ```
 
-A decoded delta may hold one object in several places, or contain cycles.
+A decoded delta may hold one object in several places, or contain cycles. A
+decoder that leaves such objects lists every substate holding one in the
+update's `shared_substates`: the frontend merges those keeping each object one,
+and compares every other substate structurally, which is faster.
 
 A decoder has to follow two rules:
 

@@ -614,16 +614,17 @@ export const applyDelta = (state, delta) => {
 /**
  * Dispatch each substate's delta of a received update.
  *
- * The substates of a decoded update share one set of pairs, so an object
- * several of them hold gets one result in all of them.
+ * The substates a decoder lists as sharing objects share one set of pairs, so
+ * an object several of them hold gets one result in all of them. Every other
+ * substate is compared structurally.
  * @param dispatch The dispatch functions, keyed by substate.
  * @param delta The update's delta, keyed by substate.
- * @param decoded Whether decoders produced the delta.
+ * @param shared The decoded update's `shared_substates`, if any.
  */
-const dispatchDelta = (dispatch, delta, decoded) => {
-  const pairs = decoded ? new Map() : undefined;
+const dispatchDelta = (dispatch, delta, shared) => {
+  const pairs = shared?.length ? new Map() : undefined;
   for (const substate in delta) {
-    if (pairs !== undefined) {
+    if (pairs !== undefined && shared.includes(substate)) {
       decodedDeltas.set(delta[substate], pairs);
     }
     dispatch[substate](delta[substate]);
@@ -1492,7 +1493,7 @@ export const connect = async (
       // Skip unknown substates in both reducer and client-storage updates.
       const delta = withoutUnknownSubstates(update.delta);
       if (delta) {
-        dispatchDelta(dispatch, delta, app.stateUpdateDecoders.length > 0);
+        dispatchDelta(dispatch, delta, update.shared_substates);
         applyClientStorageDelta(client_storage, delta);
       }
       if (update.events && update.events.length > 0) {

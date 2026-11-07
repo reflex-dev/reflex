@@ -360,7 +360,8 @@ def _run_apply_delta_script(script: str) -> None:
     """Run a node script against the delta helpers of state.js.
 
     The script sees ``applyDelta``, ``applyUpdate``, which applies an update's
-    delta to its substates as the update handler and the state store do, and
+    delta to its substates as the update handler and the state store do, all of
+    them listed as sharing objects unless given the ones to list, and
     ``applyDecoded``, which applies a decoded delta to a single substate.
 
     Args:
@@ -381,7 +382,7 @@ def _run_apply_delta_script(script: str) -> None:
             helpers
             + """
 import assert from 'node:assert/strict';
-const applyUpdate = (states, delta, decoded = true) => {
+const applyUpdate = (states, delta, shared = Object.keys(delta)) => {
   const next = {...states};
   const dispatch = {};
   for (const substate in delta) {
@@ -389,7 +390,7 @@ const applyUpdate = (states, delta, decoded = true) => {
       next[substate] = applyDelta(next[substate], substateDelta);
     };
   }
-  dispatchDelta(dispatch, delta, decoded);
+  dispatchDelta(dispatch, delta, shared);
   return next;
 };
 const applyDecoded = (state, delta) =>
@@ -618,9 +619,20 @@ assert.equal(renamed.a.parent.name, 'r');
 
 // The substates of a plain update share nothing they did not hold before.
 const plain = {a: {x: {id: 1}}, b: {x: {id: 1}}};
-const kept = applyUpdate(plain, {a: {x: {id: 1}}, b: {x: {id: 1}}}, false);
+const kept = applyUpdate(plain, {a: {x: {id: 1}}, b: {x: {id: 1}}}, []);
 assert.equal(kept.a, plain.a);
 assert.equal(kept.b, plain.b);
+
+// Only the substates a decoder lists keep an object they hold twice as one;
+// the others are compared structurally.
+const twice = () => {
+  const [x, y] = [{id: 1}, {id: 1}];
+  return {a: {x, y: x}, b: {x: y, y}};
+};
+const before = {a: {x: {id: 1}, y: {id: 1}}, b: {x: {id: 1}, y: {id: 1}}};
+const mixed = applyUpdate(before, twice(), ['a']);
+assert.equal(mixed.a.x, mixed.a.y);
+assert.equal(mixed.b, before.b);
 """)
 
 
