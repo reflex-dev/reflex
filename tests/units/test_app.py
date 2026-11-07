@@ -1648,6 +1648,46 @@ async def test_upload_file_raises_client_disconnect_when_stream_send_fails(
 
 
 @pytest.mark.asyncio
+async def test_upload_streams_the_updates_the_plugins_encode(
+    mocker: MockerFixture, token: str
+):
+    """The updates an upload streams back are encoded like the ones emitted.
+
+    Args:
+        mocker: The mock fixture.
+        token: A client token.
+    """
+    config = rx.Config(
+        app_name="testing", plugins=[_TaggingCodec()], _skip_plugins_checks=True
+    )
+    mocker.patch("reflex.state.get_config", return_value=config)
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+    form_data = FormData([("files", UploadFile(filename="a.jpg", file=io.BytesIO()))])
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    async def enqueue_stream_delta(_token, _event):  # noqa: RUF029
+        yield {"state": {"ok": True}}
+
+    request_mock.form = form
+    app = Mock(event_processor=Mock(enqueue_stream_delta=enqueue_stream_delta))
+
+    streaming_response = await upload(app)(request_mock)
+    assert isinstance(streaming_response, StreamingResponse)
+    updates = []
+    async for chunk in streaming_response.body_iterator:
+        assert isinstance(chunk, str)
+        updates.append(json.loads(chunk))
+
+    assert updates == [{"delta": {"state": {"ok": True}}, "tagged": True}]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -4992,6 +5032,51 @@ async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace
     # enumeration of the shared instance. Awaited rather than run in a fresh
     # loop via asyncio.run: the redis client is bound to the test's loop.
     await event_namespace._token_manager.disconnect_all()
+
+
+class _TaggingCodec(rx.plugins.Plugin):
+    """Marks every update it encodes."""
+
+    def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+        """Mark the update.
+
+        Args:
+            update: The update's fields.
+
+        Returns:
+            The update with a field of the plugin's own.
+        """
+        return {**update, "tagged": True}
+
+
+@pytest.mark.parametrize("encoders", [(), (_TaggingCodec(),)], ids=["none", "one"])
+async def test_emit_update_sends_the_update_the_plugins_encode(
+    event_namespace_with_processor_mock: EventNamespace,
+    encoders: tuple[rx.plugins.Plugin, ...],
+):
+    """An update is encoded where it is sent, and sent as is without encoders.
+
+    Args:
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+        encoders: The plugins encoding the update.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace._token_manager
+    manager.token_to_socket["token"] = SocketRecord(
+        instance_id=manager.instance_id, sid="sid"
+    )
+    namespace._state_update_encoders = encoders
+    namespace.emit = AsyncMock()
+    update = StateUpdate(delta={"state": {"value": 1}})
+
+    await namespace.emit_update(update, "token")
+
+    [call] = namespace.emit.await_args_list
+    sent = call.args[1]
+    if encoders:
+        assert sent == {"delta": {"state": {"value": 1}}, "tagged": True}
+    else:
+        assert sent is update
 
 
 @pytest.mark.parametrize("owner", ["current", "replacement", "remote", "missing"])

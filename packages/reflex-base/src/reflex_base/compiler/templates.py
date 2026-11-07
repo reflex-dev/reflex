@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 from collections.abc import Iterable, Mapping, Sequence
@@ -273,12 +274,27 @@ def theme_template(theme: str):
     return f"""export default {theme}"""
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class EncodedInitialState:
+    """The initial state as a state update the plugins encoded for the browser.
+
+    Attributes:
+        update_json: JSON of the encoded update whose ``delta`` is the initial
+            state.
+        decoders: The modules whose default exports decode it, and every
+            update the backend sends, in the order they decode.
+    """
+
+    update_json: str
+    decoders: Sequence[str]
+
+
 def context_template(
     *,
     is_dev_mode: bool,
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
-    initial_state_json: str | None = None,
+    initial_state_json: str | EncodedInitialState | None = None,
     initial_state_hashes: list[str] | None = None,
     state_name: str | None = None,
     state_schema: str | None = None,
@@ -289,7 +305,9 @@ def context_template(
 
     Args:
         initial_state: The initial state for the context.
-        initial_state_json: Initial state JSON already serialized by the compiler.
+        initial_state_json: Initial state JSON already serialized by the
+            compiler, or the initial state encoded as an update for the
+            decoders that come with it.
         initial_state_hashes: Per-state hashes of ``initial_state`` in sorted
             state name order, sent with the first hydrate so the backend can
             skip vars still at their default.
@@ -311,6 +329,17 @@ def context_template(
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
+    if isinstance(initial_state_json, EncodedInitialState):
+        state_update_decoders = initial_state_json.decoders
+        initial_state_str = f"stateUpdateDecoders.reduce((decoded, decode) => decode(decoded), {initial_state_json.update_json}).delta"
+    else:
+        state_update_decoders = ()
+        initial_state_str = initial_state_json
+    decoder_names = [f"decodeStateUpdate{i}" for i in range(len(state_update_decoders))]
+    decoder_imports = "".join(
+        f"import {name} from {json.dumps(module)}\n"
+        for name, module in zip(decoder_names, state_update_decoders, strict=True)
+    )
     state_str = (
         rf"""
 export const state_name = "{state_name}"
@@ -411,9 +440,10 @@ if (typeof window !== "undefined") {
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
-{disable_owner_stacks_str}
+{decoder_imports}{disable_owner_stacks_str}
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext }};
-export const initialState = {initial_state_json}
+export const stateUpdateDecoders = [{", ".join(decoder_names)}]
+export const initialState = {initial_state_str}
 export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
 export const stateSchema = {json.dumps(state_schema)}
 
@@ -428,6 +458,7 @@ export const isDevMode = {json.dumps(is_dev_mode)};
 // only one Vite re-executes when they change.
 registerApp({{
   initialState,
+  stateUpdateDecoders,
   clientStorage,
   state_name,
   on_load_internal_event,

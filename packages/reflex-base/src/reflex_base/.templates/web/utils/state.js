@@ -412,6 +412,174 @@ const replaceEqualDeep = (prev, next) => {
 };
 
 /**
+ * Pair the plain objects and arrays a decoded value reaches with the previous
+ * values they are first reached at.
+ *
+ * A pair is marked equal when its keys, in order, and its other values match
+ * the previous value's, and each object it holds was paired with the previous
+ * value's object under the same key, or already results in it; settleDecoded
+ * then clears the mark of every pair that holds an unequal one.
+ * @param prev The previous value.
+ * @param next The decoded value.
+ * @param pairs The pairs of the update so far, keyed by the decoded objects.
+ * @param fresh The pairs this substate's delta adds, which it settles.
+ * @returns The pair of next, or undefined if next is no plain object or array.
+ */
+const pairDecoded = (prev, next, pairs, fresh) => {
+  const isArray = Array.isArray(next);
+  if (!isArray && !isPlainObject(next)) {
+    return undefined;
+  }
+  let pair = pairs.get(next);
+  if (pair !== undefined) {
+    return pair;
+  }
+  const keys = isArray ? undefined : Object.keys(next);
+  const sameKind = isArray ? Array.isArray(prev) : isPlainObject(prev);
+  let equal = sameKind;
+  if (equal && isArray) {
+    equal = prev.length === next.length;
+  } else if (equal) {
+    const prevKeys = Object.keys(prev);
+    equal =
+      prevKeys.length === keys.length &&
+      prevKeys.every((key, i) => key === keys[i]);
+  }
+  pair = {
+    prev,
+    next,
+    equal,
+    // Whether an unequal pair results in next itself, see settleDecoded.
+    ownResult: true,
+    result: undefined,
+    // The pairs of the objects next holds, under childKeys, and of those
+    // holding next.
+    children: [],
+    childKeys: [],
+    parents: [],
+  };
+  // Registered before its contents, so a cycle leads back to this pair.
+  pairs.set(next, pair);
+  fresh.push(pair);
+  const length = isArray ? next.length : keys.length;
+  for (let i = 0; i < length; i++) {
+    const key = isArray ? i : keys[i];
+    const prevValue =
+      sameKind && Object.hasOwn(prev, key) ? prev[key] : undefined;
+    const child = pairDecoded(prevValue, next[key], pairs, fresh);
+    if (child === undefined) {
+      pair.equal &&= Object.is(prevValue, next[key]);
+      continue;
+    }
+    pair.children.push(child);
+    pair.childKeys.push(key);
+    if (child.result === undefined) {
+      pair.equal &&= child.prev === prevValue;
+      child.parents.push(pair);
+    } else {
+      // Settled by an earlier substate of the update.
+      pair.equal &&= child.result === prevValue;
+    }
+  }
+  return pair;
+};
+
+/**
+ * Settle the result of every pair a substate's decoded delta added.
+ *
+ * An equal pair results in its previous value. Any other pair results in its
+ * decoded object itself while every object it holds does as well, or else in
+ * a copy holding their results, so every place that holds one decoded object,
+ * on a cycle too, holds its one result.
+ * @param fresh The pairs to settle, holding only pairs settled or among them.
+ */
+const settleDecoded = (fresh) => {
+  // A pair holding an unequal pair is unequal itself.
+  const unequal = [];
+  for (const pair of fresh) {
+    if (!pair.equal) {
+      unequal.push(pair);
+    }
+  }
+  for (let i = 0; i < unequal.length; i++) {
+    for (const parent of unequal[i].parents) {
+      if (parent.equal) {
+        parent.equal = false;
+        unequal.push(parent);
+      }
+    }
+  }
+  // A pair holding an object whose result is another object is copied, and so
+  // is every unequal pair holding a copied one. Of the pairs settled here, only
+  // the equal ones have a result yet.
+  const copied = [];
+  for (const pair of unequal) {
+    if (
+      pair.children.some((child) =>
+        child.result === undefined
+          ? child.equal && child.prev !== child.next
+          : child.result !== child.next,
+      )
+    ) {
+      pair.ownResult = false;
+      copied.push(pair);
+    }
+  }
+  for (let i = 0; i < copied.length; i++) {
+    for (const parent of copied[i].parents) {
+      if (!parent.equal && parent.ownResult) {
+        parent.ownResult = false;
+        copied.push(parent);
+      }
+    }
+  }
+  for (const pair of fresh) {
+    if (pair.equal) {
+      pair.result = pair.prev;
+    } else if (pair.ownResult) {
+      pair.result = pair.next;
+    } else {
+      // Spreading next keeps a JSON "__proto__" key an own data property, so
+      // the assignments below never hit the prototype setter.
+      pair.result = Array.isArray(pair.next)
+        ? pair.next.slice()
+        : { ...pair.next };
+    }
+  }
+  for (const { result, children, childKeys } of copied) {
+    for (let i = 0; i < children.length; i++) {
+      result[childKeys[i]] = children[i].result;
+    }
+  }
+};
+
+/**
+ * Structurally share the values of a substate's decoded delta with its state.
+ *
+ * A decoded update may hold one object in several places, in one substate or
+ * several, or contain cycles. Each of its objects gets one result, which every
+ * place holding it holds: the previous value it is first reached at if it,
+ * with everything it reaches, deep-equals that value, else the object itself
+ * or a copy that shares what is unchanged. An object an earlier substate of
+ * the update reached keeps the result it got there.
+ * @param state The substate's state.
+ * @param delta The substate's decoded delta.
+ * @param pairs The pairs of the update so far, which gain the delta's objects.
+ */
+const shareDecoded = (state, delta, pairs) => {
+  const fresh = [];
+  for (const key in delta) {
+    const prev = Object.hasOwn(state, key) ? state[key] : undefined;
+    pairDecoded(prev, delta[key], pairs, fresh);
+  }
+  settleDecoded(fresh);
+};
+
+// The pairs of each decoded update, keyed by its substate deltas, which share
+// them; see dispatchDelta.
+const decodedDeltas = new WeakMap();
+
+/**
  * Apply a delta to the state.
  *
  * Unchanged values keep their previous identity, and a delta that changes
@@ -421,16 +589,49 @@ const replaceEqualDeep = (prev, next) => {
  * @returns The new state, or state itself if nothing changed.
  */
 export const applyDelta = (state, delta) => {
+  const pairs = decodedDeltas.get(delta);
+  if (pairs !== undefined) {
+    shareDecoded(state, delta, pairs);
+  }
   let out;
   for (const key in delta) {
     const own = Object.hasOwn(state, key);
-    const value = own ? replaceEqualDeep(state[key], delta[key]) : delta[key];
+    const next = delta[key];
+    const value =
+      pairs !== undefined
+        ? (pairs.get(next)?.result ?? next)
+        : own
+          ? replaceEqualDeep(state[key], next)
+          : next;
     if (!own || !Object.is(value, state[key])) {
       out ??= { ...state };
       out[key] = value;
     }
   }
   return out ?? state;
+};
+
+/**
+ * Dispatch each substate's delta of a received update.
+ *
+ * The substates a decoder lists as sharing objects share one set of pairs, so
+ * an object several of them hold gets one result in all of them. Every other
+ * substate is compared structurally.
+ * @param dispatch The dispatch functions, keyed by substate.
+ * @param delta The update's delta, keyed by substate.
+ * @param shared The decoded update's `shared_substates`, if any.
+ */
+const dispatchDelta = (dispatch, delta, shared) => {
+  const pairs = shared?.length ? new Map() : undefined;
+  for (const substate in delta) {
+    if (pairs !== undefined && shared.includes(substate)) {
+      decodedDeltas.set(delta[substate], pairs);
+    } else {
+      // A delta a decoder hands out again keeps no pairs of an earlier update.
+      decodedDeltas.delete(delta[substate]);
+    }
+    dispatch[substate](delta[substate]);
+  }
 };
 
 /**
@@ -1285,14 +1486,17 @@ export const connect = async (
   };
 
   // On each received message, queue the updates and events.
-  socket.current.on("event", (update) => {
-    // Skip unknown substates in both reducer and client-storage updates.
-    const delta = withoutUnknownSubstates(update.delta);
+  socket.current.on("event", (received) => {
     try {
+      // Undo the encoding of the plugins that registered a decoder.
+      const update = app.stateUpdateDecoders.reduce(
+        (decoded, decode) => decode(decoded),
+        received,
+      );
+      // Skip unknown substates in both reducer and client-storage updates.
+      const delta = withoutUnknownSubstates(update.delta);
       if (delta) {
-        for (const substate in delta) {
-          dispatch[substate](delta[substate]);
-        }
+        dispatchDelta(dispatch, delta, update.shared_substates);
         applyClientStorageDelta(client_storage, delta);
       }
       if (update.events && update.events.length > 0) {

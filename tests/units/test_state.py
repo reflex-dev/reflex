@@ -80,12 +80,15 @@ from reflex.state import (
     State,
     StateUpdate,
     _apply_client_storage_vars,
+    _encode_state_update,
     _frontend_schema,
     _get_client_storage_delta,
     _load_events_for_page,
     _override_base_method,
+    _state_update_encoders,
     all_base_state_classes,
     is_serializable,
+    serialize_state_update,
     state_snapshot_hashes,
 )
 from reflex.testing import chdir
@@ -356,6 +359,90 @@ def test_router_cookies_not_sent_to_frontend(test_state: TestState, method: str)
     assert headers["raw_headers"] == {"user-agent": "browser"}
     assert "secret" not in json_dumps(payload)
     assert test_state.router.headers.cookie == "session=secret"
+
+
+class _NestingCodec(rx.plugins.Plugin):
+    """Nests every var's value under the plugin's name."""
+
+    def __init__(self, name: str):
+        """Name the codec.
+
+        Args:
+            name: The key the values are nested under.
+        """
+        self.name = name
+
+    def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+        """Nest the delta's values, and mark the update with a field of its own.
+
+        Args:
+            update: The update's fields.
+
+        Returns:
+            The encoded update.
+        """
+        delta = {
+            state: {var: {self.name: value} for var, value in values.items()}
+            for state, values in update["delta"].items()
+        }
+        return {**update, "delta": delta, self.name: True}
+
+
+def test_plugins_overriding_the_hook_encode_in_configuration_order(
+    mocker: MockerFixture,
+):
+    """Only plugins overriding ``encode_state_update`` encode, in configuration order.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    first, second = _NestingCodec("first"), _NestingCodec("second")
+    config = rx.Config(
+        app_name="testing",
+        plugins=[first, rx.plugins.Plugin(), second],
+        _skip_plugins_checks=True,
+    )
+    mocker.patch("reflex.state.get_config", return_value=config)
+    update = StateUpdate(delta={"state": {"value": 1}})
+
+    encoders = _state_update_encoders()
+    encoded = _encode_state_update(serialize_state_update(update), encoders)
+
+    assert encoders == (first, second)
+    assert encoded == {
+        "delta": {"state": {"value": {"second": {"first": 1}}}},
+        "first": True,
+        "second": True,
+    }
+    # Serializing the update leaves the encoding to where it is sent.
+    assert json.loads(json_dumps(update)) == {"delta": {"state": {"value": 1}}}
+
+
+def test_state_update_without_a_delta_is_encoded_without_one():
+    """An update with only events reaches the encoders without a ``delta`` field."""
+    received: list[dict[str, Any]] = []
+
+    class _RecordingCodec(rx.plugins.Plugin):
+        """Records the updates it receives and leaves them unchanged."""
+
+        def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+            """Record the update.
+
+            Args:
+                update: The update's fields.
+
+            Returns:
+                The update, unchanged.
+            """
+            received.append(update)
+            return update
+
+    update = StateUpdate(events=[Event(name="state.handler")])
+
+    encoded = _encode_state_update(serialize_state_update(update), (_RecordingCodec(),))
+
+    assert [list(fields) for fields in received] == [["events"]]
+    assert list(encoded) == ["events"]
 
 
 def test_load_events_do_not_copy_router_data(app_module_mock):

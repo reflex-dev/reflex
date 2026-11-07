@@ -32,6 +32,7 @@ from typing import (
 )
 
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, auto_reload_cooldown, environment
 from reflex_base.event import (
@@ -43,6 +44,7 @@ from reflex_base.event import (
     EventSpec,
     call_script,
 )
+from reflex_base.plugins import Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicComponentInvalidSignatureError,
@@ -3186,6 +3188,53 @@ class StateUpdate:
 
 
 _STATE_UPDATE_FIELDS = tuple(field.name for field in dataclasses.fields(StateUpdate))
+
+
+def _state_update_encoders() -> tuple[Plugin, ...]:
+    """Get the configured plugins that encode state updates.
+
+    Returns:
+        The plugins overriding ``Plugin.encode_state_update``, in configuration order.
+    """
+    return tuple(
+        plugin
+        for plugin in get_config().plugins
+        if type(plugin).encode_state_update is not Plugin.encode_state_update
+    )
+
+
+def _encode_state_update(
+    update: dict[str, Any], encoders: Sequence[Plugin]
+) -> dict[str, Any]:
+    """Encode a state update's fields with each encoder, in order.
+
+    Args:
+        update: The update's fields.
+        encoders: The plugins encoding it, from ``_state_update_encoders``.
+
+    Returns:
+        The encoded update.
+    """
+    for encoder in encoders:
+        update = encoder.encode_state_update(update)
+    return update
+
+
+def _sendable_state_update(
+    update: StateUpdate, encoders: Sequence[Plugin]
+) -> StateUpdate | dict[str, Any]:
+    """Get a state update as it is sent to the browser.
+
+    Args:
+        update: The update.
+        encoders: The plugins encoding it, from ``_state_update_encoders``.
+
+    Returns:
+        The update's fields encoded by the encoders, or the update itself without any.
+    """
+    if not encoders:
+        return update
+    return _encode_state_update(serialize_state_update(update), encoders)
 
 
 @serializer(to=dict)
