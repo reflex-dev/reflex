@@ -360,6 +360,7 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
 
     package_module = ModuleType(app_package)
     package_module.__path__ = []
+    package_module.__dict__["rx"] = rx
     app_module = ModuleType(f"{app_package}.main")
     state_module = ModuleType(f"{app_package}.states")
     state_module.__dict__["rx"] = rx
@@ -372,24 +373,31 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
     )
 
     def load_or_check_app(*args, **kwargs):
-        if "AppState" not in state_module.__dict__:
+        if not hasattr(package_module, "AppState"):
             exec(
                 "class AppState(rx.State):\n"
                 "    count: int = 0\n"
                 "    @rx.var(cache=False)\n"
                 "    def computed(self) -> int:\n"
-                "        return self.count\n"
+                "        return self.count\n",
+                package_module.__dict__,
+            )
+            state_module.__dict__["AppState"] = package_module.AppState
+            exec(
+                "class ChildState(AppState):\n"
                 "    @rx.event\n"
                 "    def increment(self):\n"
                 "        self.count += 1\n",
                 state_module.__dict__,
             )
         else:
-            app_state = state_module.AppState
+            app_state = package_module.AppState
+            child_state = state_module.ChildState
             context = RegistrationContext.get()
             assert context.base_states[app_state.get_full_name()] is app_state
+            assert context.base_states[child_state.get_full_name()] is child_state
             assert any(
-                handler.handler is app_state.event_handlers["increment"]
+                handler.handler is child_state.event_handlers["increment"]
                 for handler in context.event_handlers.values()
             )
             assert all_base_state_classes[app_state.get_full_name()] is None
@@ -404,10 +412,16 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
         app_source="import reflex as rx\napp = rx.App()",
     )
     first.app_module_path.parent.mkdir(parents=True, exist_ok=True)
-    first._initialize_app()
-    app_state = state_module.AppState
-    assert RegistrationContext.get().base_states[app_state.get_full_name()] is app_state
-    first.stop()
+    try:
+        first._initialize_app()
+        app_state = package_module.AppState
+        child_state = state_module.ChildState
+        context = RegistrationContext.get()
+        assert context.base_states[app_state.get_full_name()] is app_state
+        assert context.base_states[child_state.get_full_name()] is child_state
+    finally:
+        if RegistrationContext.get() is not outer_context:
+            first.stop()
 
     restarted = AppHarness.create(
         root=tmp_path / "restartable_app",
@@ -418,7 +432,7 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
     try:
         restarted._initialize_app()
     finally:
-        if restarted._registry_token is not None:
+        if RegistrationContext.get() is not outer_context:
             restarted.stop()
         assert RegistrationContext.get() is outer_context
 

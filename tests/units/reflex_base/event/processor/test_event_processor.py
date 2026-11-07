@@ -673,10 +673,10 @@ async def test_processor_reports_blocking_sync_handler(
         await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
 
     assert "_blocking_sync_handler" in caplog.text
-    assert "blocked the event loop" in caplog.text
-    duration = re.search(r"blocked the event loop for (\d+\.\d+)s", caplog.text)
-    assert duration is not None
-    assert float(duration.group(1)) >= 0.1
+    # The probe that times the block lands up to a polling gap into it, so only
+    # the report of a total is checked here; test_blocking checks its length
+    # with a handler that blocks once a probe is queued.
+    assert re.search(r"blocked the event loop for \d+\.\d+s in total", caplog.text)
     # The stack of the event task ends at the blocking line, without loop frames.
     assert "Blocking stack (most recent call last):" in caplog.text
     assert "time.sleep(0.12)" in caplog.text

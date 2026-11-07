@@ -310,9 +310,7 @@ class AppHarness:
             self._modules_before_app_load = set(sys.modules)
             # ensure config and app are reloaded when testing different app
             config = reload_config()
-            self._restore_cached_app_module_states(
-                config.module.partition(".")[0]
-            )
+            self._restore_cached_app_module_states(config.module.partition(".")[0])
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
@@ -346,11 +344,12 @@ class AppHarness:
         module_names = {
             state_cls.__module__
             for state_cls in current_context.base_states.values()
-            if state_cls.__module__.startswith(prefix)
+            if (
+                state_cls.__module__ == app_package
+                or state_cls.__module__.startswith(prefix)
+            )
             and state_cls.__qualname__ == state_cls.__name__
-            and (
-                module := sys.modules.get(state_cls.__module__)
-            ) is not None
+            and (module := sys.modules.get(state_cls.__module__)) is not None
             and getattr(module, state_cls.__name__, None) is state_cls
         }
         if module_names:
@@ -365,7 +364,7 @@ class AppHarness:
             return
 
         context = RegistrationContext.get()
-        restored: list[type[BaseState]] = []
+        restored: dict[str, type[BaseState]] = {}
         for module_name in module_names:
             module = sys.modules.get(module_name)
             if module is None:
@@ -377,18 +376,24 @@ class AppHarness:
                     or state_cls.__module__ != module_name
                     or state_cls.__qualname__ != state_cls.__name__
                     or getattr(module, state_cls.__name__, None) is not state_cls
-                    or state_cls.get_full_name() in context.base_states
                 ):
                     continue
-                context._register_base_state(state_cls)
-                restored.append(state_cls)
+
+                parent_state: type[BaseState] | None = state_cls
+                while parent_state is not None:
+                    full_name = parent_state.get_full_name()
+                    if full_name not in context.base_states:
+                        restored[full_name] = parent_state
+                    parent_state = parent_state.get_parent_state()
 
         if restored:
+            for state_cls in sorted(restored.values(), key=lambda cls: len(cls.mro())):
+                context._register_base_state(state_cls)
             BaseState.get_class_substate.cache_clear()
-            for state_cls in restored:
-                all_base_state_classes[state_cls.get_full_name()] = None
+            for full_name, state_cls in restored.items():
+                all_base_state_classes[full_name] = None
                 state_cls._var_dependencies = {}
-            for state_cls in sorted(restored, key=lambda cls: len(cls.mro())):
+            for state_cls in sorted(restored.values(), key=lambda cls: len(cls.mro())):
                 state_cls._init_var_dependency_dicts()
 
     def _preserve_new_shared_module_states(self) -> None:
