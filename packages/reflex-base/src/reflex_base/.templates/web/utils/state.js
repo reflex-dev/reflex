@@ -626,6 +626,9 @@ const dispatchDelta = (dispatch, delta, shared) => {
   for (const substate in delta) {
     if (pairs !== undefined && shared.includes(substate)) {
       decodedDeltas.set(delta[substate], pairs);
+    } else {
+      // A delta a decoder hands out again keeps no pairs of an earlier update.
+      decodedDeltas.delete(delta[substate]);
     }
     dispatch[substate](delta[substate]);
   }

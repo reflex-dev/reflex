@@ -633,6 +633,14 @@ const before = {a: {x: {id: 1}, y: {id: 1}}, b: {x: {id: 1}, y: {id: 1}}};
 const mixed = applyUpdate(before, twice(), ['a']);
 assert.equal(mixed.a.x, mixed.a.y);
 assert.equal(mixed.b, before.b);
+
+// A delta a decoder hands out again in an update that does not list its
+// substate is compared structurally, not with the earlier update's results.
+const o = {id: 1};
+const reused = {a: {x: o, y: o}};
+applyUpdate({a: {x: {id: 1}, y: {id: 1}}}, reused, ['a']);
+const fresh = {a: {x: {id: 1}, y: {id: 1}}};
+assert.equal(applyUpdate(fresh, reused, []).a, fresh.a);
 """)
 
 
