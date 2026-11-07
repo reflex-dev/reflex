@@ -3092,9 +3092,28 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         widened = {state_name: set(names) for state_name, names in deps.items()}
         for state_cls in state_classes:
+            names = set(state_cls.vars)
+            # A backend field is off `vars` but dirties its state all the same, so it
+            # has to invalidate this var too; the framework's own bookkeeping among
+            # them is not the app's data.
+            names |= {
+                name
+                for name, field in state_cls.__fields__.items()
+                if field._backend and not name.startswith("_reflex_internal")
+            }
             # Client vars describe the session, and are owned above this state.
-            names = set(state_cls.vars) - BaseState._NON_DATA_VAR_NAMES
+            names -= BaseState._NON_DATA_VAR_NAMES
             if issubclass(objclass, state_cls):
+                # Routing and hydration are read through `self`, so an unfollowable
+                # read of this state may have read them too, wherever it sits in the
+                # tree. Name the router's fields rather than the `router` switchboard:
+                # it has no field of its own, so naming it would read back as the
+                # deprecated deps=["router"].
+                names |= {
+                    name
+                    for name in (*constants.ROUTER_VARS, "is_hydrated")
+                    if name in state_cls.vars
+                }
                 # This var, or an ancestor's copy of it, would only retrigger itself.
                 names.discard(self._name)
             widened.setdefault(state_cls.get_full_name(), set()).update(names)

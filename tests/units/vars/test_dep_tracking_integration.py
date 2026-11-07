@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 import pytest
+from reflex_base import constants
 
 import reflex as rx
 from reflex.state import BaseState, State
@@ -331,12 +332,15 @@ def test_untrackable_getter_depends_on_the_whole_state(
 
     deps = EscapingState.computed_vars["total"]._deps(objclass=EscapingState)
 
-    assert deps == {EscapingState.get_full_name(): {"base", "bonus"}}
+    assert deps == {
+        # The routing fields count too: a getter this unfollowable may have read them.
+        EscapingState.get_full_name(): {"base", "bonus", *constants.ROUTER_VARS}
+    }
     assert len([r for r in caplog.records if _INCOMPLETE_DEPS_MARK in r.message]) == 1
 
 
-def test_widening_skips_the_framework_client_vars() -> None:
-    """Widening leaves out the vars the framework keeps about the client itself."""
+def test_widening_covers_the_client_vars_read_through_self() -> None:
+    """A getter that could have read the routing or hydration of its own state waits for them."""
 
     # A substate of the app root, home of the client vars; no computed var of its own.
     class WidenedFrameState(State):
@@ -349,9 +353,82 @@ def test_widening_skips_the_framework_client_vars() -> None:
 
     names = widened[WidenedFrameState.get_full_name()]
     assert "base" in names
-    # Reaching the routing vars would make this a dependent of the whole tree.
+    assert set(constants.ROUTER_VARS) <= names
+    assert "is_hydrated" in names
+    # `router` is a switchboard over those fields rather than a var with a field of
+    # its own, so naming it would read back as the deprecated deps=["router"].
+    assert names == set(WidenedFrameState.vars) - {
+        constants.ROUTER,
+        constants.ROUTER_DATA,
+    }
+
+
+def test_widening_for_another_state_leaves_out_the_client_vars() -> None:
+    """Only a state read through `self` can have been read through the client vars."""
+
+    class WidenedClientState(State):
+        base: int = 0
+
+    class WidenedOtherState(BaseState):
+        value: int = 0
+
+    def getter(self) -> int:
+        return 0
+
+    widened = rx.var(getter)._widen_deps(WidenedClientState, {}, (WidenedOtherState,))
+
+    names = widened[WidenedOtherState.get_full_name()]
+    assert names == {"value"}
     assert names.isdisjoint(BaseState._NON_DATA_VAR_NAMES)
-    assert names < set(WidenedFrameState.vars)
+
+
+def test_widened_router_deps_are_not_the_deprecated_string(caplog) -> None:
+    """Widening depends on the routing fields themselves, so no deprecation is read back."""
+    with caplog.at_level(logging.WARNING):
+        # A BaseState root, so its routing vars are its own and the edges it registers
+        # stay inside this test instead of marking up the shared app tree.
+        class WidenedRouterState(BaseState):
+            base: int = 0
+
+            @rx.var
+            def total(self) -> int:
+                return getattr(self, "base")  # noqa: B009
+
+    deps = WidenedRouterState.computed_vars["total"]._deps(objclass=WidenedRouterState)
+    assert constants.ROUTER_PAGE in deps[WidenedRouterState.get_full_name()]
+
+    # The edge lands on the state the routing field is defined on, which for a var
+    # reading `self` is the state whose data escaped the analysis.
+    assert (
+        WidenedRouterState.get_full_name(),
+        "total",
+    ) in WidenedRouterState._var_dependencies[constants.ROUTER_PAGE]
+    assert not [r for r in caplog.records if 'deps=["router"]' in r.message]
+
+
+def test_widening_includes_the_backend_fields() -> None:
+    """Widening covers the fields that stay off the frontend, since they dirty all the same."""
+
+    class WidenedBackendState(BaseState):
+        _hidden: int = 0
+        shown: int = 0
+
+        @rx.var
+        def total(self) -> int:
+            return getattr(self, "_hidden") + self.shown  # noqa: B009
+
+    deps = WidenedBackendState.computed_vars["total"]._deps(
+        objclass=WidenedBackendState
+    )
+
+    # Neither field is readable from the getter's bytecode, so both must invalidate.
+    assert deps == {
+        WidenedBackendState.get_full_name(): {
+            "_hidden",
+            "shown",
+            *constants.ROUTER_VARS,
+        }
+    }
 
 
 def test_incomplete_deps_warning_is_not_repeated(

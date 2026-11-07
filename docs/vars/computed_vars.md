@@ -138,7 +138,12 @@ A string entry names a var on the state the computed var is defined on. To depen
 a var owned by another state, pass the var itself instead of a string:
 
 ```python
+class UserInfoState(rx.State):
+    coupon: int = 0
+
+
 class CartState(rx.State):
+    # `coupon` lives on another state, so it is passed as a Var, not a string.
     @rx.var(deps=[UserInfoState.coupon], auto_deps=False)
     def discounted_total(self) -> float: ...
 ```
@@ -149,8 +154,9 @@ update needs no dependency list.
 A getter that reaches the state in a way the analysis cannot follow — one that reads
 fields through `getattr(self, name)`, or hands `self` to a function defined outside
 the state — does not get a guessed, too-narrow list. Instead the var is recomputed on
-any change to that state, including changes to the fields it inherits from a state
-above it, and a warning names it so you can narrow the list back down with `deps=` and
+any change to that state: its own fields and the ones it inherits from a state above
+it, its backend fields, and the routing and hydration vars read through `self`. A
+warning names the var, so you can narrow the list back down with `deps=` and
 `auto_deps=False`.
 
 ## Async Computed Vars

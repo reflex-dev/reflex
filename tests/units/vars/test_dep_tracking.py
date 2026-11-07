@@ -705,33 +705,131 @@ def test_super_property_dependencies():
     assert not tracker.unresolved
 
 
-def test_super_recursion_marks_unresolved():
-    """A super() call that resolves back to the method being scanned stops, widening instead."""
+class SuperSupersededChildState(SuperParentState):
+    """Substate whose own override is exactly what its super() call skips."""
 
-    class CyclicOverride(SuperParentState):
+    extra: int = 0
+
+    def parent_method(self) -> int:
+        """Read this class's own field, never calling super().
+
+        Returns:
+            The extra.
+        """
+        return self.extra
+
+    @property
+    def parent_property(self) -> int:
+        """Read this class's own field, never calling super().
+
+        Returns:
+            One more than the extra.
+        """
+        return self.extra + 1
+
+    def func_supering_method(self) -> int:
+        """Call the method this class overrides, through super().
+
+        Returns:
+            The parent's result.
+        """
+        return super().parent_method()
+
+    def func_supering_property(self) -> int:
+        """Read the property this class overrides, through super().
+
+        Returns:
+            The parent's property.
+        """
+        return super().parent_property
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        SuperSupersededChildState.func_supering_method,
+        SuperSupersededChildState.func_supering_property,
+    ],
+    ids=["method", "property"],
+)
+def test_super_skips_the_subclass_override(func):
+    """super() runs the parent's implementation, so its reads are the dependencies.
+
+    Args:
+        func: The getter reaching the parent's member through super().
+    """
+    tracker = DependencyTracker(func, SuperSupersededChildState)
+
+    assert tracker.dependencies == {
+        SuperSupersededChildState.get_full_name(): {"value"}
+    }
+    assert not tracker.unresolved
+
+
+def test_super_resolves_from_the_class_the_caller_is_defined_in():
+    """A method inherited past an override resolves super() from its own class."""
+
+    class GrandparentState(SuperParentState):
+        def inherited(self) -> int:
+            """Reach the parent through super() from the grandparent's own body.
+
+            Returns:
+                The parent's result.
+            """
+            return super().parent_method()
+
+    class GrandchildState(GrandparentState):
         extra: int = 0
 
         def parent_method(self) -> int:
-            """Add the extra to the parent's value.
+            """Read this class's own field, never calling super().
 
             Returns:
-                The parent value plus the extra.
+                The extra.
             """
-            return super().parent_method() + self.extra
+            return self.extra
 
-        def func_calling_override(self) -> int:
-            """Call the overriding method.
+        def func_calling_inherited(self) -> int:
+            """Call the grandparent's method, which reaches the parent by super().
 
             Returns:
-                The overridden result.
+                The inherited result.
             """
-            return self.parent_method()
+            return self.inherited()
 
-    tracker = DependencyTracker(CyclicOverride.func_calling_override, CyclicOverride)
+    tracker = DependencyTracker(GrandchildState.func_calling_inherited, GrandchildState)
 
-    assert tracker.unresolved == {CyclicOverride}
+    assert tracker.dependencies == {GrandchildState.get_full_name(): {"value"}}
+    assert not tracker.unresolved
+
+
+def test_self_recursion_marks_unresolved():
+    """A method that calls itself cannot be scanned to a bound, so it widens."""
+
+    class RecursiveState(SuperParentState):
+        extra: int = 0
+
+        def recurse(self) -> int:
+            """Call itself, reading a field on the way.
+
+            Returns:
+                The value plus whatever the next call returns.
+            """
+            return self.value + self.recurse()
+
+        def func_calling_recursion(self) -> int:
+            """Call the self-recursive method.
+
+            Returns:
+                The recursive result.
+            """
+            return self.recurse() + self.extra
+
+    tracker = DependencyTracker(RecursiveState.func_calling_recursion, RecursiveState)
+
+    assert tracker.unresolved == {RecursiveState}
     # Widening is up to _deps(); the analysis itself still reports what it found.
-    assert CyclicOverride.get_full_name() in tracker.dependencies
+    assert RecursiveState.get_full_name() in tracker.dependencies
 
 
 def test_nested_function_argument_dependencies():
@@ -814,6 +912,52 @@ def test_aliased_self_without_reads_has_no_dependencies():
     assert not tracker.unresolved
 
 
+def func_with_rebound_local_function(self: DependencyTestState):
+    """Call a local name that has since been rebound to another function.
+
+    Args:
+        self: The state.
+
+    Returns:
+        The rebound helper's result.
+    """
+
+    def inner(st):
+        return st.count
+
+    inner = _reads_state_and_more  # noqa: F811  # pyright: ignore[reportAssignmentType]
+    return inner(self)
+
+
+def test_rebound_local_function_is_unresolved():
+    """A local function name rebound to something else cannot be read from its old body."""
+    tracker = DependencyTracker(func_with_rebound_local_function, DependencyTestState)
+
+    assert tracker.unresolved == {DependencyTestState}
+
+
+def func_with_state_as_default_argument(self: DependencyTestState):
+    """Capture the state as a lambda default and read through it when called.
+
+    Args:
+        self: The state.
+
+    Returns:
+        The count read through the captured state.
+    """
+    read = lambda st=self: st.count  # noqa: E731
+    return read()
+
+
+def test_state_captured_as_a_default_argument_is_unresolved():
+    """A state packed into a default argument leaves the analysis like any other value."""
+    tracker = DependencyTracker(
+        func_with_state_as_default_argument, DependencyTestState
+    )
+
+    assert tracker.unresolved == {DependencyTestState}
+
+
 def func_with_module_level_helper(self: DependencyTestState):
     """Read the state through a module level helper.
 
@@ -837,6 +981,18 @@ def func_with_module_level_helper_and_extra_arg(self: DependencyTestState, extra
         The helper's result.
     """
     return _reads_state_and_more(self, extra)
+
+
+def func_with_module_level_helper_and_field_arg(self: DependencyTestState):
+    """Read the state through a module level helper, passing a field read after it.
+
+    Args:
+        self: The state.
+
+    Returns:
+        The helper's result.
+    """
+    return _reads_state_and_more(self, self.count)
 
 
 def func_with_module_level_helper_by_keyword(self: DependencyTestState):
@@ -896,6 +1052,7 @@ def func_comparing_self(self: DependencyTestState, other):
     [
         func_with_module_level_helper,
         func_with_module_level_helper_and_extra_arg,
+        func_with_module_level_helper_and_field_arg,
         func_with_module_level_helper_by_keyword,
         func_with_getattr,
         func_with_self_in_container,
@@ -905,6 +1062,7 @@ def func_comparing_self(self: DependencyTestState, other):
     ids=[
         "helper(self)",
         "helper(self, extra)",
+        "helper(self, self.count)",
         "helper(st=self)",
         "getattr(self, ...)",
         "[self][0].count",
@@ -1032,3 +1190,42 @@ def test_ordinary_getters_keep_their_dependencies():
     assert DependencyTracker(
         func_with_lambda_passed_as_argument, DependencyTestState
     ).dependencies == {DependencyTestState.get_full_name(): {"count", "items"}}
+
+
+class MethodArgumentState(State):
+    """State with a method that takes a field of its own as an argument."""
+
+    name: str = ""
+
+    def prefixed_length(self, prefix: str) -> int:
+        """Count the name with the prefix in front of it.
+
+        Args:
+            prefix: What the caller puts in front of the name.
+
+        Returns:
+            The length of the name plus the prefix.
+        """
+        return len(prefix) + len(self.name)
+
+
+def func_with_field_passed_to_own_method(self: MethodArgumentState) -> int:
+    """Read a field, then hand it to this state's own method as an argument.
+
+    Args:
+        self: The state.
+
+    Returns:
+        The method's result.
+    """
+    return self.prefixed_length(self.name)
+
+
+def test_field_passed_to_a_method_is_not_a_state_escape():
+    """The state loaded again for an argument was read through, not handed over."""
+    tracker = DependencyTracker(
+        func_with_field_passed_to_own_method, MethodArgumentState
+    )
+
+    assert not tracker.unresolved
+    assert tracker.dependencies == {MethodArgumentState.get_full_name(): {"name"}}

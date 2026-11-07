@@ -1434,6 +1434,32 @@ def _escalator_via_super() -> type[Any]:
     return SuperEscalatorState
 
 
+def _escalator_via_super_past_override() -> type[Any]:
+    """Build a state whose super() getter must look past this class's own override.
+
+    Returns:
+        The state class.
+    """
+
+    class OverridingEscalatorState(_DoublerMixin, BaseState):
+        base: int = 0
+        bonus: int = 0
+
+        def doubled(self) -> int:
+            """Read the bonus instead of the base, never calling super().
+
+            Returns:
+                The bonus.
+            """
+            return self.bonus
+
+        @rx.var
+        def total(self) -> int:
+            return super().doubled() + self.bonus
+
+    return OverridingEscalatorState
+
+
 def _escalator_via_nested_function() -> type[Any]:
     """Build a state whose computed var reads a field through a nested function.
 
@@ -1496,11 +1522,18 @@ def _escalator_untrackable() -> type[Any]:
     "state_factory",
     [
         _escalator_via_super,
+        _escalator_via_super_past_override,
         _escalator_via_nested_function,
         _escalator_via_alias,
         _escalator_untrackable,
     ],
-    ids=["super", "nested_function", "alias", "untrackable"],
+    ids=[
+        "super",
+        "super_past_override",
+        "nested_function",
+        "alias",
+        "untrackable",
+    ],
 )
 def test_computed_var_invalidated_through_indirect_state_reads(
     state_factory: Callable[[], type[Any]],
