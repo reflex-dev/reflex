@@ -707,6 +707,22 @@ class EventHandler(EventActionsMixin):
             removal_version="1.0",
         )
 
+    @overload
+    def __get__(self, instance: None, owner: type | None = None) -> Self: ...
+
+    @overload
+    def __get__(
+        self, instance: "BaseState", owner: type | None = None
+    ) -> Callable[..., Any]: ...
+
+    # Only a state binds its handlers. Anywhere else, e.g. in a component or
+    # dataclass field, a stored handler reads back as the handler itself. The
+    # exception, a stateless handler declared as a method of a plain class
+    # (deprecated), binds like a method; `rx.event` types that as an
+    # EventCallback, so it does not reach these overloads.
+    @overload
+    def __get__(self, instance: object, owner: type | None = None) -> Self: ...
+
     def __get__(self, instance: Any, owner: type | None = None) -> Any:
         """Get the handler on class access, or its function bound to a state.
 
@@ -3096,6 +3112,10 @@ V2 = TypeVar("V2")
 V3 = TypeVar("V3")
 V4 = TypeVar("V4")
 V5 = TypeVar("V5")
+V6 = TypeVar("V6")
+V7 = TypeVar("V7")
+V8 = TypeVar("V8")
+V9 = TypeVar("V9")
 
 
 class EventCallback(Generic[*P], EventActionsMixin):
@@ -3243,6 +3263,101 @@ class EventCallback(Generic[*P], EventActionsMixin):
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
     ) -> "EventCallback[V5, *Q]": ...
+
+    # Five to eight values bind every argument of a handler of that arity, with a
+    # receiver of exactly that many arguments for the same ty bug as above, or the
+    # leading arguments of a longer handler.
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+    ) -> "EventCallback[V6, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+    ) -> "EventCallback[V7, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+        value7: V7 | Var[V7],
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7, V8, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+        value7: V7 | Var[V7],
+    ) -> "EventCallback[V8, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7, V8]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+        value7: V7 | Var[V7],
+        value8: V8 | Var[V8],
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7, V8, V9, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+        value7: V7 | Var[V7],
+        value8: V8 | Var[V8],
+    ) -> "EventCallback[V9, *Q]": ...
 
     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
