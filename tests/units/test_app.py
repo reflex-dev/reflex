@@ -1669,9 +1669,23 @@ async def test_upload_streams_the_updates_the_plugins_encode(
     form_data = FormData([("files", UploadFile(filename="a.jpg", file=io.BytesIO()))])
 
     async def form():  # noqa: RUF029
+        """Get the uploaded form.
+
+        Returns:
+            The form data with one file.
+        """
         return form_data
 
     async def enqueue_stream_delta(_token, _event):  # noqa: RUF029
+        """Stream the delta the upload handler produces.
+
+        Args:
+            _token: The client token.
+            _event: The upload event.
+
+        Yields:
+            One delta.
+        """
         yield {"state": {"ok": True}}
 
     request_mock.form = form
