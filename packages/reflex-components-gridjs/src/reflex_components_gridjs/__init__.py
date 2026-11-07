@@ -1,5 +1,5 @@
 """Grid components."""
 
-from .datatable import DataTable
+from .datatable import DataTable as DataTable
 
 data_table = DataTable.create
