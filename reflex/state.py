@@ -3198,19 +3198,6 @@ class StateUpdate:
             if (value := getattr(self, name))
         })
 
-    def __getstate__(self) -> dict[str, Any]:
-        """Pickle the update as it is sent, for another instance to send as is.
-
-        Returns:
-            The instance's attributes, with the encoded delta and events.
-        """
-        encoded = self._encoded
-        return {
-            **self.__dict__,
-            "delta": encoded.get("delta", {}),
-            "events": encoded.get("events", []),
-        }
-
 
 _STATE_UPDATE_FIELDS = tuple(field.name for field in dataclasses.fields(StateUpdate))
 

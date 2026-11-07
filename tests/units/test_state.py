@@ -430,20 +430,29 @@ def test_state_update_is_encoded_once_by_every_plugin_in_order(
     assert update.delta == {"state": {"value": 1}}
 
 
-def test_state_update_is_forwarded_encoded(mocker: MockerFixture):
-    """A pickled update carries its encoding, for another instance to send as is.
+@pytest.mark.parametrize("sent_before_forwarding", [False, True])
+def test_state_update_is_forwarded_as_sent(
+    mocker: MockerFixture, sent_before_forwarding: bool
+):
+    """A pickled update is sent as the original would be, encoded once in all.
 
     Args:
         mocker: The mock fixture.
+        sent_before_forwarding: Whether the original was encoded before pickling.
     """
     codec = _NestingCodec("codec")
     _configure_codecs(mocker, codec)
     update = StateUpdate(delta={"state": {"value": 1}})
+    if sent_before_forwarding:
+        json_dumps(update)
 
     forwarded = pickle.loads(pickle.dumps(update))
 
-    assert forwarded.delta == {"state": {"value": {"codec": 1}}}
-    assert json.loads(json_dumps(forwarded)) == json.loads(json_dumps(update))
+    assert json.loads(json_dumps(forwarded)) == {
+        "delta": {"state": {"value": {"codec": 1}}},
+        "codec": True,
+    }
+    assert forwarded.delta == {"state": {"value": 1}}
     assert codec.calls == 1
 
 
