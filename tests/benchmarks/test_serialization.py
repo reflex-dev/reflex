@@ -1,8 +1,5 @@
 """Benchmarks for state-update and wire serialization."""
 
-from collections.abc import Callable
-from typing import Any
-
 import pytest
 from pytest_codspeed import BenchmarkFixture
 from reflex_base.utils.format import json_dumps
@@ -10,32 +7,6 @@ from reflex_base.utils.format import json_dumps
 from reflex.state import StateUpdate, serialize_state_update
 
 from .support.events import PayloadKind, make_payload, wire_edge_cases
-
-
-def _new_update_per_round(
-    payload: object,
-) -> Callable[[], tuple[tuple[StateUpdate], dict[str, Any]]]:
-    """Make a setup that hands each measured round a new update of the payload.
-
-    An update encodes its fields once and keeps them, so a reused one would
-    measure a cache hit after the first round.
-
-    Args:
-        payload: The value the update's delta holds.
-
-    Returns:
-        The CodSpeed pedantic setup.
-    """
-
-    def setup() -> tuple[tuple[StateUpdate], dict[str, Any]]:
-        """Wrap the payload in a new update.
-
-        Returns:
-            CodSpeed pedantic positional and keyword arguments.
-        """
-        return ((StateUpdate(delta={"performance_state": {"payload": payload}}),), {})
-
-    return setup
 
 
 @pytest.mark.parametrize(
@@ -61,9 +32,9 @@ def test_state_update_wire_serialization(
         rows: Payload size parameter.
         benchmark: The CodSpeed benchmark fixture.
     """
-    encoded = benchmark.pedantic(
-        json_dumps, setup=_new_update_per_round(make_payload(kind, rows))
-    )
+    delta = {"performance_state": {"payload": make_payload(kind, rows)}}
+    # a new update per call, as an update encodes its fields once and keeps them
+    encoded = benchmark(lambda: json_dumps(StateUpdate(delta=delta)))
     assert encoded
 
 
@@ -73,9 +44,9 @@ def test_state_update_dataclass_serialization(benchmark: BenchmarkFixture):
     Args:
         benchmark: The CodSpeed benchmark fixture.
     """
-    result = benchmark.pedantic(
-        serialize_state_update, setup=_new_update_per_round(list(range(10_000)))
-    )
+    delta = {"performance_state": {"payload": list(range(10_000))}}
+    # a new update per call, as an update encodes its fields once and keeps them
+    result = benchmark(lambda: serialize_state_update(StateUpdate(delta=delta)))
     assert result["delta"]
 
 
