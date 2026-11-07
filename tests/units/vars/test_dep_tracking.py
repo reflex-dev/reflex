@@ -885,8 +885,8 @@ def test_super_start_class_held_by_a_local_is_unresolved():
         LocalOperandState.func_naming_a_local_class, LocalOperandState
     )
 
-    # The compiler hands the class and the state over in one instruction, whose two
-    # names this cannot tell apart from any other pair of locals.
+    # A local holding a class has no value the tracker can look up, so which
+    # implementation super() reaches is not known.
     assert tracker.dependencies == {}
     assert tracker.unresolved == {LocalOperandState}
 
@@ -925,8 +925,8 @@ def test_super_start_class_taken_from_a_tracked_local_is_unresolved():
         PairingSuperState.func_pairing_the_operand, PairingSuperState
     )
 
-    # Which class the combined load names is not knowable, so the middle class's
-    # override must not be taken for the implementation that runs.
+    # Which class super() starts its search after is not knowable from here, so the
+    # middle class's override must not stand in for the implementation that runs.
     assert tracker.dependencies == {}
     assert tracker.unresolved == {PairingSuperState}
 
@@ -987,8 +987,9 @@ def test_nested_function_called_by_keyword_is_unresolved():
         NestedKeywordState.func_with_a_keyword_call, NestedKeywordState
     )
 
-    # A keyword call compiles to CALL_KW, which is not followed: what it read is not
-    # known, so every field of the state invalidates the var.
+    # A call that names its arguments is not followed into the callee, on any version
+    # (CALL_KW from 3.12, the names ahead of a plain CALL on 3.11), and none of them
+    # say which parameter took the state, so every field invalidates the var.
     assert tracker.dependencies == {}
     assert tracker.unresolved == {NestedKeywordState}
 
