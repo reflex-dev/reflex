@@ -11,15 +11,15 @@ The **Cohere Integration** allows your app to use [Cohere’s](https://cohere.co
 
 1. Go to the [Cohere Dashboard](https://dashboard.cohere.com/).  
 2. Log in or create an account.  
-3. Navigate to **API Keys** in your account settings.  
-4. Click **Create Key**, give it a descriptive name (e.g., “AI Builder”), and copy the key.  
+3. Open the [API Keys](https://dashboard.cohere.com/api-keys) page.
+4. Create a trial key (free, limited to 1,000 API calls a month) or a production key (paid), give it a descriptive name (e.g., “AI Builder”), and copy the key.  
 
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Cohere** in your app settings.  
-2. Paste your **Cohere API Key** in the input field.  
-3. Click **Connect** to validate and save your integration.  
+1. In Reflex Build, open the **Integrations** tab and select the **Cohere** card.
+2. Click **Add connection** and paste your API key into **COHERE_API_KEY**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can access Cohere’s endpoints for language tasks like embeddings, classification, chat, and more.
 
