@@ -4294,6 +4294,70 @@ async def test_stateless_middleware_pass_rehydrates_a_fresh_tree(
     ), f"no rehydrate after a stateless event on a fresh tree: {emitted_deltas}"
 
 
+@pytest.mark.parametrize("stateless", [True, False])
+async def test_blocked_event_on_a_fresh_tree_keeps_the_rehydrate_pending(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    stateless: bool,
+):
+    """A middleware block on a fresh or expired tree leaves it for the next event to rehydrate.
+
+    The router data stored for the middleware would otherwise read as a
+    hydrated tree, and the next allowed stateful event would skip ``_rehydrate``.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture deltas emitted to the client.
+        token: The client token.
+        stateless: Whether the blocked event has a stateless handler.
+    """
+
+    class BlockingMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> StateUpdate | None:
+            if event.name.endswith("blocked"):
+                return StateUpdate(events=Event.from_event_type(rx.redirect("/login")))
+            return None
+
+    class FreshState(State):
+        @event
+        def blocked(self):
+            pass
+
+        @event
+        def noop(self):
+            pass
+
+    @event
+    def stateless_blocked():
+        pass
+
+    wired_app.add_middleware(BlockingMiddleware())
+    real_base_state_processor.middleware = wired_app
+    spec = stateless_blocked() if stateless else FreshState.blocked()
+    routed = Event.from_event_type(
+        spec, router_data={RouteVar.PATH: "/fresh", RouteVar.CLIENT_TOKEN: token}
+    )[0]
+    is_hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+
+    def hydrated() -> bool:
+        return any(
+            d.get(State.get_full_name(), {}).get(is_hydrated_key) is True
+            for _, d in emitted_deltas
+        )
+
+    async with real_base_state_processor as p:
+        await (await p.enqueue(token, routed))
+        await p.join(1)
+        assert not hydrated()
+        await (await p.enqueue(token, Event.from_event_type(FreshState.noop())[0]))
+        await p.join(1)
+
+    assert hydrated(), f"the blocked event consumed the rehydrate: {emitted_deltas}"
+
+
 async def test_stateless_handler_skips_middleware_that_opts_out(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

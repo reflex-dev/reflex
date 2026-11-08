@@ -366,6 +366,25 @@ async def _emit_update(ctx: EventContext, update: StateUpdate) -> None:
         await _route_events(ctx, update.events)
 
 
+async def _block_event(
+    ctx: EventContext, state: BaseState, update: StateUpdate, *, fresh: bool
+) -> None:
+    """Send a middleware's blocking update, leaving a fresh tree fresh.
+
+    The router data stored for the middleware would otherwise mark the tree
+    hydrated, and the next allowed event would skip the rehydrate it needs.
+
+    Args:
+        ctx: The event context of the blocked event.
+        state: The root state for the token, under the lock.
+        update: The delta and events the middleware returned.
+        fresh: Whether the tree had no router data before this event.
+    """
+    if fresh:
+        state.router_data = {}
+    await _emit_update(ctx, update)
+
+
 async def chain_updates(
     events: Any,
     handler_name: str,
@@ -843,7 +862,7 @@ class BaseStateEventProcessor(EventProcessor):
                         state, event, stateless=True
                     )
                     if update is not None:
-                        await _emit_update(ctx, update)
+                        await _block_event(ctx, state, update, fresh=needs_to_rehydrate)
                         return None
                     root_state = state._get_root_state()
                     ctx.set_locked_root(root_state)
@@ -891,7 +910,7 @@ class BaseStateEventProcessor(EventProcessor):
                 and (update := await self.middleware._preprocess(state, event))
                 is not None
             ):
-                await _emit_update(ctx, update)
+                await _block_event(ctx, state, update, fresh=needs_to_rehydrate)
                 return None
 
             # Get the event's substate.
