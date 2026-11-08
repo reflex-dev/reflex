@@ -196,3 +196,10 @@ used as a trigger. Awaiting a stateless handler from another handler runs it
 inline, so call external services from a
 [background task](/docs/events/background-events/) or from a stateless trigger
 like this one, never from inside `async with self`.
+
+Middleware added with `app.add_middleware` preprocesses stateless events too,
+so a gate such as an auth check covers them. The middleware gets the client's
+root state, locked for as long as `preprocess` runs, and the handler then runs
+without it. A middleware that has nothing to say about stateless events sets
+`preprocess_stateless = False` on its class, and a stateless handler whose app
+installs only such middleware never waits for the lock.

@@ -32,7 +32,7 @@ from reflex_base.utils.types import is_non_string_sequence
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from reflex.state import BaseState, State
+    from reflex.state import BaseState, State, StateUpdate
 
 # Resolved once at import: find_spec on a missing package scans sys.path (~90us),
 # far too slow for the per-event-argument path below.
@@ -330,6 +330,19 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         await ctx.emit_event(*frontend_events)
     if backend_events:
         await ctx.enqueue(*backend_events)
+
+
+async def _emit_update(ctx: EventContext, update: StateUpdate) -> None:
+    """Send a middleware's blocking update to the client in place of the event.
+
+    Args:
+        ctx: The event context of the blocked event.
+        update: The delta and events the middleware returned.
+    """
+    if update.delta:
+        await ctx.emit_delta(update.delta)
+    if update.events:
+        await _route_events(ctx, update.events)
 
 
 async def chain_updates(
@@ -792,7 +805,21 @@ class BaseStateEventProcessor(EventProcessor):
         ctx = entry.ctx
         event = entry.event
         if not registered_handler.states:
-            # A stateless handler holds no lock and gets no state.
+            # A stateless handler holds no lock and gets no state. A middleware
+            # that gates stateless events still needs the token's state, so it
+            # runs under the lock first, which is released before the handler.
+            if self.middleware is not None and self.middleware._preprocesses_stateless:
+                from reflex.state import State
+
+                async with ctx.state_manager.modify_state_with_links(
+                    BaseStateToken(ident=ctx.token, cls=State), event=event
+                ) as state:
+                    update = await self.middleware._preprocess(
+                        state, event, stateless=True
+                    )
+                if update is not None:
+                    await _emit_update(ctx, update)
+                    return None
             return await process_event(
                 handler=registered_handler.handler,
                 payload=event.payload,
@@ -838,11 +865,7 @@ class BaseStateEventProcessor(EventProcessor):
                 and (update := await self.middleware._preprocess(state, event))
                 is not None
             ):
-                # If there was an update, yield it.
-                if update.delta:
-                    await ctx.emit_delta(update.delta)
-                if update.events:
-                    await _route_events(ctx, update.events)
+                await _emit_update(ctx, update)
                 return None
 
             # Get the event's substate.

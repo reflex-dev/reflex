@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from reflex_base import constants
 from reflex_base.event import Event, get_hydrate_event
@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(init=True)
 class HydrateMiddleware(Middleware):
     """Middleware to handle initial app hydration."""
+
+    # Only the hydrate event matters here, and that is never stateless.
+    preprocess_stateless: ClassVar[bool] = False
 
     async def preprocess(
         self, app: App, state: BaseState, event: Event

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from reflex_base.event import Event
 
@@ -15,6 +15,11 @@ if TYPE_CHECKING:
 
 class Middleware(ABC):
     """Middleware to preprocess and postprocess requests."""
+
+    # Whether preprocess also runs for stateless event handlers. The token's
+    # state is locked while it runs, so a stateless handler waits for the
+    # lock when any installed middleware keeps this on.
+    preprocess_stateless: ClassVar[bool] = True
 
     @abstractmethod
     async def preprocess(

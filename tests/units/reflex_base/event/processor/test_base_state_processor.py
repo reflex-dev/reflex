@@ -4130,6 +4130,118 @@ async def test_stateless_handler_is_not_serialized_behind_the_token_queue(
     assert order == ["quick", "slow"]
 
 
+async def test_stateless_handler_is_gated_by_middleware(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_events: list[tuple[str, tuple[Event, ...]]],
+    token: str,
+):
+    """A middleware that preprocesses stateless events sees the token's state and can block.
+
+    Regression: stateless handlers ran before any middleware, so an auth gate
+    installed as middleware never saw them.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_events: List to capture events emitted to the client.
+        token: The client token.
+    """
+    calls: list[str] = []
+    seen: list[tuple[str, type]] = []
+
+    class GateState(State):
+        allowed: bool = False
+
+        @event
+        def allow(self):
+            self.allowed = True
+
+    class GatingMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> StateUpdate | None:
+            seen.append((event.name, type(state)))
+            if not event.name.endswith("stateless_gated"):
+                return None
+            if (await state.get_state(GateState)).allowed:
+                return None
+            return StateUpdate(events=Event.from_event_type(rx.redirect("/login")))
+
+    @event
+    def stateless_gated():
+        calls.append("ran")
+
+    wired_app.add_middleware(GatingMiddleware())
+    real_base_state_processor.middleware = wired_app
+
+    async with real_base_state_processor as p:
+        blocked = await p.enqueue(token, Event.from_event_type(stateless_gated())[0])
+        assert await blocked is None
+        assert calls == []
+        await p.join(1)
+        await (await p.enqueue(token, Event.from_event_type(GateState.allow())[0]))
+        await p.enqueue(token, Event.from_event_type(stateless_gated())[0])
+        await p.join(1)
+
+    assert calls == ["ran"]
+    stateless_name = Event.from_event_type(stateless_gated())[0].name
+    assert [name for name, _ in seen if name == stateless_name] == [
+        stateless_name,
+        stateless_name,
+    ]
+    # The gate ran on the token's root state, not a substate or proxy.
+    assert all(cls is State for _, cls in seen)
+    client_event_names = {e.name for _, events in emitted_events for e in events}
+    assert "_redirect" in client_event_names
+
+
+async def test_stateless_handler_skips_middleware_that_opts_out(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Middleware with ``preprocess_stateless`` off never sees a stateless event, and the handler takes no lock.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    seen: list[str] = []
+    order: list[str] = []
+    release = asyncio.Event()
+
+    class OptedOutMiddleware(Middleware):
+        preprocess_stateless = False
+
+        async def preprocess(self, app, state, event) -> None:
+            seen.append(event.name)
+
+    class HoldState(State):
+        @event
+        async def hold(self):
+            await release.wait()
+            order.append("hold")
+
+    @event
+    def unguarded():
+        order.append("unguarded")
+
+    wired_app.add_middleware(OptedOutMiddleware())
+    real_base_state_processor.middleware = wired_app
+
+    async with real_base_state_processor as p:
+        hold_future = await p.enqueue(token, Event.from_event_type(HoldState.hold())[0])
+        quick_future = await p.enqueue(token, Event.from_event_type(unguarded())[0])
+        # Runs while the token's lock is held by `hold`: no middleware, no lock.
+        await asyncio.wait_for(quick_future, 5)
+        assert order == ["unguarded"]
+        release.set()
+        await asyncio.wait_for(hold_future, 5)
+
+    assert all("unguarded" not in name for name in seen)
+    assert any(name.endswith(".hold") for name in seen)
+
+
 async def test_locked_root_is_set_only_while_the_lock_is_held(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

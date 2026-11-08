@@ -32,7 +32,18 @@ class MiddlewareMixin(AppMixin):
         else:
             self._middlewares.insert(index, middleware)
 
-    async def _preprocess(self, state: BaseState, event: Event) -> StateUpdate | None:
+    @property
+    def _preprocesses_stateless(self) -> bool:
+        """Whether any middleware preprocesses stateless events.
+
+        Returns:
+            True if a stateless event has to be preprocessed under the lock.
+        """
+        return any(m.preprocess_stateless for m in self._middlewares)
+
+    async def _preprocess(
+        self, state: BaseState, event: Event, *, stateless: bool = False
+    ) -> StateUpdate | None:
         """Preprocess the event.
 
         This is where middleware can modify the event before it is processed.
@@ -44,11 +55,15 @@ class MiddlewareMixin(AppMixin):
         Args:
             state: The state to preprocess.
             event: The event to preprocess.
+            stateless: Whether the event runs a stateless handler, which only
+                the middleware with ``preprocess_stateless`` set sees.
 
         Returns:
             An optional state to return.
         """
         for middleware in self._middlewares:
+            if stateless and not middleware.preprocess_stateless:
+                continue
             out = middleware.preprocess(app=self, state=state, event=event)  # pyright: ignore [reportArgumentType]
             if inspect.isawaitable(out):
                 out = await out
