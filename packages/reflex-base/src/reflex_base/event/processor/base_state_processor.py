@@ -839,17 +839,16 @@ class BaseStateEventProcessor(EventProcessor):
                     update = await self.middleware._preprocess(
                         state, event, stateless=True
                     )
-                    if update is None:
-                        # No handler follows under this lock to send what the
-                        # middleware wrote, so flush it now.
-                        await chain_updates(
-                            None,
-                            root_state=state._get_root_state(),
-                            handler_name=registered_handler.handler.fn.__qualname__,
-                        )
-                if update is not None:
-                    await _emit_update(ctx, update)
-                    return None
+                    if update is not None:
+                        await _emit_update(ctx, update)
+                        return None
+                    # No handler follows under this lock to send what the
+                    # middleware wrote, so flush it now.
+                    await chain_updates(
+                        None,
+                        root_state=state._get_root_state(),
+                        handler_name=registered_handler.handler.fn.__qualname__,
+                    )
             return await process_event(
                 handler=registered_handler.handler,
                 payload=event.payload,

@@ -1,1 +1,1 @@
-Middleware preprocesses stateless event handlers too, so an event gate such as an auth check covers them. Set `preprocess_stateless = False` on a `rx.Middleware` subclass to skip stateless events and let those handlers keep running without the state lock.
+Middleware preprocesses stateless event handlers triggered from the frontend, so an event gate such as an auth check covers them. Set `preprocess_stateless = False` on a `rx.Middleware` subclass to skip stateless events and let those handlers keep running without the state lock.
