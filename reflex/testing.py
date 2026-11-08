@@ -373,6 +373,7 @@ class AppHarness:
                 if (
                     not isinstance(state_cls, type)
                     or not issubclass(state_cls, BaseState)
+                    or state_cls._mixin
                     or state_cls.__module__ != module_name
                     or state_cls.__qualname__ != state_cls.__name__
                     or getattr(module, state_cls.__name__, None) is not state_cls

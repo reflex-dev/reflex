@@ -384,7 +384,9 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
             )
             state_module.__dict__["AppState"] = package_module.AppState
             exec(
-                "class ChildState(AppState):\n"
+                "class CachedMixin(rx.State, mixin=True):\n"
+                "    pass\n"
+                "class ChildState(AppState, CachedMixin):\n"
                 "    @rx.event\n"
                 "    def increment(self):\n"
                 "        self.count += 1\n",
@@ -393,9 +395,11 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
         else:
             app_state = package_module.AppState
             child_state = state_module.ChildState
+            mixin_state = state_module.CachedMixin
             context = RegistrationContext.get()
             assert context.base_states[app_state.get_full_name()] is app_state
             assert context.base_states[child_state.get_full_name()] is child_state
+            assert mixin_state.get_full_name() not in context.base_states
             assert any(
                 handler.handler is child_state.event_handlers["increment"]
                 for handler in context.event_handlers.values()
