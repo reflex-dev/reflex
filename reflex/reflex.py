@@ -1203,13 +1203,14 @@ def migrate():
     """Apply migration scripts to the database (alembic upgrade head)."""
     from reflex.utils import migrations, prerequisites
 
-    # So that the schema check afterwards compares models that pages or plugin
-    # route hooks import lazily.
-    _evaluate_pages()
     if not prerequisites.check_db_initialized():
         return
     with _alembic_errors():
         migrations.run("upgrade", "head")
+    # After the upgrade, since a page may query the database when evaluated, and
+    # before the schema check, so that it compares models that pages or plugin
+    # route hooks import lazily.
+    _evaluate_pages()
     prerequisites.check_schema_up_to_date()
 
 
