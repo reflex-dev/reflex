@@ -30,6 +30,7 @@ If the type is known, it can be any of the following:
 - `BooleanVar` represents a boolean expression. For example: `false`, `3 > 2`.
 - `StringVar` represents an expression that evaluates to a string. For example: `'hello'`, `(2).toString()`.
 - `ArrayVar` represents an expression that evaluates to an array object. For example: `[1, 2, 3]`, `'words'.split()`.
+- `SetVar` represents a Python `set` or `frozenset`. The value is an array without duplicates on the frontend, and set operations such as `contains`, `union` and `issubset` compile over it; call `to_array()` to use it as an `ArrayVar`.
 - `ObjectVar` represents an expression that evaluates to an object. For example: `{a: 2, b: 3}`, `{deeply: {nested: {value: false}}}`.
 - `NoneVar` represent null values. These can be either `undefined` or `null`.
 
@@ -41,6 +42,7 @@ State fields are converted to `Var` by default. Additionally, you can create a `
 rx.Var.create(4)  # NumberVar
 rx.Var.create("hello")  # StringVar
 rx.Var.create([1, 2, 3])  # ArrayVar
+rx.Var.create({1, 2, 3})  # SetVar
 ```
 
 If you want to explicitly create a `Var` from a raw Javascript string, you can instantiate `rx.Var` directly:
@@ -62,8 +64,9 @@ It also supports comparisons that return a `BooleanVar`.
 matching Python string indexing and slicing. A non-BMP character such as
 `"\U0001f600"` counts as one code point. These operations do not count grapheme
 clusters, so a visible character made from multiple code points may still have a
-length greater than one. Explicit string methods such as `split()` continue to
-follow their JavaScript operation semantics.
+length greater than one. `StringVar.reversed()` and `rx.foreach` over a string
+also operate on Unicode code points. Explicit string methods such as `split()`
+continue to follow their JavaScript operation semantics.
 
 Custom `Var` operations can also be defined:
 

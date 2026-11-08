@@ -8,7 +8,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
-from tests.integration.test_form_submit import FormSubmitName
+from tests.integration.tests_playwright.test_form_submit import FormSubmitName
 
 
 @pytest.fixture(
