@@ -4242,6 +4242,58 @@ async def test_stateless_middleware_sees_router_data_and_its_writes_are_sent(
     )
 
 
+async def test_stateless_middleware_pass_rehydrates_a_fresh_tree(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A stateless event on a fresh or expired tree still leads to a rehydrate.
+
+    Regression: the middleware pass stored the event's router data on the new
+    tree, so the next stateful event found it populated and skipped
+    ``_rehydrate``, leaving the recreated state unhydrated.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture deltas emitted to the client.
+        token: The client token.
+    """
+
+    class PassMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> None:
+            return None
+
+    class FreshState(State):
+        @event
+        def noop(self):
+            pass
+
+    @event
+    def stateless_first():
+        pass
+
+    wired_app.add_middleware(PassMiddleware())
+    real_base_state_processor.middleware = wired_app
+    routed = Event.from_event_type(
+        stateless_first(),
+        router_data={RouteVar.PATH: "/fresh", RouteVar.CLIENT_TOKEN: token},
+    )[0]
+
+    async with real_base_state_processor as p:
+        await (await p.enqueue(token, routed))
+        await p.join(1)
+        await (await p.enqueue(token, Event.from_event_type(FreshState.noop())[0]))
+        await p.join(1)
+
+    is_hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    assert any(
+        d.get(State.get_full_name(), {}).get(is_hydrated_key) is True
+        for _, d in emitted_deltas
+    ), f"no rehydrate after a stateless event on a fresh tree: {emitted_deltas}"
+
+
 async def test_stateless_handler_skips_middleware_that_opts_out(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

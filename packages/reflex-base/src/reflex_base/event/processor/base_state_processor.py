@@ -835,6 +835,9 @@ class BaseStateEventProcessor(EventProcessor):
                 async with ctx.state_manager.modify_state_with_links(
                     BaseStateToken(ident=ctx.token, cls=State), event=event
                 ) as state:
+                    # Storing the router data marks the tree hydrated for the
+                    # next stateful event, so a fresh tree rehydrates here.
+                    needs_to_rehydrate = not state.router_data
                     _update_router_data(state, ctx.router_data)
                     update = await self.middleware._preprocess(
                         state, event, stateless=True
@@ -842,13 +845,20 @@ class BaseStateEventProcessor(EventProcessor):
                     if update is not None:
                         await _emit_update(ctx, update)
                         return None
-                    # No handler follows under this lock to send what the
-                    # middleware wrote, so flush it now.
-                    await chain_updates(
-                        None,
-                        root_state=state._get_root_state(),
-                        handler_name=registered_handler.handler.fn.__qualname__,
-                    )
+                    root_state = state._get_root_state()
+                    ctx.set_locked_root(root_state)
+                    try:
+                        if needs_to_rehydrate:
+                            await self._rehydrate(root_state)
+                        # No handler follows under this lock to send what the
+                        # middleware wrote, so flush it now.
+                        await chain_updates(
+                            None,
+                            root_state=root_state,
+                            handler_name=registered_handler.handler.fn.__qualname__,
+                        )
+                    finally:
+                        await ctx.release_lock()
             return await process_event(
                 handler=registered_handler.handler,
                 payload=event.payload,
