@@ -332,6 +332,27 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         await ctx.enqueue(*backend_events)
 
 
+def _update_router_data(state: BaseState, router_data: dict[str, Any] | None) -> None:
+    """Merge the event's router data into the locked state.
+
+    Only the router vars whose backing keys changed are rebuilt and re-sent;
+    session and headers stay put across navigations. The merge, not the
+    payload, is stored, so a partial payload does not drop the keys it omits,
+    and only on a real change, since the assignment dirties the state.
+
+    Args:
+        state: The root state for the token, under the lock.
+        router_data: The router data the event context carries, if any.
+    """
+    previous_router_data = state.router_data
+    if router_data and previous_router_data != router_data:
+        merged_router_data = state._update_router_vars(
+            router_data, previous_router_data
+        )
+        if merged_router_data != previous_router_data:
+            state.router_data = merged_router_data
+
+
 async def _emit_update(ctx: EventContext, update: StateUpdate) -> None:
     """Send a middleware's blocking update to the client in place of the event.
 
@@ -814,9 +835,18 @@ class BaseStateEventProcessor(EventProcessor):
                 async with ctx.state_manager.modify_state_with_links(
                     BaseStateToken(ident=ctx.token, cls=State), event=event
                 ) as state:
+                    _update_router_data(state, ctx.router_data)
                     update = await self.middleware._preprocess(
                         state, event, stateless=True
                     )
+                    if update is None:
+                        # No handler follows under this lock to send what the
+                        # middleware wrote, so flush it now.
+                        await chain_updates(
+                            None,
+                            root_state=state._get_root_state(),
+                            handler_name=registered_handler.handler.fn.__qualname__,
+                        )
                 if update is not None:
                     await _emit_update(ctx, update)
                     return None
@@ -840,24 +870,11 @@ class BaseStateEventProcessor(EventProcessor):
         ) as state:
             if otel.enabled:
                 otel.record_state_acquired(acquire_start, event)
-            previous_router_data = state.router_data
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
-                not previous_router_data and event.name not in _hydrate_event_names()
+                not state.router_data and event.name not in _hydrate_event_names()
             )
-
-            # re-assign only when the value is set and different
-            if router_data and previous_router_data != router_data:
-                # only the router vars whose backing keys changed are rebuilt
-                # and re-sent; session/headers stay put across navigations.
-                merged_router_data = state._update_router_vars(
-                    router_data, previous_router_data
-                )
-                # Store what it merged, not the payload, so a partial payload
-                # does not drop the keys it omits. Only on a real change: the
-                # assignment dirties router_data and marks the state touched.
-                if merged_router_data != previous_router_data:
-                    state.router_data = merged_router_data
+            _update_router_data(state, router_data)
 
             # Preprocess the event.
             if (

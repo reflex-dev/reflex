@@ -4194,6 +4194,54 @@ async def test_stateless_handler_is_gated_by_middleware(
     assert "_redirect" in client_event_names
 
 
+async def test_stateless_middleware_sees_router_data_and_its_writes_are_sent(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """The stateless middleware pass gets the event's router data, and what it writes reaches the client.
+
+    No handler runs under the lock after the pass, so the processor flushes
+    the middleware's writes itself before releasing it.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture deltas emitted to the client.
+        token: The client token.
+    """
+
+    class RouteNoteState(State):
+        seen_path: str = ""
+
+    class NotingMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> None:
+            (await state.get_state(RouteNoteState)).seen_path = state.router_data[
+                RouteVar.PATH
+            ]
+
+    @event
+    def noted():
+        pass
+
+    wired_app.add_middleware(NotingMiddleware())
+    real_base_state_processor.middleware = wired_app
+    routed = Event.from_event_type(
+        noted(), router_data={RouteVar.PATH: "/noted", RouteVar.CLIENT_TOKEN: token}
+    )[0]
+
+    async with real_base_state_processor as p:
+        await (await p.enqueue(token, routed))
+        await p.join(1)
+
+    assert any(
+        d.get(RouteNoteState.get_full_name(), {}).get("seen_path" + FIELD_MARKER)
+        == "/noted"
+        for _, d in emitted_deltas
+    )
+
+
 async def test_stateless_handler_skips_middleware_that_opts_out(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
