@@ -93,6 +93,8 @@ def load_app() -> None:
     The import may itself call ``migrate()`` at module level, before the app
     object exists; ``run`` skips the alembic command that would start then.
     """
+    from reflex.model import ModelRegistry
+
     global _loading_app
 
     _loading_app = True
@@ -100,6 +102,9 @@ def load_app() -> None:
         get_app()
     finally:
         _loading_app = False
+    # Models registered since an earlier alembic run in this process, such as
+    # those the pages import lazily, must reach this run's metadata.
+    ModelRegistry._metadata = None
 
 
 def init() -> None:

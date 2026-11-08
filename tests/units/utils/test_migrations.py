@@ -649,6 +649,38 @@ def test_autogenerate_evaluates_pages(project: Path, caplog: pytest.LogCaptureFi
     assert _errors(caplog) == []
 
 
+def test_schema_check_sees_models_registered_after_an_upgrade(
+    project: Path, caplog: pytest.LogCaptureFixture
+):
+    """A second alembic run in one process compares the models registered since.
+
+    With more than one model base registered, the metadata handed to alembic is
+    built once per run; `reflex db migrate` runs alembic before it evaluates the
+    pages, so the schema check afterwards must not reuse the upgrade's view.
+    """
+    (project / APP_NAME / "lazy.py").write_text(
+        "import reflex as rx\n\n\nclass Lazy(rx.Model, table=True):\n    name: str\n"
+    )
+    (project / APP_NAME / f"{APP_NAME}.py").write_text(
+        APP_SOURCES["sqlalchemy"]
+        .format(columns=COLUMNS["sqlalchemy"][0])
+        .replace(
+            "app = rx.App()",
+            "@rx.page(route='/lazy')\ndef lazy_page():\n"
+            f"    from {APP_NAME}.lazy import Lazy  # noqa: F401\n\n"
+            "    return rx.text('lazy')\n\n\napp = rx.App()",
+        )
+    )
+    _forget_app()
+    _db("init")
+    assert _table_names() == {"alembic_version", "lazy", "thing"}
+    _forget_app()
+
+    _db("migrate")
+
+    assert _errors(caplog) == []
+
+
 def test_import_time_migrate_does_not_nest_alembic_runs(project: Path):
     """An app calling `rx.Model.migrate()` at import works under every command."""
     body = (
