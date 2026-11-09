@@ -280,8 +280,13 @@ def wired_app(
         The wired App instance.
     """
     app = app_module_mock.app = App()
-    assert real_base_state_processor._root_context is not None
-    app._state_manager = real_base_state_processor._root_context.state_manager
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    app._state_manager = root_ctx.state_manager
+    # As ``configure`` does: events pass through the app's middleware.
+    real_base_state_processor._root_context = dataclasses.replace(
+        root_ctx, middleware=app
+    )
     return app
 
 
@@ -365,7 +370,6 @@ async def test_preprocess_update_routes_frontend_events_to_client(
             )
 
     wired_app.add_middleware(BlockingMiddleware())
-    real_base_state_processor.middleware = wired_app
 
     async with real_base_state_processor as p:
         await p.enqueue(token, Event.from_event_type(GatedState.do_thing())[0])
@@ -4154,6 +4158,178 @@ async def test_await_handler_inline_returns_value_and_chains_its_yields(
         if f"n{FIELD_MARKER}" in delta.get(AwaitState.get_full_name(), {})
     ]
     assert 21 in n_values
+
+
+async def test_awaited_handler_passes_through_middleware_preprocess(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_events: list[tuple[str, tuple[Event, ...]]],
+    token: str,
+):
+    """An awaited handler runs the whole middleware chain like a queued event.
+
+    Regression: awaiting a handler inline skipped ``preprocess``, so a handler
+    an auth middleware blocks ran when a handler it allows awaited it. The gate
+    sits second in the chain, behind a middleware that lets everything pass.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_events: List to capture events emitted to the client.
+        token: The client token.
+    """
+
+    class GateState(State):
+        log: list[str] = []
+
+        @event
+        def allowed(self) -> str:
+            self.log = [*self.log, "allowed"]
+            return "ok"
+
+        @event
+        def blocked(self) -> str:
+            self.log = [*self.log, "blocked"]
+            return "leaked"
+
+        @event
+        async def caller(self):
+            first = await GateState.allowed()
+            second = await GateState.blocked()
+            self.log = [*self.log, f"caller:{first}:{second}"]
+
+    seen: list[str] = []
+
+    class RecordingMiddleware(Middleware):
+        def preprocess(self, app, state, event) -> None:
+            seen.append(event.name.rpartition(".")[2])
+
+    class GateMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> StateUpdate | None:
+            if event.name.endswith(".blocked"):
+                return StateUpdate(events=Event.from_event_type(rx.redirect("/login")))
+            return None
+
+    wired_app.add_middleware(RecordingMiddleware())
+    wired_app.add_middleware(GateMiddleware())
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(GateState.caller())[0]
+        )
+        await future.wait_all()
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert seen == ["caller", "allowed", "blocked"]
+    assert (await state.get_state(GateState)).log == ["allowed", "caller:ok:None"]
+    client_event_names = {e.name for _, events in emitted_events for e in events}
+    assert "_redirect" in client_event_names
+
+
+async def test_streamed_event_passes_through_middleware_preprocess(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """An event run through ``enqueue_stream_delta`` (an upload) is gated by middleware.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class StreamGateState(State):
+        ran: bool = False
+
+        @event
+        def blocked(self):
+            self.ran = True
+
+    class GateMiddleware(Middleware):
+        def preprocess(self, app, state, event) -> StateUpdate | None:
+            if event.name.endswith(".blocked"):
+                return StateUpdate()
+            return None
+
+    wired_app.add_middleware(GateMiddleware())
+
+    async with real_base_state_processor as processor:
+        async for _ in processor.enqueue_stream_delta(
+            token, Event.from_event_type(StreamGateState.blocked())[0]
+        ):
+            pass
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(StreamGateState)).ran is False
+
+
+async def test_detached_inline_task_holds_the_lock_while_middleware_preprocesses(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A detached awaited handler paused in middleware keeps the lock held.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    release = asyncio.Event()
+
+    class SlowGateState(State):
+        log: list[str] = []
+
+        @event
+        def child(self):
+            self.log = [*self.log, "child"]
+
+        @event
+        async def parent(self):
+            asyncio.ensure_future(SlowGateState.child())  # noqa: RUF006
+            # Let the child start under the lock before returning.
+            await asyncio.sleep(0)
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    class SlowMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> None:
+            if event.name.endswith(".child"):
+                await release.wait()
+
+    wired_app.add_middleware(SlowMiddleware())
+
+    async with real_base_state_processor as processor:
+        parent_future = await processor.enqueue(
+            token, Event.from_event_type(SlowGateState.parent())[0]
+        )
+        next_future = await processor.enqueue(
+            token, Event.from_event_type(SlowGateState.next_event())[0]
+        )
+        await asyncio.sleep(0.05)
+        assert not parent_future.done()
+        assert not next_future.done()
+        release.set()
+        await asyncio.wait_for(next_future, 5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(SlowGateState)).log == ["parent", "child", "next"]
 
 
 async def test_await_from_substate_targets_sibling_state(

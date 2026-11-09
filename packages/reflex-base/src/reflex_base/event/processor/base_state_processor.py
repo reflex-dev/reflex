@@ -332,6 +332,34 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         await ctx.enqueue(*backend_events)
 
 
+async def _process_middleware(
+    ctx: EventContext, state: BaseState, event: Event
+) -> bool:
+    """Pass an event through the middleware before its handler runs.
+
+    A middleware blocks the event by returning an update, which is sent on in
+    the handler's place.
+
+    Args:
+        ctx: The event context, carrying the middleware.
+        state: The locked state the event runs against.
+        event: The event about to run.
+
+    Returns:
+        Whether a middleware blocked the event.
+    """
+    if (
+        ctx.middleware is None
+        or (update := await ctx.middleware._preprocess(state, event)) is None
+    ):
+        return False
+    if update.delta:
+        await ctx.emit_delta(update.delta)
+    if update.events:
+        await _route_events(ctx, update.events)
+    return True
+
+
 async def chain_updates(
     events: Any,
     handler_name: str,
@@ -506,6 +534,10 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     else:
         ctx.inline_tasks.add(task)
     try:
+        # Inside the registered run, so the lock stays held while a
+        # middleware awaits.
+        if await _process_middleware(ctx, root_state, event):
+            return None
         substate = await root_state.get_state(registered.states[0])
         return await process_event(
             handler=handler,
@@ -795,17 +827,7 @@ class BaseStateEventProcessor(EventProcessor):
                 if merged_router_data != previous_router_data:
                     state.router_data = merged_router_data
 
-            # Preprocess the event.
-            if (
-                self.middleware is not None
-                and (update := await self.middleware._preprocess(state, event))
-                is not None
-            ):
-                # If there was an update, yield it.
-                if update.delta:
-                    await ctx.emit_delta(update.delta)
-                if update.events:
-                    await _route_events(ctx, update.events)
+            if await _process_middleware(ctx, state, event):
                 return None
 
             # Get the event's substate.
