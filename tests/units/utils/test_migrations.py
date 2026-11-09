@@ -223,6 +223,25 @@ def _errors(caplog: pytest.LogCaptureFixture) -> list[str]:
     ]
 
 
+def _alembic(project: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    """Run the bare alembic command line in the project directory.
+
+    Args:
+        project: The project directory, holding alembic.ini.
+        *args: The alembic command and its options.
+
+    Returns:
+        The completed process, with its output captured.
+    """
+    return subprocess.run(
+        [sys.executable, "-m", "alembic", *args],
+        capture_output=True,
+        text=True,
+        cwd=project,
+        check=False,
+    )
+
+
 def test_run_invokes_the_alembic_command_line(monkeypatch: pytest.MonkeyPatch):
     """`run` hands the arguments to alembic's own CLI against ALEMBIC_CONFIG."""
     monkeypatch.setenv("ALEMBIC_CONFIG", __file__)
@@ -703,13 +722,7 @@ def test_import_time_migrate_does_not_nest_alembic_runs(project: Path):
     _forget_app()
     _db("makemigrations", "--message", "add t2")
     assert len(_versions(project)) == 2
-    upgrade = subprocess.run(
-        [sys.executable, "-m", "alembic", "upgrade", "head"],
-        capture_output=True,
-        text=True,
-        cwd=project,
-        check=False,
-    )
+    upgrade = _alembic(project, "upgrade", "head")
     assert upgrade.returncode == 0, upgrade.stderr
     assert "Running upgrade" in upgrade.stderr
     assert not migrations._loading_app
@@ -720,35 +733,89 @@ def test_alembic_command_line_runs_standalone(project: Path):
     _db("init")
     _write_app(project, "sqlmodel", COLUMNS["sqlmodel"][1])
 
-    def alembic(*args: str) -> subprocess.CompletedProcess[str]:
-        """Run the bare alembic command line in the project directory.
-
-        Args:
-            *args: The alembic command and its options.
-
-        Returns:
-            The completed process, with its output captured.
-        """
-        return subprocess.run(
-            [sys.executable, "-m", "alembic", *args],
-            capture_output=True,
-            text=True,
-            cwd=project,
-            check=False,
-        )
-
-    check = alembic("check")
+    check = _alembic(project, "check")
     assert check.returncode != 0
     assert "New upgrade operations detected" in check.stderr
 
-    revision = alembic("revision", "--autogenerate", "-m", "standalone")
+    revision = _alembic(project, "revision", "--autogenerate", "-m", "standalone")
     assert revision.returncode == 0, revision.stderr
     assert len(_versions(project)) == 2
 
-    upgrade = alembic("upgrade", "head")
+    upgrade = _alembic(project, "upgrade", "head")
     assert upgrade.returncode == 0, upgrade.stderr
     assert "Running upgrade" in upgrade.stderr
 
-    check = alembic("check")
+    check = _alembic(project, "check")
     assert check.returncode == 0, check.stderr
     assert "No new upgrade operations detected." in check.stdout
+
+
+def test_alembic_command_line_evaluates_pages_when_comparing_models(project: Path):
+    """Bare `alembic check` and `revision --autogenerate` see models pages import lazily.
+
+    `alembic upgrade` leaves the pages alone: a page may query the database it
+    is about to migrate.
+    """
+    marker = project / "evaluated"
+    (project / APP_NAME / "lazy.py").write_text(
+        "import reflex as rx\n\n\nclass Lazy(rx.Model, table=True):\n    name: str\n"
+    )
+    (project / APP_NAME / f"{APP_NAME}.py").write_text(
+        "from pathlib import Path\n\nimport reflex as rx\n\n\n"
+        "class Thing(rx.Model, table=True):\n    t1: str\n\n\n"
+        "@rx.page(route='/lazy')\ndef lazy_page():\n"
+        f"    from {APP_NAME}.lazy import Lazy  # noqa: F401\n\n"
+        f"    Path('{marker.as_posix()}').touch()\n    return rx.text('lazy')\n\n\n"
+        "app = rx.App()\n"
+    )
+    _forget_app()
+    _db("init")
+    assert _table_names() == {"alembic_version", "lazy", "thing"}
+    marker.unlink()
+
+    check = _alembic(project, "check")
+    assert check.returncode == 0, check.stderr
+    assert marker.exists()
+
+    marker.unlink()
+    revision = _alembic(project, "revision", "--autogenerate", "-m", "nothing changed")
+    assert revision.returncode == 0, revision.stderr
+    assert len(_versions(project)) == 1
+    assert marker.exists()
+
+    marker.unlink()
+    upgrade = _alembic(project, "upgrade", "head")
+    assert upgrade.returncode == 0, upgrade.stderr
+    assert not marker.exists()
+
+
+def test_deprecated_migration_helpers_run_through_env_py(
+    project: Path, caplog: pytest.LogCaptureFixture
+):
+    """The deprecated `reflex.model` helpers still work, through the generated env.py."""
+    caplog.set_level(logging.WARNING)
+    _db("init")
+    _write_app(project, "sqlmodel", COLUMNS["sqlmodel"][1])
+
+    with get_engine().connect() as connection:
+        assert reflex.model.alembic_autogenerate(connection, message="add t2")
+    assert len(_versions(project)) == 2
+    assert reflex.model.migrate() is True
+    with get_engine().connect() as connection:
+        assert not reflex.model.alembic_autogenerate(
+            connection, write_migration_scripts=False
+        )
+
+    current, revisions = reflex.model.get_migration_history()
+    assert [revision.doc for revision in revisions] == ["Initial revision", "add t2"]
+    assert current == revisions[-1].revision
+    assert Model.get_migration_history()[0] == current
+    reached = [False]
+    lines = [
+        reflex.model.format_revision(revision, current, reached)
+        for revision in revisions
+    ]
+    assert all("[green]✓[/green]" in line for line in lines)
+    assert lines[-1].endswith(f"{current} (head), add t2")
+    for name in ("alembic_autogenerate", "get_migration_history", "format_revision"):
+        assert f"reflex.model.{name}" in caplog.text

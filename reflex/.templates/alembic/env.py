@@ -13,7 +13,7 @@ from logging.config import fileConfig
 from typing import TYPE_CHECKING, Literal
 
 import sqlalchemy
-from alembic import context
+from alembic import command, context
 from alembic.autogenerate.rewriter import Rewriter
 from alembic.operations import ops
 from reflex_base.config import get_config
@@ -37,10 +37,25 @@ config = context.config
 if config.config_file_name is not None and not invoked_by_reflex():
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-# Importing the app registers the models. `reflex db makemigrations` evaluates
-# the pages beforehand, so models that pages or plugin route hooks import lazily
-# are compared too.
-load_app()
+
+def compares_models() -> bool:
+    """Whether the running alembic command compares the models with the database.
+
+    Returns:
+        True under ``alembic revision --autogenerate`` and ``alembic check``.
+    """
+    cmd_opts = config.cmd_opts
+    return cmd_opts is not None and (
+        getattr(cmd_opts, "autogenerate", False) or cmd_opts.cmd[0] is command.check
+    )
+
+
+# Importing the app registers the models. Those that pages or plugin route hooks
+# import lazily register only once the pages run: the `reflex db` commands
+# evaluate the pages beforehand, and under the `alembic` command line env.py does
+# so for the commands that compare the models. `alembic upgrade` leaves the pages
+# alone, since a page may query the database it is about to migrate.
+load_app(with_pages=not invoked_by_reflex() and compares_models())
 target_metadata = ModelRegistry.get_metadata()
 
 writer = Rewriter()

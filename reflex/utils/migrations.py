@@ -16,7 +16,7 @@ from pathlib import Path
 from reflex_base.environment import environment
 from rich.markup import escape
 
-from reflex.utils.prerequisites import get_app
+from reflex.utils.prerequisites import get_app, get_compiled_app
 
 logger = logging.getLogger(__name__)
 
@@ -87,11 +87,27 @@ def run(*args: str) -> None:
         _in_run = False
 
 
-def load_app() -> None:
+def evaluate_pages() -> None:
+    """Import the app and evaluate every page, rendering and writing nothing.
+
+    Models that pages or plugin route hooks import lazily are registered only
+    once the pages run. A plain skip-compile load evaluates just the routes the
+    stateful-pages marker of an earlier run names; the dry run evaluates them all.
+    """
+    environment.REFLEX_SKIP_COMPILE.set(True)
+    get_compiled_app(dry_run=True)
+
+
+def load_app(with_pages: bool = False) -> None:
     """Import the app for env.py, so that the models it declares are registered.
 
     The import may itself call ``migrate()`` at module level, before the app
     object exists; ``run`` skips the alembic command that would start then.
+
+    Args:
+        with_pages: Evaluate the pages too, for the models they import lazily.
+            The ``reflex db`` commands do so before alembic runs; the ``alembic``
+            command line leaves it to env.py.
     """
     from reflex.model import ModelRegistry
 
@@ -100,6 +116,8 @@ def load_app() -> None:
     _loading_app = True
     try:
         get_app()
+        if with_pages:
+            evaluate_pages()
     finally:
         _loading_app = False
     # Models registered since an earlier alembic run in this process, such as
