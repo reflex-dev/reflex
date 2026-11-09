@@ -865,28 +865,33 @@ class EventProcessor:
             self._dispatch_next_for_token(token)
 
     def _dispatch_next_for_token(self, token: str) -> None:
-        """Create a task for the front entry in the per-token queue.
+        """Create a task for the first live entry in the per-token queue.
+
+        Cancelled entries at the front are dropped, and a queue left empty is
+        removed. A loop rather than recursion: it runs in a task's done
+        callback, where a RecursionError from a long cancelled backlog would
+        leave the token's queue stuck for good.
 
         Args:
             token: The client token whose queue to dispatch from.
         """
         token_queue = self._token_queues.get(token)
-        if not token_queue:
+        if token_queue is None:
             return
-        entry, registered_handler = token_queue[0]
-        # Skip cancelled futures. Before a task exists, the only way a future
-        # can be done is cancellation, and its _try_clean_future done callback
-        # removes it from _futures, so a missing future also means the entry
-        # was cancelled.
-        future = self._futures.get(entry.ctx.txid)
-        if future is None or future.cancelled():
+        while token_queue:
+            entry, registered_handler = token_queue[0]
+            # Skip cancelled futures. Before a task exists, the only way a future
+            # can be done is cancellation, and its _try_clean_future done callback
+            # removes it from _futures, so a missing future also means the entry
+            # was cancelled.
+            future = self._futures.get(entry.ctx.txid)
+            if future is not None and not future.cancelled():
+                self._create_event_task(
+                    entry=entry, registered_handler=registered_handler
+                )
+                return
             token_queue.popleft()
-            if token_queue:
-                self._dispatch_next_for_token(token)
-            else:
-                del self._token_queues[token]
-            return
-        self._create_event_task(entry=entry, registered_handler=registered_handler)
+        del self._token_queues[token]
 
     async def _process_queue(self):
         """Process events from the queue in a task."""
@@ -964,10 +969,7 @@ class EventProcessor:
         token_queue = self._token_queues.get(task_ctx.token)
         if token_queue and token_queue[0][0].ctx.txid == task_ctx.txid:
             token_queue.popleft()
-            if token_queue:
-                self._dispatch_next_for_token(task_ctx.token)
-            else:
-                del self._token_queues[task_ctx.token]
+            self._dispatch_next_for_token(task_ctx.token)
         future = self._futures.get(task_ctx.txid)
         if task.done() and self._resolve_future(task, task_ctx, future):
             return

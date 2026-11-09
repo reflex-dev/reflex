@@ -849,6 +849,45 @@ async def test_cancel_future_before_task_starts(
     assert ep._tasks == {}
 
 
+async def test_cancelled_sequential_backlog_does_not_stall_the_token(
+    processor: EventProcessor,
+    token: str,
+):
+    """A long run of cancelled same-token events is skipped, and the token keeps going.
+
+    The skip runs in the finished task's done callback, so it must not recurse
+    per cancelled entry: a RecursionError there leaves the queue's head stuck
+    and every later event for the token waiting behind it forever.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["blocker"] = asyncio.Event()
+    backlog = sys.getrecursionlimit() + 100
+    processor.configure()
+    async with processor as ep:
+        await ep.enqueue(
+            token, Event.from_event_type(gated_logging_event("blocker"))[0]
+        )
+        cancelled = [
+            await ep.enqueue(token, Event.from_event_type(logging_event(str(i)))[0])
+            for i in range(backlog)
+        ]
+        await ep.join(timeout=5)
+        for future in cancelled:
+            future.cancel()
+        _GATES["blocker"].set()
+
+        after = await ep.enqueue(
+            token, Event.from_event_type(logging_event("after"))[0]
+        )
+        await asyncio.wait_for(after, timeout=5)
+
+    assert _CALL_LOG == [{"value": "blocker"}, {"value": "after"}]
+    assert ep._token_queues == {}
+
+
 async def test_cancel_future_cancels_running_task(
     mock_event_processor: EventProcessor,
     token: str,
