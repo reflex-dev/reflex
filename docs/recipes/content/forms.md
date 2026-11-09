@@ -6,7 +6,7 @@ import reflex as rx
 
 Forms are a common way to gather information from users. Below are some examples.
 
-For more details, see the [form docs page](/docs/library/forms/form).
+For more details, see the [form docs page](/docs/library/forms/form/).
 
 ## Event creation
 

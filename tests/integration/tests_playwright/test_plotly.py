@@ -1,4 +1,4 @@
-"""Integration tests for the plotly graphing component's locale support."""
+"""Integration tests for the plotly graphing component."""
 
 from collections.abc import Generator
 
@@ -30,6 +30,13 @@ def PlotlyLocaleApp():
         # setting must be merged on top of this without discarding its options.
         plotly_config: dict = {"modeBarButtonsToRemove": ["lasso2d"]}
 
+    class PlotlyLayoutState(rx.State):
+        plotly_layout: dict = {"title": "State title", "height": 240}
+
+        @rx.event
+        def change_title(self):
+            self.plotly_layout = {"title": "Updated state title", "height": 240}
+
     app = rx.App()
 
     def plot_box(plot_id: str, **plotly_props) -> "rx.Component":
@@ -56,6 +63,14 @@ def PlotlyLocaleApp():
                 "plot_config_fr",
                 config=PlotlyConfigState.plotly_config,
                 locale="fr",
+            ),
+            plot_box("plot_title_string", layout={"title": "Literal title"}),
+            plot_box("plot_title_object", layout={"title": {"text": "Object title"}}),
+            plot_box("plot_title_state", layout=PlotlyLayoutState.plotly_layout),
+            rx.button(
+                "Update title",
+                id="update_plot_title",
+                on_click=PlotlyLayoutState.change_title,
             ),
         )
 
@@ -173,3 +188,21 @@ def test_plotly_locale_merges_with_state_config(
         expect(
             box.locator('.modebar-btn[data-attr="zoom"][data-val="auto"]')
         ).to_have_attribute("data-title", expected_autoscale)
+
+
+def test_plotly_layout_titles(page: Page, plotly_locale_app: AppHarness):
+    """String titles render and state-driven titles update without altering object titles."""
+    assert plotly_locale_app.frontend_url is not None
+    page.goto(plotly_locale_app.frontend_url)
+
+    for plot_id, title in (
+        ("plot_title_string", "Literal title"),
+        ("plot_title_object", "Object title"),
+        ("plot_title_state", "State title"),
+    ):
+        expect(page.locator(f"#{plot_id} .gtitle")).to_have_text(title, timeout=60_000)
+
+    page.locator("#update_plot_title").click()
+    expect(page.locator("#plot_title_state .gtitle")).to_have_text(
+        "Updated state title"
+    )

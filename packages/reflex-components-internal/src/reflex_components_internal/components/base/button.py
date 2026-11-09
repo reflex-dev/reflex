@@ -116,9 +116,7 @@ class Button(BaseButton, CoreComponent):
         """Validate the button variant."""
         if variant not in BUTTON_VARIANTS["variant"]:
             available_variants = ", ".join(BUTTON_VARIANTS["variant"].keys())
-            message = (
-                f"Invalid variant: {variant}. Available variants: {available_variants}"
-            )
+            message = f"Invalid variant: {variant!s}. Available variants: {available_variants}"
             raise ValueError(message)
 
     @staticmethod
@@ -126,7 +124,7 @@ class Button(BaseButton, CoreComponent):
         """Validate the button size."""
         if size not in BUTTON_VARIANTS["size"]:
             available_sizes = ", ".join(BUTTON_VARIANTS["size"].keys())
-            message = f"Invalid size: {size}. Available sizes: {available_sizes}"
+            message = f"Invalid size: {size!s}. Available sizes: {available_sizes}"
             raise ValueError(message)
 
     def _exclude_props(self) -> list[str]:

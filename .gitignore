@@ -7,7 +7,13 @@
 .mypy_cache/
 assets/external/*
 dist/*
-examples/
+# Only the tracked examples; private apps under examples/ stay ignored. The
+# pattern has a separator in the middle, so it is anchored to this directory
+# and leaves the examples that live inside packages and tests alone.
+examples/*
+!examples/README.md
+!examples/ruff.toml
+!examples/playground/
 .web
 .states
 .idea
@@ -21,10 +27,13 @@ requirements.txt
 .pyi_generator_diff
 reflex.db
 .codspeed
+.reflex-bench/
 .env
 .env.*
 node_modules
 package-lock.json
+# ...except the javascript test harness, which CI installs with `npm ci`.
+!tests/js/package-lock.json
 *.pyi
 .pre-commit-config.yaml
 .claude/.worktrees
@@ -33,3 +42,4 @@ CLAUDE.local.md
 
 # Backups written by scripts/delete_automated_releases.sh
 automated-releases-backup-*.json
+tests/js/node_modules

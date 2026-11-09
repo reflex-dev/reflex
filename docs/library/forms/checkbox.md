@@ -1,6 +1,7 @@
 ---
 components:
   - rx.checkbox
+meta_description: "Add checkboxes to Python web forms with Reflex. rx.checkbox captures true/false input with state and form integration, all in pure Python."
 
 HighLevelCheckbox: |
   lambda **props: rx.checkbox("Basic Checkbox", **props)

@@ -60,11 +60,11 @@ def workflow_stage_image(
     return rx.el.div(
         rx.html(
             _arrow_row_svg(count, width, inline_style=True),
-            class_name="block h-full w-auto text-secondary-7",
+            class_name="block h-full w-auto text-border-strong",
         ),
         rx.el.div(
             rx.el.div(
-                class_name="absolute -top-[7px] left-0 h-[24px] w-1/2 bg-primary-9 blur-[8px] animate-arrow-sweep",
+                class_name="absolute -top-[7px] left-0 h-[24px] w-1/2 bg-primary blur-[8px] animate-arrow-sweep",
                 style={
                     "animationDelay": (
                         f"calc(var(--arrow-sweep-duration) / {_ARROW_SWEEP_GROUPS} "
@@ -122,5 +122,5 @@ def workflow_stage_row(
         left_cell,
         rx.el.span(title, class_name="shrink-0 justify-self-center text-center"),
         right_cell,
-        class_name="grid h-12 w-full shrink-0 grid-cols-[1fr_auto_1fr] items-center bg-secondary-1 font-mono text-xs font-[415] uppercase text-secondary-12 lg:border-b border-secondary-4",
+        class_name="grid h-12 w-full shrink-0 grid-cols-[1fr_auto_1fr] items-center bg-background font-mono text-xs font-[415] uppercase text-foreground lg:border-b border-border-subtle",
     )

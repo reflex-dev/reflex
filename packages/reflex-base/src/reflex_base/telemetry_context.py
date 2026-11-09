@@ -46,28 +46,6 @@ class TelemetryContext(BaseContext):
     trigger: CompileTrigger | None = None
     exception: BaseException | None = dataclasses.field(default=None, repr=False)
 
-    # BaseContext is a fieldless frozen dataclass, so its generated __eq__/__hash__
-    # treat any two same-class instances as equal. That collides in the
-    # _attached_context_token dict and breaks nested `with` use, so force identity.
-    def __eq__(self, other: object) -> bool:
-        """Identity equality.
-
-        Args:
-            other: The object to compare against.
-
-        Returns:
-            True iff ``other`` is the same instance.
-        """
-        return self is other
-
-    def __hash__(self) -> int:
-        """Identity-based hash.
-
-        Returns:
-            A hash derived from the object's identity.
-        """
-        return id(self)
-
     def set_exception(self, exc: BaseException | None) -> None:
         """Attach an exception that occurred during this compile.
 

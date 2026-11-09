@@ -1,0 +1,74 @@
+name: Benchmark history
+description: >-
+  Append reflex-bench result files to the benchmark-data branch, one file per
+  result under runs/ followed by the machine profile id, and push; a rejected
+  push is rebased and retried up to three times. The job must check out the
+  default branch, grant contents write, and never run pull request code.
+
+inputs:
+  results:
+    description: >-
+      Result JSON files, separated by whitespace. Each lands at
+      runs/PROFILE/TIME_KIND_SHA_RUN_STEM.json, where STEM is its file name
+      without the extension; a file already stored is left alone.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Check out the benchmark-data branch
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        ref: benchmark-data
+        path: .benchmark-data
+        # The push below needs the job token.
+        persist-credentials: true
+    - name: Add the results and push
+      shell: bash
+      env:
+        RESULTS: ${{ inputs.results }}
+        LAYOUT: ${{ github.action_path }}/README.benchmark-data.md
+        # The commit and any rebase of it after a rejected push.
+        GIT_AUTHOR_NAME: github-actions[bot]
+        GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        GIT_COMMITTER_NAME: github-actions[bot]
+        GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+      run: |
+        set -euo pipefail
+        data=.benchmark-data
+        [ -f "$data/README.md" ] || cp "$LAYOUT" "$data/README.md"
+        added=0
+        for result in $RESULTS; do
+          read -r profile started kind commit < <(
+            jq -r '[.machine.profile_id, .invocation.started_at, .invocation.kind, (.subjects.A.commit // "unknown")] | @tsv' "$result"
+          )
+          # 2026-09-29T03:17:05Z -> 2026-09-29T03-17
+          stamp="${started:0:13}-${started:14:2}"
+          stem=$(basename "$result" .json)
+          target="runs/$profile/${stamp}_${kind}_${commit:0:7}_${GITHUB_RUN_ID}_${stem}.json"
+          if [ -e "$data/$target" ]; then
+            echo "already stored: $target"
+            continue
+          fi
+          mkdir -p "$data/runs/$profile"
+          cp "$result" "$data/$target"
+          echo "adding $target"
+          added=$((added + 1))
+        done
+        cd "$data"
+        git add README.md runs
+        if git diff --cached --quiet; then
+          echo "nothing to push"
+          exit 0
+        fi
+        git commit --quiet -m "Add $added result(s) of run $GITHUB_RUN_ID"
+        for attempt in 1 2 3 4; do
+          if git push origin HEAD:benchmark-data; then
+            exit 0
+          fi
+          if [ "$attempt" -lt 4 ]; then
+            git pull --rebase origin benchmark-data
+          fi
+        done
+        echo "::error::benchmark-data rejected the push four times"
+        exit 1

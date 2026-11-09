@@ -8,8 +8,8 @@ import sys
 import types
 import warnings
 from base64 import b64encode
-from collections.abc import Callable, Mapping, Sequence
-from functools import lru_cache, partial
+from collections.abc import Callable, Generator, Mapping, Sequence
+from functools import cached_property, lru_cache, partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -18,6 +18,8 @@ from typing import (
     Literal,
     NoReturn,
     Protocol,
+    Self,
+    TypeAlias,
     TypeVar,
     Union,
     get_args,
@@ -27,7 +29,6 @@ from typing import (
 )
 
 from typing_extensions import (
-    Self,
     TypeAliasType,
     TypedDict,
     TypeVarTuple,
@@ -39,7 +40,7 @@ from reflex_base import constants
 from reflex_base.components.field import BaseField
 from reflex_base.constants.compiler import CompileVars, Imports
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import format
+from reflex_base.utils import console, format
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     EventFnArgMismatchError,
@@ -50,12 +51,23 @@ from reflex_base.utils.types import (
     ArgsSpec,
     GenericType,
     Unset,
+    is_non_string_sequence,
+    is_optional,
     safe_issubclass,
     typehint_issubclass,
+    value_inside_optional,
 )
 from reflex_base.vars import VarData
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import (
+    Field,
+    LiteralVar,
+    ToOperation,
+    Var,
+    _operands,
+    _owner_state,
+)
 from reflex_base.vars.function import (
+    ENCODE_URI_COMPONENT,
     ArgsFunctionOperation,
     ArgsFunctionOperationBuilder,
     BuilderFunctionVar,
@@ -70,6 +82,8 @@ from reflex_base.vars.object import ObjectVar
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from reflex_components_core.core._upload import UploadChunkIterator, UploadFile
+
     from reflex.state import BaseState
 
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
@@ -103,7 +117,7 @@ class Event:
     @classmethod
     def from_event_type(
         cls,
-        events: "IndividualEventType | list[IndividualEventType] | None",
+        events: "IndividualEventType | Sequence[IndividualEventType] | None",
         *,
         router_data: dict[str, Any] | None = None,
     ) -> "list[Event]":
@@ -120,13 +134,9 @@ class Event:
         if events is None:
             return []
 
-        # If the handler returns a single event, wrap it in a list.
-        if not isinstance(events, list):
-            events = [events]
-
         # Fix the events created by the handler.
         out = []
-        for e in events:
+        for e in event_sequence(events):
             if callable(e) and getattr(e, "__name__", "") == "<lambda>":
                 # A lambda was returned, assume the user wants to call it with no args.
                 e = e()
@@ -145,22 +155,7 @@ class Event:
             if not isinstance(e, EventSpec):
                 msg = f"Unexpected event type, {type(e)}."
                 raise ValueError(msg)
-            name = format.format_event_handler(e.handler)
-            # Detach mutable values from any state-bound proxies (e.g.
-            # ImmutableMutableProxy from a background task's StateProxy),
-            # copying only subtrees that are actually proxied.
-            payload = {
-                k._js_expr: _detach_state_proxies(v._decode()) for k, v in e.args
-            }
-
-            # Create an event and append it to the list.
-            out.append(
-                Event(
-                    name=name,
-                    payload=payload,
-                    router_data=router_data or {},
-                )
-            )
+            out.append(e._to_event(router_data))
 
         return out
 
@@ -472,6 +467,54 @@ class EventActionsMixin:
         )
 
 
+def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
+    """Protect against directly chaining a background task from another event handler.
+
+    Args:
+        state: The state instance the background task is bound to.
+        fn: The background task coroutine function / generator.
+
+    Returns:
+        A compatible coroutine function / generator that raises a runtime error.
+
+    Raises:
+        TypeError: If the background task is not async.
+    """
+    name = fn.__name__
+    call = f"{type(state).__name__}.{name}"
+    message = (
+        f"Cannot directly call background task {name!r}, use "
+        f"`yield {call}` or `return {call}` instead."
+    )
+    if inspect.iscoroutinefunction(fn):
+
+        async def _no_chain_background_task_co(*args, **kwargs):  # noqa: RUF029
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_co
+    if inspect.isasyncgenfunction(fn):
+
+        async def _no_chain_background_task_gen(*args, **kwargs):  # noqa: RUF029
+            yield
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_gen
+
+    msg = f"{fn} is marked as a background task, but is not async."
+    raise TypeError(msg)
+
+
+def _base_state_type() -> type:
+    """The BaseState class, imported lazily to avoid a circular import.
+
+    Returns:
+        ``reflex.state.BaseState``.
+    """
+    from reflex.state import BaseState
+
+    return BaseState
+
+
 @dataclasses.dataclass(
     init=True,
     frozen=True,
@@ -573,29 +616,142 @@ class EventHandler(EventActionsMixin):
         """
         return Annotated[cls, args_spec]
 
-    @property
+    @cached_property
     def is_background(self) -> bool:
         """Whether the event handler is a background task.
+
+        Read on the first access, so the function has to be marked before then.
 
         Returns:
             True if the event handler is marked as a background task.
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
-    @property
-    def supersedes(self) -> bool:
-        """Whether a newer chain-root invocation supersedes an older one.
+    @cached_property
+    def _is_coroutine_function(self) -> bool:
+        """Whether the handler function is a coroutine function.
 
-        When True, enqueuing this handler as a chain root cancels the previous
-        unfinished event chain rooted at the same handler for the same client
-        token. Cancellation is cooperative: a handler that never yields to the
-        event loop runs to completion, and only its not-yet-started chained
-        events are skipped.
+        Returns:
+            True if calling the handler function returns a coroutine.
+        """
+        return inspect.iscoroutinefunction(self.fn)
+
+    @cached_property
+    def supersedes(self) -> bool:
+        """Whether a newer invocation supersedes an older one.
+
+        When True, invocations of this handler use latest-wins semantics per
+        client token, ordered by the user-initiated root enqueue each chain
+        descends from: enqueuing the handler from a newer chain cancels any
+        unfinished invocation from an older chain, whether either was a chain
+        root or yielded by another handler. Invocations belonging to the same
+        chain coexist, so a handler may re-chain itself or be yielded several
+        times by one parent. While the newer chain's invocations are still
+        tracked, an older chain enqueuing the handler is dropped instead of
+        cancelling the newer work.
+        Cancellation is cooperative: a handler that never yields to the event
+        loop runs to completion, and only its not-yet-started chained events
+        are skipped.
+        Read on the first access, so the function has to be marked before then.
 
         Returns:
             True if the event handler is marked as superseding.
         """
         return getattr(self.fn, SUPERSEDES_MARKER, False)
+
+    @property
+    def __wrapped__(self) -> Callable:
+        """The decorated function, as decorators and proxies expose it.
+
+        Returns:
+            The function the handler runs.
+        """
+        return self.fn
+
+    def __await__(self) -> Generator[Any, None, Any]:
+        """Run the handler with no arguments in the active EventContext.
+
+        Returns:
+            The awaitable's iterator; awaiting it yields the handler's return value.
+        """
+        return self().__await__()
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        """Bind the handler to the state class whose body declares it.
+
+        Runs when the class is created, before ``BaseState.__init_subclass__``
+        collects and registers the class's handlers. A handler already bound
+        to a state (aliased onto another class) is left as it is. A mixin's
+        handler is bound to the mixin, which marks it as declared there: each
+        state using the mixin gets a copy of its own.
+
+        Args:
+            owner: The class the handler is declared on.
+            name: The attribute name.
+        """
+        if self.state is not None:
+            return
+        from reflex.state import BaseState
+
+        if isinstance(owner, type) and issubclass(owner, BaseState):
+            object.__setattr__(self, "state", owner)
+            self._get_type_hints()
+            return
+        console.deprecate(
+            feature_name="@rx.event on a method of a class that is not a state",
+            reason=(
+                f"`{owner.__qualname__}.{name}` stays a plain method; remove the "
+                "decorator."
+            ),
+            deprecation_version="0.10.2",
+            removal_version="1.0",
+        )
+
+    @overload
+    def __get__(self, instance: None, owner: type | None = None) -> Self: ...
+
+    @overload
+    def __get__(
+        self, instance: "BaseState", owner: type | None = None
+    ) -> Callable[..., Any]: ...
+
+    # Only a state binds its handlers. Anywhere else, e.g. in a component or
+    # dataclass field, a stored handler reads back as the handler itself. The
+    # exception, a stateless handler declared as a method of a plain class
+    # (deprecated), binds like a method; `rx.event` types that as an
+    # EventCallback, so it does not reach these overloads.
+    @overload
+    def __get__(self, instance: object, owner: type | None = None) -> Self: ...
+
+    def __get__(self, instance: Any, owner: type | None = None) -> Any:
+        """Get the handler on class access, or its function bound to a state.
+
+        Args:
+            instance: The state instance the handler is accessed on, or None.
+            owner: The class the handler is accessed through.
+
+        Returns:
+            This handler for class access, else its function bound to the
+            instance of the handler's state (an ancestor of ``instance`` for
+            an inherited handler).
+        """
+        if instance is None:
+            return self
+        if self.state is None:
+            # A method of a class that is not a state: a plain bound method,
+            # as when @rx.event returned the function.
+            return types.MethodType(self.fn, instance)
+        if not isinstance(instance, self.state):
+            # Held by a class that is not its state, nor a substate of it.
+            return self
+        state = (
+            instance
+            if type(instance) is self.state
+            else _owner_state(instance, self.state)
+        )
+        if self.is_background:
+            return _no_chain_background_task(state, self.fn)
+        return types.MethodType(self.fn, state)
 
     def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
         """Pass arguments to the handler to get an event spec.
@@ -613,6 +769,21 @@ class EventHandler(EventActionsMixin):
             EventHandlerTypeError: If the arguments are invalid.
         """
         from reflex_base.utils.exceptions import EventHandlerTypeError
+
+        if args and isinstance(args[0], self.state or _base_state_type()):
+            # A decorator stacked above @rx.event calls the handler like the
+            # plain method it used to be (the handler itself is never bound:
+            # the class attribute is the wrapper). Run it, as before.
+            console.deprecate(
+                feature_name="Calling an event handler with a state instance",
+                reason=(
+                    f"`{self.fn.__qualname__}` is called through a decorator "
+                    "stacked above @rx.event; apply other decorators below it."
+                ),
+                deprecation_version="0.10.2",
+                removal_version="1.0",
+            )
+            return self.fn(*args, **kwargs)
 
         # Get the function args.
         if self.state is not None:
@@ -665,7 +836,7 @@ class EventHandler(EventActionsMixin):
             try:
                 payload.append((Var(_js_expr=fn_arg), LiteralVar.create(arg)))
             except TypeError as e:
-                msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+                msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
                 raise EventHandlerTypeError(msg) from e
 
         if upload_event_spec is not None:
@@ -745,6 +916,63 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "client_handler_name", client_handler_name)
         object.__setattr__(self, "args", args or ())
 
+    def __hash__(self) -> int:
+        """Hash the spec by identity, so ``asyncio.gather`` can track it as an awaitable.
+
+        The bound args are Vars, whose ``==`` builds a Var instead of a bool,
+        so the field-wise hash and equality a dataclass generates are unusable
+        for a spec with args.
+
+        Returns:
+            The hash of the spec.
+        """
+        return id(self)
+
+    @property
+    def __wrapped__(self) -> Callable:
+        """The decorated function of the handler the spec binds arguments for.
+
+        Returns:
+            The function the handler runs.
+        """
+        return self.handler.fn
+
+    def __await__(self) -> Generator[Any, None, Any]:
+        """Run the event in the active EventContext.
+
+        Inline on the locked state tree while the current task holds the state
+        lock, else enqueued and awaited. Each await runs the event again: a
+        spec describes an event, like a ``functools.partial`` describes a call.
+
+        Returns:
+            The awaitable's iterator; awaiting it yields the handler's return value.
+        """
+        from reflex_base.event.processor.base_state_processor import (
+            execute_event_inline,
+        )
+
+        return execute_event_inline(self).__await__()
+
+    def _to_event(self, router_data: dict[str, Any] | None = None) -> Event:
+        """Create the runtime Event this spec describes.
+
+        Args:
+            router_data: The routing data for the event.
+
+        Returns:
+            The Event, with its payload decoded from the bound args.
+        """
+        return Event(
+            name=format.format_event_handler(self.handler),
+            # Detach mutable values from any state-bound proxies (e.g.
+            # ImmutableMutableProxy from a background task's StateProxy),
+            # copying only subtrees that are actually proxied.
+            payload={
+                k._js_expr: _detach_state_proxies(v._decode()) for k, v in self.args
+            },
+            router_data=router_data or {},
+        )
+
     def with_args(self, args: tuple[tuple[Var, Var], ...]) -> "EventSpec":
         """Copy the event spec, with updated args.
 
@@ -788,7 +1016,7 @@ class EventSpec(EventActionsMixin):
             for arg in args:
                 values.append(LiteralVar.create(value=arg))  # noqa: PERF401, RUF100
         except TypeError as e:
-            msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+            msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
             raise EventHandlerTypeError(msg) from e
         new_payload = tuple(zip(fn_args, values, strict=False))
         return self.with_args(self.args + new_payload)
@@ -913,6 +1141,22 @@ class EventChain(EventActionsMixin):
             # Trust that the caller knows what they're doing passing an EventChain directly
             return value
 
+        # A handler bound to one trigger always produces the same chain, so
+        # every call site sharing the handler shares one instance per
+        # registration context. Handlers carrying event actions are fresh
+        # copies at every call site, so caching them would only retain them.
+        bound_handler = None
+        if (
+            not event_chain_kwargs
+            and isinstance(value, EventHandler)
+            and not value.event_actions
+        ):
+            bound_handler = value
+            bound_chains = RegistrationContext.ensure_context()._bound_event_chains
+            bound = bound_chains.get((id(value), id(args_spec), key))
+            if bound is not None and bound[0] is value and bound[1] is args_spec:
+                return bound[2]
+
         # If the input is a single event handler, wrap it in a list.
         if isinstance(value, (EventHandler, EventSpec)):
             value = [value]
@@ -920,7 +1164,7 @@ class EventChain(EventActionsMixin):
         events: list[EventSpec | EventVar | FunctionVar] = []
 
         # If the input is a list of event handlers, create an event chain.
-        if isinstance(value, list):
+        if is_non_string_sequence(value):
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
@@ -934,7 +1178,7 @@ class EventChain(EventActionsMixin):
                     # Call the lambda to get the event chain.
                     events.extend(call_event_fn(v, args_spec, key=key))
                 else:
-                    msg = f"Invalid event: {v}"
+                    msg = f"Invalid event: {v!s}"
                     raise ValueError(msg)
 
         # If the input is a callable, create an event chain.
@@ -943,7 +1187,7 @@ class EventChain(EventActionsMixin):
 
         # Otherwise, raise an error.
         else:
-            msg = f"Invalid event chain: {value}"
+            msg = f"Invalid event chain: {value!s}"
             raise ValueError(msg)
 
         # Add args to the event specs if necessary.
@@ -952,12 +1196,16 @@ class EventChain(EventActionsMixin):
             for e in events
         ]
 
-        # Return the event chain.
-        return cls(
+        chain = cls(
             events=events,
             args_spec=args_spec,
             **event_chain_kwargs,
         )
+        if bound_handler is not None:
+            RegistrationContext.ensure_context()._bound_event_chains[
+                id(bound_handler), id(args_spec), key
+            ] = (bound_handler, args_spec, chain)
+        return chain
 
 
 @dataclasses.dataclass(
@@ -1282,6 +1530,7 @@ class FileUpload:
             The upload EventSpec.
 
         Raises:
+            BackendVarFormatError: If the on_upload_progress is a field with no frontend var.
             ValueError: If the on_upload_progress is not a valid event handler.
         """
         from reflex_components_core.core.upload import (
@@ -1290,11 +1539,17 @@ class FileUpload:
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
-        upload_files_var = Var(
-            _js_expr="filesById",
-            _var_type=dict[str, Any],
-            _var_data=VarData.merge(get_upload_files_context_var_data()),
-        ).to(ObjectVar)[LiteralVar.create(upload_id)]
+        # Read the selection from refs; keep only the provider wrap, not the context hook.
+        upload_files_var = (
+            Var("__upload_files")
+            ._as_ref()
+            ._replace(
+                merge_var_data=VarData(
+                    app_wraps=get_upload_files_context_var_data().app_wraps
+                )
+            )
+            .to(ObjectVar, dict[str, Any])[LiteralVar.create(upload_id)]
+        )
         spec_args = [
             (
                 Var(_js_expr="files"),
@@ -1337,8 +1592,10 @@ class FileUpload:
                 events = call_event_fn(
                     on_upload_progress, self.on_upload_progress_args_spec
                 )
+            elif isinstance(on_upload_progress, Field):
+                raise on_upload_progress._no_frontend_var_error()
             else:
-                msg = f"{on_upload_progress} is not a valid event handler."
+                msg = f"{on_upload_progress!s} is not a valid event handler."
                 raise ValueError(msg)
             if isinstance(events, Var):
                 msg = f"{on_upload_progress} cannot return a var {events}."
@@ -1760,10 +2017,13 @@ def download(
             )
 
             # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
+            # The JSON is percent-encoded: a raw `#` would end the URL there and
+            # `%XX` sequences would be decoded, corrupting the downloaded file.
             url = cond(
                 is_data_url,
                 data.to(str),
-                f"data:{mime_type}," + data.to_string(),
+                f"data:{mime_type},"
+                + ENCODE_URI_COMPONENT.call(data.to_string()).to(str),
             )
         elif isinstance(data, bytes):
             if mime_type is None:
@@ -1986,16 +2246,32 @@ def _check_event_args_subclass_of_callback(
             type_match_found.setdefault(arg, False)
             callback_param_type = callback_param_name_to_type[arg]
 
+            provided_type = args_types_without_vars[i]
             try:
-                compare_result = typehint_issubclass(
-                    args_types_without_vars[i], callback_param_type
-                ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
-                    args_types_without_vars[i], callback_param_type, key
-                )
+                if isinstance(provided_type, TypeVar):
+                    # A generic spec arg takes on the callback's type within its
+                    # bound, or as one of its constraints; an optional callback
+                    # type accepts what its non-None type does.
+                    admitted_type = (
+                        value_inside_optional(callback_param_type)
+                        if is_optional(callback_param_type)
+                        else callback_param_type
+                    )
+                    compare_result = any(
+                        typehint_issubclass(admitted_type, admitted)
+                        for admitted in provided_type.__constraints__
+                        or (provided_type.__bound__ or Any,)
+                    )
+                else:
+                    compare_result = typehint_issubclass(
+                        provided_type, callback_param_type
+                    ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
+                        provided_type, callback_param_type, key
+                    )
             except TypeError as te:
                 callback_name_context = f" of {callback_name}" if callback_name else ""
                 key_context = f" for {key}" if key else ""
-                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
+                msg = f"Could not compare types {provided_type} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
                 raise TypeError(msg) from te
 
             if compare_result:
@@ -2007,13 +2283,16 @@ def _check_event_args_subclass_of_callback(
             )
             delayed_exceptions.append(
                 EventHandlerArgTypeMismatchError(
-                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
+                    f"Event handler {key} expects {provided_type} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
                 )
             )
 
         if all(type_match_found.values()):
             delayed_exceptions.clear()
-            if event_spec_index:
+            # A generic spec matches the callback's own types, so it is not a fallback.
+            if event_spec_index and not any(
+                isinstance(arg, TypeVar) for arg in args_types_without_vars
+            ):
                 args = get_args(provided_event_types[0])
 
                 args_types_without_vars = [
@@ -2164,6 +2443,90 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpe
     return annotation
 
 
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class EventArgVar(Var):
+    """A placeholder for one argument of an event trigger.
+
+    ``parse_args_spec`` passes these to the args spec, and through it to a
+    lambda event function, so a value built from them can be taken apart later
+    to find which of the trigger's arguments it reads.
+    """
+
+    # The JS names of every argument of the trigger, in order; this one's
+    # position is its index in it.
+    _signature: tuple[str, ...] = dataclasses.field(default=())
+
+
+def event_arg_placeholder(var: Var) -> EventArgVar | None:
+    """Get the trigger-argument placeholder ``var`` is, through any casts.
+
+    Args:
+        var: The var to look at.
+
+    Returns:
+        The placeholder, or None when ``var`` is not one.
+    """
+    while isinstance(var, ToOperation):
+        var = var._original
+    return var if isinstance(var, EventArgVar) else None
+
+
+def _trigger_args_read(value: Var) -> list[EventArgVar]:
+    """Find every trigger-argument placeholder a value is built from.
+
+    Walks the value's operations like ``get_leaf_vars`` does, except that a
+    function is always searched through its body: a placeholder closed over by
+    a nested lambda still has to be declared, whatever else the body reads.
+
+    Args:
+        value: The value to take apart.
+
+    Returns:
+        The placeholders, in order of first appearance.
+    """
+    found: dict[str, EventArgVar] = {}
+    stack = [value]
+    while stack:
+        current = stack.pop()
+        while isinstance(current, ToOperation):
+            current = current._original
+        if isinstance(current, EventArgVar):
+            found.setdefault(current._js_expr, current)
+        elif isinstance(
+            current, (ArgsFunctionOperation, ArgsFunctionOperationBuilder)
+        ) and isinstance(current._return_expr, Var):
+            stack.append(current._return_expr)
+        elif (operands := _operands(current)) is not None:
+            stack.extend(LiteralVar.create(operand) for operand in reversed(operands))
+    return list(found.values())
+
+
+def event_args_signature(value: Var) -> tuple[str, ...]:
+    """Get the trigger arguments a function built around ``value`` must declare.
+
+    An event chain calls such a function with every argument of the trigger,
+    positionally, so the declaration has to cover each argument up to the last
+    one ``value`` reads, in the trigger's order.
+
+    Args:
+        value: The value a trigger argument may have been built into.
+
+    Returns:
+        The JS parameter names to declare, possibly empty.
+    """
+    last = -1
+    signature: tuple[str, ...] = ()
+    for arg in _trigger_args_read(value):
+        position = arg._signature.index(arg._js_expr)
+        if position > last:
+            last, signature = position, arg._signature
+    return signature[: last + 1]
+
+
 @lru_cache
 def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     """Parse the args provided in the ArgsSpec of an event trigger.
@@ -2182,15 +2545,16 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
         annotations = [get_type_hints(arg_spec)]
 
     spec = inspect.getfullargspec(arg_spec)
+    signature = tuple(f"_{l_arg}" for l_arg in spec.args)
 
     return list(
         arg_spec(*[
-            Var(f"_{l_arg}").to(
+            EventArgVar(_js_expr=name, _signature=signature).to(
                 unwrap_var_annotation(
                     resolve_annotation(annotations[0], l_arg, spec=arg_spec)
                 )
             )
-            for l_arg in spec.args
+            for l_arg, name in zip(spec.args, signature, strict=True)
         ])
     ), annotations
 
@@ -2267,6 +2631,28 @@ def check_fn_match_arg_spec(
         raise EventFnArgMismatchError(msg)
 
 
+def event_sequence(events: Any) -> Sequence[Any]:
+    """Get events as a sequence, wrapping a single event-like value in a list.
+
+    A str or bytes value counts as a single value. The single event kinds are
+    checked first: they are the common case, and cheaper to check than the
+    Sequence ABC.
+
+    Args:
+        events: A single event-like value or a sequence of them.
+
+    Returns:
+        The events as a sequence.
+    """
+    if (
+        isinstance(events, (Event, EventSpec))
+        or callable(events)
+        or not is_non_string_sequence(events)
+    ):
+        return [events]
+    return events
+
+
 def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
@@ -2303,10 +2689,6 @@ def call_event_fn(
 
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
-
-    # Normalize common heterogeneous event collections into individual events
-    # while keeping other scalar values for validation below.
-    out = list(out) if isinstance(out, (list, tuple)) else [out]
 
     def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
         """Wrap a mixed event-like Var into a callable frontend dispatcher.
@@ -2363,7 +2745,7 @@ def call_event_fn(
 
     # Convert any event specs to event specs.
     events = []
-    for e in out:
+    for e in event_sequence(out):
         if isinstance(e, EventHandler):
             # An un-called EventHandler gets all of the args of the event trigger.
             e = call_event_handler(e, arg_spec, key=key)
@@ -2386,7 +2768,7 @@ def call_event_fn(
             if isinstance(e, VarOperationCall):
                 hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
             msg = (
-                f"Invalid event chain for {key}: {fn} -> {e}: A lambda inside an EventChain "
+                f"Invalid event chain for {key}: {fn} -> {e!s}: A lambda inside an EventChain "
                 "list must return `EventSpec | EventHandler | EventChain | EventVar | FunctionVar` "
                 "or a heterogeneous sequence of these types. "
                 f"Got: {type(e)}.{hint}"
@@ -2418,7 +2800,7 @@ def get_handler_args(
 
 
 def fix_events(
-    events: list[EventSpec | EventHandler] | None,
+    events: Sequence[EventSpec | EventHandler] | None,
     token: str | None = None,
     router_data: dict[str, Any] | None = None,
 ) -> list[Event]:
@@ -2449,13 +2831,9 @@ def fix_events(
     if events is None:
         return []
 
-    # If the handler returns a single event, wrap it in a list.
-    if not isinstance(events, list):
-        events = [events]
-
     # Fix the events created by the handler.
     out = []
-    for e in events:
+    for e in event_sequence(events):
         if callable(e) and getattr(e, "__name__", "") == "<lambda>":
             # A lambda was returned, assume the user wants to call it with no args.
             e = e()
@@ -2734,17 +3112,38 @@ V2 = TypeVar("V2")
 V3 = TypeVar("V3")
 V4 = TypeVar("V4")
 V5 = TypeVar("V5")
+V6 = TypeVar("V6")
+V7 = TypeVar("V7")
+V8 = TypeVar("V8")
+V9 = TypeVar("V9")
 
 
-class EventCallback(Generic[Unpack[P]], EventActionsMixin):
+class EventCallback(Generic[*P], EventActionsMixin):
     """A descriptor that wraps a function to be used as an event."""
 
     if TYPE_CHECKING:
-        # EventCallback is never instantiated: `event()` returns the undecorated
-        # function, which the state metaclass turns into an EventHandler. This
-        # class is only the static stand-in for it, so declare the EventHandler
-        # attribute that `SomeState.handler` actually exposes at runtime.
+        # EventCallback is never instantiated: `event()` returns an
+        # EventHandler. This class is only the static stand-in for it, so
+        # declare the EventHandler members that `SomeState.handler` actually
+        # exposes at runtime.
         fn: Callable[[Any, Unpack[P]], Any]
+
+        @property
+        def __wrapped__(self) -> Callable[[Any, Unpack[P]], Any]:
+            """The decorated function.
+
+            Returns:
+                The function the handler runs.
+            """
+            ...
+
+        def __await__(self) -> Generator[Any, None, Any]:
+            """Run the handler in the active EventContext.
+
+            Returns:
+                The awaitable's iterator; awaiting it yields the handler's return value.
+            """
+            ...
 
     def __init__(self, func: Callable[[Any, Unpack[P]], Any]):
         """Initialize the descriptor with the function to be wrapped.
@@ -2756,37 +3155,209 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __call__(
-        self: "EventCallback[Unpack[Q]]",
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[*Q]",
+    ) -> "EventCallback[*Q]": ...
+
+    # Handlers of up to four arguments get an overload per arity instead of a `self`
+    # that leaves the rest to `Unpack[Q]`, which ty does not bind to the receiver
+    # (astral-sh/ty#4657). This mitigates that ty bug. The `Unpack[Q]` overloads only
+    # cover longer handlers, so that each receiver matches one overload per number of
+    # values, and a wrong value is reported as such rather than as no overload matching.
+    @overload
+    def __call__(
+        self: "EventCallback[V]", value: V | Var[V]
+    ) -> "EventCallback[()]": ...
+
+    # An upload spec stands in for the files, or the chunks, that reflex uploads to the
+    # handler. Only as the handler's sole argument: bound args next to it aren't typed.
+    @overload
+    def __call__(
+        self: "EventCallback[list[UploadFile]]", value: FileUpload
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, Unpack[Q]]", value: V | Var[V]
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[UploadChunkIterator]", value: UploadFilesChunk
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, Unpack[Q]]",
-        value: V | Var[V],
-        value2: V2 | Var[V2],
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[V, V2]", value: V | Var[V]
+    ) -> "EventCallback[V2]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, Unpack[Q]]",
+        self: "EventCallback[V, V2]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[V3]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, Unpack[Q]]",
+        self: "EventCallback[V, V2, V3, V4]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3, V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[V3, V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> "EventCallback[V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3, V4, V5, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+    ) -> "EventCallback[V3, V4, V5, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> "EventCallback[V4, V5, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+    ) -> "EventCallback[V5, *Q]": ...
+
+    # Five to eight values bind every argument of a handler of that arity, with a
+    # receiver of exactly that many arguments for the same ty bug as above, or the
+    # leading arguments of a longer handler.
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+    ) -> "EventCallback[V6, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+    ) -> "EventCallback[V7, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+        value7: V7 | Var[V7],
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7, V8, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+        value7: V7 | Var[V7],
+    ) -> "EventCallback[V8, *Q]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7, V8]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+        value7: V7 | Var[V7],
+        value8: V8 | Var[V8],
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, V6, V7, V8, V9, *Q]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+        value5: V5 | Var[V5],
+        value6: V6 | Var[V6],
+        value7: V7 | Var[V7],
+        value8: V8 | Var[V8],
+    ) -> "EventCallback[V9, *Q]": ...
 
     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
@@ -2801,11 +3372,20 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __get__(
-        self: "EventCallback[Unpack[P]]", instance: None, owner: Any
-    ) -> "EventCallback[Unpack[P]]": ...
+        self: "EventCallback[*P]", instance: None, owner: Any
+    ) -> "EventCallback[*P]": ...
 
     @overload
-    def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
+    def __get__(
+        self: "EventCallback[*P]", instance: "BaseState", owner: Any
+    ) -> "Callable[[Unpack[P]], Any]": ...
+
+    # Only a state binds its handlers. Anywhere else, e.g. in a component or
+    # dataclass field, a stored callback reads back as the callback itself.
+    @overload
+    def __get__(
+        self: "EventCallback[*P]", instance: object, owner: Any
+    ) -> "EventCallback[*P]": ...
 
     def __get__(self, instance: Any, owner: Any) -> Callable:
         """Get the function with the instance bound to it.
@@ -2823,7 +3403,7 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
         return partial(self.func, instance)
 
 
-class LambdaEventCallback(Protocol[Unpack[P]]):
+class LambdaEventCallback(Protocol[*P]):
     """A protocol for a lambda event callback."""
 
     __code__: types.CodeType
@@ -2861,11 +3441,14 @@ ARGS = TypeVarTuple("ARGS")
 
 LAMBDA_OR_STATE = TypeAliasType(
     "LAMBDA_OR_STATE",
-    LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]],
+    LambdaEventCallback[*ARGS] | EventCallback[*ARGS],
     type_params=(ARGS,),
 )
 
-ItemOrList = V | list[V]
+
+# A Sequence rather than a list: lists are invariant, so a `list[EventSpec]`
+# variable would not count as a list of every kind of event.
+ItemOrList = V | Sequence[V]
 
 BASIC_EVENT_TYPES = TypeAliasType(
     "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()
@@ -2873,13 +3456,13 @@ BASIC_EVENT_TYPES = TypeAliasType(
 
 IndividualEventType = TypeAliasType(
     "IndividualEventType",
-    LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES,
+    LAMBDA_OR_STATE[*ARGS] | BASIC_EVENT_TYPES,
     type_params=(ARGS,),
 )
 
 EventType = TypeAliasType(
     "EventType",
-    ItemOrList[LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES],
+    ItemOrList[LAMBDA_OR_STATE[*ARGS] | BASIC_EVENT_TYPES],
     type_params=(ARGS,),
 )
 
@@ -2888,45 +3471,65 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
 
 
+class EventDecorator(Protocol):
+    """The decorator ``rx.event(...)`` returns, for state-bound and stateless handlers."""
+
+    @overload
+    def __call__(
+        self, func: "Callable[[BASE_STATE, Unpack[P]], Any]"
+    ) -> EventCallback[*P]: ...
+
+    @overload
+    def __call__(self, func: "Callable[[Unpack[P]], Any]") -> EventCallback[*P]: ...
+
+    def __call__(self, func: Callable) -> EventCallback:
+        """Wrap a function to be used as an event.
+
+        Args:
+            func: The function to wrap.
+        """
+        ...
+
+
 class EventNamespace:
     """A namespace for event related classes."""
 
     # Core Event Classes
-    Event = Event
-    EventActionsMixin = EventActionsMixin
-    EventHandler = EventHandler
-    EventSpec = EventSpec
-    CallableEventSpec = CallableEventSpec
-    EventChain = EventChain
-    EventVar = EventVar
-    LiteralEventVar = LiteralEventVar
-    EventChainVar = EventChainVar
-    LiteralEventChainVar = LiteralEventChainVar
-    EventCallback = EventCallback
-    LambdaEventCallback = LambdaEventCallback
+    Event: TypeAlias = Event
+    EventActionsMixin: TypeAlias = EventActionsMixin
+    EventHandler: TypeAlias = EventHandler
+    EventSpec: TypeAlias = EventSpec
+    CallableEventSpec: TypeAlias = CallableEventSpec
+    EventChain: TypeAlias = EventChain
+    EventVar: TypeAlias = EventVar
+    LiteralEventVar: TypeAlias = LiteralEventVar
+    EventChainVar: TypeAlias = EventChainVar
+    LiteralEventChainVar: TypeAlias = LiteralEventChainVar
+    EventCallback: TypeAlias = EventCallback
+    LambdaEventCallback: TypeAlias = LambdaEventCallback
 
     # Javascript Event Classes
-    JavascriptHTMLInputElement = JavascriptHTMLInputElement
-    JavascriptInputEvent = JavascriptInputEvent
-    JavascriptKeyboardEvent = JavascriptKeyboardEvent
-    JavascriptMouseEvent = JavascriptMouseEvent
-    JavascriptPointerEvent = JavascriptPointerEvent
+    JavascriptHTMLInputElement: TypeAlias = JavascriptHTMLInputElement
+    JavascriptInputEvent: TypeAlias = JavascriptInputEvent
+    JavascriptKeyboardEvent: TypeAlias = JavascriptKeyboardEvent
+    JavascriptMouseEvent: TypeAlias = JavascriptMouseEvent
+    JavascriptPointerEvent: TypeAlias = JavascriptPointerEvent
 
     # Type Info Classes
-    KeyInputInfo = KeyInputInfo
-    MouseEventInfo = MouseEventInfo
-    PointerEventInfo = PointerEventInfo
-    IdentityEventReturn = IdentityEventReturn
+    KeyInputInfo: TypeAlias = KeyInputInfo
+    MouseEventInfo: TypeAlias = MouseEventInfo
+    PointerEventInfo: TypeAlias = PointerEventInfo
+    IdentityEventReturn: TypeAlias = IdentityEventReturn
 
     # File Upload
-    FileUpload = FileUpload
-    UploadFilesChunk = UploadFilesChunk
+    FileUpload: TypeAlias = FileUpload
+    UploadFilesChunk: TypeAlias = UploadFilesChunk
 
     # Type Aliases
-    EventType = EventType
-    LAMBDA_OR_STATE = LAMBDA_OR_STATE
-    BASIC_EVENT_TYPES = BASIC_EVENT_TYPES
-    IndividualEventType = IndividualEventType
+    EventType: TypeAlias = EventType
+    LAMBDA_OR_STATE: TypeAlias = LAMBDA_OR_STATE
+    BASIC_EVENT_TYPES: TypeAlias = BASIC_EVENT_TYPES
+    IndividualEventType: TypeAlias = IndividualEventType
 
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
@@ -2939,6 +3542,7 @@ class EventNamespace:
     upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation
     prevent_default = prevent_default
+    event_sequence = staticmethod(event_sequence)
 
     # Private/Internal Functions
     resolve_upload_handler_param = staticmethod(resolve_upload_handler_param)
@@ -2962,9 +3566,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> (
-        "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
-    ): ...
+    ) -> EventDecorator: ...
 
     @overload
     def __new__(
@@ -2978,11 +3580,13 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> EventCallback[Unpack[P]]: ...
+    ) -> EventCallback[*P]: ...
 
+    # A stateless handler: a function whose first parameter is not a state.
+    @overload
     def __new__(
         cls,
-        func: "Callable[[BASE_STATE, Unpack[P]], Any] | None" = None,
+        func: "Callable[[Unpack[P]], Any]",
         *,
         background: bool | None = None,
         supersedes: bool | None = None,
@@ -2991,7 +3595,20 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
+    ) -> EventCallback[*P]: ...
+
+    def __new__(
+        cls,
+        func: "Callable[..., Any] | None" = None,
+        *,
+        background: bool | None = None,
+        supersedes: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> "EventCallback | EventDecorator":
         """Wrap a function to be used as an event.
 
         Args:
@@ -3042,9 +3659,16 @@ class EventNamespace:
                 event_actions["temporal"] = temporal
             return event_actions
 
-        def wrapper(
-            func: "Callable[[BASE_STATE, Unpack[P]], T]",
-        ) -> EventCallback[Unpack[P]]:
+        def wrapper(func: Callable[..., Any]) -> EventCallback:
+            if isinstance(func, (staticmethod, classmethod)):
+                # Never an event handler; left as it is, like before.
+                console.deprecate(
+                    feature_name="@rx.event on a staticmethod or classmethod",
+                    reason="The decorator has no effect there; remove it.",
+                    deprecation_version="0.10.2",
+                    removal_version="1.0",
+                )
+                return func  # pyright: ignore [reportReturnType]
             if background is True:
                 if not inspect.iscoroutinefunction(
                     func
@@ -3058,48 +3682,49 @@ class EventNamespace:
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)
 
+            # The markers stay on the function: a mixin's handler is copied
+            # per concrete state from its function, and the handler reads
+            # them from there.
+            event_actions = _build_event_actions()
+            if event_actions:
+                setattr(func, EVENT_ACTIONS_MARKER, event_actions)
+
             qualname: str | None = getattr(func, "__qualname__", None)
 
             if qualname and (
                 len(func_path := qualname.split(".")) == 1
                 or func_path[-2] == "<locals>"
             ):
+                # A plain function: a decentralized handler when its first
+                # parameter is a state, else a stateless one. Either is
+                # registered now, under a module-qualified name.
                 from reflex.state import BaseState
 
                 types = get_type_hints(func)
                 state_arg_name = next(iter(inspect.signature(func).parameters), None)
                 state_cls = state_arg_name and types.get(state_arg_name)
-                if state_cls and issubclass(state_cls, BaseState):
-                    name = (
-                        (func.__module__ + "." + qualname)
-                        .replace(".", "_")
-                        .replace("<locals>", "_")
-                        .removeprefix("_")
-                    )
-                    object.__setattr__(func, "__name__", name)
-                    object.__setattr__(func, "__qualname__", name)
+                name = (
+                    (func.__module__ + "." + qualname)
+                    .replace(".", "_")
+                    .replace("<locals>", "_")
+                    .removeprefix("_")
+                )
+                object.__setattr__(func, "__name__", name)
+                object.__setattr__(func, "__qualname__", name)
+                if isinstance(state_cls, type) and issubclass(state_cls, BaseState):
                     state_cls._add_event_handler(name, func)
-                    event_callback = getattr(state_cls, name)
+                    return getattr(state_cls, name)
+                return RegistrationContext.register_event_handler(
+                    EventHandler(fn=func, event_actions=event_actions)
+                )  # pyright: ignore [reportReturnType]
 
-                    # Apply decorator event actions
-                    event_actions = _build_event_actions()
-                    if event_actions:
-                        # Create new EventCallback with updated event_actions
-                        event_callback = dataclasses.replace(
-                            event_callback, event_actions=event_actions
-                        )
-
-                    return event_callback
-
-            # Store decorator event actions on the function for later processing
-            event_actions = _build_event_actions()
-            if event_actions:
-                setattr(func, EVENT_ACTIONS_MARKER, event_actions)
-            return func  # pyright: ignore [reportReturnType]
+            # A method: bound to its state class by __set_name__ when the
+            # class body is executed.
+            return EventHandler(fn=func, event_actions=event_actions)  # pyright: ignore [reportReturnType]
 
         if func is not None:
             return wrapper(func)
-        return wrapper
+        return wrapper  # pyright: ignore [reportReturnType]
 
     get_event = staticmethod(get_event)
     get_hydrate_event = staticmethod(get_hydrate_event)
@@ -3110,6 +3735,9 @@ class EventNamespace:
     check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
     resolve_annotation = staticmethod(resolve_annotation)
     parse_args_spec = staticmethod(parse_args_spec)
+    EventArgVar = EventArgVar
+    event_arg_placeholder = staticmethod(event_arg_placeholder)
+    event_args_signature = staticmethod(event_args_signature)
     args_specs_from_fields = staticmethod(args_specs_from_fields)
     unwrap_var_annotation = staticmethod(unwrap_var_annotation)
 

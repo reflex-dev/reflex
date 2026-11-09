@@ -67,6 +67,6 @@ def treemap_aspect():
 
 Explore more chart types you can build with Reflex and Recharts in pure Python:
 
-- [Pie Chart](/docs/library/graphing/charts/piechart)
-- [Bar Chart](/docs/library/graphing/charts/barchart)
-- [Funnel Chart](/docs/library/graphing/charts/funnelchart)
+- [Pie Chart](/docs/library/graphing/charts/piechart/)
+- [Bar Chart](/docs/library/graphing/charts/barchart/)
+- [Funnel Chart](/docs/library/graphing/charts/funnelchart/)

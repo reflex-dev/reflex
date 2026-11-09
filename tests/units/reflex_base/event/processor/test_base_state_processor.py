@@ -1,28 +1,147 @@
 """Tests for BaseStateEventProcessor, specifically the _rehydrate path."""
 
 import asyncio
+import collections
+import contextlib
 import dataclasses
+import gc
+import inspect
 import logging
 import traceback
+import warnings
+import weakref
 from collections.abc import Mapping
-from typing import Any
+from pathlib import Path
+from typing import Any, cast
 
 import pytest
 import pytest_asyncio
-from reflex_base.constants import CompileVars
+from opentelemetry.trace import SpanKind, StatusCode
+from reflex_base import constants, otel
+from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor.base_state_processor import (
+    _prepare_event_payload,
+    _transform_event_arg,
+    _transform_event_payload,
+)
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.form import FORM_DATA_ENTRIES_KEY, FormData
 
 import reflex as rx
 from reflex import event
-from reflex.app import App
-from reflex.event import Event
+from reflex.app import App, EventNamespace
+from reflex.compiler.utils import compile_state
+from reflex.event import Event, EventHandler, EventSpec
+from reflex.istate.delta import Delta
+from reflex.istate.manager import StateManager
+from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
-from reflex.state import OnLoadInternalState, State, StateUpdate
+from reflex.state import (
+    BaseState,
+    OnLoadInternalState,
+    State,
+    StateUpdate,
+    _override_base_method,
+    state_snapshot_hashes,
+)
+from reflex.utils import types as reflex_types
+from tests.units.conftest import metric_points
+from tests.units.mock_redis import mock_redis
+
+# Class-level registries on State that registering a substate, or installing a
+# dynamic route arg, writes into with no removal path.
+_STATE_REGISTRIES = (
+    "vars",
+    "computed_vars",
+    "_var_dependencies",
+    "_potentially_dirty_states",
+    "_always_dirty_computed_vars",
+    "_always_dirty_substates",
+    "_interval_computed_var_names",
+)
+
+
+def _snapshot_registry(value: Any) -> Any:
+    """Copy a registry deeply enough that mutating the original cannot reach it.
+
+    Args:
+        value: The registry to copy.
+
+    Returns:
+        The copy, or the value itself when it is immutable.
+    """
+    if isinstance(value, dict):
+        return {k: set(v) if isinstance(v, set) else v for k, v in value.items()}
+    if isinstance(value, set):
+        return set(value)
+    return value
+
+
+def _restore_registry(cls: type[BaseState], name: str, value: Any) -> None:
+    """Put a registry back, in place where the container is shared by reference.
+
+    Args:
+        cls: The state class to restore on.
+        name: The registry name.
+        value: The snapshotted value.
+    """
+    current = getattr(cls, name)
+    if isinstance(current, (dict, set)):
+        current.clear()
+        current.update(value)  # pyright: ignore[reportArgumentType]
+    else:
+        setattr(cls, name, value)
+
+
+def _state_tree(cls: type[BaseState]) -> list[type[BaseState]]:
+    """The state class and every substate registered under it.
+
+    Args:
+        cls: The root of the tree.
+
+    Returns:
+        The class followed by its substates, depth first.
+    """
+    return [cls, *(s for sub in cls.get_substates() for s in _state_tree(sub))]
+
+
+@pytest.fixture(autouse=True)
+def _isolate_state_class_registries(clean_registration_context: RegistrationContext):
+    """Undo what a test leaves on state classes that outlive it.
+
+    Defining a substate writes into ``State``'s dependency dicts, and
+    ``add_page`` on a dynamic route installs the arg on ``State`` and copies it
+    into the ``vars`` of every substate registered at the time -- including
+    framework ones like ``OnLoadInternalState``.
+
+    Args:
+        clean_registration_context: Requested so this tears down while the
+            test's substate registrations are still resolvable.
+
+    Yields:
+        None.
+    """
+    snapshot = {
+        name: _snapshot_registry(getattr(State, name)) for name in _STATE_REGISTRIES
+    }
+    known_vars = set(State.computed_vars)
+
+    yield
+
+    for name in set(State.computed_vars) - known_vars:
+        with contextlib.suppress(AttributeError):
+            delattr(State, name)
+        for cls in _state_tree(State):
+            cls.vars.pop(name, None)
+    for name, value in snapshot.items():
+        _restore_registry(State, name, value)
 
 
 @pytest.fixture
@@ -64,11 +183,49 @@ def emitted_events() -> list[tuple[str, tuple[Event, ...]]]:
 
 
 @pytest_asyncio.fixture
-async def real_base_state_processor(
+async def processor_state_manager(
+    request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    """The state manager backing the processor.
+
+    Defaults to the in-memory manager. Tests that care about how much of the
+    state tree a manager materializes parametrize this indirectly with
+    "in_process", "disk" or "redis".
+
+    Args:
+        request: pytest request object, whose optional param selects the manager.
+        monkeypatch: pytest monkeypatch fixture.
+        tmp_path: Per-test directory for the disk manager to persist into.
+
+    Yields:
+        The state manager.
+    """
+    kind = getattr(request, "param", "in_process")
+    state_manager: StateManager
+    if kind == "redis":
+        state_manager = StateManagerRedis(redis=mock_redis())
+    elif kind == "disk":
+        # Resolved once in __post_init__, and the manager both purges and
+        # persists there, so keep it out of the process-wide states directory.
+        monkeypatch.setenv(environment.REFLEX_STATES_WORKDIR.name, str(tmp_path))
+        state_manager = StateManagerDisk()
+    else:
+        state_manager = StateManagerMemory()
+
+    yield state_manager
+
+    await state_manager.close()
+
+
+@pytest.fixture
+def real_base_state_processor(
     _real_base_state_processor_obj: BaseStateEventProcessor,
     emitted_deltas: list,
     emitted_events: list,
     clean_registration_context: RegistrationContext,
+    processor_state_manager: StateManager,
 ):
     """A fully wired BaseStateEventProcessor with real _rehydrate.
 
@@ -80,12 +237,13 @@ async def real_base_state_processor(
         emitted_deltas: List to capture emitted deltas.
         emitted_events: List to capture emitted events.
         clean_registration_context: Isolated registration context for the test.
+        processor_state_manager: The state manager to back the processor.
 
-    Yields:
+    Returns:
         The configured but not-yet-started BaseStateEventProcessor.
     """
     clean_registration_context.register_base_state(OnLoadInternalState)
-    state_manager = StateManagerMemory()
+    state_manager = processor_state_manager
 
     async def emit_delta_impl(  # noqa: RUF029
         token: str, delta: Mapping[str, Mapping[str, Any]]
@@ -104,9 +262,7 @@ async def real_base_state_processor(
     )
     _real_base_state_processor_obj._root_context = root_ctx
 
-    yield _real_base_state_processor_obj
-
-    await state_manager.close()
+    return _real_base_state_processor_obj
 
 
 @pytest.fixture
@@ -338,6 +494,177 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
     )
 
 
+def _expire_token(state_manager: StateManager, token: str) -> None:
+    """Drop every state stored for a token, as its expiration would.
+
+    Args:
+        state_manager: The memory or redis state manager holding the token.
+        token: The client token to expire.
+    """
+    if isinstance(state_manager, StateManagerMemory):
+        state_manager._purge_token(BaseStateToken(ident=token, cls=State))
+        return
+    assert isinstance(state_manager, StateManagerRedis)
+    keys = state_manager.redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+    for key in [key for key in keys if key.startswith(token.encode())]:
+        del keys[key]
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_background_task_rehydrates_state_tree_expired_while_unlocked(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A background task re-entering an expired tree sends the full recreated state.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    waiting = asyncio.Event()
+    release = asyncio.Event()
+
+    class ExpiryState(State):
+        value: int = 0
+
+        @event(background=True)
+        async def bg(self):
+            waiting.set()
+            await release.wait()
+            async with self:
+                self.value = 100
+
+    class ExpiryChildState(ExpiryState):
+        child: int = 0
+
+        @event
+        def set_child(self):
+            self.child = 13
+
+    router_data = {
+        RouteVar.PATH: "/post/[pid]",
+        RouteVar.ORIGIN: "/post/abc",
+        RouteVar.QUERY: {"pid": "abc"},
+        RouteVar.CLIENT_TOKEN: token,
+    }
+
+    set_child, bg = (
+        Event.from_event_type(spec, router_data=router_data)[0]
+        for spec in (ExpiryChildState.set_child(), ExpiryState.bg())
+    )
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    if isinstance(state_manager, StateManagerRedis):
+        # Oplock keeps the tree cached in the process, so deleting keys does not expire it.
+        state_manager._oplock_enabled = False
+    async with real_base_state_processor as processor:
+        await (await processor.enqueue(token, set_child))
+        await processor.enqueue(token, bg)
+        await asyncio.wait_for(waiting.wait(), timeout=2)
+        _expire_token(state_manager, token)
+        emitted_deltas.clear()
+        release.set()
+        await processor.join(5)
+
+    root_name = State.get_full_name()
+    child_name = ExpiryChildState.get_full_name()
+    is_hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    snapshots = [d for _, d in emitted_deltas if child_name in d]
+    assert snapshots, f"The expired child state was never resent: {emitted_deltas}"
+    snapshot = snapshots[0]
+    # Not hydrated, so the browser does not overwrite its client storage.
+    assert snapshot[root_name][is_hydrated_key] is False
+    assert snapshot[child_name]["child" + FIELD_MARKER] == 0
+    # Routeless: the client's next event sets its current page.
+    page = snapshot[root_name][constants.ROUTER_PAGE + FIELD_MARKER]
+    assert page.raw_path == ""
+    assert emitted_deltas[-1][1][ExpiryState.get_full_name()] == {
+        "value" + FIELD_MARKER: 100
+    }
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_background_rehydrate_does_not_load_the_route_the_client_left(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A tree that expires during a background task does not reload the task's old page.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    waiting = asyncio.Event()
+    release = asyncio.Event()
+
+    class LeftPageState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def ping(self):
+            pass
+
+        @event(background=True)
+        async def bg(self):
+            waiting.set()
+            await release.wait()
+            async with self:
+                pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=LeftPageState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=LeftPageState.load_b
+    )
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    if isinstance(state_manager, StateManagerRedis):
+        # Oplock keeps the tree cached in the process, so deleting keys does not expire it.
+        state_manager._oplock_enabled = False
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(
+            token, _client_event(LeftPageState.bg(), _view("/page-a"))
+        )
+        await asyncio.wait_for(waiting.wait(), timeout=2)
+        # The client moves to /page-b, then the tree expires.
+        await _send(
+            processor, token, _client_event(LeftPageState.ping(), _view("/page-b"))
+        )
+        _expire_token(state_manager, token)
+        release.set()
+        await processor.join(5)
+        # The client's next event on /page-b.
+        await _send(
+            processor, token, _client_event(LeftPageState.ping(), _view("/page-b"))
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(LeftPageState)).loaded == ["b"], (
+            "the background rehydrate loaded the route the client had left"
+        )
+        assert root.router.url.path == "/page-b"
+
+
 async def test_background_yield_inside_context_flushes_delta_before_event(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
@@ -466,6 +793,106 @@ async def test_background_event_without_context_still_flushes_a_delta(
     assert any(d.get(state_name, {}).get(beat_key) == 7 for _, d in emitted_deltas), (
         f"no delta refreshed the uncached var: {emitted_deltas}"
     )
+
+
+@pytest.mark.parametrize("mode", ["dropped", "replaced"])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk"], indirect=True
+)
+async def test_filtered_async_var_is_delivered_after_release(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+    recwarn: pytest.WarningsRecorder,
+):
+    """Events can withhold an async var then deliver it without leaking coroutines.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        emitted_deltas: Deltas emitted by the event processor.
+        token: The client token.
+        mode: Whether the filter drops the value or replaces it with a placeholder.
+        monkeypatch: Pytest monkeypatch fixture.
+        recwarn: Fixture capturing warnings from withheld coroutines.
+    """
+
+    class FilteredAsyncState(State):
+        n: int = 0
+        _withhold: bool = True
+
+        @rx.var(cache=False)
+        async def secret(self) -> str:
+            """Return the current secret.
+
+            Returns:
+                The secret derived from the current state.
+            """
+            await asyncio.sleep(0)
+            return f"secret-{self.n}"
+
+        @event
+        def update(self, n: int, withhold: bool):
+            """Set the value and whether its computed secret may be delivered.
+
+            Args:
+                n: The new value.
+                withhold: Whether to filter out the secret.
+            """
+            self.n = n
+            self._withhold = withhold
+
+    state_name = FilteredAsyncState.get_full_name()
+    key = "secret" + FIELD_MARKER
+    original_get_delta = BaseState.get_delta
+
+    def filtered_get_delta(self: FilteredAsyncState) -> rx.state.Delta:
+        """Filter a secret before the processor resolves its coroutine.
+
+        Args:
+            self: The state whose delta is being filtered.
+
+        Returns:
+            The filtered delta.
+        """
+        delta = original_get_delta(self)
+        if self._withhold and key in delta.get(state_name, {}):
+            value = delta[state_name].pop(key)
+            assert inspect.iscoroutine(value)
+            value.close()
+            if mode == "replaced":
+                delta[state_name][key] = "anon"
+        return delta
+
+    monkeypatch.setattr(FilteredAsyncState, "get_delta", filtered_get_delta)
+    async with _read_back(real_base_state_processor, token) as root:
+        root.router_data = {"pathname": "/", "query": {}}
+
+    async with real_base_state_processor as processor:
+        for n, withhold, expected in [
+            (1, True, ["anon"] if mode == "replaced" else []),
+            (1, False, ["secret-1"]),
+            (1, False, []),
+            (2, True, ["anon"] if mode == "replaced" else []),
+            (1, False, ["secret-1"] if mode == "replaced" else []),
+        ]:
+            emitted_deltas.clear()
+            await _send(
+                processor,
+                token,
+                Event.from_event_type(FilteredAsyncState.update(n, withhold))[0],
+            )
+            assert [
+                delta[state_name][key]
+                for _, delta in emitted_deltas
+                if key in delta.get(state_name, {})
+            ] == expected
+
+    gc.collect()
+    assert not [warning for warning in recwarn if warning.category is RuntimeWarning]
 
 
 async def test_background_event_raising_without_context_still_flushes_a_delta(
@@ -597,6 +1024,66 @@ async def test_background_flush_failure_does_not_mask_handler_exception(
     ), f"the flush failure was not logged: {caplog.records}"
 
 
+@pytest.mark.parametrize("processor_state_manager", ["redis"], indirect=True)
+async def test_background_event_releases_the_dispatch_state_tree(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A suspended background handler does not keep the dispatch-time tree alive.
+
+    Regression: after dropping the state lock, ``_execute_event`` kept the
+    tree it loaded under that lock referenced from its frame locals for as
+    long as the background handler ran. With a manager that loads a fresh
+    tree for every lock, like redis, each running background task pinned an
+    extra copy of the session's state. Once the handler has entered
+    ``async with self``, its proxy wraps the tree loaded there, and nothing
+    should reference the dispatch-time one anymore.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    dispatch_root: list[weakref.ref[BaseState]] = []
+    ticked = asyncio.Event()
+    resume = asyncio.Event()
+
+    class RetainingBgState(State):
+        @event(background=True)
+        async def bg(self):
+            dispatch_root.append(
+                weakref.ref(self.__wrapped__._get_root_state())  # pyright: ignore [reportAttributeAccessIssue]
+            )
+            async with self:
+                pass
+            ticked.set()
+            await resume.wait()
+
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    assert isinstance(state_manager, StateManagerRedis)
+    # Oplock serves every lock from one cached tree, so there is no second tree.
+    state_manager._oplock_enabled = False
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(RetainingBgState.bg())[0])
+        await asyncio.wait_for(ticked.wait(), timeout=5)
+        gc.collect()
+        retained = dispatch_root[0]() is not None
+        resume.set()
+        await processor.join(5)
+
+    assert not retained, (
+        "the dispatch-time state tree stayed referenced while the background "
+        "handler was suspended outside `async with self`"
+    )
+
+
 async def test_chained_event_keeps_originating_router_data(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
@@ -646,8 +1133,8 @@ async def test_chained_event_keeps_originating_router_data(
 
         @event(background=True)
         async def outer(self):
-            # wait_for rather than asyncio.timeout: this package supports 3.10.
-            await asyncio.wait_for(router_moved.wait(), timeout=5)
+            async with asyncio.timeout(5):
+                await router_moved.wait()
             yield RouterState.note
 
     def client_event(spec, router_data: dict[str, Any]) -> Event:
@@ -666,6 +1153,48 @@ async def test_chained_event_keeps_originating_router_data(
         BaseStateToken(ident=token, cls=State)
     )
     assert (await state.get_state(RouterState)).seen == ["/item/abc|abc"]
+
+
+async def test_handler_chains_a_tuple_of_events(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A handler can return or yield its chained events as a tuple.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class TupleState(State):
+        log: list[str] = []
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+        @event
+        def returns(self):
+            return TupleState.add("r1"), TupleState.add("r2")
+
+        @event
+        def yields(self):
+            yield TupleState.add("y1"), TupleState.add("y2")
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(TupleState.returns())[0])
+        await processor.join(5)
+        await processor.enqueue(token, Event.from_event_type(TupleState.yields())[0])
+        await processor.join(5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(TupleState)).log == ["r1", "r2", "y1", "y2"]
 
 
 async def test_ensure_locked_returns_a_root_only_while_the_lock_is_held(
@@ -745,3 +1274,3897 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
         object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
 
     assert proxy._self_entered_context is False
+
+
+def _client_event(spec: Any, router_data: dict[str, Any]) -> Event:
+    """Build an event the way the socket layer delivers one: carrying router_data.
+
+    Args:
+        spec: The event spec to build the event from.
+        router_data: The router data the client sent the event with.
+
+    Returns:
+        The event.
+    """
+    return dataclasses.replace(Event.from_event_type(spec)[0], router_data=router_data)
+
+
+def _view(path: str, as_path: str | None = None, **query: str) -> dict[str, Any]:
+    """The router_data the socket layer builds for a page view.
+
+    ``pathname`` is the matched route (``/item/[item_id]``) and ``asPath`` the
+    URL the client is actually on (``/item/abc``); see
+    ``EventNamespace.on_event``.
+
+    Args:
+        path: The matched route.
+        as_path: The client's URL, defaulting to the matched route.
+        query: The route and query params for the view.
+
+    Returns:
+        A router_data dict.
+    """
+    return {
+        RouteVar.PATH: path,
+        RouteVar.ORIGIN: as_path if as_path is not None else path,
+        RouteVar.QUERY: query,
+    }
+
+
+@contextlib.asynccontextmanager
+async def _read_back(processor: BaseStateEventProcessor, token: str):
+    """Read the token's final state through the lock.
+
+    ``StateManagerRedis.get_state`` goes straight to redis, which under
+    opportunistic locking has not yet seen the writes still held in the
+    lease's cached copy.
+
+    Args:
+        processor: The processor whose state manager holds the token.
+        token: The client token.
+
+    Yields:
+        The root state.
+    """
+    root_ctx = processor._root_context
+    assert root_ctx is not None
+    async with root_ctx.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as root:
+        yield root
+
+
+async def _send(
+    processor: BaseStateEventProcessor, token: str, ev: Event, timeout: float = 10
+) -> None:
+    """Enqueue an event and wait for it and everything it chains.
+
+    ``processor.join()`` only drains the queue, which can empty between an
+    event finishing and the events it chained being put on it, so the on_load
+    chain these tests are about is not covered by it.
+
+    Args:
+        processor: The processor to enqueue against.
+        token: The client token.
+        ev: The event to enqueue.
+        timeout: Seconds to wait for the chain to finish.
+    """
+    future = await processor.enqueue(token, ev)
+    await asyncio.wait_for(future.wait_all(), timeout=timeout)
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
+)
+async def test_rehydrate_runs_on_load_for_the_incoming_events_route(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """The compatibility rehydrate loads the page the event came from.
+
+    Once a token's state has expired, the next event arrives against a fresh
+    tree with no ``router_data`` and the processor rehydrates it before running
+    the handler. ``on_load`` is page dependent, so that rehydrate has to
+    resolve the route from the event that triggered it: anything else runs
+    another page's loader, or the 404 loader, against a client that is plainly
+    somewhere else.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class RouteLoadState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def load_404(self):
+            self.loaded = [*self.loaded, "404"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=RouteLoadState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=RouteLoadState.load_b
+    )
+    wired_app.add_page(
+        lambda: rx.text("404"), route="/404", on_load=RouteLoadState.load_404
+    )
+
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, _client_event(RouteLoadState.ping(), _view("/page-b"))
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(RouteLoadState)).loaded == ["b"], (
+            "the rehydrate ran a loader for a page the event did not come from"
+        )
+        assert root.router.url.path == "/page-b"
+        assert (await root.get_state(State)).is_hydrated is True
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_superseded_handler_preserves_yielded_state(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    processor_state_manager: StateManager,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A replacement handler keeps writes already yielded by its cancelled predecessor.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        processor_state_manager: The state manager backing the processor.
+        emitted_deltas: The deltas sent by the processor.
+        token: The client token.
+    """
+    if isinstance(processor_state_manager, StateManagerRedis):
+        processor_state_manager._oplock_enabled = False
+    started = asyncio.Event()
+
+    class RefreshState(State):
+        """Track writes from superseding foreground handlers."""
+
+        entries: list[str] = []
+
+        @event(supersedes=True)
+        async def refresh(self, tag: str):
+            """Record work before yielding and after completion or cancellation.
+
+            Args:
+                tag: The invocation to record.
+
+            Yields:
+                The state update before waiting.
+            """
+            self.entries = [*self.entries, f"{tag}:start"]
+            yield
+            if tag == "A":
+                started.set()
+                try:
+                    await asyncio.Event().wait()
+                except asyncio.CancelledError:
+                    self.entries = [*self.entries, f"{tag}:cancelled"]
+                    raise
+            self.entries = [*self.entries, f"{tag}:done"]
+
+    wired_app.add_page(lambda: rx.text("refresh"), route="/")
+    async with real_base_state_processor as processor:
+        first = await processor.enqueue(
+            token, _client_event(RefreshState.refresh("A"), _view("/"))
+        )
+        await asyncio.wait_for(started.wait(), timeout=5)
+        await _send(
+            processor, token, _client_event(RefreshState.refresh("B"), _view("/"))
+        )
+        assert first.done()
+
+    expected = ["A:start", "A:cancelled", "B:start", "B:done"]
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(RefreshState)).entries == expected
+    entry_deltas = [
+        fields["entries" + FIELD_MARKER]
+        for _, delta in emitted_deltas
+        if "entries" + FIELD_MARKER
+        in (fields := delta.get(RefreshState.get_full_name(), {}))
+    ]
+    assert ["A:start"] in entry_deltas
+    assert entry_deltas[-1] == expected
+
+
+@pytest.mark.parametrize("outcome", ["cancelled", "raised"])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
+)
+async def test_failed_handler_emits_writes_after_last_yield(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    processor_state_manager: StateManager,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    outcome: str,
+):
+    """A cancelled or failing handler sends the writes it made after its last yield.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        processor_state_manager: The state manager backing the processor.
+        emitted_deltas: The deltas sent by the processor.
+        token: The client token.
+        outcome: Whether the handler is cancelled or raises.
+    """
+    started = asyncio.Event()
+
+    class CleanupState(State):
+        """Write a var only after the handler's last yield."""
+
+        cleanup: str = ""
+
+        @event
+        async def run(self):
+            """Yield, then write in cleanup when cancelled or failing.
+
+            Yields:
+                The state update before waiting.
+
+            Raises:
+                RuntimeError: When the handler is set to fail.
+            """
+            yield
+            if outcome == "raised":
+                self.cleanup = "raised"
+                msg = "handler failed"
+                raise RuntimeError(msg)
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                self.cleanup = "cancelled"
+                raise
+
+    handled: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text("cleanup"), route="/")
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _client_event(CleanupState.run(), _view("/"))
+        )
+        if outcome == "cancelled":
+            await asyncio.wait_for(started.wait(), timeout=5)
+            future.cancel()
+        with contextlib.suppress(BaseException):
+            await asyncio.wait_for(future.wait_all(), timeout=5)
+
+    field = "cleanup" + FIELD_MARKER
+    sent = [
+        fields[field]
+        for _, delta in emitted_deltas
+        if field in (fields := delta.get(CleanupState.get_full_name(), {}))
+    ]
+    assert sent[-1] == outcome
+    # The handler's own exception is reported, not one from the flush.
+    assert [str(ex) for ex in handled] == (
+        ["handler failed"] if outcome == "raised" else []
+    )
+
+
+async def test_failed_handler_flush_error_keeps_handler_exception(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A failing flush is logged and the handler's own exception is reported.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        token: The client token.
+        caplog: The pytest log capture fixture.
+    """
+
+    class FlushErrorState(State):
+        """Fail the delta computation once the handler wrote its cleanup."""
+
+        cleanup: str = ""
+
+        @rx.var
+        def checked(self) -> str:
+            """Raise once cleanup is set.
+
+            Returns:
+                The cleanup value.
+
+            Raises:
+                ValueError: When cleanup is set.
+            """
+            if self.cleanup:
+                msg = "delta failed"
+                raise ValueError(msg)
+            return self.cleanup
+
+        @event
+        def run(self):
+            """Write cleanup, then fail.
+
+            Raises:
+                RuntimeError: Always.
+            """
+            self.cleanup = "raised"
+            msg = "handler failed"
+            raise RuntimeError(msg)
+
+    handled: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text("flush"), route="/")
+    with caplog.at_level(logging.ERROR):
+        async with real_base_state_processor as processor:
+            future = await processor.enqueue(
+                token, _client_event(FlushErrorState.run(), _view("/"))
+            )
+            with contextlib.suppress(RuntimeError):
+                await asyncio.wait_for(future.wait_all(), timeout=5)
+
+    assert [str(ex) for ex in handled] == ["handler failed"]
+    assert any(
+        "Error flushing delta after handler" in record.getMessage()
+        and "delta failed" in (record.exc_text or "")
+        for record in caplog.records
+    )
+
+
+async def test_failed_delta_is_not_flushed_again(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A handler whose own delta fails reports that error once, without a flush.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        token: The client token.
+        caplog: The pytest log capture fixture.
+    """
+
+    class DeltaErrorState(State):
+        """Fail every delta once tripped, through an uncached var."""
+
+        trip: bool = False
+
+        @rx.var(cache=False)
+        def boom(self) -> str:
+            """Raise once tripped.
+
+            Returns:
+                A constant while not tripped.
+
+            Raises:
+                ValueError: When tripped.
+            """
+            if self.trip:
+                msg = "delta failed"
+                raise ValueError(msg)
+            return "ok"
+
+        @event
+        def run(self):
+            """Trip the var, so the handler's own delta fails."""
+            self.trip = True
+
+    handled: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text("delta"), route="/")
+    with caplog.at_level(logging.ERROR):
+        async with real_base_state_processor as processor:
+            future = await processor.enqueue(
+                token, _client_event(DeltaErrorState.run(), _view("/"))
+            )
+            with contextlib.suppress(ValueError):
+                await asyncio.wait_for(future.wait_all(), timeout=5)
+
+    assert [str(ex) for ex in handled] == ["delta failed"]
+    assert not [
+        record
+        for record in caplog.records
+        if "Error flushing delta after handler" in record.getMessage()
+    ]
+
+
+async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A state that expired on one page rehydrates against the client's new page.
+
+    The client navigates from ``/page-a`` to ``/page-b`` while the backend
+    drops the token's state. The next event carries the ``/page-b`` view, so
+    the rehydrate it triggers must not resurrect ``/page-a``'s loader from
+    whatever the previous event left behind.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class ExpiredLoadState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=ExpiredLoadState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=ExpiredLoadState.load_b
+    )
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state_manager = root_ctx.state_manager
+
+    async with real_base_state_processor as processor:
+        # A first event settles the state on /page-a.
+        await _send(
+            processor, token, _client_event(ExpiredLoadState.ping(), _view("/page-a"))
+        )
+        # The token's state expires out from under the still-connected client.
+        # Only the in-memory manager is driven here; expiry is a manager
+        # concern, and what it leaves the processor with -- a fresh tree for a
+        # known token -- is what the other managers are exercised on above.
+        assert isinstance(state_manager, StateManagerMemory)
+        state_manager.states.pop(token)
+        # The client, now on /page-b, sends the next event.
+        await _send(
+            processor, token, _client_event(ExpiredLoadState.ping(), _view("/page-b"))
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(ExpiredLoadState)).loaded == ["b"], (
+            "the post-expiry rehydrate loaded the route the client had left"
+        )
+        assert root.router.url.path == "/page-b"
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
+)
+async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A rehydrated dynamic page loads with the event's own route args.
+
+    The loader for ``/item/[item_id]`` is useless without ``item_id``: the
+    rehydrate has to seed ``router`` from the incoming event before chaining
+    ``on_load``, or the loader reads an empty arg on a URL that plainly names
+    one.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class DynamicLoadState(State):
+        seen: list[str] = []
+
+        @event
+        def load_item(self):
+            item_id = self.item_id  # pyright: ignore[reportAttributeAccessIssue]
+            self.seen = [*self.seen, f"{self.router.url.path}|{item_id}"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("item"),
+        route="/item/[item_id]",
+        on_load=DynamicLoadState.load_item,
+    )
+    wired_app.add_page(
+        lambda: rx.text("other"), route="/other", on_load=DynamicLoadState.load_item
+    )
+
+    async with real_base_state_processor as processor:
+        await _send(
+            processor,
+            token,
+            _client_event(
+                DynamicLoadState.ping(),
+                _view("/item/[item_id]", "/item/abc", item_id="abc"),
+            ),
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(DynamicLoadState)).seen == ["/item/abc|abc"]
+
+
+async def test_event_without_router_data_hydrates_once_without_loaders(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A backend-initiated event hydrates an expired state, but only once.
+
+    Regression: the rehydrate ran ``on_load_internal`` against the empty
+    route, whose loaders (the 404 ones) chained events that carried no
+    ``router_data`` either and rehydrated again, fanning out until the queue
+    was shut down. Nothing sets ``router_data`` on this path, so the rehydrate
+    also has to stop repeating itself.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class BackendPushState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_index(self):
+            self.loaded = [*self.loaded, "index"]
+
+        @event
+        def load_404(self):
+            self.loaded = [*self.loaded, "404"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("i"), route="/", on_load=BackendPushState.load_index
+    )
+    wired_app.add_page(
+        lambda: rx.text("404"), route="/404", on_load=BackendPushState.load_404
+    )
+
+    async with real_base_state_processor as processor:
+        # join, not the event's future: pre-fix the fan-out outruns wait_all.
+        for _ in range(2):
+            await processor.enqueue(
+                token, Event.from_event_type(BackendPushState.ping())[0]
+            )
+            await processor.join(1)
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(BackendPushState)).loaded == []
+        assert (await root.get_state(State)).is_hydrated is True
+
+    state_name = State.get_full_name()
+    is_hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    hydrate_deltas = [
+        d
+        for _, d in emitted_deltas
+        if d.get(state_name, {}).get(is_hydrated_key) is False
+    ]
+    assert len(hydrate_deltas) == 1, "the second event hydrated the state again"
+
+
+async def test_routed_event_after_a_routeless_rehydrate_loads_its_page(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Hydrating without a route does not consume the page's on_load.
+
+    A backend-initiated event leaves the state hydrated but still routeless,
+    so the first event that does carry a route still owes it its loaders.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class MixedOriginState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=MixedOriginState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=MixedOriginState.load_b
+    )
+
+    async with real_base_state_processor as processor:
+        await _send(processor, token, Event.from_event_type(MixedOriginState.ping())[0])
+        await _send(
+            processor, token, _client_event(MixedOriginState.ping(), _view("/page-b"))
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(MixedOriginState)).loaded == ["b"]
+
+
+async def test_backend_exception_handler_events_parent_under_failed_span(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    otel_exporter,
+):
+    """Events returned by the backend exception handler are children of the failed span.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+
+    class RecoverState(State):
+        @event
+        def fail(self):
+            msg = "boom"
+            raise RuntimeError(msg)
+
+        @event
+        def recover(self):
+            pass
+
+    def recover_from(_ex: Exception) -> EventSpec:
+        return cast("EventSpec", RecoverState.recover())
+
+    real_base_state_processor.backend_exception_handler = recover_from
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(RecoverState.fail())[0])
+        await processor.join(5)
+
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    failed, recovery = spans["fail"], spans["recover"]
+    assert failed.status.status_code == StatusCode.ERROR
+    assert recovery.parent is not None
+    assert recovery.parent.span_id == failed.context.span_id
+    assert recovery.kind == SpanKind.INTERNAL
+    assert failed.attributes is not None
+    assert recovery.attributes is not None
+    assert (
+        recovery.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == failed.attributes[otel.ATTR_EVENT_TXID]
+    )
+
+
+async def test_execute_event_records_state_acquire_duration(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    otel_metrics,
+):
+    """Executing an event records how long acquiring the session state took.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        otel_metrics: In-memory metric reader with metrics enabled.
+    """
+
+    class AcquireState(State):
+        @event
+        def noop(self):
+            pass
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(AcquireState.noop())[0])
+        await processor.join(1)
+
+    names = {
+        p.attributes[otel.ATTR_EVENT_NAME]
+        for p in metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
+    }
+    assert Event.from_event_type(AcquireState.noop())[0].name in names
+
+
+async def test_unannotated_handler_reuses_its_resolved_type_hints(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A handler without annotations does not resolve its type hints again per event.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class UnannotatedState(State):
+        count: int = 0
+
+        @event
+        def bump(self):
+            self.count += 1
+
+    # Resolved at registration, to an empty mapping.
+    assert UnannotatedState.event_handlers["bump"]._type_hints == {}
+    resolved: list[Any] = []
+    get_type_hints = reflex_types.get_type_hints
+
+    def recording_get_type_hints(obj: Any) -> dict[str, Any]:
+        resolved.append(obj)
+        return get_type_hints(obj)
+
+    # The module the processor resolves type hints through.
+    monkeypatch.setattr(reflex_types, "get_type_hints", recording_get_type_hints)
+    async with real_base_state_processor as processor:
+        for _ in range(2):
+            await processor.enqueue(
+                token, Event.from_event_type(UnannotatedState.bump())[0]
+            )
+        await processor.join(1)
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(UnannotatedState)).count == 2
+    assert resolved == []
+
+
+async def test_no_op_partial_router_data_leaves_the_state_untouched(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A payload that merges to what is already there must not touch the state.
+
+    A partial router_data (only the navigation keys, as `fix_events` produces)
+    is never equal to the full dict the state holds, so it reaches the merge.
+    If it merges to the same thing, nothing moved: assigning it anyway would
+    dirty router_data, mark the state touched, and persist it for an event
+    that changed nothing.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List of deltas captured from the processor.
+        token: The client token.
+    """
+
+    class NoOpRouterState(State):
+        n: int = 0
+
+        @event
+        def bump(self):
+            self.n += 1
+
+    full_view = {
+        "pathname": "/a",
+        "asPath": "/a",
+        "query": {},
+        "token": token,
+        "sid": "sid1",
+        "ip": "127.0.0.1",
+        "headers": {"origin": "http://localhost:3000"},
+    }
+    # Same navigation, but carrying only the keys a chained event keeps.
+    navigation_only = {"pathname": "/a", "asPath": "/a", "query": {}}
+
+    def client_event(router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(NoOpRouterState.bump())[0], router_data=router_data
+        )
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, client_event(full_view))
+        await processor.join(10)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    state._was_touched = False
+    emitted_deltas.clear()
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, client_event(navigation_only))
+        await processor.join(10)
+
+    # The connection-scoped data survived the partial payload...
+    assert state.router_data["headers"] == full_view["headers"]
+    assert state.rx_router_session.client_token == token
+    # ...and nothing about the router was re-sent or marked dirty.
+    assert not any(
+        key.removesuffix(FIELD_MARKER) in constants.ROUTER_VARS
+        for _token, delta in emitted_deltas
+        for key in delta.get(State.get_full_name(), {})
+    )
+    assert not state._was_touched
+
+
+async def test_navigation_delta_elides_connection_scoped_router_vars(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A navigation only re-sends the navigation-scoped router vars.
+
+    Session and headers cannot change without going through a reconnect, so
+    re-shipping them in the delta of every client event is pure overhead.
+    The router is stored in per-field base vars precisely so that a
+    navigation marks only page/url/route_id dirty; a reconnect (new sid)
+    marks only the session dirty.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List of deltas captured from the processor.
+        token: The client token.
+    """
+
+    class NavState(State):
+        n: int = 0
+
+        @event
+        def bump(self):
+            self.n += 1
+
+    headers = {"origin": "http://localhost:3000", "user-agent": "test-agent"}
+
+    def view(path: str, sid: str = "sid1") -> dict[str, Any]:
+        return {
+            "pathname": path,
+            "asPath": path,
+            "query": {},
+            "token": token,
+            "sid": sid,
+            "ip": "127.0.0.1",
+            "headers": headers,
+        }
+
+    def client_event(router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(NavState.bump())[0], router_data=router_data
+        )
+
+    def router_vars_in_deltas() -> set[str]:
+        return {
+            key.removesuffix(FIELD_MARKER)
+            for _token, delta in emitted_deltas
+            for key in delta.get(State.get_full_name(), {})
+            if key.removesuffix(FIELD_MARKER) in constants.ROUTER_VARS
+        }
+
+    async def run_event(router_data: dict[str, Any]) -> None:
+        emitted_deltas.clear()
+        async with real_base_state_processor as processor:
+            await processor.enqueue(token, client_event(router_data))
+            await processor.join(10)
+
+    # First event on the connection populates every router var.
+    await run_event(view("/a"))
+    assert router_vars_in_deltas() == {
+        "rx_router_session",
+        "rx_router_headers",
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
+    }
+
+    # A navigation only re-sends the navigation-scoped vars.
+    await run_event(view("/b"))
+    assert router_vars_in_deltas() == {
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
+    }
+
+    # An event without a route change re-sends no router vars at all.
+    await run_event(view("/b"))
+    assert router_vars_in_deltas() == set()
+
+    # A reconnect (new sid, same headers) re-sends only the session.
+    await run_event(view("/b", sid="sid2"))
+    assert router_vars_in_deltas() == {"rx_router_session"}
+
+
+_FORM_DATA_ENTRIES = [["tag", "a"], ["name", "x"], ["tag", "b"]]
+
+
+@dataclasses.dataclass
+class _TagsRecord:
+    tag: str
+    name: str
+
+
+def test_transform_event_payload_decodes_unannotated_form_data():
+    """Form data reaches an unannotated handler arg as a dict."""
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}}, {}
+    )
+    assert payload == {"form_data": {"tag": "b", "name": "x"}}
+
+
+def test_transform_event_payload_form_data_to_dataclass():
+    """Decoded form entries still feed structured annotations."""
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}},
+        {"form_data": _TagsRecord},
+    )
+    assert payload["form_data"] == _TagsRecord(tag="b", name="x")
+
+
+@pytest.mark.parametrize(
+    ("hint", "expected"),
+    [(_TagsRecord, _TagsRecord(tag="b", name="x")), (dict, {"tag": "b", "name": "x"})],
+)
+def test_transform_event_payload_passes_form_data_on_as_dict(hint, expected):
+    """A FormData passed on to another handler is built like submitted form data."""
+    payload = _transform_event_payload(
+        {"data": FormData([("tag", "a"), ("name", "x"), ("tag", "b")])},
+        {"data": hint},
+    )
+    assert payload["data"] == expected
+    assert type(payload["data"]) is type(expected)
+
+
+def test_transform_event_arg_model_drops_non_fields_without_deprecation():
+    """Filtering a Model payload to its fields emits no Pydantic deprecation."""
+    pydantic_warnings = pytest.importorskip("pydantic.warnings")
+    pytest.importorskip("sqlmodel")
+
+    class Post(rx.Model):
+        title: str
+        likes: int = 0
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        post = _transform_event_arg(
+            {"title": "hi", "likes": 2, "extra": 1, "other": 2}, Post
+        )
+
+    assert [
+        w
+        for w in caught
+        if issubclass(w.category, pydantic_warnings.PydanticDeprecatedSince20)
+    ] == []
+    assert isinstance(post, Post)
+    assert (post.title, post.likes) == ("hi", 2)
+    assert not post.model_extra
+
+
+def test_prepare_event_payload_transforms_form_data():
+    """A payload is transformed for the handler's annotations."""
+
+    def handler(self, form_data: FormData[str, str], count: int):
+        pass
+
+    payload = _prepare_event_payload(
+        EventHandler(fn=handler),
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}, "count": "3"},
+    )
+    assert payload["form_data"].getlist("tag") == ["a", "b"]
+    assert payload["count"] == 3
+
+
+def test_prepare_event_payload_falls_back_to_form_data_dict(caplog):
+    """When an arg cannot be transformed, form data still arrives as a dict."""
+
+    def handler(self, form_data: _TagsRecord, count: int):
+        pass
+
+    with caplog.at_level(logging.WARNING):
+        payload = _prepare_event_payload(
+            EventHandler(fn=handler),
+            {
+                "form_data": {
+                    FORM_DATA_ENTRIES_KEY: [*_FORM_DATA_ENTRIES, ["extra", "y"]]
+                },
+                "count": "3",
+            },
+        )
+    assert payload == {
+        "form_data": {"tag": "b", "name": "x", "extra": "y"},
+        "count": "3",
+    }
+    assert "Error transforming event payload" in caplog.text
+
+
+def test_prepare_event_payload_falls_back_when_hints_do_not_resolve():
+    """Unresolvable annotations still never expose the wrapped form entries."""
+
+    def handler(self, form_data: "_UndefinedFormData"):  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+        pass
+
+    payload = _prepare_event_payload(
+        EventHandler(fn=handler),
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}},
+    )
+    assert payload == {"form_data": {"tag": "b", "name": "x"}}
+
+
+def _boot_event(name: str, payload: dict[str, Any]) -> Event:
+    return Event(
+        name=name,
+        payload=payload,
+        router_data={"pathname": "/", "asPath": "/", "query": {}},
+    )
+
+
+async def test_hydrate_and_load_single_lock_cycle(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """One hydrate_and_load event resets/applies client storage, snapshots, and queues on_load.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class CookieState(State):
+        flavor: str = rx.Cookie("plain")
+        loads: int = 0
+
+        @event
+        def on_load_handler(self):
+            self.loads += 1
+
+    wired_app.add_page(
+        lambda: rx.text(CookieState.flavor),
+        route="/",
+        on_load=CookieState.on_load_handler,
+    )
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    cookie_key = f"{CookieState.get_full_name()}.flavor{FIELD_MARKER}"
+    state_name = State.get_full_name()
+    hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"vars": {cookie_key: "chocolate"}})
+        )
+        await future.wait_all()
+
+    # Snapshot (not hydrated, browser cookie applied), the browser cookie
+    # through get_delta (as update_vars_internal sends it), the on_load chain,
+    # hydrated.
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[state_name][hydrated_key] is False
+    assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "chocolate"
+    assert snapshot[CookieState.get_full_name()]["loads" + FIELD_MARKER] == 0
+    assert [d for _, d in emitted_deltas[1:]] == [
+        {CookieState.get_full_name(): {"flavor" + FIELD_MARKER: "chocolate"}},
+        {state_name: {hydrated_key: False}},
+        {CookieState.get_full_name(): {"loads" + FIELD_MARKER: 1}},
+        {state_name: {hydrated_key: True}},
+    ]
+
+    # The next hydrate resets the cookie var when the browser no longer sends
+    # it, and the on_load chain runs again.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(token, _boot_event(boot_name, {}))
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "plain"
+    assert emitted_deltas[2][1] == {
+        CookieState.get_full_name(): {"loads" + FIELD_MARKER: 2}
+    }
+
+
+async def test_hydrate_and_load_diffs_against_compiled_defaults(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """With matching initialState hashes only vars that differ from the defaults are sent.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class CookieState(State):
+        flavor: str = rx.Cookie("plain")
+        loads: int = 0
+        ratio: float = 1.0
+        ordered: dict[str, int] = {"alpha": 1, "beta": 2}
+
+        @event
+        def set_python_equal_values(self):
+            # Python-equal to the defaults, but JSON-distinct: key order is
+            # observable, e.g. in rx.foreach.
+            self.ratio = 1
+            self.ordered = {"beta": 2, "alpha": 1}
+
+    wired_app.add_page(lambda: rx.text(CookieState.flavor), route="/")
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    cookie_key = f"{CookieState.get_full_name()}.flavor{FIELD_MARKER}"
+    state_name = State.get_full_name()
+    compiled = compile_state(State)
+    hashes = state_snapshot_hashes(compiled)
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token,
+            _boot_event(
+                boot_name, {"vars": {cookie_key: "chocolate"}, "hashes": hashes}
+            ),
+        )
+        await future.wait_all()
+
+    snapshot = emitted_deltas[0][1]
+    # Only the navigation router vars and the changed cookie var differ from
+    # the compiled defaults.
+    assert set(snapshot) == {state_name, CookieState.get_full_name()}
+    assert set(snapshot[state_name]) == {
+        var + FIELD_MARKER
+        for var in (
+            "rx_router_page",
+            "rx_router_url",
+            "rx_router_route_id",
+            CompileVars.IS_HYDRATED,
+        )
+    }
+    assert snapshot[CookieState.get_full_name()] == {
+        "flavor" + FIELD_MARKER: "chocolate"
+    }
+
+    # Values that are Python-equal but serialize differently are still sent.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(CookieState.set_python_equal_values())[0]
+            )
+        ).wait_all()
+        emitted_deltas.clear()
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": hashes})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[CookieState.get_full_name()]["ratio" + FIELD_MARKER] == 1
+    assert list(snapshot[CookieState.get_full_name()]["ordered" + FIELD_MARKER]) == [
+        "beta",
+        "alpha",
+    ]
+
+    # Hashes compiled against a different set of states (a different names
+    # digest) fall back to the full snapshot.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": ["0" * 16, *hashes[1:]]})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert "loads" + FIELD_MARKER in snapshot[CookieState.get_full_name()]
+
+    # A matching names digest with a truncated hash list is malformed and
+    # also falls back to the full snapshot instead of failing the event.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": hashes[:-1]})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert "loads" + FIELD_MARKER in snapshot[CookieState.get_full_name()]
+
+
+async def test_hydrate_keeps_storage_write_guard_for_mismatched_substate(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A full substate snapshot must not persist its client-storage defaults.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+    """
+
+    class StorageState(State):
+        local: str = rx.LocalStorage("local-default")
+        session: str = rx.SessionStorage("session-default")
+        cookie: str = rx.Cookie("cookie-default")
+
+    wired_app.add_page(lambda: rx.text(StorageState.local), route="/")
+    wired_app._compile_page("index")
+    compiled = compile_state(State)
+    hashes = state_snapshot_hashes(compiled)
+    hashes[sorted(compiled).index(StorageState.get_full_name()) + 1] = "mismatch"
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, {"hashes": hashes}))
+        ).wait_all()
+
+    snapshot = emitted_deltas[0][1]
+    assert (
+        snapshot[State.get_full_name()][CompileVars.IS_HYDRATED + FIELD_MARKER] is False
+    )
+    assert snapshot[StorageState.get_full_name()] == {
+        "local" + FIELD_MARKER: "local-default",
+        "session" + FIELD_MARKER: "session-default",
+        "cookie" + FIELD_MARKER: "cookie-default",
+    }
+
+
+@pytest.mark.parametrize("storage", [rx.LocalStorage, rx.SessionStorage, rx.Cookie])
+@pytest.mark.parametrize("cached", [True, False])
+@pytest.mark.parametrize("asynchronous", [True, False])
+@pytest.mark.parametrize("with_load", [True, False])
+@pytest.mark.parametrize("with_hashes", [True, False])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_hydrate_delivers_computed_var_mutations(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    storage: type[rx.LocalStorage] | type[rx.SessionStorage] | type[rx.Cookie],
+    cached: bool,
+    asynchronous: bool,
+    with_load: bool,
+    with_hashes: bool,
+):
+    """Snapshot evaluation preserves storage and plain-var writes for delivery.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+        storage: The client-storage type.
+        cached: Whether to cache the computed var.
+        asynchronous: Whether its evaluation is asynchronous.
+        with_load: Whether the page has an on-load handler.
+        with_hashes: Whether this is the first boot or a reconnect.
+    """
+
+    class StorageState(State):
+        value: str = storage("")
+        status: str = "initial"
+        loaded_value: str = "initial"
+
+        @rx.var
+        def before_validation(self) -> str:
+            """Expose values captured before the validating computed var runs.
+
+            Returns:
+                The status and storage value.
+            """
+            return f"{self.status}:{self.value}"
+
+        def _sanitize(self) -> str:
+            """Clear rejected storage and update a plain var.
+
+            Returns:
+                The current storage value.
+            """
+            if self.value == "bad":
+                self.value = ""
+                self.status = "cleared"
+            return self.value
+
+        if asynchronous:
+
+            @rx.var(cache=cached)
+            async def checked(self) -> str:  # pyright: ignore[reportRedeclaration]
+                """Validate storage asynchronously.
+
+                Returns:
+                    The current storage value.
+                """
+                await asyncio.sleep(0)
+                return self._sanitize()
+
+        else:
+
+            @rx.var(cache=cached)
+            def checked(self) -> str:
+                """Validate storage.
+
+                Returns:
+                    The current storage value.
+                """
+                return self._sanitize()
+
+        @event
+        def load(self):
+            """Record the normalized value seen by on-load handlers."""
+            self.loaded_value = self.value
+
+    wired_app.add_page(
+        lambda: rx.text(StorageState.checked, StorageState.before_validation),
+        route="/",
+        on_load=StorageState.load if with_load else None,
+    )
+    wired_app._compile_page("index")
+    hashes = state_snapshot_hashes(compile_state(State))
+    name = StorageState.get_full_name()
+    key = "value" + FIELD_MARKER
+    payload: dict[str, Any] = {"vars": {f"{name}.{key}": "bad"}}
+    if with_hashes:
+        payload["hashes"] = hashes
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+
+    snapshot = emitted_deltas[0][1]
+    assert snapshot.get(name, {}).get(key, "") == ""
+    assert snapshot[name]["status" + FIELD_MARKER] == "cleared"
+    assert snapshot[name]["before_validation" + FIELD_MARKER] == "cleared:"
+    assert any(
+        delta.get(name, {}).get(key) == ""
+        and delta.get(State.get_full_name(), {}).get(
+            CompileVars.IS_HYDRATED + FIELD_MARKER
+        )
+        is not False
+        for _, delta in emitted_deltas[1:]
+    )
+    if with_load:
+        assert any(
+            delta.get(name, {}).get("loaded_value" + FIELD_MARKER) == ""
+            for _, delta in emitted_deltas[1:]
+        )
+    async with _read_back(real_base_state_processor, token) as root:
+        stored = await root.get_state(StorageState)
+        assert stored.value == ""
+        assert stored.status == "cleared"
+        assert stored.loaded_value == ("" if with_load else "initial")
+
+
+@pytest.mark.parametrize("with_load", [True, False])
+@pytest.mark.parametrize("with_hashes", [True, False])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_hydrate_passes_client_storage_through_get_delta(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    with_load: bool,
+    with_hashes: bool,
+):
+    """A get_delta override sees the browser's client storage at boot, once.
+
+    Overrides reconcile client storage there (reflex-enterprise checks its
+    OIDC token hash), so the boot values must reach them as
+    update_vars_internal's did, in a delta the browser may persist, without
+    writing back the defaults of values the browser does not hold.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+        with_load: Whether the page has an on-load handler.
+        with_hashes: Whether this is the first boot or a reconnect.
+    """
+    key = "token_hash" + FIELD_MARKER
+    seen: list[str] = []
+
+    class ReconcileState(State):
+        token_hash: str = rx.LocalStorage("")
+        unset: str = rx.Cookie("unset-default")
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            """Record the token hash passing through and replace a stale one.
+
+            Returns:
+                The delta, with a stale token hash reconciled.
+            """
+            delta = super().get_delta()
+            subdelta = delta.get(self.get_full_name(), {})
+            if (value := subdelta.get(key)) is not None:
+                seen.append(value)
+                if value == "stale":
+                    subdelta[key] = "fresh"
+            return delta
+
+        @event
+        def load(self):
+            """Provide an on-load event."""
+
+    wired_app.add_page(
+        lambda: rx.text(ReconcileState.token_hash, ReconcileState.unset),
+        route="/",
+        on_load=ReconcileState.load if with_load else None,
+    )
+    wired_app._compile_page("index")
+    name = ReconcileState.get_full_name()
+    payload: dict[str, Any] = {"vars": {f"{name}.{key}": "stale"}}
+    if with_hashes:
+        payload["hashes"] = state_snapshot_hashes(compile_state(State))
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+
+    assert seen == ["stale"]
+    hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    assert emitted_deltas[0][1][State.get_full_name()][hydrated_key] is False
+    persisted = [
+        delta[name]
+        for _, delta in emitted_deltas[1:]
+        if name in delta
+        and delta.get(State.get_full_name(), {}).get(hydrated_key) is not False
+    ]
+    assert any(subdelta.get(key) == "fresh" for subdelta in persisted)
+    assert not any("unset" + FIELD_MARKER in subdelta for subdelta in persisted)
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_hydrate_computes_client_storage_dependents_once(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """Computed vars depending on browser storage are evaluated once per hydrate.
+
+    The snapshot already computes them from the browser's values, so passing
+    those values through get_delta again must not recompute them.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+    """
+    calls: collections.Counter[str] = collections.Counter()
+
+    class StorageState(State):
+        value: str = rx.LocalStorage("")
+
+        @rx.var(cache=True)
+        def upper(self) -> str:
+            calls["upper"] += 1
+            return self.value.upper()
+
+        @rx.var(cache=False)
+        def length(self) -> int:
+            calls["length"] += 1
+            return len(self.value)
+
+    class DependentState(State):
+        @rx.var(cache=True)
+        async def copy(self) -> str:
+            calls["copy"] += 1
+            return (await self.get_state(StorageState)).value
+
+    wired_app.add_page(
+        lambda: rx.text(StorageState.upper, StorageState.length, DependentState.copy),
+        route="/",
+    )
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    payload = {"vars": {f"{StorageState.get_full_name()}.value{FIELD_MARKER}": "abc"}}
+
+    async def hydrate(payload: dict[str, Any]) -> collections.Counter[str]:
+        """Hydrate and count the computed var evaluations.
+
+        Args:
+            payload: The boot event payload.
+
+        Returns:
+            The evaluations per computed var.
+        """
+        calls.clear()
+        async with real_base_state_processor as processor:
+            await (
+                await processor.enqueue(token, _boot_event(boot_name, payload))
+            ).wait_all()
+        return calls.copy()
+
+    without_storage = await hydrate({})
+    with_storage = await hydrate(payload)
+
+    assert with_storage["upper"] == 1
+    assert with_storage["copy"] == 1
+    assert with_storage["length"] == without_storage["length"]
+    sent = {
+        key: value
+        for _, delta in emitted_deltas
+        for key, value in {
+            **delta.get(StorageState.get_full_name(), {}),
+            **delta.get(DependentState.get_full_name(), {}),
+        }.items()
+    }
+    assert sent["upper" + FIELD_MARKER] == "ABC"
+    assert sent["copy" + FIELD_MARKER] == "abc"
+
+
+async def test_hydrate_cleans_client_storage_when_get_delta_raises(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A get_delta override raising on browser storage leaves no dirty fields behind.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+    """
+    key = "value" + FIELD_MARKER
+    seen: list[str] = []
+    handled: list[Exception] = []
+
+    class StorageState(State):
+        value: str = rx.LocalStorage("")
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            """Raise the first time the browser's value passes through.
+
+            Returns:
+                The delta.
+
+            Raises:
+                RuntimeError: On the first browser value.
+            """
+            delta = super().get_delta()
+            if (value := delta.get(self.get_full_name(), {}).get(key)) is not None:
+                seen.append(value)
+                if len(seen) == 1:
+                    msg = "boom"
+                    raise RuntimeError(msg)
+            return delta
+
+        @event
+        def noop(self):
+            """Change nothing."""
+
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text(StorageState.value), route="/")
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    payload = {"vars": {f"{StorageState.get_full_name()}.{key}": "abc"}}
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, _boot_event(boot_name, payload))
+        await processor.join(5)
+        emitted_deltas.clear()
+        await _send(processor, token, Event.from_event_type(StorageState.noop())[0])
+
+    assert [type(ex) for ex in handled] == [RuntimeError]
+    assert seen == ["abc"]
+    assert not any(
+        key in delta.get(StorageState.get_full_name(), {})
+        for _, delta in emitted_deltas
+    )
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_navigation_does_not_cancel_the_hydrate_snapshot(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A navigation queued while hydrate_and_load waits for the lock still gets the snapshot.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class CounterState(State):
+        count: int = 0
+        loads: list[str] = []
+
+        @event
+        def increment(self):
+            self.count += 1
+
+        @event
+        def load_a(self):
+            self.loads = [*self.loads, "a"]
+
+        @event
+        def load_b(self):
+            self.loads = [*self.loads, "b"]
+
+    wired_app.add_page(lambda: rx.text("a"), route="/", on_load=CounterState.load_a)
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=CounterState.load_b
+    )
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    count_key = "count" + FIELD_MARKER
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, _client_event(CounterState.increment(), _view("/"))
+        )
+        emitted_deltas.clear()
+
+        # Hold the lock so the navigation is queued before the hydrate runs.
+        async with root_ctx.state_manager.modify_state(
+            BaseStateToken(ident=token, cls=State)
+        ):
+            hydrate = await processor.enqueue(token, _boot_event(boot_name, {}))
+            navigation = await processor.enqueue(
+                token,
+                _client_event(OnLoadInternalState.on_load_internal(), _view("/page-b")),
+            )
+        await asyncio.wait_for(navigation.wait_all(), timeout=10)
+        await asyncio.wait_for(hydrate.wait_all(), timeout=10)
+
+    assert any(
+        delta.get(CounterState.get_full_name(), {}).get(count_key) == 1
+        for _, delta in emitted_deltas
+    ), "the hydrate snapshot carrying the persisted count was never sent"
+    async with _read_back(real_base_state_processor, token) as root:
+        # "a" is from the first event's rehydrate; the reload's stale on_load
+        # work is dropped in favor of the navigation.
+        assert (await root.get_state(CounterState)).loads == ["a", "b"]
+        assert (await root.get_state(State)).is_hydrated is True
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_reconnect_cancels_stale_on_load_without_load_events(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A reconnect on a page without on_load handlers still cancels the stale on_load chain.
+
+    Reloading onto a page with no on_load handlers while the previous page's
+    on_load chain is still running must cancel that chain, as a navigation
+    does, so its stale work cannot change the session after the reload is
+    hydrated.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    class SlowLoadState(State):
+        seen: str = ""
+
+        @event
+        async def slow_load(self):
+            self.seen = "started"
+            yield
+            # The state lock stays held through the sleep, so the reconnect's
+            # hydrate can only get past it by cancelling this chain on enqueue.
+            started.set()
+            try:
+                await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                cancelled.set()
+                raise
+            self.seen = "stale-finished"
+
+    wired_app.add_page(
+        lambda: rx.text("slow"), route="/", on_load=SlowLoadState.slow_load
+    )
+    wired_app.add_page(lambda: rx.text("plain"), route="/plain")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+
+    async with real_base_state_processor as processor:
+        stale = await processor.enqueue(
+            token, _client_event(OnLoadInternalState.on_load_internal(), _view("/"))
+        )
+        await asyncio.wait_for(started.wait(), timeout=5)
+        reconnect = await processor.enqueue(
+            token, Event(name=boot_name, payload={}, router_data=_view("/plain"))
+        )
+        await asyncio.wait_for(cancelled.wait(), timeout=5)
+        await asyncio.wait_for(reconnect.wait_all(), timeout=10)
+        assert stale.done()
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(SlowLoadState)).seen != "stale-finished"
+        assert (await root.get_state(State)).is_hydrated is True
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+@pytest.mark.parametrize("self_chain", [False, True])
+@pytest.mark.parametrize("rehydrate", [False, True])
+@pytest.mark.parametrize("supersedes", [False, True])
+async def test_disconnect_cancels_page_load_chain(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    self_chain: bool,
+    rehydrate: bool,
+    supersedes: bool,
+):
+    """Disconnect cancels a running load even after its root handler has returned.
+
+    Args:
+        wired_app: The app sharing the processor's state manager.
+        real_base_state_processor: The real event processor.
+        token: The client token.
+        self_chain: Whether to reach the suspended handler through a self-chain.
+        rehydrate: Whether an ordinary routed event triggers the page load.
+        supersedes: Whether the user's load handler also supersedes earlier calls.
+    """
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+    invocations = 0
+
+    class DisconnectState(State):
+        @event
+        def ordinary(self):
+            """Trigger compatibility hydration on a fresh client state."""
+
+        @event(supersedes=supersedes)
+        async def load(self):
+            """Suspend a load or its self-chained successor until cancellation.
+
+            Yields:
+                A successor event or an empty update before suspending.
+            """
+            nonlocal invocations
+            invocations += 1
+            if self_chain and invocations == 1:
+                yield DisconnectState.load
+                return
+            yield
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                cancelled.set()
+
+    wired_app.add_page(lambda: rx.text("load"), route="/", on_load=DisconnectState.load)
+    wired_app._event_processor = real_base_state_processor
+    namespace = EventNamespace("/_event", wired_app)
+    await namespace._token_manager.link_token_to_sid(token, "sid")
+
+    async with real_base_state_processor as processor:
+        stale = await processor.enqueue(
+            token,
+            _client_event(
+                DisconnectState.ordinary()
+                if rehydrate
+                else OnLoadInternalState.on_load_internal(),
+                _view("/"),
+            ),
+        )
+        await asyncio.wait_for(started.wait(), timeout=5)
+        cleanup = namespace.on_disconnect("sid")
+        assert cleanup is not None
+        await cleanup
+        await asyncio.wait_for(cancelled.wait(), timeout=1)
+        await asyncio.wait_for(stale.wait_all(), timeout=5)
+        assert invocations == (2 if self_chain else 1)
+        # Cancellation releases the lock so a later connection can use the state.
+        async with _read_back(processor, token) as root:
+            assert await root.get_state(DisconnectState) is not None
+        await asyncio.sleep(0)
+        assert not processor._superseded
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+@pytest.mark.parametrize("disconnect", [False, True])
+async def test_disconnect_during_inline_hydration(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    disconnect: bool,
+):
+    """A disconnect during the hydration emit prevents late page-load work.
+
+    Args:
+        wired_app: The app sharing the processor's state manager.
+        real_base_state_processor: The real event processor.
+        token: The client token.
+        disconnect: Whether to disconnect while sending the hydration update.
+    """
+    sending = asyncio.Event()
+    release = asyncio.Event()
+    invocations = []
+
+    class InlineHydrationState(State):
+        @event
+        def ordinary(self):
+            """Record that independent work still runs after hydration."""
+            invocations.append("ordinary")
+
+        @event
+        def load(self):
+            """Record whether the page load ran."""
+            invocations.append("load")
+
+    async def pause_emit(token: str, delta: Mapping[str, Mapping[str, Any]]) -> None:
+        """Pause sending the hydration snapshot.
+
+        Args:
+            token: The client token.
+            delta: The state update.
+        """
+        sending.set()
+        await release.wait()
+
+    processor = real_base_state_processor
+    assert processor._root_context is not None
+    processor._root_context = dataclasses.replace(
+        processor._root_context, emit_delta_impl=pause_emit
+    )
+    wired_app.add_page(
+        lambda: rx.text("load"), route="/", on_load=InlineHydrationState.load
+    )
+    wired_app._event_processor = processor
+    namespace = EventNamespace("/_event", wired_app)
+    await namespace._token_manager.link_token_to_sid(token, "sid")
+
+    try:
+        async with processor:
+            ordinary = await processor.enqueue(
+                token, _client_event(InlineHydrationState.ordinary(), _view("/"))
+            )
+            try:
+                await asyncio.wait_for(sending.wait(), timeout=5)
+                if disconnect:
+                    cleanup = namespace.on_disconnect("sid")
+                    assert cleanup is not None
+                    await cleanup
+                    await namespace._token_manager.link_token_to_sid(token, "new-sid")
+            finally:
+                release.set()
+            await asyncio.wait_for(ordinary.wait_all(), timeout=5)
+            await asyncio.sleep(0)
+            assert not processor._pending_hydrates
+            assert not processor._superseded
+    finally:
+        await namespace._token_manager.disconnect_all()
+        await namespace._token_manager.close()
+
+    assert invocations == (["ordinary"] if disconnect else ["ordinary", "load"])
+
+
+@pytest.mark.parametrize("disconnect", [False, True])
+async def test_disconnect_cancels_queued_hydrate(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    disconnect: bool,
+):
+    """A disconnect before hydration starts must not launch a page-load chain.
+
+    Args:
+        wired_app: The app sharing the processor's state manager.
+        real_base_state_processor: The real event processor.
+        token: The client token.
+        disconnect: Whether the client disconnects before hydration runs.
+    """
+    loads = []
+
+    class DisconnectState(State):
+        @event
+        def load(self):
+            """Record that the page-load handler ran."""
+            loads.append("loaded")
+
+    wired_app.add_page(lambda: rx.text("load"), route="/", on_load=DisconnectState.load)
+    wired_app._event_processor = real_base_state_processor
+    namespace = EventNamespace("/_event", wired_app)
+    await namespace._token_manager.link_token_to_sid(token, "sid")
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _client_event(State.hydrate_and_load(), _view("/"))
+        )
+        if disconnect:
+            cleanup = namespace.on_disconnect("sid")
+            assert cleanup is not None
+            await cleanup
+            assert future.cancelled()
+        else:
+            await asyncio.wait_for(future.wait_all(), timeout=5)
+            await namespace._token_manager.disconnect_all()
+    assert loads == ([] if disconnect else ["loaded"])
+    assert not processor._pending_hydrates
+
+
+@pytest.mark.parametrize("routed", [False, True])
+async def test_disconnect_preserves_independent_events(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    routed: bool,
+):
+    """Independent foreground and background work survives another chain's disconnect.
+
+    Args:
+        wired_app: The app sharing the processor's state manager.
+        real_base_state_processor: The real event processor.
+        token: The client token.
+        routed: Whether the foreground event also schedules compatibility page loads.
+    """
+    started = {name: asyncio.Event() for name in ("foreground", "background", "other")}
+    release = asyncio.Event()
+    finished = []
+    loads = []
+
+    class IndependentState(State):
+        @event
+        def load(self):
+            """Record whether the disconnected page-load work ran."""
+            loads.append("loaded")
+
+        @event
+        async def foreground(self, name: str):
+            """Wait for release and record the named foreground invocation.
+
+            Args:
+                name: The invocation to record.
+            """
+            started[name].set()
+            await release.wait()
+            finished.append(name)
+
+        @event(background=True)
+        async def background(self):
+            """Wait for release independently of the page-load lifecycle."""
+            started["background"].set()
+            await release.wait()
+            finished.append("background")
+
+    wired_app.add_page(
+        lambda: rx.text("load"), route="/", on_load=IndependentState.load
+    )
+    async with real_base_state_processor as processor:
+        # Start the background event before the foreground handler holds the lock.
+        background = await processor.enqueue(
+            token, Event.from_event_type(IndependentState.background())[0]
+        )
+        await asyncio.wait_for(started["background"].wait(), timeout=5)
+        foreground = await processor.enqueue(
+            token,
+            _client_event(IndependentState.foreground("foreground"), _view("/"))
+            if routed
+            else Event.from_event_type(IndependentState.foreground("foreground"))[0],
+        )
+        other = await processor.enqueue(
+            "other-token",
+            Event.from_event_type(IndependentState.foreground("other"))[0],
+        )
+        await asyncio.wait_for(
+            asyncio.gather(*(signal.wait() for signal in started.values())), timeout=5
+        )
+        processor._on_disconnect(token)
+        assert not any(future.cancelled() for future in (background, foreground, other))
+        release.set()
+        await asyncio.wait_for(
+            asyncio.gather(
+                *(future.wait_all() for future in (background, foreground, other))
+            ),
+            timeout=5,
+        )
+    assert sorted(finished) == ["background", "foreground", "other"]
+    assert not loads
+
+
+@pytest.mark.parametrize("storage", [rx.LocalStorage, rx.SessionStorage, rx.Cookie])
+@pytest.mark.parametrize("assignment", ["before", "after", "after_output"])
+@pytest.mark.parametrize("with_load", [True, False])
+@pytest.mark.parametrize("with_hashes", [True, False])
+@pytest.mark.parametrize("client_value", ["stale", "fresh"])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_hydrate_delivers_storage_override_assignments(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    storage: type[rx.LocalStorage] | type[rx.SessionStorage] | type[rx.Cookie],
+    assignment: str,
+    with_load: bool,
+    with_hashes: bool,
+    client_value: str,
+):
+    """Deliver real storage assignments and their cached dependents during hydration.
+
+    Args:
+        wired_app: The configured app.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured client updates.
+        token: The client token.
+        storage: The storage implementation.
+        assignment: Whether the assignment precedes or follows delta creation.
+        with_load: Whether the page has an on-load handler.
+        with_hashes: Whether compiled defaults accompany hydration.
+        client_value: The browser value.
+    """
+    calls = collections.Counter()
+
+    class StorageState(State):
+        value: str = storage("")
+        unset: str = rx.Cookie("unset-default")
+        _reconciled: bool = False
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            """Normalize a stale value once, before or after the base traversal.
+
+            Returns:
+                The unmodified base delta.
+            """
+            correct = (
+                "value" in self.dirty_vars
+                and self.value == "stale"
+                and not self._reconciled
+            )
+            if correct and assignment == "before":
+                self.value = "fresh"
+                self._reconciled = True
+            delta = super().get_delta()
+            if correct and assignment != "before":
+                self.value = "fresh"
+                self._reconciled = True
+                if assignment == "after_output":
+                    delta[self.get_full_name()]["value" + FIELD_MARKER] = self.value
+            return delta
+
+        @rx.var(cache=True)
+        def same_state(self) -> str:
+            """Read the normalized storage value in the same state.
+
+            Returns:
+                The current backend storage value.
+            """
+            calls["same"] += 1
+            return self.value
+
+        @event
+        def load(self):
+            """Provide an on-load handler."""
+
+    class DependentState(State):
+        @rx.var(cache=True, auto_deps=False)
+        async def sibling(self) -> str:
+            """Read the normalized storage value from another branch.
+
+            Returns:
+                The current backend storage value.
+            """
+            calls["sibling"] += 1
+            return (await self.get_state(StorageState)).value
+
+    DependentState.computed_vars["sibling"].add_dependency(
+        DependentState,
+        StorageState.value,  # pyright: ignore[reportArgumentType]
+    )
+    wired_app.add_page(
+        lambda: rx.text(
+            StorageState.value, StorageState.same_state, DependentState.sibling
+        ),
+        route="/",
+        on_load=StorageState.load if with_load else None,
+    )
+    wired_app._compile_page("index")
+    name = StorageState.get_full_name()
+    key = "value" + FIELD_MARKER
+    payload: dict[str, Any] = {"vars": {f"{name}.{key}": client_value}}
+    if with_hashes:
+        payload["hashes"] = state_snapshot_hashes(compile_state(State))
+    calls.clear()
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+
+    # Preserve the public return contract: a synchronous value collected before
+    # an after-super assignment is not rewritten after the override returns.
+    for state_name, var_name in (
+        (name, "value"),
+        (name, "same_state"),
+        (DependentState.get_full_name(), "sibling"),
+    ):
+        values = [
+            delta[state_name][var_name + FIELD_MARKER]
+            for _, delta in emitted_deltas
+            if var_name + FIELD_MARKER in delta.get(state_name, {})
+        ]
+        expected = (
+            "stale"
+            if client_value == "stale"
+            and (
+                (var_name == "value" and assignment == "after")
+                or (var_name == "same_state" and assignment != "before")
+            )
+            else "fresh"
+        )
+        assert values[-1] == expected
+    assert not any(
+        "unset" + FIELD_MARKER in delta.get(name, {}) for _, delta in emitted_deltas[1:]
+    )
+    if client_value == "fresh":
+        assert calls == {"same": 1, "sibling": 1}
+    async with _read_back(real_base_state_processor, token) as root:
+        stored = await root.get_state(StorageState)
+        dependent = await root.get_state(DependentState)
+        assert stored.value == stored.same_state == "fresh"
+        assert await dependent.sibling == "fresh"
+
+
+@pytest.mark.parametrize("mode", ["rewrite", "drop_key", "drop_state"])
+@pytest.mark.parametrize("mutate", [False, True])
+async def test_hydrate_keeps_override_output_filters(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    mode: str,
+    mutate: bool,
+):
+    """Keep outgoing filters separate from actual backend assignments.
+
+    Args:
+        wired_app: The configured app.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured client updates.
+        token: The client token.
+        mode: How the override filters the output.
+        mutate: Whether the override also assigns a backend field.
+    """
+    seen = []
+    key = "value" + FIELD_MARKER
+
+    class StorageState(State):
+        value: str = rx.LocalStorage("")
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            """Filter a storage value without copying the filtered value into state.
+
+            Returns:
+                The filtered delta.
+            """
+            filter_output = "value" in self.dirty_vars and self.value == "stale"
+            if mutate and filter_output:
+                self.value = "fresh"
+            delta = super().get_delta()
+            subdelta = delta.get(self.get_full_name(), {})
+            if key in subdelta:
+                seen.append(subdelta[key])
+            if key in subdelta and filter_output:
+                if mode == "rewrite":
+                    subdelta[key] = "public-placeholder"
+                elif mode == "drop_key":
+                    subdelta.pop(key)
+                else:
+                    delta.pop(self.get_full_name())
+            return delta
+
+    wired_app.add_page(lambda: rx.text(StorageState.value), route="/")
+    wired_app._compile_page("index")
+    name = StorageState.get_full_name()
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name
+    payload = {"vars": {f"{name}.{key}": "stale"}}
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+    outgoing = [
+        delta[name][key]
+        for _, delta in emitted_deltas[1:]
+        if key in delta.get(name, {})
+    ]
+    assert outgoing == (["public-placeholder"] if mode == "rewrite" else [])
+    if not mutate:
+        assert seen == ["stale"]
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(StorageState)).value == (
+            "fresh" if mutate else "stale"
+        )
+
+
+async def test_hydrate_cleans_storage_when_correction_emit_fails(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A failed correction send leaves no synthetic dirtiness on the next event.
+
+    Args:
+        wired_app: The configured app.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured client updates.
+        token: The client token.
+    """
+    seen = []
+    handled = []
+    key = "value" + FIELD_MARKER
+
+    class StorageState(State):
+        value: str = rx.LocalStorage("")
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            """Record storage-bearing deltas.
+
+            Returns:
+                The base delta.
+            """
+            delta = super().get_delta()
+            if key in delta.get(self.get_full_name(), {}):
+                seen.append(self.value)
+            return delta
+
+        @event
+        def noop(self):
+            """Leave the state unchanged."""
+
+    name = StorageState.get_full_name()
+    failed = False
+
+    async def failing_emit(  # noqa: RUF029
+        client_token: str, delta: Mapping[str, Mapping[str, Any]]
+    ) -> None:
+        """Fail the first persist-eligible storage delta.
+
+        Args:
+            client_token: The receiving client.
+            delta: The outgoing update.
+
+        Raises:
+            RuntimeError: On the first storage correction.
+        """
+        nonlocal failed
+        guarded = (
+            delta.get(State.get_full_name(), {}).get("is_hydrated" + FIELD_MARKER)
+            is False
+        )
+        if not failed and not guarded and key in delta.get(name, {}):
+            failed = True
+            message = "correction send failed"
+            raise RuntimeError(message)
+        emitted_deltas.append((client_token, delta))
+
+    assert real_base_state_processor._root_context is not None
+    real_base_state_processor._root_context = dataclasses.replace(
+        real_base_state_processor._root_context, emit_delta_impl=failing_emit
+    )
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text(StorageState.value), route="/")
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name
+    async with real_base_state_processor as processor:
+        await processor.enqueue(
+            token, _boot_event(boot_name, {"vars": {f"{name}.{key}": "browser"}})
+        )
+        await processor.join(5)
+        emitted_deltas.clear()
+        await _send(processor, token, Event.from_event_type(StorageState.noop())[0])
+    assert failed
+    assert [type(error) for error in handled] == [RuntimeError]
+    assert seen == ["browser"]
+    assert not any(key in delta.get(name, {}) for _, delta in emitted_deltas)
+
+
+@pytest.mark.parametrize("hide_status", [False, True])
+async def test_hydrate_replays_override_side_effects_once(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    hide_status: bool,
+):
+    """Preserve one-shot effects and omissions for fields assigned during replay.
+
+    Args:
+        wired_app: The configured app.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured client updates.
+        token: The client token.
+        hide_status: Whether the override omits its newly assigned status.
+    """
+
+    class StorageState(State):
+        value: str = rx.LocalStorage("")
+        revision: int = 0
+        status: str = "initial"
+
+        @rx.var(cache=True)
+        def upper(self) -> str:
+            """Return the cached normalized value.
+
+            Returns:
+                The uppercase storage value.
+            """
+            return self.value.upper()
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            """Normalize storage and retain the override's field filter.
+
+            Returns:
+                The filtered delta.
+            """
+            dirty = "value" in self.dirty_vars
+            changed = dirty and self.value != self.value.strip()
+            if dirty:
+                self.value = self.value.strip()
+                self.revision += 1
+            if changed:
+                self.status = "normalized"
+            delta = super().get_delta()
+            if hide_status and changed:
+                delta.get(self.get_full_name(), {}).pop("status" + FIELD_MARKER, None)
+                delta.get(self.get_full_name(), {}).pop("upper" + FIELD_MARKER, None)
+            return delta
+
+    wired_app.add_page(
+        lambda: rx.text(StorageState.value, StorageState.revision, StorageState.upper),
+        route="/",
+    )
+    wired_app._compile_page("index")
+    name = StorageState.get_full_name()
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name
+    payload = {"vars": {f"{name}.value{FIELD_MARKER}": " browser "}}
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+    corrections = [delta.get(name, {}) for _, delta in emitted_deltas[1:]]
+    assert [
+        d["revision" + FIELD_MARKER]
+        for d in corrections
+        if "revision" + FIELD_MARKER in d
+    ] == [1]
+    if hide_status:
+        assert not any("status" + FIELD_MARKER in d for d in corrections)
+        assert not any("upper" + FIELD_MARKER in d for d in corrections)
+    async with _read_back(real_base_state_processor, token) as root:
+        state = await root.get_state(StorageState)
+        assert state.value == "browser"
+        assert state.revision == 1
+
+
+async def test_handler_return_value_resolves_future(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A non-event return value resolves the event's future after the delta.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class ReturnState(State):
+        n: int = 0
+
+        @event
+        def compute(self, x: int) -> int:
+            self.n = x
+            return x * 2
+
+        @event
+        async def compute_async(self, x: int) -> dict[str, int]:
+            self.n = x
+            return {"doubled": x * 2}
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(ReturnState.compute(21))[0]
+        )
+        assert await future == 42
+        assert any(
+            delta.get(ReturnState.get_full_name(), {}).get(f"n{FIELD_MARKER}") == 21
+            for _, delta in emitted_deltas
+        )
+        future = await processor.enqueue(
+            token, Event.from_event_type(ReturnState.compute_async(4))[0]
+        )
+        assert await future == {"doubled": 8}
+
+
+async def test_generator_return_value_resolves_future(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A generator handler's ``return`` value resolves the future; a returned event chains.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class GenReturnState(State):
+        n: int = 0
+        log: list[str] = []
+
+        @event
+        def steps(self):
+            self.n = 1
+            yield
+            self.n = 2
+            return "done"  # noqa: B901
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+        @event
+        def chains(self):
+            yield
+            return GenReturnState.add("chained")  # noqa: B901
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(GenReturnState.steps())[0]
+        )
+        assert await future == "done"
+        n_values = [
+            delta[GenReturnState.get_full_name()].get(f"n{FIELD_MARKER}")
+            for _, delta in emitted_deltas
+            if GenReturnState.get_full_name() in delta
+        ]
+        # The hydration snapshot carries the default before the two yields.
+        assert n_values[-2:] == [1, 2]
+        future = await processor.enqueue(
+            token, Event.from_event_type(GenReturnState.chains())[0]
+        )
+        assert await future.wait_all() is None
+        await processor.join(5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(GenReturnState)).log == ["chained"]
+
+
+async def test_returned_coroutine_still_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A handler returning a coroutine it forgot to await is an error, not a result.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    async def _work() -> int:  # noqa: RUF029
+        return 1
+
+    class ForgotAwaitState(State):
+        @event
+        def handler(self):
+            return _work()
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(ForgotAwaitState.handler())[0]
+        )
+        with pytest.raises(TypeError, match="must only return/yield"):
+            await future
+    assert len(captured) == 1
+
+
+async def test_returned_list_mixing_events_and_values_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A returned sequence that holds an event next to a plain value is still an error.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class MixedReturnState(State):
+        log: list[str] = []
+
+        @event
+        def add(self):
+            self.log = [*self.log, "add"]
+
+        @event
+        def handler(self):
+            return [MixedReturnState.add(), "x"]
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(MixedReturnState.handler())[0]
+        )
+        with pytest.raises(TypeError, match="must only return/yield"):
+            await future
+    assert len(captured) == 1
+
+
+async def test_returned_list_of_coroutines_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A returned list of coroutines that were never awaited is an error, not a result.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    async def _work() -> int:  # noqa: RUF029
+        return 1
+
+    class ForgotAwaitListState(State):
+        @event
+        def handler(self):
+            return [_work(), _work()]
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(ForgotAwaitListState.handler())[0]
+        )
+        with pytest.raises(TypeError, match="must only return/yield"):
+            await future
+    assert len(captured) == 1
+
+
+async def test_invalid_return_value_still_flushes_the_delta_first(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A handler's state changes reach the frontend before an invalid return value raises.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        token: The client token.
+    """
+
+    async def _work() -> int:  # noqa: RUF029
+        return 1
+
+    class FlushThenRaiseState(State):
+        value: str = "old"
+
+        @event
+        def handler(self):
+            self.value = "new"
+            return _work()
+
+    deltas_before_error: list[int] = []
+    real_base_state_processor.backend_exception_handler = lambda _ex: (
+        deltas_before_error.append(len(emitted_deltas))
+    )
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(FlushThenRaiseState.handler())[0]
+        )
+        with pytest.raises(TypeError, match="must only return/yield"):
+            await future
+    flushed = [
+        delta
+        for _, delta in emitted_deltas[: deltas_before_error[0]]
+        if delta.get(FlushThenRaiseState.get_full_name(), {}).get(
+            "value" + FIELD_MARKER
+        )
+        == "new"
+    ]
+    assert flushed, "the change was not emitted before the error was handled"
+
+
+async def test_handler_returning_an_empty_list_resolves_to_the_list(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """An empty list is a result, not an empty event chain, so awaiters get it back.
+
+    Yielding an empty list is still a no-op, as before.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class EmptyResultState(State):
+        @event
+        def search(self) -> list[str]:
+            return []
+
+        @event
+        def yields_nothing(self):
+            yield []
+
+    async with real_base_state_processor as processor:
+        assert (
+            await (
+                await processor.enqueue(
+                    token, Event.from_event_type(EmptyResultState.search())[0]
+                )
+            )
+            == []
+        )
+        assert (
+            await (
+                await processor.enqueue(
+                    token, Event.from_event_type(EmptyResultState.yields_nothing())[0]
+                )
+            )
+            is None
+        )
+
+
+async def test_background_handler_return_value_resolves_future(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A background handler's return value resolves its future too.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class BgReturnState(State):
+        n: int = 0
+
+        @event(background=True)
+        async def compute(self, x: int) -> int:
+            async with self:
+                self.n = x
+            return x + 1
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BgReturnState.compute(1))[0]
+        )
+        assert await future == 2
+
+
+async def test_stateless_handler_runs_without_lock_and_resolves_result(
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A stateless handler runs with no state and its return value resolves the future.
+
+    Args:
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    calls: list[tuple[int, int]] = []
+
+    @event
+    def stateless_add(a: int, b: int) -> int:
+        calls.append((a, b))
+        return a + b
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(stateless_add(1, 2))[0]
+        )
+        assert await future == 3
+    assert calls == [(1, 2)]
+
+
+async def test_stateless_handler_chains_returned_events(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Events a stateless handler returns or yields run against the token's state.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class ChainTargetState(State):
+        log: list[str] = []
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+    @event
+    def stateless_chain():
+        yield ChainTargetState.add("yielded")
+        return ChainTargetState.add("returned")  # noqa: B901
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(stateless_chain())[0]
+        )
+        assert await future.wait_all() is None
+        await processor.join(5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(ChainTargetState)).log == ["yielded", "returned"]
+
+
+async def test_stateless_handler_is_not_serialized_behind_the_token_queue(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A stateless handler holds no lock, so it does not wait for the token's FIFO.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    order: list[str] = []
+    release = asyncio.Event()
+
+    class SlowState(State):
+        @event
+        async def slow(self):
+            await release.wait()
+            order.append("slow")
+
+    @event
+    def quick():
+        order.append("quick")
+
+    async with real_base_state_processor as processor:
+        slow_future = await processor.enqueue(
+            token, Event.from_event_type(SlowState.slow())[0]
+        )
+        quick_future = await processor.enqueue(token, Event.from_event_type(quick())[0])
+        await asyncio.wait_for(quick_future, 5)
+        assert order == ["quick"]
+        release.set()
+        await asyncio.wait_for(slow_future, 5)
+    assert order == ["quick", "slow"]
+
+
+async def test_locked_root_is_set_only_while_the_lock_is_held(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """The context names the locked root during a handler, and None otherwise.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    seen: dict[str, Any] = {}
+
+    class LockState(State):
+        @event
+        def foreground(self):
+            ctx = EventContext.get()
+            seen["fg"] = ctx.locked_root is self._get_root_state()
+            seen["fg_ctx"] = ctx
+
+        @event(background=True)
+        async def background(self):
+            ctx = EventContext.get()
+            seen["bg_outside"] = ctx.locked_root
+            async with self:
+                seen["bg_inside"] = (
+                    ctx.locked_root is self.__wrapped__._get_root_state()  # pyright: ignore[reportAttributeAccessIssue]
+                )
+            seen["bg_after"] = ctx.locked_root
+
+        @event
+        def raises(self):
+            seen["raises_ctx"] = EventContext.get()
+            msg = "boom"
+            raise ValueError(msg)
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(LockState.foreground())[0])
+        await processor.enqueue(token, Event.from_event_type(LockState.background())[0])
+        future = await processor.enqueue(
+            token, Event.from_event_type(LockState.raises())[0]
+        )
+        with pytest.raises(ValueError, match="boom"):
+            await future
+        await processor.join(5)
+        await asyncio.sleep(0)
+
+    assert seen["fg"] is True
+    assert seen["fg_ctx"].locked_root is None
+    assert seen["bg_outside"] is None
+    assert seen["bg_inside"] is True
+    assert seen["bg_after"] is None
+    assert seen["raises_ctx"].locked_root is None
+    assert len(captured) == 1
+
+
+async def test_await_handler_inline_returns_value_and_chains_its_yields(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """Awaiting a handler runs it under the caller's lock; its yields chain under the caller.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class AwaitState(State):
+        log: list[str] = []
+        n: int = 0
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+        @event
+        def callee(self, x: int):
+            self.log = [*self.log, f"callee:{x}"]
+            self.n = x
+            yield AwaitState.add("from_callee")
+            return x * 2  # noqa: B901
+
+        @event
+        async def caller(self):
+            self.log = [*self.log, "caller:0"]
+            value = await AwaitState.callee(21)
+            self.log = [*self.log, f"caller:{value}"]
+            await asyncio.gather(AwaitState.add("g1"), AwaitState.add("g2"))
+            yield AwaitState.add("after_await")
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(AwaitState.caller())[0]
+        )
+        # The chained events are children of the caller's future, so waiting
+        # on the tree is enough: no processor.join needed.
+        await future.wait_all()
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(AwaitState)).log == [
+        "caller:0",
+        "callee:21",
+        "caller:42",
+        "g1",
+        "g2",
+        "from_callee",
+        "after_await",
+    ]
+    # The callee's yield flushed a delta with its change before the caller went on.
+    n_values = [
+        delta[AwaitState.get_full_name()][f"n{FIELD_MARKER}"]
+        for _, delta in emitted_deltas
+        if f"n{FIELD_MARKER}" in delta.get(AwaitState.get_full_name(), {})
+    ]
+    assert 21 in n_values
+
+
+async def test_await_from_substate_targets_sibling_state(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A handler can await a handler of another state in the same tree.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class SiblingA(State):
+        total: int = 0
+
+        @event
+        async def run(self):
+            self.total = await SiblingB.compute(5)
+
+    class SiblingB(State):
+        seen: int = 0
+
+        @event
+        def compute(self, x: int) -> int:
+            self.seen = x
+            return x + 1
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(SiblingA.run())[0]
+        )
+        await future
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(SiblingA)).total == 6
+    assert (await state.get_state(SiblingB)).seen == 5
+
+
+async def test_await_background_handler_from_locked_context_raises(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Awaiting a background handler under the state lock is refused (it would deadlock).
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    class BgAwaitState(State):
+        @event(background=True)
+        async def work(self):
+            pass
+
+        @event
+        async def caller(self):
+            await BgAwaitState.work()
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BgAwaitState.caller())[0]
+        )
+        with pytest.raises(EventHandlerTypeError, match="yield it instead"):
+            await future
+
+
+async def test_await_from_background_enqueues_outside_and_runs_inline_inside(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A background handler awaits through the queue, or inline inside ``async with self``.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    results: list[int] = []
+
+    class BgCallerState(State):
+        counter: int = 0
+
+        @event
+        def increment(self) -> int:
+            self.counter += 1
+            return self.counter
+
+        @event(background=True)
+        async def run(self):
+            # No lock held: each await enqueues the event and waits for it.
+            results.append(await BgCallerState.increment())
+            results.append(await BgCallerState.increment())
+            async with self:
+                # Lock held: runs inline on the locked tree.
+                results.append(await BgCallerState.increment())
+                assert self.counter == 3
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BgCallerState.run())[0]
+        )
+        await future.wait_all()
+
+    assert results == [1, 2, 3]
+
+
+async def test_await_without_event_context_raises():
+    """Awaiting a handler outside any EventContext is an error."""
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    class NoCtxState(State):
+        @event
+        def handle(self):
+            pass
+
+    with pytest.raises(EventHandlerTypeError, match="can only be awaited"):
+        await NoCtxState.handle()
+    with pytest.raises(EventHandlerTypeError, match="can only be awaited"):
+        await NoCtxState.handle
+
+
+async def test_await_frontend_only_and_upload_specs_raise(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Frontend-only events and upload events cannot be awaited.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    errors: dict[str, str] = {}
+
+    class FrontendAwaitState(State):
+        @event
+        async def handle_upload(self, files: list[rx.UploadFile]):
+            pass
+
+        @event
+        async def caller(self):
+            try:
+                await rx.redirect("/")
+            except EventHandlerTypeError as ex:
+                errors["redirect"] = str(ex)
+            try:
+                await FrontendAwaitState.handle_upload(rx.upload_files(upload_id="u"))
+            except EventHandlerTypeError as ex:
+                errors["upload"] = str(ex)
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(FrontendAwaitState.caller())[0]
+        )
+        await future
+
+    assert "frontend-only" in errors["redirect"]
+    assert "cannot be awaited" in errors["upload"]
+
+
+async def test_await_same_spec_twice_executes_twice(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A spec describes an event, so each await runs it again.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class TwiceState(State):
+        log: list[str] = []
+
+        @event
+        def add(self, tag: str):
+            self.log = [*self.log, tag]
+
+        @event
+        async def caller(self):
+            spec = TwiceState.add("x")
+            await spec
+            await spec
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(TwiceState.caller())[0]
+        )
+        await future
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(TwiceState)).log == ["x", "x"]
+
+
+async def test_await_payload_decodes_vars_and_detaches_proxies(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Args bound to an awaited handler arrive as plain values, detached from the state.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    received: list[Any] = []
+
+    class PayloadState(State):
+        items: list[int] = [1, 2]
+
+        @event
+        def take(self, values: list[int]) -> int:
+            received.append(values)
+            values.append(99)
+            return len(values)
+
+        @event(background=True)
+        async def run(self):
+            async with self:
+                assert await PayloadState.take(self.items) == 3
+                assert self.items == [1, 2]
+            assert await PayloadState.take(self.items) == 3
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(PayloadState.run())[0]
+        )
+        await future.wait_all()
+
+    assert [type(v) for v in received] == [list, list]
+    assert received == [[1, 2, 99], [1, 2, 99]]
+
+
+async def test_await_stateless_handler_flushes_the_caller_delta_first(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    emitted_events: list,
+    token: str,
+):
+    """A stateless helper awaited under the lock emits the caller's pending delta first.
+
+    A script the helper yields must see the state the caller just changed,
+    which is the ordering every other yield keeps.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        emitted_events: Frontend events emitted, in order.
+        token: The client token.
+    """
+    deltas_before_script: list[int] = []
+
+    @event
+    def read_storage():
+        yield rx.call_script("localStorage.getItem('value')")
+        deltas_before_script.append(len(emitted_deltas))
+
+    class FlushFirstState(State):
+        value: str = "old"
+
+        @event
+        async def change_then_read(self):
+            self.value = "new"
+            await read_storage()
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(FlushFirstState.change_then_read())[0]
+            )
+        )
+
+    assert len(emitted_events) == 1
+    assert "_call_script" in emitted_events[0][1][0].name
+    flushed_before_script = [
+        delta
+        for _, delta in emitted_deltas[: deltas_before_script[0]]
+        if delta.get(FlushFirstState.get_full_name(), {}).get("value" + FIELD_MARKER)
+        == "new"
+    ]
+    assert flushed_before_script, (
+        "the caller's change reached the frontend after the script"
+    )
+
+
+async def test_await_stateless_handler_runs_inline(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A stateless handler is awaited inline, with or without the lock held.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    @event
+    def stateless_double(x: int) -> int:
+        return x * 2
+
+    class StatelessCallerState(State):
+        got: int = 0
+
+        @event
+        async def caller(self):
+            self.got = await stateless_double(4)
+
+        @event(background=True)
+        async def bg_caller(self):
+            value = await stateless_double(5)
+            async with self:
+                self.got = value
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(StatelessCallerState.caller())[0]
+            )
+        )
+        root_ctx = real_base_state_processor._root_context
+        assert root_ctx is not None
+        state = await root_ctx.state_manager.get_state(
+            BaseStateToken(ident=token, cls=State)
+        )
+        assert (await state.get_state(StatelessCallerState)).got == 8
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(StatelessCallerState.bg_caller())[0]
+            )
+        )
+        state = await root_ctx.state_manager.get_state(
+            BaseStateToken(ident=token, cls=State)
+        )
+        assert (await state.get_state(StatelessCallerState)).got == 10
+
+
+async def test_detached_stateless_helper_holds_the_lock_until_it_finishes(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A stateless helper started from a locked handler keeps the lock until it is done.
+
+    It flushes deltas through the caller's root, so the lock must outlive it
+    like it outlives a detached state handler.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    release = asyncio.Event()
+    seen: dict[str, Any] = {}
+
+    @event
+    async def helper():
+        await release.wait()
+        yield rx.call_script("void 0")
+
+    class DetachedHelperState(State):
+        log: list[str] = []
+
+        @event
+        async def parent(self):
+            seen["ctx"] = EventContext.get()
+            asyncio.ensure_future(helper())  # noqa: RUF006
+            # Let the helper start under the lock before returning.
+            await asyncio.sleep(0)
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    async with real_base_state_processor as processor:
+        parent_future = await processor.enqueue(
+            token, Event.from_event_type(DetachedHelperState.parent())[0]
+        )
+        next_future = await processor.enqueue(
+            token, Event.from_event_type(DetachedHelperState.next_event())[0]
+        )
+        await asyncio.sleep(0.05)
+        # The parent has returned, but its lock is still held for the helper.
+        assert not parent_future.done()
+        assert not next_future.done()
+        assert seen["ctx"].locked_root is not None
+        release.set()
+        await asyncio.wait_for(next_future, 5)
+        assert parent_future.done()
+
+    assert seen["ctx"].locked_root is None
+
+
+async def test_gathered_inline_handlers_keep_each_others_changes(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A change made while another gathered handler's delta resolves still reaches the frontend.
+
+    Resolving a delta suspends on an async computed var. A gathered handler
+    that changes state meanwhile, and only flushes after the first one has
+    cleaned, must not have its change cleaned away unsent.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        token: The client token.
+    """
+    resolving = asyncio.Event()
+
+    class GatheredState(State):
+        a: int = 0
+        b: int = 0
+
+        @rx.var(cache=False)
+        async def slow(self) -> int:
+            # Resolving set_a's delta: let set_b write now, after the snapshot.
+            if self.a == 1:
+                resolving.set()
+            await asyncio.sleep(0)
+            return self.a
+
+        @event
+        async def set_a(self):
+            self.a = 1
+
+        @event
+        async def set_b(self):
+            await resolving.wait()
+            self.b = 2
+            # Stay out of the flush until set_a has emitted and cleaned.
+            for _ in range(10):
+                await asyncio.sleep(0)
+
+        @event
+        async def both(self):
+            await asyncio.gather(GatheredState.set_a(), GatheredState.set_b())
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(GatheredState.both())[0]
+            )
+        )
+    sent_b = [
+        delta
+        for _, delta in emitted_deltas
+        if delta.get(GatheredState.get_full_name(), {}).get("b" + FIELD_MARKER) == 2
+    ]
+    assert sent_b, "the gathered handler's change was cleaned without being sent"
+
+
+async def test_gathered_inline_handler_rewrite_of_a_dirty_var_is_kept(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A gathered handler rewriting a var the other one already dirtied is not lost.
+
+    The dirty-name set does not change in this case, so only a mutation count
+    tells the first handler to pick the new value up before cleaning.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        token: The client token.
+    """
+    resolving = asyncio.Event()
+
+    class RewriteState(State):
+        a: int = 0
+
+        @rx.var(cache=False)
+        async def slow(self) -> int:
+            if self.a == 1:
+                resolving.set()
+            await asyncio.sleep(0)
+            return self.a
+
+        @event
+        async def set_a(self):
+            self.a = 1
+
+        @event
+        async def rewrite_a(self):
+            await resolving.wait()
+            self.a = 7
+            for _ in range(10):
+                await asyncio.sleep(0)
+
+        @event
+        async def both(self):
+            await asyncio.gather(RewriteState.set_a(), RewriteState.rewrite_a())
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(RewriteState.both())[0]
+            )
+        )
+    sent_a = [
+        delta[RewriteState.get_full_name()]["a" + FIELD_MARKER]
+        for _, delta in emitted_deltas
+        if "a" + FIELD_MARKER in delta.get(RewriteState.get_full_name(), {})
+    ]
+    assert sent_a[-1] == 7, f"the frontend was left at {sent_a}"
+
+
+async def test_gathered_inline_handler_in_place_change_is_kept(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A gathered handler's in-place change to a dirty list reaches computed values.
+
+    The list keeps its identity, so only a write count tells the flushing
+    handler to recompute what depends on it before cleaning.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: Deltas emitted to the frontend, in order.
+        token: The client token.
+    """
+    resolving = asyncio.Event()
+
+    class InPlaceState(State):
+        items: list[int] = []
+
+        @rx.var
+        def count(self) -> int:
+            return len(self.items)
+
+        @rx.var(cache=False)
+        async def slow(self) -> int:
+            if self.items:
+                resolving.set()
+            await asyncio.sleep(0)
+            return len(self.items)
+
+        @event
+        async def start(self):
+            self.items = [1]
+
+        @event
+        async def append(self):
+            await resolving.wait()
+            self.items.append(2)
+            for _ in range(10):
+                await asyncio.sleep(0)
+
+        @event
+        async def both(self):
+            await asyncio.gather(InPlaceState.start(), InPlaceState.append())
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(InPlaceState.both())[0]
+            )
+        )
+    sent_counts = [
+        delta[InPlaceState.get_full_name()]["count" + FIELD_MARKER]
+        for _, delta in emitted_deltas
+        if "count" + FIELD_MARKER in delta.get(InPlaceState.get_full_name(), {})
+    ]
+    assert sent_counts[-1] == 2, f"the frontend was left with counts {sent_counts}"
+
+
+async def test_detached_inline_task_holds_the_lock_until_it_finishes(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A task started from a handler keeps the lock held after the handler returns.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    release = asyncio.Event()
+    seen: dict[str, Any] = {}
+
+    class DetachedState(State):
+        log: list[str] = []
+
+        @event
+        async def child(self):
+            await release.wait()
+            self.log = [*self.log, "child"]
+
+        @event
+        async def parent(self):
+            seen["ctx"] = EventContext.get()
+            asyncio.ensure_future(DetachedState.child())  # noqa: RUF006
+            # Let the child start under the lock before returning.
+            await asyncio.sleep(0)
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    async with real_base_state_processor as processor:
+        parent_future = await processor.enqueue(
+            token, Event.from_event_type(DetachedState.parent())[0]
+        )
+        next_future = await processor.enqueue(
+            token, Event.from_event_type(DetachedState.next_event())[0]
+        )
+        await asyncio.sleep(0.05)
+        # The parent's handler has returned, but its lock is still held for
+        # the detached child, so the next event has not run yet.
+        assert not parent_future.done()
+        assert not next_future.done()
+        assert seen["ctx"].locked_root is not None
+        release.set()
+        await asyncio.wait_for(next_future, 5)
+        assert parent_future.done()
+
+    assert seen["ctx"].locked_root is None
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(DetachedState)).log == ["parent", "child", "next"]
+
+
+async def test_detached_task_started_after_release_is_enqueued(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A task that only starts once the lock is gone runs through the queue instead.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class LateState(State):
+        log: list[str] = []
+
+        @event
+        def child(self):
+            self.log = [*self.log, "child"]
+
+        @event
+        def parent(self):
+            # Returns before the task gets to run.
+            asyncio.ensure_future(LateState.child())  # noqa: RUF006
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(LateState.parent())[0])
+        await processor.enqueue(token, Event.from_event_type(LateState.next_event())[0])
+        root_ctx = real_base_state_processor._root_context
+        assert root_ctx is not None
+        log: list[str] = []
+        for _ in range(100):
+            await asyncio.sleep(0.01)
+            state = await root_ctx.state_manager.get_state(
+                BaseStateToken(ident=token, cls=State)
+            )
+            log = (await state.get_state(LateState)).log
+            if len(log) == 3:
+                break
+
+    assert log == ["parent", "next", "child"]
+
+
+async def test_cancelled_background_handler_releases_the_lock_while_waiting_for_inline_runs(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Cancelling a handler while its lock release waits for a detached run still frees the lock.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    started = asyncio.Event()
+    seen: dict[str, Any] = {}
+
+    class CancelState(State):
+        log: list[str] = []
+
+        @event
+        async def child(self):
+            started.set()
+            await asyncio.Event().wait()
+
+        @event(background=True)
+        async def background(self):
+            async with self:
+                seen["child_task"] = asyncio.ensure_future(CancelState.child())
+                await started.wait()
+            # Leaving `async with self` waits for the detached child.
+
+        @event
+        def ping(self):
+            self.log = [*self.log, "ping"]
+
+    async with real_base_state_processor as processor:
+        bg_future = await processor.enqueue(
+            token, Event.from_event_type(CancelState.background())[0]
+        )
+        await asyncio.wait_for(started.wait(), 5)
+        await asyncio.sleep(0.05)
+        bg_future.cancel()
+        ping_future = await processor.enqueue(
+            token, Event.from_event_type(CancelState.ping())[0]
+        )
+        # The state lock was released despite the cancelled wait.
+        await asyncio.wait_for(ping_future, 5)
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(seen["child_task"], 5)
+        assert seen["child_task"].cancelled()
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(CancelState)).log == ["ping"]
+
+
+async def test_release_lock_waits_for_nested_and_late_inline_runs(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """The lock outlives a detached run that nests another, spawns a late one, or fails.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        caplog: The log capture fixture.
+    """
+    release = asyncio.Event()
+
+    class NestedState(State):
+        log: list[str] = []
+
+        @event
+        def inner(self):
+            self.log = [*self.log, "inner"]
+
+        @event
+        async def late(self):
+            await release.wait()
+            self.log = [*self.log, "late"]
+
+        @event
+        async def failing(self):
+            # Still running when the release drains, so it is gathered there.
+            await release.wait()
+            msg = "inline boom"
+            raise ValueError(msg)
+
+        @event
+        async def outer(self):
+            # Nesting an inline run must not drop this task's registration.
+            await NestedState.inner()
+            await asyncio.sleep(0)
+            # Started while the release is already waiting for this run.
+            asyncio.ensure_future(NestedState.late())  # noqa: RUF006
+            asyncio.ensure_future(NestedState.failing())  # noqa: RUF006
+            await asyncio.sleep(0)
+            self.log = [*self.log, "outer"]
+
+        @event
+        async def parent(self):
+            asyncio.ensure_future(NestedState.outer())  # noqa: RUF006
+            await asyncio.sleep(0)
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    with caplog.at_level(logging.ERROR, logger="reflex_base.event.context"):
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(NestedState.parent())[0]
+            )
+            next_future = await processor.enqueue(
+                token, Event.from_event_type(NestedState.next_event())[0]
+            )
+            await asyncio.sleep(0.05)
+            assert not next_future.done()
+            release.set()
+            await asyncio.wait_for(next_future, 5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    # The spawned run starts at the parent's first suspension point and runs
+    # `inner` inline before the parent resumes.
+    assert (await state.get_state(NestedState)).log == [
+        "inner",
+        "parent",
+        "outer",
+        "late",
+        "next",
+    ]
+    assert "inline boom" in caplog.text
+
+
+async def test_handler_cancelled_inside_the_locked_block_cancels_its_inline_runs(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A cancellation delivered inside ``async with self`` still frees the lock.
+
+    The cancelled task is not interrupted again while releasing the lock, so
+    the detached run it would wait for is cancelled instead.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    started = asyncio.Event()
+    seen: dict[str, Any] = {}
+
+    class CancelInsideState(State):
+        log: list[str] = []
+
+        @event
+        async def child(self):
+            started.set()
+            await asyncio.Event().wait()
+
+        @event(background=True)
+        async def background(self):
+            async with self:
+                seen["child_task"] = asyncio.ensure_future(CancelInsideState.child())
+                # Cancelled while still inside the locked block.
+                await asyncio.Event().wait()
+
+        @event
+        def ping(self):
+            self.log = [*self.log, "ping"]
+
+    async with real_base_state_processor as processor:
+        bg_future = await processor.enqueue(
+            token, Event.from_event_type(CancelInsideState.background())[0]
+        )
+        await asyncio.wait_for(started.wait(), 5)
+        bg_future.cancel()
+        ping_future = await processor.enqueue(
+            token, Event.from_event_type(CancelInsideState.ping())[0]
+        )
+        await asyncio.wait_for(ping_future, 5)
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(seen["child_task"], 5)
+        assert seen["child_task"].cancelled()
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(CancelInsideState)).log == ["ping"]

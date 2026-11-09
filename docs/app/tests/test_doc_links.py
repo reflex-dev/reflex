@@ -19,6 +19,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import pytest
+from reflex_base.environment import environment
 from reflex_docgen.markdown import (
     Block,
     BoldSpan,
@@ -36,8 +37,17 @@ from reflex_docgen.markdown import (
     parse_document,
 )
 
-SITEMAP_NS = {"sm": "https://www.sitemaps.org/schemas/sitemap/0.9"}
-SKIP_DIRS = {".web", "node_modules", "__pycache__", ".git", ".venv", "dist", "build"}
+SITEMAP_NS = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+SKIP_DIRS = {
+    ".web",
+    "node_modules",
+    "__pycache__",
+    ".git",
+    ".venv",
+    "dist",
+    "build",
+    environment.REFLEX_WEB_WORKDIR.get().name,
+}
 
 
 def _normalize(path: str) -> str:
@@ -185,7 +195,7 @@ def check(md_root: Path, sitemap_path: Path) -> list[str]:
 
 _DOCS_APP = Path(__file__).resolve().parent.parent  # docs/app/
 _MD_ROOT = _DOCS_APP.parent  # docs/
-_SITEMAP = _DOCS_APP / ".web" / "public" / "sitemap.xml"
+_SITEMAP = _DOCS_APP / environment.REFLEX_WEB_WORKDIR.get() / "public" / "sitemap.xml"
 
 
 @pytest.mark.xfail(
@@ -205,14 +215,14 @@ def test_docs_links_against_exported_sitemap():
 
 
 SITEMAP_XML = """<?xml version='1.0' encoding='utf-8'?>
-<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>http://localhost:3000/getting-started/basics/</loc></url>
   <url><loc>http://localhost:3000/library/disclosure/</loc></url>
 </urlset>
 """
 
 SITEMAP_XML_WITH_DOCS_PREFIX = """<?xml version='1.0' encoding='utf-8'?>
-<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>http://localhost:3000/docs/getting-started/basics/</loc></url>
   <url><loc>http://localhost:3000/docs/library/disclosure/</loc></url>
 </urlset>
@@ -234,6 +244,18 @@ def test_normalize_strips_fragment_query_and_trailing_slash():
     assert _normalize("/foo/bar#section") == "/foo/bar"
     assert _normalize("/foo/bar?x=1") == "/foo/bar"
     assert _normalize("/") == "/"
+
+
+def test_load_sitemap_uses_the_standard_xml_namespace(tmp_path):
+    """A standards-compliant sitemap must populate the link validator's paths."""
+    sitemap = tmp_path / "sitemap.xml"
+    sitemap.write_text(
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        "<url><loc>https://reflex.dev/docs/</loc></url>"
+        "<url><loc>https://reflex.dev/docs/api-reference/app/</loc></url>"
+        "</urlset>"
+    )
+    assert _load_sitemap_paths(sitemap) == {"/", "/api-reference/app"}
 
 
 def test_check_passes_for_valid_link(docs_tree):

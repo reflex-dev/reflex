@@ -15,7 +15,7 @@ from collections.abc import (
     MutableMapping,
 )
 from pathlib import Path, PureWindowsPath
-from typing import TYPE_CHECKING, Any, BinaryIO, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, Self, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.registry import RegistrationContext
@@ -28,7 +28,6 @@ from starlette.exceptions import HTTPException
 from starlette.formparsers import MultiPartException, _user_safe_decode
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
-from typing_extensions import Self
 
 if TYPE_CHECKING:
     from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
@@ -835,7 +834,8 @@ def upload(app: App):
         Raises:
             UploadValueError: If the handler does not have a supported annotation.
             UploadTypeError: If a non-streaming upload is wired to a background task.
-            HTTPException: when the request does not include token / handler headers.
+            HTTPException: when the request does not include token / handler headers,
+                or when the handler header does not name a registered event handler.
         """
         from reflex_base.event import (
             resolve_upload_chunk_handler_param,
@@ -843,9 +843,14 @@ def upload(app: App):
         )
 
         token, handler_name = _require_upload_headers(request)
-        registered_event_handler = RegistrationContext.get().event_handlers[
+        registered_event_handler = RegistrationContext.get().event_handlers.get(
             handler_name
-        ]
+        )
+        if registered_event_handler is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown upload event handler: {handler_name!r}.",
+            )
         event_handler = registered_event_handler.handler
 
         if event_handler.is_background:

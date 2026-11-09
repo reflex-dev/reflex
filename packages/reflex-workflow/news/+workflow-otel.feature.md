@@ -1,0 +1,1 @@
+Steps are traced with OpenTelemetry when `reflex-otel` is instrumented: every attempt gets a `<table>.<step>` span linked to the handler, request, or step that scheduled it, with the attempt number, outcome, and error on it. Step arguments and row columns are never recorded, beyond what a failed attempt's exception message quotes.

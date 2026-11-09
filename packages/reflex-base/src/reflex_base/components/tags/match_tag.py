@@ -4,11 +4,11 @@ import dataclasses
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class MatchTag(Tag):
+class MatchTag(CommonTag):
     """A match tag."""
 
     # The condition to determine which case to match.

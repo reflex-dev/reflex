@@ -1,0 +1,1 @@
+The Conditional Rendering page's demo text is readable in dark mode: the demos use theme-aware Radix step-11 colors instead of fixed CSS colors such as `blue`, which measured below 2:1 on the dark background.

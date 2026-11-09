@@ -2,6 +2,7 @@
 
 import dataclasses
 
+from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex_base.constants.colors import Color
 from reflex_base.vars.base import (
     CachedVarOperation,
@@ -70,19 +71,6 @@ class LiteralColorVar(CachedVarOperation, LiteralVar[Color], ColorVar):
             _var_value=value,
         )
 
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((
-            self.__class__.__name__,
-            self._var_value.color,
-            self._var_value.alpha,
-            self._var_value.shade,
-        ))
-
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.
@@ -90,6 +78,22 @@ class LiteralColorVar(CachedVarOperation, LiteralVar[Color], ColorVar):
         Returns:
             The name of the var.
         """
+        color, alpha, shade = (
+            self._var_value.color,
+            self._var_value.alpha,
+            self._var_value.shade,
+        )
+        if (
+            type(color) is str
+            and type(alpha) is bool
+            and type(shade) is int
+            and REFLEX_VAR_OPENING_TAG not in color
+        ):
+            # Every part is a plain literal, so the name is a single string literal.
+            return str(
+                LiteralStringVar.create(f"var(--{color}-{'a' if alpha else ''}{shade})")
+            )
+
         alpha = self._var_value.alpha
         alpha = (
             ternary_operation(

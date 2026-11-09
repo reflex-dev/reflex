@@ -23,6 +23,18 @@ Pyplot (`reflex-pyplot`) lets you render any [Matplotlib](https://matplotlib.org
 
 `matplotlib.pyplot` is a collection of functions that make Matplotlib behave like MATLAB: each call (`plt.plot`, `plt.scatter`, `plt.bar`, and so on) builds up a figure by adding lines, bars, labels, or legends. In a normal script you would finish with `plt.show()` to open a window. In a Reflex app you instead pass the `Figure` object to the `pyplot` component, which serves it to the frontend and re-renders it whenever your state changes.
 
+## Why use Matplotlib in a web app?
+
+Matplotlib is the most widely used plotting library in Python, with millions of users in scientific computing, data science, and machine learning. If you already have matplotlib code from Jupyter notebooks, research scripts, or data pipelines, you can reuse it directly in a Reflex web app without rewriting it for a different charting library. Common use cases include:
+
+- **Data science dashboards** — Turn notebook prototypes into shareable web apps with interactive controls
+- **Scientific reports** — Display publication-quality figures with LaTeX labels and custom styling
+- **Machine learning monitoring** — Plot training metrics, confusion matrices, and feature distributions
+- **Financial analysis** — Render time series and portfolio performance charts
+- **Engineering tools** — Visualize simulation results, sensor data, and system performance
+
+For declarative business charts like bar, line, and pie charts, consider using Reflex's built-in [Recharts components](/docs/library/graphing/charts/) instead. For interactive 3D plots and scientific visualizations, see the [Plotly component](/docs/library/graphing/other-charts/plotly/).
+
 ## Installation
 
 Install the `reflex-pyplot` package using pip.
@@ -55,7 +67,14 @@ def create_contour_plot():
 
 def pyplot_simple_example():
     return rx.card(
-        pyplot(create_contour_plot(), width="100%", height="400px"),
+        pyplot(
+            create_contour_plot(),
+            alt="Filled contour plot of a two-dimensional function",
+            loading="lazy",
+            decoding="async",
+            width="100%",
+            height="400px",
+        ),
         bg_color="#ffffff",
         width="100%",
     )
@@ -92,7 +111,14 @@ def create_line_plot():
 
 def pyplot_line_example():
     return rx.card(
-        pyplot(create_line_plot(), width="100%", height="400px"),
+        pyplot(
+            create_line_plot(),
+            alt="Sine and cosine curves from zero to ten",
+            loading="lazy",
+            decoding="async",
+            width="100%",
+            height="400px",
+        ),
         bg_color="#ffffff",
         width="100%",
     )
@@ -121,7 +147,14 @@ def create_bar_chart():
 
 def pyplot_bar_example():
     return rx.card(
-        pyplot(create_bar_chart(), width="100%", height="400px"),
+        pyplot(
+            create_bar_chart(),
+            alt="Fruit inventory: apples 23, oranges 17, bananas 35, pears 29",
+            loading="lazy",
+            decoding="async",
+            width="100%",
+            height="400px",
+        ),
         bg_color="#ffffff",
         width="100%",
     )
@@ -199,8 +232,22 @@ def pyplot_example():
     return rx.vstack(
         rx.card(
             rx.color_mode_cond(
-                pyplot(PyplotState.fig_light, width="100%", height="100%"),
-                pyplot(PyplotState.fig_dark, width="100%", height="100%"),
+                pyplot(
+                    PyplotState.fig_light,
+                    alt="Scatter plot of the current randomized points",
+                    loading="lazy",
+                    decoding="async",
+                    width="100%",
+                    height="100%",
+                ),
+                pyplot(
+                    PyplotState.fig_dark,
+                    alt="Scatter plot of the current randomized points",
+                    loading="lazy",
+                    decoding="async",
+                    width="100%",
+                    height="100%",
+                ),
             ),
             rx.vstack(
                 rx.hstack(

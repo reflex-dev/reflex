@@ -1,0 +1,19 @@
+:{$PORT}
+
+encode gzip
+
+@backend_routes path /_event/* /ping /_health /_upload /_upload/*
+handle @backend_routes {
+	reverse_proxy localhost:8000
+}
+
+root * /srv
+route {
+	try_files {path} {path}/ /404.html
+	# Serve the pre-compressed .gz copies Reflex writes for text assets at
+	# export time; .br/.zst copies exist only if frontend_compression_formats
+	# includes brotli/zstd.
+	file_server {
+		precompressed br zstd gzip
+	}
+}

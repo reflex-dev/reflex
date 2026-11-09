@@ -2,6 +2,8 @@
 
 Snowflake is a cloud-based data warehousing platform that enables users to store, manage, and analyze large volumes of data. It provides a scalable and flexible architecture that separates storage and compute resources, allowing for efficient data processing and querying.
 
+To connect, open the **Integrations** tab in Reflex Build, select the **Snowflake** card, and click **Add connection**. Both methods start with **SNOWFLAKE_HOST**: your account hostname without `https://`, for example `myorg-myaccount.snowflakecomputing.com`.
+
 The integration supports two authentication methods: **OAuth** (each user logs in with their own Snowflake account) and **Key Pair** (the app authenticates as a shared service user with an RSA key pair — no browser login, tokens never expire mid-session).
 
 ## OAuth
@@ -39,9 +41,19 @@ get_base_component_map()["pre"](
 )
 ```
 
-### Step 2: Log in via OAuth
+### Step 2: Add the client ID in Reflex Build
 
-NOTE: you must use a non-admin account to complete the OAuth flow.
+Retrieve the integration's client ID:
+
+```sql
+SELECT SYSTEM$SHOW_OAUTH_CLIENT_SECRETS('OAUTH_REFLEX_BUILD_INT');
+```
+
+On the Snowflake card's **OAuth** tab, paste the `OAUTH_CLIENT_ID` value into **client_id** and click **Add**.
+
+### Step 3: Log in via OAuth
+
+Click **Login with Snowflake**. Log in with a role Snowflake allows for OAuth: `ACCOUNTADMIN`, `SECURITYADMIN`, `ORGADMIN`, and `GLOBALORGADMIN` are blocked.
 
 ## Key Pair
 
@@ -96,7 +108,7 @@ openssl rsa -pubin -in rsa_key.pub -outform DER | openssl dgst -sha256 -binary |
 - `SNOWFLAKE_PRIVATE_KEY`: paste the full contents of `rsa_key.p8` (mangled newlines from copy/paste are fine)
 - `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`: only if the private key is encrypted. It is stored with the integration secrets and used to decrypt the key at connect time. To strip a passphrase from an existing key instead: `openssl pkcs8 -topk8 -in rsa_key.p8 -nocrypt -out rsa_key_plain.p8`
 
-The warehouse and database dropdowns populate once the key pair authenticates, which doubles as a connection check.
+The warehouse, database, and schema dropdowns populate once the key pair authenticates, which doubles as a connection check. Pick them, then click **Connect**.
 
 If a private key is ever lost or leaked, generate a new pair and re-run the `ALTER USER ... SET RSA_PUBLIC_KEY` — Snowflake also supports `RSA_PUBLIC_KEY_2` for zero-downtime rotation.
 

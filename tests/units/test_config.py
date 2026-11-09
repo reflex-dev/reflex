@@ -3,6 +3,7 @@ import importlib.util
 import logging
 import multiprocessing
 import os
+import pickle
 import sys
 import textwrap
 import threading
@@ -66,6 +67,67 @@ def test_frozen_lockfile_default(base_config_values):
     assert config.frozen_lockfile is True
 
 
+def test_trusted_proxy_hops_defaults_to_zero(base_config_values):
+    """Do not trust client-controlled forwarded headers by default."""
+    assert rx.Config(**base_config_values).trusted_proxy_hops == 0
+
+
+def test_event_loop_blocking_threshold_defaults_to_development_threshold(
+    base_config_values,
+):
+    """Enable useful blocking diagnostics by default in development."""
+    config = rx.Config(**base_config_values)
+    assert config.event_loop_blocking_threshold == pytest.approx(0.2)
+
+
+@pytest.mark.parametrize("threshold", [-1, float("inf"), float("nan"), True, "1", None])
+def test_event_loop_blocking_threshold_must_be_non_negative_finite(
+    base_config_values, threshold
+):
+    """Reject invalid event-loop blocking thresholds."""
+    with pytest.raises(
+        ConfigError,
+        match="event_loop_blocking_threshold must be a non-negative finite number",
+    ):
+        rx.Config(**base_config_values, event_loop_blocking_threshold=threshold)
+
+
+def test_event_loop_blocking_detection_can_be_disabled(base_config_values):
+    """Allow apps to disable event-loop blocking detection with 0."""
+    config = rx.Config(**base_config_values, event_loop_blocking_threshold=0)
+    assert config.event_loop_blocking_threshold == 0
+
+
+def test_event_loop_blocking_detection_can_be_disabled_from_env(
+    base_config_values, monkeypatch: pytest.MonkeyPatch
+):
+    """Allow the environment to disable event-loop blocking detection."""
+    monkeypatch.setenv("REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD", "0")
+    config = rx.Config(**base_config_values)
+    assert config.update_from_env()["event_loop_blocking_threshold"] == 0
+
+
+@pytest.mark.parametrize("trusted_proxy_hops", [-1, True, False, 1.5, "2", None])
+def test_trusted_proxy_hops_must_be_non_negative(
+    base_config_values, trusted_proxy_hops
+):
+    """Reject invalid trusted proxy hop counts."""
+    with pytest.raises(
+        ConfigError, match="trusted_proxy_hops must be a non-negative integer"
+    ):
+        rx.Config(**base_config_values, trusted_proxy_hops=trusted_proxy_hops)
+
+
+def test_react_compiler_default(base_config_values):
+    """Keep React Compiler disabled unless the app opts in.
+
+    Args:
+        base_config_values: Config values.
+    """
+    assert rx.Config(**base_config_values).react_compiler is False
+    assert rx.Config(**base_config_values, react_compiler=True).react_compiler is True
+
+
 @pytest.mark.parametrize(
     ("env_var", "value"),
     [
@@ -77,13 +139,17 @@ def test_frozen_lockfile_default(base_config_values):
         ("REFLEX_API_URL", "https://mybackend.com:8000"),
         ("REFLEX_DEPLOY_URL", "https://myfrontend.com"),
         ("REFLEX_BACKEND_HOST", "127.0.0.1"),
+        ("REFLEX_TRUSTED_PROXY_HOPS", 2),
         ("REFLEX_DB_URL", "postgresql://user:pass@localhost:5432/db"),
         ("REFLEX_REDIS_URL", "redis://localhost:6379"),
         ("REFLEX_TELEMETRY_ENABLED", False),
         ("REFLEX_TELEMETRY_ENABLED", True),
         ("REFLEX_FROZEN_LOCKFILE", False),
         ("REFLEX_FROZEN_LOCKFILE", True),
+        ("REFLEX_REACT_COMPILER", False),
+        ("REFLEX_REACT_COMPILER", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
+        ("REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD", 0.35),
     ],
 )
 def test_update_from_env(
@@ -188,6 +254,69 @@ def test_invalid_frontend_compression_formats(base_config_values: dict[str, Any]
             **base_config_values,
             frontend_compression_formats=["gzip", "snappy"],
         )
+
+
+@pytest.mark.parametrize(
+    "frontend_path",
+    [
+        "/..",
+        "..",
+        "/../other",
+        "/app/../other",
+        "app/..",
+        "/./app",
+        "/..\\escaped",
+        "/app\\..\\other",
+        "/C:/other",
+        "/D:other",
+        "/\\\\",
+        "/app/\\",
+        "\\\\server\\share",
+        "/app.",
+        "/app ",
+        "/ .",
+        "/.. ",
+        "/app./sub",
+        "//srv",
+        "/app//sub",
+    ],
+)
+def test_frontend_path_rejects_unsafe_segments(
+    base_config_values: dict[str, Any], frontend_path: str
+):
+    """A segment that is not a plain directory name could escape the build output.
+
+    Args:
+        base_config_values: Minimal valid Config kwargs.
+        frontend_path: A frontend_path with a traversal, backslash, or drive segment.
+    """
+    with pytest.raises(ConfigError, match="is not a plain directory name"):
+        rx.Config(**base_config_values, frontend_path=frontend_path)
+
+
+@pytest.mark.parametrize(
+    ("frontend_path", "expected"),
+    [
+        ("v1.2/..app/.hidden", "/v1.2/..app/.hidden"),
+        ("", ""),
+        ("/", "/"),
+        ("/app/", "/app/"),
+        ("/my app", "/my app"),
+        ("/v1:beta", "/v1:beta"),
+    ],
+)
+def test_frontend_path_allows_plain_names(
+    base_config_values: dict[str, Any], frontend_path: str, expected: str
+):
+    """Plain names and an optional trailing slash remain supported.
+
+    Args:
+        base_config_values: Minimal valid Config kwargs.
+        frontend_path: A frontend_path made of plain directory names.
+        expected: The normalized frontend_path.
+    """
+    config = rx.Config(**base_config_values, frontend_path=frontend_path)
+    assert config.frontend_path == expected
 
 
 @pytest.mark.parametrize(
@@ -338,7 +467,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8001",
                 "backend_port": 8001,
-                "deploy_url": "http://localhost:3001",
+                "deploy_url": None,
                 "frontend_port": 3001,
             },
         ),
@@ -350,7 +479,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8002",
                 "backend_port": 8002,
-                "deploy_url": "http://localhost:3001",
+                "deploy_url": None,
                 "frontend_port": 3001,
             },
         ),
@@ -362,7 +491,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8002",
                 "backend_port": 8002,
-                "deploy_url": "http://localhost:3005",
+                "deploy_url": None,
                 "frontend_port": 3005,
             },
         ),
@@ -852,6 +981,26 @@ def test_disable_plugins_bad_env_spec_warns(
     )
 
 
+def test_get_config_ignores_another_project_on_sys_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A project without rxconfig must not inherit an installed app's config."""
+    foreign = tmp_path / "foreign"
+    foreign.mkdir()
+    (foreign / "rxconfig.py").write_text(
+        'from reflex_base.config import Config\nconfig = Config(app_name="foreign")\n'
+    )
+    project = tmp_path / "project"
+    project.mkdir()
+    monkeypatch.syspath_prepend(str(foreign))
+
+    config = reflex_base.config._get_config(project)
+
+    assert config.app_name == ""
+    assert config.frontend_path == ""
+    assert "rxconfig" not in sys.modules
+
+
 def test_get_config_loads_once_for_shared_context(monkeypatch: pytest.MonkeyPatch):
     """Concurrent first access to a shared context loads the config exactly once.
 
@@ -1043,13 +1192,26 @@ def clean_config_modules() -> Generator[None, None, None]:
     Yields:
         None, once the module table is clean.
     """
-    names = ("rxconfig", "side_module", "chdir_dep_module")
+    names = (
+        "rxconfig",
+        "side_module",
+        "chdir_dep_module",
+        "reload_dep_module",
+        "shared_helper",
+        "config_reload_state_module",
+        "failing_dep_module",
+        "kept_helper",
+        "failed_only_helper",
+        "initial_dep_module",
+        "later_dep_module",
+    )
     try:
         yield
     finally:
         for name in names:
             sys.modules.pop(name, None)
         reflex_base.config._config_module_deps.clear()
+        reflex_base.config._config_module_deps_root = None
 
 
 # Reruns: taking the prepended entry back out is itself a sys.path shrink, so
@@ -1213,6 +1375,273 @@ def test_config_deps_recorded_against_load_root_when_rxconfig_chdirs(
     assert "chdir_dep_module" in reflex_base.config._config_module_deps
 
 
+def test_same_root_reload_keeps_dependency_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading from the same project keeps rxconfig's project-local modules.
+
+    rxconfig.py itself is re-read from disk, but the modules it imports must
+    stay the objects the app already holds. Re-executing them creates a second
+    copy of every class they define, and pickling an instance of the app's copy
+    then fails because the qualified name resolves to the other class.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "reload_dep_module.py").write_text("class Marker:\n    pass\n")
+    rxconfig_template = textwrap.dedent(
+        """
+        import reload_dep_module  # noqa: F401
+        import reflex as rx
+
+        config = rx.Config(app_name={app_name!r})
+        """
+    )
+    (tmp_path / "rxconfig.py").write_text(rxconfig_template.format(app_name="first"))
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "reload_dep_module", raising=False)
+
+    assert reflex_base.config._get_config().app_name == "first"
+    module = sys.modules["reload_dep_module"]
+    marker = module.Marker()
+
+    (tmp_path / "rxconfig.py").write_text(
+        rxconfig_template.format(app_name="second load")
+    )
+    assert reflex_base.config._get_config().app_name == "second load"
+    assert sys.modules["reload_dep_module"] is module
+    assert type(pickle.loads(pickle.dumps(marker))) is module.Marker
+    assert "reload_dep_module" in reflex_base.config._config_module_deps
+
+
+def test_failed_load_records_dependencies_for_other_root_eviction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A failed load still records its imports so another project evicts them.
+
+    Nothing is evicted at failure time: a module that imported completely may
+    already be held elsewhere. It is recorded, so a load from a different root
+    drops it like any other dependency of the previous project.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    broken = tmp_path / "broken"
+    broken.mkdir()
+    (broken / "failing_dep_module.py").write_text("VALUE = 1\n")
+    (broken / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import failing_dep_module  # noqa: F401
+
+            raise RuntimeError("broken rxconfig")
+            """
+        )
+    )
+    other = tmp_path / "other"
+    other.mkdir()
+    (other / "rxconfig.py").write_text(
+        "import reflex as rx\n\nconfig = rx.Config(app_name='other')\n"
+    )
+    monkeypatch.delitem(sys.modules, "failing_dep_module", raising=False)
+
+    with pytest.raises(RuntimeError, match="broken rxconfig"):
+        reflex_base.config._get_config(broken)
+    assert "failing_dep_module" in sys.modules
+    assert "failing_dep_module" in reflex_base.config._config_module_deps
+
+    assert reflex_base.config._get_config(other).app_name == "other"
+    assert "failing_dep_module" not in sys.modules
+    assert "failing_dep_module" not in reflex_base.config._config_module_deps
+
+
+def test_failed_reload_keeps_modules_from_last_good_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A failed same-root reload leaves the last good load's modules alone.
+
+    The running app may hold classes from the last successful load, so those
+    modules must survive both the failure and the retry after it. What the
+    failed attempt imported is recorded alongside them.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "kept_helper.py").write_text("class Kept:\n    pass\n")
+    (tmp_path / "failed_only_helper.py").write_text("VALUE = 1\n")
+    good_rxconfig = textwrap.dedent(
+        """
+        import kept_helper  # noqa: F401
+        import reflex as rx
+
+        config = rx.Config(app_name="good")
+        """
+    )
+    broken_rxconfig = textwrap.dedent(
+        """
+        import kept_helper  # noqa: F401
+        import failed_only_helper  # noqa: F401
+        import reflex as rx
+
+        raise RuntimeError("broken rxconfig")
+        """
+    )
+    (tmp_path / "rxconfig.py").write_text(good_rxconfig)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "kept_helper", raising=False)
+    monkeypatch.delitem(sys.modules, "failed_only_helper", raising=False)
+
+    assert reflex_base.config._get_config().app_name == "good"
+    kept = sys.modules["kept_helper"]
+
+    (tmp_path / "rxconfig.py").write_text(broken_rxconfig)
+    with pytest.raises(RuntimeError, match="broken rxconfig"):
+        reflex_base.config._get_config()
+    assert sys.modules["kept_helper"] is kept
+    assert "failed_only_helper" in reflex_base.config._config_module_deps
+
+    (tmp_path / "rxconfig.py").write_text(good_rxconfig)
+    assert reflex_base.config._get_config().app_name == "good"
+    assert sys.modules["kept_helper"] is kept
+
+
+def test_other_root_load_evicts_dependency_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Loading a different project evicts the previous project's dependencies.
+
+    Two projects with a same-named helper module must each resolve their own
+    copy, in whichever order they are loaded.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    for name, value in (("first", 1), ("second", 2)):
+        project = tmp_path / name
+        project.mkdir()
+        (project / "shared_helper.py").write_text(f"VALUE = {value}\n")
+        (project / "rxconfig.py").write_text(
+            textwrap.dedent(
+                """
+                import shared_helper
+                import reflex as rx
+
+                config = rx.Config(app_name=f"app{shared_helper.VALUE}")
+                """
+            )
+        )
+    monkeypatch.delitem(sys.modules, "shared_helper", raising=False)
+
+    assert reflex_base.config._get_config(tmp_path / "first").app_name == "app1"
+    first_helper = sys.modules["shared_helper"]
+    assert reflex_base.config._get_config(tmp_path / "second").app_name == "app2"
+    assert sys.modules["shared_helper"] is not first_helper
+    assert reflex_base.config._get_config(tmp_path / "first").app_name == "app1"
+    assert sys.modules["shared_helper"] is not first_helper
+    assert sys.modules["shared_helper"].VALUE == 1
+
+
+def test_root_change_evicts_dependencies_added_on_same_root_reload(
+    tmp_path: Path, clean_config_modules: None
+):
+    """Changing roots evicts dependencies added after the initial config load.
+
+    A later same-root reload keeps earlier dependencies while recording newly
+    imported ones. Even a root without rxconfig.py must evict every dependency.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    project = tmp_path / "project"
+    project.mkdir()
+    empty_root = tmp_path / "empty"
+    empty_root.mkdir()
+    (project / "initial_dep_module.py").write_text("VALUE = 1\n")
+    (project / "later_dep_module.py").write_text("VALUE = 2\n")
+    (project / "rxconfig.py").write_text(
+        "import initial_dep_module\nimport reflex as rx\n\nconfig = rx.Config(app_name='first')\n"
+    )
+
+    assert reflex_base.config._get_config(project).app_name == "first"
+    initial = sys.modules["initial_dep_module"]
+
+    (project / "rxconfig.py").write_text(
+        "import initial_dep_module\nimport later_dep_module\nimport reflex as rx\n\nconfig = rx.Config(app_name='second')\n"
+    )
+    assert reflex_base.config._get_config(project).app_name == "second"
+    assert sys.modules["initial_dep_module"] is initial
+    assert "later_dep_module" in reflex_base.config._config_module_deps
+
+    assert reflex_base.config._get_config(empty_root).app_name == ""
+    assert "initial_dep_module" not in sys.modules
+    assert "later_dep_module" not in sys.modules
+
+
+def test_reload_config_keeps_state_module_registered(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading a config whose rxconfig.py imports a state module does not redefine the state.
+
+    Re-importing the module would run the state class body again and trip the
+    shadowing check for the class still registered in the context. Covers both
+    a plain reload and a reload in a forked context, the shape AppHarness uses.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "config_reload_state_module.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+
+            class ConfigReloadState(rx.State):
+                value: str = ""
+            """
+        )
+    )
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import config_reload_state_module  # noqa: F401
+            import reflex as rx
+
+            config = rx.Config(app_name="statereload")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "config_reload_state_module", raising=False)
+
+    with RegistrationContext() as ctx:
+        assert reflex_base.config.get_config().app_name == "statereload"
+        state_cls = sys.modules["config_reload_state_module"].ConfigReloadState
+
+        assert reflex_base.config.reload_config().app_name == "statereload"
+        assert sys.modules["config_reload_state_module"].ConfigReloadState is state_cls
+
+        forked = ctx.fork()
+        token = RegistrationContext._context_var.set(forked)
+        try:
+            assert reflex_base.config.reload_config().app_name == "statereload"
+        finally:
+            RegistrationContext._context_var.reset(token)
+        assert sys.modules["config_reload_state_module"].ConfigReloadState is state_cls
+
+
 def test_record_imports_never_rebinds_meta_path():
     """Recording must mutate sys.meta_path in place, never rebind it.
 
@@ -1308,3 +1737,25 @@ def test_get_config_reload_deprecated(mocker: MockerFixture):
         # The freshly loaded config stays cached on the context afterwards.
         assert reflex_base.config.get_config() is second
         deprecate.assert_called_once()
+
+
+def test_frontend_url_falls_back_to_localhost_frontend_port(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """frontend_url is deploy_url when set, otherwise localhost on the frontend port.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    monkeypatch.delenv("REFLEX_FRONTEND_PORT", raising=False)
+    config = rx.Config(app_name="a")
+    assert config.deploy_url is None
+    assert config.frontend_url == "http://localhost:3000"
+
+    config = rx.Config(app_name="a", frontend_port=3005)
+    assert config.deploy_url is None
+    assert config.frontend_url == "http://localhost:3005"
+
+    config = rx.Config(app_name="a", deploy_url="https://example.com")
+    assert config.frontend_url == "https://example.com"

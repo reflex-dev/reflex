@@ -107,7 +107,6 @@ class ToastProps(NoExtrasAllowedProps):
     # Icon displayed in front of toast's text, aligned vertically.
     # icon: Icon | None = None # noqa: ERA001
 
-    # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
     action: ToastAction | None
 

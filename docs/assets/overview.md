@@ -40,6 +40,13 @@ rx.image(
 # Always prefix the asset path with a forward slash `/` to reference the asset from the root of the project, or it may not display correctly on non-root pages.
 ```
 
+If your app sets `frontend_path` (for example, `frontend_path="/app"`), literal asset paths are not prefixed automatically. Use `rx.asset("Reflex.svg")` instead, or include the prefix yourself:
+
+```python
+rx.image(src=rx.asset("Reflex.svg"))
+rx.image(src="/app/Reflex.svg")
+```
+
 ### 2. Using rx.asset Function
 
 The `rx.asset` function provides a more flexible way to reference assets in your app. It supports both local assets (in the app's `assets/` directory) and shared assets (placed next to your Python files).

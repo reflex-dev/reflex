@@ -156,3 +156,24 @@ def test_content_negotiation(
     assert body == sidecar_bytes
     if magic is not None:
         assert body[: len(magic)] == magic
+
+
+def test_bundles_exclude_embedded_core_js(prod_app: AppHarness):
+    """Emitted browser assets must not carry json5's embedded core-js runtime.
+
+    Regression for https://github.com/reflex-dev/reflex/issues/7163: json5 was
+    dropped as a direct dependency, but the upload helper kept importing it, so
+    it resolved transitively and its UMD browser build shipped core-js 2.6.5
+    into production bundles. Checking the dependency manifest alone does not
+    catch that, so assert against the built assets.
+    """
+    js_files = _find_build_files(prod_app, "**/*.js")
+    assert js_files, "No JS files in build"
+
+    offenders = [
+        path.name
+        for path in js_files
+        if "__core-js_shared__" in path.read_text(encoding="utf-8", errors="ignore")
+    ]
+
+    assert not offenders, f"bundles embed a core-js runtime: {offenders}"

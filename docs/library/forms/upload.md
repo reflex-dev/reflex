@@ -12,6 +12,8 @@ import reflex as rx
 
 Reflex makes it simple to add file upload functionality to your app. You can let users select files, store them on your server, and display or process them as needed. Below is a minimal example that demonstrates how to upload files, save them to disk, and display uploaded images using application state.
 
+For a complete processing workflow, try the [image input and output example](/docs/guides/model-and-media-interfaces/#run-an-image-input-and-output-workflow). It validates an uploaded image, creates a grayscale preview, and offers a PNG download without saving the result to the public upload directory.
+
 ## Basic File Upload Example
 
 You can let users upload files and keep track of them in your app’s state. The example below allows users to upload files, saves them using the backend, and then displays the uploaded files as images.
@@ -58,6 +60,8 @@ event args:
 - `rx.upload_files_chunk(upload_id=id)` for larger files that should be processed incrementally
 
 The `id` links the upload component to these special Vars and event args, so they must all reference the same value. Pass it as a string literal or module-level constant — a state var cannot be used as an upload `id`.
+
+Upload handlers can also run from a toast's `action` or `cancel` button or an `rx.call_script` callback. Pass `rx.upload_files(upload_id=id)` to the handler as usual. The callback uploads the files selected for that ID when it runs, so replacing or clearing the selection after a toast opens updates what its button uploads.
 
 ## File Storage Functions
 
@@ -439,7 +443,7 @@ rx.upload.root(
 
 ## Handling the Upload
 
-For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://www.starlette.io/requests/#request-files) instances. Each file exposes its original filename as `file.name`. You can read the files and save them anywhere as shown in the example.
+For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://starlette.dev/requests/#request-files) instances. Each file exposes its original filename as `file.name`. You can read the files and save them anywhere as shown in the example.
 
 ```md alert warning
 # Upload handlers are regular event handlers.

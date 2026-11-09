@@ -1,7 +1,7 @@
 """App-wrap components mounting the state and event-loop React providers.
 
 These wrap children in the ``StateProvider`` / ``EventLoopProvider`` JS
-functions emitted into ``utils/context.js`` by ``compile_contexts``. They are
+functions emitted into ``utils/context.jsx`` by ``compile_contexts``. They are
 attached to the VarData returned by :meth:`reflex_base.vars.base.VarData.from_state`
 so the compiler picks them up through the generic Var-driven app-wrap pipeline,
 rather than the JS Layout template hard-coding them around every app.
@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs
-from reflex_base.constants.compiler import Hooks
 from reflex_base.vars.base import VarData
 
 
@@ -62,7 +61,4 @@ def get_events_hooks_var_data() -> VarData:
     Returns:
         A new VarData carrying both providers as app_wraps.
     """
-    return VarData(
-        position=Hooks.HookPosition.INTERNAL,
-        app_wraps=get_event_app_wraps(),
-    )
+    return VarData(app_wraps=get_event_app_wraps())

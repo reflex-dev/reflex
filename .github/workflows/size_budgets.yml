@@ -1,0 +1,71 @@
+name: size-budgets
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
+  cancel-in-progress: true
+
+# Bundle bytes are deterministic, so they gate every pull request on a standard
+# runner: no statistics, no dedicated benchmark machine, no secrets. No branch
+# filter on pull_request, so stacked pull requests are checked too.
+on:
+  pull_request:
+    paths:
+      - "reflex/**"
+      - "packages/**"
+      - "examples/playground/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/size_budgets.yml"
+      - ".github/actions/setup_build_env/**"
+  push:
+    branches: ["main"]
+    paths:
+      - "reflex/**"
+      - "packages/**"
+      - "examples/playground/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/size_budgets.yml"
+      - ".github/actions/setup_build_env/**"
+
+env:
+  REFLEX_TELEMETRY_ENABLED: false
+  REFLEX_CHECK_LATEST_VERSION: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  size-budgets:
+    name: size-budgets
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-tags/fetch-depth: the workspace packages derive their versions from git.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      # Also installs Node, which reflex 0.9 uses to write the build's .gz files.
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.14"
+          run-uv-sync: true
+      # With CI=true, `run` fails only when the export fails (nothing is
+      # compared without --baseline); `budgets check` is the gate.
+      - name: Export the playground and measure its size
+        env:
+          RUN_KIND: ${{ github.event_name == 'pull_request' && 'pr' || 'ci' }}
+        run: uv run --no-sync reflex-bench run 'size.*' --json size-result.json --no-save --kind "$RUN_KIND"
+      - name: Check the size budgets
+        run: uv run --no-sync reflex-bench budgets check size-result.json
+      - name: Upload the result
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: size-result
+          path: size-result.json

@@ -1,10 +1,6 @@
-"""Integration tests for ``rx.memo`` runtime behavior.
+"""Integration tests for memo event handlers, recursion, and stateful props.
 
-Covers behaviors previously exercised by the deleted
-``tests/integration/test_memo.py`` (Selenium): partial-application of an
-``EventHandler`` prop (``event(some_value)``) and raw pass-through to an
-inner event trigger (``on_change=event``). Also covers recursion through a
-self-referencing component memo rendering a tree via ``rx.foreach``.
+Exercises compiler-enabled and compiler-disabled builds in dev and prod.
 """
 
 from collections.abc import Generator
@@ -12,7 +8,7 @@ from collections.abc import Generator
 import pytest
 from playwright.sync_api import Page, expect
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, AppHarnessProd
 
 
 def MemoApp():
@@ -28,6 +24,7 @@ def MemoApp():
 
     class MemoState(rx.State):
         last_value: str = ""
+        numbers: rx.Field[list[int]] = rx.field(default_factory=lambda: [1, 2, 3, 4])
         order: list[str] = ["row-a", "row-b", "row-c"]
         tree: TreeNode = TreeNode(
             name="root",
@@ -54,6 +51,11 @@ def MemoApp():
         @rx.event
         def reverse_order(self):
             self.order = list(reversed(self.order))
+
+        @rx.event
+        def replace_numbers(self):
+            """Replace the source array for the frontend calculation."""
+            self.numbers = [2, 4, 6, 8, 9]
 
     @rx.memo
     def my_memoed_component(
@@ -97,6 +99,80 @@ def MemoApp():
         # component that must still render and follow its prop.
         return rx.text(value, id="unwrapped-label")
 
+    @rx.memo
+    def memo_row(
+        item: rx.Var[str],
+        position: rx.Var[int],
+        label: rx.Var[str],
+        on_pick: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    ) -> rx.Component:
+        """One row of ``memo_rows``, with client state of its own.
+
+        Args:
+            item: The loop item.
+            position: The loop index.
+            label: A prefix the row renders.
+            on_pick: Called with the row's item.
+
+        Returns:
+            The row.
+        """
+        opened = rx.client_state(False, prefix="memoopened")
+        return rx.hstack(
+            rx.el.button(
+                "toggle",
+                id=f"memo-toggle-{position}",
+                on_click=opened.set(~opened.value),
+            ),
+            rx.el.button("pick", id=f"memo-pick-{position}", on_click=on_pick(item)),
+            rx.text(
+                rx.cond(opened.value, f"{label}:open:{item}", f"{label}:closed:{item}"),
+                id=f"memo-status-{position}",
+            ),
+        )
+
+    @rx.memo
+    def memo_rows(
+        label: rx.Var[str],
+        on_pick: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    ) -> rx.Component:
+        """Loop over the order inside an explicitly memoized container.
+
+        Per-item client state inside the loop lives in an ``@rx.memo`` item
+        function, whose instances each own their state.
+
+        Args:
+            label: A prefix every row renders.
+            on_pick: Called with the picked row's item.
+
+        Returns:
+            The rows.
+        """
+        return rx.box(
+            rx.foreach(
+                MemoState.order,
+                lambda item, position: memo_row(
+                    item=item, position=position, label=label, on_pick=on_pick
+                ),
+            ),
+            id="memo-rows",
+        )
+
+    @rx.memo
+    def derived_count(divisor: rx.Var[int]) -> rx.Component:
+        """Compute a filtered count from state in the generated component.
+
+        Args:
+            divisor: Keep numbers divisible by this value.
+
+        Returns:
+            The number of matching elements.
+        """
+        return rx.text(
+            MemoState.numbers.filter(lambda number: number % divisor == 0).length(),
+            id="derived-count",
+        )
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.input(
@@ -122,33 +198,63 @@ def MemoApp():
                 id="keyed-rows",
             ),
             unwrapped_label(value=MemoState.last_value),
+            derived_count(divisor=2),
+            rx.button(
+                "replace-numbers",
+                id="replace-numbers",
+                on_click=MemoState.replace_numbers,
+            ),
             framed(
                 rx.text(MemoState.last_value, id="framed-child"),
                 title=MemoState.last_value,
             ),
+            memo_rows(label=MemoState.last_value, on_pick=MemoState.set_last_value),
         )
 
     app = rx.App()
     app.add_page(index)
 
 
-@pytest.fixture(scope="module")
-def memo_app(
-    tmp_path_factory: pytest.TempPathFactory,
-) -> Generator[AppHarness, None, None]:
-    """Run the memo app under an AppHarness.
+@pytest.fixture(
+    scope="module", params=[False, True], ids=["compiler-off", "compiler-on"]
+)
+def react_compiler(request: pytest.FixtureRequest) -> bool:
+    """Select whether the app uses React Compiler.
 
     Args:
+        request: Pytest fixture request containing the compiler flag.
+
+    Returns:
+        Whether to enable React Compiler.
+    """
+    return request.param
+
+
+@pytest.fixture(scope="module")
+def memo_app(
+    app_harness_env: type[AppHarness],
+    tmp_path_factory: pytest.TempPathFactory,
+    react_compiler: bool,
+) -> Generator[AppHarness, None, None]:
+    """Run the memo app in dev and prod with React Compiler off and on.
+
+    Args:
+        app_harness_env: The development or production app harness.
         tmp_path_factory: Pytest fixture for creating temporary directories.
+        react_compiler: Whether to enable React Compiler.
 
     Yields:
         The running harness.
     """
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("memo_app"),
-        app_source=MemoApp,
-    ) as harness:
-        yield harness
+    name = f"memoapp_{app_harness_env.__name__.lower()}_{int(react_compiler)}"
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("REFLEX_REACT_COMPILER", str(react_compiler))
+        with app_harness_env.create(
+            root=tmp_path_factory.mktemp(name),
+            app_name=name,
+            app_source=MemoApp,
+        ) as harness:
+            yield harness
 
 
 def _load_page(page: Page, memo_app: AppHarness) -> None:
@@ -303,3 +409,87 @@ def test_memo_wrapper_none_renders_and_updates(
     expect(page.locator("#unwrapped-label")).to_have_text("")
     page.locator("#memo-input").fill("unwrapped_update")
     expect(page.locator("#unwrapped-label")).to_have_text("unwrapped_update")
+
+
+def test_foreach_inside_an_explicit_memo_keeps_client_state_per_item(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """An ``@rx.memo`` item function scopes client state per loop item.
+
+    Each rendered row is its own memo instance, so its unnamed client state is
+    its own. The rows also use the outer memo's parameters, passed down as
+    ordinary props.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+
+    expect(page.locator("#memo-status-0")).to_have_text(":closed:row-a")
+    expect(page.locator("#memo-status-1")).to_have_text(":closed:row-b")
+
+    page.locator("#memo-toggle-1").click()
+
+    expect(page.locator("#memo-status-1")).to_have_text(":open:row-b")
+    expect(page.locator("#memo-status-0")).to_have_text(":closed:row-a")
+    expect(page.locator("#memo-status-2")).to_have_text(":closed:row-c")
+
+    # The outer memo's parameters reach every row: the label as a value, the
+    # handler as a callback the row invokes with its own item.
+    page.locator("#memo-input").fill("tag")
+    expect(page.locator("#memo-status-0")).to_have_text("tag:closed:row-a")
+    expect(page.locator("#memo-status-1")).to_have_text("tag:open:row-b")
+    page.locator("#memo-pick-2").click()
+    expect(page.locator("#memo-last-value")).to_have_text("row-c")
+    expect(page.locator("#memo-status-1")).to_have_text("row-c:open:row-b")
+
+
+def test_memo_derived_array_updates(memo_app: AppHarness, page: Page) -> None:
+    """Derived values stay current after unrelated writes and array replacement.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    _load_page(page, memo_app)
+    count = page.locator("#derived-count")
+    expect(count).to_have_text("2")
+
+    page.locator("#memo-input").fill("before replacement")
+    expect(page.locator("#memo-last-value")).to_have_text("before replacement")
+    expect(count).to_have_text("2")
+
+    page.click("#replace-numbers")
+    expect(count).to_have_text("4")
+
+    page.locator("#memo-input").fill("after replacement")
+    expect(page.locator("#memo-last-value")).to_have_text("after replacement")
+    expect(count).to_have_text("4")
+
+
+def test_react_compiler_transforms_generated_components(
+    memo_app: AppHarness, react_compiler: bool, page: Page
+) -> None:
+    """Verify the actual served app component uses the compiler runtime.
+
+    Args:
+        memo_app: Running app harness.
+        react_compiler: Whether React Compiler should be active.
+        page: Playwright page.
+    """
+    if isinstance(memo_app, AppHarnessProd):
+        pytest.skip("Vite serves individual source modules only in development")
+    _load_page(page, memo_app)
+    web_dir = memo_app.app_path / ".web"
+    modules = [
+        path
+        for path in (web_dir / "app_components").rglob("*.jsx")
+        if '"derived-count"' in path.read_text()
+    ]
+    assert len(modules) == 1
+    assert memo_app.frontend_url is not None
+    module_url = f"{memo_app.frontend_url.rstrip('/')}/{modules[0].relative_to(web_dir).as_posix()}"
+    response = page.request.get(module_url)
+    assert response.ok
+    assert ("compiler-runtime" in response.text()) is react_compiler

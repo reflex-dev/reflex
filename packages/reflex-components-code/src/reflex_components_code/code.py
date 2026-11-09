@@ -265,6 +265,7 @@ LiteralCodeLanguage = Literal[
     "t4-vb",
     "tap",
     "tcl",
+    "text",
     "textile",
     "toml",
     "tremor",
@@ -382,7 +383,7 @@ for theme_name in dir(Theme):
 class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
-    library = "react-syntax-highlighter@16.1.1"
+    library = "react-syntax-highlighter@16.1.2"
 
     tag = "PrismAsyncLight"
 
@@ -485,6 +486,8 @@ class CodeBlock(Component, MarkdownComponentMap):
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy"),
+                    aria_label="Copy code",
+                    type="button",
                     on_click=set_clipboard(code),
                     style=Style({"position": "absolute", "top": "0.5em", "right": "0"}),
                 )
