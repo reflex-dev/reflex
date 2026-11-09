@@ -23,10 +23,15 @@ def ConnectionBanner():
 
     class State(rx.State):
         foo: int = 0
+        script_result: str = ""
 
         @rx.event
         def set_foo(self, foo: int):
             self.foo = foo
+
+        @rx.event
+        def set_script_result(self, result: str):
+            self.script_result = result
 
         @rx.event
         async def delay(self):
@@ -42,6 +47,21 @@ def ConnectionBanner():
                 on_click=State.set_foo(State.foo + 1),
             ),
             rx.button("Delay", id="delay", on_click=State.delay),
+            rx.input(value=State.script_result, read_only=True, id="script_result"),
+            rx.button(
+                "Pending script",
+                id="pending_script",
+                # While offline the backend event holds the script behind it in
+                # the queue, so the reconnect drains both; the test resolves the
+                # script's result.
+                on_click=[
+                    State.set_foo(State.foo + 1),
+                    rx.call_script(
+                        "new Promise((resolve) => { window.resolvePendingScript = resolve; })",
+                        callback=State.set_script_result,
+                    ),
+                ],
+            ),
         )
 
     app = rx.App()
@@ -220,6 +240,50 @@ def test_connection_banner(
 
     # Count should have incremented after coming back up
     expect(counter_element).to_have_value("2")
+
+
+def test_reconnect_after_drop_during_awaited_script(
+    connection_banner: AppHarness, page: Page
+):
+    """The page reconnects when the socket drops while an event awaits a script.
+
+    The event loop used to retry a backend event on a disconnected socket in a
+    loop of already-resolved promises, which never let the socket reconnect and
+    froze the tab.
+
+    Args:
+        connection_banner: AppHarness instance.
+        page: Playwright page.
+    """
+    assert connection_banner.frontend_url is not None
+    page.goto(connection_banner.frontend_url)
+    _assert_token(connection_banner, page)
+    banner = page.get_by_text("Cannot connect to server")
+    expect(banner).to_have_count(0)
+
+    with browser_offline(page):
+        expect(banner).to_be_visible()
+        page.locator("#pending_script").click()
+
+    # The reconnect drains the queue and waits on the script's pending promise.
+    page.wait_for_function("() => window.resolvePendingScript !== undefined")
+    expect(page.locator("#counter")).to_have_value("1")
+
+    page.context.set_offline(True)
+    expect(banner).to_be_visible()
+    # Resolve in a task of its own: the callback queues a backend event while
+    # the socket is down.
+    page.evaluate("() => setTimeout(() => window.resolvePendingScript('done'))")
+    # A frozen tab never runs another task; fail here instead of hanging in a
+    # Playwright call that waits on the page without a timeout.
+    page.wait_for_function(
+        "() => new Promise((resolve) => setTimeout(() => resolve(true), 200))",
+        timeout=5_000,
+    )
+    page.context.set_offline(False)
+
+    expect(banner).to_have_count(0)
+    expect(page.locator("#script_result")).to_have_value("done")
 
 
 def test_cloud_banner(

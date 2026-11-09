@@ -1,0 +1,1 @@
+Fixed a browser tab freezing for good when the connection dropped while an event was awaiting a script result (such as `rx.call_script` with a callback) and a backend event was queued: the page now waits for the reconnect and then sends the queued events.

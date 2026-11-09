@@ -880,7 +880,11 @@ export const queueEvents = async (
 };
 
 /**
- * Process an event off the event queue.
+ * Process the events on the event queue, draining it.
+ *
+ * Stops early, leaving the queue as it is, while a backend event waits for a
+ * disconnected socket: the socket's connect handler drains it on reconnect.
+ * Callers must not retry in a loop, which never yields to the reconnect.
  * @param socket The socket object to send the event on.
  * @param navigate The navigate function from React Router
  * @param params The params object from React Router
@@ -891,7 +895,6 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
-  // Only proceed if we're not already processing an event.
   if (event_queue.length === 0) {
     return;
   }
@@ -1113,19 +1116,18 @@ export const connect = async (
     }
   };
 
+  // The socket this connection's listeners belong to.
+  const own_socket = socket.current;
+
   function checkVisibility() {
+    if (socket.current !== own_socket) {
+      // Its event loop unmounted (or replaced the socket): building a socket
+      // here would connect one that nothing processes events for.
+      document.removeEventListener("visibilitychange", checkVisibility);
+      return;
+    }
     if (document.visibilityState === "visible") {
-      if (!socket.current) {
-        connect(
-          socket,
-          dispatch,
-          transports,
-          setConnectErrors,
-          client_storage,
-          navigate,
-          params,
-        );
-      } else if (!socket.current.connected) {
+      if (!socket.current.connected) {
         console.log("Socket is disconnected, attempting to reconnect ");
         socket.current.reconnect();
       } else {
@@ -1185,9 +1187,7 @@ export const connect = async (
       }
     }
     // Drain any initial events from the queue.
-    while (event_queue.length > 0) {
-      await processEvent(socket.current, navigate, params);
-    }
+    await processEvent(socket.current, navigate, params);
   });
 
   // Record a failed connection attempt and retry it with incremental backoff.
@@ -1699,13 +1699,8 @@ export const useEventLoop = (
     if (isBackendDisabled() || !socket.current || !socket.current.connected) {
       return;
     }
-    (async () => {
-      // Process all outstanding events.
-      while (event_queue.length > 0) {
-        await ensureSocketConnected();
-        await processEvent(socket.current, navigate, params);
-      }
-    })();
+    // Process all outstanding events.
+    processEvent(socket.current, navigate, params);
   });
 
   // localStorage event handling
