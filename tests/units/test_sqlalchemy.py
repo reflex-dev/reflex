@@ -764,7 +764,7 @@ def test_serialize_sqlalchemy_pending_model_includes_unset_fields():
 
 
 def test_serialize_sqlalchemy_transient_unloaded_relationship():
-    """Test that transient models omit unassigned relationships during serialization."""
+    """Test that transient models send unassigned relationships as empty values."""
     from reflex_base.utils.serializers import serialize
     from sqlalchemy import ForeignKey, inspect
     from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -787,12 +787,7 @@ def test_serialize_sqlalchemy_transient_unloaded_relationship():
     parent = TransientParent()
     assert "children" in inspect(parent).unloaded
 
-    result = serialize(parent)
-
-    assert isinstance(result, dict)
-    assert result == {"id": None}
-    assert "children" not in result
-    assert "children" in inspect(parent).unloaded
+    assert serialize(parent) == {"id": None, "children": []}
 
 
 def test_unserialized_property_on_sqlalchemy_model():

@@ -7,10 +7,12 @@ import sys
 import pytest
 from reflex_base.utils import serializers
 from reflex_base.utils.format import json_dumps
+from reflex_base.vars.base import Var
+from reflex_base.vars.object import ObjectVar
 
 pytest.importorskip("sqlalchemy")
 
-from sqlalchemy import ForeignKey, create_engine, select
+from sqlalchemy import ForeignKey, create_engine, event, select
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -149,9 +151,8 @@ def test_declarative_base_serializer_handles_bidirectional_relationships():
     engine.dispose()
 
 
-def test_declarative_base_serializer_transient_unassigned_relationship(monkeypatch):
-    """Serialize a transient model with unassigned relationships without triggering a load."""
-    import sqlalchemy
+def test_declarative_base_serializer_transient_unassigned_relationship():
+    """A transient model sends unassigned relationships as empty values."""
 
     class Base(DeclarativeBase):
         pass
@@ -173,40 +174,16 @@ def test_declarative_base_serializer_transient_unassigned_relationship(monkeypat
             ForeignKey("transient_serializer_team.id")
         )
 
-    team = Team(name="Avengers")
-    state = sqlalchemy.inspect(team)
-    assert "heroes" in state.unloaded
-    assert "leader" in state.unloaded
-    assert "id" in state.unloaded
-
-    orig_value_prop = type(state.attrs.heroes).value
-    orig_value_fget = orig_value_prop.fget
-    assert orig_value_fget is not None
-
-    def guarded_value(self):
-        """Reject relationship reads while allowing scalar column reads.
-
-        Returns:
-            The original value of a scalar mapped attribute.
-        """
-        if self.key in ("heroes", "leader"):
-            msg = f"Loader was triggered for unassigned relationship {self.key!r}"
-            raise AssertionError(msg)
-        return orig_value_fget(self)
-
-    monkeypatch.setattr(type(state.attrs.heroes), "value", property(guarded_value))
-
-    payload = serializers.serialize(team)
-
-    assert isinstance(payload, dict)
-    assert "heroes" not in payload
-    assert "leader" not in payload
-    assert payload == {"id": None, "name": "Avengers"}
+    assert serializers.serialize(Team(name="Avengers")) == {
+        "id": None,
+        "name": "Avengers",
+        "leader": None,
+        "heroes": [],
+    }
 
 
-def test_declarative_base_serializer_pending_unassigned_relationship(monkeypatch):
-    """Serialize a pending model with unassigned relationships without triggering a load."""
-    import sqlalchemy
+def test_declarative_base_serializer_pending_unassigned_relationship():
+    """A pending model sends unassigned relationships as empty values without SQL."""
 
     class Base(DeclarativeBase):
         pass
@@ -214,57 +191,135 @@ def test_declarative_base_serializer_pending_unassigned_relationship(monkeypatch
     class Team(Base):
         __tablename__ = "pending_serializer_team"
 
-        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
-        name: Mapped[str]
-        leader: Mapped["Hero | None"] = relationship()
-        heroes: Mapped[list["Hero"]] = relationship(overlaps="leader")
+        id: Mapped[int] = mapped_column(primary_key=True)
+        heroes: Mapped[list["Hero"]] = relationship(back_populates="team")
 
     class Hero(Base):
         __tablename__ = "pending_serializer_hero"
 
         id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
         name: Mapped[str]
-        team_id: Mapped[int | None] = mapped_column(
-            ForeignKey("pending_serializer_team.id")
-        )
+        team_id: Mapped[int] = mapped_column(ForeignKey("pending_serializer_team.id"))
+        team: Mapped[Team | None] = relationship(back_populates="heroes")
 
     engine = create_engine("sqlite://")
     Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        session.add(Team(id=1))
+        session.commit()
+
+    statements = []
+    event.listen(
+        engine,
+        "before_cursor_execute",
+        lambda *args: statements.append(args[2]),
+    )
+    with Session(engine) as session:
+        hero = Hero(name="Thor", team_id=1)
+        session.add(hero)
+
+        payload = serializers.serialize(hero)
+
+    assert payload == {"id": None, "name": "Thor", "team_id": 1, "team": None}
+    assert statements == []
+    engine.dispose()
+
+
+def test_declarative_base_serializer_deleted_attributes():
+    """Deleted attributes of a detached model serialize as None without a load."""
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Owner(Base):
+        __tablename__ = "deleted_attr_owner"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str | None]
+
+    class Pet(Base):
+        __tablename__ = "deleted_attr_pet"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        owner_id: Mapped[int | None] = mapped_column(
+            ForeignKey("deleted_attr_owner.id")
+        )
+        owner: Mapped[Owner | None] = relationship()
+
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        session.add_all([Owner(id=1, name="ada"), Pet(id=1, owner_id=1)])
+        session.commit()
 
     with Session(engine) as session:
-        team = Team(name="Avengers")
-        session.add(team)
-        state = sqlalchemy.inspect(team)
-        assert state.pending
-        assert "heroes" in state.unloaded
-        assert "leader" in state.unloaded
-        assert "id" in state.unloaded
+        pet = session.scalar(select(Pet).options(selectinload(Pet.owner)))
+        assert pet is not None
+        owner = pet.owner
+        assert owner is not None
+        del owner.name
+        del pet.owner
+        session.expunge_all()
 
-        orig_value_prop = type(state.attrs.heroes).value
-        orig_value_fget = orig_value_prop.fget
-        assert orig_value_fget is not None
-
-        def guarded_value(self):
-            """Reject relationship reads while allowing scalar column reads.
-
-            Returns:
-                The original value of a scalar mapped attribute.
-            """
-            if self.key in ("heroes", "leader"):
-                msg = f"Loader was triggered for unassigned relationship {self.key!r}"
-                raise AssertionError(msg)
-            return orig_value_fget(self)
-
-        monkeypatch.setattr(type(state.attrs.heroes), "value", property(guarded_value))
-
-        payload = serializers.serialize(team)
-
-        assert isinstance(payload, dict)
-        assert "heroes" not in payload
-        assert "leader" not in payload
-        assert payload == {"id": None, "name": "Avengers"}
-
+    assert serializers.serialize(owner) == {"id": 1, "name": None}
+    assert serializers.serialize(pet) == {"id": 1, "owner_id": 1, "owner": None}
     engine.dispose()
+
+
+def test_declarative_base_serializer_shared_related_object():
+    """An object reached by two non-cyclic paths serializes in full on both paths."""
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Author(Base):
+        __tablename__ = "shared_author"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str]
+
+    class Article(Base):
+        __tablename__ = "shared_article"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        author_id: Mapped[int | None] = mapped_column(ForeignKey("shared_author.id"))
+        author: Mapped[Author | None] = relationship()
+        comments: Mapped[list["Comment"]] = relationship()
+
+    class Comment(Base):
+        __tablename__ = "shared_comment"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        article_id: Mapped[int | None] = mapped_column(ForeignKey("shared_article.id"))
+        author_id: Mapped[int | None] = mapped_column(ForeignKey("shared_author.id"))
+        author: Mapped[Author | None] = relationship()
+
+    author = Author(id=1, name="ada")
+    article = Article(id=1, author=author, comments=[Comment(id=2, author=author)])
+
+    payload = serializers.serialize(article)
+
+    assert isinstance(payload, dict)
+    assert payload["author"] == {"id": 1, "name": "ada"}
+    assert payload["comments"][0]["author"] == {"id": 1, "name": "ada"}
+
+
+def test_declarative_base_model_attribute_access():
+    """A plain DeclarativeBase model is an ObjectVar with typed column attributes."""
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Note(Base):
+        __tablename__ = "object_var_note"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        text: Mapped[str]
+
+    note = Var("note", _var_type=Note).guess_type()
+
+    assert isinstance(note, ObjectVar)
+    assert note.text._var_type is str
 
 
 def test_declarative_base_serializer_transient_loaded_relationship():

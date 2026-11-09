@@ -202,7 +202,7 @@ with Session(engine) as session:
     session.expunge_all()
 
 assert serializers.get_serializer(Team) is serializers.serialize_sqlalchemy_base
-assert serializers.get_serializer_type(Team) == dict[str, Any]
+assert serializers.get_serializer_type(Team) is dict
 
 app = rx.App()
 
