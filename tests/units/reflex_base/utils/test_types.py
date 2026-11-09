@@ -691,3 +691,45 @@ def test_get_typed_dict_field_types_keeps_redeclared_fields():
         "value": list[str],
         "other": Sequence[str],
     }
+
+
+def test_unserialized_property_on_sqlalchemy_dataclass():
+    """Test that plain properties on SQLAlchemy dataclasses are flagged."""
+    from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+    class Base(MappedAsDataclass, DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_property"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        first_name: Mapped[str]
+        last_name: Mapped[str]
+
+        @property
+        def double(self) -> str:
+            return f"{self.first_name} {self.last_name}"
+
+    assert is_unserialized_property(User, "double")
+
+
+def test_unserialized_property_on_sqlalchemy_model():
+    """Flag plain SQLAlchemy properties while allowing mapped attributes."""
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+    class Base(DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_property"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        first: Mapped[str]
+
+        @property
+        def double(self) -> str:
+            return self.first * 2
+
+    assert is_unserialized_property(User, "double")
+    assert not is_unserialized_property(User, "first")

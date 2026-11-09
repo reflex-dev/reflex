@@ -343,7 +343,6 @@ async def test_relationships(monkeypatch):
     module = load(
         monkeypatch,
         block("queries", SESSION),
-        "from typing import Any",
         block("relationships", "class Flag(Base)"),
         block("relationships", "class FlagPostForm"),
         block("relationships", "class PostState"),

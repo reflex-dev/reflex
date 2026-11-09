@@ -104,6 +104,9 @@ The following example assumes that the flagging user is stored in the state as a
 form.
 
 ```python
+from typing import Any
+
+
 class FlagPostForm(rx.State):
     user: User
 
