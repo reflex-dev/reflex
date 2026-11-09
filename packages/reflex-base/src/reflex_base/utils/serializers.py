@@ -19,7 +19,7 @@ from datetime import date, datetime, time, timedelta
 from enum import Enum
 from importlib.util import find_spec
 from pathlib import Path
-from typing import Any, Literal, TypeVar, get_type_hints, overload
+from typing import Any, Literal, NamedTuple, TypeVar, get_type_hints, overload
 from uuid import UUID
 
 from reflex_base.constants.colors import Color
@@ -641,11 +641,56 @@ def serialize_sqlmodel(m: _serializer_types.SQLModel) -> dict[str, Any]:
     return {**fields, **relationships}
 
 
+class _SQLAlchemyLayout(NamedTuple):
+    """The attribute names of a SQLAlchemy model class."""
+
+    fields: tuple[str, ...]
+    columns: tuple[str, ...]
+    relationships: tuple[tuple[str, bool], ...]
+    primary_key: tuple[str, ...]
+
+
+@functools.cache
+def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
+    """Resolve the attribute layout of a SQLAlchemy model class once.
+
+    Args:
+        cls: The mapped class.
+
+    Returns:
+        The unmapped dataclass fields, the other mapped attributes, the
+        relationships with their ``uselist`` flags and the primary-key attributes.
+    """
+    import sqlalchemy
+
+    mapper = sqlalchemy.inspect(cls)
+    manager = mapper.class_manager
+    relationships = mapper.relationships
+    return _SQLAlchemyLayout(
+        fields=tuple(
+            field.name for field in dataclasses.fields(cls) if field.name not in manager
+        )
+        if dataclasses.is_dataclass(cls)
+        else (),
+        columns=tuple(key for key in manager if key not in relationships),
+        relationships=tuple(
+            (key, relationships[key].uselist) for key in manager if key in relationships
+        ),
+        primary_key=tuple(
+            mapper.get_property_by_column(column).key for column in mapper.primary_key
+        ),
+    )
+
+
 def _serialize_sqlalchemy_model(
     m: _serializer_types.DeclarativeBase,
     seen: set[int],
 ) -> dict[str, Any]:
     """Serialize a SQLAlchemy model while avoiding relationship cycles.
+
+    An attribute is unloaded when it is in neither ``state.dict`` nor
+    ``state.committed_state``. Unloaded relationships are omitted, and so are
+    unloaded columns of an instance with an identity key, which could lazy-load.
 
     Args:
         m: The SQLAlchemy model instance.
@@ -657,57 +702,57 @@ def _serialize_sqlalchemy_model(
     import sqlalchemy
 
     state = sqlalchemy.inspect(m)
+    layout = _get_sqlalchemy_layout(type(m))
+    values = state.dict
+    committed = state.committed_state
+    has_identity_key = state.key is not None
     seen.add(id(m))
 
     try:
-        result = {}
+        result = {name: values[name] for name in layout.fields if name in values}
 
-        if dataclasses.is_dataclass(m):
-            mapped_attrs = set(state.attrs.keys())
-            result.update({
-                field.name: m.__dict__[field.name]
-                for field in dataclasses.fields(m)
-                if field.name not in mapped_attrs and field.name in m.__dict__
-            })
+        for key in layout.columns:
+            if key in values:
+                result[key] = values[key]
+            elif not has_identity_key or key in committed:
+                result[key] = getattr(m, key)
 
-        unloaded = state.unloaded
-        has_identity_key = state.key is not None
-
-        for attr in state.attrs:
-            relationship = state.mapper.relationships.get(attr.key)
-
-            if relationship is None:
-                if has_identity_key and attr.key in unloaded:
-                    continue
-                if attr.key in state.dict:
-                    result[attr.key] = state.dict[attr.key]
-                else:
-                    result[attr.key] = attr.value
-                continue
-
-            if attr.key in unloaded:
-                continue
-
-            value = attr.value
-
-            if value is None:
-                result[attr.key] = None
-            elif relationship.uselist:
-                if isinstance(value, Mapping):
-                    result[attr.key] = {
-                        key: _serialize_sqlalchemy_related(item, seen)
-                        for key, item in value.items()
-                    }
-                else:
-                    result[attr.key] = [
-                        _serialize_sqlalchemy_related(item, seen) for item in value
-                    ]
-            else:
-                result[attr.key] = _serialize_sqlalchemy_related(value, seen)
+        for key, uselist in layout.relationships:
+            if key in values or key in committed:
+                result[key] = _serialize_sqlalchemy_relationship(
+                    getattr(m, key), uselist, seen
+                )
 
         return result
     finally:
         seen.remove(id(m))
+
+
+def _serialize_sqlalchemy_relationship(
+    value: Any,
+    uselist: bool,
+    seen: set[int],
+) -> Any:
+    """Serialize the loaded value of a SQLAlchemy relationship.
+
+    Args:
+        value: The related instance, collection or None.
+        uselist: Whether the relationship holds a collection.
+        seen: Object identities on the current serialization path.
+
+    Returns:
+        The serialized related instance or collection.
+    """
+    if value is None:
+        return None
+    if not uselist:
+        return _serialize_sqlalchemy_related(value, seen)
+    if isinstance(value, Mapping):
+        return {
+            key: _serialize_sqlalchemy_related(item, seen)
+            for key, item in value.items()
+        }
+    return [_serialize_sqlalchemy_related(item, seen) for item in value]
 
 
 def _serialize_sqlalchemy_related(
@@ -727,23 +772,12 @@ def _serialize_sqlalchemy_related(
     import sqlalchemy
 
     if id(item) in seen:
-        item_state = sqlalchemy.inspect(item)
-        mapper = item_state.mapper
-
-        pk_props = [
-            mapper.get_property_by_column(column).key for column in mapper.primary_key
-        ]
-
+        values = sqlalchemy.inspect(item).dict
         pk_data = {
-            key: item_state.dict[key] for key in pk_props if key in item_state.dict
+            key: values.get(key)
+            for key in _get_sqlalchemy_layout(type(item)).primary_key
         }
-
-        if len(pk_data) == len(pk_props) and all(
-            value is not None for value in pk_data.values()
-        ):
-            return pk_data
-
-        return None
+        return None if None in pk_data.values() else pk_data
 
     item_serializer = get_serializer(type(item))
     if item_serializer is not None and item_serializer is not serialize_sqlalchemy_base:
