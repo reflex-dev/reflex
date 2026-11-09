@@ -670,19 +670,22 @@ def _serialize_sqlalchemy_model(
                 if field.name not in mapped_attrs and field.name in m.__dict__
             })
 
-        unloaded = state.unloaded if state.key is not None else set()
+        unloaded = state.unloaded
+        has_identity_key = state.key is not None
 
         for attr in state.attrs:
-            if attr.key in unloaded:
-                continue
-
             relationship = state.mapper.relationships.get(attr.key)
 
             if relationship is None:
+                if has_identity_key and attr.key in unloaded:
+                    continue
                 if attr.key in state.dict:
                     result[attr.key] = state.dict[attr.key]
                 else:
                     result[attr.key] = attr.value
+                continue
+
+            if attr.key in unloaded:
                 continue
 
             value = attr.value

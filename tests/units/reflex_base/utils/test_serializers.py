@@ -149,6 +149,149 @@ def test_declarative_base_serializer_handles_bidirectional_relationships():
     engine.dispose()
 
 
+def test_declarative_base_serializer_transient_unassigned_relationship(monkeypatch):
+    """Serialize a transient model with unassigned relationships without triggering a load."""
+    import sqlalchemy
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Team(Base):
+        __tablename__ = "transient_serializer_team"
+
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
+        name: Mapped[str]
+        leader: Mapped["Hero | None"] = relationship()
+        heroes: Mapped[list["Hero"]] = relationship(overlaps="leader")
+
+    class Hero(Base):
+        __tablename__ = "transient_serializer_hero"
+
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
+        name: Mapped[str]
+        team_id: Mapped[int | None] = mapped_column(
+            ForeignKey("transient_serializer_team.id")
+        )
+
+    team = Team(name="Avengers")
+    state = sqlalchemy.inspect(team)
+    assert "heroes" in state.unloaded
+    assert "leader" in state.unloaded
+    assert "id" in state.unloaded
+
+    orig_value_prop = type(state.attrs.heroes).value
+    orig_value_fget = orig_value_prop.fget
+    assert orig_value_fget is not None
+
+    def guarded_value(self):
+        if self.key in ("heroes", "leader"):
+            msg = f"Loader was triggered for unassigned relationship {self.key!r}"
+            raise AssertionError(msg)
+        return orig_value_fget(self)
+
+    monkeypatch.setattr(type(state.attrs.heroes), "value", property(guarded_value))
+
+    payload = serializers.serialize(team)
+
+    assert isinstance(payload, dict)
+    assert "heroes" not in payload
+    assert "leader" not in payload
+    assert payload == {"id": None, "name": "Avengers"}
+
+
+def test_declarative_base_serializer_pending_unassigned_relationship(monkeypatch):
+    """Serialize a pending model with unassigned relationships without triggering a load."""
+    import sqlalchemy
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Team(Base):
+        __tablename__ = "pending_serializer_team"
+
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
+        name: Mapped[str]
+        leader: Mapped["Hero | None"] = relationship()
+        heroes: Mapped[list["Hero"]] = relationship(overlaps="leader")
+
+    class Hero(Base):
+        __tablename__ = "pending_serializer_hero"
+
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
+        name: Mapped[str]
+        team_id: Mapped[int | None] = mapped_column(
+            ForeignKey("pending_serializer_team.id")
+        )
+
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        team = Team(name="Avengers")
+        session.add(team)
+        state = sqlalchemy.inspect(team)
+        assert state.pending
+        assert "heroes" in state.unloaded
+        assert "leader" in state.unloaded
+        assert "id" in state.unloaded
+
+        orig_value_prop = type(state.attrs.heroes).value
+        orig_value_fget = orig_value_prop.fget
+        assert orig_value_fget is not None
+
+        def guarded_value(self):
+            if self.key in ("heroes", "leader"):
+                msg = f"Loader was triggered for unassigned relationship {self.key!r}"
+                raise AssertionError(msg)
+            return orig_value_fget(self)
+
+        monkeypatch.setattr(type(state.attrs.heroes), "value", property(guarded_value))
+
+        payload = serializers.serialize(team)
+
+        assert isinstance(payload, dict)
+        assert "heroes" not in payload
+        assert "leader" not in payload
+        assert payload == {"id": None, "name": "Avengers"}
+
+    engine.dispose()
+
+
+def test_declarative_base_serializer_transient_loaded_relationship():
+    """Serialize a transient model with an assigned relationship."""
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Team(Base):
+        __tablename__ = "transient_loaded_team"
+
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
+        name: Mapped[str]
+        heroes: Mapped[list["Hero"]] = relationship()
+
+    class Hero(Base):
+        __tablename__ = "transient_loaded_hero"
+
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
+        name: Mapped[str]
+        team_id: Mapped[int | None] = mapped_column(
+            ForeignKey("transient_loaded_team.id")
+        )
+
+    team = Team(name="Avengers", heroes=[Hero(name="Thor")])
+    payload = serializers.serialize(team)
+
+    assert isinstance(payload, dict)
+    assert payload["id"] is None
+    assert payload["name"] == "Avengers"
+    assert isinstance(payload["heroes"], list)
+    assert len(payload["heroes"]) == 1
+    assert isinstance(payload["heroes"][0], dict)
+    assert payload["heroes"][0]["id"] is None
+    assert payload["heroes"][0]["name"] == "Thor"
+
+
 def test_sqlalchemy_optional_serializer_annotations_resolve() -> None:
     """Runtime introspection must resolve the optional SQLAlchemy annotation."""
     script = """

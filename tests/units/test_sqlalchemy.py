@@ -763,7 +763,40 @@ def test_serialize_sqlalchemy_pending_model_includes_unset_fields():
     engine.dispose()
 
 
+def test_serialize_sqlalchemy_transient_unloaded_relationship():
+    """Test that transient models omit unassigned relationships during serialization."""
+    from reflex_base.utils.serializers import serialize
+    from sqlalchemy import ForeignKey, inspect
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+    class Base(DeclarativeBase):
+        pass
+
+    class TransientParent(Base):
+        __tablename__ = "test_transient_unloaded_parent"
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
+        children: Mapped[list["TransientChild"]] = relationship()
+
+    class TransientChild(Base):
+        __tablename__ = "test_transient_unloaded_child"
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
+        parent_id: Mapped[int | None] = mapped_column(
+            ForeignKey("test_transient_unloaded_parent.id")
+        )
+
+    parent = TransientParent()
+    assert "children" in inspect(parent).unloaded
+
+    result = serialize(parent)
+
+    assert isinstance(result, dict)
+    assert result == {"id": None}
+    assert "children" not in result
+    assert "children" in inspect(parent).unloaded
+
+
 def test_unserialized_property_on_sqlalchemy_model():
+    """Flag plain SQLAlchemy properties while allowing mapped attributes."""
     from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
     class Base(DeclarativeBase):
