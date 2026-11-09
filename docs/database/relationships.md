@@ -90,6 +90,8 @@ This allows eager-loaded relationships to be serialized without triggering impli
 
 For example, if a query loads a `Post` and its associated `User` using `selectinload`, both objects are included when the model is serialized. If the relationship was not loaded, the `user` attribute is omitted.
 
+When a loaded relationship points to an object that is already being serialized, Reflex represents that reference using the related object's primary key fields instead of serializing the object again. This prevents infinite recursion when models have bidirectional or cyclic relationships. For example, a child object's `parent` relationship may be serialized as `{"id": 1}` rather than the full parent object.
+
 ## Querying Relationships
 
 The examples below open sessions with the async `Session` factory from the

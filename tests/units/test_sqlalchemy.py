@@ -4,6 +4,7 @@ from unittest import mock
 
 import pytest
 from reflex_base.utils.serializers import serializer
+from reflex_base.utils.types import is_unserialized_property
 
 import reflex.constants
 import reflex.model
@@ -730,3 +731,53 @@ def test_serialize_sqlalchemy_dataclass_uninitialized_field():
     assert result["id"] == 1
     assert result["display_label"] == ""
     assert "computed_label" not in result
+
+
+def test_serialize_sqlalchemy_pending_model_includes_unset_fields():
+    """Pending models preserve unset mapped fields during serialization."""
+    from reflex_base.utils.serializers import serialize
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+    class Base(DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_pending_user"
+
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
+        username: Mapped[str]
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    user = User(username="ada")
+
+    with Session(engine) as session:
+        session.add(user)
+
+        result = serialize(user)
+
+        assert result == {"id": None, "username": "ada"}
+
+    engine.dispose()
+
+
+def test_unserialized_property_on_sqlalchemy_model():
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+    class Base(DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_property"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        first: Mapped[str]
+
+        @property
+        def double(self) -> str:
+            return self.first * 2
+
+    assert is_unserialized_property(User, "double")
+    assert not is_unserialized_property(User, "first")

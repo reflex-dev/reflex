@@ -1007,11 +1007,16 @@ def is_unserialized_property(
     from reflex_base.utils import serializers
 
     serializer = serializers.get_serializer(cls)
+    if serializer is serializers.serialize_sqlalchemy_base:
+        import sqlalchemy
+
+        return name not in sqlalchemy.inspect(cls).attrs
+
     if dataclasses.is_dataclass(cls):
-        return serializer in (
-            None,
-            serializers.serialize_sqlalchemy_base,
-        ) and name not in {field.name for field in dataclasses.fields(cls)}
+        return (
+            serializer is None
+            and name not in {field.name for field in dataclasses.fields(cls)}
+        )
     decorators = getattr(cls, "__pydantic_decorators__", None)
     if decorators is None or decorators.model_serializers:
         return False

@@ -670,64 +670,89 @@ def _serialize_sqlalchemy_model(
                 if field.name not in mapped_attrs and field.name in m.__dict__
             })
 
+        unloaded = state.unloaded if state.key is not None else set()
+
         for attr in state.attrs:
-            if attr.key in state.unloaded:
+            if attr.key in unloaded:
                 continue
 
             relationship = state.mapper.relationships.get(attr.key)
-            value = attr.value
 
             if relationship is None:
-                result[attr.key] = value
+                if attr.key in state.dict:
+                    result[attr.key] = state.dict[attr.key]
+                else:
+                    result[attr.key] = attr.value
                 continue
 
-            def _serialize_related(item: Any) -> Any:
-                if id(item) in seen:
-                    item_state = sqlalchemy.inspect(item)
-
-                    pk_props = [
-                        prop.key
-                        for column in item_state.mapper.primary_key
-                        for prop in item_state.mapper.column_attrs
-                        if column in prop.columns
-                    ]
-
-                    pk_data = {
-                        key: item_state.dict.get(key)
-                        for key in pk_props
-                        if key in item_state.dict
-                    }
-
-                    if len(pk_data) == len(pk_props) and all(
-                        val is not None for val in pk_data.values()
-                    ):
-                        return pk_data
-                    return None
-
-                item_serializer = get_serializer(type(item))
-                if (
-                    item_serializer is not None
-                    and item_serializer is not serialize_sqlalchemy_base
-                ):
-                    return item_serializer(item)
-
-                return _serialize_sqlalchemy_model(item, seen)
+            value = attr.value
 
             if value is None:
                 result[attr.key] = None
             elif relationship.uselist:
                 if isinstance(value, Mapping):
                     result[attr.key] = {
-                        key: _serialize_related(item) for key, item in value.items()
+                        key: _serialize_sqlalchemy_related(item, seen)
+                        for key, item in value.items()
                     }
                 else:
-                    result[attr.key] = [_serialize_related(item) for item in value]
+                    result[attr.key] = [
+                        _serialize_sqlalchemy_related(item, seen) for item in value
+                    ]
             else:
-                result[attr.key] = _serialize_related(value)
+                result[attr.key] = _serialize_sqlalchemy_related(value, seen)
 
         return result
     finally:
         seen.remove(id(m))
+
+
+def _serialize_sqlalchemy_related(
+    item: Any,
+    seen: set[int],
+) -> Any:
+    """Serialize a related SQLAlchemy model while avoiding relationship cycles.
+
+    Args:
+        item: The related SQLAlchemy model instance.
+        seen: Object identities currently being serialized.
+
+    Returns:
+        The serialized model, a primary-key reference for an already-seen
+        model, or None when a complete primary-key reference is unavailable.
+    """
+    import sqlalchemy
+
+    if id(item) in seen:
+        item_state = sqlalchemy.inspect(item)
+        mapper = item_state.mapper
+
+        pk_props = [
+            mapper.get_property_by_column(column).key
+            for column in mapper.primary_key
+        ]
+
+        pk_data = {
+            key: item_state.dict[key]
+            for key in pk_props
+            if key in item_state.dict
+        }
+
+        if len(pk_data) == len(pk_props) and all(
+            value is not None for value in pk_data.values()
+        ):
+            return pk_data
+
+        return None
+
+    item_serializer = get_serializer(type(item))
+    if (
+        item_serializer is not None
+        and item_serializer is not serialize_sqlalchemy_base
+    ):
+        return item_serializer(item)
+
+    return _serialize_sqlalchemy_model(item, seen)
 
 
 def serialize_sqlalchemy_base(
