@@ -361,6 +361,7 @@ async def test_relationships(monkeypatch):
     assert post["flags"][0]["message"] == "spam"
     assert post["flags"][0]["user"]["email"] == "ada@example.com"
     assert "posts" not in post["user"]
+    assert isinstance(module.post_list(), rx.Component)
 
     state = await run(module.PostFlagsState, "load_posts", posts=[])
     assert set(serialize(state.posts[0])) == {"id", "title", "body", "user_id"}

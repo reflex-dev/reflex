@@ -84,13 +84,18 @@ for more details.
 
 ## Serializing Linked Objects
 
-Reflex supports serialization of SQLAlchemy models that inherit from `DeclarativeBase`. When a model is serialized, Reflex includes its loaded columns and relationships and omits attributes that have not been loaded.
+Reflex sends a `DeclarativeBase` model with the columns and relationships that
+its query loaded. It never runs a query to load more. A column or relationship
+that was not loaded is left out of the data sent to the frontend.
 
-This allows eager-loaded relationships to be serialized without triggering implicit database queries. Unloaded relationships and expired attributes are omitted rather than causing `DetachedInstanceError` or `MissingGreenlet` exceptions.
+Load every relationship that the page reads. A left-out relationship is
+`undefined` in the browser: `post.user.username` renders as blank, but
+`post.flags.length()` fails and the page shows a render error.
 
-For example, if a query loads a `Post` and its associated `User` using `selectinload`, both objects are included when the model is serialized. If the relationship was not loaded, the `user` attribute is omitted.
-
-When a loaded relationship points to an object that is already being serialized, Reflex represents that reference using the related object's primary key fields instead of serializing the object again. This prevents infinite recursion when models have bidirectional or cyclic relationships. For example, a child object's `parent` relationship may be serialized as `{"id": 1}` rather than the full parent object.
+When a loaded relationship leads back to an object that is already being sent,
+Reflex sends only that object's primary key. For example, with
+`selectinload(Post.user).selectinload(User.posts)`, each post appears in its own
+`user.posts` list as `{"id": 1}`.
 
 ## Querying Relationships
 
@@ -179,12 +184,26 @@ class PostState(rx.State):
                 .limit(15)
             )
             self.posts = result.all()
+
+
+def post_list() -> rx.Component:
+    return rx.foreach(
+        PostState.posts,
+        lambda post: rx.vstack(
+            rx.text(post.title, " by ", post.user.username),
+            rx.text(post.flags.length(), " flags"),
+            rx.foreach(
+                post.flags,
+                lambda flag: rx.text(flag.message, " from ", flag.user.username),
+            ),
+        ),
+    )
 ```
 
 The loading methods create new query objects and thus may be chained if the
 relationship itself has other relationships that need to be loaded. In this
-example, since `Flag` references `User`, the `Flag.user` relationship must be
-chain loaded from the `Post.flags` relationship.
+example, the page reads `flag.user`, so the `Flag.user` relationship is chain
+loaded from the `Post.flags` relationship.
 
 ### Specifying the Loading Mechanism on the Relationship
 
