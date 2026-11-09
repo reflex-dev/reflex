@@ -29,6 +29,7 @@ def TestApp():
 
         @rx.event
         def mutate_then_raise(self):
+            """Set the visible status, then raise a backend error."""
             self.status = "partial"
             msg = "boom"
             raise RuntimeError(msg)

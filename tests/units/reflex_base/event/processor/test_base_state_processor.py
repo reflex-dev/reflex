@@ -957,7 +957,8 @@ async def test_background_event_raising_without_context_still_flushes_a_delta(
 
 
 @pytest.mark.parametrize(
-    "processor_state_manager", ["in_process", "disk", "redis"],
+    "processor_state_manager",
+    ["in_process", "disk", "redis"],
     indirect=["processor_state_manager"],
 )
 @pytest.mark.parametrize("handler_kind", ["sync", "async", "generator"])
@@ -969,7 +970,16 @@ async def test_foreground_handler_error_flushes_manager_state(
     handler_kind: str,
     token: str,
 ):
-    """A foreground handler error emits the state retained by its manager."""
+    """A foreground handler error emits the state retained by its manager.
+
+    Args:
+        wired_app: The app wired to the state processor.
+        real_base_state_processor: The event processor under test.
+        emitted_deltas: Deltas emitted by the processor.
+        processor_state_manager: The state manager backing the processor.
+        handler_kind: The foreground handler style to exercise.
+        token: The client token.
+    """
     handled: list[Exception] = []
 
     class RaisingState(State):
@@ -977,12 +987,14 @@ async def test_foreground_handler_error_flushes_manager_state(
 
         @event
         def fail_after_mutation(self):
+            """Set the status, then raise an error."""
             self.status = "partial"
             msg = "boom"
             raise RuntimeError(msg)
 
         @event
         async def fail_after_mutation_async(self):
+            """Set the status asynchronously, then raise an error."""
             self.status = "partial"
             await asyncio.sleep(0)
             msg = "boom"
@@ -990,6 +1002,11 @@ async def test_foreground_handler_error_flushes_manager_state(
 
         @event
         def yield_then_fail(self):
+            """Yield a status update before mutating again and raising.
+
+            Yields:
+                The state update produced before the failure.
+            """
             self.status = "sent"
             yield
             self.status = "partial"
