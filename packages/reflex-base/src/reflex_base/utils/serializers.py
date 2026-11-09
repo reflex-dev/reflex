@@ -656,22 +656,24 @@ _SQLALCHEMY_LAYOUTS: weakref.WeakKeyDictionary[type, _SQLAlchemyLayout] = (
 )
 
 
-def _get_sqlalchemy_layout(mapper: Any) -> _SQLAlchemyLayout:
+def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
     """Get the attribute layout of a mapped class, cached while the class exists.
 
     Write-only and dynamic relationships never hold loaded values, so they are
     not part of the layout.
 
     Args:
-        mapper: The SQLAlchemy mapper of the model class.
+        cls: The mapped class.
 
     Returns:
         The unmapped dataclass fields, the other mapped attributes, the
         relationships with their ``uselist`` flags and the primary-key attributes.
     """
-    cls: type = mapper.class_
     if (layout := _SQLALCHEMY_LAYOUTS.get(cls)) is not None:
         return layout
+    import sqlalchemy
+
+    mapper = sqlalchemy.inspect(cls)
     manager = mapper.class_manager
     relationships = mapper.relationships
     layout = _SQLALCHEMY_LAYOUTS[cls] = _SQLAlchemyLayout(
@@ -713,10 +715,10 @@ def _serialize_sqlalchemy_model(
     Returns:
         The loaded model fields and relationships.
     """
-    import sqlalchemy
+    from sqlalchemy.orm.attributes import instance_state
 
-    state = sqlalchemy.inspect(m)
-    layout = _get_sqlalchemy_layout(state.mapper)
+    state = instance_state(m)
+    layout = _get_sqlalchemy_layout(type(m))
     values = state.dict
     committed = state.committed_state
     has_identity_key = state.key is not None
@@ -783,14 +785,13 @@ def _serialize_sqlalchemy_related(
         The serialized model, a primary-key reference for an already-seen
         model, or None when a complete primary-key reference is unavailable.
     """
-    import sqlalchemy
-
     if id(item) in seen:
-        item_state = sqlalchemy.inspect(item)
-        values = item_state.dict
+        from sqlalchemy.orm.attributes import instance_state
+
+        values = instance_state(item).dict
         pk_data = {
             key: values.get(key)
-            for key in _get_sqlalchemy_layout(item_state.mapper).primary_key
+            for key in _get_sqlalchemy_layout(type(item)).primary_key
         }
         return None if None in pk_data.values() else pk_data
 
