@@ -5,6 +5,7 @@ import subprocess
 from collections import UserList
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any, TypeVar, cast
+from unittest.mock import patch
 
 import pytest
 from reflex_base.constants import LogLevel
@@ -26,7 +27,7 @@ from reflex_base.event import (
     on_submit_string_event,
 )
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import format, log
+from reflex_base.utils import console, format, log
 from reflex_base.utils.exceptions import (
     BackendVarFormatError,
     EventHandlerArgTypeMismatchError,
@@ -1755,6 +1756,32 @@ def test_decentralized_event_actions_are_registered():
     assert registered.handler is e
     assert registered.handler.event_actions == {"stopPropagation": True}
     assert registered.states == (S,)
+
+
+def test_rx_event_on_a_function_without_a_state_parameter_stays_a_function():
+    """A plain function decorated with @rx.event warns and is not an event handler."""
+
+    def ping(x: str) -> str:
+        return x
+
+    def summarize(items: list[int], label: str | None = None) -> int:
+        return sum(items)
+
+    before = set(RegistrationContext.get().event_handlers)
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        decorated_ping = event(ping)  # pyright: ignore [reportCallIssue, reportArgumentType]
+        decorated_summarize = event(stop_propagation=True)(summarize)  # pyright: ignore [reportArgumentType]
+
+    assert [call.kwargs["feature_name"] for call in mock_deprecate.call_args_list] == [
+        "@rx.event on a function without a state parameter"
+    ] * 2
+    assert decorated_ping is ping
+    assert decorated_summarize is summarize
+    assert ping.__name__ == "ping"
+    assert ping("1") == "1"
+    assert summarize([1, 2]) == 3
+    assert set(RegistrationContext.get().event_handlers) == before
 
 
 def test_event_handler_and_spec_expose_wrapped_function() -> None:
