@@ -646,7 +646,8 @@ class _SQLAlchemyLayout(NamedTuple):
     """The attribute names of a SQLAlchemy model class."""
 
     fields: tuple[str, ...]
-    columns: tuple[tuple[str, str], ...]
+    columns: tuple[str, ...]
+    synonyms: tuple[tuple[str, str, bool | None], ...]
     relationships: tuple[tuple[str, bool], ...]
     primary_key: tuple[str, ...]
 
@@ -659,16 +660,17 @@ _SQLALCHEMY_LAYOUTS: weakref.WeakKeyDictionary[type, _SQLAlchemyLayout] = (
 def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
     """Get the attribute layout of a mapped class, cached while the class exists.
 
-    Write-only and dynamic relationships never hold loaded values, so they are
-    not part of the layout. A synonym of a column is read from its target column.
+    Write-only and dynamic relationships never hold loaded values, so they and
+    their synonyms are not part of the layout.
 
     Args:
         cls: The mapped class.
 
     Returns:
-        The unmapped dataclass fields, the other mapped attributes with the
-        attribute their value is read from, the relationships with their
-        ``uselist`` flags and the primary-key attributes.
+        The unmapped dataclass fields, the other mapped columns, the synonyms
+        with their target attribute and the target's ``uselist`` flag (None for
+        a column), the relationships with their ``uselist`` flags and the
+        primary-key attributes.
     """
     if (layout := _SQLALCHEMY_LAYOUTS.get(cls)) is not None:
         return layout
@@ -677,10 +679,11 @@ def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
     mapper = sqlalchemy.inspect(cls)
     manager = mapper.class_manager
     relationships = mapper.relationships
-    synonyms = {
-        key: prop.name
-        for key, prop in mapper.synonyms.items()
-        if prop.name not in relationships
+    synonyms = mapper.synonyms
+    loadable = {
+        key: prop.uselist
+        for key, prop in relationships.items()
+        if prop.lazy not in ("write_only", "dynamic")
     }
     layout = _SQLALCHEMY_LAYOUTS[cls] = _SQLAlchemyLayout(
         fields=tuple(
@@ -689,17 +692,14 @@ def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
         if dataclasses.is_dataclass(cls)
         else (),
         columns=tuple(
-            (key, key)
-            for key in manager
-            if key not in relationships and key not in synonyms
-        )
-        + tuple(synonyms.items()),
-        relationships=tuple(
-            (key, relationships[key].uselist)
-            for key in manager
-            if key in relationships
-            and relationships[key].lazy not in ("write_only", "dynamic")
+            key for key in manager if key not in relationships and key not in synonyms
         ),
+        synonyms=tuple(
+            (key, prop.name, loadable.get(prop.name))
+            for key, prop in synonyms.items()
+            if prop.name not in relationships or prop.name in loadable
+        ),
+        relationships=tuple((key, loadable[key]) for key in manager if key in loadable),
         primary_key=tuple(
             mapper.get_property_by_column(column).key for column in mapper.primary_key
         ),
@@ -738,11 +738,20 @@ def _serialize_sqlalchemy_model(
     try:
         result = {name: values[name] for name in layout.fields if name in values}
 
-        for key, source in layout.columns:
-            if source in values:
-                result[key] = values[source]
-            elif not has_identity_key or source in committed:
+        for key in layout.columns:
+            if key in values:
+                result[key] = values[key]
+            elif not has_identity_key or key in committed:
                 result[key] = getattr(m, key)
+
+        for key, source, uselist in layout.synonyms:
+            if source in values or not has_identity_key or source in committed:
+                value = getattr(m, key)
+                result[key] = (
+                    value
+                    if uselist is None
+                    else _serialize_sqlalchemy_relationship(value, uselist, seen)
+                )
 
         for key, uselist in layout.relationships:
             if key in values or not has_identity_key or key in committed:

@@ -710,6 +710,7 @@ def test_unserialized_property_on_sqlalchemy_dataclass():
 
         @property
         def double(self) -> str:
+            """The full name, which is not a mapped attribute."""
             return f"{self.first_name} {self.last_name}"
 
     assert is_unserialized_property(User, "double")
@@ -731,6 +732,7 @@ def test_unserialized_property_on_sqlalchemy_model():
 
         @property
         def double(self) -> str:
+            """The first name twice, which is not a mapped attribute."""
             return self.first * 2
 
     assert is_unserialized_property(User, "double")

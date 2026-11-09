@@ -322,6 +322,7 @@ def test_declarative_base_serializer_omits_write_only_and_dynamic_relationships(
         id: Mapped[int] = mapped_column(primary_key=True)
         recent: WriteOnlyMapped["Hero"] = relationship(overlaps="members")
         members: DynamicMapped["Hero"] = relationship(overlaps="recent")
+        latest = synonym("recent")
 
     class Hero(Base):
         __tablename__ = "query_only_hero"
@@ -418,6 +419,91 @@ def test_declarative_base_serializer_includes_column_synonyms():
         "id": None,
         "username": "new",
         "name": "new",
+    }
+    engine.dispose()
+
+
+def test_declarative_base_serializer_reads_synonym_descriptor():
+    """A synonym with a custom descriptor is sent through its getter."""
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Member(Base):
+        __tablename__ = "synonym_member"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        raw_status: Mapped[str] = mapped_column("status")
+        status = synonym(
+            "raw_status", descriptor=property(lambda self: self.raw_status.upper())
+        )
+
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        session.add(Member(id=1, raw_status="active"))
+        session.commit()
+    with Session(engine) as session:
+        member = session.scalar(select(Member))
+        session.expunge_all()
+    with Session(engine) as session:
+        expired = session.scalar(select(Member))
+        session.expire(expired, ["raw_status"])
+        session.expunge_all()
+
+    expected = {"id": 1, "raw_status": "active", "status": "ACTIVE"}
+    assert serializers.serialize(expired) == {"id": 1}
+    assert serializers.serialize(member) == expected
+    assert serializers.serialize(Member(id=1, raw_status="active")) == expected
+    engine.dispose()
+
+
+def test_declarative_base_serializer_includes_relationship_synonyms():
+    """A relationship synonym is serialized like its target relationship."""
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Writer(Base):
+        __tablename__ = "synonym_writer"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        articles: Mapped[list["Article"]] = relationship(back_populates="writer")
+
+    class Article(Base):
+        __tablename__ = "synonym_article"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        writer_id: Mapped[int] = mapped_column(ForeignKey("synonym_writer.id"))
+        writer: Mapped[Writer] = relationship(back_populates="articles")
+        author = synonym("writer")
+
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        session.add(Article(id=1, writer=Writer(id=1)))
+        session.commit()
+    with Session(engine) as session:
+        article = session.scalar(select(Article).options(selectinload(Article.writer)))
+        session.expunge_all()
+
+    assert json.loads(json_dumps(article)) == {
+        "id": 1,
+        "writer_id": 1,
+        "writer": {"id": 1},
+        "author": {"id": 1},
+    }
+    assert json.loads(json_dumps(Article(id=2, writer=Writer(id=2)))) == {
+        "id": 2,
+        "writer_id": None,
+        "writer": {"id": 2, "articles": [{"id": 2}]},
+        "author": {"id": 2, "articles": [{"id": 2}]},
+    }
+    assert serializers.serialize(Article(id=3)) == {
+        "id": 3,
+        "writer_id": None,
+        "writer": None,
+        "author": None,
     }
     engine.dispose()
 
