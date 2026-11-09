@@ -95,20 +95,21 @@ def test_declarative_base_serializer_handles_loaded_and_unloaded_attributes():
     assert "private_note" not in payload
 
     with Session(engine) as session:
-        unloaded_team = session.scalar(select(SerializerTeam))
+        unloaded_team = session.scalar(
+            select(SerializerTeam).options(selectinload(SerializerTeam.heroes))
+        )
         assert unloaded_team is not None
 
-        # Expired and unloaded attributes must both be omitted.
+        # Expired and deferred columns must both be omitted.
         session.expire(unloaded_team, ["name"])
         session.expunge(unloaded_team)
 
-    # This also verifies that serialization of a detached instance does
-    # not raise DetachedInstanceError.
+    # A detached instance with expired and deferred columns does not raise.
     unloaded_payload = json.loads(json_dumps(unloaded_team))
 
     assert "name" not in unloaded_payload
-    assert "heroes" not in unloaded_payload
     assert "private_note" not in unloaded_payload
+    assert [hero["name"] for hero in unloaded_payload["heroes"]] == ["Thor"]
 
     engine.dispose()
 
@@ -422,6 +423,51 @@ def test_declarative_base_serializer_includes_column_synonyms():
     engine.dispose()
 
 
+def test_declarative_base_serializer_reads_unloaded_relationship_like_main():
+    """A relationship that was not loaded is read like any attribute access.
+
+    A detached model raises, and a model in an open session lazy-loads.
+    """
+    from sqlalchemy.orm.exc import DetachedInstanceError
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Owner(Base):
+        __tablename__ = "unloaded_rel_owner"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str]
+
+    class Pet(Base):
+        __tablename__ = "unloaded_rel_pet"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        owner_id: Mapped[int] = mapped_column(ForeignKey("unloaded_rel_owner.id"))
+        owner: Mapped[Owner] = relationship()
+
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        session.add_all([Owner(id=1, name="ada"), Pet(id=1, owner_id=1)])
+        session.commit()
+
+    with Session(engine) as session:
+        pet = session.scalar(select(Pet))
+        session.expunge_all()
+    with pytest.raises(DetachedInstanceError):
+        serializers.serialize(pet)
+
+    with Session(engine) as session:
+        pet = session.scalar(select(Pet))
+        assert serializers.serialize(pet) == {
+            "id": 1,
+            "owner_id": 1,
+            "owner": {"id": 1, "name": "ada"},
+        }
+    engine.dispose()
+
+
 def test_declarative_base_model_attribute_access():
     """A plain DeclarativeBase model is an ObjectVar with typed column attributes."""
 
@@ -635,7 +681,7 @@ def test_serialize_sqlalchemy_keyed_dict_relationship():
 
 
 def test_serialize_sqlalchemy_unloaded_relationship():
-    """Test that unloaded relationships are omitted during serialization without triggering a load."""
+    """Test that an unloaded keyed-dict relationship lazy-loads in an open session."""
     from reflex_base.utils.serializers import serialize
     from sqlalchemy import ForeignKey, create_engine
     from sqlalchemy.orm import (
@@ -686,8 +732,7 @@ def test_serialize_sqlalchemy_unloaded_relationship():
 
         assert isinstance(result, dict)
         assert result["id"] == 1
-        assert "dict_children" not in result
-        assert "dict_children" in inspect(loaded_parent).unloaded
+        assert result["dict_children"]["Alice"]["name"] == "Alice"
 
 
 def test_serialize_sqlalchemy_cycle_uses_mapped_attribute_names():

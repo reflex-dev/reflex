@@ -695,6 +695,7 @@ def test_get_typed_dict_field_types_keeps_redeclared_fields():
 
 def test_unserialized_property_on_sqlalchemy_dataclass():
     """Test that plain properties on SQLAlchemy dataclasses are flagged."""
+    pytest.importorskip("sqlalchemy")
     from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
     class Base(MappedAsDataclass, DeclarativeBase):
@@ -716,6 +717,7 @@ def test_unserialized_property_on_sqlalchemy_dataclass():
 
 def test_unserialized_property_on_sqlalchemy_model():
     """Flag plain SQLAlchemy properties while allowing mapped attributes."""
+    pytest.importorskip("sqlalchemy")
     from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
     class Base(DeclarativeBase):

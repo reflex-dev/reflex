@@ -84,11 +84,16 @@ for more details.
 
 ## Serializing Linked Objects
 
-Reflex supports serialization of SQLAlchemy models that inherit from `DeclarativeBase`. When a model is serialized, Reflex includes its loaded columns and relationships and omits attributes that have not been loaded.
+Reflex serializes SQLAlchemy models that inherit from `DeclarativeBase`. It sends
+the loaded columns and relationships of each model, and leaves out columns that
+were not loaded, such as deferred or expired columns.
 
-This allows eager-loaded relationships to be serialized without triggering implicit database queries. Unloaded relationships and expired attributes are omitted rather than causing `DetachedInstanceError` or `MissingGreenlet` exceptions.
-
-For example, if a query loads a `Post` and its associated `User` using `selectinload`, both objects are included when the model is serialized. If the relationship was not loaded, the `user` attribute is omitted.
+A relationship is read like any other attribute access. When a relationship was
+not loaded, sending the state raises the same error as reading it in your own
+code: `DetachedInstanceError` once the session is closed, or `MissingGreenlet`
+inside an async session. A model in state needs every relationship loaded,
+back-references such as `User.posts` included, so for models with
+`back_populates` store the values the page shows instead.
 
 When a loaded relationship points to an object that is already being serialized, Reflex represents that reference using the related object's primary key fields instead of serializing the object again. This prevents infinite recursion when models have bidirectional or cyclic relationships. For example, a child object's `parent` relationship may be serialized as `{"id": 1}` rather than the full parent object.
 
@@ -154,31 +159,35 @@ for more detail.
 
 ### Querying Linked Objects
 
-To query the `Post` table and include all `User` and `Flag` objects up front,
-the `.options` interface will be used to specify `selectinload` for the required
-relationships. Using this method, the linked objects will be available for
-rendering in frontend code without additional steps.
+Load the relationships the page shows with `selectinload`, then put the values
+the page needs in state.
 
 ```python
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 
 class PostState(rx.State):
-    posts: list[Post] = []
+    posts: list[dict[str, Any]] = []
 
     @rx.event
     async def load_posts(self):
         async with Session() as session:
             result = await session.scalars(
                 select(Post)
-                .options(
-                    selectinload(Post.user),
-                    selectinload(Post.flags).selectinload(Flag.user),
-                )
+                .options(selectinload(Post.user), selectinload(Post.flags))
                 .limit(15)
             )
-            self.posts = result.all()
+            self.posts = [
+                {
+                    "title": post.title,
+                    "username": post.user.username,
+                    "flags": [flag.message for flag in post.flags],
+                }
+                for post in result
+            ]
 ```
 
 The loading methods create new query objects and thus may be chained if the
@@ -215,29 +224,36 @@ class Post(Base):
 For master-detail interfaces — a table of parent rows where selecting a row
 reveals its related rows — it is not necessary to eager load every
 relationship up front. Store the selected id in state and query only the
-related rows for that selection, filtering on the foreign key.
+related rows for that selection, filtering on the foreign key. The models'
+relationships are not loaded here, so the state stores plain values: only the
+columns the page shows.
 
 ```python
+from typing import Any
+
 import reflex as rx
 from sqlalchemy import select
 
 
 class PostFlagsState(rx.State):
-    posts: list[Post] = []
+    posts: list[dict[str, Any]] = []
     selected_post_id: int | None = None
-    selected_flags: list[Flag] = []
+    selected_flags: list[dict[str, Any]] = []
 
     @rx.event
     async def load_posts(self):
         async with Session() as session:
-            self.posts = (await session.scalars(select(Post).limit(15))).all()
+            result = await session.execute(select(Post.id, Post.title).limit(15))
+            self.posts = [row._asdict() for row in result]
 
     @rx.event
     async def select_post(self, post_id: int):
         self.selected_post_id = post_id
         async with Session() as session:
-            result = await session.scalars(select(Flag).where(Flag.post_id == post_id))
-            self.selected_flags = result.all()
+            result = await session.execute(
+                select(Flag.id, Flag.message).where(Flag.post_id == post_id)
+            )
+            self.selected_flags = [row._asdict() for row in result]
 ```
 
 This runs a single indexed query per selection and avoids holding every child

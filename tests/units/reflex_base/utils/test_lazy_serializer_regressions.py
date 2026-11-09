@@ -225,16 +225,20 @@ assert "Avengers" in payload
 assert "Thor" in payload
 assert "private_note" not in payload
 
-# An unloaded relationship must be omitted even after the instance
-# has been detached from its session.
+# A relationship that was not loaded raises on a detached instance.
+from sqlalchemy.orm.exc import DetachedInstanceError
+
 with Session(engine) as session:
     unloaded_team = session.scalar(select(Team))
     assert unloaded_team is not None
     session.expunge(unloaded_team)
 
-detached_payload = json.loads(json_dumps(unloaded_team))
-assert "heroes" not in detached_payload
-assert "private_note" not in detached_payload
+try:
+    json_dumps(unloaded_team)
+except DetachedInstanceError:
+    pass
+else:
+    raise AssertionError("expected DetachedInstanceError")
 
 engine.dispose()
 """

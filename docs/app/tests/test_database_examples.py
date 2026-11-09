@@ -356,16 +356,14 @@ async def test_relationships(monkeypatch):
     )
 
     state = await run(module.PostState, "load_posts", posts=[])
-    post = to_json(state.posts[0])
-    assert post["user"]["username"] == "ada"
-    assert post["flags"][0]["message"] == "spam"
-    assert post["flags"][0]["user"]["email"] == "ada@example.com"
-    assert "posts" not in post["user"]
+    assert to_json(state.posts) == [
+        {"title": "Hello", "username": "ada", "flags": ["spam"]}
+    ]
 
     state = await run(module.PostFlagsState, "load_posts", posts=[])
-    assert set(serialize(state.posts[0])) == {"id", "title", "body", "user_id"}
+    assert state.posts == [{"id": 1, "title": "Hello"}]
     state = await run(module.PostFlagsState, "select_post", 1, selected_flags=[])
-    assert [flag.message for flag in state.selected_flags] == ["spam"]
+    assert [flag["message"] for flag in state.selected_flags] == ["spam"]
     await module.engine.dispose()
 
 

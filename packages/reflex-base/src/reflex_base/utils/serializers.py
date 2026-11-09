@@ -713,11 +713,11 @@ def _serialize_sqlalchemy_model(
 ) -> dict[str, Any]:
     """Serialize a SQLAlchemy model while avoiding relationship cycles.
 
-    An attribute is unloaded when it is in neither ``state.dict`` nor
+    A column is unloaded when it is in neither ``state.dict`` nor
     ``state.committed_state``. Only an instance with an identity key can
-    lazy-load, so its unloaded attributes are omitted. A transient or pending
-    instance sends every attribute, with unassigned relationships as None or an
-    empty collection.
+    lazy-load, so its unloaded columns are omitted. Relationships are read like
+    any attribute access: a relationship that was not loaded lazy-loads in an
+    open session and raises on a detached instance.
 
     Args:
         m: The SQLAlchemy model instance.
@@ -745,10 +745,9 @@ def _serialize_sqlalchemy_model(
                 result[key] = getattr(m, key)
 
         for key, uselist in layout.relationships:
-            if key in values or not has_identity_key or key in committed:
-                result[key] = _serialize_sqlalchemy_relationship(
-                    getattr(m, key), uselist, seen
-                )
+            result[key] = _serialize_sqlalchemy_relationship(
+                getattr(m, key), uselist, seen
+            )
 
         return result
     finally:
