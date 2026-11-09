@@ -186,36 +186,6 @@ def ls(path: str | Path) -> list[Path]:
     return list(Path(path).iterdir())
 
 
-def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
-    """Create a symbolic link at dest pointing to src, like `ln -s`.
-
-    Args:
-        src: The path the link should point at.
-        dest: The path to create the link at.
-        overwrite: Whether to replace an existing destination.
-
-    Returns:
-        Whether the link was successful.
-    """
-    src, dest = Path(src), Path(dest)
-    if src == dest:
-        return False
-    if dest.exists() or dest.is_symlink():
-        if not overwrite:
-            return False
-        if dest.is_symlink():
-            # A dangling link is neither a file nor a directory, so rm()
-            # would leave it in place and the link below would fail.
-            dest.unlink()
-        else:
-            rm(dest)
-    if src.is_dir():
-        dest.symlink_to(src, target_is_directory=True)
-    else:
-        dest.symlink_to(src)
-    return True
-
-
 def which(program: str | Path) -> Path | None:
     """Find the path to an executable.
 
