@@ -1,6 +1,9 @@
 """Unit tests for the included testing tools."""
 
+import subprocess
 import sys
+import threading
+import time
 from types import ModuleType, SimpleNamespace
 from unittest import mock
 
@@ -227,6 +230,118 @@ def test_app_harness_frontend_env_has_development_condition(
     )
     harness._start_frontend()
     assert "--conditions=development" in captured["env"]["NODE_OPTIONS"]
+
+
+def _wait_for_exit(backend: mock.Mock) -> threading.Thread:
+    """Start a stand-in backend thread that runs until the backend is told to exit.
+
+    Args:
+        backend: The stand-in uvicorn server.
+
+    Returns:
+        The started thread.
+    """
+
+    def run():
+        while not backend.should_exit:
+            time.sleep(0.01)
+
+    backend.should_exit = False
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    return thread
+
+
+def test_app_harness_stop_twice_is_a_noop(tmp_path):
+    """A second ``stop()`` finds nothing left to stop instead of raising.
+
+    A test that stops the harness itself still leaves the ``with`` block, which
+    stops it again.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+    """
+    outer = RegistrationContext.ensure_context()
+    harness = AppHarness.create(root=tmp_path, app_name="stoptwiceapp")
+    harness._registry_token = RegistrationContext.set(RegistrationContext())
+    harness.backend = mock.Mock()
+    harness.backend_thread = _wait_for_exit(harness.backend)
+    harness.frontend_process = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(60)"],
+        stdout=subprocess.PIPE,
+        **reflex_testing.FRONTEND_POPEN_ARGS,
+    )
+
+    harness.stop()
+    harness.stop()
+
+    assert RegistrationContext.get() is outer
+    assert harness.frontend_process.returncode is not None
+    assert not harness.backend_thread.is_alive()
+
+
+def test_app_harness_failed_start_stops_what_it_started(tmp_path, monkeypatch):
+    """A ``start()`` that fails part way stops what it already started.
+
+    ``__enter__`` is ``start()``, so a failure there never reaches ``__exit__``;
+    without this the backend thread and the registration context would leak.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    outer = RegistrationContext.ensure_context()
+    harness = AppHarness.create(root=tmp_path, app_name="failedstartapp")
+    backend = mock.Mock()
+
+    def initialize_app():
+        harness._registry_token = RegistrationContext.set(RegistrationContext())
+
+    def start_backend():
+        harness.backend = backend
+        harness.backend_thread = _wait_for_exit(backend)
+
+    def wait_frontend():
+        msg = "Frontend did not start"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(harness, "_initialize_app", initialize_app)
+    monkeypatch.setattr(harness, "_start_backend", start_backend)
+    monkeypatch.setattr(harness, "_start_frontend", lambda: None)
+    monkeypatch.setattr(harness, "_wait_frontend", wait_frontend)
+
+    with pytest.raises(RuntimeError, match="Frontend did not start"), harness:
+        pytest.fail("A harness that failed to start must not run the block.")
+
+    assert backend.should_exit
+    assert harness.backend_thread is not None
+    assert not harness.backend_thread.is_alive()
+    assert RegistrationContext.get() is outer
+
+
+def test_app_harness_restart_waits_for_the_new_frontend(tmp_path, monkeypatch):
+    """A restarted harness waits for its new frontend instead of keeping the old URL.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    harness = AppHarness.create(root=tmp_path, app_name="restartapp")
+    harness.frontend_url = "http://127.0.0.1:3000/"
+    seen_at_wait: list[str | None] = []
+
+    def wait_frontend():
+        seen_at_wait.append(harness.frontend_url)
+        harness.frontend_url = "http://127.0.0.1:3001/"
+
+    for step in ("_initialize_app", "_start_backend", "_start_frontend"):
+        monkeypatch.setattr(harness, step, lambda: None)
+    monkeypatch.setattr(harness, "_wait_frontend", wait_frontend)
+
+    harness.start()
+
+    assert seen_at_wait == [None]
+    assert harness.frontend_url == "http://127.0.0.1:3001/"
 
 
 def test_app_harness_reload_forgets_states_of_every_app_module(tmp_path, monkeypatch):

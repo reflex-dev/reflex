@@ -461,13 +461,22 @@ class AppHarness:
     def start(self) -> Self:
         """Start the backend in a new thread and dev frontend as a separate process.
 
+        If a step fails, whatever the earlier steps started is stopped: a failure
+        in ``__enter__`` never reaches ``__exit__``.
+
         Returns:
             self
         """
-        self._initialize_app()
-        self._start_backend()
-        self._start_frontend()
-        self._wait_frontend()
+        # A URL left by a previous run would pass for the new frontend being up.
+        self.frontend_url = None
+        try:
+            self._initialize_app()
+            self._start_backend()
+            self._start_frontend()
+            self._wait_frontend()
+        except BaseException:
+            self.stop()
+            raise
         return self
 
     @staticmethod
@@ -496,7 +505,11 @@ class AppHarness:
         return self.start()
 
     def stop(self) -> None:
-        """Stop the frontend and backend servers."""
+        """Stop the frontend and backend servers.
+
+        Safe to call more than once, and after a ``start()`` that failed part
+        way: only what is still running is stopped.
+        """
         try:
             import psutil
         except ImportError as exc:
@@ -509,23 +522,33 @@ class AppHarness:
         # Quit browsers first to avoid any lingering events being sent during shutdown.
         for driver in self._frontends:
             driver.quit()
+        self._frontends.clear()
 
         self._reload_state_module()
         if self._registry_token is not None:
             RegistrationContext.reset(self._registry_token)
+            self._registry_token = None
 
         if self.backend is not None:
             self.backend.should_exit = True
-        if self.frontend_process is not None:
+        # A reaped process has a returncode: it was stopped already.
+        if (
+            self.frontend_process is not None
+            and self.frontend_process.returncode is None
+        ):
             # https://stackoverflow.com/a/70565806
-            frontend_children = psutil.Process(self.frontend_process.pid).children(
-                recursive=True,
-            )
+            try:
+                frontend_children = psutil.Process(self.frontend_process.pid).children(
+                    recursive=True
+                )
+            except psutil.NoSuchProcess:
+                # It exited on its own, e.g. the frontend failed to start.
+                frontend_children = []
             if sys.platform == "win32":
                 self.frontend_process.terminate()
             else:
-                pgrp = os.getpgid(self.frontend_process.pid)
-                os.killpg(pgrp, signal.SIGTERM)
+                with contextlib.suppress(ProcessLookupError):
+                    os.killpg(os.getpgid(self.frontend_process.pid), signal.SIGTERM)
             # kill any remaining child processes
             for child in frontend_children:
                 # It's okay if the process is already gone.
