@@ -564,6 +564,7 @@ class EventProcessor:
                 enqueue_impl=root.enqueue_impl,
                 emit_delta_impl=_emit_delta_impl,
                 emit_event_impl=root.emit_event_impl,
+                middleware=root.middleware,
                 # Like fork(): the handler span nests under the caller's span
                 # (the upload request, a custom route).
                 otel_context=otel.capture_context(),

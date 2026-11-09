@@ -517,9 +517,6 @@ async def execute_event_inline(spec: EventSpec) -> Any:
             "state lock is held, as it would wait for that lock; yield it instead."
         )
         raise EventHandlerTypeError(msg)
-    # Gated like a queued event: a handler the middleware blocks is not run.
-    if await _preprocess_blocks(ctx, root_state, event):
-        return None
     # The lock stays held until this run is done, even if the task that
     # started it finishes first. Registered before the first await, so a
     # task that starts while the lock is held is always seen by its release.
@@ -532,6 +529,9 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     else:
         ctx.inline_tasks.add(task)
     try:
+        # Gated like a queued event: a handler the middleware blocks is not run.
+        if await _preprocess_blocks(ctx, root_state, event):
+            return None
         substate = await root_state.get_state(registered.states[0])
         return await process_event(
             handler=handler,
