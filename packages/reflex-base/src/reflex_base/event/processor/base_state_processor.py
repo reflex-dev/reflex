@@ -332,7 +332,7 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         await ctx.enqueue(*backend_events)
 
 
-async def _blocked_by_middleware(
+async def _process_middleware(
     ctx: EventContext, state: BaseState, event: Event
 ) -> bool:
     """Pass an event through the middleware before its handler runs.
@@ -536,7 +536,7 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     try:
         # Inside the registered run, so the lock stays held while a
         # middleware awaits.
-        if await _blocked_by_middleware(ctx, root_state, event):
+        if await _process_middleware(ctx, root_state, event):
             return None
         substate = await root_state.get_state(registered.states[0])
         return await process_event(
@@ -827,7 +827,7 @@ class BaseStateEventProcessor(EventProcessor):
                 if merged_router_data != previous_router_data:
                     state.router_data = merged_router_data
 
-            if await _blocked_by_middleware(ctx, state, event):
+            if await _process_middleware(ctx, state, event):
                 return None
 
             # Get the event's substate.
