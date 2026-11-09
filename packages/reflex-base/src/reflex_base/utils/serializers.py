@@ -728,14 +728,11 @@ def _serialize_sqlalchemy_related(
         mapper = item_state.mapper
 
         pk_props = [
-            mapper.get_property_by_column(column).key
-            for column in mapper.primary_key
+            mapper.get_property_by_column(column).key for column in mapper.primary_key
         ]
 
         pk_data = {
-            key: item_state.dict[key]
-            for key in pk_props
-            if key in item_state.dict
+            key: item_state.dict[key] for key in pk_props if key in item_state.dict
         }
 
         if len(pk_data) == len(pk_props) and all(
@@ -746,10 +743,7 @@ def _serialize_sqlalchemy_related(
         return None
 
     item_serializer = get_serializer(type(item))
-    if (
-        item_serializer is not None
-        and item_serializer is not serialize_sqlalchemy_base
-    ):
+    if item_serializer is not None and item_serializer is not serialize_sqlalchemy_base:
         return item_serializer(item)
 
     return _serialize_sqlalchemy_model(item, seen)
