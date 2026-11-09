@@ -956,6 +956,82 @@ async def test_background_event_raising_without_context_still_flushes_a_delta(
     )
 
 
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk", "redis"],
+    indirect=["processor_state_manager"],
+)
+@pytest.mark.parametrize("handler_kind", ["sync", "async", "generator"])
+async def test_foreground_handler_error_flushes_manager_state(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    processor_state_manager: StateManager,
+    handler_kind: str,
+    token: str,
+):
+    """A foreground handler error emits the state retained by its manager."""
+    handled: list[Exception] = []
+
+    class RaisingState(State):
+        status: str = "idle"
+
+        @event
+        def fail_after_mutation(self):
+            self.status = "partial"
+            msg = "boom"
+            raise RuntimeError(msg)
+
+        @event
+        async def fail_after_mutation_async(self):
+            self.status = "partial"
+            await asyncio.sleep(0)
+            msg = "boom"
+            raise RuntimeError(msg)
+
+        @event
+        def yield_then_fail(self):
+            self.status = "sent"
+            yield
+            self.status = "partial"
+            msg = "boom"
+            raise RuntimeError(msg)
+
+    real_base_state_processor.backend_exception_handler = handled.append
+    if isinstance(processor_state_manager, StateManagerRedis):
+        processor_state_manager._oplock_enabled = False
+
+    async with processor_state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    async with real_base_state_processor as processor:
+        handler_event = {
+            "sync": RaisingState.fail_after_mutation,
+            "async": RaisingState.fail_after_mutation_async,
+            "generator": RaisingState.yield_then_fail,
+        }[handler_kind]()
+        await processor.enqueue(token, Event.from_event_type(handler_event)[0])
+        await processor.join(5)
+
+    status_key = "status" + FIELD_MARKER
+    state_name = RaisingState.get_full_name()
+    status_deltas = [
+        delta[state_name][status_key]
+        for _, delta in emitted_deltas
+        if state_name in delta and status_key in delta[state_name]
+    ]
+    assert status_deltas[-1:] == ["partial"], (
+        f"the final state was not emitted after the handler error: {emitted_deltas}"
+    )
+    root_state = await processor_state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    state = await root_state.get_state(RaisingState)
+    assert state.status == "partial"
+    assert [type(ex) for ex in handled] == [RuntimeError]
+
+
 async def test_background_flush_failure_does_not_mask_handler_exception(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

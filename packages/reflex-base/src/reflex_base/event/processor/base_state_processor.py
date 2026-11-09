@@ -782,69 +782,111 @@ class BaseStateEventProcessor(EventProcessor):
         # and inherits the producing view's through fork().
         router_data = ctx.router_data
         acquire_start = perf_counter() if otel.enabled else 0.0
+        root_state: BaseState | None = None
         # Get the state for the session exclusively.
-        async with ctx.state_manager.modify_state_with_links(
-            BaseStateToken(
-                ident=ctx.token,
-                cls=registered_handler.states[0],
-            ),
-            event=entry.event,
-        ) as state:
-            if otel.enabled:
-                otel.record_state_acquired(acquire_start, event)
-            previous_router_data = state.router_data
-            # Compatibility hack rehydrate the state before processing this event.
-            needs_to_rehydrate = bool(
-                not previous_router_data and event.name not in _hydrate_event_names()
-            )
-
-            # re-assign only when the value is set and different
-            if router_data and previous_router_data != router_data:
-                # only the router vars whose backing keys changed are rebuilt
-                # and re-sent; session/headers stay put across navigations.
-                merged_router_data = state._update_router_vars(
-                    router_data, previous_router_data
+        foreground_error: Exception | None = None
+        try:
+            async with ctx.state_manager.modify_state_with_links(
+                BaseStateToken(
+                    ident=ctx.token,
+                    cls=registered_handler.states[0],
+                ),
+                event=entry.event,
+            ) as state:
+                if otel.enabled:
+                    otel.record_state_acquired(acquire_start, event)
+                previous_router_data = state.router_data
+                # Compatibility hack rehydrate the state before processing this event.
+                needs_to_rehydrate = bool(
+                    not previous_router_data
+                    and event.name not in _hydrate_event_names()
                 )
-                # Store what it merged, not the payload, so a partial payload
-                # does not drop the keys it omits. Only on a real change: the
-                # assignment dirties router_data and marks the state touched.
-                if merged_router_data != previous_router_data:
-                    state.router_data = merged_router_data
 
-            # Preprocess the event.
-            if (
-                self.middleware is not None
-                and (update := await self.middleware._preprocess(state, event))
-                is not None
-            ):
-                # If there was an update, yield it.
-                if update.delta:
-                    await ctx.emit_delta(update.delta)
-                if update.events:
-                    await _route_events(ctx, update.events)
-                return None
-
-            # Get the event's substate.
-            substate = await state.get_state(registered_handler.states[0])
-            root_state = state._get_root_state()
-
-            # Not `holding_lock`: this is the hot path of every event, and
-            # the plain try/finally spares the context manager's overhead.
-            ctx.set_locked_root(root_state)
-            try:
-                if needs_to_rehydrate:
-                    await self._rehydrate(root_state)
-
-                # Process non-background events while holding the lock.
-                if not registered_handler.handler.is_background:
-                    return await process_event(
-                        handler=registered_handler.handler,
-                        payload=event.payload,
-                        state=substate,
-                        root_state=root_state,
+                # re-assign only when the value is set and different
+                if router_data and previous_router_data != router_data:
+                    # only the router vars whose backing keys changed are rebuilt
+                    # and re-sent; session/headers stay put across navigations.
+                    merged_router_data = state._update_router_vars(
+                        router_data, previous_router_data
                     )
-            finally:
-                await ctx.release_lock()
+                    # Store what it merged, not the payload, so a partial payload
+                    # does not drop the keys it omits. Only on a real change: the
+                    # assignment dirties router_data and marks the state touched.
+                    if merged_router_data != previous_router_data:
+                        state.router_data = merged_router_data
+
+                # Preprocess the event.
+                if (
+                    self.middleware is not None
+                    and (update := await self.middleware._preprocess(state, event))
+                    is not None
+                ):
+                    # If there was an update, yield it.
+                    if update.delta:
+                        await ctx.emit_delta(update.delta)
+                    if update.events:
+                        await _route_events(ctx, update.events)
+                    return None
+
+                # Get the event's substate.
+                substate = await state.get_state(registered_handler.states[0])
+                root_state = state._get_root_state()
+
+                # Not `holding_lock`: this is the hot path of every event, and
+                # the plain try/finally spares the context manager's overhead.
+                ctx.set_locked_root(root_state)
+                try:
+                    if needs_to_rehydrate:
+                        await self._rehydrate(root_state)
+
+                    # Process non-background events while holding the lock.
+                    if not registered_handler.handler.is_background:
+                        try:
+                            return await process_event(
+                                handler=registered_handler.handler,
+                                payload=event.payload,
+                                state=substate,
+                                root_state=root_state,
+                            )
+                        except Exception as ex:
+                            foreground_error = ex
+                            raise
+                finally:
+                    await ctx.release_lock()
+        except Exception as ex:
+            if foreground_error is ex:
+                assert root_state is not None
+                try:
+                    async with ctx.state_manager.modify_state_with_links(
+                        BaseStateToken(
+                            ident=ctx.token,
+                            cls=registered_handler.states[0],
+                        ),
+                        event=event,
+                    ) as flush_state:
+                        flush_root = flush_state._get_root_state()
+                        pending_states = [(root_state, flush_root)]
+                        while pending_states:
+                            source, target = pending_states.pop()
+                            target.dirty_vars.update(source.dirty_vars)
+                            target.dirty_substates.update(source.dirty_substates)
+                            pending_states.extend(
+                                (source.substates[name], target.substates[name])
+                                for name in source.dirty_substates
+                                if name in source.substates and name in target.substates
+                            )
+                        await chain_updates(
+                            None,
+                            root_state=flush_root,
+                            handler_name=registered_handler.handler.fn.__qualname__,
+                        )
+                except Exception:
+                    # Preserve the handler's exception if its recovery flush fails.
+                    logger.exception(
+                        "Error flushing delta after foreground handler "
+                        f"{registered_handler.handler.fn.__qualname__} raised:"
+                    )
+            raise
         # Otherwise drop the state lock and start processing the background task
         # with a proxy state. No root_state: the lock is no longer held, and
         # under a shared state tree (opportunistic locking, in-memory manager)

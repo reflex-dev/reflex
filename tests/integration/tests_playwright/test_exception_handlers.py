@@ -21,10 +21,17 @@ def TestApp():
         """State for the TestApp app."""
 
         react_error: bool = False
+        status: str = "idle"
 
         @rx.event
         def set_react_error(self, value: bool):
             self.react_error = value
+
+        @rx.event
+        def mutate_then_raise(self):
+            self.status = "partial"
+            msg = "boom"
+            raise RuntimeError(msg)
 
         def divide_by_number(self, number: int):
             """Divide by number and print the result.
@@ -49,6 +56,12 @@ def TestApp():
                 on_click=lambda: TestAppState.divide_by_number(0),  # pyright: ignore [reportCallIssue]
                 id="induce-backend-error-btn",
             ),
+            rx.button(
+                "mutate_then_raise",
+                on_click=TestAppState.mutate_then_raise,
+                id="mutate-then-raise-btn",
+            ),
+            rx.text(TestAppState.status, id="status"),
             rx.button(
                 "induce_react_error",
                 on_click=TestAppState.set_react_error(True),
@@ -141,6 +154,20 @@ def test_backend_exception_handler_during_runtime(
     assert AppHarness._poll_for(
         lambda: "divide_by_number" in caplog.text and "ZeroDivisionError" in caplog.text
     ), caplog.text
+
+
+def test_foreground_state_delta_is_sent_when_handler_raises(
+    test_app: AppHarness,
+    page: Page,
+) -> None:
+    """A state mutation before a foreground error reaches the page immediately."""
+    _open_app(test_app, page)
+    status = page.locator("#status")
+    expect(status).to_have_text("idle")
+
+    page.locator("#mutate-then-raise-btn").click()
+
+    expect(status).to_have_text("partial")
 
 
 def test_frontend_exception_handler_with_react(
