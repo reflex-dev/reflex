@@ -1732,6 +1732,7 @@ def watch_deployment_status(
 
     with console.status("listening to status updates!"):
         while True:
+            attempt_started = monotonic()
             try:
                 report = client.api.deployments.wait(deployment_id, on_status=note)
             except DeploymentFailedError as ex:
@@ -1748,6 +1749,12 @@ def watch_deployment_status(
                 # forever, though: a control plane that stays unreachable is a
                 # command that never returns, so the handoff below ends it.
                 now = monotonic()
+                # A wait that kept going for a whole grace period had the
+                # service answering, even if the status never changed, so this
+                # is a new outage. One that failed sooner (e.g. on its report
+                # fetch) does not end the one before it.
+                if now - attempt_started >= _WATCH_UNREACHABLE_GRACE.total_seconds():
+                    unreachable_since = None
                 if unreachable_since is None:
                     unreachable_since = now
                     logger.warning(
