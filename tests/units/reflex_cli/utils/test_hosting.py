@@ -19,6 +19,7 @@ from reflex_build_sdk import (
     APITimeoutError,
     DeploymentTimeoutError,
 )
+from reflex_build_sdk._sync.resources.deployments import Deployments
 from reflex_build_sdk.transports import Request
 from reflex_build_sdk.types import DeploymentReport, GcpConnection, GcpStatus
 from reflex_cli import constants
@@ -1996,12 +1997,83 @@ def test_watch_grace_restarts_after_a_window_that_runs_out(mocker: MockerFixture
 
     client = _client()
     client.api.deployments.wait.side_effect = wait
+    client.api.deployments.report.return_value = _watch_report("Pending")
 
     assert (
         watch_deployment_status(str(uuid.UUID(int=5)), client).outcome
         is WatchOutcome.SUCCEEDED
     )
     assert client.api.deployments.wait.call_count == 4
+
+
+@pytest.mark.parametrize(
+    ("recorded", "outcome"),
+    [("Failed", WatchOutcome.FAILED), ("AwaitingApproval", WatchOutcome.SUCCEEDED)],
+)
+def test_watch_reads_the_report_slow_polls_never_reach(
+    recorded: str, outcome: WatchOutcome, mocker: MockerFixture
+):
+    """A window that runs out reads the report, which slow polls never reach.
+
+    The SDK reads the report only every 15 polls, counted per ``wait()``.
+    Status requests taking 25 s each end a five-minute window after 12, so a
+    state the deployment recorded under an unchanged message is only seen if
+    the watch reads the report itself. This runs the SDK's own wait loop.
+
+    Args:
+        recorded: The status the deployment's report records.
+        outcome: How the watch should end.
+        mocker: Pytest mocker fixture.
+    """
+    clock = _WatchClock(mocker)
+    mocker.patch(
+        "reflex_build_sdk._sync.resources.deployments.monotonic",
+        side_effect=lambda: clock.now,
+    )
+
+    class SlowDeployments:
+        """The SDK's real wait loop over a service with slow status requests."""
+
+        wait = Deployments.wait
+
+        def __init__(self):
+            """Start counting status requests."""
+            self.status_calls = 0
+
+        def status(self, deployment_id: str) -> str:
+            """Answer a status request, slowly.
+
+            Args:
+                deployment_id: The deployment.
+
+            Returns:
+                An unchanged, non-final message, until a watch that never read
+                the report gives up waiting for it and is told it went live.
+            """
+            self.status_calls += 1
+            clock.advance(25)
+            if self.status_calls < 100:
+                return "building"
+            return "Deployment completed successfully! app running at https://x"
+
+        def report(self, deployment_id: str) -> DeploymentReport:
+            """Read the deployment's report.
+
+            Args:
+                deployment_id: The deployment.
+
+            Returns:
+                The report, with the recorded status.
+            """
+            return _watch_report(recorded)
+
+    client = _client()
+    client.api.deployments = SlowDeployments()
+
+    result = watch_deployment_status(str(uuid.UUID(int=5)), client)
+
+    assert result.outcome is outcome
+    assert result.status == recorded
 
 
 def test_watch_grace_runs_out_however_long_a_failing_attempt_ran(
