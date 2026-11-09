@@ -252,6 +252,19 @@ def _wait_for_exit(backend: mock.Mock) -> threading.Thread:
     return thread
 
 
+def _frontend_process() -> subprocess.Popen:
+    """Start a stand-in frontend process, in its own session like the real one.
+
+    Returns:
+        The running process.
+    """
+    return subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(60)"],
+        stdout=subprocess.PIPE,
+        **reflex_testing.FRONTEND_POPEN_ARGS,
+    )
+
+
 def test_app_harness_stop_twice_is_a_noop(tmp_path):
     """A second ``stop()`` finds nothing left to stop instead of raising.
 
@@ -264,20 +277,19 @@ def test_app_harness_stop_twice_is_a_noop(tmp_path):
     outer = RegistrationContext.ensure_context()
     harness = AppHarness.create(root=tmp_path, app_name="stoptwiceapp")
     harness._registry_token = RegistrationContext.set(RegistrationContext())
-    harness.backend = mock.Mock()
-    harness.backend_thread = _wait_for_exit(harness.backend)
-    harness.frontend_process = subprocess.Popen(
-        [sys.executable, "-c", "import time; time.sleep(60)"],
-        stdout=subprocess.PIPE,
-        **reflex_testing.FRONTEND_POPEN_ARGS,
-    )
+    backend = harness.backend = mock.Mock()
+    harness.backend_thread = _wait_for_exit(backend)
+    frontend_process = harness.frontend_process = _frontend_process()
 
     harness.stop()
     harness.stop()
 
     assert RegistrationContext.get() is outer
-    assert harness.frontend_process.returncode is not None
+    assert frontend_process.returncode is not None
     assert not harness.backend_thread.is_alive()
+    # Code reading the harness after the `with` block still finds what it ran.
+    assert harness.backend is backend
+    assert harness.frontend_process is frontend_process
 
 
 def test_app_harness_failed_start_stops_what_it_started(tmp_path, monkeypatch):
@@ -305,18 +317,78 @@ def test_app_harness_failed_start_stops_what_it_started(tmp_path, monkeypatch):
         msg = "Frontend did not start"
         raise RuntimeError(msg)
 
+    def start_frontend():
+        harness.frontend_process = _frontend_process()
+
     monkeypatch.setattr(harness, "_initialize_app", initialize_app)
     monkeypatch.setattr(harness, "_start_backend", start_backend)
-    monkeypatch.setattr(harness, "_start_frontend", lambda: None)
+    monkeypatch.setattr(harness, "_start_frontend", start_frontend)
     monkeypatch.setattr(harness, "_wait_frontend", wait_frontend)
 
     with pytest.raises(RuntimeError, match="Frontend did not start"), harness:
         pytest.fail("A harness that failed to start must not run the block.")
 
+    assert harness.frontend_process is not None
+    assert harness.frontend_process.returncode is not None
     assert backend.should_exit
     assert harness.backend_thread is not None
     assert not harness.backend_thread.is_alive()
     assert RegistrationContext.get() is outer
+
+
+def test_app_harness_failed_start_keeps_its_error_when_cleanup_fails(
+    tmp_path, monkeypatch
+):
+    """The startup failure is what a failed ``start()`` raises, even if cleanup fails.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    harness = AppHarness.create(root=tmp_path, app_name="cleanupfailsapp")
+
+    def start_backend():
+        msg = "uvicorn is not installed"
+        raise ImportError(msg)
+
+    def stop():
+        msg = "psutil is not installed"
+        raise ImportError(msg)
+
+    monkeypatch.setattr(harness, "_initialize_app", lambda: None)
+    monkeypatch.setattr(harness, "_start_backend", start_backend)
+    monkeypatch.setattr(harness, "stop", stop)
+
+    with pytest.raises(ImportError, match="uvicorn") as exc_info:
+        harness.start()
+
+    assert any("psutil is not installed" in note for note in exc_info.value.__notes__)
+
+
+def test_app_harness_failed_start_leaves_the_callers_states(tmp_path, monkeypatch):
+    """A start that fails before the harness has its own app forgets no states.
+
+    Forgetting them would drop the states of an app the caller already
+    imported, in the caller's own registration context.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    harness = AppHarness.create(root=tmp_path, app_name="earlyfailapp")
+    reload_state_module = mock.Mock()
+
+    def initialize_app():
+        msg = "frontend dependencies failed to install"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(harness, "_initialize_app", initialize_app)
+    monkeypatch.setattr(harness, "_reload_state_module", reload_state_module)
+
+    with pytest.raises(RuntimeError, match="frontend dependencies"):
+        harness.start()
+
+    reload_state_module.assert_not_called()
 
 
 def test_app_harness_restart_waits_for_the_new_frontend(tmp_path, monkeypatch):

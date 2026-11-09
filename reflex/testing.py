@@ -474,8 +474,14 @@ class AppHarness:
             self._start_backend()
             self._start_frontend()
             self._wait_frontend()
-        except BaseException:
-            self.stop()
+        except BaseException as start_error:
+            try:
+                self.stop()
+            except Exception as stop_error:
+                # The startup failure is the one to report.
+                start_error.add_note(
+                    f"Stopping the harness after it failed to start also failed: {stop_error!r}"
+                )
             raise
         return self
 
@@ -524,8 +530,10 @@ class AppHarness:
             driver.quit()
         self._frontends.clear()
 
-        self._reload_state_module()
+        # Only a harness that registered an app of its own has states to forget;
+        # otherwise they would be the caller's.
         if self._registry_token is not None:
+            self._reload_state_module()
             RegistrationContext.reset(self._registry_token)
             self._registry_token = None
 
