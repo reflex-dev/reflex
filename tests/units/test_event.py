@@ -5,6 +5,7 @@ import subprocess
 from collections import UserList
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any, TypeVar, cast
+from unittest.mock import patch
 
 import pytest
 from reflex_base.constants import LogLevel
@@ -26,7 +27,7 @@ from reflex_base.event import (
     on_submit_string_event,
 )
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import format, log
+from reflex_base.utils import console, format, log
 from reflex_base.utils.exceptions import (
     BackendVarFormatError,
     EventHandlerArgTypeMismatchError,
@@ -1757,41 +1758,30 @@ def test_decentralized_event_actions_are_registered():
     assert registered.states == (S,)
 
 
-def test_rx_event_stateless_registers_globally():
-    """A function with no state parameter registers as a stateless handler."""
+def test_rx_event_on_a_function_without_a_state_parameter_stays_a_function():
+    """A plain function decorated with @rx.event warns and is not an event handler."""
 
-    @event
     def ping(x: str) -> str:
         return x
 
-    assert isinstance(ping, EventHandler)
-    assert ping.state is None
-    registered = RegistrationContext.get().event_handlers[
-        format.format_event_handler(ping)
-    ]
-    assert registered.handler is ping
-    assert registered.states == ()
-    spec = ping("1")
-    assert isinstance(spec, EventSpec)
-    [ev] = Event.from_event_type(spec)
-    assert ev.name == format.format_event_handler(ping)
-    assert ev.payload == {"x": "1"}
-    _ = rx.input(on_change=ping)
-
-
-def test_rx_event_stateless_with_generic_annotation():
-    """A stateless handler may annotate its first parameter with a generic alias."""
-
-    @event
     def summarize(items: list[int], label: str | None = None) -> int:
         return sum(items)
 
-    assert isinstance(summarize, EventHandler)
-    assert summarize.state is None
-    registered = RegistrationContext.get().event_handlers[
-        format.format_event_handler(summarize)
-    ]
-    assert registered.states == ()
+    before = set(RegistrationContext.get().event_handlers)
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        decorated_ping = event(ping)  # pyright: ignore [reportCallIssue, reportArgumentType]
+        decorated_summarize = event(stop_propagation=True)(summarize)  # pyright: ignore [reportArgumentType]
+
+    assert [call.kwargs["feature_name"] for call in mock_deprecate.call_args_list] == [
+        "@rx.event on a function without a state parameter"
+    ] * 2
+    assert decorated_ping is ping
+    assert decorated_summarize is summarize
+    assert ping.__name__ == "ping"
+    assert ping("1") == "1"
+    assert summarize([1, 2]) == 3
+    assert set(RegistrationContext.get().event_handlers) == before
 
 
 def test_event_handler_and_spec_expose_wrapped_function() -> None:
@@ -1818,7 +1808,7 @@ def test_rx_event_on_a_non_state_class_method_still_calls_it() -> None:
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
 
         class Helper:
-            @rx.event
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
             def compute(self, x: int) -> int:
                 return x * 2
 
@@ -1827,4 +1817,4 @@ def test_rx_event_on_a_non_state_class_method_still_calls_it() -> None:
         == "@rx.event on a method of a class that is not a state"
     )
     assert isinstance(Helper.compute, EventHandler)
-    assert Helper().compute(3) == 6  # pyright: ignore [reportArgumentType]
+    assert Helper().compute(3) == 6  # pyright: ignore [reportCallIssue]

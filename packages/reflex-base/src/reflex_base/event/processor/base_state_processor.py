@@ -390,8 +390,29 @@ async def chain_updates(
         await _route_events(ctx, fixed_events)
 
 
+async def _flush_failed_handler(root_state: BaseState, handler_name: str) -> None:
+    """Send the writes a cancelled or failing handler made after its last yield.
+
+    The next handler's delta does not carry them when it loads a fresh copy of
+    the state, as redis does. Without a pending write there is nothing to send,
+    which also covers a handler whose own delta failed: that delta already
+    cleaned the state. A flush failure is logged, so the handler's own
+    exception stays the one that propagates.
+
+    Args:
+        root_state: The locked root state of the handler.
+        handler_name: The name of the handler, used for error messages.
+    """
+    if not root_state.dirty_vars and not root_state.dirty_substates:
+        return
+    try:
+        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+    except Exception:
+        logger.exception(f"Error flushing delta after handler {handler_name} failed:")
+
+
 def ensure_locked(
-    state: BaseState | StateProxy | None, root_state: BaseState | None
+    state: BaseState | StateProxy, root_state: BaseState | None
 ) -> BaseState | None:
     """The root to flush deltas from, only while the state lock is held.
 
@@ -425,8 +446,7 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     self`` in a background handler, ``app.modify_state``), the handler runs
     inline on the locked state tree under the caller's context: its yields
     emit deltas and the events it yields chain under the caller's event. With
-    no lock held, the event is enqueued and its future awaited. A stateless
-    handler always runs inline.
+    no lock held, the event is enqueued and its future awaited.
 
     Args:
         spec: The event spec to execute.
@@ -465,23 +485,15 @@ async def execute_event_inline(spec: EventSpec) -> Any:
         raise EventHandlerTypeError(msg)
     handler = registered.handler
     root_state = ctx.locked_root
-    if not registered.states:
-        if root_state is None:
-            return await process_event(
-                handler=handler, payload=event.payload, state=None, root_state=None
-            )
-    elif root_state is None:
+    if root_state is None:
         (future,) = await ctx.enqueue(event)
         return await future
-    elif handler.is_background:
+    if handler.is_background:
         msg = (
             f"Background event handler `{name}` cannot be awaited while the "
             "state lock is held, as it would wait for that lock; yield it instead."
         )
         raise EventHandlerTypeError(msg)
-    # Under the lock, a stateless handler flushes the caller's pending delta
-    # through the locked root before any frontend event it yields, like every
-    # other yield does, so it is covered by the lock like a state handler.
     # The lock stays held until this run is done, even if the task that
     # started it finishes first. Registered before the first await, so a
     # task that starts while the lock is held is always seen by its release.
@@ -494,11 +506,7 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     else:
         ctx.inline_tasks.add(task)
     try:
-        substate = (
-            await root_state.get_state(registered.states[0])
-            if registered.states
-            else None
-        )
+        substate = await root_state.get_state(registered.states[0])
         return await process_event(
             handler=handler,
             payload=event.payload,
@@ -513,7 +521,7 @@ async def execute_event_inline(spec: EventSpec) -> Any:
 async def process_event(
     handler: EventHandler,
     payload: dict,
-    state: BaseState | StateProxy | None,
+    state: BaseState | StateProxy,
     root_state: BaseState | None,
 ) -> Any:
     """Process event.
@@ -521,7 +529,7 @@ async def process_event(
     Args:
         handler: EventHandler to process.
         payload: The event payload.
-        state: State to process the handler, or None for a stateless handler.
+        state: State to process the handler.
         root_state: The root state of the app, used for emitting deltas. Pass
             None when the caller does not hold the state lock (background
             tasks): computing and cleaning a delta on an unlocked root races
@@ -540,15 +548,13 @@ async def process_event(
     handler_name = fn.__qualname__
     payload = _prepare_event_payload(handler, payload)
 
-    # A stateless handler takes no state argument.
-    args = () if state is None else (state,)
     # Handle async functions.
     if handler._is_coroutine_function:
-        events = await fn(*args, **payload)
+        events = await fn(state, **payload)
 
     # Handle regular functions.
     else:
-        events = fn(*args, **payload)
+        events = fn(state, **payload)
     # Handle async generators.
     if inspect.isasyncgen(events):
         async for event in events:
@@ -739,20 +745,6 @@ class BaseStateEventProcessor(EventProcessor):
         for future in self._superseded.pop((on_load_name, token), {}).values():
             future.cancel()
 
-    def _runs_unordered(self, registered_handler: RegisteredEventHandler) -> bool:
-        """Whether an event runs immediately instead of in its token's FIFO.
-
-        The FIFO serializes the handlers that take the token's state lock. A
-        stateless handler takes none, so it runs like a background one.
-
-        Args:
-            registered_handler: The registered handler for the event.
-
-        Returns:
-            True for a background or stateless handler.
-        """
-        return registered_handler.handler.is_background or not registered_handler.states
-
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
     ) -> Any:
@@ -770,14 +762,6 @@ class BaseStateEventProcessor(EventProcessor):
         """
         ctx = entry.ctx
         event = entry.event
-        if not registered_handler.states:
-            # A stateless handler holds no lock and gets no state.
-            return await process_event(
-                handler=registered_handler.handler,
-                payload=event.payload,
-                state=None,
-                root_state=None,
-            )
         # The context, not the event: a chained event carries none of its own
         # and inherits the producing view's through fork().
         router_data = ctx.router_data
@@ -837,12 +821,18 @@ class BaseStateEventProcessor(EventProcessor):
 
                 # Process non-background events while holding the lock.
                 if not registered_handler.handler.is_background:
-                    return await process_event(
-                        handler=registered_handler.handler,
-                        payload=event.payload,
-                        state=substate,
-                        root_state=root_state,
-                    )
+                    try:
+                        return await process_event(
+                            handler=registered_handler.handler,
+                            payload=event.payload,
+                            state=substate,
+                            root_state=root_state,
+                        )
+                    except (Exception, asyncio.CancelledError):
+                        await _flush_failed_handler(
+                            root_state, registered_handler.handler.fn.__qualname__
+                        )
+                        raise
             finally:
                 await ctx.release_lock()
         # Otherwise drop the state lock and start processing the background task
