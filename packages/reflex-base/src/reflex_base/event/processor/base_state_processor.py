@@ -390,6 +390,27 @@ async def chain_updates(
         await _route_events(ctx, fixed_events)
 
 
+async def _flush_failed_handler(root_state: BaseState, handler_name: str) -> None:
+    """Send the writes a cancelled or failing handler made after its last yield.
+
+    The next handler's delta does not carry them when it loads a fresh copy of
+    the state, as redis does. Without a pending write there is nothing to send,
+    which also covers a handler whose own delta failed: that delta already
+    cleaned the state. A flush failure is logged, so the handler's own
+    exception stays the one that propagates.
+
+    Args:
+        root_state: The locked root state of the handler.
+        handler_name: The name of the handler, used for error messages.
+    """
+    if not root_state.dirty_vars and not root_state.dirty_substates:
+        return
+    try:
+        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+    except Exception:
+        logger.exception(f"Error flushing delta after handler {handler_name} failed:")
+
+
 def ensure_locked(
     state: BaseState | StateProxy | None, root_state: BaseState | None
 ) -> BaseState | None:
@@ -837,12 +858,18 @@ class BaseStateEventProcessor(EventProcessor):
 
                 # Process non-background events while holding the lock.
                 if not registered_handler.handler.is_background:
-                    return await process_event(
-                        handler=registered_handler.handler,
-                        payload=event.payload,
-                        state=substate,
-                        root_state=root_state,
-                    )
+                    try:
+                        return await process_event(
+                            handler=registered_handler.handler,
+                            payload=event.payload,
+                            state=substate,
+                            root_state=root_state,
+                        )
+                    except (Exception, asyncio.CancelledError):
+                        await _flush_failed_handler(
+                            root_state, registered_handler.handler.fn.__qualname__
+                        )
+                        raise
             finally:
                 await ctx.release_lock()
         # Otherwise drop the state lock and start processing the background task

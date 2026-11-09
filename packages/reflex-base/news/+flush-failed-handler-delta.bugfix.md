@@ -1,0 +1,1 @@
+Send the state changes a foreground event handler makes after its last `yield` when it is cancelled or raises, so the frontend receives them right away. With Redis, they were otherwise not sent until the same var changed again or the page reloaded.
