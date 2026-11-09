@@ -1677,16 +1677,22 @@ def watch_deployment_status(
         return WatchResult(WatchOutcome.FAILED, "")
 
     last_status = ""
+    # When the deployment service stopped answering; None while it answers.
+    unreachable_since: float | None = None
 
     def note(message: str) -> None:
         """Record and report a status the deployment reached.
+
+        A status getting through ends any outage, so the next one is given a
+        grace period of its own.
 
         Args:
             message: The status message.
 
         """
-        nonlocal last_status
+        nonlocal last_status, unreachable_since
         last_status = message
+        unreachable_since = None
         logger.info(message)
 
     def narrated(recorded: str) -> str:
@@ -1723,7 +1729,6 @@ def watch_deployment_status(
         return WatchResult(WatchOutcome.UNFINISHED, last_status)
 
     with console.status("listening to status updates!"):
-        unreachable_since = None
         while True:
             try:
                 report = client.api.deployments.wait(deployment_id, on_status=note)

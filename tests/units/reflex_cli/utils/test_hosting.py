@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open
 from urllib.parse import parse_qs, urlsplit
@@ -1834,6 +1835,48 @@ def test_watch_hands_back_a_control_plane_that_stays_unreachable(
     warnings = _log_messages(caplog, logging.WARNING)
     assert "lost contact" in warnings[0]
     assert f"apps status {deployment} --watch" in warnings[-1]
+
+
+def test_watch_grace_restarts_after_the_service_answers(mocker: MockerFixture):
+    """Each outage gets its own grace period once a status has come through.
+
+    A watch that reconnected and kept streaming for longer than the grace
+    period must not give up on the very next blip, counting from the first.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    from reflex_build_sdk import APIConnectionError
+    from reflex_build_sdk.transports import Request
+
+    mocker.patch("reflex_cli.utils.hosting.time.sleep")
+    # The second outage starts well past the grace period of the first.
+    mocker.patch(
+        "reflex_cli.utils.hosting.monotonic",
+        side_effect=[0.0, _WATCH_UNREACHABLE_GRACE.total_seconds() + 10],
+    )
+    request = Request(method="GET", url="https://build.reflex.dev", headers={})
+    attempts = iter([
+        APIConnectionError("dropped", request=request),
+        APIConnectionError("dropped later", request=request),
+    ])
+
+    def wait(deployment_id: str, on_status: Callable[[str], None]):
+        error = next(attempts, None)
+        if error is None:
+            return _watch_report()
+        if str(error) == "dropped later":
+            on_status("building")
+        raise error
+
+    client = _client()
+    client.api.deployments.wait.side_effect = wait
+
+    assert (
+        watch_deployment_status(str(uuid.UUID(int=5)), client).outcome
+        is WatchOutcome.SUCCEEDED
+    )
+    assert client.api.deployments.wait.call_count == 3
 
 
 def test_generate_config_without_pyyaml_raises(mocker: MockFixture):
