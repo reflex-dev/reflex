@@ -18,6 +18,7 @@ from reflex_build_sdk import (
     APIResponseValidationError,
     APITimeoutError,
 )
+from reflex_build_sdk.transports import Request
 from reflex_build_sdk.types import DeploymentReport, GcpConnection, GcpStatus
 from reflex_cli import constants
 from reflex_cli.utils import hosting
@@ -1846,9 +1847,6 @@ def test_watch_grace_restarts_after_the_service_answers(mocker: MockerFixture):
     Args:
         mocker: Pytest mocker fixture.
     """
-    from reflex_build_sdk import APIConnectionError
-    from reflex_build_sdk.transports import Request
-
     mocker.patch("reflex_cli.utils.hosting.time.sleep")
     # The second outage starts well past the grace period of the first.
     mocker.patch(
@@ -1862,6 +1860,18 @@ def test_watch_grace_restarts_after_the_service_answers(mocker: MockerFixture):
     ])
 
     def wait(deployment_id: str, on_status: Callable[[str], None]):
+        """Drop the connection twice, with a new status between the drops.
+
+        Args:
+            deployment_id: The deployment being watched.
+            on_status: The watch's status callback.
+
+        Returns:
+            The deployment's report, once both drops are over.
+
+        Raises:
+            APIConnectionError: For each drop.
+        """
         error = next(attempts, None)
         if error is None:
             return _watch_report()
@@ -1877,6 +1887,48 @@ def test_watch_grace_restarts_after_the_service_answers(mocker: MockerFixture):
         is WatchOutcome.SUCCEEDED
     )
     assert client.api.deployments.wait.call_count == 3
+
+
+def test_watch_grace_runs_out_when_only_the_same_status_gets_through(
+    mocker: MockerFixture,
+):
+    """A status repeated by each retry does not restart the grace period.
+
+    Every ``wait()`` call reports the current status first, so a report fetch
+    that keeps failing after it would otherwise retry forever.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    mocker.patch("reflex_cli.utils.hosting.time.sleep")
+    mocker.patch(
+        "reflex_cli.utils.hosting.monotonic",
+        side_effect=[0.0, _WATCH_UNREACHABLE_GRACE.total_seconds() + 1],
+    )
+    request = Request(method="GET", url="https://build.reflex.dev", headers={})
+
+    def wait(deployment_id: str, on_status: Callable[[str], None]):
+        """Report the same status, then fail the report fetch.
+
+        Args:
+            deployment_id: The deployment being watched.
+            on_status: The watch's status callback.
+
+        Raises:
+            APITimeoutError: On every call, as the report fetch times out.
+        """
+        on_status("building")
+        msg = "report timed out"
+        raise APITimeoutError(msg, request=request)
+
+    client = _client()
+    client.api.deployments.wait.side_effect = wait
+
+    assert (
+        watch_deployment_status(str(uuid.UUID(int=5)), client).outcome
+        is WatchOutcome.UNFINISHED
+    )
+    assert client.api.deployments.wait.call_count == 2
 
 
 def test_generate_config_without_pyyaml_raises(mocker: MockFixture):

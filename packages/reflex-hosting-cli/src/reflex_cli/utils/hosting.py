@@ -1683,16 +1683,18 @@ def watch_deployment_status(
     def note(message: str) -> None:
         """Record and report a status the deployment reached.
 
-        A status getting through ends any outage, so the next one is given a
-        grace period of its own.
+        A new status ends any outage, so the next one is given a grace period
+        of its own. A repeated one does not: every retried wait reports the
+        current status first, even when the rest of it keeps failing.
 
         Args:
             message: The status message.
 
         """
         nonlocal last_status, unreachable_since
+        if message != last_status:
+            unreachable_since = None
         last_status = message
-        unreachable_since = None
         logger.info(message)
 
     def narrated(recorded: str) -> str:
