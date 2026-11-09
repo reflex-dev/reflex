@@ -356,6 +356,7 @@ def test_declarative_base_serializer_does_not_retain_model_classes():
         Returns:
             A weak reference to the temporary model class.
         """
+
         class Base(DeclarativeBase):
             pass
 
