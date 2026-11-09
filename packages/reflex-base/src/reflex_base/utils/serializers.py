@@ -13,6 +13,7 @@ import logging
 import sys
 import uuid
 import warnings
+import weakref
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
 from datetime import date, datetime, time, timedelta
@@ -650,23 +651,30 @@ class _SQLAlchemyLayout(NamedTuple):
     primary_key: tuple[str, ...]
 
 
-@functools.cache
-def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
-    """Resolve the attribute layout of a SQLAlchemy model class once.
+_SQLALCHEMY_LAYOUTS: weakref.WeakKeyDictionary[type, _SQLAlchemyLayout] = (
+    weakref.WeakKeyDictionary()
+)
+
+
+def _get_sqlalchemy_layout(mapper: Any) -> _SQLAlchemyLayout:
+    """Get the attribute layout of a mapped class, cached while the class exists.
+
+    Write-only and dynamic relationships never hold loaded values, so they are
+    not part of the layout.
 
     Args:
-        cls: The mapped class.
+        mapper: The SQLAlchemy mapper of the model class.
 
     Returns:
         The unmapped dataclass fields, the other mapped attributes, the
         relationships with their ``uselist`` flags and the primary-key attributes.
     """
-    import sqlalchemy
-
-    mapper = sqlalchemy.inspect(cls)
+    cls: type = mapper.class_
+    if (layout := _SQLALCHEMY_LAYOUTS.get(cls)) is not None:
+        return layout
     manager = mapper.class_manager
     relationships = mapper.relationships
-    return _SQLAlchemyLayout(
+    layout = _SQLALCHEMY_LAYOUTS[cls] = _SQLAlchemyLayout(
         fields=tuple(
             field.name for field in dataclasses.fields(cls) if field.name not in manager
         )
@@ -674,12 +682,16 @@ def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
         else (),
         columns=tuple(key for key in manager if key not in relationships),
         relationships=tuple(
-            (key, relationships[key].uselist) for key in manager if key in relationships
+            (key, relationships[key].uselist)
+            for key in manager
+            if key in relationships
+            and relationships[key].lazy not in ("write_only", "dynamic")
         ),
         primary_key=tuple(
             mapper.get_property_by_column(column).key for column in mapper.primary_key
         ),
     )
+    return layout
 
 
 def _serialize_sqlalchemy_model(
@@ -704,7 +716,7 @@ def _serialize_sqlalchemy_model(
     import sqlalchemy
 
     state = sqlalchemy.inspect(m)
-    layout = _get_sqlalchemy_layout(type(m))
+    layout = _get_sqlalchemy_layout(state.mapper)
     values = state.dict
     committed = state.committed_state
     has_identity_key = state.key is not None
@@ -774,10 +786,11 @@ def _serialize_sqlalchemy_related(
     import sqlalchemy
 
     if id(item) in seen:
-        values = sqlalchemy.inspect(item).dict
+        item_state = sqlalchemy.inspect(item)
+        values = item_state.dict
         pk_data = {
             key: values.get(key)
-            for key in _get_sqlalchemy_layout(type(item)).primary_key
+            for key in _get_sqlalchemy_layout(item_state.mapper).primary_key
         }
         return None if None in pk_data.values() else pk_data
 

@@ -1,8 +1,10 @@
 """Tests for reflex_base.utils.serializers."""
 
+import gc
 import json
 import subprocess
 import sys
+import weakref
 
 import pytest
 from reflex_base.utils import serializers
@@ -15,8 +17,10 @@ pytest.importorskip("sqlalchemy")
 from sqlalchemy import ForeignKey, create_engine, event, select
 from sqlalchemy.orm import (
     DeclarativeBase,
+    DynamicMapped,
     Mapped,
     Session,
+    WriteOnlyMapped,
     mapped_column,
     relationship,
     selectinload,
@@ -302,6 +306,68 @@ def test_declarative_base_serializer_shared_related_object():
     assert isinstance(payload, dict)
     assert payload["author"] == {"id": 1, "name": "ada"}
     assert payload["comments"][0]["author"] == {"id": 1, "name": "ada"}
+
+
+def test_declarative_base_serializer_omits_write_only_and_dynamic_relationships():
+    """Write-only and dynamic relationships never hold loaded values, so they are omitted."""
+
+    class Base(DeclarativeBase):
+        pass
+
+    class Team(Base):
+        __tablename__ = "query_only_team"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        recent: WriteOnlyMapped["Hero"] = relationship(overlaps="members")
+        members: DynamicMapped["Hero"] = relationship(overlaps="recent")
+
+    class Hero(Base):
+        __tablename__ = "query_only_hero"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        team_id: Mapped[int | None] = mapped_column(ForeignKey("query_only_team.id"))
+
+    assert serializers.serialize(Team(id=1)) == {"id": 1}
+
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    statements = []
+    event.listen(
+        engine,
+        "before_cursor_execute",
+        lambda *args: statements.append(args[2]),
+    )
+    with Session(engine) as session:
+        team = Team(id=2)
+        session.add(team)
+
+        assert serializers.serialize(team) == {"id": 2}
+
+    assert statements == []
+    engine.dispose()
+
+
+def test_declarative_base_serializer_does_not_retain_model_classes():
+    """Serializing a model does not keep its class alive after the class is dropped."""
+
+    def serialize_new_model() -> weakref.ref:
+        class Base(DeclarativeBase):
+            pass
+
+        class Model(Base):
+            __tablename__ = "retained_model"
+
+            id: Mapped[int] = mapped_column(primary_key=True)
+
+        assert serializers.serialize(Model(id=1)) == {"id": 1}
+        return weakref.ref(Model)
+
+    model = serialize_new_model()
+    serializers.get_serializer.cache_clear()
+    serializers.get_serializer_type.cache_clear()
+    gc.collect()
+
+    assert model() is None
 
 
 def test_declarative_base_model_attribute_access():
