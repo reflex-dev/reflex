@@ -351,6 +351,11 @@ def test_declarative_base_serializer_does_not_retain_model_classes():
     """Serializing a model does not keep its class alive after the class is dropped."""
 
     def serialize_new_model() -> weakref.ref:
+        """Serialize a temporary model without retaining its class.
+
+        Returns:
+            A weak reference to the temporary model class.
+        """
         class Base(DeclarativeBase):
             pass
 
