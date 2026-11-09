@@ -7683,7 +7683,7 @@ def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> Non
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
 
         class StaticState(BaseState):
-            @rx.event
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
             @staticmethod
             def helper(value: int) -> int:
                 return value * 2
@@ -7693,7 +7693,7 @@ def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> Non
         == "@rx.event on a staticmethod or classmethod"
     )
     assert isinstance(StaticState.__dict__["helper"], staticmethod)
-    assert StaticState.helper(2) == 4
+    assert StaticState.helper(2) == 4  # pyright: ignore [reportCallIssue]
 
 
 def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:
