@@ -224,6 +224,7 @@ class EventProcessor:
             enqueue_impl=self.enqueue_many,
             emit_delta_impl=emit_delta_impl,
             emit_event_impl=emit_event_impl,
+            middleware=self.middleware,
         )
         return self
 

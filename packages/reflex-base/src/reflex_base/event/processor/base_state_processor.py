@@ -332,6 +332,29 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         await ctx.enqueue(*backend_events)
 
 
+async def _preprocess_blocks(ctx: EventContext, state: BaseState, event: Event) -> bool:
+    """Run the context's middleware preprocess and route the update that blocks.
+
+    Args:
+        ctx: The event context, carrying the middleware.
+        state: The locked state the event runs against.
+        event: The event about to run.
+
+    Returns:
+        Whether a middleware blocked the event.
+    """
+    if (
+        ctx.middleware is None
+        or (update := await ctx.middleware._preprocess(state, event)) is None
+    ):
+        return False
+    if update.delta:
+        await ctx.emit_delta(update.delta)
+    if update.events:
+        await _route_events(ctx, update.events)
+    return True
+
+
 async def chain_updates(
     events: Any,
     handler_name: str,
@@ -494,6 +517,9 @@ async def execute_event_inline(spec: EventSpec) -> Any:
             "state lock is held, as it would wait for that lock; yield it instead."
         )
         raise EventHandlerTypeError(msg)
+    # Gated like a queued event: a handler the middleware blocks is not run.
+    if await _preprocess_blocks(ctx, root_state, event):
+        return None
     # The lock stays held until this run is done, even if the task that
     # started it finishes first. Registered before the first await, so a
     # task that starts while the lock is held is always seen by its release.
@@ -795,17 +821,7 @@ class BaseStateEventProcessor(EventProcessor):
                 if merged_router_data != previous_router_data:
                     state.router_data = merged_router_data
 
-            # Preprocess the event.
-            if (
-                self.middleware is not None
-                and (update := await self.middleware._preprocess(state, event))
-                is not None
-            ):
-                # If there was an update, yield it.
-                if update.delta:
-                    await ctx.emit_delta(update.delta)
-                if update.events:
-                    await _route_events(ctx, update.events)
+            if await _preprocess_blocks(ctx, state, event):
                 return None
 
             # Get the event's substate.

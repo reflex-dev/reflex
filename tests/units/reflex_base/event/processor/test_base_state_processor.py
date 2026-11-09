@@ -285,6 +285,22 @@ def wired_app(
     return app
 
 
+def _use_middleware(processor: BaseStateEventProcessor, app: App) -> None:
+    """Run the processor's events through the app's middleware.
+
+    The fixture builds the root context by hand, so the middleware that
+    ``configure`` would put on it is set here.
+
+    Args:
+        processor: The not-yet-started processor.
+        app: The app whose middleware to apply.
+    """
+    assert processor._root_context is not None
+    processor._root_context = dataclasses.replace(
+        processor._root_context, middleware=app
+    )
+
+
 async def test_rehydrate_sets_is_hydrated_on_fresh_token(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
@@ -365,7 +381,7 @@ async def test_preprocess_update_routes_frontend_events_to_client(
             )
 
     wired_app.add_middleware(BlockingMiddleware())
-    real_base_state_processor.middleware = wired_app
+    _use_middleware(real_base_state_processor, wired_app)
 
     async with real_base_state_processor as p:
         await p.enqueue(token, Event.from_event_type(GatedState.do_thing())[0])
@@ -4154,6 +4170,68 @@ async def test_await_handler_inline_returns_value_and_chains_its_yields(
         if f"n{FIELD_MARKER}" in delta.get(AwaitState.get_full_name(), {})
     ]
     assert 21 in n_values
+
+
+async def test_awaited_handler_passes_through_middleware_preprocess(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_events: list[tuple[str, tuple[Event, ...]]],
+    token: str,
+):
+    """An awaited handler is gated by middleware like a queued event.
+
+    Regression: awaiting a handler inline skipped ``preprocess``, so a handler
+    an auth middleware blocks ran when a handler it allows awaited it.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_events: List to capture events emitted to the client.
+        token: The client token.
+    """
+
+    class GateState(State):
+        log: list[str] = []
+
+        @event
+        def allowed(self) -> str:
+            self.log = [*self.log, "allowed"]
+            return "ok"
+
+        @event
+        def blocked(self) -> str:
+            self.log = [*self.log, "blocked"]
+            return "leaked"
+
+        @event
+        async def caller(self):
+            first = await GateState.allowed()
+            second = await GateState.blocked()
+            self.log = [*self.log, f"caller:{first}:{second}"]
+
+    class GateMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> StateUpdate | None:
+            if event.name.endswith(".blocked"):
+                return StateUpdate(events=Event.from_event_type(rx.redirect("/login")))
+            return None
+
+    wired_app.add_middleware(GateMiddleware())
+    _use_middleware(real_base_state_processor, wired_app)
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(GateState.caller())[0]
+        )
+        await future.wait_all()
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(GateState)).log == ["allowed", "caller:ok:None"]
+    client_event_names = {e.name for _, events in emitted_events for e in events}
+    assert "_redirect" in client_event_names
 
 
 async def test_await_from_substate_targets_sibling_state(

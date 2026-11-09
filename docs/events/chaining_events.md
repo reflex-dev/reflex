@@ -95,6 +95,7 @@ state.
 - A background task awaiting a handler outside `async with self` queues the event and waits for it to finish; inside `async with self` the handler runs right away on the locked state.
 - A background handler cannot be awaited while the state lock is held, as it would wait for that lock. `yield` it instead.
 - Frontend-only events like `rx.redirect` cannot be awaited. `yield` or return them.
+- An awaited handler passes through the app's middleware like any other event. If a middleware blocks it, the handler does not run and the `await` returns `None`.
 - Awaiting several handlers at once with `asyncio.gather` works, but they run concurrently on the same state and interleave at every `await` inside them. Await them one at a time when order matters.
 - A task started from a handler, like `asyncio.ensure_future(State.add(1))`, keeps the state lock held until it finishes when it starts before the handler returns. If the handler returns first, the task's handler is queued like a yielded event and runs under its own lock.
 ```
