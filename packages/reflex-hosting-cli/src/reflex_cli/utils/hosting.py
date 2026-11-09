@@ -36,6 +36,7 @@ from reflex_build_sdk import (
     APIStatusError,
     AuthenticationError,
     DeploymentFailedError,
+    DeploymentTimeoutError,
     LoginDeniedError,
     LoginTimeoutError,
     MissingTokenError,
@@ -1681,19 +1682,21 @@ def watch_deployment_status(
     unreachable_since: float | None = None
 
     def note(message: str) -> None:
-        """Record and report a status the deployment reached.
+        """Record and report a new status the deployment reached.
 
         A new status ends any outage, so the next one is given a grace period
-        of its own. A repeated one does not: every retried wait reports the
-        current status first, even when the rest of it keeps failing.
+        of its own. A repeated one does not, and is not reported again: every
+        wait reports the current status first, even one whose report fetch
+        then fails.
 
         Args:
             message: The status message.
 
         """
         nonlocal last_status, unreachable_since
-        if message != last_status:
-            unreachable_since = None
+        if message == last_status:
+            return
+        unreachable_since = None
         last_status = message
         logger.info(message)
 
@@ -1732,9 +1735,19 @@ def watch_deployment_status(
 
     with console.status("listening to status updates!"):
         while True:
-            attempt_started = monotonic()
             try:
-                report = client.api.deployments.wait(deployment_id, on_status=note)
+                # Wait in windows of one grace period: one that runs out with
+                # the deployment still in progress had every request in it
+                # answered, which a single endless wait could never show.
+                report = client.api.deployments.wait(
+                    deployment_id,
+                    timeout=_WATCH_UNREACHABLE_GRACE.total_seconds(),
+                    on_status=note,
+                )
+            except DeploymentTimeoutError:
+                # The service answered throughout, so any outage is over.
+                unreachable_since = None
+                continue
             except DeploymentFailedError as ex:
                 _report_deployment_failure(deployment_id, ex.report, str(ex))
                 return WatchResult(WatchOutcome.FAILED, narrated(ex.report.status))
@@ -1749,12 +1762,6 @@ def watch_deployment_status(
                 # forever, though: a control plane that stays unreachable is a
                 # command that never returns, so the handoff below ends it.
                 now = monotonic()
-                # A wait that kept going for a whole grace period had the
-                # service answering, even if the status never changed, so this
-                # is a new outage. One that failed sooner (e.g. on its report
-                # fetch) does not end the one before it.
-                if now - attempt_started >= _WATCH_UNREACHABLE_GRACE.total_seconds():
-                    unreachable_since = None
                 if unreachable_since is None:
                     unreachable_since = now
                     logger.warning(

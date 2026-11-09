@@ -17,6 +17,7 @@ from reflex_build_sdk import (
     APIConnectionError,
     APIResponseValidationError,
     APITimeoutError,
+    DeploymentTimeoutError,
 )
 from reflex_build_sdk.transports import Request
 from reflex_build_sdk.types import DeploymentReport, GcpConnection, GcpStatus
@@ -1872,7 +1873,7 @@ def test_watch_grace_restarts_after_the_service_answers(mocker: MockerFixture):
         APIConnectionError("dropped later", request=request),
     ])
 
-    def wait(deployment_id: str, on_status: Callable[[str], None]):
+    def wait(deployment_id: str, *, on_status: Callable[[str], None], **_kwargs):
         """Drop the connection twice, with a new status between the drops.
 
         Args:
@@ -1918,7 +1919,7 @@ def test_watch_grace_runs_out_when_only_the_same_status_gets_through(
     clock = _WatchClock(mocker)
     request = Request(method="GET", url="https://build.reflex.dev", headers={})
 
-    def wait(deployment_id: str, on_status: Callable[[str], None]):
+    def wait(deployment_id: str, *, on_status: Callable[[str], None], **_kwargs):
         """Report the same status, then fail the report fetch half a minute in.
 
         Args:
@@ -1944,33 +1945,40 @@ def test_watch_grace_runs_out_when_only_the_same_status_gets_through(
     assert clock.now < 2 * _WATCH_UNREACHABLE_GRACE.total_seconds()
 
 
-def test_watch_grace_restarts_after_a_long_wait_with_the_same_status(
-    mocker: MockerFixture,
-):
-    """A wait that kept going for a whole grace period ends the outage before it.
+def test_watch_grace_restarts_after_a_window_that_runs_out(mocker: MockerFixture):
+    """A wait window that runs out with the build in progress ends the outage.
 
-    A build can report the same status for a long time; the service answering
-    all along shows in how long the wait ran, not in a new status.
+    A build can report the same status for a long time. The watch waits in
+    windows of one grace period; one that times out had every request in it
+    answered, so the next blip gets a grace period of its own.
 
     Args:
         mocker: Pytest mocker fixture.
     """
     clock = _WatchClock(mocker)
     request = Request(method="GET", url="https://build.reflex.dev", headers={})
-    attempts = iter(range(3))
+    attempts = iter(range(4))
 
-    def wait(deployment_id: str, on_status: Callable[[str], None]):
-        """Drop at once, then poll the same status past the grace period and drop.
+    def wait(
+        deployment_id: str,
+        *,
+        on_status: Callable[[str], None],
+        timeout: float,
+        **_kwargs,
+    ):
+        """Drop, answer for a whole window, then drop again, all on one status.
 
         Args:
             deployment_id: The deployment being watched.
             on_status: The watch's status callback.
+            timeout: The length of the wait window.
 
         Returns:
-            The deployment's report, on the third attempt.
+            The deployment's report, on the fourth attempt.
 
         Raises:
-            APIConnectionError: On the first two attempts.
+            APIConnectionError: On the first and third attempts.
+            DeploymentTimeoutError: When the second attempt's window runs out.
         """
         attempt = next(attempts)
         on_status("building")
@@ -1978,7 +1986,10 @@ def test_watch_grace_restarts_after_a_long_wait_with_the_same_status(
             msg = "dropped"
             raise APIConnectionError(msg, request=request)
         if attempt == 1:
-            clock.advance(_WATCH_UNREACHABLE_GRACE.total_seconds() + 60)
+            clock.advance(timeout)
+            msg = "still in progress"
+            raise DeploymentTimeoutError(msg)
+        if attempt == 2:
             msg = "dropped again"
             raise APIConnectionError(msg, request=request)
         return _watch_report()
@@ -1990,7 +2001,52 @@ def test_watch_grace_restarts_after_a_long_wait_with_the_same_status(
         watch_deployment_status(str(uuid.UUID(int=5)), client).outcome
         is WatchOutcome.SUCCEEDED
     )
-    assert client.api.deployments.wait.call_count == 3
+    assert client.api.deployments.wait.call_count == 4
+
+
+def test_watch_grace_runs_out_however_long_a_failing_attempt_ran(
+    mocker: MockerFixture,
+):
+    """A failed attempt never ends the outage, however long it ran first.
+
+    Only a window that runs out, or a new status, shows the service answering;
+    a report fetch that keeps failing after slow polls must still end the watch.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    clock = _WatchClock(mocker)
+    request = Request(method="GET", url="https://build.reflex.dev", headers={})
+    calls = iter(range(10))
+
+    def wait(deployment_id: str, *, on_status: Callable[[str], None], **_kwargs):
+        """Poll the same status slowly past the grace period, then fail the report.
+
+        Args:
+            deployment_id: The deployment being watched.
+            on_status: The watch's status callback.
+
+        Returns:
+            The deployment's report, if the watch retries ten times.
+
+        Raises:
+            APITimeoutError: Otherwise, as the report fetch times out.
+        """
+        if next(calls, None) is None:
+            return _watch_report()
+        on_status("building")
+        clock.advance(_WATCH_UNREACHABLE_GRACE.total_seconds() + 30)
+        msg = "report timed out"
+        raise APITimeoutError(msg, request=request)
+
+    client = _client()
+    client.api.deployments.wait.side_effect = wait
+
+    assert (
+        watch_deployment_status(str(uuid.UUID(int=5)), client).outcome
+        is WatchOutcome.UNFINISHED
+    )
+    assert client.api.deployments.wait.call_count == 2
 
 
 def test_generate_config_without_pyyaml_raises(mocker: MockFixture):
