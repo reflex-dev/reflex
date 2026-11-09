@@ -280,25 +280,14 @@ def wired_app(
         The wired App instance.
     """
     app = app_module_mock.app = App()
-    assert real_base_state_processor._root_context is not None
-    app._state_manager = real_base_state_processor._root_context.state_manager
-    return app
-
-
-def _use_middleware(processor: BaseStateEventProcessor, app: App) -> None:
-    """Run the processor's events through the app's middleware.
-
-    The fixture builds the root context by hand, so the middleware that
-    ``configure`` would put on it is set here.
-
-    Args:
-        processor: The not-yet-started processor.
-        app: The app whose middleware to apply.
-    """
-    assert processor._root_context is not None
-    processor._root_context = dataclasses.replace(
-        processor._root_context, middleware=app
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    app._state_manager = root_ctx.state_manager
+    # As ``configure`` does: events pass through the app's middleware.
+    real_base_state_processor._root_context = dataclasses.replace(
+        root_ctx, middleware=app
     )
+    return app
 
 
 async def test_rehydrate_sets_is_hydrated_on_fresh_token(
@@ -381,7 +370,6 @@ async def test_preprocess_update_routes_frontend_events_to_client(
             )
 
     wired_app.add_middleware(BlockingMiddleware())
-    _use_middleware(real_base_state_processor, wired_app)
 
     async with real_base_state_processor as p:
         await p.enqueue(token, Event.from_event_type(GatedState.do_thing())[0])
@@ -4224,7 +4212,6 @@ async def test_awaited_handler_passes_through_middleware_preprocess(
 
     wired_app.add_middleware(RecordingMiddleware())
     wired_app.add_middleware(GateMiddleware())
-    _use_middleware(real_base_state_processor, wired_app)
 
     async with real_base_state_processor as processor:
         future = await processor.enqueue(
@@ -4270,7 +4257,6 @@ async def test_streamed_event_passes_through_middleware_preprocess(
             return None
 
     wired_app.add_middleware(GateMiddleware())
-    _use_middleware(real_base_state_processor, wired_app)
 
     async with real_base_state_processor as processor:
         async for _ in processor.enqueue_stream_delta(
@@ -4324,7 +4310,6 @@ async def test_detached_inline_task_holds_the_lock_while_middleware_preprocesses
                 await release.wait()
 
     wired_app.add_middleware(SlowMiddleware())
-    _use_middleware(real_base_state_processor, wired_app)
 
     async with real_base_state_processor as processor:
         parent_future = await processor.enqueue(
