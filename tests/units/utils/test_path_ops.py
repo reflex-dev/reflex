@@ -19,7 +19,7 @@ import pytest
 
 from reflex import constants
 from reflex.utils import frontend_skeleton, path_ops
-from reflex.utils.path_ops import write_file
+from reflex.utils.path_ops import ln, write_file
 
 if sys.platform == "win32":
     import msvcrt
@@ -31,6 +31,14 @@ else:
 def _isolate_reflex_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep persistent file locks inside each test's temporary directory."""
     monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "reflex-data"))
+
+
+def test_ln_is_deprecated(mocker):
+    """Calling path_ops.ln emits the deprecation warning."""
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    assert ln(Path("same"), Path("same")) is False
+    deprecate.assert_called_once()
 
 
 def _assert_json_lock_held(file_path: Path) -> None:

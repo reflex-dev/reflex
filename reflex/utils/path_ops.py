@@ -20,6 +20,7 @@ from pathlib import Path
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
+from reflex_base.utils import console
 
 if sys.platform == "win32":
     import msvcrt
@@ -184,6 +185,36 @@ def ls(path: str | Path) -> list[Path]:
         A list of paths to the contents of the directory.
     """
     return list(Path(path).iterdir())
+
+
+def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
+    """Create a symbolic link.
+
+    Args:
+        src: The path to the file or directory.
+        dest: The path to the destination.
+        overwrite: Whether to overwrite the destination.
+
+    Returns:
+        Whether the link was successful.
+    """
+    console.deprecate(
+        feature_name="reflex.utils.path_ops.ln",
+        reason="Create symbolic links with Path.symlink_to() instead.",
+        deprecation_version="0.10.2",
+        removal_version="1.0",
+    )
+    src, dest = Path(src), Path(dest)
+    if src == dest:
+        return False
+    if not overwrite and (dest.exists() or dest.is_symlink()):
+        return False
+    if src.is_dir():
+        rm(dest)
+        src.symlink_to(dest, target_is_directory=True)
+    else:
+        src.symlink_to(dest)
+    return True
 
 
 def which(program: str | Path) -> Path | None:
