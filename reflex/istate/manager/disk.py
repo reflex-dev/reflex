@@ -436,6 +436,9 @@ class StateManagerDisk(StateManager):
     ) -> AsyncIterator[TOKEN_TYPE]:
         """Modify the state for a token while holding exclusive lock.
 
+        The state is saved even when the handler fails, also when the failure
+        reaches this context from `modify_state_with_links`.
+
         Args:
             token: The token to modify the state for.
             context: The state modification context.
@@ -453,7 +456,17 @@ class StateManagerDisk(StateManager):
 
         async with self._states_locks[lock_key]:
             state = await self.get_state(token)
-            yield state
+            try:
+                yield state
+            except (Exception, asyncio.CancelledError):
+                # A handler may already have yielded these writes to the client.
+                save = asyncio.create_task(self.set_state(token, state, **context))
+                # Keep the lock until the save finishes, even during shutdown.
+                while not save.done():
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await asyncio.shield(save)
+                save.result()
+                raise
             await self.set_state(token, state, **context)
 
     async def close(self):

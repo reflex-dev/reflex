@@ -1,5 +1,7 @@
 """Tests for the disk state manager."""
 
+import asyncio
+import contextlib
 import math
 import os
 from pathlib import Path
@@ -19,6 +21,22 @@ class DiskPersistState(BaseState):
     """A state for testing disk persistence."""
 
     num: float = 3.15
+
+
+class DiskFailureRoot(BaseState):
+    """A state whose handler fails, written as a tree.
+
+    A substate rides along so the failure path covers the whole tree, not just
+    the state the token names.
+    """
+
+    num: float = 0.0
+
+
+class DiskFailureChild(DiskFailureRoot):
+    """A substate written alongside its failed handler's root state."""
+
+    child_value: str = ""
 
 
 def test_states_directory_survives_chdir(tmp_path: Path, monkeypatch):
@@ -254,3 +272,149 @@ async def test_states_from_disk_recompute_cached_vars(
         after_reload,
     )
     await reloaded_state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("write_debounce_seconds", [0, 60])
+async def test_modify_exception_persists_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, write_debounce_seconds: int
+):
+    """Keep the writes of a handler that raises, like the other state managers.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        write_debounce_seconds: The debounce interval under test.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
+    token = BaseStateToken(ident="client", cls=DiskPersistState)
+
+    with pytest.raises(RuntimeError, match="handler failed"):
+        async with state_manager.modify_state(token) as state:
+            assert isinstance(state, DiskPersistState)
+            state.num = 1.5
+            msg = "handler failed"
+            raise RuntimeError(msg)
+
+    await state_manager.close()
+
+    # A manager that starts from the directory alone must see the write.
+    fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    persisted_state = await fresh_state_manager.get_state(token)
+    assert isinstance(persisted_state, DiskPersistState)
+    assert math.isclose(persisted_state.num, 1.5)
+    await fresh_state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("write_debounce_seconds", [0, 60])
+async def test_modify_cancelled_persists_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, write_debounce_seconds: int
+):
+    """Keep mutations and cancellation cleanup visible to the next read from disk.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        write_debounce_seconds: The debounce interval under test.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
+    token = BaseStateToken(ident="client", cls=DiskFailureRoot)
+    started = asyncio.Event()
+
+    async def modify():
+        """Mutate state before cancellation and again during handler cleanup."""
+        async with state_manager.modify_state(token) as state:
+            assert isinstance(state, DiskFailureRoot)
+            state.num = 1.0
+            child = state.substates[DiskFailureChild.get_name()]
+            assert isinstance(child, DiskFailureChild)
+            child.child_value = "cancelled"
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                state.num = 2.0
+
+    task = asyncio.create_task(modify())
+    await asyncio.wait_for(started.wait(), timeout=5)
+    task.cancel("superseded")
+    with pytest.raises(asyncio.CancelledError, match="superseded"):
+        await task
+
+    await state_manager.close()
+
+    # A manager that starts from the directory alone must see the whole tree.
+    fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    persisted_state = await fresh_state_manager.get_state(token)
+    assert isinstance(persisted_state, DiskFailureRoot)
+    assert math.isclose(persisted_state.num, 2.0)
+    persisted_child = persisted_state.substates[DiskFailureChild.get_name()]
+    assert isinstance(persisted_child, DiskFailureChild)
+    assert persisted_child.child_value == "cancelled"
+    await fresh_state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_repeated_cancellation_waits_for_state_save(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Keep the state lock until a repeatedly cancelled handler finishes saving.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="client", cls=DiskPersistState)
+    started = asyncio.Event()
+    saving = asyncio.Event()
+    release_save = asyncio.Event()
+    original_set_state = state_manager.set_state
+
+    async def save(*args, **kwargs):
+        """Pause the state write while the handler is cancelled again.
+
+        Args:
+            args: The positional arguments for the real set_state.
+            kwargs: The keyword arguments for the real set_state.
+        """
+        saving.set()
+        await release_save.wait()
+        await original_set_state(*args, **kwargs)
+
+    monkeypatch.setattr(state_manager, "set_state", save)
+
+    async def modify():
+        """Mutate state and suspend until superseded."""
+        async with state_manager.modify_state(token) as state:
+            assert isinstance(state, DiskPersistState)
+            state.num = 1.5
+            started.set()
+            await asyncio.Event().wait()
+
+    task = asyncio.create_task(modify())
+    try:
+        await asyncio.wait_for(started.wait(), timeout=5)
+        task.cancel("superseded")
+        await asyncio.wait_for(saving.wait(), timeout=5)
+        for _ in range(2):
+            task.cancel("shutdown")
+            await asyncio.sleep(0)
+        # Neither the save nor the lock may be abandoned to the new cancellation.
+        assert not task.done()
+        assert state_manager._is_locked(token)
+        release_save.set()
+        with pytest.raises(asyncio.CancelledError, match="superseded"):
+            await task
+        assert not state_manager._is_locked(token)
+    finally:
+        release_save.set()
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    await state_manager.close()
