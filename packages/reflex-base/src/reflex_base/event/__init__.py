@@ -717,7 +717,7 @@ class EventHandler(EventActionsMixin):
 
     # Only a state binds its handlers. Anywhere else, e.g. in a component or
     # dataclass field, a stored handler reads back as the handler itself. The
-    # exception, a stateless handler declared as a method of a plain class
+    # exception, a decorated method of a class that is not a state
     # (deprecated), binds like a method; `rx.event` types that as an
     # EventCallback, so it does not reach these overloads.
     @overload
@@ -3472,17 +3472,11 @@ if TYPE_CHECKING:
 
 
 class EventDecorator(Protocol):
-    """The decorator ``rx.event(...)`` returns, for state-bound and stateless handlers."""
+    """The decorator ``rx.event(...)`` returns."""
 
-    @overload
     def __call__(
         self, func: "Callable[[BASE_STATE, Unpack[P]], Any]"
-    ) -> EventCallback[*P]: ...
-
-    @overload
-    def __call__(self, func: "Callable[[Unpack[P]], Any]") -> EventCallback[*P]: ...
-
-    def __call__(self, func: Callable) -> EventCallback:
+    ) -> EventCallback[*P]:
         """Wrap a function to be used as an event.
 
         Args:
@@ -3572,21 +3566,6 @@ class EventNamespace:
     def __new__(
         cls,
         func: "Callable[[BASE_STATE, Unpack[P]], Any]",
-        *,
-        background: bool | None = None,
-        supersedes: bool | None = None,
-        stop_propagation: bool | None = None,
-        prevent_default: bool | None = None,
-        throttle: int | None = None,
-        debounce: int | None = None,
-        temporal: bool | None = None,
-    ) -> EventCallback[*P]: ...
-
-    # A stateless handler: a function whose first parameter is not a state.
-    @overload
-    def __new__(
-        cls,
-        func: "Callable[[Unpack[P]], Any]",
         *,
         background: bool | None = None,
         supersedes: bool | None = None,
@@ -3696,13 +3675,26 @@ class EventNamespace:
                 or func_path[-2] == "<locals>"
             ):
                 # A plain function: a decentralized handler when its first
-                # parameter is a state, else a stateless one. Either is
-                # registered now, under a module-qualified name.
+                # parameter is a state, registered now under a
+                # module-qualified name.
                 from reflex.state import BaseState
 
                 types = get_type_hints(func)
                 state_arg_name = next(iter(inspect.signature(func).parameters), None)
                 state_cls = state_arg_name and types.get(state_arg_name)
+                if not (
+                    isinstance(state_cls, type) and issubclass(state_cls, BaseState)
+                ):
+                    console.deprecate(
+                        feature_name="@rx.event on a function without a state parameter",
+                        reason=(
+                            f"`{qualname}` stays a plain function and is not an "
+                            "event handler; remove the decorator."
+                        ),
+                        deprecation_version="0.10.2",
+                        removal_version="1.0",
+                    )
+                    return func  # pyright: ignore [reportReturnType]
                 name = (
                     (func.__module__ + "." + qualname)
                     .replace(".", "_")
@@ -3711,12 +3703,8 @@ class EventNamespace:
                 )
                 object.__setattr__(func, "__name__", name)
                 object.__setattr__(func, "__qualname__", name)
-                if isinstance(state_cls, type) and issubclass(state_cls, BaseState):
-                    state_cls._add_event_handler(name, func)
-                    return getattr(state_cls, name)
-                return RegistrationContext.register_event_handler(
-                    EventHandler(fn=func, event_actions=event_actions)
-                )  # pyright: ignore [reportReturnType]
+                state_cls._add_event_handler(name, func)
+                return getattr(state_cls, name)
 
             # A method: bound to its state class by __set_name__ when the
             # class body is executed.

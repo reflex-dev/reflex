@@ -724,17 +724,6 @@ class EventProcessor:
         if task is not None:
             task.cancel()
 
-    def _runs_unordered(self, registered_handler: RegisteredEventHandler) -> bool:
-        """Whether an event runs immediately instead of in its token's FIFO.
-
-        Args:
-            registered_handler: The registered handler for the event.
-
-        Returns:
-            True for a background handler.
-        """
-        return registered_handler.handler.is_background
-
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
     ) -> Any:
@@ -912,7 +901,8 @@ class EventProcessor:
                             f"No registered handler found for event: {entry.event.name}"
                         )
                         raise KeyError(msg) from ke
-                    if self._runs_unordered(registered_handler):
+                    if registered_handler.handler.is_background:
+                        # Background events run immediately, bypassing per-token ordering.
                         self._create_event_task(
                             entry=entry, registered_handler=registered_handler
                         )
