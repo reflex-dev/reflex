@@ -184,6 +184,11 @@ def test_declarative_base_serializer_transient_unassigned_relationship(monkeypat
     assert orig_value_fget is not None
 
     def guarded_value(self):
+        """Reject relationship reads while allowing scalar column reads.
+
+        Returns:
+            The original value of a scalar mapped attribute.
+        """
         if self.key in ("heroes", "leader"):
             msg = f"Loader was triggered for unassigned relationship {self.key!r}"
             raise AssertionError(msg)
@@ -240,6 +245,11 @@ def test_declarative_base_serializer_pending_unassigned_relationship(monkeypatch
         assert orig_value_fget is not None
 
         def guarded_value(self):
+            """Reject relationship reads while allowing scalar column reads.
+
+            Returns:
+                The original value of a scalar mapped attribute.
+            """
             if self.key in ("heroes", "leader"):
                 msg = f"Loader was triggered for unassigned relationship {self.key!r}"
                 raise AssertionError(msg)
