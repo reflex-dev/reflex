@@ -515,13 +515,14 @@ def test_legacy_env_is_updated_with_a_backup(
     assert env_py.read_text() == stock_env_py
     caplog.clear()
 
-    # The commands and the migrate helper update env.py themselves. The helper
-    # warns, since the process that calls it may show nothing less.
+    # The commands and the model helpers update env.py themselves. The helpers
+    # warn, since the process that calls them may show nothing less.
     runs: list[tuple[Callable[[], object], int]] = [
         (lambda: _db("migrate"), logging.INFO),
         (lambda: _db("status"), logging.INFO),
         (lambda: _db("init"), logging.INFO),
         (reflex.model.migrate, logging.WARNING),
+        (lambda: reflex.model.alembic_autogenerate(mock.Mock()), logging.WARNING),
     ]
     for run, level in runs:
         env_py.write_text(stock_env_py)
