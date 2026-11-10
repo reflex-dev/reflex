@@ -128,6 +128,33 @@ def test_react_compiler_default(base_config_values):
     assert rx.Config(**base_config_values, react_compiler=True).react_compiler is True
 
 
+@pytest.mark.parametrize("react_compiler", [False, True])
+def test_warns_that_react_compiler_is_experimental(
+    base_config_values: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    react_compiler: bool,
+):
+    """Warn once that React Compiler is experimental, only when it is enabled.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: Fixture for resetting the warn-once flag.
+        caplog: Captured log records.
+        react_compiler: Whether React Compiler is enabled.
+    """
+    monkeypatch.setattr(reflex_base.config, "_warned_react_compiler", False)
+    rx.Config(**base_config_values, react_compiler=react_compiler)
+    rx.Config(**base_config_values, react_compiler=react_compiler)
+
+    warnings = [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING and "experimental" in record.getMessage()
+    ]
+    assert len(warnings) == int(react_compiler)
+
+
 def test_auto_memoize_default(base_config_values):
     """Keep Reflex auto-memoization enabled unless the app opts out.
 

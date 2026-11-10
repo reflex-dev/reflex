@@ -37,6 +37,9 @@ from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
 
 logger = logging.getLogger(__name__)
 
+# The config is built several times in one run; warn about React Compiler once.
+_warned_react_compiler = False
+
 
 @dataclasses.dataclass(kw_only=True)
 class DBConfig:
@@ -395,6 +398,15 @@ class Config(BaseConfig):
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
+
+        global _warned_react_compiler
+        if self.react_compiler and not _warned_react_compiler:
+            _warned_react_compiler = True
+            logger.warning(
+                "react_compiler=True is experimental. React Compiler skips a "
+                "component that it cannot compile and reports nothing, so some "
+                "pages can stay unoptimized."
+            )
 
         if not self.auto_memoize and not self.react_compiler:
             logger.warning(
