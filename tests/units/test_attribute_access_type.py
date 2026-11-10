@@ -24,6 +24,7 @@ from sqlalchemy.orm import (
     MappedAsDataclass,
     mapped_column,
     relationship,
+    synonym,
 )
 
 
@@ -421,6 +422,36 @@ def test_get_attribute_access_type_no_default(cls: type) -> None:
         cls: Class to test.
     """
     assert get_attribute_access_type(cls, "no_default") == int | None
+
+
+def test_get_attribute_access_type_sqlalchemy_synonyms() -> None:
+    """A synonym has the type of the attribute it points to."""
+
+    class SynonymBase(DeclarativeBase):
+        pass
+
+    class SynonymWriter(SynonymBase):
+        __tablename__ = "synonym_type_writer"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+    class SynonymMember(SynonymBase):
+        __tablename__ = "synonym_type_member"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        raw_status: Mapped[str] = mapped_column("status")
+        note: Mapped[str | None]
+        writer_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey(SynonymWriter.id))
+        writer: Mapped[SynonymWriter] = relationship()
+        status = synonym("raw_status")
+        nick: Mapped[str] = synonym("raw_status")
+        remark = synonym("note")
+        alias = synonym("nick")
+        author = synonym("writer")
+
+    assert get_attribute_access_type(SynonymMember, "status") is str
+    assert get_attribute_access_type(SynonymMember, "nick") is str
+    assert get_attribute_access_type(SynonymMember, "remark") == str | None
+    assert get_attribute_access_type(SynonymMember, "alias") is str
+    assert get_attribute_access_type(SynonymMember, "author") == SynonymWriter | None
 
 
 class UnresolvableRefClass:
