@@ -251,9 +251,11 @@ def negotiate_locale(
         if not tag or tag == "*":
             continue
         quality = 1.0
-        if params.strip().startswith("q="):
+        params = params.strip()
+        # The parameter name is case-insensitive (RFC 7231 §5.3.1).
+        if params[:2].lower() == "q=":
             try:
-                quality = float(params.strip()[2:])
+                quality = float(params[2:])
             except ValueError:
                 quality = 0.0
         if not 0.0 < quality <= 1.0:

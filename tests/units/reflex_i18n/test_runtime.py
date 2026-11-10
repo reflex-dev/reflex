@@ -168,6 +168,12 @@ def test_negotiate_locale_excludes_q0():
     assert negotiate_locale("de;q=0,fr;q=0.9", ["en", "de"], "en") == "en"
 
 
+def test_negotiate_locale_quality_name_is_case_insensitive():
+    # RFC 7231 parameter names are case-insensitive.
+    assert negotiate_locale("de;Q=0", ["en", "de"], "en") == "en"
+    assert negotiate_locale("fr;Q=0.2,de;Q=0.8", ["en", "de", "fr"], "en") == "de"
+
+
 def test_format_number_localized():
     with use_locale("de"):
         assert format_number(1234567.891, max_fraction_digits=2) == "1.234.567,89"
