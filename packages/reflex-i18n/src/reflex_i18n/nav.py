@@ -27,6 +27,9 @@ def _base_path(route: str) -> str:
 def locale_url(locale: str, route: str) -> str:
     """The URL path for a route in a given locale (for custom links).
 
+    Like any Reflex route, the path is relative to ``frontend_path``, which
+    ``rx.link`` and ``rx.redirect`` prepend.
+
     Args:
         locale: The target locale.
         route: The base route (``"/pricing"`` or ``"pricing"``).

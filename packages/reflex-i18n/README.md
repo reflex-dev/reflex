@@ -30,6 +30,9 @@ app.add_page(index)
 
 ```python
 # rxconfig.py
+import reflex as rx
+from reflex_i18n import I18nPlugin
+
 config = rx.Config(
     app_name="myapp",
     plugins=[I18nPlugin(locales=["en", "de"], default_locale="en")],
