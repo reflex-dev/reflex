@@ -188,6 +188,21 @@ def test_props_base_dict_conversion(props_class, props_kwargs, expected_dict):
     assert result == expected_dict
 
 
+def test_props_base_nested_dict_filters_only_apply_to_the_current_object():
+    props = ParentProps(
+        title="parent",
+        nested_config=NestedProps(user_name="nested_user", max_count=5),
+    )
+
+    assert props.dict(include={"nested_config"}) == {
+        "nestedConfig": {"userName": "nested_user", "maxCount": 5}
+    }
+    assert props.dict(exclude={"title"}) == {
+        "nestedConfig": {"userName": "nested_user", "maxCount": 5},
+        "isEnabled": True,
+    }
+
+
 class EventProps(PropsBase):
     """Test props with event handler fields."""
 
