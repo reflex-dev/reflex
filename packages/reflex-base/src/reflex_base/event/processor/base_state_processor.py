@@ -23,6 +23,7 @@ from reflex_base.event import Event, EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
+from reflex_base.event.processor.scope import event_scope
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
@@ -381,7 +382,10 @@ async def chain_updates(
 
     if root_state is not None:
         # Emit deltas first, so any frontend events are processed with the
-        # latest state. The clean deliberately runs after resolution: the
+        # latest state. Enter the event scope again here (after the handler
+        # ran): a provider may derive its context from state the handler just
+        # changed (e.g. the locale), and computed vars are recomputed during
+        # delta resolution. The clean deliberately runs after resolution: the
         # SharedState fan-out captures its dirty vars at clean time, and
         # resolving the delta is what re-marks linked vars through the patch
         # machinery, so cleaning earlier would fan out a stale set (see
@@ -397,13 +401,16 @@ async def chain_updates(
             # of being cleaned, and the next flush sends it.
             concurrent = bool(ctx.inline_tasks)
             seen = _written_snapshot(root_state) if concurrent else {}
-            delta = await root_state._get_resolved_delta()
-            while concurrent and _written_since(
-                seen, written := _written_snapshot(root_state)
-            ):
-                seen = written
-                for name, late in (await root_state._get_resolved_delta()).items():
-                    delta[name] = {**delta.get(name, {}), **late}
+            # A provider suppressing a resolution error leaves nothing to send.
+            delta = {}
+            async with event_scope(root_state):
+                delta = await root_state._get_resolved_delta()
+                while concurrent and _written_since(
+                    seen, written := _written_snapshot(root_state)
+                ):
+                    seen = written
+                    for name, late in (await root_state._get_resolved_delta()).items():
+                        delta[name] = {**delta.get(name, {}), **late}
         finally:
             root_state._clean()
         if delta:
@@ -838,23 +845,30 @@ class BaseStateEventProcessor(EventProcessor):
             # the plain try/finally spares the context manager's overhead.
             ctx.set_locked_root(root_state)
             try:
-                if needs_to_rehydrate:
-                    await self._rehydrate(root_state)
+                # Enter any per-event ambient context (e.g. i18n locale) around
+                # handler execution. A no-op unless a feature registered a scope
+                # provider, so apps without one pay effectively nothing.
+                async with event_scope(root_state):
+                    if needs_to_rehydrate:
+                        await self._rehydrate(root_state)
 
-                # Process non-background events while holding the lock.
+                    # Process non-background events while holding the lock.
+                    if not registered_handler.handler.is_background:
+                        try:
+                            return await process_event(
+                                handler=registered_handler.handler,
+                                payload=event.payload,
+                                state=substate,
+                                root_state=root_state,
+                            )
+                        except (Exception, asyncio.CancelledError):
+                            await _flush_failed_handler(
+                                root_state, registered_handler.handler.fn.__qualname__
+                            )
+                            raise
                 if not registered_handler.handler.is_background:
-                    try:
-                        return await process_event(
-                            handler=registered_handler.handler,
-                            payload=event.payload,
-                            state=substate,
-                            root_state=root_state,
-                        )
-                    except (Exception, asyncio.CancelledError):
-                        await _flush_failed_handler(
-                            root_state, registered_handler.handler.fn.__qualname__
-                        )
-                        raise
+                    # The scope suppressed the handler's exception.
+                    return None
             finally:
                 await ctx.release_lock()
         # Otherwise drop the state lock and start processing the background task
@@ -866,6 +880,8 @@ class BaseStateEventProcessor(EventProcessor):
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
         proxy = StateProxy(substate)
+        # The scope releases the root state once entered, so it pins no tree.
+        scope = event_scope(root_state)
         # Leave the tree loaded under the lock to the proxy, which replaces it on
         # `async with self`. A manager like redis loads a fresh tree for every
         # lock, so these locals would pin an extra copy for the whole task.
@@ -873,12 +889,13 @@ class BaseStateEventProcessor(EventProcessor):
         handler_error: BaseException | None = None
         result = None
         try:
-            result = await process_event(
-                handler=registered_handler.handler,
-                state=proxy,
-                payload=event.payload,
-                root_state=None,
-            )
+            async with scope:
+                result = await process_event(
+                    handler=registered_handler.handler,
+                    state=proxy,
+                    payload=event.payload,
+                    root_state=None,
+                )
         except BaseException as ex:
             handler_error = ex
             raise

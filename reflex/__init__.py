@@ -84,6 +84,8 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
+from importlib.util import find_spec
+
 from reflex_base.utils import lazy_loader
 from reflex_components_radix.mappings import RADIX_MAPPING
 
@@ -207,6 +209,16 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
         "upload_files_chunk",
         "window_alert",
     ],
+    "i18n": [
+        "I18nConfig",
+        "I18nPlugin",
+        "I18nState",
+        "gettext",
+        "ngettext",
+        "pgettext",
+        "set_locale",
+        "t",
+    ],
     "istate.storage": [
         "Cookie",
         "LocalStorage",
@@ -244,16 +256,35 @@ _SUBMODULES: set[str] = {
     "vars",
     "config",
     "compiler",
+    "i18n",
     "plugins",
 }
 _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = _MAPPING
 _EXTRA_MAPPINGS: dict[str, str] = _COMPONENT_NAME_TO_PATH
-getattr, __dir__, __all__ = lazy_loader.attach(
-    __name__,
-    submodules=_SUBMODULES,
-    submod_attrs=_SUBMOD_ATTRS,
-    **_EXTRA_MAPPINGS,
-)
+
+
+def _attach():
+    """Attach the lazy names, exporting only those `import *` can resolve.
+
+    Without the optional reflex-i18n its names stay reachable as attributes,
+    which report the missing package, but out of ``__all__``.
+
+    Returns:
+        The module ``__getattr__``, ``__dir__`` and ``__all__``.
+    """
+    getattr_, dir_, all_ = lazy_loader.attach(
+        __name__,
+        submodules=_SUBMODULES,
+        submod_attrs=_SUBMOD_ATTRS,
+        **_EXTRA_MAPPINGS,
+    )
+    if find_spec("reflex_i18n") is None:
+        i18n_names = {"i18n", *_MAPPING["i18n"]}
+        all_ = [name for name in all_ if name not in i18n_names]
+    return getattr_, dir_, all_
+
+
+getattr, __dir__, __all__ = _attach()
 
 
 def __getattr__(name: str):

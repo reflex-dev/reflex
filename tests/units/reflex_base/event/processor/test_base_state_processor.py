@@ -3,6 +3,7 @@
 import asyncio
 import collections
 import contextlib
+import contextvars
 import dataclasses
 import gc
 import inspect
@@ -10,7 +11,7 @@ import logging
 import traceback
 import warnings
 import weakref
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any, cast
 
@@ -22,7 +23,7 @@ from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
-from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor import BaseStateEventProcessor, scope
 from reflex_base.event.processor.base_state_processor import (
     _prepare_event_payload,
     _transform_event_arg,
@@ -2910,6 +2911,190 @@ async def test_hydrate_cleans_client_storage_when_get_delta_raises(
         key in delta.get(StorageState.get_full_name(), {})
         for _, delta in emitted_deltas
     )
+
+
+_scope_lang: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "_scope_lang", default=""
+)
+
+
+@contextlib.contextmanager
+def _use_scope_lang(lang: str) -> Iterator[None]:
+    """Set the scoped language for the duration of the context.
+
+    Args:
+        lang: The language to set.
+
+    Yields:
+        None.
+    """
+    reset = _scope_lang.set(lang)
+    try:
+        yield
+    finally:
+        _scope_lang.reset(reset)
+
+
+@pytest.mark.parametrize("reassign", [False, True])
+async def test_hydrate_snapshot_uses_the_scope_of_the_browser_storage(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+    reassign: bool,
+):
+    """The hydrate snapshot and storage replay use the browser storage's scope.
+
+    The event scope is entered before hydrate_and_load applies the browser's
+    values, so a provider deriving its context from one (like the i18n locale
+    cookie) must be re-entered before the snapshot caches its dependents, and
+    before the replay recomputes those an override assignment invalidated.
+
+    Args:
+        wired_app: The app wired to the state manager.
+        real_base_state_processor: The event processor.
+        emitted_deltas: Captured deltas.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+        reassign: Whether a get_delta override reassigns the storage value.
+    """
+
+    class LangState(State):
+        lang: str = rx.Cookie("en")
+
+        @_override_base_method
+        def get_delta(self) -> Delta:
+            """Reassign the replayed storage value, invalidating its dependents.
+
+            Returns:
+                The base delta.
+            """
+            if reassign and "lang" in self.dirty_vars:
+                self.lang = self.lang
+            return super().get_delta()
+
+        @rx.var(cache=True, auto_deps=False, deps=["lang"])
+        def scoped_lang(self) -> str:
+            return _scope_lang.get()
+
+    async def provider(
+        root_state: BaseState,
+    ) -> contextlib.AbstractContextManager[None]:
+        return _use_scope_lang((await root_state.get_state(LangState)).lang)
+
+    monkeypatch.setattr(scope, "_providers", [provider])
+    wired_app.add_page(lambda: rx.text(LangState.scoped_lang), route="/")
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    payload = {"vars": {f"{LangState.get_full_name()}.lang{FIELD_MARKER}": "de"}}
+
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(token, _boot_event(boot_name, payload))
+        ).wait_all()
+
+    sent = [
+        delta[LangState.get_full_name()]["scoped_lang" + FIELD_MARKER]
+        for _, delta in emitted_deltas
+        if "scoped_lang" + FIELD_MARKER in delta.get(LangState.get_full_name(), {})
+    ]
+    # The snapshot, then the storage replay's cached dependent.
+    assert sent == ["de", "de"]
+
+
+async def _suppress_runtime_error(  # noqa: RUF029 - providers are awaited
+    root_state: BaseState,
+) -> contextlib.AbstractContextManager[None]:
+    """An event-scope provider suppressing RuntimeError.
+
+    Args:
+        root_state: The client's root state (unused).
+
+    Returns:
+        A context manager suppressing RuntimeError.
+    """
+    return contextlib.suppress(RuntimeError)
+
+
+async def test_scope_suppressing_delta_resolution_drops_the_delta(
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A provider suppressing a delta resolution error drops that delta.
+
+    Regression: the delta was left unassigned, so the suppression surfaced as
+    an UnboundLocalError.
+
+    Args:
+        real_base_state_processor: The event processor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    handled: list[Exception] = []
+
+    class ExplodingDeltaState(State):
+        explode: bool = False
+
+        @rx.var
+        def boom(self) -> str:
+            if self.explode:
+                msg = "boom"
+                raise RuntimeError(msg)
+            return ""
+
+        @event
+        def arm(self):
+            """Make the next delta resolution raise."""
+            self.explode = True
+
+    monkeypatch.setattr(scope, "_providers", [_suppress_runtime_error])
+    real_base_state_processor.backend_exception_handler = handled.append
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, Event.from_event_type(ExplodingDeltaState.arm())[0]
+        )
+
+    assert handled == []
+
+
+async def test_scope_suppressing_handler_error_runs_handler_once(
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A provider suppressing a foreground handler's error ends the event.
+
+    Regression: the handler then fell through to the background path and ran a
+    second time on a state proxy.
+
+    Args:
+        real_base_state_processor: The event processor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    calls: list[str] = []
+
+    class FailingHandlerState(State):
+        @event
+        def fail(self):
+            """Raise after recording the call.
+
+            Raises:
+                RuntimeError: Always.
+            """
+            calls.append(type(self).__name__)
+            msg = "fail"
+            raise RuntimeError(msg)
+
+    monkeypatch.setattr(scope, "_providers", [_suppress_runtime_error])
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, Event.from_event_type(FailingHandlerState.fail())[0]
+        )
+
+    assert calls == ["FailingHandlerState"]
 
 
 @pytest.mark.parametrize(
