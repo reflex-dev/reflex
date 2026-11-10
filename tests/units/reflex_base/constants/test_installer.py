@@ -9,7 +9,7 @@ from reflex_base.constants.installer import Node, PackageJson
 
 # The manifest of the javascript package reflex-base embeds as its web template.
 FRONTEND_PACKAGE_JSON = (
-    Path(__file__).parents[4] / "packages/reflex-base/frontend/package.json"
+    Path(__file__).parents[4] / "packages/reflex-frontend/package.json"
 )
 
 # Baselines declared by the pinned react-router release (its package.json

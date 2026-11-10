@@ -24,7 +24,7 @@ uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # fail if pkg 
 uv run reflex-release sync                                       # regenerate the release workflows after editing [tool.reflex-release] or the reflex-release templates
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs
 uv run pre-commit run --all-files                                # all pre-commit hooks
-npm --prefix packages/reflex-base/frontend ci && npm --prefix packages/reflex-base/frontend test   # javascript unit tests (the frontend package)
+npm --prefix packages/reflex-frontend ci && npm --prefix packages/reflex-frontend test   # javascript unit tests (the frontend package)
 ```
 
 ## Layout
@@ -32,7 +32,7 @@ npm --prefix packages/reflex-base/frontend ci && npm --prefix packages/reflex-ba
 ```
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
 packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
-  reflex-base/frontend/ # the javascript package reflex-base embeds: src/ ships, tests/ run under vitest
+  reflex-frontend/      # the javascript package reflex-base embeds: src/ ships, tests/ run under vitest
 tests/units/            # unit tests, mirrors source tree
 tests/integration/      # Integration tests (run in dev+prod modes where applicable)
   tests_playwright/     # Browser integration tests using Playwright
@@ -64,16 +64,21 @@ docs/                   # documentation site (separate workspace member)
 ### Frontend javascript tests
 
 The javascript Reflex ships is a package of its own, `reflex-frontend`, in
-`packages/reflex-base/frontend/`. Its `src/` is copied verbatim into a user's
+`packages/reflex-frontend/`. Its `src/` is copied verbatim into a user's
 `.web` directory, so tests must **not** live inside that tree. They go in the
 package's `tests/` and run under vitest + jsdom:
-`npm --prefix packages/reflex-base/frontend test`.
+`npm --prefix packages/reflex-frontend test`.
 
 The package is not published to npm. The reflex-base wheel embeds `src/` as
-`reflex_base/.templates/web` when it is built; in a checkout
-`constants.Templates.Dirs.WEB_TEMPLATE` resolves to `src/` directly, so the next
-`reflex init` copies an edit without a rebuild. A python test that reads one of
-these files goes through that constant rather than a path.
+`reflex_base/.templates/web` when it is built (`packages/reflex-base/hatch_build.py`);
+in a checkout `constants.Templates.Dirs.WEB_TEMPLATE` resolves to `src/` directly,
+so the next `reflex init` copies an edit without a rebuild. A python test that
+reads one of these files goes through that constant rather than a path.
+
+It is the one directory under `packages/` without a `pyproject.toml`: the uv
+workspace excludes it, and nothing builds or releases it on its own. A change
+under its `src/` is a change to reflex-base (`extra-source-dirs` in
+`[tool.reflex-release]`), so its news fragment goes in `packages/reflex-base/news/`.
 
 Reach for these when behavior can only be observed at runtime and an integration
 test would be indirect or impossible to set up — provider teardown, SSR vs. client

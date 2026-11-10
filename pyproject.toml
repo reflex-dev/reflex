@@ -310,6 +310,7 @@ preview = true
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
 "packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
+"packages/reflex-base/hatch_build.py" = ["INP001"]
 "scripts/changed_paths.py" = ["T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
@@ -406,8 +407,9 @@ cli-command = "uv run --frozen --package reflex-release reflex-release"
 root-package = "reflex"
 root-source-dirs = ["reflex"]
 packages-dir = "packages"
-# `frontend/src` is the javascript reflex-base embeds as its web template.
-package-source-subdirs = ["src", "frontend/src"]
+package-source-subdirs = ["src"]
+# reflex-base embeds the frontend javascript package as its web template.
+extra-source-dirs = { reflex-base = ["packages/reflex-frontend/src"] }
 # Changelog dates and r/pre-<date> branch names are stamped in the project's
 # home timezone, so an evening release is not dated tomorrow by a UTC runner.
 release-timezone = "America/Los_Angeles"
@@ -587,3 +589,5 @@ reflex.workspace = true
 
 [tool.uv.workspace]
 members = ["packages/*", "docs/app", "docs/package"]
+# A javascript package: reflex-base embeds it, and nothing installs it with uv.
+exclude = ["packages/reflex-frontend"]

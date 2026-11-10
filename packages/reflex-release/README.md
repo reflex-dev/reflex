@@ -113,6 +113,11 @@ packages-dir = "packages"
 # none of them counts its whole directory (minus news/ and CHANGELOG.md).
 package-source-subdirs = ["src"]
 
+# Directories outside a package that it also ships, such as assets its build
+# embeds. A change under one counts as a change to that package, so it needs a
+# news fragment there. Default: none.
+extra-source-dirs = { widget-core = ["packages/widget-js/src"] }
+
 # Changelog dates and prerelease branch names are stamped in this timezone, so
 # an evening release is not dated tomorrow by a UTC runner. Default: "UTC".
 release-timezone = "America/Los_Angeles"

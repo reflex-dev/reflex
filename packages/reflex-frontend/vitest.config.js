@@ -10,7 +10,9 @@ const webRoot = resolve("./src/");
 
 // The Python side of the client-state registry key. Asserted equal to the
 // frontend constant, since these are the two definitions that can drift.
-const pyConstants = resolve("../src/reflex_base/constants/state.py");
+const pyConstants = resolve(
+  "../reflex-base/src/reflex_base/constants/state.py",
+);
 
 export default defineConfig({
   test: {

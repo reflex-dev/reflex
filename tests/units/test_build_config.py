@@ -2,7 +2,9 @@
 
 import importlib.util
 import json
+import shutil
 import tarfile
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -34,7 +36,7 @@ NOT_SELECTED = [
     "packages/reflex-components-core/src/reflex_components_core/el/element.py",
     "packages/reflex-components-core/src/reflex_components_core/el/element.pyi",
     "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi",
-    "packages/reflex-base/frontend/src/utils/state.js",
+    "packages/reflex-frontend/src/utils/state.js",
     "tests/units/reflex_base/utils/pyi_generator/golden/var_types.pyi",
     "docs/app/docs.py",
 ]
@@ -315,43 +317,123 @@ def test_build_hook_ignores_marker_for_incomplete_editable_build(
 
 
 REFLEX_BASE = REPO_ROOT / "packages" / "reflex-base"
-FRONTEND_SRC = REFLEX_BASE / "frontend" / "src"
+WEB_TEMPLATE = "reflex_base/.templates/web"
 
 
-def frontend_files() -> set[str]:
-    """List the files of the frontend package that reflex-base embeds.
+@pytest.fixture
+def reflex_base_checkout(tmp_path: Path) -> Path:
+    """Lay out reflex-base beside a frontend package, as in the repository.
+
+    The project is the real one — its build config and its hook — with a fixed
+    version, since a temporary directory has no tags to derive one from.
+
+    Args:
+        tmp_path: The temporary directory.
 
     Returns:
-        The path of every file under the package's `src`, relative to it.
+        The reflex-base project root.
     """
-    return {
-        path.relative_to(FRONTEND_SRC).as_posix()
-        for path in FRONTEND_SRC.rglob("*")
-        if path.is_file()
-    }
+    root = tmp_path / "packages" / "reflex-base"
+    (root / "src" / "reflex_base").mkdir(parents=True)
+    (root / "src" / "reflex_base" / "__init__.py").touch()
+    (root / "README.md").write_text("reflex-base")
+    shutil.copy(REFLEX_BASE / "hatch_build.py", root)
+    config = tomlkit.parse((REFLEX_BASE / "pyproject.toml").read_text())
+    config["project"]["version"] = "0.0.0"
+    config["project"]["dynamic"].remove("version")
+    del config["tool"]["hatch"]["version"]
+    (root / "pyproject.toml").write_text(tomlkit.dumps(config))
+
+    frontend = tmp_path / "packages" / "reflex-frontend"
+    (frontend / "src" / "utils").mkdir(parents=True)
+    (frontend / "src" / "utils" / "state.js").write_text("// state")
+    (frontend / "src" / ".gitignore").write_text("/node_modules")
+    (frontend / "tests").mkdir()
+    (frontend / "tests" / "state.test.js").write_text("// test")
+    (frontend / "package.json").write_text("{}")
+    return root
 
 
-def test_reflex_base_wheel_embeds_the_frontend():
-    """The wheel carries the frontend as its web template, and only there."""
-    distributed = {
-        Path(included.distribution_path).as_posix()
-        for included in WheelBuilder(str(REFLEX_BASE)).recurse_included_files()
-    }
-    files = frontend_files()
-    assert "utils/state.js" in files
-    assert {f"reflex_base/.templates/web/{name}" for name in files} <= distributed
-    assert not any(path.startswith("frontend/") for path in distributed)
+def build_wheel(root: Path, directory: Path, version: str = "standard") -> set[str]:
+    """Build a wheel and list what it holds.
+
+    Args:
+        root: The project root.
+        directory: The build output directory.
+        version: The kind of wheel: `standard` or `editable`.
+
+    Returns:
+        The path of every file in the wheel.
+    """
+    builder = WheelBuilder(str(root))
+    artifact = next(builder.build(directory=str(directory), versions=[version]))
+    with zipfile.ZipFile(artifact) as archive:
+        return set(archive.namelist())
 
 
-def test_reflex_base_sdist_ships_what_the_wheel_embeds():
-    """A wheel built from the sdist needs the frontend source, not its tests."""
-    selected = {
-        Path(included.relative_path).as_posix()
-        for included in SdistBuilder(str(REFLEX_BASE)).recurse_included_files()
-    }
-    assert {f"frontend/src/{name}" for name in frontend_files()} <= selected
-    assert "frontend/package.json" in selected
-    assert not any(
-        path.startswith(("frontend/tests/", "frontend/node_modules/"))
-        for path in selected
+def test_reflex_base_wheel_embeds_the_frontend(
+    reflex_base_checkout: Path, tmp_path: Path
+):
+    """A wheel built in the repository carries the frontend's `src`, and only that."""
+    names = build_wheel(reflex_base_checkout, tmp_path / "dist")
+    assert f"{WEB_TEMPLATE}/utils/state.js" in names
+    assert f"{WEB_TEMPLATE}/.gitignore" in names
+    assert not any("test" in name or name.endswith("package.json") for name in names)
+    assert "hatch_build.py" not in names
+
+
+def test_reflex_base_wheel_builds_from_its_sdist(
+    reflex_base_checkout: Path, tmp_path: Path
+):
+    """The sdist carries the frontend, so its wheel needs no repository."""
+    builder = SdistBuilder(str(reflex_base_checkout))
+    artifact = next(builder.build(directory=str(tmp_path / "dist")))
+    with tarfile.open(artifact) as archive:
+        names = set(archive.getnames())
+        archive.extractall(tmp_path / "unpacked", filter="data")
+    assert f"reflex_base-0.0.0/src/{WEB_TEMPLATE}/utils/state.js" in names
+    assert "reflex_base-0.0.0/hatch_build.py" in names
+
+    unpacked = tmp_path / "unpacked" / "reflex_base-0.0.0"
+    assert build_wheel(unpacked, tmp_path / "from-sdist") == build_wheel(
+        reflex_base_checkout, tmp_path / "from-checkout"
     )
+
+
+def test_reflex_base_editable_install_embeds_nothing(reflex_base_checkout: Path):
+    """An editable install reads the frontend package in place."""
+    spec = importlib.util.spec_from_file_location(
+        "reflex_base_hatch_build", reflex_base_checkout / "hatch_build.py"
+    )
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    builder = WheelBuilder(str(reflex_base_checkout))
+    hook = module.FrontendBuildHook(
+        str(reflex_base_checkout), {}, builder.config, builder.metadata, "", "wheel"
+    )
+
+    editable = {"force_include": {}}
+    hook.initialize("editable", editable)
+    assert editable["force_include"] == {}
+
+    standard = {"force_include": {}}
+    hook.initialize("standard", standard)
+    assert list(standard["force_include"].values()) == [WEB_TEMPLATE]
+
+
+def test_reflex_base_refuses_to_build_without_a_frontend(
+    reflex_base_checkout: Path, tmp_path: Path
+):
+    """A wheel with no web template could not initialize an app."""
+    shutil.rmtree(reflex_base_checkout.parent / "reflex-frontend")
+    with pytest.raises(FileNotFoundError, match="No frontend to embed"):
+        build_wheel(reflex_base_checkout, tmp_path / "dist")
+
+
+def test_frontend_package_is_where_the_build_hook_looks():
+    """The hook and the checkout fallback both assume this location."""
+    frontend = REFLEX_BASE.parent / "reflex-frontend"
+    assert (frontend / "src" / "utils" / "state.js").is_file()
+    assert (frontend / "package.json").is_file()

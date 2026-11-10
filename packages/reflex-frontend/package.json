@@ -8,7 +8,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/reflex-dev/reflex.git",
-    "directory": "packages/reflex-base/frontend"
+    "directory": "packages/reflex-frontend"
   },
   "files": [
     "src"

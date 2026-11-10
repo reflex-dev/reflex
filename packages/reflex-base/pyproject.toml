@@ -36,22 +36,10 @@ bump = true
 [tool.hatch.build]
 artifacts = [".templates/**"]
 
-# The frontend is a javascript package of its own, embedded here as the web
-# template that `reflex init` copies into a project. The sdist carries the
-# package's `src` and manifest, which is all a wheel built from it needs.
-#
-# An editable install receives a copy too, which nothing reads: reflex_base
-# resolves to the checkout there, and `Templates.Dirs.WEB_TEMPLATE` to
-# `frontend/src`.
-[tool.hatch.build.targets.wheel.force-include]
-"frontend/src" = "reflex_base/.templates/web"
-
-[tool.hatch.build.targets.sdist]
-exclude = [
-  "/frontend/tests",
-  "/frontend/package-lock.json",
-  "/frontend/vitest.config.js",
-]
+# Embeds packages/reflex-frontend, the javascript package of the frontend, as the
+# web template that `reflex init` copies into a project.
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]

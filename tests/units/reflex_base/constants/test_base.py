@@ -22,10 +22,12 @@ def test_web_template_dir_prefers_the_embedded_copy(tmp_path: Path):
 
 
 def test_web_template_dir_falls_back_to_the_checkout(tmp_path: Path):
-    """A source checkout reads the frontend package next to ``src``."""
-    root_dir = tmp_path / "reflex-base" / "src" / "reflex_base"
+    """A source checkout reads the frontend package beside reflex-base."""
+    root_dir = tmp_path / "packages" / "reflex-base" / "src" / "reflex_base"
     root_dir.mkdir(parents=True)
-    assert _web_template_dir(root_dir) == tmp_path / "reflex-base" / "frontend" / "src"
+    assert (
+        _web_template_dir(root_dir) == tmp_path / "packages" / "reflex-frontend" / "src"
+    )
 
 
 def test_web_template_holds_the_frontend():

@@ -67,6 +67,7 @@ _KNOWN_KEYS = frozenset({
     "latest-release-package",
     "internal-packages",
     "changelog-exempt-packages",
+    "extra-source-dirs",
     POST_RELEASE_WORKFLOW_KEY,
     "lockstep",
 })
@@ -190,6 +191,9 @@ class Config:
         never_publish_packages: Packages this repository builds but never
             releases. They are excluded from every release path rather than
             merely exempt from the changelog.
+        extra_source_dirs: Repo-relative directories outside a package's own
+            source that it also ships, by package name. A change under one
+            counts as a change to that package.
     """
 
     root: Path
@@ -220,6 +224,9 @@ class Config:
     uv_version: str = DEFAULT_UV_VERSION
     python_version: str = DEFAULT_PYTHON_VERSION
     never_publish_packages: tuple[str, ...] = ()
+    extra_source_dirs: dict[str, tuple[str, ...]] = dataclasses.field(
+        default_factory=dict
+    )
 
     def package_dir(self, package: str) -> str:
         """Return the repo-relative directory of a package.
@@ -418,16 +425,24 @@ class Config:
             configured ``root-source-dirs``; for a sub-package, its configured
             source subdirectories, falling back to the whole package directory
             (minus its fragment directory and changelog) when it has none.
+            Either is followed by the package's ``extra-source-dirs``.
         """
+        extra = [
+            f"{directory.rstrip('/')}/"
+            for directory in self.extra_source_dirs.get(package, ())
+        ]
         if package == self.root_package:
-            return [f"{directory.rstrip('/')}/" for directory in self.root_source_dirs]
+            return [
+                *(f"{directory.rstrip('/')}/" for directory in self.root_source_dirs),
+                *extra,
+            ]
         directory = self.package_dir(package)
         present = [
             f"{directory}/{subdir}/"
             for subdir in self.package_source_subdirs
             if (self.package_path(package) / subdir).is_dir()
         ]
-        return present or [f"{directory}/"]
+        return [*(present or [f"{directory}/"]), *extra]
 
     def is_package_source(self, package: str, path: str) -> bool:
         """Return whether a changed repo-relative path is source of a package.
@@ -629,6 +644,25 @@ def _string_list(
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
         fail(f"{label} {key} must be a list of strings")
     return tuple(value)
+
+
+def _extra_source_dirs(table: dict) -> dict[str, tuple[str, ...]]:
+    """Read the ``extra-source-dirs`` table.
+
+    Args:
+        table: The ``[tool.reflex-release]`` table.
+
+    Returns:
+        The extra source directories of each package that names any.
+    """
+    value = table.get("extra-source-dirs", {})
+    if not isinstance(value, dict):
+        fail(
+            f"[tool.{TOOL_TABLE}] extra-source-dirs must be a table mapping a "
+            "package name to a list of directories"
+        )
+    label = f"[tool.{TOOL_TABLE}.extra-source-dirs]"
+    return {package: _string_list(value, package, label) for package in value}
 
 
 def _string(
@@ -921,6 +955,7 @@ def load_config(root: Path) -> Config:
         internal_packages=_string_list(table, "internal-packages"),
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
         never_publish_packages=_string_list(table, "never-publish-packages"),
+        extra_source_dirs=_extra_source_dirs(table),
         # The documented opt-out is leaving the key out; an empty string is the
         # same thing rather than a workflow named "".
         post_release_workflow=_string(table, POST_RELEASE_WORKFLOW_KEY, "").strip()
@@ -980,6 +1015,19 @@ def load_config(root: Path) -> Config:
         for name in _string_list(table, key):
             if name not in packages:
                 fail(f"[tool.{TOOL_TABLE}] {key} lists unknown package {name!r}")
+    # A misspelled package or directory would never match a changed path, and
+    # so would quietly stop requiring a fragment for it.
+    for name, directories in config.extra_source_dirs.items():
+        if name not in packages:
+            fail(
+                f"[tool.{TOOL_TABLE}] extra-source-dirs lists unknown package {name!r}"
+            )
+        for directory in directories:
+            if not (root / directory).is_dir():
+                fail(
+                    f"[tool.{TOOL_TABLE}] extra-source-dirs of {name} names "
+                    f"{directory!r}, which is not a directory of this repository"
+                )
     latest = config.latest_release_package
     if latest is not None and latest not in packages:
         fail(f"[tool.{TOOL_TABLE}] latest-release-package is unknown: {latest!r}")

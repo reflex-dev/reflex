@@ -6,9 +6,10 @@ Vite plugins of the build.
 
 ## How it reaches an app
 
-This package is not published to npm. `src/` is embedded in the `reflex-base`
-wheel as `reflex_base/.templates/web`, and `reflex init` copies it into the
-project's `.web` directory, where Vite bundles it with the compiled pages.
+This package is not published to npm. When the `reflex-base` wheel is built, its
+build hook (`packages/reflex-base/hatch_build.py`) embeds `src/` as
+`reflex_base/.templates/web`. `reflex init` copies that into the project's `.web`
+directory, where Vite bundles it with the compiled pages.
 Compiled code imports it through the `$/` alias, which names `.web`:
 `$/utils/state` is `src/utils/state.js`.
 
@@ -17,6 +18,9 @@ In a checkout of the repository there is no embedded copy: reflex-base reads
 
 Everything in `src/` ships to every app. Tests, fixtures and tooling stay
 outside it.
+
+A change under `src/` is a change to reflex-base: its news fragment goes in
+`packages/reflex-base/news/`.
 
 ## Working on it
 

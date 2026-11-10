@@ -129,8 +129,8 @@ def _web_template_dir(root_dir: Path) -> Path:
     """Locate the frontend package that is copied into a project's web directory.
 
     A built distribution embeds it under ``.templates/web``. A source checkout
-    has nothing there and reads the package's ``src`` in place, so an edit to
-    the frontend is never shadowed by a stale copy.
+    has nothing there and reads ``packages/reflex-frontend/src`` in place, so
+    an edit to the frontend is never shadowed by a stale copy.
 
     Args:
         root_dir: The root directory of the reflex_base package.
@@ -141,7 +141,7 @@ def _web_template_dir(root_dir: Path) -> Path:
     embedded = root_dir / ".templates" / "web"
     if embedded.is_dir():
         return embedded
-    return root_dir.parents[1] / "frontend" / "src"
+    return root_dir.parents[2] / "reflex-frontend" / "src"
 
 
 class Templates(SimpleNamespace):

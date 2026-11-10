@@ -120,6 +120,54 @@ def test_package_without_src_layout_counts_whole_directory(
     assert not reloaded.is_package_source("flat", "packages/flat/news/1.misc.md")
 
 
+def test_extra_source_dirs_count_as_package_source(repo: Path) -> None:
+    """A package can ship source that lives outside its own directory."""
+    (repo / "packages" / "widget-js" / "src").mkdir(parents=True)
+    (repo / "assets").mkdir()
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[tool.reflex-release.extra-source-dirs]\n"
+        'widget-core = ["packages/widget-js/src"]\n'
+        'mypkg = ["assets/"]\n',
+    )
+    config = load_config(repo)
+    # A directory without a pyproject.toml is not a package of its own.
+    assert config.all_packages() == ["mypkg", "widget-core"]
+    assert config.package_source_prefixes("widget-core") == [
+        "packages/widget-core/src/",
+        "packages/widget-js/src/",
+    ]
+    assert config.is_package_source("widget-core", "packages/widget-js/src/a.js")
+    assert not config.is_package_source("widget-core", "packages/widget-js/tests/a.js")
+    assert not config.is_package_source("mypkg", "packages/widget-js/src/a.js")
+    assert config.package_source_prefixes("mypkg") == ["src/", "assets/"]
+    assert config.is_package_source("mypkg", "assets/logo.svg")
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ('extra-source-dirs = ["assets"]', "must be a table"),
+        ('[tool.reflex-release.extra-source-dirs]\nwidget-core = "assets"', "list"),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-cor = ["assets"]',
+            "unknown package 'widget-cor'",
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["asets"]',
+            "'asets', which is not a directory",
+        ),
+    ],
+    ids=["not-a-table", "not-a-list", "unknown-package", "missing-directory"],
+)
+def test_extra_source_dirs_are_validated(repo: Path, body: str, message: str) -> None:
+    (repo / "assets").mkdir()
+    write_config(repo, f'root-package = "mypkg"\npackages-dir = "packages"\n{body}\n')
+    with pytest.raises(ReleaseError, match=re.escape(message)):
+        load_config(repo)
+
+
 @pytest.mark.parametrize(
     ("version", "branch", "allowed"),
     [

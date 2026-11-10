@@ -33,7 +33,7 @@ reflex.db
 node_modules
 package-lock.json
 # ...except the frontend package, which CI installs with `npm ci`.
-!packages/reflex-base/frontend/package-lock.json
+!packages/reflex-frontend/package-lock.json
 *.pyi
 .pre-commit-config.yaml
 .claude/.worktrees
@@ -43,4 +43,4 @@ CLAUDE.local.md
 # Backups written by scripts/delete_automated_releases.sh
 automated-releases-backup-*.json
 # The tarball `npm run build` packs the frontend package into.
-packages/reflex-base/frontend/*.tgz
+packages/reflex-frontend/*.tgz
