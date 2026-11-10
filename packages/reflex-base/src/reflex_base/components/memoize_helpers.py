@@ -264,8 +264,14 @@ def scope_var_names(component: Component, *, recursive: bool) -> dict[str, None]
     from reflex_components_core.core.foreach import Foreach
 
     names: dict[str, None] = {}
-    for var in component._get_vars(include_children=False):
-        var_data = var._get_all_var_data()
+    var_datas = [
+        *(
+            var._get_all_var_data()
+            for var in component._get_vars(include_children=False)
+        ),
+        *component._get_added_hooks().values(),
+    ]
+    for var_data in var_datas:
         if var_data is not None:
             names.update(dict.fromkeys(str(dep) for dep in var_data.deps))
     if recursive:

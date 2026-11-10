@@ -607,6 +607,91 @@ def test_foreach_form_submit_handler_receives_loop_index() -> None:
     assert "indexRxState:index_rx_state_" in loop_body
 
 
+class SlotHolder(Component):
+    """A component that takes another component in a prop."""
+
+    tag = "SlotHolder"
+    library = "slot-holder-lib"
+
+    slot: Var[Component]
+
+
+class HookedSlotHolder(SlotHolder):
+    """A slot holder that adds a hook of its own."""
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook that reads nothing.
+
+        Returns:
+            The hook code.
+        """
+        return ["useThing()"]
+
+
+class HiddenVarLogger(Component):
+    """A component whose added hook reads a var that is not one of its props."""
+
+    tag = "HiddenVarLogger"
+    library = "hidden-var-logger-lib"
+
+    def add_hooks(self) -> list[Var]:
+        """Add a hook that reads the hidden var.
+
+        Returns:
+            The hook, carrying the var data of the hidden var.
+        """
+        hidden: Var = vars(self)["hidden_var"]
+        return [Var(f"useHidden({hidden!s})", _var_data=hidden._get_all_var_data())]
+
+
+def test_foreach_wrapper_receives_loop_var_read_by_a_prop_component() -> None:
+    """A wrapper gets the loop variable that a component in its prop reads."""
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: HookedSlotHolder.create(slot=rx.text(item)),
+        )
+    )
+
+    signature = wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert "itemRxState:item_rx_state_" in signature
+    assert "itemRxState:item_rx_state_" in foreach
+
+
+def test_foreach_wraps_item_for_lifecycle_of_a_prop_component() -> None:
+    """A lifecycle event of a component held in a prop runs once per item."""
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: SlotHolder.create(
+                item, slot=rx.text("x", on_mount=rx.console_log(item))
+            ),
+        )
+    )
+
+    assert "useEffect(() => {" in wrappers
+    assert "useEffect(() => {" not in foreach
+    signature = wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert "itemRxState:item_rx_state_" in signature
+
+
+def test_foreach_wrapper_receives_loop_var_read_by_an_added_hook() -> None:
+    """A wrapper gets the loop variable that only an added hook reads."""
+
+    def render_item(item: Var) -> Component:
+        logger = HiddenVarLogger.create()
+        vars(logger)["hidden_var"] = item
+        return logger
+
+    wrappers, _foreach = _foreach_memo_parts(
+        lambda: rx.foreach(SpecialFormMemoState.items, render_item)
+    )
+
+    assert "useHidden(item_rx_state_)" in wrappers
+    signature = wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert "itemRxState:item_rx_state_" in signature
+
+
 def test_foreach_item_without_own_hooks_renders_inline() -> None:
     """An item that only reads state gets no wrapper of its own."""
     wrappers, foreach = _foreach_memo_parts(

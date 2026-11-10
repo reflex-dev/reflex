@@ -209,6 +209,44 @@ def _should_memoize(component: Component) -> bool:
     return bool(component.event_triggers)
 
 
+def _has_instance_hooks(component: Component) -> bool:
+    """Check whether a component runs hooks that belong to one rendered instance.
+
+    Args:
+        component: The component to inspect.
+
+    Returns:
+        Whether the component, or a component it holds in a prop, has a
+        lifecycle event or adds hooks of its own.
+    """
+    if (
+        component._get_mount_lifecycle_hook()
+        or component._get_hooks() is not None
+        or component._get_added_hooks()
+    ):
+        return True
+    # A component in a prop renders inside this component's function.
+    return any(
+        isinstance(held, Component) and _subtree_has_instance_hooks(held)
+        for held in component._get_components_in_props()
+    )
+
+
+def _subtree_has_instance_hooks(component: Component) -> bool:
+    """Check a component and its descendants for hooks of one rendered instance.
+
+    Args:
+        component: The root of the subtree.
+
+    Returns:
+        Whether any component in the subtree has such hooks.
+    """
+    return _has_instance_hooks(component) or any(
+        isinstance(child, Component) and _subtree_has_instance_hooks(child)
+        for child in component.children
+    )
+
+
 def _scope_instance_hooks(
     component: Component, page_context: PageContext, compile_context: Any
 ) -> Component:
@@ -235,11 +273,7 @@ def _scope_instance_hooks(
         if (
             child._memoization_mode.disposition != MemoizationDisposition.NEVER
             and child.tag is not None
-            and (
-                child._get_mount_lifecycle_hook()
-                or child._get_hooks() is not None
-                or child._get_added_hooks()
-            )
+            and _has_instance_hooks(child)
         ):
             wrapper = MemoizeStatefulPlugin._build_wrapper(
                 child, page_context, compile_context

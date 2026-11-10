@@ -1,1 +1,1 @@
-Fix hooks of a component inside `rx.foreach`, such as `on_mount`, `on_unmount`, and hooks from `add_hooks`. A hook that used the loop variable crashed the page, and other hooks ran once for the whole list. Each item now runs its own hooks.
+Fix hooks of a component inside `rx.foreach`, such as `on_mount`, `on_unmount`, and hooks from `add_hooks`. A hook that used the loop variable crashed the page, and other hooks ran once for the whole list. Each item now runs its own hooks. A loop inside an `@rx.memo` function is not covered yet.
