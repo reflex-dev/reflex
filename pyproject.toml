@@ -289,6 +289,8 @@ preview = true
 # A benchmark is a script: it prints its results and is run, not imported.
 "packages/*/benchmarks/*.py" = ["INP", "PERF", "T", "ASYNC240"]
 "*/.templates/*.py" = ["D100", "D103", "D104"]
+# `alembic init` copies every file of the template directory, so no __init__.py.
+"reflex/.templates/alembic/*.py" = ["INP001"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "packages/reflex-base/src/reflex_base/constants/*.py" = ["N"]
