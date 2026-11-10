@@ -35,6 +35,11 @@ toast_ref = Var(
     _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
 )
 
+_TOAST_STYLE_PROP_ALIASES = (
+    ("actionButtonStyles", "actionButtonStyle"),
+    ("cancelButtonStyles", "cancelButtonStyle"),
+)
+
 
 @dataclasses.dataclass
 class ToastAction:
@@ -147,10 +152,9 @@ class ToastProps(NoExtrasAllowedProps):
             The object as a dictionary with ToastAction fields intact.
         """
         d = super().dict(*args, **kwargs)
-        if "actionButtonStyles" in d:
-            d["actionButtonStyle"] = d.pop("actionButtonStyles")
-        if "cancelButtonStyles" in d:
-            d["cancelButtonStyle"] = d.pop("cancelButtonStyles")
+        for reflex_name, sonner_name in _TOAST_STYLE_PROP_ALIASES:
+            if reflex_name in d:
+                d[sonner_name] = d.pop(reflex_name)
         # Keep these fields as ToastAction so they can be serialized specially
         if "action" in d:
             d["action"] = self.action
