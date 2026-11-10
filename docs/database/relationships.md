@@ -84,26 +84,18 @@ for more details.
 
 ## Serializing Linked Objects
 
-Reflex serializes a dataclass-mapped model field by field, and reading a
-relationship that was not loaded raises an error, because an async session never
-loads one implicitly on attribute access. Register a serializer for the base class that sends
-only the attributes a query loaded, so linked objects render when they were
-eager-loaded and are simply absent when they were not:
+Reflex sends a `DeclarativeBase` model with the columns and relationships that
+its query loaded. It never runs a query to load more. A column or relationship
+that was not loaded is left out of the data sent to the frontend.
 
-```python
-from typing import Any
+Load every relationship that the page reads. A left-out relationship is
+`undefined` in the browser: `post.user.username` renders as blank, but
+`post.flags.length()` fails and the page shows a render error.
 
-import sqlalchemy
-
-
-@rx.serializer
-def serialize_model(model: Base) -> dict[str, Any]:
-    """Send a model's loaded columns and relationships to the frontend."""
-    state = sqlalchemy.inspect(model)
-    return {
-        attr.key: attr.value for attr in state.attrs if attr.key not in state.unloaded
-    }
-```
+When a loaded relationship leads back to an object that is already being sent,
+Reflex sends only that object's primary key. For example, with
+`selectinload(Post.user).selectinload(User.posts)`, each post appears in its own
+`user.posts` list as `{"id": 1}`.
 
 ## Querying Relationships
 
@@ -117,6 +109,9 @@ The following example assumes that the flagging user is stored in the state as a
 form.
 
 ```python
+from typing import Any
+
+
 class FlagPostForm(rx.State):
     user: User
 
@@ -189,12 +184,26 @@ class PostState(rx.State):
                 .limit(15)
             )
             self.posts = result.all()
+
+
+def post_list() -> rx.Component:
+    return rx.foreach(
+        PostState.posts,
+        lambda post: rx.vstack(
+            rx.text(post.title, " by ", post.user.username),
+            rx.text(post.flags.length(), " flags"),
+            rx.foreach(
+                post.flags,
+                lambda flag: rx.text(flag.message, " from ", flag.user.username),
+            ),
+        ),
+    )
 ```
 
 The loading methods create new query objects and thus may be chained if the
 relationship itself has other relationships that need to be loaded. In this
-example, since `Flag` references `User`, the `Flag.user` relationship must be
-chain loaded from the `Post.flags` relationship.
+example, the page reads `flag.user`, so the `Flag.user` relationship is chain
+loaded from the `Post.flags` relationship.
 
 ### Specifying the Loading Mechanism on the Relationship
 

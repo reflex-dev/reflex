@@ -1007,6 +1007,11 @@ def is_unserialized_property(
     from reflex_base.utils import serializers
 
     serializer = serializers.get_serializer(cls)
+    if serializer is serializers.serialize_sqlalchemy_base:
+        import sqlalchemy
+
+        return name not in sqlalchemy.inspect(cls).attrs
+
     if dataclasses.is_dataclass(cls):
         return serializer is None and name not in {
             field.name for field in dataclasses.fields(cls)
@@ -1064,6 +1069,13 @@ def get_attribute_access_type(
 
         if issubclass(cls, DeclarativeBase):
             insp = sqlalchemy.inspect(cls)
+            if name in insp.synonyms:
+                # A synonym without a custom getter has a generated one typed Any.
+                synonym = insp.synonyms[name]
+                hint = get_property_hint(synonym.descriptor)
+                if hint is not None and hint is not Any:
+                    return hint
+                return get_attribute_access_type(cls, synonym.name)
             if name in insp.columns:
                 # check for list types
                 column = insp.columns[name]
