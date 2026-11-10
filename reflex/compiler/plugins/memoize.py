@@ -39,10 +39,12 @@ from reflex_base.components.memoize_helpers import (
     fix_event_triggers_for_memo,
     get_memoization_strategy,
     is_snapshot_boundary,
+    scope_var_names,
 )
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
+from reflex_base.vars.base import Var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.cond import Cond
 from reflex_components_core.core.match import Match
@@ -205,6 +207,54 @@ def _should_memoize(component: Component) -> bool:
 
     # Components with event triggers are always memoized (to wrap callbacks).
     return bool(component.event_triggers)
+
+
+def _scope_instance_hooks(
+    component: Component, page_context: PageContext, compile_context: Any
+) -> Component:
+    """Wrap each descendant that has hooks of its own in a memo component.
+
+    Lifecycle events and hooks that a component adds belong to one rendered
+    instance. Inside a loop, the wrapper is called in the loop body, so the
+    hooks run once per item with the loop variables passed in as props.
+
+    Args:
+        component: The root of the subtree; it is not wrapped itself.
+        page_context: The active page context.
+        compile_context: The active compile context.
+
+    Returns:
+        ``component``, or a page-local clone with wrapped descendants.
+    """
+    children: list[BaseComponent] = []
+    for child in component.children:
+        if not isinstance(child, Component):
+            children.append(child)
+            continue
+        child = _scope_instance_hooks(child, page_context, compile_context)
+        if (
+            child._memoization_mode.disposition != MemoizationDisposition.NEVER
+            and child.tag is not None
+            and (
+                child._get_mount_lifecycle_hook()
+                or child._get_hooks() is not None
+                or child._get_added_hooks()
+            )
+        ):
+            wrapper = MemoizeStatefulPlugin._build_wrapper(
+                child, page_context, compile_context
+            )
+            if isinstance(wrapper, Component):
+                wrapper.children = list(child.children)
+                wrapper.key = child.key
+                child = wrapper
+        children.append(child)
+    if all(new is old for new, old in zip(children, component.children, strict=True)):
+        return component
+    owned = page_context.own(component)
+    owned.children = children
+    owned._clear_compile_caches()
+    return owned
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -383,6 +433,17 @@ class MemoizeStatefulPlugin(Plugin):
             empty and has no meaningful tag.
         """
         comp = fix_event_triggers_for_memo(comp, page_context)
+        if _is_structural_memoization_child(comp):
+            # A loop seals its subtree, so give each descendant with hooks of
+            # its own a wrapper that is called inside the loop body.
+            comp = _scope_instance_hooks(comp, page_context, compile_context)
+        scope_vars = tuple(
+            scope_var_names(
+                comp,
+                recursive=get_memoization_strategy(comp)
+                is MemoizationStrategy.SNAPSHOT,
+            )
+        )
 
         # Passthrough memo definitions capture app-specific event/state vars, so
         # they must be rebuilt for each compile instead of shared globally. The
@@ -391,7 +452,7 @@ class MemoizeStatefulPlugin(Plugin):
         # is substituted, so passthrough wrappers that differ only in their
         # children collapse to a single definition.
         wrapper_factory, definition = create_passthrough_component_memo(
-            comp, source_module=page_context.source_module
+            comp, source_module=page_context.source_module, scope_vars=scope_vars
         )
         tag = definition.export_name
         compile_context.memoize_wrappers[tag] = None
@@ -405,7 +466,7 @@ class MemoizeStatefulPlugin(Plugin):
             local_client_state_names(memo_body_hooks(definition))
         )
 
-        wrapper = wrapper_factory()
+        wrapper = wrapper_factory(**{name: Var(_js_expr=name) for name in scope_vars})
         # The wrapper has no structural children at the page level, but parents
         # walking ``_get_all_refs`` (e.g. ``Form._get_form_refs`` collecting
         # ref_<id> mappings into ``handleSubmit``) need to see refs from the

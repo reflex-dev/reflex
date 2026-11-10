@@ -2113,6 +2113,7 @@ _PASSTHROUGH_PARAMS = (
 def create_passthrough_component_memo(
     component: Component,
     source_module: str | None = None,
+    scope_vars: Sequence[str] = (),
 ) -> tuple[
     Callable[..., MemoComponent],
     MemoComponentDefinition,
@@ -2133,6 +2134,8 @@ def create_passthrough_component_memo(
         component: The component to wrap.
         source_module: The user-app Python module that triggered creation of
             this memo (typically the page that contained the wrapped subtree).
+        scope_vars: The loop variables that the body reads; the memo
+            receives each one as a prop.
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -2184,9 +2187,25 @@ def create_passthrough_component_memo(
         return new_component
 
     # The compiler owns this fixed signature; no user annotations need resolving.
-    params = _PASSTHROUGH_PARAMS
+    params = (
+        *_PASSTHROUGH_PARAMS,
+        *(
+            MemoParam(
+                name=name,
+                kind=MemoParamKind.VALUE,
+                annotation=Var[Any],
+                parameter_kind=inspect.Parameter.KEYWORD_ONLY,
+                js_prop_name=format.to_camel_case(name),
+                placeholder_name=name,
+            )
+            for name in scope_vars
+        ),
+    )
     rest_target_fields: set[str] = set()
-    preview = _evaluate_component_body(passthrough, params, rest_target_fields)
+    # The body already holds the scoped vars, so it takes no placeholders for them.
+    preview = _evaluate_component_body(
+        passthrough, _PASSTHROUGH_PARAMS, rest_target_fields
+    )
     tag = memo_tag(preview)
 
     passthrough.__name__ = format.to_snake_case(tag)

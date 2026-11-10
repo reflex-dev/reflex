@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from reflex_base.components.tags.tag import CommonTag
 from reflex_base.utils.types import GenericType
-from reflex_base.vars import LiteralArrayVar, Var, get_unique_variable_name
+from reflex_base.vars import LiteralArrayVar, Var, VarData, get_unique_variable_name
 from reflex_base.vars.sequence import _determine_value_of_array_index
 
 if TYPE_CHECKING:
@@ -53,6 +53,7 @@ class IterTag(CommonTag):
         return Var(
             _js_expr=self.index_var_name,
             _var_type=int,
+            _var_data=VarData(deps=[Var(_js_expr=self.index_var_name)]),
         ).guess_type()
 
     def get_arg_var(self) -> Var:
@@ -66,6 +67,7 @@ class IterTag(CommonTag):
         return Var(
             _js_expr=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
+            _var_data=VarData(deps=[Var(_js_expr=self.arg_var_name)]),
         ).guess_type()
 
     def render_component(self) -> Component:

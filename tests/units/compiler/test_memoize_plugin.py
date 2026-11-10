@@ -23,6 +23,7 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.utils import format as format_utils
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
@@ -448,6 +449,148 @@ def test_foreach_snapshot_memo_applies_component_styles() -> None:
     assert '["justifyContent"] : "space-between"' in foreach_code
 
 
+class LabelLogger(Component):
+    """A component whose added hook reads one of its props."""
+
+    tag = "LabelLogger"
+    library = "label-logger-lib"
+
+    label: Var[str]
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook that reads the label.
+
+        Returns:
+            The hook code.
+        """
+        return [f"useLabel({self.label!s})"]
+
+
+class OtherMemoState(BaseState):
+    """A second state, read only by an item key."""
+
+    prefix: Field[str] = field(default="k")
+
+
+def _foreach_memo_parts(
+    component_factory: Callable[[], Component],
+) -> tuple[str, str]:
+    """Compile a page and split its memo code into item wrappers and the loop.
+
+    Args:
+        component_factory: The page function.
+
+    Returns:
+        The code of the memo wrappers of loop items, and the Foreach memo body.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, _page_ctx = _compile_single_page(component_factory)
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    code = "".join(code for _path, code in memo_files)
+    definitions = code.split("\nexport const ")[1:]
+    return (
+        "".join(d for d in definitions if not d.startswith("Foreach_")),
+        "".join(d for d in definitions if d.startswith("Foreach_")),
+    )
+
+
+@pytest.mark.parametrize(
+    ("render_item", "hook_marker", "loop_var"),
+    [
+        (
+            lambda item: rx.text(item, on_mount=rx.console_log(item)),
+            "useEffect(() => {",
+            "item_rx_state_",
+        ),
+        (
+            lambda item: LabelLogger.create(label=item),
+            "useLabel(item_rx_state_)",
+            "item_rx_state_",
+        ),
+        (
+            lambda item, position: LabelLogger.create(item, label=position.to_string()),
+            "useLabel((JSON.stringify(position_rx_state_)))",
+            "position_rx_state_",
+        ),
+    ],
+    ids=["on_mount", "add_hooks", "index_var"],
+)
+def test_foreach_item_hooks_run_in_a_wrapper_called_in_the_loop(
+    render_item: Callable[..., Component], hook_marker: str, loop_var: str
+) -> None:
+    """A hook of a foreach item compiles into a wrapper that gets the loop var.
+
+    Regression for reflex-dev/reflex#7791: the hook was hoisted to the top of
+    the Foreach memo body, where the loop variable does not exist.
+    """
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(SpecialFormMemoState.items, render_item)
+    )
+
+    prop = format_utils.to_camel_case(loop_var)
+    assert f"{prop}:{loop_var}" in wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert hook_marker in wrappers
+    before_loop, _, loop_body = foreach.partition("Array.prototype.map.call(")
+    assert loop_var not in before_loop
+    assert hook_marker not in foreach
+    assert f"{prop}:{loop_var}" in loop_body
+
+
+def test_nested_foreach_item_wrapper_receives_outer_loop_var() -> None:
+    """A wrapper in an inner loop gets the loop variable of the outer loop."""
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda outer: rx.foreach(
+                SpecialFormMemoState.items,
+                lambda inner: rx.text(
+                    inner, on_mount=rx.console_log(f"{outer}-{inner}")
+                ),
+            ),
+        )
+    )
+
+    signature = wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert "outerRxState:outer_rx_state_" in signature
+    assert "innerRxState:inner_rx_state_" in signature
+    assert "useEffect(() => {" not in foreach
+    inner_loop = foreach.rpartition("Array.prototype.map.call(")[2]
+    assert "outerRxState:outer_rx_state_" in inner_loop
+    assert "innerRxState:inner_rx_state_" in inner_loop
+
+
+def test_foreach_item_key_state_is_declared_where_the_key_is_read() -> None:
+    """The state that an item key reads is declared in the loop's own function."""
+    _wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: rx.text(
+                item,
+                key=OtherMemoState.prefix + item,
+                on_mount=rx.console_log(item),
+            ),
+        )
+    )
+
+    before_loop, _, loop_body = foreach.partition("Array.prototype.map.call(")
+    other_state = OtherMemoState.get_full_name().replace(".", "__")
+    assert f"const {other_state} = useStateContext(" in before_loop
+    assert f"key:({other_state}.prefix" in loop_body
+
+
+def test_foreach_item_without_own_hooks_renders_inline() -> None:
+    """An item that only reads state gets no wrapper of its own."""
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(SpecialFormMemoState.items, lambda item: rx.text(item))
+    )
+
+    assert not wrappers
+    assert "itemRxState" not in foreach
+
+
 def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     """Foreach owns its own snapshot while the parent stays passthrough.
 
@@ -827,14 +970,16 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
     )
 
     def fake_create_passthrough_component_memo(
-        component: Component, source_module: str | None = None
+        component: Component,
+        source_module: str | None = None,
+        scope_vars: tuple[str, ...] = (),
     ):
         definition = SimpleNamespace(
             export_name=tag,
             component=component,
             source_module=source_module,
         )
-        return (lambda definition=definition: definition), definition
+        return (lambda definition=definition, **_props: definition), definition
 
     monkeypatch.setattr(
         memoize_plugin,
