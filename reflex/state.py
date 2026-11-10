@@ -968,7 +968,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     f"`{name}` is decorated above @rx.event; apply other "
                     "decorators below it."
                 ),
-                deprecation_version="0.10.2",
+                deprecation_version="0.11.0",
                 removal_version="1.0",
             )
             for attr in _STACKED_HANDLER_ATTRIBUTES:

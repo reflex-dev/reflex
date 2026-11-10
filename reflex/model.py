@@ -320,7 +320,7 @@ if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
         console.deprecate(
             feature_name="reflex.model.format_revision",
             reason="Run `alembic history --indicate-current` or `reflex db status`.",
-            deprecation_version="0.10.2",
+            deprecation_version="0.11.0",
             removal_version="1.0.0",
         )
         current = rev.revision
@@ -353,7 +353,7 @@ if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
         console.deprecate(
             feature_name="reflex.model.get_migration_history",
             reason="Run `alembic history --indicate-current` or `reflex db status`.",
-            deprecation_version="0.10.2",
+            deprecation_version="0.11.0",
             removal_version="1.0.0",
         )
         import alembic.config
@@ -388,7 +388,7 @@ if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
         console.deprecate(
             feature_name="reflex.model.alembic_autogenerate",
             reason="Run `alembic revision --autogenerate` or `reflex db makemigrations`.",
-            deprecation_version="0.10.2",
+            deprecation_version="0.11.0",
             removal_version="1.0.0",
         )
         if not environment.ALEMBIC_CONFIG.get().exists():
