@@ -29,6 +29,19 @@
   },
   "overrides": [
     {
+      // A promise nothing awaits fails somewhere else, or nowhere. In what
+      // ships, the ones meant to run on their own say so with `void`. Tests
+      // are left out: React's synchronous `act` returns a thenable.
+      "includes": ["src/**"],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "noFloatingPromises": "error"
+          }
+        }
+      }
+    },
+    {
       // state.js evaluates event code with `eval`, which resolves names from
       // the enclosing scopes. A binding or parameter the linter sees no use of
       // (`addEvents`, `socket`, `navigate`, `params`) may be all that code can

@@ -49,7 +49,7 @@ export default function usePasteHandler(target_ids, event_actions, on_paste) {
     const handle_paste = (_ev) => {
       eventActionsRef.current?.preventDefault && _ev.preventDefault();
       eventActionsRef.current?.stopPropagation && _ev.stopPropagation();
-      handle_paste_data(_ev.clipboardData).then(onPasteRef.current);
+      void handle_paste_data(_ev.clipboardData).then(onPasteRef.current);
     };
 
     let cleanupListeners = null;

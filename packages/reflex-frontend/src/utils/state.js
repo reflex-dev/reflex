@@ -611,31 +611,56 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name === "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
+    void queueEventIfSocketExists(
+      app.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
   if (event.name === "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
+    void queueEventIfSocketExists(
+      app.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
   if (event.name === "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
+    void queueEventIfSocketExists(
+      app.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
   if (event.name === "_clear_session_storage") {
     sessionStorage.clear();
-    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
+    void queueEventIfSocketExists(
+      app.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
   if (event.name === "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
+    void queueEventIfSocketExists(
+      app.initialEvents(),
+      socket,
+      navigate,
+      params,
+    );
     return;
   }
 
@@ -832,7 +857,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       extra_args[name] = event.payload[name];
     }
     // Start upload, but do not wait for it, which would block other events.
-    uploadFiles(
+    void uploadFiles(
       event.name,
       event.payload.files,
       event.payload.upload_id,
@@ -1592,22 +1617,31 @@ export const useEventLoop = (
       // addEvents, so avoid reconnecting the socket of an unmounted event loop.
       return;
     }
-    // only use websockets if state is present and backend is not disabled (reflex cloud).
-    if (
-      Object.keys(app.initialState).length > 1 &&
-      !isBackendDisabled() &&
-      !socket.current?.connected
-    ) {
-      // Initialize the websocket connection.
-      await connect(
-        socket,
-        dispatch,
-        [env.TRANSPORT],
-        setConnectErrors,
-        client_storage,
-        navigate,
-        params,
-      );
+    try {
+      // only use websockets if state is present and backend is not disabled (reflex cloud).
+      if (
+        Object.keys(app.initialState).length > 1 &&
+        !isBackendDisabled() &&
+        !socket.current?.connected
+      ) {
+        // Initialize the websocket connection.
+        await connect(
+          socket,
+          dispatch,
+          [env.TRANSPORT],
+          setConnectErrors,
+          client_storage,
+          navigate,
+          params,
+        );
+      }
+    } catch (error) {
+      // A connection that cannot even be attempted (the browser blocks the
+      // storage that holds the token, say) is a connection error like any
+      // other. It must not reject: callers do not await this, and the handler
+      // for unhandled rejections reports through addEvents, which calls back
+      // into here and would fail the same way, forever.
+      setConnectErrors((errors) => [...errors.slice(-9), error]);
     }
   }, [
     socket,
@@ -1631,7 +1665,7 @@ export const useEventLoop = (
 
     if (!event_actions?.temporal) {
       // Reconnect socket if needed for non-temporal events.
-      ensureSocketConnected();
+      void ensureSocketConnected();
     }
 
     return applyEventActions(
@@ -1684,7 +1718,7 @@ export const useEventLoop = (
   useEffect(() => {
     // Initialize the websocket connection.
     mounted.current = true;
-    ensureSocketConnected();
+    void ensureSocketConnected();
 
     // Cleanup function.
     return () => {
@@ -1703,7 +1737,7 @@ export const useEventLoop = (
     if (isBackendDisabled() || !socket.current || !socket.current.connected) {
       return;
     }
-    (async () => {
+    void (async () => {
       // Process all outstanding events. processEvent drains the queue itself,
       // and stops at a stateful event when the socket has dropped; the connect
       // handler sends what is left once it is back.

@@ -109,6 +109,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   document.body.replaceChildren();
 });
 
@@ -130,8 +131,11 @@ const connectSocket = async () => {
 /** Mount a component running the event loop, as the app's root layout does. */
 const mountEventLoop = async () => {
   const mounted = {};
+  // One object for the life of the loop, as the app's dispatch context is: the
+  // loop reloads the route when it changes.
+  const dispatch = {};
   const Probe = () => {
-    [mounted.addEvents] = state.useEventLoop({});
+    [mounted.addEvents, mounted.connectErrors] = state.useEventLoop(dispatch);
     return null;
   };
   const container = document.body.appendChild(document.createElement("div"));
@@ -142,8 +146,9 @@ const mountEventLoop = async () => {
     });
   await render();
   return {
-    ...mounted,
-    socket: io.mock.results[0].value,
+    addEvents: (...args) => mounted.addEvents(...args),
+    connectErrors: () => mounted.connectErrors,
+    socket: io.mock.results[0]?.value,
     render,
     unmount: () => act(async () => root.unmount()),
   };
@@ -250,5 +255,33 @@ test("a mounted event loop reconnects its socket when the page becomes visible",
 
   expect(socket.connect).toHaveBeenCalledTimes(1);
   expect(io).toHaveBeenCalledTimes(1);
+  await loop.unmount();
+});
+
+test("a connection that cannot be attempted is a connection error, not a rejection", async () => {
+  // What a browser does when the site may not store data.
+  const denied = new DOMException(
+    "The operation is insecure.",
+    "SecurityError",
+  );
+  vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+    throw denied;
+  });
+  // The app's handler for unhandled rejections reports them with addEvents,
+  // which tries to connect again: a rejection here would feed itself.
+  const rejections = [];
+  const record = (reason) => rejections.push(reason);
+  process.on("unhandledRejection", record);
+
+  const loop = await mountEventLoop();
+  await act(async () => {
+    loop.addEvents([stateful]);
+  });
+  await act(() => new Promise((done) => setTimeout(done, 0)));
+  process.off("unhandledRejection", record);
+
+  expect(rejections).toEqual([]);
+  expect(io).not.toHaveBeenCalled();
+  expect(loop.connectErrors().at(-1)).toBe(denied);
   await loop.unmount();
 });

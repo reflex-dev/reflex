@@ -1,0 +1,1 @@
+Stop an endless loop of errors when the browser blocks site storage. The page reported each failed connection attempt by attempting another, thousands of times a second, and never showed a connection error; the failure is now recorded as one.
