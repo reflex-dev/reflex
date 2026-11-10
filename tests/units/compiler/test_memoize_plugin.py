@@ -692,6 +692,34 @@ def test_foreach_wrapper_receives_loop_var_read_by_an_added_hook() -> None:
     assert "itemRxState:item_rx_state_" in signature
 
 
+def test_foreach_snapshot_wrapper_passes_loop_var_to_nested_wrapper() -> None:
+    """A snapshot wrapper receives the loop variable that a wrapper inside it needs."""
+    wrappers, _foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: rx.auto_scroll(rx.text("x", on_mount=rx.console_log(item))),
+        )
+    )
+
+    auto_scroll = wrappers[wrappers.index("const Autoscroll_") :]
+    signature, _, body = auto_scroll.partition("memo((")[2].partition("=> {")
+    assert "itemRxState:item_rx_state_" in signature
+    assert "itemRxState:item_rx_state_" in body
+
+
+def test_foreach_snapshot_wrapper_call_has_no_children() -> None:
+    """A snapshot wrapper renders its own subtree; the loop does not render it again."""
+    _wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda _item: rx.auto_scroll(rx.text(OtherMemoState.prefix)),
+        )
+    )
+
+    other_state = OtherMemoState.get_full_name().replace(".", "__")
+    assert other_state not in foreach
+
+
 def test_foreach_item_without_own_hooks_renders_inline() -> None:
     """An item that only reads state gets no wrapper of its own."""
     wrappers, foreach = _foreach_memo_parts(

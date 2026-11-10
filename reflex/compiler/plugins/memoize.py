@@ -44,6 +44,7 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
+from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.cond import Cond
@@ -276,10 +277,12 @@ def _scope_instance_hooks(
             and _has_instance_hooks(child)
         ):
             wrapper = MemoizeStatefulPlugin._build_wrapper(
-                child, page_context, compile_context
+                child, page_context, compile_context, in_loop=True
             )
             if isinstance(wrapper, Component):
-                wrapper.children = list(child.children)
+                if get_memoization_strategy(child) is not MemoizationStrategy.SNAPSHOT:
+                    # A passthrough wrapper renders its children at the call site.
+                    wrapper.children = list(child.children)
                 wrapper.key = child.key
                 child = wrapper
         children.append(child)
@@ -449,6 +452,7 @@ class MemoizeStatefulPlugin(Plugin):
         comp: Component,
         page_context: PageContext,
         compile_context: Any,
+        in_loop: bool = False,
     ) -> BaseComponent | None:
         """Return the memo wrapper component for ``comp``, or ``None`` if untagged.
 
@@ -461,6 +465,7 @@ class MemoizeStatefulPlugin(Plugin):
             comp: The component being memoized.
             page_context: The active page context.
             compile_context: The active compile context.
+            in_loop: Whether the wrapper is called inside a loop body.
 
         Returns:
             The wrapper instance, or ``None`` if the component's render is
@@ -471,12 +476,18 @@ class MemoizeStatefulPlugin(Plugin):
             # A loop seals its subtree, so give each descendant with hooks of
             # its own a wrapper that is called inside the loop body.
             comp = _scope_instance_hooks(comp, page_context, compile_context)
-        scope_vars = tuple(
-            scope_var_names(
-                comp,
-                recursive=get_memoization_strategy(comp)
-                is MemoizationStrategy.SNAPSHOT,
+        # Loop variables exist only in a loop body, so only a wrapper that is
+        # called there can read one.
+        scope_vars = (
+            tuple(
+                scope_var_names(
+                    comp,
+                    recursive=get_memoization_strategy(comp)
+                    is MemoizationStrategy.SNAPSHOT,
+                )
             )
+            if in_loop
+            else ()
         )
 
         # Passthrough memo definitions capture app-specific event/state vars, so
@@ -500,7 +511,12 @@ class MemoizeStatefulPlugin(Plugin):
             local_client_state_names(memo_body_hooks(definition))
         )
 
-        wrapper = wrapper_factory(**{name: Var(_js_expr=name) for name in scope_vars})
+        # Each prop keeps naming its loop variable, so an enclosing wrapper
+        # that renders this one receives the variable too.
+        wrapper = wrapper_factory(**{
+            name: Var(_js_expr=name, _var_data=VarData(deps=[Var(_js_expr=name)]))
+            for name in scope_vars
+        })
         # The wrapper has no structural children at the page level, but parents
         # walking ``_get_all_refs`` (e.g. ``Form._get_form_refs`` collecting
         # ref_<id> mappings into ``handleSubmit``) need to see refs from the
