@@ -1191,7 +1191,7 @@ def migrate():
     from reflex.utils import migrations, prerequisites
 
     if not prerequisites.check_db_initialized():
-        return
+        raise click.exceptions.Exit(1)
     with _alembic_errors():
         migrations.run("upgrade", "head")
     # After the upgrade, since a page may query the database when evaluated, and
@@ -1207,7 +1207,7 @@ def status():
     from reflex.utils import migrations, prerequisites
 
     if not prerequisites.check_db_initialized():
-        return
+        raise click.exceptions.Exit(1)
     with _alembic_errors():
         migrations.run("history", "--indicate-current")
 
@@ -1224,7 +1224,7 @@ def makemigrations(message: str | None):
     # So that models pages or plugin route hooks import lazily are compared too.
     migrations.evaluate_pages()
     if not prerequisites.check_db_initialized():
-        return
+        raise click.exceptions.Exit(1)
     with _alembic_errors():
         migrations.run(
             "revision",

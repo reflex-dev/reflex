@@ -1493,8 +1493,23 @@ def test_db_commands_run_without_sqlmodel(
 
     result = click.testing.CliRunner().invoke(reflex.db_cli, ["migrate"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1, result.output
     assert "pip install reflex[db]" not in caplog.text
+
+
+@pytest.mark.parametrize("command", ["migrate", "status", "makemigrations"])
+def test_db_commands_fail_without_database(
+    monkeypatch: pytest.MonkeyPatch, command: str
+):
+    """A db command exits with status 1 when there is no database to migrate."""
+    from reflex.utils import migrations
+
+    monkeypatch.setattr(migrations, "evaluate_pages", lambda: None)
+    monkeypatch.setattr(reflex.get_config(), "db_url", None)
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, [command])
+
+    assert result.exit_code == 1, result.output
 
 
 @pytest.fixture
