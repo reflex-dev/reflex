@@ -39,8 +39,8 @@ class StreamedRequest {
     });
   }
 
-  finish() {
-    this.status = 200;
+  finish(status = 200) {
+    this.status = status;
     this.onload();
   }
 }
@@ -64,9 +64,10 @@ await module.link(
 await module.evaluate();
 const { uploadFiles } = module.namespace;
 
-/** Upload with `handler` as the socket's event listener, and stream the updates. */
-async function streamUpdates(handler) {
+/** Start an upload with `handler` as the socket's event listener. */
+function startUpload(handler) {
   const socket = { _callbacks: { $event: [handler] } };
+  const refs = {};
   const uploaded = uploadFiles(
     "state.handle_upload",
     [],
@@ -75,11 +76,17 @@ async function streamUpdates(handler) {
     {},
     {},
     socket,
-    {},
+    refs,
     (url) => url,
     () => "token",
   );
   const request = StreamedRequest.sent.at(-1);
+  return { uploaded, request, refs };
+}
+
+/** Upload with `handler` as the socket's event listener, and stream the updates. */
+async function streamUpdates(handler) {
+  const { uploaded, request } = startUpload(handler);
   // The browser fires each progress event as a task of its own.
   const nextTask = () => new Promise((resolve) => setImmediate(resolve));
   request.receive('{"delta": {"state": {"n": 1}}}\n');
@@ -92,6 +99,87 @@ async function streamUpdates(handler) {
   request.finish();
   await uploaded;
 }
+
+test("an unparseable chunk is reported at load without Content-Length", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request, refs } = startUpload((update) =>
+    handled.push(update),
+  );
+  request.receive('{"n":1}\n{"broken":');
+  request.receive("oops}\n");
+  assert.equal(log.mock.calls.length, 0);
+  request.finish();
+  assert.equal((await uploaded).status, 200);
+  assert.deepEqual(handled, [{ n: 1 }]);
+  assert.equal(log.mock.calls.length, 1);
+  assert.equal(log.mock.calls[0].arguments[0], "Error parsing chunk");
+  assert.equal(log.mock.calls[0].arguments[1], '{"broken":oops}');
+  assert.deepEqual(refs, {});
+});
+
+test("load handles a final chunk completed after the last progress event", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request } = startUpload((update) => handled.push(update));
+  request.receive('{"n":1}\n{"n":');
+  assert.deepEqual(handled, [{ n: 1 }]);
+  request.responseText += "2}\n";
+  request.finish();
+  await uploaded;
+  assert.deepEqual(handled, [{ n: 1 }, { n: 2 }]);
+  assert.equal(log.mock.calls.length, 0);
+});
+
+test("load handles a response with no progress events", async () => {
+  const handled = [];
+  const { uploaded, request } = startUpload((update) => handled.push(update));
+  request.responseText = '{"n":1}\n{"n":2}';
+  request.finish();
+  await uploaded;
+  assert.deepEqual(handled, [{ n: 1 }, { n: 2 }]);
+});
+
+test("a computable progress ratio of one is not response completion", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request } = startUpload((update) => handled.push(update));
+  request.receive('{"n":', { done: true });
+  assert.equal(log.mock.calls.length, 0);
+  request.responseText += "1}";
+  request.finish();
+  await uploaded;
+  assert.deepEqual(handled, [{ n: 1 }]);
+  assert.equal(log.mock.calls.length, 0);
+});
+
+test("an empty response does not report a parse error", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request } = startUpload((update) => handled.push(update));
+  request.receive(" \n");
+  request.finish();
+  await uploaded;
+  assert.deepEqual(handled, []);
+  assert.equal(log.mock.calls.length, 0);
+});
+
+test("load does not parse an HTTP error response", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request, refs } = startUpload((update) =>
+    handled.push(update),
+  );
+  request.responseText = '{"n":1}';
+  request.finish(500);
+  assert.equal(await uploaded, false);
+  assert.deepEqual(handled, []);
+  assert.deepEqual(
+    log.mock.calls.map((call) => call.arguments),
+    [["Upload error:", "HTTP error! status: 500"]],
+  );
+  assert.deepEqual(refs, {});
+});
 
 test("a synchronous listener handles each streamed update once", async () => {
   const handled = [];
