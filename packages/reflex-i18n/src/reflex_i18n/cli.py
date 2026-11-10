@@ -7,6 +7,7 @@ installed.
 from __future__ import annotations
 
 import dataclasses
+import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -90,7 +91,9 @@ def extract_catalog(app_dir: Path, used_messages: tuple[MessageKey, ...]) -> Cat
     """Build a message-template catalog from both translation sources.
 
     Args:
-        app_dir: The app source directory to scan for gettext calls.
+        app_dir: The app source directory to scan for gettext calls. Source
+            locations are recorded relative to the working directory, the
+            project root.
         used_messages: Static ``rx.t`` messages from the compile registry.
 
     Returns:
@@ -102,12 +105,13 @@ def extract_catalog(app_dir: Path, used_messages: tuple[MessageKey, ...]) -> Cat
     catalog = Catalog()
 
     # Dynamic content: gettext-family calls in the app source (with locations).
+    app_location = Path(os.path.relpath(app_dir))
     for filename, lineno, message, _comments, context in extract_from_dir(
         app_dir, keywords=_GETTEXT_KEYWORDS
     ):
         catalog.add(
             message,
-            locations=[(str(Path(app_dir.name) / filename), lineno)],
+            locations=[((app_location / filename).as_posix(), lineno)],
             context=context,
         )
 

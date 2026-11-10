@@ -54,14 +54,19 @@ def test_extract_catalog_unions_both_sources(tmp_path: Path):
     assert catalog.get("Open", context="menu") is not None
 
 
-def test_extract_catalog_records_gettext_locations(tmp_path: Path):
-    app_dir = tmp_path / "myapp"
+@pytest.mark.parametrize("layout", ["myapp", "src/myapp"])
+def test_extract_catalog_records_gettext_locations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, layout: str
+):
+    # Locations resolve from the project root the CLI runs in, src layouts too.
+    monkeypatch.chdir(tmp_path)
+    app_dir = tmp_path / layout
     _write_app_source(app_dir)
 
     catalog = extract_catalog(app_dir, ())
     message = catalog.get("Server hello")
     assert message is not None
-    assert message.locations  # source location captured for gettext calls
+    assert message.locations == [(f"{layout}/app.py", 2)]
 
 
 def test_merge_preserves_existing_translation(tmp_path: Path):
