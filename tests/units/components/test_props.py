@@ -96,6 +96,13 @@ class ParentProps(PropsBase):
     is_enabled: bool = True
 
 
+class NestedContainerProps(PropsBase):
+    """Test props containing nested PropsBase objects in containers."""
+
+    nested_mapping: dict[str, NestedProps]
+    nested_items: list[NestedProps]
+
+
 class OptionalFieldProps(PropsBase):
     """Test props with optional fields to test omission behavior."""
 
@@ -189,6 +196,7 @@ def test_props_base_dict_conversion(props_class, props_kwargs, expected_dict):
 
 
 def test_props_base_nested_dict_filters_only_apply_to_the_current_object():
+    """Keep parent include and exclude filters from filtering child fields."""
     props = ParentProps(
         title="parent",
         nested_config=NestedProps(user_name="nested_user", max_count=5),
@@ -197,10 +205,27 @@ def test_props_base_nested_dict_filters_only_apply_to_the_current_object():
     assert props.dict(include={"nested_config"}) == {
         "nestedConfig": {"userName": "nested_user", "maxCount": 5}
     }
-    assert props.dict(exclude={"title"}) == {
+    assert props.dict(exclude={"max_count"}) == {
+        "title": "parent",
         "nestedConfig": {"userName": "nested_user", "maxCount": 5},
         "isEnabled": True,
     }
+
+
+def test_props_base_filters_do_not_leak_through_nested_containers():
+    """Keep parent filters from dropping fields inside nested dicts or lists."""
+    nested_props = NestedProps(user_name="nested_user", max_count=5)
+    props = NestedContainerProps(
+        nested_mapping={"primary": nested_props},
+        nested_items=[nested_props],
+    )
+    expected = {
+        "nestedMapping": {"primary": {"userName": "nested_user", "maxCount": 5}},
+        "nestedItems": [{"userName": "nested_user", "maxCount": 5}],
+    }
+
+    assert props.dict(include={"nested_mapping", "nested_items"}) == expected
+    assert props.dict(exclude={"max_count"}) == expected
 
 
 class EventProps(PropsBase):
