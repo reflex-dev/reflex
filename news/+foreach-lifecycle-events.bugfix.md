@@ -1,1 +1,0 @@
-Fix `on_mount` and `on_unmount` on a component inside `rx.foreach`: an event that used the loop variable crashed the page, and other events fired once for the whole list. Each item now fires its own event.

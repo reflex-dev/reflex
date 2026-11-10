@@ -307,24 +307,26 @@ def test_snapshot_memo_collects_var_app_wraps_from_prop_components() -> None:
     assert (70, "MemoAppWrapProvider") in page_ctx.app_wrap_components
 
 
-def test_on_mount_handlers_render_as_distinct_effect_elements() -> None:
-    """Two components differing only in ``on_mount`` keep both handlers.
+def test_memoize_wrappers_distinct_for_different_on_mount() -> None:
+    """Two components differing only in ``on_mount`` must NOT dedupe.
 
-    Lifecycle events render as ``MountEffect`` elements beside the component,
-    so neither component needs a memo wrapper and each handler stays in the
-    page code.
+    ``on_mount`` is excluded from ``_render``'s props, so its handler does not
+    appear in ``component.render()``. The memo wrapper body, however, includes
+    a ``useEffect`` lifecycle hook whose body invokes the ``on_mount`` handler
+    — two distinct handlers produce two distinct memo bodies and must compile
+    to two distinct memo wrappers. Hashing only ``render()`` lets them collide
+    on a single tag, silently dropping one handler's logic.
     """
-    ctx, page_ctx = _compile_single_page(
+    ctx, _page_ctx = _compile_single_page(
         lambda: Fragment.create(
             Plain.create(on_mount=rx.console_log("a")),
             Plain.create(on_mount=rx.console_log("b")),
         )
     )
-    code = page_ctx.output_code or ""
-    assert not ctx.memoize_wrappers
-    assert code.count("jsx(MountEffect,{mount:") == 2
-    assert 'console?.["log"]("a")' in code
-    assert 'console?.["log"]("b")' in code
+    assert len(ctx.memoize_wrappers) == 2, (
+        "Components with different on_mount handlers must produce distinct "
+        f"memo wrappers, got: {list(ctx.memoize_wrappers)}"
+    )
 
 
 def test_memoize_wrappers_dedupe_passthrough_with_different_children() -> None:

@@ -611,6 +611,7 @@ def default_page_plugins(
     style: ComponentStyle | None = None,
     plugins: Sequence[Plugin] = (),
     auto_memoize: bool = True,
+    react_compiler: bool = False,
 ) -> tuple[Plugin, ...]:
     """Return the default compiler plugin ordering for page compilation.
 
@@ -618,6 +619,7 @@ def default_page_plugins(
         style: The app style to apply, if any.
         plugins: Plugins that run before the defaults.
         auto_memoize: Whether to wrap stateful components in memo components.
+        react_compiler: Whether React Compiler compiles the generated code.
 
     Returns:
         The ordered page compiler plugins.
@@ -626,11 +628,10 @@ def default_page_plugins(
     if style is not None:
         chain.append(ApplyStylePlugin(style=style))
     # The scope plugin's compile_page runs before the collector collapses imports.
-    chain.extend((
-        ClientStateScopePlugin(),
-        DefaultCollectorPlugin(),
-        InlineLifecyclePlugin(),
-    ))
+    chain.extend((ClientStateScopePlugin(), DefaultCollectorPlugin()))
+    # Limited to the experimental options; the default output stays unchanged.
+    if react_compiler or not auto_memoize:
+        chain.append(InlineLifecyclePlugin())
     if auto_memoize:
         from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 

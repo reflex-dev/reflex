@@ -941,17 +941,14 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
 
     plugins = default_page_plugins(style=page_style())
 
-    assert len(plugins) == 6
+    assert len(plugins) == 5
     assert isinstance(plugins[0], DefaultPagePlugin)
     assert isinstance(plugins[1], ApplyStylePlugin)
     # Scopes the page from the collected hooks, so it runs its compile_page
     # before the collector collapses the imports it adds.
     assert isinstance(plugins[2], ClientStateScopePlugin)
     assert isinstance(plugins[3], DefaultCollectorPlugin)
-    # Moves lifecycle events into elements before the memoize plugin seals
-    # snapshot subtrees.
-    assert isinstance(plugins[4], InlineLifecyclePlugin)
-    assert isinstance(plugins[5], MemoizeStatefulPlugin)
+    assert isinstance(plugins[4], MemoizeStatefulPlugin)
 
 
 def test_compile_context_collects_artifacts_from_leave_replacement_plugins() -> None:
@@ -1306,6 +1303,17 @@ def test_default_page_plugins_can_skip_auto_memoization() -> None:
     ]
 
 
+def test_react_compiler_adds_lifecycle_plugin_before_memoization() -> None:
+    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+
+    plugins = default_page_plugins(react_compiler=True)
+
+    assert [type(plugin) for plugin in plugins[-2:]] == [
+        InlineLifecyclePlugin,
+        MemoizeStatefulPlugin,
+    ]
+
+
 def _compile_page_and_memos(
     component: Callable[[], Component], auto_memoize: bool
 ) -> tuple[str, str]:
@@ -1314,13 +1322,18 @@ def _compile_page_and_memos(
     Args:
         component: The page function.
         auto_memoize: Whether to wrap stateful components in memo components.
+            React Compiler is on in that case, so both experimental modes run.
 
     Returns:
         The page code and the code of all generated memo modules.
     """
     compile_ctx = CompileContext(
         pages=[FakePage(route="/page", component=component)],
-        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize)),
+        hooks=CompilerHooks(
+            plugins=default_page_plugins(
+                auto_memoize=auto_memoize, react_compiler=auto_memoize
+            )
+        ),
     )
     with compile_ctx:
         compile_ctx.compile()
@@ -1382,15 +1395,15 @@ def test_lifecycle_stays_inside_foreach_item(auto_memoize: bool) -> None:
 def test_compile_app_passes_auto_memoize_config(
     auto_memoize: bool, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Page compilation follows the ``auto_memoize`` config."""
+    """Page compilation follows the ``auto_memoize`` and ``react_compiler`` config."""
 
     class _StopCompile(Exception):
         pass
 
-    received: list[bool] = []
+    received: list[tuple[bool, bool]] = []
 
     def recording_default_page_plugins(**kwargs):
-        received.append(kwargs["auto_memoize"])
+        received.append((kwargs["auto_memoize"], kwargs["react_compiler"]))
         raise _StopCompile
 
     monkeypatch.setattr(
@@ -1399,11 +1412,15 @@ def test_compile_app_passes_auto_memoize_config(
     monkeypatch.setattr(
         compiler,
         "get_config",
-        lambda: rx.Config(app_name="testing", auto_memoize=auto_memoize),
+        lambda: rx.Config(
+            app_name="testing",
+            auto_memoize=auto_memoize,
+            react_compiler=not auto_memoize,
+        ),
     )
     app = rx.App()
     app.add_page(lambda: rx.box("hi"), route="/")
     with pytest.raises(_StopCompile):
         compiler.compile_app(app, dry_run=True, use_rich=False)
 
-    assert received == [auto_memoize]
+    assert received == [(auto_memoize, not auto_memoize)]
