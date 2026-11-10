@@ -1116,18 +1116,14 @@ export const connect = async (
   };
 
   function checkVisibility() {
+    if (!socket.current) {
+      // The event loop that owned this socket unmounted and released it.
+      // Connecting here would open a socket nothing listens to any more.
+      document.removeEventListener("visibilitychange", checkVisibility);
+      return;
+    }
     if (document.visibilityState === "visible") {
-      if (!socket.current) {
-        connect(
-          socket,
-          dispatch,
-          transports,
-          setConnectErrors,
-          client_storage,
-          navigate,
-          params,
-        );
-      } else if (!socket.current.connected) {
+      if (!socket.current.connected) {
         console.log("Socket is disconnected, attempting to reconnect ");
         socket.current.reconnect();
       } else {

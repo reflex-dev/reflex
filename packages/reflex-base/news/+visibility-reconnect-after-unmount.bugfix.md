@@ -1,0 +1,1 @@
+Stop an unmounted app reconnecting to the backend when its tab becomes visible again. An embedded app that the host page had unmounted opened a new connection, as did every hot-reloaded copy of the event loop in dev mode.

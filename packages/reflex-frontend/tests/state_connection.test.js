@@ -225,3 +225,30 @@ test("a connection lost while the mounted loop drains leaves the rest queued", a
   expect(state.isStateful()).toBe(true);
   await loop.unmount();
 });
+
+test("an unmounted event loop is not reconnected when the page becomes visible", async () => {
+  const loop = await mountEventLoop();
+  expect(io).toHaveBeenCalledTimes(1);
+  await loop.unmount();
+
+  document.dispatchEvent(new Event("visibilitychange"));
+  await Promise.resolve();
+
+  expect(document.visibilityState).toBe("visible");
+  expect(io).toHaveBeenCalledTimes(1);
+});
+
+test("a mounted event loop reconnects its socket when the page becomes visible", async () => {
+  const loop = await mountEventLoop();
+  const { socket } = loop;
+  socket.connected = true;
+  await act(async () => socket.trigger("connect"));
+  socket.connect.mockClear();
+
+  socket.connected = false;
+  document.dispatchEvent(new Event("visibilitychange"));
+
+  expect(socket.connect).toHaveBeenCalledTimes(1);
+  expect(io).toHaveBeenCalledTimes(1);
+  await loop.unmount();
+});
