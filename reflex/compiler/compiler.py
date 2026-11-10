@@ -195,6 +195,8 @@ def _compile_app(
     app_root_imports = utils.merge_imports(
         app_root._get_all_imports(), shared_imports or {}
     )
+    if _has_moment_all_locales_import(app_root_imports):
+        _remove_moment_specific_locale_imports(app_root_imports)
     _apply_common_imports(app_root_imports)
 
     return templates.app_root_template(
@@ -539,12 +541,26 @@ def _remove_moment_locale_side_effects(
     imports: dict[str, list[ImportVar]],
 ) -> None:
     """Remove route-local locale imports after hoisting them to the app root."""
+    _remove_moment_specific_locale_imports(imports)
     if side_effect_imports := imports.get(""):
         imports[""] = [
             import_var
             for import_var in side_effect_imports
             if import_var.tag != _MOMENT_ALL_LOCALES_IMPORT
-            and not (import_var.tag or "").startswith(_MOMENT_LOCALE_IMPORT_PREFIX)
+        ]
+        if not imports[""]:
+            del imports[""]
+
+
+def _remove_moment_specific_locale_imports(
+    imports: dict[str, list[ImportVar]],
+) -> None:
+    """Remove individual Moment locale side-effect imports."""
+    if side_effect_imports := imports.get(""):
+        imports[""] = [
+            import_var
+            for import_var in side_effect_imports
+            if not (import_var.tag or "").startswith(_MOMENT_LOCALE_IMPORT_PREFIX)
         ]
         if not imports[""]:
             del imports[""]

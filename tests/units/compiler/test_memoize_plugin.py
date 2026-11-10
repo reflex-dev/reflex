@@ -448,6 +448,19 @@ def test_moment_all_locales_import_deduplicates_real_memo_imports() -> None:
     assert 'import "moment/min/locales"' in app_root_code
 
 
+def test_moment_all_locales_import_deduplicates_app_root_imports() -> None:
+    """An app-root wrapper keeps the shared bundle without a duplicate locale."""
+    from reflex.compiler.compiler import compile_app_root
+
+    app_root_code = compile_app_root(
+        Fragment.create(rx.moment("2024-03-14", locale="fr")),
+        shared_imports={"": [ImportVar(tag="moment/min/locales")]},
+    )[1]
+
+    assert 'import "moment/min/locales"' in app_root_code
+    assert 'import "moment/locale/fr"' not in app_root_code
+
+
 def test_moment_literal_locale_keeps_narrow_import() -> None:
     """A literal-only Moment locale does not pull in the all-locales bundle."""
     from reflex.compiler.compiler import compile_memo_components
