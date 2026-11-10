@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import functools
 import inspect
+import re
 from collections.abc import Callable, Iterable
 from hashlib import md5
-from typing import Any
+from typing import Any, cast
 
 from reflex_base.components.component import Component, field
 from reflex_base.components.tags import IterTag
-from reflex_base.constants import MemoizationMode
+from reflex_base.constants import Dirs, MemoizationMode
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import UntypedVarError
+from reflex_base.utils.imports import ImportDict, ImportVar
+from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var, var_operation, var_operation_return
 
 from reflex_components_core.base.fragment import Fragment
@@ -36,6 +39,32 @@ def _string_chars_operation(string: Var[Any]):
     )
 
 
+def _has_instance_hooks(component: Component) -> bool:
+    """Check whether a subtree has hooks that belong to one component instance.
+
+    Lifecycle events and hooks that a component adds run once per rendered
+    instance, so inside a loop they must run once per item.
+
+    Args:
+        component: The root of the subtree.
+
+    Returns:
+        Whether the component or a descendant outside a scoped loop has such hooks.
+    """
+    if (
+        component._get_mount_lifecycle_hook()
+        or component._get_hooks() is not None
+        or component._get_added_hooks()
+    ):
+        return True
+    if isinstance(component, Foreach) and component._item_scoped:
+        return False
+    return any(
+        isinstance(child, Component) and _has_instance_hooks(child)
+        for child in component.children
+    )
+
+
 class ForeachVarError(TypeError):
     """Raised when the iterable type is Any."""
 
@@ -54,6 +83,12 @@ class Foreach(Component):
     render_fn: Callable = field(
         doc="A function from the render args to the component.",
         default=Fragment.create,
+        is_javascript_property=False,
+    )
+
+    _item_scoped: bool = field(
+        doc="Whether each item renders as its own component, so its hooks run in the loop body.",
+        default=False,
         is_javascript_property=False,
     )
 
@@ -131,14 +166,67 @@ class Foreach(Component):
         )
         try:
             # Keep a ref to a rendered component to determine correct imports/hooks/styles.
-            component.children = [component._render().render_component()]
+            tag = component._render()
+            item = tag.render_component()
+            component.children = [item]
         except UntypedVarError as e:
             raise UntypedVarError(
                 iterable,
                 "foreach",
                 "https://reflex.dev/docs/library/dynamic-rendering/foreach/",
             ).with_traceback(e.__traceback__) from None
+        loop_vars = re.compile(
+            rf"(?<![\w$])(?:{re.escape(tag.arg_var_name)}|{re.escape(tag.index_var_name)})(?![\w$])"
+        )
+        component._item_scoped = _has_instance_hooks(item) or any(
+            loop_vars.search(hook) for hook in component._item_hooks()
+        )
         return component
+
+    def _item_hooks(self) -> dict[str, VarData | None]:
+        """Get the hooks of the rendered item.
+
+        Returns:
+            The item's hooks, internal hooks first.
+        """
+        item = self.children[0]
+        return {**item._get_all_hooks_internal(), **item._get_all_hooks()}
+
+    def _get_all_hooks_internal(self) -> dict[str, VarData | None]:
+        """Get the internal hooks that compile outside the loop body.
+
+        Returns:
+            The component's own hooks when each item is its own component,
+            otherwise the hooks of the whole subtree.
+        """
+        if self._item_scoped:
+            return dict(self._get_hooks_internal())
+        return super()._get_all_hooks_internal()
+
+    def _get_all_hooks(self) -> dict[str, VarData | None]:
+        """Get the hooks that compile outside the loop body.
+
+        Returns:
+            The component's own hooks when each item is its own component,
+            otherwise the hooks of the whole subtree.
+        """
+        if not self._item_scoped:
+            return super()._get_all_hooks()
+        code = dict(self._get_hooks_internal())
+        if (hooks := self._get_hooks()) is not None:
+            code[hooks] = None
+        code.update(self._get_added_hooks())
+        return code
+
+    def add_imports(self) -> ImportDict:
+        """Add the item component import when each item is its own component.
+
+        Returns:
+            The imports for the component.
+        """
+        if self._item_scoped:
+            return {f"$/{Dirs.STATE_PATH}": ImportVar(tag="ForeachItem")}
+        return {}
 
     def _render(self) -> IterTag:
         props = {}
@@ -188,12 +276,17 @@ class Foreach(Component):
         """
         tag = self._render()
 
-        return dict(
+        rendered = dict(
             tag,
             iterable_state=str(tag.iterable),
             arg_name=tag.arg_var_name,
             arg_index=tag.index_var_name,
         )
+        if self._item_scoped:
+            rendered["item_hooks"] = "\n".join(self._item_hooks())
+            item = cast("Component", self.children[0])
+            rendered["item_key"] = str(LiteralVar.create(item.key))
+        return rendered
 
 
 foreach = Foreach.create

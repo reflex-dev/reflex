@@ -448,6 +448,97 @@ def test_foreach_snapshot_memo_applies_component_styles() -> None:
     assert '["justifyContent"] : "space-between"' in foreach_code
 
 
+class LabelLogger(Component):
+    """A component whose added hook reads one of its props."""
+
+    tag = "LabelLogger"
+    library = "label-logger-lib"
+
+    label: Var[str]
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook that reads the label.
+
+        Returns:
+            The hook code.
+        """
+        return [f"useLabel({self.label!s})"]
+
+
+def _foreach_memo_code(component_factory: Callable[[], Component]) -> str:
+    """Compile a page and return the code of its Foreach memo modules.
+
+    Args:
+        component_factory: The page function.
+
+    Returns:
+        The generated memo module code.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, _page_ctx = _compile_single_page(component_factory)
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    return "".join(code for _path, code in memo_files)
+
+
+@pytest.mark.parametrize(
+    ("render_item", "hook_marker"),
+    [
+        (
+            lambda item: rx.text(item, on_mount=rx.console_log(item)),
+            "useEffect(() => {",
+        ),
+        (lambda item: LabelLogger.create(label=item), "useLabel(item_rx_state_)"),
+    ],
+    ids=["on_mount", "add_hooks"],
+)
+def test_foreach_item_hooks_run_inside_the_loop(
+    render_item: Callable[[Var], Component], hook_marker: str
+) -> None:
+    """A hook of a foreach item compiles inside the loop body.
+
+    Regression for reflex-dev/reflex#7791: the hook was hoisted to the top of
+    the Foreach memo body, where the loop variable does not exist.
+    """
+    code = _foreach_memo_code(
+        lambda: rx.foreach(SpecialFormMemoState.items, render_item)
+    )
+
+    before_loop, _, loop_body = code.partition("Array.prototype.map.call(")
+    assert "item_rx_state_" not in before_loop
+    assert hook_marker not in before_loop
+    assert "jsx(ForeachItem,{key:" in loop_body
+    assert hook_marker in loop_body
+
+
+def test_nested_foreach_item_hook_runs_inside_the_inner_loop() -> None:
+    """A hook in a nested foreach compiles inside the inner loop body."""
+    code = _foreach_memo_code(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda _outer: rx.foreach(
+                SpecialFormMemoState.items,
+                lambda inner: rx.text(inner, on_mount=rx.console_log(inner)),
+            ),
+        )
+    )
+
+    before_inner_loop, _, inner_loop = code.rpartition("Array.prototype.map.call(")
+    assert "inner_rx_state_" not in before_inner_loop
+    assert "useEffect(() => {" in inner_loop
+
+
+def test_foreach_item_without_scoped_hooks_renders_inline() -> None:
+    """An item that only reads state renders without an item component."""
+    code = _foreach_memo_code(
+        lambda: rx.foreach(SpecialFormMemoState.items, lambda item: rx.text(item))
+    )
+
+    assert "ForeachItem" not in code
+
+
 def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     """Foreach owns its own snapshot while the parent stays passthrough.
 
