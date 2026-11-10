@@ -40,6 +40,14 @@ const RTL_LANGUAGES = new Set([
   "yi",
 ]);
 
+// Set <html lang>/dir for a locale. Tags are case-insensitive (RFC 5646).
+const applyDocumentLocale = (locale) => {
+  const root = document.documentElement;
+  root.lang = locale;
+  const language = locale.split("-")[0].toLowerCase();
+  root.dir = RTL_LANGUAGES.has(language) ? "rtl" : "ltr";
+};
+
 const stripContext = (key) => {
   const index = key.indexOf(CONTEXT_SEPARATOR);
   return index === -1 ? key : key.slice(index + 1);
@@ -188,9 +196,7 @@ export function I18nProvider({ children, onLocaleChange }) {
     // In URL mode this locale equals the route's, so setting <html lang>/dir
     // here agrees with LocaleRoute and also covers unwrapped (default-at-root)
     // pages.
-    const root = document.documentElement;
-    root.lang = locale;
-    root.dir = RTL_LANGUAGES.has(locale.split("-")[0]) ? "rtl" : "ltr";
+    applyDocumentLocale(locale);
     return () => {
       cancelled = true;
     };
@@ -351,11 +357,7 @@ const useUrlLocaleSetter = (navigateLocale) =>
 // language is present synchronously during prerender.
 export function LocaleRoute({ locale, catalog, children }) {
   const setLocale = useUrlLocaleSetter(useLocaleNavigate());
-  useEffect(() => {
-    const root = document.documentElement;
-    root.lang = locale;
-    root.dir = RTL_LANGUAGES.has(locale.split("-")[0]) ? "rtl" : "ltr";
-  }, [locale]);
+  useEffect(() => applyDocumentLocale(locale), [locale]);
   return createElement(
     I18nContext.Provider,
     { value: { locale, catalog, setLocale } },

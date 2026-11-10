@@ -53,7 +53,7 @@ export const useNavigate = () => (to, options) =>
 
 # Renders one runtime component with browser globals from argv, runs the
 # optional action script against the module, and prints the navigations, state
-# updates and onLocaleChange calls they made.
+# updates and onLocaleChange calls they made, and the <html> attributes set.
 _RUNTIME_DRIVER = """
 import { pathToFileURL } from "node:url";
 const [modulePath, component, env, action] = process.argv.slice(2);
@@ -74,7 +74,10 @@ mod[component]({
   onLocaleChange: (locale) => localeChanges.push(locale),
 });
 new Function("mod", action)(mod);
-process.stdout.write(JSON.stringify({ navigations, stateUpdates, localeChanges }));
+const { documentElement } = globalThis.document;
+process.stdout.write(
+  JSON.stringify({ navigations, stateUpdates, localeChanges, documentElement }),
+);
 """
 
 
@@ -104,7 +107,8 @@ def _render_runtime(
         action: JS run after the render with the runtime module as ``mod``.
 
     Returns:
-        The recorded ``navigations``, ``stateUpdates`` and ``localeChanges``.
+        The recorded ``navigations``, ``stateUpdates``, ``localeChanges`` and
+        ``documentElement`` attributes.
     """
     config = {
         "locales": locales,
@@ -256,6 +260,20 @@ def test_client_negotiation_matches_server(
     )
     server = negotiate_locale(", ".join(languages), locales, default_locale)
     assert rendered["stateUpdates"][0] == server == expected
+
+
+@requires_node
+@pytest.mark.parametrize(
+    ("locale", "direction"), [("AR", "rtl"), ("Ar-EG", "rtl"), ("EN", "ltr")]
+)
+def test_provider_sets_direction_case_insensitively(
+    tmp_path: Path, locale: str, direction: str
+):
+    """Configured tags are case-insensitive, so the RTL check is too."""
+    rendered = _render_runtime(
+        tmp_path, "I18nProvider", locales=[locale], default_locale=locale
+    )
+    assert rendered["documentElement"] == {"lang": locale, "dir": direction}
 
 
 @requires_node
