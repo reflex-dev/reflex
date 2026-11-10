@@ -2187,8 +2187,12 @@ def create_passthrough_component_memo(
         return new_component
 
     # The compiler owns this fixed signature; no user annotations need resolving.
-    params = (
-        *_PASSTHROUGH_PARAMS,
+    params = _PASSTHROUGH_PARAMS
+    rest_target_fields: set[str] = set()
+    preview = _evaluate_component_body(passthrough, params, rest_target_fields)
+    # The body already holds the scoped vars; only the signature receives them.
+    scoped_params = (
+        *params,
         *(
             MemoParam(
                 name=name,
@@ -2200,11 +2204,6 @@ def create_passthrough_component_memo(
             )
             for name in scope_vars
         ),
-    )
-    rest_target_fields: set[str] = set()
-    # The body already holds the scoped vars, so it takes no placeholders for them.
-    preview = _evaluate_component_body(
-        passthrough, _PASSTHROUGH_PARAMS, rest_target_fields
     )
     tag = memo_tag(preview)
 
@@ -2233,7 +2232,7 @@ def create_passthrough_component_memo(
     definition = MemoComponentDefinition(
         fn=passthrough,
         python_name=passthrough.__name__,
-        params=params,
+        params=scoped_params,
         source_module=source_module,
         export_name=tag,
         _component=_LazyBody.ready(preview),

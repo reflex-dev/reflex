@@ -694,7 +694,7 @@ def test_foreach_wrapper_receives_loop_var_read_by_an_added_hook() -> None:
 
 def test_foreach_snapshot_wrapper_passes_loop_var_to_nested_wrapper() -> None:
     """A snapshot wrapper receives the loop variable that a wrapper inside it needs."""
-    wrappers, _foreach = _foreach_memo_parts(
+    wrappers, foreach = _foreach_memo_parts(
         lambda: rx.foreach(
             SpecialFormMemoState.items,
             lambda item: rx.auto_scroll(rx.text("x", on_mount=rx.console_log(item))),
@@ -705,6 +705,7 @@ def test_foreach_snapshot_wrapper_passes_loop_var_to_nested_wrapper() -> None:
     signature, _, body = auto_scroll.partition("memo((")[2].partition("=> {")
     assert "itemRxState:item_rx_state_" in signature
     assert "itemRxState:item_rx_state_" in body
+    assert "itemRxState:item_rx_state_" in foreach
 
 
 def test_foreach_snapshot_wrapper_call_has_no_children() -> None:

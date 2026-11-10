@@ -41,10 +41,10 @@ from reflex_base.components.memoize_helpers import (
     is_snapshot_boundary,
     scope_var_names,
 )
+from reflex_base.components.tags.iter_tag import _loop_var_data
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
-from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.cond import Cond
@@ -514,7 +514,7 @@ class MemoizeStatefulPlugin(Plugin):
         # Each prop keeps naming its loop variable, so an enclosing wrapper
         # that renders this one receives the variable too.
         wrapper = wrapper_factory(**{
-            name: Var(_js_expr=name, _var_data=VarData(deps=[Var(_js_expr=name)]))
+            name: Var(_js_expr=name, _var_data=_loop_var_data(name))
             for name in scope_vars
         })
         # The wrapper has no structural children at the page level, but parents
