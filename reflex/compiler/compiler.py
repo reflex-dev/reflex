@@ -1274,7 +1274,9 @@ def compile_app(
 
     app.style = evaluate_style_namespaces(app.style)
 
-    if not should_compile and not dry_run:
+    # With compilation skipped, every page is evaluated but none is rendered. A
+    # dry run writes no marker either, so a later backend start evaluates afresh.
+    if not should_compile:
         with (
             log.timing(logger, "Evaluate Pages (Backend)"),
             otel.span("reflex.compile.evaluate_pages"),
@@ -1283,7 +1285,8 @@ def compile_app(
                 logger.debug(f"Evaluating page: {route}")
                 app._compile_page(route, save_page=False)
 
-        app._write_stateful_pages_marker()
+        if not dry_run:
+            app._write_stateful_pages_marker()
         if app._state is not None:
             utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)

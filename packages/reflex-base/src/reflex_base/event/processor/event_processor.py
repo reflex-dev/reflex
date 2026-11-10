@@ -224,6 +224,7 @@ class EventProcessor:
             enqueue_impl=self.enqueue_many,
             emit_delta_impl=emit_delta_impl,
             emit_event_impl=emit_event_impl,
+            middleware=self.middleware,
         )
         return self
 
@@ -563,6 +564,7 @@ class EventProcessor:
                 enqueue_impl=root.enqueue_impl,
                 emit_delta_impl=_emit_delta_impl,
                 emit_event_impl=root.emit_event_impl,
+                middleware=root.middleware,
                 # Like fork(): the handler span nests under the caller's span
                 # (the upload request, a custom route).
                 otel_context=otel.capture_context(),
@@ -723,17 +725,6 @@ class EventProcessor:
         task = self._tasks.get(future.txid)
         if task is not None:
             task.cancel()
-
-    def _runs_unordered(self, registered_handler: RegisteredEventHandler) -> bool:
-        """Whether an event runs immediately instead of in its token's FIFO.
-
-        Args:
-            registered_handler: The registered handler for the event.
-
-        Returns:
-            True for a background handler.
-        """
-        return registered_handler.handler.is_background
 
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
@@ -912,7 +903,8 @@ class EventProcessor:
                             f"No registered handler found for event: {entry.event.name}"
                         )
                         raise KeyError(msg) from ke
-                    if self._runs_unordered(registered_handler):
+                    if registered_handler.handler.is_background:
+                        # Background events run immediately, bypassing per-token ordering.
                         self._create_event_task(
                             entry=entry, registered_handler=registered_handler
                         )

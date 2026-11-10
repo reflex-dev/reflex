@@ -32,6 +32,7 @@ from typing import (  # noqa: UP035
     _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
+    cast,
     get_args,
     is_typeddict,
 )
@@ -84,6 +85,8 @@ PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
 StateVarTypes = (*PrimitiveTypes, type(None))
 
 if TYPE_CHECKING:
+    from pydantic import BaseModel
+
     from reflex_base.vars.base import Var
 
 VAR1 = TypeVar("VAR1", bound="Var")
@@ -972,6 +975,58 @@ def get_attribute_descriptor(cls: GenericType, name: str) -> Any:
         return None
 
 
+def is_unserialized_property(
+    cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR
+) -> bool:
+    """Check whether ``name`` is a property that the default serializer of ``cls`` omits.
+
+    Dataclasses serialize their fields only. Pydantic models serialize with the stock
+    ``model_dump()``, which adds ``computed_field`` properties only. A registered
+    serializer, a ``model_serializer`` or an overridden ``model_dump`` may include the
+    property, so it is not flagged. A union is flagged if any member omits it.
+
+    Args:
+        cls: The type to check.
+        name: The attribute name.
+        descriptor: The attribute of ``name`` on ``cls``, if already resolved; ``cls``
+            must then be a class.
+
+    Returns:
+        Whether the frontend never receives the value of the property.
+    """
+    if descriptor is _NO_DESCRIPTOR:
+        if is_union(cls):
+            return any(is_unserialized_property(arg, name) for arg in get_args(cls))
+        cls = get_origin(cls) or cls
+        if not isinstance(cls, type):
+            return False
+        descriptor = get_attribute_descriptor(cls, name)
+    if not isinstance(descriptor, property):
+        return False
+
+    from reflex_base.utils import serializers
+
+    serializer = serializers.get_serializer(cls)
+    if serializer is serializers.serialize_sqlalchemy_base:
+        import sqlalchemy
+
+        return name not in sqlalchemy.inspect(cls).attrs
+
+    if dataclasses.is_dataclass(cls):
+        return serializer is None and name not in {
+            field.name for field in dataclasses.fields(cls)
+        }
+    decorators = getattr(cls, "__pydantic_decorators__", None)
+    if decorators is None or decorators.model_serializers:
+        return False
+    model = cast("type[BaseModel]", cls)
+    return (
+        serializer in (serializers.serialize_base_model, serializers.serialize_sqlmodel)
+        and model.model_dump.__module__ in ("pydantic.main", "sqlmodel.main")
+        and name not in model.model_computed_fields
+    )
+
+
 def get_attribute_access_type(
     cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR
 ) -> GenericType | None:
@@ -1014,6 +1069,13 @@ def get_attribute_access_type(
 
         if issubclass(cls, DeclarativeBase):
             insp = sqlalchemy.inspect(cls)
+            if name in insp.synonyms:
+                # A synonym without a custom getter has a generated one typed Any.
+                synonym = insp.synonyms[name]
+                hint = get_property_hint(synonym.descriptor)
+                if hint is not None and hint is not Any:
+                    return hint
+                return get_attribute_access_type(cls, synonym.name)
             if name in insp.columns:
                 # check for list types
                 column = insp.columns[name]

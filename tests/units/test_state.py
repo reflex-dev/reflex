@@ -2630,6 +2630,11 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
         # Create a mocked redis client instead of skipping.
         state_manager = StateManagerRedis(redis=mock_redis())
 
+    # Leases are only taken once the lock updates subscription is confirmed.
+    # Best effort: a Redis that rejects CONFIG never confirms it.
+    with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+        await state_manager._ensure_lock_task_subscribed()
+
     yield state_manager
 
     await state_manager.close()
@@ -7678,7 +7683,7 @@ def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> Non
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
 
         class StaticState(BaseState):
-            @rx.event
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
             @staticmethod
             def helper(value: int) -> int:
                 return value * 2
@@ -7688,7 +7693,7 @@ def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> Non
         == "@rx.event on a staticmethod or classmethod"
     )
     assert isinstance(StaticState.__dict__["helper"], staticmethod)
-    assert StaticState.helper(2) == 4
+    assert StaticState.helper(2) == 4  # pyright: ignore [reportCallIssue]
 
 
 def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:

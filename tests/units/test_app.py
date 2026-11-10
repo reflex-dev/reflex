@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import builtins
 import contextlib
 import contextvars
 import functools
@@ -19,7 +18,6 @@ import uuid
 from collections.abc import AsyncGenerator, Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext as does_not_raise
-from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
@@ -58,12 +56,11 @@ from starlette.exceptions import HTTPException
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, PlainTextResponse, StreamingResponse
-from starlette.routing import Route
+from starlette.routing import Mount, Route
 from starlette.testclient import TestClient
-from starlette_admin.auth import AuthProvider
 
 import reflex as rx
-from reflex import AdminDash, constants
+from reflex import constants
 from reflex._upload import upload
 from reflex.app import (
     App,
@@ -114,8 +111,6 @@ from .states.upload import (
 
 if TYPE_CHECKING:
     from multiprocessing.connection import Connection
-
-    from sqlalchemy.engine.base import Engine
 
 
 class EmptyState(BaseState):
@@ -194,68 +189,6 @@ def test_model() -> type[Model]:
     return TestModel
 
 
-@pytest.fixture(scope="session")
-def test_model_auth() -> type[Model]:
-    """A default model.
-
-    Returns:
-        A default model.
-    """
-
-    class TestModelAuth(Model, table=True):
-        """A test model with auth."""
-
-    return TestModelAuth
-
-
-@pytest.fixture
-def test_get_engine():
-    """A default database engine.
-
-    Returns:
-        A default database engine.
-    """
-    import sqlmodel
-
-    enable_admin = True
-    url = "sqlite:///test.db"
-    return sqlmodel.create_engine(
-        url,
-        echo=False,
-        connect_args={"check_same_thread": False} if enable_admin else {},
-    )
-
-
-@pytest.fixture
-def test_custom_auth_admin() -> type[AuthProvider]:
-    """A default auth provider.
-
-    Returns:
-        A default default auth provider.
-    """
-    from starlette_admin.auth import AuthProvider
-
-    class TestAuthProvider(AuthProvider):
-        """A test auth provider."""
-
-        login_path: str = "/login"
-        logout_path: str = "/logout"
-
-        def login(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Login."""
-
-        def is_authenticated(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Is authenticated."""
-
-        def get_admin_user(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Get admin user."""
-
-        def logout(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Logout."""
-
-    return TestAuthProvider
-
-
 def test_app_warns_about_a_deprecated_duration_name_at_startup(
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -287,23 +220,6 @@ def test_default_app(app: App):
     assert app._middlewares == []
     assert app.style == Style()
     assert app.admin_dash is None
-
-
-def test_setup_admin_dash_skips_optional_imports_without_config(
-    app: App, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A default app must not load the optional admin and database stacks."""
-    real_import = builtins.__import__
-
-    def import_without_admin(name, *args, **kwargs):
-        if name.startswith("starlette_admin") or name == "reflex.model":
-            msg = f"unexpected optional import: {name}"
-            raise AssertionError(msg)
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", import_without_admin)
-
-    app._setup_admin_dash()
 
 
 def test_multiple_states_error(
@@ -385,6 +301,30 @@ def test_prepare_404_page_empty_string_metadata_uses_defaults():
 
     assert prepared.page.title == constants.Page404.TITLE
     assert prepared.page.description == constants.Page404.DESCRIPTION
+
+
+class BackendMetaState(BaseState):
+    """A state with a backend var, for page metadata misuse tests."""
+
+    _meta: str = "x"
+
+
+@pytest.mark.parametrize("key", ["title", "description", "image"])
+def test_add_page_backend_var_meta_raises_format_error(
+    app: App, index_page: ComponentCallable, key: str
+):
+    """A backend var passed as page metadata raises when the page is added.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        key: The page metadata argument given the backend var.
+    """
+    with pytest.raises(
+        exceptions.BackendVarFormatError,
+        match=r"Backend var 'BackendMetaState\._meta' exists only",
+    ):
+        app.add_page(index_page, route="/meta", **{key: BackendMetaState._meta})  # pyright: ignore[reportArgumentType]
 
 
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
@@ -540,67 +480,6 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
 
 
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-def test_initialize_with_admin_dashboard(
-    test_model: type[Model], mocker: MockerFixture
-):
-    """Test setting the admin dashboard of an app.
-
-    Args:
-        test_model: The default model.
-        mocker: pytest mocker object.
-    """
-    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-    app = App(admin_dash=AdminDash(models=[test_model]))
-    assert app.admin_dash is not None
-    assert len(app.admin_dash.models) > 0
-    assert app.admin_dash.models[0] == test_model
-
-
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-@pytest.mark.parametrize("with_transformer", [False, True])
-def test_admin_dashboard_routes_remain_reversible(
-    test_model: type[Model],
-    mocker: MockerFixture,
-    tmp_path: Path,
-    with_transformer: bool,
-):
-    """Serve admin pages through the public ASGI app with working named routes.
-
-    Args:
-        test_model: A model to list in the dashboard.
-        mocker: The mock fixture for skipping frontend compilation.
-        tmp_path: The directory for the dashboard database.
-        with_transformer: Whether another Starlette application wraps the API.
-    """
-    conf = rx.Config(app_name="testing", db_url=f"sqlite:///{tmp_path / 'admin.db'}")
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-    app = App(
-        admin_dash=AdminDash(models=[test_model]),
-        api_transformer=Starlette() if with_transformer else None,
-    )
-    mocker.patch.object(app, "_compile")
-    api = app()
-    router = app.api_transformer or app._api
-    assert isinstance(router, Starlette)
-    assert str(router.url_path_for("admin:index")) == "/admin/"
-    with TestClient(api) as client:
-        response = client.get("/admin/")
-    assert response.status_code == 200
-    assert "Reflex Admin Dashboard" in response.text
-
-
 def test_api_transformer_lifespans_run(mocker: MockerFixture):
     """Send ASGI lifespan events through the api_transformer apps.
 
@@ -651,6 +530,28 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
         assert client.get("/db").json() == {"db": "conn", "own_app": True}
         assert client.get("/ping").text == '"pong"'
     assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
+
+
+def test_api_transformer_named_routes_resolve(mocker: MockerFixture):
+    """Resolve the named routes of a Starlette api_transformer through the served app.
+
+    Admin UIs mounted this way, such as starlette-admin, build every link with url_for.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+
+    async def index(request: Request) -> PlainTextResponse:  # noqa: RUF029
+        return PlainTextResponse(str(request.url_for("admin:index")))
+
+    transformer = Starlette(
+        routes=[Mount("/admin", routes=[Route("/", index, name="index")], name="admin")]
+    )
+    app = App(api_transformer=transformer)
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app()) as client:
+        assert client.get("/admin/").text == "http://testserver/admin/"
 
 
 @pytest.mark.parametrize("also_registered", [False, True])
@@ -814,69 +715,6 @@ def test_unhandled_route_error_gets_cors_headers(
     assert response.headers.get_list("access-control-allow-origin") == [
         "http://example.com"
     ]
-
-
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-def test_initialize_with_custom_admin_dashboard(
-    test_get_engine: Engine,
-    test_custom_auth_admin: type[AuthProvider],
-    test_model_auth: Model,
-):
-    """Test setting the custom admin dashboard of an app.
-
-    Args:
-        test_get_engine: The default database engine.
-        test_model_auth: The default model for an auth admin dashboard.
-        test_custom_auth_admin: The custom auth provider.
-    """
-    from starlette_admin.contrib.sqla.admin import Admin
-
-    custom_auth_provider = test_custom_auth_admin()
-    custom_admin = Admin(test_get_engine, auth_provider=custom_auth_provider)
-    app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
-    assert app.admin_dash is not None
-    assert app.admin_dash.admin is not None
-    assert len(app.admin_dash.models) > 0
-    assert app.admin_dash.models[0] == test_model_auth
-    assert app.admin_dash.admin.auth_provider == custom_auth_provider
-
-
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-def test_initialize_admin_dashboard_with_view_overrides(
-    test_model: type[Model], mocker: MockerFixture
-):
-    """Test setting the admin dashboard of an app with view class overridden.
-
-    Args:
-        test_model: The default model.
-        mocker: pytest mocker object.
-    """
-    from starlette_admin.contrib.sqla.view import ModelView
-
-    class TestModelView(ModelView):
-        pass
-
-    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-
-    app = App(
-        admin_dash=AdminDash(
-            models=[test_model], view_overrides={test_model: TestModelView}
-        )
-    )
-    assert app.admin_dash is not None
-    assert app.admin_dash.models == [test_model]
-    assert app.admin_dash.view_overrides[test_model] == TestModelView
 
 
 @pytest.mark.asyncio

@@ -1,10 +1,5 @@
-"""Integration tests for ``rx.memo`` runtime behavior.
+"""Integration tests for memo event handlers, recursion, and stateful props.
 
-Covers behaviors previously exercised by the deleted
-``tests/integration/test_memo.py`` (Selenium): partial-application of an
-``EventHandler`` prop (``event(some_value)``) and raw pass-through to an
-inner event trigger (``on_change=event``). Also covers recursion through a
-self-referencing component memo rendering a tree via ``rx.foreach``.
 Exercises compiler-enabled and compiler-disabled builds in dev and prod.
 """
 

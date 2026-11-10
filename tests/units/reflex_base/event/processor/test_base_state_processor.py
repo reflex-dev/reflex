@@ -280,8 +280,13 @@ def wired_app(
         The wired App instance.
     """
     app = app_module_mock.app = App()
-    assert real_base_state_processor._root_context is not None
-    app._state_manager = real_base_state_processor._root_context.state_manager
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    app._state_manager = root_ctx.state_manager
+    # As ``configure`` does: events pass through the app's middleware.
+    real_base_state_processor._root_context = dataclasses.replace(
+        root_ctx, middleware=app
+    )
     return app
 
 
@@ -365,7 +370,6 @@ async def test_preprocess_update_routes_frontend_events_to_client(
             )
 
     wired_app.add_middleware(BlockingMiddleware())
-    real_base_state_processor.middleware = wired_app
 
     async with real_base_state_processor as p:
         await p.enqueue(token, Event.from_event_type(GatedState.do_thing())[0])
@@ -1489,6 +1493,207 @@ async def test_superseded_handler_preserves_yielded_state(
     ]
     assert ["A:start"] in entry_deltas
     assert entry_deltas[-1] == expected
+
+
+@pytest.mark.parametrize("outcome", ["cancelled", "raised"])
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
+)
+async def test_failed_handler_emits_writes_after_last_yield(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    processor_state_manager: StateManager,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    outcome: str,
+):
+    """A cancelled or failing handler sends the writes it made after its last yield.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        processor_state_manager: The state manager backing the processor.
+        emitted_deltas: The deltas sent by the processor.
+        token: The client token.
+        outcome: Whether the handler is cancelled or raises.
+    """
+    started = asyncio.Event()
+
+    class CleanupState(State):
+        """Write a var only after the handler's last yield."""
+
+        cleanup: str = ""
+
+        @event
+        async def run(self):
+            """Yield, then write in cleanup when cancelled or failing.
+
+            Yields:
+                The state update before waiting.
+
+            Raises:
+                RuntimeError: When the handler is set to fail.
+            """
+            yield
+            if outcome == "raised":
+                self.cleanup = "raised"
+                msg = "handler failed"
+                raise RuntimeError(msg)
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                self.cleanup = "cancelled"
+                raise
+
+    handled: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text("cleanup"), route="/")
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _client_event(CleanupState.run(), _view("/"))
+        )
+        if outcome == "cancelled":
+            await asyncio.wait_for(started.wait(), timeout=5)
+            future.cancel()
+        with contextlib.suppress(BaseException):
+            await asyncio.wait_for(future.wait_all(), timeout=5)
+
+    field = "cleanup" + FIELD_MARKER
+    sent = [
+        fields[field]
+        for _, delta in emitted_deltas
+        if field in (fields := delta.get(CleanupState.get_full_name(), {}))
+    ]
+    assert sent[-1] == outcome
+    # The handler's own exception is reported, not one from the flush.
+    assert [str(ex) for ex in handled] == (
+        ["handler failed"] if outcome == "raised" else []
+    )
+
+
+async def test_failed_handler_flush_error_keeps_handler_exception(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A failing flush is logged and the handler's own exception is reported.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        token: The client token.
+        caplog: The pytest log capture fixture.
+    """
+
+    class FlushErrorState(State):
+        """Fail the delta computation once the handler wrote its cleanup."""
+
+        cleanup: str = ""
+
+        @rx.var
+        def checked(self) -> str:
+            """Raise once cleanup is set.
+
+            Returns:
+                The cleanup value.
+
+            Raises:
+                ValueError: When cleanup is set.
+            """
+            if self.cleanup:
+                msg = "delta failed"
+                raise ValueError(msg)
+            return self.cleanup
+
+        @event
+        def run(self):
+            """Write cleanup, then fail.
+
+            Raises:
+                RuntimeError: Always.
+            """
+            self.cleanup = "raised"
+            msg = "handler failed"
+            raise RuntimeError(msg)
+
+    handled: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text("flush"), route="/")
+    with caplog.at_level(logging.ERROR):
+        async with real_base_state_processor as processor:
+            future = await processor.enqueue(
+                token, _client_event(FlushErrorState.run(), _view("/"))
+            )
+            with contextlib.suppress(RuntimeError):
+                await asyncio.wait_for(future.wait_all(), timeout=5)
+
+    assert [str(ex) for ex in handled] == ["handler failed"]
+    assert any(
+        "Error flushing delta after handler" in record.getMessage()
+        and "delta failed" in (record.exc_text or "")
+        for record in caplog.records
+    )
+
+
+async def test_failed_delta_is_not_flushed_again(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A handler whose own delta fails reports that error once, without a flush.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked event processor.
+        token: The client token.
+        caplog: The pytest log capture fixture.
+    """
+
+    class DeltaErrorState(State):
+        """Fail every delta once tripped, through an uncached var."""
+
+        trip: bool = False
+
+        @rx.var(cache=False)
+        def boom(self) -> str:
+            """Raise once tripped.
+
+            Returns:
+                A constant while not tripped.
+
+            Raises:
+                ValueError: When tripped.
+            """
+            if self.trip:
+                msg = "delta failed"
+                raise ValueError(msg)
+            return "ok"
+
+        @event
+        def run(self):
+            """Trip the var, so the handler's own delta fails."""
+            self.trip = True
+
+    handled: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = handled.append
+    wired_app.add_page(lambda: rx.text("delta"), route="/")
+    with caplog.at_level(logging.ERROR):
+        async with real_base_state_processor as processor:
+            future = await processor.enqueue(
+                token, _client_event(DeltaErrorState.run(), _view("/"))
+            )
+            with contextlib.suppress(ValueError):
+                await asyncio.wait_for(future.wait_all(), timeout=5)
+
+    assert [str(ex) for ex in handled] == ["delta failed"]
+    assert not [
+        record
+        for record in caplog.records
+        if "Error flushing delta after handler" in record.getMessage()
+    ]
 
 
 async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
@@ -3827,108 +4032,6 @@ async def test_background_handler_return_value_resolves_future(
         assert await future == 2
 
 
-async def test_stateless_handler_runs_without_lock_and_resolves_result(
-    real_base_state_processor: BaseStateEventProcessor,
-    token: str,
-):
-    """A stateless handler runs with no state and its return value resolves the future.
-
-    Args:
-        real_base_state_processor: The unmocked BaseStateEventProcessor.
-        token: The client token.
-    """
-    calls: list[tuple[int, int]] = []
-
-    @event
-    def stateless_add(a: int, b: int) -> int:
-        calls.append((a, b))
-        return a + b
-
-    async with real_base_state_processor as processor:
-        future = await processor.enqueue(
-            token, Event.from_event_type(stateless_add(1, 2))[0]
-        )
-        assert await future == 3
-    assert calls == [(1, 2)]
-
-
-async def test_stateless_handler_chains_returned_events(
-    wired_app: App,
-    real_base_state_processor: BaseStateEventProcessor,
-    token: str,
-):
-    """Events a stateless handler returns or yields run against the token's state.
-
-    Args:
-        wired_app: The App wired to the processor's state manager.
-        real_base_state_processor: The unmocked BaseStateEventProcessor.
-        token: The client token.
-    """
-
-    class ChainTargetState(State):
-        log: list[str] = []
-
-        @event
-        def add(self, tag: str):
-            self.log = [*self.log, tag]
-
-    @event
-    def stateless_chain():
-        yield ChainTargetState.add("yielded")
-        return ChainTargetState.add("returned")  # noqa: B901
-
-    async with real_base_state_processor as processor:
-        future = await processor.enqueue(
-            token, Event.from_event_type(stateless_chain())[0]
-        )
-        assert await future.wait_all() is None
-        await processor.join(5)
-
-    root_ctx = real_base_state_processor._root_context
-    assert root_ctx is not None
-    state = await root_ctx.state_manager.get_state(
-        BaseStateToken(ident=token, cls=State)
-    )
-    assert (await state.get_state(ChainTargetState)).log == ["yielded", "returned"]
-
-
-async def test_stateless_handler_is_not_serialized_behind_the_token_queue(
-    wired_app: App,
-    real_base_state_processor: BaseStateEventProcessor,
-    token: str,
-):
-    """A stateless handler holds no lock, so it does not wait for the token's FIFO.
-
-    Args:
-        wired_app: The App wired to the processor's state manager.
-        real_base_state_processor: The unmocked BaseStateEventProcessor.
-        token: The client token.
-    """
-    order: list[str] = []
-    release = asyncio.Event()
-
-    class SlowState(State):
-        @event
-        async def slow(self):
-            await release.wait()
-            order.append("slow")
-
-    @event
-    def quick():
-        order.append("quick")
-
-    async with real_base_state_processor as processor:
-        slow_future = await processor.enqueue(
-            token, Event.from_event_type(SlowState.slow())[0]
-        )
-        quick_future = await processor.enqueue(token, Event.from_event_type(quick())[0])
-        await asyncio.wait_for(quick_future, 5)
-        assert order == ["quick"]
-        release.set()
-        await asyncio.wait_for(slow_future, 5)
-    assert order == ["quick", "slow"]
-
-
 async def test_locked_root_is_set_only_while_the_lock_is_held(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
@@ -4055,6 +4158,178 @@ async def test_await_handler_inline_returns_value_and_chains_its_yields(
         if f"n{FIELD_MARKER}" in delta.get(AwaitState.get_full_name(), {})
     ]
     assert 21 in n_values
+
+
+async def test_awaited_handler_passes_through_middleware_preprocess(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_events: list[tuple[str, tuple[Event, ...]]],
+    token: str,
+):
+    """An awaited handler runs the whole middleware chain like a queued event.
+
+    Regression: awaiting a handler inline skipped ``preprocess``, so a handler
+    an auth middleware blocks ran when a handler it allows awaited it. The gate
+    sits second in the chain, behind a middleware that lets everything pass.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_events: List to capture events emitted to the client.
+        token: The client token.
+    """
+
+    class GateState(State):
+        log: list[str] = []
+
+        @event
+        def allowed(self) -> str:
+            self.log = [*self.log, "allowed"]
+            return "ok"
+
+        @event
+        def blocked(self) -> str:
+            self.log = [*self.log, "blocked"]
+            return "leaked"
+
+        @event
+        async def caller(self):
+            first = await GateState.allowed()
+            second = await GateState.blocked()
+            self.log = [*self.log, f"caller:{first}:{second}"]
+
+    seen: list[str] = []
+
+    class RecordingMiddleware(Middleware):
+        def preprocess(self, app, state, event) -> None:
+            seen.append(event.name.rpartition(".")[2])
+
+    class GateMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> StateUpdate | None:
+            if event.name.endswith(".blocked"):
+                return StateUpdate(events=Event.from_event_type(rx.redirect("/login")))
+            return None
+
+    wired_app.add_middleware(RecordingMiddleware())
+    wired_app.add_middleware(GateMiddleware())
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(GateState.caller())[0]
+        )
+        await future.wait_all()
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert seen == ["caller", "allowed", "blocked"]
+    assert (await state.get_state(GateState)).log == ["allowed", "caller:ok:None"]
+    client_event_names = {e.name for _, events in emitted_events for e in events}
+    assert "_redirect" in client_event_names
+
+
+async def test_streamed_event_passes_through_middleware_preprocess(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """An event run through ``enqueue_stream_delta`` (an upload) is gated by middleware.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class StreamGateState(State):
+        ran: bool = False
+
+        @event
+        def blocked(self):
+            self.ran = True
+
+    class GateMiddleware(Middleware):
+        def preprocess(self, app, state, event) -> StateUpdate | None:
+            if event.name.endswith(".blocked"):
+                return StateUpdate()
+            return None
+
+    wired_app.add_middleware(GateMiddleware())
+
+    async with real_base_state_processor as processor:
+        async for _ in processor.enqueue_stream_delta(
+            token, Event.from_event_type(StreamGateState.blocked())[0]
+        ):
+            pass
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(StreamGateState)).ran is False
+
+
+async def test_detached_inline_task_holds_the_lock_while_middleware_preprocesses(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A detached awaited handler paused in middleware keeps the lock held.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    release = asyncio.Event()
+
+    class SlowGateState(State):
+        log: list[str] = []
+
+        @event
+        def child(self):
+            self.log = [*self.log, "child"]
+
+        @event
+        async def parent(self):
+            asyncio.ensure_future(SlowGateState.child())  # noqa: RUF006
+            # Let the child start under the lock before returning.
+            await asyncio.sleep(0)
+            self.log = [*self.log, "parent"]
+
+        @event
+        def next_event(self):
+            self.log = [*self.log, "next"]
+
+    class SlowMiddleware(Middleware):
+        async def preprocess(self, app, state, event) -> None:
+            if event.name.endswith(".child"):
+                await release.wait()
+
+    wired_app.add_middleware(SlowMiddleware())
+
+    async with real_base_state_processor as processor:
+        parent_future = await processor.enqueue(
+            token, Event.from_event_type(SlowGateState.parent())[0]
+        )
+        next_future = await processor.enqueue(
+            token, Event.from_event_type(SlowGateState.next_event())[0]
+        )
+        await asyncio.sleep(0.05)
+        assert not parent_future.done()
+        assert not next_future.done()
+        release.set()
+        await asyncio.wait_for(next_future, 5)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await state.get_state(SlowGateState)).log == ["parent", "child", "next"]
 
 
 async def test_await_from_substate_targets_sibling_state(
@@ -4309,170 +4584,6 @@ async def test_await_payload_decodes_vars_and_detaches_proxies(
 
     assert [type(v) for v in received] == [list, list]
     assert received == [[1, 2, 99], [1, 2, 99]]
-
-
-async def test_await_stateless_handler_flushes_the_caller_delta_first(
-    wired_app: App,
-    real_base_state_processor: BaseStateEventProcessor,
-    emitted_deltas: list,
-    emitted_events: list,
-    token: str,
-):
-    """A stateless helper awaited under the lock emits the caller's pending delta first.
-
-    A script the helper yields must see the state the caller just changed,
-    which is the ordering every other yield keeps.
-
-    Args:
-        wired_app: The App wired to the processor's state manager.
-        real_base_state_processor: The unmocked BaseStateEventProcessor.
-        emitted_deltas: Deltas emitted to the frontend, in order.
-        emitted_events: Frontend events emitted, in order.
-        token: The client token.
-    """
-    deltas_before_script: list[int] = []
-
-    @event
-    def read_storage():
-        yield rx.call_script("localStorage.getItem('value')")
-        deltas_before_script.append(len(emitted_deltas))
-
-    class FlushFirstState(State):
-        value: str = "old"
-
-        @event
-        async def change_then_read(self):
-            self.value = "new"
-            await read_storage()
-
-    async with real_base_state_processor as processor:
-        await (
-            await processor.enqueue(
-                token, Event.from_event_type(FlushFirstState.change_then_read())[0]
-            )
-        )
-
-    assert len(emitted_events) == 1
-    assert "_call_script" in emitted_events[0][1][0].name
-    flushed_before_script = [
-        delta
-        for _, delta in emitted_deltas[: deltas_before_script[0]]
-        if delta.get(FlushFirstState.get_full_name(), {}).get("value" + FIELD_MARKER)
-        == "new"
-    ]
-    assert flushed_before_script, (
-        "the caller's change reached the frontend after the script"
-    )
-
-
-async def test_await_stateless_handler_runs_inline(
-    wired_app: App,
-    real_base_state_processor: BaseStateEventProcessor,
-    token: str,
-):
-    """A stateless handler is awaited inline, with or without the lock held.
-
-    Args:
-        wired_app: The App wired to the processor's state manager.
-        real_base_state_processor: The unmocked BaseStateEventProcessor.
-        token: The client token.
-    """
-
-    @event
-    def stateless_double(x: int) -> int:
-        return x * 2
-
-    class StatelessCallerState(State):
-        got: int = 0
-
-        @event
-        async def caller(self):
-            self.got = await stateless_double(4)
-
-        @event(background=True)
-        async def bg_caller(self):
-            value = await stateless_double(5)
-            async with self:
-                self.got = value
-
-    async with real_base_state_processor as processor:
-        await (
-            await processor.enqueue(
-                token, Event.from_event_type(StatelessCallerState.caller())[0]
-            )
-        )
-        root_ctx = real_base_state_processor._root_context
-        assert root_ctx is not None
-        state = await root_ctx.state_manager.get_state(
-            BaseStateToken(ident=token, cls=State)
-        )
-        assert (await state.get_state(StatelessCallerState)).got == 8
-        await (
-            await processor.enqueue(
-                token, Event.from_event_type(StatelessCallerState.bg_caller())[0]
-            )
-        )
-        state = await root_ctx.state_manager.get_state(
-            BaseStateToken(ident=token, cls=State)
-        )
-        assert (await state.get_state(StatelessCallerState)).got == 10
-
-
-async def test_detached_stateless_helper_holds_the_lock_until_it_finishes(
-    wired_app: App,
-    real_base_state_processor: BaseStateEventProcessor,
-    token: str,
-):
-    """A stateless helper started from a locked handler keeps the lock until it is done.
-
-    It flushes deltas through the caller's root, so the lock must outlive it
-    like it outlives a detached state handler.
-
-    Args:
-        wired_app: The App wired to the processor's state manager.
-        real_base_state_processor: The unmocked BaseStateEventProcessor.
-        token: The client token.
-    """
-    release = asyncio.Event()
-    seen: dict[str, Any] = {}
-
-    @event
-    async def helper():
-        await release.wait()
-        yield rx.call_script("void 0")
-
-    class DetachedHelperState(State):
-        log: list[str] = []
-
-        @event
-        async def parent(self):
-            seen["ctx"] = EventContext.get()
-            asyncio.ensure_future(helper())  # noqa: RUF006
-            # Let the helper start under the lock before returning.
-            await asyncio.sleep(0)
-            self.log = [*self.log, "parent"]
-
-        @event
-        def next_event(self):
-            self.log = [*self.log, "next"]
-
-    async with real_base_state_processor as processor:
-        parent_future = await processor.enqueue(
-            token, Event.from_event_type(DetachedHelperState.parent())[0]
-        )
-        next_future = await processor.enqueue(
-            token, Event.from_event_type(DetachedHelperState.next_event())[0]
-        )
-        await asyncio.sleep(0.05)
-        # The parent has returned, but its lock is still held for the helper.
-        assert not parent_future.done()
-        assert not next_future.done()
-        assert seen["ctx"].locked_root is not None
-        release.set()
-        await asyncio.wait_for(next_future, 5)
-        assert parent_future.done()
-
-    assert seen["ctx"].locked_root is None
 
 
 async def test_gathered_inline_handlers_keep_each_others_changes(

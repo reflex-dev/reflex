@@ -60,6 +60,7 @@ from reflex_base.utils.types import (
     Send,
     is_non_string_sequence,
 )
+from reflex_base.vars.base import Field
 from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
@@ -83,7 +84,6 @@ from typing_extensions import Unpack
 
 from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
-from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
@@ -286,6 +286,20 @@ def default_error_boundary(*children: Component, **props) -> Component:
         *children,
         **props,
     )
+
+
+def _reject_page_meta_fields(*values: Any) -> None:
+    """Reject page metadata given as a field with no frontend var.
+
+    Args:
+        *values: The page metadata values.
+
+    Raises:
+        BackendVarFormatError: If a value is a field with no frontend var.
+    """
+    for value in values:
+        if isinstance(value, Field):
+            raise value._no_frontend_var_error()
 
 
 @dataclasses.dataclass(
@@ -543,7 +557,7 @@ class App(MiddlewareMixin, LifespanMixin):
         html_lang: The language to add to the html root tag of every page.
         html_custom_attrs: Attributes to add to the html root tag of every page.
         enable_state: Whether to enable [state](https://reflex.dev/docs/state/overview/) for the app. If False, the app will not use state.
-        admin_dash: Admin dashboard to view and manage the database.
+        admin_dash: Removed. rx.AdminDash raises with a link to the migration guide.
         frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         backend_exception_handler: Backend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap.
@@ -623,7 +637,8 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
-    admin_dash: AdminDash | None = None
+    # Removed integration; rx.AdminDash raises with a link to the migration guide.
+    admin_dash: None = None
 
     # The async server name space.
     _event_namespace: EventNamespace | None = None
@@ -710,9 +725,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if self.enable_state:
             self._enable_state()
-
-        # Set up the admin dash.
-        self._setup_admin_dash()
 
         if sys.platform == "win32" and not is_prod_mode():
             # Hack to fix Windows hot reload issue.
@@ -1169,6 +1181,7 @@ class App(MiddlewareMixin, LifespanMixin):
             context: Values passed to page for custom page-specific logic.
 
         Raises:
+            BackendVarFormatError: When title, description or image is a field with no frontend var.
             PageValueError: When the component is not set for a non-404 page.
             RouteValueError: When the specified route name already exists.
             ValueError: When the route syntax is invalid.
@@ -1221,6 +1234,7 @@ class App(MiddlewareMixin, LifespanMixin):
             RouteValueError: When a route cannot be derived.
             ValueError: When the route syntax is invalid.
         """
+        _reject_page_meta_fields(title, description, image)
         route = self._page_route_key(component, route)
         if route is None:
             msg = "Route must be set if component is not a callable."
@@ -1645,40 +1659,6 @@ class App(MiddlewareMixin, LifespanMixin):
                 # /posts/all is a legal static sibling of /posts/[id].
                 break
         return None
-
-    def _setup_admin_dash(self):
-        """Setup the admin dash."""
-        admin_dash = self.admin_dash
-        if not admin_dash or not admin_dash.models:
-            return
-
-        try:
-            from starlette_admin.contrib.sqla.admin import Admin
-            from starlette_admin.contrib.sqla.view import ModelView
-
-            from reflex.model import get_engine
-        except ImportError:
-            return
-
-        # Get the admin dash.
-        if not self._api:
-            return
-
-        # Build the admin dashboard
-        # The first positional argument is `engine` before starlette-admin
-        # 1.0 and `session_provider` (which still accepts an Engine) after,
-        # so pass it positionally to support both.
-        admin = admin_dash.admin or Admin(
-            get_engine(),
-            title="Reflex Admin Dashboard",
-            logo_url="https://reflex.dev/Reflex.svg",
-        )
-
-        for model in admin_dash.models:
-            view = admin_dash.view_overrides.get(model, ModelView)
-            admin.add_view(view(model))
-
-        admin.mount_to(self._api)
 
     def _get_frontend_packages(
         self,
