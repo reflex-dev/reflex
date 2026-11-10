@@ -1,1 +1,0 @@
-Allow towncrier 26.

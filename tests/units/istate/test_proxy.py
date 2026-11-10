@@ -222,6 +222,79 @@ async def test_state_proxy_releases_lock_when_rehydrate_fails(
             pass
 
 
+class ProxyLinkedTestState(rx.State):
+    """A state reached from another state's proxy through `get_state`."""
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cancelled", [False, True])
+async def test_linked_state_proxy_releases_lock_when_entering_fails(
+    attached_mock_event_context: EventContext,
+    monkeypatch: pytest.MonkeyPatch,
+    cancelled: bool,
+):
+    """A linked proxy that fails to enter must release the lock its parent took.
+
+    Args:
+        attached_mock_event_context: The attached mock event context.
+        monkeypatch: The pytest monkeypatch fixture.
+        cancelled: Whether entering is cancelled rather than raising.
+    """
+    root_proxy = StateProxy(ProxyTestState())
+    async with root_proxy:
+        linked_proxy = await root_proxy.get_state(ProxyLinkedTestState)
+
+    entering = asyncio.Event()
+
+    async def failing_get_state(self: BaseState, state_cls: type[BaseState]):
+        """Fail to load the linked state, after the parent took the lock.
+
+        Args:
+            self: The parent state.
+            state_cls: The linked state class.
+
+        Raises:
+            RuntimeError: Always, unless cancelled first.
+        """
+        entering.set()
+        if cancelled:
+            await asyncio.Event().wait()
+        msg = "Simulated get_state failure"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(BaseState, "get_state", failing_get_state)
+
+    async def enter_linked_proxy():
+        """Enter the linked proxy as a background task would."""
+        async with linked_proxy:
+            pass
+
+    task = asyncio.create_task(enter_linked_proxy())
+    try:
+        async with asyncio.timeout(1):
+            await entering.wait()
+            if cancelled:
+                task.cancel()
+                with pytest.raises(CancelledError):
+                    await task
+            else:
+                with pytest.raises(RuntimeError, match="Simulated get_state failure"):
+                    await task
+    finally:
+        task.cancel()
+        with suppress(Exception, CancelledError):
+            await task
+
+    state_token = BaseStateToken(
+        ident=attached_mock_event_context.token, cls=ProxyTestState
+    )
+    async with asyncio.timeout(1):
+        async with attached_mock_event_context.state_manager.modify_state(state_token):
+            pass
+    async with asyncio.timeout(1), root_proxy:
+        pass
+
+
 @dataclasses.dataclass
 class TaggedModel:
     """A dataclass with a mutable attribute for attr-path refresh tests."""
@@ -1723,3 +1796,21 @@ async def test_immutable_mutable_proxy_async_context_dict_view_paths(
     ) as state:
         assert isinstance(state, NestedMutableProxyState)
         assert state.data == {"a": {"x": 10}, "b": {"y": 20}}
+
+
+@pytest.mark.asyncio
+async def test_proxy_context_sets_and_clears_locked_root(
+    attached_mock_event_context: EventContext,
+):
+    """``async with self`` marks the context's locked root for its duration.
+
+    Args:
+        attached_mock_event_context: The attached event context fixture.
+    """
+    state_proxy = StateProxy(ProxyTestState())
+    assert attached_mock_event_context.locked_root is None
+    async with state_proxy as mutable:
+        locked_root = attached_mock_event_context.locked_root
+        assert locked_root is not None
+        assert locked_root is mutable.__wrapped__._get_root_state()  # pyright: ignore[reportAttributeAccessIssue]
+    assert attached_mock_event_context.locked_root is None

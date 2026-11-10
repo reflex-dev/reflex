@@ -654,10 +654,12 @@ def test_compile_app_root_can_defer_optional_window_libraries(mocker):
     )
     with RegistrationContext():
         bundle_library("@radix-ui/themes@3.3.0")
+        bundle_library("constructor")
         _, code = compiler.compile_app_root(rx.el.div("hello"))
 
     assert 'import * as radix_ui_themes from "@radix-ui/themes"' not in code
     assert '() => import("@radix-ui/themes")' in code
+    assert '"constructor": () => import("constructor")' in code
     assert 'import * as React from "react"' in code
     assert 'import * as utils_context from "$/utils/context"' in code
     assert "window.__reflex_load" in code
@@ -722,13 +724,19 @@ def test_compile_contexts_embeds_frontend_state_schema():
 
     schema = SchemaContextRoot._to_frontend_schema()
     assert f'export const stateSchema = "{schema}"' in code
+    on_load_internal_event = (
+        f"{SchemaContextRoot.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL}"
+    )
+    assert f"export const on_load_internal_event = '{on_load_internal_event}'" in code
     start = code.index("registerApp({")
     assert "stateSchema," in code[start : code.index("});", start)]
+    assert "on_load_internal_event," in code[start : code.index("});", start)]
     assert SchemaContextChild.get_full_name() in code
 
     # Without state there is nothing to compare, and nothing to connect with.
     _, code = compiler.compile_contexts(None, None)
     assert "export const stateSchema = null" in code
+    assert "export const on_load_internal_event = undefined" in code
 
 
 @pytest.mark.parametrize(

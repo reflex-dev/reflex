@@ -1,0 +1,1 @@
+Remove the built-in starlette-admin dashboard. `rx.AdminDash(...)` now raises an error linking to the [admin dashboard guide](https://reflex.dev/docs/database/admin-dashboard/), which shows how to mount starlette-admin yourself with `api_transformer`.

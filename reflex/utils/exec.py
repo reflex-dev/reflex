@@ -26,6 +26,7 @@ from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
+from reflex_base.utils.process_tree import stop_process_tree
 
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
@@ -33,10 +34,12 @@ from reflex.utils.prerequisites import get_web_dir
 
 logger = logging.getLogger(__name__)
 
-# For uvicorn windows bug fix (#2335)
+# The frontend dev server process, stopped by `reflex run` when it unwinds.
 frontend_process = None
 _frontend_process_lock = threading.Lock()
 _frontend_shutting_down = False
+# Seconds the frontend tree gets to exit on SIGTERM before SIGKILL.
+_FRONTEND_STOP_TIMEOUT = 5
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
 
@@ -178,25 +181,6 @@ def get_different_packages(
     return dependencies_change, dev_dependencies_change
 
 
-def kill(proc_pid: int):
-    """Kills a process and all its child processes.
-
-    Requires the `psutil` library to be installed.
-
-    Args:
-        proc_pid: The process ID of the process to be killed.
-
-    Example:
-        >>> kill(1234)
-    """
-    import psutil
-
-    process = psutil.Process(proc_pid)
-    for proc in process.children(recursive=True):
-        proc.kill()
-    process.kill()
-
-
 def notify_frontend(url: str, backend_present: bool):
     """Output a string notifying where the frontend is running.
 
@@ -300,10 +284,15 @@ def run_process_and_launch_url(
             global frontend_process
             with _frontend_process_lock:
                 frontend_process = process
-                if _frontend_shutting_down and process.poll() is None:
-                    process.terminate()
+                launched_too_late = _frontend_shutting_down
+            if launched_too_late:
+                stop_process_tree(process, timeout=_FRONTEND_STOP_TIMEOUT)
         if process.stdout:
-            for line in processes.stream_logs("Starting frontend", process):
+            for line in processes.stream_logs(
+                "Starting frontend",
+                process,
+                expected_exit=lambda: _frontend_shutting_down,
+            ):
                 new_content, new_hash = get_package_json_and_hash(json_file_path)
                 if new_hash != last_hash:
                     dependencies_change, dev_dependencies_change = (
@@ -517,13 +506,26 @@ def get_app_module():
     return get_config().module
 
 
-def get_app_instance():
-    """Get the app module for the backend.
+def _backend_app():
+    """Load the config, then import the app and create its ASGI app.
+
+    Backend workers import this factory instead of the app module, so the config
+    exists before the app defines its State classes.
 
     Returns:
-        The app module for the backend.
+        The backend ASGI app.
     """
-    return f"{get_app_module()}:{constants.CompileVars.APP}"
+    app_module = importlib.import_module(get_app_module())
+    return getattr(app_module, constants.CompileVars.APP)()
+
+
+def get_app_instance():
+    """Get the ASGI factory target for the backend workers.
+
+    Returns:
+        The ASGI factory target for the backend workers.
+    """
+    return f"{__name__}:_backend_app"
 
 
 def get_app_file() -> Path:
@@ -548,10 +550,10 @@ def get_app_file() -> Path:
 
 
 def get_app_instance_from_file() -> str:
-    """Get the app module for the backend.
+    """Check that the app module exists, then get the backend worker target.
 
     Returns:
-        The app module for the backend.
+        The ASGI factory target for the backend workers.
     """
     get_app_file()
     return get_app_instance()

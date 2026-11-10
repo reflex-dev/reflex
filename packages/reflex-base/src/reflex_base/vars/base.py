@@ -94,6 +94,7 @@ if TYPE_CHECKING:
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
     from .object import LiteralObjectVar, ObjectVar
     from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
+    from .set import LiteralSetVar, SetVar
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
@@ -101,6 +102,7 @@ OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 STRING_T = TypeVar("STRING_T", bound=str)
 LITERAL_STRING_T = TypeVar("LITERAL_STRING_T", bound=LiteralString)
 SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
+SET_TYPE = TypeVar("SET_TYPE", bound=set | frozenset)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
@@ -155,8 +157,10 @@ def _literal_var_for(value: Any) -> type[LiteralVar] | None:
         ),
         None,
     )
-    # A class object's type is its metaclass, which other classes share.
-    if not isinstance(value, type):
+    # A class object's type is its metaclass, which other classes share, and a
+    # proxy (such as a MutableProxy) reports the wrapped value's __class__, so
+    # its type says nothing about which literal class claims it.
+    if not isinstance(value, type) and value.__class__ is value_type:
         _literal_var_by_type[value_type] = literal_subclass
     return literal_subclass
 
@@ -1050,6 +1054,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(
         cls,
+        value: SET_TYPE,
+        _var_data: VarData | None = None,
+    ) -> LiteralSetVar[SET_TYPE]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
         value: OTHER_VAR_TYPE,
         _var_data: VarData | None = None,
     ) -> Var[OTHER_VAR_TYPE]: ...
@@ -1111,6 +1123,12 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         self,
         output: type[SEQUENCE_TYPE],
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
+
+    @overload
+    def to(
+        self,
+        output: type[SET_TYPE],
+    ) -> SetVar[SET_TYPE]: ...
 
     @overload
     def to(
@@ -1799,6 +1817,21 @@ class ToOperation:
         )
 
 
+def _unsupported_literal_error(value: Any) -> TypeError:
+    """Build the error for a value that no LiteralVar supports.
+
+    Args:
+        value: The unsupported value.
+
+    Returns:
+        The backend var error for a field with no frontend var, else a TypeError.
+    """
+    if isinstance(value, Field):
+        return value._no_frontend_var_error()
+    msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
+    return TypeError(msg)
+
+
 class LiteralVar(Var[VAR_TYPE]):
     """Base class for immutable literal vars."""
 
@@ -1870,6 +1903,7 @@ class LiteralVar(Var[VAR_TYPE]):
             The var.
 
         Raises:
+            BackendVarFormatError: If the value is a field with no frontend var.
             TypeError: If the value is not a supported type for LiteralVar.
         """
         if (literal_subclass := _literal_var_by_type.get(type(value))) is not None:
@@ -1884,6 +1918,7 @@ class LiteralVar(Var[VAR_TYPE]):
         # (EMPTY_VAR_STR is built while base.py is still loading).
         from .object import LiteralObjectVar
         from .sequence import ArrayVar, LiteralStringVar
+        from .set import LiteralSetVar  # noqa: F401
 
         if (literal_subclass := _literal_var_for(value)) is not None:
             return literal_subclass.create(value, _var_data=_var_data)
@@ -1928,8 +1963,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return ArrayVar.range(value.start, value.stop, value.step)
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
-        raise TypeError(msg)
+        raise _unsupported_literal_error(value)
 
     if not TYPE_CHECKING:
         create = _create_literal_var
@@ -1958,6 +1992,7 @@ class LiteralVar(Var[VAR_TYPE]):
             The var data or None.
 
         Raises:
+            BackendVarFormatError: If the value is a field with no frontend var.
             TypeError: If the value is not a supported type for LiteralVar.
         """
         from .object import LiteralObjectVar
@@ -2007,8 +2042,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return None
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
-        raise TypeError(msg)
+        raise _unsupported_literal_error(value)
 
     @property
     def _var_value(self) -> Any:
@@ -2105,6 +2139,13 @@ def var_operation(
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[SET_TYPE]]
+    | Callable[P, CustomVarOperationReturn[SET_TYPE | None]],
+) -> Callable[P, SetVar[SET_TYPE]]: ...
+
+
 OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 
@@ -2174,7 +2215,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
-    if isinstance(value, (list, set, tuple, Mapping, Var)):
+    if isinstance(value, (list, set, frozenset, tuple, Mapping, Var)):
         if isinstance(value, Var):
             return value._var_type
         if has_args(value_type := type(value)):
@@ -2183,8 +2224,11 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Sequence[NoReturn]
             return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
-        if isinstance(value, set):
-            return set[unionize(*{figure_out_type(v) for v in value})]
+        if isinstance(value, (set, frozenset)):
+            element_type = unionize(*{figure_out_type(v) for v in value})
+            if isinstance(value, frozenset):
+                return frozenset[element_type]
+            return set[element_type]
         if isinstance(value, tuple):
             if not value:
                 return tuple[NoReturn, ...]
@@ -2891,6 +2935,20 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
+        self: ComputedVar[set[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[set[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
+        self: ComputedVar[frozenset[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[frozenset[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
         self: ComputedVar[SQLA_TYPE],
         instance: None,
         owner: type,
@@ -3205,6 +3263,20 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[set[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[set[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[frozenset[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[frozenset[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
@@ -4340,9 +4412,30 @@ class Field(Generic[FIELD_TYPE]):
         Raises:
             BackendVarFormatError: Always; the field has no frontend var.
         """
+        raise self._no_frontend_var_error()
+
+    def __str__(self) -> str:
+        """Refuse to convert the field to text, as ``__format__`` does.
+
+        Raises:
+            BackendVarFormatError: Always; the field has no frontend var.
+        """
+        raise self._no_frontend_var_error()
+
+    def _no_frontend_var_error(self) -> BackendVarFormatError:
+        """Build the error for using the field where a frontend var is needed.
+
+        Returns:
+            The error naming the field and how to use it in the UI instead.
+        """
         path = f"{self._owner.__name__}.{self._name}" if self._owner else None
         name = f"'{path}'" if path else repr(self)
-        if self._backend:
+        if self._var is not None:
+            msg = (
+                f"{name} is the field of a state var, not the var. Use {path}"
+                " to use it in the UI."
+            )
+        elif self._backend:
             msg = (
                 f"Backend var {name} exists only on the server and has no"
                 " frontend value, so it cannot be used in the UI. Use"
@@ -4358,7 +4451,7 @@ class Field(Generic[FIELD_TYPE]):
             )
         else:
             msg = f"{name} has no frontend var, so it cannot be used in the UI."
-        raise BackendVarFormatError(msg)
+        return BackendVarFormatError(msg)
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
@@ -4457,10 +4550,7 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[list[V]]
-        | Field[set[V]]
-        | Field[list[V] | None]
-        | Field[set[V] | None],
+        self: Field[list[V]] | Field[list[V] | None],
         instance: None,
         owner: Any,
     ) -> ArrayVar[Sequence[V]]: ...
@@ -4471,6 +4561,13 @@ class Field(Generic[FIELD_TYPE]):
         instance: None,
         owner: Any,
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SET_TYPE] | Field[SET_TYPE | None],
+        instance: None,
+        owner: Any,
+    ) -> SetVar[SET_TYPE]: ...
 
     # The bounds of these type variables admit `None` (for computed vars of an
     # optional object). Matched against `Field[X | None]`, a `self` union of
@@ -4701,7 +4798,12 @@ def _validate_state_name(
     members = _reserved_state_members(root)
     if name not in members:
         return
+    from reflex_base.event import EventHandler
+
     method = value.__func__ if isinstance(value, (classmethod, staticmethod)) else value
+    if isinstance(method, EventHandler):
+        # A decorated method shadows like the function it wraps.
+        method = method.fn
     if isinstance(method, FunctionType):
         if value is members[name] or getattr(method, "__override_base_method__", False):
             return

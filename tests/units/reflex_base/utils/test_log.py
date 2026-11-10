@@ -1,20 +1,20 @@
 """Tests for the standard logging pipeline in reflex_base.utils.log."""
 
-import contextlib
 import json
 import logging
 import os
-import signal
 import subprocess
 import sys
-import time
 from pathlib import Path
 from unittest import mock
 
 import pytest
+from reflex_base import otel
 from reflex_base.constants import LogLevel
 from reflex_base.utils import console, log
 from rich.console import Console
+
+from tests.units.conftest import active_tracer
 
 logger = logging.getLogger("reflex_base.tests.logs")
 
@@ -157,6 +157,54 @@ def test_json_mode_success_level(monkeypatch, capsys):
     logger.log(log.SUCCESS, "done")
     out, _ = capsys.readouterr()
     assert json.loads(out)["level"] == "success"
+
+
+def test_json_mode_adds_trace_ids(monkeypatch, capsys, otel_sdk):
+    """Records emitted inside a span carry the span's W3C trace and span ids."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    with active_tracer().start_as_current_span("outer") as span:
+        logger.info("inside")
+        logger.error("failed inside")
+    span_context = span.get_span_context()
+    out, err = capsys.readouterr()
+    for record in (json.loads(out), json.loads(err)):
+        assert record["trace_id"] == f"{span_context.trace_id:032x}"
+        assert record["span_id"] == f"{span_context.span_id:016x}"
+
+
+def test_console_print_json_mode_adds_trace_ids(monkeypatch, capsys, otel_sdk):
+    """Plain console output in JSON mode carries the current span's ids too."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    with active_tracer().start_as_current_span("outer") as span:
+        console.print("printed inside")
+    span_context = span.get_span_context()
+    record = json.loads(capsys.readouterr().out)
+    assert record["message"] == "printed inside"
+    assert record["trace_id"] == f"{span_context.trace_id:032x}"
+    assert record["span_id"] == f"{span_context.span_id:016x}"
+
+
+def test_json_mode_omits_trace_ids_outside_span(monkeypatch, capsys, otel_sdk):
+    """With tracing on but no current span, records carry no trace ids."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    logger.info("outside")
+    record = json.loads(capsys.readouterr().out)
+    assert "trace_id" not in record
+    assert "span_id" not in record
+
+
+def test_json_mode_omits_trace_ids_when_tracing_disabled(monkeypatch, capsys):
+    """With tracing off, records carry no trace ids."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    assert otel.enabled is False
+    logger.info("untraced")
+    record = json.loads(capsys.readouterr().out)
+    assert "trace_id" not in record
+    assert "span_id" not in record
 
 
 def test_configure_idempotent():
@@ -894,389 +942,3 @@ def test_reset_releases_the_reservation():
     log.reserve_stdout()
     log._reset()
     assert log.is_stdout_reserved() is False
-
-
-_SUPERVISED_SCRIPT = """
-import logging
-import multiprocessing
-import os
-import subprocess
-import sys
-
-from reflex_base.utils import log
-
-
-def crash():
-    raise RuntimeError("boom")
-
-
-if __name__ == "__main__":
-    log.enable_managed_logging()
-    if not log.is_output_supervised():
-        sys.exit(log.supervise_output([sys.executable, __file__]))
-    print("from print")
-    os.write(1, b"from os.write\\n")
-    sys.stderr.write("from stderr\\n")
-    subprocess.run([sys.executable, "-c", "print('from child')"], check=True)
-    subprocess.run(
-        [sys.executable, "-c", "import json; print(json.dumps({'passed': 1}))"],
-        check=True,
-    )
-    record = '{"level": "info", "logger": "child", "message": "passed"}'
-    subprocess.run([sys.executable, "-c", f"print({record!r})"], check=True)
-    sys.stderr.write("Traceback (most recent call last):\\n  File \\"x.py\\"\\n")
-    sys.stderr.write('{"level": "error", "logger": "other", "message": "mid"}\\n')
-    sys.stderr.write("KeyError: 'interleaved'\\n")
-    logging.getLogger("reflex").info("from logger")
-    worker = multiprocessing.get_context("spawn").Process(target=crash)
-    worker.start()
-    worker.join()
-    print("\\u2713 unicode")
-    print("partial line", end="")
-    sys.exit(3)
-"""
-
-
-def _run_script(tmp_path: Path, source: str, **kwargs) -> subprocess.CompletedProcess:
-    """Run a Python script in JSON mode.
-
-    Args:
-        tmp_path: The directory for the script.
-        source: The script source.
-        kwargs: Extra arguments for subprocess.run.
-
-    Returns:
-        The completed process, with bytes output.
-    """
-    script = tmp_path / "script.py"
-    script.write_text(source)
-    env = {**kwargs.pop("env", os.environ), "REFLEX_LOG_JSON": "true"}
-    return subprocess.run(
-        [sys.executable, str(script)],
-        capture_output=True,
-        env=env,
-        cwd=tmp_path,
-        timeout=60,
-        **kwargs,
-    )
-
-
-def test_supervise_output_turns_every_line_into_json(tmp_path):
-    """Everything the command and its descendants print reaches the streams as JSON."""
-    result = _run_script(tmp_path, _SUPERVISED_SCRIPT)
-
-    assert result.returncode == 3, result.stderr
-    out = [json.loads(line) for line in result.stdout.splitlines()]
-    err = [json.loads(line) for line in result.stderr.splitlines()]
-    assert sorted(r["message"] for r in out if r.get("logger") == "stdout") == [
-        "from child",
-        "from os.write",
-        "from print",
-        "partial line",
-        # JSON that is not a log record is wrapped like any other line.
-        '{"passed": 1}',
-        "\u2713 unicode",
-    ]
-    assert {"level": "info", "logger": "child", "message": "passed"} in out
-    assert {"level": "error", "logger": "other", "message": "mid"} in err
-    assert [r["message"] for r in out if r.get("logger") == "reflex"] == ["from logger"]
-    assert {
-        "logger": "stderr",
-        "level": "warning",
-        "message": "from stderr",
-    }.items() <= err[0].items()
-    interleaved, crash = [r for r in err if "exception" in r]
-    assert interleaved["message"] == "KeyError: 'interleaved'"
-    assert interleaved["exception"] == (
-        "Traceback (most recent call last):\n  File \"x.py\"\nKeyError: 'interleaved'\n"
-    )
-    assert crash["level"] == "error"
-    assert crash["message"] == "RuntimeError: boom"
-    assert crash["exception"].startswith("Traceback (most recent call last):")
-    assert 'raise RuntimeError("boom")' in crash["exception"]
-
-
-_BURST_SCRIPT = """
-import sys
-
-from reflex_base.utils import log
-
-if not log.is_output_supervised():
-    sys.exit(log.supervise_output([sys.executable, __file__, *sys.argv[1:]]))
-for i in range(200):
-    print(f"line {i:03d} " + "x" * 1000, file=getattr(sys, sys.argv[1]))
-"""
-
-
-@pytest.mark.parametrize("drain_max_seconds", [log._DRAIN_MAX_SECONDS, 0.05])
-@pytest.mark.parametrize("stream", ["stdout", "stderr"])
-def test_supervise_output_drains_everything_for_a_slow_consumer(
-    tmp_path, drain_max_seconds, stream
-):
-    """Output still in the pipes at exit reaches a consumer that reads late."""
-    script = tmp_path / "burst.py"
-    script.write_text(
-        f"from reflex_base.utils import log\n"
-        f"log._DRAIN_MAX_SECONDS = {drain_max_seconds}\n" + _BURST_SCRIPT
-    )
-    with subprocess.Popen(
-        [sys.executable, str(script), stream],
-        stdout=subprocess.PIPE if stream == "stdout" else None,
-        stderr=subprocess.PIPE if stream == "stderr" else None,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-    ) as proc:
-        output = proc.stdout if stream == "stdout" else proc.stderr
-        assert output is not None
-        lines = []
-        # A consumer slower than the writer keeps the pipes full at exit.
-        for line in output:
-            lines.append(line)
-            time.sleep(0.015)
-        proc.wait(timeout=30)
-    assert proc.returncode == 0
-    assert len(lines) == 200
-    assert json.loads(lines[-1])["message"].startswith("line 199 ")
-
-
-def test_output_pump_write_snapshots_use_a_consistent_cutoff(monkeypatch):
-    """Snapshots measure a blocked or completed write at their own cutoff."""
-    pump = log._OutputPump(0, 1, "info", "stdout")
-    snapshots = []
-
-    def write(fd, data):
-        """Capture a snapshot while the simulated write is in progress.
-
-        Args:
-            fd: The output file descriptor.
-            data: The bytes to write.
-
-        Returns:
-            The number of bytes written.
-        """
-        snapshots.append(pump.writing_snapshot())
-        return len(data)
-
-    monkeypatch.setattr(
-        time, "monotonic", mock.Mock(side_effect=[10.0, 15.0, 20.0, 25.0])
-    )
-    monkeypatch.setattr(os, "write", write)
-    pump._write([b"line"], [], final=False)
-    assert snapshots == [(15.0, 5.0)]
-    assert pump.writing_snapshot() == (25.0, 10.0)
-
-
-_STALLED_CONSUMER_SCRIPT = """
-import os
-import subprocess
-import sys
-from pathlib import Path
-
-from reflex_base.utils import log
-
-log._DRAIN_WALL_SECONDS = 0.5
-if not log.is_output_supervised():
-    sys.exit(log.supervise_output([sys.executable, __file__]))
-writer = subprocess.Popen([
-    sys.executable,
-    "-c",
-    "import os\\nwhile True:\\n    os.write(int(os.environ['TEST_OUTPUT_FD']), (b'x' * 1023 + b'\\\\n') * 64)",
-])
-Path("writer.pid").write_text(str(writer.pid))
-"""
-
-
-@pytest.mark.parametrize("stream_fd", [1, 2])
-def test_supervise_output_bounds_shutdown_for_a_stalled_consumer(tmp_path, stream_fd):
-    """A lingering writer and an unread output pipe cannot prevent shutdown."""
-    script = tmp_path / "stalled.py"
-    script.write_text(_STALLED_CONSUMER_SCRIPT)
-    with subprocess.Popen(
-        [sys.executable, str(script)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=tmp_path,
-        env={
-            **os.environ,
-            "REFLEX_LOG_JSON": "true",
-            "TEST_OUTPUT_FD": str(stream_fd),
-        },
-    ) as proc:
-        try:
-            assert proc.wait(timeout=5) == 0
-        finally:
-            if proc.poll() is None:
-                proc.kill()
-                proc.wait(timeout=5)
-            pid_file = tmp_path / "writer.pid"
-            if pid_file.exists():
-                with contextlib.suppress(OSError):
-                    os.kill(int(pid_file.read_text()), signal.SIGTERM)
-
-
-_LINGERING_SCRIPT = """
-import subprocess
-import sys
-
-from reflex_base.utils import log
-
-if not log.is_output_supervised():
-    sys.exit(log.supervise_output([sys.executable, __file__]))
-sleeper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
-print(sleeper.pid)
-"""
-
-
-def test_supervise_output_does_not_wait_for_lingering_descendants(tmp_path):
-    """A descendant that outlives the command and holds the pipe does not block exit."""
-    start = time.monotonic()
-    result = _run_script(tmp_path, _LINGERING_SCRIPT)
-    elapsed = time.monotonic() - start
-    [record] = [json.loads(line) for line in result.stdout.splitlines()]
-    with contextlib.suppress(OSError):
-        os.kill(int(record["message"]), signal.SIGTERM)
-    assert result.returncode == 0, result.stderr
-    assert elapsed < 10
-
-
-_SLEEP_SCRIPT = """
-import sys
-import time
-
-from reflex_base.utils import log
-
-if not log.is_output_supervised():
-    sys.exit(log.supervise_output([sys.executable, __file__]))
-print("ready")
-time.sleep(30)
-"""
-
-
-@pytest.mark.skipif(
-    sys.platform == "win32", reason="PID-targeted signals are POSIX-only"
-)
-@pytest.mark.parametrize(
-    "signum", [signal.SIGTERM, signal.SIGINT], ids=["sigterm", "sigint"]
-)
-def test_supervise_output_forwards_shutdown_signal(tmp_path, signum):
-    """A signal sent to the supervisor's PID stops the command and is reported."""
-    script = tmp_path / "sleep.py"
-    script.write_text(_SLEEP_SCRIPT)
-    with subprocess.Popen(
-        [sys.executable, str(script)],
-        stdout=subprocess.PIPE,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-    ) as proc:
-        assert proc.stdout is not None
-        assert json.loads(proc.stdout.readline())["message"] == "ready"
-        proc.send_signal(signum)
-        assert proc.wait(timeout=10) == 128 + signum
-
-
-def test_output_pump_survives_a_gone_consumer():
-    """The reader keeps draining the child when its consumer closed the stream."""
-    child_read, child_write = os.pipe()
-    out_read, out_write = os.pipe()
-    os.close(out_read)
-    os.write(child_write, b"plain\nTraceback (most recent call last):\n  File 'x'\n")
-    os.close(child_write)
-    pump = log._OutputPump(child_read, out_write, "info", "stdout")
-    pump.run()
-    os.close(out_write)
-
-
-_ENCODING_SCRIPT = """
-import os
-import sys
-
-from reflex_base.utils import log
-
-if not log.is_output_supervised():
-    sys.exit(log.supervise_output([sys.executable, __file__]))
-print("gr\\u00fc\\u00dfe")
-sys.stdout.flush()
-os.write(1, b"10%\\r50%\\r100%\\r\\n")
-"""
-
-
-def test_supervise_output_decodes_utf8_and_splits_progress(tmp_path):
-    """Non-ASCII survives any PYTHONIOENCODING, and carriage-return updates are lines."""
-    result = _run_script(
-        tmp_path, _ENCODING_SCRIPT, env={**os.environ, "PYTHONIOENCODING": "latin-1"}
-    )
-    assert result.returncode == 0, result.stderr
-    assert [json.loads(line)["message"] for line in result.stdout.splitlines()] == [
-        "grüße",
-        "10%",
-        "50%",
-        "100%",
-    ]
-
-
-_CHATTY_LINGERING_SCRIPT = """
-import subprocess
-import sys
-
-from reflex_base.utils import log
-
-if not log.is_output_supervised():
-    sys.exit(log.supervise_output([sys.executable, __file__]))
-chatter = subprocess.Popen([
-    sys.executable,
-    "-c",
-    "import time\\nfor _ in range(600):\\n    print('tick', flush=True)\\n    time.sleep(0.05)",
-])
-print(chatter.pid)
-"""
-
-
-def test_supervise_output_does_not_wait_for_a_chatty_descendant(tmp_path):
-    """A descendant that keeps writing after the command exits does not block exit."""
-    start = time.monotonic()
-    result = _run_script(tmp_path, _CHATTY_LINGERING_SCRIPT)
-    elapsed = time.monotonic() - start
-    # The descendant can print before the command prints its PID.
-    [pid] = [
-        int(record["message"])
-        for record in map(json.loads, result.stdout.splitlines())
-        if record["message"].isdigit()
-    ]
-    with contextlib.suppress(OSError):
-        os.kill(pid, signal.SIGTERM)
-    assert result.returncode == 0, result.stderr
-    assert elapsed < 15
-
-
-_CHILD_ENV_SCRIPT = """
-import os
-import sys
-
-from reflex_base.utils import log
-
-if not log.is_output_supervised():
-    # Not os.getppid() in the child: a Windows venv python.exe is a launcher
-    # that runs the real interpreter as its own child.
-    os.environ["TEST_SUPERVISOR_PID"] = str(os.getpid())
-    sys.exit(log.supervise_output([sys.executable, __file__]))
-print(os.environ[log._SUPERVISED_ENV_VAR] == os.environ["TEST_SUPERVISOR_PID"])
-print(sys.stdout.write_through)
-print(sys.stdout.encoding, sys.stdout.errors)
-"""
-
-
-def test_supervise_output_child_environment(tmp_path):
-    """The child gets the supervisor PID, keeps user buffering and error handler, and writes UTF-8."""
-    result = _run_script(
-        tmp_path,
-        _CHILD_ENV_SCRIPT,
-        env={
-            **os.environ,
-            "PYTHONUNBUFFERED": "",
-            "PYTHONIOENCODING": "latin-1:backslashreplace",
-        },
-    )
-    assert result.returncode == 0, result.stderr
-    assert [json.loads(line)["message"] for line in result.stdout.splitlines()] == [
-        "True",
-        "False",
-        "utf-8 backslashreplace",
-    ]

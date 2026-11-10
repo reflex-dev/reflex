@@ -35,7 +35,9 @@ from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, auto_reload_cooldown, environment
 from reflex_base.event import (
+    BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
+    SUPERSEDES_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -543,6 +545,22 @@ all_base_state_classes: dict[str, None] = {}
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
 
+# What a wrapper stacked above @rx.event takes over from the function it
+# wraps: what functools.wraps copied from a plain function (its name, module,
+# docstring and the annotations the payload coercion reads, which it took
+# from the EventHandler class instead) and the markers @rx.event set on it.
+_STACKED_HANDLER_ATTRIBUTES = (
+    "__module__",
+    "__name__",
+    "__qualname__",
+    "__doc__",
+    "__annotations__",
+    BACKGROUND_TASK_MARKER,
+    SUPERSEDES_MARKER,
+    EVENT_ACTIONS_MARKER,
+)
+
+
 class BaseState(EvenMoreBasicBaseState, state_root=True):
     """The state of the app."""
 
@@ -585,6 +603,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     # Instance bookkeeping, kept out of `__dict__`: never a field, never pickled.
     __slots__ = (
+        "_mutations",
         "_was_touched",
         "dirty_substates",
         "dirty_vars",
@@ -604,6 +623,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         dirty_substates: set[str] = field(default_factory=set, is_var=False)
         # Whether the state was modified since it was last persisted.
         _was_touched: bool = field(default=False, is_var=False)
+        # How many in-place changes its mutable values took; a flush that
+        # suspended compares it, since such a change keeps the value's identity.
+        _mutations: int = field(default=0, is_var=False)
 
     # The routing path that triggered the state
     router_data: builtins.dict[str, Any] = field(
@@ -699,6 +721,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         setattr_(self, "dirty_vars", set())
         setattr_(self, "dirty_substates", set())
         setattr_(self, "_was_touched", False)
+        setattr_(self, "_mutations", 0)
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -803,7 +826,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         # Set up the event handlers.
         for name, fn in list(cls.__dict__.items()):
-            if cls._item_is_event_handler(name, fn):
+            if isinstance(fn, EventHandler):
+                # Bound by __set_name__ (a decorated method). One bound to
+                # another state is an alias and stays that state's.
+                if fn.state is cls and name not in cls.event_handlers:
+                    cls.event_handlers[name] = fn
+            elif cls._item_is_event_handler(name, fn):
                 handler = cls._create_event_handler(fn)
                 cls.event_handlers[name] = handler
                 setattr(cls, name, handler)
@@ -864,6 +892,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                             _var_data=VarData.from_state(cls),
                         ),
                     )
+                elif isinstance(value, EventHandler) and value.state is mixin_cls:
+                    # A handler declared on the mixin: copy its function, which
+                    # carries the markers, and let it be wrapped for this class.
+                    fn = cls._copy_fn(value.fn)
+                    fn.__qualname__ = f"{cls.__name__}.{name}"
+                    setattr(cls, name, fn)
                 elif cls._item_is_event_handler(name, value):
                     fn = cls._copy_fn(value)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
@@ -918,7 +952,28 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         Returns:
             Whether the item is an event handler.
+
+        A decorator stacked above ``@rx.event`` (found through the whole
+        ``__wrapped__`` chain) is deprecated: the wrapper is treated as the
+        plain method it wraps, as when ``@rx.event`` returned the function,
+        carrying the inner handler's name and markers.
         """
+        if not isinstance(value, EventHandler) and isinstance(
+            inner := inspect.unwrap(value, stop=lambda f: isinstance(f, EventHandler)),
+            EventHandler,
+        ):
+            console.deprecate(
+                feature_name="Decorators above @rx.event",
+                reason=(
+                    f"`{name}` is decorated above @rx.event; apply other "
+                    "decorators below it."
+                ),
+                deprecation_version="0.10.2",
+                removal_version="1.0",
+            )
+            for attr in _STACKED_HANDLER_ATTRIBUTES:
+                if hasattr(inner.fn, attr):
+                    setattr(value, attr, getattr(inner.fn, attr))
         return (
             not name.startswith("_")
             and isinstance(value, Callable)
@@ -1112,6 +1167,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # change to any state invalidates every cached root.
         cls._to_schema.cache_clear()
         _frontend_schema.cache_clear()
+        _shared_storage_groups.cache_clear()
 
     @classmethod
     def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
@@ -1953,7 +2009,18 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Returns:
             The resolved delta.
         """
+        if not _replay_client_storage.get():
+            await _sync_shared_storage(self)
         return await resolve_delta(self)
+
+    def _note_in_place_change(self) -> None:
+        """Count an in-place change to one of this state's mutable values.
+
+        Called through a proxy, so the count lands on the state itself. Kept
+        off the plain assignment path, which is only a few hundred
+        nanoseconds and detects reassignment by identity instead.
+        """
+        object.__setattr__(self, "_mutations", self._mutations + 1)
 
     def _mark_dirty(self, var_names: Iterable[str] | None = None) -> None:
         """Mark this state and its ancestors dirty, invalidating dependent computed vars.
@@ -2281,6 +2348,92 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         ):
             raise StateSchemaMismatchError
         return state
+
+
+@functools.lru_cache
+def _shared_storage_groups(
+    root: type[BaseState], context: RegistrationContext
+) -> tuple[tuple[tuple[type[BaseState], str, bool], ...], ...]:
+    """Group the localStorage vars by storage name.
+
+    Only names that a synced var shares with another var are included.
+
+    Args:
+        root: The state at the top of the tree.
+        context: The registration context holding the tree.
+
+    Returns:
+        The state, var name and sync flag of each var, one group per name.
+    """
+    # The compiler imports this module.
+    from reflex.compiler.utils import _compile_client_storage_recursive
+
+    by_name: dict[str, list[tuple[type[BaseState], str, bool]]] = {}
+    for state_key, options in _compile_client_storage_recursive(root)[1].items():
+        if name := options.get("name"):
+            state_name, _, var_name = state_key.removesuffix(FIELD_MARKER).rpartition(
+                "."
+            )
+            by_name.setdefault(name, []).append((
+                root.get_class_substate(state_name),
+                var_name,
+                bool(options.get("sync")),
+            ))
+    # Sorted, so conflicting writes to one name set the other vars the same way
+    # in every process.
+    return tuple(
+        tuple(sorted(members, key=lambda m: (m[0].get_full_name(), m[1])))
+        for members in by_name.values()
+        if len(members) > 1 and any(sync for _, _, sync in members)
+    )
+
+
+async def _sync_shared_storage(state: BaseState) -> None:
+    """Set the synced vars sharing the storage name of a var this event wrote.
+
+    The browser raises the storage event in other tabs only, so the tab that
+    stores the value would keep the other vars with its name stale.
+
+    Args:
+        state: The root of the states to get the delta for.
+    """
+    for members in _shared_storage_groups(
+        state.get_root_state(), RegistrationContext.get()
+    ):
+        written = {
+            (state_cls, var_name): source.get_value(var_name)
+            for state_cls, var_name, _ in members
+            if (source := _loaded_substate(state, state_cls.get_full_name()))
+            is not None
+            and var_name in source.dirty_vars
+        }
+        if not written:
+            continue
+        # The vars this event wrote keep their values; the others take the first
+        # written value in name order.
+        value = next(iter(written.values()))
+        for state_cls, var_name, sync in members:
+            if sync and (state_cls, var_name) not in written:
+                target = await state.get_state(state_cls)
+                if target.get_value(var_name) != value:
+                    setattr(target, var_name, value)
+
+
+def _loaded_substate(root: BaseState, state_name: str) -> BaseState | None:
+    """Get a substate by its full name only if it is already loaded.
+
+    Args:
+        root: The root state.
+        state_name: The full name of the substate.
+
+    Returns:
+        The substate, or None if it is not loaded.
+    """
+    state = root
+    for name in state_name.split(".")[1:]:
+        if (state := state.substates.get(name)) is None:
+            return None
+    return state
 
 
 @functools.lru_cache
