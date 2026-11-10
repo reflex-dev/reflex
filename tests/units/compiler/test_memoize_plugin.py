@@ -3169,7 +3169,7 @@ def test_memo_forwarded_ref_merges_with_id_ref() -> None:
     )
     memo_code = _compile_memo_module_text(ctx)
 
-    assert "const ref_plain_id = useRef(null)" in memo_code, (
+    assert 'const ref_plain_id = useRegisteredRef("ref_plain_id")' in memo_code, (
         "The id-derived ref hook must stay in the memo body.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
@@ -3444,6 +3444,52 @@ def test_svg_boundary_shares_hook_var_between_children() -> None:
     assert len(ctx.memoize_wrappers) == 1
     assert len(re.findall(r"= useId_\w+\(\);", memo_code)) == 1
     assert not any("useId" in hook for hook in page_ctx.hooks)
+
+
+def test_disabled_auto_memoization_keeps_state_reads_in_page() -> None:
+    """Without auto-memo, stateful components render inline in the page module."""
+    ctx = CompileContext(
+        pages=[
+            FakePage(
+                route="/p",
+                component=lambda: Plain.create(
+                    Bare.create(STATE_VAR), on_click=rx.console_log("x")
+                ),
+            )
+        ],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=False)),
+    )
+    with ctx:
+        ctx.compile()
+
+    assert not ctx.auto_memo_components
+    page_output = ctx.compiled_pages["/p"].output_code or ""
+    assert "useTestState" in page_output
+    assert "useCallback" not in page_output
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_page_client_state_keeps_scope_with_optional_auto_memoization(
+    auto_memoize: bool,
+) -> None:
+    """Local client state keeps its page scope when auto-memoization is disabled."""
+    local = rx.client_state("hello")
+    ctx = CompileContext(
+        pages=[FakePage(route="/scoped", component=lambda: rx.text(local.value))],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize)),
+    )
+    with ctx:
+        ctx.compile()
+
+    page = ctx.compiled_pages["/scoped"]
+    assert page.client_state_names
+    assert "withClientStateScope" in (page.output_code or "")
+    assert any(
+        item.tag == "withClientStateScope"
+        for item in page.frontend_imports["$/utils/client_state"]
+    )
+    if not auto_memoize:
+        assert not ctx.auto_memo_components
 
 
 def _module_by_export(files: object) -> dict[str, str]:
