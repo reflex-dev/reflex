@@ -1186,10 +1186,11 @@ export const connect = async (
         event_queue.splice(i, 1);
       }
     }
-    // Drain any initial events from the queue.
-    while (event_queue.length > 0) {
-      await processEvent(socket.current, navigate, params);
-    }
+    // Drain any initial events from the queue. One call is the whole drain:
+    // processEvent goes on until the queue is empty, or until the socket has
+    // dropped again with a stateful event waiting. Looping on the queue length
+    // would spin in that second case, since nothing can shrink the queue then.
+    await processEvent(socket.current, navigate, params);
   });
 
   // Record a failed connection attempt and retry it with incremental backoff.
@@ -1702,8 +1703,10 @@ export const useEventLoop = (
       return;
     }
     (async () => {
-      // Process all outstanding events.
-      while (event_queue.length > 0) {
+      // Process all outstanding events. processEvent drains the queue itself,
+      // and stops at a stateful event when the socket has dropped; the connect
+      // handler sends what is left once it is back.
+      if (event_queue.length > 0) {
         await ensureSocketConnected();
         await processEvent(socket.current, navigate, params);
       }
