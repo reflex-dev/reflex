@@ -119,7 +119,7 @@ def _deprecate_array_operation(name: str) -> None:
     console.deprecate(
         feature_name=f"SetVar.{name}",
         reason=_ARRAY_OPERATION_REASON,
-        deprecation_version="0.10.1",
+        deprecation_version="0.11.0",
         removal_version="1.0",
     )
 

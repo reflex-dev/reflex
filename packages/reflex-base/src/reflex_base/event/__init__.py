@@ -703,7 +703,7 @@ class EventHandler(EventActionsMixin):
                 f"`{owner.__qualname__}.{name}` stays a plain method; remove the "
                 "decorator."
             ),
-            deprecation_version="0.10.2",
+            deprecation_version="0.11.0",
             removal_version="1.0",
         )
 
@@ -780,7 +780,7 @@ class EventHandler(EventActionsMixin):
                     f"`{self.fn.__qualname__}` is called through a decorator "
                     "stacked above @rx.event; apply other decorators below it."
                 ),
-                deprecation_version="0.10.2",
+                deprecation_version="0.11.0",
                 removal_version="1.0",
             )
             return self.fn(*args, **kwargs)
@@ -3644,7 +3644,7 @@ class EventNamespace:
                 console.deprecate(
                     feature_name="@rx.event on a staticmethod or classmethod",
                     reason="The decorator has no effect there; remove it.",
-                    deprecation_version="0.10.2",
+                    deprecation_version="0.11.0",
                     removal_version="1.0",
                 )
                 return func  # pyright: ignore [reportReturnType]
@@ -3691,7 +3691,7 @@ class EventNamespace:
                             f"`{qualname}` stays a plain function and is not an "
                             "event handler; remove the decorator."
                         ),
-                        deprecation_version="0.10.2",
+                        deprecation_version="0.11.0",
                         removal_version="1.0",
                     )
                     return func  # pyright: ignore [reportReturnType]
