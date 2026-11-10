@@ -24,7 +24,7 @@ from reflex_base.breakpoints import Breakpoints
 from reflex_base.components.dynamic import load_dynamic_serializer
 from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.components.tags import CommonTag, Tag
-from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
+from reflex_base.constants import Dirs, EventTriggers, Imports, MemoizationMode
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
     EventCallback,
@@ -42,6 +42,7 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import (
     _PY_OR_IMPORT,
     CachedVarOperation,
+    Field,
     LiteralNoneVar,
     LiteralVar,
     Var,
@@ -523,6 +524,10 @@ class BaseComponent(metaclass=BaseComponentMeta):
 
 class ComponentNamespace(SimpleNamespace):
     """A namespace to manage components with subcomponents."""
+
+    # Stub the namespace as a class whose constructor is ``__call__``, so type
+    # expressions can reach its attributes (e.g. ``rx.form.FormData``).
+    _stub_as_class: ClassVar[bool] = False
 
     def __hash__(self) -> int:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Get the hash of the namespace.
@@ -1955,8 +1960,7 @@ class Component(BaseComponent, ABC):
         ref = self.get_ref()
         if ref is not None:
             return Var(
-                f"const {ref} = useRef(null); {Var(_js_expr=ref)._as_ref()!s} = {ref};",
-                _var_data=VarData(position=Hooks.HookPosition.INTERNAL),
+                f"const {ref} = useRef(null); {Var(_js_expr=ref)._as_ref()!s} = {ref};"
             )
         return None
 
@@ -1970,14 +1974,7 @@ class Component(BaseComponent, ABC):
         for var in self._get_vars():
             var_data = var._get_all_var_data()
             if var_data is not None:
-                vars_hooks.update(
-                    var_data.hooks
-                    if isinstance(var_data.hooks, dict)
-                    else {
-                        k: VarData(position=Hooks.HookPosition.INTERNAL)
-                        for k in var_data.hooks
-                    }
-                )
+                vars_hooks.update(dict.fromkeys(var_data.hooks))
                 for component in var_data.components:
                     vars_hooks.update(component._get_all_hooks())
         return vars_hooks
@@ -2012,7 +2009,7 @@ class Component(BaseComponent, ABC):
         result = {
             **self._get_events_hooks(),
             **{
-                str(hook): VarData(position=Hooks.HookPosition.INTERNAL)
+                str(hook): None
                 for hook in [self._get_ref_hook(), self._get_mount_lifecycle_hook()]
                 if hook is not None
             },
@@ -2106,10 +2103,15 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The ref name.
+
+        Raises:
+            BackendVarFormatError: If the id is a field with no frontend var.
         """
         # do not create a ref if the id is dynamic or unspecified
         if self.id is None or isinstance(self.id, Var):
             return None
+        if isinstance(self.id, Field):
+            raise self.id._no_frontend_var_error()
         return format.format_ref(self.id)
 
     def _get_all_refs(self) -> dict[str, None]:

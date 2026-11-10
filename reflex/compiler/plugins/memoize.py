@@ -27,8 +27,12 @@ from reflex_base.components.app_wraps import (
     collect_var_app_wraps_for_component,
     collect_var_app_wraps_in_subtree,
 )
+from reflex_base.components.client_state_context import local_client_state_names
 from reflex_base.components.component import BaseComponent, Component
-from reflex_base.components.memo import create_passthrough_component_memo
+from reflex_base.components.memo import (
+    create_passthrough_component_memo,
+    memo_body_hooks,
+)
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
     _is_structural_memoization_child,
@@ -395,6 +399,11 @@ class MemoizeStatefulPlugin(Plugin):
         # different user modules each get their own entry and emit into the
         # right mirrored memo file.
         compile_context.auto_memo_components[tag, definition.source_module] = definition
+        # The body's hooks leave the page module, but the page still has to own
+        # the local client state they use.
+        page_context.client_state_names.update(
+            local_client_state_names(memo_body_hooks(definition))
+        )
 
         wrapper = wrapper_factory()
         # The wrapper has no structural children at the page level, but parents

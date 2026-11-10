@@ -1,1 +1,0 @@
-Assigning a double-underscore private attribute on a state (`self.__counter = 1`) from a mixin, a base, or a class whose name starts with an underscore no longer raises `SetUndefinedStateVarError` in dev mode. Private names not explicitly declared with `rx.field()` are plain Python attributes: vars do not update in response to them.

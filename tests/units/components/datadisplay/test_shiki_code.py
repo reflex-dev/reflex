@@ -3,6 +3,7 @@ from reflex_base.style import Style
 from reflex_base.vars import Var
 from reflex_base.vars.base import LiteralVar
 from reflex_components_code.shiki_code_block import (
+    SHIKIJS_TRANSFORMER_FNS,
     ShikiBaseTransformers,
     ShikiCodeBlock,
     ShikiHighLevelCodeBlock,
@@ -154,6 +155,28 @@ def test_create_shiki_high_level_code_block(
             assert isinstance(component.children[1], expected_button_type)
     else:
         assert len(component.children) == 1
+
+
+def test_shiki_high_level_code_block_use_transformers():
+    """use_transformers should render and import the default shikijs transformers."""
+    component = ShikiHighLevelCodeBlock.create(
+        "print('x') # [!code highlight]", use_transformers=True
+    )
+    code_block_component = component.children[0]
+
+    expected_calls = ", ".join(f"({fn}())" for fn in sorted(SHIKIJS_TRANSFORMER_FNS))
+    assert f"transformers:[{expected_calls}]" in str(code_block_component)
+    assert "@shikijs/transformers@4.5.0" in code_block_component._get_all_imports()
+    for selector, prop, value in [
+        (".diff.add", "backgroundColor", "rgba(16, 185, 129, .14)"),
+        (".diff.remove", "backgroundColor", "rgba(244, 63, 94, .14)"),
+        (".diff.add:after", "content", "'+'"),
+        (".diff.remove:after", "content", "'-'"),
+        (".highlighted", "backgroundColor", "rgba(142, 150, 170, .14)"),
+    ]:
+        var = Var.create(component.style[selector][prop])
+        assert isinstance(var, LiteralVar)
+        assert var._var_value == value
 
 
 @pytest.mark.parametrize(

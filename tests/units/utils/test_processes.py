@@ -29,6 +29,27 @@ requires_ipv6 = pytest.mark.skipif(
 )
 
 
+@pytest.mark.parametrize(
+    ("cpu_count", "expected"),
+    [(None, 3), (0, 3), (1, 3), (2, 5), (3, 7), (4, 8), (64, 8)],
+)
+def test_get_num_workers_caps_automatic_worker_count(cpu_count, expected):
+    """Cap automatic worker counts while preserving the CPU-based default below the cap."""
+    redis_client = mock.Mock()
+    with (
+        mock.patch.object(
+            processes, "get_config", return_value=mock.Mock(transport="websocket")
+        ),
+        mock.patch.object(
+            processes.prerequisites, "get_redis_sync", return_value=redis_client
+        ),
+        mock.patch.object(processes.os, "cpu_count", return_value=cpu_count),
+    ):
+        assert processes.get_num_workers() == expected
+
+    redis_client.ping.assert_called_once_with()
+
+
 def test_is_process_on_port_free_port():
     """Test is_process_on_port returns False when port is free."""
     # Find a free port
@@ -402,6 +423,20 @@ def test_stream_logs_keeps_posix_sigterm_codes_as_failures_on_windows(
     assert any(
         f"failed with exit code {returncode}" in r.getMessage() for r in caplog.records
     )
+
+
+def test_stream_logs_accepts_any_exit_code_after_a_stop_request(caplog):
+    """A process the caller asked to stop is not a failure, whatever its code.
+
+    Args:
+        caplog: Pytest log capture.
+    """
+    process = _finished_process(1)
+
+    with caplog.at_level(logging.ERROR):
+        list(stream_logs("Starting frontend", process, expected_exit=lambda: True))
+
+    assert not caplog.records
 
 
 def test_stream_logs_still_fails_on_a_real_error_exit(caplog):

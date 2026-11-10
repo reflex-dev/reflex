@@ -16,7 +16,6 @@ import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 
-import psycopg
 import pytest
 import pytest_asyncio
 from sqlalchemy import DateTime, String, func, insert, literal, select, update
@@ -25,15 +24,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 URL = os.environ.get("REFLEX_TEST_POSTGRES", "")
+if not URL:
+    pytest.skip(
+        "set REFLEX_TEST_POSTGRES to test against Postgres", allow_module_level=True
+    )
 ASYNC_URL = URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-pytestmark = [
-    pytest.mark.skipif(
-        not URL, reason="set REFLEX_TEST_POSTGRES to test against Postgres"
-    ),
-    pytest.mark.asyncio(loop_scope="module"),
-]
+pytestmark = pytest.mark.asyncio(loop_scope="module")
 
+import psycopg  # noqa: E402
 from reflex_workflow import (  # noqa: E402
     AttemptLog,
     Cron,
@@ -1504,7 +1503,8 @@ async def claim_row(
     )
     async with runtime.current().session_factory() as session, session.begin():
         version, until = (await session.execute(stmt)).one()
-        return claim.Claimed(pk, version, until)
+    assert until is not None
+    return claim.Claimed(pk, version, until)
 
 
 async def pk_of(
@@ -1703,12 +1703,19 @@ async def test_a_cron_schedule_sets_the_next_time_it_names(session_factory):
 async def test_a_schedule_that_cannot_say_when_stops_the_run(session_factory):
     key = uuid.uuid4().hex
     pk = await insert_repeating(key, "broken", datetime.timedelta(seconds=1))
-    assert await step_row(Repeating, pk) == "failed"
+    with tracing() as (exporter, _):
+        assert await step_row(Repeating, pk) == "failed"
 
     row = await Repeating.by(Repeating.key == key).get()
     assert row is not None
     assert (row.next_step, row.wake_at) == (None, None)
     assert row.last_error == "RuntimeError: no idea when"
+    # The span says why too, though it was the schedule that raised.
+    (span,) = exporter.get_finished_spans()
+    assert span.attributes is not None
+    assert span.attributes["reflex.workflow.outcome"] == "failed"
+    assert span.attributes["error.type"] == "RuntimeError"
+    assert [event.name for event in span.events] == ["exception"]
     # The attempt's history says why, as the row does.
     async with runtime.current().session_factory() as session:
         latest = (
@@ -2005,27 +2012,36 @@ async def test_a_worker_with_one_slot_still_visits_every_table(session_factory):
         await engine.dispose()
 
 
-async def test_a_rate_limit_lets_through_a_burst_then_refills(session_factory):
+@pytest.mark.parametrize("enqueue_delay", [0, 1.1])
+async def test_a_rate_limit_lets_through_a_burst_then_refills(
+    session_factory, monkeypatch, enqueue_delay
+):
+    """A full bucket allows a burst and a partial refill allows two more runs."""
     STARTS.clear()
     provider = f"provider-{uuid.uuid4().hex}"
-    started = time.monotonic()
+    # Four tokens per hour prevent setup or scheduling delays from refilling
+    # the bucket; backdating it by half an hour releases exactly two tokens.
+    period = datetime.timedelta(hours=1)
+    monkeypatch.setattr(
+        Metered, "__workflow_limit__", Limit(by="provider", rate=4, per=period)
+    )
+    await asyncio.sleep(enqueue_delay)
     await start_many(Metered, provider, 8, provider=provider)
 
-    async def all_done() -> bool:
-        """Tell whether every run has finished.
-
-        Returns:
-            Whether it has.
-        """
+    for expected in (4, 6, 8):
+        if expected > 4:
+            async with session_factory() as session, session.begin():
+                await session.execute(
+                    update(WorkflowRate)
+                    .where(WorkflowRate.key == claim.bucket_key(Metered, provider))
+                    .values(tokens=0, updated_at=func.now() - period / 2)
+                )
+        # A settled worker has finished its steps and found no more to claim.
+        assert await runner.wake(datetime.timedelta(seconds=30))
+        assert len(STARTS[provider]) == expected
         rows = await Metered.by(Metered.provider == provider).all()
-        return len(rows) == 8 and all(row.status == "done" for row in rows)
-
-    await wait_until(all_done, timeout=60)
-    times = sorted(t - started for t in STARTS[provider])
-    # Four at once from a full bucket, then the rest as it refills: two a second.
-    assert len(times) == 8
-    assert times[3] < 1
-    assert times[7] >= 1.5
+        assert len(rows) == 8
+        assert sum(row.status == "done" for row in rows) == expected
 
 
 async def test_a_rate_limit_holds_across_workers(session_factory):
@@ -4733,3 +4749,82 @@ async def test_a_listener_that_keeps_failing_wakes_the_worker_once():
         assert not rt.wake.is_set()
     finally:
         await nowhere.dispose()
+
+
+@contextlib.contextmanager
+def tracing():
+    """Enable the engine's trace points against an in-memory exporter.
+
+    Yields:
+        The exporter and the provider the spans go through.
+    """
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+        InMemorySpanExporter,
+    )
+    from reflex_workflow import otel
+
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    otel.enable(tracer_provider=provider)
+    try:
+        yield exporter, provider
+    finally:
+        otel.disable()
+
+
+async def test_steps_are_traced_as_linked_root_spans(session_factory):
+    from opentelemetry import trace
+    from opentelemetry.trace import SpanKind, StatusCode
+    from reflex_workflow import otel
+
+    def span_ids(context):
+        return context.trace_id, context.span_id
+
+    def linked_to(span):
+        return [span_ids(link.context) for link in span.links]
+
+    with tracing() as (exporter, provider):
+        chain_key, flaky_key = uuid.uuid4().hex, uuid.uuid4().hex
+        with trace.get_tracer("app", tracer_provider=provider).start_as_current_span(
+            "handler"
+        ) as handler:
+            assert await Chain(key=chain_key).start(Chain.first)
+            assert await Flaky(key=flaky_key).start(Flaky.call)
+        await wait_until(status_is(Chain, chain_key, "done"))
+        await wait_until(status_is(Flaky, flaky_key, "done"), timeout=5)
+    spans = {}
+    for span in exporter.get_finished_spans():
+        spans.setdefault(span.name, []).append(span)
+    first, second = spans["wf_test_chain.first"], spans["wf_test_chain.second"]
+    assert len(first) == len(second) == 1
+    assert {span.kind for span in first + second} == {SpanKind.CONSUMER}
+    assert {span.parent for span in first + second} == {None}
+    # Each step links to what scheduled it: the handler, then the step before.
+    assert linked_to(first[0]) == [span_ids(handler.get_span_context())]
+    assert linked_to(second[0]) == [span_ids(first[0].get_span_context())]
+    assert first[0].attributes[otel.ATTR_OUTCOME] == "ok"
+    assert first[0].attributes[otel.ATTR_ATTEMPT] == 1
+    # The traceparent travels in next_args and never reaches the step.
+    row = await Chain.by(Chain.key == chain_key).get()
+    assert row is not None
+    assert row.next_args is None
+    attempts = sorted(
+        spans["wf_test_flaky.call"], key=lambda s: s.attributes[otel.ATTR_ATTEMPT]
+    )
+    assert [s.attributes[otel.ATTR_OUTCOME] for s in attempts] == [
+        "retry",
+        "retry",
+        "ok",
+    ]
+    assert [s.status.status_code for s in attempts] == [
+        StatusCode.ERROR,
+        StatusCode.ERROR,
+        StatusCode.UNSET,
+    ]
+    assert attempts[0].attributes[otel.ATTR_ERROR_TYPE] == "ConnectionError"
+    # A retry links to the attempt that failed, not back to the handler.
+    assert linked_to(attempts[1]) == [span_ids(attempts[0].get_span_context())]
+    assert linked_to(attempts[2]) == [span_ids(attempts[1].get_span_context())]

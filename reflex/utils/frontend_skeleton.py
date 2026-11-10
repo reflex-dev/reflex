@@ -453,11 +453,18 @@ def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     logger.info("Initializing the web directory.")
 
-    # Reuse the hash if one is already created, so we don't over-write it when running reflex init
-    project_hash = get_project_hash()
+    web_dir = get_web_dir()
+    # Keep JSON writers out of their same-directory staging window while the
+    # frontend tree is removed and recreated.
+    with (
+        path_ops.file_lock(web_dir / constants.Reflex.JSON),
+        path_ops.file_lock(web_dir / constants.Dirs.ENV_JSON),
+    ):
+        # Reuse the hash if one is already created, so we don't over-write it when running reflex init
+        project_hash = get_project_hash()
 
-    logger.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
-    path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
+        logger.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {web_dir}")
+        path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(web_dir))
 
     logger.debug("Restoring lockfiles.")
     sync_root_lockfiles_to_web()
@@ -624,6 +631,7 @@ def _compile_vite_config(config: Config):
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
         prod_react=environment.REFLEX_DEV_PROD_REACT.get(),
         warmup_routes=environment.REFLEX_VITE_WARMUP_ROUTES.get(),
+        react_compiler=config.react_compiler,
         sourcemap=environment.VITE_SOURCEMAP.get(),
         minify=environment.VITE_MINIFY.get(),
         allowed_hosts=config.vite_allowed_hosts,

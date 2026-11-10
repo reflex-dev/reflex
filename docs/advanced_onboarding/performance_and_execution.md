@@ -5,6 +5,9 @@ meta_description: Compare Reflex performance with Streamlit and Dash using publi
 
 # Performance and execution
 
+For deployment-level capacity and recovery, see [Scaling Reflex Apps](/docs/hosting/scaling/),
+including shared state, independent job workers, and Redis diagnostics.
+
 Reflex combines a customizable React interface with explicit Python state and event handlers. Published comparisons show concrete performance gains over Streamlit and Dash: faster initial data visibility in an NBA dashboard and faster bulk updates in a component-heavy form. The measurements below explain where those gains appeared and how to apply the same rendering and state-management techniques in your app.
 
 ## Reflex vs Streamlit: faster time to visible data

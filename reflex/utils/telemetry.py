@@ -501,6 +501,46 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
     return _executor
 
 
+def _shutdown_executor(timeout: float = 2) -> bool:
+    """Deliver queued telemetry and stop the worker thread.
+
+    Called by a supervisor right before it forks workers, so no telemetry
+    thread is alive at the fork. A send that stalls past the timeout (e.g. on
+    a DNS lookup) is abandoned so it cannot hold up startup, and the caller
+    must then not fork.
+
+    Args:
+        timeout: Maximum number of seconds to wait for queued telemetry.
+
+    Returns:
+        Whether the worker thread has stopped, i.e. whether forking is safe.
+    """
+    global _executor
+    if (executor := _executor) is None:
+        return True
+    drained = _flush(timeout)
+    if not drained:
+        logger.debug(f"Telemetry did not drain within {timeout}s before forking.")
+    # Stay published while stopping: a racing send() then fails to submit (and
+    # is suppressed) instead of starting a second pool before the fork.
+    executor.shutdown(wait=drained, cancel_futures=True)
+    with _executor_lock:
+        if _executor is executor:
+            _executor = None
+    return not any(thread.is_alive() for thread in executor._threads)
+
+
+def _reset_executor_after_fork() -> None:
+    """Drop the inherited executor and lock; the child owns neither's thread."""
+    global _executor, _executor_lock
+    _executor_lock = threading.Lock()
+    _executor = None
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_executor_after_fork)
+
+
 def _current_registration_context() -> RegistrationContext | None:
     """Return the caller's RegistrationContext, or None if none is attached.
 
@@ -634,8 +674,7 @@ def _maybe_alias_legacy_distinct_id(telemetry_enabled: bool | None) -> None:
             # Don't latch: a later enabled send in this process should retry.
             return
 
-        # Latch before the alias send below (which re-enters send()) so it cannot
-        # recurse and so the attempt happens at most once per process.
+        # Latch first so the attempt happens at most once per process.
         _legacy_alias_attempted = True
 
         # Resolve the installation id first: a brand-new install is created and
@@ -647,8 +686,10 @@ def _maybe_alias_legacy_distinct_id(telemetry_enabled: bool | None) -> None:
 
         # distinct_id is the UUID form (set by get_event_defaults); send the
         # legacy integer as ``alias`` so PostHog coerces it to the same float as
-        # the historic events and merges the two persons.
-        send("$create_alias", telemetry_enabled, properties={"alias": installation_id})
+        # the historic events and merges the two persons. Delivered on the
+        # calling thread: this runs from the worker, or from a caller that must
+        # not start one.
+        _send("$create_alias", telemetry_enabled, properties={"alias": installation_id})
 
         # Record the new semantics regardless of outcome; we must not retry every
         # run even if the lossy legacy id failed to match.
@@ -668,7 +709,9 @@ def send(
     pool, so neither the data gathering (blocking syscalls and subprocess calls)
     nor the synchronous HTTP request blocks the caller — in particular the
     asyncio event loop serving a running app. Delivery is best-effort: any
-    failure is suppressed and never surfaces to the caller.
+    failure is suppressed and never surfaces to the caller. A caller that must
+    not start a thread (a process about to fork) uses ``_process_event``
+    directly instead.
 
     Args:
         event: The event name.

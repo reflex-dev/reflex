@@ -272,6 +272,7 @@ def _compile_contexts(
             initial_state_json=initial_state_json,
             initial_state_hashes=state_snapshot_hashes(initial_state),
             state_name=state.get_name(),
+            state_schema=state._to_frontend_schema(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
@@ -827,6 +828,7 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         hooks=page_ctx.hooks,
         render=page_ctx.root_component.render(),
         route=page_ctx.route,
+        client_state_owns=sorted(page_ctx.client_state_names),
     )
     return output_path, code
 
@@ -1208,7 +1210,7 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
 def _read_stateful_pages_marker() -> list[str] | None:
     """Read the routes that create state classes from a previous compile.
 
-    A missing marker or one truncated by an older writer requires full page
+    A missing marker or one corrupted by an older writer requires full page
     evaluation. New writers replace the marker atomically.
 
     Returns:
@@ -1216,8 +1218,10 @@ def _read_stateful_pages_marker() -> list[str] | None:
     """
     marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
     try:
-        return json.loads(marker.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
+        return json.loads(marker.read_bytes())
+    except (FileNotFoundError, ValueError):
+        # ValueError covers both JSONDecodeError and the UnicodeDecodeError of a
+        # marker that is not valid UTF-8.
         return None
     except PermissionError:
         if constants.IS_WINDOWS:

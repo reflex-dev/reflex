@@ -18,7 +18,9 @@ if TYPE_CHECKING:
     from typing import TypeVar
 
     import sqlalchemy
+    import sqlalchemy.ext.asyncio
     import sqlmodel
+    from sqlmodel.ext.asyncio.session import AsyncSession
 
     SQLModelOrSqlAlchemy = (
         type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
@@ -63,10 +65,9 @@ class _ClassThatErrorsOnInit:
         _print_db_not_available(**kwargs)
 
 
-if find_spec("sqlalchemy"):
+if TYPE_CHECKING or find_spec("sqlalchemy"):
     import sqlalchemy
     import sqlalchemy.exc
-    import sqlalchemy.ext.asyncio
     import sqlalchemy.orm
 
     _ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
@@ -167,6 +168,9 @@ if find_spec("sqlalchemy"):
         global _ASYNC_ENGINE
         if url in _ASYNC_ENGINE:
             return _ASYNC_ENGINE[url]
+
+        # Requires greenlet, which SQLAlchemy 2.1 only installs with the asyncio extra.
+        import sqlalchemy.ext.asyncio
 
         if not environment.ALEMBIC_CONFIG.get().exists():
             logger.warning(
@@ -276,7 +280,7 @@ else:
     sqla_session = _print_db_not_available
     ModelRegistry = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
 
-if find_spec("sqlalchemy") and find_spec("alembic"):
+if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
     import alembic.autogenerate
     import alembic.command
     import alembic.config
@@ -522,10 +526,11 @@ else:
     alembic_autogenerate = _print_db_not_available
     migrate = _print_db_not_available
 
-if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
+if TYPE_CHECKING or (
+    find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic")
+):
     import sqlmodel
     from reflex_base.utils.serializers import serialize_sqlmodel as serialize_sqlmodel
-    from sqlmodel.ext.asyncio.session import AsyncSession
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 
@@ -698,6 +703,9 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
         """
         global _AsyncSessionLocal
         if url not in _AsyncSessionLocal:
+            import sqlalchemy.ext.asyncio
+            from sqlmodel.ext.asyncio.session import AsyncSession
+
             _AsyncSessionLocal[url] = sqlalchemy.ext.asyncio.async_sessionmaker(
                 bind=get_async_engine(url),
                 class_=AsyncSession,

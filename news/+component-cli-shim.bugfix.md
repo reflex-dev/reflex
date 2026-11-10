@@ -1,1 +1,0 @@
-`reflex component` and its old subcommands now exit with a pointer to the wrapping React docs and the [component template](https://github.com/reflex-dev/component-template) instead of "No such command".

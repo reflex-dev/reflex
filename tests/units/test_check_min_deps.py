@@ -425,19 +425,32 @@ def test_build_wheelhouse_builds_every_source_once(
     """
     fake_run = _FakeRun(
         built={
-            # Both satisfy what the root package declares, so neither is rebuilt.
+            # Both satisfy the fixture's floors, so neither is rebuilt.
             "reflex-base": "0.9.13.dev1+abc1234",
             "reflex-hosting-cli": "0.1.71.post1.dev0+abc1234",
         }
     )
     monkeypatch.setattr(check_min_deps, "_run", fake_run)
     sources = (
-        check_min_deps.REPO_ROOT / "packages" / "reflex-base",
-        check_min_deps.REPO_ROOT / "packages" / "reflex-hosting-cli",
+        tmp_path / "reflex-base",
+        tmp_path / "reflex-hosting-cli",
+    )
+    for source in sources:
+        source.mkdir()
+        (source / "pyproject.toml").write_text(f'[project]\nname = "{source.name}"\n')
+    consumer = tmp_path / "consumer"
+    _write_pyproject(
+        consumer, ["reflex-base >= 0.9.12.dev0", "reflex-hosting-cli >= 0.1.71"]
     )
     wheelhouse = tmp_path / "nested" / "wheelhouse"
 
-    package = _fake_package(sources)
+    package = check_min_deps.Package(
+        name="demo",
+        project_dir=consumer,
+        source_dir=consumer,
+        extras=(),
+        local_sources=sources,
+    )
     versions, detail = check_min_deps.build_wheelhouse(
         [package], wheelhouse, build=True
     )

@@ -53,7 +53,7 @@ def _inherited_variant_selector(
 class AccordionComponent(RadixPrimitiveComponent):
     """Base class for all @radix-ui/accordion components."""
 
-    library = "@radix-ui/react-accordion@1.2.20"
+    library = "@radix-ui/react-accordion@1.3.1"
 
     color_scheme: Var[LiteralAccentColor] = field(
         doc="The color scheme of the component."
@@ -278,7 +278,7 @@ class AccordionItem(AccordionComponent):
             "width": "100%",
             "margin_top": "1px",
             "border_top": divider_style,
-            "&:first-child": {
+            "&:first-of-type": {
                 "margin_top": 0,
                 "border_top": 0,
                 "border_top_left_radius": "var(--radius-4)",
@@ -292,7 +292,7 @@ class AccordionItem(AccordionComponent):
                 "position": "relative",
                 "z_index": 1,
             },
-            _inherited_variant_selector("ghost", "&:first-child"): {
+            _inherited_variant_selector("ghost", "&:first-of-type"): {
                 "border_radius": 0,
                 "border_top": divider_style,
             },

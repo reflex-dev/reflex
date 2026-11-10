@@ -11,12 +11,17 @@ import os
 import tempfile
 import traceback
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import MISSING
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
+from reflex_base.components.client_state_context import (
+    local_client_state_names,
+    scoped_memo_wrapper,
+)
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.components.dynamic import _bundle_imports
 from reflex_base.components.memo import (
@@ -28,7 +33,8 @@ from reflex_base.components.memo import (
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import format, imports, memo_paths, serializers
+from reflex_base.utils import format, imports, memo_paths, serializers, types
+from reflex_base.utils.exceptions import VarTypeError
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -40,7 +46,12 @@ from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
 from reflex.istate.delta import _resolve_delta
-from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
+from reflex.istate.storage import (
+    ClientStorageBase,
+    Cookie,
+    LocalStorage,
+    SessionStorage,
+)
 from reflex.state import BaseState, cache_initial_snapshot
 from reflex.utils import path_ops
 from reflex.utils.exec import is_prod_mode
@@ -326,15 +337,67 @@ def _compile_client_storage_field(
         if isinstance(field.default, field_type):
             cs_obj = field.default
         elif isinstance(field.type_, type) and issubclass(field.type_, field_type):
-            # A factory-backed field carries its options in what it produces.
-            produced = (
-                field.default_factory() if field.default_factory is not None else None
-            )
-            cs_obj = produced if isinstance(produced, field_type) else field.type_()
+            if field.default is MISSING:
+                _raise_factory_storage(field, field.type_)
+            cs_obj = field.type_()
         else:
             continue
         return field_type, cs_obj.options()
+    if (
+        not field._backend
+        and field.default is MISSING
+        and field.default_factory is not None
+        and _may_hold_str(field.outer_type_)
+    ):
+        # A factory that only works at runtime declares no storage.
+        try:
+            produced = field.default_factory()
+        except Exception:
+            return None, None
+        if isinstance(produced, ClientStorageBase):
+            _raise_factory_storage(field, type(produced))
     return None, None
+
+
+def _may_hold_str(type_: Any) -> bool:
+    """Whether a value of the type can be a browser storage value, a str subclass.
+
+    Args:
+        type_: The field's annotated type.
+
+    Returns:
+        Whether the type accepts a str or a str subclass.
+    """
+    type_ = types.resolve_type_alias(type_)
+    if type_ is Any:
+        return True
+    if types.is_union(type_):
+        return any(_may_hold_str(arg) for arg in get_args(type_))
+    if get_origin(type_) is Literal:
+        return any(isinstance(arg, str) for arg in get_args(type_))
+    return types.safe_issubclass(str, type_) or types.safe_issubclass(type_, str)
+
+
+def _raise_factory_storage(field: Field, storage_type: type) -> None:
+    """Reject a browser storage default produced by a default_factory.
+
+    The storage name and options must be known when the app compiles, so a
+    storage var declares them with a storage value as its default.
+
+    Args:
+        field: The field with a default_factory.
+        storage_type: The browser storage type the field declares or produces.
+
+    Raises:
+        VarTypeError: Always.
+    """
+    owner = field._owner.__name__ if field._owner is not None else ""
+    msg = (
+        f"Browser storage var '{owner}.{field._name}' cannot use a default_factory."
+        " Declare the storage as the default value instead, such as"
+        f' `{field._name}: str = rx.{storage_type.__name__}("", name={field._name!r})`.'
+    )
+    raise VarTypeError(msg)
 
 
 def _compile_client_storage_recursive(
@@ -528,7 +591,7 @@ def compile_experimental_component_memo(
             )
             render._imports_cache = analysis.imports
         # Strings returned by the root's ``add_hooks`` can reference symbols
-        # (``refs``, ``StateContexts``, etc.) that normally reach this module
+        # (``refs``, ``EventLoopContext``, etc.) that normally reach this module
         # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
         # imports are side-effect-free and dedup cleanly, so pulling the
         # whole subtree's imports here is safe even when some go unused.
@@ -568,6 +631,15 @@ def compile_experimental_component_memo(
     # var itself, so a custom wrapper brings its own imports and ``None``
     # pulls in nothing.
     wrapper = definition.wrapper
+    if (
+        definition.is_instance_boundary
+        and f"$/{constants.Dirs.CLIENT_STATE_PATH}" in imports
+    ):
+        # This memo is a real component instance boundary and its body uses
+        # client state, so wrap it in a client state scope: names it declares are
+        # owned per instance, and its descendants resolve to the same slots.
+        # Gated on actual usage so pages don't pay a provider per memo.
+        wrapper = scoped_memo_wrapper(wrapper, local_client_state_names(hooks))
     if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)
