@@ -401,6 +401,8 @@ async def chain_updates(
             # of being cleaned, and the next flush sends it.
             concurrent = bool(ctx.inline_tasks)
             seen = _written_snapshot(root_state) if concurrent else {}
+            # A provider suppressing a resolution error leaves nothing to send.
+            delta = {}
             async with event_scope(root_state):
                 delta = await root_state._get_resolved_delta()
                 while concurrent and _written_since(
@@ -864,6 +866,9 @@ class BaseStateEventProcessor(EventProcessor):
                                 root_state, registered_handler.handler.fn.__qualname__
                             )
                             raise
+                if not registered_handler.handler.is_background:
+                    # The scope suppressed the handler's exception.
+                    return None
             finally:
                 await ctx.release_lock()
         # Otherwise drop the state lock and start processing the background task

@@ -1602,6 +1602,12 @@ async def test_proxy_aexit_cleans_state_when_scope_provider_raises(
     assert not root_state.dirty_vars
     assert not root_state.dirty_substates
     assert not proxy._self_actx_lock.locked()
+    # The state manager's lock is released too: the next event can enter.
+    async with (
+        asyncio.timeout(1),
+        state_manager.modify_state(BaseStateToken(ident=token, cls=ScopedProxyState)),
+    ):
+        pass
 
 
 @pytest.mark.asyncio
@@ -1657,6 +1663,60 @@ async def test_proxy_block_exception_suppressed_by_scope_provider(
         scope._providers.remove(provider)
 
     assert persisted == [[1, 3]]
+    assert not proxy._self_actx_lock.locked()
+
+
+class ExplodingProxyState(BaseState):
+    """A test state whose computed var raises once armed."""
+
+    explode: bool = False
+
+    @rx.var
+    def boom(self) -> str:
+        """Raise once armed.
+
+        Returns:
+            An empty string while unarmed.
+
+        Raises:
+            RuntimeError: Once armed.
+        """
+        if self.explode:
+            msg = "boom"
+            raise RuntimeError(msg)
+        return ""
+
+
+@pytest.mark.asyncio
+async def test_proxy_aexit_drops_delta_suppressed_by_scope_provider(
+    token: str,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """A provider suppressing an exit delta resolution error drops that delta.
+
+    Regression: the delta was left unassigned, so leaving the block raised
+    UnboundLocalError.
+    """
+    from reflex_base.event.processor import scope
+
+    state_manager = attached_mock_event_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=ExplodingProxyState)
+    ) as state:
+        proxy = StateProxy(await state.get_state(ExplodingProxyState))
+    root_state = proxy.__wrapped__._get_root_state()
+
+    async def provider(_root_state):  # noqa: RUF029 - providers are awaited
+        return suppress(RuntimeError)
+
+    scope.register_event_scope_provider(provider)
+    try:
+        async with proxy:
+            proxy.explode = True
+    finally:
+        scope._providers.remove(provider)
+
+    assert not root_state.dirty_vars
     assert not proxy._self_actx_lock.locked()
 
 

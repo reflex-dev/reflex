@@ -350,7 +350,9 @@ class StateProxy(wrapt.ObjectProxy):
                 root_state = self.__wrapped__._get_root_state()
                 # Re-derive the ambient event scope (e.g. i18n locale) from
                 # the state the handler just changed: computed vars are
-                # recomputed during delta resolution.
+                # recomputed during delta resolution. A provider suppressing a
+                # resolution error leaves nothing to send.
+                delta = {}
                 try:
                     async with event_scope(root_state):
                         delta = await root_state._get_resolved_delta()

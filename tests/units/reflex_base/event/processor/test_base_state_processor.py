@@ -3003,6 +3003,100 @@ async def test_hydrate_snapshot_uses_the_scope_of_the_browser_storage(
     assert sent == ["de", "de"]
 
 
+async def _suppress_runtime_error(  # noqa: RUF029 - providers are awaited
+    root_state: BaseState,
+) -> contextlib.AbstractContextManager[None]:
+    """An event-scope provider suppressing RuntimeError.
+
+    Args:
+        root_state: The client's root state (unused).
+
+    Returns:
+        A context manager suppressing RuntimeError.
+    """
+    return contextlib.suppress(RuntimeError)
+
+
+async def test_scope_suppressing_delta_resolution_drops_the_delta(
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A provider suppressing a delta resolution error drops that delta.
+
+    Regression: the delta was left unassigned, so the suppression surfaced as
+    an UnboundLocalError.
+
+    Args:
+        real_base_state_processor: The event processor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    handled: list[Exception] = []
+
+    class ExplodingDeltaState(State):
+        explode: bool = False
+
+        @rx.var
+        def boom(self) -> str:
+            if self.explode:
+                msg = "boom"
+                raise RuntimeError(msg)
+            return ""
+
+        @event
+        def arm(self):
+            """Make the next delta resolution raise."""
+            self.explode = True
+
+    monkeypatch.setattr(scope, "_providers", [_suppress_runtime_error])
+    real_base_state_processor.backend_exception_handler = handled.append
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, Event.from_event_type(ExplodingDeltaState.arm())[0]
+        )
+
+    assert handled == []
+
+
+async def test_scope_suppressing_handler_error_runs_handler_once(
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A provider suppressing a foreground handler's error ends the event.
+
+    Regression: the handler then fell through to the background path and ran a
+    second time on a state proxy.
+
+    Args:
+        real_base_state_processor: The event processor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    calls: list[str] = []
+
+    class FailingHandlerState(State):
+        @event
+        def fail(self):
+            """Raise after recording the call.
+
+            Raises:
+                RuntimeError: Always.
+            """
+            calls.append(type(self).__name__)
+            msg = "fail"
+            raise RuntimeError(msg)
+
+    monkeypatch.setattr(scope, "_providers", [_suppress_runtime_error])
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, Event.from_event_type(FailingHandlerState.fail())[0]
+        )
+
+    assert calls == ["FailingHandlerState"]
+
+
 @pytest.mark.parametrize(
     "processor_state_manager", ["in_process", "redis"], indirect=True
 )
