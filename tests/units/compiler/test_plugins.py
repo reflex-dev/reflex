@@ -1361,6 +1361,32 @@ def test_cond_branches_get_distinct_lifecycle_wrappers_without_auto_memoization(
     assert code.index(f"jsx({first},") < code.index(f"jsx({second},")
 
 
+class SlotHolder(Component):
+    """A component that takes another component in a prop."""
+
+    tag = "SlotHolder"
+    library = "slot-holder-lib"
+
+    slot: Var[Component]
+
+
+def test_prop_component_lifecycle_stays_inside_cond_branch_without_auto_memoization() -> (
+    None
+):
+    """A lifecycle hook of a component held in a prop stays in its branch."""
+    code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.cond(
+            Var("flag", _var_type=bool),
+            SlotHolder.create(slot=rx.text("x", on_mount=rx.console_log("mounted"))),
+            rx.text("hidden"),
+        )
+    )
+
+    assert "useEffect(" not in code
+    (wrapper,) = compile_ctx.memoize_wrappers
+    assert code.index("?(") < code.index(f"jsx({wrapper},") < code.index('"hidden"')
+
+
 def test_foreach_item_lifecycle_gets_loop_var_without_auto_memoization() -> None:
     """An item's lifecycle hook compiles into a wrapper that gets the loop var."""
     from reflex.compiler.compiler import compile_memo_components

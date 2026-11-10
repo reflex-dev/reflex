@@ -165,14 +165,11 @@ def _should_memoize(component: Component, scope_only: bool = False) -> bool:
     if scope_only and strategy is not MemoizationStrategy.SNAPSHOT:
         if component.tag is None:
             return False
-        if component._memoization_mode.disposition == MemoizationDisposition.ALWAYS:
-            return True
         # A lifecycle event or an added hook belongs to one rendered instance,
         # so it must not move up into the page function.
-        return bool(
-            component._get_mount_lifecycle_hook()
-            or component._get_hooks() is not None
-            or component._get_added_hooks()
+        return (
+            component._memoization_mode.disposition == MemoizationDisposition.ALWAYS
+            or _has_instance_hooks(component)
         )
     if isinstance(component, Bare):
         # A stateful value will be wrapped in a separate component. Match the
