@@ -12,6 +12,7 @@ from __future__ import annotations
 import copy
 import functools
 import gettext as _gettext_module
+import io
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
     import datetime
     import decimal
 
+    from babel.messages.catalog import Catalog
     from reflex_base.vars.base import Var
 
 # The locale in effect for the current client while an event is processed.
@@ -79,6 +81,25 @@ def _catalog_path(locale: str) -> Path | None:
         return None
     path = catalog_dir / f"{locale}.po"
     return path if path.exists() else None
+
+
+class _CatalogTranslations(_gettext_module.GNUTranslations):
+    """A catalog's translator, picking plurals by the rule the client compiles."""
+
+    def __init__(self, catalog: Catalog) -> None:
+        """Compile the catalog into a gettext translator.
+
+        Args:
+            catalog: The catalog from ``read_po_catalog``.
+        """
+        from babel.messages.mofile import write_mo
+
+        buffer = io.BytesIO()
+        write_mo(buffer, catalog)
+        buffer.seek(0)
+        super().__init__(buffer)
+        # Babel leaves Plural-Forms out of the .mo for a locale it has no data for.
+        self.plural = _gettext_module.c2py(catalog.plural_expr)
 
 
 class _SourceTranslations(_gettext_module.NullTranslations):
@@ -149,17 +170,9 @@ def _get_translations(locale: str) -> _gettext_module.NullTranslations:
             _gettext_module.NullTranslations()
         )
     else:
-        import io
-
-        from babel.messages.mofile import write_mo
-
         from .catalog import read_po_catalog
 
-        catalog = read_po_catalog(path, locale)
-        buffer = io.BytesIO()
-        write_mo(buffer, catalog)
-        buffer.seek(0)
-        translations = _gettext_module.GNUTranslations(buffer)
+        translations = _CatalogTranslations(read_po_catalog(path, locale))
 
     translations.add_fallback(_source_translations())
     _translations[locale] = translations

@@ -1,8 +1,8 @@
 """Tests for compiling .po catalogs into per-locale JS modules."""
 
-import dataclasses
 from pathlib import Path
 
+import pytest
 from babel.messages.catalog import Catalog
 from reflex_i18n.catalog import (
     compile_catalog_module,
@@ -77,20 +77,6 @@ def test_compile_catalog_polish_plural_expr():
     assert "n%10>=2" in module
 
 
-@dataclasses.dataclass
-class _FakeCatalog:
-    """Minimal catalog stand-in for exercising plural-expr validation."""
-
-    plural_expr: str
-
-
-def test_compile_catalog_rejects_malicious_plural_expr():
-    catalog = _FakeCatalog("alert('xss')")
-    module = compile_catalog_module(catalog, [], "de", is_default_locale=False)  # pyright: ignore[reportArgumentType]
-    assert "alert" not in module
-    assert "export const plural = (n) => Number(n != 1);" in module
-
-
 def test_compile_catalog_skips_fuzzy_entries():
     # A fuzzy entry carries a stale translation; the client must fall back to
     # the source msgid (matching the server, where write_mo excludes fuzzy).
@@ -141,6 +127,18 @@ def test_read_po_catalog_uses_locale_plural_rules(tmp_path: Path):
     catalog = read_po_catalog(_write_po(tmp_path, "fr"), "fr")
     assert catalog.plural_expr == "(n > 1)"
     assert read_po_catalog(_write_po(tmp_path, "pt-BR"), "pt-BR").locale is not None
+
+
+@pytest.mark.parametrize("expr", ["alert('xss')", "(n !== 1)"])
+def test_read_po_catalog_replaces_an_unparsable_plural_rule(tmp_path: Path, expr: str):
+    # The rule is embedded in the client's JS and run by gettext on the server;
+    # one gettext cannot parse (code, or JS-only syntax) gives way to the
+    # generic rule for both.
+    header = f'"Plural-Forms: nplurals=2; plural={expr};\\n"'
+    catalog = read_po_catalog(_write_po(tmp_path, "de", header), "de")
+    assert catalog.plural_expr == "n != 1"
+    module = compile_catalog_module(catalog, [], "de", is_default_locale=False)
+    assert "export const plural = (n) => Number(n != 1);" in module
 
 
 def test_read_po_catalog_tolerates_unknown_locale(tmp_path: Path):

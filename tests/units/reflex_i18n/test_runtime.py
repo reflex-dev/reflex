@@ -37,12 +37,14 @@ def clean_state():
     set_active_i18n_config(None)
 
 
-def _write_po(catalog_dir: Path, locale: str, body: str) -> None:
+def _write_po(
+    catalog_dir: Path, locale: str, body: str, plural: str = "(n != 1)"
+) -> None:
     catalog_dir.mkdir(parents=True, exist_ok=True)
     header = (
         'msgid ""\nmsgstr ""\n'
         '"Content-Type: text/plain; charset=UTF-8\\n"\n'
-        '"Plural-Forms: nplurals=2; plural=(n != 1);\\n"\n\n'
+        f'"Plural-Forms: nplurals=2; plural={plural};\\n"\n\n'
     )
     (catalog_dir / f"{locale}.po").write_text(header + body, encoding="utf-8")
 
@@ -119,6 +121,42 @@ def test_untranslated_plural_follows_the_default_locale_rule(
     with use_locale(locale):
         assert ngettext("{n} article", "{n} articles", 0) == "{n} article"
         assert ngettext("{n} article", "{n} articles", 2) == "{n} articles"
+
+
+@pytest.mark.parametrize("locale", [None, "en", "de"])
+def test_unparsable_plural_rule_falls_back_to_the_generic_one(
+    tmp_path: Path, monkeypatch, locale: str | None
+):
+    # `!==` is JS, not C: gettext cannot parse it, so the generic rule applies,
+    # as on the client, rather than every lookup raising.
+    monkeypatch.chdir(tmp_path)
+    for code in ("en", "de"):
+        _write_po(tmp_path / "locales", code, "", plural="(n !== 1)")
+    set_active_i18n_config(I18nConfig(locales=["en", "de"], default_locale="en"))
+
+    with use_locale(locale):
+        assert ngettext("{n} item", "{n} items", 1) == "{n} item"
+        assert ngettext("{n} item", "{n} items", 2) == "{n} items"
+
+
+def test_plural_rule_of_a_locale_babel_lacks_comes_from_its_catalog(
+    tmp_path: Path, monkeypatch
+):
+    # Babel writes no Plural-Forms into the .mo for a tag it has no data for;
+    # the catalog's own rule still picks the form, as on the client.
+    monkeypatch.chdir(tmp_path)
+    _write_po(
+        tmp_path / "locales",
+        "qq-ZZ",
+        'msgid "{n} item"\nmsgid_plural "{n} items"\n'
+        'msgstr[0] "one"\nmsgstr[1] "other"\n',
+        plural="(n > 1)",
+    )
+    set_active_i18n_config(I18nConfig(locales=["en", "qq-ZZ"], default_locale="en"))
+
+    with use_locale("qq-ZZ"):
+        assert ngettext("{n} item", "{n} items", 0) == "one"
+        assert ngettext("{n} item", "{n} items", 2) == "other"
 
 
 def test_pgettext_context(tmp_path: Path, monkeypatch):
