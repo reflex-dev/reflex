@@ -522,6 +522,7 @@ class _MemoGroup:
 
 _MOMENT_ALL_LOCALES_IMPORT = "moment/min/locales"
 _MOMENT_LOCALE_IMPORT_PREFIX = "moment/locale/"
+_MOMENT_IMPORT_TAG = "moment"
 
 
 def _has_moment_all_locales_import(
@@ -622,23 +623,31 @@ def _compile_memo_components(
     all_import_dicts.extend(item[2] for item in unmirrored)
     if page_imports is not None:
         all_import_dicts.append(page_imports)
-    if shared_imports is not None and any(
+    has_all_locales_import = any(
         _has_moment_all_locales_import(imports) for imports in all_import_dicts
-    ):
-        moment_library = next(
+    )
+    moment_library = next(
+        (
             library
             for imports in all_import_dicts
             for library, import_vars in imports.items()
             if library.startswith("moment@")
-            and any(import_var.tag == "moment" for import_var in import_vars)
-        )
+            and any(import_var.tag == _MOMENT_IMPORT_TAG for import_var in import_vars)
+        ),
+        None,
+    )
+    if (
+        shared_imports is not None
+        and has_all_locales_import
+        and moment_library is not None
+    ):
         for imports in all_import_dicts:
             _remove_moment_locale_side_effects(imports)
         _extend_imports_in_place(
             shared_imports,
             {
                 "": [ImportVar(tag=_MOMENT_ALL_LOCALES_IMPORT)],
-                moment_library: [ImportVar(tag="moment", is_default=True)],
+                moment_library: [ImportVar(tag=_MOMENT_IMPORT_TAG, is_default=True)],
             },
         )
 

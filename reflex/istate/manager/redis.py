@@ -296,9 +296,6 @@ class StateManagerRedis(StateManager):
         if self._oplock_enabled and self.oplock_hold_time_ms >= lock_expiration:
             msg = f"The opportunistic lock hold time({self.oplock_hold_time_ms}) must be less than the lock expiration time({lock_expiration})."
             raise InvalidLockWarningThresholdError(msg)
-        with contextlib.suppress(RuntimeError):
-            asyncio.get_running_loop()  # Check if we're in an event loop.
-            self._ensure_lock_task()
 
     def _get_required_state_classes(
         self,
@@ -448,9 +445,12 @@ class StateManagerRedis(StateManager):
         # Read the tree atomically with one command instead of a transaction
         # containing a GET for each state. An already populated tree needs no IO.
         redis_states = (
-            await self.redis.mget([
-                token._state_key(state_cls) for state_cls in required_state_classes
-            ])
+            cast(
+                "list[bytes | None]",
+                await self.redis.mget([
+                    token._state_key(state_cls) for state_cls in required_state_classes
+                ]),
+            )
             if required_state_classes
             else []
         )

@@ -471,6 +471,22 @@ def test_moment_literal_locale_keeps_narrow_import() -> None:
     assert shared_imports == {}
 
 
+def test_moment_all_locales_without_moment_import_is_left_alone() -> None:
+    """Do not fail when a side-effect import has no default Moment import."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    page_imports = {"": [ImportVar(tag="moment/min/locales")]}
+    shared_imports: dict[str, list[ImportVar]] = {}
+
+    compile_memo_components(
+        page_imports=page_imports,
+        shared_imports=shared_imports,
+    )
+
+    assert page_imports == {"": [ImportVar(tag="moment/min/locales")]}
+    assert shared_imports == {}
+
+
 def test_foreach_snapshot_memo_applies_component_styles() -> None:
     """Foreach memo bodies must render styled children after preview rendering.
 
