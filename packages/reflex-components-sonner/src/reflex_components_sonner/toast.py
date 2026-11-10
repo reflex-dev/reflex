@@ -125,7 +125,6 @@ class ToastProps(NoExtrasAllowedProps):
     # Class name for the toast.
     class_name: str | None
 
-    # XXX: These still do not seem to work Custom style for the toast primary button.
     action_button_styles: Style | None
 
     # Custom style for the toast secondary button.
@@ -148,6 +147,10 @@ class ToastProps(NoExtrasAllowedProps):
             The object as a dictionary with ToastAction fields intact.
         """
         d = super().dict(*args, **kwargs)
+        if "actionButtonStyles" in d:
+            d["actionButtonStyle"] = d.pop("actionButtonStyles")
+        if "cancelButtonStyles" in d:
+            d["cancelButtonStyle"] = d.pop("cancelButtonStyles")
         # Keep these fields as ToastAction so they can be serialized specially
         if "action" in d:
             d["action"] = self.action
