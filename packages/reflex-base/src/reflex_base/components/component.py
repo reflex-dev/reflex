@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import builtins
 import contextlib
+import contextvars
 import copy
 import dataclasses
 import functools
@@ -322,6 +323,15 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
                 namespace[field_name], ComponentField
             ):
                 namespace[field_name] = field_
+
+
+# The variables that the generated function under evaluation binds: the
+# parameters of a memo function, then the loop variables of each enclosing
+# ``rx.foreach``. A component that compiles to its own function reads these to
+# receive them as props.
+ENCLOSING_SCOPE_VARS: contextvars.ContextVar[tuple[str, ...]] = contextvars.ContextVar(
+    "ENCLOSING_SCOPE_VARS", default=()
+)
 
 
 _COMPILE_CACHE_ATTRS = (

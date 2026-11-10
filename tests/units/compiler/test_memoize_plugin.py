@@ -506,8 +506,12 @@ def _split_item_component(code: str) -> tuple[str, str, str]:
             "useEffect(() => {",
         ),
         (lambda item: LabelLogger.create(label=item), "useLabel(item_rx_state_)"),
+        (
+            lambda item, position: LabelLogger.create(item, label=position.to_string()),
+            "useLabel((JSON.stringify(position_rx_state_)))",
+        ),
     ],
-    ids=["on_mount", "add_hooks"],
+    ids=["on_mount", "add_hooks", "index_var"],
 )
 def test_foreach_item_hooks_run_in_an_item_component(
     render_item: Callable[[Var], Component], hook_marker: str
@@ -554,6 +558,85 @@ def test_nested_foreach_item_component_receives_outer_loop_vars() -> None:
     call = memo_body.partition(f"jsx({name},")[2].partition(")")[0]
     assert "outer_rx_state_" in call
     assert "inner_rx_state_" in call
+
+
+class OtherMemoState(BaseState):
+    """A second state, read only by an item key."""
+
+    prefix: Field[str] = field(default="k")
+
+
+def test_foreach_item_key_state_stays_in_the_outer_scope() -> None:
+    """The state that an item key reads is declared where the key is evaluated."""
+    code = _foreach_memo_code(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: rx.text(
+                item,
+                key=OtherMemoState.prefix + item,
+                on_mount=rx.console_log(item),
+            ),
+        )
+    )
+
+    name, _definition, memo_body = _split_item_component(code)
+    before_loop, _, loop_body = memo_body.partition("Array.prototype.map.call(")
+    other_state = OtherMemoState.get_full_name().replace(".", "__")
+    assert f"const {other_state} = useStateContext(" in before_loop
+    assert f"jsx({name},{{key:({other_state}.prefix" in loop_body
+
+
+class SlotHolder(Component):
+    """A component that takes another component in a prop."""
+
+    tag = "SlotHolder"
+    library = "slot-holder-lib"
+
+    slot: Var[Component]
+
+
+def test_foreach_item_scopes_lifecycle_of_a_prop_component() -> None:
+    """A lifecycle event of a component passed in a prop runs once per item."""
+    code = _foreach_memo_code(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: SlotHolder.create(
+                item, slot=rx.text("x", on_mount=rx.console_log("mounted"))
+            ),
+        )
+    )
+
+    _name, definition, memo_body = _split_item_component(code)
+    assert "useEffect(() => {" in definition
+    assert "useEffect(() => {" not in memo_body
+
+
+@rx.memo
+def _memo_with_loop(label: rx.Var[str]) -> rx.Component:
+    return rx.box(
+        rx.foreach(
+            ["a"],
+            lambda item: rx.text(label, on_mount=rx.console_log(item)),
+        )
+    )
+
+
+def test_foreach_item_component_receives_memo_params() -> None:
+    """An item inside a memo function gets the memo parameters as props."""
+    from reflex_base.components.memo import MEMOS
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    definition = next(
+        memo for memo in MEMOS.values() if memo.python_name == "_memo_with_loop"
+    )
+    memo_files, _memo_imports = compile_memo_components(memos=(definition,))
+    code = "".join(code for _path, code in memo_files)
+
+    name, item_definition, memo_body = _split_item_component(code)
+    assert "labelRxMemo" in item_definition.partition("=>")[0]
+    call = memo_body.partition(f"jsx({name},")[2].partition(")")[0]
+    assert "labelRxMemo" in call
 
 
 def test_foreach_item_without_scoped_hooks_renders_inline() -> None:

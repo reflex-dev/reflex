@@ -29,6 +29,7 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_base import constants
 from reflex_base.components.app_wraps import collect_subtree_app_wraps
 from reflex_base.components.component import (
+    ENCLOSING_SCOPE_VARS,
     BaseComponent,
     Component,
     _field_values_equal,
@@ -1242,7 +1243,12 @@ def _evaluate_memo_function(
         else:
             keyword_args[param.name] = placeholder
 
-    return fn(*positional_args, **keyword_args)
+    # A memo function is a new scope: only its own parameters are bound.
+    scope = ENCLOSING_SCOPE_VARS.set(tuple(param.placeholder_name for param in params))
+    try:
+        return fn(*positional_args, **keyword_args)
+    finally:
+        ENCLOSING_SCOPE_VARS.reset(scope)
 
 
 def _normalize_component_return(value: Any) -> Component | None:

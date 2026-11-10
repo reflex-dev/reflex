@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextvars
 import functools
 import inspect
 import re
@@ -11,7 +10,7 @@ from hashlib import md5
 from typing import Any, cast
 
 from reflex_base.compiler.templates import _RenderUtils
-from reflex_base.components.component import Component, field
+from reflex_base.components.component import ENCLOSING_SCOPE_VARS, Component, field
 from reflex_base.components.tags import IterTag
 from reflex_base.constants import MemoizationMode
 from reflex_base.constants.state import FIELD_MARKER
@@ -40,12 +39,6 @@ def _string_chars_operation(string: Var[Any]):
     )
 
 
-# The loop variables of the foreach components whose render function is running.
-_ENCLOSING_LOOP_VARS: contextvars.ContextVar[tuple[str, ...]] = contextvars.ContextVar(
-    "_ENCLOSING_LOOP_VARS", default=()
-)
-
-
 def _has_instance_hooks(component: Component) -> bool:
     """Check whether a subtree has hooks that belong to one component instance.
 
@@ -68,7 +61,7 @@ def _has_instance_hooks(component: Component) -> bool:
         return False
     return any(
         isinstance(child, Component) and _has_instance_hooks(child)
-        for child in component.children
+        for child in (*component.children, *component._get_components_in_props())
     )
 
 
@@ -99,8 +92,8 @@ class Foreach(Component):
         is_javascript_property=False,
     )
 
-    _loop_vars: tuple[str, ...] = field(
-        doc="The loop variables in scope for an item: those of the enclosing foreach components, then its own.",
+    _scope_vars: tuple[str, ...] = field(
+        doc="The variables in scope for an item: those the enclosing generated function binds, then the loop variables.",
         default=(),
         is_javascript_property=False,
     )
@@ -179,10 +172,10 @@ class Foreach(Component):
         )
         tag = component._render()
         loop_vars = (tag.arg_var_name, tag.index_var_name)
-        component._loop_vars = tuple(
-            dict.fromkeys((*_ENCLOSING_LOOP_VARS.get(), *loop_vars))
+        component._scope_vars = tuple(
+            dict.fromkeys((*ENCLOSING_SCOPE_VARS.get(), *loop_vars))
         )
-        enclosing = _ENCLOSING_LOOP_VARS.set(component._loop_vars)
+        enclosing = ENCLOSING_SCOPE_VARS.set(component._scope_vars)
         try:
             # Keep a ref to a rendered component to determine correct imports/hooks/styles.
             item = tag.render_component()
@@ -193,7 +186,7 @@ class Foreach(Component):
                 "https://reflex.dev/docs/library/dynamic-rendering/foreach/",
             ).with_traceback(e.__traceback__) from None
         finally:
-            _ENCLOSING_LOOP_VARS.reset(enclosing)
+            ENCLOSING_SCOPE_VARS.reset(enclosing)
         component.children = [item]
         reads_loop_var = re.compile(
             rf"(?<![\w$])(?:{'|'.join(map(re.escape, loop_vars))})(?![\w$])"
@@ -206,14 +199,14 @@ class Foreach(Component):
     def _item_component(self) -> tuple[str, str]:
         """Compile the item into a module-level component.
 
-        The item's hooks run in that component, once per item, and the loop
-        variables reach it as props.
+        The item's hooks run in that component, once per item, and the
+        variables in scope reach it as props.
 
         Returns:
             The component name and its definition.
         """
         item = self.children[0]
-        params = ",".join(self._loop_vars)
+        params = ",".join(self._scope_vars)
         hooks = "\n".join(item._get_all_hooks())
         body = _RenderUtils.render(item.render())
         name = f"ForeachItem_{md5(f'{params}{hooks}{body}'.encode()).hexdigest()}"
@@ -221,6 +214,23 @@ class Foreach(Component):
             name,
             f"const {name} = (({{{params}}}) => {{\n{hooks}\nreturn ({body})\n}});",
         )
+
+    def _item_key(self) -> Var:
+        """Get the key of the rendered item.
+
+        Returns:
+            The key, which the loop body evaluates outside the item component.
+        """
+        return LiteralVar.create(cast("Component", self.children[0]).key)
+
+    def _item_key_hooks(self) -> dict[str, VarData | None]:
+        """Get the hooks that the item key needs where the loop body evaluates it.
+
+        Returns:
+            The hooks of the key.
+        """
+        var_data = self._item_key()._get_all_var_data()
+        return dict.fromkeys(var_data.hooks) if var_data is not None else {}
 
     def _get_all_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the internal hooks that compile outside the loop body.
@@ -230,7 +240,7 @@ class Foreach(Component):
             otherwise the hooks of the whole subtree.
         """
         if self._item_scoped:
-            return dict(self._get_hooks_internal())
+            return {**self._get_hooks_internal(), **self._item_key_hooks()}
         return super()._get_all_hooks_internal()
 
     def _get_all_hooks(self) -> dict[str, VarData | None]:
@@ -242,7 +252,7 @@ class Foreach(Component):
         """
         if not self._item_scoped:
             return super()._get_all_hooks()
-        code = dict(self._get_hooks_internal())
+        code = {**self._get_hooks_internal(), **self._item_key_hooks()}
         if (hooks := self._get_hooks()) is not None:
             code[hooks] = None
         code.update(self._get_added_hooks())
@@ -312,9 +322,8 @@ class Foreach(Component):
         )
         if self._item_scoped:
             name, _ = self._item_component()
-            key = LiteralVar.create(cast("Component", self.children[0]).key)
             rendered["item_call"] = (
-                f"jsx({name},{{key:{key!s},{','.join(self._loop_vars)}}},)"
+                f"jsx({name},{{key:{self._item_key()!s},{','.join(self._scope_vars)}}},)"
             )
         return rendered
 
