@@ -21,6 +21,7 @@ from abc import ABCMeta
 from collections.abc import Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from dataclasses import MISSING
 from decimal import Decimal
+from itertools import islice
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -2239,8 +2240,8 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Mapping[NoReturn, NoReturn]
             return Mapping[
-                unionize(*{figure_out_type(k) for k in list(value.keys())[:100]}),
-                unionize(*{figure_out_type(v) for v in list(value.values())[:100]}),
+                unionize(*{figure_out_type(k) for k in islice(value.keys(), 100)}),
+                unionize(*{figure_out_type(v) for v in islice(value.values(), 100)}),
             ]
     return type(value)
 
