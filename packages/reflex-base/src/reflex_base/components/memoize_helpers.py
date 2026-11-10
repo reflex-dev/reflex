@@ -246,6 +246,45 @@ def _is_structural_memoization_child(component: Component) -> bool:
     return bool(isinstance(component, Foreach))
 
 
+def scope_var_names(component: Component, *, recursive: bool) -> dict[str, None]:
+    """Get the scoped variables that a component reads from its surroundings.
+
+    A loop variable names itself in ``VarData.deps``, and every var built
+    from it carries that name. A generated function that the
+    component moves into must receive these names as props.
+
+    Args:
+        component: The component to inspect.
+        recursive: Whether the descendants move into the same function.
+
+    Returns:
+        The variable names, insertion-ordered, without those that a loop
+        inside the component binds itself.
+    """
+    from reflex_components_core.core.foreach import Foreach
+
+    names: dict[str, None] = {}
+    var_datas = [
+        *(
+            var._get_all_var_data()
+            for var in component._get_vars(include_children=False)
+        ),
+        *component._get_added_hooks().values(),
+    ]
+    for var_data in var_datas:
+        if var_data is not None:
+            names.update(dict.fromkeys(str(dep) for dep in var_data.deps))
+    if recursive:
+        for child in component.children:
+            if isinstance(child, Component):
+                names.update(scope_var_names(child, recursive=True))
+        if isinstance(component, Foreach):
+            tag = component._render()
+            names.pop(tag.arg_var_name, None)
+            names.pop(tag.index_var_name, None)
+    return names
+
+
 def passthrough_children_var(
     children: list[BaseComponent],
 ) -> ArrayVar[list[BaseComponent]] | None:
@@ -300,4 +339,5 @@ __all__ = [
     "get_memoized_event_triggers",
     "is_snapshot_boundary",
     "passthrough_children_var",
+    "scope_var_names",
 ]

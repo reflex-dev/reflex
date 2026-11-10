@@ -23,6 +23,7 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.utils import format as format_utils
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
@@ -448,6 +449,288 @@ def test_foreach_snapshot_memo_applies_component_styles() -> None:
     assert '["justifyContent"] : "space-between"' in foreach_code
 
 
+class LabelLogger(Component):
+    """A component whose added hook reads one of its props."""
+
+    tag = "LabelLogger"
+    library = "label-logger-lib"
+
+    label: Var[str]
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook that reads the label.
+
+        Returns:
+            The hook code.
+        """
+        return [f"useLabel({self.label!s})"]
+
+
+class OtherMemoState(BaseState):
+    """A second state, read only by an item key."""
+
+    prefix: Field[str] = field(default="k")
+
+
+def _foreach_memo_parts(
+    component_factory: Callable[[], Component],
+) -> tuple[str, str]:
+    """Compile a page and split its memo code into item wrappers and the loop.
+
+    Args:
+        component_factory: The page function.
+
+    Returns:
+        The code of the memo wrappers of loop items, and the Foreach memo body.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, _page_ctx = _compile_single_page(component_factory)
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    code = "".join(code for _path, code in memo_files)
+    definitions = code.split("\nexport const ")[1:]
+    return (
+        "".join(d for d in definitions if not d.startswith("Foreach_")),
+        "".join(d for d in definitions if d.startswith("Foreach_")),
+    )
+
+
+@pytest.mark.parametrize(
+    ("render_item", "hook_marker", "loop_var"),
+    [
+        (
+            lambda item: rx.text(item, on_mount=rx.console_log(item)),
+            "useEffect(() => {",
+            "item_rx_state_",
+        ),
+        (
+            lambda item: LabelLogger.create(label=item),
+            "useLabel(item_rx_state_)",
+            "item_rx_state_",
+        ),
+        (
+            lambda item, position: LabelLogger.create(item, label=position.to_string()),
+            "useLabel((JSON.stringify(position_rx_state_)))",
+            "position_rx_state_",
+        ),
+    ],
+    ids=["on_mount", "add_hooks", "index_var"],
+)
+def test_foreach_item_hooks_run_in_a_wrapper_called_in_the_loop(
+    render_item: Callable[..., Component], hook_marker: str, loop_var: str
+) -> None:
+    """A hook of a foreach item compiles into a wrapper that gets the loop var.
+
+    Regression for reflex-dev/reflex#7791: the hook was hoisted to the top of
+    the Foreach memo body, where the loop variable does not exist.
+    """
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(SpecialFormMemoState.items, render_item)
+    )
+
+    prop = format_utils.to_camel_case(loop_var)
+    assert f"{prop}:{loop_var}" in wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert hook_marker in wrappers
+    before_loop, _, loop_body = foreach.partition("Array.prototype.map.call(")
+    assert loop_var not in before_loop
+    assert hook_marker not in foreach
+    assert f"{prop}:{loop_var}" in loop_body
+
+
+def test_nested_foreach_item_wrapper_receives_outer_loop_var() -> None:
+    """A wrapper in an inner loop gets the loop variable of the outer loop."""
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda outer: rx.foreach(
+                SpecialFormMemoState.items,
+                lambda inner: rx.text(
+                    inner, on_mount=rx.console_log(f"{outer}-{inner}")
+                ),
+            ),
+        )
+    )
+
+    signature = wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert "outerRxState:outer_rx_state_" in signature
+    assert "innerRxState:inner_rx_state_" in signature
+    assert "useEffect(() => {" not in foreach
+    inner_loop = foreach.rpartition("Array.prototype.map.call(")[2]
+    assert "outerRxState:outer_rx_state_" in inner_loop
+    assert "innerRxState:inner_rx_state_" in inner_loop
+
+
+def test_foreach_item_key_state_is_declared_where_the_key_is_read() -> None:
+    """The state that an item key reads is declared in the loop's own function."""
+    _wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: rx.text(
+                item,
+                key=OtherMemoState.prefix + item,
+                on_mount=rx.console_log(item),
+            ),
+        )
+    )
+
+    before_loop, _, loop_body = foreach.partition("Array.prototype.map.call(")
+    other_state = OtherMemoState.get_full_name().replace(".", "__")
+    assert f"const {other_state} = useStateContext(" in before_loop
+    assert f"key:({other_state}.prefix" in loop_body
+
+
+def test_foreach_form_submit_handler_receives_loop_index() -> None:
+    """A form in a loop can use the loop index in its ``on_submit`` handler.
+
+    Regression for reflex-dev/reflex#3210: the form's submit hook was hoisted
+    out of the loop, where the index does not exist.
+    """
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            rx.Var.range(3),
+            lambda index: rx.form(
+                rx.input(name="input"),
+                on_submit=lambda form_data: SpecialFormMemoState.record(
+                    index, form_data
+                ),
+            ),
+        )
+    )
+
+    form = next(d for d in wrappers.split("\nexport const ") if d.startswith("Form_"))
+    signature = form.partition("memo((")[2].partition("=> {")[0]
+    assert "indexRxState:index_rx_state_" in signature
+    before_loop, _, loop_body = foreach.partition("Array.prototype.map.call(")
+    assert "index_rx_state_" not in before_loop
+    assert "indexRxState:index_rx_state_" in loop_body
+
+
+class SlotHolder(Component):
+    """A component that takes another component in a prop."""
+
+    tag = "SlotHolder"
+    library = "slot-holder-lib"
+
+    slot: Var[Component]
+
+
+class HookedSlotHolder(SlotHolder):
+    """A slot holder that adds a hook of its own."""
+
+    def add_hooks(self) -> list[str]:
+        """Add a hook that reads nothing.
+
+        Returns:
+            The hook code.
+        """
+        return ["useThing()"]
+
+
+class HiddenVarLogger(Component):
+    """A component whose added hook reads a var that is not one of its props."""
+
+    tag = "HiddenVarLogger"
+    library = "hidden-var-logger-lib"
+
+    def add_hooks(self) -> list[Var]:
+        """Add a hook that reads the hidden var.
+
+        Returns:
+            The hook, carrying the var data of the hidden var.
+        """
+        hidden: Var = vars(self)["hidden_var"]
+        return [Var(f"useHidden({hidden!s})", _var_data=hidden._get_all_var_data())]
+
+
+def test_foreach_wrapper_receives_loop_var_read_by_a_prop_component() -> None:
+    """A wrapper gets the loop variable that a component in its prop reads."""
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: HookedSlotHolder.create(slot=rx.text(item)),
+        )
+    )
+
+    signature = wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert "itemRxState:item_rx_state_" in signature
+    assert "itemRxState:item_rx_state_" in foreach
+
+
+def test_foreach_wraps_item_for_lifecycle_of_a_prop_component() -> None:
+    """A lifecycle event of a component held in a prop runs once per item."""
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: SlotHolder.create(
+                item, slot=rx.text("x", on_mount=rx.console_log(item))
+            ),
+        )
+    )
+
+    assert "useEffect(() => {" in wrappers
+    assert "useEffect(() => {" not in foreach
+    signature = wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert "itemRxState:item_rx_state_" in signature
+
+
+def test_foreach_wrapper_receives_loop_var_read_by_an_added_hook() -> None:
+    """A wrapper gets the loop variable that only an added hook reads."""
+
+    def render_item(item: Var) -> Component:
+        logger = HiddenVarLogger.create()
+        vars(logger)["hidden_var"] = item
+        return logger
+
+    wrappers, _foreach = _foreach_memo_parts(
+        lambda: rx.foreach(SpecialFormMemoState.items, render_item)
+    )
+
+    assert "useHidden(item_rx_state_)" in wrappers
+    signature = wrappers.partition("memo((")[2].partition("=> {")[0]
+    assert "itemRxState:item_rx_state_" in signature
+
+
+def test_foreach_snapshot_wrapper_passes_loop_var_to_nested_wrapper() -> None:
+    """A snapshot wrapper receives the loop variable that a wrapper inside it needs."""
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: rx.auto_scroll(rx.text("x", on_mount=rx.console_log(item))),
+        )
+    )
+
+    auto_scroll = wrappers[wrappers.index("const Autoscroll_") :]
+    signature, _, body = auto_scroll.partition("memo((")[2].partition("=> {")
+    assert "itemRxState:item_rx_state_" in signature
+    assert "itemRxState:item_rx_state_" in body
+    assert "itemRxState:item_rx_state_" in foreach
+
+
+def test_foreach_snapshot_wrapper_call_has_no_children() -> None:
+    """A snapshot wrapper renders its own subtree; the loop does not render it again."""
+    _wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            SpecialFormMemoState.items,
+            lambda _item: rx.auto_scroll(rx.text(OtherMemoState.prefix)),
+        )
+    )
+
+    other_state = OtherMemoState.get_full_name().replace(".", "__")
+    assert other_state not in foreach
+
+
+def test_foreach_item_without_own_hooks_renders_inline() -> None:
+    """An item that only reads state gets no wrapper of its own."""
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(SpecialFormMemoState.items, lambda item: rx.text(item))
+    )
+
+    assert not wrappers
+    assert "itemRxState" not in foreach
+
+
 def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:
     """Foreach owns its own snapshot while the parent stays passthrough.
 
@@ -827,14 +1110,16 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
     )
 
     def fake_create_passthrough_component_memo(
-        component: Component, source_module: str | None = None
+        component: Component,
+        source_module: str | None = None,
+        scope_vars: tuple[str, ...] = (),
     ):
         definition = SimpleNamespace(
             export_name=tag,
             component=component,
             source_module=source_module,
         )
-        return (lambda definition=definition: definition), definition
+        return (lambda definition=definition, **_props: definition), definition
 
     monkeypatch.setattr(
         memoize_plugin,
