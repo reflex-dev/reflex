@@ -941,14 +941,17 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
 
     plugins = default_page_plugins(style=page_style())
 
-    assert len(plugins) == 5
+    assert len(plugins) == 6
     assert isinstance(plugins[0], DefaultPagePlugin)
     assert isinstance(plugins[1], ApplyStylePlugin)
     # Scopes the page from the collected hooks, so it runs its compile_page
     # before the collector collapses the imports it adds.
     assert isinstance(plugins[2], ClientStateScopePlugin)
     assert isinstance(plugins[3], DefaultCollectorPlugin)
-    assert isinstance(plugins[4], MemoizeStatefulPlugin)
+    # Moves lifecycle events into elements before the memoize plugin seals
+    # snapshot subtrees.
+    assert isinstance(plugins[4], InlineLifecyclePlugin)
+    assert isinstance(plugins[5], MemoizeStatefulPlugin)
 
 
 def test_compile_context_collects_artifacts_from_leave_replacement_plugins() -> None:
@@ -1303,27 +1306,35 @@ def test_default_page_plugins_can_skip_auto_memoization() -> None:
     ]
 
 
-def _compile_without_auto_memoize(component: Callable[[], Component]) -> PageContext:
-    """Compile one page with ``auto_memoize=False``.
+def _compile_page_and_memos(
+    component: Callable[[], Component], auto_memoize: bool
+) -> tuple[str, str]:
+    """Compile one page and its generated memo components.
 
     Args:
         component: The page function.
+        auto_memoize: Whether to wrap stateful components in memo components.
 
     Returns:
-        The compiled page context.
+        The page code and the code of all generated memo modules.
     """
     compile_ctx = CompileContext(
         pages=[FakePage(route="/page", component=component)],
-        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=False)),
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize)),
     )
     with compile_ctx:
         compile_ctx.compile()
-    return compile_ctx.compiled_pages["/page"]
+        memo_files, _ = compiler.compile_memo_components(
+            compile_ctx.auto_memo_components.values()
+        )
+    page_code = compile_ctx.compiled_pages["/page"].output_code or ""
+    return page_code, "".join(code for _, code in memo_files)
 
 
-def test_lifecycle_stays_inside_cond_branch_without_auto_memoization() -> None:
-    """A branch's lifecycle events render in the branch, not as page hooks."""
-    page_ctx = _compile_without_auto_memoize(
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_lifecycle_stays_inside_cond_branch(auto_memoize: bool) -> None:
+    """A branch's lifecycle events render in the branch, not as hoisted hooks."""
+    page_code, memo_code = _compile_page_and_memos(
         lambda: rx.cond(
             Var("flag", _var_type=bool),
             rx.text(
@@ -1332,31 +1343,37 @@ def test_lifecycle_stays_inside_cond_branch_without_auto_memoization() -> None:
                 on_unmount=rx.console_log("unmounted"),
             ),
             rx.text("hidden"),
-        )
+        ),
+        auto_memoize,
     )
 
-    code = page_ctx.output_code or ""
-    assert "useEffect(" not in code
-    branch_start = code.index("?(")
-    effect = code.index("jsx(MountEffect,{mount:")
-    assert branch_start < effect < code.index('"hidden"')
-    assert code.count("jsx(MountEffect,") == 1
-    assert "unmount:" in code
+    assert "useEffect(" not in page_code + memo_code
+    assert "MountEffect" not in memo_code
+    effect = page_code.index("jsx(MountEffect,{mount:")
+    assert page_code.index('"shown"') < effect < page_code.index('"hidden"')
+    assert page_code.count("jsx(MountEffect,") == 1
+    assert "unmount:" in page_code
 
 
-def test_lifecycle_stays_inside_foreach_item_without_auto_memoization() -> None:
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_lifecycle_stays_inside_foreach_item(auto_memoize: bool) -> None:
     """An item's lifecycle event renders in the loop body under the item key."""
-    page_ctx = _compile_without_auto_memoize(
+    page_code, memo_code = _compile_page_and_memos(
         lambda: rx.foreach(
-            Var("items", _var_type=list[str]),
+            Var(
+                "items",
+                _var_type=list[str],
+                _var_data=VarData(hooks={"const items = useItems()": None}),
+            ),
             lambda item: rx.text(item, on_mount=rx.console_log(item)),
-        )
+        ),
+        auto_memoize,
     )
 
-    code = page_ctx.output_code or ""
-    assert "useEffect(" not in code
-    _, _, loop_body = code.partition("=>")
-    assert loop_body.startswith("(jsx(Fragment,{key:")
+    assert "useEffect(" not in page_code + memo_code
+    # The hook-backed iterable makes the memoize plugin seal the loop in a memo.
+    _, _, loop_body = (memo_code if auto_memoize else page_code).partition("=>(")
+    assert loop_body.startswith("jsx(Fragment,{key:")
     assert loop_body.count("key:") == 1
     assert "jsx(MountEffect,{mount:" in loop_body
 

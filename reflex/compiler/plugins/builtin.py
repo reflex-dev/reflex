@@ -10,6 +10,10 @@ from reflex_base import constants
 from reflex_base.components.app_wraps import _ingest_component_var_app_wraps
 from reflex_base.components.client_state_context import local_client_state_names
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
+from reflex_base.components.memoize_helpers import (
+    MemoizationStrategy,
+    get_memoization_strategy,
+)
 from reflex_base.config import get_config
 from reflex_base.constants import EventTriggers
 from reflex_base.plugins import CompileContext, PageContext, PageDefinition, Plugin
@@ -507,10 +511,13 @@ class MountEffect(Component):
 class InlineLifecyclePlugin(Plugin):
     """Render ``on_mount`` and ``on_unmount`` as an element beside the component.
 
-    Without memo wrappers, a lifecycle hook is hoisted to the page function,
+    A lifecycle hook is hoisted to the top of the enclosing generated function,
     out of its ``rx.cond`` branch or ``rx.foreach`` item. An element keeps the
     events at the component's place in the tree.
     """
+
+    # Rewrite a snapshot subtree before the memoize plugin seals it.
+    _compiler_enter_component_order = HookOrder.PRE
 
     def enter_component(
         self,
@@ -530,16 +537,57 @@ class InlineLifecyclePlugin(Plugin):
             in_prop_tree: Whether the component is in a prop subtree.
 
         Returns:
-            A keyed fragment of the component and its effect element, or
-            ``None`` when the component has no lifecycle events.
+            The rewritten component, or ``None`` when nothing changed.
         """
         if in_prop_tree or not isinstance(comp, Component):
             return None
+        rewritten = comp
+        if get_memoization_strategy(comp) is MemoizationStrategy.SNAPSHOT:
+            # The walker does not descend into a memoized snapshot.
+            rewritten = self._inline_subtree(comp, page_context)
+        rewritten = self._inline(rewritten, page_context)
+        return None if rewritten is comp else rewritten
+
+    def _inline_subtree(self, comp: Component, page_context: PageContext) -> Component:
+        """Move the lifecycle events of every descendant into effect elements.
+
+        Args:
+            comp: The root of the subtree; its own events are left in place.
+            page_context: The active page context.
+
+        Returns:
+            ``comp``, or a page-local clone with rewritten children.
+        """
+        children = [
+            self._inline(self._inline_subtree(child, page_context), page_context)
+            if isinstance(child, Component)
+            else child
+            for child in comp.children
+        ]
+        if all(new is old for new, old in zip(children, comp.children, strict=True)):
+            return comp
+        owned = page_context.own(comp)
+        owned.children = children
+        owned._clear_compile_caches()
+        return owned
+
+    @staticmethod
+    def _inline(comp: Component, page_context: PageContext) -> Component:
+        """Move a component's lifecycle events into an effect element.
+
+        Args:
+            comp: The component to rewrite.
+            page_context: The active page context.
+
+        Returns:
+            A keyed fragment of the component and its effect element, or
+            ``comp`` when it has no lifecycle events.
+        """
         triggers = comp.event_triggers
         on_mount = triggers.get(EventTriggers.ON_MOUNT)
         on_unmount = triggers.get(EventTriggers.ON_UNMOUNT)
         if on_mount is None and on_unmount is None:
-            return None
+            return comp
 
         owned = page_context.own(comp)
         owned.event_triggers = {
@@ -578,13 +626,15 @@ def default_page_plugins(
     if style is not None:
         chain.append(ApplyStylePlugin(style=style))
     # The scope plugin's compile_page runs before the collector collapses imports.
-    chain.extend((ClientStateScopePlugin(), DefaultCollectorPlugin()))
+    chain.extend((
+        ClientStateScopePlugin(),
+        DefaultCollectorPlugin(),
+        InlineLifecyclePlugin(),
+    ))
     if auto_memoize:
         from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 
         chain.append(MemoizeStatefulPlugin())
-    else:
-        chain.append(InlineLifecyclePlugin())
     return tuple(chain)
 
 
