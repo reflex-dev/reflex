@@ -120,15 +120,18 @@ def test_merge_into_locale_accepts_region_and_script_tags(
 def test_catalog_stats_counts_missing_and_obsolete(tmp_path: Path):
     app_dir = tmp_path / "myapp"
     _write_app_source(app_dir)
-    template = extract_catalog(app_dir, ())
-
     po_path = tmp_path / "de.po"
-    merge_into_locale(template, po_path, "de")
+    # An earlier extraction still had a message the app no longer uses.
+    merge_into_locale(
+        extract_catalog(app_dir, (MessageKey("Removed message"),)), po_path, "de"
+    )
+    merge_into_locale(extract_catalog(app_dir, ()), po_path, "de")
     with po_path.open("rb") as f:
         catalog = read_po(f, locale="de")
 
     stats = _catalog_stats(catalog, "de")
     assert stats.missing == 2  # both extracted messages untranslated
+    assert stats.obsolete == 1
     assert stats.locale == "de"
 
 

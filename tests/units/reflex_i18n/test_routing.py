@@ -5,8 +5,11 @@ import types
 import pytest
 from reflex_i18n import I18nConfig, PathPrefixRouting
 from reflex_i18n.catalog import compile_index_module
+from reflex_i18n.component import LocaleRoute
 from reflex_i18n.config import set_active_i18n_config
 from reflex_i18n.plugin import I18nPlugin, _catalog_ident, _catalog_var
+
+import reflex as rx
 
 LOCALES = ["en", "de", "fr"]
 
@@ -99,7 +102,7 @@ def _fake_context(pages):
     calls = []
 
     def add_page(component=None, route=None, **kwargs):
-        calls.append((route, kwargs))
+        calls.append((route, {**kwargs, "component": component}))
 
     return {"add_page": add_page, "pages": pages, "calls": calls}
 
@@ -108,7 +111,10 @@ def test_expand_routes_fans_out_non_default_locales():
     plugin = I18nPlugin(
         locales=LOCALES, default_locale="en", routing=PathPrefixRouting()
     )
-    ctx = _fake_context([_page("index"), _page("pricing")])
+    ctx = _fake_context([
+        _page("index", lambda: rx.text("Home")),
+        _page("pricing", lambda: rx.text("Pricing")),
+    ])
     plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
 
     routes = sorted(route for route, _ in ctx["calls"])
@@ -118,6 +124,15 @@ def test_expand_routes_fans_out_non_default_locales():
     locales = {route: kw["context"]["i18n_locale"] for route, kw in ctx["calls"]}
     assert locales["/de/pricing"] == "de"
     assert locales["/fr"] == "fr"
+    # ...and renders the original page in that locale, from its static catalog.
+    for route, kw in ctx["calls"]:
+        rendered = kw["component"]()
+        locale = kw["context"]["i18n_locale"]
+        assert isinstance(rendered, LocaleRoute)
+        assert str(rendered.locale) == f'"{locale}"'
+        assert str(rendered.catalog) == str(_catalog_var(locale))
+        page_text = "Pricing" if route.endswith("/pricing") else "Home"
+        assert page_text in str(rendered.children[0])
 
 
 def test_expand_routes_noop_without_routing():

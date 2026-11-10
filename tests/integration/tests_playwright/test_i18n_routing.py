@@ -126,12 +126,16 @@ def test_url_locale_routing(i18n_url_app: AppHarness, page: Page):
     expect(page.locator("#locale")).to_have_text("de")
     expect(page.locator("html")).to_have_attribute("lang", "de")
 
-    # Reciprocal hreflang alternates are present in the head.
+    # Reciprocal hreflang alternates in the head point at each locale's URL.
     alternates = page.eval_on_selector_all(
         "link[rel=alternate]",
-        "els => els.map(e => e.getAttribute('hreflang'))",
+        "els => els.map(e => [e.getAttribute('hreflang'), e.getAttribute('href')])",
     )
-    assert {"en", "de", "x-default"} <= set(alternates)
+    assert dict(alternates) == {
+        "en": "https://example.com/",
+        "de": "https://example.com/de",
+        "x-default": "https://example.com/",
+    }
 
 
 def test_url_locale_wins_over_cookie(i18n_url_app: AppHarness, page: Page):
