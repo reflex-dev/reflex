@@ -86,14 +86,19 @@ def get_backend_compile_trigger() -> CompileTrigger:
 def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str]:
     """Get the content of package.json and its hash.
 
+    A missing file reads as empty.
+
     Args:
         package_json_path: The path to the package.json file.
 
     Returns:
         A tuple containing the content of package.json as a dictionary and its SHA-256 hash.
     """
-    with package_json_path.open("r") as file:
-        json_data = json.load(file)
+    try:
+        with package_json_path.open("r") as file:
+            json_data = json.load(file)
+    except FileNotFoundError:
+        json_data = {}
 
     # Calculate the hash
     json_string = json.dumps(json_data, sort_keys=True)
@@ -101,7 +106,7 @@ def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str
     return (json_data, hash_object.hexdigest())
 
 
-class PackageJson(TypedDict):
+class PackageJson(TypedDict, total=False):
     """package.json content."""
 
     dependencies: dict[str, str]

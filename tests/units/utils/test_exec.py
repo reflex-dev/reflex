@@ -1290,3 +1290,13 @@ def test_backend_worker_target_loads_config_before_app(
     )
 
     assert result.stdout.splitlines()[-1] == "True"
+
+
+def test_get_package_json_and_hash_missing_file(tmp_path: Path):
+    """A missing package.json reads as empty with the same hash as an empty one."""
+    missing = tmp_path / "package.json"
+    content, missing_hash = exec_utils.get_package_json_and_hash(missing)
+
+    assert content == {}
+    missing.write_text("{}")
+    assert exec_utils.get_package_json_and_hash(missing) == ({}, missing_hash)
