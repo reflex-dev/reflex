@@ -361,9 +361,11 @@ describe("session", () => {
   test("generateUUID produces distinct version 4 uuids", () => {
     const ids = new Set(Array.from({ length: 200 }, generateUUID));
     expect(ids.size).toBe(200);
+    // The digit after the third dash is the variant: 8, 9, a or b. Masking it
+    // one bit too wide once let c-f through on about half the ids.
     for (const id of ids) {
       expect(id).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
       );
     }
   });
@@ -383,19 +385,21 @@ describe("session", () => {
     expect(isBackendDisabled()).toBe(true);
   });
 
-  test("getBackendURL points a wildcard bind address at the page's host", () => {
-    expect(getBackendURL("http://0.0.0.0:8000/ping").href).toBe(
+  // `URL.hostname` gives an IPv6 address in brackets and in its shortest form,
+  // so both spellings of the IPv6 wildcard arrive as "[::]".
+  test.each([
+    "http://0.0.0.0:8000/ping",
+    "http://[::]:8000/ping",
+    "http://[0:0:0:0:0:0:0:0]:8000/ping",
+  ])("getBackendURL points the wildcard bind address in %s at the page's host", (url) => {
+    expect(getBackendURL(url).href).toBe(
       `http://${window.location.hostname}:8000/ping`,
     );
   });
 
-  // Known bug: `URL.hostname` keeps the brackets of an IPv6 address ("[::]"),
-  // so the "::" and "0:0:0:0:0:0:0:0" entries of SAME_DOMAIN_HOSTNAMES never
-  // match and an IPv6 wildcard backend is not pointed at the page's host.
-  // `test.fails` turns red once that is fixed; make it a plain test then.
-  test.fails("getBackendURL treats the IPv6 wildcard like 0.0.0.0", () => {
-    expect(getBackendURL("ws://[::]:8000/_event").hostname).toBe(
-      window.location.hostname,
+  test("getBackendURL leaves an IPv6 address that is not the wildcard alone", () => {
+    expect(getBackendURL("http://[2001:db8::1]:8000/ping").hostname).toBe(
+      "[2001:db8::1]",
     );
   });
 

@@ -14,6 +14,9 @@ test("a same-domain backend is reached on the page's host and https port", () =>
   expect(getBackendURL("ws://0.0.0.0:8000/_event").href).toBe(
     "wss://app.example.com/_event",
   );
+  expect(getBackendURL("ws://[::]:8000/_event").href).toBe(
+    "wss://app.example.com/_event",
+  );
 });
 
 test("a backend on its own host keeps its protocol and port", () => {

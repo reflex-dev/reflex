@@ -47,7 +47,9 @@ const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
 const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
-const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
+// They are compared with URL.hostname, which gives an IPv6 address in brackets
+// and in its shortest form: "[::]" is every spelling of the IPv6 wildcard.
+const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "[::]"];
 
 // Global variable to hold the token.
 let token;
