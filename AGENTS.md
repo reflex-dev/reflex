@@ -24,7 +24,7 @@ uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # fail if pkg 
 uv run reflex-release sync                                       # regenerate the release workflows after editing [tool.reflex-release] or the reflex-release templates
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs
 uv run pre-commit run --all-files                                # all pre-commit hooks
-npm --prefix tests/js ci && npm --prefix tests/js test            # javascript unit tests (frontend templates)
+npm --prefix packages/reflex-base/frontend ci && npm --prefix packages/reflex-base/frontend test   # javascript unit tests (the frontend package)
 ```
 
 ## Layout
@@ -32,10 +32,10 @@ npm --prefix tests/js ci && npm --prefix tests/js test            # javascript u
 ```
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
 packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
+  reflex-base/frontend/ # the javascript package reflex-base embeds: src/ ships, tests/ run under vitest
 tests/units/            # unit tests, mirrors source tree
 tests/integration/      # Integration tests (run in dev+prod modes where applicable)
   tests_playwright/     # Browser integration tests using Playwright
-tests/js/               # vitest unit tests for the shipped frontend javascript
 tests/benchmarks/       # performance benchmarks
 docs/                   # documentation site (separate workspace member)
 ```
@@ -63,21 +63,29 @@ docs/                   # documentation site (separate workspace member)
 
 ### Frontend javascript tests
 
-The javascript Reflex ships lives in
-`packages/reflex-base/src/reflex_base/.templates/web/` and is copied verbatim into a
-user's `.web` directory, so tests must **not** live inside that tree. They go in
-`tests/js/`, which has its own `package.json` and runs under vitest + jsdom:
-`npm --prefix tests/js test`.
+The javascript Reflex ships is a package of its own, `reflex-frontend`, in
+`packages/reflex-base/frontend/`. Its `src/` is copied verbatim into a user's
+`.web` directory, so tests must **not** live inside that tree. They go in the
+package's `tests/` and run under vitest + jsdom:
+`npm --prefix packages/reflex-base/frontend test`.
+
+The package is not published to npm. The reflex-base wheel embeds `src/` as
+`reflex_base/.templates/web` when it is built; in a checkout
+`constants.Templates.Dirs.WEB_TEMPLATE` resolves to `src/` directly, so the next
+`reflex init` copies an edit without a rebuild. A python test that reads one of
+these files goes through that constant rather than a path.
 
 Reach for these when behavior can only be observed at runtime and an integration
 test would be indirect or impossible to set up — provider teardown, SSR vs. client
 branches, subscription bookkeeping. Prefer a Playwright test when the thing you
 want to assert is visible in a real app.
 
-`$/...` specifiers resolve to the template tree via a vitest alias. `$/utils/state`
-is not stubbed: the real module imports npm packages that `tests/js` does not install
-(socket.io-client, react-router, mergician, universal-cookie) and the per-app
-*generated* `env.json`, so a module that imports it is not currently unit-testable.
+`$/...` specifiers resolve to `src/` via a vitest alias, as they resolve to `.web`
+in an app. `$/env.json` is compiled per app, so the alias points it at
+`tests/fixtures/env.json`. The modules import their real npm dependencies:
+`package.json` pins them to the versions `constants.PackageJson.DEPENDENCIES`
+installs into an app, and `tests/units/reflex_base/constants/test_installer.py`
+fails when the two drift.
 
 ### Integration test patterns
 

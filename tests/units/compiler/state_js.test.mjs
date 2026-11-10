@@ -5,7 +5,7 @@ import vm from "node:vm";
 
 const source = await readFile(
   new URL(
-    "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/state.js",
+    "../../../packages/reflex-base/frontend/src/utils/state.js",
     import.meta.url,
   ),
   "utf8",

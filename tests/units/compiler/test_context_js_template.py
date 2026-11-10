@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from reflex_base.compiler.templates import context_template
+from reflex_base.constants import Templates
 
 requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 
@@ -250,10 +251,7 @@ export const hydrateClientStorage = () => ({});
 export const useEventLoop = () => [];
 export const refs = {};
 """
-    registry_path = (
-        Path(__file__).parents[3]
-        / "packages/reflex-base/src/reflex_base/.templates/web/utils/context-registry.js"
-    )
+    registry_path = Templates.Dirs.WEB_TEMPLATE / "utils" / "context-registry.js"
     registry_source = registry_path.read_text().replace(
         'from "react"', 'from "./react.mjs"'
     )

@@ -125,6 +125,25 @@ class ReflexHostingCLI(SimpleNamespace):
     MODULE_NAME = "reflex-hosting-cli"
 
 
+def _web_template_dir(root_dir: Path) -> Path:
+    """Locate the frontend package that is copied into a project's web directory.
+
+    A built distribution embeds it under ``.templates/web``. A source checkout
+    has nothing there and reads the package's ``src`` in place, so an edit to
+    the frontend is never shadowed by a stale copy.
+
+    Args:
+        root_dir: The root directory of the reflex_base package.
+
+    Returns:
+        The directory holding the frontend files.
+    """
+    embedded = root_dir / ".templates" / "web"
+    if embedded.is_dir():
+        return embedded
+    return root_dir.parents[1] / "frontend" / "src"
+
+
 class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
@@ -147,8 +166,8 @@ class Templates(SimpleNamespace):
 
         # The template directory used during reflex init.
         BASE = Reflex.ROOT_DIR / ".templates"
-        # The web subdirectory of the template directory.
-        WEB_TEMPLATE = BASE / "web"
+        # The frontend package, copied into the web directory of a project.
+        WEB_TEMPLATE = _web_template_dir(Reflex.ROOT_DIR)
         # Where the code for the templates is stored.
         CODE = "code"
 

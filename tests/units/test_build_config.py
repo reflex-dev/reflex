@@ -34,7 +34,7 @@ NOT_SELECTED = [
     "packages/reflex-components-core/src/reflex_components_core/el/element.py",
     "packages/reflex-components-core/src/reflex_components_core/el/element.pyi",
     "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi",
-    "packages/reflex-base/src/reflex_base/.templates/web/components/reflex/color_mode.js",
+    "packages/reflex-base/frontend/src/utils/state.js",
     "tests/units/reflex_base/utils/pyi_generator/golden/var_types.pyi",
     "docs/app/docs.py",
 ]
@@ -312,3 +312,46 @@ def test_build_hook_ignores_marker_for_incomplete_editable_build(
     hook.initialize("editable", {})
 
     assert runs
+
+
+REFLEX_BASE = REPO_ROOT / "packages" / "reflex-base"
+FRONTEND_SRC = REFLEX_BASE / "frontend" / "src"
+
+
+def frontend_files() -> set[str]:
+    """List the files of the frontend package that reflex-base embeds.
+
+    Returns:
+        The path of every file under the package's `src`, relative to it.
+    """
+    return {
+        path.relative_to(FRONTEND_SRC).as_posix()
+        for path in FRONTEND_SRC.rglob("*")
+        if path.is_file()
+    }
+
+
+def test_reflex_base_wheel_embeds_the_frontend():
+    """The wheel carries the frontend as its web template, and only there."""
+    distributed = {
+        Path(included.distribution_path).as_posix()
+        for included in WheelBuilder(str(REFLEX_BASE)).recurse_included_files()
+    }
+    files = frontend_files()
+    assert "utils/state.js" in files
+    assert {f"reflex_base/.templates/web/{name}" for name in files} <= distributed
+    assert not any(path.startswith("frontend/") for path in distributed)
+
+
+def test_reflex_base_sdist_ships_what_the_wheel_embeds():
+    """A wheel built from the sdist needs the frontend source, not its tests."""
+    selected = {
+        Path(included.relative_path).as_posix()
+        for included in SdistBuilder(str(REFLEX_BASE)).recurse_included_files()
+    }
+    assert {f"frontend/src/{name}" for name in frontend_files()} <= selected
+    assert "frontend/package.json" in selected
+    assert not any(
+        path.startswith(("frontend/tests/", "frontend/node_modules/"))
+        for path in selected
+    )

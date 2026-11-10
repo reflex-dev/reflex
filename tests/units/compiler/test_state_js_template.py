@@ -6,11 +6,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from reflex_base.constants import Templates
 
-STATE_JS_TEMPLATE = (
-    Path(__file__).parents[3]
-    / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
-)
+STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 
 ADD_EVENTS_ALIAS = "const addEvents = (...args) => eventLoop.addEvents(...args);"
 

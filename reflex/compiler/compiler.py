@@ -392,7 +392,7 @@ def _compile_root_stylesheet(
 
     # Add CSS reset if enabled
     if reset_style:
-        # Reference the vendored style reset file (automatically copied from .templates/web)
+        # Reference the vendored style reset file (automatically copied from the web template)
         sheets.append(f"./{ResetStylesheet.FILENAME}")
 
     active_plugins = get_config().plugins if plugins is None else plugins

@@ -158,13 +158,16 @@ jobs:
           path: coverage_html_report/
 
   js-unit-tests:
-    # Unit tests for the javascript Reflex ships in
-    # `reflex-base/.templates/web`, which the python suites can only reach
-    # through compiled output.
+    # Tests and packs the frontend package: the javascript reflex-base embeds as
+    # its web template, which the python suites can only reach through compiled
+    # output.
     needs: changes
     if: needs.changes.outputs.run == 'true'
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/reflex-base/frontend
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -173,11 +176,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: tests/js/package-lock.json
+          cache-dependency-path: packages/reflex-base/frontend/package-lock.json
       - run: npm ci
-        working-directory: tests/js
       - run: npm test
-        working-directory: tests/js
+      # Nothing publishes the tarball yet. Packing it on every change keeps the
+      # manifest publishable, and the artifact shows what a release would carry.
+      - run: npm run build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: reflex-frontend
+          path: packages/reflex-base/frontend/*.tgz
+          if-no-files-found: error
+          retention-days: 7
 
   unit-tests-macos:
     timeout-minutes: 30

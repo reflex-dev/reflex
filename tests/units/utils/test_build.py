@@ -8,7 +8,6 @@ import zipfile
 from pathlib import Path
 
 import pytest
-import reflex_base
 from pytest_mock import MockerFixture
 from reflex_base import constants
 
@@ -106,9 +105,7 @@ def test_compress_static_output_overwrites_stale_sidecars(
 
     web_dir = tmp_path / ".web"
     web_dir.mkdir()
-    compress_script = (
-        Path(reflex_base.__file__).parent / ".templates/web/compress-static.js"
-    )
+    compress_script = constants.Templates.Dirs.WEB_TEMPLATE / "compress-static.js"
     (web_dir / "compress-static.js").write_text(compress_script.read_text())
 
     static_dir = tmp_path / "static"

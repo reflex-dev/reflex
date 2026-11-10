@@ -406,7 +406,8 @@ cli-command = "uv run --frozen --package reflex-release reflex-release"
 root-package = "reflex"
 root-source-dirs = ["reflex"]
 packages-dir = "packages"
-package-source-subdirs = ["src"]
+# `frontend/src` is the javascript reflex-base embeds as its web template.
+package-source-subdirs = ["src", "frontend/src"]
 # Changelog dates and r/pre-<date> branch names are stamped in the project's
 # home timezone, so an evening release is not dated tomorrow by a UTC runner.
 release-timezone = "America/Los_Angeles"

@@ -1,8 +1,16 @@
 """Tests for the frontend toolchain version constants."""
 
+import json
+from pathlib import Path
+
 import pytest
 from packaging import version
 from reflex_base.constants.installer import Node, PackageJson
+
+# The manifest of the javascript package reflex-base embeds as its web template.
+FRONTEND_PACKAGE_JSON = (
+    Path(__file__).parents[4] / "packages/reflex-base/frontend/package.json"
+)
 
 # Baselines declared by the pinned react-router release (its package.json
 # `engines.node` and `peerDependencies.react`, plus the Vite floor from its
@@ -52,3 +60,16 @@ def test_vite_pin_satisfies_react_router():
     assert version.parse(PackageJson.DEV_DEPENDENCIES["vite"]) >= version.parse(
         REACT_ROUTER_MIN_VITE
     )
+
+
+def test_frontend_package_dependencies_match_what_an_app_installs():
+    """The frontend package's tests run against the versions an app gets.
+
+    Its manifest pins every dependency it declares, and an app only ever
+    installs what `PackageJson.DEPENDENCIES` names, so the two must agree.
+    """
+    manifest = json.loads(FRONTEND_PACKAGE_JSON.read_text())
+    assert manifest["dependencies"] == {
+        name: PackageJson.DEPENDENCIES[name].removeprefix("v")
+        for name in manifest["dependencies"]
+    }
