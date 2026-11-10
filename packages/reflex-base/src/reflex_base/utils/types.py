@@ -1070,7 +1070,12 @@ def get_attribute_access_type(
         if issubclass(cls, DeclarativeBase):
             insp = sqlalchemy.inspect(cls)
             if name in insp.synonyms:
-                return get_attribute_access_type(cls, insp.synonyms[name].name)
+                # A synonym without a custom getter has a generated one typed Any.
+                synonym = insp.synonyms[name]
+                hint = get_property_hint(synonym.descriptor)
+                if hint is not None and hint is not Any:
+                    return hint
+                return get_attribute_access_type(cls, synonym.name)
             if name in insp.columns:
                 # check for list types
                 column = insp.columns[name]
