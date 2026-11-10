@@ -465,9 +465,9 @@ def test_status_shows_history_with_current_revision(
 def test_commands_require_an_initialized_database(
     project: Path, caplog: pytest.LogCaptureFixture
 ):
-    """Without alembic.ini the commands stop with the init hint."""
+    """Without alembic.ini the commands exit with status 1 and the init hint."""
     for args in (["migrate"], ["makemigrations"], ["status"]):
-        _db(*args)
+        _db(*args, exit_code=1)
         assert "reflex db init" in caplog.text
     assert not (project / "alembic").exists()
 
@@ -475,7 +475,7 @@ def test_commands_require_an_initialized_database(
 def test_commands_without_db_url(
     project: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
-    """Without db_url the commands say so instead of failing inside alembic."""
+    """Without db_url the commands say so and exit with status 1."""
     # Written to the file: importing the app reloads the config from it.
     (project / "rxconfig.py").write_text(
         "import reflex as rx\n\nconfig = rx.Config(\n"
@@ -488,7 +488,7 @@ def test_commands_without_db_url(
     monkeypatch.setattr("alembic.config.main", main)
 
     for args in (["migrate"], ["makemigrations"], ["status"]):
-        _db(*args)
+        _db(*args, exit_code=1)
         assert "db_url is not configured" in caplog.text
     main.assert_not_called()
 
