@@ -2231,13 +2231,13 @@ def figure_out_type(value: Any) -> types.GenericType:
             return set[element_type]
         if isinstance(value, tuple):
             if not value:
-                return tuple[NoReturn, ...]
+                return tuple[Any, ...]
             if len(value) <= 5:
                 return tuple[tuple(figure_out_type(v) for v in value)]
             return tuple[unionize(*{figure_out_type(v) for v in value[:100]}), ...]
         if isinstance(value, Mapping):
             if not value:
-                return Mapping[NoReturn, NoReturn]
+                return Mapping[Any, Any]
             return Mapping[
                 unionize(*{figure_out_type(k) for k in list(value.keys())[:100]}),
                 unionize(*{figure_out_type(v) for v in list(value.values())[:100]}),

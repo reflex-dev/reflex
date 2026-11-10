@@ -6886,6 +6886,27 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     error_mock.assert_called_once()
 
 
+def test_setattr_unannotated_empty_containers(mocker: MockerFixture) -> None:
+    """Empty unannotated containers accept values when assigned later."""
+
+    class EmptyContainerState(rx.State):
+        mapping = {}
+        pair = ()
+        items = []
+
+    error_mock = mocker.patch("reflex_base.vars.base.logger.error")
+    state = EmptyContainerState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+    state.mapping = {"key": "value"}  # pyright: ignore[reportAttributeAccessIssue]
+    state.pair = (1, "value")  # pyright: ignore[reportAttributeAccessIssue]
+    state.items = [1]  # pyright: ignore[reportAttributeAccessIssue]
+
+    assert state.mapping == {"key": "value"}
+    assert state.pair == (1, "value")
+    assert state.items == [1]
+    error_mock.assert_not_called()
+
+
 def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
     """A substate redeclaring an inherited var gets its own var, stored on the substate."""
 
