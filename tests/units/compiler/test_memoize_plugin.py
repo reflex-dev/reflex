@@ -581,6 +581,32 @@ def test_foreach_item_key_state_is_declared_where_the_key_is_read() -> None:
     assert f"key:({other_state}.prefix" in loop_body
 
 
+def test_foreach_form_submit_handler_receives_loop_index() -> None:
+    """A form in a loop can use the loop index in its ``on_submit`` handler.
+
+    Regression for reflex-dev/reflex#3210: the form's submit hook was hoisted
+    out of the loop, where the index does not exist.
+    """
+    wrappers, foreach = _foreach_memo_parts(
+        lambda: rx.foreach(
+            rx.Var.range(3),
+            lambda index: rx.form(
+                rx.input(name="input"),
+                on_submit=lambda form_data: SpecialFormMemoState.record(
+                    index, form_data
+                ),
+            ),
+        )
+    )
+
+    form = next(d for d in wrappers.split("\nexport const ") if d.startswith("Form_"))
+    signature = form.partition("memo((")[2].partition("=> {")[0]
+    assert "indexRxState:index_rx_state_" in signature
+    before_loop, _, loop_body = foreach.partition("Array.prototype.map.call(")
+    assert "index_rx_state_" not in before_loop
+    assert "indexRxState:index_rx_state_" in loop_body
+
+
 def test_foreach_item_without_own_hooks_renders_inline() -> None:
     """An item that only reads state gets no wrapper of its own."""
     wrappers, foreach = _foreach_memo_parts(
