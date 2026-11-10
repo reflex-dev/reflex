@@ -94,7 +94,7 @@ def t(
         A StringVar resolving to the translated, interpolated message.
 
     Raises:
-        TypeError: If message or plural is not a literal string.
+        TypeError: If message, plural or context is not a literal string.
         ValueError: If only one of ``plural`` and ``count`` is given, or the
             message was already used with a different plural form.
         RuntimeError: If no I18nPlugin is configured.
@@ -113,9 +113,10 @@ def t(
             "(see reflex.i18n)."
         )
         raise TypeError(msg)
-    if plural is not None and (isinstance(plural, Var) or not isinstance(plural, str)):
-        msg = "rx.t() requires a literal string for plural."
-        raise TypeError(msg)
+    for name, value in (("plural", plural), ("context", context)):
+        if value is not None and (isinstance(value, Var) or not isinstance(value, str)):
+            msg = f"rx.t() requires a literal string for {name}."
+            raise TypeError(msg)
     if (plural is None) != (count is None):
         msg = "rx.t() requires count and plural to be passed together."
         raise ValueError(msg)

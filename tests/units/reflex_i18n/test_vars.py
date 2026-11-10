@@ -119,6 +119,12 @@ def test_t_rejects_non_literal_plural():
         t("{count} item", plural=state_var, count=1)  # pyright: ignore[reportArgumentType]
 
 
+def test_t_rejects_non_literal_context():
+    state_var = Var(_js_expr="state.ctx", _var_type=str)
+    with pytest.raises(TypeError, match="literal string"):
+        t("item", context=state_var)  # pyright: ignore[reportArgumentType]
+
+
 def test_t_plural_requires_count():
     with pytest.raises(ValueError, match="count and plural"):
         t("{count} item", plural="{count} items")
