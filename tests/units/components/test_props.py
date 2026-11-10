@@ -205,8 +205,7 @@ def test_props_base_nested_dict_filters_only_apply_to_the_current_object():
     assert props.dict(include={"nested_config"}) == {
         "nestedConfig": {"userName": "nested_user", "maxCount": 5}
     }
-    assert props.dict(exclude={"max_count"}) == {
-        "title": "parent",
+    assert props.dict(exclude={"title", "max_count"}) == {
         "nestedConfig": {"userName": "nested_user", "maxCount": 5},
         "isEnabled": True,
     }
