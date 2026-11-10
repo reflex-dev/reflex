@@ -37,6 +37,7 @@ from reflex.compiler.plugins import (
     ClientStateScopePlugin,
     DefaultCollectorPlugin,
     DefaultPagePlugin,
+    InlineLifecyclePlugin,
     default_page_plugins,
 )
 
@@ -1298,7 +1299,66 @@ def test_default_page_plugins_can_skip_auto_memoization() -> None:
         ApplyStylePlugin,
         ClientStateScopePlugin,
         DefaultCollectorPlugin,
+        InlineLifecyclePlugin,
     ]
+
+
+def _compile_without_auto_memoize(component: Callable[[], Component]) -> PageContext:
+    """Compile one page with ``auto_memoize=False``.
+
+    Args:
+        component: The page function.
+
+    Returns:
+        The compiled page context.
+    """
+    compile_ctx = CompileContext(
+        pages=[FakePage(route="/page", component=component)],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=False)),
+    )
+    with compile_ctx:
+        compile_ctx.compile()
+    return compile_ctx.compiled_pages["/page"]
+
+
+def test_lifecycle_stays_inside_cond_branch_without_auto_memoization() -> None:
+    """A branch's lifecycle events render in the branch, not as page hooks."""
+    page_ctx = _compile_without_auto_memoize(
+        lambda: rx.cond(
+            Var("flag", _var_type=bool),
+            rx.text(
+                "shown",
+                on_mount=rx.console_log("mounted"),
+                on_unmount=rx.console_log("unmounted"),
+            ),
+            rx.text("hidden"),
+        )
+    )
+
+    code = page_ctx.output_code or ""
+    assert "useEffect(" not in code
+    branch_start = code.index("?(")
+    effect = code.index("jsx(MountEffect,{mount:")
+    assert branch_start < effect < code.index('"hidden"')
+    assert code.count("jsx(MountEffect,") == 1
+    assert "unmount:" in code
+
+
+def test_lifecycle_stays_inside_foreach_item_without_auto_memoization() -> None:
+    """An item's lifecycle event renders in the loop body under the item key."""
+    page_ctx = _compile_without_auto_memoize(
+        lambda: rx.foreach(
+            Var("items", _var_type=list[str]),
+            lambda item: rx.text(item, on_mount=rx.console_log(item)),
+        )
+    )
+
+    code = page_ctx.output_code or ""
+    assert "useEffect(" not in code
+    _, _, loop_body = code.partition("=>")
+    assert loop_body.startswith("(jsx(Fragment,{key:")
+    assert loop_body.count("key:") == 1
+    assert "jsx(MountEffect,{mount:" in loop_body
 
 
 @pytest.mark.parametrize("auto_memoize", [True, False])

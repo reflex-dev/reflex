@@ -11,11 +11,13 @@ from reflex_base.components.app_wraps import _ingest_component_var_app_wraps
 from reflex_base.components.client_state_context import local_client_state_names
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.config import get_config
+from reflex_base.constants import EventTriggers
 from reflex_base.plugins import CompileContext, PageContext, PageDefinition, Plugin
 from reflex_base.plugins.base import HookOrder
 from reflex_base.utils.format import make_default_page_title
 from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
 from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.fragment import Fragment
 
 from reflex.compiler import utils
@@ -488,6 +490,74 @@ class DefaultCollectorPlugin(Plugin):
             )
 
 
+class MountEffect(Component):
+    """An element that runs lifecycle events where it renders."""
+
+    library = "$/utils/state"
+    tag = "MountEffect"
+
+    # Called after the element mounts.
+    mount: Var[Any]
+
+    # Called when the element unmounts.
+    unmount: Var[Any]
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class InlineLifecyclePlugin(Plugin):
+    """Render ``on_mount`` and ``on_unmount`` as an element beside the component.
+
+    Without memo wrappers, a lifecycle hook is hoisted to the page function,
+    out of its ``rx.cond`` branch or ``rx.foreach`` item. An element keeps the
+    events at the component's place in the tree.
+    """
+
+    def enter_component(
+        self,
+        comp: BaseComponent,
+        /,
+        *,
+        page_context: PageContext,
+        compile_context: Any,
+        in_prop_tree: bool = False,
+    ) -> BaseComponent | None:
+        """Replace a lifecycle-bearing component with itself plus an effect element.
+
+        Args:
+            comp: The component being visited.
+            page_context: The active page context.
+            compile_context: The active compile context.
+            in_prop_tree: Whether the component is in a prop subtree.
+
+        Returns:
+            A keyed fragment of the component and its effect element, or
+            ``None`` when the component has no lifecycle events.
+        """
+        if in_prop_tree or not isinstance(comp, Component):
+            return None
+        triggers = comp.event_triggers
+        on_mount = triggers.get(EventTriggers.ON_MOUNT)
+        on_unmount = triggers.get(EventTriggers.ON_UNMOUNT)
+        if on_mount is None and on_unmount is None:
+            return None
+
+        owned = page_context.own(comp)
+        owned.event_triggers = {
+            name: value
+            for name, value in triggers.items()
+            if name not in (EventTriggers.ON_MOUNT, EventTriggers.ON_UNMOUNT)
+        }
+        owned._clear_compile_caches()
+        effect_props = {}
+        if on_mount is not None:
+            effect_props["mount"] = LiteralVar.create(on_mount)
+        if on_unmount is not None:
+            effect_props["unmount"] = LiteralVar.create(on_unmount)
+        # The fragment is the new root of a foreach item, so it takes the key.
+        key, owned.key = owned.key, None
+        return Fragment.create(owned, MountEffect.create(**effect_props), key=key)
+
+
 def default_page_plugins(
     *,
     style: ComponentStyle | None = None,
@@ -513,6 +583,8 @@ def default_page_plugins(
         from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 
         chain.append(MemoizeStatefulPlugin())
+    else:
+        chain.append(InlineLifecyclePlugin())
     return tuple(chain)
 
 
@@ -520,5 +592,6 @@ __all__ = [
     "ApplyStylePlugin",
     "DefaultCollectorPlugin",
     "DefaultPagePlugin",
+    "InlineLifecyclePlugin",
     "default_page_plugins",
 ]
