@@ -10,8 +10,9 @@ whenever the locale changes.
 from __future__ import annotations
 
 import copy
+import functools
 import gettext as _gettext_module
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
@@ -80,6 +81,54 @@ def _catalog_path(locale: str) -> Path | None:
     return path if path.exists() else None
 
 
+class _SourceTranslations(_gettext_module.NullTranslations):
+    """Pass-through translator picking source plurals by the default locale's rule.
+
+    The source messages are written in the default locale, and the client picks
+    an untranslated plural by that rule too (``defaultPlural``).
+    """
+
+    def __init__(self, plural: Callable[[int], int]) -> None:
+        """Create the translator.
+
+        Args:
+            plural: The default locale's plural rule, from n to a form index.
+        """
+        super().__init__()
+        self._plural = plural
+
+    def ngettext(self, msgid1: str, msgid2: str, n: int) -> str:
+        """Pick a source message by the default locale's plural rule.
+
+        Args:
+            msgid1: The singular source message.
+            msgid2: The plural source message.
+            n: The quantity selecting the form.
+
+        Returns:
+            The singular message for form 0, else the plural one.
+        """
+        return msgid1 if self._plural(n) == 0 else msgid2
+
+
+@functools.cache
+def _source_translations() -> _SourceTranslations:
+    """The fallback for messages no catalog translates.
+
+    Returns:
+        A pass-through translator using the default locale's plural rule.
+    """
+    from .catalog import default_plural_expr_js, read_po_catalog
+
+    config = get_active_i18n_config()
+    locale = config.default_locale if config is not None else "en"
+    path = _catalog_path(locale)
+    catalog = read_po_catalog(path, locale) if path is not None else None
+    # The expression the client's defaultPlural evaluates, in C syntax.
+    plural = _gettext_module.c2py(default_plural_expr_js(catalog, locale))
+    return _SourceTranslations(plural)
+
+
 def _get_translations(locale: str) -> _gettext_module.NullTranslations:
     """Get (and cache) the gettext translator for a locale.
 
@@ -112,6 +161,7 @@ def _get_translations(locale: str) -> _gettext_module.NullTranslations:
         buffer.seek(0)
         translations = _gettext_module.GNUTranslations(buffer)
 
+    translations.add_fallback(_source_translations())
     _translations[locale] = translations
     return translations
 
@@ -119,6 +169,7 @@ def _get_translations(locale: str) -> _gettext_module.NullTranslations:
 def clear_translations_cache() -> None:
     """Drop cached translators. Intended for tests and hot reload."""
     _translations.clear()
+    _source_translations.cache_clear()
 
 
 def gettext(message: str) -> str:
@@ -146,13 +197,14 @@ def ngettext(singular: str, plural: str, n: int) -> str:
         n: The quantity selecting the form.
 
     Returns:
-        The translated message for ``n``, or the appropriate source message
-        if untranslated or no locale is active.
+        The translated message for ``n``, or the source message the default
+        locale's plural rule picks if untranslated or no locale is active.
     """
     locale = _active_locale.get()
-    if locale is None:
-        return singular if n == 1 else plural
-    return _get_translations(locale).ngettext(singular, plural, n)
+    translations = (
+        _source_translations() if locale is None else _get_translations(locale)
+    )
+    return translations.ngettext(singular, plural, n)
 
 
 def pgettext(context: str, message: str) -> str:

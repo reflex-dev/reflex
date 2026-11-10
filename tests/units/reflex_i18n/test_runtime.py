@@ -105,6 +105,22 @@ def test_ngettext_without_locale():
     assert ngettext("one", "many", 2) == "many"
 
 
+@pytest.mark.parametrize("locale", [None, "de"])
+def test_untranslated_plural_follows_the_default_locale_rule(
+    tmp_path: Path, monkeypatch, locale: str | None
+):
+    # The source messages are in the default locale, so an untranslated plural
+    # picks one by that locale's rule, as the client does: French treats 0 as
+    # singular, unlike the English rule gettext falls back to.
+    monkeypatch.chdir(tmp_path)
+    _write_po(tmp_path / "locales", "de", 'msgid "Hello"\nmsgstr "Hallo"\n')
+    set_active_i18n_config(I18nConfig(locales=["fr", "de"], default_locale="fr"))
+
+    with use_locale(locale):
+        assert ngettext("{n} article", "{n} articles", 0) == "{n} article"
+        assert ngettext("{n} article", "{n} articles", 2) == "{n} articles"
+
+
 def test_pgettext_context(tmp_path: Path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     _write_po(
