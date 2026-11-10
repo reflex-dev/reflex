@@ -7,6 +7,7 @@ Module-scoped fixtures tear down (and ``reload_state_module``) at module end,
 so a separate module gets a clean ``I18nState``.
 """
 
+import re
 from collections.abc import Generator
 
 import pytest
@@ -53,6 +54,7 @@ def I18nUrlApp():
             rx.text(UrlState.greeting, id="dynamic"),
             rx.text(rx.i18n.locale, id="locale"),
             rx.i18n.language_switcher(id="switcher"),
+            rx.button("de", on_click=rx.i18n.set_locale("de"), id="to-de"),
         )
 
     app = rx.App()
@@ -155,3 +157,25 @@ def test_url_locale_wins_over_cookie(i18n_url_app: AppHarness, page: Page):
     # The canonical link points at the page's own URL.
     canonical = page.locator("link[rel=canonical]")
     expect(canonical).to_have_attribute("href", "https://example.com/")
+
+
+def test_set_locale_navigates(i18n_url_app: AppHarness, page: Page):
+    """``rx.i18n.set_locale`` navigates to the localized URL.
+
+    With client translation in use the provider publishes a setter alongside
+    the routing wrap; either one must switch the URL.
+
+    Args:
+        i18n_url_app: Running harness for the URL-routing app.
+        page: Playwright page.
+    """
+    base = i18n_url_app.frontend_url
+    assert base is not None
+    base = base.rstrip("/")
+
+    page.goto(base)
+    expect(page.locator("#token")).not_to_have_value("")
+    page.click("#to-de")
+    expect(page).to_have_url(re.compile(re.escape(base) + r"/de/?$"))
+    expect(page.locator("#static")).to_have_text("Hallo")
+    expect(page.locator("#dynamic")).to_have_text("Willkommen")

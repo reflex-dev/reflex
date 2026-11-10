@@ -329,14 +329,11 @@ export function useTranslation() {
 
 // --- URL-based locale routing (opt-in via I18nPlugin(routing=...)) ---
 
-// Provide a fixed locale + statically-imported catalog to a route's subtree.
-// The catalog is a static import (bundled with the route chunk), so the right
-// language is present synchronously during prerender.
-export function LocaleRoute({ locale, catalog, children }) {
-  const navigateLocale = useLocaleNavigate();
-  // Its own navigate-backed setter rather than the I18nProvider's: a page that
-  // uses neither rx.t nor a formatting var never pulls the provider in.
-  const setLocale = useCallback(
+// The URL-routing locale setter: validate, then navigate to the current page in
+// that locale. Independent of the I18nProvider, which an app that uses neither
+// rx.t nor a formatting var never pulls in.
+const useUrlLocaleSetter = (navigateLocale) =>
+  useCallback(
     (nextLocale) => {
       if (!locales.includes(nextLocale)) {
         console.error(
@@ -348,7 +345,12 @@ export function LocaleRoute({ locale, catalog, children }) {
     },
     [navigateLocale],
   );
-  usePublishedSetter(setLocale);
+
+// Provide a fixed locale + statically-imported catalog to a route's subtree.
+// The catalog is a static import (bundled with the route chunk), so the right
+// language is present synchronously during prerender.
+export function LocaleRoute({ locale, catalog, children }) {
+  const setLocale = useUrlLocaleSetter(useLocaleNavigate());
   useEffect(() => {
     const root = document.documentElement;
     root.lang = locale;
@@ -399,9 +401,12 @@ export function HreflangLinks({ children }) {
   const { pathname } = useLocation();
   const basename = useBasename();
   const navigateLocale = useLocaleNavigate();
+  // This wrap is on every page with URL routing, unlike the provider and
+  // LocaleRoute (absent from the default locale's unprefixed pages), so it
+  // publishes the setter rx.i18n.set_locale drives.
+  usePublishedSetter(useUrlLocaleSetter(navigateLocale));
   // When every locale is prefixed (defaultAtRoot off), an unprefixed URL has
-  // no locale of its own; send it to its default-locale address. This wrap is
-  // on every page with URL routing, unlike the provider.
+  // no locale of its own; send it to its default-locale address.
   useEffect(() => {
     if (!defaultAtRoot && pathLocale(pathname) === undefined) {
       navigateLocale(defaultLocale, { replace: true });

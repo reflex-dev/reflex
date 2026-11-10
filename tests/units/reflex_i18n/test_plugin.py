@@ -290,6 +290,36 @@ def test_routing_wrap_redirects_unprefixed_path(
 
 @requires_node
 @pytest.mark.parametrize(
+    ("pathname", "locale", "expected"),
+    [
+        ("/pricing", "de", [["/de/pricing", None]]),
+        ("/de/pricing", "en", [["/pricing", None]]),
+        ("/pricing", "fr", []),
+    ],
+)
+def test_routing_wrap_drives_switch_locale(
+    tmp_path: Path, pathname: str, locale: str, expected: list
+):
+    """``rx.i18n.set_locale`` navigates through the routing wrap alone.
+
+    Regression: without client translation neither the provider nor
+    ``LocaleRoute`` (absent from unprefixed default-locale pages) is mounted,
+    so the switch did nothing.
+    """
+    rendered = _render_runtime(
+        tmp_path,
+        "HreflangLinks",
+        locales=["en", "de"],
+        default_locale="en",
+        url_routing=True,
+        pathname=pathname,
+        action=f"mod.switchLocale({locale!r}, {{ notifyServer: false }})",
+    )
+    assert rendered["navigations"] == expected
+
+
+@requires_node
+@pytest.mark.parametrize(
     ("action", "url_routing", "expected"),
     [
         ("mod.I18nContext.value.setLocale('de')", False, ["de"]),
