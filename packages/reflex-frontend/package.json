@@ -14,7 +14,10 @@
     "src"
   ],
   "scripts": {
+    "lint": "biome lint --config-path=lint.biome.jsonc",
+    "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm test",
     "build": "npm pack"
   },
   "dependencies": {
@@ -26,7 +29,11 @@
     "universal-cookie": "8.1.2"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.8",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "jsdom": "^26.1.0",
+    "typescript": "5.9.3",
     "vitest": "^5.1.0"
   }
 }

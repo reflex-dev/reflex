@@ -24,7 +24,7 @@ uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # fail if pkg 
 uv run reflex-release sync                                       # regenerate the release workflows after editing [tool.reflex-release] or the reflex-release templates
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs
 uv run pre-commit run --all-files                                # all pre-commit hooks
-npm --prefix packages/reflex-frontend ci && npm --prefix packages/reflex-frontend test   # javascript unit tests (the frontend package)
+npm --prefix packages/reflex-frontend ci && npm --prefix packages/reflex-frontend run check   # frontend package: lint, type-check (JSDoc) and unit tests
 ```
 
 ## Layout
@@ -67,7 +67,15 @@ The javascript Reflex ships is a package of its own, `reflex-frontend`, in
 `packages/reflex-frontend/`. Its `src/` is copied verbatim into a user's
 `.web` directory, so tests must **not** live inside that tree. They go in the
 package's `tests/` and run under vitest + jsdom:
-`npm --prefix packages/reflex-frontend test`.
+`npm --prefix packages/reflex-frontend test`. `npm run check` there also lints
+and type-checks the source from its JSDoc; CI runs all three.
+
+`utils/state.js` evaluates event code with `eval`, which resolves names from
+the module's own scope: a binding that looks unused may be all that code can
+reach, and moving a function to another module can break it. The package
+README lists this and the rest of the module-level state. A global the runtime
+reads from `window` is declared in `types/globals.d.ts`, and a name an app
+imports is listed in `tests/public_api.test.js`.
 
 The package is not published to npm. The reflex-base wheel embeds `src/` as
 `reflex_base/.templates/web` when it is built (`packages/reflex-base/hatch_build.py`);

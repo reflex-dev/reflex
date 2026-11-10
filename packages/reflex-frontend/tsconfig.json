@@ -1,0 +1,22 @@
+{
+  // Type-checks the javascript in place from its JSDoc: nothing is emitted, and
+  // nothing here ships. `npm run typecheck`.
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": [],
+    "skipLibCheck": true,
+    "paths": {
+      "$/*": ["./src/*"]
+    }
+  },
+  "include": ["src/utils", "src/components", "types"],
+  // dataeditor.js imports a package only the data editor component installs.
+  "exclude": ["src/utils/helpers/dataeditor.js"]
+}

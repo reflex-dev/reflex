@@ -27,10 +27,10 @@ export const pySetKey = (x) => {
 export const pySetHas = (arr, x) => {
   const key = pySetKey(x);
   // SameValueZero, as Set.has uses: NaN matches NaN, without copying arr.
-  const isNaNKey = key !== key;
+  const isNaNKey = Number.isNaN(key);
   return arr.some((y) => {
     const other = pySetKey(y);
-    return other === key || (isNaNKey && other !== other);
+    return other === key || (isNaNKey && Number.isNaN(other));
   });
 };
 

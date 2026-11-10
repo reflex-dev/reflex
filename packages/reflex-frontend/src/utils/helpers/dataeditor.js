@@ -1,7 +1,7 @@
 import { GridCellKind } from "@glideapps/glide-data-grid";
 
 export function getDEColumn(columns, col) {
-  let c = columns[col];
+  const c = columns[col];
   c.pos = col;
   return c;
 }
@@ -56,7 +56,7 @@ export function formatCell(value, column) {
         data: value,
         readonly: !editable,
       };
-    case "dropdown":
+    case "dropdown": {
       const cellValue = value ? String(value) : "";
       return {
         kind: GridCellKind.Custom,
@@ -70,6 +70,7 @@ export function formatCell(value, column) {
           value: cellValue,
         },
       };
+    }
     default:
       console.log(
         "Warning: column.type is undefined for column.title=" + column.title,

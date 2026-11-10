@@ -178,6 +178,8 @@ jobs:
           cache: npm
           cache-dependency-path: packages/reflex-frontend/package-lock.json
       - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
       # Nothing publishes the tarball yet. Packing it on every change keeps the
       # manifest publishable, and the artifact shows what a release would carry.

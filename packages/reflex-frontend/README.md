@@ -25,13 +25,50 @@ A change under `src/` is a change to reflex-base: its news fragment goes in
 ## Working on it
 
 ```
-npm ci        # install
-npm test      # vitest + jsdom
-npm run build # pack the tarball a release would publish
+npm ci            # install
+npm run check     # lint, type-check and test: what CI runs
+npm run lint      # biome, configured in lint.biome.jsonc
+npm run typecheck # tsc over the JSDoc, nothing emitted
+npm test          # vitest + jsdom
+npm run build     # pack the tarball a release would publish
 ```
 
 `$/env.json` is compiled per app, so tests read `tests/fixtures/env.json` in its
 place.
+
+The source is javascript with JSDoc types. `tsc` checks it in place (`checkJs`),
+so there is still no compile step between this directory and an app.
+
+## State that is not in the function signatures
+
+Several of the bugs found in this code came from state a function reads or writes
+without it appearing in its arguments. What there is, and where it is pinned:
+
+- **Module-level state in `utils/state.js`**: the event queue, the session
+  token, the socket warmed up before React mounts, the record of sent
+  localStorage values. Every mounted event loop and every drain shares them.
+  A test that needs a clean copy reloads the module (`vi.resetModules()`, as
+  `tests/state_connection.test.js` does). Code that awaits must not assume the
+  queue or the socket is as it left them.
+- **Work done on import**: `utils/state.js` starts a socket transport, creates
+  the cookie reader and publishes the client state store on `refs`. All of it
+  is skipped without a `window`, because a production build evaluates every
+  module in node to prerender pages. `tests/public_api.test.js` imports each
+  module in node to keep it that way.
+- **`eval` scope**: event code sent by the backend (`rx.call_script`, event
+  callbacks) is evaluated inside `utils/state.js` and resolves names from the
+  scopes around the `eval`: `queueEvents`, `processEvent`, `refs`, `addEvents`,
+  and the `socket`, `navigate` and `params` parameters. This is why the file is
+  one module, why the linter's unused-variable rules are off for it
+  (`lint.biome.jsonc`), and why nothing there is renamed or moved casually.
+- **Globals on `window`**: hooks other code installs (`__reflex_otel`,
+  `__reflex`, `__reflex_load`) and the per-app `$/env.json`. Each is declared
+  in `types/globals.d.ts`; one that is not fails the type check.
+- **Exported names**: compiled pages and separately published component
+  packages import them by name. `tests/public_api.test.js` lists them, so a
+  rename or removal is a visible edit.
+- **Timers keyed by name**: `debounce` and `throttle` keep one timer per event
+  name and delay, shared by every component that fires that event.
 
 ## Dependencies
 

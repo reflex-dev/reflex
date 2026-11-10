@@ -67,7 +67,7 @@ export function registerApp(values) {
 // Kept here so a re-executed generated module still reaches the mounted
 // provider.
 export const eventLoop = {
-  addEvents: (events, args, event_actions) => {
+  addEvents: (events, _args, _event_actions) => {
     console.warn("addEvents called before EventLoopProvider mounted", events);
   },
   connectErrors: [],

@@ -647,11 +647,11 @@ def test_backend_events_use_the_shared_store() -> None:
 
     state_js = (Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js").read_text()
     assert "refs[CLIENT_STATE_REF] = getClientStore()" in state_js
-    set_branch = state_js.split('event.name == "_client_state_set"')[1].split(
+    set_branch = state_js.split('event.name === "_client_state_set"')[1].split(
         "return;"
     )[0]
     assert "setClientState(event.payload.var_name, event.payload.value)" in set_branch
-    get_branch = state_js.split('event.name == "_client_state_get"')[1].split(
+    get_branch = state_js.split('event.name === "_client_state_get"')[1].split(
         "return;"
     )[0]
     assert "applyResultCallback" in get_branch

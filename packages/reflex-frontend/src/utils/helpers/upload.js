@@ -153,6 +153,7 @@ export const uploadFiles = async (
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
     // Instrumentation hook (installed by reflex-otel): may add trace headers.
+    /** @type {Record<string, string>} */
     const trace_headers = {};
     window.__reflex_otel?.onUploadSend?.(handler, trace_headers);
     for (const [key, value] of Object.entries(trace_headers)) {

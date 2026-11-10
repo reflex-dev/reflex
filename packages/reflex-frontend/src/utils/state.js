@@ -111,8 +111,8 @@ const locationRef = {
  * @returns A UUID.
  */
 export const generateUUID = () => {
-  let d = new Date().getTime(),
-    d2 = (performance && performance.now && performance.now() * 1000) || 0;
+  let d = Date.now(),
+    d2 = performance?.now?.() * 1000 || 0;
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     let r = Math.random() * 16;
     if (d > 0) {
@@ -122,7 +122,7 @@ export const generateUUID = () => {
       r = ((d2 + r) % 16) | 0;
       d2 = Math.floor(d2 / 16);
     }
-    return (c == "x" ? r : (r & 0x3) | 0x8).toString(16);
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
   });
 };
 
@@ -194,7 +194,7 @@ export const isBackendDisabled = () => {
   const cookie = document.cookie
     .split("; ")
     .find((row) => row.startsWith("backend-enabled="));
-  return cookie !== undefined && cookie.split("=")[1] == "false";
+  return cookie !== undefined && cookie.split("=")[1] === "false";
 };
 
 /**
@@ -369,6 +369,7 @@ const replaceEqualDeep = (prev, next) => {
   }
   if (isPlainObject(prev) && isPlainObject(next)) {
     const keys = Object.keys(next);
+    /** @type {Record<string, any>} */
     let out;
     // Spreading next keeps a JSON "__proto__" key an own data property, so the
     // assignments below never hit the prototype setter.
@@ -489,7 +490,6 @@ function urlFrom(string) {
   } catch {
     return undefined;
   }
-  return undefined;
 }
 
 /**
@@ -578,7 +578,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   // code can resolve it from.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
-  if (event.name == "_redirect") {
+  if (event.name === "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
       return;
     }
@@ -609,37 +609,37 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  if (event.name == "_remove_cookie") {
+  if (event.name === "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
     queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
-  if (event.name == "_clear_local_storage") {
+  if (event.name === "_clear_local_storage") {
     localStorage.clear();
     queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
-  if (event.name == "_remove_local_storage") {
+  if (event.name === "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
     queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
-  if (event.name == "_clear_session_storage") {
+  if (event.name === "_clear_session_storage") {
     sessionStorage.clear();
     queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
-  if (event.name == "_remove_session_storage") {
+  if (event.name === "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
     queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
-  if (event.name == "_download") {
+  if (event.name === "_download") {
     const a = document.createElement("a");
     a.hidden = true;
     a.href = event.payload.url;
@@ -658,7 +658,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  if (event.name == "_set_focus") {
+  if (event.name === "_set_focus") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
     const current = ref?.current;
@@ -672,7 +672,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  if (event.name == "_blur_focus") {
+  if (event.name === "_blur_focus") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
     const current = ref?.current;
@@ -686,7 +686,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  if (event.name == "_set_value") {
+  if (event.name === "_set_value") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
     if (ref.current) {
@@ -697,12 +697,12 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   // Backend reads and writes go to the shared store directly, so a var that no
   // component renders is still reachable.
-  if (event.name == "_client_state_set") {
+  if (event.name === "_client_state_set") {
     setClientState(event.payload.var_name, event.payload.value);
     return;
   }
 
-  if (event.name == "_client_state_get") {
+  if (event.name === "_client_state_get") {
     try {
       await applyResultCallback(
         event,
@@ -713,7 +713,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       );
     } catch (e) {
       console.log("_client_state_get", e);
-      if (window && window?.onerror) {
+      if (window?.onerror) {
         window.onerror(e.message, null, null, null, e);
       }
     }
@@ -721,7 +721,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (
-    event.name == "_call_function" &&
+    event.name === "_call_function" &&
     typeof event.payload.function !== "string"
   ) {
     try {
@@ -734,24 +734,24 @@ export const applyEvent = async (event, socket, navigate, params) => {
       );
     } catch (e) {
       console.log("_call_function", e);
-      if (window && window?.onerror) {
+      if (window?.onerror) {
         window.onerror(e.message, null, null, null, e);
       }
     }
     return;
   }
 
-  if (event.name == "_call_script" || event.name == "_call_function") {
+  if (event.name === "_call_script" || event.name === "_call_function") {
     try {
       const eval_result =
-        event.name == "_call_script"
+        event.name === "_call_script"
           ? eval(event.payload.javascript_code)
           : eval(event.payload.function)();
 
       await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
       console.log("_call_script", e);
-      if (window && window?.onerror) {
+      if (window?.onerror) {
         window.onerror(e.message, null, null, null, e);
       }
     }
@@ -761,7 +761,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   // Send the event to the server.
   if (socket) {
     const routed_event = withRouterData(
-      event.name == SYNC_LOCAL_STORAGE
+      event.name === SYNC_LOCAL_STORAGE
         ? syncLocalStorageEvent(event.payload)
         : event,
       params,
@@ -889,7 +889,7 @@ export const queueEvents = async (
  */
 export const processEvent = async (socket, navigate, params) => {
   // A connected socket can dispatch without inspecting the queued event types.
-  if (!(socket && socket.connected) && isStateful()) {
+  if (!socket?.connected && isStateful()) {
     return;
   }
 
@@ -985,7 +985,7 @@ const handleStateMismatch = (info) => {
     return;
   }
   const last_reload =
-    parseInt(window.sessionStorage.getItem(LAST_RELOADED_KEY)) || 0;
+    parseInt(window.sessionStorage.getItem(LAST_RELOADED_KEY), 10) || 0;
   if (Date.now() - last_reload > info.reload_cooldown_ms) {
     reloadForNewVersion();
     return;
@@ -1082,6 +1082,7 @@ export const connect = async (
     const size = 1 + frameSize(encoded[0], transport);
     if (size > engine._maxPayload) {
       const unit = transport === "websocket" ? "characters" : "bytes";
+      /** @type {Error & { code?: string }} */
       const error = new Error(
         `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
       );
@@ -1316,7 +1317,7 @@ export const connect = async (
 /**
  * Create an event object.
  * @param {string} name The name of the event.
- * @param {Object.<string, Any>} payload The payload of the event.
+ * @param {Object.<string, any>} payload The payload of the event.
  * @param {Object.<string, (number|boolean)>} event_actions The actions to take on the event.
  * @param {string} handler The client handler to process event.
  * @returns The event object.
@@ -1343,7 +1344,7 @@ export const ReflexEvent = (
 /**
  * Apply event actions before invoking a target function.
  * @param {Function} target The function to invoke after applying event actions.
- * @param {Object.<string, (number|boolean)>} event_actions The actions to apply.
+ * @param {{preventDefault?: boolean, stopPropagation?: boolean, temporal?: boolean, throttle?: number, debounce?: number}} event_actions The actions to apply.
  * @param {Array<any>|any} args The event args.
  * @param {string|null} action_key A stable key for debounce/throttle tracking.
  * @param {Function|null} temporal_handler Returns whether temporal actions may run.
@@ -1356,7 +1357,7 @@ export const applyEventActions = (
   action_key = null,
   temporal_handler = null,
 ) => {
-  if (!(args instanceof Array)) {
+  if (!Array.isArray(args)) {
     args = [args];
   }
 
@@ -1416,7 +1417,7 @@ export const hydrateClientStorage = (client_storage) => {
       }
     }
   }
-  if (client_storage.session_storage && typeof window != "undefined") {
+  if (client_storage.session_storage && typeof window !== "undefined") {
     for (const state_key in client_storage.session_storage) {
       const session_options = client_storage.session_storage[state_key];
       const session_storage_value = sessionStorage.getItem(
@@ -1566,7 +1567,10 @@ export const useEventLoop = (
   const prevLocationRef = useRef(location);
   const [searchParams] = useSearchParams();
   const [connectErrors, setConnectErrors] = useState([]);
-  const params = useRef(paramsR);
+  // A splat route's segments are kept as a list, so the values are not all strings.
+  const params = useRef(
+    /** @type {Record<string, string | string[] | undefined>} */ (paramsR),
+  );
   const mounted = useRef(false);
 
   useEffect(() => {
@@ -1619,9 +1623,10 @@ export const useEventLoop = (
   const addEvents = useCallback((events, args, event_actions) => {
     const _events = normalizeEvents(events);
 
-    event_actions = _events.reduce(
-      (acc, e) => ({ ...acc, ...e.event_actions }),
-      event_actions ?? {},
+    event_actions = Object.assign(
+      {},
+      event_actions,
+      ..._events.map((e) => e.event_actions),
     );
 
     if (!event_actions?.temporal) {
@@ -2133,13 +2138,13 @@ export const getRefValue = (ref) => {
   if (!ref || !ref.current) {
     return null;
   }
-  if (ref.current.type == "checkbox") {
+  if (ref.current.type === "checkbox") {
     return ref.current.checked; // chakra
   } else if (
     ref.current.className?.includes("rt-CheckboxRoot") ||
     ref.current.className?.includes("rt-SwitchRoot")
   ) {
-    return ref.current.ariaChecked == "true"; // radix
+    return ref.current.ariaChecked === "true"; // radix
   } else if (ref.current.className?.includes("rt-SliderRoot")) {
     // find the actual slider
     return ref.current.querySelector(".rt-SliderThumb")?.ariaValueNow;
@@ -2147,8 +2152,7 @@ export const getRefValue = (ref) => {
     //querySelector(":checked") is needed to get value from radio_group
     return (
       ref.current.value ??
-      (ref.current.querySelector &&
-        ref.current.querySelector(":checked")?.value) ??
+      ref.current.querySelector?.(":checked")?.value ??
       null
     );
   }

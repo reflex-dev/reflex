@@ -1,0 +1,64 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.8/schema.json",
+  // Not named biome.jsonc on purpose: the repository's format hook runs from
+  // its root with no configuration, and would stop on finding one down here.
+  // `npm run lint` names this file instead.
+  "files": {
+    "includes": ["src/**/*.js", "tests/**/*.js", "*.js"]
+  },
+  // Formatting is the repository's pre-commit hook; this matches its arguments.
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "style": {
+        "useTemplate": "off"
+      },
+      "complexity": {
+        "useArrowFunction": "off",
+        "useLiteralKeys": "off"
+      },
+      "suspicious": {
+        // `(cache[key] ??= [])` and `token ?? (token = make())` are deliberate.
+        "noAssignInExpressions": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      // state.js evaluates event code with `eval`, which resolves names from
+      // the enclosing scopes. A binding or parameter the linter sees no use of
+      // (`addEvents`, `socket`, `navigate`, `params`) may be all that code can
+      // reach, so nothing here is removed on the linter's word. Its effects
+      // also leave dependencies out on purpose: `addEvents` must keep one
+      // identity for the life of the loop.
+      "includes": ["src/utils/state.js"],
+      "linter": {
+        "rules": {
+          "security": {
+            "noGlobalEval": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedFunctionParameters": "off",
+            "useExhaustiveDependencies": "off"
+          }
+        }
+      }
+    },
+    {
+      // The cookie tests write `document.cookie` to set up what the code reads.
+      "includes": ["tests/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noDocumentCookie": "off"
+          }
+        }
+      }
+    }
+  ]
+}
