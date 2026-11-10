@@ -1318,7 +1318,6 @@ def compile_app(
                 style=app.style,
                 plugins=compiler_plugins,
                 auto_memoize=config.auto_memoize,
-                react_compiler=config.react_compiler,
             )
         ),
     )

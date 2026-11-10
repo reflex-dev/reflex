@@ -37,7 +37,6 @@ from reflex.compiler.plugins import (
     ClientStateScopePlugin,
     DefaultCollectorPlugin,
     DefaultPagePlugin,
-    InlineLifecyclePlugin,
     default_page_plugins,
 )
 
@@ -1291,7 +1290,9 @@ def test_compile_context_applies_style_before_shared_stateful_render() -> None:
     assert '["color"] : "red"' in (compile_ctx.compiled_pages["/b"].output_code or "")
 
 
-def test_default_page_plugins_can_skip_auto_memoization() -> None:
+def test_default_page_plugins_keep_scope_wrappers_without_auto_memoization() -> None:
+    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+
     plugins = default_page_plugins(style=page_style(), auto_memoize=False)
 
     assert [type(plugin) for plugin in plugins] == [
@@ -1299,55 +1300,34 @@ def test_default_page_plugins_can_skip_auto_memoization() -> None:
         ApplyStylePlugin,
         ClientStateScopePlugin,
         DefaultCollectorPlugin,
-        InlineLifecyclePlugin,
-    ]
-
-
-def test_react_compiler_adds_lifecycle_plugin_before_memoization() -> None:
-    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
-
-    plugins = default_page_plugins(react_compiler=True)
-
-    assert [type(plugin) for plugin in plugins[-2:]] == [
-        InlineLifecyclePlugin,
         MemoizeStatefulPlugin,
     ]
+    assert plugins[-1] == MemoizeStatefulPlugin(scope_only=True)
 
 
-def _compile_page_and_memos(
-    component: Callable[[], Component], auto_memoize: bool
-) -> tuple[str, str]:
-    """Compile one page and its generated memo components.
+def _compile_without_auto_memoize(
+    component: Callable[[], Component],
+) -> tuple[str, CompileContext]:
+    """Compile one page with ``auto_memoize=False``.
 
     Args:
         component: The page function.
-        auto_memoize: Whether to wrap stateful components in memo components.
-            React Compiler is on in that case, so both experimental modes run.
 
     Returns:
-        The page code and the code of all generated memo modules.
+        The page code and the compile context.
     """
     compile_ctx = CompileContext(
         pages=[FakePage(route="/page", component=component)],
-        hooks=CompilerHooks(
-            plugins=default_page_plugins(
-                auto_memoize=auto_memoize, react_compiler=auto_memoize
-            )
-        ),
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=False)),
     )
     with compile_ctx:
         compile_ctx.compile()
-        memo_files, _ = compiler.compile_memo_components(
-            compile_ctx.auto_memo_components.values()
-        )
-    page_code = compile_ctx.compiled_pages["/page"].output_code or ""
-    return page_code, "".join(code for _, code in memo_files)
+    return compile_ctx.compiled_pages["/page"].output_code or "", compile_ctx
 
 
-@pytest.mark.parametrize("auto_memoize", [True, False])
-def test_lifecycle_stays_inside_cond_branch(auto_memoize: bool) -> None:
-    """A branch's lifecycle events render in the branch, not as hoisted hooks."""
-    page_code, memo_code = _compile_page_and_memos(
+def test_lifecycle_stays_inside_cond_branch_without_auto_memoization() -> None:
+    """A branch's lifecycle hook compiles into a wrapper, not into the page."""
+    code, compile_ctx = _compile_without_auto_memoize(
         lambda: rx.cond(
             Var("flag", _var_type=bool),
             rx.text(
@@ -1356,54 +1336,53 @@ def test_lifecycle_stays_inside_cond_branch(auto_memoize: bool) -> None:
                 on_unmount=rx.console_log("unmounted"),
             ),
             rx.text("hidden"),
-        ),
-        auto_memoize,
+        )
     )
 
-    assert "useEffect(" not in page_code + memo_code
-    assert "MountEffect" not in memo_code
-    effect = page_code.index("jsx(MountEffect,{mount:")
-    assert page_code.index('"shown"') < effect < page_code.index('"hidden"')
-    assert page_code.count("jsx(MountEffect,") == 1
-    assert "unmount:" in page_code
+    assert "useEffect(" not in code
+    (wrapper,) = compile_ctx.memoize_wrappers
+    assert code.index("?(") < code.index(f"jsx({wrapper},") < code.index('"hidden"')
 
 
-@pytest.mark.parametrize("auto_memoize", [True, False])
-def test_lifecycle_stays_inside_foreach_item(auto_memoize: bool) -> None:
-    """An item's lifecycle event renders in the loop body under the item key."""
-    page_code, memo_code = _compile_page_and_memos(
-        lambda: rx.foreach(
-            Var(
-                "items",
-                _var_type=list[str],
-                _var_data=VarData(hooks={"const items = useItems()": None}),
-            ),
-            lambda item: rx.text(item, on_mount=rx.console_log(item)),
-        ),
-        auto_memoize,
+def test_cond_branches_get_distinct_lifecycle_wrappers_without_auto_memoization() -> (
+    None
+):
+    """Each branch has its own wrapper, so a branch switch remounts it."""
+    code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.cond(
+            Var("flag", _var_type=bool),
+            rx.text("a", on_mount=rx.console_log("a")),
+            rx.text("b", on_mount=rx.console_log("b")),
+        )
     )
 
-    assert "useEffect(" not in page_code + memo_code
-    # The hook-backed iterable makes the memoize plugin seal the loop in a memo.
-    _, _, loop_body = (memo_code if auto_memoize else page_code).partition("=>(")
-    assert loop_body.startswith("jsx(Fragment,{key:")
-    assert loop_body.count("key:") == 1
-    assert "jsx(MountEffect,{mount:" in loop_body
+    first, second = compile_ctx.memoize_wrappers
+    assert first != second
+    assert code.index(f"jsx({first},") < code.index(f"jsx({second},")
+
+
+def test_stateful_component_without_hooks_is_not_wrapped_without_auto_memoization() -> (
+    None
+):
+    """Only components with hooks of their own keep a wrapper."""
+    _code, compile_ctx = _compile_without_auto_memoize(create_inline_stateful_component)
+
+    assert not compile_ctx.memoize_wrappers
 
 
 @pytest.mark.parametrize("auto_memoize", [True, False])
 def test_compile_app_passes_auto_memoize_config(
     auto_memoize: bool, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Page compilation follows the ``auto_memoize`` and ``react_compiler`` config."""
+    """Page compilation follows the ``auto_memoize`` config."""
 
     class _StopCompile(Exception):
         pass
 
-    received: list[tuple[bool, bool]] = []
+    received: list[bool] = []
 
     def recording_default_page_plugins(**kwargs):
-        received.append((kwargs["auto_memoize"], kwargs["react_compiler"]))
+        received.append(kwargs["auto_memoize"])
         raise _StopCompile
 
     monkeypatch.setattr(
@@ -1412,15 +1391,11 @@ def test_compile_app_passes_auto_memoize_config(
     monkeypatch.setattr(
         compiler,
         "get_config",
-        lambda: rx.Config(
-            app_name="testing",
-            auto_memoize=auto_memoize,
-            react_compiler=not auto_memoize,
-        ),
+        lambda: rx.Config(app_name="testing", auto_memoize=auto_memoize),
     )
     app = rx.App()
     app.add_page(lambda: rx.box("hi"), route="/")
     with pytest.raises(_StopCompile):
         compiler.compile_app(app, dry_run=True, use_rich=False)
 
-    assert received == [(auto_memoize, not auto_memoize)]
+    assert received == [auto_memoize]

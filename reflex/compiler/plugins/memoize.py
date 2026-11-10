@@ -131,7 +131,7 @@ def _component_subtree_is_reactive(
     return False
 
 
-def _should_memoize(component: Component) -> bool:
+def _should_memoize(component: Component, scope_only: bool = False) -> bool:
     """Decide whether ``component`` is a candidate for auto-memoization.
 
     Snapshot boundaries (``recursive=False``) suppress their descendants,
@@ -148,6 +148,9 @@ def _should_memoize(component: Component) -> bool:
 
     Args:
         component: The candidate component.
+        scope_only: Whether to wrap a component only when its hooks need a
+            function of their own. Snapshot boundaries keep the full rule,
+            because they seal their subtree.
 
     Returns:
         True if the component should be wrapped in a memo definition.
@@ -156,6 +159,18 @@ def _should_memoize(component: Component) -> bool:
 
     if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
         return False
+    if scope_only and strategy is not MemoizationStrategy.SNAPSHOT:
+        if component.tag is None:
+            return False
+        if component._memoization_mode.disposition == MemoizationDisposition.ALWAYS:
+            return True
+        # A lifecycle event or an added hook belongs to one rendered instance,
+        # so it must not move up into the page function.
+        return bool(
+            component._get_mount_lifecycle_hook()
+            or component._get_hooks() is not None
+            or component._get_added_hooks()
+        )
     if isinstance(component, Bare):
         # A stateful value will be wrapped in a separate component. Match the
         # per-Var predicate used by ``_subtree_has_reactive_data`` so a Bare
@@ -230,6 +245,9 @@ class MemoizeStatefulPlugin(Plugin):
     component leaves.
     """
 
+    # Wrap only components whose hooks need a function of their own.
+    scope_only: bool = False
+
     def enter_component(
         self,
         comp: BaseComponent,
@@ -275,7 +293,7 @@ class MemoizeStatefulPlugin(Plugin):
             return None
         snapshot_boundary = is_snapshot_boundary(comp)
 
-        if not _should_memoize(comp):
+        if not _should_memoize(comp, self.scope_only):
             # Boundary not worth wrapping — still suppress descendants so
             # they don't memoize independently of the boundary's subtree.
             if snapshot_boundary:
@@ -345,7 +363,7 @@ class MemoizeStatefulPlugin(Plugin):
         if strategy is MemoizationStrategy.SNAPSHOT:
             return None
 
-        if not _should_memoize(comp):
+        if not _should_memoize(comp, self.scope_only):
             return None
 
         # The collector plugin runs at HookOrder.POST — *after* this plugin

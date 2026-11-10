@@ -76,20 +76,6 @@ export const useRegisteredRef = (name) => {
   return ref;
 };
 
-/**
- * Run lifecycle events from the element's own place in the tree.
- * @param props.mount Called after the element mounts.
- * @param props.unmount Called when the element unmounts.
- * @returns Nothing to render.
- */
-export const MountEffect = ({ mount, unmount }) => {
-  useEffect(() => {
-    mount?.();
-    return () => unmount?.();
-  }, []);
-  return null;
-};
-
 // The client state store, for code evaluated outside this module's scope: a
 // `run_script` body pushing a value, or the devtools console. Client only, so
 // a server render never shares a store between requests.

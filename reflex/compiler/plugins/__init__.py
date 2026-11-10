@@ -13,7 +13,6 @@ from .builtin import (
     ClientStateScopePlugin,
     DefaultCollectorPlugin,
     DefaultPagePlugin,
-    InlineLifecyclePlugin,
     default_page_plugins,
 )
 from .memoize import MemoizeStatefulPlugin
@@ -27,7 +26,6 @@ __all__ = [
     "ComponentAndChildren",
     "DefaultCollectorPlugin",
     "DefaultPagePlugin",
-    "InlineLifecyclePlugin",
     "MemoizeStatefulPlugin",
     "PageContext",
     "default_page_plugins",

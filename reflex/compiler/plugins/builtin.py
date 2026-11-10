@@ -10,18 +10,12 @@ from reflex_base import constants
 from reflex_base.components.app_wraps import _ingest_component_var_app_wraps
 from reflex_base.components.client_state_context import local_client_state_names
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
-from reflex_base.components.memoize_helpers import (
-    MemoizationStrategy,
-    get_memoization_strategy,
-)
 from reflex_base.config import get_config
-from reflex_base.constants import EventTriggers
 from reflex_base.plugins import CompileContext, PageContext, PageDefinition, Plugin
 from reflex_base.plugins.base import HookOrder
 from reflex_base.utils.format import make_default_page_title
 from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
 from reflex_base.vars import VarData
-from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.fragment import Fragment
 
 from reflex.compiler import utils
@@ -494,124 +488,11 @@ class DefaultCollectorPlugin(Plugin):
             )
 
 
-class MountEffect(Component):
-    """An element that runs lifecycle events where it renders."""
-
-    library = "$/utils/state"
-    tag = "MountEffect"
-
-    # Called after the element mounts.
-    mount: Var[Any]
-
-    # Called when the element unmounts.
-    unmount: Var[Any]
-
-
-@dataclasses.dataclass(frozen=True, slots=True)
-class InlineLifecyclePlugin(Plugin):
-    """Render ``on_mount`` and ``on_unmount`` as an element beside the component.
-
-    A lifecycle hook is hoisted to the top of the enclosing generated function,
-    out of its ``rx.cond`` branch or ``rx.foreach`` item. An element keeps the
-    events at the component's place in the tree.
-    """
-
-    # Rewrite a snapshot subtree before the memoize plugin seals it.
-    _compiler_enter_component_order = HookOrder.PRE
-
-    def enter_component(
-        self,
-        comp: BaseComponent,
-        /,
-        *,
-        page_context: PageContext,
-        compile_context: Any,
-        in_prop_tree: bool = False,
-    ) -> BaseComponent | None:
-        """Replace a lifecycle-bearing component with itself plus an effect element.
-
-        Args:
-            comp: The component being visited.
-            page_context: The active page context.
-            compile_context: The active compile context.
-            in_prop_tree: Whether the component is in a prop subtree.
-
-        Returns:
-            The rewritten component, or ``None`` when nothing changed.
-        """
-        if in_prop_tree or not isinstance(comp, Component):
-            return None
-        rewritten = comp
-        if get_memoization_strategy(comp) is MemoizationStrategy.SNAPSHOT:
-            # The walker does not descend into a memoized snapshot.
-            rewritten = self._inline_subtree(comp, page_context)
-        rewritten = self._inline(rewritten, page_context)
-        return None if rewritten is comp else rewritten
-
-    def _inline_subtree(self, comp: Component, page_context: PageContext) -> Component:
-        """Move the lifecycle events of every descendant into effect elements.
-
-        Args:
-            comp: The root of the subtree; its own events are left in place.
-            page_context: The active page context.
-
-        Returns:
-            ``comp``, or a page-local clone with rewritten children.
-        """
-        children = [
-            self._inline(self._inline_subtree(child, page_context), page_context)
-            if isinstance(child, Component)
-            else child
-            for child in comp.children
-        ]
-        if all(new is old for new, old in zip(children, comp.children, strict=True)):
-            return comp
-        owned = page_context.own(comp)
-        owned.children = children
-        owned._clear_compile_caches()
-        return owned
-
-    @staticmethod
-    def _inline(comp: Component, page_context: PageContext) -> Component:
-        """Move a component's lifecycle events into an effect element.
-
-        Args:
-            comp: The component to rewrite.
-            page_context: The active page context.
-
-        Returns:
-            A keyed fragment of the component and its effect element, or
-            ``comp`` when it has no lifecycle events.
-        """
-        triggers = comp.event_triggers
-        on_mount = triggers.get(EventTriggers.ON_MOUNT)
-        on_unmount = triggers.get(EventTriggers.ON_UNMOUNT)
-        if on_mount is None and on_unmount is None:
-            return comp
-
-        owned = page_context.own(comp)
-        owned.event_triggers = {
-            name: value
-            for name, value in triggers.items()
-            if name not in (EventTriggers.ON_MOUNT, EventTriggers.ON_UNMOUNT)
-        }
-        owned._clear_compile_caches()
-        effect_props = {}
-        if on_mount is not None:
-            effect_props["mount"] = LiteralVar.create(on_mount)
-        if on_unmount is not None:
-            effect_props["unmount"] = LiteralVar.create(on_unmount)
-        # The fragment is the new root of a foreach item, so it takes the key.
-        key, owned.key = owned.key, None
-        return Fragment.create(owned, MountEffect.create(**effect_props), key=key)
-
-
 def default_page_plugins(
     *,
     style: ComponentStyle | None = None,
     plugins: Sequence[Plugin] = (),
     auto_memoize: bool = True,
-    react_compiler: bool = False,
 ) -> tuple[Plugin, ...]:
     """Return the default compiler plugin ordering for page compilation.
 
@@ -619,7 +500,8 @@ def default_page_plugins(
         style: The app style to apply, if any.
         plugins: Plugins that run before the defaults.
         auto_memoize: Whether to wrap stateful components in memo components.
-        react_compiler: Whether React Compiler compiles the generated code.
+            When False, only components whose hooks need a function of
+            their own are wrapped.
 
     Returns:
         The ordered page compiler plugins.
@@ -629,13 +511,9 @@ def default_page_plugins(
         chain.append(ApplyStylePlugin(style=style))
     # The scope plugin's compile_page runs before the collector collapses imports.
     chain.extend((ClientStateScopePlugin(), DefaultCollectorPlugin()))
-    # Limited to the experimental options; the default output stays unchanged.
-    if react_compiler or not auto_memoize:
-        chain.append(InlineLifecyclePlugin())
-    if auto_memoize:
-        from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 
-        chain.append(MemoizeStatefulPlugin())
+    chain.append(MemoizeStatefulPlugin(scope_only=not auto_memoize))
     return tuple(chain)
 
 
@@ -643,6 +521,5 @@ __all__ = [
     "ApplyStylePlugin",
     "DefaultCollectorPlugin",
     "DefaultPagePlugin",
-    "InlineLifecyclePlugin",
     "default_page_plugins",
 ]
