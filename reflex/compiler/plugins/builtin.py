@@ -500,8 +500,9 @@ def default_page_plugins(
         style: The app style to apply, if any.
         plugins: Plugins that run before the defaults.
         auto_memoize: Whether to wrap stateful components in memo components.
-            When False, only components whose hooks need a function of
-            their own are wrapped.
+            When False, only components with a lifecycle event or hooks of
+            their own are wrapped, plus snapshot boundaries such as rx.foreach
+            and components with ``MemoizationDisposition.ALWAYS``.
 
     Returns:
         The ordered page compiler plugins.

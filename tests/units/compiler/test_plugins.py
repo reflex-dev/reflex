@@ -1361,6 +1361,32 @@ def test_cond_branches_get_distinct_lifecycle_wrappers_without_auto_memoization(
     assert code.index(f"jsx({first},") < code.index(f"jsx({second},")
 
 
+def test_foreach_item_lifecycle_gets_loop_var_without_auto_memoization() -> None:
+    """An item's lifecycle hook compiles into a wrapper that gets the loop var."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    _code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.foreach(
+            Var("items", _var_type=list[str]),
+            lambda item: rx.text(item, on_mount=rx.console_log(item)),
+        )
+    )
+
+    memo_files, _imports = compile_memo_components(
+        memos=tuple(compile_ctx.auto_memo_components.values())
+    )
+    definitions = "".join(code for _path, code in memo_files).split("\nexport const ")
+    loop = next(d for d in definitions if d.startswith("Foreach_"))
+    item = next(d for d in definitions if d.startswith("Text_"))
+
+    before_loop, _, loop_body = loop.partition("Array.prototype.map.call(")
+    assert "item_rx_state_" not in before_loop
+    assert "itemRxState:item_rx_state_" in loop_body
+    signature, _, body = item.partition("memo((")[2].partition("=> {")
+    assert "itemRxState:item_rx_state_" in signature
+    assert "useEffect(" in body
+
+
 def test_stateful_component_without_hooks_is_not_wrapped_without_auto_memoization() -> (
     None
 ):
