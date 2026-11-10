@@ -483,6 +483,21 @@ def _foreach_memo_code(component_factory: Callable[[], Component]) -> str:
     return "".join(code for _path, code in memo_files)
 
 
+def _split_item_component(code: str) -> tuple[str, str, str]:
+    """Split memo module code around the first item component definition.
+
+    Args:
+        code: The generated memo module code.
+
+    Returns:
+        The item component name, its definition, and the code after it.
+    """
+    _, _, rest = code.partition("const ForeachItem_")
+    definition, _, after = rest.partition("\n});")
+    name = "ForeachItem_" + definition.partition(" ")[0]
+    return name, definition, after
+
+
 @pytest.mark.parametrize(
     ("render_item", "hook_marker"),
     [
@@ -494,10 +509,10 @@ def _foreach_memo_code(component_factory: Callable[[], Component]) -> str:
     ],
     ids=["on_mount", "add_hooks"],
 )
-def test_foreach_item_hooks_run_inside_the_loop(
+def test_foreach_item_hooks_run_in_an_item_component(
     render_item: Callable[[Var], Component], hook_marker: str
 ) -> None:
-    """A hook of a foreach item compiles inside the loop body.
+    """A hook of a foreach item compiles into a module-level item component.
 
     Regression for reflex-dev/reflex#7791: the hook was hoisted to the top of
     the Foreach memo body, where the loop variable does not exist.
@@ -506,28 +521,39 @@ def test_foreach_item_hooks_run_inside_the_loop(
         lambda: rx.foreach(SpecialFormMemoState.items, render_item)
     )
 
-    before_loop, _, loop_body = code.partition("Array.prototype.map.call(")
+    name, definition, memo_body = _split_item_component(code)
+    assert definition.partition("=>")[0].count("item_rx_state_") == 1
+    assert hook_marker in definition
+    before_loop, _, loop_body = memo_body.partition("Array.prototype.map.call(")
     assert "item_rx_state_" not in before_loop
-    assert hook_marker not in before_loop
-    assert "jsx(ForeachItem,{key:" in loop_body
-    assert hook_marker in loop_body
+    assert hook_marker not in memo_body
+    assert f"jsx({name},{{key:" in loop_body
+    assert ",item_rx_state_," in loop_body
 
 
-def test_nested_foreach_item_hook_runs_inside_the_inner_loop() -> None:
-    """A hook in a nested foreach compiles inside the inner loop body."""
+def test_nested_foreach_item_component_receives_outer_loop_vars() -> None:
+    """An inner item component gets the loop variables of the outer loop as props."""
     code = _foreach_memo_code(
         lambda: rx.foreach(
             SpecialFormMemoState.items,
-            lambda _outer: rx.foreach(
+            lambda outer: rx.foreach(
                 SpecialFormMemoState.items,
-                lambda inner: rx.text(inner, on_mount=rx.console_log(inner)),
+                lambda inner: rx.text(
+                    inner, on_mount=rx.console_log(f"{outer}-{inner}")
+                ),
             ),
         )
     )
 
-    before_inner_loop, _, inner_loop = code.rpartition("Array.prototype.map.call(")
-    assert "inner_rx_state_" not in before_inner_loop
-    assert "useEffect(() => {" in inner_loop
+    name, definition, memo_body = _split_item_component(code)
+    params = definition.partition("=>")[0]
+    assert "outer_rx_state_" in params
+    assert "inner_rx_state_" in params
+    assert "useEffect(() => {" in definition
+    assert "useEffect(() => {" not in memo_body
+    call = memo_body.partition(f"jsx({name},")[2].partition(")")[0]
+    assert "outer_rx_state_" in call
+    assert "inner_rx_state_" in call
 
 
 def test_foreach_item_without_scoped_hooks_renders_inline() -> None:
@@ -536,7 +562,7 @@ def test_foreach_item_without_scoped_hooks_renders_inline() -> None:
         lambda: rx.foreach(SpecialFormMemoState.items, lambda item: rx.text(item))
     )
 
-    assert "ForeachItem" not in code
+    assert "ForeachItem_" not in code
 
 
 def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:

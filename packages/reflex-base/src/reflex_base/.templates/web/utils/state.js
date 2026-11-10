@@ -65,14 +65,6 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
-/**
- * Render one `rx.foreach` item as its own component, so the item's hooks run
- * once per item with the loop variables in scope.
- * @param props.render Calls the item's hooks and returns its element.
- * @returns The item's element.
- */
-export const ForeachItem = ({ render }) => render();
-
 // The client state store, for code evaluated outside this module's scope: a
 // `run_script` body pushing a value, or the devtools console. Client only, so
 // a server render never shares a store between requests.

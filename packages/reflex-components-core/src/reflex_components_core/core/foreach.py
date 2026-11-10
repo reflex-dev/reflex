@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextvars
 import functools
 import inspect
 import re
@@ -9,13 +10,13 @@ from collections.abc import Callable, Iterable
 from hashlib import md5
 from typing import Any, cast
 
+from reflex_base.compiler.templates import _RenderUtils
 from reflex_base.components.component import Component, field
 from reflex_base.components.tags import IterTag
-from reflex_base.constants import Dirs, MemoizationMode
+from reflex_base.constants import MemoizationMode
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import UntypedVarError
-from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var, var_operation, var_operation_return
 
@@ -37,6 +38,12 @@ def _string_chars_operation(string: Var[Any]):
         js_expression=f'Array.from(({string!s}) ?? "")',
         var_type=list[str],
     )
+
+
+# The loop variables of the foreach components whose render function is running.
+_ENCLOSING_LOOP_VARS: contextvars.ContextVar[tuple[str, ...]] = contextvars.ContextVar(
+    "_ENCLOSING_LOOP_VARS", default=()
+)
 
 
 def _has_instance_hooks(component: Component) -> bool:
@@ -87,8 +94,14 @@ class Foreach(Component):
     )
 
     _item_scoped: bool = field(
-        doc="Whether each item renders as its own component, so its hooks run in the loop body.",
+        doc="Whether each item renders as its own component, so its hooks run once per item.",
         default=False,
+        is_javascript_property=False,
+    )
+
+    _loop_vars: tuple[str, ...] = field(
+        doc="The loop variables in scope for an item: those of the enclosing foreach components, then its own.",
+        default=(),
         is_javascript_property=False,
     )
 
@@ -164,33 +177,50 @@ class Foreach(Component):
             iterable=iterable,
             render_fn=render_fn,
         )
+        tag = component._render()
+        loop_vars = (tag.arg_var_name, tag.index_var_name)
+        component._loop_vars = tuple(
+            dict.fromkeys((*_ENCLOSING_LOOP_VARS.get(), *loop_vars))
+        )
+        enclosing = _ENCLOSING_LOOP_VARS.set(component._loop_vars)
         try:
             # Keep a ref to a rendered component to determine correct imports/hooks/styles.
-            tag = component._render()
             item = tag.render_component()
-            component.children = [item]
         except UntypedVarError as e:
             raise UntypedVarError(
                 iterable,
                 "foreach",
                 "https://reflex.dev/docs/library/dynamic-rendering/foreach/",
             ).with_traceback(e.__traceback__) from None
-        loop_vars = re.compile(
-            rf"(?<![\w$])(?:{re.escape(tag.arg_var_name)}|{re.escape(tag.index_var_name)})(?![\w$])"
+        finally:
+            _ENCLOSING_LOOP_VARS.reset(enclosing)
+        component.children = [item]
+        reads_loop_var = re.compile(
+            rf"(?<![\w$])(?:{'|'.join(map(re.escape, loop_vars))})(?![\w$])"
         )
         component._item_scoped = _has_instance_hooks(item) or any(
-            loop_vars.search(hook) for hook in component._item_hooks()
+            reads_loop_var.search(hook) for hook in item._get_all_hooks()
         )
         return component
 
-    def _item_hooks(self) -> dict[str, VarData | None]:
-        """Get the hooks of the rendered item.
+    def _item_component(self) -> tuple[str, str]:
+        """Compile the item into a module-level component.
+
+        The item's hooks run in that component, once per item, and the loop
+        variables reach it as props.
 
         Returns:
-            The item's hooks, internal hooks first.
+            The component name and its definition.
         """
         item = self.children[0]
-        return {**item._get_all_hooks_internal(), **item._get_all_hooks()}
+        params = ",".join(self._loop_vars)
+        hooks = "\n".join(item._get_all_hooks())
+        body = _RenderUtils.render(item.render())
+        name = f"ForeachItem_{md5(f'{params}{hooks}{body}'.encode()).hexdigest()}"
+        return (
+            name,
+            f"const {name} = (({{{params}}}) => {{\n{hooks}\nreturn ({body})\n}});",
+        )
 
     def _get_all_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the internal hooks that compile outside the loop body.
@@ -218,15 +248,13 @@ class Foreach(Component):
         code.update(self._get_added_hooks())
         return code
 
-    def add_imports(self) -> ImportDict:
-        """Add the item component import when each item is its own component.
+    def add_custom_code(self) -> list[str]:
+        """Add the item component definition when each item is its own component.
 
         Returns:
-            The imports for the component.
+            The module-level code for the component.
         """
-        if self._item_scoped:
-            return {f"$/{Dirs.STATE_PATH}": ImportVar(tag="ForeachItem")}
-        return {}
+        return [self._item_component()[1]] if self._item_scoped else []
 
     def _render(self) -> IterTag:
         props = {}
@@ -283,9 +311,11 @@ class Foreach(Component):
             arg_index=tag.index_var_name,
         )
         if self._item_scoped:
-            rendered["item_hooks"] = "\n".join(self._item_hooks())
-            item = cast("Component", self.children[0])
-            rendered["item_key"] = str(LiteralVar.create(item.key))
+            name, _ = self._item_component()
+            key = LiteralVar.create(cast("Component", self.children[0]).key)
+            rendered["item_call"] = (
+                f"jsx({name},{{key:{key!s},{','.join(self._loop_vars)}}},)"
+            )
         return rendered
 
 

@@ -53,9 +53,8 @@ class _RenderUtils:
         children_rendered = "".join([
             _RenderUtils.render(child) for child in component.get("children", [])
         ])
-        if (item_hooks := component.get("item_hooks")) is not None:
-            # The item's hooks run in the item component, inside the loop body.
-            children_rendered = f"jsx(ForeachItem,{{key:{component['item_key']},render:(() => {{\n{item_hooks}\nreturn ({children_rendered})}})}},)"
+        # An item with its own hooks renders through its item component.
+        children_rendered = component.get("item_call") or children_rendered
         return f"Array.prototype.map.call({component['iterable_state']} ?? [],(({component['arg_name']},{component['arg_index']})=>({children_rendered})))"
 
     @staticmethod
