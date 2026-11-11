@@ -19,7 +19,7 @@ the milestone `v0.11.0`.
 | 022 (+023 diagnostics) | Prod CORS default breaks TLS-proxied and split deployments | **PR open** [reflex-dev/reflex#7799](https://github.com/reflex-dev/reflex/pull/7799) |
 | 033 | kill -9 of a worker stops the server | **Merged** [reflex-dev/reflex#7803](https://github.com/reflex-dev/reflex/pull/7803) |
 | 034 + 035 | client_state API contract (wrong name hint, identifier collisions, conflicting defaults) | **Merged** [reflex-dev/reflex#7804](https://github.com/reflex-dev/reflex/pull/7804) |
-| 003 (+002 changelog line) | `refs` not imported in 0.11 pages/memos (rxe AG Grid) | **PR open** [reflex-dev/reflex#7806](https://github.com/reflex-dev/reflex/pull/7806) (compat import, `refs` declared internal) |
+| 003 (+002 changelog line) | `refs` not imported in 0.11 pages/memos (rxe AG Grid) | **merged** [reflex-dev/reflex#7806](https://github.com/reflex-dev/reflex/pull/7806) (compat import, `refs` declared internal); rxe companion still to check |
 | 002, 003, 008 (rxe side) | MCP prod crash without deploy_url, AG Grid `refs`, MCP consent redirect | **PR open** [reflex-dev/reflex-enterprise#290](https://github.com/reflex-dev/reflex-enterprise/pull/290) (needs an rxe release) |
 | 044 | upload handler error truncates the response | **Merged** [reflex-dev/reflex#7808](https://github.com/reflex-dev/reflex/pull/7808) |
 | 001+016, 007 | repeated `@rx.event`, staticmethod above `@rx.event`, pyright 3.11–3.13 handler types | #7810 **merged** (carried most of #7807); [reflex-dev/reflex#7807](https://github.com/reflex-dev/reflex/pull/7807) open with the 2 remaining commits |
@@ -223,6 +223,7 @@ As each PR merges into `main`:
 | #7798 (011, incl. reviewer's scalar-subclass commit; generic TypedDict kept as dict) | 45ee83cac | 4ec43f78b |
 | #7810 (007; stacked, carries #7807's 65e0d0280 + d502726d0 — #7807's fd6ba8ae1/d318f186d NOT included) | b95fbf50c | 0bf47b960 |
 | #7815 (012, incl. reviewer's STI test + message reword) | 3184cad6b | 15d8b20c1 |
+| #7806 (003 shim; owner merged with the embed-mode globalThis.refs thread open, i.e. current behaviour accepted; deploy-url-default + react-compiler fragment sentences folded into reflex-base CHANGELOG) | 381da0fe1 | b76b55ec8 |
 
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
