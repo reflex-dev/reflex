@@ -204,7 +204,7 @@ As each PR merges into `main`:
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
 |---|---|---|
-| #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open; owner reviewed ("good aside from reviewbot"); bot threads fixed 5f2ea8d10 + resolved. Known residual: SADD-in-flight cancel race, bounded by pexpire |
+| #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open; owner reviewed ("good aside from reviewbot"); bot threads fixed 5f2ea8d10 + test hang-proofing fcabd8562, all resolved; greptile 5/5. Known residual: SADD-in-flight cancel race, bounded by pexpire |
 | #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, watch; "call it" hint pushed (ed2ee8910) |
 | #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, watch; breaking fragment pushed |
 | #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, watch (CodSpeed red = hardware noise, commented; not required) |
