@@ -1,0 +1,30 @@
+19-[Reflex Frontend Exception]
+20: ReferenceError: refs is not defined
+21:ReferenceError: refs is not defined
+22-    at Object.function (http://localhost:8880/assets/_index-aYWtzgYE.js:1:1)
+23-    at applyEvent (http://localhost:8880/assets/button-DWJCO9qt.js:3:3733)
+24-    at processEvent (http://localhost:8880/assets/button-DWJCO9qt.js:3:5624)
+25-    at queueEvents (http://localhost:8880/assets/button-DWJCO9qt.js:3:5418)
+26-    at http://localhost:8880/assets/button-DWJCO9qt.js:3:14655
+27-    at y (http://localhost:8880/assets/button-DWJCO9qt.js:3:11925)
+28-    at applyEventActions 
+29-(http://localhost:8880/assets/button-DWJCO9qt.js:3:12044)
+--
+35-[Reflex Frontend Exception]
+36: ReferenceError: refs is not defined
+37:ReferenceError: refs is not defined
+38-    at Object.function (http://localhost:8880/assets/_index-aYWtzgYE.js:1:1)
+39-    at applyEvent (http://localhost:8880/assets/button-DWJCO9qt.js:3:3733)
+40-    at processEvent (http://localhost:8880/assets/button-DWJCO9qt.js:3:5624)
+41-    at queueEvents (http://localhost:8880/assets/button-DWJCO9qt.js:3:5418)
+42-    at http://localhost:8880/assets/button-DWJCO9qt.js:3:14655
+43-    at y (http://localhost:8880/assets/button-DWJCO9qt.js:3:11925)
+44-    at applyEventActions 
+45-(http://localhost:8880/assets/button-DWJCO9qt.js:3:12044)
+--
+51-[Reflex Frontend Exception]
+52: ReferenceError: refs is not defined
+53:ReferenceError: refs is not defined
+54-    at Object.function (http://localhost:8880/assets/_index-aYWtzgYE.js:1:1)
+55-    at applyEvent (http://localhost:8880/assets/button-DWJCO9qt.js:3:3733)
+56-    at processEvent (http://localhost:8880/assets/button-DWJCO9qt.js:3:5624)

@@ -123,7 +123,7 @@ Left on 0.11.0a1 (`typing/out_new.txt`): `S.no_args` is not assignable to an `Ev
   annotation `-> EventCallback[*P]`; pyright resolves it to Unknown unless annotations are deferred (3.14). Commenting out that one line restores
   `EventCallback[int]` on 3.12. (`EventDecorator`, used by `@rx.event()`, lives at module scope, which is why the parenthesised form is unaffected.)
 
-### Await matrix (#7673 / #7782) — awaitapp, `scripts/drive_await.py` (52 single-click cases + 14 multi-step "special" scenarios)
+### Await matrix (#7673 / #7782) — awaitapp, `scripts/drive_await.py` (51 single-click cases + 13 multi-step "special" scenarios)
 Run on 0.11.0a1 in dev+memory, prod+memory, dev+Redis, prod+Redis (8 granian workers): identical visible outcome in all four except one scenario
 (`sup_bg_await_x2`, FINDING E). `evidence/await_matrix_*.txt`, `evidence/await_matrix_cmp.txt`. Every case is followed by a `ping` round trip
 (40-70 ms everywhere: no case leaves the state locked). No browser console errors or failed requests other than the favicon 404 in prod.

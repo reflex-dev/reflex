@@ -1,0 +1,12 @@
+  File "$SB/envs/vent-prev/lib/python3.12/site-packages/reflex/state.py", line 2624, in cache_initial_snapshot
+  File "$SB/envs/vent-prev/lib/python3.12/site-packages/reflex/state.py", line 2571, in state_snapshot_hashes
+  File "$SB/envs/vent-prev/lib/python3.12/site-packages/reflex/state.py", line 2574, in <genexpr>
+  File "$SB/envs/vent-prev/lib/python3.12/site-packages/reflex_base/utils/format.py", line 743, in json_dumps
+  File "/usr/lib/python3.12/json/encoder.py", line 200, in encode
+  File "/usr/lib/python3.12/json/encoder.py", line 258, in iterencode
+  File "$SB/envs/vent-prev/lib/python3.12/site-packages/reflex_base/utils/serializers.py", line 229, in serialize
+  File "$SB/envs/vent-prev/lib/python3.12/site-packages/reflex_enterprise/vars.py", line 284, in serialize_lambda
+  File "$SB/envs/vent-prev/lib/python3.12/site-packages/reflex_enterprise/vars.py", line 244, in create
+  File "$SB/envs/vent-prev/lib/python3.12/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@radix-ui/themes') to enable it it.

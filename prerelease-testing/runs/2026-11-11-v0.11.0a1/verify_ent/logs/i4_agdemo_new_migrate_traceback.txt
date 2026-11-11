@@ -1,0 +1,25 @@
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/click/core.py", line 1653, in __call__
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/click/core.py", line 1560, in main
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/click/core.py", line 2054, in invoke
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/click/core.py", line 2054, in invoke
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/click/core.py", line 1414, in invoke
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/click/core.py", line 911, in invoke
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/reflex.py", line 1200, in migrate
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/utils/migrations.py", line 98, in evaluate_pages
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/app.py", line 1885, in _compile
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1292, in compile_app
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/compiler/utils.py", line 286, in _compile_initial_state
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/compiler/utils.py", line 252, in compile_state
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/state.py", line 2777, in cache_initial_snapshot
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/state.py", line 2724, in state_snapshot_hashes
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex/state.py", line 2727, in <genexpr>
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex_base/utils/format.py", line 757, in json_dumps
+  File "/usr/lib/python3.12/json/encoder.py", line 200, in encode
+  File "/usr/lib/python3.12/json/encoder.py", line 258, in iterencode
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex_base/utils/serializers.py", line 230, in serialize
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex_enterprise/vars.py", line 284, in serialize_lambda
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex_enterprise/vars.py", line 244, in create
+  File "$SB/envs/vent-new/lib/python3.12/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@radix-ui/themes') to enable it it.
