@@ -19,6 +19,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
+import click
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
@@ -26,6 +27,7 @@ from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 from reflex_base.utils.process_tree import stop_process_tree
 
 from reflex.utils import path_ops
@@ -42,6 +44,7 @@ _frontend_shutting_down = False
 _FRONTEND_STOP_TIMEOUT = 5
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
+_GRANIAN_RESPAWN_ENV = "GRANIAN_RESPAWN_FAILED_WORKERS"
 
 
 def get_dev_backend_reload_marker() -> Path:
@@ -1132,6 +1135,9 @@ def run_granian_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
+
+    Raises:
+        EnvironmentVarValueError: If GRANIAN_RESPAWN_FAILED_WORKERS is not a boolean.
     """
     import multiprocessing
 
@@ -1149,6 +1155,15 @@ def run_granian_backend_prod(
             logger.debug("A telemetry send is still running; spawning workers.")
             multiprocessing.set_start_method("spawn", force=True)
 
+    try:
+        # Parse it as Granian's own CLI does, so every value Granian accepts works.
+        respawn_failed_workers = click.BOOL.convert(
+            os.getenv(_GRANIAN_RESPAWN_ENV, "true"), None, None
+        )
+    except click.BadParameter as err:
+        msg = f"{_GRANIAN_RESPAWN_ENV}: {err.message}"
+        raise EnvironmentVarValueError(msg) from None
+
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),
         factory=True,
@@ -1158,6 +1173,9 @@ def run_granian_backend_prod(
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
         log_dictconfig=_granian_log_dictconfig(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
+        # Granian otherwise stops the server when any one worker dies. It still
+        # exits when a respawned worker dies again within a few seconds.
+        respawn_failed_workers=respawn_failed_workers,
     )
 
     granian_app.serve()
