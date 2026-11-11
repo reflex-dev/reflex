@@ -13,7 +13,7 @@ the milestone `v0.11.0`.
 | 036 | Optional set var ops crash / fail prod build | **PR open** [reflex-dev/reflex#7800](https://github.com/reflex-dev/reflex/pull/7800) |
 | instaque | Redis lock release lets the releaser retake before waiters hear of it | **Deferred** — [reflex-dev/reflex#7801](https://github.com/reflex-dev/reflex/pull/7801) moved to draft (PING+EVAL pipeline costs 10-20% client CPU on every uncontended `modify_state`, CodSpeed -13%); follow-up [reflex-dev/reflex#7805](https://github.com/reflex-dev/reflex/issues/7805) |
 | 045 | Event payload transform imported reflex.model / SQLAlchemy inside the event | **PR open** [reflex-dev/reflex#7802](https://github.com/reflex-dev/reflex/pull/7802) |
-| 015 | Mistaken handler return values silently accepted | **PR open** [reflex-dev/reflex#7796](https://github.com/reflex-dev/reflex/pull/7796) (merges before #7761) |
+| 015 | Mistaken handler return values silently accepted | **Merged** via [reflex-dev/reflex#7821](https://github.com/reflex-dev/reflex/pull/7821)'s squash (554eb10a6); [reflex-dev/reflex#7796](https://github.com/reflex-dev/reflex/pull/7796) left open for the owner to close (comment posted) |
 | 004 | Unregistered DeclarativeBase → silent drop of every table | **PR open** [reflex-dev/reflex#7797](https://github.com/reflex-dev/reflex/pull/7797) (design: auto-detect bases) |
 | 011 | JSON column on DeclarativeBase typed `object` | **PR open** [reflex-dev/reflex#7798](https://github.com/reflex-dev/reflex/pull/7798) |
 | 022 (+023 diagnostics) | Prod CORS default breaks TLS-proxied and split deployments | **PR open** [reflex-dev/reflex#7799](https://github.com/reflex-dev/reflex/pull/7799) |
@@ -25,9 +25,9 @@ the milestone `v0.11.0`.
 | 001+016, 007 | repeated `@rx.event`, staticmethod above `@rx.event`, pyright 3.11–3.13 handler types | **PRs open** [reflex-dev/reflex#7807](https://github.com/reflex-dev/reflex/pull/7807), [reflex-dev/reflex#7810](https://github.com/reflex-dev/reflex/pull/7810) (stacked) |
 | 005/006/017, 012 | kept env.py errors / empty revisions / env.old; NOT NULL default_factory column | **PRs open** #7809, #7815 (stacked on #7797) |
 | 028, 029, 042, 047 | deprecation frames, package.json format, lucide/hosting floors, auto_memoize warning dedupe | **PRs open** #7811, #7812, #7813, #7814 |
-| 009, 037/038, 039 | see below | **PRs open** [reflex-dev/reflex#7817](https://github.com/reflex-dev/reflex/pull/7817), [reflex-dev/reflex#7818](https://github.com/reflex-dev/reflex/pull/7818), [reflex-dev/reflex#7820](https://github.com/reflex-dev/reflex/pull/7820) |
+| 009, 037/038, 039 | see below | **PRs open** [reflex-dev/reflex#7817](https://github.com/reflex-dev/reflex/pull/7817), [reflex-dev/reflex#7818](https://github.com/reflex-dev/reflex/pull/7818) (**merged** 10dd495ea, train 954a6f6e6), [reflex-dev/reflex#7820](https://github.com/reflex-dev/reflex/pull/7820) |
 | 024, 014, 020 | `rx.App()()` breaking entry; admin guide; serializer example | **PR open** [reflex-dev/reflex#7816](https://github.com/reflex-dev/reflex/pull/7816) |
-| 010 | empty token → `EventHandlerTypeError` (stack on #7796) | **PR open** [reflex-dev/reflex#7821](https://github.com/reflex-dev/reflex/pull/7821) (stacked on #7796) |
+| 010 | empty token → `EventHandlerTypeError` (stack on #7796) | **Merged** [reflex-dev/reflex#7821](https://github.com/reflex-dev/reflex/pull/7821) (554eb10a6, on train 5ba8287c0) |
 
 ## Already in flight (outside this pass)
 | PR | Covers | Gap check |
@@ -204,12 +204,14 @@ As each PR merges into `main`:
 
 | PR | squash sha on main | cherry-picked to r/pre-2026.11.11 |
 |---|---|---|
+| #7821 (010, carries #7796 015 — stacked, so its squash includes #7796's commits) | 554eb10a6 | 5ba8287c0 |
+| #7818 (037/038) | 10dd495ea | 954a6f6e6 (fragment modify/delete: sentence folded into packages/reflex-base/CHANGELOG.md #7651 entry) |
 
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
 |---|---|---|
 | #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open; owner reviewed ("good aside from reviewbot"); bot threads fixed 5f2ea8d10 + test hang-proofing fcabd8562, all resolved; greptile 5/5. Known residual: SADD-in-flight cancel race, bounded by pexpire |
-| #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, head 9679a8f93; all 6 bot threads resolved; CodSpeed -45% was the benchmark mock (AsyncMock future), harness now uses a real future — dev-only cost a few µs/event |
+| #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | LANDED via #7821's squash 554eb10a6 (PR still open, owner to close); head 9679a8f93; dev-warning cost question now applies to main; all 6 bot threads resolved; CodSpeed -45% was the benchmark mock (AsyncMock future), harness now uses a real future — dev-only cost a few µs/event |
 | #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, head 025862563 (detection-condition wording + fragment scope); owner reviewed ("seems legit"); all cubic threads answered + resolved (docs qualified; makemigrations warning declined; library bases = documented trade-off); ubuntu-3.12 test_get_cpu_info host flake (runner lscpu) re-run once — passed |
 | #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, head 51976c4c1; ARRAY(JSON) annotation fallback + lru_cache(1024) + TypedDict test; threads resolved |
 | #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, head 27c2dd954; all bot threads answered + resolved (5 cubic docs/fragment fixes); CodeQL alert auto-marked fixed after 6f621870e, thread shows resolved (not by us); greptile 5/5 |
