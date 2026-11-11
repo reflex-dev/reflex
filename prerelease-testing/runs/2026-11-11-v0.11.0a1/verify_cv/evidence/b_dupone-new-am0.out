@@ -1,0 +1,12 @@
+== /static status=500 body=''
+    HTTP 500 http://localhost:3760/static
+    console.error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+    console.error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+== / status=500 body=''
+    HTTP 500 http://localhost:3760/
+    console.error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+    console.error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+== /dup1 status=500 body=''
+    HTTP 500 http://localhost:3760/dup1
+    console.error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+    console.error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)

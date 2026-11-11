@@ -1,6 +1,6 @@
 # Findings — reflex 0.11.0a1 pre-release testing (2026-11-11) — DRAFT
 
-**Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. `server_net`, `redis_runtime` verified. Still exploring: `compile_memo`. `client_vars` and `examples_ui` done (client_vars verifier running).
+**Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. `server_net`, `redis_runtime` verified. Still exploring: `compile_memo`. `client_vars` (verified) and `examples_ui` done.
 Findings marked *(unverified)* have not yet been through an independent verifier. Numbering is provisional; the final
 pass re-ranks by severity.
 
@@ -66,6 +66,11 @@ Index:
 - FINDING-031: After a Redis outage > ~5 s, cross-worker updates to connected clients are silently dropped (MEDIUM, not a regression)
 - FINDING-032: A dead worker's socket record makes the returning tab look like a duplicate → new token, session lost (MEDIUM, not a regression)
 - FINDING-033: kill -9 of one granian worker stops the whole prod server; no respawn knob through `reflex run` (LOW-MEDIUM, not a regression)
+- FINDING-034: `rx.client_state` "Give it a name" hint and docstring show a call that does not name the var (LOW)
+- FINDING-035: client_state generated identifiers collide (case-only names; one name with two defaults) (LOW)
+- FINDING-036: Operations on a None `set[...] | None` / `list[...] | None` var crash the page and fail the prod build (LOW, not a regression)
+- FINDING-037: `print` / `str` / `%` / logging of a class-level backend var in server code now raises (LOW, regression by design; changelog gap)
+- FINDING-038: Storage-compatible `default_factory` called extra times (once per compile + once per backend worker) (LOW, regression)
 - PKG-A (maintainer decision): reflex 0.11.0a1 requires only `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`
 
 ---
@@ -377,6 +382,42 @@ Index:
   3.9-4.8 s on 0.11.0a1 (0.10.1: 0.03-0.22 s) via "instaque" barging in `_wait_lock`; a 3 ms gap removes it and the real-app
   matrix is fine. Worth a follow-up look.
 
+## FINDING-034: `rx.client_state` "Give it a name" hint and docstring show a call that does not name the var (LOW)
+- Cluster: `client_vars` | Regression: no (new API) | Verifier: CONFIRMED; docs at the tag use `name=` correctly
+- `rx.client_state("x").push(1)` → `ValueError: ... Give it a name -- rx.client_state("my_name") -- ...`; following it
+  creates an unnamed var whose default is "my_name" and raises the same error. Migration trap: `rx.ClientStateVar.create
+  ("user_input")` (old name-first order) silently makes an unnamed var. Repro `verify_cv/a_hint.py`.
+- Root cause: `reflex_base/client_state.py:58-62` (`_NOT_GLOBAL_MSG`), `:247` (docstring). Fix: `rx.client_state(default, name="my_name")`.
+
+## FINDING-035: client_state generated identifiers collide (LOW)
+- Cluster: `client_vars` | Regression: no (0.10.1 identical; its `capitalize()` setter also collided `searchQuery`/`searchquery`,
+  which 0.11 now renders) | Verifier: CONFIRMED, blast radius NARROWED
+- `name="item"` + `name="Item"` → `Identifier setItem has already been declared`: dev fails every page importing that
+  module's memo file (`/casing2`; a text-only page still renders); prod build fails. One name with two defaults: silent
+  (first mounted wins); with `auto_memoize=False` dev 500s on every route.
+- Root cause: `client_state.py:315-316` (setter = `set` + capitalized first letter; defaults per name not recorded). Fix:
+  setter derived from the getter name; compile-time error for one name with two defaults.
+
+## FINDING-036: Operations on a None `set[...] | None` / `list[...] | None` var crash the page and fail the prod build (LOW)
+- Cluster: `client_vars` | Regression: no (0.10.1 `reading 'includes'`) | Verifier: CONFIRMED, wider (every optional collection)
+- `maybe: set[str] | None = None`; `S.maybe.contains("m")` → prod prerender `TypeError: Cannot read properties of null
+  (reading 'some')` at `pySetHas`, export exits 1; dev render error. Root cause `.templates/web/utils/helpers/set.js:27-31`
+  (no null guard; `None` dropped when the Var class is chosen). Fix: null-as-empty in helpers or `?.` for optional vars.
+
+## FINDING-037: `print` / `str` / `%` / logging of a class-level backend var in server code now raises (LOW)
+- Cluster: `client_vars` | Regression: yes (intentional #7651) | Verifier: CONFIRMED
+- `print(State._secret)`, `str()`, `"%s" %`, `json.dumps(default=str)`, `str()` of mixin fields / `get_fields()` entries raise
+  `BackendVarFormatError` ("cannot be used in the UI"); `logging.info("%s", State._secret)` prints `--- Logging error ---`;
+  a bare module-level print stops the app importing. f-strings / `.format` already raised on 0.10.1; `repr` works.
+- Root cause `reflex_base/vars/base.py:4418-4424` (`Field.__str__`). Fix: changelog sentence (or Breaking Changes) and
+  "use repr() to inspect it" in the message.
+
+## FINDING-038: Storage-compatible `default_factory` called extra times (LOW)
+- Cluster: `client_vars` | Regression: yes (minor) | Verifier: CONFIRMED, wider
+- One extra call per compile and one per backend worker in its first event (`hydrate_and_load` → `_sync_shared_storage` →
+  `_shared_storage_groups`, cached per process). Matters for side-effecting / slow factories. Root cause
+  `reflex/compiler/utils.py:346-358`, `reflex/state.py:2354-2373`. Fix: skip the factory check on the runtime path.
+
 ## PKG-A: sibling floors (maintainer decision)
 reflex 0.11.0a1 requires `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`. A stock `pip install
 reflex==0.11.0a1` resolves lucide 1.1.1 and hosting-cli 0.2.1 (without the #7674 / #7670 fixes); `uv pip install -U`
@@ -446,9 +487,10 @@ diff, 27/27). Fresh installs 3.11/3.14/3.15 pip+uv OK. Issues: FINDING-028/-029;
 ### `client_vars` (pass:16, anomaly:5, fail:1)
 rx.client_state 91/91 + edge 51/51 (incl. auto_memoize=False + react_compiler), SetVar 29 ops × 17 mutations = Python,
 storage declaration / shared-name sync / cross-tab clear, @property and backend-var errors, code-point strings; HYD-08/09/12/13
-fixed. Issues: dup of FINDING-001; 9 low (verifier running): wrong client_state name hint, client_state identifier
-collisions break every page, rx.match on sets order-dependent, set handler args arrive as list, `set | None` ops break prod
-build, `split()` UTF-16, int/list storage factories, remaining cryptic backend-var errors, row-index client state in foreach.
+fixed. Issues: dup of FINDING-001; FINDING-034 … -038 (verified); not separately verified, filed as lows: `rx.match` on sets is
+order-dependent (JSON compare), `set[str]` handler args arrive as `list`, `StringVar.split()` splits UTF-16 units,
+int/list storage `default_factory` still silently ordinary vars, remaining cryptic backend-var errors (child / typed prop /
+event arg / `==`), foreach per-row client state follows the index without `key` (docs).
 ### `redis_runtime` (pass:17, anomaly:5, fail:1)
 Lock correctness exact across redis-py 7/8/beta × workers 1/2/4 × oplock; contention stalls 5-10 s → ~1 s; lost release
 notification 8.35 s → 0.33 s; #7412/#7696/#7616/#7590 fixed vs failing 0.10.1; py3.11 shutdown no hang. Issues (verified, none regressions): FINDING-030 … -033.

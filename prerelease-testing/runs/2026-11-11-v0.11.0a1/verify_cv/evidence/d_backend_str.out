@@ -1,0 +1,32 @@
+### vcv-prev
+[ok]   print(S._secret): 'None'
+[ok]   str(S._secret): "Field(default='s3cr3t-default', is_var=True, annotated_type=<class 'st"
+[ok]   '%s' % S._secret: "Field(default='s3cr3t-default', is_var=True, annotated_type=<class 'st"
+[RAISE] '{}'.format(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] f'{S._secret}': BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[ok]   f'{S._secret!r}': "Field(default='s3cr3t-default', is_var=True, annotated_type=<class 'st"
+[ok]   repr(S._secret): "Field(default='s3cr3t-default', is_var=True, annotated_type=<class 'st"
+[ok]   json.dumps(S._secret, default=str): '"Field(default=\'s3cr3t-default\', is_var=True, annotated_type=<class \'s'
+[ok]   pprint.pformat(vars(S)['_secret']): "Field(default='s3cr3t-default', is_var=True, annotated_type=<class 'st"
+[ok]   str(Mix.mcount) (mixin field): "Field(default=0, is_var=True, annotated_type=<class 'int'>)"
+[ok]   help-style pydoc.render_doc(S): '13277'
+[ok]   str(S.get_fields()['v']): "Field(default=0, is_var=True, annotated_type=<class 'int'>)"
+[ok]   str(S.__dict__): '17288'
+[RAISE] debug loop: [f'{k}={getattr(S,k)}' for backend vars]: AttributeError: type object 'S' has no attribute 'backend_vars'
+[logging.info('%s', S._secret) / logging.info(S._secret)] stderr: clean
+### vcv-new
+[RAISE] print(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] str(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] '%s' % S._secret: BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] '{}'.format(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] f'{S._secret}': BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[ok]   f'{S._secret!r}': "Field(default='s3cr3t-default', is_var=True, annotated_type=<class 'st"
+[ok]   repr(S._secret): "Field(default='s3cr3t-default', is_var=True, annotated_type=<class 'st"
+[RAISE] json.dumps(S._secret, default=str): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[ok]   pprint.pformat(vars(S)['_secret']): "Field(default='s3cr3t-default', is_var=True, annotated_type=<class 'st"
+[RAISE] str(Mix.mcount) (mixin field): BackendVarFormatError: Var 'Mix.mcount' is declared on a mixin state, which has no frontend vars. Access it through a state that incl
+[ok]   help-style pydoc.render_doc(S): '13277'
+[RAISE] str(S.get_fields()['v']): BackendVarFormatError: 'S.v' is the field of a state var, not the var. Use S.v to use it in the UI.
+[ok]   str(S.__dict__): '17288'
+[RAISE] debug loop: [f'{k}={getattr(S,k)}' for backend vars]: AttributeError: type object 'S' has no attribute 'backend_vars'
+[logging.info('%s', S._secret) / logging.info(S._secret)] stderr: --- Logging error --- (swallowed, app continues)

@@ -1,0 +1,6 @@
+15:Creating Production Build failed with exit code 1
+21:✗ Build failed in 978ms
+22:Build failed with 1 error:
+24:[31m[PARSE_ERROR] [0mIdentifier `setItem` has already been declared
+48:already been declared here
+69:redeclared here

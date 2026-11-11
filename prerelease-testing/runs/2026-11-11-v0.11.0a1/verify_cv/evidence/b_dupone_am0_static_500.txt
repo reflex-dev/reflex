@@ -1,0 +1,8 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <title>Error</title>
+            <script type="module">
+              const error = {"message":"Transform failed with 2 errors:\n\n[PARSE_ERROR] Identifier `openRxClientState` has already been declared\n    ╭─[ app/routes/[dup1]._index.jsx:12:8 ]\n    │\n 12 │ const [openRxClientState, setOpen] = useClientState(false, \"open\", true)\n    │        ────────┬────────  \n    │                ╰────────── `openRxClientState` has already been declared here\n    │ \n 14 │ const [openRxClientState, setOpen] = useClientState(true, \"open\", true)\n    │        ────────┬────────  \n    │                ╰────────── It can not be redeclared here\n───

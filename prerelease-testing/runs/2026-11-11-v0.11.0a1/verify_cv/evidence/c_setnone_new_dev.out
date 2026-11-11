@@ -1,0 +1,24 @@
+== / status=200 body='HOME-OK |  | casing | inc |  | 0'
+== /setnone status=200 body="An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | TypeError: Cannot read properties of null (reading 'some') | TypeError: Cannot read properties of null (reading 'some') |     at pySetHas (http://localhost:3760/utils/helpers/set."
+    console.error: %o
+
+%s
+
+%s
+ TypeError: Cannot read properties of null (reading 'some')
+    at pySetHas (http://localhost:3760/utils/helpers/set.js:31:14)
+    at Bare (http://localhost:3760/app_components/cvb/cvb.jsx:55:27)
+    at Object.react_stack_bottom_frame (http://localhost:3760/node_modules/.vite/deps/react-d
+    console.error: %o
+
+%s
+
+%s
+ TypeError: Cannot read properties of null (reading 'some')
+    at pySetHas (http://localhost:3760/utils/helpers/set.js:31:14)
+    at Bare (http://localhost:3760/app_components/cvb/cvb.jsx:55:27)
+    at Object.react_stack_bottom_frame (http://localhost:3760/node_modules/.vite/deps/react-d
+    click failed: Page.click: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("#fill")
+

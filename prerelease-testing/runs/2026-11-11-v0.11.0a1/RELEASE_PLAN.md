@@ -1,6 +1,6 @@
 # Release plan — what blocks reflex 0.11.0 vs what gets filed — DRAFT
 
-Draft from the 0.11.0a1 pass; `compile_memo` and `verify_cv` still running. Finding numbers
+Draft from the 0.11.0a1 pass; `compile_memo` still running. Finding numbers
 refer to `FINDINGS.md`. Rubric (SKILL.md): **fix before release** = confirmed regression vs 0.10.1, security-relevant, or
 significant user impact / trivially small; everything else is filed. Each entry names the arm that put it there.
 
@@ -59,6 +59,9 @@ significant user impact / trivially small; everything else is filed. Each entry 
   FINDING-006 note, FINDING-014 (admin guide: trailing slash, dataclass models, `MyAuthProvider`), FINDING-020 (serializer
   example), #7534 wording (FINDING-030).
 - **FINDING-028** (LOW, small): exclude `reflex_components_*` frames from deprecation locations.
+- **FINDING-034** (LOW, trivial): fix the client_state name hint + docstring.
+- **FINDING-037 / -038** (LOW, regressions, small): changelog sentence + `repr()` hint; skip the factory check on the runtime
+  storage path.
 - **FINDING-030** (LOW, small): reset `StateManagerRedis._instance_id` per forked worker (one line next to the token
   manager's reset) — or reword the #7534 changelog sentence, which is false as written for Linux prod with ≥2 workers.
 
@@ -73,9 +76,9 @@ significant user impact / trivially small; everything else is filed. Each entry 
   awaited exception still shows the error toast; deprecation names only the first stacked method per class.
 - FINDING-031 (cross-worker updates lost after > 5 s Redis outage), FINDING-032 (dead worker's socket record → new token),
   FINDING-033 (no granian respawn; consider `respawn_failed_workers=True`), the in-process "instaque" barging note.
-- client_vars lows (pending verify_cv): client_state name hint wrong; client_state identifier collisions break every page;
-  `rx.match` on sets order-dependent; `set[str]` handler args arrive as list; `set | None` ops break the prod build;
-  `split()` UTF-16; int/list storage factories; remaining cryptic backend-var errors; foreach row-index client state (docs).
+- FINDING-035 (client_state identifier collisions), FINDING-036 (optional collection ops crash / fail prod build), and the
+  unverified client_vars lows: `rx.match` on sets order-dependent; `set[str]` handler args arrive as list; `split()` UTF-16;
+  int/list storage factories; remaining cryptic backend-var errors; foreach row-index client state (docs).
 
 ### reflex-dev/reflex-enterprise
 - FINDING-021 (`use_single_port=True` dev proxy never mounts); ENT-07 still broken (prod cookie sync 405, 2 workers);
@@ -92,7 +95,7 @@ significant user impact / trivially small; everything else is filed. Each entry 
 5. **redis-py beta:** `uv --prerelease=allow` resolves redis-py 8.2.0b1 for alpha testers; acceptable, or cap `redis<8.2`
    until it is final?
 6. **Undocumented behaviour changes:** handler return values silently dropped (FINDING-015), `print(State._x)` in server
-   code now raises (client_vars anomaly), `default_factory` of storage-compatible vars called once more at compile — bug or
+   code now raises (FINDING-037), `default_factory` of storage-compatible vars called extra times (FINDING-038) — bug or
    missing changelog entry?
 
 ## Suggested sequencing

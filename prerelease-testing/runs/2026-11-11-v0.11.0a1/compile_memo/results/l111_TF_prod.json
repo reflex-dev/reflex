@@ -1,0 +1,152 @@
+{
+ "base": "http://localhost:3300",
+ "dyn": {
+  "initial": "nothing",
+  "icon": "MISSING nothing",
+  "icon_reqs": [
+   "+esm"
+  ],
+  "recharts": "MISSING nothing",
+  "recharts_reqs": [
+   "+esm"
+  ],
+  "callout": "MISSING nothing",
+  "callout_reqs": [
+   "+esm"
+  ],
+  "window_reflex_keys": [
+   "$/utils/context",
+   "$/utils/context-registry",
+   "$/utils/state",
+   "@emotion/react",
+   "@radix-ui/themes",
+   "react"
+  ],
+  "secs": 31.6
+ },
+ "comps": {
+  "co-str": "lucide lucide-info paths=3",
+  "co-comp": "lucide lucide-triangle-alert css-tokvmb paths=3",
+  "co-cond": "lucide lucide-check paths=1",
+  "co-match": "lucide lucide-info paths=3",
+  "co-var": "NO-SVG",
+  "co-memo": "lucide lucide-star paths=1",
+  "co-cond_after_toggle": "lucide lucide-x paths=2",
+  "co-match_after_cycle": "lucide lucide-triangle-alert paths=3",
+  "co-match_after_cycle2": "lucide lucide-circle-x paths=3",
+  "code_text": "1plain text\n2line 2",
+  "code_var": "x = 1",
+  "icon_rows": [
+   "grid_2x_2 => NO-SVG",
+   "grid_3x_3 => NO-SVG",
+   "arrow_up_0_1 => lucide dyn-icn paths=5",
+   "a_arrow_down => lucide dyn-icn paths=4",
+   "grid-2x2 => lucide dyn-icn paths=3",
+   "calendar_1 => lucide dyn-icn paths=5",
+   "no_such_icon_x => NO-SVG"
+  ],
+  "icn-static": "lucide lucide-grid2x2 lucide-grid-2x2 paths=3",
+  "icn-var-seq": [
+   "icon: grid_2x_2 -> NO",
+   "icon: grid_3x_3 -> NO",
+   "icon: arrow_up_0_1 -> lucide paths=5",
+   "icon: a_arrow_down -> lucide paths=4",
+   "icon: grid-2x2 -> lucide paths=3",
+   "icon: calendar_1 -> lucide paths=5",
+   "icon: no_such_icon_x -> lucide paths=5"
+  ],
+  "secs": 7.8
+ },
+ "console": [
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "/dyn",
+   "type": "reqfailed",
+   "text": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/dist/esm/icons/banana.mjs/+esm net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "reqfailed",
+   "text": "https://cdn.jsdelivr.net/npm/recharts@3.10.1/+esm net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "reqfailed",
+   "text": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/dist/esm/icons/info.mjs/+esm net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-_5w9iZaw.js:2:243329)\n    at http://localhost:3300/assets/cm-_5w9iZaw.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  }
+ ]
+}

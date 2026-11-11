@@ -1,0 +1,332 @@
+{
+ "base": "http://localhost:3300",
+ "home": {
+  "initial_branch": "branch: mA,page",
+  "n_after_3": true,
+  "renders": {
+   "initial": {
+    "n_probe": 3,
+    "static_probe": 1,
+    "memo_a": 1,
+    "memo_b": 1,
+    "memo_c": 1
+   },
+   "after_inc3": {
+    "n_probe": 6,
+    "static_probe": 1,
+    "memo_a": 1,
+    "memo_b": 1,
+    "memo_c": 1
+   },
+   "after_other2": {
+    "n_probe": 8,
+    "static_probe": 1,
+    "memo_a": 1,
+    "memo_b": 1,
+    "memo_c": 1
+   }
+  },
+  "clicks": "clicks: a,b,c",
+  "branch_after_2_toggles": "branch: mA,page,uA,mB,uB,mA",
+  "cstate": [
+   "cstate 2",
+   "cstate 0"
+  ],
+  "client_state": {
+   "shared": "shared: 1",
+   "memo": [
+    "A: 2",
+    "B: 0"
+   ]
+  },
+  "fstring_focus_active": "fin_abc",
+  "fstring_input_dom_id": "",
+  "secs": 6.2
+ },
+ "loop": {
+  "initial": {
+   "mounted": "mounted: alpha,alpha-x,alpha-y,idx0,beta,beta-x,beta-y,idx1,gamma,gamma-x,gamma-y,idx2,kv-one,kv-two",
+   "unmounted": "unmounted:",
+   "hooklog": "hm:alpha,hm:beta,hm:gamma",
+   "items": [
+    "alpha",
+    "beta",
+    "gamma"
+   ]
+  },
+  "after_add": {
+   "mounted": "mounted: alpha,alpha-x,alpha-y,idx0,beta,beta-x,beta-y,idx1,gamma,gamma-x,gamma-y,idx2,kv-one,kv-two,item3,item3-x,item3-y,idx3",
+   "unmounted": "unmounted:",
+   "hooklog": "hm:item3",
+   "items": [
+    "alpha",
+    "beta",
+    "gamma",
+    "item3"
+   ]
+  },
+  "after_rm-first": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted: alpha",
+   "hooklog": "hu:alpha",
+   "items": [
+    "beta",
+    "gamma",
+    "item3"
+   ]
+  },
+  "after_reverse": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted:",
+   "hooklog": "",
+   "items": [
+    "item3",
+    "gamma",
+    "beta"
+   ]
+  },
+  "after_rm-mid": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted: gamma",
+   "hooklog": "hu:gamma",
+   "items": [
+    "item3",
+    "beta"
+   ]
+  },
+  "row_focus_first_btn_focuses_index": 1,
+  "row_input_ids": [
+   "row_item3",
+   "row_beta"
+  ],
+  "secs": 10.3
+ },
+ "loopmemo": {
+  "EXC": "TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"#page-loopmemo\") to be visible\n",
+  "secs": 17.0
+ },
+ "refs": {
+  "raw_prop": "raw prop: refs-undefined",
+  "refs_hook": "ERR:refs is not defined",
+  "set_focus_active": "plain_input",
+  "set_value": "from set_value",
+  "scroll_y": 1382,
+  "call_script_value": "via call_script",
+  "log_after_call_script": "log: via call_script",
+  "raw_var_value": "raw var",
+  "log_after_callfn": "log: raw var",
+  "log_after_form": "log: {\"form_ref_input\":\"formval\"}",
+  "secs": 5.5
+ },
+ "upload": {
+  "selected": "a.txt,b.txt",
+  "direct": "uploaded: a.txt:15|b.txt:15",
+  "progress": "progress:",
+  "backend_toast": "uploaded: t1.txt:18",
+  "backend_toast_progress": "progress: 1",
+  "frontend_toast_changed_selection": "uploaded: new1.txt:24|new2.txt:24",
+  "frontend_call_script": "uploaded: cs.txt:18",
+  "backend_call_script": "uploaded: bcs.txt:21",
+  "selected_after_clear": "",
+  "secs": 8.8
+ },
+ "plotly": {
+  "probe_count": 1,
+  "js_requests": [
+   "Icon-CWjPNylD.js",
+   "_plotly_._index-C7rBlDe2.js",
+   "box-BqEKbzv0.js",
+   "classnames-CHFLM5yM.js",
+   "click-outside-container--F7V8S3r.js",
+   "cm-C03JU6JI.js",
+   "components-C1-eJffo.js",
+   "createLucideIcon-pxQ29k6D.js",
+   "dist-DmWFTTeT.js",
+   "emotion-memoize.esm-DsbkLwm0.js",
+   "emotion-react.browser.esm-2Wpoz11n.js",
+   "entry.client-C6W-s5_T.js",
+   "errorBoundaries-DZESPwId.js",
+   "link-CnOp_phf.js",
+   "manifest-6fa621a5.js",
+   "preload-helper-BLdHbfdN.js",
+   "react-DlmbjZJV.js",
+   "react-dom-1flDk5uq.js",
+   "reflex-env-nIAc7oSI.js",
+   "rolldown-runtime-XKyaHtl9.js",
+   "root-CzCBq55F.js",
+   "text-field-DkJ0Ghlg.js",
+   "wifi-off-ByMGIQPM.js"
+  ],
+  "secs": 3.8
+ },
+ "recharts": {
+  "probe_count": 1,
+  "js_requests": [
+   "Icon-CWjPNylD.js",
+   "_recharts_._index-B1LW7kOC.js",
+   "box-BqEKbzv0.js",
+   "classnames-CHFLM5yM.js",
+   "components-C1-eJffo.js",
+   "createLucideIcon-pxQ29k6D.js",
+   "emotion-memoize.esm-DsbkLwm0.js",
+   "emotion-react.browser.esm-2Wpoz11n.js",
+   "entry.client-C6W-s5_T.js",
+   "errorBoundaries-DZESPwId.js",
+   "link-CnOp_phf.js",
+   "manifest-6fa621a5.js",
+   "preload-helper-BLdHbfdN.js",
+   "react-DlmbjZJV.js",
+   "react-dom-1flDk5uq.js",
+   "reflex-env-nIAc7oSI.js",
+   "rolldown-runtime-XKyaHtl9.js",
+   "root-CzCBq55F.js",
+   "text-field-DkJ0Ghlg.js",
+   "wifi-off-ByMGIQPM.js"
+  ],
+  "secs": 3.9
+ },
+ "editor": {
+  "probe_count": 5,
+  "js_requests": [
+   "Icon-CWjPNylD.js",
+   "_editor_._index-CnXh6w9j.js",
+   "box-BqEKbzv0.js",
+   "classnames-CHFLM5yM.js",
+   "click-outside-container--F7V8S3r.js",
+   "cm-C03JU6JI.js",
+   "components-C1-eJffo.js",
+   "createLucideIcon-pxQ29k6D.js",
+   "dist-D41knOY6.js",
+   "emotion-memoize.esm-DsbkLwm0.js",
+   "emotion-react.browser.esm-2Wpoz11n.js",
+   "entry.client-C6W-s5_T.js",
+   "errorBoundaries-DZESPwId.js",
+   "esm-BO4t_Bx-.js",
+   "link-CnOp_phf.js",
+   "manifest-6fa621a5.js",
+   "preload-helper-BLdHbfdN.js",
+   "react-DlmbjZJV.js",
+   "react-dom-1flDk5uq.js",
+   "reflex-env-nIAc7oSI.js",
+   "rolldown-runtime-XKyaHtl9.js",
+   "root-CzCBq55F.js",
+   "text-field-DkJ0Ghlg.js",
+   "wifi-off-ByMGIQPM.js"
+  ],
+  "secs": 3.9
+ },
+ "dyn": {
+  "initial": "nothing",
+  "icon": "MISSING nothing",
+  "icon_reqs": [
+   "+esm"
+  ],
+  "recharts": "MISSING nothing",
+  "recharts_reqs": [
+   "+esm"
+  ],
+  "callout": "MISSING nothing",
+  "callout_reqs": [
+   "+esm"
+  ],
+  "window_reflex_keys": [
+   "$/utils/context",
+   "$/utils/context-registry",
+   "$/utils/state",
+   "@emotion/react",
+   "@radix-ui/themes",
+   "react"
+  ],
+  "secs": 31.4
+ },
+ "comps": {
+  "co-str": "lucide lucide-info paths=3",
+  "co-comp": "lucide lucide-triangle-alert css-tokvmb paths=3",
+  "co-cond": "lucide lucide-check paths=1",
+  "co-match": "lucide lucide-info paths=3",
+  "co-var": "lucide paths=3",
+  "co-memo": "lucide lucide-star paths=1",
+  "co-cond_after_toggle": "lucide lucide-x paths=2",
+  "co-match_after_cycle": "lucide lucide-triangle-alert paths=3",
+  "co-match_after_cycle2": "lucide lucide-circle-x paths=3",
+  "code_text": "1plain text\n2line 2",
+  "code_var": "x = 1",
+  "icon_rows": [
+   "grid_2x_2 => lucide dyn-icn paths=3",
+   "grid_3x_3 => lucide dyn-icn paths=5",
+   "arrow_up_0_1 => lucide dyn-icn paths=5",
+   "a_arrow_down => lucide dyn-icn paths=4",
+   "grid-2x2 => lucide dyn-icn paths=3",
+   "calendar_1 => lucide dyn-icn paths=5",
+   "no_such_icon_x => NO-SVG"
+  ],
+  "icn-static": "lucide lucide-grid2x2 lucide-grid-2x2 paths=3",
+  "icn-var-seq": [
+   "icon: grid_2x_2 -> lucide paths=3",
+   "icon: grid_3x_3 -> lucide paths=5",
+   "icon: arrow_up_0_1 -> lucide paths=5",
+   "icon: a_arrow_down -> lucide paths=4",
+   "icon: grid-2x2 -> lucide paths=3",
+   "icon: calendar_1 -> lucide paths=5",
+   "icon: no_such_icon_x -> lucide paths=5"
+  ],
+  "secs": 7.8
+ },
+ "console": [
+  {
+   "page": "/",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "/",
+   "type": "error",
+   "text": "ReferenceError: it_rx_state_ is not defined\n    at http://localhost:3300/assets/cm-C03JU6JI.js:7:65621\n    at http://localhost:3300/assets/cm-C03JU6JI.js:7:65646\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:117875)\n    at Uu (htt"
+  },
+  {
+   "page": "/dyn",
+   "type": "reqfailed",
+   "text": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/dist/esm/icons/banana.mjs/+esm net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "reqfailed",
+   "text": "https://cdn.jsdelivr.net/npm/recharts@3.10.1/+esm net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "reqfailed",
+   "text": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/dist/esm/icons/info.mjs/+esm net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-C03JU6JI.js:2:243329)\n    at http://localhost:3300/assets/cm-C03JU6JI.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-C03JU6JI.js:2:243329)\n    at http://localhost:3300/assets/cm-C03JU6JI.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  },
+  {
+   "page": "/comps",
+   "type": "error",
+   "text": "Error: [lucide-react]: Name in Lucide DynamicIcon not found\n    at yt (http://localhost:3300/assets/cm-C03JU6JI.js:2:243329)\n    at http://localhost:3300/assets/cm-C03JU6JI.js:2:243532\n    at El (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:94941)\n    at Uu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8:118102)\n    at Hu (http://localhost:3300/assets/entry.client-C6W-s5_T.js:8"
+  }
+ ]
+}

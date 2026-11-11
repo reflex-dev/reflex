@@ -1,0 +1,46 @@
+{
+ "/": {
+  "n_js": 16,
+  "js_bytes": 1592014,
+  "libs": [
+   "createLucideIcon-DwUh1A96.js"
+  ],
+  "errors": []
+ },
+ "/#2": {
+  "n_js": 16,
+  "js_bytes": 1592014,
+  "libs": [
+   "createLucideIcon-DwUh1A96.js"
+  ],
+  "errors": []
+ },
+ "/plotly": {
+  "n_js": 16,
+  "js_bytes": 1590751,
+  "libs": [
+   "_plotly_._index-DukVBrVO.js",
+   "createLucideIcon-DwUh1A96.js"
+  ],
+  "errors": []
+ },
+ "/recharts": {
+  "n_js": 14,
+  "js_bytes": 1460441,
+  "libs": [
+   "_recharts_._index-D1Zit7bZ.js",
+   "createLucideIcon-DwUh1A96.js",
+   "es6-s7z4Pki-.js"
+  ],
+  "errors": []
+ },
+ "/dyn": {
+  "n_js": 16,
+  "js_bytes": 1590860,
+  "libs": [
+   "createLucideIcon-DwUh1A96.js"
+  ],
+  "dyn_recharts_html": "",
+  "errors": []
+ }
+}

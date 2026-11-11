@@ -1,8 +1,15 @@
 # compile_memo cluster — reflex 0.11.0a1 (vs 0.10.1)
 
+Run any app: `cd <app> && REFLEX_TELEMETRY_ENABLED=false $SB/envs/compile_memo-new/bin/reflex run --frontend-port 3300 --backend-port 8300`
+(prod: `--env prod --frontend-port 3300 --backend-port 3300` with `REFLEX_API_URL=http://localhost:3300`; or `scripts/srv.sh`).
+Rebuild the venvs: `uv --no-config venv $SB/envs/compile_memo-new --python 3.12 && uv --no-config pip install --python
+$SB/envs/compile_memo-new/bin/python --only-binary :all: -r reqs/new.txt plotly` (prev: `reqs/prev.txt`; lucide-1.1.1 variant:
+`reqs/new_l111.txt`). The 0.10.1 copy of `cm` is the same `cm/cm.py` (runs on both).
+
 ## Status / resume here
-- [in progress] app `cm` being written at `$SB/apps/compile_memo/cm` (copy in `./cm`).
-- Next: matrix run (auto_memoize x react_compiler), foreach hooks, refs surface, lazy libs, reproducibility, uploads, components.
+- DONE. Report: `../reports/compile_memo.md`. All servers stopped. Full logs/builds stay in `$SB/apps/compile_memo/`
+  (`logs/`, `results/`, `builds/`); this dir holds sources, scripts, result JSON and evidence screenshots.
+- Not covered: HYD-15 with `--backend-only`, R101-01/02, React Compiler bailout counting (R101-08), Windows.
 
 `SB=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad`
 Ports: frontend 3300-3319, backend 8300-8319.
@@ -105,3 +112,40 @@ Screenshots: `evidence/refs_*_prod.png`.
   receives `record_unmount("gamma")` while `alpha` was removed and gamma is still on screen (index keys + mount-time
   closure with `[]` deps). New behaviour (0.10.1 crashes on this page). #7793 "each item now runs its own hooks" — the
   hooks run per position, not per item. With an explicit `key=item` (`/loop`) the payloads are correct.
+- **Python compile time, large app** (`big/`: 40 pages x 150 stateful blocks, `reflex compile`, 2 runs each):
+  new T,F 18.3-21.6 s; new F,T 8.4-8.8 s (2.2x faster, claim holds); new T,T 18.2-18.5 s; prev T,F 17.1-20.0 s.
+  `.web/app_components` 265 KB -> 3 KB with auto_memoize=False.
+- **Controlled inputs under every cell** (`/typing`, `scripts/drive_typing.py`, dev+prod, T,F / F,T / F,F): fast typing
+  into plain, debounced, cond-wrapped and text_area controlled inputs — no lost characters, state matches.
+- **Warnings**: `react_compiler=True is experimental...` logged once per process (good). `auto_memoize=False without
+  react_compiler=True disables page memoization...` is NOT deduplicated: 2x per `reflex compile`, 5x per `reflex run`
+  (dev) — low noise.
+- **In-place upgrade of a react_compiler app** (`cm_upg`: `.web` built by 0.10.1 with react_compiler, then 0.11.0a1):
+  package.json `babel-plugin-react-compiler` 1.0.0 -> `0.0.0-experimental-a1856f3-20260507`, export + prod run clean.
+  Leftover `.web/reflex.json` stays (harmless).
+- **#7716 callout icon**: component icon, `rx.cond` of icons (switches check<->x), `rx.match` of icons (info ->
+  triangle_alert -> circle_x), ComponentVar via `@rx.memo` arg, Var icon name — all render in dev+prod, all cells.
+  0.10.1: `TypeError: Icon name must be a string` at compile (expected — new feature).
+- **#7753** `rx.code_block(language="text", show_line_numbers=True, can_copy=True)` renders plain text with line numbers;
+  Var language `"text"` too. 0.10.1 rejects `"text"` at compile (`Invalid var passed for prop CodeBlock.language`).
+- **#7750 typing** (`typing/typ.py`, pyright 1.1.414 from `events_await-typing-*` venvs, read-only): new: component-first
+  match -> `Component`, str-first -> `Var[Unknown]`; prev: `Component | Var[Unknown]` everywhere + callout icon component
+  rejected. Fixed. (Minor: str match types as `Var[Unknown]`, not `Var[str]`.)
+- **#7747 input clear_events**: only in reflex-components-internal, which was NOT released in this train (PyPI latest
+  0.0.34; the change is an unreleased news fragment). Radix `rx.input(clear_events=...)` does not exist (it is turned
+  into a style prop and fails: `EventHandler cannot be used as style values`). Skipped.
+- **#7674 lucide digit icons** (`/comps`): with lucide 1.1.2a1 Var-tag `grid_2x_2`, `grid_3x_3` render (also in
+  `rx.foreach` and `rx.callout(icon=Var)`). **With lucide 1.1.1 + reflex 0.11.0a1** (`$SB/envs/compile_memo-l111`,
+  what `pip install -U reflex` gives, floor `reflex-components-lucide>=1.1.1`): grid_2x_2 / grid_3x_3 blank +
+  `[lucide-react]: Name in Lucide DynamicIcon not found` x11 — fix does not reach upgraders. Unknown names
+  (`no_such_icon_x`) via Var keep showing the previous icon + console error on both versions (pre-existing).
+- **#7057 mapping inference** (`py/mapping_perf.py`): 2M-entry dict: 0.1 ms new vs 62 ms prev; a heterogeneous value past
+  the 100-entry sample is ignored on both (`Mapping[str, int]`) — by design.
+- **Blocking-monitor false positive (adjacent, #7672)**: the first event whose handler takes a `dict` arg
+  (`on_upload_progress`) lazily runs `from reflex.model import Model` (imports sqlalchemy, 0.2-0.9 s) inside
+  `_transform_event_arg`; dev then warns `Event handler S.on_progress is blocking the event loop` with a stack through
+  sqlalchemy imports — blames the user's trivial handler for reflex's own lazy import. Lazy import exists in 0.10.1 too;
+  the warning is new.
+- **enterprise refs survey** (context for the enterprise cluster): `reflex_enterprise/components/map/base.py` carries
+  `refs_var_data` (safe); `auth/oidc/state.py` uses `refs[...]` inside `rx.call_script` (safe, state.js scope);
+  `ag_grid/aggrid.py:253,902` emit bare `refs[...]` (the known break).

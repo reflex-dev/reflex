@@ -1,0 +1,60 @@
+{
+ "/": {
+  "n_js": 21,
+  "js_bytes": 2113273,
+  "libs": [
+   "banana-2W1awhZy.js",
+   "createLucideIcon-BBRXAp0m.js",
+   "es6-s7z4Pki-.js",
+   "info-Bqqj8iY1.js"
+  ],
+  "errors": []
+ },
+ "/#2": {
+  "n_js": 21,
+  "js_bytes": 2113273,
+  "libs": [
+   "banana-2W1awhZy.js",
+   "createLucideIcon-BBRXAp0m.js",
+   "es6-s7z4Pki-.js",
+   "info-Bqqj8iY1.js"
+  ],
+  "errors": []
+ },
+ "/plotly": {
+  "n_js": 21,
+  "js_bytes": 2112028,
+  "libs": [
+   "_plotly_._index-Bnpgl-JR.js",
+   "banana-2W1awhZy.js",
+   "createLucideIcon-BBRXAp0m.js",
+   "es6-s7z4Pki-.js",
+   "info-Bqqj8iY1.js"
+  ],
+  "errors": []
+ },
+ "/recharts": {
+  "n_js": 18,
+  "js_bytes": 1385671,
+  "libs": [
+   "_recharts_._index-Cxr0aqHW.js",
+   "banana-2W1awhZy.js",
+   "createLucideIcon-BBRXAp0m.js",
+   "es6-s7z4Pki-.js",
+   "info-Bqqj8iY1.js"
+  ],
+  "errors": []
+ },
+ "/dyn": {
+  "n_js": 21,
+  "js_bytes": 2112190,
+  "libs": [
+   "banana-2W1awhZy.js",
+   "createLucideIcon-BBRXAp0m.js",
+   "es6-s7z4Pki-.js",
+   "info-Bqqj8iY1.js"
+  ],
+  "dyn_recharts_html": "",
+  "errors": []
+ }
+}

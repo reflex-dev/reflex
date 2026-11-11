@@ -1,0 +1,238 @@
+{
+ "base": "http://localhost:3300",
+ "rowfocus": {
+  "focus_btn_i_focuses": [
+   2,
+   2,
+   2
+  ],
+  "values_after_set_value_each": [
+   "",
+   "",
+   "gamma"
+  ],
+  "ids": [
+   "rf_alpha",
+   "rf_beta",
+   "rf_gamma"
+  ],
+  "secs": 3.6
+ },
+ "home": {
+  "initial_branch": "branch: mA,page",
+  "n_after_3": true,
+  "renders": {
+   "initial": {
+    "n_probe": 3,
+    "static_probe": 1,
+    "memo_a": 1,
+    "memo_b": 1,
+    "memo_c": 1
+   },
+   "after_inc3": {
+    "n_probe": 6,
+    "static_probe": 1,
+    "memo_a": 1,
+    "memo_b": 1,
+    "memo_c": 1
+   },
+   "after_other2": {
+    "n_probe": 8,
+    "static_probe": 1,
+    "memo_a": 1,
+    "memo_b": 1,
+    "memo_c": 1
+   }
+  },
+  "clicks": "clicks: a,b,c",
+  "branch_after_2_toggles": "branch: mA,page,uA,mB,uB,mA",
+  "cstate": [
+   "cstate 2",
+   "cstate 0"
+  ],
+  "fstring_focus_active": "fin_abc",
+  "fstring_input_dom_id": "",
+  "secs": 5.8
+ },
+ "refs": {
+  "raw_prop": "raw prop: refs-ok",
+  "refs_hook": "ref_nav_home,ref_nav_loop,ref_nav_loopmemo,ref_nav_refs,ref_nav_upload,ref_nav_plotly,ref_nav_recharts,ref_nav_editor,ref_nav_dyn,ref_nav_comps,ref_page_refs,ref_plain_input,ref_other_input,ref_scroll_target,ref_raw_prop,ref_focus_log,ref_form_ref_input,ref_form_submit,ref_b_focus,ref_b_setvalue,ref_b_scroll,ref_b_callscript,ref_b_rawvar,ref_b_callfn",
+  "set_focus_active": "plain_input",
+  "set_value": "from set_value",
+  "scroll_y": 1382,
+  "call_script_value": "via call_script",
+  "log_after_call_script": "log: via call_script",
+  "raw_var_value": "raw var",
+  "log_after_callfn": "log: raw var",
+  "log_after_form": "log: {\"form_ref_input\":\"formval\"}",
+  "secs": 5.5
+ },
+ "upload": {
+  "selected": "a.txt,b.txt",
+  "direct": "uploaded: a.txt:15|b.txt:15",
+  "progress": "progress:",
+  "backend_toast": "uploaded:",
+  "backend_toast_progress": "progress:",
+  "frontend_toast_changed_selection": "uploaded:",
+  "frontend_call_script": "uploaded:",
+  "backend_call_script": "uploaded:",
+  "selected_after_clear": "",
+  "secs": 40.5
+ },
+ "plotly": {
+  "probe_count": 1,
+  "js_requests": [
+   "Icon-CWjPNylD.js",
+   "_plotly_._index-DwbE2vWS.js",
+   "box-BnUjrGD2.js",
+   "classnames-CHFLM5yM.js",
+   "click-outside-container--F7V8S3r.js",
+   "cm-C3nyeIbG.js",
+   "components-C1-eJffo.js",
+   "createLucideIcon-pxQ29k6D.js",
+   "dist-DmWFTTeT.js",
+   "emotion-memoize.esm-DsbkLwm0.js",
+   "emotion-react.browser.esm-2Wpoz11n.js",
+   "entry.client-C6W-s5_T.js",
+   "errorBoundaries-DZESPwId.js",
+   "link-CEz-fkA-.js",
+   "manifest-dda51791.js",
+   "preload-helper-BLdHbfdN.js",
+   "react-DlmbjZJV.js",
+   "react-dom-1flDk5uq.js",
+   "reflex-env-BYqugNyC.js",
+   "rolldown-runtime-XKyaHtl9.js",
+   "root-Dy0HhG0i.js",
+   "text-field-g1rAR3b1.js",
+   "wifi-off-ByMGIQPM.js"
+  ],
+  "secs": 3.9
+ },
+ "recharts": {
+  "probe_count": 1,
+  "js_requests": [
+   "Icon-CWjPNylD.js",
+   "_recharts_._index-nfakSFAf.js",
+   "box-BnUjrGD2.js",
+   "classnames-CHFLM5yM.js",
+   "components-C1-eJffo.js",
+   "createLucideIcon-pxQ29k6D.js",
+   "emotion-memoize.esm-DsbkLwm0.js",
+   "emotion-react.browser.esm-2Wpoz11n.js",
+   "entry.client-C6W-s5_T.js",
+   "errorBoundaries-DZESPwId.js",
+   "link-CEz-fkA-.js",
+   "manifest-dda51791.js",
+   "preload-helper-BLdHbfdN.js",
+   "react-DlmbjZJV.js",
+   "react-dom-1flDk5uq.js",
+   "reflex-env-BYqugNyC.js",
+   "rolldown-runtime-XKyaHtl9.js",
+   "root-Dy0HhG0i.js",
+   "text-field-g1rAR3b1.js",
+   "wifi-off-ByMGIQPM.js"
+  ],
+  "secs": 3.9
+ },
+ "editor": {
+  "probe_count": 5,
+  "js_requests": [
+   "Icon-CWjPNylD.js",
+   "_editor_._index-C7DzszEr.js",
+   "box-BnUjrGD2.js",
+   "classnames-CHFLM5yM.js",
+   "click-outside-container--F7V8S3r.js",
+   "cm-C3nyeIbG.js",
+   "components-C1-eJffo.js",
+   "createLucideIcon-pxQ29k6D.js",
+   "dist-D41knOY6.js",
+   "emotion-memoize.esm-DsbkLwm0.js",
+   "emotion-react.browser.esm-2Wpoz11n.js",
+   "entry.client-C6W-s5_T.js",
+   "errorBoundaries-DZESPwId.js",
+   "esm-BO4t_Bx-.js",
+   "link-CEz-fkA-.js",
+   "manifest-dda51791.js",
+   "preload-helper-BLdHbfdN.js",
+   "react-DlmbjZJV.js",
+   "react-dom-1flDk5uq.js",
+   "reflex-env-BYqugNyC.js",
+   "rolldown-runtime-XKyaHtl9.js",
+   "root-Dy0HhG0i.js",
+   "text-field-g1rAR3b1.js",
+   "wifi-off-ByMGIQPM.js"
+  ],
+  "secs": 3.9
+ },
+ "dyn": {
+  "initial": "nothing",
+  "icon": "MISSING nothing",
+  "icon_reqs": [
+   "+esm"
+  ],
+  "recharts": "MISSING nothing",
+  "recharts_reqs": [
+   "+esm"
+  ],
+  "callout": "MISSING nothing",
+  "callout_reqs": [
+   "+esm"
+  ],
+  "window_reflex_keys": [
+   "$/utils/context",
+   "$/utils/context-registry",
+   "$/utils/state",
+   "@emotion/react",
+   "@radix-ui/themes",
+   "react"
+  ],
+  "secs": 31.4
+ },
+ "console": [
+  {
+   "page": "/rowfocus",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "page": "/upload",
+   "type": "pageerror",
+   "text": "filesById is not defined"
+  },
+  {
+   "page": "/upload",
+   "type": "pageerror",
+   "text": "filesById is not defined"
+  },
+  {
+   "page": "/dyn",
+   "type": "reqfailed",
+   "text": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/dist/esm/icons/banana.mjs/+esm net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "reqfailed",
+   "text": "https://cdn.jsdelivr.net/npm/recharts@3.10.1/+esm net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "reqfailed",
+   "text": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/dist/esm/icons/info.mjs/+esm net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "page": "/dyn",
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ]
+}

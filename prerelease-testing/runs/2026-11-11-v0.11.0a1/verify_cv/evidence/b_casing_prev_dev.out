@@ -1,0 +1,25 @@
+== /static status=200 body='STATIC-OK'
+== / status=200 body='Application Error | TypeError: Failed to fetch dynamically imported module: http://localhost:3761/app/routes/_index.jsx?import'
+    HTTP 500 http://localhost:3761/app_components/cvb/cvb.jsx
+    console.error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+    console.error: Error loading route module `/app/routes/_index.jsx`, reloading page...
+    console.error: TypeError: Failed to fetch dynamically imported module: http://localhost:3761/app/routes/_index.jsx?import
+    console.error: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).
+    console.error: TypeError: Failed to fetch dynamically imported module: http://localhost:3761/app/routes/_index.jsx?import
+    console.error: TypeError: Failed to fetch dynamically imported module: http://localhost:3761/app/routes/_index.jsx?import
+    click failed: Page.click: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("#inc")
+
+== /casing status=200 body='Application Error | TypeError: Failed to fetch dynamically imported module: http://localhost:3761/app/routes/[casing]._index.jsx?import'
+    HTTP 500 http://localhost:3761/app_components/cvb/cvb.jsx
+    console.error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+    console.error: Error loading route module `/app/routes/[casing]._index.jsx`, reloading page...
+    console.error: TypeError: Failed to fetch dynamically imported module: http://localhost:3761/app/routes/[casing]._index.jsx?import
+    console.error: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).
+    console.error: TypeError: Failed to fetch dynamically imported module: http://localhost:3761/app/routes/[casing]._index.jsx?import
+    console.error: TypeError: Failed to fetch dynamically imported module: http://localhost:3761/app/routes/[casing]._index.jsx?import
+    click failed: Page.click: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("#both")
+

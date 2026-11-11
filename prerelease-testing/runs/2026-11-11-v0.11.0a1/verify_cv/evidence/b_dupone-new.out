@@ -1,0 +1,2 @@
+== / status=200 body='HOME-OK |  | casing | inc |  | 0'
+== /dup1 status=200 body='false |  | false'

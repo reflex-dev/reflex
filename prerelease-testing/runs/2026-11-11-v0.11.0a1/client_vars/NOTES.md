@@ -288,3 +288,135 @@ Control `client_vars-ctrl-a3` = `reflex[db]==0.10.0a3` from PyPI (`cd $SB && uv 
   every probe and app after that ran from `$SB/apps/client_vars/...` and asserts its venv (`EXPECT_VENV` in the apps,
   `assert "/envs/<venv>/" in rx.__file__` in the probes, `/envs/driver/` in `drvlib.py`).
 - The hydration fixtures ran alone (no other server of this cluster at the same time); offline probes ran in parallel with them.
+
+## VERIFICATION
+Independent verifier `verify_cv`, 2026-11-11. Venvs from PyPI only, cwd `$SB`: `$SB/envs/vcv-new` (`reflex==0.11.0a1`,
+`--prerelease=allow`; resolved lucide 1.1.2a1, hosting-cli 0.2.2a1) and `$SB/envs/vcv-prev` (`reflex==0.10.1`, no
+`--prerelease`). Ports 3760-3763 / 8760-8761. Working dir `$SB/apps/verify_cv/`. Scripts, the app and evidence:
+`runs/2026-11-11-v0.11.0a1/verify_cv/` (`probes/`, `scripts/srv.sh` + `scripts/drive.py`, `app/` = `cvb`, `evidence/`).
+Issue 1 (stacked `@rx.event`) skipped, verified elsewhere. All servers stopped; no process left.
+
+App `cvb` (one file, `CV_CASE` selects the page set; `EXPECT_VENV` asserts the venv). It always has `/` (a state button,
+so it gets memoized components) and `/static` (text only). Run one case:
+`cd $SB/apps/verify_cv && scripts/srv.sh start <lbl> vcv-new dev $PWD/cvb 3760 8760 CV_CASE=<case> [CV_AUTO_MEMO=0]`,
+then `NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python scripts/drive.py http://localhost:3760 /static / /casing!both`
+(`path!id` clicks `#id`), then `scripts/srv.sh stop <lbl>`. For 0.10.1 use a separate copy (`cvb_prev`, same files) so
+the two versions never share `.web`. Prod: `srv.sh start <lbl> vcv-new prod $PWD/cvb 3762 3762 CV_CASE=<case>`.
+
+Where NOTES.md was not enough: the repro commands say `cd $W/probes` while the copied tree is `src/probes`; `srv.sh` refuses
+any port outside 3260-3279, so a verifier must copy and edit it; the `/casing` repro needs `CS_PAGES=casing,casing2` and the
+breaking page is `/casing2` (one element with both setters), not `/casing`; no rerun command is given for the
+`print(State._secret)` / logging observation or for the factory call count (both probes were rewritten here).
+
+| item | verdict | severity | regression |
+|---|---|---|---|
+| A hint/docstring shows `rx.client_state("my_name")` | CONFIRMED; docs are correct | low | no (new API) |
+| B identifier collisions | CONFIRMED, blast radius NARROWED; worse on 0.10.1 | low | no |
+| C ops on a `None` `set[str] \| None` | CONFIRMED, wider than SetVar: also `list[str] \| None` on 0.11.0a1 | low | no |
+| D `print`/`%`/`logging` of a class-level backend var raise | CONFIRMED, behavior change; changelog wording incomplete | low | yes (intentional) |
+| E extra `default_factory` calls | CONFIRMED and WIDER: also one call per backend worker at its first event | low | yes (minor) |
+
+### A. Wrong "Give it a name" hint
+`cd $SB/apps/verify_cv/probes && $SB/envs/vcv-new/bin/python -I a_hint.py` (`evidence/a_hint.out`):
+- `rx.client_state("x").push(1)` -> `ValueError: ... Give it a name -- rx.client_state("my_name") -- to make it global`.
+- Followed literally: `rx.client_state("my_name")` -> `_is_global=False`, hook `useClientState("my_name", "cs$1")`, so the
+  default is the string `"my_name"` and `push` raises the same error. `rx.client_state("", name="my_name")` works.
+- `ClientStateVar.create.__doc__` repeats it: `- ``rx.client_state("my_name")`` is **global**.`
+- Migration trap the hint reinforces: `rx._x.client_state` / legacy `ClientStateVar.create` took `var_name` first.
+  `rx.ClientStateVar.create("user_input")` (the new class) silently gives an unnamed var with default `"user_input"`;
+  `create("user_input", default="")` and `rx.client_state("user_input", "")` fail loudly with a `TypeError`.
+- Docs at the tag (`git -C /home/user/reflex grep -n client_state v0.11.0a1 -- docs`): every call names the var with
+  `name=` (`docs/wrapping-react/overview.md:75,131,205`, `docs/library/data-display/icon.md:11`, the integration
+  gallery); unnamed calls are the intended scoped ones. Both changelogs show `rx.client_state("", name="query")`. The
+  `rx._x` deprecation text says `rx.client_state(default, name=...)`. So the docs do not teach the wrong call; it stays low.
+- 0.10.1 has no `rx.client_state` / `rx.ClientStateVar`, so this is not a regression.
+- Root cause: `packages/reflex-base/src/reflex_base/client_state.py:58-62` (`_NOT_GLOBAL_MSG`) and `:247` (docstring).
+  Fix: write `rx.client_state(default, name="my_name")` in both places.
+
+### B. Generated identifier collisions
+| run | 0.11.0a1 | 0.10.1 (`rx._x.client_state`) |
+|---|---|---|
+| `casing` dev: `name="item"` + `name="Item"`, both setters on one button | `/` and `/casing`: `GET /app_components/cvb/cvb.jsx -> 500`, `[PARSE_ERROR] Identifier setItem has already been declared`, "Application Error"; `/static` renders | identical (`useState` + `refs['_client_state_setItem']`) |
+| `casing` prod | `Build failed ... Identifier setItem has already been declared`, `script "export" exited with code 1`: the whole app is down | (not run; same generated code) |
+| `camel` dev: `name="searchQuery"` + `name="searchquery"` on one button | works (`A`/`B` after click) | 500 as above: `capitalize()` folds both to `setSearchquery` |
+| `dup` dev: `name="open"` with defaults `False` / `True`, one per page | each page shows its own default; no warning | same |
+| `dupone` dev: both declarations read on one page | both show `false` (first declaration wins), no warning | same |
+| `dupone` dev, `auto_memoize=False` | every route returns 500, `/static` too: `Identifier openRxClientState has already been declared` in `app/routes/[dup1]._index.jsx` (`evidence/b_dupone_am0_static_500.txt`) | n/a (no `auto_memoize` option) |
+
+Is it realistic? First-letter-case pairs (`item`/`Item`) are rare. One name declared twice with different defaults in
+different components (`open`, `selected`, `search`) is more plausible in a big app; in the default config it is silent
+(first mounted reader wins), which is easy to miss. Blast radius, narrowed: in dev with the default config, the pages that
+import the broken memo module break. That module is per Python module (`app_components/<app>/<module>.jsx`), so in a
+one-file app it is every page with a stateful component; a page with no memoized component (`/static`) still renders. In
+prod the build fails, so nothing is served. With `auto_memoize=False`, dev answers 500 on every route. Not a regression:
+0.10.1 collides on more names (`capitalize()` also folds `searchQuery`/`searchquery`).
+Root cause: `client_state.py:315-316`, where `getter_name = f"{var_name}{MARKER}"` and
+`setter_name = f"set{var_name[0].upper()}{var_name[1:]}"`. The setter is not injective, nothing records
+name -> default, and hooks are deduplicated by their full text only. Fix: derive the setter from the getter so it is
+injective (e.g. `f"{var_name}{MARKER}Set"`; it is only referenced through `_setter_name`); then raise
+a clear `ValueError` at compile (not at `create`, so hot reload with an edited default still works) when two hook
+lines declare the same `{name}RxClientState` with different defaults.
+
+### C. Operations on a `None` optional set var
+`cvb` `CV_CASE=setnone`: `maybe_set: set[str] | None = None`; page reads `S.maybe_set.contains("m")` and
+`.union({"z"}).length()` (0.10.1: `S.maybe_set.contains` and `S.maybe_list.contains`). `CV_CASE=listnone`:
+`maybe_list: list[str] | None = None` with `.contains` / `.length()`.
+- 0.11.0a1 prod: `TypeError: Cannot read properties of null (reading 'some')`, `Error: Prerender: Request failed for
+  /setnone/ ... Received a 500`, build exit 1, server does not start (`evidence/c_prod_setnone-new.txt`).
+- 0.11.0a1 dev: `/setnone` shows "An error occurred while rendering this page ... reading 'some'" at
+  `pySetHas (utils/helpers/set.js:31)`; `/` is unaffected (`evidence/c_setnone_new_dev.out`).
+- 0.10.1 prod: the same failure with `reading 'includes'` (`evidence/c_prod_setnone-prev.txt`). The claim holds.
+- 0.11.0a1 `list[str] | None` prod: the same `reading 'includes'` failure (`evidence/c_prod_listnone-new.txt`).
+  So this is how every `X | None` collection var behaves, not something SetVar introduced.
+Misuse? In part: Python would also raise on `"m" in None`, and `rx.cond(S.maybe_set, ...)` or a `set()` default avoids
+it. But reflex gives the `| None` var the full SetVar/ArrayVar API with no warning, and the failure is loud (prod build
+fails), so it is caught before deploy. Low, not a regression. Root cause: the optional type is dropped when the Var
+class is picked, and the JS helpers do not guard null
+(`packages/reflex-base/src/reflex_base/.templates/web/utils/helpers/set.js:27-31` `arr.some`, and `pySetUnion` etc.;
+`vars/set.py:576`). Fix: make set helpers treat `null`/`undefined` as empty (`(arr ?? [])`), or emit `?.` for
+optional vars; at least document the `rx.cond` guard.
+
+### D. `BackendVarFormatError` from `print` / logging in server code
+`cd $SB/apps/verify_cv/probes && $SB/envs/<v>/bin/python -I d_backend_str.py <v>` (`evidence/d_backend_str.out`):
+| expression (class-level `S._secret`) | 0.10.1 | 0.11.0a1 |
+|---|---|---|
+| `print(...)`, `str(...)`, `"%s" % ...`, `json.dumps(..., default=str)` | `Field(...)` text | raises `BackendVarFormatError` |
+| `logging.info("%s", ...)`, `logging.info(...)` | logged | `--- Logging error ---` on stderr; the app keeps running |
+| `f"{...}"`, `"{}".format(...)` | **already raised** | raises |
+| `repr()`, `!r`, `pprint`, `pydoc.render_doc(S)`, `str(S.__dict__)` | ok | ok |
+| `str(Mix.mcount)` (field of a mixin state) | `Field(...)` | raises ("declared on a mixin state") |
+| `str(S.get_fields()["v"])` | `Field(...)` | raises ("is the field of a state var") |
+Plausibility: low. Inside handlers `self._secret` is the real value and is unaffected; only class-level access hits the
+`Field`, and printing a `Field` repr was never useful. Also, the most common debug spelling (an f-string) already
+raised on 0.10.1. What breaks is import-time debug prints or a generic attribute dump that calls `str()`. A bare `print`
+at module level stops the app from importing. Logging only writes a "Logging error" traceback.
+Changelog: reflex-base 0.11.0a1 Bug Fixes, "Converting a backend var to text with `str()`, `%` or `!s` now raises it too,
+instead of putting the `Field` text in the page". This covers the mechanism, but it says "in the page" and sits under
+Bug Fixes. It does not say that `print`/logging in server code and mixin fields are affected. The error itself says
+"cannot be used in the UI" even when no UI is involved.
+Severity: low, intentional behavior change. Root cause: `packages/reflex-base/src/reflex_base/vars/base.py:4418-4424`
+(`Field.__str__` raising like `__format__` at `:4403`). Fix: keep it, but add one changelog sentence (and add "use `repr()`
+to inspect it" to the message built in `_no_frontend_var_error`, `:4426-4455`), or list it under Breaking Changes. Alternatively, return the repr from
+`__str__` and rely on `__format__` and `LiteralVar.create` for the UI paths; that would weaken the `str()` guard.
+
+### E. Extra `default_factory` calls
+`cvb` `CV_CASE=factory CV_FACTORY_LOG=<file>`: a state `F` with `token: str` and `maybe_tok: str | None`, both
+`rx.field(default_factory=_tok)`; `_tok` appends `pid` + call stack to the file. Counts below are for the two fields
+(`evidence/e_*.calls`):
+| run | 0.10.1 | 0.11.0a1 |
+|---|---|---|
+| dev startup | 4 (`_compile_initial_state`, 2 processes) | 6: +2 from `_compile_client_storage_field` in the compiling process |
+| dev, first page load | +2 (state instance) | +4: +2 state instance, **+2 from `hydrate_and_load > _sync_shared_storage > _shared_storage_groups > _compile_client_storage_field`** |
+| prod startup / after page loads | 4 / 6 | 6 / 10 |
+| prod `GRANIAN_WORKERS=3` | n/a | +1 per field in each worker that handles its first event (`lru_cache` per process; cleared when a state class is defined, `reflex/state.py:1170`) |
+So each str-compatible factory runs one extra time per compile, plus one extra time in every backend worker, inside that
+worker's first event. The reporter saw only the compile call. Could it matter? Compile-time calls are not new: 0.10.1
+already calls each factory once at compile for the initial state, so a factory that needs a DB or the network
+already ran at compile time. The new effects are a factory with observable side effects (counter, row insert, logging)
+running N+1 times, and a slow factory delaying the first event of every worker. Exceptions are swallowed. uuid/time
+factories are harmless (the value is discarded). Low.
+Root cause: `reflex/compiler/utils.py:346-358` calls `field.default_factory()` to detect a storage-producing factory, and
+`reflex/state.py:2354-2373` (`_shared_storage_groups`) reruns the whole `_compile_client_storage_recursive` at runtime.
+Fix: give `_compile_client_storage_recursive` a flag that skips the factory probe and pass it from
+`_shared_storage_groups`, since compile already validated the declarations. Optionally reuse the value already
+computed for the initial state instead of calling the factory again.

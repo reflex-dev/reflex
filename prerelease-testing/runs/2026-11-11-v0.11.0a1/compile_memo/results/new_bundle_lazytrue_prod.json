@@ -1,0 +1,145 @@
+{
+ "base": "http://localhost:3300",
+ "home": {
+  "initial_branch": "branch: mA,page",
+  "n_after_3": true,
+  "renders": {
+   "initial": {
+    "n_probe": 3,
+    "static_probe": 1,
+    "memo_a": 1,
+    "memo_b": 1,
+    "memo_c": 1
+   },
+   "after_inc3": {
+    "n_probe": 6,
+    "static_probe": 1,
+    "memo_a": 1,
+    "memo_b": 1,
+    "memo_c": 1
+   },
+   "after_other2": {
+    "n_probe": 8,
+    "static_probe": 1,
+    "memo_a": 1,
+    "memo_b": 1,
+    "memo_c": 1
+   }
+  },
+  "clicks": "clicks: a,b,c",
+  "branch_after_2_toggles": "branch: mA,page,uA,mB,uB,mA",
+  "cstate": [
+   "cstate 2",
+   "cstate 0"
+  ],
+  "client_state": {
+   "shared": "shared: 1",
+   "memo": [
+    "A: 2",
+    "B: 0"
+   ]
+  },
+  "fstring_focus_active": "fin_abc",
+  "fstring_input_dom_id": "",
+  "secs": 6.3
+ },
+ "plotly": {
+  "probe_count": 1,
+  "js_requests": [
+   "Icon-bvN7Ggfz.js",
+   "_plotly_._index-DukVBrVO.js",
+   "click-outside-container-BBHG-f7x.js",
+   "cm-3PX18ir_.js",
+   "components-DqZPmQF1.js",
+   "createLucideIcon-DwUh1A96.js",
+   "dist-CszEDxl-.js",
+   "dist-lOUIYuM3.js",
+   "emotion-react.browser.esm-BhsI01oB.js",
+   "entry.client-BfeRvdMD.js",
+   "errorBoundaries-C4FswQ2s.js",
+   "manifest-9e306869.js",
+   "preload-helper-DarYC749.js",
+   "reflex-env-nIAc7oSI.js",
+   "rolldown-runtime-XKyaHtl9.js",
+   "root-HR136DSS.js",
+   "wifi-off-BnQfXWq7.js"
+  ],
+  "secs": 3.9
+ },
+ "recharts": {
+  "probe_count": 1,
+  "js_requests": [
+   "Icon-bvN7Ggfz.js",
+   "_recharts_._index-D1Zit7bZ.js",
+   "components-DqZPmQF1.js",
+   "createLucideIcon-DwUh1A96.js",
+   "emotion-react.browser.esm-BhsI01oB.js",
+   "entry.client-BfeRvdMD.js",
+   "errorBoundaries-C4FswQ2s.js",
+   "es6-s7z4Pki-.js",
+   "manifest-9e306869.js",
+   "preload-helper-DarYC749.js",
+   "reflex-env-nIAc7oSI.js",
+   "rolldown-runtime-XKyaHtl9.js",
+   "root-HR136DSS.js",
+   "wifi-off-BnQfXWq7.js"
+  ],
+  "secs": 3.9
+ },
+ "editor": {
+  "probe_count": 5,
+  "js_requests": [
+   "Icon-bvN7Ggfz.js",
+   "_editor_._index-DrjygdK_.js",
+   "click-outside-container-BBHG-f7x.js",
+   "cm-3PX18ir_.js",
+   "components-DqZPmQF1.js",
+   "createLucideIcon-DwUh1A96.js",
+   "dist-CszEDxl-.js",
+   "emotion-react.browser.esm-BhsI01oB.js",
+   "entry.client-BfeRvdMD.js",
+   "errorBoundaries-C4FswQ2s.js",
+   "manifest-9e306869.js",
+   "preload-helper-DarYC749.js",
+   "reflex-env-nIAc7oSI.js",
+   "rolldown-runtime-XKyaHtl9.js",
+   "root-HR136DSS.js",
+   "wifi-off-BnQfXWq7.js"
+  ],
+  "secs": 3.9
+ },
+ "dyn": {
+  "initial": "nothing",
+  "icon": "ok",
+  "icon_reqs": [
+   "banana-DXE4uzlb.js"
+  ],
+  "recharts": "MISSING ",
+  "recharts_reqs": [
+   "es6-s7z4Pki-.js"
+  ],
+  "callout": "ok",
+  "callout_reqs": [
+   "info-CZ_cwzKW.js"
+  ],
+  "window_reflex_keys": [
+   "$/utils/context",
+   "$/utils/context-registry",
+   "$/utils/state",
+   "@emotion/react",
+   "@radix-ui/themes",
+   "lucide-react/dist/esm/icons/banana.mjs",
+   "lucide-react/dist/esm/icons/info.mjs",
+   "react",
+   "recharts"
+  ],
+  "secs": 11.5
+ },
+ "console": [
+  {
+   "page": "/",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ]
+}
