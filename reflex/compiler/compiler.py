@@ -1236,8 +1236,17 @@ def compile_app(
     prerender_routes: bool = False,
     dry_run: bool = False,
     use_rich: bool = True,
+    compile_initial_state: bool = True,
 ) -> bool:
     """Compile an app using the compiler plugin pipeline.
+
+    Args:
+        app: The app to compile.
+        prerender_routes: Whether to prerender the routes.
+        dry_run: Whether to compile the app without saving it.
+        use_rich: Whether to use rich progress bars.
+        compile_initial_state: Whether a skipped compile still serializes the
+            initial state. The ``reflex db`` commands only need the pages evaluated.
 
     Returns:
         ``True`` when a real frontend compile ran, ``False`` when the call
@@ -1263,7 +1272,7 @@ def compile_app(
         for route in stateful_pages:
             logger.debug(f"BE Evaluating stateful page: {route}")
             app._compile_page(route, save_page=False)
-        if app._state is not None:
+        if compile_initial_state and app._state is not None:
             utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
@@ -1287,7 +1296,7 @@ def compile_app(
 
         if not dry_run:
             app._write_stateful_pages_marker()
-        if app._state is not None:
+        if compile_initial_state and app._state is not None:
             utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()

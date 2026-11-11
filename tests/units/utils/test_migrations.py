@@ -15,6 +15,7 @@ from reflex_base import constants
 from reflex_base.config import reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import serializers
 
 import reflex.model
 from reflex.model import Model, ModelRegistry, get_engine
@@ -667,6 +668,45 @@ def test_autogenerate_evaluates_pages(project: Path, caplog: pytest.LogCaptureFi
     _forget_app()
     prerequisites.get_compiled_app(dry_run=True, check_if_schema_up_to_date=True)
     assert _errors(caplog) == []
+
+
+def test_db_commands_do_not_serialize_the_initial_state(project: Path):
+    """The db commands evaluate the pages without serializing the initial state.
+
+    Without a frontend compile, the libraries compiler plugins bundle are not
+    registered, so a serializer that requires one, like reflex-enterprise's, would
+    fail a fresh `reflex db init`, `makemigrations` or `migrate`. The serializer
+    here raises whenever it is called, so the test does not depend on which
+    libraries an earlier test bundled.
+    """
+    (project / APP_NAME / f"{APP_NAME}.py").write_text(
+        "import reflex as rx\n\n\n"
+        "class Thing(rx.Model, table=True):\n    t1: str\n\n\n"
+        "class Strict:\n    pass\n\n\n"
+        "@rx.serializer\n"
+        "def serialize_strict(value: Strict) -> str:\n"
+        "    raise ValueError('The initial state was serialized')\n\n\n"
+        "class StrictState(rx.State):\n    value: Strict = Strict()\n\n\n"
+        "def index():\n    return rx.text(StrictState.router.page.path)\n\n\n"
+        "app = rx.App()\napp.add_page(index)\n"
+    )
+    _forget_app()
+    original_serializers = serializers.SERIALIZERS.copy()
+    original_serializer_types = serializers.SERIALIZER_TYPES.copy()
+    try:
+        # The app module stays imported: a second import would redefine its state.
+        _db("init")
+        _db("makemigrations", "--message", "nothing changed")
+        _db("migrate")
+    finally:
+        serializers.SERIALIZERS.clear()
+        serializers.SERIALIZERS.update(original_serializers)
+        serializers.SERIALIZER_TYPES.clear()
+        serializers.SERIALIZER_TYPES.update(original_serializer_types)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+
+    assert _table_names() == {"alembic_version", "thing"}
 
 
 def test_schema_check_sees_models_registered_after_an_upgrade(
