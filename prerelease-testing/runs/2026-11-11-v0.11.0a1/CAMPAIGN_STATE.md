@@ -89,7 +89,7 @@ items in its area. Known and filed items: do NOT re-report unless changed.
 | 2 events_await | explore DONE (HIGH regression: double @rx.event crashes at import, overkey; medium regression: pyright Unknown args on py3.11-3.13; +5 low); verified: #1 CONFIRMED (trivial fix), #2 CONFIRMED, #3 CONFIRMED cross-caller read, #4 RECLASSIFIED (diagnostics), #5 NARROWED | `reports/events_await.md`, `reports/verify_evt.md` |
 | 3 redis_runtime | explore DONE (0 regressions; medium: cross-worker updates lost after >5 s Redis outage, kill -9 of a worker stops server; low: oplock same-instance waiter 1 s stall contradicts #7534 text); verifier `verify_rds` running | `reports/redis_runtime.md` |
 | 6 server_net | DONE + verified: #1 CORS CONFIRMED WIDER → HIGH (TLS-proxied same-origin prod + all documented split/CDN guides); #2/#3 NARROWED; #4/#5 CONFIRMED low | `reports/server_net.md`, `reports/verify_net.md` |
-| 4 client_vars | explore running (fable high) | `reports/client_vars.md` |
+| 4 client_vars | explore DONE (high = dup of FINDING-001; 9 low non-regressions; HYD-08/09/12/13 fixed); verifier `verify_cv` running | `reports/client_vars.md` |
 | 5 compile_memo | explore running (opus high; also checks reflex's own `refs` surface after the rxe ReferenceError) | `reports/compile_memo.md` |
 | 8 examples_ui | not started — launch next | |
 

@@ -73,7 +73,7 @@ Quirks (not issues):
 scripts/srv.sh start edge-dev new dev $PWD/csedge 3260 8260 [CS_PAGES=a,b] [CS_AUTO_MEMO=0 CS_COMPILER=1]
 CS_PAGES=... NO_PROXY=... $SB/envs/driver/bin/python scripts/drive_edge.py http://localhost:3260 new-dev
 ```
-- default dev 51/51 (+`/casing2` only on request), default prod 50/50, compiler prod 45/45; compiler dev 43/44 (first page hit
+- default dev 51/51 (`/casing2` is only added on request and skipped), default prod 50/50, compiler prod 45/45; compiler dev 43/44 (first page hit
   vite's cold-start `504 Outdated Optimize Dep` and did not recover within 15 s; not reproduced on other pages).
 - `/collapse`: page-level read lifts the var (documented). `/memoforeach`: an unnamed var created in a foreach body inside a memo is
   shared by the rows of one memo instance, separate per instance. `/statedefault`: `rx.client_state(State.v)` takes the state value
@@ -110,7 +110,7 @@ CS_PAGES=... NO_PROXY=... $SB/envs/driver/bin/python scripts/drive_edge.py http:
   pydantic fields, `dict[str, set[int]]["k"]`, `list[set[int]][0]` are all `SetVar`; literals render sorted
   (`[[1, "a"], [2, "b"]]`), mixed unsortable literals do not crash (`[null, 1, "x"]`).
 - 0.10.1: all of those are `ArrayVar`; `frozenset` state vars are rejected (`VarTypeError ... serializable type`).
-- 17 deprecated array operations each warn once per call site with the caller's `file:line`
+- 15 deprecated array operations (18 call sites in the probe) each warn once per call site with the caller's `file:line`
   (`SetVar.__getitem__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first ...`).
 - `tags + ["x"]` raises `VarTypeError: Unsupported Operand type(s) for +: ArrayCastedVar, list` on BOTH versions (ArrayVar + python
   list is unsupported), so it is not a new break; `lst + tags` works with the warning.
@@ -141,7 +141,7 @@ scripts/srv.sh start vars-prod new prod $PWD/varsapp 3261 3261 VARS_NO_SETNONE=1
 
 ## 3. Unicode string ops (#7548): `varsapp` `/unicode`
 `... drive_unicode.py http://localhost:3260 new-dev` (table in `results/unicode/<label>_table.json`)
-- 0.11.0a1 dev + prod: `reversed()`, `length()`, `rx.foreach(str)`, slices, `[1]`, `[-1]`, `upper`/`lower` equal Python for ASCII,
+- 0.11.0a1 dev + prod (20/20 each): `reversed()`, `length()`, `rx.foreach(str)`, slices, `[1]`, `[-1]`, `upper`/`lower` equal Python for ASCII,
   `a😀b`, the family ZWJ sequence, a flag, `e` + combining acute, thumbs-up + skin tone, CJK incl. U+20BB7, and typed input.
   Code points, not graphemes: the family emoji has length 5, foreach renders 👨, ZWJ, 👩, ZWJ, 👧 as separate spans, and
   `reversed()` gives 👧‍👩‍👨 (a different family); `"e\u0301a".reversed()` moves the accent onto the `a`; a flag reverses into
@@ -281,3 +281,10 @@ Control `client_vars-ctrl-a3` = `reflex[db]==0.10.0a3` from PyPI (`cd $SB && uv 
 - Storage: prod + Redis legs, the 100 ms RTT / raw-CDP verifier families (`vmatrix.sh`), Cookie `secure` / `same_site` / `domain`,
   `sessionStorage.clear()`.
 - Var errors: `rx.upload(on_upload_progress=State._x)`, hybrid properties, pydantic v1 models.
+
+## Procedural
+- The first sanity command of the session ran `$SB/envs/new/bin/python -c "import reflex; print(reflex.__file__)"` with
+  `/home/user/reflex` as cwd and printed the checkout path (the trap rule 2 of the brief describes). Nothing was derived from it;
+  every probe and app after that ran from `$SB/apps/client_vars/...` and asserts its venv (`EXPECT_VENV` in the apps,
+  `assert "/envs/<venv>/" in rx.__file__` in the probes, `/envs/driver/` in `drvlib.py`).
+- The hydration fixtures ran alone (no other server of this cluster at the same time); offline probes ran in parallel with them.
