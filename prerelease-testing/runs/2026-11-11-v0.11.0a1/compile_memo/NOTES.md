@@ -91,3 +91,17 @@ Screenshots: `evidence/refs_*_prod.png`.
   Dynamic recharts `bar_chart` renders an empty box on both versions (no error) — context.
   Without `bundle_library`, dynamic icons/charts fall back to the jsdelivr CDN (blocked here) on both versions.
 - **CMP-05** module-scope `bundle_library()` survives compile: dynamic icon/callout render from the bundle in prod -> fixed.
+- **Docs pattern: per-row `rx.client_state` in an `@rx.memo` row inside `rx.foreach`** (`/rows`, `scripts/drive_rows.py`,
+  new only — API is new): toggling row "beta" opens only beta (good), but `rx.foreach` keys rows by INDEX, so after
+  `remove first` the open state jumps to the row that moved into beta's slot (`[beta, alpha]` -> `open-alpha`). Same in
+  T,F and F,T. Also the hidden `rx.cond` branch's on_mount fires for every row at mount (`open-alpha,open-beta,open-gamma`
+  while none is open) — see next item.
+- **on_mount inside `rx.cond` inside an `@rx.memo` body** (`/memocond`, `scripts/drive_mc.py`): the hidden branch's
+  on_mount fires at mount (`mount-shown-x,mount-shown-y` with only x shown) and toggling fires nothing; compiled
+  MemoRow shows the cond child's `useEffect` hoisted unconditionally into the memo function body. Identical on 0.10.1
+  (pre-existing), but #7694's changelog promise "on_mount and on_unmount still follow their rx.cond branch" only holds
+  outside `@rx.memo`.
+- **on_unmount payload in an unkeyed foreach** (`/loopnokey`): items `[alpha,beta,gamma]`, `remove first` -> the backend
+  receives `record_unmount("gamma")` while `alpha` was removed and gamma is still on screen (index keys + mount-time
+  closure with `[]` deps). New behaviour (0.10.1 crashes on this page). #7793 "each item now runs its own hooks" — the
+  hooks run per position, not per item. With an explicit `key=item` (`/loop`) the payloads are correct.
