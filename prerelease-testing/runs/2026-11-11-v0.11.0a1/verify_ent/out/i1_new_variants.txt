@@ -1,0 +1,9 @@
+=== new REFLEX_API_URL=https://myapp.example.com
+[i1_new_prod2] server exited
+ConfigError: MCP OAuth needs the app's public origin for the RFC 8414 issuer, but neither MCPPlugin(issuer_url=
+stopped
+=== new REFLEX_DEPLOY_URL=http://localhost:8880
+[i1_new_prod2] ready after 10s
+HTTP/1.1 401 Unauthorized
+www-authenticate: Bearer error="invalid_token", error_description="Authentication required", resource_metadata="http://localhost:8880/.well-known/oauth-protected-resource/_reflex/mcp"
+stopped

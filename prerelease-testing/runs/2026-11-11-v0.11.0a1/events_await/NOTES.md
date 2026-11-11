@@ -5,7 +5,7 @@
 - [x] awaitapp prod + memory, dev + redis, prod + redis (identical to dev + memory except `sup_bg_await_x2`, see anomalies)
 - [x] legacyapp (decorator stacking + failure paths) on 0.11.0a1 (dev mem, dev redis, prod redis) and 0.10.1 (dev mem, dev redis)
 - [x] `probes/deco_matrix.py` on both versions; reflex-examples `overkey` import on both versions
-- [ ] typing module (pyright + mypy, 0.11.0a1 vs 0.10.1)
+- [x] typing module (pyright 1.1.414 + 1.1.411, mypy 2.4.1; 0.11.0a1 vs 0.10.1) — `typing/`
 - [ ] report written to `../reports/events_await.md`
 
 All paths below are relative to `$SB/apps/events_await/` (scratch) = this directory (repo copy).
@@ -75,3 +75,31 @@ The bg scenarios use a test hook (`F.get_state` overridden with `_override_base_
 `return self.a` (int), `return rx.redirect` (forgot the call) and `return self.chained` (bound method — the documented pitfall) raised
 `TypeError: Your handler F.ret_value must only return/yield: None, Events or other EventHandlers referenced by their class...` on 0.10.1.
 On 0.11.0a1 all three are silently accepted as "the handler's result": no log line, no toast, the event the user meant to chain never runs.
+
+### Typing (#7715 / #7752 / #7755 / #7754) — `typing/run_typing.sh <new|prev> [file]`
+Own venvs `$SB/envs/events_await-typing-{new,prev}` = frozen copies of the shared `new` / `prev` graphs + pyright 1.1.414 + mypy 2.4.1, Python 3.12
+(`cd $SB && uv --no-config pip freeze --python envs/new/bin/python > f.txt && uv --no-config pip install --python envs/events_await-typing-new/bin/python --only-binary :all: -r f.txt pyright mypy`).
+`typed_app.py` (a typed user module: handlers with 0-9 args, awaits, a dataclass holding a handler, `FunctionStringVar.create(_var_type=EventChain)`):
+| checker | 0.10.1 | 0.11.0a1 |
+|---|---|---|
+| mypy 2.4.1 | 35 errors (`"EventNamespace" not callable` on every handler use) | 4 errors |
+| pyright 1.1.414 | 16 errors | 3 errors |
+#7715, #7752 (5-8 values), #7754 confirmed under mypy; #7755 confirmed (reading `holder.on_submit` gives `EventHandler` under both).
+Left on 0.11.0a1 (`typing/out_new.txt`): `S.no_args` is not assignable to an `EventHandler`-typed field/parameter (both checkers, same on 0.10.1);
+`spec: EventSpec = S.one(1)` fails under mypy only (`EventCallback[()]` vs `EventSpec`); a fully applied 9-argument call has no overload (both).
+
+### FINDING B (MEDIUM, regression): pyright loses every bare-`@rx.event` handler's argument types on Python 3.11-3.13
+`typing/reveal2.py`, `typing/strict_app.py`; outputs `typing/out_reveal2_{new,prev}.txt`, `typing/out_strict_{new,prev}.txt`.
+- 0.10.1, pyright 1.1.414, Python 3.12: `S.via_rx` is `EventCallback[int]`; `S.via_rx("not an int")`, `S.via_rx(1, 2, 3)` and
+  `rx.input(on_change=S.via_rx)` (int handler on a str trigger) are errors.
+- 0.11.0a1, same checker: `S.via_rx` is `EventCallback[*tuple[Unknown, ...]]`, `S.via_rx(1)` is `Unknown`, `self.via_rx` is `(*Unknown) -> Any`; none of the
+  three mistakes is reported. `@rx.event()` (with parentheses) and `@rx.event(throttle=...)` keep `EventCallback[int]`. mypy is correct.
+- `# pyright: strict` on a plain 0.10-style app (`strict_app.py`): 4 errors on 0.10.1, 18 on 0.11.0a1 (14 new `reportUnknownMemberType` /
+  `reportUnknownArgumentType` / `reportUnknownVariableType` on every handler reference).
+- Version dependent: `pyright --pythonversion 3.14` gives `EventCallback[int]` again (and 4 strict errors); 3.11, 3.12, 3.13 give Unknown. pyright 1.1.411
+  (the version in the tag's `uv.lock`) behaves the same. The tag's own `tests/type_checking/event.py` (`typing/upstream_event_test.py`) run against the
+  installed wheel on Python 3.12: 15 errors with pyright 1.1.411, 24 with 1.1.414.
+- Cause, confirmed on a scratch copy of `reflex_base` put first on `extraPaths`: `EventNamespace` now declares `EventCallback: TypeAlias = EventCallback`
+  (`reflex_base/event/__init__.py:3502`, from #7715). Inside the class body that name shadows the module-level class in the `__new__` overload's return
+  annotation `-> EventCallback[*P]`; pyright resolves it to Unknown unless annotations are deferred (3.14). Commenting out that one line restores
+  `EventCallback[int]` on 3.12. (`EventDecorator`, used by `@rx.event()`, lives at module scope, which is why the parenthesised form is unaffected.)

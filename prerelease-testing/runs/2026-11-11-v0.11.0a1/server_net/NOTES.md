@@ -131,3 +131,14 @@ REFLEX_API_URL=http://localhost:8348 reflex run --env prod --frontend-only --fro
 - PyYAML is not a dependency of reflex/hosting-cli (absent from the shared `new` venv), so the first case is what a
   default install sees. reflex 0.11.0a1 requires only `reflex-hosting-cli>=0.2.1`, so an in-place upgrade keeps 0.2.1
   (campaign-level note in CAMPAIGN_STATE).
+
+### HYD-06 / #7522 pre-connect navigation (fixture `fixtures/hydration/scripts/run_prenav.sh`, WORK=$W/hyd, ports 3350 + proxy 3351)
+`WORK=$W/hyd PORT_RANGES="3340-3359 8340-8359" bash $F/scripts/run_prenav.sh <prev|new> <label> 3350 3351` (F = fixtures/hydration); output `logs/prenav.txt`.
+| scenario | 0.10.1 (positive control) | 0.11.0a1 |
+|---|---|---|
+| `/slow -> /other` socket held 2 s | trace `slow_load run1 step1`, `other_load` (LEFT page's on_load ran) | only `other_load#1 path=/other`, slow progress 0 |
+| `/items/1 -> /items/2` | `item_load id=1`, `item_load id=2` | only `id=2` |
+| `/redir` hijack via 800 ms upgrade-delay proxy (2 runs) | `redirect_load` ran, **final=/other** (hijacked) 2/2 | `item_load id=2`, final=/items/2, 2/2 |
+| natural window /items, click delay 0/300 ms (4 runs) | id=1 then id=2 | only id=2 |
+| click before connect | processed after load (3/3) | same (3/3) |
+-> HYD-06 **fixed**. Behaviour change (intended): on_load of a page left before the socket connected never runs.

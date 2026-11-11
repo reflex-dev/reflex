@@ -57,3 +57,34 @@ although its second waiter is still queued; the holder on worker A then sees `_n
 lease, and B's second waiter is passed over until its 1 s re-check. (0.10.1 had the same SREM but waited a full
 lock_expiration; #7534's 1/10 re-check caps it at ~1 s.) Note also `SMR = f"[SMR:{os.getpid()}]"` is computed at import, so
 forked workers all log the supervisor's pid (debug-only cosmetic).
+
+## B. Fault injection (prod, 2 workers, oplock off; `bin/faults.sh <venv> 0 2 OUT [scenarios]`, prod 3221, redis 8237)
+Raw: `logs/faults_lost.jsonl`, `faults2.jsonl`, `faults3.jsonl`, `faults4.jsonl`, `kill9.jsonl`.
+- **Lost lock-release notification (#7534 claim)** — `slow(2000)` holds the lock on worker A, 10 `/api/bump` wait (some on
+  worker B); at +1.9 s `CONFIG SET notify-keyspace-events ""` (all release notifications lost):
+  0.11.0a1: worker-B waiters finish **0.33 s** after the release (1 s re-check); 0.10.1: **8.35 s** (waits a full
+  lock_expiration). FIXED as claimed. `CLIENT KILL TYPE pubsub` at +1.9 s: both versions fine (subscriber reconnects in time).
+- **SIGSTOP redis-server 10 s** (half-open-like): both versions: events and API calls hang silently (no error, no toast)
+  for the whole stop and complete 2 ms after SIGCONT; count exact. `socket_timeout=None` (#7757) = same as 0.10.1+redis 7.
+  A real black-holed TCP connection (no RST) would hang until TCP keepalive; iptables not available to test.
+- **redis-server SHUTDOWN SAVE, 10 s down, restart (same dump)**: both versions: event during the outage -> error toast
+  "An error occurred." (ConnectionError) and the event is dropped; `/api/bump` -> 500; first event after restart 2 ms.
+  **But** each worker's RedisTokenManager pubsub tasks give up after 5 failures in 60 s
+  (`_subscribe_lost_and_found_updates: task exceeded exception limit 5 within 60.0s`, same for
+  `_subscribe_socket_record_updates`) and are only re-created by a NEW socket connecting to that worker. After the restart,
+  updates for an existing client produced on another worker are silently dropped: 10 bumps -> api deltas received =
+  10 - bumps_on_other_worker in all 3 runs (stock 6/10 with 4 on B, prev 9/10 with 1, r7 5/10 with 5). Same on 0.10.1. ISSUE.
+- **kill -9 of one granian worker mid-event**: granian logs `[ERROR] Unexpected exit from worker-1` and **the whole prod server
+  stops** ("Info: Reflex app stopped."), both versions (no worker respawn). Restarting the server at once and reconnecting the
+  same token: the server answers `new_token` (the dead worker's socket record is still in redis) -> the client's session is
+  replaced by a fresh state (count back to 0). Lock left by the dead worker (PTTL 9.5 s) is never waited on because the token
+  changed. Both versions. Relates to registry HYD-07 (token reassigned after an unclean stop): reproducible on demand this way.
+
+## E. Shutdown with events in flight (`bin/shutdown.sh OUT "<venvs>" "INT-group TERM-pid" prod`)
+4 socket clients pipelining incr_async x300, bg_incr(2000), 100 api bumps, 3 `slow(2000)` holders; signal at +1.5 s.
+- Python 3.11.18 + redis 8.1.0 / 7.4.1, Python 3.12 + redis 8.1.0 / 7.4.1, 0.10.1: **every stop 1.0-1.8 s, no hang** (16 runs).
+- Anomaly (1/7 SIGINT runs on stock 3.12 + redis 8.1.0, 0/6 on 0.10.1): 3 `[Reflex Backend Exception]` tracebacks at shutdown:
+  `CancelledError` in `get_state` -> `mget`, then during handling, `_lock` finally -> `_release_lock` -> `self.redis.eval` ->
+  `pool.get_connection()` -> `connection.connect()` -> `asyncio/selector_events.py writelines -> self._write_ready()`
+  `TypeError: 'NoneType' object is not callable` (the shielded re-release of #7534 opens a new connection while the loop's
+  transports are being torn down). Log overwritten by a rerun (tag reuse, fixed since); excerpt recorded here.

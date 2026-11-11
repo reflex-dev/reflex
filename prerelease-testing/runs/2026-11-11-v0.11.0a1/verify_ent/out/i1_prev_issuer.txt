@@ -1,0 +1,18 @@
+=== prev 
+[i1_prev_prod2] ready after 8s
+-- POST /_reflex/mcp/ (no bearer)
+HTTP/1.1 401 Unauthorized
+www-authenticate: Bearer error="invalid_token", error_description="Authentication required", resource_metadata="http://localhost:8880/.well-known/oauth-protected-resource/_reflex/mcp"
+-- PRM
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link as="style" href="/assets/__reflex_global_styles-NccINl-w.css" rel="preload"/><link rel="modulepreload" href="/assets/manifest-a4ebad74.js"/><link rel="modulepreload"
+-- openapi servers
+stopped
+=== prev REFLEX_API_URL=https://myapp.example.com
+[i1_prev_prod2] ready after 6s
+-- POST /_reflex/mcp/ (no bearer)
+HTTP/1.1 401 Unauthorized
+www-authenticate: Bearer error="invalid_token", error_description="Authentication required", resource_metadata="http://localhost:8880/.well-known/oauth-protected-resource/_reflex/mcp"
+-- PRM
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link as="style" href="/assets/__reflex_global_styles-NccINl-w.css" rel="preload"/><link rel="modulepreload" href="/assets/manifest-bb48ea68.js"/><link rel="modulepreload"
+-- openapi servers
+stopped

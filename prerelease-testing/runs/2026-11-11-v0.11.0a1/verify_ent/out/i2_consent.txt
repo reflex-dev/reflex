@@ -1,0 +1,18 @@
+=== vent-new dev
+[i2_vent-new_dev] ready after 10s
+issuer http://localhost:8880/ authorization_endpoint http://localhost:8880/authorize
+register 201
+authorize -> 302 Location: http://localhost:8880/agent-consent?txn=toDwKMOZ3SJvUZzZCxuUH5HYcFBwTZUN3NiXcxxDrIY
+consent URL -> 404 text/plain; charset=utf-8 'Not Found'
+stopped
+=== vent-prev dev
+[i2_vent-prev_dev] ready after 6s
+issuer http://localhost:8880/ authorization_endpoint http://localhost:8880/authorize
+register 201
+authorize -> 302 Location: http://localhost:3880/agent-consent?txn=WtDoB5TRj8jd0U1L8y-oYJnJ33wrYR77-fKWxYBYYwE
+consent URL -> 200 text/html '<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width'
+stopped
+issuer http://localhost:8880/ authorization_endpoint http://localhost:8880/authorize
+register 201
+authorize -> 302 Location: http://localhost:3880/agent-consent?txn=bSvkhglyVKNvPURdPmzPE18ohtu9Le3yQBptJ6d7as0
+consent URL -> 200 text/html '<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width'
