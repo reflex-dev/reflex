@@ -61,6 +61,25 @@ env_var_prefixes = {rx.Config: "REFLEX_"}
 
 from .env_vars import env_vars_doc
 
+
+def _public_name(cls: type) -> str:
+    """Return the name users reach a class by, such as ``rx.State``.
+
+    Search matches the identifier users type, so API reference titles lead
+    with it, like component titles do.
+
+    Args:
+        cls: A documented class.
+
+    Returns:
+        The ``rx`` or ``rx.event`` attribute path, or the bare class name.
+    """
+    for namespace, prefix in ((rx, "rx"), (rx.event, "rx.event")):
+        if getattr(namespace, cls.__name__, None) is cls:
+            return f"{prefix}.{cls.__name__}"
+    return cls.__name__
+
+
 pages = []
 for module in modules:
     name = module.__name__.lower()
@@ -72,10 +91,9 @@ for module in modules:
         f"/api-reference/{name}/", title, source_path=inspect.getsourcefile(module)
     )(docs)
     # Keep the short sidebar/nav label (e.g. "App"), but emit a descriptive HTML
-    # <title> for SEO. Use the real class name (e.g. "ComponentState") so it
-    # reads as a proper API symbol.
+    # <title> that leads with the public name (e.g. "rx.State") for search.
     page_data.title = title
-    page_data.seo_title = f"{module.__name__} API Reference · Reflex Docs"
+    page_data.seo_title = f"{_public_name(module)} API Reference · Reflex Docs"
     pages.append(page_data)
 
 pages.append(env_vars_doc)
