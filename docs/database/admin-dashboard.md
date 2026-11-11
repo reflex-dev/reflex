@@ -15,7 +15,7 @@ on the Reflex backend; this page shows how.
 ## Install starlette-admin
 
 ```bash
-pip install "reflex[db]" starlette-admin
+pip install "reflex[db]" "starlette-admin>=1.0"
 ```
 
 The `db` extra provides SQLModel and `get_engine()`. starlette-admin is a
