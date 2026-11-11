@@ -202,24 +202,45 @@ def test_tables_register_with_the_migration_registry(monkeypatch):
 
 @run_async
 async def test_tables_custom_serializer(monkeypatch):
-    """The explicit column type example serializes with its registered function."""
+    """The explicit column type example serializes with its registered function.
+
+    The post gets a relationship, which the serializer must leave alone whether
+    or not the query loaded it.
+    """
     module = load(
         monkeypatch,
         block("queries", SESSION),
         block("tables", "rx.ModelRegistry.register(Base)"),
         block("tables", "server_default=sqlalchemy.func.now()").replace(
-            "    ...\n", ""
+            "    ...\n",
+            "    user_id: Mapped[int | None] = mapped_column("
+            'sqlalchemy.ForeignKey("user.id"), default=None)\n'
+            "    user: Mapped[User | None] = sqlalchemy.orm.relationship("
+            "init=False, repr=False)\n",
         ),
         block("tables", "def serialize_post"),
     )
-    await create_tables(module, module.Post())
+    await create_tables(
+        module,
+        module.User(username="ada", email="ada@example.com"),
+        module.Post(user_id=1),
+    )
     async with module.Session() as session:
         post = await session.get(module.Post, 1)
-    assert serialize(post) == {
+    async with module.Session() as session:
+        with_user = await session.get(
+            module.Post,
+            1,
+            options=[module.sqlalchemy.orm.selectinload(module.Post.user)],
+        )
+    expected = {
         "id": 1,
+        "user_id": 1,
         "update_ts": post.update_ts.replace(microsecond=0).isoformat(),
     }
-    assert serialize(module.Post()) == {"id": None, "update_ts": None}
+    assert serialize(post) == expected
+    assert serialize(with_user) == expected
+    assert serialize(module.Post()) == {"id": None, "user_id": None, "update_ts": None}
     await module.engine.dispose()
 
 
