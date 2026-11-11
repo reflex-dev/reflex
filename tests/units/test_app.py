@@ -5508,6 +5508,27 @@ async def test_on_event_does_not_watch_frontend_results_in_prod(
     future.add_done_callback.assert_not_called()
 
 
+@pytest.mark.asyncio
+async def test_dropped_result_warning_names_an_unregistered_event(  # noqa: RUF029
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """An event missing from the app's registry is named by its event name.
+
+    Args:
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+    """
+    warn = mocker.patch("reflex.app.logger.warning")
+    future = asyncio.get_running_loop().create_future()
+    future.set_result(42)
+    event_namespace_with_processor_mock._warn_dropped_result(
+        "unregistered_state.handler", future
+    )
+    (message,) = warn.call_args.args
+    assert message.startswith("Event handler unregistered_state.handler returned")
+
+
 @pytest.mark.parametrize("compile_raises", [False, True])
 def test_compile_releases_memo_naming_caches(
     mocker: MockerFixture, compile_raises: bool

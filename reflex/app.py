@@ -2642,9 +2642,10 @@ class EventNamespace(AsyncNamespace):
         if name in self._warned_dropped_results:
             return
         self._warned_dropped_results.add(name)
-        handler = self.app._registration_context.event_handlers[name].handler
+        registered = self.app._registration_context.event_handlers.get(name)
+        label = registered.handler.fn.__qualname__ if registered else name
         logger.warning(
-            f"Event handler {handler.fn.__qualname__} returned a value, but it was "
+            f"Event handler {label} returned a value, but it was "
             "triggered from the frontend, so the value is dropped: only backend "
             "code that awaits the handler receives its return value. Return None "
             "or events to chain from a handler used as an event trigger."

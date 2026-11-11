@@ -144,7 +144,7 @@ def _is_event_creator(value: Any) -> bool:
     return isinstance(returns, type) and issubclass(returns, EventSpec)
 
 
-def _creator_reference(creator: Any) -> str:
+def _creator_reference(creator: Any) -> str | None:
     """How to name an event creator in the hint to call it.
 
     Args:
@@ -152,12 +152,12 @@ def _creator_reference(creator: Any) -> str:
 
     Returns:
         ``rx.<name>`` when reflex exports the creator's function under its own
-        name, as for ``rx.redirect``, else the function's qualified name.
+        name, as for ``rx.redirect``, else None.
     """
     fn = _creator_function(creator)
     if getattr(sys.modules.get("reflex"), fn.__name__, None) is creator:
         return f"rx.{fn.__name__}"
-    return fn.__qualname__
+    return None
 
 
 def _is_mistaken_event(value: Any) -> bool:
@@ -237,9 +237,9 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
         for e in events
         if callable(e) and not isinstance(e, _EVENT_LIKE_TYPES) and _is_event_creator(e)
     ]:
-        msg += (
-            f" Did you mean to call {'it' if len(creators) == 1 else 'them'}: "
-            f"{', '.join(f'{_creator_reference(c)}(...)' for c in creators)}?"
+        refs = [_creator_reference(c) for c in creators]
+        msg += f" Did you mean to call {'it' if len(creators) == 1 else 'them'}" + (
+            "?" if None in refs else f": {', '.join(f'{r}(...)' for r in refs)}?"
         )
     raise TypeError(msg)
 
