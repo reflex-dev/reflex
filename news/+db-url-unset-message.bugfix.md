@@ -1,1 +1,0 @@
-`reflex db migrate`, `reflex db makemigrations` and `reflex db status` now report that `db_url` is not configured in rxconfig.py instead of failing inside alembic, and exit with status 1 when there is no database to migrate or it is not initialized.

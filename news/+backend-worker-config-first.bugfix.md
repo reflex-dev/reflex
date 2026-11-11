@@ -1,1 +1,0 @@
-Backend workers now load `rxconfig.py` before they import the app, so `state_auto_setters=True` generates `set_<var>` setters in workers started with spawn (Windows, macOS, `REFLEX_STRICT_HOT_RELOAD`, `REFLEX_BACKEND_START_METHOD=spawn`).

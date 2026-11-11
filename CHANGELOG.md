@@ -1,3 +1,74 @@
+## v0.11.0a1 (2026-11-10)
+
+### Breaking Changes
+
+- Browser storage vars (`rx.Cookie`, `rx.LocalStorage`, `rx.SessionStorage`) must be declared with a storage value as the default or with a storage type annotation. A `default_factory` on a storage var, or one returning a storage value, now fails at compile time instead of being silently ignored or treated as an ordinary var. ([#7582](https://github.com/reflex-dev/reflex/issues/7582))
+- In prod mode, when `deploy_url` is unset (now the default), the backend no longer sends CORS headers, so browsers cannot read cross-origin responses, and Socket.IO accepts same-origin connections only. With `deploy_url` set, only that origin is allowed. Previously any origin was allowed. Set `cors_allowed_origins` explicitly for other setups (`["*"]` restores the old behavior). ([#7641](https://github.com/reflex-dev/reflex/issues/7641))
+- A `set` or `frozenset` state var is now a `SetVar` rather than an `ArrayVar`, so it no longer type-checks as a sequence in frontend code: indexing, slicing, `map`, `filter`, `join`, `reverse`, `+`, `*`, the comparisons `<`, `<=`, `>` and `>=`, and `contains` with a `field` on it are deprecated. They still compile for now with a deprecation warning and will be removed in 1.0. Call `.to_array()` first:
+
+  ```python
+  State.tags[0]  # deprecated
+  State.tags.to_array()[0]
+  ``` ([#7642](https://github.com/reflex-dev/reflex/issues/7642))
+- `@rx.event` now returns an `EventHandler` instead of the decorated function. A decorator stacked above `@rx.event` is deprecated: the method still runs and registers under its own name, with a deprecation warning, until 1.0; apply other decorators below `@rx.event`. `@rx.event` on a method of a class that is not a state keeps working when called through an instance, and on a `staticmethod` or `classmethod` leaves it unchanged; both warn and should be removed, and calling such a method through the class (`Helper.compute(obj, 3)`) is not supported. A module-level function decorated with `@rx.event` whose first parameter is not a state stays a plain function and warns; drop the decorator from plain helper functions. ([#7673](https://github.com/reflex-dev/reflex/issues/7673))
+- Remove the built-in starlette-admin dashboard. `rx.AdminDash(...)` now raises an error linking to the [admin dashboard guide](https://reflex.dev/docs/database/admin-dashboard/), which shows how to mount starlette-admin yourself with `api_transformer`. ([#7739](https://github.com/reflex-dev/reflex/issues/7739))
+
+### Deprecations
+
+- `reflex.model.alembic_autogenerate`, `reflex.model.get_migration_history` and `reflex.model.format_revision`, and the `rx.Model.alembic_autogenerate` and `rx.Model.get_migration_history` class methods, are deprecated and will be removed in 1.0.0. `alembic_autogenerate` now runs through the generated `alembic/env.py` and ignores its `connection` argument. Use `alembic revision --autogenerate`, `alembic check` and `alembic history --indicate-current`, or the matching `reflex db` commands, instead. ([#7742](https://github.com/reflex-dev/reflex/issues/7742))
+
+### Features
+
+- Add `rx.client_state` for client-only state. A named var (`rx.client_state("", name="query")`) is global: any component can read and write it, and the backend can `push` and `retrieve` it. An unnamed var is owned by the outermost page or `@rx.memo` that uses it, so each `@rx.memo` instance gets its own value and a page's values reset when it unmounts. Setting a var re-renders only the components that read it. `.set` takes a value, a `FunctionVar`, or a lambda (`count.set(lambda v: v + 1)`) and replaces `.set_value`, which is deprecated and will be removed in 1.0. `rx._x.client_state` remains available with a deprecation warning. ([#6936](https://github.com/reflex-dev/reflex/issues/6936))
+- Add `rx.vars.SetVar` for `set[T]` and `frozenset[T]` state vars and literals, with set operations (`contains`, `union`, `intersection`, `issubset`, ...) and `to_array()` for list operations and `rx.foreach`. Array operations used directly on a set var are deprecated. ([#7642](https://github.com/reflex-dev/reflex/issues/7642))
+- Add development-time detection for event handlers that block the asyncio event loop. ([#7672](https://github.com/reflex-dev/reflex/issues/7672))
+- Event handlers are awaitable: `await State.handler(args)` inside another event handler runs it right away on the same locked state and returns its result, so a handler may return a value to the backend code awaiting it (returned events still chain, a returned coroutine still raises, and return values are not sent to the frontend yet). `@rx.event` returns the `EventHandler` itself, and `self.handler()` keeps calling the plain method as before.
+
+  ```python
+  @rx.event
+  def add(self, amount: int) -> int:
+      self.total += amount
+      return self.total
+
+
+  @rx.event
+  async def add_twice(self, amount: int):
+      first = await type(self).add(amount)
+      yield rx.toast(f"total is now {await type(self).add(amount)}")
+  ``` ([#7673](https://github.com/reflex-dev/reflex/issues/7673))
+- The `db` extra now installs `aiosqlite`, the async SQLite driver, so `reflex[db]` works with SQLAlchemy's async engine and sessions on the default SQLite database without a separate install. ([#7679](https://github.com/reflex-dev/reflex/issues/7679))
+- Add the experimental `auto_memoize` option (`REFLEX_AUTO_MEMOIZE`). Set `auto_memoize=False` together with `react_compiler=True` to let React Compiler memoize whole pages instead of Reflex's generated memo wrappers, which also shortens compilation. Disabling both options logs a warning. Components with lifecycle events or hooks of their own keep a wrapper, so `on_mount` and `on_unmount` still follow their `rx.cond` branch. ([#7694](https://github.com/reflex-dev/reflex/issues/7694))
+- `reflex db init` now runs `alembic init` and installs an `alembic/env.py` that loads the app and reads `db_url` from rxconfig.py, and `reflex db migrate`, `makemigrations` and `status` are thin wrappers over `alembic upgrade head`, `alembic revision --autogenerate` and `alembic history --indicate-current`. The `alembic` command line works on the same environment, so `alembic downgrade -1` needs no extra setup, and `alembic revision --autogenerate` and `alembic check` evaluate the pages as `reflex db makemigrations` does, so a model that only a page imports is compared too. In apps initialized by an earlier release, the next `reflex db` command or `migrate()` call replaces the stock `env.py` with the current template, keeping the previous file as `env.old` and the existing revisions; `migrate()` logs a warning when it does so. ([#7742](https://github.com/reflex-dev/reflex/issues/7742))
+- `reflex db init` writes `alembic/env.py` from the template when the file is missing, so an `env.py` edited by hand can be replaced by moving it aside, and it no longer prints alembic's list of generated template files. ([#7742](https://github.com/reflex-dev/reflex/issues/7742))
+- Allow redis-py 8. Reflex's redis clients disable redis-py 8's new default socket timeout, as redis-py 7 had none; on Python 3.11 that timeout loses task cancellations and can hang shutdown. ([#7757](https://github.com/reflex-dev/reflex/issues/7757))
+
+### Bug Fixes
+
+- Preserve state changes made by foreground event handlers that raise or are cancelled when using Redis, including updates already yielded to the client before a superseding event, matching the other state managers. ([#7412](https://github.com/reflex-dev/reflex/issues/7412))
+- Fixed the redis state manager stalling a token's events until its lock expired after an event was cancelled (for example by `supersedes`) or failed, or after a lock release notification was lost. With `REFLEX_OPLOCK_ENABLED`, events queued on a lease no longer lose their updates when together they outlast the lock expiration, and events waiting on other instances are no longer passed over by the next lease. ([#7534](https://github.com/reflex-dev/reflex/issues/7534))
+- Make production frontend builds reproducible: exporting the same app twice now gives identical files, so a deploy no longer renames scripts that did not change. ([#7564](https://github.com/reflex-dev/reflex/issues/7564))
+- Backend workers now load `rxconfig.py` before they import the app, so `state_auto_setters=True` generates `set_<var>` setters in workers started with spawn (Windows, macOS, `REFLEX_STRICT_HOT_RELOAD`, `REFLEX_BACKEND_START_METHOD=spawn`). ([#7590](https://github.com/reflex-dev/reflex/issues/7590))
+- Match page routes case-insensitively on the backend, as React Router does on the frontend, so `on_load` events and `router.page.path` resolve for a URL like `/About` instead of falling back to the 404 page. ([#7599](https://github.com/reflex-dev/reflex/issues/7599))
+- After a hot reload in dev mode, cached vars restored by the disk or Redis state manager are recomputed with the new code instead of showing values from before the reload. State fields keep their values. ([#7616](https://github.com/reflex-dev/reflex/issues/7616))
+- Fixed a polling-transport stall where an event larger than `REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` left the page unable to reconnect: the backend now reads the oversized request body before it rejects it, so the browser can reconnect. ([#7621](https://github.com/reflex-dev/reflex/issues/7621))
+- Apps passed to `api_transformer` now get ASGI lifespan events, so the `lifespan` (and `on_startup`/`on_shutdown` handlers) of a FastAPI or Starlette transformer run, and state the lifespan yields is available on `request.state`. Events are forwarded through callable transformers as the ASGI spec describes; apps you mount on a transformer yourself still get none. If you worked around this by also registering the transformer's lifespan with `register_lifespan_task`, or by finding the transformer through the `starlette_app` lifespan task argument, remove the workaround: the first now runs the lifespan twice, and `starlette_app` is now the `Starlette` app serving Reflex's own routes. ([#7624](https://github.com/reflex-dev/reflex/issues/7624))
+- Synced `LocalStorage` vars that share one storage `name` now update in the tab that writes, not only in other tabs. ([#7637](https://github.com/reflex-dev/reflex/issues/7637))
+- `reflex run` now stops the whole frontend process tree on SIGINT or SIGTERM, including a dev server left behind by `npm run`, a repeat right after the first signal no longer interrupts that cleanup, and a later Ctrl-C forces the exit when the cleanup is stuck. An exit the CLI asked for is no longer reported as a frontend failure. ([#7650](https://github.com/reflex-dev/reflex/issues/7650))
+- `app.add_page(...)` now raises `BackendVarFormatError` when `title`, `description` or `image` is a backend var such as `State._title`, instead of failing later at compile time with an unrelated error. ([#7651](https://github.com/reflex-dev/reflex/issues/7651))
+- `reflex run --frontend-only` and `reflex run --backend-only` no longer exit with "Cannot specify --backend-port/--frontend-port" when `rxconfig.py` sets `frontend_port` or `backend_port`. Only a port flag given on the command line for the side that does not run is an error. ([#7693](https://github.com/reflex-dev/reflex/issues/7693))
+- A background task whose `async with` on a state reached through `get_state` was cancelled, or failed while loading that state, no longer leaves the client's state locked, which hung every later event for that client and the server's shutdown. ([#7738](https://github.com/reflex-dev/reflex/issues/7738))
+- `reflex db migrate`, `reflex db makemigrations` and `reflex db status` now report that `db_url` is not configured in rxconfig.py instead of failing inside alembic, and exit with status 1 when there is no database to migrate or it is not initialized. ([#7742](https://github.com/reflex-dev/reflex/issues/7742))
+- The schema check that runs after `reflex db migrate` and at app startup now evaluates the pages first, so a model that only a page imports no longer triggers the "Detected database schema changes" warning. ([#7742](https://github.com/reflex-dev/reflex/issues/7742))
+- `reflex db init` and `reflex db makemigrations` now evaluate every page before comparing the models, so a model that a page imports lazily is no longer missed or dropped from the generated revision after a previous `reflex run` has written the stateful-pages marker. ([#7742](https://github.com/reflex-dev/reflex/issues/7742))
+- The Redis state manager now starts its lock subscriber on the event loop that serves the app, not the one running when the app is built. This fixes `RuntimeError: ... attached to a different loop` at backend shutdown, and the occasional `Redis error deleting token` failure, in `AppHarness` tests that use Playwright's sync API with Redis. ([#7751](https://github.com/reflex-dev/reflex/issues/7751))
+- Fix hooks of a component inside `rx.foreach`, such as `on_mount`, `on_unmount`, and hooks from `add_hooks`. A hook that used the loop variable crashed the page, and other hooks ran once for the whole list. Each item now runs its own hooks. A loop inside an `@rx.memo` function is not covered yet. ([#7793](https://github.com/reflex-dev/reflex/issues/7793))
+
+### Performance
+
+- Lazy bundled libraries now load only the modules required by each dynamic component instead of loading every registered optional library at once. ([#7276](https://github.com/reflex-dev/reflex/issues/7276))
+- The backend no longer wraps the app in an extra `Starlette` application to run lifespan tasks, which removes a routing layer from every request. As a result, calling the `rx.App` instance returns a plain ASGI app rather than a `Starlette` instance. ([#7624](https://github.com/reflex-dev/reflex/issues/7624))
+
+
 ## v0.10.1 (2026-10-26)
 
 ### Breaking Changes

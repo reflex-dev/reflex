@@ -1,1 +1,0 @@
-A background task whose `async with` on a state reached through `get_state` was cancelled, or failed while loading that state, no longer leaves the client's state locked, which hung every later event for that client and the server's shutdown.
