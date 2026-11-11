@@ -17,8 +17,10 @@ Agents read this first, then `AGENT_BRIEF.md` in this directory.
   `reflex-components-core>=0.10.1`; code 0.11.0a1 requires `>=0.10.0` floors. `redis<9.0,>=6.4`.
 - **reflex-enterprise 0.9.11** (PyPI, uploaded 2026-11-10, `reflex[db]>=0.9.6`) — run with `CI=true`. Source checkout
   (read-only, for demos/tests only, never install from it): `/home/user/reflex-enterprise` @ `b9ec0a9` = tag `v0.9.11`.
-  `REFLEX_ACCESS_TOKEN` is not present in this container (added to the environment after it started); use the
-  account stub (`fixtures/enterprise/lib.sh acct_stub`) for prod/export.
+  A short-lived, no-permission `REFLEX_ACCESS_TOKEN` supplied by the user is at `$SB/secrets/reflex_access_token`
+  (mode 600, scratch only): `REFLEX_ACCESS_TOKEN="$(cat $SB/secrets/reflex_access_token)"`. NEVER write its value
+  under the repo; grep copied logs for `rfx_` and redact. The account stub (`fixtures/enterprise/lib.sh acct_stub`)
+  remains the fallback.
 
 ## What changed since 0.10.1 (82 commits; every CHANGELOG.md top entry)
 | PR | Change | Risk (what to hunt) |
