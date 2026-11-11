@@ -1,0 +1,96 @@
+{
+ "base": "http://localhost:3352",
+ "scenario": "bigstorage",
+ "steps": [
+  {
+   "step": "load",
+   "ok": true,
+   "val": "index",
+   "dt": 0.28
+  },
+  {
+   "step": "inc",
+   "ok": true,
+   "val": "count=1",
+   "dt": 0.07
+  },
+  {
+   "step": "reload",
+   "ok": true,
+   "val": "index",
+   "dt": 0.13
+  },
+  {
+   "step": "after_reload",
+   "ok": true,
+   "val": {
+    "event_requests": 0,
+    "ws_opens": 1,
+    "statuses": []
+   },
+   "dt": 0.0
+  },
+  {
+   "step": "count_after",
+   "ok": true,
+   "val": "count=0",
+   "dt": 0.0
+  },
+  {
+   "step": "stored_len",
+   "ok": true,
+   "val": "stored_len=0",
+   "dt": 0.0
+  },
+  {
+   "step": "inc_after",
+   "ok": false,
+   "err": "TimeoutError('Page.wait_for_function: Timeout 8000ms exceeded.')",
+   "dt": 8.05
+  },
+  {
+   "step": "reload_clean",
+   "ok": true,
+   "val": "count=2",
+   "dt": 3.12
+  }
+ ],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "error: Hydration payload (1200396 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "bad_status": [],
+ "ws": [
+  {
+   "url": "ws://localhost:3352/_event/?token=854b20a7-f63b-4032-8984-6e914290a324&EIO=4&transport=websocket",
+   "opened": 1794362421.69,
+   "recv": 7,
+   "sent": 3,
+   "closed": 1794362421.89
+  },
+  {
+   "url": "ws://localhost:3352/_event/?token=854b20a7-f63b-4032-8984-6e914290a324&EIO=4&transport=websocket",
+   "opened": 1794362421.95,
+   "recv": 1,
+   "sent": 0,
+   "closed": 1794362422.0
+  },
+  {
+   "url": "ws://localhost:3352/_event/?token=854b20a7-f63b-4032-8984-6e914290a324&EIO=4&transport=websocket",
+   "opened": 1794362450.18,
+   "recv": 7,
+   "sent": 2,
+   "closed": null
+  }
+ ],
+ "downloads": [],
+ "requests": [],
+ "after_reload": {
+  "event_requests": 0,
+  "ws_opens": 1,
+  "statuses": []
+ }
+}

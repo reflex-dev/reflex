@@ -1,0 +1,81 @@
+NA_MARK {"t": 1794362618.01, "pid": 4606, "evt": "upload", "files": "['blk_basic.upload.txt']"}
+NA_MARK {"t": 1794362630.738, "pid": 4606, "evt": "block_sync_start"}
+Warning: Event handler S.block_sync is blocking the event loop at 
+netapp/netapp.py:124 in block_sync (threshold: 0.200s), including state updates 
+such as computed vars. Move blocking I/O to a thread pool or use a non-blocking 
+async API.
+Blocking stack (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/envs/server_net-main/lib/python3.12/site-packages/reflex_base/event/processor/e
+vent_processor.py", line 784, in _process_event_queue_entry
+    return await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/envs/server_net-main/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 847, in _execute_event
+    return await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/envs/server_net-main/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 589, in process_event
+    events = fn(state, **payload)
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/apps/server_net/run/server_net-main/netapp/netapp/netapp.py", line 124, in 
+block_sync
+    time.sleep(1)
+Warning: Event handler S.block_sync blocked the event loop for 0.994s in total.
+NA_MARK {"t": 1794362631.785, "pid": 4606, "evt": "block_async_start"}
+Warning: Event handler S.block_async is blocking the event loop at 
+netapp/netapp.py:118 in block_async (threshold: 0.200s), including state updates
+such as computed vars. Move blocking I/O to a thread pool or use a non-blocking 
+async API.
+Blocking stack (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/envs/server_net-main/lib/python3.12/site-packages/reflex_base/event/processor/e
+vent_processor.py", line 784, in _process_event_queue_entry
+    return await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/envs/server_net-main/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 847, in _execute_event
+    return await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/envs/server_net-main/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 585, in process_event
+    events = await fn(state, **payload)
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/apps/server_net/run/server_net-main/netapp/netapp/netapp.py", line 118, in 
+block_async
+    time.sleep(2)
+Warning: Event handler S.block_async blocked the event loop for 1.995s in total.
+Warning: Event handler S.cpu_bg is blocking the event loop at 
+netapp/netapp.py:141 in cpu_bg (threshold: 0.200s), including state updates such
+as computed vars. Move blocking I/O to a thread pool or use a non-blocking async
+API.
+Blocking stack (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/envs/server_net-main/lib/python3.12/site-packages/reflex_base/event/processor/e
+vent_processor.py", line 784, in _process_event_queue_entry
+    return await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/envs/server_net-main/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 876, in _execute_event
+    result = await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/envs/server_net-main/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 585, in process_event
+    events = await fn(state, **payload)
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/apps/server_net/run/server_net-main/netapp/netapp/netapp.py", line 141, in 
+cpu_bg
+    while time.time() - t0 < 3:
+Warning: Event handler S.cpu_bg blocked the event loop for 2.992s in total.

@@ -1,0 +1,408 @@
+{
+ "<none>": {
+  "GET /ping": {
+   "status": 200,
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /_health": {
+   "status": 200,
+   "vary": "Origin, Origin, Origin"
+  },
+  "OPTIONS /_upload": {
+   "status": 405,
+   "vary": "Origin, Origin, Origin"
+  },
+  "POST /_upload": {
+   "status": 400,
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /api/greet": {
+   "status": 200,
+   "vary": "Origin, Origin"
+  },
+  "OPTIONS /api/greet": {
+   "status": 404,
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 101 Switching Protocols",
+   "after": "\ufffdl0{\"sid\":\"7MUgTkzZo-uss0pNAAAA\",\"upgrades\":[],\"pingTimeout\""
+  }
+ },
+ "http://localhost:3346": {
+  "GET /ping": {
+   "status": 200,
+   "access-control-allow-origin": "http://localhost:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /_health": {
+   "status": 200,
+   "access-control-allow-origin": "http://localhost:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "OPTIONS /_upload": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://localhost:3346",
+   "access-control-allow-headers": "content-type,reflex-client-token,reflex-event-handler"
+  },
+  "POST /_upload": {
+   "status": 400,
+   "access-control-allow-origin": "http://localhost:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /api/greet": {
+   "status": 200,
+   "access-control-allow-origin": "http://localhost:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin"
+  },
+  "OPTIONS /api/greet": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://localhost:3346"
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-origin": "http://localhost:3346, http://localhost:3346",
+   "access-control-allow-credentials": "true, true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 101 Switching Protocols",
+   "after": "\ufffdl0{\"sid\":\"CR-wT2zNQwpDlIjqAAAB\",\"upgrades\":[],\"pingTimeout\""
+  }
+ },
+ "http://evil.example": {
+  "GET /ping": {
+   "status": 200,
+   "access-control-allow-origin": "http://evil.example",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /_health": {
+   "status": 200,
+   "access-control-allow-origin": "http://evil.example",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "OPTIONS /_upload": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://evil.example",
+   "access-control-allow-headers": "content-type,reflex-client-token,reflex-event-handler"
+  },
+  "POST /_upload": {
+   "status": 400,
+   "access-control-allow-origin": "http://evil.example",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /api/greet": {
+   "status": 200,
+   "access-control-allow-origin": "http://evil.example",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin"
+  },
+  "OPTIONS /api/greet": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://evil.example"
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-origin": "http://evil.example, http://evil.example",
+   "access-control-allow-credentials": "true, true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 101 Switching Protocols",
+   "after": "\ufffdl0{\"sid\":\"Pnz6N4bPkECxN6kwAAAC\",\"upgrades\":[],\"pingTimeout\""
+  }
+ },
+ "null": {
+  "GET /ping": {
+   "status": 200,
+   "access-control-allow-origin": "null",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /_health": {
+   "status": 200,
+   "access-control-allow-origin": "null",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "OPTIONS /_upload": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "null",
+   "access-control-allow-headers": "content-type,reflex-client-token,reflex-event-handler"
+  },
+  "POST /_upload": {
+   "status": 400,
+   "access-control-allow-origin": "null",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /api/greet": {
+   "status": 200,
+   "access-control-allow-origin": "null",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin"
+  },
+  "OPTIONS /api/greet": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "null"
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-origin": "null, null",
+   "access-control-allow-credentials": "true, true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 101 Switching Protocols",
+   "after": "\ufffdl0{\"sid\":\"ndTS0j8qw9oqawX5AAAD\",\"upgrades\":[],\"pingTimeout\""
+  }
+ },
+ "http://localhost:3346/": {
+  "GET /ping": {
+   "status": 200,
+   "access-control-allow-origin": "http://localhost:3346/",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /_health": {
+   "status": 200,
+   "access-control-allow-origin": "http://localhost:3346/",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "OPTIONS /_upload": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://localhost:3346/",
+   "access-control-allow-headers": "content-type,reflex-client-token,reflex-event-handler"
+  },
+  "POST /_upload": {
+   "status": 400,
+   "access-control-allow-origin": "http://localhost:3346/",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /api/greet": {
+   "status": 200,
+   "access-control-allow-origin": "http://localhost:3346/",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin"
+  },
+  "OPTIONS /api/greet": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://localhost:3346/"
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-origin": "http://localhost:3346/, http://localhost:3346/",
+   "access-control-allow-credentials": "true, true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 101 Switching Protocols",
+   "after": "\ufffdl0{\"sid\":\"UeWpXY2az7rlF_m7AAAE\",\"upgrades\":[],\"pingTimeout\""
+  }
+ },
+ "http://LOCALHOST:3346": {
+  "GET /ping": {
+   "status": 200,
+   "access-control-allow-origin": "http://LOCALHOST:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /_health": {
+   "status": 200,
+   "access-control-allow-origin": "http://LOCALHOST:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "OPTIONS /_upload": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://LOCALHOST:3346",
+   "access-control-allow-headers": "content-type,reflex-client-token,reflex-event-handler"
+  },
+  "POST /_upload": {
+   "status": 400,
+   "access-control-allow-origin": "http://LOCALHOST:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /api/greet": {
+   "status": 200,
+   "access-control-allow-origin": "http://LOCALHOST:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin"
+  },
+  "OPTIONS /api/greet": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://LOCALHOST:3346"
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-origin": "http://LOCALHOST:3346, http://LOCALHOST:3346",
+   "access-control-allow-credentials": "true, true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 101 Switching Protocols",
+   "after": "\ufffdl0{\"sid\":\"M4XSJc0nv3XRKQBIAAAF\",\"upgrades\":[],\"pingTimeout\""
+  }
+ },
+ "http://localhost:3347": {
+  "GET /ping": {
+   "status": 200,
+   "access-control-allow-origin": "http://localhost:3347",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /_health": {
+   "status": 200,
+   "access-control-allow-origin": "http://localhost:3347",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "OPTIONS /_upload": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://localhost:3347",
+   "access-control-allow-headers": "content-type,reflex-client-token,reflex-event-handler"
+  },
+  "POST /_upload": {
+   "status": 400,
+   "access-control-allow-origin": "http://localhost:3347",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /api/greet": {
+   "status": 200,
+   "access-control-allow-origin": "http://localhost:3347",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin"
+  },
+  "OPTIONS /api/greet": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://localhost:3347"
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-origin": "http://localhost:3347, http://localhost:3347",
+   "access-control-allow-credentials": "true, true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 101 Switching Protocols",
+   "after": "\ufffdl0{\"sid\":\"YcpjbbWpcnKoRA0WAAAG\",\"upgrades\":[],\"pingTimeout\""
+  }
+ },
+ "http://127.0.0.1:3346": {
+  "GET /ping": {
+   "status": 200,
+   "access-control-allow-origin": "http://127.0.0.1:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /_health": {
+   "status": 200,
+   "access-control-allow-origin": "http://127.0.0.1:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "OPTIONS /_upload": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://127.0.0.1:3346",
+   "access-control-allow-headers": "content-type,reflex-client-token,reflex-event-handler"
+  },
+  "POST /_upload": {
+   "status": 400,
+   "access-control-allow-origin": "http://127.0.0.1:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "GET /api/greet": {
+   "status": 200,
+   "access-control-allow-origin": "http://127.0.0.1:3346",
+   "access-control-allow-credentials": "true",
+   "vary": "Origin, Origin"
+  },
+  "OPTIONS /api/greet": {
+   "status": 200,
+   "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Request-Private-Network",
+   "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, QUERY",
+   "access-control-max-age": "600",
+   "access-control-allow-credentials": "true",
+   "access-control-allow-origin": "http://127.0.0.1:3346"
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-origin": "http://127.0.0.1:3346, http://127.0.0.1:3346",
+   "access-control-allow-credentials": "true, true",
+   "vary": "Origin, Origin, Origin"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 101 Switching Protocols",
+   "after": "\ufffdl0{\"sid\":\"6Hgg5sQPbV_xU8uaAAAH\",\"upgrades\":[],\"pingTimeout\""
+  }
+ }
+}

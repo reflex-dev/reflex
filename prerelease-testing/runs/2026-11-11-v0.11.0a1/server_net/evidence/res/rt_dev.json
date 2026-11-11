@@ -1,0 +1,325 @@
+{
+ "base": "http://localhost:3349",
+ "scenario": "routes",
+ "steps": [
+  {
+   "step": "direct /about",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "about",
+    "#loads": "loads=[\"about\"]",
+    "#router_path": "router_path=/about",
+    "#path_seen": "path_seen=/about",
+    "url": "http://localhost:3349/about"
+   },
+   "dt": 2.82
+  },
+  {
+   "step": "direct /About",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "about",
+    "#loads": "loads=[\"about\",\"about\"]",
+    "#router_path": "router_path=/about",
+    "#path_seen": "path_seen=/about",
+    "url": "http://localhost:3349/About"
+   },
+   "dt": 1.8
+  },
+  {
+   "step": "direct /ABOUT",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "about",
+    "#loads": "loads=[\"about\",\"about\",\"about\"]",
+    "#router_path": "router_path=/about",
+    "#path_seen": "path_seen=/about",
+    "url": "http://localhost:3349/ABOUT"
+   },
+   "dt": 1.77
+  },
+  {
+   "step": "direct /items/A1",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "item",
+    "#loads": "loads=[\"about\",\"about\",\"about\",\"item:A1\"]",
+    "#router_path": "router_path=/items/[id]",
+    "#path_seen": "path_seen=/items/[id]",
+    "#item_id": "item_id=A1",
+    "url": "http://localhost:3349/items/A1"
+   },
+   "dt": 1.29
+  },
+  {
+   "step": "direct /ITEMS/b2",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "item",
+    "#loads": "loads=[\"about\",\"about\",\"about\",\"item:A1\",\"item:b2\"]",
+    "#router_path": "router_path=/items/[id]",
+    "#path_seen": "path_seen=/items/[id]",
+    "#item_id": "item_id=b2",
+    "url": "http://localhost:3349/ITEMS/b2"
+   },
+   "dt": 1.17
+  },
+  {
+   "step": "direct /Items/C3/",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "item",
+    "#loads": "loads=[\"about\",\"about\",\"about\",\"item:A1\",\"item:b2\",\"item:C3\"]",
+    "#router_path": "router_path=/items/[id]",
+    "#path_seen": "path_seen=/items/[id]",
+    "#item_id": "item_id=C3",
+    "url": "http://localhost:3349/Items/C3/"
+   },
+   "dt": 1.2
+  },
+  {
+   "step": "direct /nonexistent",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "404: Page not found",
+    "url": "http://localhost:3349/nonexistent"
+   },
+   "dt": 13.1
+  },
+  {
+   "step": "dup /Foo",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "body": "Foo upper",
+    "loads": null
+   },
+   "dt": 2.14
+  },
+  {
+   "step": "dup /foo",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "body": "Foo upper",
+    "loads": null
+   },
+   "dt": 2.08
+  },
+  {
+   "step": "dup /FOO",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "body": "Foo upper",
+    "loads": null
+   },
+   "dt": 2.08
+  }
+ ],
+ "console": [
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "debug: [vite] connected.",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "debug: [vite] connected.",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "log: Disconnect websocket on page navigation",
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+  "debug: [vite] connecting...",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "debug: [vite] connected."
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "bad_status": [],
+ "ws": [
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361879.86,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361879.86,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361881.64
+  },
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361881.75,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361881.79,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361883.43
+  },
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361883.57,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361883.57,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361885.2
+  },
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361885.37,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361885.37,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361886.49
+  },
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361886.57,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361886.58,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361887.67
+  },
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361887.75,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361887.75,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361888.86
+  },
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361888.99,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361889.0,
+   "recv": 4,
+   "sent": 2,
+   "closed": 1794361901.97
+  },
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361902.11,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361902.14,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361904.09
+  },
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361904.18,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361904.18,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361906.17
+  },
+  {
+   "url": "ws://localhost:3349/?token=w7qmGc-o4hSK",
+   "opened": 1794361906.29,
+   "recv": 1,
+   "sent": 0,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:8349/_event/?token=13010bcb-bfe6-43eb-dedb-fb68d0988842&EIO=4&transport=websocket",
+   "opened": 1794361906.29,
+   "recv": 6,
+   "sent": 1,
+   "closed": null
+  }
+ ],
+ "downloads": [],
+ "requests": []
+}

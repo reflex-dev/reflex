@@ -1,0 +1,229 @@
+{
+ "base": "http://localhost:3349",
+ "scenario": "routes",
+ "steps": [
+  {
+   "step": "direct /about",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "about",
+    "#loads": "loads=[\"about\"]",
+    "#router_path": "router_path=/about",
+    "#path_seen": "path_seen=/about",
+    "url": "http://localhost:3349/about/"
+   },
+   "dt": 1.78
+  },
+  {
+   "step": "direct /About",
+   "ok": true,
+   "val": {
+    "http": 404,
+    "page": "about",
+    "#loads": "loads=[\"about\"]",
+    "#router_path": "router_path=/404",
+    "#path_seen": "path_seen=/about",
+    "url": "http://localhost:3349/About"
+   },
+   "dt": 1.63
+  },
+  {
+   "step": "direct /ABOUT",
+   "ok": true,
+   "val": {
+    "http": 404,
+    "page": "about",
+    "#loads": "loads=[\"about\"]",
+    "#router_path": "router_path=/404",
+    "#path_seen": "path_seen=/about",
+    "url": "http://localhost:3349/ABOUT"
+   },
+   "dt": 1.63
+  },
+  {
+   "step": "direct /items/A1",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "item",
+    "#loads": "loads=[\"about\",\"item:A1\"]",
+    "#router_path": "router_path=/items/[id]",
+    "#path_seen": "path_seen=/items/[id]",
+    "#item_id": "item_id=A1",
+    "url": "http://localhost:3349/items/A1"
+   },
+   "dt": 1.11
+  },
+  {
+   "step": "direct /ITEMS/b2",
+   "ok": true,
+   "val": {
+    "http": 404,
+    "page": "item",
+    "#loads": "loads=[\"about\",\"item:A1\"]",
+    "#router_path": "router_path=/404",
+    "#path_seen": "path_seen=/items/[id]",
+    "#item_id": "item_id=A1",
+    "url": "http://localhost:3349/ITEMS/b2"
+   },
+   "dt": 1.12
+  },
+  {
+   "step": "direct /Items/C3/",
+   "ok": true,
+   "val": {
+    "http": 404,
+    "page": "item",
+    "#loads": "loads=[\"about\",\"item:A1\"]",
+    "#router_path": "router_path=/404",
+    "#path_seen": "path_seen=/items/[id]",
+    "#item_id": "item_id=A1",
+    "url": "http://localhost:3349/Items/C3/"
+   },
+   "dt": 1.15
+  },
+  {
+   "step": "direct /nonexistent",
+   "ok": true,
+   "val": {
+    "http": 404,
+    "page": "404: Page not found\nBuilt with Reflex",
+    "url": "http://localhost:3349/nonexistent"
+   },
+   "dt": 13.07
+  },
+  {
+   "step": "dup /Foo",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "body": "Foo upper\nBuilt with Reflex",
+    "loads": null
+   },
+   "dt": 2.08
+  },
+  {
+   "step": "dup /foo",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "body": "Foo upper\nBuilt with Reflex",
+    "loads": null
+   },
+   "dt": 2.07
+  },
+  {
+   "step": "dup /FOO",
+   "ok": true,
+   "val": {
+    "http": 404,
+    "body": "Foo upper\nBuilt with Reflex",
+    "loads": null
+   },
+   "dt": 2.08
+  }
+ ],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "bad_status": [
+  "404 GET http://localhost:3349/About",
+  "404 GET http://localhost:3349/ABOUT",
+  "404 GET http://localhost:3349/ITEMS/b2",
+  "404 GET http://localhost:3349/Items/C3/",
+  "404 GET http://localhost:3349/nonexistent",
+  "404 GET http://localhost:3349/FOO"
+ ],
+ "ws": [
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361957.77,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361959.39
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361959.44,
+   "recv": 4,
+   "sent": 2,
+   "closed": 1794361961.02
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361961.07,
+   "recv": 4,
+   "sent": 2,
+   "closed": 1794361962.66
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361962.7,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361963.77
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361963.82,
+   "recv": 4,
+   "sent": 2,
+   "closed": 1794361964.89
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361964.96,
+   "recv": 4,
+   "sent": 2,
+   "closed": 1794361966.04
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361966.1,
+   "recv": 4,
+   "sent": 2,
+   "closed": 1794361979.1
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361979.15,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361981.19
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361981.22,
+   "recv": 6,
+   "sent": 2,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=30c52b24-114f-483e-dd6a-2e786f4cfd0e&EIO=4&transport=websocket",
+   "opened": 1794361983.31,
+   "recv": 4,
+   "sent": 1,
+   "closed": null
+  }
+ ],
+ "downloads": [],
+ "requests": []
+}

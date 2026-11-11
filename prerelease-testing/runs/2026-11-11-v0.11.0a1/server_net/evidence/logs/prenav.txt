@@ -1,0 +1,40 @@
+######## prev
+started pn-prev pid=19708 venv=prev mode=prod env=[] log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/server_net/hyd/logs/pn-prev-1.log
+prev slow_to_other url= other connected_before_nav= False hyd= H:yes trace= ['slow_load run1 step1', 'other_load#1 path=/other'] {'#other-count': '1', '#slow-progress-other': '1'}
+prev slow_to_other url= other connected_before_nav= False hyd= H:yes trace= ['slow_load run1 step1', 'other_load#1 path=/other'] {'#other-count': '1', '#slow-progress-other': '1'}
+prev item1_to_item2 url= items/2 connected_before_nav= False hyd= H:yes trace= ['item_load id=1', 'item_load id=2'] {'#item-trace': '["id=1|path=/items/1|url=http://localhost:3350/items/1","id=2|path=/items/2|url=http://localhost:3350/items/2"]'}
+prev item1_to_item2 url= items/2 connected_before_nav= False hyd= H:yes trace= ['item_load id=1', 'item_load id=2'] {'#item-trace': '["id=1|path=/items/1|url=http://localhost:3350/items/1","id=2|path=/items/2|url=http://localhost:3350/items/2"]'}
+prev H:no connected_before_click= False ['load', 'click-always(loaded=True,hyd=True)']
+prev H:no connected_before_click= False ['load', 'click-always(loaded=True,hyd=True)']
+prev H:no connected_before_click= False ['load', 'click-always(loaded=True,hyd=True)']
+stopped pn-prev (pgid 19708)
+started pn-prev pid=21198 venv=prev mode=prod env=[REFLEX_API_URL=http://localhost:3351] log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/server_net/hyd/logs/pn-prev-2.log
+proxy 3351->3350 delay 800 pid=21414
+prev-redir cd=0 run=0 interactive=232 ws_open=952 click=316 connect=955 IN_WINDOW=True boot=/redir/ trace=['redirect_load', 'item_load id=2', 'other_load#1 path=/other'] final=/other
+prev-redir cd=0 run=1 interactive=218 ws_open=976 click=285 connect=978 IN_WINDOW=True boot=/redir/ trace=['redirect_load', 'item_load id=2', 'other_load#1 path=/other'] final=/other
+prev-items cd=0 run=0 interactive=223 ws_open=932 click=313 connect=933 IN_WINDOW=True boot=/items/1 trace=['item_load id=1', 'item_load id=2'] final=/items/2
+prev-items cd=0 run=1 interactive=245 ws_open=934 click=310 connect=936 IN_WINDOW=True boot=/items/1 trace=['item_load id=1', 'item_load id=2'] final=/items/2
+prev-items cd=300 run=0 interactive=184 ws_open=932 click=539 connect=933 IN_WINDOW=True boot=/items/1 trace=['item_load id=1', 'item_load id=2'] final=/items/2
+prev-items cd=300 run=1 interactive=240 ws_open=944 click=590 connect=945 IN_WINDOW=True boot=/items/1 trace=['item_load id=1', 'item_load id=2'] final=/items/2
+proxy 3351 stopped
+stopped pn-prev (pgid 21198)
+######## new
+started pn-new pid=22273 venv=new mode=prod env=[] log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/server_net/hyd/logs/pn-new-1.log
+new slow_to_other url= other connected_before_nav= False hyd= H:yes trace= ['other_load#1 path=/other'] {'#other-count': '1', '#slow-progress-other': '0'}
+new slow_to_other url= other connected_before_nav= False hyd= H:yes trace= ['other_load#1 path=/other'] {'#other-count': '1', '#slow-progress-other': '0'}
+new item1_to_item2 url= items/2 connected_before_nav= False hyd= H:yes trace= ['item_load id=2'] {'#item-trace': '["id=2|path=/items/2|url=http://localhost:3350/items/2"]'}
+new item1_to_item2 url= items/2 connected_before_nav= False hyd= H:yes trace= ['item_load id=2'] {'#item-trace': '["id=2|path=/items/2|url=http://localhost:3350/items/2"]'}
+new H:no connected_before_click= False ['load', 'click-always(loaded=True,hyd=True)']
+new H:no connected_before_click= False ['load', 'click-always(loaded=True,hyd=True)']
+new H:no connected_before_click= False ['load', 'click-always(loaded=True,hyd=True)']
+stopped pn-new (pgid 22273)
+started pn-new pid=24167 venv=new mode=prod env=[REFLEX_API_URL=http://localhost:3351] log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/server_net/hyd/logs/pn-new-2.log
+proxy 3351->3350 delay 800 pid=24321
+new-redir cd=0 run=0 interactive=252 ws_open=984 click=321 connect=986 IN_WINDOW=True boot=/items/2 trace=['item_load id=2'] final=/items/2
+new-redir cd=0 run=1 interactive=184 ws_open=937 click=239 connect=938 IN_WINDOW=True boot=/items/2 trace=['item_load id=2'] final=/items/2
+new-items cd=0 run=0 interactive=227 ws_open=934 click=302 connect=936 IN_WINDOW=True boot=/items/2 trace=['item_load id=2'] final=/items/2
+new-items cd=0 run=1 interactive=253 ws_open=939 click=336 connect=941 IN_WINDOW=True boot=/items/2 trace=['item_load id=2'] final=/items/2
+new-items cd=300 run=0 interactive=279 ws_open=995 click=662 connect=997 IN_WINDOW=True boot=/items/2 trace=['item_load id=2'] final=/items/2
+new-items cd=300 run=1 interactive=191 ws_open=899 click=546 connect=900 IN_WINDOW=True boot=/items/2 trace=['item_load id=2'] final=/items/2
+proxy 3351 stopped
+stopped pn-new (pgid 24167)

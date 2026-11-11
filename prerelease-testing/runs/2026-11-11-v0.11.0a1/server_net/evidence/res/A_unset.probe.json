@@ -1,0 +1,226 @@
+{
+ "<none>": {
+  "GET /ping": {
+   "status": 200
+  },
+  "GET /_health": {
+   "status": 200
+  },
+  "OPTIONS /_upload": {
+   "status": 405
+  },
+  "POST /_upload": {
+   "status": 400
+  },
+  "GET /api/greet": {
+   "status": 200
+  },
+  "OPTIONS /api/greet": {
+   "status": 404
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-credentials": "true"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 101 Switching Protocols",
+   "after": "\ufffdl0{\"sid\":\"U-erB52VUg1L89NzAAAA\",\"upgrades\":[],\"pingTimeout\""
+  }
+ },
+ "http://localhost:3346": {
+  "GET /ping": {
+   "status": 200
+  },
+  "GET /_health": {
+   "status": 200
+  },
+  "OPTIONS /_upload": {
+   "status": 405
+  },
+  "POST /_upload": {
+   "status": 400
+  },
+  "GET /api/greet": {
+   "status": 200
+  },
+  "OPTIONS /api/greet": {
+   "status": 404
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-credentials": "true"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 403 Forbidden",
+   "after": ""
+  }
+ },
+ "http://evil.example": {
+  "GET /ping": {
+   "status": 200
+  },
+  "GET /_health": {
+   "status": 200
+  },
+  "OPTIONS /_upload": {
+   "status": 405
+  },
+  "POST /_upload": {
+   "status": 400
+  },
+  "GET /api/greet": {
+   "status": 200
+  },
+  "OPTIONS /api/greet": {
+   "status": 404
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-credentials": "true"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 403 Forbidden",
+   "after": ""
+  }
+ },
+ "null": {
+  "GET /ping": {
+   "status": 200
+  },
+  "GET /_health": {
+   "status": 200
+  },
+  "OPTIONS /_upload": {
+   "status": 405
+  },
+  "POST /_upload": {
+   "status": 400
+  },
+  "GET /api/greet": {
+   "status": 200
+  },
+  "OPTIONS /api/greet": {
+   "status": 404
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-credentials": "true"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 403 Forbidden",
+   "after": ""
+  }
+ },
+ "http://localhost:3346/": {
+  "GET /ping": {
+   "status": 200
+  },
+  "GET /_health": {
+   "status": 200
+  },
+  "OPTIONS /_upload": {
+   "status": 405
+  },
+  "POST /_upload": {
+   "status": 400
+  },
+  "GET /api/greet": {
+   "status": 200
+  },
+  "OPTIONS /api/greet": {
+   "status": 404
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-credentials": "true"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 403 Forbidden",
+   "after": ""
+  }
+ },
+ "http://LOCALHOST:3346": {
+  "GET /ping": {
+   "status": 200
+  },
+  "GET /_health": {
+   "status": 200
+  },
+  "OPTIONS /_upload": {
+   "status": 405
+  },
+  "POST /_upload": {
+   "status": 400
+  },
+  "GET /api/greet": {
+   "status": 200
+  },
+  "OPTIONS /api/greet": {
+   "status": 404
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-credentials": "true"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 403 Forbidden",
+   "after": ""
+  }
+ },
+ "http://localhost:3347": {
+  "GET /ping": {
+   "status": 200
+  },
+  "GET /_health": {
+   "status": 200
+  },
+  "OPTIONS /_upload": {
+   "status": 405
+  },
+  "POST /_upload": {
+   "status": 400
+  },
+  "GET /api/greet": {
+   "status": 200
+  },
+  "OPTIONS /api/greet": {
+   "status": 404
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-credentials": "true"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 403 Forbidden",
+   "after": ""
+  }
+ },
+ "http://127.0.0.1:3346": {
+  "GET /ping": {
+   "status": 200
+  },
+  "GET /_health": {
+   "status": 200
+  },
+  "OPTIONS /_upload": {
+   "status": 405
+  },
+  "POST /_upload": {
+   "status": 400
+  },
+  "GET /api/greet": {
+   "status": 200
+  },
+  "OPTIONS /api/greet": {
+   "status": 404
+  },
+  "GET poll": {
+   "status": 400,
+   "access-control-allow-credentials": "true"
+  },
+  "WS upgrade": {
+   "status_line": "HTTP/1.1 403 Forbidden",
+   "after": ""
+  }
+ }
+}

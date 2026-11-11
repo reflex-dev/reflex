@@ -1,0 +1,41 @@
+{
+ "base": "http://localhost:3348",
+ "scenario": "connect",
+ "steps": [
+  {
+   "step": "load",
+   "ok": true,
+   "val": "index",
+   "dt": 0.33
+  },
+  {
+   "step": "inc",
+   "ok": true,
+   "val": "count=1",
+   "dt": 0.08
+  },
+  {
+   "step": "loads",
+   "ok": true,
+   "val": "loads=[\"index\"]",
+   "dt": 0.01
+  }
+ ],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "bad_status": [],
+ "ws": [
+  {
+   "url": "ws://localhost:8348/_event/?token=9bfca538-3920-4327-9c6d-e7d0af403952&EIO=4&transport=websocket",
+   "opened": 1794361804.32,
+   "recv": 7,
+   "sent": 2,
+   "closed": null
+  }
+ ],
+ "downloads": [],
+ "requests": []
+}

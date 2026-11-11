@@ -1,0 +1,24 @@
+### new INT-group rate=40 01:41:22
+{"signal": "INT-group", "slow_rate": 40.0, "signal_to_eof_s": 10.97, "signal_to_exit_s": 6.68, "returncode": 0, "lines_total": 1409, "lines_after_signal": 435, "invalid_json": 0, "seq_max_received": 1403, "seq_written_final": "", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### new TERM-pid rate=40 01:41:45
+{"signal": "TERM-pid", "slow_rate": 40.0, "signal_to_eof_s": 11.27, "signal_to_exit_s": 7.27, "returncode": 0, "lines_total": 1378, "lines_after_signal": 447, "invalid_json": 0, "seq_max_received": 1372, "seq_written_final": "", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### new TERM-pid rate=6 01:42:07
+{"signal": "TERM-pid", "slow_rate": 6.0, "signal_to_eof_s": 60.83, "signal_to_exit_s": 30.77, "returncode": 0, "lines_total": 1312, "lines_after_signal": 364, "invalid_json": 0, "seq_max_received": 1307, "seq_written_final": "", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### new INT-pid rate=40 01:43:20
+{"signal": "INT-pid", "slow_rate": 40.0, "signal_to_eof_s": 11.33, "signal_to_exit_s": 7.27, "returncode": 0, "lines_total": 1407, "lines_after_signal": 449, "invalid_json": 0, "seq_max_received": 1401, "seq_written_final": "1401", "lost_tail": 0, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### prev INT-group rate=40 01:43:42
+{"signal": "INT-group", "slow_rate": 40.0, "signal_to_eof_s": 11.03, "signal_to_exit_s": 6.44, "returncode": 0, "lines_total": 1348, "lines_after_signal": 435, "invalid_json": 0, "seq_max_received": 1342, "seq_written_final": "", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### prev TERM-pid rate=40 01:44:03
+{"signal": "TERM-pid", "slow_rate": 40.0, "signal_to_eof_s": 11.16, "signal_to_exit_s": 6.41, "returncode": 0, "lines_total": 1406, "lines_after_signal": 442, "invalid_json": 0, "seq_max_received": 1400, "seq_written_final": "1400", "lost_tail": 0, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### prev TERM-pid rate=6 01:44:24
+{"signal": "TERM-pid", "slow_rate": 6.0, "signal_to_eof_s": 60.82, "signal_to_exit_s": 30.28, "returncode": 0, "lines_total": 1270, "lines_after_signal": 365, "invalid_json": 1, "seq_max_received": 1264, "seq_written_final": "1341", "lost_tail": 77, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked
+### prev INT-pid rate=40 01:45:36
+{"signal": "INT-pid", "slow_rate": 40.0, "signal_to_eof_s": 13.64, "signal_to_exit_s": 9.01, "returncode": 0, "lines_total": 1471, "lines_after_signal": 540, "invalid_json": 0, "seq_max_received": 1465, "seq_written_final": "", "lost_tail": null, "seq_gaps": [], "leftover_after_exit": ""}
+no listeners on: 2 ports checked

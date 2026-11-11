@@ -1,0 +1,173 @@
+{
+ "base": "http://localhost:3352",
+ "scenario": "bigstorage",
+ "steps": [
+  {
+   "step": "load",
+   "ok": true,
+   "val": "index",
+   "dt": 0.25
+  },
+  {
+   "step": "inc",
+   "ok": true,
+   "val": "count=1",
+   "dt": 0.07
+  },
+  {
+   "step": "reload",
+   "ok": true,
+   "val": "index",
+   "dt": 0.12
+  },
+  {
+   "step": "after_reload",
+   "ok": true,
+   "val": {
+    "event_requests": 2,
+    "ws_opens": 0,
+    "statuses": [
+     200
+    ]
+   },
+   "dt": 0.0
+  },
+  {
+   "step": "count_after",
+   "ok": true,
+   "val": "count=0",
+   "dt": 0.0
+  },
+  {
+   "step": "stored_len",
+   "ok": true,
+   "val": "stored_len=0",
+   "dt": 0.0
+  },
+  {
+   "step": "inc_after",
+   "ok": false,
+   "err": "TimeoutError('Page.wait_for_function: Timeout 8000ms exceeded.')",
+   "dt": 8.06
+  },
+  {
+   "step": "reload_clean",
+   "ok": true,
+   "val": "count=2",
+   "dt": 3.12
+  }
+ ],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "error: Hydration payload (1200396 bytes) exceeds the server limit (1000000 bytes). Reduce browser storage data and reload."
+ ],
+ "pageerrors": [],
+ "failed": [
+  "GET http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjdodw5&sid=jkwOiwqDdzeRXY5KAAAA net::ERR_ABORTED",
+  "POST http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjea01p&sid=jkwOiwqDdzeRXY5KAAAA net::ERR_ABORTED",
+  "GET http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjg6c8v&sid=9UrIU1KM8s8yDs53AAAC net::ERR_ABORTED"
+ ],
+ "bad_status": [],
+ "ws": [],
+ "downloads": [],
+ "requests": [
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzj90er8",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjb4ax5&sid=jkwOiwqDdzeRXY5KAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzj9btdt&sid=jkwOiwqDdzeRXY5KAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjbhvd4&sid=jkwOiwqDdzeRXY5KAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjbsixe&sid=jkwOiwqDdzeRXY5KAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjdhiax&sid=jkwOiwqDdzeRXY5KAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjc25n4&sid=jkwOiwqDdzeRXY5KAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjfj73s",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=gzjgpo4v&sid=9UrIU1KM8s8yDs53AAAC",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=h0580xdf",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=h058dwri&sid=dMePXxt8s_XEjoo2AAAD",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=h058528d&sid=dMePXxt8s_XEjoo2AAAD",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=h058jc6m&sid=dMePXxt8s_XEjoo2AAAD",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=h07kho91&sid=dMePXxt8s_XEjoo2AAAD",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=f06c6414-462d-4928-935e-ec5c1cf8bd31&EIO=4&transport=polling&t=h058nfjt&sid=dMePXxt8s_XEjoo2AAAD",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  }
+ ],
+ "after_reload": {
+  "event_requests": 2,
+  "ws_opens": 0,
+  "statuses": [
+   200
+  ]
+ }
+}

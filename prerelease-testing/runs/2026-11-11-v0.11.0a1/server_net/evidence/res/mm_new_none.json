@@ -1,0 +1,28 @@
+{
+ "mode": "none",
+ "venv": "server_net-main",
+ "console": [
+  "1794362484.8 error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "1794362489.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=74ff8025-913c-45af-9c7f-98292f80aff6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362489.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=74ff8025-913c-45af-9c7f-98292f80aff6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362489.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=74ff8025-913c-45af-9c7f-98292f80aff6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362489.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=74ff8025-913c-45af-9c7f-98292f80aff6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362489.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=74ff8025-913c-45af-9c7f-98292f80aff6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362489.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=74ff8025-913c-45af-9c7f-98292f80aff6&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362489.6 warning: This page was built for another version of the app than the backend it connected to (state schema 35586a1cd93c307229ff236a99c967c8, backend e7f4b9d9333b2e5c91a0afaa827b52dc)."
+ ],
+ "navs": [
+  "1794362484.6 http://localhost:3353/",
+  "1794362484.7 http://localhost:3353/",
+  "1794362484.8 http://localhost:3353/",
+  "1794362489.6 http://localhost:3353/"
+ ],
+ "steps": {
+  "before": "count=1",
+  "banner": false,
+  "mm_events": null,
+  "count_text": "count=0",
+  "inc_after": "ok count=1"
+ },
+ "restart_s": 4.2
+}

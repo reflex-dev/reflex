@@ -1,0 +1,25 @@
+=== server_net-prev prod-be NA_TX=fastapi up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":null,"client":null,"prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start rx_task_stop rx_coro_cancelled 
+=== server_net-prev prod-be NA_TX=fastapi_reg up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":null,"client":null,"prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start fa_lifespan_start fa_lifespan_state_err rx_coro_start fa_lifespan_stop rx_task_stop rx_coro_cancelled 
+=== server_net-prev prod-be NA_TX=starlette up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":null,"client":null} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start rx_task_stop rx_coro_cancelled 
+=== server_net-prev prod-be NA_TX=callable_path up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":null,"client":null,"prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start rx_task_stop rx_coro_cancelled 
+=== server_net-prev prod-be NA_TX=fastapi_fail up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":null,"client":null,"prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start rx_task_stop rx_coro_cancelled 

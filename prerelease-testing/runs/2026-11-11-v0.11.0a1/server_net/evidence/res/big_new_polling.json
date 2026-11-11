@@ -1,0 +1,151 @@
+{
+ "base": "http://localhost:3352",
+ "scenario": "big",
+ "steps": [
+  {
+   "step": "load",
+   "ok": true,
+   "val": "index",
+   "dt": 0.37
+  },
+  {
+   "step": "inc",
+   "ok": true,
+   "val": "count=1",
+   "dt": 0.1
+  },
+  {
+   "step": "click_big",
+   "ok": true,
+   "val": null,
+   "dt": 0.19
+  },
+  {
+   "step": "big_len",
+   "ok": true,
+   "val": "big_len=0",
+   "dt": 0.0
+  },
+  {
+   "step": "inc_after_big",
+   "ok": true,
+   "val": "count=2",
+   "dt": 0.06
+  },
+  {
+   "step": "small_after",
+   "ok": true,
+   "val": "big_len=10",
+   "dt": 0.07
+  }
+ ],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: the server responded with a status of 400 (Bad Request)"
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "bad_status": [
+  "400 POST http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxufjnm8&sid=RYuq-X0-s8wyZmJjAAAA"
+ ],
+ "ws": [],
+ "downloads": [],
+ "requests": [
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxu99nao",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxub7e22&sid=RYuq-X0-s8wyZmJjAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxu9lpcu&sid=RYuq-X0-s8wyZmJjAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxubxymx&sid=RYuq-X0-s8wyZmJjAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxucaetq&sid=RYuq-X0-s8wyZmJjAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxudoxkb&sid=RYuq-X0-s8wyZmJjAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxuctidn&sid=RYuq-X0-s8wyZmJjAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxufjnm8&sid=RYuq-X0-s8wyZmJjAAAA",
+   "status": 400,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxue566k&sid=RYuq-X0-s8wyZmJjAAAA",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxuh87ud",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxuhyoz2&sid=pjke9pLN9aBkocHHAAAC",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxuhzocq&sid=pjke9pLN9aBkocHHAAAC",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxz7ic6s&sid=pjke9pLN9aBkocHHAAAC",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxui67dp&sid=pjke9pLN9aBkocHHAAAC",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxz9cewq&sid=pjke9pLN9aBkocHHAAAC",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  },
+  {
+   "url": "http://localhost:3352/_event/?token=24ca8158-a840-4b1d-ec0b-fb5c37736762&EIO=4&transport=polling&t=gxz7uzq0&sid=pjke9pLN9aBkocHHAAAC",
+   "status": 200,
+   "acao": null,
+   "acac": null
+  }
+ ]
+}

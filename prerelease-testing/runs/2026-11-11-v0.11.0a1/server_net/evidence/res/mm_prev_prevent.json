@@ -1,0 +1,27 @@
+{
+ "mode": "prevent",
+ "venv": "server_net-prev",
+ "console": [
+  "1794362570.8 error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "1794362575.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=0c596361-a067-4097-9402-6026f3c706eb&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362575.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=0c596361-a067-4097-9402-6026f3c706eb&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362575.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=0c596361-a067-4097-9402-6026f3c706eb&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362575.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=0c596361-a067-4097-9402-6026f3c706eb&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362575.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=0c596361-a067-4097-9402-6026f3c706eb&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362575.6 error: WebSocket connection to 'ws://localhost:3353/_event/?token=0c596361-a067-4097-9402-6026f3c706eb&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+ ],
+ "navs": [
+  "1794362570.6 http://localhost:3353/",
+  "1794362570.7 http://localhost:3353/",
+  "1794362570.8 http://localhost:3353/",
+  "1794362575.6 http://localhost:3353/"
+ ],
+ "steps": {
+  "before": "count=1",
+  "banner": false,
+  "mm_events": [],
+  "count_text": "count=0",
+  "inc_after": "ok count=1"
+ },
+ "restart_s": 4.2
+}

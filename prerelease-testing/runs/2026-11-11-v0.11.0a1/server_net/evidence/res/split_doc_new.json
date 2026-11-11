@@ -1,0 +1,124 @@
+{
+ "base": "http://localhost:3348",
+ "scenario": "connect",
+ "steps": [
+  {
+   "step": "load",
+   "ok": true,
+   "val": "index",
+   "dt": 0.32
+  },
+  {
+   "step": "inc",
+   "ok": false,
+   "err": "TimeoutError('Page.wait_for_function: Timeout 8000ms exceeded.')",
+   "dt": 8.06
+  },
+  {
+   "step": "loads",
+   "ok": true,
+   "val": "loads=[]",
+   "dt": 0.0
+  }
+ ],
+ "console": [
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403"
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "bad_status": [],
+ "ws": [
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361787.9,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361787.94,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  },
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361788.02,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361788.03,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  },
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361788.08,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361788.09,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  },
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361788.49,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361788.49,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  },
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361789.09,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361789.1,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  },
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361789.9,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361789.9,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  },
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361790.91,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361790.93,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  },
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361792.14,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361792.14,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  },
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361793.57,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361793.58,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  },
+  {
+   "url": "ws://localhost:8348/_event/?token=51cab7bd-fe6f-4c9c-aa83-04adad5300ae&EIO=4&transport=websocket",
+   "opened": 1794361795.22,
+   "recv": 0,
+   "sent": 0,
+   "closed": 1794361795.23,
+   "error": "Error during WebSocket handshake: Unexpected response code: 403"
+  }
+ ],
+ "downloads": [],
+ "requests": []
+}

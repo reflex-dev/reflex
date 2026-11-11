@@ -1,0 +1,88 @@
+=== server_net-main prod-be NA_TX=none up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> Not Found [404]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start rx_task_stop rx_coro_cancelled 
+=== server_net-main prod-be NA_TX=fastapi up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":"hello","client":"connected","prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start fa_lifespan_start fa_lifespan_stop rx_task_stop rx_coro_cancelled 
+=== server_net-main prod-be NA_TX=fastapi_reg up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":"hello","client":"connected","prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start fa_lifespan_start fa_lifespan_state_err rx_coro_start fa_lifespan_start fa_lifespan_stop fa_lifespan_stop rx_task_stop rx_coro_cancelled 
+  log: 8:Warning: The lifespan of api_transformer <fastapi.applications.FastAPI object at
+  log: 9:0x7f16ea40e7e0> is also registered with register_lifespan_task, so it runs 
+  log: 10:twice: Reflex now runs a transformer's own lifespan. Remove the 
+  log: 11:register_lifespan_task call.
+=== server_net-main prod-be NA_TX=starlette up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":"hello","client":"connected"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start fa_lifespan_start fa_lifespan_stop rx_task_stop rx_coro_cancelled 
+=== server_net-main prod-be NA_TX=callable up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> Not Found [404]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start mw_pass_lifespan_scope rx_task_stop rx_coro_cancelled 
+=== server_net-main prod-be NA_TX=callable_path up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":null,"client":null,"prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start rx_task_stop rx_coro_cancelled 
+  log: 10:Info: ASGI lifespan appears unsupported by <function mw_path.<locals>.middleware
+  log: 11:at 0x7f85bb94f240>: KeyError('path')
+=== server_net-main prod-be NA_TX=callable_http_only up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":null,"client":null,"prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start rx_task_stop rx_coro_cancelled 
+  log: 10:Info: ASGI lifespan appears unsupported by <function 
+=== server_net-main prod-be NA_TX=list up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":"hello","client":"connected","prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start mw_pass_lifespan_scope fa_lifespan_start fa_lifespan_stop rx_task_stop rx_coro_cancelled 
+=== server_net-main prod-be NA_TX=nested up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":"hello","client":"connected","prefix":"/api"} [200]
+  GET /api2/greet -> {"greeting":"hello","client":"connected","prefix":"/api2"} [200]
+  marks: rx_task_start rx_coro_start fa_lifespan_start fa_lifespan_start fa_lifespan_stop fa_lifespan_stop rx_task_stop rx_coro_cancelled 
+=== server_net-main prod-be NA_TX=fastapi_fail up=no
+  marks: rx_task_start rx_coro_start fa_lifespan_fail_start rx_coro_cancelled 
+  log: 12:[ERROR] Traceback (most recent call last):
+  log: 13:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app.py", line 411, in _serve_lifespan
+  log: 14:    async with self.lifespan(scope):
+  log: 18:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py", line 289, in _run_lifespan
+  log: 19:    await stack.enter_async_context(_run_asgi_lifespan(asgi_app, scope))
+  log: 26:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py", line 126, in _run_asgi_lifespan
+  log: 27:    raise RuntimeError(msg)
+  log: 28:RuntimeError: Lifespan startup of <fastapi.applications.FastAPI object at 0x7f9b98b7d340> failed: Traceback (most recent call last):
+  log: 29:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/starlette/routing.py", line 661, in lifespan
+  log: 30:    async with self.lifespan_context(app) as maybe_state:
+  log: 34:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/server_net/run/server_net-main/netapp/netapp/netapp.py", line 236, in fa_lifespan_fail
+  log: 35:    raise RuntimeError("boom-in-lifespan-startup")
+=== server_net-main prod-be NA_TX=fastapi_shutdown_fail up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":null,"client":null,"prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start fa_lifespan_sdfail_start fa_lifespan_sdfail_stop rx_coro_cancelled 
+  log: 13:[ERROR] Traceback (most recent call last):
+  log: 14:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app.py", line 411, in _serve_lifespan
+  log: 15:    async with self.lifespan(scope):
+  log: 18:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py", line 286, in _run_lifespan
+  log: 27:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py", line 142, in _run_asgi_lifespan
+  log: 28:    raise RuntimeError(msg)
+  log: 29:RuntimeError: Lifespan shutdown of <fastapi.applications.FastAPI object at 0x7fc889e593d0> failed: Traceback (most recent call last):
+  log: 30:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/starlette/routing.py", line 661, in lifespan
+  log: 31:    async with self.lifespan_context(app) as maybe_state:
+  log: 34:  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/server_net/run/server_net-main/netapp/netapp/netapp.py", line 245, in fa_lifespan_shutdown_fail
+  log: 35:    raise RuntimeError("boom-in-lifespan-shutdown")
+  log: 36:RuntimeError: boom-in-lifespan-shutdown
+=== server_net-main prod-be NA_TX=fastapi_onstartup up=yes
+  GET /ping -> "pong" [200]
+  GET /api/greet -> {"greeting":null,"client":null,"prefix":"/api"} [200]
+  GET /api2/greet -> Not Found [404]
+  marks: rx_task_start rx_coro_start fa_on_startup fa_on_shutdown rx_task_stop rx_coro_cancelled 

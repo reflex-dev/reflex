@@ -1,0 +1,40 @@
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/server_net/run/server_net-main/netapp/netapp/netapp.py", line 236, in fa_lifespan_fail
+    raise RuntimeError("boom-in-lifespan-startup")
+RuntimeError: boom-in-lifespan-startup
+
+
+[ERROR] ASGI lifespan startup failed
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/granian/asgi.py", line 26, in handle
+    await self.callable(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app.py", line 393, in __call__
+    await self._serve_lifespan(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app.py", line 411, in _serve_lifespan
+    async with self.lifespan(scope):
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py", line 289, in _run_lifespan
+    await stack.enter_async_context(_run_asgi_lifespan(asgi_app, scope))
+  File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/reflex/app_mixins/lifespan.py", line 126, in _run_asgi_lifespan
+    raise RuntimeError(msg)
+RuntimeError: Lifespan startup of <fastapi.applications.FastAPI object at 0x7f69db94d3d0> failed: Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/server_net-main/lib/python3.12/site-packages/starlette/routing.py", line 661, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/server_net/run/server_net-main/netapp/netapp/netapp.py", line 236, in fa_lifespan_fail
+    raise RuntimeError("boom-in-lifespan-startup")
+RuntimeError: boom-in-lifespan-startup
+
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

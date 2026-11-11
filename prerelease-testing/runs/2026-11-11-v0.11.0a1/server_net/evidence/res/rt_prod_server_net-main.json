@@ -1,0 +1,219 @@
+{
+ "base": "http://localhost:3349",
+ "scenario": "routes",
+ "steps": [
+  {
+   "step": "direct /about",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "about",
+    "#loads": "loads=[\"about\"]",
+    "#router_path": "router_path=/about",
+    "#path_seen": "path_seen=/about",
+    "url": "http://localhost:3349/about/"
+   },
+   "dt": 1.83
+  },
+  {
+   "step": "direct /About",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "about",
+    "#loads": "loads=[\"about\",\"about\"]",
+    "#router_path": "router_path=/about",
+    "#path_seen": "path_seen=/about",
+    "url": "http://localhost:3349/About"
+   },
+   "dt": 1.68
+  },
+  {
+   "step": "direct /ABOUT",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "about",
+    "#loads": "loads=[\"about\",\"about\",\"about\"]",
+    "#router_path": "router_path=/about",
+    "#path_seen": "path_seen=/about",
+    "url": "http://localhost:3349/ABOUT"
+   },
+   "dt": 1.62
+  },
+  {
+   "step": "direct /items/A1",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "item",
+    "#loads": "loads=[\"about\",\"about\",\"about\",\"item:A1\"]",
+    "#router_path": "router_path=/items/[id]",
+    "#path_seen": "path_seen=/items/[id]",
+    "#item_id": "item_id=A1",
+    "url": "http://localhost:3349/items/A1"
+   },
+   "dt": 1.12
+  },
+  {
+   "step": "direct /ITEMS/b2",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "item",
+    "#loads": "loads=[\"about\",\"about\",\"about\",\"item:A1\",\"item:b2\"]",
+    "#router_path": "router_path=/items/[id]",
+    "#path_seen": "path_seen=/items/[id]",
+    "#item_id": "item_id=b2",
+    "url": "http://localhost:3349/ITEMS/b2"
+   },
+   "dt": 1.13
+  },
+  {
+   "step": "direct /Items/C3/",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "page": "item",
+    "#loads": "loads=[\"about\",\"about\",\"about\",\"item:A1\",\"item:b2\",\"item:C3\"]",
+    "#router_path": "router_path=/items/[id]",
+    "#path_seen": "path_seen=/items/[id]",
+    "#item_id": "item_id=C3",
+    "url": "http://localhost:3349/Items/C3/"
+   },
+   "dt": 1.15
+  },
+  {
+   "step": "direct /nonexistent",
+   "ok": true,
+   "val": {
+    "http": 404,
+    "page": "404: Page not found\nBuilt with Reflex",
+    "url": "http://localhost:3349/nonexistent"
+   },
+   "dt": 13.09
+  },
+  {
+   "step": "dup /Foo",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "body": "Foo upper\nBuilt with Reflex",
+    "loads": null
+   },
+   "dt": 2.1
+  },
+  {
+   "step": "dup /foo",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "body": "Foo upper\nBuilt with Reflex",
+    "loads": null
+   },
+   "dt": 2.08
+  },
+  {
+   "step": "dup /FOO",
+   "ok": true,
+   "val": {
+    "http": 200,
+    "body": "Foo upper\nBuilt with Reflex",
+    "loads": null
+   },
+   "dt": 2.09
+  }
+ ],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation",
+  "log: Disconnect websocket on page navigation"
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "bad_status": [
+  "404 GET http://localhost:3349/nonexistent"
+ ],
+ "ws": [
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361923.84,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361925.47
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361925.55,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361927.14
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361927.19,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361928.75
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361928.8,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361929.87
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361929.92,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361931.0
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361931.06,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361932.15
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361932.22,
+   "recv": 4,
+   "sent": 2,
+   "closed": 1794361945.24
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361945.3,
+   "recv": 6,
+   "sent": 2,
+   "closed": 1794361947.33
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361947.37,
+   "recv": 6,
+   "sent": 2,
+   "closed": null
+  },
+  {
+   "url": "ws://localhost:3349/_event/?token=d2e8e131-3ac2-48f6-c33b-1e16398900c7&EIO=4&transport=websocket",
+   "opened": 1794361949.45,
+   "recv": 6,
+   "sent": 1,
+   "closed": null
+  }
+ ],
+ "downloads": [],
+ "requests": []
+}

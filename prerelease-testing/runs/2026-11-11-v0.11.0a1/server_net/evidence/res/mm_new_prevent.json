@@ -1,0 +1,33 @@
+{
+ "mode": "prevent",
+ "venv": "server_net-main",
+ "console": [
+  "1794362510.6 error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "1794362515.4 error: WebSocket connection to 'ws://localhost:3353/_event/?token=3ea41d69-0ee0-4f01-bf2f-ada3b2a4a00d&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362515.4 error: WebSocket connection to 'ws://localhost:3353/_event/?token=3ea41d69-0ee0-4f01-bf2f-ada3b2a4a00d&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362515.4 error: WebSocket connection to 'ws://localhost:3353/_event/?token=3ea41d69-0ee0-4f01-bf2f-ada3b2a4a00d&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362515.4 error: WebSocket connection to 'ws://localhost:3353/_event/?token=3ea41d69-0ee0-4f01-bf2f-ada3b2a4a00d&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362515.4 error: WebSocket connection to 'ws://localhost:3353/_event/?token=3ea41d69-0ee0-4f01-bf2f-ada3b2a4a00d&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362515.4 error: WebSocket connection to 'ws://localhost:3353/_event/?token=3ea41d69-0ee0-4f01-bf2f-ada3b2a4a00d&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362515.4 error: WebSocket connection to 'ws://localhost:3353/_event/?token=3ea41d69-0ee0-4f01-bf2f-ada3b2a4a00d&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+  "1794362516.3 warning: This page was built for another version of the app than the backend it connected to (state schema 35586a1cd93c307229ff236a99c967c8, backend e7f4b9d9333b2e5c91a0afaa827b52dc)."
+ ],
+ "navs": [
+  "1794362510.4 http://localhost:3353/",
+  "1794362510.4 http://localhost:3353/",
+  "1794362510.6 http://localhost:3353/"
+ ],
+ "steps": {
+  "before": "count=1",
+  "banner": false,
+  "mm_events": [
+   {
+    "frontend": "35586a1cd93c307229ff236a99c967c8",
+    "backend": "e7f4b9d9333b2e5c91a0afaa827b52dc"
+   }
+  ],
+  "count_text": "count=0",
+  "inc_after": "ok count=1"
+ },
+ "restart_s": 4.2
+}
