@@ -52,6 +52,7 @@ When using Granian, set `GRANIAN_WORKERS` to override the default, including to 
 Granian replaces a worker that dies; if a replaced worker dies again within a few
 seconds, it stops the server. Set `GRANIAN_RESPAWN_FAILED_WORKERS=false` to stop the
 server when any worker dies instead, for example when a process supervisor restarts it.
+Only the worker's exit is logged by default; set `GRANIAN_LOG_LEVEL=info` to see the respawn too.
 
 When using Granian on Linux, backend workers are forked from a supervisor
 process that has already imported the app, so they share its memory instead of
