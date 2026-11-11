@@ -62,7 +62,7 @@ env_var_prefixes = {rx.Config: "REFLEX_"}
 from .env_vars import env_vars_doc
 
 
-def public_name(cls: type) -> str:
+def _public_name(cls: type) -> str:
     """Return the name users reach a class by, such as ``rx.State``.
 
     Search matches the identifier users type, so API reference titles lead
@@ -93,7 +93,7 @@ for module in modules:
     # Keep the short sidebar/nav label (e.g. "App"), but emit a descriptive HTML
     # <title> that leads with the public name (e.g. "rx.State") for search.
     page_data.title = title
-    page_data.seo_title = f"{public_name(module)} API Reference · Reflex Docs"
+    page_data.seo_title = f"{_public_name(module)} API Reference · Reflex Docs"
     pages.append(page_data)
 
 pages.append(env_vars_doc)
