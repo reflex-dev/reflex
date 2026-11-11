@@ -13,6 +13,7 @@ import pickle
 import re
 import tempfile
 import threading
+import traceback
 import unittest.mock
 import uuid
 from collections.abc import AsyncGenerator, Generator
@@ -22,6 +23,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
 
+import httpx
 import pytest
 import pytest_asyncio
 import reflex_base
@@ -36,6 +38,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor.event_processor import QueueShutDown
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
@@ -45,6 +48,7 @@ from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core import _upload as upload_module
 from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
 from reflex_otel import ReflexInstrumentor
@@ -1719,6 +1723,180 @@ async def test_upload_file_unknown_handler_returns_400(
     # The form should never have been read: the handler lookup fails first.
     request_mock.form.assert_not_called()
     await app.state_manager.close()
+
+
+async def _post_failing_upload(
+    handler: str,
+    token: str,
+    processor: BaseStateEventProcessor,
+) -> tuple[httpx.Response, list[tuple[Exception, list[str]]]]:
+    """POST an upload to a failing handler through a real ASGI app.
+
+    The transport re-raises any exception that escapes the app, which the
+    server would otherwise log a second time.
+
+    Args:
+        handler: The FileUploadState handler to upload to.
+        token: The client token.
+        processor: The event processor serving the upload.
+
+    Returns:
+        The response, and each exception the backend exception handler
+        received, with the names of its traceback's frames at that time.
+    """
+    handled: list[tuple[Exception, list[str]]] = []
+
+    def _handle(ex: Exception) -> None:
+        handled.append((ex, [f.name for f in traceback.extract_tb(ex.__traceback__)]))
+
+    processor.backend_exception_handler = _handle
+    api = Starlette(
+        routes=[
+            Route("/_upload", upload(Mock(event_processor=processor)), methods=["POST"])
+        ]
+    )
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=api), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/_upload",
+            files=[("files", ("a.txt", b"data", "text/plain"))],
+            headers={
+                "reflex-client-token": token,
+                "reflex-event-handler": f"{FileUploadState.get_full_name()}.{handler}",
+            },
+        )
+    await processor.join()
+    return response, handled
+
+
+@pytest.mark.asyncio
+async def test_upload_handler_error_before_any_update_returns_500(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A handler that raises before streaming anything gets a clean 500 response.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+    """
+    response, handled = await _post_failing_upload(
+        "failing_upload",
+        token,
+        attached_mock_base_state_event_processor,
+    )
+    assert response.status_code == 500, response.text
+    # Handled once, by the backend exception handler, with the handler's frame.
+    ((error, frames),) = handled
+    assert isinstance(error, OSError)
+    assert "failing_upload" in frames
+
+
+@pytest.mark.asyncio
+async def test_upload_handler_error_after_update_ends_stream_with_error_frame(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A handler that raises after streaming an update ends the stream with an error frame.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+    """
+    response, handled = await _post_failing_upload(
+        "yield_then_fail_upload",
+        token,
+        attached_mock_base_state_event_processor,
+    )
+    assert response.status_code == 200
+    *updates, last = [json.loads(line) for line in response.text.splitlines()]
+    assert updates[0]["delta"] == {
+        FileUploadState.get_full_name(): {"img_list" + FIELD_MARKER: ["partial"]}
+    }
+    # An explicit error frame, not a truncated body.
+    assert list(last) == ["error"]
+    ((error, frames),) = handled
+    assert isinstance(error, OSError)
+    assert "yield_then_fail_upload" in frames
+
+
+async def _raise_queue_shut_down(  # noqa: RUF029
+    token: str, event: Event
+) -> AsyncGenerator[Any]:
+    """Fail like enqueue_stream_delta on a processor that is not running.
+
+    Args:
+        token: The client token.
+        event: The upload event.
+
+    Yields:
+        Nothing.
+
+    Raises:
+        QueueShutDown: Always, before yielding.
+    """
+    msg = "Event processor is not running, call .start(...) first."
+    raise QueueShutDown(msg)
+    yield
+
+
+def _raise_type_error(value: Any) -> str:
+    """Fail like json_dumps on a state update it cannot serialize.
+
+    Args:
+        value: The value to serialize.
+
+    Returns:
+        A plain dict (the error frame) as JSON.
+
+    Raises:
+        TypeError: For anything else, i.e. a state update.
+    """
+    if isinstance(value, dict):
+        return json.dumps(value)
+    msg = "Object of type X is not JSON serializable"
+    raise TypeError(msg)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("target", "replacement", "error"),
+    [
+        ("enqueue_stream_delta", _raise_queue_shut_down, QueueShutDown),
+        ("json_dumps", _raise_type_error, TypeError),
+    ],
+)
+async def test_upload_error_the_event_processor_did_not_report_reaches_the_server(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    monkeypatch: pytest.MonkeyPatch,
+    target: str,
+    replacement: Any,
+    error: type[Exception],
+):
+    """An upload failure the event processor never reported is not swallowed.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+        monkeypatch: pytest monkeypatch fixture.
+        target: What fails: the processor's stream or the update serialization.
+        replacement: The failing stand-in for the target.
+        error: The exception the stand-in raises.
+    """
+    monkeypatch.setattr(
+        attached_mock_base_state_event_processor
+        if target == "enqueue_stream_delta"
+        else upload_module,
+        target,
+        replacement,
+    )
+    # It escapes the app, so the server logs it.
+    with pytest.raises(error):
+        await _post_failing_upload(
+            "upload_alias_handler", token, attached_mock_base_state_event_processor
+        )
 
 
 @pytest.mark.asyncio
