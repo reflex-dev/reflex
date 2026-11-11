@@ -418,6 +418,49 @@ def test_on_submit_warns_for_controls_not_named_by_a_form_field(
     )
 
 
+@pytest.mark.parametrize(
+    "control",
+    [
+        lambda: rx.input(),
+        lambda: rx.input(
+            value=Var(_js_expr="typed", _var_type=str), on_change=rx.console_log
+        ),
+        lambda: rx.debounce_input(rx.input(on_change=rx.console_log)),
+        lambda: rx.text_area(),
+        lambda: rx.el.input(),
+        lambda: rx.el.textarea(),
+        lambda: rx.el.select(rx.el.option("Apple", value="apple")),
+    ],
+)
+def test_form_control_renders_native_controls_as_child(control):
+    """A form control renders a component backed by a native form control."""
+    form_control = rx.form.control(control())
+    assert form_control.render()["props"] == ["asChild:true", 'className:"Control "']
+
+
+@pytest.mark.parametrize(
+    "control",
+    [
+        lambda: rx.checkbox(),
+        lambda: rx.select(["apple"]),
+        lambda: rx.switch(),
+        lambda: rx.box(),
+    ],
+)
+def test_form_control_rejects_other_components(control):
+    """A form control composes with nothing but native form controls."""
+    child = control()
+    with pytest.raises(TypeError) as excinfo:
+        rx.form.control(child)
+    assert str(excinfo.value) == (
+        "The child of rx.form.control must render a native form control: "
+        "rx.input, rx.text_area, rx.debounce_input, rx.el.input, rx.el.select or "
+        f"rx.el.textarea, not {type(child).__name__}. Radix forms do not compose "
+        "with other controls such as rx.checkbox or rx.select; give those a "
+        "`name` and place them under rx.form.root or rx.form.field instead."
+    )
+
+
 def test_form_control_name_is_passed_to_radix_and_names_its_child():
     """A form control's own name reaches Radix and replaces the field's name."""
 
