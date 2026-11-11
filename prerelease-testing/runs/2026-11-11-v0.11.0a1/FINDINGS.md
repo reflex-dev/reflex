@@ -1,6 +1,6 @@
 # Findings — reflex 0.11.0a1 pre-release testing (2026-11-11) — DRAFT
 
-**Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. `server_net`, `redis_runtime` verified. Still exploring: `compile_memo`. `client_vars` (verified) and `examples_ui` done.
+**Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. `server_net`, `redis_runtime` verified. `compile_memo` done (verification running). `client_vars` (verified) and `examples_ui` done.
 Findings marked *(unverified)* have not yet been through an independent verifier. Numbering is provisional; the final
 pass re-ranks by severity.
 
@@ -35,7 +35,7 @@ FINDING-005 / -006 (kept hand-edited env.py).
 Index:
 - FINDING-001: A second `@rx.event` on a handler crashes the app at import (HIGH, regression)
 - FINDING-002: [reflex-enterprise] MCPPlugin app dies at prod startup when `deploy_url` is unset (HIGH, regression)
-- FINDING-003: [reflex-enterprise / reflex compat] AG Grid API calls throw `ReferenceError: refs is not defined` (HIGH, regression)
+- FINDING-003: Page code reading `refs[...]` throws `ReferenceError: refs is not defined` (raw Var handlers, `rx.call_function`, custom `add_hooks`; reflex-enterprise AG Grid API) (HIGH, regression) *(reflex-side widening: verification running)*
 - FINDING-004: Unregistered DeclarativeBase → `makemigrations` silently generates `drop_table` for every table (HIGH, not a regression)
 - FINDING-005: Hand-edited 0.10.x `env.py` is now executed; placeholder URL crashes `reflex run` / `reflex db` (MEDIUM, regression)
 - FINDING-006: Kept user `env.py` → every `makemigrations` writes an empty revision (MEDIUM, regression)
@@ -71,6 +71,11 @@ Index:
 - FINDING-036: Operations on a None `set[...] | None` / `list[...] | None` var crash the page and fail the prod build (LOW, not a regression)
 - FINDING-037: `print` / `str` / `%` / logging of a class-level backend var in server code now raises (LOW, regression by design; changelog gap)
 - FINDING-038: Storage-compatible `default_factory` called extra times (once per compile + once per backend worker) (LOW, regression)
+- FINDING-039: Unkeyed `rx.foreach` on_unmount / on_mount payloads name the item at that position, not the removed item (MEDIUM, new with #7793) *(verification running)*
+- FINDING-040: on_mount / on_unmount inside `rx.cond` inside an `@rx.memo` body fire unconditionally; contradicts the #7694 changelog line (MEDIUM, not a regression) *(verification running)*
+- FINDING-041: `rx.foreach` with item hooks inside `@rx.memo` crashes the whole page (documented "not covered yet") (MEDIUM, not a regression)
+- FINDING-042: #7674 lucide digit-icon fix does not reach in-place upgraders (lucide floor 1.1.1) (MEDIUM, part of PKG-A) *(verification running)*
+- FINDING-043: compile_memo lows: f-string ids in foreach all share one ref (set_focus targets the last row); blocking-monitor blames user handler for reflex's lazy sqlalchemy import; repeated auto_memoize warning; upload handler exception cuts the chunked response (LOW)
 - PKG-A (maintainer decision): reflex 0.11.0a1 requires only `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`
 
 ---
@@ -107,7 +112,15 @@ Index:
   that reads `config.deploy_url` (point to `frontend_url`); coordinate the 0.11.0 final with a fixed rxe (rxe requires
   `reflex[db]>=0.9.6` with no upper bound).
 
-## FINDING-003: [reflex-enterprise / reflex compat] AG Grid API calls throw `ReferenceError: refs is not defined` (HIGH)
+## FINDING-003: Page code reading `refs[...]` throws `ReferenceError: refs is not defined` (HIGH)
+- WIDENED by `compile_memo` (verification `verify_cm` running): not only reflex-enterprise. On 0.11.0a1 (dev + prod, every
+  auto_memoize × react_compiler cell) a raw `rx.Var("() => { refs['ref_target'].current.value = 'x' }").to(rx.vars.FunctionVar)`
+  handler, `rx.call_function(rx.Var("() => refs['ref_target'].current.value"), callback=...)` and a custom component's
+  `add_hooks` reading `refs[...]` all throw; 0.10.1 works. Repro app `compile_memo/refsrepro/`,
+  `compile_memo/scripts/drive_refs.py`; compiled route imports only `{useRegisteredRef}` (0.10.1: `{refs}`). It can pass by
+  accident when a memo wrapper shares a module with a form that imports refs. Reflex's own `rx.set_focus` / `set_value` /
+  `scroll_to` / `call_script` and sonner are unaffected.
+- reflex-enterprise part:
 - Cluster: `enterprise` | Regression vs 0.10.1: yes | Verifier: CONFIRMED (latent rxe bug, widened by 0.11)
 - Repro: `XC_SRC=$SB/apps/enterprise/src/agapi ACCT=token enterprise/scripts/xc.sh start new-ent prod agapi_new`, then
   `python -I enterprise/scripts/agapi_drv.py http://localhost:8380 new`; repeat with prev-ent. Upstream demo
@@ -418,6 +431,35 @@ Index:
   `_shared_storage_groups`, cached per process). Matters for side-effecting / slow factories. Root cause
   `reflex/compiler/utils.py:346-358`, `reflex/state.py:2354-2373`. Fix: skip the factory check on the runtime path.
 
+## FINDING-039: Unkeyed `rx.foreach` lifecycle payloads name the item at that position (MEDIUM)
+- Cluster: `compile_memo` | Regression: no (0.10.1 crashes on this page; behaviour new with #7793) | Verifier: running
+- cm page /loopnokey: `rx.foreach(S.items, lambda item: rx.text(item, on_mount=S.record_mount(item), on_unmount=S.record_unmount(item)))`,
+  items [alpha, beta, gamma], remove first → `record_unmount("gamma")`. foreach keys children by index; the generated
+  `useEffect` captures the loop var with `[]` deps. `key=item` fixes it; docs never say a key is needed. Related: the docs'
+  per-row `rx.client_state` in an `@rx.memo` row follows the row position (state jumps rows after a removal).
+
+## FINDING-040: on_mount / on_unmount inside `rx.cond` inside an `@rx.memo` body fire unconditionally (MEDIUM)
+- Cluster: `compile_memo` | Regression: no (identical on 0.10.1) | Verifier: running
+- cm page /memocond: hidden branch's on_mount fires at mount; toggling fires nothing. The cond child's `useEffect(..., [])`
+  is hoisted to the memo body's top level. #7694's line "on_mount and on_unmount still follow their rx.cond branch" holds
+  only outside `@rx.memo`.
+
+## FINDING-041: `rx.foreach` with item hooks inside `@rx.memo` crashes the whole page (MEDIUM)
+- Cluster: `compile_memo` | Regression: no (same on 0.10.1) | Not separately verified (documented gap)
+- cm page /loopmemo → error boundary `ReferenceError: it_rx_state_ is not defined`. The changelog says only "not covered yet".
+
+## FINDING-042: #7674 lucide digit-icon fix does not reach in-place upgraders (MEDIUM)
+- Cluster: `compile_memo` | Regression: no | Verifier: running. With lucide 1.1.1 (what `pip install -U reflex` keeps):
+  `rx.icon(S.icon_name)` with `grid_2x_2` blank, `DynamicIcon not found` ×11; 1.1.2a1 renders. See PKG-A.
+
+## FINDING-043: compile_memo lows (LOW)
+- f-string id in foreach (`rx.set_focus(f"rf_{item}")`) → every row registers `ref_rf_item_rx_state_`; focus/set_value hit
+  the last row (same on 0.10.1).
+- Blocking monitor blames a trivial handler for `_transform_event_arg`'s lazy `from reflex.model import Model` (0.2-0.9 s
+  sqlalchemy import) on the first dict-arg event (also seen by enterprise).
+- "auto_memoize=False without react_compiler=True" warning logged 2× per compile, 5× per dev run (no dedupe guard).
+- Upload handler raising: response cut mid-body (`incomplete chunked read`; 0.10.1 returned 500); exception logged twice.
+
 ## PKG-A: sibling floors (maintainer decision)
 reflex 0.11.0a1 requires `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`. A stock `pip install
 reflex==0.11.0a1` resolves lucide 1.1.1 and hosting-cli 0.2.1 (without the #7674 / #7670 fixes); `uv pip install -U`
@@ -467,6 +509,14 @@ moves them. Stock pip resolves redis 8.1.0; `uv --prerelease=allow` resolves the
 | STATE-20 | schema hash stable; sessions survive 0.10.1 ↔ 0.11.0a1 | fixed | redis_runtime |
 | STATE-21 | hash depends on Python version | changed (3.11 vs 3.12 identical) | redis_runtime |
 | STATE-26 | py3.14 / spawn state_auto_setters | fixed | redis_runtime |
+| CMP-24 | hook component in rx.foreach | fixed | compile_memo |
+| CMP-34 | upload_files from toast / call_script | fixed | compile_memo |
+| CMP-27 | reproducible export | fixed (3937 files identical across seeds/paths) | compile_memo |
+| CMP-01 | hostile upload filenames | fixed (contained on both) | compile_memo |
+| CMP-05 | module-scope bundle_library survives prod compile | fixed | compile_memo |
+| HYD-15 | dynamic components with bundled libs in prod workers | changed (single-port OK; backend-only untested) | compile_memo |
+| CMP-35 | lazy libs heavier on a recharts page | still broken (~70 KB) | compile_memo |
+| R101-08 | react_compiler silent bailouts | changed (warning logged) | compile_memo |
 | HYD-07 | kill -9 worker → reconnect gets new_token | changed (reproducible on demand; same on 0.10.1) | redis_runtime |
 
 ## Cluster summaries
@@ -480,6 +530,10 @@ prod + Redis, hot reload; AdminDash error; deprecated helpers. Issues: FINDING-0
 ### `enterprise` (pass:14, anomaly:4, fail:2)
 rxe 0.9.11 imports clean; OIDC 36/36 + N-032 + deeplink; demos dnd/flow/mantine/map/highcharts/tickets; awaited protected
 handlers; REST/WS parity; Redis; lifespan; CORS. Issues: FINDING-002/-003/-008/-009/-021.
+### `compile_memo` (pass:17, anomaly:6, fail:4)
+auto_memoize × react_compiler matrix in dev + prod (F,T best render counts, 2.2× faster Python compile); #7793 foreach
+hooks, #7409 uploads, reproducible exports, per-component lazy libs, callout / code_block / match typing / mapping perf
+verified. Issues: FINDING-003 widening (HIGH), FINDING-039 … -043.
 ### `examples_ui` (pass:13, anomaly:3, fail:2)
 Nine non-DB reflex-examples apps (counter, github-stats, overkey, reflexle, upload, clock, quiz, snakegame, lorem-stream)
 upgraded in place 0.10.1 → 0.11.0a1, dev/prod/cold: identical results except overkey (FINDING-001; fixed with a one-line
