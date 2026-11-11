@@ -1915,6 +1915,45 @@ def test_repeated_rx_event_outer_false_and_zero_override():
     assert OverrideState.throttled.event_actions == {"throttle": 0}
 
 
+def test_repeated_rx_event_outer_false_overrides_background_and_supersedes():
+    """An outer background=False or supersedes=False turns off the inner True."""
+
+    class OverrideFlagsState(BaseState):
+        @event(background=False, supersedes=False)  # pyright: ignore [reportArgumentType]
+        @event(background=True, supersedes=True)
+        async def handle(self):
+            pass
+
+    handler = OverrideFlagsState.__dict__["handle"]
+    assert handler.is_background is False
+    assert handler.supersedes is False
+
+
+@pytest.mark.parametrize(
+    "options", [{}, {"background": True}, {"throttle": 300}], ids=str
+)
+def test_rx_event_on_a_handler_of_another_state_raises(options: dict):
+    """Decorating a handler bound to a state raises and leaves that handler as it is.
+
+    Args:
+        options: The options of the second decorator.
+    """
+
+    class OwnerState(BaseState):
+        @event
+        async def handle(self):
+            pass
+
+    with pytest.raises(TypeError, match="already an event handler"):
+
+        class OtherState(BaseState):
+            alias = event(OwnerState.handle, **options)  # pyright: ignore [reportArgumentType, reportCallIssue]
+
+    handler = OwnerState.__dict__["handle"]
+    assert handler.is_background is False
+    assert not hasattr(handler.fn, EVENT_ACTIONS_MARKER)
+
+
 def test_rx_event_with_only_false_actions_has_no_actions():
     """A single @rx.event whose actions are all False or 0 carries none, as before."""
 

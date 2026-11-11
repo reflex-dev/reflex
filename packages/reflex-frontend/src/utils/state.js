@@ -64,8 +64,13 @@ const TOKEN_KEY = "token";
 // create cookie instance
 const cookies = new Cookies();
 
-// Dictionary holding component references.
+// Dictionary holding component references. Internal: not covered by any
+// compatibility guarantee. Framework vars reach it through `Var._as_ref()`,
+// whose var data imports `refs`. It is also published as a global, only so
+// code written against 0.10 that reads `refs[...]` without the import keeps
+// working; a module that binds its own `refs` shadows the global.
 export const refs = {};
+globalThis.refs = refs;
 
 /**
  * Create a ref and register it in `refs` under the given name.

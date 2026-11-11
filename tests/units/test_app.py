@@ -5400,6 +5400,23 @@ async def test_on_event_falls_back_to_environ_without_connect(
         )
 
 
+def _dropped_result_warning(label: str) -> str:
+    """The full warning for a frontend event whose return value is dropped.
+
+    Args:
+        label: How the warning names the handler.
+
+    Returns:
+        The expected warning message.
+    """
+    return (
+        f"Event handler {label} returned a value, but it was triggered from the "
+        "frontend, so the value is dropped: only backend code that awaits the "
+        "handler receives its return value. Return None or events to chain from "
+        "a handler used as an event trigger."
+    )
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("outcome", "warns"),
@@ -5471,11 +5488,12 @@ async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
     if not warns:
         warn.assert_not_called()
         return
-    (message,) = warn.call_args.args
-    warn.assert_called_once_with(message)
-    assert "DroppedResultState.handler" in message
-    assert "dropped" in message
-    assert "await" in message
+    warn.assert_called_once_with(
+        _dropped_result_warning(
+            "test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped"
+            ".<locals>.DroppedResultState.handler"
+        )
+    )
 
 
 @pytest.mark.asyncio
@@ -5504,6 +5522,26 @@ async def test_on_event_does_not_watch_frontend_results_in_prod(
         await event_namespace._token_manager.disconnect_all()
     cast(AsyncMock, app.event_processor.enqueue).assert_awaited_once()
     future.add_done_callback.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_dropped_result_warning_names_an_unregistered_event(  # noqa: RUF029
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """An event missing from the app's registry is named by its event name.
+
+    Args:
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+    """
+    warn = mocker.patch("reflex.app.logger.warning")
+    future = asyncio.get_running_loop().create_future()
+    future.set_result(42)
+    event_namespace_with_processor_mock._warn_dropped_result(
+        "unregistered_state.handler", future
+    )
+    warn.assert_called_once_with(_dropped_result_warning("unregistered_state.handler"))
 
 
 @pytest.mark.parametrize("compile_raises", [False, True])
