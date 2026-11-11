@@ -479,7 +479,7 @@ def _existing_web_package_sections() -> tuple[set[str], set[str]]:
     if not web_pkg_json_path.exists():
         return set(), set()
     try:
-        data = json.loads(web_pkg_json_path.read_text())
+        data = json.loads(web_pkg_json_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as e:
         logger.warning(
             f"Failed to read {web_pkg_json_path}: {e}; skipping existing package check."

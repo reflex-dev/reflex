@@ -202,3 +202,21 @@ def test_validate_does_not_gate_bun(monkeypatch):
     _patch_unsupported_node(monkeypatch)
 
     js_runtimes.validate_frontend_dependencies(init=False)
+
+
+@pytest.mark.usefixtures("windows_text_io")
+def test_existing_web_package_sections_reads_utf8(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The declared packages are read as UTF-8 whatever the locale encoding.
+
+    Args:
+        tmp_path: Temporary .web directory.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(js_runtimes.frontend_skeleton, "get_web_dir", lambda: tmp_path)
+    (tmp_path / "package.json").write_bytes(
+        '{"description": "\u0101", "dependencies": {"a": "1"}, '
+        '"devDependencies": {"b": "1"}}'.encode()
+    )
+    assert js_runtimes._existing_web_package_sections() == ({"a"}, {"b"})

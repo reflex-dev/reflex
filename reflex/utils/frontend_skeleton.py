@@ -373,7 +373,7 @@ def sync_root_package_json_to_web() -> bool:
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)
-    output_path.write_text(rendered, encoding="utf-8")
+    output_path.write_text(rendered, encoding="utf-8", newline="\n")
     return changed
 
 
@@ -425,7 +425,7 @@ def _read_package_json_object(package_json_path: Path) -> dict:
         return {}
     try:
         parsed = json.loads(package_json_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         logger.warning(
             f"Failed to read {package_json_path}: {e}; treating it as empty."
         )
@@ -610,6 +610,7 @@ def update_package_json_overrides() -> bool:
     package_json_path.write_text(
         json.dumps(package_json, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     return True
 
@@ -617,7 +618,7 @@ def update_package_json_overrides() -> bool:
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    output_path.write_text(_compile_package_json(), encoding="utf-8")
+    output_path.write_text(_compile_package_json(), encoding="utf-8", newline="\n")
 
 
 def _compile_vite_config(config: Config):
