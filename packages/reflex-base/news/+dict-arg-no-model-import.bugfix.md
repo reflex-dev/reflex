@@ -1,0 +1,1 @@
+The first event of a handler that takes a `dict`, dataclass, `TypedDict` or Pydantic model argument no longer imports `reflex.model`, and with it SQLAlchemy, on the event loop, so the development blocking monitor no longer reports that handler as blocking the event loop.
