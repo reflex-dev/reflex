@@ -8,7 +8,7 @@ from reflex_base.client_state import ClientStateVar, client_state
 from reflex_base.components.client_state_context import CLIENT_STATE_APP_WRAP_PRIORITY
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants import Dirs
-from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
 from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.function import FunctionVar
 
@@ -934,7 +934,7 @@ def test_same_body_conflicting_defaults_fail_at_compile() -> None:
     def conflicting() -> rx.Component:
         return rx.el.div(first.value, second.value)
 
-    with pytest.raises(ValueError, match="'open_cc'") as err:
+    with pytest.raises(ClientStateConflictError, match="'open_cc'") as err:
         compiler.compile_memo_components((MEMOS["Conflicting", __name__],))
     message = str(err.value)
     assert "`false`" in message

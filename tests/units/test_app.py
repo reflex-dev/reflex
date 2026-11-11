@@ -6333,8 +6333,10 @@ def test_client_state_conflicting_defaults_fail_the_compile(
     app.add_page(lambda: rx.text(closed.value), route="/a")
     app.add_page(lambda: rx.text(opened.value), route="/b")
 
-    with pytest.raises(ValueError, match="'open_app'") as err:
+    with pytest.raises(exceptions.ClientStateConflictError, match="'open_app'") as err:
         app._compile(dry_run=True)
+    # A compile error, like the compiler's other app-level errors.
+    assert isinstance(err.value, exceptions.ReflexError)
     message = str(err.value)
     assert "`false`" in message
     assert "`true`" in message

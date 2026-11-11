@@ -25,7 +25,7 @@ from reflex_base.event import (
     server_side,
 )
 from reflex_base.utils import console, format
-from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
@@ -195,7 +195,8 @@ def _check_declarations(hooks: Iterable[str]) -> None:
         hooks: The hook lines of one body.
 
     Raises:
-        ValueError: If a name is declared with a different default than before.
+        ClientStateConflictError: If a name is declared with a different
+            default than before.
     """
     seen = _compile_declarations.get()
     if seen is None:
@@ -214,7 +215,7 @@ def _check_declarations(hooks: Iterable[str]) -> None:
                 "same default. Declare it once and import it where it is used, "
                 "or give the declarations different names."
             )
-            raise ValueError(msg)
+            raise ClientStateConflictError(msg)
 
 
 @contextlib.contextmanager
