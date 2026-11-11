@@ -1307,3 +1307,48 @@ def test_second_legacy_env_keeps_the_first_backup(
     assert (alembic_dir / "env.old.2").read_text() == third
     assert "env.old.2" in caplog.text
     assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
+
+
+def _write_failing_revision(project: Path) -> None:
+    """Add a revision script on top of the initial one whose upgrade raises.
+
+    Args:
+        project: The project directory.
+    """
+    (initial,) = _versions(project)
+    down = initial.name.partition("_")[0]
+    (project / "alembic" / "versions" / "f00d_broken.py").write_text(
+        f'revision = "f00d"\ndown_revision = "{down}"\n'
+        "branch_labels = None\ndepends_on = None\n\n\n"
+        "def upgrade():\n    sa.Column('note')\n\n\n"
+        "def downgrade():\n    pass\n"
+    )
+
+
+@pytest.mark.parametrize("custom", [False, True])
+def test_revision_script_failure_keeps_its_traceback(
+    project: Path, caplog: pytest.LogCaptureFixture, custom: bool
+):
+    """A failing revision script is logged with its traceback and without the hint.
+
+    The fault is in the script, under either env.py, so moving env.py aside
+    would not help.
+
+    Args:
+        project: The project directory.
+        caplog: The log capture fixture.
+        custom: Run the revision under a working hand-edited env.py.
+    """
+    _db("init")
+    if custom:
+        _write_custom_env(project, REGISTRY_METADATA, url=_db_url())
+    _write_failing_revision(project)
+    caplog.clear()
+
+    _db("migrate", exit_code=1)
+
+    (record,) = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert "NameError" in record.getMessage()
+    assert "not the Reflex template" not in record.getMessage()
+    assert record.exc_info is not None
+    assert "f00d_broken.py" in caplog.text

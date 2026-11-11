@@ -11,6 +11,7 @@ import contextlib
 import io
 import logging
 import shutil
+import traceback
 from pathlib import Path
 from typing import Literal
 
@@ -321,18 +322,39 @@ def describe_error(error: Exception) -> str:
     return message
 
 
+def _raised_in_env_py(error: Exception) -> bool:
+    """Whether env.py itself raised, not a revision script that it ran.
+
+    Args:
+        error: The exception raised while alembic ran.
+
+    Returns:
+        True if the innermost frame in the script directory is env.py's.
+    """
+    scripts = script_directory()
+    for frame in reversed(traceback.extract_tb(error.__traceback__)):
+        path = Path(frame.filename)
+        if path.is_relative_to(scripts):
+            return path.name == "env.py"
+    return False
+
+
 def report_failure(error: Exception) -> None:
     """Log an exception other than a ``CommandError`` that an alembic run raised.
 
-    It names the exception, with the fix when env.py is not the template, once
-    per process: an import-time ``migrate()`` and the startup check fail alike.
-    The traceback is logged at debug level.
+    A custom env.py that failed is named with the fix and the traceback goes to
+    the debug log; any other failure, such as a revision script's, is logged
+    with its traceback. Each is logged once per process: an import-time
+    ``migrate()`` and the startup check fail alike.
 
     Args:
-        error: The exception raised while alembic ran env.py.
+        error: The exception raised while alembic ran.
     """
     message = escape(f"Alembic failed with {type(error).__name__}: {error}")
-    if env_kind() == "custom":
-        message = f"{message}\n{CUSTOM_ENV_HINT}"
-    logger.error(message, extra={"dedupe": True, "rich": True})
-    logger.debug("The alembic run failed.", exc_info=error)
+    if env_kind() == "custom" and _raised_in_env_py(error):
+        logger.error(
+            f"{message}\n{CUSTOM_ENV_HINT}", extra={"dedupe": True, "rich": True}
+        )
+        logger.debug("The alembic run failed.", exc_info=error)
+    else:
+        logger.error(message, exc_info=error, extra={"dedupe": True, "rich": True})
