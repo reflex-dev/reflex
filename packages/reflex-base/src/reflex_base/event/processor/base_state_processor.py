@@ -265,9 +265,10 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
             return value
         hinted_args = types.value_inside_optional(hinted_args)
     if isinstance(value, dict) and isinstance(hinted_args, type):
-        from reflex.model import Model
-
-        if issubclass(hinted_args, Model):
+        # No class subclasses rx.Model before reflex.model is loaded, so never
+        # import it (and SQLAlchemy with it) here, inside the event.
+        model = getattr(sys.modules.get("reflex.model"), "Model", None)
+        if model is not None and issubclass(hinted_args, model):
             # Remove non-fields from the payload
             model_fields = hinted_args.model_fields
             return hinted_args(**{
