@@ -17,12 +17,12 @@ the milestone `v0.11.0`.
 | 004 | Unregistered DeclarativeBase → silent drop of every table | **PR open** [reflex-dev/reflex#7797](https://github.com/reflex-dev/reflex/pull/7797) (design: auto-detect bases) |
 | 011 | JSON column on DeclarativeBase typed `object` | **PR open** [reflex-dev/reflex#7798](https://github.com/reflex-dev/reflex/pull/7798) |
 | 022 (+023 diagnostics) | Prod CORS default breaks TLS-proxied and split deployments | **PR open** [reflex-dev/reflex#7799](https://github.com/reflex-dev/reflex/pull/7799) |
-| 033 + instaque note | kill -9 of a worker stops the server; lock-handoff starvation | fix in progress (`fix/respawn-failed-prod-workers`; instaque part stacks on #7795 if a fix is warranted) |
-| 034 + 035 | client_state API contract (wrong name hint, identifier collisions, conflicting defaults) | fix in progress (`fix/client-state-api-contract`) |
-| 036 | Optional set var ops crash / fail prod build | fix in progress (`fix/optional-set-var-ops`) |
-| 045 | Blocking monitor blames handlers for reflex's lazy imports | fix in progress (`fix/warm-lazy-imports-before-events`) |
-| 001, 005, 006, 007, 009, 016, 010, 012, 028, 029, 037, 038, 039, 042, 044, 047 + changelog lines | see below | not started |
-| 002, 003, 008 | reflex-enterprise breakage | not started (needs an rxe release; 003 also has an optional reflex shim) |
+| 033 | kill -9 of a worker stops the server | **PR open** [reflex-dev/reflex#7803](https://github.com/reflex-dev/reflex/pull/7803) |
+| 034 + 035 | client_state API contract (wrong name hint, identifier collisions, conflicting defaults) | **PR open** [reflex-dev/reflex#7804](https://github.com/reflex-dev/reflex/pull/7804) |
+| 003 (+002 changelog line) | `refs` not imported in 0.11 pages/memos (rxe AG Grid) | **PR open** [reflex-dev/reflex#7806](https://github.com/reflex-dev/reflex/pull/7806) (compat import, `refs` declared internal) |
+| 002, 003, 008 (rxe side) | MCP prod crash without deploy_url, AG Grid `refs`, MCP consent redirect | **PR open** [reflex-dev/reflex-enterprise#290](https://github.com/reflex-dev/reflex-enterprise/pull/290) (needs an rxe release) |
+| 001+016+007, 005/006/017+012, 044 | see below | agents running (open PRs) |
+| 009, 010, 028, 029, 037, 038, 039, 042, 047 + changelog lines 024/006/014/020 | see below | not started |
 
 ## Already in flight (outside this pass)
 | PR | Covers | Gap check |
@@ -203,24 +203,23 @@ As each PR merges into `main`:
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
 |---|---|---|
-| #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open, watch (CodSpeed red = hardware noise on route benchmarks, commented; not required) |
+| #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open; owner reviewed ("good aside from reviewbot"); bot threads fixed 5f2ea8d10 + resolved. Known residual: SADD-in-flight cancel race, bounded by pexpire |
 | #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, watch; "call it" hint pushed (ed2ee8910) |
 | #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, watch; breaking fragment pushed |
 | #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, watch (CodSpeed red = hardware noise, commented; not required) |
-| #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open; agent fixing CodeQL clear-text-logging alert (thread stays open for owner) + empty `cors_allowed_origins` list semantics + checking unit-tests-gate |
+| #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open; CodeQL fix + empty-list semantics pushed 6f621870e (CodeQL thread left open for owner); greptile 5/5 |
 | #7800 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | PR open, watch |
 | #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | PR open, watch (bot nits fixed b1b99aba4) |
 | #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | draft, deferred to #7805; not cherry-picked |
-| #7804 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | PR open, watch (ClientStateConflictError) |
+| #7804 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | PR open; bot threads fixed 2163da819 + resolved; greptile 5/5 |
 | #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | PR open, watch (no warm-up needed: check sys.modules instead of importing) |
 | 001+016+007 | fix/repeated-rx-event (+ maybe fix/event-callback-pyright-typing), /home/user/reflex-fix-001 | agent running (opens PR) |
 | 005/006/017+012 | fix/kept-env-py-errors (stacked on #7797), /home/user/reflex-fix-005 | agent running (opens PR) |
-| 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | agent running (opens PRs) |
-| 044 | (new) upload error response | to start |
+| 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | PRs open reflex #7806 (f714343c4), rxe #290 (d27d6a14b); watch |
 | 044 | fix/upload-handler-error-response, /home/user/reflex-fix-044 | agent running (opens PR) |
 | 009, 010 (stack on 015), 039, 037/038, 028, 029, 042, 047 | (new) | to start |
 | changelog/doc lines 024, 006, 014, 020 | (new) fragment corrections on main | to start |
-| issues for "file after release" | — | to file |
+| issues for "file after release" | — | to file; filed so far: #7805 (fair redis lock hand-off). Add: public ref helper instead of `Var._as_ref()` (003 docs point at a private API; no new public API in a fix-up); rxe `collect_page_info` lists relative paths on 0.11 (`deploy_url or ""`); rxe `/.well-known/oauth-protected-resource/_reflex/mcp` returns app HTML in single-port prod (also 0.10.1) |
 | Phase 7 + close-out (REGISTRY, history, fixtures, testing/prerelease) | — | after the owner cuts the next pre-release |
 
 ## Suggested sequencing
