@@ -22,7 +22,8 @@ the milestone `v0.11.0`.
 | 003 (+002 changelog line) | `refs` not imported in 0.11 pages/memos (rxe AG Grid) | **PR open** [reflex-dev/reflex#7806](https://github.com/reflex-dev/reflex/pull/7806) (compat import, `refs` declared internal) |
 | 002, 003, 008 (rxe side) | MCP prod crash without deploy_url, AG Grid `refs`, MCP consent redirect | **PR open** [reflex-dev/reflex-enterprise#290](https://github.com/reflex-dev/reflex-enterprise/pull/290) (needs an rxe release) |
 | 044 | upload handler error truncates the response | **PR open** [reflex-dev/reflex#7808](https://github.com/reflex-dev/reflex/pull/7808) |
-| 001+016+007, 005/006/017+012 | see below | agents running (open PRs) |
+| 001+016, 007 | repeated `@rx.event`, staticmethod above `@rx.event`, pyright 3.11–3.13 handler types | **PRs open** [reflex-dev/reflex#7807](https://github.com/reflex-dev/reflex/pull/7807), [reflex-dev/reflex#7810](https://github.com/reflex-dev/reflex/pull/7810) (stacked) |
+| 005/006/017+012 | see below | agent running (opens PR) |
 | 009, 010, 028, 029, 037, 038, 039, 042, 047 + changelog lines 024/006/014/020 | see below | not started |
 
 ## Already in flight (outside this pass)
@@ -214,7 +215,7 @@ As each PR merges into `main`:
 | #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | draft, deferred to #7805; not cherry-picked |
 | #7804 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | PR open; bot threads fixed 2163da819 + resolved; greptile 5/5 |
 | #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | PR open, watch (no warm-up needed: check sys.modules instead of importing) |
-| 001+016+007 | fix/repeated-rx-event (+ maybe fix/event-callback-pyright-typing), /home/user/reflex-fix-001 | agent running (opens PR) |
+| #7807 001+016 / #7810 007 | fix/repeated-rx-event (65e0d0280) + fix/event-callback-pyright-typing (f5bd795e1, stacked on #7807 → rebase onto main after #7807 merges), /home/user/reflex-fix-001 | PRs open, watch. 007 trade-off: mypy rejects `rx.event.EventCallback[int]` again (0.10.1 behaviour; import from reflex_base.event); pyright hooks on 3.11+3.14. Follow-up: type `@rx.event(...)` stacked on `@rx.event` for pyright |
 | 005/006/017+012 | fix/kept-env-py-errors (stacked on #7797), /home/user/reflex-fix-005 | agent running (opens PR) |
 | 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | PRs open reflex #7806 (1b1d7867c; function-memo refs import added, bot threads resolved), rxe #290 (d27d6a14b, greptile 5/5); watch |
 | #7808 044 | fix/upload-handler-error-response, /home/user/reflex-fix-044 | PR open (5d91c16ae), watch. Cause #7696 (not #7721); browser UX unchanged vs 0.10.1; 500 w/ CORS before any update, else 200 + `{"error"}` frame (owner default); double log removed. Follow-up: upload.js skips parsing non-2xx bodies |
