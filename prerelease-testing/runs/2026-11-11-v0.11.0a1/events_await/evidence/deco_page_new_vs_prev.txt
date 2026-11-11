@@ -1,0 +1,108 @@
+plain
+   0.10.1 (dev, memory)   out='plain' own_out=None calls='' event=['plain'] 
+   0.11.0a1 (dev, redis)  out='plain' own_out=None calls='' event=['plain'] 
+undecorated
+   0.10.1 (dev, memory)   out='undecorated' own_out=None calls='' event=['undecorated'] 
+   0.11.0a1 (dev, redis)  out='undecorated' own_out=None calls='' event=['undecorated'] 
+below
+   0.10.1 (dev, memory)   out='below' own_out=None calls='logged:below' event=['below'] 
+   0.11.0a1 (dev, redis)  out='below' own_out=None calls='logged:below' event=['below'] 
+above
+   0.10.1 (dev, memory)   out='above' own_out=None calls='logged:above' event=['above'] 
+   0.11.0a1 (dev, redis)  out='above' own_out=None calls='logged:above' event=['above'] DeprecationWarning: Calling an event handler with a state instance has been deprecated in version 0.11.0. `D.above` is called through a decorator stacked above @rx.event;
+above_async
+   0.10.1 (dev, memory)   out='above_async' own_out=None calls='alogged:above_async' event=['above_async'] 
+   0.11.0a1 (dev, redis)  out='above_async' own_out=None calls='alogged:above_async' event=['above_async'] DeprecationWarning: Calling an event handler with a state instance has been deprecated in version 0.11.0. `D.above_async` is called through a decorator stacked above @rx.
+below_async
+   0.10.1 (dev, memory)   out='below_async' own_out=None calls='alogged:below_async' event=['below_async'] 
+   0.11.0a1 (dev, redis)  out='below_async' own_out=None calls='alogged:below_async' event=['below_async'] 
+above_gen
+   0.10.1 (dev, memory)   out='above_gen 2' own_out=None calls='logged:above_gen' event=['above_gen'] 
+   0.11.0a1 (dev, redis)  out='above_gen 2' own_out=None calls='logged:above_gen' event=['above_gen'] 
+bg_below
+   0.10.1 (dev, memory)   out='reset' own_out=None calls='' event=['bg_below'] ) reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.
+   0.11.0a1 (dev, redis)  out='reset' own_out=None calls='' event=['bg_below'] ) reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.
+uses_helpers
+   0.10.1 (dev, memory)   out="uses_helpers: self.fmt='n=7' | self.above_args=None | self.below=None | static_over=8 | self.static_over=8 | s" own_out=None calls='logged:above_args,logged:below' event=['uses_helpers'] 
+   0.11.0a1 (dev, redis)  out="uses_helpers: self.fmt='n=7' | self.above_args=None | self.below=None | static_over=EventSpec(event_actions={}" own_out=None calls='logged:above_args,logged:below' event=['uses_helpers'] 
+above_args
+   0.10.1 (dev, memory)   out="above_args 5 'z'" own_out=None calls='logged:above_args' event=['above_args'] 
+   0.11.0a1 (dev, redis)  out="above_args 5 'z'" own_out=None calls='logged:above_args' event=['above_args'] 
+decentralized
+   0.10.1 (dev, memory)   out='decentralized 5' own_out=None calls='' event=['legacyapp_legacyapp_decentralized'] 
+   0.11.0a1 (dev, redis)  out='decentralized 5' own_out=None calls='' event=['legacyapp_legacyapp_decentralized'] 
+decentralized_str
+   0.10.1 (dev, memory)   out='decentralized_str 6' own_out=None calls='' event=['legacyapp_legacyapp_decentralized_str'] 
+   0.11.0a1 (dev, redis)  out='decentralized_str 6' own_out=None calls='' event=['legacyapp_legacyapp_decentralized_str'] 
+double_plain
+   0.10.1 (dev, memory)   out='reset' own_out='double_plain' calls='' event=['h'] 
+   0.11.0a1 (dev, redis)  (no button: handler/class could not be created or compiled)
+double_bg
+   0.10.1 (dev, memory)   out='reset' own_out='double_bg' calls='' event=['h'] 
+   0.11.0a1 (dev, redis)  (no button: handler/class could not be created or compiled)
+double_bg_rev
+   0.10.1 (dev, memory)   out='reset' own_out='double_bg_rev' calls='' event=['h'] 
+   0.11.0a1 (dev, redis)  (no button: handler/class could not be created or compiled)
+double_throttle
+   0.10.1 (dev, memory)   out='reset' own_out='double_throttle' calls='' event=['h'] 
+   0.11.0a1 (dev, redis)  (no button: handler/class could not be created or compiled)
+double_throttle_rev
+   0.10.1 (dev, memory)   out='reset' own_out='double_throttle_rev' calls='' event=['h'] 
+   0.11.0a1 (dev, redis)  (no button: handler/class could not be created or compiled)
+mix_plain
+   0.10.1 (dev, memory)   (no button: handler/class could not be created or compiled)
+   0.11.0a1 (dev, redis)  out='reset' own_out=None calls='' event=['mix_plain'] KeyError: 'No registered handler found for event: PlainMixin.mix_plain'
+static_over
+   0.10.1 (dev, memory)   (no button: handler/class could not be created or compiled)
+   0.11.0a1 (dev, redis)  out='reset' own_out=None calls='' event=['static_over'] KeyError: 'No registered handler found for event: D.static_over'
+
+import results 0.10.1 (dev, memory)
+    helper_fn(1) = 2
+    type(helper_fn) = 'function'
+    Helper().compute(3) = 9
+    Helper.compute(Helper(), 3) = 9
+    Helper.static_under_event(3) = 6
+    Helper.static_over_event(3) = 6
+    Helper.class_under_event(3) = 'Helper:3'
+    D.static_over(3) = 6
+    D.static_under(3) = 6
+    type(D.plain) = 'EventHandler'
+    type(D.above) = 'EventHandler'
+    type(D.__dict__['above']) = 'EventHandler'
+    D.above.__wrapped__ = !AttributeError: 'EventHandler' object has no attribute '__wrapped__'
+    D.plain.__name__ = !AttributeError: 'EventHandler' object has no attribute '__name__'
+    D.plain.__doc__ = 'An event handler responds to an event to update the state.\n\n    Attributes:\n        fn: The function to call in response to the event.\n        state: The state this 
+    D.event_handlers = ['above', 'above_args', 'above_async', 'above_gen', 'below', 'below_async', 'bg_below', 'fmt', 'legacyapp_legacyapp_decentralized', 'legacyapp_legacyapp_decentralized_str
+    D.above_gen.fn = 'function'
+    define double_plain = ok bg=False actions={}
+    define double_bg = ok bg=True actions={}
+    define double_bg_rev = ok bg=True actions={}
+    define double_throttle = ok bg=False actions={'throttle': 300}
+    define double_throttle_rev = ok bg=False actions={'throttle': 300}
+    button:mix_plain = !TypeError: super(type, obj): obj must be an instance or subtype of type
+    button:helper_fn = !TypeError: unsupported operand type(s) for +: 'ObjectCastedVar' and 'int'
+    button:static_over = !TypeError: unsupported operand type(s) for *: 'ObjectCastedVar' and 'int'
+import results 0.11.0a1 (dev, redis)
+    helper_fn(1) = 2
+    type(helper_fn) = 'function'
+    Helper().compute(3) = 9
+    Helper.compute(Helper(), 3) = !EventHandlerTypeError: Arguments to event handlers must be Vars or JSON-serializable. Got <legacyapp.legacyapp.Helper object at 0x7f64852c4b00>
+    Helper.static_under_event(3) = 6
+    Helper.static_over_event(3) = EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function Helper.static_over_event at 0x7f64852b9940>), client_handler_name='', args=((Var(_js_expr=
+    Helper.class_under_event(3) = 'Helper:3'
+    D.static_over(3) = EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function D.static_over at 0x7f64852ba5c0>), client_handler_name='', args=((Var(_js_expr='x', _var_t
+    D.static_under(3) = 6
+    type(D.plain) = 'EventHandler'
+    type(D.above) = 'EventHandler'
+    type(D.__dict__['above']) = 'EventHandler'
+    D.above.__wrapped__ = 'function'
+    D.plain.__name__ = !AttributeError: 'EventHandler' object has no attribute '__name__'
+    D.plain.__doc__ = 'An event handler responds to an event to update the state.\n\n    Attributes:\n        fn: The function to call in response to the event.\n        state: The state this 
+    D.event_handlers = ['above', 'above_args', 'above_async', 'above_gen', 'below', 'below_async', 'bg_below', 'fmt', 'legacyapp_legacyapp_decentralized', 'legacyapp_legacyapp_decentralized_str
+    D.above_gen.fn = 'function'
+    define double_plain = !AttributeError: 'EventHandler' object has no attribute '__qualname__'
+    define double_bg = !AttributeError: 'EventHandler' object has no attribute '__qualname__'
+    define double_bg_rev = !TypeError: Background task must be async function or generator.
+    define double_throttle = !AttributeError: 'EventHandler' object has no attribute '__qualname__'
+    define double_throttle_rev = !FrozenInstanceError: cannot assign to field '_rx_event_actions'
+    button:helper_fn = !TypeError: unsupported operand type(s) for +: 'ObjectCastedVar' and 'int'

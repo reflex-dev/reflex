@@ -1,0 +1,73 @@
+add_twice                completed=True 0.057s ping=0.054 result='add_twice: 5 then 10'
+                         toasts=['5 then 10']
+c_sub                    completed=True 0.056s ping=0.043 result='c_sub: 2,5'
+c_parent                 completed=True 0.043s ping=0.058 result='c_parent: 3,6,9 total=9'
+c_other                  completed=True 0.06s ping=0.05 result='c_other: 1 path=/'
+other_to_main            completed=True 0.045s ping=0.053 result='other_to_main: 4'
+c_other_get_state        completed=True 0.043s ping=0.045 result="c_other_get_state: plain=1 awaited=TypeError: object int can't be used in 'await' expression"
+c_mixin                  completed=True 0.059s ping=0.057 result="c_mixin: 1,2 mlog=['m1', 'm2']"
+c_no_args                completed=True 0.045s ping=0.045 result='c_no_args: no_args_value,no_args_value'
+c_gen_sync               completed=True 0.042s ping=0.04 result="c_gen_sync: 'gen_sync_return'"
+c_gen_async              completed=True 0.93s ping=0.055 result='c_gen_async: None'
+c_ret_toast              completed=True 0.057s ping=0.044 result='c_ret_toast: None'
+                         toasts=['from ret_toast']
+c_ret_events             completed=True 0.057s ping=0.044 result='c_ret_events: None total_now=0'
+                         toasts=['from ret_events']
+c_ret_empty_list         completed=True 0.058s ping=0.056 result='c_ret_empty_list: []'
+c_ret_dict               completed=True 0.048s ping=0.068 result='c_ret_dict: datetime Item'
+c_await_frontend         completed=True 0.047s ping=0.045 result='c_await_frontend: EventHandlerTypeError: `_call_function` is a frontend-only event, so it cannot be awaited; yield or return it instead. || EventHandlerTypeError: `_redirect` is a frontend-only event, so it cannot be awaited; yield or return it instead.'
+c_boom_caught            completed=True 0.052s ping=0.053 result='c_boom_caught: boom total=1000'
+c_boom_uncaught          completed=False 3.039s ping=0.052 result='reset: ok'
+                         toasts=['An error occurred.ValueError: boom\nSee logs for details.']
+c_fact                   completed=True 0.057s ping=0.045 result='c_fact: 3628800 depth=10'
+c_recurse                completed=True 0.043s ping=0.046 result='c_recurse: RecursionError depth=319 maximum recursion depth exceeded'
+c_actions                completed=True 0.043s ping=0.056 result='c_actions: throttled_value,throttled_value,debounced_value,1,2 progress=3'
+c_self_sync              completed=True 0.06s ping=0.045 result="c_self_sync: TypeError: object int can't be used in 'await' expression total=5"
+c_self_async             completed=True 0.078s ping=0.045 result='c_self_async: slow_done,6'
+c_self_gen               completed=True 0.057s ping=0.044 result="c_self_gen: TypeError: object async_generator can't be used in 'await' expression progress=0"
+c_args                   completed=True 0.043s ping=0.044 result='c_args: str->int=5 | kw=7 | item="Item:Item(name=\'a\', qty=2)" | item_dict="Item:Item(name=\'b\', qty=3)" | dt=\'datetime:2026-11-11T12:00:00\' | dt_str=\'datetime:2026-11-11T12:00:00\' | bad_int!TypeError:unsupported operand type(s) for +=: \'int\' and \'str\' | too_many=8 | missing!TypeError:Main.add() missing 1 required positional argument: \'amoun
+c_proxied                completed=True 0.059s ping=0.043 result="c_proxied: 2,2,2 data={'a': 1} rows=1"
+c_proxied_yield          completed=True 0.056s ping=0.044 result='c_proxied_yield: ok'
+c_gather                 completed=True 0.238s ping=0.054 result="c_gather: [1, 11, 'slow_done', 1] total=11"
+c_ensure_future          completed=True 0.055s ping=0.045 result='c_ensure_future: returned-before-task done=False'
+c_create_task            completed=True 0.043s ping=0.047 result="c_create_task: TypeError: a coroutine was expected, got EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function Main.add at 0x7fc65d0a47c0>), client_handler_name='', args=((Var(_js_expr='amount', _var_type=typing.Any, _var_data=None), LiteralNumberVar(_js_expr='1', _var_type=<class 'int'>, _var_data=None, _var_value=1)),))"
+c_wait_for               completed=True 0.226s ping=0.061 result='c_wait_for: TimeoutError progress=1'
+c_setvar                 completed=False 5.036s ping=0.054 result='reset: ok'
+                         toasts=['An error occurred.AttributeError: Variable `progress` cannot be set on `reflex___state____state.awaitapp___awaitapp____main`\nSee logs for details.']
+c_fg_await_bg            completed=True 0.053s ping=0.045 result='c_fg_await_bg: EventHandlerTypeError: Background event handler `reflex___state____state.awaitapp___awaitapp____main.bg_worker` cannot be awaited while the state lock is held, as it would wait for that lock; yield it instead.'
+c_sync_await             completed=True 0.061s ping=0.048 result='c_sync_await: EventSpec total=0'
+c_upload_spec            completed=True 0.058s ping=0.055 result='c_upload_spec: EventHandlerTypeError: Upload event `reflex___state____state.awaitapp___awaitapp____main.handle_upload` cannot be awaited; use it as an event trigger.'
+c_mw_blocked             completed=True 0.057s ping=0.041 result='c_mw_blocked: None total 0->0 runs=0'
+                         toasts=['blocked secret_add']
+c_mw_mutate              completed=True 0.049s ping=0.055 result='c_mw_mutate: 30 total=30'
+c_mw_raise               completed=True 0.061s ping=0.043 result='c_mw_raise: RuntimeError: middleware exploded'
+c_mw_self_bypass         completed=True 0.049s ping=0.059 result='c_mw_self_bypass: 5 runs=1'
+c_mw_bg_blocked          completed=True 0.043s ping=0.044 result='c_mw_bg_blocked: out=None in=None runs=0'
+                         toasts=['blocked secret_add', 'blocked secret_add']
+c_bg_outside             completed=True 0.693s ping=0.044 result='c_bg_outside: 7 gen=None total=7'
+c_bg_inside              completed=True 0.044s ping=0.045 result='c_bg_inside: 7,1,1'
+c_bg_await_bg            completed=True 0.258s ping=0.043 result="c_bg_await_bg: 'worker2' total=2"
+c_bg_inside_await_bg     completed=True 0.04s ping=0.046 result='c_bg_inside_await_bg: EventHandlerTypeError: Background event handler `reflex___state____state.awaitapp___awaitapp____main.bg_worker` cannot be awaited while the state lock is held, as it would wait for that lock; yield it instead.'
+c_bg_boom                completed=True 0.045s ping=0.043 result='c_bg_boom: ValueError: boom total=1000'
+                         toasts=['An error occurred.ValueError: boom\nSee logs for details.']
+c_bg_gather              completed=True 0.044s ping=0.045 result='c_bg_gather: [1, 11, 1] total=11'
+c_bg_self                completed=True 0.092s ping=0.045 result='c_bg_self: self.add!ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async | locked self.slow=slow_done'
+add-direct               completed=None 0.018s ping=0.053 result='reset: ok'
+ret-dict-direct          completed=None 0.016s ping=0.054 result='reset: ok'
+secret-direct            completed=None 0.031s ping=0.056 result='reset: ok'
+                         toasts=['blocked secret_add']
+mutate-direct            completed=None 0.032s ping=0.052 result='reset: ok'
+cs-a                     completed=None 0.036s ping=0.051 result='reset: ok'
+[special] mw_logged_in_await: {'result': 'c_mw_blocked: 5 total 0->5 runs=1', 'total': '5', 'doubled': '10', 'secret_runs': '1', 'auth': 'in', 'cs-msg-a': 'cs: 1/1', 'cs-count-a': '1'} toasts=[] {'ping_after_s': 0.059}
+[special] mw_logged_in_bg: {'result': 'c_mw_bg_blocked: out=5 in=10 runs=2', 'total': '10', 'doubled': '20', 'secret_runs': '2', 'auth': 'in', 'cs-msg-a': 'cs: 1/1', 'cs-count-a': '1'} toasts=[] {'ping_after_s': 0.057}
+[special] mw_secret_direct_logged_in: {'result': 'reset: ok', 'total': '5', 'doubled': '10', 'secret_runs': '1', 'auth': 'in', 'cs-msg-a': 'cs: 1/1', 'cs-count-a': '1'} toasts=[] {'ping_after_s': 0.055}
+[special] sup_await_inline_x2: {'result': 'c_supersedes: SECOND query=second', 'query': 'second', 'auth': 'out', 'cs-msg-a': 'cs: 1/1', 'cs-count-a': '1'} toasts=[] {'ping_after_s': 0.053}
+[special] sup_direct_x2: {'result': 'reset: ok', 'query': 'dsecond', 'auth': 'out', 'cs-msg-a': 'cs: 1/1', 'cs-count-a': '1'} toasts=[] {'ping_after_s': 0.054}
+[special] sup_bg_await_x2: {'result': 'c_bg_supersedes: bgsecond -> BGSECOND query=bgsecond', 'query': 'bgsecond', 'auth': 'out', 'cs-msg-a': 'cs: 1/1', 'cs-count-a': '1'} toasts=[] {'ping_after_s': 0.053}
+[special] gen_async_x2: {'result': 'c_gen_async: None', 'progress': '3', 'auth': 'out', 'cs-msg-a': 'cs: 1/1', 'cs-count-a': '1'} toasts=[] {'ping_after_s': 0.054}
+[special] component_state: {'result': 'reset: ok', 'total': '3', 'doubled': '6', 'last_added': '1', 'auth': 'out', 'cs-msg-a': 'cs: 3/2', 'cs-count-a': '3', 'cs-msg-b': 'cs: 1/3', 'cs-count-b': '1'} toasts=[] {'ping_after_s': 0.053}
+[special] upload_await: {'result': 'upload: sizes=[5, 1005] other=1', 'total': '1005', 'doubled': '2010', 'last_added': '1000', 'other-items': 'upload:2', 'uploaded': 'up1.txt,up2.bin', 'auth': 'out', 'cs-msg-a': 'cs: 3/2', 'cs-count-a': '3', 'cs-msg-b': 'cs: 1/3', 'cs-count-b': '1'} toasts=[] {'ping_after_s': 0.048}
+[special] upload_secret_logged_out: {'result': 'reset: ok', 'auth': 'out', 'blocked-count': '1', 'cs-msg-a': 'cs: 3/2', 'cs-count-a': '3', 'cs-msg-b': 'cs: 1/3', 'cs-count-b': '1'} toasts=['blocked secret_upload'] {'ping_after_s': 0.061}
+[special] upload_secret_logged_in: {'result': 'secret_upload: ran with 2 file(s)', 'secret_runs': '1', 'auth': 'in', 'cs-msg-a': 'cs: 3/2', 'cs-count-a': '3', 'cs-msg-b': 'cs: 1/3', 'cs-count-b': '1'} toasts=[] {'ping_after_s': 0.057}
+[special] on_load_nav: {'result': 'on_load: 1 1 path=/onload', 'total': '1', 'other-items': 'loaded'} toasts=[] {'completed': True}
+[special] on_load_hard: {'result': 'on_load: 2 2 path=/onload', 'total': '2', 'other-items': 'loaded,loaded'} toasts=[] 

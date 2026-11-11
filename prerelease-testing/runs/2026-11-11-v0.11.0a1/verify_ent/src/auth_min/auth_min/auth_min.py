@@ -94,6 +94,15 @@ class Vault(rx.State):
         RAN.append("secret_action")
         return "secret-value"
 
+    @rxe.event(auth=False)
+    async def public_action(self) -> str:
+        """Public control: return a value.
+
+        Returns:
+            The value.
+        """
+        return "public-value"
+
 
 class Pub(rx.State):
     """Public state awaiting the protected handler."""
@@ -107,6 +116,11 @@ class Pub(rx.State):
         r = await Vault.secret_action()
         self.result = repr(r)
         self.ran = len(RAN)
+
+    @rxe.event(auth=False)
+    async def call_public(self):
+        """Positive control: await a public handler."""
+        self.result = repr(await Vault.public_action())
 
     @rxe.event(auth=False)
     def read_ran(self):
@@ -125,6 +139,7 @@ def await_page() -> rx.Component:
         rx.button("call", id="call", on_click=Pub.call_protected),
         rx.button("direct", id="direct", on_click=Vault.secret_action),
         rx.button("read", id="readran", on_click=Pub.read_ran),
+        rx.button("public", id="public", on_click=Pub.call_public),
         rx.text(Pub.result, id="result"),
         rx.text(Pub.ran, id="ran"),
     )

@@ -1,0 +1,16 @@
+[i3_vent-new_prod] ready after 8s
+[FAIL] i3_vent-new_prod {"console": ["error: Failed to load resource: the server responded with a status of 404 (Not Found)", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"], "page_errors": [], "rows_after_grid_api": 0, "state_selected": "-1", "rows_after_AgGridAPI_create": 0, "typeof_refs_in_window": "undefined"}
+  server-log ReferenceError lines: 6
+stopped
+[i3_vent-new_dev] ready after 4s
+[FAIL] i3_vent-new_dev {"console": ["error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"], "page_errors": [], "rows_after_grid_api": 0, "state_selected": "-1", "rows_after_AgGridAPI_create": 0, "typeof_refs_in_window": "undefined"}
+  server-log ReferenceError lines: 6
+stopped
+[i3_vent-prev_prod] ready after 8s
+[PASS] i3_vent-prev_prod {"console": ["error: Failed to load resource: the server responded with a status of 404 (Not Found)", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"], "page_errors": [], "rows_after_grid_api": 3, "state_selected": "3", "rows_after_AgGridAPI_create": 3, "typeof_refs_in_window": "undefined"}
+  server-log ReferenceError lines: 0
+stopped
+[i3_vent-prev_dev] ready after 6s
+[PASS] i3_vent-prev_dev {"console": ["error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"], "page_errors": [], "rows_after_grid_api": 3, "state_selected": "3", "rows_after_AgGridAPI_create": 3, "typeof_refs_in_window": "undefined"}
+  server-log ReferenceError lines: 0
+stopped

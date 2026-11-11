@@ -1,0 +1,15 @@
+== reflex from envs/prev
+imported ok; tick background = True
+== reflex from envs/new
+  File "$SB/envs/new/lib/python3.12/site-packages/reflex_base/registry.py", line 219, in _register_base_state
+    self._register_event_handler(event_handler, states=(state_cls,))
+  File "$SB/envs/new/lib/python3.12/site-packages/reflex_base/registry.py", line 268, in _register_event_handler
+    full_name = format_event_handler(handler)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "$SB/envs/new/lib/python3.12/site-packages/reflex_base/utils/format.py", line 472, in format_event_handler
+    state, name = get_event_handler_parts(handler)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "$SB/envs/new/lib/python3.12/site-packages/reflex_base/utils/format.py", line 448, in get_event_handler_parts
+    name = handler.fn.__qualname__
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'EventHandler' object has no attribute '__qualname__'. Did you mean: '__set_name__'?

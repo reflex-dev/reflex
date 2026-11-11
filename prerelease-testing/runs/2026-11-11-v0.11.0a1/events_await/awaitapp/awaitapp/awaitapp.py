@@ -11,6 +11,13 @@ import reflex as rx
 from .mw import AuthGate, Mutator, RecorderMiddleware
 
 
+def _trace(msg: str) -> None:
+    """Timestamped line in the server log (ordering evidence for the supersedes scenarios)."""
+    import time
+
+    print(f"TRACE {time.time():.3f} {msg}", flush=True)
+
+
 @dataclasses.dataclass
 class Item:
     name: str
@@ -189,8 +196,14 @@ class Main(LogMixin, rx.State):
 
     @rx.event(supersedes=True)
     async def search(self, q: str) -> str:
-        await asyncio.sleep(0.6)
+        _trace(f"search({q}) start")
+        try:
+            await asyncio.sleep(0.6)
+        except BaseException as ex:
+            _trace(f"search({q}) interrupted by {type(ex).__name__}")
+            raise
         self.query = q
+        _trace(f"search({q}) end")
         return q.upper()
 
     @rx.event
@@ -543,6 +556,7 @@ class Main(LogMixin, rx.State):
 
     @rx.event(background=True)
     async def c_bg_supersedes(self, q: str):
+        _trace(f"c_bg_supersedes({q}) task started")
         try:
             r = await Main.search(q)
         except BaseException as ex:
@@ -567,6 +581,73 @@ class Main(LogMixin, rx.State):
             except Exception as ex:
                 out.append(f"locked self.slow!{type(ex).__name__}: {str(ex)[:80]}")
             self.result = "c_bg_self: " + " | ".join(out)
+
+    # -- cases: lock hygiene (drive_locks.py) --------------------------------
+    @rx.event
+    async def k_gather_boom(self):
+        # one gathered handler raises while the other is still sleeping
+        await asyncio.gather(Main.slow(1.0), Main.boom(1))
+
+    @rx.event
+    async def k_future_then_raise(self):
+        asyncio.ensure_future(Main.slow(1.0))
+        await asyncio.sleep(0)
+        msg = "raised with an inline task still running"
+        raise RuntimeError(msg)
+
+    @rx.event(supersedes=True)
+    async def k_sup_outer(self, tag: str):
+        # superseded while an awaited handler is running inline
+        self.result = f"k_sup_outer: {tag} started"
+        yield
+        r = await Main.slow(3.0)
+        self.result = f"k_sup_outer: {tag} {r}"
+
+    @rx.event(background=True)
+    async def k_bg_future(self):
+        async with self:
+            asyncio.ensure_future(Main.slow(1.0))
+            await asyncio.sleep(0)
+        async with self:
+            self.result = f"k_bg_future: progress={self.progress}"
+
+    @rx.event(background=True)
+    async def k_bg_wait_for(self):
+        async with self:
+            try:
+                await asyncio.wait_for(Main.slow(5), timeout=0.2)
+                r = "no timeout"
+            except TimeoutError:
+                r = "TimeoutError"
+            self.result = f"k_bg_wait_for: {r} progress={self.progress}"
+
+    @rx.event(background=True, supersedes=True)
+    async def k_bg_sup(self, tag: str):
+        # a background task superseded while awaiting (inline, locked) a slow handler
+        async with self:
+            self.result = f"k_bg_sup: {tag} started"
+        async with self:
+            r = await Main.slow(3.0)
+            self.result = f"k_bg_sup: {tag} {r}"
+
+    @rx.event
+    async def k_slow_nav(self):
+        # in flight while the page is reloaded
+        r = await Main.slow(2.0)
+        self.result = f"k_slow_nav: {r}"
+
+    @rx.event
+    async def k_nested_gen(self):
+        # awaited async generator that itself awaits and yields events
+        r = await Main.gen_chain(2)
+        self.result = f"k_nested_gen: {r!r} total={self.total}"
+
+    @rx.event
+    async def gen_chain(self, n: int):
+        for i in range(n):
+            got = await Main.add(1)
+            yield rx.toast(f"gen_chain {got}")
+            yield Main.mlog_add(f"chained{i}")
 
     # -- upload / on_load ---------------------------------------------------
     @rx.event
@@ -711,6 +792,7 @@ def index() -> rx.Component:
         out("uploaded", Main.uploaded.join(","), "uploaded"),
         out("auth", rx.cond(Auth.logged_in, "in", "out"), "auth"),
         out("blocked_count", Auth.blocked_count, "blocked-count"),
+        out("token", Main.router.session.client_token, "token"),
         rx.hstack(
             rx.button("reset", on_click=Main.reset_all, id="b-reset"),
             rx.button("ping", on_click=Main.ping, id="b-ping"),
@@ -735,6 +817,21 @@ def index() -> rx.Component:
             rx.button("c_bg_supersedes b", on_click=Main.c_bg_supersedes("bgsecond"), id="b-bgsup-2"),
             wrap="wrap",
         ),
+        rx.flex(
+            rx.button("k_gather_boom", on_click=Main.k_gather_boom, id="b-k_gather_boom"),
+            rx.button("k_future_then_raise", on_click=Main.k_future_then_raise, id="b-k_future_then_raise"),
+            rx.button("k_sup_outer a", on_click=Main.k_sup_outer("a"), id="b-k_sup_outer-a"),
+            rx.button("k_sup_outer b", on_click=Main.k_sup_outer("b"), id="b-k_sup_outer-b"),
+            rx.button("k_bg_future", on_click=Main.k_bg_future, id="b-k_bg_future"),
+            rx.button("k_bg_wait_for", on_click=Main.k_bg_wait_for, id="b-k_bg_wait_for"),
+            rx.button("k_bg_sup a", on_click=Main.k_bg_sup("a"), id="b-k_bg_sup-a"),
+            rx.button("k_bg_sup b", on_click=Main.k_bg_sup("b"), id="b-k_bg_sup-b"),
+            rx.button("k_slow_nav", on_click=Main.k_slow_nav, id="b-k_slow_nav"),
+            rx.button("k_nested_gen", on_click=Main.k_nested_gen, id="b-k_nested_gen"),
+            wrap="wrap",
+            spacing="1",
+        ),
+        out("mlog", Main.mlog.join(","), "mlog"),
         Counter.create(ident="a"),
         Counter.create(ident="b"),
         rx.upload(rx.text("drop"), id="u1", multiple=True),
@@ -766,7 +863,41 @@ def onload() -> rx.Component:
     )
 
 
-app = rx.App()
+async def poke(request):
+    """Out-of-band API route: await handlers inside and outside `app.modify_state`."""
+    from starlette.responses import JSONResponse
+
+    token = request.path_params["token"]
+    res = {}
+    try:
+        async with app.modify_state(rx.BaseStateToken(ident=token, cls=Main)) as state:
+            res["state_cls"] = type(state).__name__
+            res["add"] = await Main.add(50)
+            res["other"] = await Other.record("poked")
+            res["secret"] = await Main.secret_add(1)
+            res["gen"] = await Main.gen_sync(2)
+            res["toast"] = await Main.ret_toast()
+            try:
+                res["bg"] = await Main.bg_worker(1)
+            except Exception as ex:
+                res["bg"] = f"{type(ex).__name__}: {str(ex)[:90]}"
+    except Exception as ex:
+        res["error"] = f"{type(ex).__name__}: {ex}"
+    try:
+        res["outside"] = await Main.add(1)
+    except Exception as ex:
+        res["outside"] = f"{type(ex).__name__}: {ex}"
+    return JSONResponse(res)
+
+
+def _api():
+    from starlette.applications import Starlette
+    from starlette.routing import Route
+
+    return Starlette(routes=[Route("/poke/{token}", poke)])
+
+
+app = rx.App(api_transformer=_api())
 app.add_middleware(RecorderMiddleware())
 app.add_middleware(AuthGate())
 app.add_middleware(Mutator())

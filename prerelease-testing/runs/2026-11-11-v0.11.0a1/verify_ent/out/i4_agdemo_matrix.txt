@@ -1,0 +1,8 @@
+vent-new migrate exit=1 web=yes | ValueError: Library @radix-ui/themes is not bundled
+vent-new init exit=1 web=yes | ValueError: Library @radix-ui/themes is not bundled
+vent-new makemig exit=1 web=yes | ValueError: Library @radix-ui/themes is not bundled
+vent-new migrate_web exit=0 web=yes | compile exit=0
+vent-prev migrate exit=0 web=yes | 
+vent-prev init exit=1 web=yes | ValueError: Library @radix-ui/themes is not bundled
+vent-prev makemig exit=1 web=yes | ValueError: Library @radix-ui/themes is not bundled
+vent-prev migrate_web exit=0 web=yes | compile exit=0

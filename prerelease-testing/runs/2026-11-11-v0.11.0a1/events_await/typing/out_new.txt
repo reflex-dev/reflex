@@ -1,0 +1,25 @@
+### pyright (new) typed_app.py
+typed_app.py
+  typed_app.py:134:27 - error: Argument of type "EventCallback[*tuple[Unknown, ...]]" cannot be assigned to parameter "on_submit" of type "EventHandler" in function "__init__"
+    "EventCallback[*tuple[Unknown, ...]]" is not assignable to "EventHandler" (reportArgumentType)
+  typed_app.py:137:15 - error: Argument of type "EventCallback[*tuple[Unknown, ...]]" cannot be assigned to parameter "h" of type "EventHandler" in function "takes_handler"
+    "EventCallback[*tuple[Unknown, ...]]" is not assignable to "EventHandler" (reportArgumentType)
+  typed_app.py:154:34 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal[b""], Literal[2], Literal['b'], Literal[False], float) (reportCallIssue)
+3 errors, 0 warnings, 0 informations
+### mypy (new) typed_app.py
+typed_app.py:134: error: Argument "on_submit" to "Holder" has incompatible type "EventCallback[()]"; expected "EventHandler"  [arg-type]
+typed_app.py:137: error: Argument 1 to "takes_handler" has incompatible type "EventCallback[()]"; expected "EventHandler"  [arg-type]
+typed_app.py:144: error: Incompatible types in assignment (expression has type "EventCallback[()]", variable has type "EventSpec")  [assignment]
+typed_app.py:154: error: No overload variant of "__call__" of "EventCallback" matches argument types "int", "str", "bool", "float", "bytes", "int", "str", "bool", "float"  [call-overload]
+typed_app.py:154: note: Possible overload variants:
+typed_app.py:154: note:     def __call__(self) -> EventCallback[int, str, bool, float, bytes, int, str, bool, float]
+typed_app.py:154: note:     def __call__(self, value: int | Var[int]) -> EventCallback[str, bool, float, bytes, int, str, bool, float]
+typed_app.py:154: note:     def __call__(self, value: int | Var[int], value2: str | Var[str]) -> EventCallback[bool, float, bytes, int, str, bool, float]
+typed_app.py:154: note:     def __call__(self, value: int | Var[int], value2: str | Var[str], value3: bool | Var[bool]) -> EventCallback[float, bytes, int, str, bool, float]
+typed_app.py:154: note:     def __call__(self, value: int | Var[int], value2: str | Var[str], value3: bool | Var[bool], value4: float | Var[float]) -> EventCallback[bytes, int, str, bool, float]
+typed_app.py:154: note:     def __call__(self, value: int | Var[int], value2: str | Var[str], value3: bool | Var[bool], value4: float | Var[float], value5: bytes | Var[bytes]) -> EventCallback[int, str, bool, float]
+typed_app.py:154: note:     def __call__(self, value: int | Var[int], value2: str | Var[str], value3: bool | Var[bool], value4: float | Var[float], value5: bytes | Var[bytes], value6: int | Var[int]) -> EventCallback[str, bool, float]
+typed_app.py:154: note:     def __call__(self, value: int | Var[int], value2: str | Var[str], value3: bool | Var[bool], value4: float | Var[float], value5: bytes | Var[bytes], value6: int | Var[int], value7: str | Var[str]) -> EventCallback[bool, float]
+typed_app.py:154: note:     def __call__(self, value: int | Var[int], value2: str | Var[str], value3: bool | Var[bool], value4: float | Var[float], value5: bytes | Var[bytes], value6: int | Var[int], value7: str | Var[str], value8: bool | Var[bool]) -> EventCallback[float]
+Found 4 errors in 1 file (checked 1 source file)

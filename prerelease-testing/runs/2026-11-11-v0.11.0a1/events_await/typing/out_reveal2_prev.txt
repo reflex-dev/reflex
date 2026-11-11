@@ -1,0 +1,54 @@
+### pyright (prev) reveal2.py
+reveal2.py
+  reveal2.py:37:13 - information: Type of "rx.event" is "type[EventNamespace]"
+  reveal2.py:38:13 - information: Type of "S.via_rx" is "EventCallback[int]"
+  reveal2.py:39:13 - information: Type of "S.via_reflex_event" is "EventCallback[int]"
+  reveal2.py:40:13 - information: Type of "S.via_reflex_base" is "EventCallback[int]"
+  reveal2.py:41:13 - information: Type of "S.via_rx_call" is "EventCallback[int]"
+  reveal2.py:42:13 - information: Type of "S.no_args" is "EventCallback[*tuple[()]]"
+  reveal2.py:43:13 - information: Type of "S.via_rx_async" is "EventCallback[int]"
+  reveal2.py:44:13 - information: Type of "S.via_rx_gen" is "EventCallback[int]"
+  reveal2.py:46:10 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:47:1 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal[2], Literal[3]) (reportCallIssue)
+  reveal2.py:48:19 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:49:15 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:50:34 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:51:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+    Type "EventCallback[int]" is not assignable to type "EventType[()] | EventType[str] | None"
+      "EventCallback[int]" is incompatible with protocol "LambdaEventCallback[*tuple[()]]"
+        "__code__" is not present
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[list[UploadFile]]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[UploadChunkIterator]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+    ... (reportArgumentType)
+6 errors, 0 warnings, 8 informations
+### mypy (prev) reveal2.py
+reveal2.py:37: note: Revealed type is "Overload(def (func: None =, *, background: bool | None =, supersedes: bool | None =, stop_propagation: bool | None =, prevent_default: bool | None =, throttle: int | None =, debounce: int | None =, temporal: bool | None =) -> def [BASE_STATE <: reflex.state.BaseState, P] (def (BASE_STATE, *args: *P) -> Any) -> EventCallback?[Any], def [BASE_STATE <: reflex.state.BaseState, P] (func: def (BASE_STATE, *args: *P) -> Any, *, background: bool | None =, supersedes: bool | None =, stop_propagation: bool | None =, prevent_default: bool | None =, throttle: int | None =, debounce: int | None =, temporal: bool | None =) -> reflex_base.event.EventNamespace)"
+reveal2.py:38: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal2.py:39: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal2.py:40: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal2.py:41: note: Revealed type is "EventCallback?[Any]"
+reveal2.py:42: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal2.py:43: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal2.py:44: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal2.py:46: error: "EventNamespace" not callable  [operator]
+reveal2.py:47: error: "EventNamespace" not callable  [operator]
+reveal2.py:48: error: "EventNamespace" not callable  [operator]
+reveal2.py:49: error: "EventCallback?[Any]" not callable  [misc]
+reveal2.py:50: error: "EventNamespace" not callable  [operator]
+Found 5 errors in 1 file (checked 1 source file)

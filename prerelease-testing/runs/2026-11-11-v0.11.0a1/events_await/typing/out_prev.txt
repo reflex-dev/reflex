@@ -1,0 +1,82 @@
+### pyright (prev) typed_app.py
+typed_app.py
+  typed_app.py:88:27 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal[b""]) (reportCallIssue)
+  typed_app.py:93:23 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  typed_app.py:94:24 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  typed_app.py:95:23 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  typed_app.py:96:22 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  typed_app.py:97:15 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  typed_app.py:98:15 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  typed_app.py:109:23 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  typed_app.py:134:27 - error: Argument of type "EventCallback[*tuple[()]]" cannot be assigned to parameter "on_submit" of type "EventHandler" in function "__init__"
+    "EventCallback[*tuple[()]]" is not assignable to "EventHandler" (reportArgumentType)
+  typed_app.py:137:15 - error: Argument of type "EventCallback[*tuple[()]]" cannot be assigned to parameter "h" of type "EventHandler" in function "takes_handler"
+    "EventCallback[*tuple[()]]" is not assignable to "EventHandler" (reportArgumentType)
+  typed_app.py:140:13 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal[b""], Literal[2], Literal['b'], Literal[False]) (reportCallIssue)
+  typed_app.py:144:19 - error: Type "EventCallback[*tuple[()]]" is not assignable to declared type "EventSpec"
+    "EventCallback[*tuple[()]]" is not assignable to "EventSpec" (reportAssignmentType)
+  typed_app.py:152:33 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal[b""]) (reportCallIssue)
+  typed_app.py:153:33 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal[b""], Literal[2], Literal['b'], Literal[False]) (reportCallIssue)
+  typed_app.py:154:34 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal[b""], Literal[2], Literal['b'], Literal[False], float) (reportCallIssue)
+  typed_app.py:167:75 - error: Argument of type "type[EventChain]" cannot be assigned to parameter "_var_type" of type "type[OTHER_CALLABLE_TYPE@create]" in function "create"
+    Type "EventChain" is not assignable to type "ReflexCallable[..., Unknown]"
+      "EventChain" is incompatible with protocol "ReflexCallable[..., Unknown]"
+        "__call__" is not present (reportArgumentType)
+16 errors, 0 warnings, 0 informations
+### mypy (prev) typed_app.py
+typed_app.py:79: error: Variable "reflex_base.event.EventNamespace.EventSpec" is not valid as a type  [valid-type]
+typed_app.py:79: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#variables-vs-type-aliases
+typed_app.py:88: error: "EventNamespace" not callable  [operator]
+typed_app.py:93: error: "EventNamespace" not callable  [operator]
+typed_app.py:94: error: "EventNamespace" not callable  [operator]
+typed_app.py:95: error: "EventNamespace" not callable  [operator]
+typed_app.py:96: error: "EventCallback?[Any]" not callable  [misc]
+typed_app.py:97: error: "EventNamespace" not callable  [operator]
+typed_app.py:98: error: Incompatible types in "await" (actual type "EventNamespace", expected type "Awaitable[Any]")  [misc]
+typed_app.py:100: error: "EventNamespace" not callable  [operator]
+typed_app.py:101: error: "EventNamespace" not callable  [operator]
+typed_app.py:102: error: "EventNamespace" not callable  [operator]
+typed_app.py:104: error: "EventNamespace" not callable  [operator]
+typed_app.py:109: error: "EventNamespace" not callable  [operator]
+typed_app.py:134: error: Argument "on_submit" to "Holder" has incompatible type "EventNamespace"; expected "EventHandler"  [arg-type]
+typed_app.py:134: error: Argument "on_text" to "Holder" has incompatible type "EventNamespace"; expected "EventCallback[str] | None"  [arg-type]
+typed_app.py:137: error: Argument 1 to "takes_handler" has incompatible type "EventNamespace"; expected "EventHandler"  [arg-type]
+typed_app.py:139: error: "EventNamespace" not callable  [operator]
+typed_app.py:140: error: "EventNamespace" not callable  [operator]
+typed_app.py:141: error: "EventNamespace" not callable  [operator]
+typed_app.py:143: error: Argument 1 to "takes_callable" has incompatible type "EventNamespace"; expected "Callable[[int], Any]"  [arg-type]
+typed_app.py:144: error: "EventNamespace" not callable  [operator]
+typed_app.py:145: error: "EventNamespace" not callable  [operator]
+typed_app.py:151: error: "EventNamespace" not callable  [operator]
+typed_app.py:152: error: "EventNamespace" not callable  [operator]
+typed_app.py:153: error: "EventNamespace" not callable  [operator]
+typed_app.py:154: error: "EventNamespace" not callable  [operator]
+typed_app.py:155: error: "EventNamespace" not callable  [operator]
+typed_app.py:158: error: "EventNamespace" not callable  [operator]
+typed_app.py:160: error: "EventNamespace" not callable  [operator]
+typed_app.py:161: error: "EventCallback?[Any]" not callable  [misc]
+typed_app.py:162: error: "EventNamespace" not callable  [operator]
+typed_app.py:163: error: "EventNamespace" not callable  [operator]
+typed_app.py:166: error: "EventNamespace" not callable  [operator]
+typed_app.py:167: error: Value of type variable "OTHER_CALLABLE_TYPE" of "create" of "FunctionStringVar" cannot be "EventChain"  [type-var]
+typed_app.py:174: error: "EventNamespace" not callable  [operator]
+Found 35 errors in 1 file (checked 1 source file)

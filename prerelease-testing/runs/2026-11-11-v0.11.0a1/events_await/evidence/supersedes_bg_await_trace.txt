@@ -1,0 +1,11 @@
+memory (dev): scenario sup_bg_await_x2 = click c_bg_supersedes('bgfirst'), 150 ms later c_bg_supersedes('bgsecond')
+result history: ['c_bg_supersedes: bgfirst -> CancelledError', 'c_bg_supersedes: bgsecond -> BGSECOND query=bgsecond', 'ping: ok total=0']
+TRACE 1794362492.607 c_bg_supersedes(bgfirst) task started
+TRACE 1794362492.607 search(bgfirst) start
+TRACE 1794362493.208 search(bgfirst) end
+TRACE 1794362493.208 c_bg_supersedes(bgsecond) task started
+TRACE 1794362493.209 search(bgsecond) start
+TRACE 1794362493.809 search(bgsecond) end
+new_dev_redis result history: ['c_bg_supersedes: bgfirst -> BGFIRST query=bgfirst', 'c_bg_supersedes: bgsecond -> BGSECOND query=bgsecond', 'ping: ok total=0']
+new_prod_redis result history: ['c_bg_supersedes: bgfirst -> BGFIRST query=bgfirst', 'c_bg_supersedes: bgsecond -> BGSECOND query=bgsecond', 'ping: ok total=0']
+new_prod_mem result history: ['c_bg_supersedes: bgfirst -> CancelledError', 'c_bg_supersedes: bgsecond -> BGSECOND query=bgsecond', 'ping: ok total=0']

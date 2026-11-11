@@ -1,0 +1,8 @@
+[i3aligned_vent-prev_dev] ready after 6s
+[PASS] i3aligned_vent-prev_dev {"page_errors": [], "before": [200, 200], "after": [276, 276]}
+  server-log ReferenceError lines: 0
+stopped
+[i3aligned_vent-new_dev] ready after 4s
+[FAIL] i3aligned_vent-new_dev {"page_errors": ["refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined"], "before": [200, 200], "after": [276, 200]}
+  server-log ReferenceError lines: 22
+stopped

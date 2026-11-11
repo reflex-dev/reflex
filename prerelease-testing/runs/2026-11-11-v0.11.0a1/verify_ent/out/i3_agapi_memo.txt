@@ -1,0 +1,10 @@
+[i3memo_vent-prev_dev] ready after 8s
+[PASS] i3memo_vent-prev_dev {"rows_selected_via_memo_button": 3}
+  server-log ReferenceError lines: 0
+stopped
+  i3memo_vent-prev_dev/.web/app_components/agapi_memo/agapi_memo.jsx: import {ReflexEvent,applyEventActions,isTrue,mergeSlotProps,refs} from "$/utils/state"
+[i3memo_vent-new_dev] ready after 4s
+[FAIL] i3memo_vent-new_dev {"rows_selected_via_memo_button": 0}
+  server-log ReferenceError lines: 2
+stopped
+  i3memo_vent-new_dev/.web/app_components/agapi_memo/agapi_memo.jsx: import {ReflexEvent,applyEventActions,isTrue,mergeSlotProps,useRegisteredRef} from "$/utils/state"

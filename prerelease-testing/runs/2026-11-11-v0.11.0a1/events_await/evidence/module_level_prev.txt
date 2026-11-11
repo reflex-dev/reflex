@@ -1,0 +1,13 @@
+reflex 0.10.1
+- plain helper (x: int)                          -> function
+- first param annotated with the state class     -> EventHandler registered as '_main___state_first___decentral' on S
+- first param annotated "S" (string)             -> EventHandler registered as '_main___state_str___decentral_str' on S
+- first param is an unresolvable forward ref     RAISES NameError: name 'NotDefinedYet' is not defined
+- first param Optional[S]                        RAISES TypeError: issubclass() arg 1 must be a class
+- first param is a mixin state                   -> EventHandler registered as '_main___state_mixin___decentral_mixin' on M
+- unannotated params                             -> function
+- no params                                      -> function
+- lambda                                         -> function
+- background helper without state                -> function
+- background decentralized (state: S)            -> EventHandler registered as '_main___state_background___bg_decentral' on S
+- private name (_private)                        RAISES ValueError: Event handlers cannot be private.

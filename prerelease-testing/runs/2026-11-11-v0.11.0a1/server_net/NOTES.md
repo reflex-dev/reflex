@@ -142,3 +142,22 @@ REFLEX_API_URL=http://localhost:8348 reflex run --env prod --frontend-only --fro
 | natural window /items, click delay 0/300 ms (4 runs) | id=1 then id=2 | only id=2 |
 | click before connect | processed after load (3/3) | same (3/3) |
 -> HYD-06 **fixed**. Behaviour change (intended): on_load of a page left before the socket connected never runs.
+
+### #7621 oversized event (prod 3352, `NA_TRANSPORT=polling|websocket`, `drv.py <base> big`, 2,000,000-char event arg)
+- new and prev identical: polling -> the POST gets 400, page keeps working within the 6 s wait (inc after ok, a small
+  event after ok, count kept); websocket -> socket dropped and reconnected (2 opens), page keeps working. Could not
+  reproduce the pre-fix stall on 0.10.1 with granian + Chromium (the PR's case may need a slower client/proxy).
+- anomaly (pre-existing, both versions): the oversized event is dropped silently — no console error, no toast, no
+  server log line (contrast: an oversized hydrate shows a clear toast, below).
+- `bigstorage` scenario (1.2 MB LocalStorage var, reload): both versions show the toast "Hydration payload (1200396
+  bytes) exceeds the server limit (1000000 bytes). Reduce browser storage data and reload." (polling says bytes,
+  websocket says characters), page does not hydrate, no reconnect storm (1 open in 20 s) -> the old HYD-05 storm does
+  not occur on either version (not my registry item; FYI). `res/shots/bs_server_net-main_polling/bigstorage.png`.
+
+### #7653 `reflex:state-mismatch` (`drivers/mismatch.py <venv> 3353 <none|prevent|observe>`): prod tab open, server restarted with `NA_EXTRA=1` (extra state var)
+| mode | 0.11.0a1 | 0.10.1 |
+|---|---|---|
+| no listener | console.warn "This page was built for another version ... (state schema 3558..., backend e7f4...)", one reload, then works | reloads |
+| listener + preventDefault | event detail `{frontend, backend}` hashes; **no reload, no banner**; old bundle keeps working against the new backend (inc ok) | no event; reloads |
+| listener without preventDefault | reloads | |
+-> pass.

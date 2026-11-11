@@ -1,0 +1,33 @@
+### pyright (new) reveal.py
+reveal.py
+  reveal.py:32:21 - information: Type of "type(self).add" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal.py:33:21 - information: Type of "S.add" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal.py:34:21 - information: Type of "S.add(1)" is "Unknown"
+  reveal.py:35:21 - information: Type of "await S.add(1)" is "Unknown"
+  reveal.py:36:21 - information: Type of "await S.aadd(1)" is "Unknown"
+  reveal.py:37:21 - information: Type of "await S.no_args" is "Any"
+  reveal.py:38:21 - information: Type of "self.add" is "(*Unknown) -> Any"
+  reveal.py:39:21 - information: Type of "self.add(1)" is "Any"
+  reveal.py:40:21 - information: Type of "self.aadd(1)" is "Any"
+  reveal.py:41:21 - information: Type of "S.bg" is "EventCallback[int]"
+  reveal.py:42:21 - information: Type of "S.throttled" is "EventCallback[str]"
+  reveal.py:43:21 - information: Type of "S.no_args" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal.py:53:17 - information: Type of "h.on_submit" is "EventHandler"
+  reveal.py:54:17 - information: Type of "h.on_text" is "EventCallback[str] | None"
+0 errors, 0 warnings, 14 informations
+### mypy (new) reveal.py
+reveal.py:32: note: Revealed type is "reflex_base.event.EventCallback[int]"
+reveal.py:33: note: Revealed type is "reflex_base.event.EventCallback[int]"
+reveal.py:34: note: Revealed type is "reflex_base.event.EventCallback[()]"
+reveal.py:35: note: Revealed type is "Any"
+reveal.py:36: note: Revealed type is "Any"
+reveal.py:37: note: Revealed type is "Any"
+reveal.py:38: note: Revealed type is "def (int) -> Any"
+reveal.py:39: note: Revealed type is "Any"
+reveal.py:40: note: Revealed type is "Any"
+reveal.py:41: note: Revealed type is "reflex_base.event.EventCallback[int]"
+reveal.py:42: note: Revealed type is "reflex_base.event.EventCallback[str]"
+reveal.py:43: note: Revealed type is "reflex_base.event.EventCallback[()]"
+reveal.py:53: note: Revealed type is "reflex_base.event.EventHandler"
+reveal.py:54: note: Revealed type is "reflex_base.event.EventCallback[str] | None"
+Success: no issues found in 1 source file

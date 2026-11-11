@@ -1,0 +1,19 @@
+reflex 0.11.0a1
+- plain helper (x: int)                          -> function
+    warning: @rx.event on a function without a state parameter has been deprecated in version 0.11.0. `plain.<locals>.helper` stays a plain function and is not an event handler; remove the decorator. It will be completely removed in 1.0. (apps/events_await/probes/module_le
+- first param annotated with the state class     -> EventHandler registered as '_main___state_first___decentral' on S
+- first param annotated "S" (string)             -> EventHandler registered as '_main___state_str___decentral_str' on S
+- first param is an unresolvable forward ref     RAISES NameError: name 'NotDefinedYet' is not defined
+- first param Optional[S]                        -> function
+    warning: @rx.event on a function without a state parameter has been deprecated in version 0.11.0. `state_optional.<locals>.decentral_opt` stays a plain function and is not an event handler; remove the decorator. It will be completely removed in 1.0. (apps/events_await/
+- first param is a mixin state                   -> EventHandler registered as '_main___state_mixin___decentral_mixin' on M
+- unannotated params                             -> function
+    warning: @rx.event on a function without a state parameter has been deprecated in version 0.11.0. `state_unannotated.<locals>.decentral_unannotated` stays a plain function and is not an event handler; remove the decorator. It will be completely removed in 1.0. (apps/ev
+- no params                                      -> function
+    warning: @rx.event on a function without a state parameter has been deprecated in version 0.11.0. `no_params.<locals>.nothing` stays a plain function and is not an event handler; remove the decorator. It will be completely removed in 1.0. (apps/events_await/probes/modu
+- lambda                                         -> function
+    warning: @rx.event on a function without a state parameter has been deprecated in version 0.11.0. `a_lambda.<locals>.<lambda>` stays a plain function and is not an event handler; remove the decorator. It will be completely removed in 1.0. (apps/events_await/probes/modu
+- background helper without state                -> function
+    warning: @rx.event on a function without a state parameter has been deprecated in version 0.11.0. `with_background.<locals>.bg_helper` stays a plain function and is not an event handler; remove the decorator. It will be completely removed in 1.0. (apps/events_await/pro
+- background decentralized (state: S)            -> EventHandler registered as '_main___state_background___bg_decentral' on S
+- private name (_private)                        RAISES ValueError: Event handlers cannot be private.

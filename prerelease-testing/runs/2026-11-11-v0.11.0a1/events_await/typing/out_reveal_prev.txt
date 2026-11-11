@@ -1,0 +1,48 @@
+### pyright (prev) reveal.py
+reveal.py
+  reveal.py:32:21 - information: Type of "type(self).add" is "EventCallback[int]"
+  reveal.py:33:21 - information: Type of "S.add" is "EventCallback[int]"
+  reveal.py:34:21 - information: Type of "S.add(1)" is "EventCallback[*tuple[()]]"
+  reveal.py:35:21 - information: Type of "await S.add(1)" is "Unknown"
+  reveal.py:35:27 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  reveal.py:36:21 - information: Type of "await S.aadd(1)" is "Unknown"
+  reveal.py:36:27 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  reveal.py:37:21 - information: Type of "await S.no_args" is "Unknown"
+  reveal.py:37:27 - error: "EventCallback[*tuple[()]]" is not awaitable
+    "EventCallback[*tuple[()]]" is incompatible with protocol "Awaitable[_T_co@Awaitable]"
+      "__await__" is not present (reportGeneralTypeIssues)
+  reveal.py:38:21 - information: Type of "self.add" is "(int) -> Any"
+  reveal.py:39:21 - information: Type of "self.add(1)" is "Any"
+  reveal.py:40:21 - information: Type of "self.aadd(1)" is "Any"
+  reveal.py:41:21 - information: Type of "S.bg" is "EventCallback[int]"
+  reveal.py:42:21 - information: Type of "S.throttled" is "EventCallback[str]"
+  reveal.py:43:21 - information: Type of "S.no_args" is "EventCallback[*tuple[()]]"
+  reveal.py:53:17 - information: Type of "h.on_submit" is "Any"
+  reveal.py:54:17 - information: Type of "h.on_text" is "EventCallback[str] | None"
+3 errors, 0 warnings, 14 informations
+### mypy (prev) reveal.py
+reveal.py:32: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal.py:33: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal.py:34: error: "EventNamespace" not callable  [operator]
+reveal.py:34: note: Revealed type is "Any"
+reveal.py:35: note: Revealed type is "Any"
+reveal.py:35: error: "EventNamespace" not callable  [operator]
+reveal.py:36: note: Revealed type is "Any"
+reveal.py:36: error: "EventNamespace" not callable  [operator]
+reveal.py:37: error: Incompatible types in "await" (actual type "EventNamespace", expected type "Awaitable[Any]")  [misc]
+reveal.py:37: note: Revealed type is "Any"
+reveal.py:38: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal.py:39: error: "EventNamespace" not callable  [operator]
+reveal.py:39: note: Revealed type is "Any"
+reveal.py:40: error: "EventNamespace" not callable  [operator]
+reveal.py:40: note: Revealed type is "Any"
+reveal.py:41: note: Revealed type is "EventCallback?[Any]"
+reveal.py:42: note: Revealed type is "EventCallback?[Any]"
+reveal.py:43: note: Revealed type is "reflex_base.event.EventNamespace"
+reveal.py:53: note: Revealed type is "reflex_base.event.EventHandler"
+reveal.py:54: note: Revealed type is "reflex_base.event.EventCallback[str] | None"
+Found 6 errors in 1 file (checked 1 source file)

@@ -1,0 +1,10 @@
+typed_app.py
+  typed_app.py:134:27 - error: Argument of type "EventCallback[*tuple[()]]" cannot be assigned to parameter "on_submit" of type "EventHandler" in function "__init__"
+    "EventCallback[*tuple[()]]" is not assignable to "EventHandler" (reportArgumentType)
+  typed_app.py:137:15 - error: Argument of type "EventCallback[*tuple[()]]" cannot be assigned to parameter "h" of type "EventHandler" in function "takes_handler"
+    "EventCallback[*tuple[()]]" is not assignable to "EventHandler" (reportArgumentType)
+  typed_app.py:144:19 - error: Type "EventCallback[*tuple[()]]" is not assignable to declared type "EventSpec"
+    "EventCallback[*tuple[()]]" is not assignable to "EventSpec" (reportAssignmentType)
+  typed_app.py:154:34 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal['a'], Literal[True], float, Literal[b""], Literal[2], Literal['b'], Literal[False], float) (reportCallIssue)
+4 errors, 0 warnings, 0 informations

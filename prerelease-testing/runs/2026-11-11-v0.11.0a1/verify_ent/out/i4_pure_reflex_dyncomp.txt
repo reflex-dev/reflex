@@ -1,0 +1,6 @@
+vent-new init exit=0
+vent-new migrate(fresh .web) exit=0
+vent-new makemigrations exit=0
+vent-prev init exit=0
+vent-prev migrate(fresh .web) exit=0
+vent-prev makemigrations exit=0

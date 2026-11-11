@@ -1,0 +1,2 @@
+vent-prev backend-only fresh: ping=000 alive=no | ValueError: Library @radix-ui/themes is not bundled
+vent-new backend-only fresh: ping=000 alive=no | ValueError: Library @radix-ui/themes is not bundled

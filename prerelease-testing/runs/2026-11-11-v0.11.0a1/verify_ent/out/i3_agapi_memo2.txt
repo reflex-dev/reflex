@@ -1,0 +1,10 @@
+[i3memo2_vent-prev_dev] ready after 6s
+[PASS] i3memo2_vent-prev_dev {"rows_selected_via_memo_button": 3}
+  server-log ReferenceError lines: 0
+stopped
+  i3memo2_vent-prev_dev/.web/app_components/agapi_memo2/buttons.jsx: import {ReflexEvent,applyEventActions,isTrue,refs} from "$/utils/state"
+[i3memo2_vent-new_dev] ready after 6s
+[FAIL] i3memo2_vent-new_dev {"rows_selected_via_memo_button": 0}
+  server-log ReferenceError lines: 2
+stopped
+  i3memo2_vent-new_dev/.web/app_components/agapi_memo2/buttons.jsx: import {ReflexEvent,applyEventActions,isTrue,useRegisteredRef} from "$/utils/state"

@@ -1,0 +1,50 @@
+### pyright (new) reveal2.py
+reveal2.py
+  reveal2.py:37:13 - information: Type of "rx.event" is "type[EventNamespace]"
+  reveal2.py:38:13 - information: Type of "S.via_rx" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:39:13 - information: Type of "S.via_reflex_event" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:40:13 - information: Type of "S.via_reflex_base" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:41:13 - information: Type of "S.via_rx_call" is "EventCallback[int]"
+  reveal2.py:42:13 - information: Type of "S.no_args" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:43:13 - information: Type of "S.via_rx_async" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:44:13 - information: Type of "S.via_rx_gen" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:49:15 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+1 error, 0 warnings, 8 informations
+### mypy (new) reveal2.py
+reveal2.py:37: note: Revealed type is "Overload(def (func: None =, *, background: bool | None =, supersedes: bool | None =, stop_propagation: bool | None =, prevent_default: bool | None =, throttle: int | None =, debounce: int | None =, temporal: bool | None =) -> reflex_base.event.EventDecorator, def [BASE_STATE <: reflex.state.BaseState, P] (func: def (BASE_STATE, *args: *P) -> Any, *, background: bool | None =, supersedes: bool | None =, stop_propagation: bool | None =, prevent_default: bool | None =, throttle: int | None =, debounce: int | None =, temporal: bool | None =) -> reflex_base.event.EventCallback[*P])"
+reveal2.py:38: note: Revealed type is "reflex_base.event.EventCallback[int]"
+reveal2.py:39: note: Revealed type is "reflex_base.event.EventCallback[int]"
+reveal2.py:40: note: Revealed type is "reflex_base.event.EventCallback[int]"
+reveal2.py:41: note: Revealed type is "reflex_base.event.EventCallback[int]"
+reveal2.py:42: note: Revealed type is "reflex_base.event.EventCallback[()]"
+reveal2.py:43: note: Revealed type is "reflex_base.event.EventCallback[int]"
+reveal2.py:44: note: Revealed type is "reflex_base.event.EventCallback[int]"
+reveal2.py:46: error: No overload variant of "__call__" of "EventCallback" matches argument type "str"  [call-overload]
+reveal2.py:46: note: Possible overload variants:
+reveal2.py:46: note:     def __call__(self) -> EventCallback[int]
+reveal2.py:46: note:     def __call__(self, value: int | Var[int]) -> EventCallback[()]
+reveal2.py:46: note:     def __call__(self, value: UploadFilesChunk) -> EventCallback[()]
+reveal2.py:47: error: No overload variant of "__call__" of "EventCallback" matches argument types "int", "int", "int"  [call-overload]
+reveal2.py:47: note: Possible overload variants:
+reveal2.py:47: note:     def __call__(self) -> EventCallback[int]
+reveal2.py:47: note:     def __call__(self, value: int | Var[int]) -> EventCallback[()]
+reveal2.py:47: note:     def __call__(self, value: UploadFilesChunk) -> EventCallback[()]
+reveal2.py:48: error: No overload variant of "__call__" of "EventCallback" matches argument type "str"  [call-overload]
+reveal2.py:48: note: Possible overload variants:
+reveal2.py:48: note:     def __call__(self) -> EventCallback[int]
+reveal2.py:48: note:     def __call__(self, value: int | Var[int]) -> EventCallback[()]
+reveal2.py:48: note:     def __call__(self, value: UploadFilesChunk) -> EventCallback[()]
+reveal2.py:49: error: No overload variant of "__call__" of "EventCallback" matches argument type "str"  [call-overload]
+reveal2.py:49: note: Possible overload variants:
+reveal2.py:49: note:     def __call__(self) -> EventCallback[int]
+reveal2.py:49: note:     def __call__(self, value: int | Var[int]) -> EventCallback[()]
+reveal2.py:49: note:     def __call__(self, value: UploadFilesChunk) -> EventCallback[()]
+reveal2.py:50: error: No overload variant of "__call__" of "EventCallback" matches argument type "str"  [call-overload]
+reveal2.py:50: note: Possible overload variants:
+reveal2.py:50: note:     def __call__(self) -> EventCallback[int]
+reveal2.py:50: note:     def __call__(self, value: int | Var[int]) -> EventCallback[()]
+reveal2.py:50: note:     def __call__(self, value: UploadFilesChunk) -> EventCallback[()]
+Found 5 errors in 1 file (checked 1 source file)

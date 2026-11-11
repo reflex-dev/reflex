@@ -1,0 +1,22 @@
+# prod-memory vs dev-redis
+DIFF c_boom_uncaught
+   toasts: A=['An error occurred.Contact the website administrator.'] B=['An error occurred.ValueError: boom\nSee logs for details.']
+DIFF c_setvar
+   toasts: A=['An error occurred.Contact the website administrator.'] B=['An error occurred.AttributeError: Variable `progress` cannot be set on `reflex___state____state.awaitapp___awaitapp____main`\nSee logs for details.']
+DIFF c_bg_boom
+   toasts: A=['An error occurred.Contact the website administrator.'] B=['An error occurred.ValueError: boom\nSee logs for details.']
+DIFF sup_bg_await_x2
+   hist: A=['c_bg_supersedes: bgfirst -> CancelledError', 'c_bg_supersedes: bgsecond -> BGSECOND query=bgsecond', 'ping: ok total=0'] B=['c_bg_supersedes: bgfirst -> BGFIRST query=bgfirst', 'c_bg_supersedes: bgsecond -> BGSECOND query=bgsecond', 'ping: ok total=0']
+DIFF on_load_hard
+   result: A='on_load: 2 2 path=/onload/'
+           B='on_load: 2 2 path=/onload'
+   hist: A=['', 'on_load: 1 1 path=/onload', 'on_load: 2 2 path=/onload/'] B=['on_load: 2 2 path=/onload']
+same=59 diff=5
+A slow/failed pings: {'on_load_nav': None, 'on_load_hard': None}
+B slow/failed pings: {'on_load_nav': None, 'on_load_hard': None}
+# prod-memory vs prod-redis
+DIFF sup_bg_await_x2
+   hist: A=['c_bg_supersedes: bgfirst -> CancelledError', 'c_bg_supersedes: bgsecond -> BGSECOND query=bgsecond', 'ping: ok total=0'] B=['c_bg_supersedes: bgfirst -> BGFIRST query=bgfirst', 'c_bg_supersedes: bgsecond -> BGSECOND query=bgsecond', 'ping: ok total=0']
+same=63 diff=1
+A slow/failed pings: {'on_load_nav': None, 'on_load_hard': None}
+B slow/failed pings: {'on_load_nav': None, 'on_load_hard': None}

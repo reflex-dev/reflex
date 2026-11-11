@@ -1,0 +1,205 @@
+== leg_new_dev_mem_fail.json
+  raise_after_yield            ping=0.061 2nd=- client={'a': '1', 'b': '2', 'cv': '20'}
+                               server=a=1 b=2 c=0 count=0 status='' partial=[] done=[] cv=20 bg=''
+                               first-seen-ms={'a': 30, 'b': 32, 'cv': 32} blocked=0 errs=['ValueError(msg) ValueError: after yield']
+  raise_no_yield               ping=0.046 2nd=- client={'c': '3', 'partial': 'rny'}
+                               server=a=0 b=0 c=3 count=0 status='' partial=['rny'] done=[] cv=0 bg=''
+                               first-seen-ms={'c': 79, 'partial': 79} blocked=0 errs=['ValueError(msg) ValueError: no yield']
+  raise_other                  ping=0.057 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'other-n': 42} blocked=0 errs=['ValueError(msg) ValueError: after writing Other']
+  ret_value                    ping=0.05 2nd=- client={'a': '5'}
+                               server=a=5 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 33} blocked=0 errs=[]
+  ret_garbage                  ping=0.048 2nd=- client={'a': '6'}
+                               server=a=6 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 32} blocked=0 errs=[]
+  ret_self_handler             ping=0.049 2nd=- client={'a': '8'}
+                               server=a=8 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 68} blocked=0 errs=[]
+  ret_self_handler_call        ping=0.048 2nd=- client={'a': '9', 'b': '4', 'cv': '40'}
+                               server=a=9 b=4 c=0 count=0 status='' partial=[] done=[] cv=40 bg=''
+                               first-seen-ms={'a': 33, 'b': 33, 'cv': 33} blocked=0 errs=[]
+  chain                        ping=0.049 2nd=- client={'a': '7', 'b': '1', 'cv': '10'}
+                               server=a=7 b=1 c=0 count=0 status='' partial=[] done=[] cv=10 bg=''
+                               first-seen-ms={'a': 33, 'b': 39, 'cv': 39} blocked=0 errs=[]
+  gated_plain                  ping=0.044 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
+  supersedes                   ping=0.047 2nd=- client={'c': '20', 'status': 'done b', 'count': '2', 'partial': 'a,b', 'done': 'b'}
+                               server=a=0 b=0 c=20 count=2 status='done b' partial=['a', 'b'] done=['b'] cv=0 bg=''
+                               first-seen-ms={'c': 1548, 'status': 32, 'count': 32, 'partial': 1548, 'done': 3557} blocked=- errs=[]
+                               0.5s-after-cancel={'c': '10', 'status': 'start b', 'count': '2', 'partial': 'a'} hist={'c': [[1548, '10'], [3557, '20']], 'status': [[32, 'start a'], [1549, 'start b'], [3557, 'done b']], 'count': [[32, '1'], [1549, '2']], 'partial': [[1548, 'a'], [3557, 'a,b']]}
+  bg_linked_load_fails         ping=0.056 2nd=0.049 client={'bg': "armed 'fail'"}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg="armed 'fail'"
+                               first-seen-ms={'bg': 34} blocked=- errs=['RuntimeError(msg) RuntimeError: simulated load failure', 'RuntimeError: simulated load failure t=1794361728.838 [Reflex Backend Exception] Traceback (most rec']
+  bg_linked_cancelled_in_load  ping=0.064 2nd=0.039 client={'bg': "finished ''"}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg="finished ''"
+                               first-seen-ms={'bg': 33, 'other-n': 1085} blocked=- errs=['CancelledError: t=1794361733.893']
+  gated_upload                 ping=0.05 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
+== leg_new_dev_redis.json
+  raise_after_yield            ping=0.055 2nd=- client={'a': '1', 'b': '2', 'cv': '20'}
+                               server=a=1 b=2 c=0 count=0 status='' partial=[] done=[] cv=20 bg=''
+                               first-seen-ms={'a': 50, 'b': 51, 'cv': 51} blocked=0 errs=['ValueError(msg) ValueError: after yield']
+  raise_no_yield               ping=0.043 2nd=- client={'c': '3', 'partial': 'rny'}
+                               server=a=0 b=0 c=3 count=0 status='' partial=['rny'] done=[] cv=0 bg=''
+                               first-seen-ms={'c': 32, 'partial': 32} blocked=0 errs=['ValueError(msg) ValueError: no yield']
+  raise_other                  ping=0.053 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'other-n': 33} blocked=0 errs=['ValueError(msg) ValueError: after writing Other']
+  ret_value                    ping=0.054 2nd=- client={'a': '5'}
+                               server=a=5 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 29} blocked=0 errs=[]
+  ret_garbage                  ping=0.045 2nd=- client={'a': '6'}
+                               server=a=6 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 33} blocked=0 errs=[]
+  ret_self_handler             ping=0.048 2nd=- client={'a': '8'}
+                               server=a=8 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 32} blocked=0 errs=[]
+  ret_self_handler_call        ping=0.051 2nd=- client={'a': '9', 'b': '4', 'cv': '40'}
+                               server=a=9 b=4 c=0 count=0 status='' partial=[] done=[] cv=40 bg=''
+                               first-seen-ms={'a': 25, 'b': 25, 'cv': 25} blocked=0 errs=[]
+  chain                        ping=0.045 2nd=- client={'a': '7', 'b': '1', 'cv': '10'}
+                               server=a=7 b=1 c=0 count=0 status='' partial=[] done=[] cv=10 bg=''
+                               first-seen-ms={'a': 33, 'b': 34, 'cv': 34} blocked=0 errs=[]
+  gated_plain                  ping=0.05 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
+  supersedes                   ping=0.049 2nd=- client={'c': '20', 'status': 'done b', 'count': '2', 'partial': 'a,b', 'done': 'b'}
+                               server=a=0 b=0 c=20 count=2 status='done b' partial=['a', 'b'] done=['b'] cv=0 bg=''
+                               first-seen-ms={'c': 1553, 'status': 33, 'count': 33, 'partial': 1553, 'done': 3550} blocked=- errs=[]
+                               0.5s-after-cancel={'c': '10', 'status': 'start b', 'count': '2', 'partial': 'a'} hist={'c': [[1553, '10'], [3550, '20']], 'status': [[33, 'start a'], [1555, 'start b'], [3550, 'done b']], 'count': [[33, '1'], [1555, '2']], 'partial': [[1553, 'a'], [3550, 'a,b']]}
+  bg_linked_load_fails         ping=0.075 2nd=0.08 client={'bg': "armed 'fail'"}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg="armed 'fail'"
+                               first-seen-ms={'bg': 34} blocked=- errs=['RuntimeError(msg) RuntimeError: simulated load failure', 'RuntimeError: simulated load failure t=1794361812.246 [Reflex Backend Exception] Traceback (most rec']
+  bg_linked_cancelled_in_load  ping=0.053 2nd=0.051 client={'bg': "finished ''"}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg="finished ''"
+                               first-seen-ms={'bg': 34, 'other-n': 1057} blocked=- errs=['CancelledError: t=1794361817.755']
+  gated_upload                 ping=0.046 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
+== leg_new_prod_redis.json
+  raise_after_yield            ping=0.042 2nd=- client={'a': '1', 'b': '2', 'cv': '20'}
+                               server=a=1 b=2 c=0 count=0 status='' partial=[] done=[] cv=20 bg=''
+                               first-seen-ms={'a': 33, 'b': 34, 'cv': 34} blocked=0 errs=['ValueError(msg) ValueError: after yield']
+  raise_no_yield               ping=0.047 2nd=- client={'c': '3', 'partial': 'rny'}
+                               server=a=0 b=0 c=3 count=0 status='' partial=['rny'] done=[] cv=0 bg=''
+                               first-seen-ms={'c': 33, 'partial': 33} blocked=0 errs=['ValueError(msg) ValueError: no yield']
+  raise_other                  ping=0.051 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'other-n': 32} blocked=0 errs=['ValueError(msg) ValueError: after writing Other']
+  ret_value                    ping=0.048 2nd=- client={'a': '5'}
+                               server=a=5 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 34} blocked=0 errs=[]
+  ret_garbage                  ping=0.05 2nd=- client={'a': '6'}
+                               server=a=6 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 32} blocked=0 errs=[]
+  ret_self_handler             ping=0.053 2nd=- client={'a': '8'}
+                               server=a=8 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 32} blocked=0 errs=[]
+  ret_self_handler_call        ping=0.05 2nd=- client={'a': '9', 'b': '4', 'cv': '40'}
+                               server=a=9 b=4 c=0 count=0 status='' partial=[] done=[] cv=40 bg=''
+                               first-seen-ms={'a': 32, 'b': 32, 'cv': 32} blocked=0 errs=[]
+  chain                        ping=0.051 2nd=- client={'a': '7', 'b': '1', 'cv': '10'}
+                               server=a=7 b=1 c=0 count=0 status='' partial=[] done=[] cv=10 bg=''
+                               first-seen-ms={'a': 33, 'b': 33, 'cv': 33} blocked=0 errs=[]
+  gated_plain                  ping=0.044 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
+  supersedes                   ping=0.046 2nd=- client={'c': '20', 'status': 'done b', 'count': '2', 'partial': 'a,b', 'done': 'b'}
+                               server=a=0 b=0 c=20 count=2 status='done b' partial=['a', 'b'] done=['b'] cv=0 bg=''
+                               first-seen-ms={'c': 1550, 'status': 33, 'count': 33, 'partial': 1550, 'done': 3547} blocked=- errs=[]
+                               0.5s-after-cancel={'c': '10', 'status': 'start b', 'count': '2', 'partial': 'a'} hist={'c': [[1550, '10'], [3547, '20']], 'status': [[33, 'start a'], [1550, 'start b'], [3547, 'done b']], 'count': [[33, '1'], [1550, '2']], 'partial': [[1550, 'a'], [3547, 'a,b']]}
+  bg_linked_load_fails         ping=0.057 2nd=0.053 client={'bg': "armed 'fail'"}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg="armed 'fail'"
+                               first-seen-ms={'bg': 32} blocked=- errs=['RuntimeError(msg) RuntimeError: simulated load failure', 'RuntimeError: simulated load failure t=1794361973.197 [Reflex Backend Exception] Traceback (most rec']
+  bg_linked_cancelled_in_load  ping=0.055 2nd=0.054 client={'bg': "finished ''"}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg="finished ''"
+                               first-seen-ms={'bg': 32, 'other-n': 1067} blocked=- errs=['CancelledError: t=1794361977.781']
+  gated_upload                 ping=0.047 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
+== leg_prev_dev_mem_fail.json
+  raise_after_yield            ping=0.057 2nd=- client={'a': '1'}
+                               server=a=1 b=2 c=0 count=0 status='' partial=[] done=[] cv=20 bg=''
+                               first-seen-ms={'a': 33, 'b': 1585, 'cv': 1585} blocked=0 errs=['ValueError(msg) ValueError: after yield']
+  raise_no_yield               ping=0.046 2nd=- client={}
+                               server=a=0 b=0 c=3 count=0 status='' partial=['rny'] done=[] cv=0 bg=''
+                               first-seen-ms={'c': 1582, 'partial': 1582} blocked=0 errs=['ValueError(msg) ValueError: no yield']
+  raise_other                  ping=0.047 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'other-n': 1566} blocked=0 errs=['ValueError(msg) ValueError: after writing Other']
+  ret_value                    ping=0.048 2nd=- client={'a': '5'}
+                               server=a=5 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 33} blocked=0 errs=['TypeError(msg) TypeError: Your handler F.ret_value must only return/yield: None, Events or other Ev']
+  ret_garbage                  ping=0.06 2nd=- client={'a': '6'}
+                               server=a=6 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 36} blocked=0 errs=['TypeError(msg) TypeError: Your handler F.ret_garbage must only return/yield: None, Events or other ']
+  ret_self_handler             ping=0.062 2nd=- client={'a': '8'}
+                               server=a=8 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 32} blocked=0 errs=['TypeError(msg) TypeError: Your handler F.ret_self_handler must only return/yield: None, Events or o']
+  ret_self_handler_call        ping=0.05 2nd=- client={'a': '9', 'b': '4', 'cv': '40'}
+                               server=a=9 b=4 c=0 count=0 status='' partial=[] done=[] cv=40 bg=''
+                               first-seen-ms={'a': 33, 'b': 33, 'cv': 33} blocked=0 errs=[]
+  chain                        ping=0.037 2nd=- client={'a': '7', 'b': '1', 'cv': '10'}
+                               server=a=7 b=1 c=0 count=0 status='' partial=[] done=[] cv=10 bg=''
+                               first-seen-ms={'a': 33, 'b': 33, 'cv': 33} blocked=0 errs=[]
+  gated_plain                  ping=0.05 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
+  supersedes                   ping=0.05 2nd=- client={'c': '20', 'status': 'done b', 'count': '2', 'partial': 'a,b', 'done': 'b'}
+                               server=a=0 b=0 c=20 count=2 status='done b' partial=['a', 'b'] done=['b'] cv=0 bg=''
+                               first-seen-ms={'c': 1567, 'status': 33, 'count': 33, 'partial': 1567, 'done': 3560} blocked=- errs=[]
+                               0.5s-after-cancel={'c': '10', 'status': 'start b', 'count': '2', 'partial': 'a'} hist={'c': [[1567, '10'], [3560, '20']], 'status': [[33, 'start a'], [1567, 'start b'], [3560, 'done b']], 'count': [[33, '1'], [1567, '2']], 'partial': [[1567, 'a'], [3560, 'a,b']]}
+  bg_linked_load_fails         ping=None 2nd=None client={'bg': "armed 'fail'"}
+                               server=None
+                               first-seen-ms={'bg': 32} blocked=- errs=['RuntimeError(msg) RuntimeError: simulated load failure', 'RuntimeError: simulated load failure t=1794361585.745 [Reflex Backend Exception] Traceback (most rec']
+  bg_linked_cancelled_in_load  ping=None 2nd=None client={'bg': "armed 'slow'"}
+                               server=None
+                               first-seen-ms={'bg': 41} blocked=- errs=['CancelledError: t=1794361630.875']
+  gated_upload                 ping=0.046 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
+== leg_prev_dev_redis.json
+  raise_after_yield            ping=0.05 2nd=- client={'a': '1'}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 33} blocked=0 errs=['ValueError(msg) ValueError: after yield']
+  raise_no_yield               ping=0.06 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=0 errs=['ValueError(msg) ValueError: no yield']
+  raise_other                  ping=0.05 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=0 errs=['ValueError(msg) ValueError: after writing Other']
+  ret_value                    ping=0.052 2nd=- client={'a': '5'}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 32} blocked=0 errs=['TypeError(msg) TypeError: Your handler F.ret_value must only return/yield: None, Events or other Ev']
+  ret_garbage                  ping=0.053 2nd=- client={'a': '6'}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 32} blocked=0 errs=['TypeError(msg) TypeError: Your handler F.ret_garbage must only return/yield: None, Events or other ']
+  ret_self_handler             ping=0.05 2nd=- client={'a': '8'}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={'a': 31} blocked=0 errs=['TypeError(msg) TypeError: Your handler F.ret_self_handler must only return/yield: None, Events or o']
+  ret_self_handler_call        ping=0.052 2nd=- client={'a': '9', 'b': '4', 'cv': '40'}
+                               server=a=9 b=4 c=0 count=0 status='' partial=[] done=[] cv=40 bg=''
+                               first-seen-ms={'a': 31, 'b': 31, 'cv': 31} blocked=0 errs=[]
+  chain                        ping=0.05 2nd=- client={'a': '7', 'b': '1', 'cv': '10'}
+                               server=a=7 b=1 c=0 count=0 status='' partial=[] done=[] cv=10 bg=''
+                               first-seen-ms={'a': 33, 'b': 34, 'cv': 34} blocked=0 errs=[]
+  gated_plain                  ping=0.052 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
+  supersedes                   ping=0.049 2nd=- client={'c': '10', 'status': 'done b', 'count': '1', 'partial': 'b', 'done': 'b'}
+                               server=a=0 b=0 c=10 count=1 status='done b' partial=['b'] done=['b'] cv=0 bg=''
+                               first-seen-ms={'c': 3576, 'status': 48, 'count': 48, 'partial': 3576, 'done': 3576} blocked=- errs=[]
+                               0.5s-after-cancel={'status': 'start b', 'count': '1'} hist={'c': [[3576, '10']], 'status': [[48, 'start a'], [1581, 'start b'], [3576, 'done b']], 'count': [[48, '1']], 'partial': [[3576, 'b']]}
+  bg_linked_load_fails         ping=9.054 2nd=0.055 client={'bg': "armed 'fail'"}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg="armed 'fail'"
+                               first-seen-ms={'bg': 33} blocked=- errs=['RuntimeError(msg) RuntimeError: simulated load failure', 'RuntimeError: simulated load failure t=1794361867.722 [Reflex Backend Exception] Traceback (most rec']
+  bg_linked_cancelled_in_load  ping=7.569 2nd=10.023 client={'bg': "armed 'slow'"}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg="armed 'slow'"
+                               first-seen-ms={'bg': 33} blocked=- errs=['CancelledError: t=1794361881.869 HOOK get_state(Other) mode=slow t=1794361890.936']
+  gated_upload                 ping=0.049 2nd=- client={}
+                               server=a=0 b=0 c=0 count=0 status='' partial=[] done=[] cv=0 bg=''
+                               first-seen-ms={} blocked=1 errs=[]
