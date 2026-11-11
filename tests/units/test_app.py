@@ -6348,8 +6348,10 @@ def test_socketio_origins_with_deploy_url_or_explicit_list(
             "https://cdn.example.com",
             "api.example.com",
             (),
-            "if it is your frontend's origin, set REFLEX_DEPLOY_URL on the backend "
-            "to the frontend's public URL",
+            (
+                "if it is your frontend's origin, set REFLEX_DEPLOY_URL on the "
+                "backend to the frontend's public URL"
+            ),
         ),
         # The origin is named only by an X-Forwarded-Host the backend does not trust.
         (
@@ -6379,8 +6381,10 @@ def test_socketio_origins_with_deploy_url_or_explicit_list(
             "https://cdn.example.com",
             "api.example.com",
             (),
-            "if it is your frontend's origin, add it to cors_allowed_origins "
-            "(REFLEX_CORS_ALLOWED_ORIGINS)",
+            (
+                "if it is your frontend's origin, add it to cors_allowed_origins "
+                "(REFLEX_CORS_ALLOWED_ORIGINS)"
+            ),
         ),
     ],
 )
