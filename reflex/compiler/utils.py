@@ -318,6 +318,8 @@ def _restore_bundled_libraries() -> None:
 
 def _compile_client_storage_field(
     field: Field,
+    *,
+    check_factory: bool = True,
 ) -> (
     tuple[
         type[Cookie] | type[LocalStorage] | type[SessionStorage],
@@ -329,6 +331,8 @@ def _compile_client_storage_field(
 
     Args:
         field: The possible cookie field to compile.
+        check_factory: Whether to call a default_factory to reject one that
+            produces browser storage. Only the compile needs to check.
 
     Returns:
         A dictionary of the compiled cookie or None if the field is not cookie-like.
@@ -344,7 +348,8 @@ def _compile_client_storage_field(
             continue
         return field_type, cs_obj.options()
     if (
-        not field._backend
+        check_factory
+        and not field._backend
         and field.default is MISSING
         and field.default_factory is not None
         and _may_hold_str(field.outer_type_)
@@ -402,6 +407,8 @@ def _raise_factory_storage(field: Field, storage_type: type) -> None:
 
 def _compile_client_storage_recursive(
     state: type[BaseState],
+    *,
+    check_factories: bool = True,
 ) -> tuple[
     dict[str, dict[str, Any]], dict[str, dict[str, Any]], dict[str, dict[str, Any]]
 ]:
@@ -409,6 +416,8 @@ def _compile_client_storage_recursive(
 
     Args:
         state: The app state object.
+        check_factories: Whether to call the default factories to reject those
+            that produce browser storage.
 
     Returns:
         A tuple of the compiled client-side storage info: (cookies, local_storage, session_storage).
@@ -422,7 +431,9 @@ def _compile_client_storage_recursive(
             # only include vars defined in this state
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
-        field_type, options = _compile_client_storage_field(field)
+        field_type, options = _compile_client_storage_field(
+            field, check_factory=check_factories
+        )
         if field_type is None or options is None:
             continue
         if field_type is Cookie:
@@ -438,7 +449,7 @@ def _compile_client_storage_recursive(
             substate_cookies,
             substate_local_storage,
             substate_session_storage,
-        ) = _compile_client_storage_recursive(substate)
+        ) = _compile_client_storage_recursive(substate, check_factories=check_factories)
         cookies.update(substate_cookies)
         local_storage.update(substate_local_storage)
         session_storage.update(substate_session_storage)

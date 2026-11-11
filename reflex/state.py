@@ -2369,7 +2369,9 @@ def _shared_storage_groups(
     from reflex.compiler.utils import _compile_client_storage_recursive
 
     by_name: dict[str, list[tuple[type[BaseState], str, bool]]] = {}
-    for state_key, options in _compile_client_storage_recursive(root)[1].items():
+    # The compile already rejected factories that produce browser storage.
+    local_storage = _compile_client_storage_recursive(root, check_factories=False)[1]
+    for state_key, options in local_storage.items():
         if name := options.get("name"):
             state_name, _, var_name = state_key.removesuffix(FIELD_MARKER).rpartition(
                 "."
