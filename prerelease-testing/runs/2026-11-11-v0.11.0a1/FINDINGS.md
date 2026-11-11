@@ -639,3 +639,61 @@ and `--json`, `--frontend-only/--backend-only` ports, blocking monitor, otel tra
 FINDING-022 … -027.
 ### `events_await` (pass:15, anomaly:7, fail:3)
 64 await scenarios × dev/prod × memory/Redis; middleware; failure paths; decorators; typing. Issues: FINDING-001/-007/-010/-015/-016, plus low: memory-manager `CancelledError` for a background task awaiting a superseded handler; background task that catches an awaited exception still shows the error toast; deprecation names only the first stacked method per class.
+
+## Phase 7 — re-verification on 0.11.0a2 + reflex-enterprise 0.9.12 (2026-11-11)
+
+Published packages only: reflex / reflex-base / reflex-components-core 0.11.0a2 (`check_release_versions.py --ref v0.11.0a2`:
+20/20 OK; `check_wheel_sources.py v0.11.0a1..v0.11.0a2`: 32 changed files identical; `.pyi` audit PASS, 122 stubs),
+reflex-enterprise 0.9.12 (wheel sha256 checked against PyPI). Each original failing repro was re-run; controls: 0.10.1
+(all-final) and a **clean** 0.11.0a1 rebuilt with a private uv cache (see the note below). Group reports:
+`phase7/{db,events,compile,server,enterprise}.md`, evidence under `phase7/<group>/`.
+
+| finding | fix | a2 / rxe 0.9.12 | group |
+|---|---|---|---|
+| 001 second `@rx.event` crashes at import | #7810, #7807 | PASS (18/18 patterns; overkey runs unmodified) | events |
+| 002 [rxe] MCP prod dies without deploy_url | rxe#290 | PASS (MCP answers in prod) | enterprise |
+| 003 `refs is not defined` (pages, memos, AG Grid) | #7806, rxe#290 | PASS dev+prod, all auto_memoize × react_compiler cells; the reflex global alone also fixes rxe 0.9.11 | compile, enterprise |
+| 004 unregistered DeclarativeBase → drop every table | #7797 | PASS | db |
+| 005 kept 0.10 env.py crashes run / db | #7809 | PASS (app starts, actionable error); hint missing with a relative `script_location` → #7856 | db |
+| 006 kept env.py writes empty revisions | #7809 | PASS | db |
+| 007 pyright 3.11–3.13 loses handler arg types | #7810 | PASS on 3.11/3.12/3.13/3.14 | events |
+| 008 [rxe] MCP consent redirect to backend origin | rxe#290 | PASS (full OAuth flow, dev and prod) | enterprise |
+| 009 `reflex db migrate` on a fresh rxe app | #7817 | PASS (plain and rxe) | db, enterprise |
+| 010 `await` outside an event on a shared session | #7821 | PASS | events |
+| 011 JSON column typed `object` | #7798 | PASS | db |
+| 012 default_factory NOT NULL column | #7815 | PASS (env.py written by a1's `db init` keeps the old hook — alpha users only, documented) | db |
+| 014 / 020 / 024 docs + changelog | #7816 | PASS (guide samples run verbatim) | db, server |
+| 015 mistaken handler returns silently accepted | #7821, #7796 | PASS | events |
+| 016 `@staticmethod` above `@rx.event` | #7807, #7810 | PASS on state classes (non-state class unchanged by design) | events |
+| 017 second legacy env.py overwrites env.old | #7809 | PASS | db |
+| 022 prod CORS default breaks TLS-proxied / split deploys | #7799 | PASS (TLS terminator, doc-literal split, AFD hops 0/1/2, cross-site still rejected) | server |
+| 023 CORS rejection reported as unreachable | #7799 | PASS (backend warning; toast unchanged by design); scheme-cause diagnosis gap → #7857 | server |
+| 028 deprecation location in site-packages | #7811 | PASS | compile |
+| 029 package.json format flips | #7812 | PASS | compile |
+| 030 shared redis contender id, ~1 s stalls | #7795 | PASS (0/24 stalls > 500 ms; a1 17/24) | server |
+| 033 kill -9 of a worker stops the server | #7803 | PASS (respawn; opt-out works; invalid value named) | server |
+| 034 / 035 client_state hint, identifier collisions | #7804 | PASS | events |
+| 036 None optional set/list ops crash / prod build | #7800 | PASS dev + prod build | events |
+| 037 / 038 backend var str; storage factory calls | #7818 | PASS | events |
+| 039 unkeyed foreach lifecycle payloads | #7820 | PASS (warning once, names `key=`) | compile |
+| 042 lucide / hosting-cli floors | #7813 | PASS (pip -U, uv -U and uv from 0.10.1) | compile |
+| 044 raising upload handler cuts the response | #7808 | PASS (fresh / from 0.10.1); a1→a2 in place keeps core a1 (alpha-only; the final lifts the floor); no UI error when raising after an update → #7858 | compile |
+| 045 reflex.model imported inside the event | #7802 | PASS | compile |
+| 047 auto_memoize warning repeats | #7814 | PASS | compile |
+| still open by design | 021 → rxe#294, 031 → #7835, 032 → #6345, 048 → #7838, lock hand-off → #7805 | still reproduce, as expected | — |
+
+General smokes, all four channels: blank app dev/prod; reflex-examples twitter / form-designer / overkey / upload upgraded
+in place from 0.10.1; prod single-port with 2 workers + Redis; rxe ag_grid / dnd / flow / mantine / map dev and prod —
+clean apart from known noise and the misses already seen in the a1 pass.
+
+New issues found in Phase 7 (all LOW, none a regression against 0.10.1): reflex #7856, #7857, #7858;
+reflex-enterprise #296 (model wrapper bool fields will drop under reflex 0.12, other deprecated calls), and the
+`/index` page name noted on rxe#292. Not filed: `const refs` in user custom code shadowing the global with
+auto_memoize=False (refs is internal); the a1→a2 core floor (alpha-only).
+
+**Environment note.** Every 0.11.0a1 venv built from the shared uv cache during the a1 pass is contaminated: verifier
+patches written into hardlinked files (`reflex_base/components/component.py` implicit refs import,
+`reflex/istate/manager/redis.py`) leaked into every venv that links them, so those venvs no longer match their RECORD
+hashes. Phase 7 detected it (an a1 control passing FINDING-003) and rebuilt the a1 controls with a private
+`UV_CACHE_DIR` and `--link-mode=copy`; every venv used for a Phase 7 result passed a RECORD check. Rule for future
+passes: never edit a file inside a venv (uv hardlinks it into the cache); patch a copy on `PYTHONPATH` instead.
