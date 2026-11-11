@@ -2314,6 +2314,12 @@ class EventNamespace(AsyncNamespace):
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
 
+        # In dev, warn about values that handlers triggered from the frontend
+        # return, which nothing receives. Read once: on_event is the hot path.
+        self._warn_dropped_results = not is_prod_mode()
+        # The handlers already warned about, so each warns once.
+        self._warned_dropped_results: set[str] = set()
+
     @property
     def token_to_sid(self) -> Mapping[str, str]:
         """Token to SID mapping for backward compatibility.
@@ -2598,10 +2604,42 @@ class EventNamespace(AsyncNamespace):
             else "404"
         ).removeprefix("/")
         if not otel.enabled:
-            await self.app.event_processor.enqueue(token, event)
+            future = await self.app.event_processor.enqueue(token, event)
+        else:
+            with otel.remote_context(fields):
+                future = await self.app.event_processor.enqueue(token, event)
+        if self._warn_dropped_results:
+            future.add_done_callback(
+                functools.partial(self._warn_dropped_result, event.name)
+            )
+
+    def _warn_dropped_result(self, name: str, future: asyncio.Future) -> None:
+        """Warn once per handler that a frontend event's return value is dropped.
+
+        The frontend event discards its future, so only backend code awaiting
+        the handler receives what it returns.
+
+        Args:
+            name: The name of the event the frontend sent.
+            future: The event's future, done.
+        """
+        if future.cancelled() or future.exception() is not None:
             return
-        with otel.remote_context(fields):
-            await self.app.event_processor.enqueue(token, event)
+        result = future.result()
+        # An empty list is how a handler said "no events" before return
+        # values were results.
+        if result is None or (is_non_string_sequence(result) and not result):
+            return
+        if name in self._warned_dropped_results:
+            return
+        self._warned_dropped_results.add(name)
+        handler = self.app._registration_context.event_handlers[name].handler
+        logger.warning(
+            f"Event handler {handler.fn.__qualname__} returned a value, but it was "
+            "triggered from the frontend, so the value is dropped: only backend "
+            "code that awaits the handler receives its return value. Return None "
+            "or events to chain from a handler used as an event trigger."
+        )
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.

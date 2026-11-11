@@ -467,6 +467,11 @@ class EventActionsMixin:
         )
 
 
+# Set on the stand-in a background handler binds to on a state instance, so a
+# returned or yielded `self.background_handler` is recognized as a mistake.
+_BOUND_BACKGROUND_TASK_MARKER = "_reflex_bound_background_task"
+
+
 def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
     """Protect against directly chaining a background task from another event handler.
 
@@ -491,17 +496,45 @@ def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
         async def _no_chain_background_task_co(*args, **kwargs):  # noqa: RUF029
             raise RuntimeError(message)
 
-        return _no_chain_background_task_co
-    if inspect.isasyncgenfunction(fn):
+        no_chain = _no_chain_background_task_co
+    elif inspect.isasyncgenfunction(fn):
 
         async def _no_chain_background_task_gen(*args, **kwargs):  # noqa: RUF029
             yield
             raise RuntimeError(message)
 
-        return _no_chain_background_task_gen
+        no_chain = _no_chain_background_task_gen
+    else:
+        msg = f"{fn} is marked as a background task, but is not async."
+        raise TypeError(msg)
+    setattr(no_chain, _BOUND_BACKGROUND_TASK_MARKER, True)
+    return no_chain
 
-    msg = f"{fn} is marked as a background task, but is not async."
-    raise TypeError(msg)
+
+def _is_bound_event_handler(value: Any) -> bool:
+    """Whether a value is an event handler accessed through a state instance.
+
+    That is what ``self.handler`` evaluates to (see ``EventHandler.__get__``):
+    returned or yielded as an event, it is a mistake for ``type(self).handler``.
+    An inherited handler accessed through a background task's state proxy is a
+    ``functools.partial`` and is not recognized.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        True for a handler's function bound to its state, or to a proxy of it,
+        and for the stand-in a background handler binds to.
+    """
+    if type(value) is not types.MethodType:
+        return getattr(value, _BOUND_BACKGROUND_TASK_MARKER, None) is True
+    func = value.__func__
+    handlers = getattr(value.__self__, "event_handlers", None)
+    return (
+        isinstance(handlers, dict)
+        and (handler := handlers.get(func.__name__)) is not None
+        and handler.fn is func
+    )
 
 
 def _base_state_type() -> type:
@@ -3544,6 +3577,7 @@ class EventNamespace:
         resolve_upload_chunk_handler_param
     )
     _values_returned_from_event = staticmethod(_values_returned_from_event)
+    _is_bound_event_handler = staticmethod(_is_bound_event_handler)
     _check_event_args_subclass_of_callback = staticmethod(
         _check_event_args_subclass_of_callback
     )
