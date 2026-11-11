@@ -19,10 +19,11 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
+import click
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
-from reflex_base.environment import environment, interpret_boolean_env
+from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
@@ -1161,8 +1162,9 @@ def run_granian_backend_prod(
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
         # Granian otherwise stops the server when any one worker dies. It still
         # exits when a respawned worker dies again within a few seconds.
-        respawn_failed_workers=interpret_boolean_env(
-            os.getenv(_GRANIAN_RESPAWN_ENV, "true"), _GRANIAN_RESPAWN_ENV
+        # Parse it as Granian's own CLI does, so every value Granian accepts works.
+        respawn_failed_workers=click.BOOL.convert(
+            os.getenv(_GRANIAN_RESPAWN_ENV, "true"), None, None
         ),
     )
 
