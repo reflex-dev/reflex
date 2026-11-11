@@ -164,6 +164,16 @@ def todo_example():
     )
 ```
 
+## Keys
+
+By default, `rx.foreach` keys each rendered item by its index, so React matches the rendered components to items by position.
+When the list changes, a component keeps its position, not its item: after the first of three items is removed, React unmounts the component at the last position.
+This matters when an item has lifecycle events (`on_mount`, `on_unmount`), hooks of its own, or per-row state such as an uncontrolled input or `rx.client_state`.
+An `on_unmount=State.removed(item)` in an unkeyed loop reports the last item, not the removed one.
+
+Set `key` on the component that the render function returns to a value that is unique and stable for each item, such as `key=item` for a list of distinct strings or `key=item.id` as in the todo example above.
+Reflex warns at compile time when an unkeyed item has lifecycle events or hooks.
+
 ## Dictionaries
 
 Items in a dictionary are passed to the render function as key-value pairs.
