@@ -190,3 +190,41 @@ new-ent and prev-ent alike: "Unable to find the base Starlette app. Proxying wil
 answers 404 for `/` (with and without an api_transformer). rxe's `proxy_middleware(app)` lifespan task receives reflex's
 `App` (reflex binds a parameter named `app` to the rx.App), not a Starlette. Upstream AG Grid demo's rxconfig sets
 `use_single_port=True`. Not a 0.11 regression. Repro: `XC_SINGLE=1 $S/xc.sh start <venv> dev l; curl localhost:8380/` -> 404.
+
+## More upstream demos, prod (acct=stub via the fixture start.sh)
+| demo | new | prev | notes |
+|---|---|---|---|
+| tickets (EventHandlerAPIPlugin) | UI **18/18**; API as before: openapi.yaml 200 (PyYAML present), malformed JSON -> 500, handler arg errors -> HTTP 200 + error body (ENT-15, known), unknown handler -> 405 from the frontend mount; REST bodies show `rx_router_session.client_token == ""` | not re-run (no failure) | 3 server tracebacks = the malformed-JSON / handler-error paths (ENT-15) |
+| highcharts | **13/13** | not re-run | 5 console warnings = Highcharts accessibility module notice (known benign) |
+| AG Grid demo (`enterprise-demo-new` / `-prev` venvs: reflex[db] + rxe[mcp] 0.9.11 + faker/pandas/aiosqlite) | smoke **20/20**, coldefs **7/7**, features **39/48**, model 24/29 | smoke 20/20, coldefs 7/7, features **46/47**, model 24/29 | new-only feature failures = ISSUE 4 (tree column-state save/load, aligned grids x2, state-grid `select_all_on_load`, selected-items Select All); `clipboard` + the 5 model misses are the known pre-existing ones (ENT-32, driver assumption); the 2 tracebacks are the known `met` string -> SQLite DateTime (both) |
+`ag_demo.sh` also runs `reflex db migrate` first -> ISSUE 5.
+
+## ISSUE 4 — rxe AG Grid API calls (`grid.api.*`, `AgGridAPI`, `aligned_grids`) throw `ReferenceError: refs is not defined`
+Minimal repro `src/agapi` + `scripts/agapi_drv.py` (out `out/agapi.txt`): a grid with `id="grid1"`, buttons
+`grid.api.select_all()` and `grid.api.getSelectedRows(callback=S.got_rows)`.
+- new-ent prod: 0 rows selected, State stays -1; server log 4x `[Reflex Frontend Exception] ReferenceError: refs is not defined`.
+- new-ent dev: same (4x).  prev-ent prod: PASS (3 rows selected, State 3), 0 errors.
+Cause: the compiled page module uses `refs['ref_grid1']?.current?.api` (rxe `AgGridAPI._api` / `_format_props(aligned_grids)`)
+without importing `refs`. On 0.10.1 every page with a ref imported `refs` from `$/utils/state`; 0.11 (#7694 element refs via
+`useRegisteredRef`) imports only `useRegisteredRef` (`_index.jsx`: new `import {useRegisteredRef} from "$/utils/state"` vs
+prev `import {refs} from "$/utils/state"`). `rxe.map`'s API already attaches `refs_var_data` and is unaffected; `rx.call_script`
+code (OIDC refresh timer) is evaluated inside state.js where `refs` exists. Fix: reflex-enterprise should attach
+`VarData(imports={"$/utils/state": ["refs"]})` to `AgGridAPIVar` and the aligned-grids var; reflex could keep exporting the
+implicit import for compatibility. Severity high: every AG Grid API action silently does nothing (only a server-log line).
+```
+XC_SRC=$SB/apps/enterprise/src/agapi ACCT=token <DEST>/scripts/xc.sh start new-ent prod agapi_new
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python -I <DEST>/scripts/agapi_drv.py http://localhost:8380 new; <DEST>/scripts/xc.sh stop
+```
+
+## ISSUE 5 — `reflex db migrate` (and `db init` / `makemigrations`) exits 1 on the upstream AG Grid demo from a fresh checkout
+`cd <copy of demos/ag_grid> && rm -f reflex.db && CI=true REFLEX_DB_URL=sqlite:///reflex.db $SB/envs/enterprise-demo-new/bin/reflex db migrate`
+-> tables are created, then `ValueError: Library @radix-ui/themes is not bundled. Use ... bundle_library('@radix-ui/themes')`
+(rxe `vars.py::_validate_and_extend_return_expr` while reflex serializes the initial state in `migrations.evaluate_pages()` ->
+`get_compiled_app(dry_run=True)` -> `_compile_initial_state`), exit 1 (`logs/agmig_new.log`). prev-ent: exit 0 (0.10.1 `db
+migrate` only imports the app). With a `.web` left by an earlier compile, new exits 0 (the skip-compile path restores the
+bundled-library list from `.web`). So on 0.11 a fresh clone / CI / Docker image running `reflex db migrate` before the first
+`reflex run` fails for any rxe app whose state holds an `rxe` lambda/cell-renderer that uses Radix components. Also printed on
+that run (expected, #7742): "Updated env.py to load the app; the previous one is kept as alembic/env.old" (the demo ships the
+stock env.py). Fix: reflex (dry-run/skip-compile evaluation should collect bundled libraries before compiling state, or not
+compile initial state for `reflex db`), or rxe (defer the bundled-library check). Label both; reflex first (regression from the
+new `evaluate_pages` step).
