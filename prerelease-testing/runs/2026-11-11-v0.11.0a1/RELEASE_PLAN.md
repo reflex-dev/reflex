@@ -27,7 +27,7 @@ the milestone `v0.11.0`.
 | 028, 029, 042, 047 | deprecation frames, package.json format, lucide/hosting floors, auto_memoize warning dedupe | **PRs open** #7811, #7812, #7813, #7814 |
 | 009, 037/038, 039 | see below | agent running (opens PRs) |
 | 024, 014, 020 | `rx.App()()` breaking entry; admin guide; serializer example | **PR open** [reflex-dev/reflex#7816](https://github.com/reflex-dev/reflex/pull/7816) |
-| 010 | empty token → `EventHandlerTypeError` (stack on #7796) | not started (after #7796 settles) |
+| 010 | empty token → `EventHandlerTypeError` (stack on #7796) | agent running (fix/await-handler-without-token, /home/user/reflex-fix-010; opens PR) |
 
 ## Already in flight (outside this pass)
 | PR | Covers | Gap check |
@@ -209,7 +209,7 @@ As each PR merges into `main`:
 | item | branch / worktree | state |
 |---|---|---|
 | #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open; owner reviewed ("good aside from reviewbot"); bot threads fixed 5f2ea8d10 + test hang-proofing fcabd8562, all resolved; greptile 5/5. Known residual: SADD-in-flight cancel race, bounded by pexpire |
-| #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, watch; "call it" hint pushed (ed2ee8910) |
+| #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, head 9679a8f93; all 6 bot threads resolved; CodSpeed -45% was the benchmark mock (AsyncMock future), harness now uses a real future — dev-only cost a few µs/event |
 | #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, head 93beac9a3; owner reviewed ("seems legit"); all cubic threads answered + resolved (docs qualified; makemigrations warning declined; library bases = documented trade-off) |
 | #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, head 51976c4c1; ARRAY(JSON) annotation fallback + lru_cache(1024) + TypedDict test; threads resolved |
 | #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, head 27c2dd954; all bot threads answered + resolved (5 cubic docs/fragment fixes); CodeQL alert auto-marked fixed after 6f621870e, thread shows resolved (not by us); greptile 5/5 |
