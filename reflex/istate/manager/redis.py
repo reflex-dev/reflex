@@ -67,6 +67,11 @@ end
 return 0
 """
 
+# Counts the instances in a lock's contender set (KEYS[1]) other than ARGV[1].
+_COUNT_OTHER_CONTENDERS_SCRIPT = """
+return redis.call("scard", KEYS[1]) - redis.call("sismember", KEYS[1], ARGV[1])
+"""
+
 
 async def enable_keyspace_notifications(
     redis: Redis, events: str = NOTIFY_KEYSPACE_EVENTS
@@ -257,7 +262,8 @@ class StateManagerRedis(StateManager):
     _cached_state_handoffs: dict[str, asyncio.Event] = dataclasses.field(
         default_factory=dict, init=False
     )
-    # The unique ID for this state manager, the domain for _local_leases.
+    # The unique ID for this state manager, the domain for _local_leases. It
+    # registers the instance as a contender for a lock while it has waiters.
     _instance_id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
 
     # Under the dev hot reloader, the keys of the states this process has
@@ -296,6 +302,15 @@ class StateManagerRedis(StateManager):
         if self._oplock_enabled and self.oplock_hold_time_ms >= lock_expiration:
             msg = f"The opportunistic lock hold time({self.oplock_hold_time_ms}) must be less than the lock expiration time({lock_expiration})."
             raise InvalidLockWarningThresholdError(msg)
+
+    @override
+    def _reset_instance_id(self) -> None:
+        """Assign a fresh instance ID when a server worker starts.
+
+        Workers forked after the app was imported inherit the manager, and
+        would otherwise register as one contender for every lock.
+        """
+        self._instance_id = str(uuid.uuid4())
 
     def _get_required_state_classes(
         self,
@@ -693,7 +708,7 @@ class StateManagerRedis(StateManager):
         # single update below holds it, it is released here, so a cancelled
         # modify cannot leave it behind until it expires.
         try:
-            # Do not create a lease break task when multiple instances are waiting.
+            # Do not create a lease break task when other instances are waiting.
             if (
                 not await self._get_local_lease(lock_key)
                 and await self._n_lock_contenders(self._lock_key(token)) > 0
@@ -1112,24 +1127,33 @@ class StateManagerRedis(StateManager):
         return len(lock_released_events)
 
     async def _n_lock_contenders(self, lock_key: bytes) -> int:
-        """Get the number of contenders for a given lock key.
+        """Get the number of other instances waiting for a given lock key.
+
+        This instance's own waiters do not count, as a lease it takes serves them.
 
         Args:
             lock_key: The redis key for the lock.
 
         Returns:
-            The number of contenders for the lock key across all instances.
+            The number of other instances contending for the lock key.
         """
-        res = self.redis.scard(lock_key + b"_waiters")
-        if inspect.isawaitable(res):
-            res = await res
-        return res
+        # redis-py types EVAL arguments as str; the waiters key is bytes here.
+        count = cast("Callable[..., Awaitable[int]]", self.redis.eval)
+        return await count(
+            _COUNT_OTHER_CONTENDERS_SCRIPT,
+            1,
+            lock_key + b"_waiters",
+            self._instance_id,
+        )
 
     @contextlib.asynccontextmanager
     async def _request_lock_release(
         self, lock_key: bytes, lock_id: bytes
     ) -> AsyncIterator[None]:
         """Request the release of a redis lock.
+
+        The instance stays a contender until its last waiter for the lock
+        leaves. Runs inside the waiter's `_lock_waiter`, which counts it.
 
         Args:
             lock_key: The redis key for the lock.
@@ -1143,9 +1167,13 @@ class StateManagerRedis(StateManager):
         try:
             yield  # Waiting for redis/oplock to be acquired.
         finally:
-            res = self.redis.srem(lock_key + b"_waiters", self._instance_id)
-            if inspect.isawaitable(res):
-                await res
+            if self._n_lock_waiters(lock_key) <= 1:
+                res = self.redis.srem(lock_key + b"_waiters", self._instance_id)
+                if inspect.isawaitable(res):
+                    await res
+                # A waiter that queued meanwhile may have registered before the SREM.
+                if self._n_lock_waiters(lock_key) > 1:
+                    await self._register_lock_contender(lock_key)
 
     async def _register_lock_contender(self, lock_key: bytes) -> None:
         """Register this instance as a contender for a lock for one lock expiration.
