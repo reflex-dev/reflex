@@ -1,0 +1,33 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+────────────────────────────── Initializing fapp ───────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized fapp. Install dependencies from `requirements.txt` with `uv
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0.
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3340/
+Warning: Rejected an event websocket from origin 'http://evil.test:3342': in 
+prod mode the backend accepts only its own origin (request Host 'app.test:3341',
+X-Forwarded-Host None trusted); if it is your frontend's origin, set 
+REFLEX_DEPLOY_URL on the backend to the frontend's public URL or add it to 
+cors_allowed_origins; a reverse proxy must forward the original Host header. 
+This warning is logged once per worker.
+http://evil.test:3342 is not an accepted origin. (further occurrences of this error will be logged with level INFO)
+Info: Reflex app stopped.

@@ -1,0 +1,18 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3347/
+Warning: Rejected an event websocket from origin 'https://evil1.example': in 
+prod mode the backend accepts only its own origin (request Host 
+'localhost:3347', X-Forwarded-Host None ignored as trusted_proxy_hops is 0); if 
+it is your frontend's origin, set REFLEX_DEPLOY_URL on the backend to the 
+frontend's public URL or add it to cors_allowed_origins; a reverse proxy must 
+forward the original Host header. This warning is logged once per worker.
+https://evil1.example is not an accepted origin. (further occurrences of this error will be logged with level INFO)
+Warning: Rejected an event websocket from origin 'https://evil2.example': in 
+prod mode the backend accepts only its own origin (request Host 
+'localhost:3347', X-Forwarded-Host None ignored as trusted_proxy_hops is 0); if 
+it is your frontend's origin, set REFLEX_DEPLOY_URL on the backend to the 
+frontend's public URL or add it to cors_allowed_origins; a reverse proxy must 
+forward the original Host header. This warning is logged once per worker.
+https://evil2.example is not an accepted origin. (further occurrences of this error will be logged with level INFO)
+Info: Reflex app stopped.

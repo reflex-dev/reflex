@@ -1,0 +1,80 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0.
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3346/
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+localhost:6391. Connect call failed ('127.0.0.1', 6391).
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+to localhost:6391. Connect call failed ('127.0.0.1', 6391).
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+localhost:6391. Connect call failed ('127.0.0.1', 6391).
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+to localhost:6391. Connect call failed ('127.0.0.1', 6391).
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/p7/envs/new/lib/python3.12/site-packages/redis/asyncio/connection.py", line 
+3248, in ensure_connection
+    if await connection.can_read():
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/p7/envs/new/lib/python3.12/site-packages/redis/asyncio/connection.py", line 
+1478, in can_read
+    return await self._parser.can_read()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/p7/envs/new/lib/python3.12/site-packages/redis/_parsers/base.py", line 606, in 
+can_read
+    raise ConnectionError(SERVER_CLOSED_CONNECTION_ERROR)
+redis.exceptions.ConnectionError: Connection closed by server.
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/p7/envs/new/lib/python3.12/site-packages/reflex/istate/manager/redis.py", line 
+1313, in _lock
+    await self._wait_lock(lock_key, lock_id)
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/p7/envs/new/lib/python3.12/site-packages/reflex/istate/manager/redis.py", line 
+1241, in _wait_lock
+    and await self._try_get_lock(lock_key, lock_id)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/p7/envs/new/lib/python3.12/site-packages/reflex/istate/manager/redis.py", line 
+974, in _try_get_lock
+    await self.redis.set(
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/p7/envs/new/lib/python3.12/site-packages/redis/asyncio/client.py", line 967, in
+execute_command
+    conn = self.connection or await pool.get_connection()
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/p7/envs/new/lib/python3.12/site-packages/redis/utils.py", line 297, in 
+async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad

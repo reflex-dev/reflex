@@ -1,0 +1,10 @@
+{"label": "new-false", "mode": "kill", "killed_pid": 29177, "lock_pttl_ms_at_kill": "9493"}
+label=new-false pids_before=[29177 29179 ] pids_after=[] ping_every_250ms_after_kill=0000000000000000000000000000000000000000
+server log tail:
+  Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 16/15 0:00:00
+  Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+  ───────────────────────────────── App Running ──────────────────────────────────
+  App running at: http://0.0.0.0:3346/
+  [ERROR] Unexpected exit from worker-1
+  Info: Reflex app stopped.
+stopped k9

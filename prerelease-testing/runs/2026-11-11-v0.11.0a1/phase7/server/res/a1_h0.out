@@ -1,0 +1,38 @@
+##### a1_h0 venv=a1 env: 
+  [a1_h0_passthrough] {"ok": false, "count_text": "count=0"} ws_opens= 12
+  [a1_h0_passthrough]   console: error: WebSocket connection to 'wss://app.test:3341/_event/?token=6efd252e-78c5-40f1-ee30-ebb714fae214&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [a1_h0_passthrough]   console: error: WebSocket connection to 'wss://app.test:3341/_event/?token=6efd252e-78c5-40f1-ee30-ebb714fae214&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [xsite]
+    origin http://evil.test:3342 {"wss://app.test:3341/_event/?EIO=4&transport=websocket": "ERROR", "ws://localhost:3340/_event/?EIO=4&transport=websocket": "ERROR"}
+  [a1_h0_afd] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1_h0_xfp-xfh] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1_h0_caddy-behind-edge] {"ok": false, "count_text": "count=0"} ws_opens= 12
+  [a1_h0_caddy-behind-edge]   console: error: WebSocket connection to 'wss://app.test:3341/_event/?token=54385b4a-8eab-414b-fcb8-0eeb10216645&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [a1_h0_caddy-behind-edge]   console: error: WebSocket connection to 'wss://app.test:3341/_event/?token=54385b4a-8eab-414b-fcb8-0eeb10216645&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  hs local-localhost          101  Host=localhost:3340 Origin=http://localhost:3340 
+  hs local-127                101  Host=127.0.0.1:3340 Origin=http://127.0.0.1:3340 
+  hs passthrough              403  Host=app.test:3341 Origin=https://app.test:3341 
+  hs nginx-default            403  Host=127.0.0.1:3340 Origin=https://app.test:3341 
+  hs nginx-host-xfp           101  Host=app.test:3341 Origin=https://app.test:3341 X-Forwarded-Proto: https
+  hs xfp-xfh                  101  Host=app.test:3341 Origin=https://app.test:3341 X-Forwarded-Proto: https X-Forwarded-Host: app.test:3341
+  hs render-wss               403  Host=app.test:3341 Origin=https://app.test:3341 X-Forwarded-Proto: wss
+  hs caddy-behind-edge        403  Host=app.test:3341 Origin=https://app.test:3341 X-Forwarded-Proto: http X-Forwarded-Host: app.test:3341
+  hs afd                      101  Host=origin.azurewebsites.test Origin=https://app.test:3341 X-Forwarded-Proto: https X-Forwarded-Host: app.test:3341
+  hs afd-noxfp                403  Host=origin.azurewebsites.test Origin=https://app.test:3341 X-Forwarded-Host: app.test:3341
+  hs afd-xfh-chain2           403  Host=origin.azurewebsites.test Origin=https://app.test:3341 X-Forwarded-Proto: https X-Forwarded-Host: edge.test, app.test:3341
+  hs split-or-cdn             403  Host=api.test Origin=https://app.test:3341 X-Forwarded-Proto: https
+  hs http-plain-proxy         101  Host=app.test:3341 Origin=http://app.test:3341 
+  hs atk-cross-site           403  Host=app.test:3341 Origin=https://evil.example X-Forwarded-Proto: https
+  hs atk-cross-site-noxf      403  Host=app.test:3341 Origin=https://evil.example 
+  hs atk-http-downgrade       403  Host=app.test:3341 Origin=http://app.test:3341 X-Forwarded-Proto: https
+  hs atk-http-downgrade-wss   403  Host=app.test:3341 Origin=http://app.test:3341 X-Forwarded-Proto: wss
+  hs atk-http-dg-chain2       403  Host=app.test:3341 Origin=http://app.test:3341 X-Forwarded-Proto: https, http
+  hs atk-null                 403  Host=app.test:3341 Origin=null 
+  hs no-origin                101  Host=app.test:3341 Origin=- 
+  hs atk-xfh-forged           101  Host=app.test:3341 Origin=https://evil.example X-Forwarded-Proto: https X-Forwarded-Host: evil.example
+  hs atk-xfh-chain-evil       101  Host=origin.azurewebsites.test Origin=https://evil.example X-Forwarded-Proto: https X-Forwarded-Host: evil.example, app.test:3341
+  hs atk-userinfo             403  Host=app.test:3341 Origin=https://x@app.test:3341 
+  hs atk-suffix               403  Host=app.test:3341 Origin=https://app.test:3341.evil.example 
+  log: rejections:
+    31:https://app.test:3341 is not an accepted origin. (further occurrences of this error will be logged with level INFO)
+  log: warning/error count: 5

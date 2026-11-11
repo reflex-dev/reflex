@@ -1,0 +1,7 @@
+##### prev_split_doc venv=prev backend env: REFLEX_DEPLOY_URL=http://localhost:3343
+  [prev_split_doc] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [xsite] origin http://evil.test:3344 {"ws://localhost:8343/_event/?EIO=4&transport=websocket": "OPEN"}
+  hs 101  Host=localhost:8343 Origin=http://localhost:3343 
+  hs 101  Host=localhost:8343 Origin=http://localhost:8343 
+  hs 101  Host=localhost:8343 Origin=http://127.0.0.1:3343 
+  hs 101  Host=localhost:8343 Origin=https://evil.example 

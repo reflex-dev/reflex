@@ -1,0 +1,10 @@
+##### a1_split_nodeploy venv=a1 backend env: 
+  [a1_split_nodeploy] {"ok": false, "count_text": "count=0"} ws_opens= 13
+  [a1_split_nodeploy]   console: error: WebSocket connection to 'ws://localhost:8343/_event/?token=bccab6a5-48f3-47a7-ee22-0a453037fc7c&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [a1_split_nodeploy]   console: error: WebSocket connection to 'ws://localhost:8343/_event/?token=bccab6a5-48f3-47a7-ee22-0a453037fc7c&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [xsite] origin http://evil.test:3344 {"ws://localhost:8343/_event/?EIO=4&transport=websocket": "ERROR"}
+  hs 403  Host=localhost:8343 Origin=http://localhost:3343 
+  hs 101  Host=localhost:8343 Origin=http://localhost:8343 
+  hs 403  Host=localhost:8343 Origin=http://127.0.0.1:3343 
+  hs 403  Host=localhost:8343 Origin=https://evil.example 
+  backend log: http://localhost:3343 is not an accepted origin. (further occurrences of this error will be logged with level INFO)

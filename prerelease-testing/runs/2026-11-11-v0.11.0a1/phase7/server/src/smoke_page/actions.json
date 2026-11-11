@@ -1,0 +1,7 @@
+[{"wait_for": "#inc"}, {"wait": 1500},
+ {"click": "#inc"}, {"click": "#inc"}, {"expect_text": "count=2"},
+ {"click": "#runbg"}, {"expect_text": "running"}, {"expect_text": "bg=5"}, {"expect_text": "idle"},
+ {"eval": "document.querySelector('#pid').innerText"},
+ {"goto": "SELF"}, {"wait": 2500}, {"expect_text": "count=2"}, {"expect_text": "bg=5"},
+ {"click": "#inc"}, {"expect_text": "count=3"},
+ {"screenshot": "SHOT"}]

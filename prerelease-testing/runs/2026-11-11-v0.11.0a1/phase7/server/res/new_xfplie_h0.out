@@ -1,0 +1,5 @@
+hops=0 plain-http proxy profile=nginx-host (proxy pid 32178: hproxy nginx-host 3341 -> 3340)
+  [new_xfplie_h0_nginx-host] {"ok": true, "count_text": "count=2"} ws_opens= 1
+hops=0 plain-http proxy profile=xfp-https (proxy pid 32319: hproxy xfp-https 3341 -> 3340)
+  [new_xfplie_h0_xfp-https] {"ok": true, "count_text": "count=2"} ws_opens= 1
+

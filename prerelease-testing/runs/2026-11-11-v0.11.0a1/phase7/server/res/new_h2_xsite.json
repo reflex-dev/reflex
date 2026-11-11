@@ -1,0 +1,13 @@
+{
+ "page": "http://evil.test:3342/",
+ "results": {
+  "wss://app.test:3341/_event/?EIO=4&transport=websocket": "ERROR",
+  "ws://localhost:3340/_event/?EIO=4&transport=websocket": "ERROR"
+ },
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (File not found)",
+  "error: WebSocket connection to 'wss://app.test:3341/_event/?EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:3340/_event/?EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403"
+ ],
+ "origin": "http://evil.test:3342"
+}

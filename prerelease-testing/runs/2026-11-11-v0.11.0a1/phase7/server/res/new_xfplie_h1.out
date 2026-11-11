@@ -1,0 +1,7 @@
+hops=1 plain-http proxy profile=nginx-host (proxy pid 31800: hproxy nginx-host 3341 -> 3340)
+  [new_xfplie_h1_nginx-host] {"ok": true, "count_text": "count=2"} ws_opens= 1
+hops=1 plain-http proxy profile=xfp-https (proxy pid 31945: hproxy xfp-https 3341 -> 3340)
+  [new_xfplie_h1_xfp-https] {"ok": false, "count_text": "count=0"} ws_opens= 13
+  [new_xfplie_h1_xfp-https]   console: error: WebSocket connection to 'ws://app.test:3341/_event/?token=96ac7821-6d1b-4e62-b5d5-4be4e830109e&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+Warning: Rejected an event websocket from origin 'http://app.test:3341': in prod mode the backend accepts only its own origin (request Host 'app.test:3341',  X-Forwarded-Host None trusted); if it is your frontend's origin, set  REFLEX_DEPLOY_URL on the backend to the frontend's public URL or add it 
+

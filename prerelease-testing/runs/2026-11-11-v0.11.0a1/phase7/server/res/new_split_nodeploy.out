@@ -1,0 +1,16 @@
+##### new_split_nodeploy venv=new backend env: 
+  [new_split_nodeploy] {"ok": false, "count_text": "count=0"} ws_opens= 13
+  [new_split_nodeploy]   console: error: WebSocket connection to 'ws://localhost:8343/_event/?token=e47d24a9-9172-4f53-f3a7-690143329ec2&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [new_split_nodeploy]   console: error: WebSocket connection to 'ws://localhost:8343/_event/?token=e47d24a9-9172-4f53-f3a7-690143329ec2&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [xsite] origin http://evil.test:3344 {"ws://localhost:8343/_event/?EIO=4&transport=websocket": "ERROR"}
+  hs 403  Host=localhost:8343 Origin=http://localhost:3343 
+  hs 101  Host=localhost:8343 Origin=http://localhost:8343 
+  hs 403  Host=localhost:8343 Origin=http://127.0.0.1:3343 
+  hs 403  Host=localhost:8343 Origin=https://evil.example 
+  backend log: Warning: Rejected an event websocket from origin 'http://localhost:3343': in 
+  backend log: prod mode the backend accepts only its own origin (request Host 
+  backend log: 'localhost:8343', X-Forwarded-Host None ignored as trusted_proxy_hops is 0); if 
+  backend log: it is your frontend's origin, set REFLEX_DEPLOY_URL on the backend to the 
+  backend log: frontend's public URL or add it to cors_allowed_origins; a reverse proxy must 
+  backend log: forward the original Host header. This warning is logged once per worker.
+  backend log: http://localhost:3343 is not an accepted origin. (further occurrences of this error will be logged with level INFO)

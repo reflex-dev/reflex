@@ -1,0 +1,24 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8343/
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: Rejected an event websocket from origin 'http://evil.test:3344': in 
+prod mode the backend accepts only its own origin (request Host 
+'localhost:8343', X-Forwarded-Host None ignored as trusted_proxy_hops is 0) and 
+['http://localhost:3343']; if it is your frontend's origin, set 
+REFLEX_DEPLOY_URL on the backend to the frontend's public URL or add it to 
+cors_allowed_origins; a reverse proxy must forward the original Host header. 
+This warning is logged once per worker.
+http://evil.test:3344 is not an accepted origin. (further occurrences of this error will be logged with level INFO)
+Info: Reflex app stopped.

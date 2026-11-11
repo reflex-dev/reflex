@@ -1,0 +1,14 @@
+##### new_h0_afdwarn venv=new profile=afd env: 
+  [new_h0_afdwarn_afd] {"ok": false, "count_text": "count=0"} ws_opens= 12
+  [new_h0_afdwarn_afd]   console: error: WebSocket connection to 'wss://app.test:3341/_event/?token=e68286bd-6f92-4810-bb3e-f7f63d7334e1&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [new_h0_afdwarn_afd]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [new_h0_afdwarn_afd]   console: error: WebSocket connection to 'wss://app.test:3341/_event/?token=e68286bd-6f92-4810-bb3e-f7f63d7334e1&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+    Warning: Rejected an event websocket from origin 'https://app.test:3341': in 
+    prod mode the backend accepts only its own origin (request Host 
+    'origin.azurewebsites.test', X-Forwarded-Host 'app.test:3341' ignored as 
+    trusted_proxy_hops is 0); the untrusted X-Forwarded-Host names that origin, so 
+    if only your reverse proxies can reach the backend, set trusted_proxy_hops 
+    (REFLEX_TRUSTED_PROXY_HOPS) to their number; otherwise, if it is your frontend's
+    origin, set REFLEX_DEPLOY_URL on the backend to the frontend's public URL. This 
+    warning is logged once per worker.
+    https://app.test:3341 is not an accepted origin. (further occurrences of this error will be logged with level INFO)

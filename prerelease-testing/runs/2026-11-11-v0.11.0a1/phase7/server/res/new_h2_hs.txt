@@ -1,0 +1,24 @@
+local-localhost          101  Host=localhost:3340 Origin=http://localhost:3340 
+local-127                101  Host=127.0.0.1:3340 Origin=http://127.0.0.1:3340 
+passthrough              101  Host=app.test:3341 Origin=https://app.test:3341 
+nginx-default            403  Host=127.0.0.1:3340 Origin=https://app.test:3341 
+nginx-host-xfp           101  Host=app.test:3341 Origin=https://app.test:3341 X-Forwarded-Proto: https
+xfp-xfh                  101  Host=app.test:3341 Origin=https://app.test:3341 X-Forwarded-Proto: https X-Forwarded-Host: app.test:3341
+render-wss               101  Host=app.test:3341 Origin=https://app.test:3341 X-Forwarded-Proto: wss
+caddy-behind-edge        101  Host=app.test:3341 Origin=https://app.test:3341 X-Forwarded-Proto: http X-Forwarded-Host: app.test:3341
+afd                      101  Host=origin.azurewebsites.test Origin=https://app.test:3341 X-Forwarded-Proto: https X-Forwarded-Host: app.test:3341
+afd-noxfp                101  Host=origin.azurewebsites.test Origin=https://app.test:3341 X-Forwarded-Host: app.test:3341
+afd-xfh-chain2           403  Host=origin.azurewebsites.test Origin=https://app.test:3341 X-Forwarded-Proto: https X-Forwarded-Host: edge.test, app.test:3341
+split-or-cdn             403  Host=api.test Origin=https://app.test:3341 X-Forwarded-Proto: https
+http-plain-proxy         101  Host=app.test:3341 Origin=http://app.test:3341 
+atk-cross-site           403  Host=app.test:3341 Origin=https://evil.example X-Forwarded-Proto: https
+atk-cross-site-noxf      403  Host=app.test:3341 Origin=https://evil.example 
+atk-http-downgrade       403  Host=app.test:3341 Origin=http://app.test:3341 X-Forwarded-Proto: https
+atk-http-downgrade-wss   403  Host=app.test:3341 Origin=http://app.test:3341 X-Forwarded-Proto: wss
+atk-http-dg-chain2       403  Host=app.test:3341 Origin=http://app.test:3341 X-Forwarded-Proto: https, http
+atk-null                 403  Host=app.test:3341 Origin=null 
+no-origin                101  Host=app.test:3341 Origin=- 
+atk-xfh-forged           101  Host=app.test:3341 Origin=https://evil.example X-Forwarded-Proto: https X-Forwarded-Host: evil.example
+atk-xfh-chain-evil       101  Host=origin.azurewebsites.test Origin=https://evil.example X-Forwarded-Proto: https X-Forwarded-Host: evil.example, app.test:3341
+atk-userinfo             403  Host=app.test:3341 Origin=https://x@app.test:3341 
+atk-suffix               403  Host=app.test:3341 Origin=https://app.test:3341.evil.example 

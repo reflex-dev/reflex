@@ -1,0 +1,14 @@
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7fb46bfd1100>
+{"label": "new-default", "mode": "kill", "killed_pid": 28887, "lock_pttl_ms_at_kill": "9493"}
+label=new-default pids_before=[28887 28889 ] pids_after=[28889 28943 ] ping_every_250ms_after_kill=2222222222222222222222222222222222222222
+fresh clients after kill: ok 4 / 4 sock_pids ['28889', '28943'] exc []
+same-token resume: {'connect_s': 0.009, 'first_incr_s': 0.021, 'count': 1} new_token
+server log tail:
+  [ERROR] Unexpected exit from worker-1
+  [INFO] Respawning worker-1
+  [INFO] Spawning worker-1 with PID: 28943
+  [INFO] Stopping old worker-1
+  [INFO] Stopped old worker-1
+  [INFO] Started worker-1
+stopped k9

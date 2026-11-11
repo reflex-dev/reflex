@@ -1,0 +1,6 @@
+{"label": "new-default", "mode": "kill", "killed_pid": 28887, "lock_pttl_ms_at_kill": "9493"}
+{"label": "new-default|fresh-clients-after-kill", "mode": "seq", "clients": 4, "events": 20, "bg": 0, "api": 0, "ok": 4, "of": 4, "timeouts": 0, "exceptions": [], "p50": 2.79, "p90": 5.2, "p99": 6.78, "max": 6.78, "api_conc": 4, "api_over_500ms": 0, "seq_over_500ms": 0, "api_p50": null, "api_p99": null, "api_max": null, "elapsed_max": 0.066, "bad": [], "sock_pids": ["28889", "28943"], "api_pids": []}
+{"label": "new-default", "mode": "resume", "since_kill_at_resume_s": 11.61, "lock_pttl_ms_at_resume": "-2", "connect_s": 0.009, "first_incr_s": 0.021, "count": 1, "first_event_done_since_kill_s": 11.64, "log": [[0.013, "new_token", "08cc9946-0fb3-45b0-b5fa-22e788d08bb6"], [0.014, "ns connect"], [0.016, "event", "{\"delta\": {\"reflex___state____state\": {\"rx_router_url_rx_state_\": {\"scheme\": \"\", \"netloc\": \"\", \"origin\": \"://\", \"path\": \"/\", \"query\": \"\", \"query_parameters\": {}"]]}
+{"label": "new-false", "mode": "kill", "killed_pid": 29177, "lock_pttl_ms_at_kill": "9493"}
+{"label": "new-off", "mode": "kill", "killed_pid": 29425, "lock_pttl_ms_at_kill": "9496"}
+{"label": "a1-default", "mode": "kill", "killed_pid": 29669, "lock_pttl_ms_at_kill": "9495"}

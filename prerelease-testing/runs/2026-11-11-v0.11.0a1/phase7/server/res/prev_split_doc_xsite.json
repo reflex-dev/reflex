@@ -1,0 +1,10 @@
+{
+ "page": "http://evil.test:3344/",
+ "results": {
+  "ws://localhost:8343/_event/?EIO=4&transport=websocket": "OPEN"
+ },
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (File not found)"
+ ],
+ "origin": "http://evil.test:3344"
+}

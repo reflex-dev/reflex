@@ -1,0 +1,8 @@
+##### a1_split_doc venv=a1 backend env: REFLEX_DEPLOY_URL=http://localhost:3343
+  [a1_split_doc] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [xsite] origin http://evil.test:3344 {"ws://localhost:8343/_event/?EIO=4&transport=websocket": "ERROR"}
+  hs 101  Host=localhost:8343 Origin=http://localhost:3343 
+  hs 403  Host=localhost:8343 Origin=http://localhost:8343 
+  hs 403  Host=localhost:8343 Origin=http://127.0.0.1:3343 
+  hs 403  Host=localhost:8343 Origin=https://evil.example 
+  backend log: http://evil.test:3344 is not an accepted origin. (further occurrences of this error will be logged with level INFO)
