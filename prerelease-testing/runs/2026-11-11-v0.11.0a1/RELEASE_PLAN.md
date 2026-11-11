@@ -11,7 +11,7 @@ the milestone `v0.11.0`.
 |---|---|---|
 | 030 | Forked workers share one redis lock-contender id (oplock ~1 s stalls) | **PR open** [reflex-dev/reflex#7795](https://github.com/reflex-dev/reflex/pull/7795) |
 | 036 | Optional set var ops crash / fail prod build | **PR open** [reflex-dev/reflex#7800](https://github.com/reflex-dev/reflex/pull/7800) |
-| instaque | Redis lock release lets the releaser retake before waiters hear of it | **PR open** [reflex-dev/reflex#7801](https://github.com/reflex-dev/reflex/pull/7801) |
+| instaque | Redis lock release lets the releaser retake before waiters hear of it | **Deferred** — [reflex-dev/reflex#7801](https://github.com/reflex-dev/reflex/pull/7801) moved to draft (PING+EVAL pipeline costs 10-20% client CPU on every uncontended `modify_state`, CodSpeed -13%); follow-up [reflex-dev/reflex#7805](https://github.com/reflex-dev/reflex/issues/7805) |
 | 045 | Event payload transform imported reflex.model / SQLAlchemy inside the event | **PR open** [reflex-dev/reflex#7802](https://github.com/reflex-dev/reflex/pull/7802) |
 | 015 | Mistaken handler return values silently accepted | **PR open** [reflex-dev/reflex#7796](https://github.com/reflex-dev/reflex/pull/7796) (merges before #7761) |
 | 004 | Unregistered DeclarativeBase → silent drop of every table | **PR open** [reflex-dev/reflex#7797](https://github.com/reflex-dev/reflex/pull/7797) (design: auto-detect bases) |
@@ -180,7 +180,7 @@ non-callable defaults as server_default, refuse factories with a clear message; 
 changelog line; 039 warning + docs; 042 raise floors; 044 investigate, clean error status if the response has not
 started else an explicit error frame, dedupe the log; redis-py: no cap; #7797 add a `breaking` fragment, keep debug
 log; #7795 hook OK; #7796 add a "call it" hint, keep the dev warning; 033 opt-out via `GRANIAN_RESPAWN_FAILED_WORKERS`,
-add a reflex INFO line on respawn only if simple; instaque fix ships (follow-up issue for a real fair hand-off); 034/035
+add a reflex INFO line on respawn only if simple; instaque fix ships (follow-up issue for a real fair hand-off) — REVISED 08:50: deferred to #7805, #7801 drafted after the per-event CPU cost was confirmed; 034/035
 `ReflexError` for conflicts, keep `bugfix` fragment; 036 fold the note into `+set-var.feature.md`, `to_array()`
 non-optional OK, file the ComputedVar `set | None` typing gap and the optional-list follow-up.
 
@@ -210,7 +210,7 @@ As each PR merges into `main`:
 | #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open; agent fixing CodeQL clear-text-logging alert (thread stays open for owner) + empty `cors_allowed_origins` list semantics + checking unit-tests-gate |
 | #7800 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | PR open, watch |
 | #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | PR open, watch (bot nits fixed b1b99aba4) |
-| #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | PR open, watch |
+| #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | draft, deferred to #7805; not cherry-picked |
 | #7804 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | PR open, watch (ClientStateConflictError) |
 | #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | PR open, watch (no warm-up needed: check sys.modules instead of importing) |
 | 001+016+007 | fix/repeated-rx-event (+ maybe fix/event-callback-pyright-typing), /home/user/reflex-fix-001 | agent running (opens PR) |
@@ -231,5 +231,5 @@ As each PR merges into `main`:
   (`compiler.py`), FINDING-010 (`base_state_processor.py` — after #7796, same file), FINDING-044 (upload path),
   FINDING-028 (`reflex_base/utils/log.py`), FINDING-042 floors (`pyproject.toml` — trivial, any time), FINDING-039
   (`iter_tag.py` + docs), FINDING-029 / -047 (trivial), FINDING-003 shim if chosen (`reflex_base/components/component.py`).
-- In-progress fixes land as their agents finish (instaque part stacks on #7795).
+- In-progress fixes land as their agents finish (instaque deferred: #7801 draft, #7805).
 - Then cut 0.11.0a2 and re-run the original repros (Phase 7), together with a fixed reflex-enterprise build.
