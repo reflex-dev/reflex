@@ -158,6 +158,51 @@ the milestone `v0.11.0`.
    #7796 — add a "call it" hint to the error for uncalled creators? keep the dev "value dropped" warning until #7761?
 7. **Release-branch CHANGELOG:** who corrects the #7641 entry (orchestrator on the release branch, or at release time)?
 
+## Unattended execution (authorized by the release owner, 2026-11-11)
+Standing authorizations: open a PR per fix without asking (label `on deck`, milestone `v0.11.0`, base `main`); subscribe to
+and drive our own PRs (CI fixes, review responses — push back on excessive bot comments; no scope creep: if a fix grows
+complicated, prefer a simpler design + follow-up, or pulling the feature); stack branches where files overlap; open PRs
+in reflex-dev/reflex-enterprise (no conventions); all changes target `main` — corrections to already-materialized 0.11.0a1
+text are made by editing the unreleased fragments on `main` (modify/delete conflicts are reconciled when `main` merges
+into the pre-release branch); file well-specified issues for "file after release" items (they will be picked up by
+outside contributors' agents: state the actual problem, repro, expected behaviour, constraints and non-goals); push to
+`testing/prerelease` at close-out; opus-high agents, ~4 at a time. The owner cuts the next pre-release once all PRs merge;
+then run Phase 7 (re-verify original repros).
+
+Answers (defaults accepted unless noted): 001 merge repeated `@rx.event` silently; 003 add the reflex `refs` shim AND
+declare `refs` internal (+ rxe fix); 002 no rxe cap, add the reflex changelog line about `config.deploy_url`; 005/006 catch
+all env.py exceptions with the hint, `alembic check` before writing a revision, one-time "not the reflex template"
+warning; 009 skip initial-state compile in `evaluate_pages`; 010 empty token → `EventHandlerTypeError`; 012 use only
+non-callable defaults as server_default, refuse factories with a clear message; 037 keep raising + `repr()` hint +
+changelog line; 039 warning + docs; 042 raise floors; 044 investigate, clean error status if the response has not
+started else an explicit error frame, dedupe the log; redis-py: no cap; #7797 add a `breaking` fragment, keep debug
+log; #7795 hook OK; #7796 add a "call it" hint, keep the dev warning; 033 opt-out via `GRANIAN_RESPAWN_FAILED_WORKERS`,
+add a reflex INFO line on respawn only if simple; instaque fix ships (follow-up issue for a real fair hand-off); 034/035
+`ReflexError` for conflicts, keep `bugfix` fragment; 036 fold the note into `+set-var.feature.md`, `to_array()`
+non-optional OK, file the ComputedVar `set | None` typing gap and the optional-list follow-up.
+
+### Work queue (update as items move; a fresh agent resumes from here)
+| item | branch / worktree | state |
+|---|---|---|
+| #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open, watch |
+| #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, watch; add "call it" hint |
+| #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, watch; add breaking fragment |
+| #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, watch |
+| #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, watch; correct `news/+cors-prod-default.breaking.md` deploy_url sentence |
+| 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | committed; fold fragment, open PR |
+| 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | committed; optional INFO line, open PR |
+| instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | committed; open PR |
+| 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | committed; ReflexError, open PR |
+| 045 | fix/warm-lazy-imports-before-events, /home/user/reflex-fix-045 | agent running |
+| 001+016+007 | (new) stacked event-decorator/typing branch | to start |
+| 005/006/017+012 | (new) stacked on fix/autogenerate-never-drops-tables | to start |
+| 003 shim + rxe 002/003/008 + 002 changelog line | (new) reflex + reflex-enterprise | to start |
+| 044 | (new) upload error response | to start |
+| 009, 010 (stack on 015), 039, 037/038, 028, 029, 042, 047 | (new) | to start |
+| changelog/doc lines 024, 006, 014, 020 | (new) fragment corrections on main | to start |
+| issues for "file after release" | — | to file |
+| Phase 7 + close-out (REGISTRY, history, fixtures, testing/prerelease) | — | after the owner cuts the next pre-release |
+
 ## Suggested sequencing
 - Open PRs (#7795–#7799) are independent of each other and branch from current `main`; any order. #7796 before #7761.
 - Next, in parallel (independent files): FINDING-001 + -016 + -007 (one PR or stacked: `reflex_base/event/__init__.py`,
