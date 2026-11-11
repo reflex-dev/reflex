@@ -42,6 +42,7 @@ _frontend_shutting_down = False
 _FRONTEND_STOP_TIMEOUT = 5
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
+_GRANIAN_RESPAWN_ENV = "GRANIAN_RESPAWN_FAILED_WORKERS"
 
 
 def get_dev_backend_reload_marker() -> Path:
@@ -1161,8 +1162,7 @@ def run_granian_backend_prod(
         # Granian otherwise stops the server when any one worker dies. It still
         # exits when a respawned worker dies again within a few seconds.
         respawn_failed_workers=interpret_boolean_env(
-            os.getenv("GRANIAN_RESPAWN_FAILED_WORKERS", "true"),
-            "GRANIAN_RESPAWN_FAILED_WORKERS",
+            os.getenv(_GRANIAN_RESPAWN_ENV, "true"), _GRANIAN_RESPAWN_ENV
         ),
     )
 
