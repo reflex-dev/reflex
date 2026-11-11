@@ -1,0 +1,16 @@
+  [v101_passthrough] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [v101_passthrough]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [v101_nginx-default] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [v101_nginx-default]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [v101_nginx-host-xfp] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [v101_nginx-host-xfp]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [v101_xfp-xfh] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [v101_xfp-xfh]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [v101_render-wss] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [v101_render-wss]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [v101_caddy-behind-edge] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [v101_caddy-behind-edge]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [v101_appgw-override] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [v101_appgw-override]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [v101_afd] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [v101_afd]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)

@@ -1,0 +1,16 @@
+  [a1dep_passthrough] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1dep_passthrough]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [a1dep_nginx-default] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1dep_nginx-default]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [a1dep_nginx-host-xfp] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1dep_nginx-host-xfp]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [a1dep_xfp-xfh] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1dep_xfp-xfh]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [a1dep_render-wss] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1dep_render-wss]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [a1dep_caddy-behind-edge] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1dep_caddy-behind-edge]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [a1dep_appgw-override] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1dep_appgw-override]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [a1dep_afd] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [a1dep_afd]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)

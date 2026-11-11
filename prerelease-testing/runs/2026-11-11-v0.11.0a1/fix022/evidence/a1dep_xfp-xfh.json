@@ -1,0 +1,13 @@
+{
+ "url": "https://app.test:3903/",
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "ws": [
+  "wss://app.test:3903/_event/?token=38e65539-7cb6-4c48-c057-69866ba4aa91&EIO=4&transport=websocket"
+ ],
+ "failed": [],
+ "count_text": "count=2",
+ "body_tail": "fapp\n\ncount=2\n\ninc\nBuilt with Reflex",
+ "ok": true
+}

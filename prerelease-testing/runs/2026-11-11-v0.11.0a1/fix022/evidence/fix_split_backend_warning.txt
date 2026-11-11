@@ -1,0 +1,5 @@
+Warning: Rejected an event websocket from origin 'http://localhost:3908': in 
+prod mode the backend accepts only its own origin (request Host 
+'localhost:8908', X-Forwarded-Host None). If the frontend is served from 
+http://localhost:3908, set REFLEX_DEPLOY_URL=http://localhost:3908 on the 
+backend, or add it to cors_allowed_origins; a reverse proxy must forward the 

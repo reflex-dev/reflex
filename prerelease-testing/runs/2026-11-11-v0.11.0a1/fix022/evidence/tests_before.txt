@@ -1,0 +1,10 @@
+FAILED tests/units/test_app.py::test_socketio_prod_default_accepts_own_host_behind_tls_proxy[https://app.example.com-app.example.com-headers0-True]
+FAILED tests/units/test_app.py::test_socketio_prod_default_accepts_own_host_behind_tls_proxy[https://app.example.com-App.Example.COM-headers1-True]
+FAILED tests/units/test_app.py::test_socketio_prod_default_accepts_own_host_behind_tls_proxy[https://app.example.com-app.example.com:443-headers2-True]
+FAILED tests/units/test_app.py::test_socketio_prod_default_accepts_own_host_behind_tls_proxy[https://app.example.com:8443-app.example.com:8443-headers3-True]
+FAILED tests/units/test_app.py::test_socketio_prod_default_accepts_own_host_behind_tls_proxy[https://app.example.com-app.example.com-headers8-True]
+FAILED tests/units/test_app.py::test_socketio_prod_default_accepts_own_host_behind_tls_proxy[https://app.example.com-app.example.com-headers9-True]
+FAILED tests/units/test_app.py::test_socketio_origins_with_deploy_url_or_explicit_list[True-config_kwargs1-http://localhost:3000-localhost:3000-True]
+FAILED tests/units/test_app.py::test_socketio_rejection_warns_once_with_fix
+FAILED tests/units/test_app.py::test_event_websocket_handshake_behind_tls_proxy[https://app.example.com-True]
+9 failed, 47 passed, 214 deselected in 1.24s

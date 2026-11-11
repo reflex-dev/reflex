@@ -1,0 +1,36 @@
+{
+ "url": "http://localhost:3908/",
+ "console": [
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403"
+ ],
+ "ws": [
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket",
+  "ws://localhost:8908/_event/?token=ac7f6458-dac3-4ee2-b75c-bbe6b13aea61&EIO=4&transport=websocket"
+ ],
+ "failed": [],
+ "count_text": "count=0",
+ "body_tail": "Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:8908/_event\nfapp\n\ncount=0\n\ninc\nBuilt with Reflex",
+ "ok": false
+}

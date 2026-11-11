@@ -1,0 +1,13 @@
+{
+ "url": "http://localhost:8906/",
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "ws": [
+  "ws://localhost:8906/_event/?token=f2fe6044-9fd3-4191-aa37-05f492cde359&EIO=4&transport=websocket"
+ ],
+ "failed": [],
+ "count_text": "count=2",
+ "body_tail": "fapp\n\ncount=2\n\ninc\nBuilt with Reflex",
+ "ok": true
+}

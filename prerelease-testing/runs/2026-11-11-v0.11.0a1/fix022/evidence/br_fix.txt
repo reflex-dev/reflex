@@ -1,0 +1,18 @@
+  [fix_passthrough] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix_passthrough]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix_nginx-default] {"ok": false, "count_text": "count=0"} ws_opens= 12
+  [fix_nginx-default]   console: error: WebSocket connection to 'wss://app.test:3904/_event/?token=75591fb8-3707-4bd5-a6e1-0acf5bbc7839&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [fix_nginx-default]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix_nginx-host-xfp] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix_nginx-host-xfp]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix_xfp-xfh] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix_xfp-xfh]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix_render-wss] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix_render-wss]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix_caddy-behind-edge] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix_caddy-behind-edge]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix_appgw-override] {"ok": false, "count_text": "count=0"} ws_opens= 12
+  [fix_appgw-override]   console: error: WebSocket connection to 'wss://app.test:3904/_event/?token=fc7fe6f6-1c0c-4a64-8d9d-ed15b78e7ac2&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [fix_appgw-override]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix_afd] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix_afd]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
