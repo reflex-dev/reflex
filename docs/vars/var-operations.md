@@ -373,6 +373,8 @@ We use the `reverse` operation to reverse a list var. The var must be of type `l
 
 Finally we use the `join` operation to join a list var into a string.
 
+An optional list var (`list[str] | None`) holding `None` acts as an empty list in every list operation: `contains` is false, `length` is 0 and `join` gives an empty string.
+
 ```python demo exec
 class ListsState(rx.State):
     list_1: list = [1, 2, 3, 4, 6]

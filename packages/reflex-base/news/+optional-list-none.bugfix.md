@@ -1,0 +1,1 @@
+Operations on an optional list var (`list[T] | None`) holding `None` no longer crash the page or the production prerender: the list acts as an empty list, so `contains` is false, `length` is 0 and `join` gives an empty string.

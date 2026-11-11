@@ -36,6 +36,7 @@ from .sequence import (
     _determine_value_of_array_index,
     _literal_elements_json,
     _literal_elements_var_data,
+    array_or_empty_operation,
 )
 
 if TYPE_CHECKING:
@@ -331,9 +332,12 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
         Returns:
             The set as an array var.
         """
-        if types.is_optional(self._var_type):
-            return optional_set_to_array_operation(self)
-        return self.to(
+        array = (
+            array_or_empty_operation(self)
+            if types.is_optional(self._var_type)
+            else self
+        )
+        return array.to(
             ArrayVar, Sequence[_determine_value_of_array_index(self._var_type)]
         )
 
@@ -592,24 +596,6 @@ def set_length_operation(value: SetVar) -> CustomVarOperationReturn[int]:
     """
     return var_operation_return(
         js_expression=f"{value.to_array()!s}.length", var_type=int
-    )
-
-
-@var_operation
-def optional_set_to_array_operation(
-    value: SetVar,
-) -> CustomVarOperationReturn[Sequence]:
-    """View an optional set as an array, with None as an empty array.
-
-    Args:
-        value: The optional set.
-
-    Returns:
-        The array view operation.
-    """
-    return var_operation_return(
-        js_expression=f"({value!s} ?? [])",
-        var_type=Sequence[_determine_value_of_array_index(value._var_type)],
     )
 
 
