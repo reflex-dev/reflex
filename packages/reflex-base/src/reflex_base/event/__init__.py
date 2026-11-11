@@ -3610,33 +3610,23 @@ class EventNamespace:
             TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
         """
 
-        def _build_event_actions():
-            """Build event_actions dict from decorator parameters.
+        def _explicit_event_actions() -> dict[str, Any]:
+            """Collect the event actions passed to the decorator.
 
             Returns:
-                Dict of event actions to apply, or empty dict if none specified.
+                Every action that is not None, False and 0 included.
             """
-            if not any([
-                stop_propagation,
-                prevent_default,
-                throttle,
-                debounce,
-                temporal,
-            ]):
-                return {}
-
-            event_actions = {}
-            if stop_propagation is not None:
-                event_actions["stopPropagation"] = stop_propagation
-            if prevent_default is not None:
-                event_actions["preventDefault"] = prevent_default
-            if throttle is not None:
-                event_actions["throttle"] = throttle
-            if debounce is not None:
-                event_actions["debounce"] = debounce
-            if temporal is not None:
-                event_actions["temporal"] = temporal
-            return event_actions
+            return {
+                key: value
+                for key, value in (
+                    ("stopPropagation", stop_propagation),
+                    ("preventDefault", prevent_default),
+                    ("throttle", throttle),
+                    ("debounce", debounce),
+                    ("temporal", temporal),
+                )
+                if value is not None
+            }
 
         def wrapper(func: Callable[..., Any]) -> EventCallback:
             if isinstance(func, (staticmethod, classmethod)):
@@ -3665,16 +3655,22 @@ class EventNamespace:
                 setattr(func, BACKGROUND_TASK_MARKER, True)
             if supersedes is True:
                 setattr(func, SUPERSEDES_MARKER, True)
-            if getattr(func, "__name__", "").startswith("_"):
+            # A registered handler was checked before its rename, which
+            # starts with "_" for a module named like `__main__`.
+            if not registered and getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)
 
             # The markers stay on the function: a mixin's handler is copied
             # per concrete state from its function, and the handler reads
             # them from there.
-            event_actions = _build_event_actions()
+            event_actions = _explicit_event_actions()
             if inner_actions:
+                # An explicit False or 0 turns off the inner decorator's action.
                 event_actions = {**inner_actions, **event_actions}
+            elif not any(event_actions.values()):
+                # Alone, actions that are all False or 0 are no actions.
+                event_actions = {}
             if event_actions:
                 setattr(func, EVENT_ACTIONS_MARKER, event_actions)
 

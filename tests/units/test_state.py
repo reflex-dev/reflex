@@ -7713,9 +7713,19 @@ def test_static_and_class_methods_above_rx_event_are_deprecated_and_ignored() ->
             def cls_helper(cls, value: int) -> str:
                 return f"{cls.__name__}:{value}"
 
-    assert {call.kwargs["feature_name"] for call in mock_deprecate.call_args_list} == {
+        class StaticAboveMixin(BaseState, mixin=True):
+            @staticmethod  # pyright: ignore [reportArgumentType]
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def mixin_helper(value: int) -> int:
+                return value * 2
+
+        class UsesStaticAboveMixin(StaticAboveMixin, State):
+            pass
+
+    # One warning each: the staticmethod, the classmethod, the mixin's copy.
+    assert [call.kwargs["feature_name"] for call in mock_deprecate.call_args_list] == [
         "@rx.event on a staticmethod or classmethod"
-    }
+    ] * 3
     assert isinstance(StaticAboveState.__dict__["helper"], staticmethod)
     assert isinstance(StaticAboveState.__dict__["cls_helper"], classmethod)
     assert StaticAboveState.helper(3) == 6  # pyright: ignore [reportCallIssue]
@@ -7723,18 +7733,8 @@ def test_static_and_class_methods_above_rx_event_are_deprecated_and_ignored() ->
     assert StaticAboveState.cls_helper(3) == "StaticAboveState:3"  # pyright: ignore [reportCallIssue]
     assert "helper" not in StaticAboveState.event_handlers
     assert "cls_helper" not in StaticAboveState.event_handlers
-
-    class StaticAboveMixin(BaseState, mixin=True):
-        @staticmethod  # pyright: ignore [reportArgumentType]
-        @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
-        def helper(value: int) -> int:
-            return value * 2
-
-    class UsesStaticAboveMixin(StaticAboveMixin, State):
-        pass
-
-    assert UsesStaticAboveMixin.helper(4) == 8  # pyright: ignore [reportCallIssue]
-    assert "helper" not in UsesStaticAboveMixin.event_handlers
+    assert UsesStaticAboveMixin.mixin_helper(4) == 8  # pyright: ignore [reportCallIssue]
+    assert "mixin_helper" not in UsesStaticAboveMixin.event_handlers
 
 
 def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:

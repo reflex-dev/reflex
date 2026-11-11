@@ -1886,10 +1886,65 @@ def test_repeated_rx_event_merges_event_actions():
         def handle(self):
             pass
 
-    expected = {"throttle": 300, "stopPropagation": True, "debounce": 50}
-    assert MergedState.handle.event_actions == expected
-    # A state built from a mixin copies the actions from the function.
-    assert getattr(MergedState.handle.fn, EVENT_ACTIONS_MARKER) == expected
+    assert MergedState.handle.event_actions == {
+        "throttle": 300,
+        "stopPropagation": True,
+        "debounce": 50,
+    }
+
+
+def test_repeated_rx_event_outer_false_and_zero_override():
+    """An outer False or 0 turns off the inner decorator's action."""
+
+    class OverrideState(BaseState):
+        @event(prevent_default=False, temporal=False)  # pyright: ignore [reportArgumentType]
+        @event(prevent_default=True, temporal=True, debounce=50)
+        def handle(self):
+            pass
+
+        @event(throttle=0)  # pyright: ignore [reportArgumentType]
+        @event(throttle=300)
+        def throttled(self):
+            pass
+
+    assert OverrideState.handle.event_actions == {
+        "preventDefault": False,
+        "temporal": False,
+        "debounce": 50,
+    }
+    assert OverrideState.throttled.event_actions == {"throttle": 0}
+
+
+def test_rx_event_with_only_false_actions_has_no_actions():
+    """A single @rx.event whose actions are all False or 0 carries none, as before."""
+
+    class FalseState(BaseState):
+        @event(prevent_default=False, temporal=False, throttle=0)
+        def handle(self):
+            pass
+
+    assert FalseState.handle.event_actions == {}
+
+
+def test_repeated_rx_event_on_a_mixin_is_copied_with_merged_actions():
+    """A state copying a mixin's repeated @rx.event gets the merged actions."""
+
+    class RepeatedMixin(BaseState, mixin=True):
+        @event(stop_propagation=True)  # pyright: ignore [reportArgumentType]
+        @event(background=True, throttle=100)
+        async def work(self):
+            pass
+
+    class UsesRepeatedMixin(RepeatedMixin, BaseState):
+        pass
+
+    handler = UsesRepeatedMixin.event_handlers["work"]
+    assert handler.state is UsesRepeatedMixin
+    assert handler.fn is not RepeatedMixin.__dict__["work"].fn
+    assert handler.is_background
+    expected = {"throttle": 100, "stopPropagation": True}
+    assert handler.event_actions == expected
+    assert getattr(handler.fn, EVENT_ACTIONS_MARKER) == expected
 
 
 def test_repeated_rx_event_on_a_decentralized_handler():
@@ -1912,3 +1967,27 @@ def test_repeated_rx_event_on_a_decentralized_handler():
     assert e.event_actions == {"throttle": 300, "stopPropagation": True}
     assert e.state is S
     assert S.event_handlers[e.fn.__name__] is e
+
+
+def test_repeated_rx_event_on_a_decentralized_handler_in_main():
+    """A repeated @rx.event on a handler of ``__main__`` is not taken for a private one.
+
+    Registering it renames it to ``_main___<name>``, which the second
+    decorator must not reject.
+    """
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    def handle(s: S):
+        s.field = "foo"
+
+    handle.__module__ = "__main__"
+    once = event(handle)  # pyright: ignore [reportArgumentType]
+    assert once.fn.__name__.startswith("_main___")
+    twice = event(stop_propagation=True)(once)  # pyright: ignore [reportArgumentType]
+
+    assert isinstance(twice, EventHandler)
+    assert twice.fn is once.fn
+    assert twice.event_actions == {"stopPropagation": True}
+    assert S.event_handlers[twice.fn.__name__] is twice
