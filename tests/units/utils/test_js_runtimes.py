@@ -220,3 +220,19 @@ def test_existing_web_package_sections_reads_utf8(
         '"devDependencies": {"b": "1"}}'.encode()
     )
     assert js_runtimes._existing_web_package_sections() == ({"a"}, {"b"})
+
+
+@pytest.mark.parametrize("content", [b"{invalid", b"\xff{}"])
+def test_existing_web_package_sections_unreadable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, content: bytes
+):
+    """An unreadable package.json (invalid JSON or not UTF-8) declares nothing.
+
+    Args:
+        tmp_path: Temporary .web directory.
+        monkeypatch: Pytest monkeypatch fixture.
+        content: Unreadable file content.
+    """
+    monkeypatch.setattr(js_runtimes.frontend_skeleton, "get_web_dir", lambda: tmp_path)
+    (tmp_path / "package.json").write_bytes(content)
+    assert js_runtimes._existing_web_package_sections() == (set(), set())
