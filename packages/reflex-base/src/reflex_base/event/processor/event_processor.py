@@ -943,7 +943,9 @@ class EventProcessor:
         """Handle an event's exception with the traceback it was raised with.
 
         A caller awaiting the event's future (e.g. an upload stream) re-raises
-        the exception before this runs, which replaces the handler's frames.
+        the exception before this runs. CPython's C ``asyncio.Future`` raises it
+        there with a fresh traceback of the awaiting frames only, dropping the
+        handler's frames (the pure-Python future would prepend them instead).
 
         Args:
             ex: The exception the event raised.

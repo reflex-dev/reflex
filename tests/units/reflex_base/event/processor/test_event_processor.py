@@ -911,7 +911,9 @@ async def test_backend_exception_handler_sees_handler_frames_when_future_awaited
     """Awaiting the failed event's future does not strip the handler from the traceback.
 
     A caller awaiting the future (e.g. an upload stream) re-raises the exception
-    before the exception handler task runs, replacing its traceback.
+    before the exception handler task runs. CPython's C ``asyncio.Future`` gives
+    that re-raise a traceback of the awaiting frames only, so without the
+    restore the handler sees just this test's frame.
 
     Args:
         token: The client token.

@@ -38,6 +38,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor.event_processor import QueueShutDown
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
@@ -47,6 +48,7 @@ from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core import _upload as upload_module
 from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
 from reflex_otel import ReflexInstrumentor
@@ -1817,6 +1819,84 @@ async def test_upload_handler_error_after_update_ends_stream_with_error_frame(
     ((error, frames),) = handled
     assert isinstance(error, OSError)
     assert "yield_then_fail_upload" in frames
+
+
+async def _raise_queue_shut_down(  # noqa: RUF029
+    token: str, event: Event
+) -> AsyncGenerator[Any]:
+    """Fail like enqueue_stream_delta on a processor that is not running.
+
+    Args:
+        token: The client token.
+        event: The upload event.
+
+    Yields:
+        Nothing.
+
+    Raises:
+        QueueShutDown: Always, before yielding.
+    """
+    msg = "Event processor is not running, call .start(...) first."
+    raise QueueShutDown(msg)
+    yield
+
+
+def _raise_type_error(value: Any) -> str:
+    """Fail like json_dumps on a state update it cannot serialize.
+
+    Args:
+        value: The value to serialize.
+
+    Returns:
+        A plain dict (the error frame) as JSON.
+
+    Raises:
+        TypeError: For anything else, i.e. a state update.
+    """
+    if isinstance(value, dict):
+        return json.dumps(value)
+    msg = "Object of type X is not JSON serializable"
+    raise TypeError(msg)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("target", "replacement", "error"),
+    [
+        ("enqueue_stream_delta", _raise_queue_shut_down, QueueShutDown),
+        ("json_dumps", _raise_type_error, TypeError),
+    ],
+)
+async def test_upload_error_the_event_processor_did_not_report_reaches_the_server(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    monkeypatch: pytest.MonkeyPatch,
+    target: str,
+    replacement: Any,
+    error: type[Exception],
+):
+    """An upload failure the event processor never reported is not swallowed.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+        monkeypatch: pytest monkeypatch fixture.
+        target: What fails: the processor's stream or the update serialization.
+        replacement: The failing stand-in for the target.
+        error: The exception the stand-in raises.
+    """
+    monkeypatch.setattr(
+        attached_mock_base_state_event_processor
+        if target == "enqueue_stream_delta"
+        else upload_module,
+        target,
+        replacement,
+    )
+    # It escapes the app, so the server logs it.
+    with pytest.raises(error):
+        await _post_failing_upload(
+            "upload_alias_handler", token, attached_mock_base_state_event_processor
+        )
 
 
 @pytest.mark.asyncio
