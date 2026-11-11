@@ -10,6 +10,9 @@ the milestone `v0.11.0`.
 | Finding | What | Status |
 |---|---|---|
 | 030 | Forked workers share one redis lock-contender id (oplock ~1 s stalls) | **PR open** [reflex-dev/reflex#7795](https://github.com/reflex-dev/reflex/pull/7795) |
+| 036 | Optional set var ops crash / fail prod build | **PR open** [reflex-dev/reflex#7800](https://github.com/reflex-dev/reflex/pull/7800) |
+| instaque | Redis lock release lets the releaser retake before waiters hear of it | **PR open** [reflex-dev/reflex#7801](https://github.com/reflex-dev/reflex/pull/7801) |
+| 045 | Event payload transform imported reflex.model / SQLAlchemy inside the event | **PR open** [reflex-dev/reflex#7802](https://github.com/reflex-dev/reflex/pull/7802) |
 | 015 | Mistaken handler return values silently accepted | **PR open** [reflex-dev/reflex#7796](https://github.com/reflex-dev/reflex/pull/7796) (merges before #7761) |
 | 004 | Unregistered DeclarativeBase → silent drop of every table | **PR open** [reflex-dev/reflex#7797](https://github.com/reflex-dev/reflex/pull/7797) (design: auto-detect bases) |
 | 011 | JSON column on DeclarativeBase typed `object` | **PR open** [reflex-dev/reflex#7798](https://github.com/reflex-dev/reflex/pull/7798) |
@@ -185,18 +188,18 @@ non-optional OK, file the ComputedVar `set | None` typing gap and the optional-l
 | item | branch / worktree | state |
 |---|---|---|
 | #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open, watch |
-| #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, watch; add "call it" hint |
-| #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, watch; add breaking fragment |
+| #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, watch; "call it" hint being added (agent pushes) |
+| #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, watch; breaking fragment pushed |
 | #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, watch |
-| #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, watch; correct `news/+cors-prod-default.breaking.md` deploy_url sentence |
-| 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | committed; fold fragment, open PR |
-| 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | committed; optional INFO line, open PR |
-| instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | committed; open PR |
-| 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | committed; ReflexError, open PR |
-| 045 | fix/warm-lazy-imports-before-events, /home/user/reflex-fix-045 | agent running |
-| 001+016+007 | (new) stacked event-decorator/typing branch | to start |
-| 005/006/017+012 | (new) stacked on fix/autogenerate-never-drops-tables | to start |
-| 003 shim + rxe 002/003/008 + 002 changelog line | (new) reflex + reflex-enterprise | to start |
+| #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, watch; deploy_url sentence in `news/+cors-prod-default.breaking.md` corrected |
+| #7800 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | PR open, watch |
+| 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | committed; agent adding optional INFO line, then open PR |
+| #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | PR open, watch |
+| 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | committed; agent switching to ReflexError, then open PR |
+| #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | PR open, watch (no warm-up needed: check sys.modules instead of importing) |
+| 001+016+007 | fix/repeated-rx-event (+ maybe fix/event-callback-pyright-typing), /home/user/reflex-fix-001 | agent running (opens PR) |
+| 005/006/017+012 | fix/kept-env-py-errors (stacked on #7797), /home/user/reflex-fix-005 | agent running (opens PR) |
+| 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | agent running (opens PRs) |
 | 044 | (new) upload error response | to start |
 | 009, 010 (stack on 015), 039, 037/038, 028, 029, 042, 047 | (new) | to start |
 | changelog/doc lines 024, 006, 014, 020 | (new) fragment corrections on main | to start |
