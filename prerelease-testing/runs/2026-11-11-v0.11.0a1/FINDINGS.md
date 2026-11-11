@@ -37,8 +37,8 @@ FINDING-002 / -003 / -008 (reflex-enterprise 0.9.11 breaks on 0.11: MCP prod sta
 (unregistered DeclarativeBase silently drops every table — not a regression, but the docs now steer everyone there),
 FINDING-005 / -006 / -007 / -009 / -016 (regressions), plus small fixes and changelog lines listed in the plan.
 
-**Counts.** 43 findings: 5 HIGH, 13 MEDIUM (one MEDIUM-LOW), 2 LOW-MEDIUM, 23 LOW; 15 are regressions against 0.10.1
-(001, 002, 003, 005, 006, 007, 008, 009, 015 (diagnostics), 016, 022, 024, 029, 037, 038). Verifiers refuted, narrowed or
+**Counts.** 43 findings: 5 HIGH, 13 MEDIUM (one MEDIUM-LOW), 2 LOW-MEDIUM, 23 LOW; 14 are regressions against 0.10.1
+(001, 002, 003, 005, 006, 007, 008, 009, 015 (diagnostics), 016, 022, 024, 037, 038). Verifiers refuted, narrowed or
 reclassified 17 claims (listed below); none was refuted outright as non-reproducible.
 
 Index:
@@ -70,7 +70,7 @@ Index:
 - FINDING-026: Routes differing only in case are accepted silently; one is unreachable (LOW, not a regression)
 - FINDING-027: Prod `reflex run`: repeated Ctrl-C does not force exit while lifespan cleanup is stuck (LOW, not a regression)
 - FINDING-028: Deprecation warnings for handlers passed as props point into `site-packages/reflex_components_*` (LOW)
-- FINDING-029: First 0.11 run rewrites the committed `reflex.lock/package.json` as one-line JSON (LOW, cosmetic regression)
+- FINDING-029: `reflex.lock/package.json` flips between bun's indented and reflex's one-line JSON (LOW, not a regression — RECLASSIFIED)
 - FINDING-030: Forked prod workers share one `StateManagerRedis` instance id; oplock waiters passed over ~1 s; #7534 changelog claim false as written (LOW)
 - FINDING-031: After a Redis outage > ~5 s, cross-worker updates to connected clients are silently dropped (MEDIUM, not a regression)
 - FINDING-032: A dead worker's socket record makes the returning tab look like a duplicate → new token, session lost (MEDIUM, not a regression)
@@ -363,11 +363,16 @@ Index:
   socketio, granian, reflex_base and the stdlib, but not the `reflex_components_*` packages split out of reflex.
 - Fix shape: add every installed `reflex_components_*` (or any `reflex_*` distribution of the train) to the exclude roots.
 
-## FINDING-029: First 0.11 run rewrites the committed `reflex.lock/package.json` as one-line JSON (LOW)
-- Cluster: `examples_ui` | Regression: yes (cosmetic) | Not separately verified
-- Any app run once on 0.10.1, then upgraded: `reflex.lock/package.json` (and `.web/package.json`) become compact JSON;
-  content identical (`examples_ui/scripts/pkgjson_cmp.py`), `bun.lock` byte-identical. Every upgraded project gets a
-  content-free VCS diff. Fix: keep indented output.
+## FINDING-029: `reflex.lock/package.json` flips between bun's indented and reflex's one-line JSON (LOW)
+- Cluster: `examples_ui` | Regression: NO — RECLASSIFIED by the orchestrator (reported as a 0.11 regression)
+- On 0.10.1 alone (`$SB/pj/a`, blank app): after `reflex init` the file is compact (reflex's `json.dumps`), after the first
+  `reflex run` it is indented (bun rewrites it when `bun add` adds the framework deps), after `rm -rf .web` + run (restored
+  from `reflex.lock`) it is compact again. The 0.11 upgrade run only looked like a change because its persisted lockfile
+  already had every dependency, so `bun add` added nothing and reflex's compact render persisted.
+- Cause: reflex renders package.json with `json.dumps(...)` without indent (`templates.package_json_template`,
+  `frontend_skeleton.update_package_json_overrides`) while bun writes 2-space indented JSON. Not intentional.
+- Fix shape (trivial): write package.json with `indent=2` and a trailing newline everywhere reflex writes it, so the
+  persisted file is stable and stops producing content-free VCS diffs.
 
 ## FINDING-030: Forked prod workers share one `StateManagerRedis` instance id; oplock waiters passed over ~1 s (LOW)
 - Cluster: `redis_runtime` | Regression vs 0.10.1: no (0.10.1 stalls 5-10 s) | Verifier: NARROWED to a wider root cause
@@ -488,6 +493,7 @@ reflex==0.11.0a1` resolves lucide 1.1.1 and hosting-cli 0.2.1 (without the #7674
 moves them. Stock pip resolves redis 8.1.0; `uv --prerelease=allow` resolves the redis-py beta 8.2.0b1.
 
 ## Refuted / reclassified claims
+- **package.json formatting regression** (`examples_ui`): pre-existing on 0.10.1 — bun vs reflex writers alternate (FINDING-029).
 - **refs break for plain reflex HIGH** (`compile_memo`): narrowed to MEDIUM — not a documented pattern; worked on 0.10.1 only with an `id`'d component in the module (FINDING-003).
 - **on_mount in cond in memo contradicts #7694** (`compile_memo`): reclassified — the changelog sentence is about page compilation; not a regression (FINDING-040).
 - **TLS / split-deploy CORS MEDIUM** (`server_net`): raised to HIGH by the verifier (FINDING-022).

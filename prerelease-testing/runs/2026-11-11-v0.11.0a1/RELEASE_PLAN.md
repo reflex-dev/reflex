@@ -76,7 +76,7 @@ significant user impact / trivially small; everything else is filed. Each entry 
 - FINDING-013 (duplicate table in two metadatas, random), FINDING-017 (env.old overwrite), FINDING-018 (serializer silent
   blanks), FINDING-019 (naming_convention lost in merge), FINDING-023 (if not closed by FINDING-022's code change),
   FINDING-025 (lifespan skipped silently behind a non-http-safe middleware), FINDING-026 (case-duplicate routes),
-  FINDING-027 (prod repeated Ctrl-C), FINDING-029 (package.json formatting).
+  FINDING-027 (prod repeated Ctrl-C), FINDING-029 (package.json formatting — not a regression; trivial `indent=2` fix).
 - events_await lows: memory-manager `CancelledError` for a bg task awaiting a superseded handler; bg task that catches an
   awaited exception still shows the error toast; deprecation names only the first stacked method per class.
 - FINDING-031 (cross-worker updates lost after > 5 s Redis outage), FINDING-032 (dead worker's socket record → new token),
