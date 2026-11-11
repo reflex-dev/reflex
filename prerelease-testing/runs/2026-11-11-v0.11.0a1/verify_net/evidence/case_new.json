@@ -1,0 +1,23 @@
+{
+ "/Foo": {
+  "http": 200,
+  "mark": "Foo-upper page",
+  "on_load": [
+   "onload-Foo-upper"
+  ]
+ },
+ "/foo": {
+  "http": 200,
+  "mark": "Foo-upper page",
+  "on_load": [
+   "onload-Foo-upper"
+  ]
+ },
+ "/FOO": {
+  "http": 200,
+  "mark": "Foo-upper page",
+  "on_load": [
+   "onload-Foo-upper"
+  ]
+ }
+}

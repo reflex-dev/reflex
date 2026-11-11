@@ -1,0 +1,13 @@
+{
+ "url": "http://localhost:3843/",
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "ws": [
+  "ws://localhost:8843/_event/?token=0a011918-5345-4d5b-8ced-f03c724565a0&EIO=4&transport=websocket"
+ ],
+ "failed": [],
+ "count_text": "count=2",
+ "body_tail": "vapp\n\ncount=2\n\ninc\nBuilt with Reflex",
+ "ok": true
+}

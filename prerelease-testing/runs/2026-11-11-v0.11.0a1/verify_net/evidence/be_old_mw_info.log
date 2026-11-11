@@ -1,0 +1,2 @@
+Info: ASGI lifespan appears unsupported by <function old_mw.<locals>.middleware 
+at 0x7fa31a2262a0>: KeyError('path')

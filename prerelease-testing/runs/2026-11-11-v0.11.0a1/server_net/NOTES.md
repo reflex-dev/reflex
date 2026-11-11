@@ -247,3 +247,164 @@ App `src/otelapp` (`ReflexInstrumentor().instrument()` at import), prod 3356, `O
 (json matrix, lifespan matrices, prenav, blocking excerpts, otel JSON records, lifespan-fail rc=1 log, CORS origin
 lines), `evidence/res` (probe/driver JSON), `evidence/shots` (CORS rejection toast, documented split deployment,
 hydration-too-large toast), `new_constraints.txt` / `prev_constraints.txt` (freeze of the shared venvs used as -c).
+
+## VERIFICATION
+Independent verifier `verify_net` (2026-11-11). I reproduced everything from the written repro and the doc text, not from
+the reporter's scripts. Own venvs (PyPI only, cwd `$SB`): `$SB/envs/vnet-new` = `reflex==0.11.0a1 fastapi uvicorn`
+(`--prerelease=allow --only-binary :all:`), `$SB/envs/vnet-prev` = `reflex==0.10.1 fastapi uvicorn` (no prerelease flag).
+Both resolve starlette 1.10.0 and python-engineio 4.15.1, so engine.io is held constant. My probe app is
+`verify_net/src/vapp` (a counter, plus `VN_CASE_DUP=1` and `VN_TX=fastapi|old_mw|new_mw|http_only_mw`). Scripts are in
+`verify_net/bin/`, evidence in `verify_net/evidence/`. Ports used: 3840-3851 and 8840-8845. Every server, proxy and
+browser was stopped, and the ports were checked free at the end.
+
+Where these NOTES fell short: the split-deployment repro depends on `bin/srv.sh` and `drivers/drv.py`, so it cannot be
+rerun from the doc text alone. That was easy to replace. The NOTES never tested a TLS-terminating proxy in front of a
+*same-origin* deployment (NOT_COVERED), and that case turned out to be the larger half of issue 1 (below). The double
+Ctrl-C item was not in my brief and I did not re-verify it.
+
+### V1. Split deployment 403. CONFIRMED, and WIDER: severity raised to HIGH (regression)
+- Literal doc repro (`bin/split.sh <venv> <label> <FP> <BP> [backend ENV=VAL]`): `reflex run --env prod --backend-only
+  --backend-port 8840`, then `REFLEX_API_URL=http://localhost:8840 reflex run --env prod --frontend-only --frontend-port 3840`,
+  then Chromium clicks inc twice:
+  | run | result |
+  |---|---|
+  | 0.11.0a1 (`split_new`) | count=0, 13 websocket opens, each `Unexpected response code: 403`; toast "Cannot connect to server: websocket error. Check if server is reachable at ws://localhost:8840/_event"; backend logs one line `http://localhost:3840 is not an accepted origin. (further occurrences ... INFO)` |
+  | 0.10.1 (`split_prev`) | count=2, 1 websocket open |
+  | 0.11.0a1 + backend `REFLEX_DEPLOY_URL=http://localhost:3842` | count=2 |
+  | 0.11.0a1 + backend `REFLEX_CORS_ALLOWED_ORIGINS=http://localhost:3843` | count=2 |
+- NEW, not in the original report: a same-origin single-port prod server behind a TLS terminator also never connects.
+  The self-hosting doc says (L91-95) "a single-port production deployment behind a TLS-terminating proxy needs no
+  `api_url` configuration at all". `bin/tls_run.sh <venv> <label> <P> <TLS_P>` starts `reflex run --env prod` on P with
+  `REFLEX_API_URL=https://vnet.test:<TLS_P>`, puts `bin/tls_term.py` in front (TLS, then raw TCP passthrough; it keeps
+  Host and adds no X-Forwarded-*), and loads `https://vnet.test:<TLS_P>/` in Chromium:
+  | run | result |
+  |---|---|
+  | 0.11.0a1 (`tls_new`) | count=0, 12 websocket opens, all 403; `https://vnet.test:3845 is not an accepted origin.` (`evidence/tls_new.png`) |
+  | 0.10.1 (`tls_prev`) | count=2 |
+  | 0.11.0a1 + `REFLEX_CORS_ALLOWED_ORIGINS=https://vnet.test:3849` | count=2 |
+  Raw handshakes against single-port prod 0.11.0a1 (`bin/ws_origin.sh`, `evidence/ws_origin_new.txt`):
+  `Host app.example.com, Origin https://app.example.com` gives 403; adding `X-Forwarded-Proto: https` gives 101; with
+  `X-Forwarded-Proto: http` it is 403 again. `Origin http://127.0.0.1:3844` against `Host localhost:3844` also gives 403.
+- Root cause @ v0.11.0a1: `reflex/app.py:512-515` (`_cors_allowed_origins` returns `None` in prod when `deploy_url` is
+  unset) passes through `reflex/app.py:761-766` to `AsyncServer(cors_allowed_origins=None)`. engine.io then accepts only
+  `{wsgi.url_scheme}://{Host}` plus the `X-Forwarded-Proto`/`X-Forwarded-Host` variant
+  (`engineio/base_server.py:284-300`, enforced in `engineio/async_server.py:227-236`). The scheme comes from the ASGI
+  scope, and that is `http` behind any proxy that terminates TLS. So "same origin" fails unless the proxy sends
+  `X-Forwarded-Proto: https` (and keeps Host, or sends X-Forwarded-Host). The new default itself is intended (#7641 is
+  labeled security + breaking, and configuration.md L101-112 documents it). The deployment guides were not updated.
+- Deployment guides at the tag:
+  - `docs/hosting/self-hosting.md` L63-71 (split `--backend-only`/`--frontend-only`): broken (reproduced).
+  - `docs/hosting/self-hosting.md` L89-109 "API URL" (static host + `api_url`) and L135-152 "Exporting a Static Build"
+    (`REFLEX_API_URL=https://api.example.com reflex export`): broken, because the frontend is on a different origin from
+    the backend and no `deploy_url` is set.
+  - `docs/hosting/self-hosting.md` L84-87 "Reverse Proxy and Websockets" and L91-95 ("behind a TLS-terminating proxy needs
+    no api_url"): broken unless the proxy forwards `X-Forwarded-Proto` (reproduced with a passthrough terminator). The
+    page never mentions forwarded headers.
+  - `docker-example/app-platform-backend/README.md` L58-67 (CDN frontend plus `REFLEX_API_URL` only): broken (the same
+    shape as the static export).
+  - `docs/hosting/scaling.md` L62-72 (frontend on a CDN, backends behind a load balancer, `--backend-only`): broken.
+    It says to configure only the API URL.
+  - `docker-example/production/` (Dockerfile + Caddyfile, "Start here", "use with an existing load balancer or reverse
+    proxy to terminate TLS ... Render or Heroku"): likely broken behind the platform's TLS edge. Caddy keeps Host but by
+    default replaces an untrusted incoming `X-Forwarded-Proto` with its own scheme (`http`), and the Caddyfile sets no
+    `trusted_proxies`. That is exactly the 403 row above. Not run end to end: downloading a Caddy binary was refused in
+    this sandbox. Plain `docker run -p 8080:8080` over http is fine.
+  - `docker-example/production-compose/`: OK. Caddy terminates TLS itself, so `X-Forwarded-Proto: https`.
+  - Other docs/hosting/* pages (Reflex Cloud: deploy-quick-start, config_file, custom-domains, regions, ...): n/a.
+    reflex.dev hosting sets these values itself; not verified.
+- Verdict: CONFIRMED as a regression, and broader than reported. Every documented cross-origin self-host recipe breaks,
+  and so do TLS-terminating proxies that do not send `X-Forwarded-Proto: https`. I put this at HIGH, not medium. The
+  0.11.0a1 changelog does state the change, but a user who follows the deployment docs gets an app that never connects,
+  with an error that points elsewhere (V2). The behaviour is intended (security), so the default should not go back to
+  `*`. Before final:
+  (a) Docs (required): self-hosting.md split, static export and API URL sections, scaling.md, and the app-platform-backend
+      README should set `REFLEX_DEPLOY_URL=<frontend origin>` (or `REFLEX_CORS_ALLOWED_ORIGINS`) on the *backend*. The
+      reverse-proxy section needs `X-Forwarded-Proto` (nginx `proxy_set_header X-Forwarded-Proto $scheme; Host $host`),
+      and docker-example/production's Caddyfile needs a note on `trusted_proxies`/`header_up X-Forwarded-Proto`. The
+      upgrade guide should get a line too.
+  (b) Code (recommended): treat the `None` default as "same origin *or* the forwarded scheme". Pass engine.io a callable
+      `cors_allowed_origins` that also accepts `https://{Host}` when the request arrived as http (or compare host only:
+      a cross-site page cannot forge Origin, so host equality keeps the protection; the cost is accepting an http page
+      of the same host). That fixes the TLS
+      proxy case without reopening CORS. Defaulting to `REFLEX_API_URL` for `--frontend-only` cannot help: that process
+      is not the one checking origins. The backend could warn at startup, but only when `--backend-only` and
+      `deploy_url`/`cors_allowed_origins` are both unset, and docker-example/production also runs `--backend-only`
+      same-origin, so an unconditional warning would be noise there. Prefer the rejection-time hint in V2.
+
+### V2. CORS rejection reported as "server unreachable". NARROWED: low, a diagnosability gap of #7641 (the message itself is pre-existing)
+- Reproduced in both runs above (`evidence/split_new.png`, `tls_new.png`). The page and `/` answer 200 while every
+  websocket gets 403. Server side there is exactly one WARNING-level engine.io line per process, `<origin> is not an
+  accepted origin. (further occurrences ... INFO)`, and nothing from Reflex. The toast text comes from
+  `packages/reflex-components-core/src/reflex_components_core/core/banner.py:80-91` (`default_connection_error`) and
+  `:107-110`. It is byte-identical at v0.10.1, so the message did not regress; what is new is a default that triggers it.
+  The browser WebSocket API does not expose the 403 status to JS, so the frontend cannot tell the cases apart from the
+  socket error alone. No Reflex-level hint names `deploy_url` or `cors_allowed_origins` anywhere (grep of reflex/,
+  reflex-base and the templates at the tag).
+- Fix shape: (1) Backend: give engine.io a callable `cors_allowed_origins` (Reflex's own same-origin check, see V1b). On
+  rejection it logs once at WARNING: "Rejected websocket from origin X (backend sees Y). In prod only same-origin
+  connections are accepted unless deploy_url or cors_allowed_origins is set; set REFLEX_DEPLOY_URL=X on the backend, or
+  forward X-Forwarded-Proto from your proxy." (2) Frontend (optional): after N failed websocket opens,
+  `fetch(pingUrl, {mode: "no-cors"})`. If it resolves, the backend is reachable, so show "server reachable but refused
+  the connection (check deploy_url / cors_allowed_origins)" instead of "Check if server is reachable".
+
+### V3. Case-colliding pages. NARROWED: low, NOT a regression (pre-existing; 0.11 changes which page wins)
+- Backend router (`bin/case_router.py`, no server): 0.11.0a1 resolves `/Foo`, `/foo` and `/FOO` to `Foo`. On 0.10.1
+  `/Foo` goes to `Foo`, `/foo` to `foo`, and `/FOO` to None.
+- Browser, prod single port, `VN_CASE_DUP=1` (`evidence/case_new.json`, `case_prev.json`):
+  0.11.0a1: all three spellings give HTTP 200, the Foo-upper page, and the Foo-upper on_load.
+  0.10.1: `/foo` gives the **Foo-upper page with the foo-lower on_load** (frontend/backend mismatch); `/FOO` gives HTTP
+  404 with the Foo-upper page and no on_load.
+  So the `/foo` page was already unreachable on 0.10.1, because React Router matches case-insensitively. 0.11.0a1 makes
+  the backend agree with the frontend. No warning at compile or start on either version.
+- Root cause @ v0.11.0a1: `reflex/app.py:1295` (`_register_prepared_page`) compares route strings exactly, and
+  `_check_routes_conflict` (`reflex/app.py:1594`) only checks dynamic segment names. `reflex/route.py:185` compiles the
+  route regex with `re.IGNORECASE`, and `get_router` (route.py:198-208) returns the first match by specificity, which
+  for ties is registration order.
+- Fix shape: in `_register_prepared_page` (and `_check_routes_conflict` for evaluated pages), raise `RouteValueError`
+  when `route.casefold()` (ASCII) equals an existing route with different case. Keep a casefolded-route dict so the
+  check stays O(1).
+
+### V4. `rx.App()()` returns `_RootMiddleware`. CONFIRMED: low; breaking by design, filed in the wrong changelog section
+- `bin/lifespan_probe.py` (in process, `REFLEX_ENV_MODE=prod`): 0.11.0a1 returns `type(app()) = reflex.app
+  _RootMiddleware` with `add_middleware/routes/mount` all False. 0.10.1 returns `starlette.applications Starlette`,
+  all True (`evidence/lifespan_probe.txt`).
+- Root cause: `reflex/app.py:1010-1023` (`__call__` returns `_RootMiddleware`, or the otel wrapper), class at
+  `reflex/app.py:364`. CHANGELOG.md L69 lists it under Performance. The Breaking section (L3-15) does not mention it,
+  and the related `starlette_app` lifespan-argument change sits in the Bug Fixes entry at L54.
+- Downstream reliance is unlikely. reflex-enterprise 0.9.11 (`$SB/envs/new-ent` wheel) never uses the return value of
+  `app()`. It calls `app._api.add_middleware` / `app._api.routes.insert` / `app._api.mount` (auth.py:577,
+  mcp.py:1830/1883/1957, api_tokens.py:527, cookie.py:383), and `_api` is still a Starlette. `app.add_middleware` in
+  auth.py:343 is Reflex's event middleware. proxy.py's `proxy_middleware` gets the lifespan `starlette_app` (now
+  `_api`, still a Starlette), not `app()`. The docs at v0.10.1 and v0.11.0a1 have no `app()` /
+  `app.__call__` / `.add_middleware` usage, and reflex-examples has none either. What breaks is only user code like
+  `asgi = app(); asgi.add_middleware(...)`, `asgi.routes`, or `isinstance(asgi, Starlette)`. Mounting `app()` inside
+  another ASGI app or server still works.
+- Fix: move or duplicate the L69 entry into Breaking with the migration ("use `api_transformer` or `app._api` ... to add
+  Starlette middleware or routes"). No code change.
+
+### V5. Lifespan skipped by a middleware that breaks on lifespan scopes. CONFIRMED anomaly: low, not a regression (a new feature degrades silently; documented)
+- Real server `bin/be_tx.sh <venv> <VN_TX> <BP>` (`reflex run --env prod --backend-only`, default loglevel), then
+  `GET /api/greeting`:
+  | VN_TX | 0.11.0a1 | 0.10.1 |
+  |---|---|---|
+  | `fastapi` | `{"greeting":"hello","client":"connected"}`, lifespan start/stop marks | (probe) nulls, never runs |
+  | `old_mw` = `[fastapi_app, mw doing scope["path"]]` (docs @ v0.10.1 overview.md:132) | nulls; only `Info: ASGI lifespan appears unsupported by <function old_mw.<locals>.middleware at 0x...>: KeyError('path')` | nulls (never ran) |
+  | `new_mw` = docs @ v0.11.0a1 overview.md:129-139 (`scope.get("path")`) | **works**: hello/connected, start + stop marks | nulls |
+  | `http_only_mw` (returns on non-http scopes) | nulls; Info line `...: no answer` | nulls |
+  HTTP requests still go through the broken middleware fine (`Request: /api/greeting` printed), so the app works apart
+  from the lifespan.
+- Root cause: `reflex/app_mixins/lifespan.py:120-132` (`_run_asgi_lifespan`). Any exception raised while answering
+  `lifespan.startup` becomes `{"type": repr(err)}`, and `logger.info(...)` records it as "appears unsupported". This
+  mirrors uvicorn's `lifespan="auto"`. `reflex/app.py:987-1007` hands the FastAPI transformer's lifespan only to the
+  outermost wrapped app (`lifespan_apps` gets the callable-wrapped app, not the inner Starlette), so one broken
+  middleware hides every Starlette lifespan below it.
+- Assessment: the outcome is identical to 0.10.1 (the lifespan never ran), so nothing a user had breaks. The new docs
+  state the skip ("An app that does not support lifespan events is skipped, and Reflex logs that it appears not to
+  support them", overview.md:185-188), and the updated example works. The changelog's promise does not hold for anyone
+  who copied the 0.10 docs middleware, though, and an INFO line that calls a `KeyError` "unsupported" is easy to miss.
+  Low.
+- Fix shape: when startup *raises* (not just returns without answering), log at WARNING with the exception, and name
+  the Starlette/FastAPI transformer(s) under it whose `router.lifespan_context` is not the default, because their
+  lifespan will not run. Or fall back to sending lifespan events directly to those inner Starlette transformers, as is
+  already done for mounted ones. An upgrade-guide line: "middleware in `api_transformer` now sees `lifespan` scopes; use
+  `scope.get("path")` or pass non-http scopes through."

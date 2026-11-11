@@ -150,3 +150,71 @@ scripts/srv.sh start vars-prod new prod $PWD/varsapp 3261 3261 VARS_NO_SETNONE=1
 - Not covered by #7548: `StringVar.split()` / `.split("")` still split UTF-16 code units on both versions (`"a😀b".split()` ->
   `["a","\ud83d","\ude00","b"]`), so `rx.foreach(s.split(), ...)` (the pattern overkey uses) still breaks astral characters
   while `rx.foreach(s, ...)` does not (ISSUE CV-8, low).
+
+## 4. Storage declarations (#7582, STATE-22/23)
+
+### Offline probe (`src/probes/storage_decl_probe.py`), both versions
+`cd probes && $SB/envs/<venv>/bin/python -I storage_decl_probe.py <venv>` (outputs in scratch `results/storage_decl_{new,prev}.txt`)
+- Unchanged and working on both: `x: str = rx.LocalStorage("a")`, `x: rx.LocalStorage = rx.LocalStorage("a")`,
+  `x: str = rx.Cookie("c", max_age=60, path="/p")`, `x: rx.Cookie = rx.Cookie()`, `x: str = rx.SessionStorage("s")`,
+  annotation-only `x: rx.LocalStorage`, `x: rx.LocalStorage = "plain"`, `rx.field(rx.LocalStorage("a"))`, `rx.Field[str]`,
+  `Annotated[str, ...]`, `str | None`, `int` / `set[str]` / `list[str]` annotations with a storage default, `name=` + `sync=True`,
+  a mixin with a storage default.
+- Now `VarTypeError` at compile (0.10.1: silently an ordinary var, or storage with the factory ignored):
+  `rx.field(default_factory=lambda: rx.LocalStorage("a"))` on `str`, `str | None`, `Literal[...]`, `Annotated[str, ...]`; the same with
+  `rx.Cookie` / `rx.SessionStorage`; a storage-annotated var with ANY factory (`default_factory=rx.LocalStorage`, `lambda: "plain"`);
+  on a parent state, in a mixin, in an `rx.ComponentState`.
+  Message: `Browser storage var 'State.theme' cannot use a default_factory. Declare the storage as the default value instead, such
+  as `theme: str = rx.LocalStorage("", name='theme')`.` Names the var and the fix (the suggested line drops the factory's default
+  and options such as `max_age`, and always says `str`). The traceback has no frame in the user's file (raised from the compiler).
+- **Still silent on 0.11.0a1** (residual STATE-22): a storage-producing factory on a var that cannot hold a `str`:
+  `x: int = rx.field(default_factory=lambda: rx.LocalStorage("5"))` and `x: list[str] = rx.field(default_factory=...)` compile and
+  stay ordinary vars, although `x: int = rx.LocalStorage("5")` IS storage (ISSUE CV-9, low).
+- Side effect of the check: every `default_factory` on a str-compatible frontend var is now called once more, at compile time
+  (`plain factory calls`: 0.10.1 = 1, 0.11.0a1 = 2). A factory that raises at compile is skipped silently (by design).
+- `pydantic.Field(...)` as an rx.State default is not understood on either version (the FieldInfo object becomes the value).
+
+### Real compile: `errapp` (`scripts/run_errapp.sh <venv> [case...]`, one misuse per `ERR_CASE`)
+| case | 0.10.1 | 0.11.0a1 |
+|---|---|---|
+| `storage_factory`, `storage_factory_cookie` | compiles (ordinary var) | `VarTypeError` above, exit 1 |
+
+## 5. Var errors (#7648, #7651; STATE-10)
+
+Offline probe `src/probes/var_errors_probe.py` (both versions, scratch `results/var_errors_{new,prev}.txt`) + `errapp`.
+
+### #7648 `@property` through a state Var
+- 0.11.0a1 raises `VarAttributeError` for a plain `@property` on a pydantic model, a subclass (inherited), a dataclass (+inherited),
+  `list[Model][0].prop`, inside `rx.foreach`, `Model | None`, `dict[str, DC]["k"].prop`, an `rx.Model`, a SQLAlchemy
+  `MappedAsDataclass` model. Message names the property, the class and the fix:
+  `The property 'full' on Pydantic model 'Person' is not included in serialized state. Use `@pydantic.computed_field` ...` /
+  `The property 'label' on dataclass 'Item' ... register an `rx.serializer` for the dataclass to include it.`
+  `reflex compile` prints the full traceback incl. the user's `errapp.py, line N, in index` and `Happened while evaluating page 'index'`.
+- Still allowed: `@pydantic.computed_field`, a model overriding `model_dump`, a model with a registered `rx.serializer`.
+- 0.10.1: all of them compiled (rendered empty). All are covered by the reflex-base Breaking Changes entry.
+- `functools.cached_property` and methods get the older generic message (`has no attribute 'cached' or may have been annotated
+  wrongly`) on both versions.
+
+### #7651 backend var misuse (re-verification of STATE-10)
+Now `BackendVarFormatError: Backend var 'State._secret' exists only on the server ... Use State._secret.default_value() ...,
+declare it as ClassVar[...] ..., or use a regular state var ...` (0.10.1 in brackets):
+`rx.toast(...)`, `rx.image(src=)`, `rx.input(value=)`, style / `color=` / `class_name=` / `custom_attrs` / `key=` (all: `TypeError:
+Unsupported type Field for LiteralVar`), `rx.box(id=)` (`TypeError: expected string or bytes-like object, got 'Field'`),
+`rx.Var.create(...)` incl. inside list/dict/tuple, `rx.cond` / `rx.match` / `rx.foreach`, `rx.redirect` / `set_clipboard` /
+`console_log` / `window_alert` / `call_script` / `download`, `str()` / `%` / `!s` (returned the `Field(default='secret', ...)` repr),
+`app.add_page(title= / description= / image=)` and `@rx.page(title=)` (`ChildrenTypeError: Component Title received child
+Field(...)` at compile).
+Unchanged, still cryptic or silent on 0.11.0a1 (same as 0.10.1; ISSUE CV-10):
+- child: `rx.text(State._secret)` -> `ChildrenTypeError: Component Text received child Field(default='s3cr3t-default', is_var=True,
+  annotated_type=<class 'str'>) of type <class '...Field'>` (prints the default value, names neither the var nor a fix)
+- typed props: `rx.el.div(title=State._secret)`, `rx.link(href=...)`, `add_page(meta=[{"content": State._secret}])` ->
+  `TypeError: Invalid var passed for prop Div.title, expected type Var[str], got value Field(default=...)`
+- event args: `State.take(State._secret)` -> `EventHandlerTypeError: Arguments to event handlers must be Vars or
+  JSON-serializable. Got Field(default=...)`
+- silent: `State._secret == "x"` is a plain `False`, so `rx.cond(State._secret == "s3cr3t-default", A, B)` compiles and always
+  shows B; `bool(State._secret)` is `True`; `app.add_page(on_load=State._secret)` compiles (exit 0).
+- `app.add_page(route=State._secret)` -> `AttributeError: 'Field' object has no attribute 'strip'`.
+Server-side fallout of the `str()` change: `print(State._secret)` and `logging.info("%s", State._secret)` now raise
+`BackendVarFormatError` ("cannot be used in the UI") where 0.10.1 printed the Field repr; logging swallows it as
+`--- Logging error ---`. `repr()` / `!r` still work. `str(State.get_fields()["v"])` (frontend var) now raises
+`'S.v' is the field of a state var, not the var. Use S.v to use it in the UI.`

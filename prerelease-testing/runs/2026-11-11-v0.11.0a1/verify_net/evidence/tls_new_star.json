@@ -1,0 +1,13 @@
+{
+ "url": "https://vnet.test:3849/",
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "ws": [
+  "wss://vnet.test:3849/_event/?token=a2fbae9e-a90d-44be-f1f9-1a055013ec00&EIO=4&transport=websocket"
+ ],
+ "failed": [],
+ "count_text": "count=2",
+ "body_tail": "vapp\n\ncount=2\n\ninc\nBuilt with Reflex",
+ "ok": true
+}

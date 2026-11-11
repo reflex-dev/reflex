@@ -1,0 +1,7 @@
+## 0.11.0a1 single-port prod :3844
+Host=localhost:3844 Origin=http://localhost:3844 XFP=- -> 101
+Host=app.example.com Origin=https://app.example.com XFP=- -> 403
+Host=app.example.com Origin=https://app.example.com XFP=https -> 101
+Host=app.example.com Origin=https://app.example.com XFP=http -> 403
+Host=app.example.com Origin=http://app.example.com XFP=- -> 101
+Host=localhost:3844 Origin=http://127.0.0.1:3844 XFP=- -> 403

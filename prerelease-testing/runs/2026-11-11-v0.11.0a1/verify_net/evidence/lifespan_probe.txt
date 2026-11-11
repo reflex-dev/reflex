@@ -1,0 +1,91 @@
+===== vnet-new VN_TX=fastapi
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+type(app()) = reflex.app _RootMiddleware
+has add_middleware/routes/mount: [False, False, False]
+VN_MARK fastapi lifespan start
+startup -> lifespan.startup.complete
+lifespan log after startup: ['fastapi-start']
+GET /api/greeting 200 {"greeting":"hello","client":"connected"}
+GET /ping 200 "pong"
+VN_MARK fastapi lifespan stop
+shutdown -> lifespan.shutdown.complete
+lifespan log at end: ['fastapi-start', 'fastapi-stop']
+===== vnet-new VN_TX=old_mw
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+type(app()) = reflex.app _RootMiddleware
+has add_middleware/routes/mount: [False, False, False]
+startup -> lifespan.startup.complete
+lifespan log after startup: []
+Request: /api/greeting
+GET /api/greeting 200 {"greeting":null,"client":null}
+Request: /ping
+GET /ping 200 "pong"
+shutdown -> lifespan.shutdown.complete
+lifespan log at end: []
+===== vnet-new VN_TX=new_mw
+type(app()) = reflex.app _RootMiddleware
+has add_middleware/routes/mount: [False, False, False]
+VN_MARK fastapi lifespan start
+startup -> lifespan.startup.complete
+lifespan log after startup: ['fastapi-start']
+Request: /api/greeting
+GET /api/greeting 200 {"greeting":"hello","client":"connected"}
+Request: /ping
+GET /ping 200 "pong"
+VN_MARK fastapi lifespan stop
+shutdown -> lifespan.shutdown.complete
+lifespan log at end: ['fastapi-start', 'fastapi-stop']
+===== vnet-new VN_TX=http_only_mw
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+type(app()) = reflex.app _RootMiddleware
+has add_middleware/routes/mount: [False, False, False]
+startup -> lifespan.startup.complete
+lifespan log after startup: []
+GET /api/greeting 200 {"greeting":null,"client":null}
+GET /ping 200 "pong"
+shutdown -> lifespan.shutdown.complete
+lifespan log at end: []
+===== vnet-prev VN_TX=fastapi
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+type(app()) = starlette.applications Starlette
+has add_middleware/routes/mount: [True, True, True]
+startup -> lifespan.startup.complete
+lifespan log after startup: []
+GET /api/greeting 200 {"greeting":null,"client":null}
+GET /ping 200 "pong"
+shutdown -> lifespan.shutdown.complete
+lifespan log at end: []
+===== vnet-prev VN_TX=old_mw
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+type(app()) = starlette.applications Starlette
+has add_middleware/routes/mount: [True, True, True]
+startup -> lifespan.startup.complete
+lifespan log after startup: []
+Request: /api/greeting
+GET /api/greeting 200 {"greeting":null,"client":null}
+Request: /ping
+GET /ping 200 "pong"
+shutdown -> lifespan.shutdown.complete
+lifespan log at end: []
+===== vnet-prev VN_TX=new_mw
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+type(app()) = starlette.applications Starlette
+has add_middleware/routes/mount: [True, True, True]
+startup -> lifespan.startup.complete
+lifespan log after startup: []
+Request: /api/greeting
+GET /api/greeting 200 {"greeting":null,"client":null}
+Request: /ping
+GET /ping 200 "pong"
+shutdown -> lifespan.shutdown.complete
+lifespan log at end: []
+===== vnet-prev VN_TX=http_only_mw
+`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+type(app()) = starlette.applications Starlette
+has add_middleware/routes/mount: [True, True, True]
+startup -> lifespan.startup.complete
+lifespan log after startup: []
+GET /api/greeting 200 {"greeting":null,"client":null}
+GET /ping 200 "pong"
+shutdown -> lifespan.shutdown.complete
+lifespan log at end: []
