@@ -34,7 +34,8 @@ constructs a row and Reflex can store `User` instances in state and render their
 fields in components. Until a base is registered with
 `rx.ModelRegistry.register(Base)`, the `reflex db`
 [migration commands](/docs/database/overview/#migrations) find the tables of every
-module-level `DeclarativeBase` subclass that the app imports; see
+`DeclarativeBase` subclass defined at module level or in a class body of a module
+that the app imports; see
 [Database Overview](/docs/database/overview/) for when to register bases.
 
 Dataclass fields without a default must come before fields with one, so declare

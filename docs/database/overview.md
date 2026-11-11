@@ -130,10 +130,11 @@ class User(Base):
 ```
 
 Until a base is registered, the `reflex db` commands manage the tables of every
-`DeclarativeBase` subclass defined at module level in a module that the app or
-its pages import, alongside those of `rx.Model`, including a base that an
-installed library defines. Only a base that its module holds under its own class name counts, so one made
-by a factory and bound to a different name, or one made with the legacy
+`DeclarativeBase` subclass defined at module level or in a class body of a
+module that the app or its pages import, alongside those of `rx.Model`,
+including a base that an installed library defines. Only a base that its module
+holds under its qualified name, such as `Base` or `Namespace.Base`, counts, so
+one made by a factory and bound to a different name, or one made with the legacy
 `declarative_base()`, is not detected: register it. To manage only some bases,
 for example when another one belongs to a different database or to a library,
 register each with `rx.ModelRegistry.register(Base)`: once a base is registered,

@@ -284,6 +284,15 @@ class EmptyBase(DeclarativeBase):
     pass
 
 
+class Namespace:
+    class Base(DeclarativeBase):
+        pass
+
+    class Nested(Base):
+        __tablename__ = "nested"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+
 def make_base():
     class Local(DeclarativeBase):
         pass
@@ -343,18 +352,22 @@ def registry(
 def test_unregistered_declarative_bases_are_detected(
     monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
 ):
-    """Module-level DeclarativeBase subclasses with tables count as registered.
+    """Module- and class-level DeclarativeBase subclasses with tables count as registered.
 
     Mapped and abstract classes are not bases, an empty base has no tables, and
     a base its module does not hold, such as one made in a function, is skipped.
     """
     module = _import_bases_module(monkeypatch)
 
-    assert registry._find_bases() == {module.Base, module.EmptyBase}
+    assert registry._find_bases() == {
+        module.Base,
+        module.EmptyBase,
+        module.Namespace.Base,
+    }
     assert module.Base in registry.get_models()
     assert module.EmptyBase not in registry.get_models()
     assert module.EmptyBase in registry.get_models(include_empty=True)
-    assert set(registry.get_metadata().tables) >= {"user"}
+    assert set(registry.get_metadata().tables) >= {"user", "nested"}
     assert "hidden" not in registry.get_metadata().tables
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 import re
 import sys
@@ -199,7 +200,8 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
         """Registry for all models.
 
         Until a SQLAlchemy model base is registered, every ``DeclarativeBase``
-        subclass that the app's modules define counts as registered too.
+        subclass that the app's modules hold under its qualified name counts as
+        registered too.
 
         Attributes:
             _metadata: Cache the metadata to avoid re-creating it.
@@ -253,8 +255,9 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
         def _find_bases() -> set[type[sqlalchemy.orm.DeclarativeBase]]:
             """Find the model bases: the DeclarativeBase subclasses with their own metadata.
 
-            Only a base that its module holds under its name counts, so one that
-            a reload of its module replaced, or one made inside a function, does not.
+            Only a base that its module holds under its qualified name counts, such
+            as ``Base`` or ``Namespace.Base``, so one that a reload of its module
+            replaced, or one made inside a function, does not.
 
             Returns:
                 The model bases.
@@ -266,7 +269,11 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
                 pending.extend(cls.__subclasses__())
                 if (
                     "metadata" in cls.__dict__
-                    and getattr(sys.modules.get(cls.__module__), cls.__name__, None)
+                    and functools.reduce(
+                        lambda obj, name: getattr(obj, name, None),
+                        cls.__qualname__.split("."),
+                        sys.modules.get(cls.__module__),
+                    )
                     is cls
                 ):
                     bases.add(cls)
