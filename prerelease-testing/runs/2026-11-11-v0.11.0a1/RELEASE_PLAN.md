@@ -10,7 +10,7 @@ the milestone `v0.11.0`.
 | Finding | What | Status |
 |---|---|---|
 | 030 | Forked workers share one redis lock-contender id (oplock ~1 s stalls) | **Merged** [reflex-dev/reflex#7795](https://github.com/reflex-dev/reflex/pull/7795) |
-| 036 | Optional set var ops crash / fail prod build | **PR open** [reflex-dev/reflex#7800](https://github.com/reflex-dev/reflex/pull/7800) |
+| 036 | Optional set var ops crash / fail prod build | **merged** [reflex-dev/reflex#7800](https://github.com/reflex-dev/reflex/pull/7800) |
 | instaque | Redis lock release lets the releaser retake before waiters hear of it | **Deferred** — [reflex-dev/reflex#7801](https://github.com/reflex-dev/reflex/pull/7801) moved to draft (PING+EVAL pipeline costs 10-20% client CPU on every uncontended `modify_state`, CodSpeed -13%); follow-up [reflex-dev/reflex#7805](https://github.com/reflex-dev/reflex/issues/7805) |
 | 045 | Event payload transform imported reflex.model / SQLAlchemy inside the event | **Merged** [reflex-dev/reflex#7802](https://github.com/reflex-dev/reflex/pull/7802) |
 | 015 | Mistaken handler return values silently accepted | **Merged** via [reflex-dev/reflex#7821](https://github.com/reflex-dev/reflex/pull/7821)'s squash (554eb10a6); [reflex-dev/reflex#7796](https://github.com/reflex-dev/reflex/pull/7796) now carries FarhanAliRaza's follow-up 254040205 (toast hint, dropped-result `.get()`), approved: **merge it, then cherry-pick** |
@@ -219,6 +219,7 @@ As each PR merges into `main`:
 | #7816 (024/014/020 docs + changelog) | 34f8c3c67 | 895c6849e (fragment modify/delete: dropped the moved sentence from the materialized #7624 entry in CHANGELOG.md; kept new `news/7624.breaking.md` for a2; docs/app tests 26 passed) |
 | #7812 (029, incl. reviewer's non-UTF-8 package.json commit) | f13348afa | a9c990e2d |
 | #7797 (004, incl. final head cb42ebe41: class-nested bases) | a6f2f8cf0 | 791356a4d |
+| #7800 (036; owner merged with the None guard, i.e. its cost accepted; set-var fragment sentence folded into reflex-base CHANGELOG #7642 entry) | 384b63f70 | 81de29f44 |
 
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
