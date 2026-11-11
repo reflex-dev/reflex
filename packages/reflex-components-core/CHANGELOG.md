@@ -4,10 +4,6 @@
 
 - Removal of form controls submitting their value under their `id` is postponed from 0.11 to 0.12; give each control a `name` before then. ([#7789](https://github.com/reflex-dev/reflex/issues/7789))
 
-### Features
-
-- `rx.foreach` iterates a `set` or `frozenset` var through its array view, so set-typed state vars keep working with the new `SetVar`. ([#7642](https://github.com/reflex-dev/reflex/issues/7642))
-
 ### Bug Fixes
 
 - `rx.foreach` over a string now iterates Unicode code points, so a character such as an emoji is no longer split into lone surrogates. ([#7548](https://github.com/reflex-dev/reflex/issues/7548))
