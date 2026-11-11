@@ -27,6 +27,7 @@ from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 from reflex_base.utils.process_tree import stop_process_tree
 
 from reflex.utils import path_ops
@@ -1134,6 +1135,9 @@ def run_granian_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
+
+    Raises:
+        EnvironmentVarValueError: If GRANIAN_RESPAWN_FAILED_WORKERS is not a boolean.
     """
     import multiprocessing
 
@@ -1151,6 +1155,15 @@ def run_granian_backend_prod(
             logger.debug("A telemetry send is still running; spawning workers.")
             multiprocessing.set_start_method("spawn", force=True)
 
+    try:
+        # Parse it as Granian's own CLI does, so every value Granian accepts works.
+        respawn_failed_workers = click.BOOL.convert(
+            os.getenv(_GRANIAN_RESPAWN_ENV, "true"), None, None
+        )
+    except click.BadParameter as err:
+        msg = f"{_GRANIAN_RESPAWN_ENV}: {err.message}"
+        raise EnvironmentVarValueError(msg) from None
+
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),
         factory=True,
@@ -1162,10 +1175,7 @@ def run_granian_backend_prod(
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
         # Granian otherwise stops the server when any one worker dies. It still
         # exits when a respawned worker dies again within a few seconds.
-        # Parse it as Granian's own CLI does, so every value Granian accepts works.
-        respawn_failed_workers=click.BOOL.convert(
-            os.getenv(_GRANIAN_RESPAWN_ENV, "true"), None, None
-        ),
+        respawn_failed_workers=respawn_failed_workers,
     )
 
     granian_app.serve()

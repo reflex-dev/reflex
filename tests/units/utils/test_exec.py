@@ -16,11 +16,11 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-import click
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base.environment import environment
 from reflex_base.utils import serializers
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.utils import exec as exec_utils
 from reflex.utils import prerequisites, telemetry
@@ -958,7 +958,9 @@ def test_run_granian_backend_prod_rejects_invalid_respawn_setting(
     """A GRANIAN_RESPAWN_FAILED_WORKERS value that is not a boolean is an error."""
     monkeypatch.setenv("GRANIAN_RESPAWN_FAILED_WORKERS", "sometimes")
 
-    with pytest.raises(click.BadParameter, match="sometimes"):
+    with pytest.raises(
+        EnvironmentVarValueError, match=r"GRANIAN_RESPAWN_FAILED_WORKERS: .sometimes."
+    ):
         _granian_prod_options(mocker)
 
 
