@@ -365,9 +365,33 @@ def file_lock(path: str | Path) -> Iterator[Path]:
                 os.close(lock_fd)
 
 
+def held_lock_paths() -> frozenset[Path]:
+    """Get the paths whose locks the current thread holds.
+
+    Returns:
+        The resolved paths of the locks this thread holds.
+    """
+    return frozenset(getattr(_held_locks, "paths", ()))
+
+
+def adopt_held_locks(paths: frozenset[Path]) -> None:
+    """Reenter, in this thread, locks a parent holds while it waits on this process.
+
+    Args:
+        paths: Resolved lock paths from the parent's ``held_lock_paths``.
+    """
+    held: set[Path] | None = getattr(_held_locks, "paths", None)
+    if held is None:
+        _held_locks.paths = set(paths)
+    else:
+        held.update(paths)
+
+
 @contextlib.contextmanager
 def atomic_write(file_path: Path, mode: Literal["w", "wb"] = "w") -> Iterator[IO]:
     """Atomically replace a file with the contents written in the body.
+
+    A symlinked destination keeps its link; the file it points to is replaced.
 
     Args:
         file_path: The destination file.
@@ -376,6 +400,7 @@ def atomic_write(file_path: Path, mode: Literal["w", "wb"] = "w") -> Iterator[IO
     Yields:
         The staging file. The target keeps its old contents until the body exits.
     """
+    file_path = file_path.resolve()
     open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
     temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")
     # Preserve the old Path.touch behavior by letting umask set new-file mode.

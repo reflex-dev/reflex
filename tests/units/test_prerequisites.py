@@ -986,6 +986,28 @@ def test_sync_web_lockfile_to_root_preserves_existing_mode(
     assert env.root_lock.stat().st_mode & 0o777 == 0o644
 
 
+def test_sync_web_lockfile_to_root_writes_through_symlink(
+    install_packages_env: InstallPackagesEnv,
+) -> None:
+    """A persisted lockfile linked to a shared file keeps its link."""
+    env = install_packages_env
+    shared_lock = env.tmp_path / "shared" / "bun.lock"
+    shared_lock.parent.mkdir()
+    shared_lock.write_text("old-lock")
+    env.root_lock.parent.mkdir(parents=True, exist_ok=True)
+    env.root_lock.unlink(missing_ok=True)
+    try:
+        env.root_lock.symlink_to(shared_lock)
+    except OSError as error:
+        pytest.skip(f"symlinks unavailable: {error}")
+    env.web_lock.write_text("new-lock")
+
+    frontend_skeleton.sync_web_lockfile_to_root(constants.Bun.LOCKFILE_PATH)
+
+    assert env.root_lock.is_symlink()
+    assert shared_lock.read_text() == "new-lock"
+
+
 def test_install_frontend_packages_syncs_root_bun_lock(
     install_packages_env: InstallPackagesEnv,
 ):

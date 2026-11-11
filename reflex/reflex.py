@@ -364,7 +364,7 @@ def init(
 
 
 def _compile_app(*, avoid_dirty_check: bool = True):
-    from reflex.utils import exec, prerequisites
+    from reflex.utils import exec, path_ops, prerequisites
 
     app_task = prerequisites.compile_or_validate_app
     args = (True,)
@@ -380,8 +380,14 @@ def _compile_app(*, avoid_dirty_check: bool = True):
 
         exec.set_dev_start_method()
         with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+            # The worker reenters the locks held here, e.g. preview's ``.web``
+            # lock, since this process waits on it for the whole compile.
             compile_future = executor.submit(
-                _compile_app_worker, app_task, args, kwargs
+                _compile_app_worker,
+                app_task,
+                args,
+                kwargs,
+                path_ops.held_lock_paths(),
             )
             return_result = compile_future.result()
     else:
@@ -395,6 +401,7 @@ def _compile_app_worker(
     app_task: Callable[..., bool],
     args: tuple[Any, ...],
     kwargs: dict[str, Any],
+    held_locks: frozenset[Path] = frozenset(),
 ) -> bool:
     """Compile an app in a worker and flush telemetry before the worker exits.
 
@@ -402,12 +409,16 @@ def _compile_app_worker(
         app_task: The app compilation callable.
         args: Positional arguments for ``app_task``.
         kwargs: Keyword arguments for ``app_task``.
+        held_locks: Lock paths the waiting parent holds, which the worker reenters.
 
     Returns:
         Whether the app compiled successfully.
     """
     from reflex_base import otel
 
+    from reflex.utils import path_ops
+
+    path_ops.adopt_held_locks(held_locks)
     try:
         return app_task(*args, **kwargs)
     finally:
