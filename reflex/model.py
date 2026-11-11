@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import sys
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -197,6 +198,9 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
     class ModelRegistry:
         """Registry for all models.
 
+        Until a SQLAlchemy model base is registered, every ``DeclarativeBase``
+        subclass that the app's modules define counts as registered too.
+
         Attributes:
             _metadata: Cache the metadata to avoid re-creating it.
         """
@@ -220,7 +224,7 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
 
         @classmethod
         def get_models(cls, include_empty: bool = False) -> set[SQLModelOrSqlAlchemy]:
-            """Get registered models.
+            """Get registered models, with the detected bases unless one is registered.
 
             Args:
                 include_empty: If True, include models with empty metadata.
@@ -228,11 +232,46 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
             Returns:
                 The registered models.
             """
+            sqlmodel = sys.modules.get("sqlmodel")
+            # A registered base opts out of detection; SQLModel ones, such as the
+            # always registered rx.Model, do not.
+            models = (
+                cls.models
+                if any(
+                    sqlmodel is None or not issubclass(model, sqlmodel.SQLModel)
+                    for model in cls.models
+                )
+                else cls.models | cls._find_bases()
+            )
             if include_empty:
-                return cls.models
+                return models
             return {
-                model for model in cls.models if not cls._model_metadata_is_empty(model)
+                model for model in models if not cls._model_metadata_is_empty(model)
             }
+
+        @staticmethod
+        def _find_bases() -> set[type[sqlalchemy.orm.DeclarativeBase]]:
+            """Find the model bases: the DeclarativeBase subclasses with their own metadata.
+
+            Only a base that its module holds under its name counts, so one that
+            a reload of its module replaced, or one made inside a function, does not.
+
+            Returns:
+                The model bases.
+            """
+            bases = set()
+            pending = sqlalchemy.orm.DeclarativeBase.__subclasses__()
+            while pending:
+                cls = pending.pop()
+                pending.extend(cls.__subclasses__())
+                if (
+                    "metadata" in cls.__dict__
+                    and getattr(sys.modules.get(cls.__module__), cls.__name__, None)
+                    is cls
+                ):
+                    bases.add(cls)
+            logger.debug(f"Detected model bases: {sorted(map(str, bases))}")
+            return bases
 
         @staticmethod
         def _model_metadata_is_empty(model: SQLModelOrSqlAlchemy) -> bool:
@@ -264,7 +303,7 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
                 # Merge the metadata from all the models.
                 # This allows mixing bare sqlalchemy models with sqlmodel models in one database.
                 metadata = sqlalchemy.MetaData()
-                for model in cls.get_models():
+                for model in models:
                     for table in model.metadata.tables.values():
                         table.to_metadata(metadata)
 

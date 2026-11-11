@@ -158,7 +158,7 @@ async def test_overview_examples(monkeypatch):
     module = load(
         monkeypatch,
         block("overview", SESSION),
-        block("overview", "rx.ModelRegistry.register(Base)"),
+        block("overview", "class Base(MappedAsDataclass, DeclarativeBase)"),
         block("overview", "class UserState(rx.State)").replace(
             "from .db import Session\nfrom .models import User\n", ""
         ),
@@ -189,7 +189,9 @@ def test_examples_parse_and_never_block():
 
 def test_tables_register_with_the_migration_registry(monkeypatch):
     """The tables page's base class is what `reflex db` manages."""
-    module = load(monkeypatch, block("tables", "rx.ModelRegistry.register(Base)"))
+    module = load(
+        monkeypatch, block("tables", "class Base(MappedAsDataclass, DeclarativeBase)")
+    )
     assert set(rx.ModelRegistry.get_metadata().tables) == {"user"}
     user = module.User(username="ada", email="ada@example.com")
     assert user.id is None
@@ -206,7 +208,7 @@ async def test_tables_custom_serializer(monkeypatch):
     module = load(
         monkeypatch,
         block("queries", SESSION),
-        block("tables", "rx.ModelRegistry.register(Base)"),
+        block("tables", "class Base(MappedAsDataclass, DeclarativeBase)"),
         block("tables", "server_default=sqlalchemy.func.now()").replace(
             "    ...\n", ""
         ),

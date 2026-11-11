@@ -121,9 +121,6 @@ class Base(MappedAsDataclass, DeclarativeBase):
     """Base class for the app's tables."""
 
 
-rx.ModelRegistry.register(Base)
-
-
 class User(Base):
     __tablename__ = "user"
 
@@ -132,8 +129,12 @@ class User(Base):
     email: Mapped[str]
 ```
 
-`rx.ModelRegistry.register(Base)` tells the `reflex db` commands which tables
-to manage. See [Tables](/docs/database/tables/) for column types and
+The `reflex db` commands manage the tables of every `DeclarativeBase` subclass
+that the app's modules define, alongside those of `rx.Model`. To manage only
+some bases, for example when another one belongs to a different database,
+register each with `rx.ModelRegistry.register(Base)`: once a base is registered,
+unregistered bases are left out. A base made with the legacy `declarative_base()`
+is not detected, so register it. See [Tables](/docs/database/tables/) for column types and
 [Relationships](/docs/database/relationships/) for foreign keys.
 
 ## Migrations

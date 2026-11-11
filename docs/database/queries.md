@@ -41,9 +41,6 @@ class Base(MappedAsDataclass, DeclarativeBase):
     """Base class for the app's tables."""
 
 
-rx.ModelRegistry.register(Base)
-
-
 class User(Base):
     __tablename__ = "user"
 

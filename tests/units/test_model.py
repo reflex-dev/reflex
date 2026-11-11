@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import tomllib
+import types
 from pathlib import Path
 
 import pytest
@@ -8,7 +9,7 @@ from packaging.requirements import Requirement
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 
-from reflex.model import Model, _ClassThatErrorsOnInit
+from reflex.model import Model, ModelRegistry, _ClassThatErrorsOnInit
 from reflex.state import BaseState, State
 from tests.units.test_state import (
     mock_app_simple,  # noqa: F401 # for pytest.mark.usefixtures
@@ -259,3 +260,145 @@ def test_sync_db_api_without_greenlet(tmp_path: Path):
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip().endswith("OK")
+
+
+BASES_MODULE = "_model_bases_app"
+BASES_SOURCE = """
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+
+class Base(MappedAsDataclass, DeclarativeBase):
+    pass
+
+
+class Abstract(Base):
+    __abstract__ = True
+
+
+class User(Abstract):
+    __tablename__ = "user"
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+
+
+class EmptyBase(DeclarativeBase):
+    pass
+
+
+def make_base():
+    class Local(DeclarativeBase):
+        pass
+
+    class Hidden(Local):
+        __tablename__ = "hidden"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+    return Local
+
+
+Unnamed = make_base()
+"""
+
+
+def _import_bases_module(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
+    """Import a fresh module of model bases, as an app module would be.
+
+    Args:
+        monkeypatch: Removes the module from ``sys.modules`` afterwards.
+
+    Returns:
+        The module.
+    """
+    module = types.ModuleType(BASES_MODULE)
+    monkeypatch.setitem(sys.modules, BASES_MODULE, module)
+    exec(BASES_SOURCE, module.__dict__)
+    return module
+
+
+@pytest.fixture
+def registry(
+    monkeypatch: pytest.MonkeyPatch, model_registry: type[ModelRegistry]
+) -> type[ModelRegistry]:
+    """The model registry with only rx.Model registered and this module's bases.
+
+    Args:
+        monkeypatch: Restores the registry afterwards.
+        model_registry: Resets the cached metadata afterwards.
+
+    Returns:
+        The registry.
+    """
+    find_bases = ModelRegistry._find_bases
+    monkeypatch.setattr(ModelRegistry, "models", {Model})
+    monkeypatch.setattr(ModelRegistry, "_metadata", None)
+    monkeypatch.setattr(
+        ModelRegistry,
+        "_find_bases",
+        staticmethod(
+            lambda: {base for base in find_bases() if base.__module__ == BASES_MODULE}
+        ),
+    )
+    return model_registry
+
+
+def test_unregistered_declarative_bases_are_detected(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """Module-level DeclarativeBase subclasses with tables count as registered.
+
+    Mapped and abstract classes are not bases, an empty base has no tables, and
+    a base its module does not hold, such as one made in a function, is skipped.
+    """
+    module = _import_bases_module(monkeypatch)
+
+    assert registry._find_bases() == {module.Base, module.EmptyBase}
+    assert module.Base in registry.get_models()
+    assert module.EmptyBase not in registry.get_models()
+    assert module.EmptyBase in registry.get_models(include_empty=True)
+    assert set(registry.get_metadata().tables) >= {"user"}
+    assert "hidden" not in registry.get_metadata().tables
+
+
+def test_reimported_module_replaces_its_bases(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """A base that a re-import of its module replaced is no longer detected."""
+    old = _import_bases_module(monkeypatch)
+    new = _import_bases_module(monkeypatch)
+
+    assert old.Base not in registry.get_models()
+    assert new.Base in registry.get_models()
+
+
+def test_registering_a_base_disables_detection(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """Once a base is registered, only registered bases are migrated.
+
+    rx.Model, always registered, does not count.
+    """
+    module = _import_bases_module(monkeypatch)
+    assert module.Base in registry.get_models()
+
+    registry.register(module.EmptyBase)
+
+    assert module.Base not in registry.get_models()
+    assert registry.get_models(include_empty=True) == {Model, module.EmptyBase}
+
+
+def test_metadata_detects_bases_once(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """The bases are looked for when the metadata is built, not on each call."""
+    module = _import_bases_module(monkeypatch)
+    calls = []
+    find_bases = registry._find_bases
+    monkeypatch.setattr(
+        registry, "_find_bases", staticmethod(lambda: calls.append(1) or find_bases())
+    )
+
+    metadata = registry.get_metadata()
+
+    assert registry.get_metadata() is metadata
+    assert len(calls) == 1
+    assert "user" in metadata.tables
+    assert module.Base in registry.get_models()
