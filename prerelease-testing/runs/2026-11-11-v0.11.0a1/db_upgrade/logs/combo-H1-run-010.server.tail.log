@@ -1,0 +1,12 @@
+/apps/db_upgrade/combo/fd-H1/rxconfig.py']
+[INFO] Starting granian (main PID: 15843)
+[INFO] Listening at: http://0.0.0.0:8102
+[INFO] Spawning worker-1 with PID: 15903
+[INFO] Started worker-1
+App running at: http://localhost:3102/
+Backend running at: http://0.0.0.0:8102
+[INFO] Stopping worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

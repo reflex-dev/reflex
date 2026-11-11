@@ -1,0 +1,31 @@
+### status
+481d2a7a6d6f -> 4c92535dbbbd (head) (current), Add hidden to response.
+<base> -> 481d2a7a6d6f, empty message
+[rc=0] reflex db status
+### makemigrations (no model change)
+[rc=0] reflex db makemigrations --message qa_noop
+481d2a7a6d6f_.py
+4c92535dbbbd_add_hidden_to_response.py
+__pycache__
+### alembic check
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.schemas
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.tables
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.types
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.constraints
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.defaults
+INFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.comments
+No new upgrade operations detected.
+[rc=0] alembic check
+### alembic current
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+4c92535dbbbd (head)
+[rc=0] alembic current
+### alembic history --indicate-current
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+481d2a7a6d6f -> 4c92535dbbbd (head) (current), Add hidden to response.
+<base> -> 481d2a7a6d6f, empty message
+[rc=0] alembic history --indicate-current

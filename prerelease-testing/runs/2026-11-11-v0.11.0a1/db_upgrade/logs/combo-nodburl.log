@@ -1,0 +1,52 @@
+======== crud010 (rxconfig without db_url; alembic dir present)
+### reflex db status
+Traceback (most recent call last):
+ValueError: No database url configured
+[rc=1] reflex db status
+### reflex db migrate
+Traceback (most recent call last):
+ValueError: No database url configured
+[rc=1] reflex db migrate
+### reflex db makemigrations
+Traceback (most recent call last):
+ValueError: No database url configured
+[rc=1] reflex db makemigrations
+### reflex db init
+db_url is not configured, cannot initialize.
+[rc=0] reflex db init
+======== crud (rxconfig without db_url; alembic dir present)
+### reflex db status
+db_url is not configured in rxconfig.py, so there is no database to migrate.
+[rc=1] reflex db status
+### reflex db migrate
+db_url is not configured in rxconfig.py, so there is no database to migrate.
+[rc=1] reflex db migrate
+### reflex db makemigrations
+db_url is not configured in rxconfig.py, so there is no database to migrate.
+[rc=1] reflex db makemigrations
+### reflex db init
+db_url is not configured, cannot initialize.
+[rc=0] reflex db init
+======== crud010 (db_url set, no alembic.ini)
+### reflex db status
+Database is not initialized. Run reflex db init first.
+Info: Database is not initialized. Run reflex db init to initialize.
+[rc=0] reflex db status
+### reflex db migrate
+Database is not initialized. Run reflex db init first.
+[rc=0] reflex db migrate
+### reflex db makemigrations
+Database is not initialized. Run reflex db init first.
+[rc=0] reflex db makemigrations
+
+======== crud (db_url set, no alembic.ini)
+### reflex db status
+Database is not initialized. Run reflex db init first.
+[rc=1] reflex db status
+### reflex db migrate
+Database is not initialized. Run reflex db init first.
+[rc=1] reflex db migrate
+### reflex db makemigrations
+Database is not initialized. Run reflex db init first.
+[rc=1] reflex db makemigrations
+

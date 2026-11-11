@@ -1,0 +1,52 @@
+===== vdbm-new ins
+init rc=0
+    score: Mapped[int] = mapped_column(insert_default=7, default_factory=lambda: 7)
+Column.default = ScalarElementColumnDefault(7)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== vdbm-new dfbatch
+init rc=0
+    score: Mapped[int] = mapped_column(default_factory=lambda: 7)
+    name: Mapped[str | None] = mapped_column(default=None)
+Column.default = None  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), nullable=False))
+migrate rc=1
+sqlite3.IntegrityError: NOT NULL constraint failed: _alembic_tmp_item.score
+sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) NOT NULL constraint failed: _alembic_tmp_item.score
+tables ['alembic_version', 'item', '_alembic_tmp_item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) table _alembic_tmp_item already exists
+===== vdbm-prev ins
+init rc=0
+    score: Mapped[int] = mapped_column(insert_default=7, default_factory=lambda: 7)
+Column.default = ScalarElementColumnDefault(7)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== vdbm-prev dfbatch
+init rc=0
+    score: Mapped[int] = mapped_column(default_factory=lambda: 7)
+    name: Mapped[str | None] = mapped_column(default=None)
+Column.default = None  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), nullable=False))
+migrate rc=1
+sqlite3.IntegrityError: NOT NULL constraint failed: _alembic_tmp_item.score
+sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) NOT NULL constraint failed: _alembic_tmp_item.score
+tables ['alembic_version', 'item', '_alembic_tmp_item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) table _alembic_tmp_item already exists

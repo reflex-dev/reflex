@@ -130,3 +130,71 @@ Register `zed`, login, then the Base/async blog page renders; rows in localuser 
 ## Baseline: the rewritten (Base/async) app on 0.10.1
 `snap_blog_rw` with the 0.10.1 env.py on `db_models-old`: index renders no posts, server `sqlalchemy.orm.exc.DetachedInstanceError: Parent instance <Author ...>` — the documented 0.11 pattern
 has no working 0.10.1 equivalent (#7756 is what makes it work). `logs/rewrite_on_0101_detached.log`.
+
+## VERIFICATION
+Independent adversarial verifier (`verify_dbm`), 2026-11-11. Fresh venvs, PyPI only, cwd always under `$SB/apps/verify_dbm/`:
+- `cd $SB && uv --no-config venv $SB/envs/vdbm-new --python 3.12 && uv --no-config pip install --python $SB/envs/vdbm-new/bin/python --prerelease=allow --only-binary :all: 'reflex[db]==0.11.0a1' starlette-admin`
+  (reflex/reflex-base 0.11.0a1, sqlalchemy 2.1.8, sqlmodel 0.0.48, alembic 1.20.1, starlette-admin 1.0.3, aiosqlite 0.22.1)
+- `cd $SB && uv --no-config venv $SB/envs/vdbm-prev --python 3.12 && uv --no-config pip install --python $SB/envs/vdbm-prev/bin/python --only-binary :all: 'reflex[db]==0.10.1' starlette-admin` (no --prerelease)
+Scripts (all self-contained, no snapshots needed): `/home/user/reflex/prerelease-testing/runs/2026-11-11-v0.11.0a1/verify_dbm/`; captured outputs in its `out/`.
+Servers: backend-only on 8640-8644, each process group killed afterwards.
+
+| # | Claim | Verdict | Severity | Regression | Root cause (v0.11.0a1) |
+|---|---|---|---|---|---|
+| 1 | Unregistered DeclarativeBase -> makemigrations writes drop_table for every table, migrate drops all data, startup hint says "run makemigrations" | CONFIRMED | high (fix before 0.11.0 final; not an alpha blocker) | no (0.10.1 identical) | `reflex/model.py:258-272` `get_metadata()` returns a fresh empty `MetaData()` when no registered model has tables (the `len(models)==1` branch is skipped, the merge loop adds nothing); `reflex/.templates/alembic/env.py:59` passes it as `target_metadata`, which defeats alembic's own "env.py does not provide a MetaData object" refusal (alembic/autogenerate/api.py:375). Hint: `reflex/utils/prerequisites.py:880-884`. |
+| 2 | JSON column on DeclarativeBase model typed `object`; `State.m.d["city"]` compile TypeError | CONFIRMED (broader: also `Mapped[list[str]]` JSON, and plain non-dataclass DeclarativeBase) | medium | no (0.10.1 identical) | `packages/reflex-base/src/reflex_base/utils/types.py:1079-1098`: the column's `type.python_type` (`object` for `sa.JSON`) is returned without consulting the `Mapped[...]` annotation. |
+| 3 | `default_factory` column on non-empty table -> no server_default -> NOT NULL migrate failure; leftover `_alembic_tmp_*` breaks next migrate | CONFIRMED, NARROWED on two points | medium | no (0.10.1 identical) | `reflex/.templates/alembic/env.py:82-86` only reads `op.column.default`; a MappedAsDataclass `default_factory` is dataclass-only (SQLAlchemy design: `Column.default is None`). `_alembic_tmp_*` leftover is alembic batch mode on SQLite (non-transactional DDL), only when the revision rebuilds the table. Docs (tables.md:40-42) mention default_factory as an option for optional fields, they do not recommend it for columns specifically. New fact: rx.Model `Field(default_factory=...)` DOES set `Column.default` and migrates fine, so the documented rewrite turns a working migration into a failing one. |
+| 4 | Same table in two registered metadatas -> compared definition random per process | CONFIRMED, NARROWED (not silent) | low | no (0.10.1 identical) | `reflex/model.py:204` `models` is a `set` (iteration order = id hash, varies per process) + `model.py:267-269` `table.to_metadata(metadata)` keeps the first copy. Every run prints `SAWarning: Table 'post' already exists within the given MetaData - not copying.` pointing at model.py:269, so the user is told; the non-determinism is reflex's. |
+| 5a | Admin "New <Model>" 500 with MappedAsDataclass | CONFIRMED, RECLASSIFIED (upstream starlette-admin + docs gap) | low | no (0.10.1 `rx.AdminDash` 500s identically) | starlette-admin 1.0.3 `contrib/sqla/view.py:581/588` calls `self.model()` with no args; reflex code is not involved. Docs example (admin-dashboard.md) uses a SQLModel model and never mentions the dataclass limitation; `MyAuthProvider` is undefined. |
+| 5b | `/admin` (no slash) 404 via api_transformer; 0.10.1 rx.AdminDash redirected 307 | CONFIRMED, NARROWED (docs inaccuracy, not a code regression) | low | only vs the removed feature; `api_transformer` composition is identical on 0.10.1 (also 404) | `reflex/app.py:1000` `api_transformer.mount("", asgi_app)`: the catch-all Mount matches `/admin` before Starlette's `redirect_slashes` can run, so reflex's app answers 404. 0.10.1 rx.AdminDash mounted on reflex's own router (`app.py:1522` at v0.10.1). Docs sentence "existing links keep working" is false for `/admin`. |
+
+### 1. Unregistered DeclarativeBase -> drop_table (CONFIRMED, high, not a regression)
+`bash verify_dbm/v1_noregister.sh vdbm-new` / `vdbm-prev` (two-table Base app, `reflex db init`, one row per table, delete the `rx.ModelRegistry.register(Base)` line):
+- both versions: `makemigrations rc=0`, no warning, revision `op.drop_table('user')` / `op.drop_table('post')`; `migrate rc=0`; `tables after ['alembic_version']`. (`out/v1.out`)
+- hint: with no pending revision, `reflex db migrate` (runs the same `check_schema_up_to_date()` as `reflex run`'s compile) prints
+  "Detected database schema changes. Run reflex db makemigrations to generate migration scripts." The 0.10.1 code prints the same hint (`git show v0.10.1:reflex/utils/prerequisites.py` 868-871).
+  Note: `reflex run --backend-only` does NOT run the check (only the compile path does).
+- `v1b_noregister_mixed.sh vdbm-new` (extra `rx.Model` table, as with reflex-local-auth): only the Base tables are dropped, `legacy` survives -> an "empty metadata" guard alone would not cover that case.
+- fresh project with the line missing: `reflex db init` rc 0, no revision written, DB has only `alembic_version`, no warning (the runtime later fails with "no such table", so less dangerous).
+- Docs: overview.md (line 14 summary bullet, code sample line 124, sentence 135-137) and tables.md (23, 37-38) DO show and explain `register(Base)`; nothing says what happens without it. overview also says "It is recommended that they be inspected before applying them." So this is API misuse the docs warn against only implicitly, but the consequence (silent total data loss, with the startup hint steering the user to the command that writes it) is disproportionate and cheaply detectable:
+  (a) `ModelRegistry.get_metadata()` returning an empty MetaData, or env.py seeing `not target_metadata.tables` while the DB has tables -> refuse autogenerate (alembic itself refuses when `target_metadata is None`; reflex's empty MetaData bypasses that);
+  (b) after `load_app`, walk `DeclarativeBase.__subclasses__()` for bases with tables whose metadata is not registered and warn/raise (covers the mixed case);
+  (c) a docs callout.
+- Severity: HIGH. Release-blocker call: not a blocker for the alpha (identical on 0.10.1, documented), but should be fixed before 0.11.0 final because 0.11 makes DeclarativeBase the only documented path and rx.Model needed no registration, so every migrating user gains a new one-line step whose omission silently deletes data.
+
+### 2. JSON column typed `object` (CONFIRMED, medium, not a regression)
+`cd $SB/apps/verify_dbm/neutral && $SB/envs/vdbm-new/bin/python -I verify_dbm/v2_json_types.py $SB/envs/vdbm-new` (prev: add `--no-plain`; 0.10.1 cannot hold a non-dataclass DeclarativeBase in state at all). `out/v2.out`:
+`Mapped[dict]`, `Mapped[dict | None]`, `Mapped[list[str]]` with `mapped_column(JSON)` -> `object` / `object | None`; `S.mm.d['city']`, `S.mm.l[0]` -> `TypeError: Var of type <class 'object'> does not support item access.` on both versions; also on a plain (non-dataclass) DeclarativeBase on 0.11. rx.Model `dict` + `Column(JSON)` -> `dict`, item access OK. Workaround `.to(dict)` works.
+Root cause `reflex_base/utils/types.py:1079-1098` (column `python_type` wins over the `Mapped[]` annotation; for `object` it should fall back to the annotation, as the sqlmodel branch at 1118-1131 does).
+
+### 3. default_factory column (CONFIRMED, NARROWED, medium, not a regression)
+`bash verify_dbm/v3_default_factory.sh <vdbm-new|vdbm-prev> <df|dfbatch|dflt|ins|rxdf>` (`out/v3.out`, `out/v3b.out`), one existing row, add NOT NULL `score`:
+| variant | Column.default | revision | migrate |
+|---|---|---|---|
+| df `mapped_column(default_factory=lambda: 7)` | None | `add_column(... nullable=False)` | rc 1 `Cannot add a NOT NULL column with default value NULL` (no tmp table) |
+| dfbatch (df + `name` made nullable -> table rebuild) | None | same | rc 1 `NOT NULL constraint failed: _alembic_tmp_item.score`; `_alembic_tmp_item` left; next migrate `table _alembic_tmp_item already exists` |
+| dflt `mapped_column(default=7)` | Scalar(7) | `server_default=sa.text('7')` | rc 0, row gets 7 |
+| ins `mapped_column(insert_default=7, default_factory=lambda: 7)` | Scalar(7) | `server_default=sa.text('7')` | rc 0 |
+| rxdf rx.Model `Field(default_factory=lambda: 7)` | Callable | `server_default=sa.text('7')` | rc 0 |
+Identical on 0.10.1. Narrowing: (a) tables.md 40-42 only mentions `default_factory` as one way to give a dataclass field a default (ordering rule); it does not single it out for columns. (b) the `_alembic_tmp_*` leftover is alembic batch-mode behaviour on SQLite and appears only when the revision rebuilds the table. Not refuted: the rx.Model->Base rewrite the docs prescribe turns a working `Field(default_factory=...)` migration into a failing one. Root cause `reflex/.templates/alembic/env.py:82-86` reads only `op.column.default`; fix options: map the column back to its dataclass field's `default_factory` in the hook, or document `insert_default=` / scalar `default=` for columns.
+
+### 4. Same table in two metadatas (CONFIRMED, NARROWED to low, not a regression)
+`bash verify_dbm/v4_dup_table.sh vdbm-new 8` / `vdbm-prev 8` (`out/v4b.out`): DB from rx.Model `post(id,title)`, then a registered Base `post` with an extra column, both modules imported.
+0.11 `alembic check` x8: `add_column add_column clean add_column clean clean add_column add_column` (earlier x10: 3 clean / 7 add_column); `makemigrations` x8 `REV none REV none none none none none`; 0.10.1 makemigrations x8 `none none REV REV none REV REV none`.
+Not silent: every run (both versions) prints `reflex/model.py:269: SAWarning: Table 'post' already exists within the given MetaData - not copying.` Reflex-side cause is the non-determinism: `model.py:204` `models: ClassVar[set[...]]` + `267-269` first copy wins. Fix: insertion-ordered registry and raise on a conflicting duplicate table.
+
+### 5. Admin dashboard (5a RECLASSIFIED upstream/docs; 5b NARROWED docs; both low)
+App `verify_dbm/admin_app` (MappedAsDataclass `Tag` + SQLModel `Label`, `api_transformer` recipe, no auth for the test); `bash verify_dbm/v5_admin.sh <venv> <appdir> <port>`:
+| run | GET /admin | POST /admin/tag/create (dataclass) | POST /admin/label/create (SQLModel) |
+|---|---|---|---|
+| 0.11 api_transformer | 404 | 500 `TypeError: __init__() missing 1 required positional argument: 'name'` | 303 |
+| 0.10.1 api_transformer | 404 | 500 same | 303 |
+| 0.10.1 `rx.AdminDash(models=[Tag, Label])` | 307 -> /admin/ | 500 same | 303 |
+5a: starlette-admin `contrib/sqla/view.py:581,588` `self.model()`, so any required-arg dataclass model fails on every reflex version; reflex code is not involved. Docs gap only: the guide's example uses a SQLModel model and says nothing about MappedAsDataclass (and `MyAuthProvider` is never defined).
+5b: `reflex/app.py:1000` `api_transformer.mount("", asgi_app)` catch-all matches `/admin` before Starlette's `redirect_slashes`. Same composition on 0.10.1 (`app.py:854`); the old dashboard was mounted on reflex's own router (v0.10.1 `app.py:1522`). The regression is only against the removed feature, and the docs' "existing links keep working" is wrong for the bare `/admin` URL. Fix: correct the docs (link to `/admin/`, or add a `Route("/admin", RedirectResponse("/admin/"))` to the recipe).
+
+### Repro quality (NOTES.md as written)
+- F1 `probe_types.py` and F2 `repro_default_factory.sh` are self-contained and sufficient (the verifier read them and ran its own broader equivalents, v2/v3, with the same results). repro_default_factory's simple case gives the ALTER TABLE error, not the `_alembic_tmp` one; the leftover table needs a table rebuild, which NOTES attributes to the blog app without saying so.
+- F3/F5 (`variant.sh` + `v_noregister.py` / `v_dup.py`) depend on `$SB/apps/db_models/snap_blog_rw` / `snap_blog_011up`, which are not in the artifacts under those names; NOTES says how to rebuild them (copy apps/blog, delete one revision, strip three columns, re-migrate), which is manual and error-prone. The verifier's v1/v4 scripts build from nothing.
+- F3's startup-hint claim only shows on the compiling `reflex run` path (or `reflex db migrate`), not `--backend-only`; NOTES did not say so.
+- F8/F9 need a full `reflex run` + Playwright + an auth provider in the reporter's version; curl against a backend-only run is enough (`v5_admin.sh`).

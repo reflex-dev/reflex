@@ -1,0 +1,104 @@
+===== vdbm-new df
+init rc=0
+    score: Mapped[int] = mapped_column(default_factory=lambda: 7)
+Column.default = None  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), nullable=False))
+migrate rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) Cannot add a NOT NULL column with default value NULL
+[SQL: ALTER TABLE item ADD COLUMN score INTEGER NOT NULL]
+tables ['alembic_version', 'item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) Cannot add a NOT NULL column with default value NULL
+===== vdbm-new dflt
+init rc=0
+    score: Mapped[int] = mapped_column(default=7)
+Column.default = ScalarElementColumnDefault(7)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== vdbm-new ins
+init rc=0
+    score: Mapped[int] = mapped_column(insert_default=7, default=None)
+    return MappedColumn(
+    self.column = cast("Column[_T]", Column(*arg, **kw))
+sqlalchemy.exc.ArgumentError: The 'default' and 'insert_default' parameters of Column are mutually exclusive
+makemigrations rc=1
+grep: alembic/versions/*add_score*.py: No such file or directory
+migrate rc=1
+    raise exc.ArgumentError(
+sqlalchemy.exc.ArgumentError: The 'default' and 'insert_default' parameters of Column are mutually exclusive
+tables ['alembic_version', 'item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=1
+sqlalchemy.exc.ArgumentError: The 'default' and 'insert_default' parameters of Column are mutually exclusive
+===== vdbm-new rxdf
+init rc=0
+    score: int = sqlmodel.Field(default_factory=lambda: 7)
+Column.default = CallableColumnDefault(<function Item.<lambda> at 0x7f43aea31bc0>)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== vdbm-prev df
+init rc=0
+    score: Mapped[int] = mapped_column(default_factory=lambda: 7)
+Column.default = None  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), nullable=False))
+migrate rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) Cannot add a NOT NULL column with default value NULL
+[SQL: ALTER TABLE item ADD COLUMN score INTEGER NOT NULL]
+tables ['alembic_version', 'item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) Cannot add a NOT NULL column with default value NULL
+===== vdbm-prev dflt
+init rc=0
+    score: Mapped[int] = mapped_column(default=7)
+Column.default = ScalarElementColumnDefault(7)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== vdbm-prev ins
+init rc=0
+    score: Mapped[int] = mapped_column(insert_default=7, default=None)
+    return MappedColumn(
+    self.column = cast("Column[_T]", Column(*arg, **kw))
+sqlalchemy.exc.ArgumentError: The 'default' and 'insert_default' parameters of Column are mutually exclusive
+makemigrations rc=1
+grep: alembic/versions/*add_score*.py: No such file or directory
+migrate rc=1
+    raise exc.ArgumentError(
+sqlalchemy.exc.ArgumentError: The 'default' and 'insert_default' parameters of Column are mutually exclusive
+tables ['alembic_version', 'item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=1
+sqlalchemy.exc.ArgumentError: The 'default' and 'insert_default' parameters of Column are mutually exclusive
+===== vdbm-prev rxdf
+init rc=0
+    score: int = sqlmodel.Field(default_factory=lambda: 7)
+Column.default = CallableColumnDefault(<function Item.<lambda> at 0x7fbebe3bc4a0>)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0

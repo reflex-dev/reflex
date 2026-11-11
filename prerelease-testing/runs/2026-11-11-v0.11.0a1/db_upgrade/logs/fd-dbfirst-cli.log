@@ -1,0 +1,31 @@
+### (ii) first command: reflex db status
+Info: Updated env.py to load the app; the previous one is kept as 
+alembic/env.old.
+481d2a7a6d6f -> 4c92535dbbbd (head) (current), Add hidden to response.
+<base> -> 481d2a7a6d6f, empty message
+[rc=0] reflex db status
+README
+__pycache__
+env.old
+env.py
+script.py.mako
+versions
+8072903597410973
+e6da64f8b84c2b20
+186f56cf9c1a48c7
+### reflex db migrate
+[rc=0] reflex db migrate
+### reflex db status (2nd)
+481d2a7a6d6f -> 4c92535dbbbd (head) (current), Add hidden to response.
+<base> -> 481d2a7a6d6f, empty message
+[rc=0] reflex db status
+### makemigrations
+[rc=0] reflex db makemigrations
+481d2a7a6d6f_.py
+4c92535dbbbd_add_hidden_to_response.py
+__pycache__
+### reflex db init on initialized+updated project
+Database is already initialized. Use reflex db makemigrations to create schema 
+change scripts and reflex db migrate to apply migrations to a new or existing 
+database.
+[rc=0] reflex db init

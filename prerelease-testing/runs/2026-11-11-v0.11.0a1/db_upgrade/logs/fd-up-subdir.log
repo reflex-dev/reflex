@@ -1,0 +1,12 @@
+### reflex db status from subdir
+db_url is not configured in rxconfig.py, so there is no database to migrate.
+[rc=1] reflex db status
+### alembic current from subdir
+FAILED: No 'script_location' key found in configuration.
+[rc=255] alembic current
+### alembic -c ../alembic.ini current from subdir
+FAILED: Path doesn't exist: alembic.  Please use the 'init' command to create a new scripts folder.
+[rc=255] alembic -c ../alembic.ini current
+### ALEMBIC_CONFIG=../alembic.ini reflex db status from subdir
+db_url is not configured in rxconfig.py, so there is no database to migrate.
+[rc=1] reflex db status

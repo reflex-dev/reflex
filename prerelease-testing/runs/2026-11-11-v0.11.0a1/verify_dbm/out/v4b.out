@@ -1,0 +1,11 @@
+== vdbm-new
+init rc=0
+add_column add_column clean add_column clean clean add_column add_column 
+alembic check x8: clean=3 add_column=5
+      8 /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/vdbm-new/lib/python3.12/site-packages/reflex/model.py:269: SAWarning: Table 'post' already exists within the given MetaData - not copying.
+makemigrations x8: REV none REV none none none none none 
+== vdbm-prev
+init rc=0
+ERR ERR ERR ERR ERR ERR ERR ERR 
+alembic check x8: clean=0 add_column=0
+makemigrations x8: none none REV REV none REV REV none 

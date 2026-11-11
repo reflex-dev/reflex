@@ -1,0 +1,56 @@
+======== 0.11.0a1 H1
+### reflex db status
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] reflex db status
+### reflex db migrate
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] reflex db migrate
+### reflex db makemigrations
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] reflex db makemigrations
+### alembic current
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] alembic current
+### alembic check
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] alembic check
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/combo/fd-H1/alembic: README __pycache__ env.py script.py.mako versions  /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/combo/fd-H1/alembic/versions: 481d2a7a6d6f_.py 4c92535dbbbd_add_hidden_to_response.py __pycache__ 
+======== 0.11.0a1 H2
+### reflex db status
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+481d2a7a6d6f -> 4c92535dbbbd (head) (current), Add hidden to response.
+<base> -> 481d2a7a6d6f, empty message
+[rc=0] reflex db status
+### reflex db migrate
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+[rc=0] reflex db migrate
+### reflex db makemigrations
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+Generating /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/combo/fd-H2/alembic/versions/33b77d334a84_.py ...  done
+[rc=0] reflex db makemigrations
+### alembic current
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+4c92535dbbbd
+[rc=0] alembic current
+### alembic check
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+ERROR [alembic.util.messaging] Target database is not up to date.
+FAILED: Target database is not up to date.
+[rc=255] alembic check
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/combo/fd-H2/alembic: README __pycache__ env.py script.py.mako versions  /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/combo/fd-H2/alembic/versions: 33b77d334a84_.py 481d2a7a6d6f_.py 4c92535dbbbd_add_hidden_to_response.py __pycache__ 

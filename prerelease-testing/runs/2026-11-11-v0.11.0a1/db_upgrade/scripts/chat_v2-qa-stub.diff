@@ -1,0 +1,26 @@
+diff -ru /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/downloads/reflex-examples/chat_v2/chat_v2/page_chat/chat_state.py chat_v2/chat_v2/page_chat/chat_state.py
+--- /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/downloads/reflex-examples/chat_v2/chat_v2/page_chat/chat_state.py	2026-11-11 00:40:50.947511982 +0000
++++ chat_v2/chat_v2/page_chat/chat_state.py	2026-11-11 01:01:36.036342523 +0000
+@@ -42,6 +42,11 @@
+                 api_key=os.environ.get("TOGETHER_API_KEY"),
+             )
+ 
++        case "qa_stub":  # QA: fake streaming client (chat_v2/qa_stub.py)
++            from ..qa_stub import FakeClient
++
++            return FakeClient()
++
+         case _:
+             print("Invalid AI provider. Please set AI_PROVIDER environment variable")
+ 
+@@ -76,6 +81,9 @@
+         case "together":
+             AI_MODEL = "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo"
+ 
++        case "qa_stub":
++            AI_MODEL = "qa-stub"
++
+         case _:
+             print("Invalid AI provider. Please set AI_PROVIDER environment variable")
+ 
+Only in chat_v2/chat_v2: qa_stub.py

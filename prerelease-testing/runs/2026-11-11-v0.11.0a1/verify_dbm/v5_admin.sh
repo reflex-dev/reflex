@@ -1,6 +1,10 @@
 #!/bin/bash
 # v5_admin.sh <venv-name> <appdir> <backend-port> : backend-only run of an adm app (see verify_dbm/admin_new/adm/adm.py),
 # then GET /admin (no slash) and POST "New" for the MappedAsDataclass Tag and the SQLModel Label.
+# Setup: cp -a <verify_dbm>/admin_app $SB/apps/verify_dbm/admin_new  (api_transformer recipe, no auth provider: test only)
+#   0.10.1 rx.AdminDash variant: copy again to admin_prev_dash and replace the last App line with
+#   `app = rx.App(admin_dash=rx.AdminDash(models=[Tag, Label]))`
+# Ran: v5_admin.sh vdbm-new .../admin_new 8644 ; vdbm-prev .../admin_prev_xf 8643 ; vdbm-prev .../admin_prev_dash 8642
 SB=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
 V=$SB/envs/$1; W=$2; P=$3; cd $W; export REFLEX_TELEMETRY_ENABLED=false
 [ -f alembic.ini ] || { $V/bin/reflex db init > init.log 2>&1; echo "init rc=$?"; }

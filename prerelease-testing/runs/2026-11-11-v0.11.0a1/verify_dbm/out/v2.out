@@ -1,0 +1,25 @@
+S.mm.d     type=<class 'object'>
+S.mm.l     type=<class 'object'>
+S.mm.s     type=<class 'str'>
+S.m.d      type=<class 'object'>
+S.m.dn     type=object | None
+S.p.d      type=<class 'object'>
+S.r.d      type=<class 'dict'>
+S.mm.d['city']           -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.m.d['city']            -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.mm.l[0]                -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.p.d['city']            -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.r.d['city']            -> OK <reflex.Var>-3340401073764354691</reflex.Var>reflex___state____state____main_____s.r_rx_state_?.["d"]?.["city"]
+S.m.d.to(dict)['city']   -> OK <reflex.Var>1480533486973788955</reflex.Var>reflex___state____state____main_____s.m_rx_state_?.["d"]?.["city"]
+== prev
+S.mm.d     type=<class 'object'>
+S.mm.l     type=<class 'object'>
+S.mm.s     type=<class 'str'>
+S.m.d      type=<class 'object'>
+S.m.dn     type=object | None
+S.r.d      type=<class 'dict'>
+S.mm.d['city']           -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.m.d['city']            -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.mm.l[0]                -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.r.d['city']            -> OK <reflex.Var>4639061944561919725</reflex.Var>reflex___state____state____main_____s.r_rx_state_?.["d"]?.["city"]
+S.m.d.to(dict)['city']   -> OK <reflex.Var>-1012667619298504298</reflex.Var>reflex___state____state____main_____s.m_rx_state_?.["d"]?.["city"]

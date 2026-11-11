@@ -1,0 +1,13 @@
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/
+apps/db_upgrade/chat_v2/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/
+apps/db_upgrade/chat_v2/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.11s
+Debug: [timing] Write to Disk: 0.00s
+The migration environment was created by an earlier Reflex release and cannot 
+load the app. Run reflex db init to update env.py; existing revisions are kept.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.

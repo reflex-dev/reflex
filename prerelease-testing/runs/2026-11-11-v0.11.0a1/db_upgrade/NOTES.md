@@ -1,12 +1,8 @@
 # db_upgrade — reflex-examples DB apps, 0.10.1 -> 0.11.0a1 in place (PR #7742 alembic env.py)
 
 ## Status / resume here
-- [x] venvs built: `$SB/envs/db_upgrade-{fd,chat,crud,tw}` = `reflex[db]==0.10.1` + app requirements, constrained to `$SB/envs/prev` freeze (`freeze/prev-constraints.txt`), no `--prerelease`.
-- [ ] form-designer baseline / upgrade / orders / combos
-- [ ] chat_v2
-- [ ] basic_crud
-- [ ] twitter
-- [ ] report
+DONE (2026-11-11). All four apps baselined on 0.10.1, upgraded in place, both orders, dev+prod+cold, column added; combinations done; every server/redis stopped (ports 3100-3119/8100-8119 free). Report: `../reports/db_upgrade.md`.
+Headline: the in-place upgrade of all four reflex-examples DB apps is clean (no data loss, no spurious revision, env.old byte-identical, alembic.ini/versions untouched, alembic CLI works afterwards). One HIGH regression: an env.py that was hand-edited so it no longer contains `target_metadata = None` is now executed, and with the stock alembic.ini URL `reflex run` dies at startup (section "combinations", H1/H1b).
 
 ## Setup (how to rerun)
 ```
@@ -87,3 +83,45 @@ freeze diff: +aiosqlite 0.22.1, redis 7.4.1->8.2.0b1, reflex/base/core/code/radi
 - Add `Tweet.likes: int = 0` -> `e69c084b544e_qa_likes.py` (batch, server_default '0', NOT NULL); migrate; `alembic downgrade -1` -> tweet columns back to 4, dbdump of every table identical to the 0.10.1 baseline; `alembic upgrade head` -> identical to post-migrate dump. PASS.
 - DB behind head at `reflex run`: `Target database is not up to date. Run reflex db migrate to update database.` — identical on 0.10.1. PASS.
 - tw-dbfirst dev 14/0/0, prod (3101 single port) 12/0/2 (anomalies = `bg.svg` 404s, known-benign app asset), cold 14/0/0 with package.json / file list identical to in-place.
+
+
+## Other checks
+- **Race, prod `--backend-only` + Redis + GRANIAN_WORKERS=4 from a legacy env.py** (`scripts/race_backend_only.sh fd 3`, Redis on 8119): 3/3 runs: 4 workers, /ping 200, env.py == template, env.old == stock, exactly one `Updated env.py` message, 0 tracebacks. PASS.
+- **Fresh clone of form-designer with no reflex.db** (`reflex run --env prod`, the "hosting" path the app comments on): import-time migrate() replaces env.py (WARNING) and creates the DB at 4c92535dbbbd; full driver 18/0/2 (pre-existing login anomalies). `reflex db migrate` on a fresh clone: rc 0 on both versions.
+- **Fresh `reflex db init` of form-designer with alembic/ removed**: rc 1 on 0.10.1 AND 0.11.0a1 — evaluating the pages queries `localuser` before any table exists (`sqlite3.OperationalError: no such table: localuser`). Pre-existing, app-specific (the repo ships its alembic dir).
+- **Dev hot reload adding a model column, then makemigrations + migrate while the server runs** (twitter): reload ok, revision written, migrate rc 0 with the app holding the sqlite file, no "database is locked", drive 14/0/0. A fresh start with an unmigrated column logs `Detected database schema changes...` on both versions; the hot reload itself does not re-run the check (both versions).
+- **Rollback to 0.10.1 after 0.11 replaced env.py** (`$W/combo/fd-rollback`, venv db_upgrade-fd010): `reflex db status|makemigrations|migrate` rc 0, `reflex run` works (/form/1 200); only bare `alembic` fails (`ModuleNotFoundError: No module named 'reflex.utils.migrations'`), expected.
+- **H1 remedy from the changelog** (move env.py aside, `reflex db init`): `Info: Created alembic/env.py from the template. Existing revisions are kept.`, then status/makemigrations rc 0, no revision. Works — but nothing tells the H1 user to do it (they only get a NoSuchModuleError traceback; `reflex db init` on the kept file says "Database is already initialized").
+- Bare `alembic` on a legacy env.py right after the package upgrade (before any `reflex db` command) still fails exactly like 0.10.1 (stock file, placeholder URL) — by design.
+
+## Anomalies (benign but surprising)
+- `reflex db makemigrations` with no change and `reflex db migrate` that applies revisions print nothing at all (exit 0); same on 0.10.1.
+- `reflex db init` with `db_url` unset exits 0 (error logged) while status/migrate/makemigrations now exit 1; same rc on 0.10.1.
+- From a subdirectory (no rxconfig.py in cwd) 0.11 says `db_url is not configured in rxconfig.py` (status/migrate/init) or raises `RuntimeError: Cannot get the app module because app_name is not set` (makemigrations); 0.10.1 raised the RuntimeError traceback for all three.
+- The env.old path in the update message is relative (`alembic/env.old`) for old ini files (`script_location = alembic`) and absolute for alembic-1.20 ini files (`%(here)s/alembic`).
+- Legacy hint at `reflex run` is printed at ERROR level with no "Error:" prefix (consistent with other reflex errors, e.g. "Target database is not up to date", which looks the same on 0.10.1).
+- 0.11 writes `.web/package.json` as compact single-line JSON (0.10.1 pretty-printed); contents identical.
+- New #7672 monitor warns `Event handler LoginState.on_submit is blocking the event loop` (reflex-local-auth bcrypt) on every login — accurate, third-party code.
+- form-designer `rx.Cookie` client_token is a session cookie (expires -1): a new token per browser session; same on both versions.
+- chat_v2 needs an app patch on sqlmodel 0.0.48 (naive datetime) on both versions; React unknown-prop / hook-order console errors (app).
+
+## Issues (repro steps)
+### I-1 (HIGH, regression) Hand-edited env.py without `target_metadata = None` is now executed: `reflex run` crashes at startup, every `reflex db` command tracebacks
+0.10.x ran `alembic init` but never executed the generated env.py, so editing it (the usual alembic recipe `target_metadata = SQLModel.metadata`) was harmless. 0.11 keeps any env.py that lacks the literal `target_metadata = None` and executes it. With the stock alembic.ini URL (`driver://user:pass@localhost/dbname`), env.py's `engine_from_config` raises `sqlalchemy.exc.NoSuchModuleError`, which is not an alembic `CommandError`, so neither `check_schema_up_to_date()` nor `_alembic_errors()` catches it.
+Repro (verified on chat_v2 and form-designer):
+```
+SB=...; W=$SB/apps/db_upgrade; cp -r $SB/downloads/reflex-examples/chat_v2 /tmp/x && cd /tmp/x     # any app with the committed stock env.py
+sed -i 's/^target_metadata = None$/from sqlmodel import SQLModel\ntarget_metadata = SQLModel.metadata/' alembic/env.py
+# 0.10.1 venv (reflex[db]==0.10.1 + requirements): reflex db migrate -> rc 0; reflex run -> app works   (verified: $W/combo/fd-H1, venv db_upgrade-fd010)
+# upgrade: uv pip install --prerelease=allow -U 'reflex[db]==0.11.0a1'
+reflex run --frontend-port 3100 --backend-port 8100   # dies: check_schema_up_to_date -> alembic check -> env.py -> NoSuchModuleError
+reflex db status; reflex db migrate; reflex db makemigrations   # rc 1, raw traceback, no hint
+```
+Evidence: `logs/chat-H1-run.server.traceback.log`, `logs/combo-H1b-run.server.traceback.log`, `logs/combo-H1-run.server.tail.log` (form-designer, import-time migrate() variant), `logs/combo-H1-run-010.server.tail.log` (0.10.1 control UP), `logs/combo-H12-010.log` vs `logs/combo-H12-011.log`. Workaround (works): move env.py aside, `reflex db init`.
+Suggested direction (not a fix): catch any exception from the startup schema check and log it with the "move env.py aside and run reflex db init" hint; and/or detect env.py files that do not import `reflex` as "not a reflex env.py".
+
+### I-2 (MEDIUM/LOW, behaviour change) Kept user env.py lacks the template hooks: `reflex db makemigrations` writes an empty revision on unchanged models
+H2 = I-1's env.py + alembic.ini `sqlalchemy.url = sqlite:///reflex.db` (a user who made the alembic CLI work on 0.10). 0.10.1 makemigrations: no file. 0.11.0a1: writes `<rev>_.py` with `def upgrade(): pass` every time; no render_as_batch / server_default rewriter / `import sqlmodel` hook either. Evidence `logs/combo-H12-011.log`, `combo/fd-H2/`.
+
+### I-3 (LOW) Second legacy replacement silently overwrites env.old
+H3: an env.py with custom edits that still contains `target_metadata = None` is replaced (Info message only) and its only copy is env.old; restoring the committed stock env.py (e.g. `git checkout alembic/env.py`) and running any `reflex db` command replaces again and overwrites env.old with the stock file — the custom edits are gone from the working tree. Evidence: this file, section H3.

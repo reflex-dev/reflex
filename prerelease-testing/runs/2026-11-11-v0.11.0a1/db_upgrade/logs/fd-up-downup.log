@@ -1,0 +1,23 @@
+### alembic downgrade -1
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 4c92535dbbbd -> 481d2a7a6d6f, Add hidden to response.
+[rc=0] alembic downgrade -1
+alembic_version	rows=1	digest=fab6712d4664
+field	rows=5	digest=87a0886a9964
+    (1, 'favorite_food', 'text', 0, 'What is your favorite food?', 1)
+    (2, 'age', 'number', 1, 'How old are you?', 1)
+--
+response	rows=2	digest=92eee44eadb8
+    (1, '58f6a48b-30a2-432b-ccae-3898f61f7331', 1, '2026-11-11 00:50:20')
+    (2, '575cdc29-0010-4145-ab46-bca79cced9d8', 1, '2026-11-11 00:52:06')
+alembic_version: [('481d2a7a6d6f',)]
+### reflex db status
+481d2a7a6d6f -> 4c92535dbbbd (head), Add hidden to response.
+<base> -> 481d2a7a6d6f (current), empty message
+[rc=0] reflex db status
+### alembic upgrade head
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 481d2a7a6d6f -> 4c92535dbbbd, Add hidden to response.
+[rc=0] alembic upgrade head

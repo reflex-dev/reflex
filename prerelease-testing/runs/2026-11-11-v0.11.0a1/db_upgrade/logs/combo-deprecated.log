@@ -1,0 +1,46 @@
+======== fd010
+reflex ? /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/db_upgrade-fd010/lib/python3.12/site-packages/reflex/__init__.py
+get_migration_history present: True
+format_revision present: True
+alembic_autogenerate present: True
+migrate present: True
+alembic_init present: True
+get_migration_history -> 4c92535dbbbd ['481d2a7a6d6f', '4c92535dbbbd']
+format_revision ->   [[green]✓[/green]] 481d2a7a6d6f, empty message
+format_revision ->   [[green]✓[/green]] 4c92535dbbbd (head), Add hidden to response.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/scripts/probe_deprecated.py", line 22, in <module>
+    changed = model.alembic_autogenerate(connection=None, message="qa_probe", write_migration_scripts=False)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/db_upgrade-fd010/lib/python3.12/site-packages/reflex/model.py", line 447, in alembic_autogenerate
+    env.configure(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/db_upgrade-fd010/lib/python3.12/site-packages/alembic/runtime/environment.py", line 939, in configure
+    self._migration_context = MigrationContext.configure(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/db_upgrade-fd010/lib/python3.12/site-packages/alembic/runtime/migration.py", line 269, in configure
+    raise Exception("Connection, url, or dialect_name is required.")
+Exception: Connection, url, or dialect_name is required.
+======== fd
+reflex ? /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/db_upgrade-fd/lib/python3.12/site-packages/reflex/__init__.py
+get_migration_history present: True
+format_revision present: True
+alembic_autogenerate present: True
+migrate present: True
+alembic_init present: True
+reflex.model.get_migration_history has been deprecated in version 0.11.0. Run `alembic history --indicate-current` or `reflex db status`. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/scripts/probe_deprecated.
+get_migration_history -> 4c92535dbbbd ['481d2a7a6d6f', '4c92535dbbbd']
+reflex.model.format_revision has been deprecated in version 0.11.0. Run `alembic history --indicate-current` or `reflex db status`. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/scripts/probe_deprecated.py:21)
+format_revision ->   [[green]✓[/green]] 481d2a7a6d6f, empty message
+format_revision ->   [[green]✓[/green]] 4c92535dbbbd (head), Add hidden to response.
+reflex.model.alembic_autogenerate has been deprecated in version 0.11.0. Run `alembic revision --autogenerate` or `reflex db makemigrations`. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/scripts/probe_depreca
+Updated env.py to load the app; the previous one is kept as alembic/env.old.
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/combo/fd-DEP-fd/form_designer/components/form_editor.py:11: SADeprecationWarning: The ``noload`` loader strategy is deprecated and will be removed in a future release.  This option produces incorrect resu
+  form: Form = Form()
+alembic_autogenerate(write=False) -> False
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/scripts/probe_deprecated.py:24)
+reflex.model.get_migration_history has been deprecated in version 0.11.0. Run `alembic history --indicate-current` or `reflex db status`. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/scripts/probe_deprecated.
+rx.Model.get_migration_history -> 4c92535dbbbd
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/scripts/probe_deprecated.py:25)
+reflex.model.alembic_autogenerate has been deprecated in version 0.11.0. Run `alembic revision --autogenerate` or `reflex db makemigrations`. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/db_upgrade/scripts/probe_depreca
+rx.Model.alembic_autogenerate -> False
+env.old exists: True
