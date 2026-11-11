@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "lint": "biome lint --config-path=lint.biome.jsonc",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm test",
     "build": "npm pack"

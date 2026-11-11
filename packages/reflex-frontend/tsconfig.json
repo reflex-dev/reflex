@@ -1,6 +1,7 @@
 {
-  // Type-checks the javascript in place from its JSDoc: nothing is emitted, and
-  // nothing here ships. `npm run typecheck`.
+  // Type-checks the javascript that runs in a browser, in place from its JSDoc:
+  // nothing is emitted, and nothing here ships. The build files, which run in
+  // node, are checked by tsconfig.node.json; `npm run typecheck` runs both.
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
@@ -10,23 +11,18 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "lib": ["es2023", "dom", "dom.iterable"],
-    // The build files at the top of `src` run in node.
-    "types": ["node"],
+    // No node types here: `process` or `Buffer` in browser code must fail.
+    "types": [],
     "skipLibCheck": true,
     "paths": {
       "$/*": ["./src/*"]
     }
   },
-  "include": ["src/*.js", "src/utils", "src/components", "types"],
-  // Three places are left unchecked, each because it imports something this
-  // package cannot install or does not contain:
+  "include": ["src/utils", "src/components", "types"],
+  // Left unchecked, each because it imports something this package cannot
+  // install or does not contain:
   // - src/app: the entry points import modules compiled into each app
   //   (`$/app/root`, the embed manifest, the global stylesheet).
   // - dataeditor.js: imports a package only the data editor component installs.
-  // - vite-plugin-react-compiler.js: imports babel, which an app installs only
-  //   when the React Compiler is turned on.
-  "exclude": [
-    "src/utils/helpers/dataeditor.js",
-    "src/vite-plugin-react-compiler.js"
-  ]
+  "exclude": ["src/utils/helpers/dataeditor.js"]
 }
