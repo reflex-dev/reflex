@@ -138,6 +138,8 @@ export const uploadFiles = async (
 
     // Handle download progress with streaming response parsing
     xhr.onprogress = function (event) {
+      // Only a 2xx body is an update stream; onload reports an error status.
+      if (xhr.status < 200 || xhr.status >= 300) return;
       if (eventHandler) {
         const progressEvent = {
           event: {
