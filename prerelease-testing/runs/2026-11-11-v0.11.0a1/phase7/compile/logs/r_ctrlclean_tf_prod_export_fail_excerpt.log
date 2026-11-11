@@ -1,0 +1,6 @@
+70-Prerender (html): /hook -> build/client/hook/index.html
+71:ReferenceError: refs is not defined
+72-    at ref_kind_17d1e908 
+73-(file:///tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scr
+74-atchpad/p7/work/cm/apps/ctrl/refsrepro/.web/build/server/index.js:31:2282)
+75-    at Component$2 

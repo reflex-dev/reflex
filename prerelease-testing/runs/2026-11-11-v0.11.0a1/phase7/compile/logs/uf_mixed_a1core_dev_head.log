@@ -1,0 +1,80 @@
+───────────────────────────── Initializing upfail ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized upfail. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 13/12 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3300/
+Backend running at: http://0.0.0.0:8300
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"$OLDSB
+/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/reflex_base/event/process
+or/event_processor.py", line 1004, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/reflex_base/event/process
+or/event_processor.py", line 785, in _process_event_queue_entry
+    return await self._execute_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/reflex_base/event/process
+or/base_state_processor.py", line 949, in _execute_event
+    return await process_event(
+           ^^^^^^^^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/reflex_base/event/process
+or/base_state_processor.py", line 686, in process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/apps/mixed/upfail/upfail/upfail.py", line 17, in fail_now
+    raise ValueError("boom before any update")
+ValueError: boom before any update
+
+
+[ERROR] Application callable raised an exception
+Traceback (most recent call last):
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/granian/_futures.py", line 15, in future_watcher
+    await inner(watcher.scope, watcher.proto)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/reflex/app.py", line 396, in __call__
+    await self.app(scope, receive, send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/middleware/cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/middleware/cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/routing.py", line 683, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/routing.py", line 704, in app
+    await route.handle(scope, receive, send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/routing.py", line 289, in handle
+    await self.app(scope, receive, send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/routing.py", line 65, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "$OLDSB/p7/work/cm/envs/up-uv-a1/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app

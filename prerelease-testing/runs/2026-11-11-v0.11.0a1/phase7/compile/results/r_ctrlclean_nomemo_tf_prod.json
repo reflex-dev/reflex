@@ -1,0 +1,16 @@
+{
+ "errors": [
+  "/ pageerror: refs is not defined",
+  "/hook console.error: ReferenceError: refs is not defined\n    at http://localhost:3300/assets/_hook_._index-CStfjaSe.js:1:277\n    at El (http://localhost:3300/assets/entry.client-DMqNtF3h.js:8:94941)\n    at Uu (http://loca",
+  "/memo HTTP 404 http://localhost:3300/memo",
+  "/decl HTTP 404 http://localhost:3300/decl"
+ ],
+ "raw_handler_value": "",
+ "call_function_log": "log:",
+ "hook_value": null,
+ "hook_text": "An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | ReferenceError: refs is n",
+ "memo_value": null,
+ "memo_text": "404: Page not found | Built with Reflex",
+ "decl_value": null,
+ "decl_text": "404: Page not found | Built with Reflex"
+}

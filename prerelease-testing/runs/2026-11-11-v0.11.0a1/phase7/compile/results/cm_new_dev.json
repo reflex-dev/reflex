@@ -1,0 +1,100 @@
+{
+ "loopnokey": {
+  "initial": {
+   "mounted": "mounted: alpha,beta,gamma,alpha,beta,gamma",
+   "unmounted": "unmounted: alpha,beta,gamma",
+   "hooklog": "",
+   "items": [
+    "alpha",
+    "beta",
+    "gamma"
+   ]
+  },
+  "after_rm-first": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted: gamma",
+   "hooklog": "",
+   "items": [
+    "beta",
+    "gamma"
+   ]
+  },
+  "secs": 11.4
+ },
+ "rowfocus": {
+  "focus_btn_i_focuses": [
+   1,
+   1
+  ],
+  "values_after_set_value_each": [
+   "",
+   "gamma"
+  ],
+  "ids": [
+   "rf_beta",
+   "rf_gamma"
+  ],
+  "secs": 3.4
+ },
+ "loop": {
+  "initial": {
+   "mounted": "mounted: beta,beta-x,beta-y,idx0,gamma,gamma-x,gamma-y,idx1,kv-one,kv-two,beta,beta-x,beta-y,idx0,gamma,gamma-x,gamma-y,idx1,kv-one,kv-two",
+   "unmounted": "unmounted: beta,gamma",
+   "hooklog": "hm:beta,hm:gamma,hu:beta,hu:gamma,hm:beta,hm:gamma",
+   "items": [
+    "beta",
+    "gamma"
+   ]
+  },
+  "after_add": {
+   "mounted": "mounted: beta,beta-x,beta-y,idx0,gamma,gamma-x,gamma-y,idx1,kv-one,kv-two,beta,beta-x,beta-y,idx0,gamma,gamma-x,gamma-y,idx1,kv-one,kv-two,item2,item2-x,item2-y,idx2,item2,item2-x,item2-y,idx2",
+   "unmounted": "unmounted: beta,gamma,item2",
+   "hooklog": "hm:item2,hu:item2,hm:item2",
+   "items": [
+    "beta",
+    "gamma",
+    "item2"
+   ]
+  },
+  "after_rm-first": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted: beta",
+   "hooklog": "hu:beta",
+   "items": [
+    "gamma",
+    "item2"
+   ]
+  },
+  "after_reverse": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted:",
+   "hooklog": "",
+   "items": [
+    "item2",
+    "gamma"
+   ]
+  },
+  "after_rm-mid": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted: gamma",
+   "hooklog": "hu:gamma",
+   "items": [
+    "item2"
+   ]
+  },
+  "secs": 10.3
+ },
+ "upload": {
+  "selected": "a.txt,b.txt",
+  "direct": "uploaded: a.txt:15|b.txt:15",
+  "progress": "progress: 1",
+  "backend_toast": "uploaded: t1.txt:18",
+  "backend_toast_progress": "progress: 1",
+  "frontend_toast_changed_selection": "uploaded: new1.txt:24|new2.txt:24",
+  "frontend_call_script": "uploaded: cs.txt:18",
+  "backend_call_script": "uploaded: bcs.txt:21",
+  "selected_after_clear": "",
+  "secs": 9.3
+ },
+ "console": []
+}

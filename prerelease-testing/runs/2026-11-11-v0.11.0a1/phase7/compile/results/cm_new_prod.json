@@ -1,0 +1,94 @@
+{
+ "loopnokey": {
+  "initial": {
+   "mounted": "mounted: alpha,beta,gamma",
+   "unmounted": "unmounted:",
+   "hooklog": "",
+   "items": [
+    "alpha",
+    "beta",
+    "gamma"
+   ]
+  },
+  "after_rm-first": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted: gamma",
+   "hooklog": "",
+   "items": [
+    "beta",
+    "gamma"
+   ]
+  },
+  "secs": 5.4
+ },
+ "rowfocus": {
+  "focus_btn_i_focuses": [
+   1,
+   1
+  ],
+  "values_after_set_value_each": [
+   "",
+   "gamma"
+  ],
+  "ids": [
+   "rf_beta",
+   "rf_gamma"
+  ],
+  "secs": 2.7
+ },
+ "loop": {
+  "initial": {
+   "mounted": "mounted: beta,beta-x,beta-y,idx0,gamma,gamma-x,gamma-y,idx1,kv-one,kv-two",
+   "unmounted": "unmounted:",
+   "hooklog": "hm:beta,hm:gamma",
+   "items": [
+    "beta",
+    "gamma"
+   ]
+  },
+  "after_add": {
+   "mounted": "mounted: beta,beta-x,beta-y,idx0,gamma,gamma-x,gamma-y,idx1,kv-one,kv-two,item2,item2-x,item2-y,idx2",
+   "unmounted": "unmounted:",
+   "hooklog": "hm:item2",
+   "items": [
+    "beta",
+    "gamma",
+    "item2"
+   ]
+  },
+  "after_rm-first": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted: beta",
+   "hooklog": "hu:beta",
+   "items": [
+    "gamma",
+    "item2"
+   ]
+  },
+  "after_reverse": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted:",
+   "hooklog": "",
+   "items": [
+    "item2",
+    "gamma"
+   ]
+  },
+  "after_rm-mid": {
+   "mounted": "mounted:",
+   "unmounted": "unmounted: gamma",
+   "hooklog": "hu:gamma",
+   "items": [
+    "item2"
+   ]
+  },
+  "secs": 9.8
+ },
+ "console": [
+  {
+   "page": "/",
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ]
+}

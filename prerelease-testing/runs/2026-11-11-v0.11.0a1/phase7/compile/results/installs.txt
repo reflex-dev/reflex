@@ -1,0 +1,19 @@
+# In-place upgrade paths (UV_CACHE_DIR=$W/uvcache, --link-mode=copy, --only-binary :all:), base envs built from PyPI
+# 0.10.1 bases: -c prev_constraints.txt reflex==0.10.1 (finals only); a1 bases: -r a1.freeze.txt (freeze of the phase-1 a1 env)
+up-pip-0101: redis==7.4.1 reflex==0.11.0a2 reflex-base==0.11.0a2 reflex-components-code==0.11.0a1 reflex-components-core==0.11.0a2 reflex-components-lucide==1.1.2a1 reflex-components-radix==0.11.0a1 reflex-hosting-cli==0.2.2a1 
+up-uvU-0101: redis==8.2.0b1 reflex==0.11.0a2 reflex-base==0.11.0a2 reflex-components-code==0.11.0a1 reflex-components-core==0.11.0a2 reflex-components-lucide==1.1.2a1 reflex-components-radix==0.11.0a1 reflex-hosting-cli==0.2.2a1 
+up-pip-a1: redis==8.2.0b1 reflex==0.11.0a2 reflex-base==0.11.0a2 reflex-components-code==0.11.0a1 reflex-components-core==0.11.0a1 reflex-components-lucide==1.1.2a1 reflex-components-radix==0.11.0a1 reflex-hosting-cli==0.2.2a1 
+up-uv-a1: redis==8.2.0b1 reflex==0.11.0a2 reflex-base==0.11.0a2 reflex-components-code==0.11.0a1 reflex-components-core==0.11.0a1 reflex-components-lucide==1.1.2a1 reflex-components-radix==0.11.0a1 reflex-hosting-cli==0.2.2a1 
+ctrl042: redis==7.4.1 reflex==0.11.0a1 reflex-base==0.11.0a1 reflex-components-code==0.11.0a1 reflex-components-core==0.11.0a2 reflex-components-lucide==1.1.1 reflex-components-radix==0.11.0a1 reflex-hosting-cli==0.2.1 
+eu-overkey: redis==7.4.1 reflex==0.11.0a2 reflex-base==0.11.0a2 reflex-components-code==0.11.0a1 reflex-components-core==0.11.0a2 reflex-components-lucide==1.1.2a1 reflex-components-radix==0.11.0a1 reflex-hosting-cli==0.2.2a1 
+eu-upload: redis==7.4.1 reflex==0.11.0a2 reflex-base==0.11.0a2 reflex-components-code==0.11.0a1 reflex-components-core==0.11.0a2 reflex-components-lucide==1.1.2a1 reflex-components-radix==0.11.0a1 reflex-hosting-cli==0.2.2a1 
+ctrl: redis==8.2.0b1 reflex==0.11.0a1 reflex-base==0.11.0a1 reflex-components-code==0.11.0a1 reflex-components-core==0.11.0a1 reflex-components-lucide==1.1.2a1 reflex-components-radix==0.11.0a1 reflex-hosting-cli==0.2.2a1 
+new: redis==8.2.0b1 reflex==0.11.0a2 reflex-base==0.11.0a2 reflex-components-code==0.11.0a1 reflex-components-core==0.11.0a2 reflex-components-lucide==1.1.2a1 reflex-components-radix==0.11.0a1 reflex-hosting-cli==0.2.2a1 
+# commands:
+# up-pip-0101: python -m pip install -U --pre --only-binary :all: reflex==0.11.0a2
+# up-uvU-0101: uv pip install -U --prerelease=allow reflex==0.11.0a2
+# up-pip-a1:   python -m pip install -U --pre reflex==0.11.0a2           (core stays 0.11.0a1)
+# up-uv-a1:    uv pip install --prerelease=allow reflex==0.11.0a2        (core stays 0.11.0a1)
+# ctrl042:     0.10.1 then python -m pip install -U --pre reflex==0.11.0a1 (lucide stays 1.1.1, hosting 0.2.1; core resolves to 0.11.0a2)
+# eu-overkey/eu-upload: 0.10.1 then uv pip install --prerelease=allow reflex==0.11.0a2 (no -U, seq_eu.sh upgrade phase)
+# ctrl: clean a1 control, fresh UV_CACHE_DIR, --link-mode=copy, RECORD-verified

@@ -1,0 +1,4 @@
+status 200 application/x-ndjson
+FRAME {"delta": {"reflex___state____state.cm___cm___s": {"upload_log_rx_state_": ["'evil1.txt'->UP/nul", "'.hidden'->UP/.hidden"]}}}
+FRAME {"error": "The upload handler raised an exception."} ... {"error": "The upload handler raised an exception."}
+uploaded:

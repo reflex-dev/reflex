@@ -1,0 +1,110 @@
+### overkey base 22:19:34
+started reflex pid=6026 (22:19:34) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/overkey/base.server.log
+UP after 10s (frontend 200, backend /ping 200)
+drive overkey-base rc=0
+== overkey-base: {'pass': 27, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=34 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=58
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 6026 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### overkey baseprod 22:20:14
+started reflex pid=6638 (22:20:14) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/overkey/baseprod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive overkey-baseprod rc=0
+== overkey-baseprod: {'pass': 27, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=27 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=54
+SHUTDOWN: main pid 6638 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### overkey upgrade 22:20:50
+ - reflex==0.10.1
+ + reflex==0.11.0a2
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a2
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a2
+ - reflex-components-lucide==1.1.1
+ + reflex-components-lucide==1.1.2a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+ - reflex-hosting-cli==0.2.1
+ + reflex-hosting-cli==0.2.2a1
+Using Python 3.12.3 environment at: p7/work/cm/envs/eu-overkey
+Checked 41 packages in 1ms
+All installed packages are compatible
+### overkey up 22:20:59
+started reflex pid=7465 (22:20:59) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/overkey/up.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json overkey-base -> overkey-up: < } > } 
+.web file list differs:
+32c32,33
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+40a42
+> .web/utils/helpers/set.js
+semantic package.json diff: IDENTICAL (formatting only)
+drive overkey-up rc=0
+== overkey-up: {'pass': 27, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=35 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=58
+SHUTDOWN: main pid 7465 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### overkey prod 22:21:33
+started reflex pid=8087 (22:21:33) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/overkey/prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive overkey-prod rc=0
+== overkey-prod: {'pass': 27, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=27 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=54
+SHUTDOWN: main pid 8087 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### overkey cold 22:22:08
+started reflex pid=8432 (22:22:08) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/overkey/cold.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json overkey-up -> overkey-cold: 
+package.json identical
+.web file list identical
+semantic package.json diff: IDENTICAL
+drive overkey-cold rc=0
+== overkey-cold: {'pass': 27, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=35 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=58
+SHUTDOWN: main pid 8432 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- overkey-base server-log warnings:
+      2 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      2 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      2 Warning: Mutable default values are not recommended. Use default_factory instead
+      2 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      2 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+      1 Debug: error: script "dev" exited with code 143
+--- overkey-baseprod server-log warnings:
+      1 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      1 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      1 Warning: Mutable default values are not recommended. Use default_factory instead
+      1 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      1 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+--- overkey-up server-log warnings:
+      2 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      2 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      2 Warning: Mutable default values are not recommended. Use default_factory instead
+      2 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      2 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+      2 DeprecationWarning: ClientStateVar.set_value has been deprecated in version 
+      2 DeprecationWarning: ClientStateVar.create has been deprecated in version 0.11.0.
+      1 Debug: error: script "dev" exited with code 143
+--- overkey-prod server-log warnings:
+      2 DeprecationWarning: ClientStateVar.set_value has been deprecated in version 
+      1 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      1 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      1 Warning: Mutable default values are not recommended. Use default_factory instead
+      1 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      1 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+      1 DeprecationWarning: ClientStateVar.create has been deprecated in version 0.11.0.
+--- overkey-cold server-log warnings:
+      2 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      2 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      2 Warning: Mutable default values are not recommended. Use default_factory instead
+      2 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      2 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+      2 DeprecationWarning: ClientStateVar.set_value has been deprecated in version 
+      2 DeprecationWarning: ClientStateVar.create has been deprecated in version 0.11.0.
+      1 Debug: error: script "dev" exited with code 143
+### overkey done 22:22:42

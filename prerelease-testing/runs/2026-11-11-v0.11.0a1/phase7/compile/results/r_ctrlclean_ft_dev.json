@@ -1,0 +1,16 @@
+{
+ "errors": [
+  "/ pageerror: refs is not defined",
+  "/hook console.error: %o\n\n%s\n\n%s\n ReferenceError: refs is not defined\n    at t1 (http://localhost:3300/app_components/refsrepro/refsrepro.jsx:103:9)\n    at Object.react_stack_bottom_frame (http://localhost:3300/node_module",
+  "/hook console.error: %o\n\n%s\n\n%s\n ReferenceError: refs is not defined\n    at t1 (http://localhost:3300/app_components/refsrepro/refsrepro.jsx:103:9)\n    at Object.react_stack_bottom_frame (http://localhost:3300/node_module",
+  "/memo console.error: %o\n\n%s\n\n%s\n ReferenceError: refs is not defined\n    at ref_kind_17d1e908 (http://localhost:3300/app_components/refsrepro/refsrepro.jsx:6:54)\n    at Component (http://localhost:3300/app/routes/[memo]._"
+ ],
+ "raw_handler_value": "",
+ "call_function_log": "log:",
+ "hook_value": null,
+ "hook_text": "An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | ReferenceError: refs is n",
+ "memo_value": null,
+ "memo_text": "An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | ReferenceError: refs is n",
+ "decl_value": null,
+ "decl_text": "404: Page not found"
+}

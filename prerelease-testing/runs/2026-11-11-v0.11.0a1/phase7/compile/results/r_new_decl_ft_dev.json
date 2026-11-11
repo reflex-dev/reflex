@@ -1,0 +1,16 @@
+{
+ "errors": [
+  "/hook console.error: %o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading 'current')\n    at t1 (http://localhost:3300/app_components/refsrepro/refsrepro.jsx:106:25)\n    at Object.react_stack_bottom_frame (h",
+  "/hook console.error: %o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading 'current')\n    at t1 (http://localhost:3300/app_components/refsrepro/refsrepro.jsx:106:25)\n    at Object.react_stack_bottom_frame (h",
+  "/memo console.error: %o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading 'current')\n    at t1 (http://localhost:3300/app_components/refsrepro/refsrepro.jsx:29:25)\n    at Object.react_stack_bottom_frame (ht",
+  "/memo console.error: %o\n\n%s\n\n%s\n TypeError: Cannot read properties of undefined (reading 'current')\n    at t1 (http://localhost:3300/app_components/refsrepro/refsrepro.jsx:29:25)\n    at Object.react_stack_bottom_frame (ht"
+ ],
+ "raw_handler_value": "set by raw var",
+ "call_function_log": "log: typed",
+ "hook_value": null,
+ "hook_text": "An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | TypeError: Cannot read pr",
+ "memo_value": null,
+ "memo_text": "An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | TypeError: Cannot read pr",
+ "decl_value": "",
+ "decl_text": "decl page |  | decl ok"
+}

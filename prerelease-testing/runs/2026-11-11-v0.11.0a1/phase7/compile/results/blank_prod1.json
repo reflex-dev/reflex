@@ -1,0 +1,28 @@
+{
+  "url": "http://localhost:3300/",
+  "title": "Blank | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "expect_text: 'Welcome to Reflex!'",
+    "click: 'button.rt-IconButton, [aria-label*=olor], button >> nth=0'",
+    "wait: 800",
+    "screenshot: '/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/results/shots/blank_prod1.png'",
+    "goto: 'http://localhost:3300/'",
+    "expect_text: 'Welcome to Reflex!'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "empty_page": false,
+  "console": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "Welcome to Reflex!\n\nGet started by editing blank/blank.py\n\nCheck out our docs!\nBuilt with Reflex"
+}

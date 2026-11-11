@@ -1,0 +1,28 @@
+{
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "var_icon_svgs": 1,
+ "static_icon_svgs": 1,
+ "foreach_svgs": [
+  [
+   "grid_2x_2",
+   1
+  ],
+  [
+   "grid_3x_3",
+   1
+  ],
+  [
+   "house",
+   1
+  ],
+  [
+   "align_center",
+   1
+  ]
+ ],
+ "var_icon_svgs_after_flip": 1,
+ "var_icon_class_after_flip": "lucide",
+ "console_count": 1
+}

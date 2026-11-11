@@ -1,0 +1,42 @@
+{
+ "console": [
+  "error: Access to XMLHttpRequest at 'http://localhost:8300/_upload' from origin 'http://localhost:3300' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+  "reqfailed http://localhost:8300/_upload net::ERR_FAILED",
+  "error: Failed to load resource: net::ERR_FAILED",
+  "reqfailed http://localhost:8300/_upload net::ERR_INCOMPLETE_CHUNKED_ENCODING",
+  "error: Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING"
+ ],
+ "upload_responses": [
+  {
+   "status": 200,
+   "body": "<Error: Response.text: Protocol error (Network.getResponseBody): No data found for resource with given ident>"
+  },
+  {
+   "status": 200,
+   "body": "{\"delta\": {\"reflex___state____state.upfail___upfail___s\": {\"n_rx_state_\": 11}}}\n"
+  }
+ ],
+ "b-now": {
+  "n": "n=0",
+  "prog": "prog=1",
+  "toasts": [
+   "An error occurred.\nValueError: boom before any update\nSee logs for details."
+  ],
+  "dialogs": [],
+  "after_ping_done": "done=ping"
+ },
+ "b-later": {
+  "n": "n=1",
+  "prog": "prog=1,1",
+  "toasts": [],
+  "dialogs": [],
+  "after_ping_done": "done=ping,ping"
+ },
+ "b-ok": {
+  "n": "n=11",
+  "prog": "prog=1,1,1",
+  "toasts": [],
+  "dialogs": [],
+  "after_ping_done": "done=ping,ping,ping"
+ }
+}

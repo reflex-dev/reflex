@@ -1,0 +1,44 @@
+{
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+  "log: Upload error: HTTP error! status: 500",
+  "log: Upload error: The upload handler raised an exception."
+ ],
+ "upload_responses": [
+  {
+   "status": 500,
+   "body": "The upload handler raised an exception."
+  },
+  {
+   "status": 200,
+   "body": "{\"delta\": {\"reflex___state____state.upfail___upfail___s\": {\"n_rx_state_\": 1}}}\n{\"error\": \"The upload handler raised an exception.\"}\n"
+  },
+  {
+   "status": 200,
+   "body": "{\"delta\": {\"reflex___state____state.upfail___upfail___s\": {\"n_rx_state_\": 11}}}\n"
+  }
+ ],
+ "b-now": {
+  "n": "n=0",
+  "prog": "prog=1",
+  "toasts": [
+   "An error occurred.\nValueError: boom before any update\nSee logs for details."
+  ],
+  "dialogs": [],
+  "after_ping_done": "done=ping"
+ },
+ "b-later": {
+  "n": "n=1",
+  "prog": "prog=1,1",
+  "toasts": [],
+  "dialogs": [],
+  "after_ping_done": "done=ping,ping"
+ },
+ "b-ok": {
+  "n": "n=11",
+  "prog": "prog=1,1,1",
+  "toasts": [],
+  "dialogs": [],
+  "after_ping_done": "done=ping,ping,ping"
+ }
+}

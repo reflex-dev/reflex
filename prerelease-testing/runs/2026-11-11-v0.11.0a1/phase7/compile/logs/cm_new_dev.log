@@ -1,0 +1,26 @@
+─────────────────────────────── Initializing cm ────────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized cm. Install dependencies from `requirements.txt` with `uv 
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: The rx.foreach over `items` on page `loopnokey` renders a Text with 
+lifecycle events or hooks keyed by its index: after an item is removed or moved,
+its hooks run for the item now at that position. Set a unique, stable key on the
+item, such as key=item.id, or key=item for a list of unique strings. See 
+https://reflex.dev/docs/library/dynamic-rendering/foreach/
+Warning: The rx.foreach over `tags` on page `loop` renders a Text with lifecycle
+events or hooks keyed by its index: after an item is removed or moved, its hooks
+run for the item now at that position. Set a unique, stable key on the item, 
+such as key=item.id, or key=item for a list of unique strings. See 
+https://reflex.dev/docs/library/dynamic-rendering/foreach/
+Warning: The rx.foreach over `mapping` on page `loop` renders a Text with 
+lifecycle events or hooks keyed by its index: after an item is removed or moved,
+its hooks run for the item now at that position. Set a unique, stable key on the
+item, such as key=item.id, or key=item for a list of unique strings. See 
+https://reflex.dev/docs/library/dynamic-rendering/foreach/
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 41/40 0:00:01
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3300/
+Backend running at: http://0.0.0.0:8300
+Info: Reflex app stopped.

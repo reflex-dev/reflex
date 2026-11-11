@@ -1,0 +1,40 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 41/40 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3300/
+Backend running at: http://0.0.0.0:8300
+Warning: Event handler S.on_progress is blocking the event loop (threshold: 
+0.200s), including state updates such as computed vars. Move blocking I/O to a 
+thread pool or use a non-blocking async API.
+Blocking stack (most recent call last):
+  File 
+"$OLDSB
+/p7/work/cm/envs/ctrl/lib/python3.12/site-packages/reflex_base/event/processor/e
+vent_processor.py", line 784, in _process_event_queue_entry
+    return await self._execute_event(
+  File 
+"$OLDSB
+/p7/work/cm/envs/ctrl/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 847, in _execute_event
+    return await process_event(
+  File 
+"$OLDSB
+/p7/work/cm/envs/ctrl/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 581, in process_event
+    payload = _prepare_event_payload(handler, payload)
+  File 
+"$OLDSB
+/p7/work/cm/envs/ctrl/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 256, in _prepare_event_payload
+    return _transform_event_payload(payload, type_hints)
+  File 
+"$OLDSB
+/p7/work/cm/envs/ctrl/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 229, in _transform_event_payload
+    transformed[arg] = _transform_event_arg(value, hinted_args)
+  File 
+"$OLDSB
+/p7/work/cm/envs/ctrl/lib/python3.12/site-packages/reflex_base/event/processor/b
+ase_state_processor.py", line 179, in _transform_event_arg
+    from reflex.model import Model
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load

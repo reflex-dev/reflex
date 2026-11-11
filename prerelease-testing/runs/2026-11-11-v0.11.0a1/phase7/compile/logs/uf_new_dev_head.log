@@ -1,0 +1,71 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 13/12 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3300/
+Backend running at: http://0.0.0.0:8300
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"$OLDSB
+/p7/work/cm/envs/new/lib/python3.12/site-packages/reflex_base/event/processor/ev
+ent_processor.py", line 1004, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/envs/new/lib/python3.12/site-packages/reflex_base/event/processor/ev
+ent_processor.py", line 785, in _process_event_queue_entry
+    return await self._execute_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/envs/new/lib/python3.12/site-packages/reflex_base/event/processor/ba
+se_state_processor.py", line 949, in _execute_event
+    return await process_event(
+           ^^^^^^^^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/envs/new/lib/python3.12/site-packages/reflex_base/event/processor/ba
+se_state_processor.py", line 686, in process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/apps/new/upfail/upfail/upfail.py", line 17, in fail_now
+    raise ValueError("boom before any update")
+ValueError: boom before any update
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"$OLDSB
+/p7/work/cm/envs/new/lib/python3.12/site-packages/reflex_base/event/processor/ev
+ent_processor.py", line 1004, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/envs/new/lib/python3.12/site-packages/reflex_base/event/processor/ev
+ent_processor.py", line 785, in _process_event_queue_entry
+    return await self._execute_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/envs/new/lib/python3.12/site-packages/reflex_base/event/processor/ba
+se_state_processor.py", line 949, in _execute_event
+    return await process_event(
+           ^^^^^^^^^^^^^^^^^^^^
+  File 
+"$OLDSB
+/p7/work/cm/envs/new/lib/python3.12/site-packages/reflex_base/event/processor/ba
+se_state_processor.py", line 693, in process_event
+    async for event in events:
+  File 
+"$OLDSB
+/p7/work/cm/apps/new/upfail/upfail/upfail.py", line 26, in fail_later
+    raise ValueError("boom after an update")
+ValueError: boom after an update
+
+
+Info: Reflex app stopped.

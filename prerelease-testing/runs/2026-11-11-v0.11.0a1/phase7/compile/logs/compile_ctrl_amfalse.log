@@ -1,0 +1,8 @@
+Warning: auto_memoize=False without react_compiler=True disables page 
+memoization. Every state change can re-render the whole page. Enable 
+react_compiler=True or restore auto_memoize=True.
+Warning: auto_memoize=False without react_compiler=True disables page 
+memoization. Every state change can re-render the whole page. Enable 
+react_compiler=True or restore auto_memoize=True.
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 41/40 0:00:00
+Success: App compiled successfully in 0.635 seconds.

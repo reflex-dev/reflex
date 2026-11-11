@@ -1,0 +1,84 @@
+### upload base 22:23:19
+started reflex pid=9197 (22:23:19) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/upload/base.server.log
+UP after 7s (frontend 200, backend /ping 200)
+drive upload-base rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-base: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=105
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 9197 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload baseprod 22:23:44
+started reflex pid=9743 (22:23:44) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/upload/baseprod.server.log
+UP after 7s (frontend 200, backend /ping 200)
+drive upload-baseprod rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-baseprod: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=2 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=106
+SHUTDOWN: main pid 9743 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload upgrade 22:24:07
+ - reflex==0.10.1
+ + reflex==0.11.0a2
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a2
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a2
+ - reflex-components-lucide==1.1.1
+ + reflex-components-lucide==1.1.2a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+ - reflex-hosting-cli==0.2.1
+ + reflex-hosting-cli==0.2.2a1
+Using Python 3.12.3 environment at: p7/work/cm/envs/eu-upload
+Checked 41 packages in 2ms
+All installed packages are compatible
+### upload up 22:24:08
+started reflex pid=10184 (22:24:08) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/upload/up.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json upload-base -> upload-up: < } > } 
+.web file list differs:
+32c32,33
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+40a42
+> .web/utils/helpers/set.js
+semantic package.json diff: IDENTICAL (formatting only)
+drive upload-up rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-up: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=107
+SHUTDOWN: main pid 10184 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload prod 22:24:30
+started reflex pid=10620 (22:24:30) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/upload/prod.server.log
+UP after 7s (frontend 200, backend /ping 200)
+drive upload-prod rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-prod: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=2 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=107
+SHUTDOWN: main pid 10620 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload cold 22:24:53
+started reflex pid=10985 (22:24:54) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/cm/eu-stage/logs/upload/cold.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json upload-up -> upload-cold: 
+package.json identical
+.web file list identical
+semantic package.json diff: IDENTICAL
+drive upload-cold rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-cold: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=105
+SHUTDOWN: main pid 10985 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- upload-base server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- upload-baseprod server-log warnings:
+--- upload-up server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- upload-prod server-log warnings:
+--- upload-cold server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+### upload done 22:25:17

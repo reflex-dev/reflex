@@ -1,0 +1,14 @@
+{
+ "errors": [
+  "/hook console.error: TypeError: Cannot read properties of undefined (reading 'current')\n    at n (http://localhost:3300/assets/refsrepro-DhlnJqle.js:1:1005)\n    at El (http://localhost:3300/assets/entry.client-DMqNtF3h.js",
+  "/memo console.error: TypeError: Cannot read properties of undefined (reading 'current')\n    at u (http://localhost:3300/assets/refsrepro-DhlnJqle.js:1:392)\n    at El (http://localhost:3300/assets/entry.client-DMqNtF3h.js:"
+ ],
+ "raw_handler_value": "set by raw var",
+ "call_function_log": "log: typed",
+ "hook_value": null,
+ "hook_text": "An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | TypeError: Cannot read pr",
+ "memo_value": null,
+ "memo_text": "An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | TypeError: Cannot read pr",
+ "decl_value": "",
+ "decl_text": "decl page |  | decl ok |  | Built with Reflex"
+}

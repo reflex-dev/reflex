@@ -1,0 +1,15 @@
+{
+ "upload": {
+  "selected": "a.txt,b.txt",
+  "direct": "uploaded: a.txt:15|b.txt:15",
+  "progress": "progress: 1",
+  "backend_toast": "uploaded: t1.txt:18",
+  "backend_toast_progress": "progress: 1",
+  "frontend_toast_changed_selection": "uploaded: new1.txt:24|new2.txt:24",
+  "frontend_call_script": "uploaded: cs.txt:18",
+  "backend_call_script": "uploaded: bcs.txt:21",
+  "selected_after_clear": "",
+  "secs": 12.3
+ },
+ "console": []
+}
