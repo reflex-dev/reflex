@@ -3485,8 +3485,18 @@ class EventDecorator(Protocol):
         ...
 
 
+# The handler type for EventNamespace's annotations, whose class body shadows
+# the name with its re-export.
+_EventCallback = EventCallback
+
+
 class EventNamespace:
     """A namespace for event related classes."""
+
+    # The re-exports are explicit aliases, so mypy reads `rx.event.EventSpec` as
+    # a type. A generic one is a plain assignment instead: pyright reads an
+    # explicit alias of a generic in a class body as already specialized, which
+    # rejects `rx.event.EventCallback[int]`.
 
     # Core Event Classes
     Event: TypeAlias = Event
@@ -3499,8 +3509,8 @@ class EventNamespace:
     LiteralEventVar: TypeAlias = LiteralEventVar
     EventChainVar: TypeAlias = EventChainVar
     LiteralEventChainVar: TypeAlias = LiteralEventChainVar
-    EventCallback: TypeAlias = EventCallback
-    LambdaEventCallback: TypeAlias = LambdaEventCallback
+    EventCallback = EventCallback
+    LambdaEventCallback = LambdaEventCallback
 
     # Javascript Event Classes
     JavascriptHTMLInputElement: TypeAlias = JavascriptHTMLInputElement
@@ -3513,17 +3523,17 @@ class EventNamespace:
     KeyInputInfo: TypeAlias = KeyInputInfo
     MouseEventInfo: TypeAlias = MouseEventInfo
     PointerEventInfo: TypeAlias = PointerEventInfo
-    IdentityEventReturn: TypeAlias = IdentityEventReturn
+    IdentityEventReturn = IdentityEventReturn
 
     # File Upload
     FileUpload: TypeAlias = FileUpload
     UploadFilesChunk: TypeAlias = UploadFilesChunk
 
     # Type Aliases
-    EventType: TypeAlias = EventType
-    LAMBDA_OR_STATE: TypeAlias = LAMBDA_OR_STATE
+    EventType = EventType
+    LAMBDA_OR_STATE = LAMBDA_OR_STATE
     BASIC_EVENT_TYPES: TypeAlias = BASIC_EVENT_TYPES
-    IndividualEventType: TypeAlias = IndividualEventType
+    IndividualEventType = IndividualEventType
 
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
@@ -3574,7 +3584,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> EventCallback[*P]: ...
+    ) -> _EventCallback[*P]: ...
 
     def __new__(
         cls,
@@ -3587,7 +3597,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> "EventCallback | EventDecorator":
+    ) -> "_EventCallback | EventDecorator":
         """Wrap a function to be used as an event.
 
         Args:
@@ -3628,7 +3638,7 @@ class EventNamespace:
                 if value is not None
             }
 
-        def wrapper(func: Callable[..., Any]) -> EventCallback:
+        def wrapper(func: Callable[..., Any]) -> _EventCallback:
             if isinstance(func, (staticmethod, classmethod)):
                 # Never an event handler; left as it is, like before.
                 console.deprecate(
