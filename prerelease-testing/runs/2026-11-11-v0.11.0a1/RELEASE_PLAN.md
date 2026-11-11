@@ -193,7 +193,7 @@ non-optional OK, file the ComputedVar `set | None` typing gap and the optional-l
 | #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, watch |
 | #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, watch; deploy_url sentence in `news/+cors-prod-default.breaking.md` corrected |
 | #7800 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | PR open, watch |
-| 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | committed; agent adding optional INFO line, then open PR |
+| #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | PR open, watch (no INFO line: no granian hook; docs point at GRANIAN_LOG_LEVEL=info) |
 | #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | PR open, watch |
 | 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | committed; agent switching to ReflexError, then open PR |
 | #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | PR open, watch (no warm-up needed: check sys.modules instead of importing) |
