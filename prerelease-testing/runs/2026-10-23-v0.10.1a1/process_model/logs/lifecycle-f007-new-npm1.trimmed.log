@@ -1,0 +1,53 @@
+### reflex 0.10.1a1 REFLEX_USE_NPM=1 app=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/lifecycle/run/f007-new-npm1
+frontend up; reflex CLI pid=3773; process group before SIGTERM:
+ 3773  3673  3773 Ssl  /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/python /tmp/claude-0/-home-u
+ 4515  3773  3773 Sl   npm run dev
+ 4528  4515  3773 S    sh -c react-router dev --host
+ 4529  4528  3773 Sl   node /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/lifecycle/run/f00
+ 4536  3773  3773 Sl   /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/python /tmp/claude-0/-home-u
+--- kill -TERM 3773 (single process, no TTY)
+RESULT: reflex CLI STILL RUNNING 30s after SIGTERM
+listeners on 3212/8212 after 30s:
+node      4529 root   27u  IPv4 146516      0t0  TCP *:3212 (LISTEN)
+process group after 30s:
+ 3773  3673  3773 Ssl  /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/python /tmp/claude-0/-home-u
+ 4515  3773  3773 Z    [npm run dev] <defunct>
+ 4529     1  3773 Sl   node /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/lifecycle/run/f00
+  thread 3773 wchan=futex_do_wait
+  thread 4513 wchan=anon_pipe_read
+--- cleanup: SIGKILL process group 3773
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/lifecycle/bin/npm_sigterm_repro.sh: line 27:  3773 Killed                  REFLEX_USE_NPM=$USE_NPM REFLEX_TELEMETRY_ENABLED=false setsid "$VENV/bin/reflex" run --frontend-port "$FP" --backend-port "$BP" > "$LOG.server" 2>&1
+  ports free
+server log tail:
+  | ───────────────────────────── Starting Reflex App ──────────────────────────────
+  | Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+  | ───────────────────────────────── App Running ──────────────────────────────────
+  | App running at: http://localhost:3212/
+  | Backend running at: http://0.0.0.0:8212
+... [trimmed] ...
+### reflex 0.10.1a1 REFLEX_USE_NPM=1 app=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/lifecycle/run/f007-new-npm1
+frontend up; reflex CLI pid=3773; process group before SIGTERM:
+ 3773  3673  3773 Ssl  /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/python /tmp/claude-0/-home-u
+ 4515  3773  3773 Sl   npm run dev
+ 4528  4515  3773 S    sh -c react-router dev --host
+ 4529  4528  3773 Sl   node /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/lifecycle/run/f00
+ 4536  3773  3773 Sl   /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/python /tmp/claude-0/-home-u
+--- kill -TERM 3773 (single process, no TTY)
+RESULT: reflex CLI STILL RUNNING 30s after SIGTERM
+listeners on 3212/8212 after 30s:
+node      4529 root   27u  IPv4 146516      0t0  TCP *:3212 (LISTEN)
+process group after 30s:
+ 3773  3673  3773 Ssl  /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/python /tmp/claude-0/-home-u
+ 4515  3773  3773 Z    [npm run dev] <defunct>
+ 4529     1  3773 Sl   node /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/lifecycle/run/f00
+  thread 3773 wchan=futex_do_wait
+  thread 4513 wchan=anon_pipe_read
+--- cleanup: SIGKILL process group 3773
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/lifecycle/bin/npm_sigterm_repro.sh: line 27:  3773 Killed                  REFLEX_USE_NPM=$USE_NPM REFLEX_TELEMETRY_ENABLED=false setsid "$VENV/bin/reflex" run --frontend-port "$FP" --backend-port "$BP" > "$LOG.server" 2>&1
+  ports free
+server log tail:
+  | ───────────────────────────── Starting Reflex App ──────────────────────────────
+  | Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+  | ───────────────────────────────── App Running ──────────────────────────────────
+  | App running at: http://localhost:3212/
+  | Backend running at: http://0.0.0.0:8212

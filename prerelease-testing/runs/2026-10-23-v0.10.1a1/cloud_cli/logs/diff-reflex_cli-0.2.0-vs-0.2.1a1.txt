@@ -1,0 +1,366 @@
+Only in /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-new/lib/python3.12/site-packages/reflex_cli/utils: deploy.py
+diff -r -x __pycache__ /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-prev/lib/python3.12/site-packages/reflex_cli/utils/exceptions.py /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-new/lib/python3.12/site-packages/reflex_cli/utils/exceptions.py
+19c19
+<     def __init__(self, message: str, request_id: str = ""):
+---
+>     def __init__(self, message: str, request_id: str = "", retryable: bool = True):
+24a25,26
+>             retryable: Whether trying again later may succeed. False when the
+>                 control plane refused the request itself.
+27a30
+>         self.retryable = retryable
+31c34,46
+<     """Raised when the control plane rejects the access token."""
+---
+>     """Raised when the control plane rejects the access token.
+> 
+>     Trying again with the same token cannot succeed, so it is never retryable.
+>     """
+> 
+>     def __init__(self, message: str, request_id: str = ""):
+>         """Initialize the error.
+> 
+>         Args:
+>             message: The error message.
+>             request_id: The X-Request-ID header sent with the failed request.
+>         """
+>         super().__init__(message, request_id, retryable=False)
+diff -r -x __pycache__ /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-prev/lib/python3.12/site-packages/reflex_cli/utils/hosting.py /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-new/lib/python3.12/site-packages/reflex_cli/utils/hosting.py
+34a35
+>     APIResponseValidationError,
+46a48
+> from reflex_build_sdk.transports import default_transport
+52a55,59
+> from reflex_cli.utils.deploy import (
+>     _DeploymentRetryTransport,
+>     _is_scaling_conflict,
+>     _retry_scaling_conflicts,
+> )
+468,469c475,476
+< def rejected_token_message(source: TokenSource, err: TokenValidationError) -> str:
+<     """Describe a token the control plane would not validate.
+---
+> def rejected_token_message(source: TokenSource, err: TokenAccessDeniedError) -> str:
+>     """Describe a rejected token and how to replace it for its source.
+477a485,496
+>     if source is TokenSource.ENVIRONMENT:
+>         recovery = (
+>             "Replace REFLEX_ACCESS_TOKEN with a valid token, or unset it and run "
+>             "`reflex login` to authenticate."
+>         )
+>     elif source is TokenSource.OPTION:
+>         recovery = (
+>             "Replace the --token value with a valid token, or omit --token and run "
+>             "`reflex login` to authenticate."
+>         )
+>     else:
+>         recovery = "Run `reflex login` to authenticate."
+480c499,522
+<         f"(auth request id: {err.request_id})"
+---
+>         f"(auth request id: {err.request_id}). {recovery}"
+>     )
+> 
+> 
+> def _token_validation_failure_message(
+>     source: TokenSource, err: TokenValidationError
+> ) -> str:
+>     """Describe a validation failure, suggesting a retry only if one may help.
+> 
+>     Args:
+>         source: Where the token was loaded from.
+>         err: The validation error.
+> 
+>     Returns:
+>         The message to report.
+>     """
+>     if not err.retryable:
+>         return (
+>             f"Unable to validate the access token from the {source.value}: "
+>             f"{err} (auth request id: {err.request_id})."
+>         )
+>     return (
+>         f"Unable to validate the access token from the {source.value}: "
+>         f"{err} (auth request id: {err.request_id}). Please try again later."
+722a765,784
+> def _is_retryable_status(status_code: int) -> bool:
+>     """Tell whether a refused request may succeed if sent again later.
+> 
+>     Args:
+>         status_code: The status the control plane answered with.
+> 
+>     Returns:
+>         True for a timeout, a throttled request or a server error.
+>     """
+>     return (
+>         status_code
+>         in (
+>             HTTPStatus.REQUEST_TIMEOUT,
+>             HTTPStatus.TOO_EARLY,
+>             HTTPStatus.TOO_MANY_REQUESTS,
+>         )
+>         or status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+>     )
+> 
+> 
+736c798,800
+<             failed request, a server error. These are worth trying again.
+---
+>             failed request, a server error, or a request the control plane
+>             refused. Only the first kinds are worth trying again, as
+>             ``retryable`` says.
+751a816,819
+>             retryable = _is_retryable_status(ex.status_code)
+>             # The API's explanation is not shown or logged: it may echo the
+>             # request, including the token.
+>             message = f"HTTP {ex.status_code}"
+753c821
+<                 f"Unable to validate the token due to: {ex} (request id: {ex.request_id})"
+---
+>                 f"Unable to validate the token due to: {message} (request id: {ex.request_id})"
+755c823,825
+<             raise TokenValidationError("server error", request_id=ex.request_id) from ex
+---
+>             raise TokenValidationError(
+>                 message, request_id=ex.request_id, retryable=retryable
+>             ) from ex
+787c857,858
+< def upload_client(client: AuthenticatedClient) -> ReflexBuild:
+---
+> @contextlib.contextmanager
+> def upload_client(client: AuthenticatedClient) -> Iterator[ReflexBuild]:
+797,798c868,869
+<     Returns:
+<         A client to submit the deployment with. The caller closes it.
+---
+>     Yields:
+>         A client that retries confirmed scaling refusals without reuploading.
+801,805c872,886
+<     return ReflexBuild(
+<         token=client.token,
+<         base_url=constants.Hosting.HOSTING_SERVICE,
+<         timeout=UPLOAD_IO_TIMEOUT.total_seconds(),
+<     )
+---
+>     base_url = constants.Hosting.HOSTING_SERVICE.rstrip("/")
+>     with (
+>         contextlib.closing(
+>             _DeploymentRetryTransport(
+>                 default_transport(), url=f"{base_url}/api/v1/deployments"
+>             )
+>         ) as transport,
+>         ReflexBuild(
+>             token=client.token,
+>             base_url=base_url,
+>             timeout=UPLOAD_IO_TIMEOUT.total_seconds(),
+>             transport=transport,
+>         ) as uploader,
+>     ):
+>         yield uploader
+923,926c1004
+<             logger.error(
+<                 f"Unable to validate the access token from the {source.value}: "
+<                 f"{err} (auth request id: {err.request_id})"
+<             )
+---
+>             logger.error(_token_validation_failure_message(source, err))
+1211a1290,1303
+> def _warn_unconfirmed_instance_bounds(app_name: str) -> None:
+>     """Warn when a bounds write may have committed without acknowledgement.
+> 
+>     Args:
+>         app_name: The app whose instance bounds were being updated.
+>     """
+>     logger.warning(
+>         f"Could not confirm the instance bounds of "
+>         f"'{app_name}'; they may or may not have been applied. "
+>         "Check the app in the Reflex Cloud dashboard before relying "
+>         "on its scaling."
+>     )
+> 
+> 
+1216a1309,1310
+>     *,
+>     retry_scaling: bool = False,
+1229a1324,1325
+>         retry_scaling: Whether to retry confirmed scaling refusals, up to eight
+>             attempts with a 15-second wait between attempts.
+1233c1329,1335
+<         error (validation, unsupported platform, or a scale already running).
+---
+>         a non-retryable refusal (validation or unsupported platform).
+> 
+>     Raises:
+>         APIStatusError: If scaling refused the write or a server error left its
+>             outcome unknown.
+>         APIConnectionError: If contact is lost while reading or updating bounds.
+>         APIResponseValidationError: If the response could not be decoded.
+1236c1338,1342
+<     try:
+---
+>     bounds_url = f"{client.api.base_url}/api/v1/apps/{app_id}/instance_bounds"
+>     scaling_code = "instance_bounds_scale_conflict"
+> 
+>     def update_bounds() -> None:
+>         """Update the requested bounds, preserving the latest unspecified bound."""
+1238,1246c1344,1391
+<         client.api.apps.set_instance_bounds(
+<             app_id,
+<             min_instances=current.min_instances
+<             if min_instances is None
+<             else min_instances,
+<             max_instances=current.max_instances
+<             if max_instances is None
+<             else max_instances,
+<         )
+---
+>         try:
+>             client.api.apps.set_instance_bounds(
+>                 app_id,
+>                 min_instances=current.min_instances
+>                 if min_instances is None
+>                 else min_instances,
+>                 max_instances=current.max_instances
+>                 if max_instances is None
+>                 else max_instances,
+>             )
+>         except MissingTokenError:
+>             raise
+>         except APIResponseValidationError:
+>             logger.warning(
+>                 f"The server reported success setting the instance bounds of "
+>                 f"'{current.name}', but its response could not be decoded. "
+>                 "The bounds may have changed even though this deploy stopped. "
+>                 "Check the app in the Reflex Cloud dashboard before relying "
+>                 "on its scaling."
+>             )
+>             raise
+>         except APIStatusError as ex:
+>             if ex.status_code >= 500:
+>                 _warn_unconfirmed_instance_bounds(current.name)
+>             raise
+>         except BaseException:
+>             _warn_unconfirmed_instance_bounds(current.name)
+>             raise
+> 
+>     try:
+>         if retry_scaling:
+>             _retry_scaling_conflicts(
+>                 update_bounds,
+>                 url=bounds_url,
+>                 code=scaling_code,
+>                 action="the instance bounds update",
+>                 attempts=8,
+>             )
+>         else:
+>             update_bounds()
+>     except (APIConnectionError, APIResponseValidationError):
+>         raise
+>     except APIStatusError as ex:
+>         if ex.status_code >= 500 or _is_scaling_conflict(
+>             ex, url=bounds_url, code=scaling_code
+>         ):
+>             raise
+>         return f"set instance bounds failed: {error_message(ex)}"
+diff -r -x __pycache__ /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-prev/lib/python3.12/site-packages/reflex_cli/v2/apps.py /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-new/lib/python3.12/site-packages/reflex_cli/v2/apps.py
+5a6
+> import json
+8c9
+< from typing import Any
+---
+> from typing import TYPE_CHECKING, Any
+23a25,27
+> if TYPE_CHECKING:
+>     from reflex_build_sdk.types import LogRecord
+> 
+32a37,44
+> # Terminal control characters print as escapes, so a log line cannot move the
+> # cursor or rewrite the lines above it. Tabs stay.
+> _CONTROL_ESCAPES = {
+>     code: f"\\x{code:02x}"
+>     for code in (*range(0x20), *range(0x7F, 0xA0))
+>     if code != 0x09
+> }
+> 
+48a61,83
+> def _format_log_record(record: LogRecord) -> str:
+>     """Render a log record as a ``timestamp [LEVEL] message`` line.
+> 
+>     The message's further lines and the details follow indented, so no line
+>     of a record can pass for the start of another.
+> 
+>     Args:
+>         record: The record to render.
+> 
+>     Returns:
+>         The record as terminal text.
+>     """
+>     message = record.message
+>     if not isinstance(message, str):
+>         message = json.dumps(message, ensure_ascii=False)
+>     lines = message.splitlines() or [""]
+>     if record.details:
+>         lines.extend(record.details.splitlines())
+>     level = (record.log_level or "info").upper()
+>     lines[0] = f"{record.timestamp} [{level}] {lines[0]}"
+>     return "\n  ".join(line.translate(_CONTROL_ESCAPES) for line in lines)
+> 
+> 
+749,750c784,789
+<             entry = hosting.as_json_document(record)
+<             logger.info(pprint.pformat(entry, indent=2) if pretty else entry)
+---
+>             message = (
+>                 pprint.pformat(hosting.as_json_document(record), indent=2)
+>                 if pretty
+>                 else _format_log_record(record)
+>             )
+>             console.print(message, markup=False, emoji=False, soft_wrap=True)
+diff -r -x __pycache__ /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-prev/lib/python3.12/site-packages/reflex_cli/v2/auth.py /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-new/lib/python3.12/site-packages/reflex_cli/v2/auth.py
+14c14
+< from reflex_cli.utils.exceptions import TokenValidationError
+---
+> from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
+109c109
+<     except TokenValidationError as err:
+---
+>     except TokenAccessDeniedError as err:
+110a111,113
+>         raise click.exceptions.Exit(1) from err
+>     except TokenValidationError as err:
+>         logger.error(hosting._token_validation_failure_message(source, err))
+diff -r -x __pycache__ /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-prev/lib/python3.12/site-packages/reflex_cli/v2/cli.py /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-new/lib/python3.12/site-packages/reflex_cli/v2/cli.py
+325,326c325,326
+<         gcp_status = hosting.gcp_deploy_available(client)
+<         if not gcp_status or not interactive:
+---
+>         gcp_status = hosting.gcp_deploy_available(client) if interactive else None
+>         if not gcp_status:
+1111a1112
+>                     retry_scaling=True,
+1113,1121c1114,1116
+<             except BaseException:
+<                 # A dropped connection says nothing about whether the server
+<                 # applied the write, and the bounds are billable state, so hedge
+<                 # rather than report either outcome as fact.
+<                 logger.warning(
+<                     f"Lost contact while setting the instance bounds of "
+<                     f"'{app.name}'; they may or may not have been applied. "
+<                     "Check the app in the Reflex Cloud dashboard before relying "
+<                     "on its scaling."
+---
+>             except ReflexBuildError as ex:
+>                 hosting.exit_reporting(
+>                     ex, f"set instance bounds failed: {hosting.error_message(ex)}"
+1123d1117
+<                 raise
+diff -r -x __pycache__ /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-prev/lib/python3.12/site-packages/reflex_cli/v2/project.py /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/cloud_cli-new/lib/python3.12/site-packages/reflex_cli/v2/project.py
+339c339,344
+<     _print_rows([hosting.as_json_document(project) for project in projects], as_json)
+---
+>     rows = [hosting.as_json_document(project) for project in projects]
+>     if not as_json:
+>         for row, project in zip(rows, projects, strict=True):
+>             row["tier"] = project.tier.name
+> 
+>     _print_rows(rows, as_json)

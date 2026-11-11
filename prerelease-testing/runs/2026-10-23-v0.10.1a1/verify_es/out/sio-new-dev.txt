@@ -1,0 +1,34 @@
+A after connect: ['event', 'event'] B after connect: ['event', 'event']
+--- [A] valid envelope -> dict handler
+    payload={"form": "ok_env", "form_data": {"__reflex_form_data__": [["a", "1"], ["a", "2"]]}}
+    received 1: DELTA results_json_rx_state_": "{\"ok_env\": \"{\\\"form\\\": \\\"ok_env\\\", \\\"type\\\": \\\"dict\\\", \\\"data\\\": {\\\"a
+    connected=True
+--- [A] envelope value is a string
+    payload={"form": "bad_str", "form_data": {"__reflex_form_data__": "not-a-list"}}
+    received 1: TOAST  : \"ValueError: dictionary update sequence element #0 has length 1; 2 is required See logs fo
+    connected=True
+--- [A] envelope pairs of length 1
+    payload={"form": "bad_pairs", "form_data": {"__reflex_form_data__": [["only-one"]]}}
+    received 1: TOAST  : \"ValueError: dictionary update sequence element #0 has length 1; 2 is required See logs fo
+    connected=True
+--- [A] envelope key unhashable
+    payload={"form": "bad_unhashable", "form_data": {"__reflex_form_data__": [[["x"], "v"]]}}
+    received 1: TOAST  : \"TypeError: unhashable type: 'list' See logs for details.\", [\"position\"] : \"top-center
+    connected=True
+--- [B] bystander B sends a plain dict right after A's bad ones
+    payload={"form": "bystander", "form_data": {"b": "fine"}}
+    received 1: DELTA results_json_rx_state_": "{\"bystander\": \"{\\\"form\\\": \\\"bystander\\\", \\\"type\\\": \\\"dict\\\", \\\"data\\\": 
+    connected=True
+--- [A] generic garbage: int to a dataclass-annotated handler
+    payload={"form": "garbage_int", "form_data": 5}
+    received 1: TOAST  : \"TypeError: asdict() should be called on dataclass instances See logs for details.\", [\"p
+    connected=True
+--- [A] generic garbage: wrong keys to a dataclass-annotated handler
+    payload={"form": "garbage_dict", "form_data": {"zzz": 1}}
+    received 1: TOAST  : \"TypeError: asdict() should be called on dataclass instances See logs for details.\", [\"p
+    connected=True
+--- [A] plain dict after the bad ones
+    payload={"form": "after", "form_data": {"a": "still-works"}}
+    received 1: DELTA results_json_rx_state_": "{\"after\": \"{\\\"form\\\": \\\"after\\\", \\\"type\\\": \\\"dict\\\", \\\"data\\\": {\\\"a\\
+    connected=True
+done; A events 10 B events 4

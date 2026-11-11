@@ -1,0 +1,51 @@
+addvar                       ROW D3 `if name not in S.__fields__: S.add_var(name)` guard on parent then substate | P11.add_var -> ok; C12.add_var -> TypeError: 'form_id' is a stat
+adv7495                      CASE non_field_attrs_delete_and_set | ClassVar set -> ok (2); del ClassVar -> ok hasattr=False; del method -> ok hasattr=False; del missing -> Attribu
+autoset_off                  ROW 4 grandparent var set_size + grandchild var size | created
+autoset_on                   ROW 4 grandparent var set_size + grandchild var size | EXC TypeError: 'set_size' is a state var of GA, inherited by GC; assigning it on GC would repla
+autoset_orig                 parent var 'set_color' + child var 'color' with auto setters: TypeError: 'set_color' is a state var of P, inherited by C; assigning it on C would repl
+copydef                      ROW e14 ComponentState class default appended after definition, create() after | ComponentState created after late append sees=MutableProxy([])
+copydef_extra                ROW ComponentState.create cost with large mutable class default | 100 x ComponentState.create with a 200k-item list default: 105 ms
+default_trap2                set_default(['sd']) (0.10)  : s4=['sd', 'x'] s5=['sd']
+default_trap_09              session trees (root State): other session items=['leak', 'leak'] _bitems=['bleak', 'bleak']; new session items=['leak', 'leak'] _bitems=['bleak', 'ble
+derive_a.dev                 keys of S.dict(): ['KEY_rx_state_', 'pub_rx_state_']
+derive_a.prod                keys of S.dict(): ['KEY_rx_state_', 'pub_rx_state_']
+derive_e_format              inst.count = S._size  (mistyped assignment of a Field) -> OK Field(default=16, is_var=True, annotated_type=<class 'int'>)
+docs                         ROW news/CHANGELOG: State.__fields__['items'].set_default(['a']) / ['count'].set_default(10) | items=['a'] count=10
+dynroute                     compile ok
+guard7495.dev                state whose __name__ was changed after creation, self.__r                      -> SetUndefinedStateVarError: The state variable '_GRenamed__r' has not
+guard7495.prod               state whose __name__ was changed after creation, self.__r                      -> accepted -> 11
+guard_local_rename.dev       #2: __name__=Loc_1 __original_name__=Loc -> 1
+guard_local_rename.prod      #2: __name__=Loc_1 __original_name__=Loc -> 1
+internals                    ROW dynamic route /post/[slug] | route arg var on State: True type=DynamicRouteVar
+large_df                     0.10.1a1   df       value= 100.7MB classdef=   373.3ms (+  66.8MB) first-instance+access=   376.8ms (+  50.0MB) after `del value`= 183.7MB rss peak= 2
+large_dictrows               0.10.1a1   dictrows value=  56.7MB classdef=   683.6ms (+  71.4MB) first-instance+access=   500.3ms (+  53.9MB) after `del value`= 196.6MB rss peak= 1
+large_list                   0.10.1a1   list     value=  61.2MB classdef=   967.5ms (+  36.5MB) first-instance+access=   449.4ms (+  12.2MB) after `del value`= 113.9MB rss peak= 1
+large_ndarray                0.10.1a1   ndarray  value=  12.4MB classdef=   566.1ms (+  72.9MB) first-instance+access=   372.0ms (+  50.0MB) after `del value`= 151.4MB rss peak= 1
+lock_tree                    STEP classdef FAIL TypeError cannot pickle '_thread.lock' object
+lockmod_fevar                  notes: None
+lockmod_mystate                notes: None
+many_states                  0.10.1a1: 400 states x 4 small mutable defaults: 275 ms
+mem_floats_keep              0.10.1a1  floats  keep classdef=  638.0ms  held-after-classdef(net vs data loaded)=    8.1MB  classdef-peak=    8.1MB  +first-instance=    8.1MB  clas
+mem_ndarray_keep             0.10.1a1  ndarray keep classdef=  317.7ms  held-after-classdef(net vs data loaded)=   50.0MB  classdef-peak=   50.1MB  +first-instance=   50.0MB  clas
+mem_rows_keep                0.10.1a1  rows    keep classdef= 2332.3ms  held-after-classdef(net vs data loaded)=   36.7MB  classdef-peak=   54.3MB  +first-instance=   36.6MB  clas
+owner_msg                    ROW framework var C.router | ACCEPTED (no error)
+pt_converted                 25 passed in 0.34s
+pt_converted_attr            21 passed in 0.30s
+pt_min                       1 failed, 1 passed in 0.28s
+pt_moot                      25 passed in 0.40s
+pt_mp_backend_var            4 failed, 2 passed in 0.61s
+pt_mp_other_attrs            1 failed, 9 passed in 0.31s
+pt_n039_fields               204 passed, 1 skipped in 0.59s
+pt_patch_substate            2 failed, 2 passed in 0.50s
+pt_undo_edge                 1 error in 0.66s
+pt_v7_undo                   1 error in 0.42s
+schema_hashes                reflex 0.10.1a1: HBase=2efae2635f7cb10f HChild=f2d2a961f646368d HCfg=472cb6c56187afeb
+schema_hashes_sd             reflex 0.10.1a1 (set_default): HSd=cb3b619998cde91c
+shared_default               after a.reset(): ['AAPL', 'MSFT']
+storage_fields               == str-annotated var, default MISSING + factory returning LocalStorage(name=k_fac,sync): entry=None is_cs=False instance='f'
+storage_setdefault           == str-annotated var, default MISSING + factory returning LocalStorage(name=k_fac,sync): entry=None is_cs=False instance='f'
+thread_fields                (2') same on a plain Python object attribute: errors=0 final=61451
+thread_setdefault            set_default stress: errors=0 [] instance errors=0 [] | final count=0 _f='d' items=['decl'] | fields: count=(0,None) _f=('d',None) items.default=<datac
+v1_late                      p12 VChild instance options                    : []
+v1_patchdict                 reflex 0.10.1a1  under mock.patch.dict -> filters={'status': 'open'} _features=['base']
+v8_storage                   TypeError: 'opt' is a state var of St; assigning it on the class would replace the var. Set its default with St.__fields__['opt'].set_default(...), or

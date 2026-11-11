@@ -1,0 +1,9 @@
+typing_new_api.py:25:13: error[type-assertion-failure] Type `Any` does not match asserted type `str`
+typing_new_api.py:26:13: error[type-assertion-failure] Type `Any` does not match asserted type `str`
+typing_new_api.py:50:13: info[revealed-type] Revealed type: `Form`
+typing_new_api.py:52:1: error[type-assertion-failure] Type `Any` does not match asserted type `list[str]`
+typing_new_api.py:53:13: info[revealed-type] Revealed type: `Any`
+typing_new_api.py:54:6: error[unresolved-import] Cannot resolve imported module `reflex_base.utils.form`
+typing_new_api.py:57:1: error[type-assertion-failure] Type `Unknown` does not match asserted type `list[str]`
+typing_new_api.py:67:11: error[unresolved-attribute] Module `reflex` has no member `moment_provider`
+Found 8 diagnostics

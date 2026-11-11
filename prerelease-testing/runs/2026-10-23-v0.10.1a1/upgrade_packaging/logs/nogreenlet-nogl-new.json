@@ -1,0 +1,54 @@
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nogl-new/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:133)
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/probes/nogreenlet_probe.py:80)
+Database is not initialized, run [bold]reflex db init[/bold] first.
+{
+ "venv": "upgrade_packaging-nogl-new",
+ "steps": {
+  "import reflex.model": {
+   "ok": true,
+   "result": [
+    "Model",
+    "session",
+    "asession",
+    "get_engine",
+    "get_async_engine"
+   ]
+  },
+  "rx.Model subclass": {
+   "ok": true,
+   "result": "note"
+  },
+  "rx.session create/insert/select": {
+   "ok": true,
+   "result": [
+    "hello"
+   ]
+  },
+  "rx.asession (expect helpful ImportError)": {
+   "ok": false,
+   "error": "ImportError: The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed.  In order to ensure this dependency is available, use the 'sqlalchemy[asyncio]' install target:  'pip install sqlalchemy[asyncio]'",
+   "tb_tail": [
+    "  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nogl-new/lib/python3.12/site-packages/sqlalchemy/util/concurrency.py\", line 79, in _initialize",
+    "    raise ImportError(_ERROR_MESSAGE) from e",
+    "ImportError: The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed.  In order to ensure this dependency is available, use the 'sqlalchemy[asyncio]' install target:  'pip install sqlalchemy[asyncio]'"
+   ]
+  },
+  "get_async_engine (expect ImportError)": {
+   "ok": false,
+   "error": "ValueError: No async database url configured",
+   "tb_tail": [
+    "  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nogl-new/lib/python3.12/site-packages/reflex/model.py\", line 166, in get_async_engine",
+    "    raise ValueError(msg)",
+    "ValueError: No async database url configured"
+   ]
+  }
+ },
+ "versions": {
+  "reflex": "0.10.1a1",
+  "reflex-base": "0.10.1a1",
+  "sqlalchemy": "2.1.6",
+  "sqlmodel": "0.0.48",
+  "greenlet": null,
+  "alembic": "1.20.1"
+ }
+}

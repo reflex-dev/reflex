@@ -1,0 +1,176 @@
+##### venv=new --loglevel -
+[probe] argv loglevel=None env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.INFO: 'info'> env REFLEX_LOGLEVEL=None
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.DEFAULT: 'default'> .subprocess_level()=<LogLevel.WARNING: 'warning'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.DEFAULT: 'default'>
+[probe] after export(): log level=<LogLevel.WARNING: 'warning'>  <- level every later hosting-CLI record is filtered at
+Warning: WARNING record after export
+ERROR record after export
+##### venv=new --loglevel info
+[probe] argv loglevel='info' env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.INFO: 'info'> env REFLEX_LOGLEVEL=None
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.DEFAULT: 'default'> .subprocess_level()=<LogLevel.WARNING: 'warning'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.DEFAULT: 'default'>
+[probe] after export(): log level=<LogLevel.WARNING: 'warning'>  <- level every later hosting-CLI record is filtered at
+Warning: WARNING record after export
+ERROR record after export
+##### venv=new --loglevel debug
+[probe] argv loglevel='debug' env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.DEBUG: 'debug'> env REFLEX_LOGLEVEL='debug'
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.DEBUG: 'debug'> .subprocess_level()=<LogLevel.DEBUG: 'debug'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.DEBUG: 'debug'>
+[probe] after export(): log level=<LogLevel.DEBUG: 'debug'>  <- level every later hosting-CLI record is filtered at
+Debug: DEBUG record after export
+Info: INFO record after export (e.g. 'App is being scaled; waiting 15 
+seconds...')
+Success: SUCCESS record after export (e.g. 'deployment completed successfully')
+Warning: WARNING record after export
+ERROR record after export
+##### venv=new --loglevel warning
+[probe] argv loglevel='warning' env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.WARNING: 'warning'> env REFLEX_LOGLEVEL='warning'
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.WARNING: 'warning'> .subprocess_level()=<LogLevel.WARNING: 'warning'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.WARNING: 'warning'>
+[probe] after export(): log level=<LogLevel.WARNING: 'warning'>  <- level every later hosting-CLI record is filtered at
+Warning: WARNING record after export
+ERROR record after export
+##### venv=new --loglevel default
+[probe] argv loglevel='default' env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.DEFAULT: 'default'> env REFLEX_LOGLEVEL='default'
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.DEFAULT: 'default'> .subprocess_level()=<LogLevel.WARNING: 'warning'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.DEFAULT: 'default'>
+[probe] after export(): log level=<LogLevel.WARNING: 'warning'>  <- level every later hosting-CLI record is filtered at
+Warning: WARNING record after export
+ERROR record after export
+##### venv=new env REFLEX_LOGLEVEL=info, no flag
+[probe] argv loglevel=None env REFLEX_LOGLEVEL(before)='info'
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.INFO: 'info'> env REFLEX_LOGLEVEL='info'
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.INFO: 'info'> .subprocess_level()=<LogLevel.INFO: 'info'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.INFO: 'info'>
+[probe] after export(): log level=<LogLevel.INFO: 'info'>  <- level every later hosting-CLI record is filtered at
+Info: INFO record after export (e.g. 'App is being scaled; waiting 15 
+seconds...')
+Success: SUCCESS record after export (e.g. 'deployment completed successfully')
+Warning: WARNING record after export
+ERROR record after export
+##### venv=prev --loglevel -
+[probe] argv loglevel=None env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.INFO: 'info'> env REFLEX_LOGLEVEL=None
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.DEFAULT: 'default'> .subprocess_level()=<LogLevel.WARNING: 'warning'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.DEFAULT: 'default'>
+[probe] after export(): log level=<LogLevel.WARNING: 'warning'>  <- level every later hosting-CLI record is filtered at
+Warning: WARNING record after export
+ERROR record after export
+##### venv=prev --loglevel info
+[probe] argv loglevel='info' env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.INFO: 'info'> env REFLEX_LOGLEVEL=None
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.DEFAULT: 'default'> .subprocess_level()=<LogLevel.WARNING: 'warning'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.DEFAULT: 'default'>
+[probe] after export(): log level=<LogLevel.WARNING: 'warning'>  <- level every later hosting-CLI record is filtered at
+Warning: WARNING record after export
+ERROR record after export
+##### venv=prev --loglevel debug
+[probe] argv loglevel='debug' env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.DEBUG: 'debug'> env REFLEX_LOGLEVEL='debug'
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.DEBUG: 'debug'> .subprocess_level()=<LogLevel.DEBUG: 'debug'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.DEBUG: 'debug'>
+[probe] after export(): log level=<LogLevel.DEBUG: 'debug'>  <- level every later hosting-CLI record is filtered at
+Debug: DEBUG record after export
+Info: INFO record after export (e.g. 'App is being scaled; waiting 15 
+seconds...')
+Success: SUCCESS record after export (e.g. 'deployment completed successfully')
+Warning: WARNING record after export
+ERROR record after export
+##### venv=prev --loglevel warning
+[probe] argv loglevel='warning' env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.WARNING: 'warning'> env REFLEX_LOGLEVEL='warning'
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.WARNING: 'warning'> .subprocess_level()=<LogLevel.WARNING: 'warning'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.WARNING: 'warning'>
+[probe] after export(): log level=<LogLevel.WARNING: 'warning'>  <- level every later hosting-CLI record is filtered at
+Warning: WARNING record after export
+ERROR record after export
+##### venv=prev --loglevel default
+[probe] argv loglevel='default' env REFLEX_LOGLEVEL(before)=None
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.DEFAULT: 'default'> env REFLEX_LOGLEVEL='default'
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.DEFAULT: 'default'> .subprocess_level()=<LogLevel.WARNING: 'warning'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.DEFAULT: 'default'>
+[probe] after export(): log level=<LogLevel.WARNING: 'warning'>  <- level every later hosting-CLI record is filtered at
+Warning: WARNING record after export
+ERROR record after export
+##### venv=prev env REFLEX_LOGLEVEL=info, no flag
+[probe] argv loglevel=None env REFLEX_LOGLEVEL(before)='info'
+[probe] initial log.get_log_level()=<LogLevel.INFO: 'info'>
+[probe] after --loglevel callback: log level=<LogLevel.INFO: 'info'> env REFLEX_LOGLEVEL='info'
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[probe] get_config().loglevel=<LogLevel.INFO: 'info'> .subprocess_level()=<LogLevel.INFO: 'info'>
+[probe] after deploy() set_log_level(prep.loglevel): log level=<LogLevel.INFO: 'info'>
+[probe] after export(): log level=<LogLevel.INFO: 'info'>  <- level every later hosting-CLI record is filtered at
+Info: INFO record after export (e.g. 'App is being scaled; waiting 15 
+seconds...')
+Success: SUCCESS record after export (e.g. 'deployment completed successfully')
+Warning: WARNING record after export
+ERROR record after export

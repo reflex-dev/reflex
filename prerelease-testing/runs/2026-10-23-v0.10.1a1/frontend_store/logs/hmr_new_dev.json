@@ -1,0 +1,259 @@
+{
+ "checks": [
+  {
+   "name": "new substate rendered after hot reload",
+   "ok": true,
+   "got": "hmr-v1",
+   "want": "hmr-v1"
+  },
+  {
+   "name": "event on new substate works",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "old substate still updates",
+   "ok": true,
+   "got": "3",
+   "want": "3"
+  },
+  {
+   "name": "no full reload (uncontrolled input kept)",
+   "ok": false,
+   "got": "loc",
+   "want": "kept?"
+  },
+  {
+   "name": "after revert the page still handles events",
+   "ok": true,
+   "got": true,
+   "want": true
+  }
+ ],
+ "console_during_hmr": [
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 81bc0f65fa5cbd5ff8ea0472dac3a6f8, backend f914ed70fa956c150aad7ff893f840ca). Reload the page if it stays out of date once the frontend rebuilds.",
+   "t": 1792789938.6422942
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.fs_app___fs_app____hmr_state\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792789938.650518
+  },
+  {
+   "type": "debug",
+   "text": "[vite] invalidate /app_components/fs_app/fs_app.jsx: Could not Fast Refresh (new export)",
+   "t": 1792789939.1498454
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/fs_app/fs_app.jsx",
+   "t": 1792789939.1501086
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/fs_app/fs_app.jsx",
+   "t": 1792789939.1671135
+  },
+  {
+   "type": "debug",
+   "text": "[vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports",
+   "t": 1792789939.179441
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx",
+   "t": 1792789939.1797726
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx",
+   "t": 1792789939.1882966
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx",
+   "t": 1792789939.1888244
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/[hooks]._index.jsx",
+   "t": 1792789939.6875443
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/[hooks]._index.jsx",
+   "t": 1792789939.6951017
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/[hooks]._index.jsx",
+   "t": 1792789939.7386796
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app/root.jsx",
+   "t": 1792789939.8136983
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx",
+   "t": 1792789939.8146577
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/app.jsx",
+   "t": 1792789939.8150349
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/compiler/compiler.jsx",
+   "t": 1792789939.815223
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/fs_app/fs_app.jsx",
+   "t": 1792789939.815412
+  },
+  {
+   "type": "debug",
+   "text": "[vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports",
+   "t": 1792789943.081683
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx",
+   "t": 1792789943.0821118
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx",
+   "t": 1792789943.0921462
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx",
+   "t": 1792789943.101956
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app/root.jsx",
+   "t": 1792789943.4966686
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx",
+   "t": 1792789943.497008
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/app.jsx",
+   "t": 1792789943.4972212
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/compiler/compiler.jsx",
+   "t": 1792789943.497461
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/fs_app/fs_app.jsx",
+   "t": 1792789943.4976485
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema f914ed70fa956c150aad7ff893f840ca, backend 81bc0f65fa5cbd5ff8ea0472dac3a6f8). Reload the page if it stays out of date once the frontend rebuilds.",
+   "t": 1792790004.4220073
+  },
+  {
+   "type": "debug",
+   "text": "[vite] invalidate /app_components/fs_app/fs_app.jsx: Could not Fast Refresh (export removed)",
+   "t": 1792790004.8663485
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/fs_app/fs_app.jsx",
+   "t": 1792790004.8773525
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/fs_app/fs_app.jsx",
+   "t": 1792790004.8919396
+  },
+  {
+   "type": "debug",
+   "text": "[vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports",
+   "t": 1792790004.9104555
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx",
+   "t": 1792790004.911581
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx",
+   "t": 1792790004.9150715
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/context.jsx",
+   "t": 1792790004.9181705
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/[hooks]._index.jsx",
+   "t": 1792790005.2669706
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/[hooks]._index.jsx",
+   "t": 1792790005.281611
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app/routes/[hooks]._index.jsx",
+   "t": 1792790005.337747
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app/root.jsx",
+   "t": 1792790005.5236647
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx",
+   "t": 1792790005.5251415
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/app.jsx",
+   "t": 1792790005.5254416
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/reflex/compiler/compiler.jsx",
+   "t": 1792790005.5257463
+  },
+  {
+   "type": "debug",
+   "text": "[vite] hot updated: /app_components/fs_app/fs_app.jsx",
+   "t": 1792790005.5259528
+  }
+ ],
+ "mismatch_warnings": [
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 81bc0f65fa5cbd5ff8ea0472dac3a6f8, backend f914ed70fa956c150aad7ff893f840ca). Reload the page if it stays out of date once the frontend rebuilds.",
+   "t": 1792789938.6422942
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema f914ed70fa956c150aad7ff893f840ca, backend 81bc0f65fa5cbd5ff8ea0472dac3a6f8). Reload the page if it stays out of date once the frontend rebuilds.",
+   "t": 1792790004.4220073
+  }
+ ],
+ "pageerrors": []
+}

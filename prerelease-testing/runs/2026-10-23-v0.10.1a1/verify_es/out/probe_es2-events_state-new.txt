@@ -1,0 +1,4 @@
+reflex 0.10.1a1
+mode=none      delta keys=['av', 'n'] body_runs=1 warnings=[]
+mode=pop       delta keys=['n'] body_runs=0 warnings=[('RuntimeWarning', "coroutine '_drop_unchanged_delta_value' was never awaited")]
+mode=pop_close delta keys=['n'] body_runs=0 warnings=[]

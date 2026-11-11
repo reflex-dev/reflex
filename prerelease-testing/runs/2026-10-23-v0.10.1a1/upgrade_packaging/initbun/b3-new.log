@@ -1,0 +1,12 @@
+───────────────────────────── Initializing app_b3 ──────────────────────────────
+Info: Using custom Bun path: /root/.bun/bin/bun
+Warning: Bun 1.4.2 is below the minimum supported version 1.4.4. Please upgrade 
+Bun by running bun upgrade.
+Info: Initializing the web directory.
+Info: Failed to connect to https://registry.npmmirror.com.
+Info: Failed to connect to https://registry.npmmirror.com.
+Info: Failed to connect to https://registry.npmmirror.com.
+Info: Initializing the app directory.
+Success: Initialized app_b3 using the blank template. Install dependencies from 
+`requirements.txt` with `uv pip install -r requirements.txt` (or your preferred 
+installer) before running `uv run reflex run`.

@@ -1,0 +1,163 @@
+
+######## probe (21:26:10)
+reflex 0.10.1a1
+assign_plain  : EXCEPTION TypeError: 'pref' is a state var of Box_n1; assigning it on the class would replace the var. Set its default with Box_n1.__fields__['pref'].set_default(...), or declare cl
+assign_storage: EXCEPTION TypeError: 'pref' is a state var of Box_n2; assigning it on the class would replace the var. Set its default with Box_n2.__fields__['pref'].set_default(...), or declare cl
+field_plain   : is_client_storage=False default='dark' type(default)=str name=None
+field_storage : is_client_storage=True default='dark' type(default)=LocalStorage name='box_pref_dark'
+field_none    : is_client_storage=False default=None type(default)=NoneType name=None
+
+######## F-002 control hydration_net-0.10.0a1 prod (21:26:11)
+started f1-ctrl-prod pid=25900 venv=hydration_net-0.10.0a1 mode=prod env=[] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/f1-ctrl-prod-1.log
+UP http://localhost:3140/ping after 8.1s
+UP http://localhost:3140/ after 8.1s
+== fresh_1
+{"hydrated": true, "shown": {"pl-ls": "pl-light", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-light", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"cu_ls": "cu-light", "theme": "system", "wu_ls": "wu-light", "wu_sync": "wu-sync-default", "wt_ls": "wt-light"}, "sessionStorage": {"cu_ss": "cu-x", "wu_ss": "wu-x"}, "cookies": [["wu_ck", "wu-unset"], ["cu_ck", "cu-unset"]]}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.331 delta root_has_is_hydrated=False root_is_hydrated=None states={"reflex___state____state": ["rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____with_clock_va
+  IN t=0.331 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== fresh_2
+{"hydrated": true, "shown": {"pl-ls": "pl-light", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-light", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"cu_ls": "cu-light", "theme": "system", "wu_ls": "wu-light", "wu_sync": "wu-sync-default", "wt_ls": "wt-light"}, "sessionStorage": {"cu_ss": "cu-x", "wu_ss": "wu-x"}, "cookies": [["wu_ck", "wu-unset"], ["cu_ck", "cu-unset"]]}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.228 delta root_has_is_hydrated=False root_is_hydrated=None states={"reflex___state____state": ["rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____with_clock_va
+  IN t=0.228 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== returning_same (state1, same build)
+{"hydrated": true, "shown": {"pl-ls": "pl-light", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-light", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"cu_ls": "cu-light", "theme": "system", "wt_ls": "wt-light", "wu_ls": "wu-light", "wu_sync": "wu-sync-default"}, "sessionStorage": {"cu_ss": "cu-x", "wu_ss": "wu-x"}, "cookies": [["wu_ck", "wu-unset"], ["cu_ck", "cu-unset"]]}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= {'reflex___state____state.f1combo___f1combo____with_uuid.wu_ck_rx_state_': 'wu-unset', 'reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid.cu_ck_rx_state_': 'cu-unset', 'reflex___state____state.f1combo___f1combo____with_uuid.wu_ls_rx_state_': 'wu-light', 'reflex___state____state.f1combo___f1combo____with_uuid.wu_sync_rx_state_': 'wu-sync-default', 'reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_u
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.232 delta root_has_is_hydrated=False root_is_hydrated=None states={"reflex___state____state": ["rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____with_clock_va
+  IN t=0.233 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== sync tabs
+p2_A_shown_final = "sync-from-tabA"
+p2_B2_shown_final = "sync-from-tabA"
+p2_ls_final = "sync-from-tabA"
+stopped f1-ctrl-prod (pgid 25900)
+started f1-ctrl-prod pid=26722 venv=hydration_net-0.10.0a1 mode=prod env=[] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/f1-ctrl-prod-2.log
+UP http://localhost:3140/ping after 4.1s
+UP http://localhost:3140/ after 4.1s
+== v2 returning (state1 from v1)
+{"hydrated": true, "shown": {"pl-ls": "pl-dark-v2", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-dark-v2", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"cu_ls": "cu-light", "theme": "system", "wt_ls": "wt-light", "wu_ls": "wu-light", "wu_sync": "wu-sync-default"}, "sessionStorage": {"cu_ss": "cu-x", "wu_ss": "wu-x"}, "cookies": [["wu_ck", "wu-unset"], ["cu_ck", "cu-unset"]]}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= {'reflex___state____state.f1combo___f1combo____with_uuid.wu_ck_rx_state_': 'wu-unset', 'reflex___state____state.f1combo___f1combo____parent_plain.f1combo___f1combo____child_storage_uuid.cu_ck_rx_state_': 'cu-unset', 'reflex___state____state.f1combo___f1combo____with_clock_var.wt_ls_rx_state_': 'wt-light', 'reflex___state____state.f1combo___f1combo____with_uuid.wu_ls_rx_state_': 'wu-light', 'reflex___state____state.f1combo___f1combo____with_uuid.wu_sync_rx_state_': 'wu-sync-default', 'ref
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.232 delta root_has_is_hydrated=False root_is_hydrated=None states={"reflex___state____state": ["rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____with_clock_var": ["wt_ls_rx_state_", "wt_stamp_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo__
+  IN t=0.236 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== v2 fresh
+{"hydrated": true, "shown": {"pl-ls": "pl-dark-v2", "wu-ls": "wu-dark-v2", "wu-sync": "wu-sync-v2", "cs-ls": "cs-dark-v2", "cu-ls": "cu-dark-v2", "ws-ls": "ws-light", "wt-ls": "wt-dark-v2"}, "localStorage": {"cu_ls": "cu-dark-v2", "theme": "system", "wu_sync": "wu-sync-v2", "wt_ls": "wt-dark-v2", "wu_ls": "wu-dark-v2"}, "sessionStorage": {"cu_ss": "cu-x", "wu_ss": "wu-x"}, "cookies": [["wu_ck", "wu-ck-v2"], ["cu_ck", "cu-ck-v2"]]}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.246 delta root_has_is_hydrated=False root_is_hydrated=None states={"reflex___state____state": ["rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____with_clock_var": ["wt_ls_rx_state_", "wt_stamp_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo__
+  IN t=0.247 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+stopped f1-ctrl-prod (pgid 26722)
+
+######## F-002 new prod (21:26:57)
+started f1-new-prod pid=27143 venv=new mode=prod env=[] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/f1-new-prod-1.log
+UP http://localhost:3140/ after 6.0s
+UP http://localhost:3140/ping after 6.0s
+== fresh_1
+{"hydrated": true, "shown": {"pl-ls": "pl-light", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-light", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.323 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo__
+  IN t=0.324 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== fresh_2
+{"hydrated": true, "shown": {"pl-ls": "pl-light", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-light", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.275 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo__
+  IN t=0.276 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== returning_same (state1, same build)
+{"hydrated": true, "shown": {"pl-ls": "pl-light", "wu-ls": "wu-light", "wu-sync": "wu-sync-default", "cs-ls": "cs-light", "cu-ls": "cu-light", "ws-ls": "ws-light", "wt-ls": "wt-light"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.381 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_rx_state_", "wu_ls_rx_state_", "wu_ss_rx_state_", "wu_sync_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo__
+  IN t=0.387 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== sync tabs
+p2_A_shown_final = "sync-from-tabA"
+p2_B2_shown_final = "sync-from-tabA"
+p2_ls_final = "sync-from-tabA"
+stopped f1-new-prod (pgid 27143)
+started f1-new-prod pid=28000 venv=new mode=prod env=[] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/f1-new-prod-2.log
+UP http://localhost:3140/ping after 3.0s
+UP http://localhost:3140/ after 3.0s
+== v2 returning (state1 from v1)
+{"hydrated": true, "shown": {"pl-ls": "pl-dark-v2", "wu-ls": "wu-dark-v2", "wu-sync": "wu-sync-v2", "cs-ls": "cs-dark-v2", "cu-ls": "cu-dark-v2", "ws-ls": "ws-light", "wt-ls": "wt-dark-v2"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.212 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_clock_var": ["wt_ls_rx_state_", "wt_stamp_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_
+  IN t=0.212 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+== v2 fresh
+{"hydrated": true, "shown": {"pl-ls": "pl-dark-v2", "wu-ls": "wu-dark-v2", "wu-sync": "wu-sync-v2", "cs-ls": "cs-dark-v2", "cu-ls": "cu-dark-v2", "ws-ls": "ws-light", "wt-ls": "wt-dark-v2"}, "localStorage": {"theme": "system"}, "sessionStorage": {}, "cookies": []}
+  OUT CONNECT boot= reflex___state____state.hydrate_and_load router= {'pathname': '/', 'asPath': '/'} vars= None n_hashes= 14
+  IN CONNECT boot= None router= None vars= None n_hashes= 0
+  IN t=0.231 delta root_has_is_hydrated=True root_is_hydrated=False states={"reflex___state____state": ["is_hydrated_rx_state_", "rx_router_headers_rx_state_", "rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_session_rx_state_", "rx_router_url_rx_state_"], "f1combo___f1combo____child_storage_uuid": ["cu_ck_rx_state_", "cu_id_rx_state_", "cu_ls_rx_state_", "cu_ss_rx_state_"], "f1combo___f1combo____parent_uuid": ["pu_id_rx_state_"], "f1combo___f1combo____with_clock_var": ["wt_ls_rx_state_", "wt_stamp_rx_state_"], "f1combo___f1combo____with_uuid": ["wu_ck_rx_state_", "wu_id_
+  IN t=0.232 delta root_has_is_hydrated=True root_is_hydrated=True states={"reflex___state____state": ["is_hydrated_rx_state_"]}
+stopped f1-new-prod (pgid 28000)
+
+######## F-003 control hydration_net-0.10.0a1 dev s4 a b g (21:27:41)
+SUMMARY ctrl-dev-s4 a:
+SUMMARY ctrl-dev-s4 b:
+SUMMARY ctrl-dev-s4 g:
+
+######## F-003 cvstore new dev s4 (21:28:51)
+SUMMARY new-dev-s4 a:
+SUMMARY new-dev-s4 b:
+SUMMARY new-dev-s4 c:
+SUMMARY new-dev-s4 d:
+SUMMARY new-dev-s4 e_cookie:
+SUMMARY new-dev-s4 e_session:
+SUMMARY new-dev-s4 f:
+SUMMARY new-dev-s4 g:
+SUMMARY new-dev-s4 i:
+SUMMARY new-dev-s4 j:
+CVSTORE MATCHES cvstore_dev.summary.txt
+
+######## A3-11 control hydration_net-0.10.0a3 (21:32:02)
+storm_hydration_net-0.10.0a3_dev_S_6_*: storms 0/3 (files 3)
+   storm_hydration_net-0.10.0a3_dev_S_6_1.json: storm=False frames_total=53 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_hydration_net-0.10.0a3_dev_S_6_2.json: storm=False frames_total=47 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_hydration_net-0.10.0a3_dev_S_6_3.json: storm=False frames_total=49 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+
+######## A3-11 storm new dev (21:32:53)
+storm_new_dev_S_6_*: storms 0/3 (files 3)
+   storm_new_dev_S_6_1.json: storm=False frames_total=59 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_new_dev_S_6_2.json: storm=False frames_total=65 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_new_dev_S_6_3.json: storm=False frames_total=63 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+
+######## A3-12 control hydration_net-0.10.0a3 (21:33:44)
+state.js md5: caea5520
+hydration_net-0.10.0a3 dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": false, "storm": true, "windows_5s": [306121, 299108], "frames_total": 1108630, "finals": ["36382b-1", "36382b-1", "2a91e1-1", "36382b-1", "36382b-1", "2a91e1-1"], "storage_events": [150760, 151122, 150881, 151129, 151007, 151966]}
+hydration_net-0.10.0a3 dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 77, "finals": ["198f06-1", "198f06-1", "198f06-1", "198f06-1", "198f06-1", "198f06-1"], "storage_events": [5, 5, 5, 5, 5, 5]}
+hydration_net-0.10.0a3 dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 49, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [0, 1, 1, 1, 1, 1]}
+
+######## A3-12 stamp new dev (21:37:00)
+state.js md5: de8ccd2b
+new dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 87, "finals": ["d300ed-1", "d300ed-1", "d300ed-1", "d300ed-1", "d300ed-1", "d300ed-1"], "storage_events": [6, 6, 6, 5, 6, 6]}
+new dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 87, "finals": ["4ba929-1", "4ba929-1", "4ba929-1", "4ba929-1", "4ba929-1", "4ba929-1"], "storage_events": [6, 6, 6, 6, 5, 6]}
+new dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 48, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [1, 0, 1, 1, 1, 1]}
+
+######## #7360 control hydration_net-0.10.0a4 dev (21:38:07)
+started rtr-ctrl-dev pid=4864 venv=hydration_net-0.10.0a4 mode=dev env=[REFLEX_API_URL=http://localhost:8143] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/rtr-ctrl-dev-1.log
+LEAKS {"ck_plain": [21, 2, 0, 0], "ck_httponly": [20, 2, 0, 0], "authorization": [20, 1, 0, 0], "proxy-authorization": [20, 1, 0, 0], "cf-access-jwt-assertion": [20, 1, 0, 0], "x-forwarded-access-token": [20, 1, 0, 0], "x-auth-request-access-token": [20, 1, 0, 0], "x-amzn-oidc-accesstoken": [20, 1, 0, 0], "x-amzn-oidc-data": [20, 1, 0, 0], "x-goog-iap-jwt-assertion": [20, 1, 0, 0]}
+NFRAMES {'in': 257, 'out': 111, 'open': 34} anomalies []
+CONSOLE [('t1', 'error', 'Failed to load resource: the server responded with a status of 404 (Not Found)')]
+FAILED []
+stats {'conns': 19, 'heads': 20, 'upgrades': 18}
+
+######## #7360 rtr new dev (21:40:51)
+started rtr-new-dev pid=7571 venv=new mode=dev env=[REFLEX_API_URL=http://localhost:8143] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/rtr-new-dev-1.log
+LEAKS {"ck_plain": [0, 0, 0, 0], "ck_httponly": [0, 0, 0, 0], "authorization": [0, 0, 0, 0], "proxy-authorization": [0, 0, 0, 0], "cf-access-jwt-assertion": [0, 0, 0, 0], "x-forwarded-access-token": [0, 0, 0, 0], "x-auth-request-access-token": [0, 0, 0, 0], "x-amzn-oidc-accesstoken": [0, 0, 0, 0], "x-amzn-oidc-data": [0, 0, 0, 0], "x-goog-iap-jwt-assertion": [0, 0, 0, 0]}
+NFRAMES {'in': 258, 'out': 111, 'open': 34} anomalies []
+CONSOLE [('t1', 'error', 'Failed to load resource: the server responded with a status of 404 (Not Found)')]
+FAILED []
+stats {'conns': 19, 'heads': 20, 'upgrades': 18}
+steps A=37 B=37 log/url diffs=0
+recv_headers A=  B= {"keys": ["accept_encoding", "accept_language", "cache_control", "connection", "host", "origin", "pragma", "raw_headers", "sec_websocket_extensions", "sec_websocket_key", "sec_websocket_version", "upgrade", "user_agent"], "raw_keys": ["accept-encoding", "accept-language", "asgi-scope-client", "cache
+recv_cookie A= {"cookie_arg": "rtr_plain=PLAINSECRET7a1; rtr_httponly=H", "has_secret": true} B= {"cookie_arg": "", "has_secret": false}
+front_html_has A= {'ck_plain': True, 'ck_httponly': True, 'authorization': True, 'proxy-authorization': True, 'cf-access-jwt-assertion': True, 'x-forwarded-access-token': True, 'x-auth-request-access-token': True, 'x-amzn-oidc-accesstoken': True, 'x-amzn-oidc-data': True, 'x-goog-iap-jwt-assertion': True} B= {'ck_plain': False, 'ck_httponly': False, 'authorization': False, 'proxy-authorization': False, 'cf-access-jwt-assertion': False, 'x-forwarded-access-token': False, 'x-auth-request-access-token': False, 'x-amzn-oidc-accesstoken': False, 'x-amzn-oidc-data': False, 'x-goog-iap-jwt-assertion'
+sync A= s2 s2 B= s2 s2
+reconnect A= {'opens': 2, 'closes': 2, 'frames_after': 29} B= {'opens': 2, 'closes': 2, 'frames_after': 30}
+leaks(in,out,docs,console) A= {'ck_plain': (21, 2, 0, 0), 'ck_httponly': (20, 2, 0, 0), 'authorization': (20, 1, 0, 0), 'proxy-authorization': (20, 1, 0, 0), 'cf-access-jwt-assertion': (20, 1, 0, 0), 'x-forwarded-access-token': (20, 1, 0, 0), 'x-auth-request-access-token': (20, 1, 0, 0), 'x-amzn-oidc-accesstoken': (20, 1, 0, 0), 'x-amzn-oidc-data': (20, 1, 0, 0), 'x-goog-iap-jwt-assertion': (20, 1, 0, 0)}
+leaks(in,out,docs,console) B= {'ck_plain': (0, 0, 0, 0), 'ck_httponly': (0, 0, 0, 0), 'authorization': (0, 0, 0, 0), 'proxy-authorization': (0, 0, 0, 0), 'cf-access-jwt-assertion': (0, 0, 0, 0), 'x-forwarded-access-token': (0, 0, 0, 0), 'x-auth-request-access-token': (0, 0, 0, 0), 'x-amzn-oidc-accesstoken': (0, 0, 0, 0), 'x-amzn-oidc-data': (0, 0, 0, 0), 'x-goog-iap-jwt-assertion': (0, 0, 0, 0)}
+AREA QUICK EXIT 0

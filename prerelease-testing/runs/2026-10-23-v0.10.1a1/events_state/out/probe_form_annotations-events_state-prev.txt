@@ -1,0 +1,15 @@
+Event handler on_submit expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> () as annotated in S.h_dict_str_str instead. This may lead to unexpected behavior but is intentionally ignored for on_submit.
+OK   h_any
+EXC  h_dataclass: TypeError: Could not compare types ~FORM_SUBMIT_MAPPING and <class '__main__.DC'> for argument form_data of S.h_dataclass for on_submit.
+OK   h_dict_bare
+OK   h_dict_str_any
+OK   h_dict_str_str
+OK   h_mapping
+OK   h_mutmapping
+OK   h_none
+OK   h_object
+OK   h_optdict
+OK   h_optional_dict
+EXC  h_pydantic: TypeError: Could not compare types ~FORM_SUBMIT_MAPPING and <class '__main__.Pyd'> for argument form_data of S.h_pydantic for on_submit.
+EXC  h_str: TypeError: Could not compare types ~FORM_SUBMIT_MAPPING and <class 'str'> for argument form_data of S.h_str for on_submit.
+OK   h_td_total_false

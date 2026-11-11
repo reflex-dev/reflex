@@ -1,0 +1,98 @@
+
+##### xff3 new-h0 06:34:20
+## REST (rxe EventHandlerAPIPlugin) -> 8610
+rest_none          tok=200 ev=200 ip=127.0.0.1    xff=None                   asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_one     tok=200 ev=200 ip=6.6.6.6      xff='6.6.6.6'              asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_chain   tok=200 ev=200 ip=6.6.6.6      xff='6.6.6.6, 7.7.7.7'     asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_junk    tok=200 ev=200 ip=not an ip <script> xff='not an ip <script>'   asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0
+
+##### xff3 new-h1 06:35:13
+## REST (rxe EventHandlerAPIPlugin) -> 8610
+rest_none          tok=200 ev=200 ip=127.0.0.1    xff=None                   asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_one     tok=200 ev=200 ip=6.6.6.6      xff='6.6.6.6'              asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_chain   tok=200 ev=200 ip=6.6.6.6      xff='6.6.6.6, 7.7.7.7'     asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_junk    tok=200 ev=200 ip=not an ip <script> xff='not an ip <script>'   asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0
+
+##### xff3 prev-h0 06:35:30
+## REST (rxe EventHandlerAPIPlugin) -> 8610
+rest_none          tok=200 ev=200 ip=127.0.0.1    xff=None                   asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_one     tok=200 ev=200 ip=6.6.6.6      xff='6.6.6.6'              asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_chain   tok=200 ev=200 ip=6.6.6.6      xff='6.6.6.6, 7.7.7.7'     asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+rest_spoof_junk    tok=200 ev=200 ip=not an ip <script> xff='not an ip <script>'   asc=127.0.0.1 ctok_len=36 sid_len=0 cookie_in_router='qa_cookie=COOKIEVALUE123' authz_in_router=None | retrieve=200 ctok_vals=[''] sid_vals=[''] tok_leak=False cookie_echo=True secret_note_visible=True
+## websocket (reflex core) -> 8610
+ws_none                      status=HTTP/1.1 101 ip=127.0.0.1      xff=None                           asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_one                 status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                      asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+ws_spoof_chain               status=HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7'             asc=127.0.0.1 ctok_len=36 sid_len=20 err=[]
+stopped; tracebacks=0 xff-warnings=0
+
+##### gridshare dom debug new 06:35:56
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=1885 pgid=1885
+ready after 10s (frontend 200, /ping 200)
+{'ids': ['bump_first', 'sort_price', 'reverse', 'add_row', 'remove_first', 'rename_all', 'swap_cols', 'reset_rows', 'total', 'json', 'log', 'ag-3', 'ag-5-label', 'ag-5-display', 'ag-3-first-row', 'ag-3-to', 'ag-3-last-row', 'ag-3-of', 'ag-3-row-count', 'ag-3-start-page', 'ag-3-start-page-number', 'ag-12-label', 'ag-12-input', 'ag-3-of-page', 'ag-3-of-page-number', 'ag-16', 'ag-18-label', 'ag-18-display', 'ag-16-first-row', 'ag-16-to', 'ag-16-last-row', 'ag-16-of', 'ag-16-row-count', 'ag-16-start-page', 'ag-16-start-page-number', 'ag-25-label', 'ag-25-input', 'ag-16-of-page', 'ag-16-of-page-number'], 'wrappers': 2, 'rows': 10, 'ga': False, 'ga_html': None, 'json': '[{"uid": "u-1", "name": "delta", "price": 40}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5",', 'body': 'bump_first\nsort_price\nreverse\nadd_row\nremove_first\nrename_all\nswap_cols\nreset_rows\n\ntotal=150\n\n[{"uid": "u-1", "name": "delta", "price": 40}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}]\n\nUid\nName\nPrice\nu-1\ndelta\n40\nu-2\nalpha\n10\nu-3\necho\n50\nu-4\ncharlie\n30\nu-5\n'}
+errors: []
+reserved ports free
+
+##### hyd15 prev 06:36:48
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=2493 pgid=2493
+ready after 12s (frontend 200, /ping 200)
+driver exit=0
+SUMMARY prev hyd15: 9/9 pass; errors=[]
+server log: tracebacks=0 errors=292 reload=2
+reserved ports free
+
+##### mcp anon+oauth prev 06:40:17
+PONG
+oidc pid 4341 redis pid 4340
+OK
+started pid=4422 pgid=4422
+ready after 10s
+check_mcp_anon exit=0
+{"probe_nobearer_/_reflex/mcp": {"status": 307, "www": null, "body": ""}, "probe_nobearer_/_reflex/mcp/": {"status": 401, "www": "Bearer error=\"invalid_token\", error_description=\"Authentication required\", resource_metadata=\"http://localhost:8620/.well-known/oauth-protected-resource/_reflex/mcp\
+check_mcp_oauth_redis exit=1
+no code from partial consent: {"error": "AssertionError: Locator expected to be enabled\nActual value: None\nError: element(s) not found \nCall log:\n  - Expect \"to_be_enabled\" get_by_role(\"button\", name=\"Approve\", exact=True) with timeout 45000ms\n  - waiting for get_by_role(\"button\", name=
+stopped
+stopped-infra
+server log: tracebacks=2
+
+##### control N-032 reflex0.10.0a2 vauth dev 06:42:43
+### part 1 vauth_ctrla2 dev redis 06:42:45
+SUMMARY ctrla2-dev-redis stale: {"p1_corrected": 0, "p2_corrected": 0, "p3_logged_out": 0, "p4_logged_out": 3} of 3
+SUMMARY ctrla2-dev-redis away: tab1 logged out after Back 0/3
+SUMMARY ctrla2-dev-redis xtab: tab1 logged out 0/3; accepted-after-logout 3/3
+rep 0: race(tab1 re-wrote old hash)=True empty-hash writes=[('tab2', 0.03), ('tab2', 0.05), ('tab3', 18.17), ('tab2', 18.17), ('tab1', 18.2)] tab2 sent reconcile=False -> tab1_logged_out=False
+rep 1: race(tab1 re-wrote old hash)=True empty-hash writes=[('tab2', 0.05), ('tab2', 0.1), ('tab3', 18.21), ('tab2', 18.22), ('tab1', 18.25)] tab2 sent reconcile=False -> tab1_logged_out=False
+rep 2: race(tab1 re-wrote old hash)=True empty-hash writes=[('tab2', 0.04), ('tab2', 0.06), ('tab3', 17.94), ('tab2', 17.96), ('tab1', 17.99)] tab2 sent reconcile=False -> tab1_logged_out=False
+SUMMARY ctrla2-dev-redis loads: see per-step counts above
+SUMMARY ctrla2-dev-redis relogin: ok 2/2
+server log ctrla2-dev-redis: tracebacks=0 TypeError=0
+### ent auth done 06:49:57
+
+##### flow prod prev 06:49:57
+driver exit=0 20 pass / 2 fail
+[FAIL] index lists 6 flow demos: ['Add Node on Edge Drop Demo', 'Connection Limit Demo', 'Custom Node Demo', 'Drag Handle Demo', 'Intersections', 'Feature Overview', 'Built with Reflex']
+[FAIL] overview: after reload the moved position, deleted node and emoji persist (session state): {'moved': (-124.246, 160.583), 'now': (0.0, 100.0)}
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+
+##### flow reload AB 06:50:49
+new-ent r1: [FAIL] flow overview: moved node position survives reload: {'before reload': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'after reload 1': {'1-2': (0.0, 100.0), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'reload 1: frame
+new-ent r2: [FAIL] flow overview: moved node position survives reload: {'before reload': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'after reload 1': {'1-2': (0.0, 100.0), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'reload 1: frame
+new-ent r3: [FAIL] flow overview: moved node position survives reload: {'before reload': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'after reload 1': {'1-2': (0.0, 100.0), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'reload 1: frame
+prev-ent r1: [FAIL] flow overview: moved node position survives reload: {'before reload': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'after reload 1': {'1-2': (0.0, 100.0), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'reload 1: frame
+prev-ent r2: [FAIL] flow overview: moved node position survives reload: {'before reload': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'after reload 1': {'1-2': (0.0, 100.0), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'reload 1: frame
+prev-ent r3: [FAIL] flow overview: moved node position survives reload: {'before reload': {'1-2': (-124.246, 160.583), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'after reload 1': {'1-2': (0.0, 100.0), '1-3 present': 1, 'emoji': '🔥', 'nodes': 11}, 'reload 1: frame
+
+##### QUEUE4 DONE 06:52:58

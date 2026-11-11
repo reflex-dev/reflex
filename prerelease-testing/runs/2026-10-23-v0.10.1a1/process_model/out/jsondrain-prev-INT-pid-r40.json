@@ -1,0 +1,40 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev",
+ "chatty": true,
+ "signal": "INT-pid",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 8.62,
+  "pause_start": 12.35,
+  "signal": 16.35,
+  "signal_wall": "21:36:03.249Z",
+  "exit": 76.35
+ },
+ "signal_to_eof_s": NaN,
+ "signal_to_exit_s": 60.0,
+ "returncode": "TIMEOUT",
+ "lines_total": 1700,
+ "lines_after_signal": 1482,
+ "invalid_json": 1,
+ "invalid_samples": [
+  {
+   "t": 56.35,
+   "err": "Expecting value: line 1 column 59 (char 58)",
+   "line": "{\"timestamp\": \"2026-10-23T21:36:37.723080+00:00\", \"level\":<NO-NEWLINE-AT-EOF> [len 77]"
+  }
+ ],
+ "last_line_valid_json": false,
+ "seq_first": 0,
+ "seq_max_received": 1694,
+ "seq_written_at_signal": "647",
+ "seq_written_final": "2167",
+ "lost_tail": 473,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-23T21:36:37.723080+00:00\", \"level\":<NO-NEWLINE-AT-EOF>",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-23T21:36:37.723080+00:00\", \"level\":<NO-NEWLINE-AT-EOF>"
+ ],
+ "leftover_after_exit": "2472 Ssl  /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/reflex run --json --frontend-port 3210 --backend-port 8210\n 2473 Sl   /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n 2502 S    /root/.local/share/reflex/bun/bin/bun run dev\n 2503 Sl   node /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/lifecycle/run/jsondrain-prev/.web/node_modules/.bin/react-router dev --host\n 2511 Sl   /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev/bin/python -m reflex run --json --frontend-port 3210 --backend-port 8210\n2503\n2473\n2511"
+}

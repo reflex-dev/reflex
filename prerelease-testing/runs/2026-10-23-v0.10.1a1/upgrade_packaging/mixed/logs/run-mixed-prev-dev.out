@@ -1,0 +1,40 @@
+started mixed-prev-dev pid=4254 (02:08:09)
+UP after 3s
+[FAIL] page title: None
+[FAIL] hydrated (nrows=3): None
+[FAIL] lucide static icon rendered as svg: None
+[FAIL] lucide dynamic icon rendered as svg: None
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/mixed/drive_mixed.py", line 67, in <module>
+    page.click("#toggle_icon")
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 16267, in click
+    self._sync(
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 111, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_page.py", line 891, in click
+    return await self._main_frame._click(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 598, in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 78, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/driver/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 636, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#toggle_icon")
+
+--- mixed-prev-dev server log: warnings/deprecations/errors
+      5 Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+      2 redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+      1 your browser cache. This error usually indicates a mismatch between frontend and
+      1 error boundary you provided, C.
+      1 [Reflex Frontend Exception]
+      1 Warning: `rx._x` contains experimental features and might be removed at any time
+      1 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: The above error occurred in the <ForwardRef(DataGrid)> component.
+      1 Debug: 2:08:17 AM [vite] (client) [console.error] TypeError: Cannot read 
+      1 Debug: 2:08:16 AM [vite] (client) [console.error] Cannot process state update: 

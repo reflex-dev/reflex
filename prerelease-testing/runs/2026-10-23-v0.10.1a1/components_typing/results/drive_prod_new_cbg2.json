@@ -1,0 +1,171 @@
+{
+ "base": "http://localhost:3241",
+ "is_new": true,
+ "checks": [
+  {
+   "page": "cbg",
+   "name": "initial_group_value",
+   "ok": true,
+   "detail": "group=a"
+  },
+  {
+   "page": "cbg",
+   "name": "group_items_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "item_a_checked",
+   "ok": true,
+   "detail": "true"
+  },
+  {
+   "page": "cbg",
+   "name": "item_b_disabled_attr",
+   "ok": true,
+   "detail": "disabled='' data-disabled=''"
+  },
+  {
+   "page": "cbg",
+   "name": "hidden_inputs_named_grp",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "click_c_updates_state",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "on_value_change_payload_list",
+   "ok": true,
+   "detail": "payload=[\"a\", \"c\"]"
+  },
+  {
+   "page": "cbg",
+   "name": "one_change_event",
+   "ok": true,
+   "detail": "group_changes=1"
+  },
+  {
+   "page": "cbg",
+   "name": "disabled_item_click_ignored",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "server_reset_state",
+   "ok": true,
+   "detail": "group="
+  },
+  {
+   "page": "cbg",
+   "name": "server_reset_reaches_dom",
+   "ok": true,
+   "detail": "['false', 'false', 'false']"
+  },
+  {
+   "page": "cbg",
+   "name": "server_preset_reaches_dom",
+   "ok": true,
+   "detail": "group=a,c ['true', 'false', 'true']"
+  },
+  {
+   "page": "cbg",
+   "name": "root_disabled_var_disables_items",
+   "ok": true,
+   "detail": "disabled=true disabled attrs=['', '', '']"
+  },
+  {
+   "page": "cbg",
+   "name": "root_disabled_blocks_clicks",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "info_cards_dom",
+   "ok": true,
+   "detail": "<div role=\"group\" dir=\"ltr\" id=\"cc\" style=\"outline:none\" class=\"rt-Grid rt-CheckboxCardsRoot rt-r-size-2 rt-variant-surface rt-r-gtc-3 rt-r-gap-4\" tabindex=\"0\"><label class=\"rt-BaseCard rt-CheckboxCardsItem\"><p class=\"rt-Text\">X</p><button type=\"button\" role=\"checkbox\" aria-checked=\"true\" aria-required=\"false\" data-state=\"checked\" value=\"x\" class=\"rt-reset rt-BaseCheckboxRoot rt-CheckboxCardCheckbox rt-r-size-2 rt-variant-surface\" tabindex=\"-1\" data-radix-collection-item=\"\"><svg width=\"9\" height=\"9\" viewBox=\"0 0 9 9\" fill=\"currentcolor\" xmlns=\"http://www.w3.org/2000/svg\" data-state=\"checked\" c"
+  },
+  {
+   "page": "cbg",
+   "name": "cards_click_z",
+   "ok": true,
+   "detail": "cards=x,z"
+  },
+  {
+   "page": "cbg",
+   "name": "cards_click_x_keeps_z",
+   "ok": false,
+   "detail": "cards="
+  },
+  {
+   "page": "cbg",
+   "name": "cards_two_change_events",
+   "ok": true,
+   "detail": "cards_changes=2"
+  },
+  {
+   "page": "cbg",
+   "name": "card_y_disabled",
+   "ok": true,
+   "detail": "disabled=''"
+  },
+  {
+   "page": "cbg",
+   "name": "default_value_group_checked",
+   "ok": true,
+   "detail": "D2 aria-checked=true"
+  },
+  {
+   "page": "cbg",
+   "name": "form_submit_includes_group",
+   "ok": true,
+   "detail": "submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "cbg",
+   "name": "form_submit_all_values",
+   "ok": false,
+   "detail": "submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "cbg",
+   "name": "info_id_based_keys_in_submit",
+   "ok": true,
+   "detail": "id keys present: cg=True cc=True cg_default=True :: submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  }
+ ],
+ "pages": {
+  "cbg": {
+   "console": [
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  }
+ },
+ "summary": {
+  "cbg": {
+   "console_errwarn": 1,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  }
+ },
+ "fail_count": 2,
+ "check_count": 23
+}

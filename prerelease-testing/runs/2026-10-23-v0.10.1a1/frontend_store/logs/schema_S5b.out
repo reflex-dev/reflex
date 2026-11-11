@@ -1,0 +1,24 @@
+[FAIL] first load: no mismatch warning: got=1 want=0
+[FAIL] first load: no banner: got=1 want=0
+[FAIL] first load: navigation type: got='reload' want='navigate'
+[FAIL] after 2 reloads: no mismatch warning: got=3 want=0
+[FAIL] after reloads: no banner: got=1 want=0
+[ok ] after reloads: count kept: got='1' want='1'
+[ok ] after reloads: tally kept: got='1' want='1'
+[ok ] second: tally t3 renders: got='0' want='0'
+[FAIL] prerendered routes: no mismatch warning: got=5 want=0
+[ok ] prerendered /item/5 iid: got='5' want='5'
+[ok ] no page errors so far: got=[] want=[]
+fails=6 mismatch_warnings=6 unknown_substate_warnings=7 console(non-benign)=19 pageerrors=0
+  console: warning Skipping state update for unknown substate(s): no dispatch function for "reflex___state____state.schema_app___schema_app____extra", "reflex___state____state.schema_app___schema_app____base.schema_app_
+  console: log Disconnect websocket on pagehide
+  console: warning This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get th
+  console: warning Skipping state update for unknown substate(s): no dispatch function for "reflex___state____state.schema_app___schema_app____extra", "reflex___state____state.schema_app___schema_app____base.schema_app_
+  console: log Disconnect websocket on page navigation
+  console: warning This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get th
+  console: warning Skipping state update for unknown substate(s): no dispatch function for "reflex___state____state.schema_app___schema_app____extra", "reflex___state____state.schema_app___schema_app____base.schema_app_
+  console: log Disconnect websocket on page navigation
+  console: warning This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get th
+  console: warning Skipping state update for unknown substate(s): no dispatch function for "reflex___state____state.schema_app___schema_app____extra", "reflex___state____state.schema_app___schema_app____base.schema_app_
+  console: log Disconnect websocket on page navigation
+  console: warning This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get th

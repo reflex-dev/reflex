@@ -1,0 +1,1247 @@
+{
+ "base": "http://localhost:3241",
+ "is_new": true,
+ "checks": [
+  {
+   "page": "cbg",
+   "name": "initial_group_value",
+   "ok": true,
+   "detail": "group=a"
+  },
+  {
+   "page": "cbg",
+   "name": "group_items_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "item_a_checked",
+   "ok": true,
+   "detail": "true"
+  },
+  {
+   "page": "cbg",
+   "name": "item_b_disabled_attr",
+   "ok": true,
+   "detail": "disabled='' data-disabled=''"
+  },
+  {
+   "page": "cbg",
+   "name": "hidden_inputs_named_grp",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "cbg",
+   "name": "click_c_updates_state",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "on_value_change_payload_list",
+   "ok": true,
+   "detail": "payload=[\"a\", \"c\"]"
+  },
+  {
+   "page": "cbg",
+   "name": "one_change_event",
+   "ok": true,
+   "detail": "group_changes=1"
+  },
+  {
+   "page": "cbg",
+   "name": "disabled_item_click_ignored",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "server_reset_state",
+   "ok": true,
+   "detail": "group="
+  },
+  {
+   "page": "cbg",
+   "name": "server_reset_reaches_dom",
+   "ok": true,
+   "detail": "['false', 'false', 'false']"
+  },
+  {
+   "page": "cbg",
+   "name": "server_preset_reaches_dom",
+   "ok": true,
+   "detail": "group=a,c ['true', 'false', 'true']"
+  },
+  {
+   "page": "cbg",
+   "name": "root_disabled_var_disables_items",
+   "ok": true,
+   "detail": "disabled=true disabled attrs=['', '', '']"
+  },
+  {
+   "page": "cbg",
+   "name": "root_disabled_blocks_clicks",
+   "ok": true,
+   "detail": "group=a,c"
+  },
+  {
+   "page": "cbg",
+   "name": "cards_click_z",
+   "ok": false,
+   "detail": "cards=x"
+  },
+  {
+   "page": "cbg",
+   "name": "cards_click_x_keeps_z",
+   "ok": false,
+   "detail": "cards="
+  },
+  {
+   "page": "cbg",
+   "name": "cards_two_change_events",
+   "ok": true,
+   "detail": "cards_changes=2"
+  },
+  {
+   "page": "cbg",
+   "name": "card_y_disabled",
+   "ok": true,
+   "detail": "disabled=''"
+  },
+  {
+   "page": "cbg",
+   "name": "default_value_group_checked",
+   "ok": true,
+   "detail": "D2 aria-checked=true"
+  },
+  {
+   "page": "cbg",
+   "name": "form_submit_includes_group",
+   "ok": true,
+   "detail": "submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "cbg",
+   "name": "form_submit_all_values",
+   "ok": false,
+   "detail": "submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "cbg",
+   "name": "info_id_based_keys_in_submit",
+   "ok": true,
+   "detail": "id keys present: cg=True cc=True cg_default=True :: submitted={\"grp\": [\"a\", \"c\"], \"dgrp\": [\"d2\"], \"cg\": [\"a\"], \"cc\": [null], \"cg_default\": [\"d2\"]}"
+  },
+  {
+   "page": "radio",
+   "name": "radio_cards_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "radio",
+   "name": "radio_cards_controlled_change",
+   "ok": true,
+   "detail": "rc=2"
+  },
+  {
+   "page": "radio",
+   "name": "radio_two_checked",
+   "ok": true,
+   "detail": "true"
+  },
+  {
+   "page": "radio_aschild",
+   "name": "page_renders",
+   "ok": true,
+   "detail": "aschild page loaded"
+  },
+  {
+   "page": "radio_aschild",
+   "name": "three_radios_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "radio_aschild",
+   "name": "root_grid_container_present",
+   "ok": true,
+   "detail": "display=grid"
+  },
+  {
+   "page": "radio_aschild",
+   "name": "no_page_errors",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-true",
+   "ok": true,
+   "detail": "expected='on' got='on'"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-false",
+   "ok": true,
+   "detail": "expected='off' got='off'"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-boolvar",
+   "ok": true,
+   "detail": "expected='off' got='off'"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-none",
+   "ok": true,
+   "detail": "expected=None got=None"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-el",
+   "ok": true,
+   "detail": "expected='off' got='off'"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-off",
+   "ok": true,
+   "detail": "expected='off' got='off'"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-email",
+   "ok": true,
+   "detail": "expected='email' got='email'"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-strvar",
+   "ok": true,
+   "detail": "expected='email' got='email'"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_ac-controlled",
+   "ok": true,
+   "detail": "expected='off' got='off'"
+  },
+  {
+   "page": "input",
+   "name": "autocomplete_boolvar_toggles_to_on",
+   "ok": true,
+   "detail": "ac_bool=true got='on'"
+  },
+  {
+   "page": "input",
+   "name": "controlled_input_roundtrip",
+   "ok": true,
+   "detail": "typed=hello"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_root_aria_initial",
+   "ok": true,
+   "detail": "{'now': '25', 'max': '100', 'state': 'loading', 'value': '25', 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_root_role_progressbar",
+   "ok": true,
+   "detail": "{'now': '25', 'max': '100', 'state': 'loading', 'value': '25', 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_literal_aria",
+   "ok": true,
+   "detail": "{'now': '60', 'max': '200', 'state': 'loading', 'value': '60', 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_default_aria",
+   "ok": true,
+   "detail": "{'now': '0', 'max': '100', 'state': 'loading', 'value': '0', 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "themes_progress_aria",
+   "ok": true,
+   "detail": "{'now': '25', 'max': '100', 'state': 'loading', 'value': '25', 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_root_aria_updates",
+   "ok": true,
+   "detail": "pv=50 {'now': '50', 'max': '100', 'state': 'loading', 'value': '50', 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "themes_progress_aria_updates",
+   "ok": true,
+   "detail": "{'now': '50', 'max': '100', 'state': 'loading', 'value': '50', 'role': 'progressbar'}"
+  },
+  {
+   "page": "progress",
+   "name": "primitive_indicator_transform",
+   "ok": true,
+   "detail": "matrix(1, 0, 0, 1, -150, 0)"
+  },
+  {
+   "page": "accordion",
+   "name": "no_emotion_first_child_warning",
+   "ok": true,
+   "detail": "none"
+  },
+  {
+   "page": "accordion",
+   "name": "triggers_rendered",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "accordion",
+   "name": "multiple_two_open",
+   "ok": true,
+   "detail": "['open', 'open', 'closed']"
+  },
+  {
+   "page": "accordion",
+   "name": "content_visible",
+   "ok": true,
+   "detail": "M First\nM first content\nM Second\nM second content\nM Third"
+  },
+  {
+   "page": "accordion",
+   "name": "single_only_one_open",
+   "ok": true,
+   "detail": "['closed', 'open', 'closed']"
+  },
+  {
+   "page": "accordion",
+   "name": "default_value_open",
+   "ok": true,
+   "detail": "open"
+  },
+  {
+   "page": "accordion",
+   "name": "first_item_styled_first_of_type",
+   "ok": true,
+   "detail": "[{'btw': '0px', 'tl': '8px', 'mt': '0px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}]"
+  },
+  {
+   "page": "accordion",
+   "name": "keyboard_arrow_down_moves_focus",
+   "ok": true,
+   "detail": "M Second"
+  },
+  {
+   "page": "dialog",
+   "name": "dialog_opens_controlled",
+   "ok": true,
+   "detail": "open=true"
+  },
+  {
+   "page": "dialog",
+   "name": "focus_trapped_in_dialog",
+   "ok": true,
+   "detail": "[True, True, True, True, True, True, True]"
+  },
+  {
+   "page": "dialog",
+   "name": "nested_dialog_opens",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "dialog",
+   "name": "escape_closes_only_nested",
+   "ok": true,
+   "detail": "nested=0 outer_visible=True"
+  },
+  {
+   "page": "dialog",
+   "name": "outer_state_still_open",
+   "ok": true,
+   "detail": "open=true"
+  },
+  {
+   "page": "dialog",
+   "name": "close_button_updates_state",
+   "ok": true,
+   "detail": "open=false count=0"
+  },
+  {
+   "page": "dialog",
+   "name": "escape_closes_outer",
+   "ok": true,
+   "detail": "open=false"
+  },
+  {
+   "page": "dialog",
+   "name": "open_count",
+   "ok": true,
+   "detail": "opens=2"
+  },
+  {
+   "page": "dialog",
+   "name": "alert_dialog_open_cancel",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "dialog",
+   "name": "drawer_opens",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "dialog",
+   "name": "drawer_closes",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "dialog",
+   "name": "popover_opens",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "page": "slider",
+   "name": "single_thumb_initial",
+   "ok": true,
+   "detail": "50"
+  },
+  {
+   "page": "slider",
+   "name": "single_keyboard_dom",
+   "ok": true,
+   "detail": "53"
+  },
+  {
+   "page": "slider",
+   "name": "single_on_change_state",
+   "ok": true,
+   "detail": "single=53"
+  },
+  {
+   "page": "slider",
+   "name": "single_on_value_commit",
+   "ok": true,
+   "detail": "committed=53"
+  },
+  {
+   "page": "slider",
+   "name": "range_two_thumbs",
+   "ok": true,
+   "detail": "count=2"
+  },
+  {
+   "page": "slider",
+   "name": "range_on_change",
+   "ok": true,
+   "detail": "range=20,79"
+  },
+  {
+   "page": "slider",
+   "name": "range_home_moves_first_thumb",
+   "ok": true,
+   "detail": "range=0,79 thumb0=0"
+  },
+  {
+   "page": "slider",
+   "name": "single_mouse_click_track",
+   "ok": true,
+   "detail": "single=10"
+  },
+  {
+   "page": "rform",
+   "name": "value_missing_message",
+   "ok": true,
+   "detail": "Email\nEmail is required\nAge\nSubmit"
+  },
+  {
+   "page": "rform",
+   "name": "invalid_not_submitted",
+   "ok": true,
+   "detail": "submits=0"
+  },
+  {
+   "page": "rform",
+   "name": "type_mismatch_message",
+   "ok": true,
+   "detail": "Email\nNot an email\nAge\nSubmit"
+  },
+  {
+   "page": "rform",
+   "name": "range_underflow_message",
+   "ok": true,
+   "detail": "Email\nAge\nMust be 18+\nSubmit"
+  },
+  {
+   "page": "rform",
+   "name": "valid_submit_reaches_state",
+   "ok": true,
+   "detail": "data={\"email\": \"a@b.co\", \"age\": \"21\", \"f_email\": \"a@b.co\", \"f_age\": \"21\"}"
+  },
+  {
+   "page": "rform",
+   "name": "reset_on_submit",
+   "ok": true,
+   "detail": "email value after submit=''"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_plain",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_plain2",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_english",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_french",
+   "ok": true,
+   "detail": "jeudi 14 mars 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_titled",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "cmp11_fromnow_english",
+   "ok": true,
+   "detail": "7 years ago"
+  },
+  {
+   "page": "moment",
+   "name": "with_title_attr",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "info_defineLocale_warnings",
+   "ok": true,
+   "detail": "1 defineLocale messages (CMP-14 known)"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-default",
+   "ok": true,
+   "detail": "expected='14 mars 2024' got='14 mars 2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-en",
+   "ok": true,
+   "detail": "expected='14 Mar 2024' got='14 Mar 2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-fmt",
+   "ok": true,
+   "detail": "expected='2024' got='2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-tz",
+   "ok": true,
+   "detail": "expected='2024-03-15 00:30' got='2024-03-15 00:30'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_outside",
+   "ok": true,
+   "detail": "expected='14 Mar 2024' got='14 Mar 2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-var",
+   "ok": true,
+   "detail": "expected='Donnerstag' got='Donnerstag'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_prov-var-fr",
+   "ok": true,
+   "detail": "expected='jeudi' got='jeudi'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_utc",
+   "ok": true,
+   "detail": "expected='2024-03-14 23:30' got='2024-03-14 23:30'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_noutc",
+   "ok": true,
+   "detail": "expected='2024-03-14 19:30' got='2024-03-14 19:30'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_calendar",
+   "ok": true,
+   "detail": "expected='03/14/2024' got='03/14/2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_from",
+   "ok": true,
+   "detail": "expected='in 4 days' got='in 4 days'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_from-ago",
+   "ok": true,
+   "detail": "expected='4 days' got='4 days'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_to",
+   "ok": true,
+   "detail": "expected='in 6 days' got='in 6 days'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_element",
+   "ok": true,
+   "detail": "expected='2024' got='2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_fallback",
+   "ok": true,
+   "detail": "expected='INVALID' got='INVALID'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_filters",
+   "ok": true,
+   "detail": "expected='MARCH' got='MARCH'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_renderers",
+   "ok": true,
+   "detail": "expected='R:2024' got='R:2024'"
+  },
+  {
+   "page": "moment",
+   "name": "opt_onchange",
+   "ok": true,
+   "detail": "expected='2024' got='2024'"
+  },
+  {
+   "page": "moment",
+   "name": "info_provider_format_overrides_child_from_now",
+   "ok": true,
+   "detail": "got='1 janv. 2020' (react-moment precedence: format > fromNow)"
+  },
+  {
+   "page": "moment",
+   "name": "provider_locale_applies_to_fromnow",
+   "ok": true,
+   "detail": "vor 7 Jahren"
+  },
+  {
+   "page": "moment",
+   "name": "opt_ago_fromnow",
+   "ok": true,
+   "detail": "7 years"
+  },
+  {
+   "page": "moment",
+   "name": "opt_element_span",
+   "ok": true,
+   "detail": "SPAN"
+  },
+  {
+   "page": "moment",
+   "name": "default_element_time",
+   "ok": true,
+   "detail": "TIME"
+  },
+  {
+   "page": "moment",
+   "name": "on_change_fired",
+   "ok": true,
+   "detail": "changes=1"
+  },
+  {
+   "page": "moment",
+   "name": "on_change_payload",
+   "ok": true,
+   "detail": "last=2024"
+  },
+  {
+   "page": "moment",
+   "name": "pooled_clocks_tick",
+   "ok": true,
+   "detail": "02:43:47->02:43:50 02:43:47->02:43:50"
+  },
+  {
+   "page": "moment",
+   "name": "pooled_clocks_in_sync",
+   "ok": true,
+   "detail": "02:43:50 vs 02:43:50"
+  },
+  {
+   "page": "moment",
+   "name": "provider_var_locale_switch_es",
+   "ok": true,
+   "detail": "jueves"
+  },
+  {
+   "page": "moment",
+   "name": "siblings_stay_english_after_switch",
+   "ok": true,
+   "detail": "Thursday 14 March 2024"
+  },
+  {
+   "page": "moment",
+   "name": "component_locale_overrides_provider",
+   "ok": true,
+   "detail": "jeudi"
+  },
+  {
+   "page": "moment",
+   "name": "provider_var_locale_switch_en",
+   "ok": true,
+   "detail": "Thursday"
+  },
+  {
+   "page": "moment",
+   "name": "info_utc_css_leak",
+   "ok": true,
+   "detail": "{'utc': None, 'cls': ''}"
+  },
+  {
+   "page": "de",
+   "name": "editor_1_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "editor_2_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "editor_3_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "editor_4_canvas",
+   "ok": true,
+   "detail": "canvases=2"
+  },
+  {
+   "page": "de",
+   "name": "no_page_errors_on_load",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "page": "de",
+   "name": "no_column_type_undefined_warning",
+   "ok": true,
+   "detail": "0 messages"
+  },
+  {
+   "page": "de",
+   "name": "portal_div_present",
+   "ok": true,
+   "detail": "portal=True"
+  },
+  {
+   "page": "de",
+   "name": "info_app_wraps",
+   "ok": true,
+   "detail": "{'badge': True, 'portalChildren': 0}"
+  },
+  {
+   "page": "de",
+   "name": "info_overlay_editor",
+   "ok": true,
+   "detail": "{'html': '<div style=\"--gdg-accent-color: #4F5DFF; --gdg-accent-fg: #FFFFFF; --gdg-accent-light: rgba(62, 116, 253, 0.1); --gdg-text-dark: #313139; --gdg-text-medium: #737383; --gdg-text-light: #B2B2C0; --gdg-text-bubble: #313139; --gdg-bg-icon-header: #737383; --gdg-fg-icon-header: #FFFFFF; --gdg-text-header', 'active': 'TEXTAREA. gdg-input gdg-izpuzkl', 'value': 'Ann'}"
+  },
+  {
+   "page": "de",
+   "name": "cell_edit_roundtrip",
+   "ok": true,
+   "detail": "edits=0,0=Zed"
+  },
+  {
+   "page": "de",
+   "name": "cell_edit_updates_row",
+   "ok": true,
+   "detail": "row0=Zed|30|1990-01-01"
+  },
+  {
+   "page": "de",
+   "name": "cell_edit_dblclick_number",
+   "ok": true,
+   "detail": "edits=2,1=99"
+  },
+  {
+   "page": "de",
+   "name": "add_row_state",
+   "ok": true,
+   "detail": "nrows=4"
+  },
+  {
+   "page": "de",
+   "name": "add_untyped_column_no_error",
+   "ok": true,
+   "detail": "ncols=4 errors=[]"
+  },
+  {
+   "page": "de",
+   "name": "no_column_type_undefined_after_add",
+   "ok": true,
+   "detail": "0 messages"
+  },
+  {
+   "page": "de",
+   "name": "cmp31_image_overlay_opens",
+   "ok": true,
+   "detail": "{'imgs': 4, 'carousel': True, 'text': '1 of 2'}"
+  },
+  {
+   "page": "de",
+   "name": "info_overlay_closes_on_escape",
+   "ok": true,
+   "detail": "imgs after escape=0 (CMP-48 known)"
+  },
+  {
+   "page": "icons",
+   "name": "no_page_errors_on_load",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "page": "icons",
+   "name": "static_icon",
+   "ok": true,
+   "detail": "lucide lucide-apple"
+  },
+  {
+   "page": "icons",
+   "name": "button_icon",
+   "ok": true,
+   "detail": "lucide lucide-search"
+  },
+  {
+   "page": "icons",
+   "name": "badge_icon",
+   "ok": true,
+   "detail": "lucide lucide-check"
+  },
+  {
+   "page": "icons",
+   "name": "callout_icon",
+   "ok": true,
+   "detail": "lucide lucide-info"
+  },
+  {
+   "page": "icons",
+   "name": "input_slot_icon",
+   "ok": true,
+   "detail": "count=1"
+  },
+  {
+   "page": "icons",
+   "name": "dynamic_icon_initial",
+   "ok": true,
+   "detail": "class=lucide same_paths_as_apple=True"
+  },
+  {
+   "page": "icons",
+   "name": "foreach_icons",
+   "ok": true,
+   "detail": "count=3"
+  },
+  {
+   "page": "icons",
+   "name": "dynamic_icon_switches",
+   "ok": true,
+   "detail": "same_paths_as_banana=True"
+  },
+  {
+   "page": "icons",
+   "name": "dynamic_icon_underscore_name",
+   "ok": true,
+   "detail": "same_paths_as_wifi_off=True"
+  },
+  {
+   "page": "icons",
+   "name": "size_var_icon",
+   "ok": true,
+   "detail": "24"
+  },
+  {
+   "page": "icons",
+   "name": "size_var_updates",
+   "ok": true,
+   "detail": "32"
+  },
+  {
+   "page": "icons",
+   "name": "same_library_prop_import_static",
+   "ok": true,
+   "detail": "width=40"
+  },
+  {
+   "page": "icons",
+   "name": "same_library_prop_import_dynamic",
+   "ok": true,
+   "detail": "width=40"
+  },
+  {
+   "page": "icons",
+   "name": "color_mode_cond_icon_light",
+   "ok": true,
+   "detail": "rgb(255, 0, 0)"
+  },
+  {
+   "page": "icons",
+   "name": "toggle_color_mode_on_icon",
+   "ok": true,
+   "detail": "rgb(0, 0, 255)"
+  },
+  {
+   "page": "icons",
+   "name": "info_bundled_lucide_modules",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "page": "code",
+   "name": "transformer_highlight_line",
+   "ok": true,
+   "detail": "count=1"
+  },
+  {
+   "page": "code",
+   "name": "transformer_diff_add",
+   "ok": true,
+   "detail": "count=1"
+  },
+  {
+   "page": "code",
+   "name": "transformer_diff_remove",
+   "ok": true,
+   "detail": "count=1"
+  },
+  {
+   "page": "code",
+   "name": "transformer_notation_stripped",
+   "ok": true,
+   "detail": "def hello(name):  \n    print(\"hi\", name)\n    return name  \n    return None"
+  },
+  {
+   "page": "code",
+   "name": "transformer_highlight_styled",
+   "ok": true,
+   "detail": "rgba(142, 150, 170, 0.14)"
+  },
+  {
+   "page": "code",
+   "name": "plain_block_no_transformers",
+   "ok": true,
+   "detail": "def hello(name):  # [!code highlight]\n    print(\"hi\", name)\n    return name  # ["
+  },
+  {
+   "page": "code",
+   "name": "transformer_block_with_line_numbers",
+   "ok": true,
+   "detail": "hl=1 buttons=1"
+  },
+  {
+   "page": "code",
+   "name": "rsh_python_tokens",
+   "ok": true,
+   "detail": "spans=35 buttons=1"
+  },
+  {
+   "page": "code",
+   "name": "rsh_js_tokens",
+   "ok": true,
+   "detail": "spans=21"
+  },
+  {
+   "page": "code",
+   "name": "rsh_light_theme",
+   "ok": true,
+   "detail": "spans=21"
+  },
+  {
+   "page": "code",
+   "name": "markdown_code_blocks",
+   "ok": true,
+   "detail": "pre=2"
+  }
+ ],
+ "pages": {
+  "cbg": {
+   "console": [
+    {
+     "type": "error",
+     "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "radio": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "radio_aschild": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "input": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "progress": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "accordion": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "dialog": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "slider": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "rform": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "moment": {
+   "console": [
+    {
+     "type": "warning",
+     "text": "Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.\nError\n    at O (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:3)\n    at r.Mn [as defineLocale] (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:22208)\n    at http://localhost:3241/assets/_moment_._index-C-5heudJ.js:2:1074\n    at http://localhost:3241/assets/_moment_._index-C-5heudJ.js:2:506\n    at http://localhost:3241/assets/_moment_._index-C-5heudJ.js:2:588\n    at http://localhost:3241/assets/rolldown-runtime-BCiCTKAo.js:1:268\n    at http://localhost:3241/assets/_moment_._index-C-5heudJ.js:2:736274"
+    },
+    {
+     "type": "warning",
+     "text": "Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.\nArguments: \n[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: en, _i: garbage, _f: undefined, _strict: undefined, _locale: [object Object]\nError\n    at r.createFromInputFallback (http://localhost:3241/assets/ctapp-BU1dvaSN.js:5:3)\n    at Qn (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:26478)\n    at dr (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:30846)\n    at ur (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:30713)\n    at lr (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:30442)\n    at fr (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:31206)\n    at pr (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:31240)\n    at r (http://localhost:3241/assets/ctapp-BU1dvaSN.js:2:16298)\n    at mn (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:65389)\n    at hn (http://localhost:3241/assets/ctapp-BU1dvaSN.js:6:65473)"
+    },
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "de": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "icons": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  },
+  "code": {
+   "console": [
+    {
+     "type": "log",
+     "text": "Disconnect websocket on pagehide"
+    }
+   ],
+   "pageerrors": [],
+   "failed": [],
+   "http": []
+  }
+ },
+ "summary": {
+  "cbg": {
+   "console_errwarn": 1,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "radio": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "radio_aschild": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "input": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "progress": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "accordion": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "dialog": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "slider": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "rform": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "moment": {
+   "console_errwarn": 2,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "de": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "icons": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  },
+  "code": {
+   "console_errwarn": 0,
+   "pageerrors": 0,
+   "failed_requests": 0,
+   "http_4xx_5xx": 0
+  }
+ },
+ "fail_count": 3,
+ "check_count": 167
+}

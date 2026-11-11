@@ -1,0 +1,17 @@
+started deapp-pip312-dev pid=5941 (02:09:53)
+UP after 4s
+[OK ] initial sweep: page_errors+0 nrows=3 ncols=2 cell=
+[OK ] append (in-place) -> 4 rows: page_errors+0 nrows=4 ncols=2 cell=
+[OK ] append again -> 5 rows: page_errors+0 nrows=5 ncols=2 cell=
+[OK ] assign (new list) -> 6 rows: page_errors+0 nrows=6 ncols=2 cell=
+[OK ] more_cols (in-place column append + data reassign): page_errors+0 nrows=6 ncols=3 cell=
+[OK ] reset -> 3 rows: page_errors+0 nrows=3 ncols=2 cell=
+[OK ] append after reset -> 4 rows: page_errors+0 nrows=4 ncols=2 cell=
+[OK ] after reload sweep: page_errors+0 nrows=4 ncols=2 cell=
+== deapp-pip312-dev: page_errors=0 unique=[]
+--- deapp-pip312-dev server log: warnings/deprecations/errors
+      5 Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+      2 redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+      1 DeprecationWarning: format_data_editor_column has been deprecated in version 
+      1 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+      1 Debug: error: script "dev" exited with code 143

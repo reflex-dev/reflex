@@ -1,0 +1,63 @@
+{
+ "rows": [
+  {
+   "pid": 13729,
+   "ppid": 13718,
+   "n": 60,
+   "imported_here": true,
+   "import_pid": 13729,
+   "start_method": "fork",
+   "start_method_at_import": "fork",
+   "module_random": 0.23539453778629404,
+   "module_uuid": "14366ddf",
+   "module_token": "cd9be053dc26e02e",
+   "first_random_now": 0.10199199622633182,
+   "first_prng_now": 0.9674930295246428,
+   "ticks_first": 12,
+   "ticks_last": 13,
+   "ticks_pid": 13729,
+   "ticker_alive": true,
+   "timer_first": 4,
+   "timer_last": 5,
+   "timer_pid": 13729,
+   "lifespan": {
+    "ran": 1,
+    "pid": 13729,
+    "loop_ticks": 5
+   },
+   "threads": [
+    "AnyIO worker thread",
+    "MainThread",
+    "Thread-2 (_monitor)",
+    "Thread-7",
+    "forkapp-ticker"
+   ],
+   "gc_enabled": true,
+   "gc_freeze_count": 375,
+   "redis_ping": null,
+   "import_redis_ping": null,
+   "import_db_count": 294,
+   "db_count": 294,
+   "qlistener_alive": true,
+   "env_marker": null,
+   "backend_port": 8201
+  }
+ ],
+ "summary": {
+  "workers_seen": 1,
+  "errors": 0,
+  "distinct_module_random": 1,
+  "distinct_module_uuid": 1,
+  "distinct_first_random_now": 1,
+  "distinct_first_prng_now": 1,
+  "imported_in_worker": 1,
+  "ticker_advancing": 1,
+  "ticker_alive": 1,
+  "timer_advancing": 1,
+  "lifespan_ran_in_worker": 1,
+  "qlistener_alive": 1,
+  "start_methods": [
+   "fork"
+  ]
+ }
+}

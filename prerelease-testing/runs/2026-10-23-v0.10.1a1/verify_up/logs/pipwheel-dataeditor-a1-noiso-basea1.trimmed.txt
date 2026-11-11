@@ -1,0 +1,3 @@
+## pipwheel-dataeditor-a1-noiso-basea1 (trimmed: build-env resolution of reflex-base + pyi_generator errors; full log was 25 lines)
+23:  Created wheel for reflex-components-dataeditor: filename=reflex_components_dataeditor-0.10.1a1-py3-none-any.whl size=12509 sha256=189feaf6ddd92f7a54aafb9b3ffab41645b65bbeb5c0bcdef9eca39c77dd06b8
+25:Successfully built reflex-components-dataeditor

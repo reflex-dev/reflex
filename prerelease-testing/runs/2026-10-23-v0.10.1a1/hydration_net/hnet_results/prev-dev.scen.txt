@@ -1,0 +1,34 @@
+[pass] big_300k_roundtrip: {"ls_len": 300000, "reload_hydrate_s": 0.41}
+[FAIL] big_oversize_reported_once: {"n_ws_opens": 326, "open_gaps": [0.076, 0.047, 0.034, 0.024, 0.034, 0.032, 0.042, 0.05, 0.042, 0.031, 0.025, 0.038, 0.029, 0.031, 0.03, 0.037, 0.031, 0.036, 0.043, 0.03], "n_connect_frames_sent": 325, "hydration_errors": [], "n_console_errors": 0, "hydrated": "false", "size": 1100000}
+[FAIL] big_oversize_toast_shown_and_stays: {"first_toast": null, "toast_at_s": null, "final_toasts": []}
+[pass] big_recovery_after_shrink: {"big_len": "len:100", "ws_opens_after": 2, "toasts": []}
+[pass] big_click_after_recovery: {}
+[pass] shared_initial: {"t1": ["pref-default", "pref-default", "plain-default"], "t2": ["pref-default", "pref-default", "plain-default"], "other": ["other-default", "other-default"]}
+[FAIL] shared_set_a_syncs_all_in_other_tab: {"writing_tab": ["from-a", "pref-default", "plain-default"], "other_tab": ["pref-default", "pref-default", "from-a"], "ls": "from-a"}
+[FAIL] shared_set_plain_syncs_all_in_other_tab: {"other_tab": ["from-a", "pref-default", "from-plain"], "writing_tab": ["pref-default", "pref-default", "from-plain"]}
+[FAIL] shared_typed_b_syncs_all_in_other_tab: {"other_tab": ["from-a", "pref-default", "typed-b"], "writing_tab": ["pref-default", "typed-b", "from-plain"]}
+[FAIL] shared_other_name_unaffected: {"t1": ["from-a", "pref-default", "typed-b"], "t2": ["pref-default", "typed-b", "from-plain"], "other2": "from-other"}
+[pass] shared_quiet_after: {"frames_in_2s": 0, "total_frames": 30}
+[pass] shared_new_tab_sees_value: {"t3": ["typed-b", "typed-b", "typed-b"]}
+[FAIL] cv_storage_dependents_once_per_load: {"evals": {"sib_len": 2, "tok_len": 2, "uncached": 4}, "shown": ["tok_len:8", "sib_len:6", "unc:6"]}
+[FAIL] cv_storage_dependents_once_per_load_2: {"evals": {"sib_len": 2, "tok_len": 2, "uncached": 4}}
+[pass] typed_defaults: {"summary": {"ann_ls": ["ls-d", "LocalStorage"], "ann_ck": ["ck-d", "Cookie"], "ann_ss": ["ss-d", "SessionStorage"], "ann_opt": ["opt-d", "LocalStorage"], "ann_fld": ["fld-d", "LocalStorage"], "n_int": ["3", "LocalStorage"], "n_bool": ["true", "Cookie"], "j_dict": ["{\"a\": 1}", "LocalStorage"]}, "console": []}
+[pass] typed_write_w1: {"summary": {"ann_ls": ["ls-w1", "str"], "ann_ck": ["ck-w1", "str"], "ann_ss": ["ss-w1", "str"], "ann_opt": ["opt-w1", "str"], "ann_fld": ["fld-w1", "str"], "n_int": [2, "int"], "n_bool": [true, "bool"], "j_dict": ["{'s': 'w1'}", "MutableProxy"]}, "storage": {"ls": {"hnet_ann_opt": "opt-w1", "hnet_json": "[object Object]", "hnet_ann_fld": "fld-w1", "hnet_ann_ls": "ls-w1", "hnet_int": "2"}, "ss": {"hnet_ann_ss": "ss-w1"}, "ck": "hnet_ann_ck=ck-w1; hnet_bool=true"}}
+[pass] typed_reload_hydrates_w1: {"summary": {"ann_ls": ["ls-w1", "str"], "ann_ck": ["ck-w1", "str"], "ann_ss": ["ss-w1", "str"], "ann_opt": ["opt-w1", "str"], "ann_fld": ["fld-w1", "str"], "n_int": ["2", "str"], "n_bool": ["true", "str"], "j_dict": ["[object Object]", "str"]}, "shown": ["ls-w1", "2", "\"true\"", "\"[object Object]\""]}
+[pass] typed_nonstr_storage_roundtrip_INFO: {"n_int": ["2", "str"], "n_bool": ["true", "str"], "j_dict": ["[object Object]", "str"], "ls_json": "[object Object]"}
+[pass] typed_opt_none_roundtrip: {"after_none": [null, "NoneType"], "ls_after_none": "null", "after_reload": ["null", "str"]}
+[pass] typed_reload_hydrates_w2: {"summary": {"ann_ls": ["ls-w2", "str"], "ann_ck": ["ck-w2", "str"], "ann_ss": ["ss-w2", "str"], "ann_opt": ["opt-w2", "str"], "ann_fld": ["fld-w2", "str"], "n_int": ["2", "str"], "n_bool": ["false", "str"], "j_dict": ["[object Object]", "str"]}}
+[pass] typed_console_clean: {"anomalies": {"console_err_warn": [], "pageerrors": [], "failed": [], "http_errors": []}}
+[pass] ovr_good_persists: {"tok_ok": "ok:True:good-1", "tok": "[good-1]"}
+[pass] ovr_bad_sanitised_dependents_follow: {"tok_ok": "ok:False:", "tok": "[]", "plain_dep": "plain:sanitised", "ls": "", "calls": "{\"calls\": 3, \"dep_evals\": 40}"}
+[pass] ovr_after_sanitise_reload: {"tok_ok": "ok:False:", "tok": "[]", "ls": ""}
+[pass] ovr_event_bad_sanitised: {"tok_ok": "ok:False:", "tok": "[]", "plain_dep": "plain:sanitised", "ls": ""}
+[pass] cs_push_before_reader_no_error: {"errors": []}
+[FAIL] cs_late_reader_sees_pushed: {"flag": "flag=[initial]", "count": "count=0"}
+[FAIL] cs_late_reader_follows_set_back_to_default: {"flag": "flag=[clicked]"}
+[FAIL] cs_reader_mounted_after_set_then_default: {"flag": "flag=[clicked]"}
+[FAIL] cs_push_none_and_backend: {"flag": "flag=[initial]"}
+[FAIL] cs_count_int: {"count": "count=1"}
+[FAIL] cs_gate_push_during_onload: {"flag": "flag=[initial]", "errors": []}
+[pass] cs_gate_set_default: {"flag": "flag=[initial]"}
+SUMMARY 19/33 pass; fail=['big_oversize_reported_once', 'big_oversize_toast_shown_and_stays', 'shared_set_a_syncs_all_in_other_tab', 'shared_set_plain_syncs_all_in_other_tab', 'shared_typed_b_syncs_all_in_other_tab', 'shared_other_name_unaffected', 'cv_storage_dependents_once_per_load', 'cv_storage_dependents_once_per_load_2', 'cs_late_reader_sees_pushed', 'cs_late_reader_follows_set_back_to_default', 'cs_reader_mounted_after_set_then_default', 'cs_push_none_and_backend', 'cs_count_int', 'cs_gate_push_during_onload']

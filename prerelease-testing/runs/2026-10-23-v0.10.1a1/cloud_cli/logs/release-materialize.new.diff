@@ -1,0 +1,82 @@
+diff --git a/packages/reflex-hosting-cli/CHANGELOG.md b/packages/reflex-hosting-cli/CHANGELOG.md
+index 5e11bab..e0cdc99 100644
+--- a/packages/reflex-hosting-cli/CHANGELOG.md
++++ b/packages/reflex-hosting-cli/CHANGELOG.md
+@@ -1,3 +1,27 @@
++## v0.2.1a2 (2026-10-23)
++
++### Features
++
++- `reflex cloud apps logs` prints `timestamp [LEVEL] message` lines. Example:
++
++  ```bash
++  reflex cloud apps logs <app-id> --loglevel error
++  ```
++
++  - bullet one with `code`
++  - bullet two with a [link](https://example.invalid)
++
++  ([#4242](https://github.com/reflex-dev/reflex/issues/4242))
++
++### Bug Fixes
++
++- Fix *something* with **emphasis** and a second sentence. Unicode: héllo 日本語 🚀. ([#7777](https://github.com/reflex-dev/reflex/issues/7777))
++
++### Miscellaneous
++
++- Internal cleanup. ([#4242](https://github.com/reflex-dev/reflex/issues/4242))
++
++
+ ## v0.2.1a1 (2026-10-23)
+ 
+ ### Bug Fixes
+diff --git a/packages/reflex-hosting-cli/news/+qa-logs-format.feature.md b/packages/reflex-hosting-cli/news/+qa-logs-format.feature.md
+deleted file mode 100644
+index 080c279..0000000
+--- a/packages/reflex-hosting-cli/news/+qa-logs-format.feature.md
++++ /dev/null
+@@ -1,8 +0,0 @@
+-`reflex cloud apps logs` prints `timestamp [LEVEL] message` lines. Example:
+-
+-```bash
+-reflex cloud apps logs <app-id> --loglevel error
+-```
+-
+-- bullet one with `code`
+-- bullet two with a [link](https://example.invalid)
+diff --git a/packages/reflex-hosting-cli/news/+qa-misc.misc.md b/packages/reflex-hosting-cli/news/+qa-misc.misc.md
+deleted file mode 100644
+index 0a32229..0000000
+--- a/packages/reflex-hosting-cli/news/+qa-misc.misc.md
++++ /dev/null
+@@ -1 +0,0 @@
+-Internal cleanup.
+diff --git a/packages/reflex-hosting-cli/news/7777.bugfix.md b/packages/reflex-hosting-cli/news/7777.bugfix.md
+deleted file mode 100644
+index 496a2ab..0000000
+--- a/packages/reflex-hosting-cli/news/7777.bugfix.md
++++ /dev/null
+@@ -1 +0,0 @@
+-Fix *something* with **emphasis** and a second sentence. Unicode: héllo 日本語 🚀.
+diff --git a/packages/reflex-release/CHANGELOG.md b/packages/reflex-release/CHANGELOG.md
+index 339fd07..eb40067 100644
+--- a/packages/reflex-release/CHANGELOG.md
++++ b/packages/reflex-release/CHANGELOG.md
+@@ -1,3 +1,10 @@
++## v0.2.1a2 (2026-10-23)
++
++### Miscellaneous
++
++- Rendered with the installed towncrier. ([#4242](https://github.com/reflex-dev/reflex/issues/4242))
++
++
+ ## v0.2.1a1 (2026-10-23)
+ 
+ ### Miscellaneous
+diff --git a/packages/reflex-release/news/+qa-towncrier.misc.md b/packages/reflex-release/news/+qa-towncrier.misc.md
+deleted file mode 100644
+index 13cc3b3..0000000
+--- a/packages/reflex-release/news/+qa-towncrier.misc.md
++++ /dev/null
+@@ -1 +0,0 @@
+-Rendered with the installed towncrier.

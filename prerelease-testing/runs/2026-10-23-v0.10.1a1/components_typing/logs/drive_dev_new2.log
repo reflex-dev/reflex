@@ -1,0 +1,152 @@
+== cbg
+  [ok ] cbg/initial_group_value: group=a
+  [ok ] cbg/group_items_rendered: count=3
+  [ok ] cbg/item_a_checked: true
+  [ok ] cbg/item_b_disabled_attr: disabled='' data-disabled=''
+  [ok ] cbg/hidden_inputs_named_grp: count=3
+  [ok ] cbg/click_c_updates_state: group=a,c
+  [ok ] cbg/on_value_change_payload_list: payload=["a", "c"]
+  [ok ] cbg/one_change_event: group_changes=1
+  [ok ] cbg/disabled_item_click_ignored: group=a,c
+  [ok ] cbg/server_reset_state: group=
+  [ok ] cbg/server_reset_reaches_dom: ['false', 'false', 'false']
+  [ok ] cbg/server_preset_reaches_dom: group=a,c ['true', 'false', 'true']
+  [ok ] cbg/root_disabled_var_disables_items: disabled=true disabled attrs=['', '', '']
+  [ok ] cbg/root_disabled_blocks_clicks: group=a,c
+  [FAIL] cbg/cards_click_z: cards=x
+  [FAIL] cbg/cards_click_x_keeps_z: cards=
+  [ok ] cbg/cards_two_change_events: cards_changes=2
+  [ok ] cbg/card_y_disabled: disabled=''
+  [ok ] cbg/default_value_group_checked: D2 aria-checked=true
+  [ok ] cbg/form_submit_includes_group: submitted={"grp": ["a", "c"], "dgrp": ["d2"], "cg": ["a"], "cc": [null], "cg_default": ["d2"]}
+  [FAIL] cbg/form_submit_all_values: submitted={"grp": ["a", "c"], "dgrp": ["d2"], "cg": ["a"], "cc": [null], "cg_default": ["d2"]}
+== accordion
+  [ok ] accordion/no_emotion_first_child_warning: none
+  [ok ] accordion/triggers_rendered: count=3
+  [ok ] accordion/multiple_two_open: ['open', 'open', 'closed']
+  [ok ] accordion/content_visible: M First
+M first content
+M Second
+M second content
+M Third
+  [ok ] accordion/single_only_one_open: ['closed', 'open', 'closed']
+  [ok ] accordion/default_value_open: open
+  [ok ] accordion/first_item_styled_first_of_type: [{'btw': '0px', 'tl': '8px', 'mt': '0px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}, {'btw': '0px', 'tl': '0px', 'mt': '1px'}]
+  [ok ] accordion/keyboard_arrow_down_moves_focus: M Second
+== slider
+  [ok ] slider/single_thumb_initial: 50
+  [ok ] slider/single_keyboard_dom: 53
+  [ok ] slider/single_on_change_state: single=53
+  [ok ] slider/single_on_value_commit: committed=53
+  [ok ] slider/range_two_thumbs: count=2
+  [ok ] slider/range_on_change: range=20,79
+  [ok ] slider/range_home_moves_first_thumb: range=0,79 thumb0=0
+  [ok ] slider/single_mouse_click_track: single=10
+== moment
+  [ok ] moment/cmp11_plain: Thursday 14 March 2024
+  [ok ] moment/cmp11_plain2: Thursday 14 March 2024
+  [ok ] moment/cmp11_english: Thursday 14 March 2024
+  [ok ] moment/cmp11_french: jeudi 14 mars 2024
+  [ok ] moment/cmp11_titled: Thursday 14 March 2024
+  [ok ] moment/cmp11_fromnow_english: 7 years ago
+  [ok ] moment/with_title_attr: Thursday 14 March 2024
+  [ok ] moment/info_defineLocale_warnings: 1 defineLocale messages (CMP-14 known)
+  [ok ] moment/opt_prov-default: expected='14 mars 2024' got='14 mars 2024'
+  [ok ] moment/opt_prov-en: expected='14 Mar 2024' got='14 Mar 2024'
+  [ok ] moment/opt_prov-fmt: expected='2024' got='2024'
+  [ok ] moment/opt_prov-tz: expected='2024-03-15 00:30' got='2024-03-15 00:30'
+  [ok ] moment/opt_outside: expected='14 Mar 2024' got='14 Mar 2024'
+  [ok ] moment/opt_prov-var: expected='Donnerstag' got='Donnerstag'
+  [ok ] moment/opt_prov-var-fr: expected='jeudi' got='jeudi'
+  [ok ] moment/opt_utc: expected='2024-03-14 23:30' got='2024-03-14 23:30'
+  [ok ] moment/opt_noutc: expected='2024-03-14 19:30' got='2024-03-14 19:30'
+  [ok ] moment/opt_calendar: expected='03/14/2024' got='03/14/2024'
+  [ok ] moment/opt_from: expected='in 4 days' got='in 4 days'
+  [ok ] moment/opt_from-ago: expected='4 days' got='4 days'
+  [ok ] moment/opt_to: expected='in 6 days' got='in 6 days'
+  [ok ] moment/opt_element: expected='2024' got='2024'
+  [ok ] moment/opt_fallback: expected='INVALID' got='INVALID'
+  [ok ] moment/opt_filters: expected='MARCH' got='MARCH'
+  [ok ] moment/opt_renderers: expected='R:2024' got='R:2024'
+  [ok ] moment/opt_onchange: expected='2024' got='2024'
+  [ok ] moment/info_provider_format_overrides_child_from_now: got='1 janv. 2020' (react-moment precedence: format > fromNow)
+  [ok ] moment/provider_locale_applies_to_fromnow: vor 7 Jahren
+  [ok ] moment/opt_ago_fromnow: 7 years
+  [ok ] moment/opt_element_span: SPAN
+  [ok ] moment/default_element_time: TIME
+  [ok ] moment/on_change_fired: changes=2
+  [ok ] moment/on_change_payload: last=2024
+  [ok ] moment/pooled_clocks_tick: 02:38:47->02:38:50 02:38:47->02:38:50
+  [ok ] moment/pooled_clocks_in_sync: 02:38:50 vs 02:38:50
+  [ok ] moment/provider_var_locale_switch_es: jueves
+  [ok ] moment/siblings_stay_english_after_switch: Thursday 14 March 2024
+  [ok ] moment/component_locale_overrides_provider: jeudi
+  [ok ] moment/provider_var_locale_switch_en: Thursday
+  [ok ] moment/info_utc_css_leak: {'utc': None, 'cls': ''}
+== de
+  [ok ] de/editor_1_canvas: canvases=2
+  [ok ] de/editor_2_canvas: canvases=2
+  [ok ] de/editor_3_canvas: canvases=2
+  [ok ] de/editor_4_canvas: canvases=2
+  [ok ] de/no_page_errors_on_load: []
+  [ok ] de/no_column_type_undefined_warning: 0 messages
+  [ok ] de/portal_div_present: portal=True
+  [ok ] de/info_app_wraps: {'badge': False, 'portalChildren': 0}
+  [ok ] de/info_overlay_editor: {'html': '<div style="--gdg-accent-color: #4F5DFF; --gdg-accent-fg: #FFFFFF; --gdg-accent-light: rgba(62, 116, 253, 0.1); --gdg-text-dark: #313139; --gdg-text-medium: #737383; --gdg-text-light: #B2B2C
+  [FAIL] de/cell_edit_roundtrip: edits=0,0=Zed
+  [ok ] de/cell_edit_updates_row: row0=Zed|30|1990-01-01
+  [FAIL] de/cell_edit_dblclick_number: edits=2,1=99
+  [ok ] de/add_row_state: nrows=4
+  [ok ] de/add_untyped_column_no_error: ncols=4 errors=[]
+  [ok ] de/no_column_type_undefined_after_add: 0 messages
+  [ok ] de/cmp31_image_overlay_opens: {'imgs': 4, 'carousel': True, 'text': '1 of 2'}
+  [ok ] de/info_overlay_closes_on_escape: imgs after escape=0 (CMP-48 known)
+== icons
+  [ok ] icons/no_page_errors_on_load: []
+  [ok ] icons/static_icon: lucide lucide-apple
+  [ok ] icons/button_icon: lucide lucide-search
+  [ok ] icons/badge_icon: lucide lucide-check
+  [ok ] icons/callout_icon: lucide lucide-info
+  [ok ] icons/input_slot_icon: count=1
+  [ok ] icons/dynamic_icon_initial: class=lucide same_paths_as_apple=True
+  [ok ] icons/foreach_icons: count=3
+  [ok ] icons/dynamic_icon_switches: same_paths_as_banana=True
+  [ok ] icons/dynamic_icon_underscore_name: same_paths_as_wifi_off=True
+  [ok ] icons/size_var_icon: 24
+  [ok ] icons/size_var_updates: 32
+  [ok ] icons/same_library_prop_import_static: width=40
+  [ok ] icons/same_library_prop_import_dynamic: width=40
+  [ok ] icons/color_mode_cond_icon_light: rgb(255, 0, 0)
+  [ok ] icons/toggle_color_mode_on_icon: rgb(0, 0, 255)
+  [ok ] icons/info_bundled_lucide_modules: []
+  [accordion] console.error: Received `%s` for a non-boolean attribute `%s`.
+
+If you want to write it to the DOM, pass a string instead: %s="%s" or %s={value.toString()}. true collapsible collapsible true collapsible
+  [moment] console.warning: Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for creating a new locale See http://momentjs.com/guides/#/warnin
+  [moment] console.warning: Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are disc
+  [moment] console.warning: [react-moment] Invalid date input: garbage Provide a valid date or use the `fallback` prop.
+  [moment] console.warning: [react-moment] Invalid date input: garbage Provide a valid date or use the `fallback` prop.
+  [icons] console.error: Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)
+  [icons] console.error: Error loading route module `/app/routes/[icons]._index.jsx`, reloading page...
+  [icons] console.error: TypeError: Failed to fetch dynamically imported module: http://localhost:3240/app/routes/[icons]._index.jsx?import
+  [icons] console.error: Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)
+  [icons] console.error: Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)
+  [icons] console.error: Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)
+  [icons] console.error: Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)
+  [icons] console.error: Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web
+  [icons] REQFAIL: http://localhost:3240/node_modules/.vite/deps/haxe-DUkJCI1h.js?v=be94aef4 net::ERR_ABORTED
+  [icons] REQFAIL: http://localhost:3240/node_modules/.vite/deps/json-BOP5U8hn.js?v=be94aef4 net::ERR_ABORTED
+  [icons] REQFAIL: http://localhost:3240/node_modules/.vite/deps/http-CzO94ZEL.js?v=be94aef4 net::ERR_ABORTED
+  [icons] REQFAIL: http://localhost:3240/node_modules/.vite/deps/hsts-ctDtOOdo.js?v=be94aef4 net::ERR_ABORTED
+  [icons] REQFAIL: http://localhost:3240/node_modules/.vite/deps/uri-GPCUOsUA.js?v=be94aef4 net::ERR_ABORTED
+  [icons] HTTP 504: http://localhost:3240/node_modules/.vite/deps/haxe-DUkJCI1h.js?v=be94aef4
+  [icons] HTTP 504: http://localhost:3240/node_modules/.vite/deps/json-BOP5U8hn.js?v=be94aef4
+  [icons] HTTP 504: http://localhost:3240/node_modules/.vite/deps/http-CzO94ZEL.js?v=be94aef4
+  [icons] HTTP 504: http://localhost:3240/node_modules/.vite/deps/hsts-ctDtOOdo.js?v=be94aef4
+  [icons] HTTP 504: http://localhost:3240/node_modules/.vite/deps/uri-GPCUOsUA.js?v=be94aef4
+RESULT: 106/111 checks passed; is_new=True
+  FAIL cbg/cards_click_z: cards=x
+  FAIL cbg/cards_click_x_keeps_z: cards=
+  FAIL cbg/form_submit_all_values: submitted={"grp": ["a", "c"], "dgrp": ["d2"], "cg": ["a"], "cc": [null], "cg_default": ["d2"]}
+  FAIL de/cell_edit_roundtrip: edits=0,0=Zed
+  FAIL de/cell_edit_dblclick_number: edits=2,1=99

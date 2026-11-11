@@ -1,0 +1,1 @@
+{"responses":{"GET deployments/regions":[{"status":403,"json":{"detail":"forbidden"}}],"GET deployments/vm_types":[{"status":403,"json":{"detail":"forbidden"}}]}}

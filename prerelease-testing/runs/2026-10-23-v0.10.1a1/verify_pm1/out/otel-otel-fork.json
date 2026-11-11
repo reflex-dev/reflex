@@ -1,0 +1,168 @@
+{
+ "rows": [
+  {
+   "pid": 18202,
+   "imported_here": false,
+   "threads": [
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader"
+   ],
+   "spans_exported_here_first": 2,
+   "spans_exported_here_last": 7,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": false,
+   "job_runs_first": 1,
+   "job_runs_last": 1,
+   "job_pid": 18175,
+   "qlistener_alive": false,
+   "queue_depth": 7
+  },
+  {
+   "pid": 18206,
+   "imported_here": false,
+   "threads": [
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader"
+   ],
+   "spans_exported_here_first": 2,
+   "spans_exported_here_last": 10,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": false,
+   "job_runs_first": 1,
+   "job_runs_last": 1,
+   "job_pid": 18175,
+   "qlistener_alive": false,
+   "queue_depth": 15
+  },
+  {
+   "pid": 18213,
+   "imported_here": false,
+   "threads": [
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 9,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": false,
+   "job_runs_first": 1,
+   "job_runs_last": 1,
+   "job_pid": 18175,
+   "qlistener_alive": false,
+   "queue_depth": 10
+  },
+  {
+   "pid": 18216,
+   "imported_here": false,
+   "threads": [
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader"
+   ],
+   "spans_exported_here_first": 2,
+   "spans_exported_here_last": 5,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": false,
+   "job_runs_first": 1,
+   "job_runs_last": 1,
+   "job_pid": 18175,
+   "qlistener_alive": false,
+   "queue_depth": 10
+  },
+  {
+   "pid": 18226,
+   "imported_here": false,
+   "threads": [
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 8,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": false,
+   "job_runs_first": 1,
+   "job_runs_last": 1,
+   "job_pid": 18175,
+   "qlistener_alive": false,
+   "queue_depth": 10
+  },
+  {
+   "pid": 18228,
+   "imported_here": false,
+   "threads": [
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 3,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": false,
+   "job_runs_first": 1,
+   "job_runs_last": 1,
+   "job_pid": 18175,
+   "qlistener_alive": false,
+   "queue_depth": 11
+  },
+  {
+   "pid": 18236,
+   "imported_here": false,
+   "threads": [
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 5,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": false,
+   "job_runs_first": 1,
+   "job_runs_last": 1,
+   "job_pid": 18175,
+   "qlistener_alive": false,
+   "queue_depth": 6
+  },
+  {
+   "pid": 18244,
+   "imported_here": false,
+   "threads": [
+    "AnyIO worker thread",
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 4,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": false,
+   "job_runs_first": 2,
+   "job_runs_last": 2,
+   "job_pid": 18175,
+   "qlistener_alive": false,
+   "queue_depth": 11
+  }
+ ],
+ "summary": {
+  "workers_seen": 8,
+  "imported_in_worker": 0,
+  "spans_exported_in_worker": 8,
+  "metrics_exported_in_worker": 8,
+  "sched_running_flag": 8,
+  "sched_thread_alive": 0,
+  "job_advancing": 0,
+  "qlistener_alive": 0,
+  "max_queue_depth": 15
+ }
+}

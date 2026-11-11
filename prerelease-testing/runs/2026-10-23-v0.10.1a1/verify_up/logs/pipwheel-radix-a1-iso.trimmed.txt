@@ -1,0 +1,7 @@
+## pipwheel-radix-a1-iso (trimmed: build-env resolution of reflex-base + pyi_generator errors; full log was 343 lines)
+73:  Collecting reflex-base
+341:  Created wheel for reflex-components-radix: filename=reflex_components_radix-0.10.1a1-py3-none-any.whl size=268485 sha256=06addaa80450a8408da9767dc7bd9377cd2d690ff43f076dfd48a01e700f044e
+137:  ERROR:pyi_generator:Failed to import reflex_components_radix.primitives.form
+152:  ModuleNotFoundError: No module named 'reflex_base.utils.form'
+115:  Using cached reflex_base-0.10.0-py3-none-any.whl (403 kB)
+343:Successfully built reflex-components-radix

@@ -1,0 +1,5 @@
+== new
+{"venv": "new", "procs": 8, "updates": 40, "seconds": 1.12, "keys_expected": 320, "keys_present": 320, "lost": 0, "reader_reads": 296, "invalid_reads": 0, "invalid_samples": [], "lock_dir": "/root/.local/share/reflex/locks", "lock_dir_is_dir": true, "tmp_files_left": [], "writer_exitcodes": [0, 0, 0, 0, 0, 0, 0, 0]}
+== prev
+json.decoder.JSONDecodeError: Extra data: line 1 column 470 (char 469)
+{"venv": "new", "procs": 8, "updates": 40, "seconds": 0.77, "keys_expected": 320, "keys_present": 121, "lost": 199, "reader_reads": 176, "invalid_reads": 0, "invalid_samples": [], "lock_dir": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/rdir-badlocks/locks", "lock_dir_is_dir": false, "tmp_files_left": [], "writer_exitcodes": [0, 0, 0, 0, 0, 0,

@@ -1,0 +1,248 @@
+{
+ "label": "new-prod-redis",
+ "base": "http://localhost:8200",
+ "clients": 6,
+ "checks": [
+  {
+   "name": "tokens_present",
+   "ok": true,
+   "detail": "6 tokens"
+  },
+  {
+   "name": "onload_pids",
+   "ok": true,
+   "detail": "socket worker pids: [7638, 7640, 7646, 7654, 7662]"
+  },
+  {
+   "name": "evt04_poke_delivered",
+   "ok": true,
+   "detail": "6/6 delivered, 6/6 cross-worker; client0: socket_pid=7646 poke_pid=7665 -> 'poked: 1 by 7665'; client1: socket_pid=7654 poke_pid=7646 -> 'poked: 1 by 7646'; client2: socket_pid=7662 poke_pid=7665 -> 'poked: 1 by 7665'; client3: socket_pid=7662 poke_pid=7646 -> 'poked: 1 by 7646'; client4: socket_pid"
+  },
+  {
+   "name": "evt04_second_round",
+   "ok": true,
+   "detail": "6/6"
+  },
+  {
+   "name": "inc_client0",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "inc_client1",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "inc_client2",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "inc_client3",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "inc_client4",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "inc_client5",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "note_client0",
+   "ok": true,
+   "detail": "rows: 1"
+  },
+  {
+   "name": "note_client1",
+   "ok": true,
+   "detail": "rows: 2"
+  },
+  {
+   "name": "note_client2",
+   "ok": true,
+   "detail": "rows: 3"
+  },
+  {
+   "name": "note_client3",
+   "ok": true,
+   "detail": "rows: 4"
+  },
+  {
+   "name": "note_client4",
+   "ok": true,
+   "detail": "rows: 5"
+  },
+  {
+   "name": "note_client5",
+   "ok": true,
+   "detail": "rows: 6"
+  },
+  {
+   "name": "bg_client0",
+   "ok": true,
+   "detail": "bg: bg-done pid=7646 ticks=33"
+  },
+  {
+   "name": "bg_client1",
+   "ok": true,
+   "detail": "bg: bg-done pid=7654 ticks=33"
+  },
+  {
+   "name": "bg_client2",
+   "ok": true,
+   "detail": "bg: bg-done pid=7662 ticks=33"
+  },
+  {
+   "name": "bg_client3",
+   "ok": true,
+   "detail": "bg: bg-done pid=7662 ticks=33"
+  },
+  {
+   "name": "bg_client4",
+   "ok": true,
+   "detail": "bg: bg-done pid=7638 ticks=33"
+  },
+  {
+   "name": "bg_client5",
+   "ok": true,
+   "detail": "bg: bg-done pid=7640 ticks=33"
+  },
+  {
+   "name": "fetch_client0",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=7642"
+  },
+  {
+   "name": "fetch_client1",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=7638"
+  },
+  {
+   "name": "fetch_client2",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=7654"
+  },
+  {
+   "name": "fetch_client3",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=7654"
+  },
+  {
+   "name": "fetch_client4",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=7654"
+  },
+  {
+   "name": "fetch_client5",
+   "ok": true,
+   "detail": "fetch: fetch 200 pid=7644"
+  },
+  {
+   "name": "reload_keeps_count",
+   "ok": true,
+   "detail": "count: 2"
+  },
+  {
+   "name": "console_clean_client0",
+   "ok": false,
+   "detail": "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "name": "console_clean_client1",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "console_clean_client2",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "console_clean_client3",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "console_clean_client4",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "console_clean_client5",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "tokens": [
+  "23b68a14-1fef-43f2-f5f0-031596dcdc2e",
+  "ffd512bf-0d85-4b61-f72c-007340e0ff4f",
+  "3c93c1bf-b043-4709-eac2-40e0f61ad9c1",
+  "2fc64dbc-29f3-460a-f35e-05d9439b55ce",
+  "e98af698-5e04-4e9b-b1a7-3382552e31f2",
+  "eebc01c9-3e24-4743-faef-8d3ab694ebf6"
+ ],
+ "socket_pids": [
+  7646,
+  7654,
+  7662,
+  7662,
+  7638,
+  7640
+ ],
+ "poke_pids": [
+  7665,
+  7646,
+  7665,
+  7646,
+  7640,
+  7638
+ ],
+ "pass": 34,
+ "fail": 1,
+ "logs": [
+  {
+   "console": [
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  },
+  {
+   "console": [],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  },
+  {
+   "console": [],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  },
+  {
+   "console": [],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  },
+  {
+   "console": [],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  },
+  {
+   "console": [],
+   "errors": [],
+   "failed": [],
+   "http_err": []
+  }
+ ]
+}

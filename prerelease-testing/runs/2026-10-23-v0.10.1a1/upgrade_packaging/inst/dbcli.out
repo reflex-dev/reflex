@@ -1,0 +1,45 @@
+=== uv311
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-n001-uv311/lib/python3.11/site-packages/pydantic/_internal/_model_construction.py:133)
+reflex 0.10.1a1 sqlmodel 0.0.48 sqlalchemy 2.1.6 greenlet 3.5.6
+OK: rx.Model subclass created, table m
+reflex db init rc=0 0 error-lines
+reflex db makemigrations --message init rc=0 0 error-lines
+reflex db migrate rc=0 0 error-lines
+reflex db makemigrations --message noop rc=0 0 error-lines
+  versions: 1 files; tables: ['alembic_version', 'note']
+=== uv315
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-n001-uv315/lib/python3.15/site-packages/pydantic/_internal/_model_construction.py:133)
+reflex 0.10.1a1 sqlmodel 0.0.48 sqlalchemy 2.1.6 greenlet 3.5.6
+OK: rx.Model subclass created, table m
+reflex db init rc=0 0 error-lines
+reflex db makemigrations --message init rc=0 0 error-lines
+reflex db migrate rc=0 0 error-lines
+reflex db makemigrations --message noop rc=0 0 error-lines
+  versions: 1 files; tables: ['alembic_version', 'note']
+=== pip311
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-n001-pip311/lib/python3.11/site-packages/pydantic/_internal/_model_construction.py:133)
+reflex 0.10.1a1 sqlmodel 0.0.48 sqlalchemy 2.1.6 greenlet 3.5.6
+OK: rx.Model subclass created, table m
+reflex db init rc=0 0 error-lines
+reflex db makemigrations --message init rc=0 0 error-lines
+reflex db migrate rc=0 0 error-lines
+reflex db makemigrations --message noop rc=0 0 error-lines
+  versions: 1 files; tables: ['alembic_version', 'note']
+=== pip315
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-n001-pip315/lib/python3.15/site-packages/pydantic/_internal/_model_construction.py:133)
+reflex 0.10.1a1 sqlmodel 0.0.48 sqlalchemy 2.1.6 greenlet 3.5.6
+OK: rx.Model subclass created, table m
+reflex db init rc=0 0 error-lines
+reflex db makemigrations --message init rc=0 0 error-lines
+reflex db migrate rc=0 0 error-lines
+reflex db makemigrations --message noop rc=0 0 error-lines
+  versions: 1 files; tables: ['alembic_version', 'note']
+=== f006pip312
+reflex 0.10.1a1 sqlmodel NOT INSTALLED sqlalchemy NOT INSTALLED greenlet NOT INSTALLED
+FAIL: ImportError: Database is not available. Please install the required packages: `pip install reflex[db]`.
+reflex db init rc=1 0 error-lines
+reflex db makemigrations --message init rc=1 0 error-lines
+reflex db migrate rc=1 0 error-lines
+reflex db makemigrations --message noop rc=1 0 error-lines
+ls: cannot access '/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/inst/run/dbcli-f006pip312/alembic/versions': No such file or directory
+  versions: 0 files; tables: []

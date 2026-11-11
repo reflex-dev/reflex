@@ -1,0 +1,4 @@
+./run_prod.sh: line 12: ss: command not found
+dev stopped: 0 listeners left
+prod up after 5x5s
+PROD DRIVE DONE rc=1

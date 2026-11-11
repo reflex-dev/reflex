@@ -1,0 +1,23 @@
+{
+  "url": "http://localhost:3222/hooks",
+  "title": "",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 6000",
+    "eval -> \"An error occurred while rendering this page.\\n\\nThis is an error with the application itself. Refreshing the page might help.\\n\\nReferenceError: Cannot access 'hr_pos' before initialization\\nReferenceError: Cannot access 'hr_pos' before initialization\\n    at Component (http://localhost:3222/app/routes/[h\""
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [
+    {
+      "type": "error",
+      "text": "%o\n\n%s\n\n%s\n ReferenceError: Cannot access 'hr_pos' before initialization\n    at Component (http://localhost:3222/app/routes/[hooks]._index.jsx?import:48:22)\n    at Object.react_stack_bottom_frame (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:14140:12)\n    at renderWithHooks (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:4398:19)\n    at updateFunctionComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5773:16)\n    at beginWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:6389:20)\n    at runWithFiberInDEV (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:942:66)\n    at performUnitOfWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9146:92)\n    at workLoopSync (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9042:37)\n    at renderRootSync (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9026:6)\n    at performWorkOnRoot (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:8713:27) The above error occurred in the <Component(hooks)> component. React will try to recreate this component tree from scratch using the error boundary you provided, C."
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nReferenceError: Cannot access 'hr_pos' before initialization\nReferenceError: Cannot access 'hr_pos' before initialization\n    at Component (http://localhost:3222/app/routes/[hooks]._index.jsx?import:48:22)\n    at Object.react_stack_bottom_frame (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:14140:12)\n    at renderWithHooks (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:4398:19)\n    at updateFunctionComponent (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:5773:16)\n    at beginWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:6389:20)\n    at runWithFiberInDEV (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:942:66)\n    at performUnitOfWork (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9146:92)\n    at workLoopSync (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9042:37)\n    at renderRootSync (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:9026:6)\n    at performWorkOnRoot (http://localhost:3222/node_modules/.vite/deps/react-dom_client.js?v=88001695:8713:27)\nCopy\nBuilt with"
+}

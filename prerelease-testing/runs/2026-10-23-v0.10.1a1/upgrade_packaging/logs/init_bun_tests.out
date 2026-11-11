@@ -1,0 +1,46 @@
+system bun on PATH: /root/.bun/bin/bun 1.4.2; managed default: 1.4.4
+=== B1 fresh REFLEX_DIR, new
+rc=0 [b1-new] bun lines: 
+  bun in rd-fresh: 1.4.4
+=== B2 fresh REFLEX_DIR, prev then new
+rc=0 [b2-prev] bun lines: 
+  bun after prev: none
+rc=0 [b2-new] bun lines: 
+  bun after new re-init on the same REFLEX_DIR: 1.4.4
+=== B3 REFLEX_USE_SYSTEM_BUN=1 (system bun 1.4.2)
+rc=0 [b3-new] bun lines: Info: Using custom Bun path: /root/.bun/bin/bun|Warning: Bun 1.4.2 is below the minimum supported version 1.4.4. Please upgrade |Bun by running bun upgrade.|
+  warning lines: Warning: Bun 1.4.2 is below the minimum supported version 1.4.4. Please upgrade |
+  bun installed into rd-sys: none
+rc=0 [b3-prev] bun lines: 
+  warning lines (prev): 
+=== I1 fresh init in a dir named reflex
+rc=1 [i1-new] bun lines: 
+  msg: The app directory cannot be named reflex.|
+rc=1 [i1-prev] bun lines: 
+  msg: The app directory cannot be named reflex.|
+=== I2 init --name myapp in a dir named reflex, then re-init without --name
+rc=0 [i2a-new] bun lines: 
+  app_name in rxconfig: app_name="myapp",
+rc=0 [i2b-new] bun lines: 
+  re-init msg: ────────────────────────────── Initializing myapp ──────────────────────────────|Info: Initializing the web directory.|Success: Initialized myapp. Install dependencies from `requirements.txt` with |
+rc=0 [i2a-prev] bun lines: 
+  app_name in rxconfig: app_name="myapp",
+rc=1 [i2b-prev] bun lines: 
+  re-init msg: The app directory cannot be named reflex.|
+=== I3 re-init of an existing app in a normal dir (tree diff)
+rc=0 [i3a-new] bun lines: 
+rc=0 [i3b-new] bun lines: 
+  tree diff after re-init: 1 lines
+rc=0 [i3a-prev] bun lines: 
+rc=0 [i3b-prev] bun lines: 
+  tree diff after re-init: 1 lines
+=== I4 templates list, --version, export
+-- new: 0.10.1a1
+  bogus template rc=1
+Template `__bogus__` not found or invalid.
+  export rc=0 zips: backend.zip frontend.zip  errors: 0
+-- prev: 0.10.0
+  bogus template rc=1
+Template `__bogus__` not found or invalid.
+  export rc=0 zips: backend.zip frontend.zip  errors: 0
+=== done 01:56:20

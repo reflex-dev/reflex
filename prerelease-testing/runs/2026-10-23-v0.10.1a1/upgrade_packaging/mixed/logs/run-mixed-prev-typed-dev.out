@@ -1,0 +1,43 @@
+started mixed-prev-typed-dev pid=13974 (02:16:59)
+UP after 3s
+[PASS] page title: mixed floors probe
+[PASS] hydrated (nrows=3): 3
+[PASS] lucide static icon rendered as svg: svg lucide lucide-calendar
+[PASS] lucide dynamic icon rendered as svg: svg lucide
+[PASS] dynamic icon toggles to sun (svg content changes): before=<path d="M8 2v4"></path><path d="M16 2v4"></path><rect width after=<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></p
+[PASS] shiki code block rendered (pre + spans): {'pre': 1, 'spans': 28, 'highlighted': 1, 'text': "def hello(name: str) -> str:\n    return f'hi {name}'"}
+[PASS] shiki [!code highlight] transformer applied: {'pre': 1, 'spans': 28, 'highlighted': 1, 'text': "def hello(name: str) -> str:\n    return f'hi {name}'"}
+[PASS] react-syntax-highlighter code block rendered: {'pre': 1, 'spans': 30, 'text': "1def hello(name: str) -> str:\n2    return f'hi {name}'  # [!"}
+[PASS] moment formats the UTC timestamp: 2026-10-24 12:30
+[PASS] data_editor with state-backed columns renders a canvas: {'state': 2, 'literal': 2, 'state_text': ''}
+[PASS] data_editor with literal columns renders a canvas: {'state': 2, 'literal': 2, 'state_text': ''}
+[PASS] add row -> nrows 4: 4
+[PASS] on_cell_clicked fired: [0, 0]
+[PASS] form submitted once: 1
+[PASS] form data has username: {'agree': True, 'choice': 'a', 'idonly': 'idval', 'sw': True, 'tag1': 't1', 'tag2': 't2', 'tags': 't2', 'username': 'ada'}
+[PASS] form data: checkbox value: agree=True
+[PASS] form data: switch value: sw=True
+[PASS] form data: id-only input: idonly='idval'
+[PASS] form data: repeated name tags (dict keeps last): tags='t2'
+[PASS] form data: select: choice='a'
+[PASS] window_event_listener on_key_down fired: count=1 last_key=F7
+[PASS] clipboard on_paste fired: [["text/plain", "pasted-text"]]
+[PASS] reload hydrates again: 4
+== mixed-prev-typed-dev: pass=23 fail=0 unexpected_console=1 page_errors=4 failed_requests=0
+  CONSOLE warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the life
+  PAGE ERROR Cannot read properties of undefined (reading '0')
+  PAGE ERROR Cannot read properties of undefined (reading '0')
+  PAGE ERROR Cannot read properties of undefined (reading '0')
+  PAGE ERROR Cannot read properties of undefined (reading '0')
+--- mixed-prev-typed-dev server log: warnings/deprecations/errors
+      5 Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+      4 [Reflex Frontend Exception]
+      4 TypeError: Cannot read properties of undefined (reading '0')
+      4  TypeError: Cannot read properties of undefined (reading '0')
+      2 redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+      2 Debug: 2:17:09 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+      2 Debug: 2:17:08 AM [vite] (client) [Unhandled error] TypeError: Cannot read 
+      1 Warning: `rx._x` contains experimental features and might be removed at any time
+      1 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: 2:17:08 AM [vite] (client) [console.warn] Checkbox is changing from 

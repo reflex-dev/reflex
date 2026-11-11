@@ -1,0 +1,1 @@
+{"responses":{"GET deployments/[^/]+/status":[{"status":200,"json":"Deployment is being built."},{"status":200,"json":"Deployment is being built."},{"status":200,"json":"Deployment is being provisioned."},{"status":200,"json":"deployment completed successfully"}]}}

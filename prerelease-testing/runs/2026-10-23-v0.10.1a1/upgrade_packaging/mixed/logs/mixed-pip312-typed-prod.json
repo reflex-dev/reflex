@@ -1,0 +1,149 @@
+{
+ "label": "mixed-pip312-typed-prod",
+ "checks": [
+  {
+   "name": "page title",
+   "ok": true,
+   "detail": "mixed floors probe"
+  },
+  {
+   "name": "hydrated (nrows=3)",
+   "ok": true,
+   "detail": "3"
+  },
+  {
+   "name": "lucide static icon rendered as svg",
+   "ok": true,
+   "detail": "svg lucide lucide-calendar"
+  },
+  {
+   "name": "lucide dynamic icon rendered as svg",
+   "ok": true,
+   "detail": "svg lucide"
+  },
+  {
+   "name": "dynamic icon toggles to sun (svg content changes)",
+   "ok": true,
+   "detail": "before=<path d=\"M8 2v4\"></path><path d=\"M16 2v4\"></path><rect width after=<circle cx=\"12\" cy=\"12\" r=\"4\"></circle><path d=\"M12 2v2\"></p"
+  },
+  {
+   "name": "shiki code block rendered (pre + spans)",
+   "ok": true,
+   "detail": "{'pre': 1, 'spans': 18, 'highlighted': 0, 'text': \"def hello(name: str) -> str:\\n    return f'hi {name}'  # [!code highlight]\\n\"}"
+  },
+  {
+   "name": "shiki [!code highlight] transformer applied",
+   "ok": false,
+   "detail": "{'pre': 1, 'spans': 18, 'highlighted': 0, 'text': \"def hello(name: str) -> str:\\n    return f'hi {name}'  # [!code highlight]\\n\"}"
+  },
+  {
+   "name": "react-syntax-highlighter code block rendered",
+   "ok": true,
+   "detail": "{'pre': 1, 'spans': 30, 'text': \"1def hello(name: str) -> str:\\n2    return f'hi {name}'  # [!\"}"
+  },
+  {
+   "name": "moment formats the UTC timestamp",
+   "ok": true,
+   "detail": "2026-10-24 12:30"
+  },
+  {
+   "name": "data_editor with state-backed columns renders a canvas",
+   "ok": true,
+   "detail": "{'state': 2, 'literal': 2, 'state_text': ''}"
+  },
+  {
+   "name": "data_editor with literal columns renders a canvas",
+   "ok": true,
+   "detail": "{'state': 2, 'literal': 2, 'state_text': ''}"
+  },
+  {
+   "name": "add row -> nrows 4",
+   "ok": true,
+   "detail": "4"
+  },
+  {
+   "name": "on_cell_clicked fired",
+   "ok": true,
+   "detail": "[0, 0]"
+  },
+  {
+   "name": "form submitted once",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "form data has username",
+   "ok": true,
+   "detail": "{'agree': True, 'choice': 'a', 'idonly': 'idval', 'sw': True, 'tag1': 't1', 'tag2': 't2', 'tags': 't2', 'username': 'ada'}"
+  },
+  {
+   "name": "form data: checkbox value",
+   "ok": true,
+   "detail": "agree=True"
+  },
+  {
+   "name": "form data: switch value",
+   "ok": true,
+   "detail": "sw=True"
+  },
+  {
+   "name": "form data: id-only input",
+   "ok": true,
+   "detail": "idonly='idval'"
+  },
+  {
+   "name": "form data: repeated name tags (dict keeps last)",
+   "ok": true,
+   "detail": "tags='t2'"
+  },
+  {
+   "name": "form data: select",
+   "ok": true,
+   "detail": "choice='a'"
+  },
+  {
+   "name": "window_event_listener on_key_down fired",
+   "ok": true,
+   "detail": "count=1 last_key=F7"
+  },
+  {
+   "name": "clipboard on_paste fired",
+   "ok": true,
+   "detail": "[[\"text/plain\", \"pasted-text\"]]"
+  },
+  {
+   "name": "reload hydrates again",
+   "ok": true,
+   "detail": "3"
+  }
+ ],
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "page_errors": [
+  "Cannot read properties of undefined (reading '0')",
+  "Cannot read properties of undefined (reading '0')",
+  "Cannot read properties of undefined (reading '0')",
+  "Cannot read properties of undefined (reading '0')"
+ ],
+ "failed_requests": [],
+ "form_data": {
+  "agree": true,
+  "choice": "a",
+  "idonly": "idval",
+  "sw": true,
+  "tag1": "t1",
+  "tag2": "t2",
+  "tags": "t2",
+  "username": "ada"
+ },
+ "unexpected_console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ]
+}

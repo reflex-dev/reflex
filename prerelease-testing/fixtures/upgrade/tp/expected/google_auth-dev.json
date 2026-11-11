@@ -1,0 +1,141 @@
+{
+"source": "a5 pass (reflex 0.10.0a5) google_auth dev; trimmed to what bin/cmp_checks.py and bin/compare_console.py read",
+"checks": [
+{
+"name": "index renders",
+"ok": true
+},
+{
+"name": "index link Protected Page",
+"ok": true
+},
+{
+"name": "index link Partially Protected Page",
+"ok": true
+},
+{
+"name": "index link Custom Login Button",
+"ok": true
+},
+{
+"name": "index link Custom Scope",
+"ok": true
+},
+{
+"name": "/protected anonymous: no protected content",
+"ok": true
+},
+{
+"name": "/partially-protected renders",
+"ok": true
+},
+{
+"name": "/custom-button shows custom login button",
+"ok": true
+},
+{
+"name": "custom login button click handled (popup or no reflex error)",
+"ok": true
+},
+{
+"name": "/custom-scope (on_load DriveState + get_state(GoogleAuthState)) renders login button",
+"ok": true
+},
+{
+"name": "token_response_json LocalStorage key discoverable",
+"ok": false
+},
+{
+"name": "bogus token cleared from LocalStorage by tokeninfo computed var",
+"ok": true
+},
+{
+"name": "bogus token does not unlock /protected",
+"ok": true
+}
+],
+"console_all": [
+{
+"type": "error",
+"where": "protected",
+"text": "Failed to load resource: the server responded with a status of 403 ()",
+"benign": false
+},
+{
+"type": "error",
+"where": "protected",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"benign": false
+},
+{
+"type": "error",
+"where": "protected",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"benign": false
+},
+{
+"type": "warning",
+"where": "partially",
+"text": "[GSI_LOGGER]: google.accounts.id.initialize() is called multiple times. This could cause unexpected behavior and only the last initialized instance will be used.",
+"benign": false
+},
+{
+"type": "error",
+"where": "partially",
+"text": "Failed to load resource: the server responded with a status of 403 ()",
+"benign": false
+},
+{
+"type": "error",
+"where": "partially",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"benign": false
+},
+{
+"type": "error",
+"where": "partially",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"benign": false
+},
+{
+"type": "warning",
+"where": "after-inject",
+"text": "[GSI_LOGGER]: google.accounts.id.initialize() is called multiple times. This could cause unexpected behavior and only the last initialized instance will be used.",
+"benign": false
+},
+{
+"type": "error",
+"where": "after-inject",
+"text": "Failed to load resource: the server responded with a status of 403 ()",
+"benign": false
+},
+{
+"type": "error",
+"where": "after-inject",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"benign": false
+},
+{
+"type": "error",
+"where": "after-inject",
+"text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+"benign": false
+}
+],
+"anomalies": {
+"page_errors": [
+{
+"where": "protected",
+"error": "gis is not defined"
+},
+{
+"where": "partially",
+"error": "gis is not defined"
+},
+{
+"where": "after-inject",
+"error": "gis is not defined"
+}
+]
+}
+}

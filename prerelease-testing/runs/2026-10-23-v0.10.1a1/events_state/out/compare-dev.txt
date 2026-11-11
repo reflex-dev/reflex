@@ -1,0 +1,27 @@
+SAME     id_only            dict {"io_email": "em@x", "io_ta": "ta-text", "io_cb": true, "io_sw": true, "io_rg": "r2", "io_sl": "35", "io_hid": "hv", "io_hcb": true, "io_hcb_checked": true}
+SAME     name_only          dict {"email": "em@x", "ta": "ta-text", "cb": "on", "sw": "on", "sel": "b", "rg": "r2", "sl": "35", "hid": "hv", "hcb": "on", "hcb_checked": "on"}
+SAME     id_eq_name         dict {"ien_email": "em@x", "ien_ta": "ta-text", "ien_cb": true, "ien_sw": true, "ien_sel": "b", "ien_rg": "r2", "ien_sl": "35", "ien_hid": "hv", "ien_hcb": true, "ie
+SAME     id_ne_name         dict {"namex": "x-typed", "cbname": "on", "swname": "on", "hcbname": "on", "slname": "35", "idx": "x-typed", "cbid": true, "swid": true, "hcbid": true, "slid": "35"}
+SAME     groups             dict {"cg": "c3", "topping": "olives", "rg": "r2", "hr": "x2", "rep": "rep-second", "hsel": "o3"}
+DIFF     group_id_eq_name  
+   prev dict: {"cg": "c1", "topping": true}
+   new  dict: {"cg": "c3", "topping": "olives"}
+      key 'cg': prev='c1' new='c3'
+      key 'topping': prev=True new='olives'
+SAME     sliders            dict {"sl": "35", "range[]": "82", "range2[]": "81", "rangeid": "21", "range2": "21"}
+SAME     controlled         dict {"ctrl": "c1-typed", "ctrl3": "c3-typed", "ctrl4": "c4-typed", "ta_ctrl": "ta-typed", "num": "5", "empty": "", "ctrl2": "c2-typed", "disabled_id": "dis"}
+SAME     reset              dict {"r1": "will-reset", "rcb": "on"}
+   after_reset prev {'input': '', 'checkbox': 'false'} new {'input': '', 'checkbox': 'false'}
+SAME     foreach            dict {"item": "beta", "which": "beta", "which_id": "beta"}
+SAME     el_form            dict {"a": "A", "c": "C", "b": "B"}
+SAME     radix_root         dict {"email": "f@x.io", "agree": "agreed", "explicit": "expl", "femail": "f@x.io"}
+SAME     dynamic            dict {"dyn_field": "dyn-value", "h": "dyn-hidden", "dyn_field_cb": "on"}
+SAME     unannotated        dict {"u": "U", "ucb": "on", "uid": "UID"}
+SAME     dict_any           dict {"u": "U", "uid": "UID"}
+SAME     lambda             dict {"l": "L", "lid": "LID"}
+SAME     chain_first        dict {"ch": "CH", "topping": "b"}
+SAME     chain_second       dict {"ch": "CH", "topping": "b"}
+SAME     file               dict {"ftext": "with-file", "f": "<bytes:b'#!/bin/bash\\n# Usage: wait_up.sh <url> [timeout_s] [pidfile] -- poll until HTTP 200\\nURL=$1; T=${2:-400}; PIDF=${3:-}\\n
+SAME     selects            dict {"sel2": "i2", "hsel_single": "o1", "rc": "rc1", "hsel_id": "o1"}
+SAME     brackets           dict {"tags[]": "t2", "single[]": "s1"}
+pageerrors prev [] new []

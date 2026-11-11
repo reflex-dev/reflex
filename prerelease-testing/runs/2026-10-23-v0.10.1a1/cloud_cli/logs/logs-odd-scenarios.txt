@@ -1,0 +1,5 @@
+{"responses":{"GET apps/00000000-0000-0000-0000-000000000a01/logsv2":[{"status":200,"json":[[{"ns":1,"timestamp":"2026-10-23T12:00:00+00:00","name":"cliapp","message":["a","list"]}],null]}]}}
+{"responses":{"GET apps/00000000-0000-0000-0000-000000000a01/logsv2":[{"status":200,"json":[[{"ns":1,"name":"cliapp","message":"no timestamp"}],null]}]}}
+{"responses":{"GET apps/00000000-0000-0000-0000-000000000a01/logsv2":[{"status":200,"json":[[],null]}]}}
+{"responses":{"GET apps/00000000-0000-0000-0000-000000000a01/logsv2":[{"status":200,"json":[[{"ns":2,"timestamp":"t2","name":"cliapp","message":"page1"}],"c1"]},{"status":200,"json":[[{"ns":1,"timestamp":"t1","name":"cliapp","message":"page2"}],null]}]}}
+{"responses":{"GET apps/00000000-0000-0000-0000-000000000a01/logsv2":[{"status":500,"json":{"detail":"log store down"}}]}}

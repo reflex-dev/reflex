@@ -1,0 +1,62 @@
+{"form": "id_only", "type": "dict", "data": {"email": "", "ta": "", "cb": false, "sw": false, "rg": null, "sl": "30", "hid": "hv", "hcb": false, "hcb_checked": true}}
+{"form": "name_only", "type": "dict", "data": {"email": "em@x", "ta": "ta-text", "cb": "on", "sw": "on", "sel": "b", "rg": "r2", "sl": "35", "hid": "hv", "hcb": "on", "hcb_checked": "on"}}
+{"form": "id_eq_name", "type": "dict", "data": {"email": "em@x", "ta": "ta-text", "cb": true, "sw": true, "sel": "b", "rg": "r2", "sl": "35", "hid": "hv", "hcb": true, "hcb_checked": true}}
+{"form": "id_ne_name", "type": "dict", "data": {"namex": "x-typed", "cbname": "on", "swname": "on", "hcbname": "on", "slname": "35", "idx": "x-typed", "cbid": true, "swid": true, "hcbid": true, "slid": "35"}}
+{"form": "groups", "type": "dict", "data": {"cg": "c3", "topping": "olives", "rg": "r2", "hr": "x2", "rep": "rep-second", "hsel": "o3"}}
+{"form": "group_id_eq_name", "type": "dict", "data": {"cg": "c1", "topping": true}}
+{"form": "sliders", "type": "dict", "data": {"sl": "35", "range[]": "82", "range2[]": "81", "rangeid": "21", "range2": "21"}}
+{"form": "controlled", "type": "dict", "data": {"ctrl": "c1-typed", "ctrl3": "c3-typed", "ctrl4": "c4-typed", "ta_ctrl": "ta-typed", "num": "5", "empty": "", "ctrl2": "c2-typed", "disabled_id": "dis"}}
+{"form": "reset", "type": "dict", "data": {"r1": "will-reset", "rcb": "on"}}
+{"form": "el_form", "type": "dict", "data": {"a": "A", "c": "C", "b": "B"}}
+{"form": "radix_root", "type": "dict", "data": {"email": "f@x.io", "agree": "agreed", "explicit": "expl", "femail": "f@x.io"}}
+{"form": "dynamic", "type": "dict", "data": {"dyn_field": "dyn-value", "h": "dyn-hidden", "dyn_field_cb": "on"}}
+{"form": "unannotated", "type": "dict", "data": {"u": "U", "ucb": "on", "uid": "UID"}}
+{"form": "dict_any", "type": "dict", "data": {"u": "U", "uid": "UID"}}
+{"form": "lambda", "type": "dict", "data": {"l": "L", "lid": "LID"}}
+{"form": "chain_first", "type": "dict", "data": {"ch": "CH", "topping": "b"}}
+{"form": "chain_second", "type": "dict", "data": {"ch": "CH", "topping": "b"}}
+{"form": "file", "type": "dict", "data": {"ftext": "with-file", "f": "<bytes:b'#!/bin/bash\\n# Usage: wait_up.sh <url> [timeout_s] [pidfile] -- poll until HTTP 200\\nURL=$1; T=${2:-400}; PIDF=${3:-}\\nfor i in $(seq 1 $T); do\\n  code=$(curl --noproxy \\'*\\' -s -o /dev/null -w \\'%{http_code}\\' \"$URL\")\\n  if [ \"$code\" = \"200\" ]; then echo \"UP after ${i}s ($URL)\"; exit 0; fi\\n  if [ -n \"$PIDF\" ] && ! kill -0 \"$(cat $PIDF)\" 2>/dev/null; then echo \"SERVER DIED after ${i}s\"; exit 2; fi\\n  sleep 1\\ndone\\necho \"NOT UP after ${T}s last=$code\"; exit 1\\n'>", "topping": "b"}}
+{"form": "selects", "type": "dict", "data": {"sel2": "i2", "hsel_single": "o1", "rc": "rc1", "hsel_id": "o1"}}
+{"form": "brackets", "type": "dict", "data": {"tags[]": "t2", "single[]": "s1"}}
+{"form": "id_only", "type": "dict", "data": {"io_email": "em@x", "io_ta": "ta-text", "io_cb": true, "io_sw": true, "io_rg": "r2", "io_sl": "35", "io_hid": "hv", "io_hcb": true, "io_hcb_checked": true}}
+{"form": "name_only", "type": "dict", "data": {"email": "em@x", "ta": "ta-text", "cb": "on", "sw": "on", "sel": "b", "rg": "r2", "sl": "35", "hid": "hv", "hcb": "on", "hcb_checked": "on"}}
+{"form": "id_eq_name", "type": "dict", "data": {"ien_email": "em@x", "ien_ta": "ta-text", "ien_cb": true, "ien_sw": true, "ien_sel": "b", "ien_rg": "r2", "ien_sl": "35", "ien_hid": "hv", "ien_hcb": true, "ien_hcb_checked": true}}
+{"form": "id_ne_name", "type": "dict", "data": {"namex": "x-typed", "cbname": "on", "swname": "on", "hcbname": "on", "slname": "35", "idx": "x-typed", "cbid": true, "swid": true, "hcbid": true, "slid": "35"}}
+{"form": "groups", "type": "dict", "data": {"cg": "c3", "topping": "olives", "rg": "r2", "hr": "x2", "rep": "rep-second", "hsel": "o3"}}
+{"form": "group_id_eq_name", "type": "dict", "data": {"cg": "c1", "topping": true}}
+{"form": "sliders", "type": "dict", "data": {"sl": "35", "range[]": "82", "range2[]": "81", "rangeid": "21", "range2": "21"}}
+{"form": "controlled", "type": "dict", "data": {"ctrl": "c1-typed", "ctrl3": "c3-typed", "ctrl4": "c4-typed", "ta_ctrl": "ta-typed", "num": "5", "empty": "", "ctrl2": "c2-typed", "disabled_id": "dis"}}
+{"form": "reset", "type": "dict", "data": {"r1": "will-reset", "rcb": "on"}}
+{"form": "el_form", "type": "dict", "data": {"a": "A", "c": "C", "b": "B"}}
+{"form": "radix_root", "type": "dict", "data": {"email": "f@x.io", "agree": "agreed", "explicit": "expl", "femail": "f@x.io"}}
+{"form": "dynamic", "type": "dict", "data": {"dyn_field": "dyn-value", "h": "dyn-hidden", "dyn_field_cb": "on"}}
+{"form": "unannotated", "type": "dict", "data": {"u": "U", "ucb": "on", "uid": "UID"}}
+{"form": "dict_any", "type": "dict", "data": {"u": "U", "uid": "UID"}}
+{"form": "lambda", "type": "dict", "data": {"l": "L", "lid": "LID"}}
+{"form": "chain_first", "type": "dict", "data": {"ch": "CH", "topping": "b"}}
+{"form": "chain_second", "type": "dict", "data": {"ch": "CH", "topping": "b"}}
+{"form": "file", "type": "dict", "data": {"ftext": "with-file", "f": "<bytes:b'#!/bin/bash\\n# Usage: wait_up.sh <url> [timeout_s] [pidfile] -- poll until HTTP 200\\nURL=$1; T=${2:-400}; PIDF=${3:-}\\nfor i in $(seq 1 $T); do\\n  code=$(curl --noproxy \\'*\\' -s -o /dev/null -w \\'%{http_code}\\' \"$URL\")\\n  if [ \"$code\" = \"200\" ]; then echo \"UP after ${i}s ($URL)\"; exit 0; fi\\n  if [ -n \"$PIDF\" ] && ! kill -0 \"$(cat $PIDF)\" 2>/dev/null; then echo \"SERVER DIED after ${i}s\"; exit 2; fi\\n  sleep 1\\ndone\\necho \"NOT UP after ${T}s last=$code\"; exit 1\\n'>", "topping": "b"}}
+{"form": "selects", "type": "dict", "data": {"sel2": "i2", "hsel_single": "o1", "rc": "rc1", "hsel_id": "o1"}}
+{"form": "brackets", "type": "dict", "data": {"tags[]": "t2", "single[]": "s1"}}
+{"form": "id_only", "type": "dict", "data": {"io_email": "em@x", "io_ta": "ta-text", "io_cb": true, "io_sw": true, "io_rg": "r2", "io_sl": "35", "io_hid": "hv", "io_hcb": true, "io_hcb_checked": true}}
+{"form": "name_only", "type": "dict", "data": {"email": "em@x", "ta": "ta-text", "cb": "on", "sw": "on", "sel": "b", "rg": "r2", "sl": "35", "hid": "hv", "hcb": "on", "hcb_checked": "on"}}
+{"form": "id_eq_name", "type": "dict", "data": {"ien_email": "em@x", "ien_ta": "ta-text", "ien_cb": true, "ien_sw": true, "ien_sel": "b", "ien_rg": "r2", "ien_sl": "35", "ien_hid": "hv", "ien_hcb": true, "ien_hcb_checked": true}}
+{"form": "id_ne_name", "type": "dict", "data": {"namex": "x-typed", "cbname": "on", "swname": "on", "hcbname": "on", "slname": "35", "idx": "x-typed", "cbid": true, "swid": true, "hcbid": true, "slid": "35"}}
+{"form": "groups", "type": "dict", "data": {"cg": "c3", "topping": "olives", "rg": "r2", "hr": "x2", "rep": "rep-second", "hsel": "o3"}}
+{"form": "group_id_eq_name", "type": "dict", "data": {"cg": "c1", "topping": true}}
+{"form": "sliders", "type": "dict", "data": {"sl": "35", "range[]": "82", "range2[]": "81", "rangeid": "21", "range2": "21"}}
+{"form": "controlled", "type": "dict", "data": {"ctrl": "c1-typed", "ctrl3": "c3-typed", "ctrl4": "c4-typed", "ta_ctrl": "ta-typed", "num": "5", "empty": "", "ctrl2": "c2-typed", "disabled_id": "dis"}}
+{"form": "reset", "type": "dict", "data": {"r1": "will-reset", "rcb": "on"}}
+{"form": "foreach", "type": "dict", "data": {"item": "alpha", "which": "alpha", "which_id": "beta"}}
+{"form": "foreach", "type": "dict", "data": {"item": "beta", "which": "beta", "which_id": "beta"}}
+{"form": "el_form", "type": "dict", "data": {"a": "A", "c": "C", "b": "B"}}
+{"form": "radix_root", "type": "dict", "data": {"email": "f@x.io", "agree": "agreed", "explicit": "expl", "femail": "f@x.io"}}
+{"form": "dynamic", "type": "dict", "data": {"dyn_field": "dyn-value", "h": "dyn-hidden", "dyn_field_cb": "on"}}
+{"form": "unannotated", "type": "dict", "data": {"u": "U", "ucb": "on", "uid": "UID"}}
+{"form": "dict_any", "type": "dict", "data": {"u": "U", "uid": "UID"}}
+{"form": "lambda", "type": "dict", "data": {"l": "L", "lid": "LID"}}
+{"form": "chain_first", "type": "dict", "data": {"ch": "CH", "topping": "b"}}
+{"form": "chain_second", "type": "dict", "data": {"ch": "CH", "topping": "b"}}
+{"form": "file", "type": "dict", "data": {"ftext": "with-file", "f": "<bytes:b'#!/bin/bash\\n# Usage: wait_up.sh <url> [timeout_s] [pidfile] -- poll until HTTP 200\\nURL=$1; T=${2:-400}; PIDF=${3:-}\\nfor i in $(seq 1 $T); do\\n  code=$(curl --noproxy \\'*\\' -s -o /dev/null -w \\'%{http_code}\\' \"$URL\")\\n  if [ \"$code\" = \"200\" ]; then echo \"UP after ${i}s ($URL)\"; exit 0; fi\\n  if [ -n \"$PIDF\" ] && ! kill -0 \"$(cat $PIDF)\" 2>/dev/null; then echo \"SERVER DIED after ${i}s\"; exit 2; fi\\n  sleep 1\\ndone\\necho \"NOT UP after ${T}s last=$code\"; exit 1\\n'>", "topping": "b"}}
+{"form": "selects", "type": "dict", "data": {"sel2": "i2", "hsel_single": "o1", "rc": "rc1", "hsel_id": "o1"}}
+{"form": "brackets", "type": "dict", "data": {"tags[]": "t2", "single[]": "s1"}}

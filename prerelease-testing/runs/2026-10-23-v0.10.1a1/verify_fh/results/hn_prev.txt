@@ -1,0 +1,15 @@
+## [prev_append] direct -> 8701 (peer 127.0.0.1)
+d0_none                    HTTP/1.1 101 client_ip='127.0.0.1'                    xff=None                                     peer=127.0.0.1 err=[]
+d1_xff_one                 HTTP/1.1 101 client_ip='6.6.6.6'                      xff='6.6.6.6'                                peer=127.0.0.1 err=[]
+d2_xff_chain               HTTP/1.1 101 client_ip='6.6.6.6'                      xff='6.6.6.6, 7.7.7.7'                       peer=127.0.0.1 err=[]
+d4b_junk                   HTTP/1.1 101 client_ip='not an ip!! <script>'         xff='not an ip!! <script>'                   peer=127.0.0.1 err=[]
+d5b_ipv6_port              HTTP/1.1 101 client_ip='[2001:db8::1]:443'            xff='[2001:db8::1]:443, 1.2.3.4:5678'        peer=127.0.0.1 err=[]
+d5c_port_only              HTTP/1.1 101 client_ip='1.2.3.4:5678'                 xff='1.2.3.4:5678'                           peer=127.0.0.1 err=[]
+d7_latin1                  HTTP/1.1 101 client_ip=None                           xff=None                                     peer=None err=[]
+d7b_latin1_last            HTTP/1.1 101 client_ip=None                           xff=None                                     peer=None err=[]
+## [prev_append] via proxy 8702 -> 8701 (proxy peer 127.0.0.2, client 127.0.0.3)
+p0_none                    HTTP/1.1 101 client_ip='127.0.0.3'                    xff='127.0.0.3'                              peer=127.0.0.2 err=[]
+p1_spoof_one               HTTP/1.1 101 client_ip='6.6.6.6'                      xff='6.6.6.6, 127.0.0.3'                     peer=127.0.0.2 err=[]
+p4b_junk                   HTTP/1.1 101 client_ip='not an ip!! <script>'         xff='not an ip!! <script>, 127.0.0.3'        peer=127.0.0.2 err=[]
+p5c_port                   HTTP/1.1 101 client_ip='1.2.3.4:5678'                 xff='1.2.3.4:5678, 127.0.0.3'                peer=127.0.0.2 err=[]
+p7_latin1                  HTTP/1.1 101 client_ip=None                           xff=None                                     peer=None err=[]

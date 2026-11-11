@@ -1,0 +1,543 @@
+{
+ "checks": [
+  {
+   "name": "before-reload /lit: every grid has headers and cells",
+   "ok": true,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "L:make",
+       "L:price",
+       "L:double",
+       "L:tip",
+       "L:memo",
+       "L:trace"
+      ],
+      "cells": 24,
+      "text": "AG Grid found 1 deprecation L:make L:price L:double L:tip L:memo L:trace \"PINNED\" $99 198 \"XX\" memo:PINNED T:PINNED \"Tes",
+      "badges": 8
+     },
+     {
+      "headers": [
+       "Group",
+       "Make",
+       "sum(Price)"
+      ],
+      "cells": 15,
+      "text": "Group Make sum(Price) US (2) 3 Tesla 1 Ford 2 JP (1) 3 Toyota 3",
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "before-reload /var: every grid has headers and cells",
+   "ok": true,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "J:make",
+       "J:price",
+       "J:double",
+       "J:arrow"
+      ],
+      "cells": 16,
+      "text": "AG Grid found 1 deprecation J:make J:price J:double J:arrow S:PINNED $99 198 PINNED S:Tesla $1 2 TESLA S:Ford $2 4 FORD ",
+      "badges": 0
+     },
+     {
+      "headers": [
+       "S:make",
+       "S:price",
+       "S:double",
+       "S:tip",
+       "S:memo",
+       "S:trace"
+      ],
+      "cells": 18,
+      "text": "AG Grid found 1 deprecation S:make S:price S:double S:tip S:memo S:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+      "badges": 6
+     },
+     {
+      "headers": [
+       "L:make",
+       "L:price",
+       "L:double",
+       "L:tip",
+       "L:memo",
+       "L:trace"
+      ],
+      "cells": 18,
+      "text": "AG Grid found 1 deprecation L:make L:price L:double L:tip L:memo L:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+      "badges": 6
+     },
+     {
+      "headers": [
+       "C:make",
+       "C:price"
+      ],
+      "cells": 6,
+      "text": "C:make C:price Tesla 1 EUR Ford 2 EUR Toyota 3 EUR",
+      "badges": 0
+     },
+     {
+      "headers": [
+       "Group",
+       "G:make",
+       "sum(G:price)"
+      ],
+      "cells": 15,
+      "text": "Group G:make sum(G:price) US (2) 3 Tesla 1 Ford 2 JP (1) 3 Toyota 3",
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "before-reload /detail2: every grid has headers and cells",
+   "ok": true,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "Id",
+       "Name"
+      ],
+      "cells": 4,
+      "text": "Id Name 1 A 2 B",
+      "badges": 0
+     },
+     {
+      "headers": [
+       "Id",
+       "Name"
+      ],
+      "cells": 4,
+      "text": "Id Name 1 A 2 B",
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "before-reload /memo2: every grid has headers and cells",
+   "ok": true,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "S:make",
+       "S:price",
+       "S:double",
+       "S:tip",
+       "S:memo",
+       "S:trace"
+      ],
+      "cells": 18,
+      "text": "AG Grid found 1 deprecation S:make S:price S:double S:tip S:memo S:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+      "badges": 6
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "after-hot-reload /lit: every grid has headers and cells",
+   "ok": true,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "L:make",
+       "L:price",
+       "L:double",
+       "L:tip",
+       "L:memo",
+       "L:trace"
+      ],
+      "cells": 24,
+      "text": "AG Grid found 1 deprecation L:make L:price L:double L:tip L:memo L:trace \"PINNED\" $99 198 \"XX\" memo:PINNED T:PINNED \"Tes",
+      "badges": 8
+     },
+     {
+      "headers": [
+       "Group",
+       "Make",
+       "sum(Price)"
+      ],
+      "cells": 15,
+      "text": "Group Make sum(Price) US (2) 3 Tesla 1 Ford 2 JP (1) 3 Toyota 3",
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "after-hot-reload /var: every grid has headers and cells",
+   "ok": true,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "J:make",
+       "J:price",
+       "J:double",
+       "J:arrow"
+      ],
+      "cells": 16,
+      "text": "AG Grid found 1 deprecation J:make J:price J:double J:arrow S:PINNED $99 198 PINNED S:Tesla $1 2 TESLA S:Ford $2 4 FORD ",
+      "badges": 0
+     },
+     {
+      "headers": [
+       "S:make",
+       "S:price",
+       "S:double",
+       "S:tip",
+       "S:memo",
+       "S:trace"
+      ],
+      "cells": 18,
+      "text": "AG Grid found 1 deprecation S:make S:price S:double S:tip S:memo S:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+      "badges": 6
+     },
+     {
+      "headers": [
+       "L:make",
+       "L:price",
+       "L:double",
+       "L:tip",
+       "L:memo",
+       "L:trace"
+      ],
+      "cells": 18,
+      "text": "AG Grid found 1 deprecation L:make L:price L:double L:tip L:memo L:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+      "badges": 6
+     },
+     {
+      "headers": [
+       "C:make",
+       "C:price"
+      ],
+      "cells": 6,
+      "text": "C:make C:price Tesla 1 EUR Ford 2 EUR Toyota 3 EUR",
+      "badges": 0
+     },
+     {
+      "headers": [
+       "Group",
+       "G:make",
+       "sum(G:price)"
+      ],
+      "cells": 15,
+      "text": "Group G:make sum(G:price) US (2) 3 Tesla 1 Ford 2 JP (1) 3 Toyota 3",
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "after-hot-reload /detail2: every grid has headers and cells",
+   "ok": true,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "Id",
+       "Name"
+      ],
+      "cells": 4,
+      "text": "Id Name 1 A 2 B",
+      "badges": 0
+     },
+     {
+      "headers": [
+       "Id",
+       "Name"
+      ],
+      "cells": 4,
+      "text": "Id Name 1 A 2 B",
+      "badges": 0
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "after-hot-reload /memo2: every grid has headers and cells",
+   "ok": true,
+   "info": {
+    "grids": [
+     {
+      "headers": [
+       "S:make",
+       "S:price",
+       "S:double",
+       "S:tip",
+       "S:memo",
+       "S:trace"
+      ],
+      "cells": 18,
+      "text": "AG Grid found 1 deprecation S:make S:price S:double S:tip S:memo S:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+      "badges": 6
+     }
+    ],
+    "hydrated": "n/a"
+   }
+  },
+  {
+   "name": "grids identical before/after hot reload",
+   "ok": true,
+   "info": {
+    "before": {
+     "/lit": [
+      {
+       "headers": [
+        "L:make",
+        "L:price",
+        "L:double",
+        "L:tip",
+        "L:memo",
+        "L:trace"
+       ],
+       "cells": 24,
+       "text": "AG Grid found 1 deprecation L:make L:price L:double L:tip L:memo L:trace \"PINNED\" $99 198 \"XX\" memo:PINNED T:PINNED \"Tes",
+       "badges": 8
+      },
+      {
+       "headers": [
+        "Group",
+        "Make",
+        "sum(Price)"
+       ],
+       "cells": 15,
+       "text": "Group Make sum(Price) US (2) 3 Tesla 1 Ford 2 JP (1) 3 Toyota 3",
+       "badges": 0
+      }
+     ],
+     "/var": [
+      {
+       "headers": [
+        "J:make",
+        "J:price",
+        "J:double",
+        "J:arrow"
+       ],
+       "cells": 16,
+       "text": "AG Grid found 1 deprecation J:make J:price J:double J:arrow S:PINNED $99 198 PINNED S:Tesla $1 2 TESLA S:Ford $2 4 FORD ",
+       "badges": 0
+      },
+      {
+       "headers": [
+        "S:make",
+        "S:price",
+        "S:double",
+        "S:tip",
+        "S:memo",
+        "S:trace"
+       ],
+       "cells": 18,
+       "text": "AG Grid found 1 deprecation S:make S:price S:double S:tip S:memo S:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+       "badges": 6
+      },
+      {
+       "headers": [
+        "L:make",
+        "L:price",
+        "L:double",
+        "L:tip",
+        "L:memo",
+        "L:trace"
+       ],
+       "cells": 18,
+       "text": "AG Grid found 1 deprecation L:make L:price L:double L:tip L:memo L:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+       "badges": 6
+      },
+      {
+       "headers": [
+        "C:make",
+        "C:price"
+       ],
+       "cells": 6,
+       "text": "C:make C:price Tesla 1 EUR Ford 2 EUR Toyota 3 EUR",
+       "badges": 0
+      },
+      {
+       "headers": [
+        "Group",
+        "G:make",
+        "sum(G:price)"
+       ],
+       "cells": 15,
+       "text": "Group G:make sum(G:price) US (2) 3 Tesla 1 Ford 2 JP (1) 3 Toyota 3",
+       "badges": 0
+      }
+     ],
+     "/detail2": [
+      {
+       "headers": [
+        "Id",
+        "Name"
+       ],
+       "cells": 4,
+       "text": "Id Name 1 A 2 B",
+       "badges": 0
+      },
+      {
+       "headers": [
+        "Id",
+        "Name"
+       ],
+       "cells": 4,
+       "text": "Id Name 1 A 2 B",
+       "badges": 0
+      }
+     ],
+     "/memo2": [
+      {
+       "headers": [
+        "S:make",
+        "S:price",
+        "S:double",
+        "S:tip",
+        "S:memo",
+        "S:trace"
+       ],
+       "cells": 18,
+       "text": "AG Grid found 1 deprecation S:make S:price S:double S:tip S:memo S:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+       "badges": 6
+      }
+     ]
+    },
+    "after": {
+     "/lit": [
+      {
+       "headers": [
+        "L:make",
+        "L:price",
+        "L:double",
+        "L:tip",
+        "L:memo",
+        "L:trace"
+       ],
+       "cells": 24,
+       "text": "AG Grid found 1 deprecation L:make L:price L:double L:tip L:memo L:trace \"PINNED\" $99 198 \"XX\" memo:PINNED T:PINNED \"Tes",
+       "badges": 8
+      },
+      {
+       "headers": [
+        "Group",
+        "Make",
+        "sum(Price)"
+       ],
+       "cells": 15,
+       "text": "Group Make sum(Price) US (2) 3 Tesla 1 Ford 2 JP (1) 3 Toyota 3",
+       "badges": 0
+      }
+     ],
+     "/var": [
+      {
+       "headers": [
+        "J:make",
+        "J:price",
+        "J:double",
+        "J:arrow"
+       ],
+       "cells": 16,
+       "text": "AG Grid found 1 deprecation J:make J:price J:double J:arrow S:PINNED $99 198 PINNED S:Tesla $1 2 TESLA S:Ford $2 4 FORD ",
+       "badges": 0
+      },
+      {
+       "headers": [
+        "S:make",
+        "S:price",
+        "S:double",
+        "S:tip",
+        "S:memo",
+        "S:trace"
+       ],
+       "cells": 18,
+       "text": "AG Grid found 1 deprecation S:make S:price S:double S:tip S:memo S:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+       "badges": 6
+      },
+      {
+       "headers": [
+        "L:make",
+        "L:price",
+        "L:double",
+        "L:tip",
+        "L:memo",
+        "L:trace"
+       ],
+       "cells": 18,
+       "text": "AG Grid found 1 deprecation L:make L:price L:double L:tip L:memo L:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+       "badges": 6
+      },
+      {
+       "headers": [
+        "C:make",
+        "C:price"
+       ],
+       "cells": 6,
+       "text": "C:make C:price Tesla 1 EUR Ford 2 EUR Toyota 3 EUR",
+       "badges": 0
+      },
+      {
+       "headers": [
+        "Group",
+        "G:make",
+        "sum(G:price)"
+       ],
+       "cells": 15,
+       "text": "Group G:make sum(G:price) US (2) 3 Tesla 1 Ford 2 JP (1) 3 Toyota 3",
+       "badges": 0
+      }
+     ],
+     "/detail2": [
+      {
+       "headers": [
+        "Id",
+        "Name"
+       ],
+       "cells": 4,
+       "text": "Id Name 1 A 2 B",
+       "badges": 0
+      },
+      {
+       "headers": [
+        "Id",
+        "Name"
+       ],
+       "cells": 4,
+       "text": "Id Name 1 A 2 B",
+       "badges": 0
+      }
+     ],
+     "/memo2": [
+      {
+       "headers": [
+        "S:make",
+        "S:price",
+        "S:double",
+        "S:tip",
+        "S:memo",
+        "S:trace"
+       ],
+       "cells": 18,
+       "text": "AG Grid found 1 deprecation S:make S:price S:double S:tip S:memo S:trace \"Tesla\" $1 2 \"US\" memo:Tesla T:Tesla \"Ford\" $2 ",
+       "badges": 6
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "errors": []
+}

@@ -1,0 +1,27 @@
+== pyright new typing_user.py
+  information L103: Type of "AppState.plain_user" is "User | None"  []
+  information L174: Type of "_form" is "Form"  []
+  information L175: Type of "_form_root" is "FormRoot"  []
+  error    L209: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None" in function "create"  [reportArgumentType]
+  error    L215: Argument of type "Literal[True]" cannot be assigned to parameter "auto_complete" of type "Var[str] | str | None" in function "__call__"  [reportArgumentType]
+  summary: errors=2 warnings=0
+== ty new typing_user.py
+  typing_user.py:99:1: error[type-assertion-failure] Type `Var[User | None]` does not match asserted type `ObjectVar[User]`
+  typing_user.py:103:13: info[revealed-type] Revealed type: `User | None`
+  typing_user.py:104:18: error[unresolved-attribute] Object of type `Var[User | None]` has no attribute `name`
+  typing_user.py:107:17: error[unresolved-attribute] Object of type `Var[User | None]` has no attribute `email`
+  typing_user.py:174:13: info[revealed-type] Revealed type: `Form`
+  typing_user.py:175:13: info[revealed-type] Revealed type: `FormRoot`
+  typing_user.py:190:15: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+  typing_user.py:191:16: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+  typing_user.py:209:24: error[invalid-argument-type] Argument to bound method `DataEditor.create` is incorrect: Expected `Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None`, found `list[str]`
+  typing_user.py:215:18: error[invalid-argument-type] Argument to function `TextField.__call__` is incorrect: Expected `Var[str] | str | None`, found `Literal[True]`
+  Found 10 diagnostics
+== pyright new typing_new_api.py
+  information L50: Type of "_form" is "Form"  []
+  information L53: Type of "rx.form.FormData" is "type[FormData[Unknown, Unknown]]"  []
+  summary: errors=0 warnings=0
+== ty new typing_new_api.py
+  typing_new_api.py:50:13: info[revealed-type] Revealed type: `Form`
+  typing_new_api.py:53:13: info[revealed-type] Revealed type: `<class 'FormData'>`
+  Found 2 diagnostics

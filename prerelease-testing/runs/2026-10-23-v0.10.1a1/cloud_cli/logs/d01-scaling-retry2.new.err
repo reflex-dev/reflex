@@ -1,0 +1,2 @@
+[fake export] frontend=False backend=True api_url=https://cliapp-backend.example.invalid deploy_url=https://cliapp.example.invalid
+[fake export] frontend=True backend=False api_url=https://cliapp-backend.example.invalid deploy_url=https://cliapp.example.invalid

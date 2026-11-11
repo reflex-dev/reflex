@@ -1,0 +1,6 @@
+Info: {'ns': 2, 'timestamp': 't2', 'name': 'cliapp', 'message': 'page1', 
+'details': None, 'log_level': None, 'region': None, 'deployment_id': None, 
+'event_id': None, 'stream_id': None, 'revision_id': None}
+Info: {'ns': 1, 'timestamp': 't1', 'name': 'cliapp', 'message': 'page2', 
+'details': None, 'log_level': None, 'region': None, 'deployment_id': None, 
+'event_id': None, 'stream_id': None, 'revision_id': None}

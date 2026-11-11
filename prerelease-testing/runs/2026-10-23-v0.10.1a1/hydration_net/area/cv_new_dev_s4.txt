@@ -1,0 +1,11 @@
+SUMMARY new-dev-s4 a:
+SUMMARY new-dev-s4 b:
+SUMMARY new-dev-s4 c:
+SUMMARY new-dev-s4 d:
+SUMMARY new-dev-s4 e_cookie:
+SUMMARY new-dev-s4 e_session:
+SUMMARY new-dev-s4 f:
+SUMMARY new-dev-s4 g:
+SUMMARY new-dev-s4 i:
+SUMMARY new-dev-s4 j:
+CVSTORE MATCHES cvstore_dev.summary.txt

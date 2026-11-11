@@ -1,0 +1,7 @@
+email               qa@example.invalid
+user_id             00000000-0000-0000-0000-000000000001
+org_id              00000000-0000-0000-0000-000000000002
+tier                Pro
+is_service_account  False
+token_source        REFLEX_ACCESS_TOKEN environment variable
+token_fingerprint   sha256:461caa80a5210443

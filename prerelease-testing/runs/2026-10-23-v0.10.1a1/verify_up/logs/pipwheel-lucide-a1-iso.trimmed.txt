@@ -1,0 +1,5 @@
+## pipwheel-lucide-a1-iso (trimmed: build-env resolution of reflex-base + pyi_generator errors; full log was 158 lines)
+67:  Collecting reflex-base
+156:  Created wheel for reflex-components-lucide: filename=reflex_components_lucide-1.1.1a1-py3-none-any.whl size=12990 sha256=cd179e226b1527f7e9429ecdbdd1edc59e5b57983879a739340d59ed01facc40
+92:  Using cached reflex_base-0.10.0-py3-none-any.whl (403 kB)
+158:Successfully built reflex-components-lucide

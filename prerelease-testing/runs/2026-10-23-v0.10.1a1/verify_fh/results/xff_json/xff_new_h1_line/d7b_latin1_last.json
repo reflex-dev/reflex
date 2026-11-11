@@ -1,0 +1,75 @@
+{
+ "args": [
+  "--port",
+  "8701",
+  "--version",
+  "0.10.1a1",
+  "--tag",
+  "d7b_latin1_last",
+  "--out",
+  "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_fh/results/xff_new_h1_line/d7b_latin1_last.json",
+  "--hdr",
+  "X-Forwarded-For: 7.7.7.7",
+  "--hdr-hex",
+  "X-Forwarded-For:e9e8"
+ ],
+ "frames_in": [
+  "0{\"sid\":\"xOfxwuYdoB8EIohFAABC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"EDVYFtKRJoiaEUElAABD\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"127.0.0.1:8701\",\"origin\":\"http://localhost:8701\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"\",\"cache_control\":\"\",\"user_agent\":\"ws_probe/1\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"igEF9twaiXIB7agg57eNmw==\",\"sec_websocket_extensions\":\"\",\"accept_encoding\":\"\",\"accept_language\":\"\",\"raw_headers\":{\"asgi-scope-client\":\"127.0.0.1\",\"connection\":\"Upgrade\",\"host\":\"127.0.0.1:8701\",\"origin\":\"http://localhost:8701\",\"sec-websocket-key\":\"igEF9twaiXIB7agg57eNmw==\",\"s",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hnet___hnet___ip_state\":{\"seen_rx_state_\":[\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"éè\\\", \\\"pid\\\": 6103, \\\"raw_n\\\": 10, \\\"tag\\\": \\\"on_load\\\", \\\"x-bad\\\": null, \\\"x-dup\\\": null, \\\"x-forwarded-for\\\": \\\"7.7.7.7, éè\\\", \\\"x-name\\\": null, \\\"x-real-ip\\\": null}\"]}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hnet___hnet___ip_state\":{\"seen_rx_state_\":[\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"éè\\\", \\\"pid\\\": 6103, \\\"raw_n\\\": 10, \\\"tag\\\": \\\"on_load\\\", \\\"x-bad\\\": null, \\\"x-dup\\\": null, \\\"x-forwarded-for\\\": \\\"7.7.7.7, éè\\\", \\\"x-name\\\": null, \\\"x-real-ip\\\": null}\",\"{\\\"asgi-scope-client\\\": \\\"127.0.0.1\\\", \\\"cookie\\\": null, \\\"cookie_attr\\\": \\\"\\\", \\\"forwarded\\\": null, \\\"ip\\\": \\\"éè\\\", \\\"pid\\\": 6103, \\\"raw_n\\\": 10, \\\"tag\\\": \\\"d7b_latin1_last\\\", \\\"x-bad\\\": null, \\\"x-dup\\\": null, \\\"x-forwa"
+ ],
+ "seen": [
+  "{\"asgi-scope-client\": \"127.0.0.1\", \"cookie\": null, \"cookie_attr\": \"\", \"forwarded\": null, \"ip\": \"éè\", \"pid\": 6103, \"raw_n\": 10, \"tag\": \"on_load\", \"x-bad\": null, \"x-dup\": null, \"x-forwarded-for\": \"7.7.7.7, éè\", \"x-name\": null, \"x-real-ip\": null}",
+  "{\"asgi-scope-client\": \"127.0.0.1\", \"cookie\": null, \"cookie_attr\": \"\", \"forwarded\": null, \"ip\": \"éè\", \"pid\": 6103, \"raw_n\": 10, \"tag\": \"d7b_latin1_last\", \"x-bad\": null, \"x-dup\": null, \"x-forwarded-for\": \"7.7.7.7, éè\", \"x-name\": null, \"x-real-ip\": null}"
+ ],
+ "errors": [],
+ "token": "518a0182-9b56-4abd-89de-159a23ed020e",
+ "local": [
+  "127.0.0.1",
+  50138
+ ],
+ "upgrade_status": "HTTP/1.1 101 Switching Protocols",
+ "open": {
+  "sid": "xOfxwuYdoB8EIohFAABC",
+  "upgrades": [],
+  "pingTimeout": 120000,
+  "pingInterval": 25000,
+  "maxPayload": 1000000
+ },
+ "seen_parsed": [
+  {
+   "asgi-scope-client": "127.0.0.1",
+   "cookie": null,
+   "cookie_attr": "",
+   "forwarded": null,
+   "ip": "éè",
+   "pid": 6103,
+   "raw_n": 10,
+   "tag": "on_load",
+   "x-bad": null,
+   "x-dup": null,
+   "x-forwarded-for": "7.7.7.7, éè",
+   "x-name": null,
+   "x-real-ip": null
+  },
+  {
+   "asgi-scope-client": "127.0.0.1",
+   "cookie": null,
+   "cookie_attr": "",
+   "forwarded": null,
+   "ip": "éè",
+   "pid": 6103,
+   "raw_n": 10,
+   "tag": "d7b_latin1_last",
+   "x-bad": null,
+   "x-dup": null,
+   "x-forwarded-for": "7.7.7.7, éè",
+   "x-name": null,
+   "x-real-ip": null
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+onload_navigate {"steps_before_leave": "s1", "url_after": "http://localhost:3302/", "slow_load_steps_logged": [1], "bg_steps_logged": []}
+onload_close {"steps_before_leave": "s1", "slow_load_steps_logged": [1], "bg_steps_logged": []}
+onload_plain_close {"steps_before_leave": "", "slow_load_steps_logged": ["start"], "bg_steps_logged": []}
+onload_bg_close {"steps_before_leave": "", "slow_load_steps_logged": [], "bg_steps_logged": []}
+onload_bg_navigate {"steps_before_leave": "", "url_after": "http://localhost:3302/", "slow_load_steps_logged": [], "bg_steps_logged": []}
+console: ['[log] Disconnect websocket on pagehide', '[log] Disconnect websocket on pagehide', '[log] Disconnect websocket on pagehide', '[log] Disconnect websocket on pagehide', '[log] Disconnect websocket on pagehide'] errors: []

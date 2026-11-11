@@ -1,0 +1,15 @@
+{
+ "url": "http://localhost:3226/",
+ "read": 50,
+ "load_ms": 1398,
+ "hydrated_ms": null,
+ "hydrate_error": "Page.wait_for_function: Timeout 60000ms exceeded.",
+ "n_vals": 0,
+ "first_vals": [],
+ "last_val": null,
+ "console": [],
+ "pageerrors": [
+  "Maximum call stack size exceeded"
+ ],
+ "stack_overflow": true
+}

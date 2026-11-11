@@ -1,0 +1,20 @@
+started deapp-pureprev-dev pid=5277 (02:09:05)
+UP after 3s
+[OK ] initial sweep: page_errors+0 nrows=3 ncols=2 cell=
+[OK ] append (in-place) -> 4 rows: page_errors+0 nrows=3 ncols=2 cell=
+[OK ] append again -> 5 rows: page_errors+0 nrows=3 ncols=2 cell=
+[OK ] assign (new list) -> 6 rows: page_errors+0 nrows=3 ncols=2 cell=
+[OK ] more_cols (in-place column append + data reassign): page_errors+0 nrows=3 ncols=2 cell=
+[OK ] reset -> 3 rows: page_errors+0 nrows=3 ncols=2 cell=
+[OK ] append after reset -> 4 rows: page_errors+0 nrows=3 ncols=2 cell=
+[OK ] after reload sweep: page_errors+0 nrows=3 ncols=2 cell=
+== deapp-pureprev-dev: page_errors=0 unique=[]
+--- deapp-pureprev-dev server log: warnings/deprecations/errors
+      5 Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+      2 redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+      2 [Reflex Frontend Exception]
+      2 Try refreshing the page or clearing your browser cache. This error usually 
+      1 DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: 2:09:51 AM [vite] (client) [console.error] Cannot process state update: 
+      1 Debug: 2:09:11 AM [vite] (client) [console.error] Cannot process state update: 

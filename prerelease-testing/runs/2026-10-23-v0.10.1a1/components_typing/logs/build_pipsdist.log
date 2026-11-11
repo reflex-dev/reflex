@@ -1,0 +1,120 @@
+Using pip 26.2.2 from /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist/lib/python3.12/site-packages/pip (python 3.12)
+Collecting reflex-components-radix==0.10.1a1
+  Downloading reflex_components_radix-0.10.1a1.tar.gz (117 kB)
+  Installing build dependencies: started
+  Running command installing build dependencies for reflex-components-radix
+  Using pip 26.2.2 from /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist/lib/python3.12/site-packages/pip (python 3.12)
+  Collecting hatchling
+    Using cached hatchling-1.32.4-py3-none-any.whl
+  Collecting uv-dynamic-versioning
+    Using cached uv_dynamic_versioning-0.14.1-py3-none-any.whl
+  Collecting hatch-reflex-pyi
+    Using cached hatch_reflex_pyi-0.10.0-py3-none-any.whl
+  Collecting packaging>=24.2 (from hatchling)
+    Using cached packaging-26.3-py3-none-any.whl
+  Collecting pathspec>=0.10.1 (from hatchling)
+    Using cached pathspec-1.1.1-py3-none-any.whl
+  Collecting pluggy>=1.0.0 (from hatchling)
+    Using cached pluggy-1.7.0-py3-none-any.whl
+  Collecting tomlkit>=0.11.1 (from hatchling)
+    Using cached tomlkit-0.15.2-py3-none-any.whl
+  Collecting trove-classifiers (from hatchling)
+    Using cached trove_classifiers-2026.9.21.13-py3-none-any.whl
+  Collecting dunamai~=1.26.1 (from uv-dynamic-versioning)
+    Using cached dunamai-1.26.3-py3-none-any.whl
+  Collecting jinja2~=3.0 (from uv-dynamic-versioning)
+    Using cached jinja2-3.1.6-py3-none-any.whl
+  Collecting MarkupSafe>=2.0 (from jinja2~=3.0->uv-dynamic-versioning)
+    Using cached markupsafe-3.0.4-cp312-cp312-linux_x86_64.whl
+  Installing collected packages: trove-classifiers, tomlkit, pluggy, pathspec, packaging, MarkupSafe, jinja2, hatchling, dunamai, uv-dynamic-versioning, hatch-reflex-pyi
+    Creating /tmp/pip-build-env-se6_bt2m/overlay/bin
+    changing mode of /tmp/pip-build-env-se6_bt2m/overlay/bin/trove-classifiers to 755
+    changing mode of /tmp/pip-build-env-se6_bt2m/overlay/bin/hatchling to 755
+    changing mode of /tmp/pip-build-env-se6_bt2m/overlay/bin/dunamai to 755
+    changing mode of /tmp/pip-build-env-se6_bt2m/overlay/bin/uv-dynamic-versioning to 755
+
+  Successfully installed MarkupSafe-3.0.4 dunamai-1.26.3 hatch-reflex-pyi-0.10.0 hatchling-1.32.4 jinja2-3.1.6 packaging-26.3 pathspec-1.1.1 pluggy-1.7.0 tomlkit-0.15.2 trove-classifiers-2026.9.21.13 uv-dynamic-versioning-0.14.1
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Running command Getting requirements to build wheel
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Running command installing backend dependencies for reflex-components-radix
+  Using pip 26.2.2 from /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist/lib/python3.12/site-packages/pip (python 3.12)
+  Collecting reflex-base
+    Using cached reflex_base-0.10.0.tar.gz (373 kB)
+    Installing build dependencies: started
+    Running command installing build dependencies for reflex-base
+    Using pip 26.2.2 from /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist/lib/python3.12/site-packages/pip (python 3.12)
+    Collecting hatchling
+      Using cached hatchling-1.32.4-py3-none-any.whl
+    Collecting uv-dynamic-versioning
+      Using cached uv_dynamic_versioning-0.14.1-py3-none-any.whl
+    Collecting packaging>=24.2 (from hatchling)
+      Using cached packaging-26.3-py3-none-any.whl
+    Collecting pathspec>=0.10.1 (from hatchling)
+      Using cached pathspec-1.1.1-py3-none-any.whl
+    Collecting pluggy>=1.0.0 (from hatchling)
+      Using cached pluggy-1.7.0-py3-none-any.whl
+    Collecting tomlkit>=0.11.1 (from hatchling)
+      Using cached tomlkit-0.15.2-py3-none-any.whl
+    Collecting trove-classifiers (from hatchling)
+      Using cached trove_classifiers-2026.9.21.13-py3-none-any.whl
+    Collecting dunamai~=1.26.1 (from uv-dynamic-versioning)
+      Using cached dunamai-1.26.3-py3-none-any.whl
+    Collecting jinja2~=3.0 (from uv-dynamic-versioning)
+      Using cached jinja2-3.1.6-py3-none-any.whl
+    Collecting MarkupSafe>=2.0 (from jinja2~=3.0->uv-dynamic-versioning)
+      Using cached markupsafe-3.0.4-cp312-cp312-linux_x86_64.whl
+    Installing collected packages: trove-classifiers, tomlkit, pluggy, pathspec, packaging, MarkupSafe, jinja2, hatchling, dunamai, uv-dynamic-versioning
+      Creating /tmp/pip-build-env-ol23e2am/overlay/bin
+      changing mode of /tmp/pip-build-env-ol23e2am/overlay/bin/trove-classifiers to 755
+      changing mode of /tmp/pip-build-env-ol23e2am/overlay/bin/hatchling to 755
+      changing mode of /tmp/pip-build-env-ol23e2am/overlay/bin/dunamai to 755
+      changing mode of /tmp/pip-build-env-ol23e2am/overlay/bin/uv-dynamic-versioning to 755
+
+    Successfully installed MarkupSafe-3.0.4 dunamai-1.26.3 hatchling-1.32.4 jinja2-3.1.6 packaging-26.3 pathspec-1.1.1 pluggy-1.7.0 tomlkit-0.15.2 trove-classifiers-2026.9.21.13 uv-dynamic-versioning-0.14.1
+    Installing build dependencies: finished with status 'done'
+    Getting requirements to build wheel: started
+    Running command Getting requirements to build wheel
+    Getting requirements to build wheel: finished with status 'done'
+    Preparing metadata (pyproject.toml): started
+    Running command Preparing metadata (pyproject.toml)
+    Preparing metadata (pyproject.toml): finished with status 'done'
+  Collecting ruff
+    Using cached ruff-0.17.2.tar.gz (5.3 MB)
+    Installing build dependencies: started
+    Running command installing build dependencies for ruff
+    Using pip 26.2.2 from /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist/lib/python3.12/site-packages/pip (python 3.12)
+    Collecting maturin<2.0,>=1.9.3
+      Using cached maturin-1.15.0-cp312-cp312-linux_x86_64.whl
+    Installing collected packages: maturin
+    Successfully installed maturin-1.15.0
+    Installing build dependencies: finished with status 'done'
+    Getting requirements to build wheel: started
+    Running command Getting requirements to build wheel
+    Getting requirements to build wheel: finished with status 'done'
+    Preparing metadata (pyproject.toml): started
+    Running command Preparing metadata (pyproject.toml)
+    Checking for Rust toolchain....
+    Running `maturin pep517 write-dist-info --metadata-directory /tmp/pip-modern-metadata-yb9ljnsm --interpreter /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist/bin/python`
+    🍹 Building a mixed python/rust project
+    🐍 Using CPython 3.12 at /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist/bin/python to generate the bin bindings
+    🔗 Found bin bindings
+    📡 Using build options bindings from pyproject.toml
+    ruff-0.17.2.dist-info
+    Preparing metadata (pyproject.toml): finished with status 'done'
+  Collecting reflex-components-core
+    Using cached reflex_components_core-0.10.0-py3-none-any.whl
+  Collecting reflex-components-lucide
+    Using cached reflex_components_lucide-1.1.0.tar.gz (20 kB)
+    Installing build dependencies: started
+    Running command installing build dependencies for reflex-components-lucide
+    Using pip 26.2.2 from /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-pipsdist/lib/python3.12/site-packages/pip (python 3.12)
+    Collecting hatchling
+      Using cached hatchling-1.32.4-py3-none-any.whl
+    Collecting uv-dynamic-versioning
+      Using cached uv_dynamic_versioning-0.14.1-py3-none-any.whl
+    Collecting hatch-reflex-pyi
+      Using cached hatch_reflex_pyi-0.10.0-py3-none-any.whl
+    Collecting packaging>=24.2 (from hatchling)

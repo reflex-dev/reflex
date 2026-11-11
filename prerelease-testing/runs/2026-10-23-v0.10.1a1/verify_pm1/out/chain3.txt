@@ -1,0 +1,14 @@
+#### C1 py3.14 backend-only new 21:55:43
+## py314-new-be venv=process_model-py314-new mode=prod-be port=8723 pid=20406 alive=yes up after 2s: http://localhost:8723/ping (2.1s wall)
+SUMMARY {"n_procs": 9, "n_python": 9, "pss_total_kb": 221597, "pss_python_kb": 221597, "rss_python_kb": 978936}
+SUMMARY {"workers_seen": 8, "errors": 0, "distinct_module_random": 1, "distinct_module_uuid": 1, "distinct_first_random_now": 8, "distinct_first_prng_now": 1, "imported_in_worker": 0, "ticker_advancing": 0, "ticker_alive": 0, "timer_advancing": 0, "lifespan_ran_in_worker": 8, "qlistener_alive": 0, "start_methods": ["fork"]}
+py314-new-be exited 2.0s after SIGTERM
+no leftovers in pgid 20406
+workers spawned: 8; unexpected-exit: 0; tracebacks: 0; spawning-instead: 8
+#### C2 py3.14 backend-only prev 21:55:51
+## py314-prev-be venv=process_model-py314-prev mode=prod-be port=8723 pid=20554 alive=yes up after 4s: http://localhost:8723/ping (4.4s wall)
+SUMMARY {"n_procs": 11, "n_python": 11, "pss_total_kb": 921098, "pss_python_kb": 921098, "rss_python_kb": 1151960}
+SUMMARY {"workers_seen": 9, "errors": 0, "distinct_module_random": 9, "distinct_module_uuid": 9, "distinct_first_random_now": 9, "distinct_first_prng_now": 9, "imported_in_worker": 9, "ticker_advancing": 6, "ticker_alive": 9, "timer_advancing": 0, "lifespan_ran_in_worker": 9, "qlistener_alive": 9, "start_methods": ["spawn"]}
+py314-prev-be exited 5.0s after SIGTERM
+no leftovers in pgid 20554
+workers spawned: 9; unexpected-exit: 0; tracebacks: 0; spawning-instead: 9

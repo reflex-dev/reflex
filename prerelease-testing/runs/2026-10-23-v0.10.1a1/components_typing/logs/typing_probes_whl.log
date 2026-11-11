@@ -1,0 +1,41 @@
+== pyright components_typing-new-whl fd_probe.py
+16:13 - information: Type of "rx.form" is "type[FormNamespace]"
+17:13 - information: Type of "rx.form.FormData" is "type[FormData[Unknown, Unknown]]"
+18:13 - information: Type of "rx.form(rx.input(name="x"))" is "Form"
+19:13 - information: Type of "rx.form.root(rx.input(name="x"))" is "FormRoot"
+20:13 - information: Type of "rx.form.field(rx.form.label("x"))" is "FormField"
+0 errors, 0 warnings, 5 informations
+== ty components_typing-new-whl fd_probe.py
+16:13: info[revealed-type] Revealed type: `<class 'FormNamespace'>`
+17:13: info[revealed-type] Revealed type: `<class 'FormData'>`
+18:13: info[revealed-type] Revealed type: `Form`
+19:13: info[revealed-type] Revealed type: `FormRoot`
+20:13: info[revealed-type] Revealed type: `FormField`
+== pyright components_typing-new-whl fd_probe2.py
+24:13 - information: Type of "S.opt" is "ObjectVar[User]"
+25:13 - information: Type of "S.req" is "ObjectVar[User]"
+26:13 - information: Type of "S.plain_opt" is "ObjectVar[Plain]"
+27:13 - information: Type of "S.plain_req" is "ObjectVar[Plain]"
+28:13 - information: Type of "form" is "type[FormNamespace]"
+29:13 - information: Type of "FormNamespace" is "type[FormNamespace]"
+30:13 - information: Type of "FormNamespace.root" is "(..., as_child: Var[bool] | bool | None = None, accept: Var[str] | str | None = None, accept_charset: Var[str] | str | None = None, action: Var[str] | str | None = No
+31:13 - information: Type of "form.root" is "(..., as_child: Var[bool] | bool | None = None, accept: Var[str] | str | None = None, accept_charset: Var[str] | str | None = None, action: Var[str] | str | None = None, auto_
+32:13 - information: Type of "FormRoot.create" is "(..., as_child: Var[bool] | bool | None = None, accept: Var[str] | str | None = None, accept_charset: Var[str] | str | None = None, action: Var[str] | str | None = None,
+33:13 - information: Type of "FormRoot.create(rx.input())" is "FormRoot"
+34:13 - information: Type of "form(rx.input())" is "Form"
+35:13 - information: Type of "ComponentNamespace.__call__" is "(...) -> Any"
+0 errors, 0 warnings, 12 informations
+== ty components_typing-new-whl fd_probe2.py
+24:13: info[revealed-type] Revealed type: `Var[User | None]`
+25:13: info[revealed-type] Revealed type: `Var[User]`
+26:13: info[revealed-type] Revealed type: `Var[Plain | None]`
+27:13: info[revealed-type] Revealed type: `Var[Plain]`
+28:13: info[revealed-type] Revealed type: `<class 'FormNamespace'>`
+29:13: info[revealed-type] Revealed type: `<class 'FormNamespace'>`
+30:13: info[revealed-type] Revealed type: `bound method <class 'FormRoot'>.create[FORM_SUBMIT_MAPPING](*children, as_child: Var[bool] | bool | None = None, accept: Var[str] | str | None = None, accept_charset: Var[str] |
+31:13: info[revealed-type] Revealed type: `bound method <class 'FormRoot'>.create[FORM_SUBMIT_MAPPING](*children, as_child: Var[bool] | bool | None = None, accept: Var[str] | str | None = None, accept_charset: Var[str] |
+32:13: info[revealed-type] Revealed type: `bound method <class 'FormRoot'>.create[FORM_SUBMIT_MAPPING](*children, as_child: Var[bool] | bool | None = None, accept: Var[str] | str | None = None, accept_charset: Var[str] |
+33:13: info[revealed-type] Revealed type: `FormRoot`
+34:13: info[revealed-type] Revealed type: `Form`
+35:13: info[revealed-type] Revealed type: `bound method <class 'ComponentNamespace'>.__call__(...) -> Any`
+DONE

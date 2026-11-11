@@ -1,0 +1,8 @@
+ENTRIES 6
+plain.txt
+rxconfig.py
+cliapp/cliapp.py
+cliapp/__init__.py
+cliapp/cliapp.py
+cliapp/__init__.py
+TESTZIP None

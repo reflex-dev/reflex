@@ -1,0 +1,107 @@
+===== CONTROL core 0.10.0: common=36 AST-level residual files=4
+  -- reflex_components_core/core/upload.pyi: 10 changed lines
+      -_on_drop_args_spec = (_on_drop_spec, passthrough_event_spec(UploadChunkIterator))
+      +_on_drop_args_spec = ...
+      -    def create(cls, *children, style: Sequence[Mapping[str, Any]] | Mapping[str, Any] | Var[Mapping[str, Any]] | Breakpoints | None=None, key: Any | None=None,
+      +    def create(cls, *children, style: Sequence[Mapping[str, Any]] | Mapping[str, Any] | Var[Mapping[str, Any]] | Breakpoints | None=None, key: Any | None=None,
+      -    def create(cls, *children, accept: Var[dict[str, Sequence] | None] | dict[str, Sequence] | None=None, disabled: Var[bool] | bool | None=None, max_files: Va
+      +    def create(cls, *children, accept: Var[dict[str, Sequence] | None] | dict[str, Sequence] | None=None, disabled: Var[bool] | bool | None=None, max_files: Va
+  -- reflex_components_core/el/elements/__init__.pyi: 2 changed lines
+      -_MAPPING = {'forms': ['button', 'datalist', 'fieldset', 'form', 'input', 'label', 'legend', 'meter', 'optgroup', 'option', 'output', 'progress', 'select', 'tex
+      +_MAPPING = ...
+  -- reflex_components_core/el/elements/base.pyi: 2 changed lines
+      -InputMode = Literal['none', 'text', 'tel', 'url', 'email', 'numeric', 'decimal', 'search', 'search']
+      +InputMode = Literal['none', 'text', 'tel', 'url', 'email', 'numeric', 'decimal', 'search']
+  -- reflex_components_core/el/elements/forms.pyi: 4 changed lines
+      -    def create(cls, *children, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: Var[str] | str | None=None, auto_complet
+      +    def create(cls, *children, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: Var[str] | str | None=None, auto_complet
+      -    def create(cls, *children, accept: Var[str] | str | None=None, alt: Var[str] | str | None=None, auto_complete: Var[str] | str | None=None, auto_focus: Var[
+      +    def create(cls, *children, accept: Var[str] | str | None=None, alt: Var[str] | str | None=None, auto_complete: Var[str] | str | None=None, auto_focus: Var[
+===== core a1 (built vs base 0.10.0): common=32 AST-level residual files=2
+  -- reflex_components_core/el/elements/__init__.pyi: 2 changed lines
+      -_MAPPING = {'forms': ['button', 'datalist', 'fieldset', 'form', 'input', 'label', 'legend', 'meter', 'optgroup', 'option', 'output', 'progress', 'select', 'tex
+      +_MAPPING = ...
+  -- reflex_components_core/el/elements/base.pyi: 2 changed lines
+      -InputMode = Literal['none', 'text', 'tel', 'url', 'email', 'numeric', 'decimal', 'search', 'search']
+      +InputMode = Literal['none', 'text', 'tel', 'url', 'email', 'numeric', 'decimal', 'search']
+===== core a1 (noiso, base a1): common=36 AST-level residual files=4
+  -- reflex_components_core/core/upload.pyi: 10 changed lines
+      -_on_drop_args_spec = (_on_drop_spec, passthrough_event_spec(UploadChunkIterator))
+      +_on_drop_args_spec = ...
+      -    def create(cls, *children, style: Sequence[Mapping[str, Any]] | Mapping[str, Any] | Var[Mapping[str, Any]] | Breakpoints | None=None, key: Any | None=None,
+      +    def create(cls, *children, style: Sequence[Mapping[str, Any]] | Mapping[str, Any] | Var[Mapping[str, Any]] | Breakpoints | None=None, key: Any | None=None,
+      -    def create(cls, *children, accept: Var[dict[str, Sequence] | None] | dict[str, Sequence] | None=None, disabled: Var[bool] | bool | None=None, max_files: Va
+      +    def create(cls, *children, accept: Var[dict[str, Sequence] | None] | dict[str, Sequence] | None=None, disabled: Var[bool] | bool | None=None, max_files: Va
+  -- reflex_components_core/el/elements/__init__.pyi: 2 changed lines
+      -_MAPPING = {'forms': ['button', 'datalist', 'fieldset', 'form', 'input', 'label', 'legend', 'meter', 'optgroup', 'option', 'output', 'progress', 'select', 'tex
+      +_MAPPING = ...
+  -- reflex_components_core/el/elements/base.pyi: 2 changed lines
+      -InputMode = Literal['none', 'text', 'tel', 'url', 'email', 'numeric', 'decimal', 'search', 'search']
+      +InputMode = Literal['none', 'text', 'tel', 'url', 'email', 'numeric', 'decimal', 'search']
+  -- reflex_components_core/el/elements/forms.pyi: 4 changed lines
+      -    def create(cls, *children, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: Var[str] | str | None=None, auto_complet
+      +    def create(cls, *children, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: Var[str] | str | None=None, auto_complet
+      -    def create(cls, *children, accept: Var[str] | str | None=None, alt: Var[str] | str | None=None, auto_complete: Var[str] | str | None=None, auto_focus: Var[
+      +    def create(cls, *children, accept: Var[str] | str | None=None, alt: Var[str] | str | None=None, auto_complete: Var[str] | str | None=None, auto_focus: Var[
+===== CONTROL radix 0.10.0: common=65 AST-level residual files=4
+  -- reflex_components_radix/primitives/form.pyi: 6 changed lines
+      -    def create(cls, *children, as_child: Var[bool] | bool | None=None, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: 
+      +    def create(cls, *children, as_child: Var[bool] | bool | None=None, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: 
+      -    def create(cls, *children, as_child: Var[bool] | bool | None=None, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: 
+      +    def create(cls, *children, as_child: Var[bool] | bool | None=None, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: 
+      -    def __call__(*children, as_child: Var[bool] | bool | None=None, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: Var
+      +    def __call__(*children, as_child: Var[bool] | bool | None=None, accept: Var[str] | str | None=None, accept_charset: Var[str] | str | None=None, action: Var
+  -- reflex_components_radix/themes/color_mode.pyi: 2 changed lines
+      -    def create(cls, *children, position: Literal['bottom-left', 'bottom-right', 'top-left', 'top-right'] | Literal['bottom-left', 'bottom-right', 'top-left', '
+      +    def create(cls, *children, position: Literal['bottom-left', 'bottom-right', 'top-left', 'top-right'] | Var[Literal['bottom-left', 'bottom-right', 'top-left
+  -- reflex_components_radix/themes/components/slider.pyi: 6 changed lines
+      -from reflex_base.event import EventType, PointerEventInfo, passthrough_event_spec
+      +from reflex_base.event import EventType, PointerEventInfo
+      -on_value_event_spec = (passthrough_event_spec(list[float]), passthrough_event_spec(list[int]))
+      +on_value_event_spec = ...
+      -    def create(cls, *children, as_child: Var[bool] | bool | None=None, size: Breakpoints[str, Literal['1', '2', '3']] | Literal['1', '2', '3'] | Var[Breakpoint
+      +    def create(cls, *children, as_child: Var[bool] | bool | None=None, size: Breakpoints[str, Literal['1', '2', '3']] | Literal['1', '2', '3'] | Var[Breakpoint
+  -- reflex_components_radix/themes/layout/list.pyi: 8 changed lines
+      -    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      +    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      -    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      +    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      -    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      +    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+===== radix a1 (built vs base 0.10.0): common=64 AST-level residual files=3
+  -- reflex_components_radix/themes/color_mode.pyi: 2 changed lines
+      -    def create(cls, *children, position: Literal['bottom-left', 'bottom-right', 'top-left', 'top-right'] | Literal['bottom-left', 'bottom-right', 'top-left', '
+      +    def create(cls, *children, position: Literal['bottom-left', 'bottom-right', 'top-left', 'top-right'] | Var[Literal['bottom-left', 'bottom-right', 'top-left
+  -- reflex_components_radix/themes/components/slider.pyi: 6 changed lines
+      -from reflex_base.event import EventType, PointerEventInfo, passthrough_event_spec
+      +from reflex_base.event import EventType, PointerEventInfo
+      -on_value_event_spec = (passthrough_event_spec(list[float]), passthrough_event_spec(list[int]))
+      +on_value_event_spec = ...
+      -    def create(cls, *children, as_child: Var[bool] | bool | None=None, size: Breakpoints[str, Literal['1', '2', '3']] | Literal['1', '2', '3'] | Var[Breakpoint
+      +    def create(cls, *children, as_child: Var[bool] | bool | None=None, size: Breakpoints[str, Literal['1', '2', '3']] | Literal['1', '2', '3'] | Var[Breakpoint
+  -- reflex_components_radix/themes/layout/list.pyi: 8 changed lines
+      -    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      +    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      -    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      +    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      -    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+      +    def create(cls, *children, list_style_type: Literal['armenian', 'decimal', 'decimal-leading-zero', 'georgian', 'hiragana', 'katakana', 'lower-alpha', 'lowe
+===== CONTROL dataeditor 0.10.0: common=1 AST-level residual files=0
+===== code a1: common=2 AST-level residual files=2
+  -- reflex_components_code/code.pyi: 90 changed lines
+      -    a11y_dark: ClassVar[Var[Theme]] = construct_theme_var('a11yDark')
+      -    atom_dark: ClassVar[Var[Theme]] = construct_theme_var('atomDark')
+      -    cb: ClassVar[Var[Theme]] = construct_theme_var('cb')
+      -    coldark_cold: ClassVar[Var[Theme]] = construct_theme_var('coldarkCold')
+      -    coldark_dark: ClassVar[Var[Theme]] = construct_theme_var('coldarkDark')
+      -    coy: ClassVar[Var[Theme]] = construct_theme_var('coy')
+  -- reflex_components_code/shiki_code_block.pyi: 4 changed lines
+      -LINE_NUMBER_STYLING = {'code': {'counter-reset': 'step', 'counter-increment': 'step 0', 'display': 'grid', 'line-height': '1.7', 'font-size': '0.875em'}, 'code
+      -BOX_PARENT_STYLING = {'pre': {'margin': '0', 'padding': '24px', 'background': 'transparent', 'overflow-x': 'auto', 'border-radius': '6px'}}
+      +LINE_NUMBER_STYLING = ...
+      +BOX_PARENT_STYLING = ...
+===== lucide a1: common=1 AST-level residual files=1
+  -- reflex_components_lucide/icon.pyi: 2 changed lines
+      -LUCIDE_ICON_LIST = ['a_arrow_down', 'a_arrow_up', 'a_large_small', 'accessibility', 'activity', 'ad', 'air_vent', 'airplay', 'alarm_clock_check', 'alarm_clock_
+      +LUCIDE_ICON_LIST = ...
+===== moment a1: common=1 AST-level residual files=0

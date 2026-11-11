@@ -1,0 +1,11 @@
+typing_user.py:99:1: error[type-assertion-failure] Type `Var[User | None]` does not match asserted type `ObjectVar[User]`
+typing_user.py:103:13: info[revealed-type] Revealed type: `User | None`
+typing_user.py:104:18: error[unresolved-attribute] Object of type `Var[User | None]` has no attribute `name`
+typing_user.py:107:17: error[unresolved-attribute] Object of type `Var[User | None]` has no attribute `email`
+typing_user.py:174:13: info[revealed-type] Revealed type: `Form`
+typing_user.py:175:13: info[revealed-type] Revealed type: `FormRoot`
+typing_user.py:190:15: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+typing_user.py:191:16: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+typing_user.py:209:24: error[invalid-argument-type] Argument to bound method `DataEditor.create` is incorrect: Expected `Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None`, found `list[str]`
+typing_user.py:215:18: error[invalid-argument-type] Argument to function `TextField.__call__` is incorrect: Expected `Var[str] | str | None`, found `Literal[True]`
+Found 10 diagnostics

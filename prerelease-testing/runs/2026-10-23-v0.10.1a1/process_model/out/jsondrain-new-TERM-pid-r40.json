@@ -1,0 +1,35 @@
+{
+ "cmd": "run --json --frontend-port 3210 --backend-port 8210",
+ "venv": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new",
+ "chatty": true,
+ "signal": "TERM-pid",
+ "slow_rate": 40.0,
+ "pause": 4.0,
+ "marks": {
+  "up": 2.61,
+  "pause_start": 5.62,
+  "signal": 9.62,
+  "signal_wall": "21:33:37.134Z",
+  "exit": 16.72,
+  "eof": 21.32
+ },
+ "signal_to_eof_s": 11.7,
+ "signal_to_exit_s": 7.11,
+ "returncode": 0,
+ "lines_total": 1257,
+ "lines_after_signal": 460,
+ "invalid_json": 0,
+ "invalid_samples": [],
+ "last_line_valid_json": true,
+ "seq_first": 0,
+ "seq_max_received": 1251,
+ "seq_written_at_signal": "1225",
+ "seq_written_final": "1251",
+ "lost_tail": 0,
+ "seq_gaps": [],
+ "last_line": "{\"timestamp\": \"2026-10-23T21:33:37.271724+00:00\", \"level\": \"info\", \"logger\": \"reflex.utils.processes\", \"message\": \"Reflex app stopped.\", \"location\": \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/lib/python3.12/site-packages/reflex/utils/processes.py:572\", \"pid",
+ "last_non_seq_lines": [
+  "{\"timestamp\": \"2026-10-23T21:33:37.271724+00:00\", \"level\": \"info\", \"logger\": \"reflex.utils.processes\", \"message\": \"Reflex app stopped.\", \"location\": \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchp"
+ ],
+ "leftover_after_exit": ""
+}

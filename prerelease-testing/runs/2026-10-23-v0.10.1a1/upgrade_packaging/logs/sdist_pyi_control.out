@@ -1,0 +1,22 @@
+=== (1) .pyi files inside the published sdists
+reflex-components-core==0.10.1a1: 90 entries, 36 .pyi, build-system: {'requires': ['hatchling', 'uv-dynamic-versioning', 'hatch-reflex-pyi'], 'build-backend': 'hatchling.build'}
+  hooks: {'hooks': {'reflex-pyi': {'dependencies': ['ruff', 'reflex-base', 'reflex-components-lucide', 'reflex-components-sonner', 'python_multipart', 'starlette', 'typing_extensions']}}}
+reflex-components-dataeditor==0.10.1a1: 9 entries, 1 .pyi, build-system: {'requires': ['hatchling', 'uv-dynamic-versioning', 'hatch-reflex-pyi'], 'build-backend': 'hatchling.build'}
+  hooks: {'hooks': {'reflex-pyi': {'dependencies': ['ruff', 'reflex-base', 'reflex-components-core', 'reflex-components-lucide', 'reflex-components-sonner']}}}
+reflex-components-radix==0.10.1a1: 139 entries, 65 .pyi, build-system: {'requires': ['hatchling', 'uv-dynamic-versioning', 'hatch-reflex-pyi'], 'build-backend': 'hatchling.build'}
+  hooks: {'hooks': {'reflex-pyi': {'dependencies': ['ruff', 'reflex-base', 'reflex-components-core', 'reflex-components-lucide', 'reflex-components-sonner']}}}
+reflex==0.10.1a1: 130 entries, 3 .pyi, build-system: {'requires': ['hatchling', 'uv-dynamic-versioning'], 'build-backend': 'hatchling.build'}
+  hooks: {'hooks': {'custom': {'path': 'scripts/hatch_build.py', 'dependencies': ['plotly', 'ruff'], 'require-runtime-dependencies': True}}}
+reflex-components-core==0.10.0: 90 entries, 36 .pyi, build-system: {'requires': ['hatchling', 'uv-dynamic-versioning', 'hatch-reflex-pyi'], 'build-backend': 'hatchling.build'}
+  hooks: {'hooks': {'reflex-pyi': {'dependencies': ['ruff', 'reflex-base', 'reflex-components-lucide', 'reflex-components-sonner', 'python_multipart', 'starlette', 'typing_extensions']}}}
+reflex-components-dataeditor==0.10.0: 9 entries, 1 .pyi, build-system: {'requires': ['hatchling', 'uv-dynamic-versioning', 'hatch-reflex-pyi'], 'build-backend': 'hatchling.build'}
+  hooks: {'hooks': {'reflex-pyi': {'dependencies': ['ruff', 'reflex-base', 'reflex-components-core', 'reflex-components-lucide', 'reflex-components-sonner']}}}
+reflex-components-radix==0.10.0: 139 entries, 65 .pyi, build-system: {'requires': ['hatchling', 'uv-dynamic-versioning', 'hatch-reflex-pyi'], 'build-backend': 'hatchling.build'}
+  hooks: {'hooks': {'reflex-pyi': {'dependencies': ['ruff', 'reflex-base', 'reflex-components-core', 'reflex-components-lucide', 'reflex-components-sonner']}}}
+=== (2) control: 0.10.0 sdist installs with pip
+pip reflex-components-core==0.10.0 rc=0 pyi(sdist-built)=36 pyi(wheel)=36 diff=0
+pip reflex-components-dataeditor==0.10.0 rc=0 pyi(sdist-built)=1 pyi(wheel)=1 diff=0
+pip reflex-components-radix==0.10.0 rc=0 pyi(sdist-built)=65 pyi(wheel)=65 diff=0
+=== (3) verbose pip build of reflex-components-core 0.10.1a1 (hook output)
+rc=0
+=== done 01:56:18

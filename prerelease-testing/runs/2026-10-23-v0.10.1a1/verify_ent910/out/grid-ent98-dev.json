@@ -1,0 +1,93 @@
+{
+ "page_errors": [],
+ "steps": [
+  {
+   "step": "A price u-2 -> 777 (handler stores as typed)",
+   "edit_reached_backend": true,
+   "views_showing_expected": {
+    "backend": true,
+    "store": true,
+    "memo": false,
+    "ga": true,
+    "gc": false,
+    "gr": false,
+    "gb": false,
+    "foreach": true
+   },
+   "all_expected_views_ok": false
+  },
+  {
+   "step": "A nested addr.city u-3 -> paris",
+   "edit_reached_backend": true,
+   "views_showing_expected": {
+    "backend": true,
+    "store": true,
+    "memo": false,
+    "ga": true,
+    "gc": false,
+    "gr": false,
+    "gb": false,
+    "foreach": true
+   },
+   "all_expected_views_ok": false
+  },
+  {
+   "step": "C price u-1 -> 500 (handler clamps to 100)",
+   "edit_reached_backend": true,
+   "views_showing_expected": {
+    "backend": true,
+    "store": true,
+    "memo": true,
+    "ga": true,
+    "gc": true,
+    "gr": true,
+    "gb": true,
+    "foreach": true
+   },
+   "all_expected_views_ok": true
+  },
+  {
+   "step": "R price u-2 -> 5 (handler rejects, keeps 777)",
+   "edit_reached_backend": true,
+   "views_showing_expected": {
+    "backend": true,
+    "store": false,
+    "memo": true,
+    "ga": true,
+    "gc": false,
+    "gr": false,
+    "gb": true,
+    "foreach": false
+   },
+   "all_expected_views_ok": false
+  },
+  {
+   "step": "reset",
+   "views_showing_expected": {
+    "backend": true,
+    "store": true,
+    "memo": true,
+    "ga": true,
+    "gc": true,
+    "gr": true,
+    "gb": true,
+    "foreach": true
+   }
+  },
+  {
+   "step": "after reload: A price u-2 -> 778",
+   "edit_reached_backend": true,
+   "views_showing_expected": {
+    "backend": true,
+    "store": true,
+    "memo": false,
+    "ga": true,
+    "gc": false,
+    "gr": false,
+    "gb": false,
+    "foreach": true
+   },
+   "all_expected_views_ok": false
+  }
+ ]
+}

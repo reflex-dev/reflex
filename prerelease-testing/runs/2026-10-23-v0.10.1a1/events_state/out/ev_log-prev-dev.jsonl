@@ -1,0 +1,174 @@
+{"who": "start_bg", "step": "dispatch", "t": 1792807248.744}
+{"who": "slow_load", "step": 1, "loads": 1, "t": 1792807248.749}
+{"who": "start_bg", "step": "dispatch", "t": 1792807257.533}
+{"who": "slow_load", "step": 1, "loads": 1, "t": 1792807257.538}
+{"who": "slow_load", "step": 2, "loads": 1, "t": 1792807258.74}
+{"who": "slow_load", "step": 3, "loads": 1, "t": 1792807259.943}
+{"who": "slow_load", "step": 4, "loads": 1, "t": 1792807261.145}
+{"who": "slow_load", "step": "done", "loads": 1, "t": 1792807262.348}
+{"who": "start_bg", "step": "dispatch", "t": 1792807262.363}
+{"who": "slow_load", "step": 1, "loads": 2, "t": 1792807262.367}
+{"who": "bg_from_load", "step": 1, "t": 1792807263.359}
+{"who": "bg_from_load", "step": 1, "t": 1792807263.366}
+{"who": "slow_load", "step": 2, "loads": 2, "t": 1792807263.569}
+{"who": "slow_load", "step": 3, "loads": 2, "t": 1792807264.771}
+{"who": "slow_load", "step": 4, "loads": 2, "t": 1792807265.973}
+{"who": "plain_slow_load", "step": "start", "t": 1792807267.119}
+{"who": "slow_load", "step": "done", "loads": 2, "t": 1792807267.19}
+{"who": "start_bg", "step": "dispatch", "t": 1792807267.202}
+{"who": "slow_load", "step": 1, "loads": 3, "t": 1792807267.208}
+{"who": "bg_from_load", "step": 2, "t": 1792807268.198}
+{"who": "bg_from_load", "step": 2, "t": 1792807268.199}
+{"who": "bg_from_load", "step": 1, "t": 1792807268.208}
+{"who": "slow_load", "step": 2, "loads": 3, "t": 1792807268.417}
+{"who": "slow_load", "step": 3, "loads": 3, "t": 1792807269.62}
+{"who": "plain_slow_load", "step": "end", "t": 1792807269.621}
+{"who": "slow_load", "step": 4, "loads": 3, "t": 1792807270.829}
+{"who": "slow_load", "step": "done", "loads": 3, "t": 1792807272.032}
+{"who": "start_bg", "step": "dispatch", "t": 1792807272.044}
+{"who": "slow_load", "step": 1, "loads": 4, "t": 1792807272.051}
+{"who": "bg_from_load", "step": 3, "t": 1792807273.037}
+{"who": "bg_from_load", "step": 3, "t": 1792807273.038}
+{"who": "bg_from_load", "step": 2, "t": 1792807273.04}
+{"who": "bg_from_load", "step": 1, "t": 1792807273.051}
+{"who": "slow_load", "step": 2, "loads": 4, "t": 1792807273.252}
+{"who": "slow_load", "step": 3, "loads": 4, "t": 1792807274.455}
+{"who": "slow_load", "step": 4, "loads": 4, "t": 1792807275.657}
+{"who": "bg_from_load", "step": 1, "t": 1792807276.677}
+{"who": "slow_load", "step": "done", "loads": 4, "t": 1792807276.859}
+{"who": "start_bg", "step": "dispatch", "t": 1792807276.874}
+{"who": "slow_load", "step": 1, "loads": 5, "t": 1792807276.876}
+{"who": "bg_from_load", "step": 2, "t": 1792807277.683}
+{"who": "bg_from_load", "step": 4, "t": 1792807277.866}
+{"who": "bg_from_load", "step": 4, "t": 1792807277.867}
+{"who": "bg_from_load", "step": 3, "t": 1792807277.868}
+{"who": "bg_from_load", "step": 2, "t": 1792807277.87}
+{"who": "bg_from_load", "step": 1, "t": 1792807277.876}
+{"who": "slow_load", "step": 2, "loads": 5, "t": 1792807278.077}
+{"who": "bg_from_load", "step": 3, "t": 1792807278.69}
+{"who": "slow_load", "step": 3, "loads": 5, "t": 1792807279.28}
+{"who": "bg_from_load", "step": 4, "t": 1792807279.695}
+{"who": "bg_from_load", "step": "done", "t": 1792807279.697}
+{"who": "slow_load", "step": 4, "loads": 5, "t": 1792807280.483}
+{"who": "slow_load", "step": "done", "loads": 5, "t": 1792807281.685}
+{"who": "bg_from_load", "step": "done", "t": 1792807281.693}
+{"who": "bg_from_load", "step": "done", "t": 1792807281.695}
+{"who": "start_bg", "step": "dispatch", "t": 1792807281.704}
+{"who": "slow_load", "step": 1, "loads": 6, "t": 1792807281.707}
+{"who": "bg_from_load", "step": 4, "t": 1792807282.699}
+{"who": "bg_from_load", "step": 3, "t": 1792807282.7}
+{"who": "bg_from_load", "step": 2, "t": 1792807282.7}
+{"who": "bg_from_load", "step": 1, "t": 1792807282.707}
+{"who": "slow_load", "step": 2, "loads": 6, "t": 1792807282.909}
+{"who": "slow_load", "step": 3, "loads": 6, "t": 1792807284.111}
+{"who": "slow_load", "step": 4, "loads": 6, "t": 1792807285.313}
+{"who": "slow_load", "step": "done", "loads": 6, "t": 1792807286.519}
+{"who": "bg_from_load", "step": "done", "t": 1792807286.524}
+{"who": "start_bg", "step": "dispatch", "t": 1792807286.533}
+{"who": "slow_load", "step": 1, "loads": 7, "t": 1792807286.535}
+{"who": "bg_from_load", "step": 4, "t": 1792807287.528}
+{"who": "bg_from_load", "step": 3, "t": 1792807287.529}
+{"who": "bg_from_load", "step": 2, "t": 1792807287.529}
+{"who": "bg_from_load", "step": 1, "t": 1792807287.536}
+{"who": "slow_load", "step": 2, "loads": 7, "t": 1792807287.737}
+{"who": "slow_load", "step": 3, "loads": 7, "t": 1792807288.939}
+{"who": "slow_load", "step": 4, "loads": 7, "t": 1792807290.141}
+{"who": "slow_load", "step": "done", "loads": 7, "t": 1792807291.344}
+{"who": "bg_from_load", "step": "done", "t": 1792807291.349}
+{"who": "start_bg", "step": "dispatch", "t": 1792807291.357}
+{"who": "slow_load", "step": 1, "loads": 8, "t": 1792807291.359}
+{"who": "bg_from_load", "step": 4, "t": 1792807292.352}
+{"who": "bg_from_load", "step": 3, "t": 1792807292.354}
+{"who": "bg_from_load", "step": 2, "t": 1792807292.354}
+{"who": "bg_from_load", "step": 1, "t": 1792807292.361}
+{"who": "slow_load", "step": 2, "loads": 8, "t": 1792807292.567}
+{"who": "exp.on_load", "loads": 1, "t": 1792807293.248}
+{"who": "long_task", "step": "started", "count": 1, "t": 1792807293.484}
+{"who": "slow_load", "step": 3, "loads": 8, "t": 1792807293.775}
+{"who": "slow_load", "step": 4, "loads": 8, "t": 1792807294.979}
+{"who": "long_task", "step": "done", "count": 11, "loads": 1, "pref": "chosen", "t": 1792807295.488}
+{"who": "long_task", "step": "started", "count": 12, "t": 1792807296.101}
+{"who": "slow_load", "step": "done", "loads": 8, "t": 1792807296.181}
+{"who": "bg_from_load", "step": "done", "t": 1792807296.186}
+{"who": "start_bg", "step": "dispatch", "t": 1792807296.196}
+{"who": "slow_load", "step": 1, "loads": 9, "t": 1792807296.2}
+{"who": "bg_from_load", "step": 4, "t": 1792807297.189}
+{"who": "bg_from_load", "step": 3, "t": 1792807297.191}
+{"who": "bg_from_load", "step": 2, "t": 1792807297.192}
+{"who": "bg_from_load", "step": 1, "t": 1792807297.2}
+{"who": "slow_load", "step": 2, "loads": 9, "t": 1792807297.401}
+{"who": "slow_load", "step": 3, "loads": 9, "t": 1792807298.604}
+{"who": "slow_load", "step": 4, "loads": 9, "t": 1792807299.805}
+{"who": "slow_load", "step": "done", "loads": 9, "t": 1792807301.008}
+{"who": "bg_from_load", "step": "done", "t": 1792807301.056}
+{"who": "start_bg", "step": "dispatch", "t": 1792807301.067}
+{"who": "slow_load", "step": 1, "loads": 10, "t": 1792807301.07}
+{"who": "bg_from_load", "step": 4, "t": 1792807302.06}
+{"who": "bg_from_load", "step": 3, "t": 1792807302.06}
+{"who": "bg_from_load", "step": 2, "t": 1792807302.063}
+{"who": "bg_from_load", "step": 1, "t": 1792807302.07}
+{"who": "slow_load", "step": 2, "loads": 10, "t": 1792807302.272}
+{"who": "slow_load", "step": 3, "loads": 10, "t": 1792807303.475}
+{"who": "long_task", "step": "done", "count": 10, "loads": 0, "pref": "unset", "t": 1792807304.105}
+{"who": "slow_load", "step": 4, "loads": 10, "t": 1792807304.678}
+{"who": "slow_load", "step": "done", "loads": 10, "t": 1792807305.88}
+{"who": "bg_from_load", "step": "done", "t": 1792807305.885}
+{"who": "start_bg", "step": "dispatch", "t": 1792807305.895}
+{"who": "slow_load", "step": 1, "loads": 11, "t": 1792807305.898}
+{"who": "exp.on_load", "loads": 1, "t": 1792807306.767}
+{"who": "bg_from_load", "step": 4, "t": 1792807306.889}
+{"who": "bg_from_load", "step": 3, "t": 1792807306.89}
+{"who": "bg_from_load", "step": 2, "t": 1792807306.89}
+{"who": "bg_from_load", "step": 1, "t": 1792807306.898}
+{"who": "slow_load", "step": 2, "loads": 11, "t": 1792807307.099}
+{"who": "slow_load", "step": 3, "loads": 11, "t": 1792807308.301}
+{"who": "slow_load", "step": 4, "loads": 11, "t": 1792807309.504}
+{"who": "exp.on_load", "loads": 2, "t": 1792807309.563}
+{"who": "slow_load", "step": "done", "loads": 11, "t": 1792807310.708}
+{"who": "bg_from_load", "step": "done", "t": 1792807310.713}
+{"who": "start_bg", "step": "dispatch", "t": 1792807310.721}
+{"who": "slow_load", "step": 1, "loads": 12, "t": 1792807310.723}
+{"who": "bg_from_load", "step": 4, "t": 1792807311.717}
+{"who": "bg_from_load", "step": 3, "t": 1792807311.717}
+{"who": "bg_from_load", "step": 2, "t": 1792807311.718}
+{"who": "bg_from_load", "step": 1, "t": 1792807311.724}
+{"who": "slow_load", "step": 2, "loads": 12, "t": 1792807311.925}
+{"who": "slow_load", "step": 3, "loads": 12, "t": 1792807313.128}
+{"who": "slow_load", "step": 4, "loads": 12, "t": 1792807314.332}
+{"who": "slow_load", "step": "done", "loads": 12, "t": 1792807315.534}
+{"who": "bg_from_load", "step": "done", "t": 1792807315.539}
+{"who": "start_bg", "step": "dispatch", "t": 1792807315.545}
+{"who": "slow_load", "step": 1, "loads": 13, "t": 1792807315.548}
+{"who": "bg_from_load", "step": 4, "t": 1792807316.542}
+{"who": "bg_from_load", "step": 3, "t": 1792807316.543}
+{"who": "bg_from_load", "step": 2, "t": 1792807316.543}
+{"who": "bg_from_load", "step": 1, "t": 1792807316.548}
+{"who": "slow_load", "step": 2, "loads": 13, "t": 1792807316.749}
+{"who": "slow_load", "step": 3, "loads": 13, "t": 1792807317.952}
+{"who": "slow_load", "step": 4, "loads": 13, "t": 1792807319.156}
+{"who": "slow_load", "step": "done", "loads": 13, "t": 1792807320.358}
+{"who": "bg_from_load", "step": "done", "t": 1792807320.363}
+{"who": "start_bg", "step": "dispatch", "t": 1792807320.372}
+{"who": "slow_load", "step": 1, "loads": 14, "t": 1792807320.375}
+{"who": "bg_from_load", "step": 4, "t": 1792807321.366}
+{"who": "bg_from_load", "step": 3, "t": 1792807321.367}
+{"who": "bg_from_load", "step": 2, "t": 1792807321.369}
+{"who": "bg_from_load", "step": 1, "t": 1792807321.375}
+{"who": "slow_load", "step": 2, "loads": 14, "t": 1792807321.577}
+{"who": "slow_load", "step": 3, "loads": 14, "t": 1792807322.78}
+{"who": "slow_load", "step": 4, "loads": 14, "t": 1792807323.983}
+{"who": "slow_load", "step": "done", "loads": 14, "t": 1792807325.186}
+{"who": "bg_from_load", "step": "done", "t": 1792807325.191}
+{"who": "start_bg", "step": "dispatch", "t": 1792807325.204}
+{"who": "slow_load", "step": 1, "loads": 15, "t": 1792807325.208}
+{"who": "bg_from_load", "step": 4, "t": 1792807326.195}
+{"who": "bg_from_load", "step": 3, "t": 1792807326.197}
+{"who": "bg_from_load", "step": 2, "t": 1792807326.199}
+{"who": "bg_from_load", "step": 1, "t": 1792807326.208}
+{"who": "slow_load", "step": 2, "loads": 15, "t": 1792807326.41}
+{"who": "slow_load", "step": 3, "loads": 15, "t": 1792807327.613}
+{"who": "slow_load", "step": 4, "loads": 15, "t": 1792807328.816}
+{"who": "slow_load", "step": "done", "loads": 15, "t": 1792807330.017}
+{"who": "bg_from_load", "step": "done", "t": 1792807330.023}
+{"who": "start_bg", "step": "dispatch", "t": 1792807330.032}
+{"who": "slow_load", "step": 1, "loads": 16, "t": 1792807330.035}

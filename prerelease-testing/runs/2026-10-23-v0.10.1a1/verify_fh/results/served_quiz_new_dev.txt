@@ -1,0 +1,12 @@
+SERVED app/_document.js                                                       bytes=6221    _c(=0   runtime=0
+SERVED app/entry.client.embed.js                                              bytes=5753    _c(=0   runtime=0
+SERVED app/entry.client.js                                                    bytes=1590    _c(=0   runtime=0
+SERVED app/root.jsx                                                           bytes=14295   _c(=1   runtime=1
+SERVED app/routes.js                                                          bytes=1177    _c(=0   runtime=0
+SERVED app/routes/[404]._index.jsx                                            bytes=4335    _c(=0   runtime=0
+SERVED app/routes/[result]._index.jsx                                         bytes=13898   _c(=0   runtime=0
+SERVED app/routes/_index.jsx                                                  bytes=25397   _c(=0   runtime=0
+SERVED app_components/quiz/quiz.jsx                                           bytes=54746   _c(=11  runtime=1
+SERVED app_components/reflex/app.jsx                                          bytes=13358   _c(=1   runtime=1
+SERVED app_components/reflex/compiler/compiler.jsx                            bytes=5222    _c(=0   runtime=0
+SERVED utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx bytes=19166   _c(=1   runtime=1

@@ -1,0 +1,55 @@
+
+##### consent new redis 07:01:07
+PONG
+oidc pid 6212 redis pid 6211
+started pid=6246 pgid=6246
+ready after 10s
+NAV: [[0.77, "http://localhost:3620/agent-consent?txn=bL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c"], [2.14, "http://localhost:3620/agent-consent?txn=bL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c"], [2.31, "http://localhost:3620/login?redirect_to=%2Fagent-consent%3Ftxn%3DbL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c"], [2.42, "http://localhost:8638/oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&state="], [2.75, "http://localhost:3620/callback?code=Y7Gkh7Sm8z8ogmen5QzBqDbOh6wVd8zn3CQH5BuiELrDIejd&state=sxAcCvp_XDWSznHrG2eYGhhN9E1ZOefxytVlpUq8-yFXV_UCIStto8hHc_rz1-b8qKzog"], [3.06, "http://localhost:3620/callback?code=Y7Gkh7Sm8z8ogmen5QzBqDbOh6wVd8zn3CQH5BuiELrDIejd&state=sxAcCvp_XDWSznHrG2eYGhhN9E1ZOefxytVlpUq8-yFXV_UCIStto8hHc_rz1-b8qKzog"], [3.19, "http://localhost:3620/agent-consent?txn=bL_uURxFtauyqX-lFWPJ
+WS_SENT: [[2.17, "hydrate_and_load"], [2.23, "check_if_iframed"], [2.27, "check_if_iframed_cb"], [2.32, "on_load_internal"], [2.38, "redirect_to_login"], [3.08, "hydrate_and_load"], [3.14, "update_access_token_hash_in_browser"], [3.21, "update_vars_internal"], [3.21, "on_load_internal"]]
+CONSOLE: [[2.65, "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"]]
+HTTP>=400: []
+FINAL url=http://localhost:3620/agent-consent?txn=bL_uURxFtauyqX-lFWPJjnWS7bdfMoQIEpkom0gvO5c approve_buttons=1 cookies=['_oidc_generic_access_token_data_partitioned', '_oidc_generic_granted_scopes_partitioned', '_oidc_generic_id_token_partitioned', '_oidc_generic_refresh_token_partitioned'] ss_keys=['token', 'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_', 'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_', 'react-router-scroll-positions', 'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_']
+RESULT new-redis: PASS
+stopped
+stopped-infra
+293:                             8] ─ Auth callback succeeded; user                 
+294:                             logged in, redirecting to                          
+server tracebacks=0
+
+##### consent rxe97 redis 07:01:45
+PONG
+oidc pid 6775 redis pid 6774
+started pid=6801 pgid=6801
+ready after 4s
+NAV: [[0.78, "http://localhost:3620/agent-consent?txn=_R3VPtYr_Y1UO656DGAE_0w3UMafClSfrwROGtHZM-A"], [2.17, "http://localhost:3620/agent-consent?txn=_R3VPtYr_Y1UO656DGAE_0w3UMafClSfrwROGtHZM-A"], [2.33, "http://localhost:3620/login?redirect_to=%2Fagent-consent%3Ftxn%3D_R3VPtYr_Y1UO656DGAE_0w3UMafClSfrwROGtHZM-A"], [2.45, "http://localhost:8638/oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&state="], [2.79, "http://localhost:3620/callback?code=SHogf0EVssgQO2PrW4OyEeqNJXykoka5YQy7taJuyc8cIUGF&state=LbB5n95iFlw-my1iRVPeJFQkae54oau45BZT2PQx-QSQzxcLW_fAKNIJ0IhGtUuPRsVcO"], [3.12, "http://localhost:3620/callback?code=SHogf0EVssgQO2PrW4OyEeqNJXykoka5YQy7taJuyc8cIUGF&state=LbB5n95iFlw-my1iRVPeJFQkae54oau45BZT2PQx-QSQzxcLW_fAKNIJ0IhGtUuPRsVcO"], [3.23, "http://localhost:3620/agent-consent?txn=_R3VPtYr_Y1UO656DGAE
+WS_SENT: [[2.21, "hydrate_and_load"], [2.25, "check_if_iframed"], [2.31, "check_if_iframed_cb"], [2.34, "on_load_internal"], [2.41, "redirect_to_login"], [3.13, "hydrate_and_load"], [3.2, "update_access_token_hash_in_browser"], [3.25, "update_vars_internal"], [3.25, "on_load_internal"]]
+CONSOLE: [[2.69, "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"]]
+HTTP>=400: []
+FINAL url=http://localhost:3620/agent-consent?txn=_R3VPtYr_Y1UO656DGAE_0w3UMafClSfrwROGtHZM-A approve_buttons=1 cookies=['_oidc_generic_access_token_data_partitioned', '_oidc_generic_granted_scopes_partitioned', '_oidc_generic_id_token_partitioned', '_oidc_generic_refresh_token_partitioned'] ss_keys=['token', 'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_', 'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_', 'react-router-scroll-positions', 'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_']
+RESULT rxe97-redis: PASS
+stopped
+stopped-infra
+292:                             2] ─ Auth callback succeeded; user                 
+293:                             logged in, redirecting to                          
+server tracebacks=0
+
+##### consent new memory 07:02:17
+PONG
+oidc pid 7094 redis pid 7093
+started pid=7120 pgid=7120
+ready after 4s
+NAV: [[0.77, "http://localhost:3620/agent-consent?txn=vw8OYAW9MwuWJ1jRMh9k3D66Q8IjNa3HdPszEisg7Q0"], [2.13, "http://localhost:3620/agent-consent?txn=vw8OYAW9MwuWJ1jRMh9k3D66Q8IjNa3HdPszEisg7Q0"], [2.28, "http://localhost:3620/login?redirect_to=%2Fagent-consent%3Ftxn%3Dvw8OYAW9MwuWJ1jRMh9k3D66Q8IjNa3HdPszEisg7Q0"], [2.41, "http://localhost:8638/oauth2/authorize?client_id=reflex-integration-test&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&state="], [2.74, "http://localhost:3620/callback?code=8l4oElBPWiKMHcWlk88doIfQSPAe14XaR3ce2qAHrBz5mpam&state=WvcAPsdUuFhxIOjfYOyIn_IINWl4wvzE4epYD06YS6CXiGbcSvOFMBh5uYLAIxIa1aG9J"], [3.08, "http://localhost:3620/callback?code=8l4oElBPWiKMHcWlk88doIfQSPAe14XaR3ce2qAHrBz5mpam&state=WvcAPsdUuFhxIOjfYOyIn_IINWl4wvzE4epYD06YS6CXiGbcSvOFMBh5uYLAIxIa1aG9J"], [3.18, "http://localhost:3620/agent-consent?txn=vw8OYAW9MwuWJ1jRMh9k
+WS_SENT: [[2.16, "hydrate_and_load"], [2.23, "check_if_iframed"], [2.25, "check_if_iframed_cb"], [2.29, "on_load_internal"], [2.36, "redirect_to_login"], [3.09, "hydrate_and_load"], [3.15, "update_access_token_hash_in_browser"], [3.19, "update_vars_internal"], [3.19, "on_load_internal"]]
+CONSOLE: [[2.64, "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"]]
+HTTP>=400: []
+FINAL url=http://localhost:3620/agent-consent?txn=vw8OYAW9MwuWJ1jRMh9k3D66Q8IjNa3HdPszEisg7Q0 approve_buttons=1 cookies=['_oidc_generic_access_token_data_partitioned', '_oidc_generic_granted_scopes_partitioned', '_oidc_generic_id_token_partitioned', '_oidc_generic_refresh_token_partitioned'] ss_keys=['token', 'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.code_verifier_rx_state_', 'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.app_state_rx_state_', 'react-router-scroll-positions', 'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state.redirect_to_url_rx_state_']
+RESULT new-mem: PASS
+stopped
+stopped-infra
+260:do not survive restarts and are per-process; configure redis_url for 
+269:survive restarts and are per-process; configure redis_url for multi-worker 
+304:                             0] ─ Auth callback succeeded; user                 
+305:                             logged in, redirecting to                          
+server tracebacks=0
+
+##### QUEUE8 DONE 07:02:49

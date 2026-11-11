@@ -1,0 +1,24 @@
+## direct -> 8142 (peer 127.0.0.1)
+d0_none                            HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d1_xff_one                         HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6'                              asc=127.0.0.1 err=[] {"raw_n": 10}
+d2_xff_chain                       HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d3_xff_two_lines                   HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d4_xff_ws_garbage                  HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6 ,, ,  7.7.7.7'                asc=127.0.0.1 err=[] {"raw_n": 10}
+d4b_xff_junk                       HTTP/1.1 101 ip=127.0.0.1      xff='not an ip!! <script>'                 asc=127.0.0.1 err=[] {"raw_n": 10}
+d4c_xff_empty                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d5_xff_ipv6                        HTTP/1.1 101 ip=127.0.0.1      xff='2001:db8::1'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d5b_xff_ipv6_port                  HTTP/1.1 101 ip=[2001:db8::1]:443 xff='[2001:db8::1]:443, 1.2.3.4:5678'      asc=127.0.0.1 err=[] {"raw_n": 10}
+d6_xrealip_fwd                     HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"forwarded": "for=8.8.8.8;proto=https", "raw_n": 11, "x-real-ip": "9.9.9.9"}
+d7_xff_latin1                      HTTP/1.1 101 ip=7.7.7.7        xff='7.7.7.7, éè'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d8_dup_cookie                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "a=1; b=2; c=3", "cookie_attr": "a=1; b=2; c=3", "raw_n": 11, "x-dup": "one, two"}
+d9_bad_utf8_value                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "z=9; a=é", "cookie_attr": "z=9; a=é", "raw_n": 11, "x-bad": "ÿþ"}
+d10_bad_utf8_name                  HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d11_name_latin1                    HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d12_cookie_secret                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "cookie_attr": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "raw_n": 11}
+## via xff_proxy 8143 -> 8142 (proxy binds 127.0.0.2, client from 127.0.0.3)
+p0_none                            HTTP/1.1 101 ip=127.0.0.2      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 10}
+p1_spoof_one                       HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 127.0.0.3'                   asc=127.0.0.2 err=[] {"raw_n": 10}
+p2_spoof_chain                     HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p3_spoof_two_lines                 HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p4_spoof_ipv6                      HTTP/1.1 101 ip=2001:db8::1    xff='2001:db8::1, 127.0.0.3'               asc=127.0.0.2 err=[] {"raw_n": 10}
+p5_xrealip                         HTTP/1.1 101 ip=127.0.0.2      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 11, "x-real-ip": "9.9.9.9"}

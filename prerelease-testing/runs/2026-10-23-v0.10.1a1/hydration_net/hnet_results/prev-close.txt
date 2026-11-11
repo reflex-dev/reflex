@@ -1,0 +1,5 @@
+[FAIL] bigproxy_backoff_no_tight_loop: {"n_ws_opens": 1051, "open_gaps": [0.059, 0.016, 0.018, 0.013, 0.015, 0.014, 0.01, 0.017, 0.012, 0.016, 0.012, 0.014, 0.013, 0.016, 0.013, 0.015, 0.013, 0.017, 0.014, 0.008, 0.022, 0.022, 0.01, 0.011, 0.014], "hydrated": "false", "console_errors": [], "observe_s": 15.0}
+[FAIL] bigproxy_toast_shown: {"first_toast": null, "toast_at_s": null, "final": []}
+[pass] bigproxy_recovery: {"big_len": "len:10"}
+SUMMARY 1/3 pass; fail=['bigproxy_backoff_no_tight_loop', 'bigproxy_toast_shown']
+proxy closes: 1062

@@ -1,0 +1,5 @@
+Error: development-release dependency pins must not be published:
+  reflex: reflex-base >= 0.10.1.dev0
+  reflex-components-internal: reflex >= 0.10.1.dev0
+
+2 development-release pin(s) found. Release the depended-on package(s) and re-pin to a published version before publishing.

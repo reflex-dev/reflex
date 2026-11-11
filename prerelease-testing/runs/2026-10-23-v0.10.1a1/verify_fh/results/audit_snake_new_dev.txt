@@ -1,0 +1,40 @@
+  ok   app/root.jsx fn=ReflexProviders@L26
+  ok   app/routes/_index.jsx fn=Component@L19
+  ok   app_components/reflex/app.jsx fn=DefaultOverlayComponents_04c36749@L17
+  BAIL app_components/reflex/compiler/compiler.jsx fn=MemoizedToastProvider_18b15038@L16 line=18 :: Immutability: This value cannot be modified
+       refs['__toast'] = toast
+  BAIL app_components/snakegame/snakegame.jsx fn=Cond_comp_ca57bf910541d8ab66114abd37794349_9e5230bb@L17 line=20 :: Todo: Unexpected terminal kind `optional` for ternary test block
+       ((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.())?(children?.at?.(0)):(children?.at?.(1)))
+  ok   app_components/snakegame/snakegame.jsx fn=Iconbutton_iconbutton_db18ecf04859f231c6e13b4d7e4be22d_9e5230bb@L28
+  ok   app_components/snakegame/snakegame.jsx fn=Button_button_9032a3e0beb68bef8e5d8190f3fefcb1_9e5230bb@L40
+  ok   app_components/snakegame/snakegame.jsx fn=Button_button_1876d7ccae416977358790cdf1153ce7_9e5230bb@L51
+  ok   app_components/snakegame/snakegame.jsx fn=Switch_switch_a4b3cc9add2bb7d2090bfacbf0222a1a_9e5230bb@L62
+  ok   app_components/snakegame/snakegame.jsx fn=Bare_comp_42c3a4287bc2acb6ec4aa77664cc836a_9e5230bb@L74
+  ok   app_components/snakegame/snakegame.jsx fn=Bare_comp_54f9f01d36d47cd53a171ec7fd0a1d48_9e5230bb@L85
+  ok   app_components/snakegame/snakegame.jsx fn=Bare_comp_e5b7c1544a8c66ffa34dabc97bc06e8e_9e5230bb@L96
+  ok   app_components/snakegame/snakegame.jsx fn=Foreach_comp_7c24da72f68112e1c6bf2d6eb9474e6f_9e5230bb@L107
+  ok   app_components/snakegame/snakegame.jsx fn=Cond_comp_1a2b841093eb31d5c9478afb64cfdbf9_9e5230bb@L119
+  ok   app_components/snakegame/snakegame.jsx fn=Iconbutton_iconbutton_60d22ab5bc021b3b862595b50c9d2297_9e5230bb@L130
+  ok   app_components/snakegame/snakegame.jsx fn=Iconbutton_iconbutton_e460626ba534cf1ef40674916f7145cb_9e5230bb@L141
+  ok   app_components/snakegame/snakegame.jsx fn=Iconbutton_iconbutton_ba484c3a5a7c178dadcdea0134c6d78d_9e5230bb@L152
+  ok   app_components/snakegame/snakegame.jsx fn=Iconbutton_iconbutton_85ee881ec6d5c9861e8032a2a5677490_9e5230bb@L163
+  ok   utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx fn=Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3@L15
+
+## snakegame/.web : 11 files in scope
+file | functions | compiled | bailed | skipped | _c( calls | has id: | has refs[ | bailed fns
+app/_document.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.embed.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/root.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+app/routes.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[404]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/_index.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+app_components/reflex/app.jsx | 1 | 1 | 0 | 0 | 1 | true | true | 
+app_components/reflex/compiler/compiler.jsx | 1 | 0 | 1 | 0 | 0 | false | true | MemoizedToastProvider_18b15038@L16
+app_components/snakegame/snakegame.jsx | 14 | 13 | 1 | 0 | 9 | false | false | Cond_comp_ca57bf910541d8ab66114abd37794349_9e5230bb@L17
+utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+
+TOTAL functions=19 compiled=17 bailed=2
+bail-out reasons:
+  1  Immutability: This value cannot be modified
+  1  Todo: Unexpected terminal kind `optional` for ternary test block

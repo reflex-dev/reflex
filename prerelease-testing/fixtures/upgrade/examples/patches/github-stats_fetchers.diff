@@ -1,0 +1,22 @@
+--- a/github-stats/github_stats/fetchers.py
++++ b/github-stats/github_stats/fetchers.py
+@@ -44,6 +44,10 @@
+ 
+ # Set the GitHub GraphQL API URL
+ GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
++# QA (upgrades_a): opt-in local stub endpoint (no GitHub token in this sandbox). Unset = upstream behaviour.
++QA_STUB_URL = os.environ.get("QA_GITHUB_GRAPHQL_URL")
++if QA_STUB_URL:
++    GITHUB_GRAPHQL_URL = QA_STUB_URL
+ 
+ 
+ async def user_stats(username: str):
+@@ -64,7 +68,7 @@
+         },
+     }
+ 
+-    async with httpx.AsyncClient() as client:
++    async with httpx.AsyncClient(trust_env=not QA_STUB_URL) as client:
+         response = await client.post(GITHUB_GRAPHQL_URL, headers=headers, json=payload)
+ 
+         response.raise_for_status()

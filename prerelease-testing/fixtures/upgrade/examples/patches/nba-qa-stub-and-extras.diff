@@ -1,0 +1,50 @@
+--- a/nba/nba/views/table.py
++++ b/nba/nba/views/table.py
+@@ -3,7 +3,10 @@
+ import plotly.express as px
+ import plotly.graph_objects as go
+ 
+-nba_overview = "https://media.geeksforgeeks.org/wp-content/uploads/nba.csv"
++# QA STUB: the upstream CSV URL is blocked by this environment's egress proxy (CONNECT 403),
++# so the same nine columns are read from a locally generated file instead.
++import pathlib
++nba_overview = str(pathlib.Path(__file__).resolve().parents[2] / "nba_local.csv")
+ nba_data = pd.read_csv(nba_overview)
+ college = ["All"] + sorted(nba_data["College"].dropna().unique())
+ 
+@@ -37,6 +40,11 @@
+         """Set the salary filter."""
+         self.salary = (int(salary[0]), int(salary[1]))
+ 
++    # QA ADD (rendered only with QA_NBA_EXTRAS=1): a plain-string layout title driven by state (#7226 path)
++    @rx.var
++    def qa_layout(self) -> dict:
++        return {"title": f"QA {self.position} players"}
++
+     @rx.var
+     def df(self) -> pd.DataFrame:
+         """The data."""
+--- a/nba/nba/views/stats.py
++++ b/nba/nba/views/stats.py
+@@ -1,3 +1,5 @@
++import os
++
+ import reflex as rx
+ from .table import State
+ from .table import college
+@@ -90,6 +92,15 @@
+         rx.box(
+             rx.plotly(data=State.scat_fig, width="100%", use_resize_handler=True),
+             rx.plotly(data=State.hist_fig, width="100%", use_resize_handler=True),
++            *(
++                [
++                    # QA ADD: string layout titles (literal and state-driven) -> #7226 normalization
++                    rx.plotly(data=State.hist_fig, layout={"title": "QA literal layout title"}, width="100%", id="qa-literal-title"),
++                    rx.plotly(data=State.hist_fig, layout=State.qa_layout, width="100%", id="qa-state-title"),
++                ]
++                if os.environ.get("QA_NBA_EXTRAS") == "1"
++                else []
++            ),
+             width="100%",
+         ),
+         width=["100%", "100%", "100%", "50%"],

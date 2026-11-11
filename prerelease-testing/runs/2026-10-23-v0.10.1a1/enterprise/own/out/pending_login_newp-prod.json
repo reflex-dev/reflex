@@ -1,0 +1,52 @@
+[
+ {
+  "name": "A two_starts #1",
+  "state_first": "HVOUn77j6kEh",
+  "state_second": "HVOUn77j6kEh",
+  "pair_reused": true,
+  "ok": true,
+  "errors": [
+   "console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "final_url": "http://localhost:8621/vault/"
+ },
+ {
+  "name": "B other_tab #1",
+  "different_pairs": true,
+  "restarted": true,
+  "restart_state_is_own": true,
+  "ok": true,
+  "final_url_t2": "http://localhost:8621/vault/",
+  "errors": [
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "final_url": "http://localhost:8638/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A8621%2Fcallback&scope=openid+email+profile&state=FLxyywT60aviQ49c1T_AcN2PhfBGy5WEJwb5uqDZGSPzgq6Y3HH9aNruYKoZanP-wllGeuXGwybk1Lob_5MQPA&code_challenge=tiy9uYRKGDR-GK3qeUSowo-rbBnQp2-sL7Ui38rA2Nc&code_challenge_method=S256&response_type=code&response_mode=query"
+ },
+ {
+  "name": "C dblclick #1",
+  "state": "C9cSJDPsg6WL",
+  "ok": true,
+  "errors": [
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "final_url": "http://localhost:8621/vault/"
+ },
+ {
+  "name": "D logout_keep #1",
+  "login2_ok": true,
+  "after_logout_path": "/oauth2/end_session",
+  "state_third_new": true,
+  "ok": true,
+  "errors": [
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "console: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "final_url": "http://localhost:8621/vault/"
+ }
+]

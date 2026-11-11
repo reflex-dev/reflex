@@ -1,0 +1,16 @@
+venv ok: 0.10.0
+[c00-control/prev] rc=0  
+[c01-dirlink-rel-out/prev] rc=1  ValueError: '/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_cc/sym/outside_target/file.txt' is not in the subpath of '/
+[c02-dirlink-abs-out/prev] rc=1  ValueError: '/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_cc/sym/outside_target/file.txt' is not in the subpath of '/
+[c03-nested-dirlink/prev] rc=1  ValueError: '/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_cc/sym/outside_target/file.txt' is not in the subpath of '/
+[c04-dotvenv-real/prev] rc=0  
+[c05-venv-nodot-real/prev] rc=0  
+[c06-venvlink-out/prev] rc=0  
+[c07-filelink-out/prev] rc=0  
+[c08-dangling-link/prev] rc=1  FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_cc/sym/c08-dang
+[c09-link-in-pycache/prev] rc=0  
+[c10-link-in-dotdir/prev] rc=0  
+[c11-dirlink-excluded/prev] rc=0  
+[c12-dirlink-inside/prev] rc=0  
+[c13-venv-nocfg-link/prev] rc=1  ValueError: '/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_cc/sym/outside_venv/lib/python3.12/site-packages/_virtualen
+SYM-DONE prev

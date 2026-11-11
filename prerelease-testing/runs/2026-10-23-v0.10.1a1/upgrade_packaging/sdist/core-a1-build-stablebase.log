@@ -1,0 +1,9 @@
+Processing ./.
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: reflex-components-core
+  Building wheel for reflex-components-core (pyproject.toml): started
+  Building wheel for reflex-components-core (pyproject.toml): finished with status 'done'
+  Created wheel for reflex-components-core: filename=reflex_components_core-0.10.1a1-py3-none-any.whl size=164236 sha256=310bdd559116a6fd611ce14b18cf5f3d98cea26cd7abccf4c514824161d5cac0
+  Stored in directory: /tmp/pip-ephem-wheel-cache-uor66jvo/wheels/d1/7e/a8/88d16bd8d68171924616491d7edcf6cb3b397cefd0701ea2b7
+Successfully built reflex-components-core

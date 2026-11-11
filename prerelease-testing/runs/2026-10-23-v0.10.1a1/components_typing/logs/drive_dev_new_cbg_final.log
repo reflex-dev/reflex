@@ -1,0 +1,44 @@
+== cbg
+  [ok ] cbg/initial_group_value: group=a
+  [ok ] cbg/group_items_rendered: count=3
+  [ok ] cbg/item_a_checked: true
+  [ok ] cbg/item_b_disabled_attr: disabled='' data-disabled=''
+  [ok ] cbg/hidden_inputs_named_grp: count=3
+  [ok ] cbg/click_c_updates_state: group=a,c
+  [ok ] cbg/on_value_change_payload_list: payload=["a", "c"]
+  [ok ] cbg/one_change_event: group_changes=1
+  [ok ] cbg/disabled_item_click_ignored: group=a,c
+  [ok ] cbg/server_reset_state: group=
+  [ok ] cbg/server_reset_reaches_dom: ['false', 'false', 'false']
+  [ok ] cbg/server_preset_reaches_dom: group=a,c ['true', 'false', 'true']
+  [ok ] cbg/root_disabled_var_disables_items: disabled=true disabled attrs=['', '', '']
+  [ok ] cbg/root_disabled_blocks_clicks: group=a,c
+  [ok ] cbg/info_cards_dom: <div role="group" dir="ltr" id="cc" class="rt-Grid rt-CheckboxCardsRoot rt-r-size-2 rt-variant-surface rt-r-gtc-3 rt-r-gap-4" tabindex="0" style="outline: none;"><label class="rt-BaseCard rt-CheckboxC
+  [ok ] cbg/cards_click_z: cards=z
+  [ok ] cbg/cards_click_x_keeps_z: cards=z,x
+  [ok ] cbg/cards_two_change_events: cards_changes=2
+  [ok ] cbg/card_y_disabled: disabled=''
+  [ok ] cbg/default_value_group_checked: D2 aria-checked=true
+  [ok ] cbg/form_submit_includes_group: submitted={"cards": ["x", "z"], "dgrp": ["d2"], "cg": [null], "cc": ["x"], "cg_default": ["d2"]}
+  [FAIL] cbg/form_submit_all_values: submitted={"cards": ["x", "z"], "dgrp": ["d2"], "cg": [null], "cc": ["x"], "cg_default": ["d2"]}
+  [ok ] cbg/info_id_based_keys_in_submit: id keys present: cg=True cc=True cg_default=True :: submitted={"cards": ["x", "z"], "dgrp": ["d2"], "cg": [null], "cc": ["x"], "cg_default": ["d2"]}
+== de
+  [ok ] de/editor_1_canvas: canvases=2
+  [ok ] de/editor_2_canvas: canvases=2
+  [ok ] de/editor_3_canvas: canvases=2
+  [ok ] de/editor_4_canvas: canvases=2
+  [ok ] de/no_page_errors_on_load: []
+  [ok ] de/no_column_type_undefined_warning: 0 messages
+  [ok ] de/portal_div_present: portal=True
+  [ok ] de/info_app_wraps: {'badge': False, 'portalChildren': 0}
+  [ok ] de/info_overlay_editor: {'html': '<div style="--gdg-accent-color: #4F5DFF; --gdg-accent-fg: #FFFFFF; --gdg-accent-light: rgba(62, 116, 253, 0.1); --gdg-text-dark: #313139; --gdg-text-medium: #737383; --gdg-text-light: #B2B2C
+  [ok ] de/cell_edit_roundtrip: edits=0,0=Zed
+  [ok ] de/cell_edit_updates_row: row0=Zed|30|1990-01-01
+  [ok ] de/cell_edit_dblclick_number: edits=2,1=99
+  [ok ] de/add_row_state: nrows=4
+  [ok ] de/add_untyped_column_no_error: ncols=4 errors=[]
+  [ok ] de/no_column_type_undefined_after_add: 0 messages
+  [ok ] de/cmp31_image_overlay_opens: {'imgs': 4, 'carousel': True, 'text': '1 of 2'}
+  [ok ] de/info_overlay_closes_on_escape: imgs after escape=0 (CMP-48 known)
+RESULT: 39/40 checks passed; is_new=True
+  FAIL cbg/form_submit_all_values: submitted={"cards": ["x", "z"], "dgrp": ["d2"], "cg": [null], "cc": ["x"], "cg_default": ["d2"]}

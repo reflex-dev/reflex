@@ -1,0 +1,17 @@
+typing_user.py:45:29: error[invalid-assignment] Object of type `dataclasses.Field[Field[Point]]` is not assignable to `Point`
+typing_user.py:98:1: error[type-assertion-failure] Type `User | None` does not match asserted type `ObjectVar[User]`
+typing_user.py:99:1: error[type-assertion-failure] Type `Point | None` does not match asserted type `ObjectVar[Point]`
+typing_user.py:100:1: error[type-assertion-failure] Type `Filters | None` does not match asserted type `ObjectVar[Filters]`
+typing_user.py:101:1: error[type-assertion-failure] Type `Point` does not match asserted type `ObjectVar[Point]`
+typing_user.py:102:18: error[unresolved-attribute] Attribute `name` is not defined on `None` in union `User | None`
+typing_user.py:103:12: error[unresolved-attribute] Attribute `x` is not defined on `None` in union `Point | None`
+typing_user.py:104:14: error[unresolved-attribute] Object of type `Filters | None` has no attribute `q`
+typing_user.py:105:17: error[unresolved-attribute] Attribute `email` is not defined on `None` in union `User | None`
+typing_user.py:105:38: error[unresolved-attribute] Attribute `y` is not defined on `None` in union `Point | None`
+typing_user.py:105:56: error[unresolved-attribute] Object of type `Filters | None` has no attribute `page`
+typing_user.py:170:1: error[type-assertion-failure] Type `RadixPrimitiveComponentWithClassName` does not match asserted type `Component`
+typing_user.py:171:1: error[type-assertion-failure] Type `RadixPrimitiveComponentWithClassName` does not match asserted type `Component`
+typing_user.py:186:15: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+typing_user.py:187:16: error[invalid-type-form] Non-generic class `EventHandler` cannot be specialized in a type expression
+typing_user.py:211:18: error[invalid-argument-type] Argument to function `TextField.__call__` is incorrect: Expected `Var[str] | str | None`, found `Literal[True]`
+Found 16 diagnostics

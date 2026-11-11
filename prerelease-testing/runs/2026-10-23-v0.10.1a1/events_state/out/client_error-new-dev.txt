@@ -1,0 +1,11 @@
+no payload at all            connected=True received=[]
+empty dict                   connected=True received=[]
+None                         connected=True received=[]
+string                       connected=True received=[]
+list                         connected=True received=[]
+dict without expected keys   connected=True received=[]
+dict with huge stack         connected=True received=[]
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/events_state/probe_client_error.py", line 41, in <module>
+    sio.emit("client_error", *args, namespace="/_event")
+TypeError: Client.emit() got multiple values for argument 'namespace'

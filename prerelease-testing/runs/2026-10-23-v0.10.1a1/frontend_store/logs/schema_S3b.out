@@ -1,0 +1,21 @@
+[ok ] first load: no mismatch warning: got=0 want=0
+[ok ] first load: no banner: got=0 want=0
+[ok ] first load: navigation type: got='navigate' want='navigate'
+[ok ] after 6 reloads: no mismatch warning: got=0 want=0
+[ok ] after reloads: no banner: got=0 want=0
+[ok ] after reloads: count kept: got='1' want='1'
+[ok ] after reloads: tally kept: got='1' want='1'
+[ok ] second: tally t3 renders: got='0' want='0'
+[ok ] prerendered routes: no mismatch warning: got=0 want=0
+[ok ] prerendered /item/5 iid: got='5' want='5'
+[ok ] no page errors so far: got=[] want=[]
+fails=0 mismatch_warnings=0 unknown_substate_warnings=0 console(non-benign)=9 pageerrors=0
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation
+  console: log Disconnect websocket on page navigation

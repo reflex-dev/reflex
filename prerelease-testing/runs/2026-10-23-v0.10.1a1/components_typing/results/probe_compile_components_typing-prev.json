@@ -1,0 +1,563 @@
+{
+ "venv": "components_typing-prev",
+ "reflex": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-prev/lib/python3.12/site-packages/reflex/__init__.py",
+ "rows": [
+  {
+   "name": "cg_controlled",
+   "ok": false,
+   "detail": "ValueError: The CheckboxGroupRoot does not take in an `on_value_change` event trigger. Valid triggers for CheckboxGroupRoot: ['on_blur', 'on_click', 'on_context_menu', 'on_double_click', 'on_focus', 'on_mount', 'on_mouse_down', 'on_mouse_enter', 'on_mouse_leave', 'on_mouse_move', 'on_mouse_out', 'on_mouse_over', 'on_mouse_up', 'on_scroll', 'on_scroll_end', 'on_unmount']. If CheckboxGroupRoot is a third party component make sure to add `on_value_change` to the component's event triggers. visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info.",
+   "tb": "mes/base.py\", line 122, in create\n    component = super().create(*children, **props)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-prev/lib/python3.12/site-packages/reflex_base/components/component.py\", line 1321, in create\n    return cls._create(children_normalized, **props)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-prev/lib/python3.12/site-packages/reflex_base/components/component.py\", line 1336, in _create\n    comp._post_init(children=list(children), **props)\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-prev/lib/python3.12/site-packages/reflex_base/components/component.py\", line 974, in _post_init\n    raise ValueError(msg)\nValueError: The CheckboxGroupRoot does not take in an `on_value_change` event trigger. Valid triggers for CheckboxGroupRoot: ['on_blur', 'on_click', 'on_context_menu', 'on_double_click', 'on_focus', 'on_mount', 'on_mouse_down', 'on_mouse_enter', 'on_mouse_leave', 'on_mouse_move', 'on_mouse_out', 'on_mouse_over', 'on_mouse_up', 'on_scroll', 'on_scroll_end', 'on_unmount']. If CheckboxGroupRoot is a third party component make sure to add `on_value_change` to the component's event triggers. visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info.\n"
+  },
+  {
+   "name": "cc_controlled",
+   "ok": false,
+   "detail": "ValueError: The CheckboxCardsRoot does not take in an `on_value_change` event trigger. Valid triggers for CheckboxCardsRoot: ['on_blur', 'on_click', 'on_context_menu', 'on_double_click', 'on_focus', 'on_mount', 'on_mouse_down', 'on_mouse_enter', 'on_mouse_leave', 'on_mouse_move', 'on_mouse_out', 'on_mouse_over', 'on_mouse_up', 'on_scroll', 'on_scroll_end', 'on_unmount']. If CheckboxCardsRoot is a third party component make sure to add `on_value_change` to the component's event triggers. visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info.",
+   "tb": "mes/base.py\", line 122, in create\n    component = super().create(*children, **props)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-prev/lib/python3.12/site-packages/reflex_base/components/component.py\", line 1321, in create\n    return cls._create(children_normalized, **props)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-prev/lib/python3.12/site-packages/reflex_base/components/component.py\", line 1336, in _create\n    comp._post_init(children=list(children), **props)\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/components_typing-prev/lib/python3.12/site-packages/reflex_base/components/component.py\", line 974, in _post_init\n    raise ValueError(msg)\nValueError: The CheckboxCardsRoot does not take in an `on_value_change` event trigger. Valid triggers for CheckboxCardsRoot: ['on_blur', 'on_click', 'on_context_menu', 'on_double_click', 'on_focus', 'on_mount', 'on_mouse_down', 'on_mouse_enter', 'on_mouse_leave', 'on_mouse_move', 'on_mouse_out', 'on_mouse_over', 'on_mouse_up', 'on_scroll', 'on_scroll_end', 'on_unmount']. If CheckboxCardsRoot is a third party component make sure to add `on_value_change` to the component's event triggers. visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info.\n"
+  },
+  {
+   "name": "rc_aschild",
+   "ok": true,
+   "detail": {
+    "root_props": [
+     "asChild:true",
+     "defaultValue:\"1\""
+    ],
+    "item_props": [
+     "asChild:true",
+     "value:\"1\""
+    ],
+    "root_asChild_prop": true,
+    "root_as_child_in_css": false,
+    "item_asChild_prop": true
+   }
+  },
+  {
+   "name": "ac_cases",
+   "ok": true,
+   "detail": {
+    "off": "TypeError: Invalid var passed for prop TextFieldRoot.auto_complete, expected type <class 'bool'>, got value 'off' of type <class 'str'>.",
+    "email": "TypeError: Invalid var passed for prop TextFieldRoot.auto_complete, expected type <class 'bool'>, got value 'email' of type <class 'str'>.",
+    "true": [
+     "autoComplete:true"
+    ],
+    "false": [
+     "autoComplete:false"
+    ],
+    "boolvar": [
+     "autoComplete:reflex___state____state____main_____s.flag_rx_state_"
+    ],
+    "strvar": "TypeError: Invalid var passed for prop TextFieldRoot.auto_complete, expected type <class 'bool'>, got value reflex___state____state____main_____s.ac_rx_state_ of type <class 'str'>. You can call `.bool()` on the value to convert it to a boolean.",
+    "el_off": [
+     "autoComplete:\"off\""
+    ]
+   }
+  },
+  {
+   "name": "prim_progress",
+   "ok": true,
+   "detail": {
+    "root_tag": "RadixProgressRoot",
+    "root_props": [
+     "className:\"Root \""
+    ],
+    "indicator_props": [
+     "className:\"Indicator \"",
+     "max:200",
+     "value:reflex___state____state____main_____s.name_rx_state_.split(\"\").length"
+    ],
+    "root_has_value": false,
+    "root_has_max": false,
+    "library": "@radix-ui/react-progress@1.1.16"
+   }
+  },
+  {
+   "name": "accordion_style",
+   "ok": true,
+   "detail": {
+    "first_of_type": false,
+    "first_child": true,
+    "library": "@radix-ui/react-accordion@1.2.20"
+   }
+  },
+  {
+   "name": "radix_versions",
+   "ok": false,
+   "detail": "AttributeError: 'Dialog' object has no attribute 'DialogElement'",
+   "tb": "Traceback (most recent call last):\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/probes/probe_compile.py\", line 26, in row\n    res = fn()\n          ^^^^\n  File \"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/probes/probe_compile.py\", line 206, in radix_versions\n    \"dialog\": dialog.DialogElement.library,\n              ^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'Dialog' object has no attribute 'DialogElement'\n"
+  },
+  {
+   "name": "form_ns",
+   "ok": true,
+   "detail": {
+    "FormData": "None",
+    "form_call": "Form",
+    "form_root": "FormRoot",
+    "stub_as_class": null
+   }
+  },
+  {
+   "name": "moment_props",
+   "ok": true,
+   "detail": {
+    "utc": {
+     "props": [
+      "css:({ [\"utc\"] : true })",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"utc\"] : true })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "calendar": {
+     "props": [
+      "css:({ [\"calendar\"] : true })",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"calendar\"] : true })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "calendar_dict": {
+     "props": [
+      "css:({ [\"calendar\"] : ({ [\"sameDay\"] : \"[Today]\" }) })",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"calendar\"] : ({ [\"sameDay\"] : \"[Today]\" }) })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "from_": {
+     "props": [
+      "css:({ [\"from\"] : \"2024-03-10\" })",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"from\"] : \"2024-03-10\" })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "to": {
+     "props": [
+      "css:({ [\"to\"] : \"2024-03-20\" })",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"to\"] : \"2024-03-20\" })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "ago": {
+     "props": [
+      "css:({ [\"ago\"] : true })",
+      "fromNow:true",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"ago\"] : true })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "element": {
+     "props": [
+      "css:({ [\"element\"] : \"span\" })",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"element\"] : \"span\" })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "fallback": {
+     "props": [
+      "css:({ [\"fallback\"] : \"x\" })",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"fallback\"] : \"x\" })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "filters": {
+     "props": [
+      "css:({ [\"@media screen and (min-width: 0)\"] : ({ [\"filters\"] : (c) => c }) })",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"@media screen and (min-width: 0)\"] : ({ [\"filters\"] : (c) => c }) })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "renderers": {
+     "props": [
+      "css:({ [\"@media screen and (min-width: 0)\"] : ({ [\"renderers\"] : (p, d) => null }) })",
+      "locale:\"en\""
+     ],
+     "css": [
+      "css:({ [\"@media screen and (min-width: 0)\"] : ({ [\"renderers\"] : (p, d) => null }) })"
+     ],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "locale_fr": {
+     "props": [
+      "locale:\"fr\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "": [
+       "ImportVar(tag='moment/locale/fr', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "locale_en": {
+     "props": [
+      "locale:\"en\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "locale_var": {
+     "props": [
+      "locale:reflex___state____state____main_____s.loc_rx_state_"
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')",
+       "ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react": [
+       "ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "": [
+       "ImportVar(tag='moment/min/locales', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "tz": {
+     "props": [
+      "locale:\"en\"",
+      "tz:\"Europe/Paris\""
+     ],
+     "css": [],
+     "imports": {
+      "$/utils/context": [
+       "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ],
+      "moment@2.31.0": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "react-moment@2.0.2": [
+       "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+      ],
+      "moment-timezone@0.6.5": [
+       "ImportVar(tag='', is_default=False, alias=None, install=True, render=True, package_path='/')"
+      ]
+     },
+     "custom_code": []
+    },
+    "bad_filter": [
+     "css:({ [\"filter\"] : true })",
+     "locale:\"en\""
+    ],
+    "bad_settings": [
+     "css:({ [\"settings\"] : true })",
+     "locale:\"en\""
+    ],
+    "bad_form_at": [
+     "css:({ [\"formAt\"] : true })",
+     "locale:\"en\""
+    ]
+   }
+  },
+  {
+   "name": "moment_provider",
+   "ok": true,
+   "detail": "n/a (no rx.moment_provider)"
+  },
+  {
+   "name": "de_literal_not_mutated",
+   "ok": true,
+   "detail": {
+    "mutated": true,
+    "before": "[{\"title\": \"Name\"}, {\"title\": \"Age\", \"type\": \"int\"}, {\"title\": \"Birth\", \"id\": \"date\"}, \"Plain\"]",
+    "after": "[{\"title\": \"Name\", \"id\": \"name\", \"type\": \"str\", \"overlayIcon\": null}, {\"title\": \"Age\", \"type\": \"int\", \"id\": \"age\", \"overlayIcon\": null}, {\"title\": \"Birth\", \"id\": \"date\", \"type\": \"str\", \"overlayIcon\": null}, \"Plain\"]",
+    "columns_prop": [
+     "columns:[({ [\"title\"] : \"Name\", [\"id\"] : \"name\", [\"type\"] : \"str\", [\"overlayIcon\"] : null }), ({ [\"title\"] : \"Age\", [\"type\"] : \"int\", [\"id\"] : \"age\", [\"overlayIcon\"] : null }), ({ [\"title\"] : \"Birth\", [\"id\"] : \"date\", [\"type\"] : \"str\", [\"overlayIcon\"] : null }), ({ [\"title\"] : \"Plain\", [\"id\"] : \"plain\", [\"type\"] : \"str\" })]"
+    ]
+   }
+  },
+  {
+   "name": "de_state_columns",
+   "ok": true,
+   "detail": {
+    "dict_cols": {
+     "columns_prop": [
+      "columns:reflex___state____state____main_____s.cols_rx_state_"
+     ],
+     "getCellContent": [
+      "getCellContent:getData_xdvxrcsn"
+     ],
+     "hooks": [
+      "const reflex___state____state____main_____s = useContext(StateContexts.reflex___state____state____main_____s)",
+      "function getData_xdvxrcsn([col, row]){\n    return formatDataEditorCells(col, row, reflex___state____state____main_____s.cols_rx_state_, reflex___state____state____main_____s.data_rx_state_);\n  }"
+     ],
+     "react_imports": [
+      "useContext"
+     ]
+    },
+    "title_cols": "TypeError: Invalid var passed for prop DataEditor.columns, expected type collections.abc.Sequence[dict[str, typing.Any]], got value reflex___state____state____main_____s.titles_rx_state_ of type list[str].",
+    "sliced_data": {
+     "columns_prop": [
+      "columns:reflex___state____state____main_____s.cols_rx_state_"
+     ],
+     "getCellContent": [
+      "getCellContent:getData_rgwuwrnh"
+     ],
+     "hooks": [
+      "const reflex___state____state____main_____s = useContext(StateContexts.reflex___state____state____main_____s)",
+      "function getData_rgwuwrnh([col, row]){\n    return formatDataEditorCells(col, row, reflex___state____state____main_____s.cols_rx_state_, reflex___state____state____main_____s.data_rx_state_.slice(1, undefined));\n  }"
+     ],
+     "react_imports": [
+      "useContext"
+     ]
+    },
+    "literal_with_var_col": {
+     "columns_prop": [
+      "columns:[({ [\"title\"] : \"A\", [\"id\"] : \"a\", [\"type\"] : \"str\" }), reflex___state____state____main_____s.cols_rx_state_?.at?.(0)]"
+     ],
+     "getCellContent": [
+      "getCellContent:getData_wnkiegyk"
+     ],
+     "hooks": [
+      "const reflex___state____state____main_____s = useContext(StateContexts.reflex___state____state____main_____s)",
+      "function getData_wnkiegyk([col, row]){\n    return formatDataEditorCells(col, row, [({ [\"title\"] : \"A\", [\"id\"] : \"a\", [\"type\"] : \"str\" }), reflex___state____state____main_____s.cols_rx_state_?.at?.(0)], reflex___state____state____main_____s.data_rx_state_);\n  }"
+     ],
+     "react_imports": [
+      "useContext"
+     ]
+    }
+   }
+  },
+  {
+   "name": "de_format_shim",
+   "ok": true,
+   "detail": {
+    "result": {
+     "title": "A",
+     "id": "a",
+     "type": "str",
+     "overlayIcon": null
+    },
+    "warnings": [],
+    "stdout": ""
+   }
+  },
+  {
+   "name": "lucide_import_var",
+   "ok": true,
+   "detail": {
+    "static_import_var": "ImportVar(tag='WifiOff', is_default=False, alias='LucideWifiOff', install=True, render=True, package_path='/')",
+    "dyn_import_var": "ImportVar(tag='DynamicIcon', is_default=False, alias=None, install=True, render=True, package_path='/')",
+    "static_imports": {
+     "lucide-react@1.26.0": [
+      "ImportVar(tag='WifiOff', is_default=True, alias='LucideWifiOff', install=True, render=True, package_path='/dist/esm/icons/wifi-off.mjs')"
+     ]
+    },
+    "with_prop_imports": {
+     "lucide-react@1.26.0": [
+      "ImportVar(tag='Apple', is_default=True, alias='LucideApple', install=True, render=True, package_path='/dist/esm/icons/apple.mjs')"
+     ]
+    },
+    "with_prop_keeps_lucideIcons": false,
+    "dyn_with_prop_keeps_lucideIcons": false,
+    "cm_all_imports_keys": [
+     "$/utils/context",
+     "lucide-react@1.26.0",
+     "react"
+    ],
+    "idempotent": true
+   }
+  },
+  {
+   "name": "shiki_transformers",
+   "ok": true,
+   "detail": {
+    "transformers_prop": null,
+    "transformers_empty": false,
+    "imports": [
+     "",
+     "$/utils/context",
+     "/components/shiki/code",
+     "@radix-ui/themes@3.3.0",
+     "react",
+     "shiki@4.5.0"
+    ],
+    "has_shikijs_transformers": false,
+    "rsh_library": "react-syntax-highlighter@16.1.1",
+    "custom_code_has_highlighted_style": false,
+    "styles": "{}"
+   }
+  },
+  {
+   "name": "vardata_position",
+   "ok": true,
+   "detail": {
+    "position_attr": "<HookPosition.PRE_TRIGGER: 'pre_trigger'>",
+    "warnings": [],
+    "console": ""
+   }
+  },
+  {
+   "name": "themes_libs",
+   "ok": true,
+   "detail": {
+    "themes_progress": "@radix-ui/themes@3.3.0",
+    "themes_dialog_content": "@radix-ui/themes@3.3.0",
+    "slider": "@radix-ui/themes@3.3.0",
+    "accordion_root": "@radix-ui/react-accordion@1.2.20",
+    "drawer_root": "vaul@1.1.2"
+   }
+  }
+ ]
+}

@@ -1,0 +1,56 @@
+{
+ "cmd": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/reflex run --json --frontend-port 3214 --backend-port 8214",
+ "reflex": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/lib/python3.12/site-packages/reflex/__init__.py 0.10.1a1",
+ "ready_s": 4.74,
+ "top_pid": 7628,
+ "inner_pid": 7632,
+ "tree_before": {
+  "7628": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/python /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-",
+  "7632": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/python -m reflex run --json --frontend-port 3214 --",
+  "7684": "/root/.local/share/reflex/bun/bin/bun run dev",
+  "7702": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new/bin/python -m reflex run --json --frontend-port 3214 --",
+  "7685": "node /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/process_model/run/chatty-vu/.web/node_modules/.bin/rea"
+ },
+ "bytes_before_signal": 1107,
+ "sig_dispositions": {
+  "reader": {
+   "INT": "caught",
+   "TERM": "default"
+  },
+  "top": {
+   "INT": "caught",
+   "TERM": "caught"
+  },
+  "inner": {
+   "INT": "caught",
+   "TERM": "caught"
+  }
+ },
+ "leftover_after": {},
+ "ports_bound_after": [],
+ "rc": 0,
+ "killed_by_reader": false,
+ "sig": "INT",
+ "target": "pid",
+ "json_mode": true,
+ "rate_bps": -1,
+ "pause": 0.0,
+ "sig2_at": null,
+ "inner_exit_s": 0.49,
+ "top_exit_s": 0.63,
+ "ping_down_s": 0.35,
+ "eof_s": 0.63,
+ "top_exit_minus_inner_exit_s": 0.14,
+ "bytes_total": 1416,
+ "ends_with_newline": true,
+ "truncated_tail": "",
+ "truncated_tail_len": 0,
+ "lines_complete": 5,
+ "invalid_count": 0,
+ "invalid_sample": [],
+ "levels": {
+  "info": 4,
+  "success": 1
+ },
+ "seq_printed_by_app": null
+}

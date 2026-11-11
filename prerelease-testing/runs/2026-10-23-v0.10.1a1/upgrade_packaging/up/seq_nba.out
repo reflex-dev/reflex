@@ -1,0 +1,43 @@
+### nba base 0.10.0
+started reflex pid=27076 (01:59:59) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/nba-base.server.log
+SERVER DIED after 10s
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3486 is not in use.
+Debug: Checking if Backend port: 8486 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8486 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8486 is not in use.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nba/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nba/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+    app, app_module = get_and_validate_app(
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nba/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 303, in get_and_validate_app
+    app_module = get_app(reload=reload)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nba/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 263, in get_app
+    __import__(module, fromlist=(constants.CompileVars.APP,))
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/apps/nba/nba/nba.py", line 4, in <module>
+    from .views.table import table
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/apps/nba/nba/views/table.py", line 10, in <module>
+    nba_data = pd.read_csv(nba_overview)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nba/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 873, in read_csv
+    return _read(filepath_or_buffer, kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nba/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 300, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nba/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 1645, in __init__
+    self._engine = self._make_engine(f, self.engine)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nba/lib/python3.12/site-packages/pandas/io/parsers/readers.py", line 1904, in _make_engine
+    self.handles = get_handle(
+                   ^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/upgrade_packaging-nba/lib/python3.12/site-packages/pandas/io/common.py", line 926, in get_handle
+    handle = open(
+             ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/apps/nba/nba_local.csv'

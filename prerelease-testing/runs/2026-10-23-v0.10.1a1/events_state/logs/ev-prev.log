@@ -1,0 +1,248 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Debug: Overriding config value redis_token_expiration with env var 
+REDIS_TOKEN_EXPIRATION=4
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='evapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url='redis://localhost:8319', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=4, 
+_non_default_attributes={'redis_url', 'redis_token_expiration', 'loglevel', 
+'telemetry_enabled', 'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.0 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/events_state-prev/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3302
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8302
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3302 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3302 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3302 is not in use.
+Debug: Checking if Backend port: 8302 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8302 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8302 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-prev/lib/python3.12/site-packages/reflex_components_radix/plugin.
+py:76)
+Debug: [timing] Compile pages: 0.11s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 28/27 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/react-form@0.1.16', '@radix-ui/themes@3.3.0', 'lucide-react@1.26.0',
+'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/events_state/evapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/events_state/evapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/ap
+ps/events_state/evapp/requirements.txt', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/events_state/evapp/evapp', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/events_state/evapp/rxconfig.py']
+[INFO] Starting granian (main PID: 27932)
+[INFO] Listening at: http://0.0.0.0:8302
+[INFO] Spawning worker-1 with PID: 27956
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3302/
+App running at: http://localhost:3302/
+Backend running at: http://0.0.0.0:8302
+Debug:   ➜  Network: http://192.0.2.2:3302/  eth0
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py:584: RuntimeWarning: coroutine 'AsyncComputedVar.__get__.<locals>._awaitable_result' was never awaited
+  if (children := future.children) and not all(c.done() for c in children):
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/events_state-prev/lib/python3.12/site-packages/reflex_base/event/processor/event_processor.py:584: RuntimeWarning: coroutine '_drop_unchanged_delta_value' was never awaited
+  if (children := future.children) and not all(c.done() for c in children):
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+Debug: Cancelling the previous unfinished 
+reflex___state____state.reflex___state____on_load_internal_state.on_load_interna
+l chain for token 02aff9b0-a87a-48cb-b3be-e634cce2e928, superseded by a newer 
+invocation.
+Warning: Lock for token 
+f44a8fc3-66ab-4da1-aa6b-885a1992b3cc_reflex___state____state.evapp___evapp____lo
+ad_state was held too long time_taken=4.813s, use `@rx.event(background=True)` 
+decorator for long-running tasks. Happened in event: 
+reflex___state____state.evapp___evapp____load_state.slow_load
+Warning: Lock for token 
+f44a8fc3-66ab-4da1-aa6b-885a1992b3cc_reflex___state____state.evapp___evapp____lo
+ad_state was held too long time_taken=4.824s, use `@rx.event(background=True)` 
+decorator for long-running tasks. Happened in event: 
+reflex___state____state.evapp___evapp____load_state.slow_load
+Warning: Lock for token 
+cf5cb1fd-b052-4290-e623-c2f3022f51bc_reflex___state____state.evapp___evapp____lo
+ad_state was held too long time_taken=2.511s, use `@rx.event(background=True)` 
+decorator for long-running tasks. Happened in event: 
+reflex___state____state.evapp___evapp____load_state.plain_slow_load
+Warning: Lock for token 
+f44a8fc3-66ab-4da1-aa6b-885a1992b3cc_reflex___state____state.evapp___evapp____lo
+ad_state was held too long time_taken=4.825s, use `@rx.event(background=True)` 
+decorator for long-running tasks. Happened in event: 
+reflex___state____state.evapp___evapp____load_state.slow_load
+Warning: Lock for token 
+f44a8fc3-66ab-4da1-aa6b-885a1992b3cc_reflex___state____state.evapp___evapp____lo
+ad_state was held too long time_taken=4.81s, use `@rx.event(background=True)` 
+decorator for long-running tasks. Happened in event: 
+reflex___state____state.evapp___evapp____load_state.slow_load
+Debug: Cancelling the previous unfinished 
+reflex___state____state.reflex___state____on_load_internal_state.on_load_interna
+l chain for token ac84cebf-3e9b-4bc3-af3d-77ac186e7e28, superseded by a newer 
+invocation.
+Warning: Lock for token 
+f44a8fc3-66ab-4da1-aa6b-885a1992b3cc_reflex___state____state.evapp___evapp____lo
+ad_state was held too long time_taken=4.814s, use `@rx.event(background=True)` 
+decorator for long-running tasks. Happened in event: 
+reflex___state____state.evapp___evapp____load_state.slow_load
+Warning: Lock for token 
+f44a8fc3-66ab-4da1-aa6b-885a1992b3cc_reflex___state____state.evapp___evapp____lo
+ad_state was held too long time_taken=4.811s, use `@rx.event(background=True)` 
+decorator for long-running tasks. Happened in event: 
+reflex___state____state.evapp___evapp____load_state.slow_load
+[Reflex Frontend Exception]
+ ReferenceError: it_rx_state_ is not defined
+ReferenceError: it_rx_state_ is not defined
+    at http://localhost:3302/app_components/evapp/evapp.jsx:412:30
+    at http://localhost:3302/app_components/evapp/evapp.jsx:414:26
+    at handleEvent 
+(http://localhost:3302/node_modules/.vite/deps/@radix-ui_react-form.js?v=8ad5fdf
+c:17:25)
+    at executeDispatch 
+(http://localhost:3302/node_modules/.vite/deps/react-dom_client.js?v=8ad5fdfc:99
+04:5)
+    at runWithFiberInDEV 
+(http://localhost:3302/node_modules/.vite/deps/react-dom_client.js?v=8ad5fdfc:94
+2:66)
+    at processDispatchQueue 
+(http://localhost:3302/node_modules/.vite/deps/react-dom_client.js?v=8ad5fdfc:99
+30:27)
+    at 
+http://localhost:3302/node_modules/.vite/deps/react-dom_client.js?v=8ad5fdfc:101
+99:5
+    at batchedUpdates$1 
+(http://localhost:3302/node_modules/.vite/deps/react-dom_client.js?v=8ad5fdfc:21
+43:12)
+    at dispatchEventForPluginEventSystem 
+(http://localhost:3302/node_modules/.vite/deps/react-dom_client.js?v=8ad5fdfc:10
+003:4)
+    at dispatchEvent 
+(http://localhost:3302/node_modules/.vite/deps/react-dom_client.js?v=8ad5fdfc:12
+511:29)
+
+is not defined
+Debug:  > it_rx_state_ app_components/evapp/evapp.jsx:374:130
+Debug:     372 |          };
+Debug:     373 |  
+Debug:     374 |  ...te.evapp___evapp___fe_state.store", ({ ["which"] : 
+("item_"+it_rx_state_), ["form_data"] : form_data }), ({  })))]...
+Debug:         |                                                                
+^
+Debug:     375 |  
+Debug:     376 |          if (false) {
+Debug:  > ev app_components/evapp/evapp.jsx:374:202
+Debug:  > handleEvent node_modules/@radix-ui/primitive/dist/index.mjs:8:27
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:20804:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:1045:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:20854:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:21423:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3437:39
+Debug:  > dispatchEventForPluginEventSystem 
+node_modules/react-dom/cjs/react-dom-client.development.js:21008:6
+Debug:  > dispatchEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:26142:10
+Debug: 
+Warning: Lock for token 
+f44a8fc3-66ab-4da1-aa6b-885a1992b3cc_reflex___state____state.evapp___evapp____lo
+ad_state was held too long time_taken=4.812s, use `@rx.event(background=True)` 
+decorator for long-running tasks. Happened in event: 
+reflex___state____state.evapp___evapp____load_state.slow_load
+[INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

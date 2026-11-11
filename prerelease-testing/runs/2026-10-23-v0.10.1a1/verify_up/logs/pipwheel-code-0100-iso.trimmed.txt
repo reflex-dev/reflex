@@ -1,0 +1,5 @@
+## pipwheel-code-0100-iso (trimmed: build-env resolution of reflex-base + pyi_generator errors; full log was 212 lines)
+76:  Collecting reflex-base
+210:  Created wheel for reflex-components-code: filename=reflex_components_code-0.10.0-py3-none-any.whl size=24245 sha256=0a1a19c681cde7ec692f5198e344c8e9981937c1d194b6c1fb241e8b88ea2192
+119:  Using cached reflex_base-0.10.0-py3-none-any.whl (403 kB)
+212:Successfully built reflex-components-code

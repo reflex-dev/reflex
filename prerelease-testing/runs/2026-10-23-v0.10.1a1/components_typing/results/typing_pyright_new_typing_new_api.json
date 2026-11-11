@@ -1,0 +1,44 @@
+{
+    "version": "1.1.414",
+    "time": "1792824185888",
+    "generalDiagnostics": [
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "information",
+            "message": "Type of \"_form\" is \"Form\"",
+            "range": {
+                "start": {
+                    "line": 49,
+                    "character": 12
+                },
+                "end": {
+                    "line": 49,
+                    "character": 17
+                }
+            }
+        },
+        {
+            "file": "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/components_typing/typing/typing_new_api.py",
+            "severity": "information",
+            "message": "Type of \"rx.form.FormData\" is \"type[FormData[Unknown, Unknown]]\"",
+            "range": {
+                "start": {
+                    "line": 52,
+                    "character": 12
+                },
+                "end": {
+                    "line": 52,
+                    "character": 28
+                }
+            }
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 1,
+        "errorCount": 0,
+        "warningCount": 0,
+        "informationCount": 2,
+        "timeInSec": 1.933
+    }
+}
+

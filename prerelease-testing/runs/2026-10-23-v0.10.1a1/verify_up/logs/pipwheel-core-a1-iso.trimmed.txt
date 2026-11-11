@@ -1,0 +1,11 @@
+## pipwheel-core-a1-iso (trimmed: build-env resolution of reflex-base + pyi_generator errors; full log was 281 lines)
+207:  AttributeError: type object 'ClientErrorType' has no attribute 'HYDRATION_PAYLOAD_TOO_LARGE'
+82:  Collecting reflex-base
+279:  Created wheel for reflex-components-core: filename=reflex_components_core-0.10.1a1-py3-none-any.whl size=164236 sha256=310bdd559116a6fd611ce14b18cf5f3d98cea26cd7abccf4c514824161d5cac0
+149:  ERROR:pyi_generator:Failed to import reflex_components_core.base.error_boundary
+191:  ERROR:pyi_generator:Failed to import reflex_components_core.core.banner
+173:  ERROR:pyi_generator:Failed to import reflex_components_core.core.upload
+133:  ERROR:pyi_generator:Failed to import reflex_components_core.el.elements.forms
+148:  ImportError: cannot import name 'get_required_typed_dict_keys' from 'reflex_base.utils.types' (/tmp/pip-build-env-71xcbbq3/normal/lib/python3.12/site-packages/reflex_base/utils/types.py)
+116:  Using cached reflex_base-0.10.0-py3-none-any.whl (403 kB)
+281:Successfully built reflex-components-core

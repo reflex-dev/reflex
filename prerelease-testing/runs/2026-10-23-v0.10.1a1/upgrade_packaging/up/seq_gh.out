@@ -1,0 +1,95 @@
+### gh base 0.10.0 01:57:49
+started reflex pid=22556 (01:57:49) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/gh-base.server.log
+UP after 7s (frontend 200, backend /ping 200)
+[PASS   ] reload: users + stats restored from LocalStorage: chips=['alice', 'ghost1'] logins=['alice'] expected=['alice', 'ghost1']/['alice']
+[ANOMALY] widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12): ['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 2.416, "type": "error", "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mut
+== gh-base: {'pass': 14, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=21 unexpected_console=2 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=554
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 22556 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### gh upgrade -> 0.10.1a1 01:58:14
+freeze diff gh: > alembic==1.20.1 > annotated-types==0.8.0 > greenlet==3.5.6 > mako==1.4.3 > markupsafe==3.0.4 > pydantic==2.14.1 > pydantic-core==2.50.1 < reflex==0.10.0 < reflex-base==0.10.0 < reflex-build-sdk==0.1.0 < reflex-components-code==0.10.0 < reflex-components-core==0.10.0 < reflex-components-dataeditor==0.10.0 > reflex==0.10.1a1 > reflex-base==0.10.1a1 > reflex-build-sdk==0.1.1a1 > reflex-components-code==0.10.1a1 > reflex-components-core==0.10.1a1 > reflex-components-dataeditor==0.10.1a1 < reflex-components-lucide==1.1.0 > reflex-components-lucide==1.1.1a1 < reflex-components-moment==0.10.0 > reflex-components-moment==0.10.1a1 < reflex-components-radix==0.10.0 > reflex-components-radix==0.10.1a1 < reflex-hosting-cli==0.2.0 > reflex-hosting-cli==0.2.1a1 > sqlalchemy==2.1.6 > sqlmodel==0.0.48 > typing-inspection==0.4.4 < wrapt==2.5.1 > wrapt==2.5.2rc1 
+Checked 51 packages in 1ms
+All installed packages are compatible
+### gh up 01:58:14
+started reflex pid=23395 (01:58:14) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/gh-up.server.log
+UP after 7s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json gh-base -> gh-up: < "react": "19.3.0", > "react": "19.3.1", < "react-dom": "19.3.0", > "react-dom": "19.3.1", < "postcss": "8.5.29", < "postcss-import": "17.0.0", < "vite": "8.3.2" > "postcss": "8.5.30", > "postcss-import": "17.0.1", > "vite": "8.3.4" 
+.web file list differs:
+34c34
+< .web/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx
+---
+> .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+47a48
+> .web/vite-plugin-react-compiler.js
+PASS text visible: 'alice' | Github Stats | aliceX | ghost1X | Get Stats | alice | 0 | 50 | 100 | 150 | 200 | 0
+PASS no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored) | []
+CHANGING WRITE: removeItem debug prev= None new= None
+CHANGING WRITE: setItem token prev= None new= '3b94aac0-777b-4f76-e288-f958b5ca9f64'
+idempotent write x315: setItem reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_
+idempotent write x1: setItem reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_
+idempotent write x1: setItem reflex___state____state.github_stats___widget____widget_state.user_stats_json_rx_state_
+idempotent write x1: setItem reflex___state____state.github_stats___widget____widget_state.last_fetch_rx_state_
+[PASS   ] persist: selected users restored from LocalStorage written by previous run: chips=['alice', 'ghost1'] localstorage=['alice', 'ghost1']
+[PASS   ] persist: user stats restored (textarea JSON + chart): logins=['alice'] expected(LocalStorage)=['alice'] bars=4
+[PASS   ] reload: users + stats restored from LocalStorage: chips=['alice', 'carol'] logins=['alice', 'carol'] expected=['alice', 'carol']/['alice', 'carol']
+[ANOMALY] widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12): ['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 1.276, "type": "error", "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mut
+== gh-up: {'pass': 12, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=22 unexpected_console=3 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=431
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+SHUTDOWN: main pid 23395 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### gh prod 01:58:47
+started reflex pid=24499 (01:58:47) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/gh-up-prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+[PASS   ] persist: selected users restored from LocalStorage written by previous run: chips=['alice', 'carol'] localstorage=['alice', 'carol']
+[PASS   ] persist: user stats restored (textarea JSON + chart): logins=['alice', 'carol'] expected(LocalStorage)=['alice', 'carol'] bars=8
+[PASS   ] reload: users + stats restored from LocalStorage: chips=['alice', 'carol'] logins=['alice', 'carol'] expected=['alice', 'carol']/['alice', 'carol']
+[ANOMALY] widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12): ['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']
+== gh-up-prod: {'pass': 13, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=3 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=49
+SHUTDOWN: main pid 24499 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### gh cold 01:59:05
+started reflex pid=24922 (01:59:06) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/gh-cold.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json gh-up -> gh-cold: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.26.0", < "mergician": "v2.0.2", < "react": "19.3.1", < "react-debounce-input": "3.3.0", < "react-dom": "19.3.1", < "react-error-boundary": "6.1.6", < "react-helmet": "6.1.0", < "react-router": "8.4.0", < "recharts": "3.10.1", < "socket.io-client": "4.8.4", < "sonner": "2.0.8", < "universal-cookie": "8.1.2" < }, < "devDependencies": { < "@emotion/react": "11.14.0", < "@react-router/dev": "8.4.0", < "@react-router/fs-routes": "8.4.0", < "autoprefixer": "10.6.1", < "postcss": "8.5.30", < "postcss-import": "17.0.1", < "vite": "8.3.4" < }, < "overrides": {} < } > {"name": "reflex", "type": "module", "scripts": {"dev": "react-router dev --host", "export": "react-router build"}, "dependencies": {"@radix-ui/themes": "3.3.0", "@react-router/node": "8.4.0", "isbot": "5.2.2", "lucide-react": "1.26.0", "mergician": "v2.0.2", "react": "19.3.1", "react-debounce-input": "3.3.0", "react-dom": "19.3.1", "react-error-boundary": "6.1.6", "react-helmet": "6.1.0", "react-router": "8.4.0", "recharts": "3.10.1", "socket.io-client": "4.8.4", "sonner": "2.0.8", "universal-cookie": "8.1.2"}, "devDependencies": {"@emotion/react": "11.14.0", "@react-router/dev": "8.4.0", "@react-router/fs-routes": "8.4.0", "autoprefixer": "10.6.1", "postcss": "8.5.30", "postcss-import": "17.0.1", "vite": "8.3.4"}, "overrides": {}} 
+.web file list identical
+[PASS   ] reload: users + stats restored from LocalStorage: chips=['alice', 'ghost1'] logins=['alice'] expected=['alice', 'ghost1']/['alice']
+[ANOMALY] widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12): ['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 2.16, "type": "error", "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be muta
+== gh-cold: {'pass': 14, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=22 unexpected_console=3 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=419
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+SHUTDOWN: main pid 24922 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- gh-base server-log warnings:
+     55 Warning: Attempting to send delta to disconnected client 
+      1 DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: 1:58:06 AM [vite] (client) [console.error] You provided a `value` prop to
+      1 Debug: 1:57:59 AM [vite] (client) [console.error] You provided a `value` prop to
+--- gh-up server-log warnings:
+      2 Debug: 1:58:33 AM [vite] (client) [console.error] You provided a `value` prop to
+      1 Warning: Attempting to send delta to disconnected client 
+      1 DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: 1:58:39 AM [vite] (client) [console.error] You provided a `value` prop to
+      1 Debug: 1:58:23 AM [vite] (client) [console.error] You provided a `value` prop to
+--- gh-up-prod server-log warnings:
+      1 Warning: Page widget/[selected_user_param] is being redefined with the same 
+      1 DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+--- gh-cold server-log warnings:
+     19 Warning: Attempting to send delta to disconnected client 
+      2 Debug: 1:59:19 AM [vite] (client) [console.error] You provided a `value` prop to
+      1 DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: 1:59:12 AM [vite] (client) [console.error] You provided a `value` prop to
+### gh done 01:59:27

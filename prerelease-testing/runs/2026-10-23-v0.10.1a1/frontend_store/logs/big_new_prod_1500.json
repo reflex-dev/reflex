@@ -1,0 +1,30 @@
+{
+ "url": "http://localhost:3226/",
+ "read": 50,
+ "load_ms": 144,
+ "hydrated_ms": 392,
+ "n_vals": 50,
+ "first_vals": [
+  "0",
+  "1",
+  "2"
+ ],
+ "last_val": "49",
+ "bump_ms": 99,
+ "bump_correct": true,
+ "inc_last_ms": 64,
+ "reload_hydrated_ms": 213,
+ "after_reload_last": "51",
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "pageerrors": [],
+ "stack_overflow": false
+}

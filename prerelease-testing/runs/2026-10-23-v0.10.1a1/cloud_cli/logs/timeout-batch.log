@@ -1,0 +1,4 @@
+venv ok: 0.10.1a1 hosting-cli 0.2.1a1 build-sdk 0.1.1a1
+[whoami-timeout-env/new] rc=1 elapsed=61.2s
+venv ok: 0.10.0 hosting-cli 0.2.0 build-sdk 0.1.0
+[whoami-timeout-env/prev] rc=1 elapsed=60.9s

@@ -1,0 +1,48 @@
+py3.11/uv 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.1a1 reflex-build-sdk=0.1.1a1
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-build-sdk==0.1.1a1 reflex-components-code==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-dataeditor==0.10.1a1 reflex-components-lucide==1.1.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 reflex-hosting-cli==0.2.1a1 wrapt==2.5.2rc1 
+  import reflex.model OK
+  uv pip check: All installed packages are compatible
+py3.12/uv 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.1a1 reflex-build-sdk=0.1.1a1
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-build-sdk==0.1.1a1 reflex-components-code==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-dataeditor==0.10.1a1 reflex-components-lucide==1.1.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 reflex-hosting-cli==0.2.1a1 wrapt==2.5.2rc1 
+  import reflex.model OK
+  uv pip check: All installed packages are compatible
+py3.13/uv 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.1a1 reflex-build-sdk=0.1.1a1
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-build-sdk==0.1.1a1 reflex-components-code==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-dataeditor==0.10.1a1 reflex-components-lucide==1.1.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 reflex-hosting-cli==0.2.1a1 wrapt==2.5.2rc1 
+  import reflex.model OK
+  uv pip check: All installed packages are compatible
+py3.14/uv 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.1a1 reflex-build-sdk=0.1.1a1
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-build-sdk==0.1.1a1 reflex-components-code==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-dataeditor==0.10.1a1 reflex-components-lucide==1.1.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 reflex-hosting-cli==0.2.1a1 wrapt==2.5.2rc1 
+  import reflex.model OK
+  uv pip check: All installed packages are compatible
+py3.15/uv 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.1a1 reflex-build-sdk=0.1.1a1
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-build-sdk==0.1.1a1 reflex-components-code==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-dataeditor==0.10.1a1 reflex-components-lucide==1.1.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 reflex-hosting-cli==0.2.1a1 wrapt==2.5.2rc1 
+  import reflex.model OK
+  uv pip check: All installed packages are compatible
+py3.11/pip 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.0 reflex-build-sdk=0.1.0
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 
+  import reflex.model OK
+  pip check: No broken requirements found.
+py3.12/pip 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.0 reflex-build-sdk=0.1.0
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 
+  import reflex.model OK
+  pip check: No broken requirements found.
+py3.13/pip 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.0 reflex-build-sdk=0.1.0
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 
+  import reflex.model OK
+  pip check: No broken requirements found.
+py3.14/pip 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.0 reflex-build-sdk=0.1.0
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 
+  import reflex.model OK
+  pip check: No broken requirements found.
+py3.15/pip 'reflex[db]==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=2.1.6 sqlmodel=0.0.48 greenlet=3.5.6 alembic=1.20.1 pydantic=2.14.1 reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.0 reflex-build-sdk=0.1.0
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 
+  import reflex.model OK
+  pip check: No broken requirements found.
+py3.12/pip 'reflex==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=NOT-INSTALLED sqlmodel=NOT-INSTALLED greenlet=NOT-INSTALLED alembic=NOT-INSTALLED pydantic=NOT-INSTALLED reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.0 reflex-build-sdk=0.1.0
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 
+  import reflex.model OK
+  pip check: No broken requirements found.
+py3.12/uv 'reflex==0.10.1a1' rc=0: reflex=0.10.1a1 reflex-base=0.10.1a1 sqlalchemy=NOT-INSTALLED sqlmodel=NOT-INSTALLED greenlet=NOT-INSTALLED alembic=NOT-INSTALLED pydantic=NOT-INSTALLED reflex-components-core=0.10.1a1 reflex-components-radix=0.10.1a1 reflex-hosting-cli=0.2.1a1 reflex-build-sdk=0.1.1a1
+  pre-releases in graph: reflex==0.10.1a1 reflex-base==0.10.1a1 reflex-build-sdk==0.1.1a1 reflex-components-code==0.10.1a1 reflex-components-core==0.10.1a1 reflex-components-dataeditor==0.10.1a1 reflex-components-lucide==1.1.1a1 reflex-components-moment==0.10.1a1 reflex-components-radix==0.10.1a1 reflex-hosting-cli==0.2.1a1 wrapt==2.5.2rc1 
+  import reflex.model OK
+  uv pip check: All installed packages are compatible

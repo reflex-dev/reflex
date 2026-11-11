@@ -1,0 +1,132 @@
+db init rc=0
+### twr base 0.10.0 01:55:38
+migrate rc=0
+started reflex pid=18623 (01:55:40) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/twr-base-prod.server.log
+UP after 12s (frontend 200, backend /ping 200)
+granian workers spawned (base): 9
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): c25e58dd-0f7d-4bc6-e14b-e4cabada155f -> c25e58dd-0f7d-4bc6-e14b-e4cabada155f
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "alice", "t": 1.973, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "alice", "t": 2.178, "type": "error", "text":
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "alice", "t": 1.973, "url": "http://localhost:3498/bg.svg", "status": 404}, {"page": "alice", "t": 2.178, "url": "http://localhost:3498/signup/bg.svg", "status": 404}, {"page": "bob", "t": 5.0
+== twr-base-prod: {'pass': 19, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=27 unexpected_console=8 page_errors=0 bad_requests=8 (unexpected 8) ws_frames=160
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'alice', 't': 1.973, 'url': 'http://localhost:3498/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 2.178, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'bob', 't': 5.043, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 12.48, 'url': 'http://localhost:3498/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 12.779, 'url': 'http://localhost:3498/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 14.242, 'url': 'http://localhost:3498/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 17.445, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 19.093, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+stale tab ready: yes
+redis keys: 17
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 18623 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### twr upgrade -> 0.10.1a1 01:56:21
+freeze diff twr: < reflex==0.10.0 < reflex-base==0.10.0 < reflex-build-sdk==0.1.0 < reflex-components-code==0.10.0 < reflex-components-core==0.10.0 < reflex-components-dataeditor==0.10.0 > reflex==0.10.1a1 > reflex-base==0.10.1a1 > reflex-build-sdk==0.1.1a1 > reflex-components-code==0.10.1a1 > reflex-components-core==0.10.1a1 > reflex-components-dataeditor==0.10.1a1 < reflex-components-lucide==1.1.0 > reflex-components-lucide==1.1.1a1 < reflex-components-moment==0.10.0 > reflex-components-moment==0.10.1a1 < reflex-components-radix==0.10.0 > reflex-components-radix==0.10.1a1 < reflex-hosting-cli==0.2.0 > reflex-hosting-cli==0.2.1a1 < wrapt==2.5.1 > wrapt==2.5.2rc1 
+Checked 51 packages in 1ms
+All installed packages are compatible
+### twr up 01:56:22
+started reflex pid=20226 (01:56:22) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/twr-up-prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+granian workers spawned (up): 8
+reflex.lock/package.json == .web/package.json
+package.json twr-base -> twr-up: < "react": "19.3.0", < "react-dom": "19.3.0", > "react": "19.3.1", > "react-dom": "19.3.1", < "postcss": "8.5.29", < "postcss-import": "17.0.0", < "vite": "8.3.2" > "postcss": "8.5.30", > "postcss-import": "17.0.1", > "vite": "8.3.4" 
+.web file list differs:
+34c34
+< .web/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx
+---
+> .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+47a48
+> .web/vite-plugin-react-compiler.js
+[ANOMALY] C: did the old tab reload itself after the new server came up?: marker=old-tab-1792806977578
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "dave", "t": 0.929, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "dave", "t": 4.034, "type": "error", "text": "
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "dave", "t": 0.929, "url": "http://localhost:3498/signup/bg.svg", "status": 404}, {"page": "dave", "t": 22.983, "url": "http://localhost:3498/bg.svg", "status": 404}]
+== twr-stale-prod: {'pass': 8, 'fail': 0, 'anomaly': 3, 'skipped': 0}  console_total=16 unexpected_console=12 page_errors=0 bad_requests=2 (unexpected 2) ws_frames=85
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3498/_event/?token=011ee606-be62-40bd-b467-52ed0199daae&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'dave', 't': 0.929, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'dave', 't': 22.983, 'url': 'http://localhost:3498/bg.svg', 'status': 404}
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "bob-pw", "t": 5.015, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "carol", "t": 7.522, "type": "error", "text"
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "bob-pw", "t": 5.014, "url": "http://localhost:3498/login/bg.svg", "status": 404}, {"page": "carol", "t": 7.522, "url": "http://localhost:3498/signup/bg.svg", "status": 404}, {"page": "alice-t
+== twr-up-prod: {'pass': 12, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=14 unexpected_console=4 page_errors=0 bad_requests=4 (unexpected 4) ws_frames=93
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'bob-pw', 't': 5.014, 'url': 'http://localhost:3498/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol', 't': 7.522, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice-tok', 't': 10.625, 'url': 'http://localhost:3498/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice-tok', 't': 10.708, 'url': 'http://localhost:3498/login/bg.svg', 'status': 404}
+[PASS   ] bob still logged in after reload (token kept): bo
+[PASS   ] same token kept across logout/login (reset() keeps session): 4d9a5b98-0515-4b75-e595-b7fb96339259 -> 4d9a5b98-0515-4b75-e595-b7fb96339259
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "alice", "t": 1.068, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "alice", "t": 1.199, "type": "error", "text":
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "alice", "t": 1.068, "url": "http://localhost:3498/bg.svg", "status": 404}, {"page": "alice", "t": 1.199, "url": "http://localhost:3498/signup/bg.svg", "status": 404}, {"page": "bob", "t": 3.8
+== twr-up-prod-base: {'pass': 19, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=27 unexpected_console=8 page_errors=0 bad_requests=8 (unexpected 8) ws_frames=160
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'alice', 't': 1.068, 'url': 'http://localhost:3498/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 1.199, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'bob', 't': 3.869, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 10.733, 'url': 'http://localhost:3498/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 11.09, 'url': 'http://localhost:3498/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice', 't': 12.314, 'url': 'http://localhost:3498/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 14.843, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol0', 't': 16.216, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+SHUTDOWN: main pid 20226 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### twr rollback to 0.10.0 against the same Redis 01:57:15
+27,32c27,32
+< reflex==0.10.0
+< reflex-base==0.10.0
+< reflex-build-sdk==0.1.0
+< reflex-components-code==0.10.0
+started reflex pid=21541 (01:57:15) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/twr-rollback-prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+[FAIL   ] alice's token after restart lands on /login (disk state manager: `reflex run` wipes .states, both versions): path=/ avatar=al token_now=c25e58dd-0f7d-4bc6-e14b-e4cabada155f same_token=True
+[FAIL   ] bob's token after restart lands on /login (disk mode, expected): path=/
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "bob-pw", "t": 4.927, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"page": "carol", "t": 7.597, "type": "error", "text"
+[ANOMALY] network: no unexpected failed/4xx/5xx requests: [{"page": "bob-pw", "t": 4.927, "url": "http://localhost:3498/login/bg.svg", "status": 404}, {"page": "carol", "t": 7.596, "url": "http://localhost:3498/signup/bg.svg", "status": 404}, {"page": "alice-t
+== twr-rollback-prod: {'pass': 10, 'fail': 2, 'anomaly': 2, 'skipped': 0}  console_total=14 unexpected_console=4 page_errors=0 bad_requests=4 (unexpected 4) ws_frames=93
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+  BAD REQUEST: {'page': 'bob-pw', 't': 4.927, 'url': 'http://localhost:3498/login/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'carol', 't': 7.596, 'url': 'http://localhost:3498/signup/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice-tok', 't': 20.646, 'url': 'http://localhost:3498/bg.svg', 'status': 404}
+  BAD REQUEST: {'page': 'alice-tok', 't': 20.718, 'url': 'http://localhost:3498/login/bg.svg', 'status': 404}
+SHUTDOWN: main pid 21541 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- twr-base-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+--- twr-up-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+      1 Warning: Frontend version 0.10.0 for session Rjskwwuc8zofHyCUAAAB does not match
+--- twr-rollback-prod server-log warnings:
+      1 [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 
+### twr done 01:57:48

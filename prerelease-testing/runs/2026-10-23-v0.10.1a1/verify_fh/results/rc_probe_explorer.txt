@@ -1,0 +1,3 @@
+plain compiled= false | events: CompileError: Cannot access refs during render
+refs_assign compiled= false | events: CompileError: This value cannot be modified
+state_hook compiled= true | events: CompileSuccess

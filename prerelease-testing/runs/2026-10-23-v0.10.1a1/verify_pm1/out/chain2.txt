@@ -1,0 +1,197 @@
+#### A1 new fork, 40x /api/log (QueueListener drop count) 21:52:48
+## new-be-log-fork venv=new port=8721 env=[] up after 2s: http://localhost:8721/ping
+direct log lines: 41 (pids: 9); queued log lines: 1 (pids: 1)
+queued log content:
+2026-10-23 21:52:49,370 pid=16572 forkapp.queued import start_method=fork
+SUMMARY {"workers_seen": 8, "errors": 0, "distinct_module_random": 1, "distinct_module_uuid": 1, "distinct_first_random_now": 8, "distinct_first_prng_now": 1, "imported_in_worker": 0, "ticker_advancing": 0, "ticker_alive": 0, "timer_advancing": 0, "lifespan_ran_in_worker": 8, "qlistener_alive": 0, "start_methods": ["fork"]}
+SUMMARY {"n_procs": 9, "n_python": 9, "pss_total_kb": 229349, "pss_python_kb": 229349, "rss_python_kb": 881476}
+new-be-log-fork exited 1.5s after SIGTERM
+no leftovers in pgid 16572
+log: tracebacks=0 multi-threaded-warning=0 spawning-workers-fallback=0
+#### A2 new spawn workaround 21:52:56
+## new-be-log-spawn venv=new port=8721 env=[REFLEX_BACKEND_START_METHOD=spawn] up after 7s: http://localhost:8721/ping
+direct log lines: 48 (pids: 8); queued log lines: 48 (pids: 8)
+queued log content:
+2026-10-23 21:53:00,133 pid=17034 forkapp.queued import start_method=spawn
+2026-10-23 21:53:00,841 pid=17032 forkapp.queued import start_method=spawn
+2026-10-23 21:53:01,002 pid=17026 forkapp.queued import start_method=spawn
+2026-10-23 21:53:01,001 pid=17029 forkapp.queued import start_method=spawn
+2026-10-23 21:53:01,362 pid=17021 forkapp.queued import start_method=spawn
+2026-10-23 21:53:01,731 pid=17040 forkapp.queued import start_method=spawn
+2026-10-23 21:53:01,837 pid=17023 forkapp.queued import start_method=spawn
+2026-10-23 21:53:02,304 pid=17037 forkapp.queued import start_method=spawn
+2026-10-23 21:53:04,451 pid=17034 forkapp.queued api queued marker=1
+2026-10-23 21:53:04,471 pid=17032 forkapp.queued api queued marker=2
+2026-10-23 21:53:04,484 pid=17021 forkapp.queued api queued marker=3
+2026-10-23 21:53:04,497 pid=17023 forkapp.queued api queued marker=4
+2026-10-23 21:53:04,507 pid=17026 forkapp.queued api queued marker=5
+2026-10-23 21:53:04,518 pid=17034 forkapp.queued api queued marker=6
+2026-10-23 21:53:04,528 pid=17021 forkapp.queued api queued marker=7
+2026-10-23 21:53:04,539 pid=17026 forkapp.queued api queued marker=8
+2026-10-23 21:53:04,552 pid=17034 forkapp.queued api queued marker=9
+2026-10-23 21:53:04,562 pid=17026 forkapp.queued api queued marker=10
+2026-10-23 21:53:04,575 pid=17032 forkapp.queued api queued marker=11
+2026-10-23 21:53:04,590 pid=17023 forkapp.queued api queued marker=12
+2026-10-23 21:53:04,601 pid=17026 forkapp.queued api queued marker=13
+2026-10-23 21:53:04,612 pid=17021 forkapp.queued api queued marker=14
+2026-10-23 21:53:04,628 pid=17029 forkapp.queued api queued marker=15
+2026-10-23 21:53:04,643 pid=17032 forkapp.queued api queued marker=16
+2026-10-23 21:53:04,655 pid=17021 forkapp.queued api queued marker=17
+2026-10-23 21:53:04,668 pid=17029 forkapp.queued api queued marker=18
+2026-10-23 21:53:04,684 pid=17029 forkapp.queued api queued marker=19
+2026-10-23 21:53:04,694 pid=17021 forkapp.queued api queued marker=20
+2026-10-23 21:53:04,706 pid=17040 forkapp.queued api queued marker=21
+2026-10-23 21:53:04,717 pid=17034 forkapp.queued api queued marker=22
+2026-10-23 21:53:04,728 pid=17040 forkapp.queued api queued marker=23
+2026-10-23 21:53:04,741 pid=17023 forkapp.queued api queued marker=24
+2026-10-23 21:53:04,751 pid=17034 forkapp.queued api queued marker=25
+2026-10-23 21:53:04,763 pid=17037 forkapp.queued api queued marker=26
+2026-10-23 21:53:04,777 pid=17034 forkapp.queued api queued marker=27
+2026-10-23 21:53:04,791 pid=17026 forkapp.queued api queued marker=28
+2026-10-23 21:53:04,801 pid=17026 forkapp.queued api queued marker=29
+2026-10-23 21:53:04,813 pid=17032 forkapp.queued api queued marker=30
+2026-10-23 21:53:04,823 pid=17040 forkapp.queued api queued marker=31
+2026-10-23 21:53:04,837 pid=17037 forkapp.queued api queued marker=32
+2026-10-23 21:53:04,852 pid=17023 forkapp.queued api queued marker=33
+2026-10-23 21:53:04,864 pid=17037 forkapp.queued api queued marker=34
+2026-10-23 21:53:04,877 pid=17037 forkapp.queued api queued marker=35
+2026-10-23 21:53:04,894 pid=17032 forkapp.queued api queued marker=36
+2026-10-23 21:53:04,907 pid=17040 forkapp.queued api queued marker=37
+2026-10-23 21:53:04,920 pid=17040 forkapp.queued api queued marker=38
+2026-10-23 21:53:04,935 pid=17040 forkapp.queued api queued marker=39
+2026-10-23 21:53:04,946 pid=17037 forkapp.queued api queued marker=40
+SUMMARY {"workers_seen": 8, "errors": 0, "distinct_module_random": 8, "distinct_module_uuid": 8, "distinct_first_random_now": 8, "distinct_first_prng_now": 8, "imported_in_worker": 8, "ticker_advancing": 7, "ticker_alive": 8, "timer_advancing": 1, "lifespan_ran_in_worker": 8, "qlistener_alive": 8, "start_methods": ["spawn"]}
+SUMMARY {"n_procs": 10, "n_python": 10, "pss_total_kb": 696460, "pss_python_kb": 696460, "rss_python_kb": 924732}
+new-be-log-spawn exited 3.0s after SIGTERM
+no leftovers in pgid 16998
+log: tracebacks=0 multi-threaded-warning=0 spawning-workers-fallback=0
+#### A3 new fork + PYTHONWARNINGS=default (does CPython's fork+threads DeprecationWarning surface?) 21:53:10
+## new-be-log-pywarn venv=new port=8721 env=[PYTHONWARNINGS=default] up after 2s: http://localhost:8721/ping
+direct log lines: 41 (pids: 9); queued log lines: 1 (pids: 1)
+queued log content:
+2026-10-23 21:53:11,967 pid=17673 forkapp.queued import start_method=fork
+SUMMARY {"workers_seen": 8, "errors": 0, "distinct_module_random": 1, "distinct_module_uuid": 1, "distinct_first_random_now": 8, "distinct_first_prng_now": 1, "imported_in_worker": 0, "ticker_advancing": 0, "ticker_alive": 0, "timer_advancing": 0, "lifespan_ran_in_worker": 8, "qlistener_alive": 0, "start_methods": ["fork"]}
+SUMMARY {"n_procs": 9, "n_python": 9, "pss_total_kb": 226394, "pss_python_kb": 226394, "rss_python_kb": 884820}
+new-be-log-pywarn exited 2.5s after SIGTERM
+no leftovers in pgid 17673
+log: tracebacks=0 multi-threaded-warning=1 spawning-workers-fallback=0
+#### A4 prev fork, 40x /api/log (baseline) 21:53:20
+## prev-be-log-fork venv=prev port=8721 env=[] up after 3s: http://localhost:8721/ping
+direct log lines: 49 (pids: 9); queued log lines: 49 (pids: 9)
+queued log content:
+2026-10-23 21:53:21,713 pid=17860 forkapp.queued import start_method=fork
+2026-10-23 21:53:21,917 pid=17852 forkapp.queued import start_method=fork
+2026-10-23 21:53:21,944 pid=17854 forkapp.queued import start_method=fork
+2026-10-23 21:53:21,985 pid=17856 forkapp.queued import start_method=fork
+2026-10-23 21:53:22,080 pid=17858 forkapp.queued import start_method=fork
+2026-10-23 21:53:22,127 pid=17866 forkapp.queued import start_method=fork
+2026-10-23 21:53:22,301 pid=17862 forkapp.queued import start_method=fork
+2026-10-23 21:53:22,309 pid=17864 forkapp.queued import start_method=fork
+2026-10-23 21:53:22,395 pid=17868 forkapp.queued import start_method=fork
+2026-10-23 21:53:23,538 pid=17854 forkapp.queued api queued marker=1
+2026-10-23 21:53:23,562 pid=17854 forkapp.queued api queued marker=2
+2026-10-23 21:53:23,580 pid=17854 forkapp.queued api queued marker=3
+2026-10-23 21:53:23,595 pid=17854 forkapp.queued api queued marker=4
+2026-10-23 21:53:23,611 pid=17854 forkapp.queued api queued marker=5
+2026-10-23 21:53:23,645 pid=17854 forkapp.queued api queued marker=6
+2026-10-23 21:53:23,673 pid=17854 forkapp.queued api queued marker=7
+2026-10-23 21:53:23,689 pid=17854 forkapp.queued api queued marker=8
+2026-10-23 21:53:23,709 pid=17854 forkapp.queued api queued marker=9
+2026-10-23 21:53:23,731 pid=17854 forkapp.queued api queued marker=10
+2026-10-23 21:53:23,750 pid=17854 forkapp.queued api queued marker=11
+2026-10-23 21:53:23,774 pid=17854 forkapp.queued api queued marker=12
+2026-10-23 21:53:23,811 pid=17854 forkapp.queued api queued marker=13
+2026-10-23 21:53:23,823 pid=17854 forkapp.queued api queued marker=14
+2026-10-23 21:53:23,839 pid=17854 forkapp.queued api queued marker=15
+2026-10-23 21:53:23,852 pid=17854 forkapp.queued api queued marker=16
+2026-10-23 21:53:23,864 pid=17854 forkapp.queued api queued marker=17
+2026-10-23 21:53:23,876 pid=17854 forkapp.queued api queued marker=18
+2026-10-23 21:53:23,893 pid=17854 forkapp.queued api queued marker=19
+2026-10-23 21:53:23,915 pid=17854 forkapp.queued api queued marker=20
+2026-10-23 21:53:23,934 pid=17854 forkapp.queued api queued marker=21
+2026-10-23 21:53:23,965 pid=17854 forkapp.queued api queued marker=22
+2026-10-23 21:53:23,979 pid=17854 forkapp.queued api queued marker=23
+2026-10-23 21:53:23,996 pid=17864 forkapp.queued api queued marker=24
+2026-10-23 21:53:24,006 pid=17854 forkapp.queued api queued marker=25
+2026-10-23 21:53:24,015 pid=17854 forkapp.queued api queued marker=26
+2026-10-23 21:53:24,025 pid=17864 forkapp.queued api queued marker=27
+2026-10-23 21:53:24,035 pid=17854 forkapp.queued api queued marker=28
+2026-10-23 21:53:24,053 pid=17854 forkapp.queued api queued marker=29
+2026-10-23 21:53:24,065 pid=17854 forkapp.queued api queued marker=30
+2026-10-23 21:53:24,081 pid=17864 forkapp.queued api queued marker=31
+2026-10-23 21:53:24,101 pid=17864 forkapp.queued api queued marker=32
+2026-10-23 21:53:24,125 pid=17854 forkapp.queued api queued marker=33
+2026-10-23 21:53:24,138 pid=17852 forkapp.queued api queued marker=34
+2026-10-23 21:53:24,157 pid=17864 forkapp.queued api queued marker=35
+2026-10-23 21:53:24,179 pid=17858 forkapp.queued api queued marker=36
+2026-10-23 21:53:24,192 pid=17858 forkapp.queued api queued marker=37
+2026-10-23 21:53:24,207 pid=17852 forkapp.queued api queued marker=38
+2026-10-23 21:53:24,220 pid=17864 forkapp.queued api queued marker=39
+2026-10-23 21:53:24,237 pid=17852 forkapp.queued api queued marker=40
+SUMMARY {"workers_seen": 9, "errors": 0, "distinct_module_random": 9, "distinct_module_uuid": 9, "distinct_first_random_now": 9, "distinct_first_prng_now": 9, "imported_in_worker": 9, "ticker_advancing": 8, "ticker_alive": 9, "timer_advancing": 3, "lifespan_ran_in_worker": 9, "qlistener_alive": 9, "start_methods": ["fork"]}
+SUMMARY {"n_procs": 10, "n_python": 10, "pss_total_kb": 690750, "pss_python_kb": 690750, "rss_python_kb": 1009288}
+prev-be-log-fork exited 2.0s after SIGTERM
+no leftovers in pgid 17841
+log: tracebacks=0 multi-threaded-warning=0 spawning-workers-fallback=0
+#### B1 otel+apscheduler app, new fork 21:53:29
+## otel-fork venv=verify_pm1-otel port=8722 env=[] up after 4s: http://localhost:8722/ping
+{"pid": 18202, "imported_here": false, "threads": ["MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader"], "spans_exported_here_first": 2, "spans_exported_here_last": 7, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": false, "job_runs_first": 1, "job_runs_last": 1, "job_pid": 18175, "qlistener_alive": false, "queue_depth": 7}
+{"pid": 18206, "imported_here": false, "threads": ["MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader"], "spans_exported_here_first": 2, "spans_exported_here_last": 10, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": false, "job_runs_first": 1, "job_runs_last": 1, "job_pid": 18175, "qlistener_alive": false, "queue_depth": 15}
+{"pid": 18213, "imported_here": false, "threads": ["MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader"], "spans_exported_here_first": 1, "spans_exported_here_last": 9, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": false, "job_runs_first": 1, "job_runs_last": 1, "job_pid": 18175, "qlistener_alive": false, "queue_depth": 10}
+{"pid": 18216, "imported_here": false, "threads": ["MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader"], "spans_exported_here_first": 2, "spans_exported_here_last": 5, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": false, "job_runs_first": 1, "job_runs_last": 1, "job_pid": 18175, "qlistener_alive": false, "queue_depth": 10}
+{"pid": 18226, "imported_here": false, "threads": ["MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader"], "spans_exported_here_first": 1, "spans_exported_here_last": 8, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": false, "job_runs_first": 1, "job_runs_last": 1, "job_pid": 18175, "qlistener_alive": false, "queue_depth": 10}
+{"pid": 18228, "imported_here": false, "threads": ["MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader"], "spans_exported_here_first": 1, "spans_exported_here_last": 3, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": false, "job_runs_first": 1, "job_runs_last": 1, "job_pid": 18175, "qlistener_alive": false, "queue_depth": 11}
+{"pid": 18236, "imported_here": false, "threads": ["MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader"], "spans_exported_here_first": 1, "spans_exported_here_last": 5, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": false, "job_runs_first": 1, "job_runs_last": 1, "job_pid": 18175, "qlistener_alive": false, "queue_depth": 6}
+{"pid": 18244, "imported_here": false, "threads": ["AnyIO worker thread", "MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader"], "spans_exported_here_first": 1, "spans_exported_here_last": 4, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": false, "job_runs_first": 2, "job_runs_last": 2, "job_pid": 18175, "qlistener_alive": false, "queue_depth": 11}
+SUMMARY {"workers_seen": 8, "imported_in_worker": 0, "spans_exported_in_worker": 8, "metrics_exported_in_worker": 8, "sched_running_flag": 8, "sched_thread_alive": 0, "job_advancing": 0, "qlistener_alive": 0, "max_queue_depth": 15}
+spans.log by pid:
+      9 pid=18202      17 pid=18206      11 pid=18213      12 pid=18216      11 pid=18226      12 pid=18228       7 pid=18236      12 pid=18244 
+span names:
+     80 name=GET /api/otelstat       8 name=reflex.compile       3 name=reflex.compile.evaluate_pages 
+metrics.log by pid:
+      5 pid=18202       5 pid=18206       5 pid=18213       5 pid=18216       5 pid=18226       5 pid=18228       5 pid=18236       5 pid=18244 
+queued.log lines: 1 / direct.log lines: 81
+otel-fork exited 1.5s after SIGTERM
+no leftovers in pgid 18175
+log: tracebacks=0 errors=0
+#### B2 otel+apscheduler app, new spawn 21:53:41
+## otel-spawn venv=verify_pm1-otel port=8722 env=[REFLEX_BACKEND_START_METHOD=spawn] up after 3s: http://localhost:8722/ping
+{"pid": 18489, "imported_here": true, "threads": ["APScheduler", "MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader", "Thread-1 (_monitor)", "ThreadPoolExecutor-3_0"], "spans_exported_here_first": 1, "spans_exported_here_last": 7, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": true, "job_runs_first": 3, "job_runs_last": 8, "job_pid": 18489, "qlistener_alive": true, "queue_depth": 1}
+{"pid": 18491, "imported_here": true, "threads": ["APScheduler", "AnyIO worker thread", "MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader", "Thread-1 (_monitor)", "ThreadPoolExecutor-3_0"], "spans_exported_here_first": 1, "spans_exported_here_last": 4, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": true, "job_runs_first": 2, "job_runs_last": 8, "job_pid": 18491, "qlistener_alive": true, "queue_depth": 1}
+{"pid": 18493, "imported_here": true, "threads": ["APScheduler", "MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader", "Thread-1 (_monitor)", "ThreadPoolExecutor-3_0"], "spans_exported_here_first": 1, "spans_exported_here_last": 5, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": true, "job_runs_first": 3, "job_runs_last": 8, "job_pid": 18493, "qlistener_alive": true, "queue_depth": 1}
+{"pid": 18495, "imported_here": true, "threads": ["APScheduler", "MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader", "Thread-1 (_monitor)", "ThreadPoolExecutor-3_0"], "spans_exported_here_first": 1, "spans_exported_here_last": 5, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": true, "job_runs_first": 2, "job_runs_last": 8, "job_pid": 18495, "qlistener_alive": true, "queue_depth": 1}
+{"pid": 18497, "imported_here": true, "threads": ["APScheduler", "MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader", "Thread-1 (_monitor)", "ThreadPoolExecutor-3_0"], "spans_exported_here_first": 1, "spans_exported_here_last": 5, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": true, "job_runs_first": 3, "job_runs_last": 8, "job_pid": 18497, "qlistener_alive": true, "queue_depth": 1}
+{"pid": 18499, "imported_here": true, "threads": ["APScheduler", "MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader", "Thread-1 (_monitor)", "ThreadPoolExecutor-3_0"], "spans_exported_here_first": 1, "spans_exported_here_last": 8, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": true, "job_runs_first": 3, "job_runs_last": 8, "job_pid": 18499, "qlistener_alive": true, "queue_depth": 1}
+{"pid": 18501, "imported_here": true, "threads": ["APScheduler", "MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader", "Thread-1 (_monitor)", "ThreadPoolExecutor-3_0"], "spans_exported_here_first": 1, "spans_exported_here_last": 9, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": true, "job_runs_first": 3, "job_runs_last": 8, "job_pid": 18501, "qlistener_alive": true, "queue_depth": 1}
+{"pid": 18503, "imported_here": true, "threads": ["APScheduler", "MainThread", "OtelBatchSpanRecordProcessor", "OtelPeriodicExportingMetricReader", "Thread-1 (_monitor)", "ThreadPoolExecutor-3_0"], "spans_exported_here_first": 1, "spans_exported_here_last": 6, "metrics_exported_here_last": 3, "sched_running": true, "sched_thread_alive": true, "job_runs_first": 3, "job_runs_last": 8, "job_pid": 18503, "qlistener_alive": true, "queue_depth": 0}
+SUMMARY {"workers_seen": 8, "imported_in_worker": 8, "spans_exported_in_worker": 8, "metrics_exported_in_worker": 8, "sched_running_flag": 8, "sched_thread_alive": 8, "job_advancing": 8, "qlistener_alive": 8, "max_queue_depth": 1}
+spans.log by pid:
+     11 pid=18489      11 pid=18491       9 pid=18493      13 pid=18495       7 pid=18497      16 pid=18499      14 pid=18501       7 pid=18503 
+span names:
+     80 name=GET /api/otelstat       8 name=reflex.compile 
+metrics.log by pid:
+      5 pid=18489       5 pid=18491       5 pid=18493       5 pid=18495       5 pid=18497       5 pid=18499       5 pid=18501       5 pid=18503 
+queued.log lines: 88 / direct.log lines: 88
+otel-spawn exited 3.0s after SIGTERM
+no leftovers in pgid 18477
+log: tracebacks=0 errors=0
+#### C1 py3.14 backend-only new 21:53:53
+./scripts/probe_run.sh: line 7: $4: unbound variable
+#### C2 py3.14 backend-only prev 21:53:53
+./scripts/probe_run.sh: line 7: $4: unbound variable
+#### C3 py3.14 FULL-STACK prev (claim: any prod run on 3.14 regresses) 21:53:53
+## py314-prev-full venv=process_model-py314-prev mode=prod port=8720 pid=18761 alive=yes up after 12s: http://localhost:8720/ping (12.5s wall)
+SUMMARY {"n_procs": 11, "n_python": 11, "pss_total_kb": 982505, "pss_python_kb": 982505, "rss_python_kb": 1219220}
+SUMMARY {"workers_seen": 9, "errors": 0, "distinct_module_random": 9, "distinct_module_uuid": 9, "distinct_first_random_now": 9, "distinct_first_prng_now": 9, "imported_in_worker": 9, "ticker_advancing": 7, "ticker_alive": 9, "timer_advancing": 1, "lifespan_ran_in_worker": 9, "qlistener_alive": 9, "start_methods": ["spawn"]}
+py314-prev-full exited 4.0s after SIGTERM
+no leftovers in pgid 18761
+workers spawned: 9; unexpected-exit: 0; tracebacks: 0; spawning-instead: 9
+#### C4 py3.14 FULL-STACK new 21:54:12
+## py314-new-full venv=process_model-py314-new mode=prod port=8720 pid=19343 alive=yes up after 9s: http://localhost:8720/ping (9.3s wall)
+SUMMARY {"n_procs": 9, "n_python": 9, "pss_total_kb": 230479, "pss_python_kb": 230479, "rss_python_kb": 1043632}
+SUMMARY {"workers_seen": 8, "errors": 0, "distinct_module_random": 1, "distinct_module_uuid": 1, "distinct_first_random_now": 8, "distinct_first_prng_now": 1, "imported_in_worker": 0, "ticker_advancing": 0, "ticker_alive": 0, "timer_advancing": 0, "lifespan_ran_in_worker": 8, "qlistener_alive": 0, "start_methods": ["fork"]}
+py314-new-full exited 1.5s after SIGTERM
+no leftovers in pgid 19343
+workers spawned: 8; unexpected-exit: 0; tracebacks: 0; spawning-instead: 8
+#### done 21:54:27
+no listeners left on 8720-8738

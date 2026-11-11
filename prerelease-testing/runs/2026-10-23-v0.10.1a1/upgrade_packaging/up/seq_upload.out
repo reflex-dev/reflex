@@ -1,0 +1,53 @@
+### upload base 0.10.0
+started reflex pid=25652 (01:59:27) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/upload-base.server.log
+UP after 7s (frontend 200, backend /ping 200)
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/scripts/drive_upload.py", line 30, in <module>
+    run.expected_bad.append(lambda b: b["url"].endswith("/_upload") and "ERR_ABORTED" in str(b.get("failure")))
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'Run' object has no attribute 'expected_bad'. Did you mean: 'unexpected_bad'?
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 25652 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload upgrade -> 0.10.1a1
+freeze diff upload: > annotated-types==0.8.0 > pydantic==2.14.1 > pydantic-core==2.50.1 < reflex==0.10.0 < reflex-base==0.10.0 < reflex-build-sdk==0.1.0 < reflex-components-code==0.10.0 < reflex-components-core==0.10.0 < reflex-components-dataeditor==0.10.0 > reflex==0.10.1a1 > reflex-base==0.10.1a1 > reflex-build-sdk==0.1.1a1 > reflex-components-code==0.10.1a1 > reflex-components-core==0.10.1a1 > reflex-components-dataeditor==0.10.1a1 < reflex-components-lucide==1.1.0 > reflex-components-lucide==1.1.1a1 < reflex-components-moment==0.10.0 > reflex-components-moment==0.10.1a1 < reflex-components-radix==0.10.0 > reflex-components-radix==0.10.1a1 < reflex-hosting-cli==0.2.0 > reflex-hosting-cli==0.2.1a1 > typing-inspection==0.4.4 < wrapt==2.5.1 > wrapt==2.5.2rc1 
+Checked 45 packages in 1ms
+All installed packages are compatible
+### upload up
+started reflex pid=26253 (01:59:40) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/upload-up.server.log
+UP after 7s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json upload-base -> upload-up: < "react": "19.3.0", < "react-dom": "19.3.0", > "react": "19.3.1", > "react-dom": "19.3.1", < "postcss": "8.5.29", < "postcss-import": "17.0.0", < "vite": "8.3.2" > "postcss": "8.5.30", > "postcss-import": "17.0.1", > "vite": "8.3.4" 
+.web file list differs:
+32c32
+< .web/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx
+---
+> .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+45a46
+> .web/vite-plugin-react-compiler.js
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/scripts/drive_upload.py", line 30, in <module>
+    run.expected_bad.append(lambda b: b["url"].endswith("/_upload") and "ERR_ABORTED" in str(b.get("failure")))
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'Run' object has no attribute 'expected_bad'. Did you mean: 'unexpected_bad'?
+SHUTDOWN: main pid 26253 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload cold
+started reflex pid=26549 (01:59:51) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/upload-cold.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json upload-up -> upload-cold: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.26.0", < "mergician": "v2.0.2", < "react": "19.3.1", < "react-dom": "19.3.1", < "react-dropzone": "17.0.0", < "react-error-boundary": "6.1.6", < "react-helmet": "6.1.0", < "react-router": "8.4.0", < "socket.io-client": "4.8.4", < "sonner": "2.0.8", < "universal-cookie": "8.1.2" < }, < "devDependencies": { < "@emotion/react": "11.14.0", < "@react-router/dev": "8.4.0", < "@react-router/fs-routes": "8.4.0", < "autoprefixer": "10.6.1", < "postcss": "8.5.30", < "postcss-import": "17.0.1", < "vite": "8.3.4" < }, < "overrides": {} < } > {"name": "reflex", "type": "module", "scripts": {"dev": "react-router dev --host", "export": "react-router build"}, "dependencies": {"@radix-ui/themes": "3.3.0", "@react-router/node": "8.4.0", "isbot": "5.2.2", "lucide-react": "1.26.0", "mergician": "v2.0.2", "react": "19.3.1", "react-dom": "19.3.1", "react-dropzone": "17.0.0", "react-error-boundary": "6.1.6", "react-helmet": "6.1.0", "react-router": "8.4.0", "socket.io-client": "4.8.4", "sonner": "2.0.8", "universal-cookie": "8.1.2"}, "devDependencies": {"@emotion/react": "11.14.0", "@react-router/dev": "8.4.0", "@react-router/fs-routes": "8.4.0", "autoprefixer": "10.6.1", "postcss": "8.5.30", "postcss-import": "17.0.1", "vite": "8.3.4"}, "overrides": {}} 
+.web file list identical
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/scripts/drive_upload.py", line 30, in <module>
+    run.expected_bad.append(lambda b: b["url"].endswith("/_upload") and "ERR_ABORTED" in str(b.get("failure")))
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'Run' object has no attribute 'expected_bad'. Did you mean: 'unexpected_bad'?
+SHUTDOWN: main pid 26549 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- upload-base server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- upload-up server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- upload-cold server-log warnings:
+      1 Debug: error: script "dev" exited with code 143

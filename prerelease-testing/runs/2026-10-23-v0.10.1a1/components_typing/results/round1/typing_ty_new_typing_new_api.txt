@@ -1,0 +1,8 @@
+typing_new_api.py:17:40: error[invalid-type-form] Invalid subscript of object of type `type[FormData[Unknown, Unknown]]` in a parameter annotation
+typing_new_api.py:21:13: error[type-assertion-failure] Type `Unknown` does not match asserted type `str`
+typing_new_api.py:22:13: error[type-assertion-failure] Type `Unknown` does not match asserted type `str`
+typing_new_api.py:31:25: error[unresolved-attribute] Class `FormState` has no attribute `set_toppings`
+typing_new_api.py:45:1: error[type-assertion-failure] Type `RadixPrimitiveComponentWithClassName` does not match asserted type `Component`
+typing_new_api.py:46:6: error[invalid-type-form] Invalid subscript of object of type `type[FormData[Unknown, Unknown]]` in a type expression
+typing_new_api.py:47:1: error[type-assertion-failure] Type `list[Unknown]` does not match asserted type `list[str]`
+Found 7 diagnostics

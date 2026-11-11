@@ -1,0 +1,7206 @@
+[
+ {
+  "rep": 0,
+  "login": true,
+  "tab1_hash_after_login": "ed21906ff1f1190c...",
+  "cookies_after_login": [
+   "_oidc_generic_access_token_data_partitioned",
+   "_oidc_generic_granted_scopes_partitioned",
+   "_oidc_generic_id_token_partitioned",
+   "_oidc_generic_refresh_token_partitioned"
+  ],
+  "tab2_logged_in": true,
+  "t_logout_click": 1792806494841.2837,
+  "tab2_boot_events": [
+   "hydrate_and_load"
+  ],
+  "tab1_who_before_add": "",
+  "tab1_path_before_add": "/vault",
+  "cookies_after_logout": [],
+  "ls_hash_after_logout": "",
+  "tab1_path_after_add": "/login",
+  "tab1_clicks": [
+   "0",
+   null
+  ],
+  "tab1_entries": [],
+  "add_response": [
+   {
+    "dir": "sent",
+    "events": [
+     "add_entry"
+    ],
+    "delta": null,
+    "chained": null
+   },
+   {
+    "dir": "recv",
+    "events": null,
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "dir": "sent",
+    "events": [
+     "update_vars_internal"
+    ],
+    "delta": null,
+    "chained": null
+   },
+   {
+    "dir": "sent",
+    "events": [
+     "on_load_internal"
+    ],
+    "delta": null,
+    "chained": null
+   },
+   {
+    "dir": "recv",
+    "events": null,
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "dir": "recv",
+    "events": null,
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   }
+  ],
+  "tab1_boot_events_reload": [
+   "hydrate_and_load"
+  ],
+  "tab1_path_after_reload": "/login",
+  "tab1_who_after_reload": null,
+  "tab3_path": "/login",
+  "tab1_event_accepted": false,
+  "tab1_logged_out": true,
+  "timeline": [
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494866.0188,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "logout"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494873.825,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806494871,
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "storage_event",
+    "t": 1792806494873,
+    "old": "ed21906ff1f1190cad393de3a84014ec7fb9f3bda54bffa5498b341778e301fe",
+    "new": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494879.3508,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494879.9292,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494888.284,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806494888.7563,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494888.9192,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494894.194,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806494893,
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494896.1726,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806494906.3894,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494906.615,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494910.9778,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806494916.289,
+    "to": "http://localhost:8638/oauth2/end_session?state=-HiX8p3wrOAToihjHlOz1o6A_r0jSsnnFz0X4Z2BBGUVh51-DSVEoFkRk3sWJelndjWWDH8EtGFNK5u6gRgRKw&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InJWZXZoQnhUTC1JbXRSdHpOWXBKS1BKWlNyVkMzbFNLaHR1SlR2UEZ2RTQifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTAwOTAsImlhdCI6MTc5MjgwNjQ5MCwiYXV0aF90aW1lIjoxNzkyODA2NDkwLCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiI3U0dRYl9IeEdReXRPVDNqcUVBVTdBIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.FI9KukVQj2pFFNXjM81aZ8IBr9HPXLLAbMQ0GV2OSdf6ejurCL9H8DFabsVPq5IkOfWaspprnxy1oXrCd9KjRLZNNtEeqStj5wAzr1JVbZi45jxc_GAkQE8h82vPRp-6Z7us5eqHtnctxSxLh4R9iD5g1NF_k2nAv_2aL7CaMhwedQG06LuUVtfJyc915q14yw74IpSLJC5oAFb1fuyUbXgDU3_JnePypA_ELd8na-gR8kOHSzMpf8h3Oc_-Hq5mdCap_NSiVJw5eflbTLFVDwgpilG7-89Hwftm8k38PIp61mx798Pdv4n4-sKD9wush-Rn2hJsdrVfv6g7tQqmEA&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494930.3638,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806494935.856,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806495411.5054,
+    "to": "http://localhost:3620/?state=-HiX8p3wrOAToihjHlOz1o6A_r0jSsnnFz0X4Z2BBGUVh51-DSVEoFkRk3sWJelndjWWDH8EtGFNK5u6gRgRKw"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806495922.004,
+    "to": "http://localhost:3620/?state=-HiX8p3wrOAToihjHlOz1o6A_r0jSsnnFz0X4Z2BBGUVh51-DSVEoFkRk3sWJelndjWWDH8EtGFNK5u6gRgRKw"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495924.1008,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "app_state_rx_state_": "",
+     "code_verifier_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495924.4417,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504213.9197,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "add_entry"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504224.6387,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806504237.3477,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504246.1682,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "Nuukp5d9Zvdxj-r-...",
+     "code_verifier_rx_state_": "BTyJ5G1FDegvOJCB..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504246.3025,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504257.5205,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806508293.5762,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508420.8276,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "Nuukp5d9Zvdxj-r-...",
+     "code_verifier_rx_state_": "BTyJ5G1FDegvOJCB..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508432.1416,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806515575.8386,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806516034.3506,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516072.173,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516088.2168,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "",
+     "has_any_token": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516093.8408,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806516115.2483,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516160.3333,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516160.4927,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516160.6047,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516162.611,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516162.725,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516173.1755,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   }
+  ],
+  "console_errors": [
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806490019.715,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806490037.5493,
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806495320.121,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "requestfailed": [
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806490019.4336,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806490579.1958,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806494889.7556,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806494907.031,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806494937.7554,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806495319.679,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "http_errors": [],
+  "cookie_sync_statuses": [
+   [
+    "tab1",
+    200,
+    null
+   ],
+   [
+    "tab2",
+    200,
+    null
+   ],
+   [
+    "tab1",
+    200,
+    null
+   ],
+   [
+    "tab1",
+    200,
+    null
+   ]
+  ],
+  "_full_log": [
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806488772.5083,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806488840.0466,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806489097.7666,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806489176.897,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489180.063,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806489180.2546,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806489187.1328,
+    "url": "ws://localhost:8620/_event/?token=09cf6746-0042-4bad-8730-8b516b461068&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489189.1765,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"b1lNxJ08Sc2JFIsRAABm\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806489360.024,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806489372.3472,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489416.692,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489461.727,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"bUfnFO3OwWJ6ulLeAABn\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489466.0159,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489466.2412,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489472.2725,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489472.4463,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806489498.2202,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489525.9998,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489526.172,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489531.2651,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489531.3599,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489532.6868,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489538.7727,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489750.179,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "redirect_to_login"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489758.8113,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806489759.1326,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806489764.1426,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806489764.273
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806489775.9993
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806489779.7942,
+    "to": "http://localhost:8638/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&state=Nuukp5d9Zvdxj-r-kH_vd34qGHigIwaCDHHI5G-eMAukRUhX07c_y0kUrFGuM6Jl8Y_iWGzbmXzpSCitZUFkyA&code_challenge=GYtg6OLGjsXb2KYgnSjf2F1m8PYQihgO6YwZwQpOg8g&code_challenge_method=S256&response_type=code&response_mode=query"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806490019.4336,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806490019.715,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806490037.5493,
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806490146.5293,
+    "to": "http://localhost:3620/callback?code=kEMWpJhwDDgZQaYwcJml4RQ24gxuPWfmB22SdddvHLrJ1UQt&state=Nuukp5d9Zvdxj-r-kH_vd34qGHigIwaCDHHI5G-eMAukRUhX07c_y0kUrFGuM6Jl8Y_iWGzbmXzpSCitZUFkyA"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806490386.377,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806490421.376,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806490430.2043,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806490468.6853,
+    "url": "ws://localhost:8620/_event/?token=09cf6746-0042-4bad-8730-8b516b461068&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490469.6685,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806490473.6877,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806490473.8916,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490498.3643,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"r2rJn8DnaX5leL7FAABo\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806490501.5208,
+    "to": "http://localhost:3620/callback?code=kEMWpJhwDDgZQaYwcJml4RQ24gxuPWfmB22SdddvHLrJ1UQt&state=Nuukp5d9Zvdxj-r-kH_vd34qGHigIwaCDHHI5G-eMAukRUhX07c_y0kUrFGuM6Jl8Y_iWGzbmXzpSCitZUFkyA"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490520.0566,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "Nuukp5d9Zvdxj-r-...",
+     "code_verifier_rx_state_": "BTyJ5G1FDegvOJCB..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490525.7163,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"yyxmeDhxQU0C9vo5AABp\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490531.1687,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490540.1226,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490543.178,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490564.4314,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490566.764,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490569.5571,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806490578.3643,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490578.8625,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806490579.1958,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490583.356,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "ed21906ff1f1190c..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1792806490580,
+    "url": "/callback",
+    "key": "hash",
+    "value": "ed21906ff1f1190cad393de3a84014ec7fb9f3bda54bffa5498b341778e301fe"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490589.523,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490596.1636,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806490613.3533,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490615.836,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "ed21906ff1f1190c...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "Nuukp5d9Zvdxj-r-...",
+     "code_verifier_rx_state_": "BTyJ5G1FDegvOJCB..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490615.9712,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490624.768,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "ed21906ff1f1190c..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490626.6733,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490630.7043,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806490633.1194,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806492246.4753,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806492371.6616,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806492565.7349,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806492588.7576,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806492600.237,
+    "url": "ws://localhost:8620/_event/?token=73da4e49-c4d7-4703-c518-96bf2563f7af&EIO=4&tra"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492600.5166,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806492600.6897,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492600.7734,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"Cj9Vzq-lIXvSUqbRAABq\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806492678.3145,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806492691.392,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492727.7798,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "ed21906ff1f1190c..."
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492731.4521,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"gkgPiYtNXOJIqxMdAABr\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492743.6506,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": true,
+     "hash": "ed21906ff1f1190c...",
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492743.8035,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "ed21906ff1f1190c..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492745.766,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492748.5813,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492753.2983,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492758.9812,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806492761.369,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494866.0188,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "logout"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494873.825,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806494871,
+    "url": "/vault",
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "storage_event",
+    "t": 1792806494873,
+    "url": "/vault",
+    "old": "ed21906ff1f1190cad393de3a84014ec7fb9f3bda54bffa5498b341778e301fe",
+    "new": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494879.3508,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494879.9292,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494888.284,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806494888.7563,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494888.9192,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806494889.7556,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494893.3806,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "has_any_token": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494894.194,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806494893,
+    "url": "/vault",
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494896.1726,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806494899.458,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806494905.5024,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806494906.3894,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494906.615,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_close",
+    "t": 1792806494906.8193
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806494907.031,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494910.9778,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_close",
+    "t": 1792806494914.7073
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806494916.289,
+    "to": "http://localhost:8638/oauth2/end_session?state=-HiX8p3wrOAToihjHlOz1o6A_r0jSsnnFz0X4Z2BBGUVh51-DSVEoFkRk3sWJelndjWWDH8EtGFNK5u6gRgRKw&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InJWZXZoQnhUTC1JbXRSdHpOWXBKS1BKWlNyVkMzbFNLaHR1SlR2UEZ2RTQifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTAwOTAsImlhdCI6MTc5MjgwNjQ5MCwiYXV0aF90aW1lIjoxNzkyODA2NDkwLCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiI3U0dRYl9IeEdReXRPVDNqcUVBVTdBIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.FI9KukVQj2pFFNXjM81aZ8IBr9HPXLLAbMQ0GV2OSdf6ejurCL9H8DFabsVPq5IkOfWaspprnxy1oXrCd9KjRLZNNtEeqStj5wAzr1JVbZi45jxc_GAkQE8h82vPRp-6Z7us5eqHtnctxSxLh4R9iD5g1NF_k2nAv_2aL7CaMhwedQG06LuUVtfJyc915q14yw74IpSLJC5oAFb1fuyUbXgDU3_JnePypA_ELd8na-gR8kOHSzMpf8h3Oc_-Hq5mdCap_NSiVJw5eflbTLFVDwgpilG7-89Hwftm8k38PIp61mx798Pdv4n4-sKD9wush-Rn2hJsdrVfv6g7tQqmEA&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806494930.3638,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806494935.856,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806494937.7554,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806495319.679,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806495320.121,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806495411.5054,
+    "to": "http://localhost:3620/?state=-HiX8p3wrOAToihjHlOz1o6A_r0jSsnnFz0X4Z2BBGUVh51-DSVEoFkRk3sWJelndjWWDH8EtGFNK5u6gRgRKw"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806495433.9927,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806495482.377,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806495490.5842,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806495748.433,
+    "url": "ws://localhost:8620/_event/?token=73da4e49-c4d7-4703-c518-96bf2563f7af&EIO=4&tra"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495748.6763,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806495748.8408,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495748.9236,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"QktUfSI6fglV3jwDAABs\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806495749.161,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806495922.004,
+    "to": "http://localhost:3620/?state=-HiX8p3wrOAToihjHlOz1o6A_r0jSsnnFz0X4Z2BBGUVh51-DSVEoFkRk3sWJelndjWWDH8EtGFNK5u6gRgRKw"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495924.1008,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "app_state_rx_state_": "",
+     "code_verifier_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495924.2341,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"uQ7WaBXbINOhJ2UnAABt\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495924.3545,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495924.4417,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495924.5176,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806495924.5952,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504213.9197,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "add_entry"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504224.6387,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806504237.3477,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504246.1682,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "Nuukp5d9Zvdxj-r-...",
+     "code_verifier_rx_state_": "BTyJ5G1FDegvOJCB..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504246.3025,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504257.5205,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504257.624,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806504263.3115,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806508273.6738,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508274.0837,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806508274.1797
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806508292.8567
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806508293.5762,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806508311.6814,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806508366.681,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806508378.3962,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806508385.0413,
+    "url": "ws://localhost:8620/_event/?token=09cf6746-0042-4bad-8730-8b516b461068&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508385.2205,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806508385.8118,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508391.499,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"1hQfuWwP4aZtg9a3AABu\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806508396.1055,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508420.8276,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "Nuukp5d9Zvdxj-r-...",
+     "code_verifier_rx_state_": "BTyJ5G1FDegvOJCB..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508425.2512,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"G0CyOFUGorfdJWCpAABv\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508429.422,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508432.1416,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508432.3232,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806508445.7166,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806515575.8386,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806515614.4836,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806515822.6965,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws_open",
+    "t": 1792806515871.868,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws_open",
+    "t": 1792806515891.6555,
+    "url": "ws://localhost:8620/_event/?token=f960526d-66e2-4b07-9e41-35200c39e09c&EIO=4&tra"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806515891.847,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806515892.0867,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806515892.2812,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"4aS7zIoQtvcxWMShAABw\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806516025.656,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806516034.3506,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516072.173,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516082.4587,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"nsCl7dOJ5uOQ4nkvAABx\"}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516088.0784,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516088.2168,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "",
+     "has_any_token": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516088.314,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516093.8408,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516097.5642,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806516115.2483,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516160.3333,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516160.4927,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516160.6047,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516162.611,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516162.725,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516173.1755,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516173.406,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806516173.6887,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806519900.0723,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806519900.877,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806519904.0884
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806519904.2898,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806519905.5845,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   }
+  ]
+ },
+ {
+  "rep": 1,
+  "login": true,
+  "tab1_hash_after_login": "cac54cee0bc8f470...",
+  "cookies_after_login": [
+   "_oidc_generic_access_token_data_partitioned",
+   "_oidc_generic_granted_scopes_partitioned",
+   "_oidc_generic_id_token_partitioned",
+   "_oidc_generic_refresh_token_partitioned"
+  ],
+  "tab2_logged_in": true,
+  "t_logout_click": 1792806525392.1047,
+  "tab2_boot_events": [
+   "hydrate_and_load"
+  ],
+  "tab1_who_before_add": "",
+  "tab1_path_before_add": "/vault",
+  "cookies_after_logout": [],
+  "ls_hash_after_logout": "",
+  "tab1_path_after_add": "/login",
+  "tab1_clicks": [
+   "0",
+   null
+  ],
+  "tab1_entries": [],
+  "add_response": [
+   {
+    "dir": "sent",
+    "events": [
+     "add_entry"
+    ],
+    "delta": null,
+    "chained": null
+   },
+   {
+    "dir": "recv",
+    "events": null,
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "dir": "sent",
+    "events": [
+     "update_vars_internal"
+    ],
+    "delta": null,
+    "chained": null
+   },
+   {
+    "dir": "sent",
+    "events": [
+     "on_load_internal"
+    ],
+    "delta": null,
+    "chained": null
+   },
+   {
+    "dir": "recv",
+    "events": null,
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "dir": "recv",
+    "events": null,
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   }
+  ],
+  "tab1_boot_events_reload": [
+   "hydrate_and_load"
+  ],
+  "tab1_path_after_reload": "/login",
+  "tab1_who_after_reload": null,
+  "tab3_path": "/login",
+  "tab1_event_accepted": false,
+  "tab1_logged_out": true,
+  "timeline": [
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525430.4312,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "logout"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525441.7803,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806525439,
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "storage_event",
+    "t": 1792806525442,
+    "old": "cac54cee0bc8f4706d45dd98d32b4fefc6b76223121723fc602b656fe12763e4",
+    "new": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525445.9353,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525448.0234,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525455.7505,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806525456.2031,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525456.306,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806525461.5002,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525461.633,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525464.8516,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806525463,
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525468.56,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525476.6794,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525479.0803,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806525487.463,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806525507.1804,
+    "to": "http://localhost:8638/oauth2/end_session?state=52-28DZi4vc3VjwaBwk3v3UQypHpSosoSdZpvFQspxVQVX2kiyS6R5eX65NLPzHxYStNdoW0KmvS2wNOUb8FMg&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InJWZXZoQnhUTC1JbXRSdHpOWXBKS1BKWlNyVkMzbFNLaHR1SlR2UEZ2RTQifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTAxMjEsImlhdCI6MTc5MjgwNjUyMSwiYXV0aF90aW1lIjoxNzkyODA2NTIxLCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiJ5c1ZNN2d2STlIQnRSZDJZMHl0UDd3IiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.ENsAtMM009PKbYmDt3_73GaiqoAyxr2sD88o2l7KZ8wilBldtpMfTrV1ccfbSvSdQVSxI6oYTHyuFD0CAr7SCakUTSp5wrluAXajQF3_BK4Kg1T8gcvtpbsJIuzFm0zBkpsPyGZ95sHcpKxF-968WZYQ08X_PI_FiMpHlhvEAlgQqLhDqddGoY5daaGdO48n3kCvhxSSGb-zQ3zmcUWi6RYOfJgoXfAY8_v2JekjVkK2kvvt3f22yNGj-wTpRtgqxy1j2pf6kMOypjEagWf7_Caw8nuQa_ksRLO2XJl7GLhCnrZRPOPS0qJSaSQ-Lco9fly5dmSoxGewI-2RkbPn5g&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806525877.4915,
+    "to": "http://localhost:3620/?state=52-28DZi4vc3VjwaBwk3v3UQypHpSosoSdZpvFQspxVQVX2kiyS6R5eX65NLPzHxYStNdoW0KmvS2wNOUb8FMg"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806526305.4185,
+    "to": "http://localhost:3620/?state=52-28DZi4vc3VjwaBwk3v3UQypHpSosoSdZpvFQspxVQVX2kiyS6R5eX65NLPzHxYStNdoW0KmvS2wNOUb8FMg"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526315.1296,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "app_state_rx_state_": "",
+     "code_verifier_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526332.7656,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534694.4849,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "add_entry"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534705.7908,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806534712.8162,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534729.8113,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "5W_TOicP1qWnz3Rb...",
+     "code_verifier_rx_state_": "enCOKnFKQRCxNvvo..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534731.778,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534739.9783,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806538869.8772,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539068.0261,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "5W_TOicP1qWnz3Rb...",
+     "code_verifier_rx_state_": "enCOKnFKQRCxNvvo..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539096.4204,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806546211.1404,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806546691.882,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546734.9937,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546758.0981,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "",
+     "has_any_token": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546769.3533,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806546791.5425,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546808.4124,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546808.5347,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546808.612,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546818.518,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546819.0012,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546819.9897,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   }
+  ],
+  "console_errors": [
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806520916.4543,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806525742.579,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "requestfailed": [
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806520916.2314,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806521238.183,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806525464.0354,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806525464.2004,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806525487.6384,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806525742.438,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "http_errors": [],
+  "cookie_sync_statuses": [
+   [
+    "tab1",
+    200,
+    null
+   ],
+   [
+    "tab2",
+    200,
+    null
+   ],
+   [
+    "tab1",
+    200,
+    null
+   ],
+   [
+    "tab1",
+    200,
+    null
+   ]
+  ],
+  "_full_log": [
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806520046.5896,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806520101.5156,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806520281.4604,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806520328.081,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806520331.198,
+    "url": "ws://localhost:8620/_event/?token=3e56217a-e8d3-47c0-8d3d-e3987a9d932f&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520333.3638,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806520333.6265,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520341.7961,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"AanHsDJQihS0zkFjAABy\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806520457.813,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806520468.1196,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520502.75,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520511.365,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"dUZG6Hl3icDLLCdwAABz\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520512.8042,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520516.705,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520523.6914,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520524.305,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806520537.2478,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520555.9727,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520556.0945,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520563.4958,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520563.6008,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520563.6863,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520565.3396,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520645.6345,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "redirect_to_login"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520652.564,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806520654.8174,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806520661.5476,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806520661.625
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806520673.1265
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806520674.0745,
+    "to": "http://localhost:8638/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&state=5W_TOicP1qWnz3Rb-c_0rk0pfT4vJPzF6MWyIIXOHIlwVPT2hMCD8dbLN0ALqe7Dz9Uo7LGj6CHeIuO9n4RRLg&code_challenge=e0TnEvp_2b76gB_EH1f18sfXeSL3z-RWbDejGwe1en4&code_challenge_method=S256&response_type=code&response_mode=query"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806520916.2314,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806520916.4543,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806521024.1519,
+    "to": "http://localhost:3620/callback?code=vwY9Mg2Y3V8gc4x3lz2Ul9qubSWq8ZavAUZGqZwVmuMcagLx&state=5W_TOicP1qWnz3Rb-c_0rk0pfT4vJPzF6MWyIIXOHIlwVPT2hMCD8dbLN0ALqe7Dz9Uo7LGj6CHeIuO9n4RRLg"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806521058.5933,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806521082.828,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806521094.4785,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806521130.45,
+    "url": "ws://localhost:8620/_event/?token=3e56217a-e8d3-47c0-8d3d-e3987a9d932f&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521133.235,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806521135.2134,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521135.4238,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"IoctkxtJQ9xOVqEVAAB0\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806521136.9272,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806521162.6973,
+    "to": "http://localhost:3620/callback?code=vwY9Mg2Y3V8gc4x3lz2Ul9qubSWq8ZavAUZGqZwVmuMcagLx&state=5W_TOicP1qWnz3Rb-c_0rk0pfT4vJPzF6MWyIIXOHIlwVPT2hMCD8dbLN0ALqe7Dz9Uo7LGj6CHeIuO9n4RRLg"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521171.8657,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "5W_TOicP1qWnz3Rb...",
+     "code_verifier_rx_state_": "enCOKnFKQRCxNvvo..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521177.5764,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"xYGNyD_Ib_9LQbNAAAB1\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521182.488,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521198.8318,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521200.1921,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521223.0972,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521225.535,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521226.8076,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806521237.4783,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521237.5864,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806521238.183,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521240.5298,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "cac54cee0bc8f470..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1792806521239,
+    "url": "/callback",
+    "key": "hash",
+    "value": "cac54cee0bc8f4706d45dd98d32b4fefc6b76223121723fc602b656fe12763e4"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521245.6687,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806521259.7224,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521264.8613,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521273.4128,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "cac54cee0bc8f470...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "5W_TOicP1qWnz3Rb...",
+     "code_verifier_rx_state_": "enCOKnFKQRCxNvvo..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521273.5757,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521276.0945,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "cac54cee0bc8f470..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521281.023,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521281.2524,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806521282.4858,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806522870.6956,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806522922.6843,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806523076.9346,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806523126.844,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806523127.2769,
+    "url": "ws://localhost:8620/_event/?token=0c0b5649-bd31-43a9-e5b8-b67c1c24751d&EIO=4&tra"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523131.4114,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806523131.7253,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523131.8193,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"9uFbYwq4WZ3eV_3KAAB2\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806523223.6426,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806523237.0327,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523263.5671,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "cac54cee0bc8f470..."
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523270.6797,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"6t1hvu_-K_ZhKrUoAAB3\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523288.5789,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": true,
+     "hash": "cac54cee0bc8f470...",
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523297.9314,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "cac54cee0bc8f470..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523298.0833,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523299.0957,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523300.2117,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523301.8508,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806523302.7651,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525430.4312,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "logout"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525441.7803,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806525439,
+    "url": "/vault",
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "storage_event",
+    "t": 1792806525442,
+    "url": "/vault",
+    "old": "cac54cee0bc8f4706d45dd98d32b4fefc6b76223121723fc602b656fe12763e4",
+    "new": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525445.9353,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525448.0234,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525455.7505,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806525456.2031,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525456.306,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525457.8384,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "has_any_token": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806525461.5002,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525461.633,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806525464.0354,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806525464.2004,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525464.8516,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806525463,
+    "url": "/vault",
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525468.56,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806525468.7944,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806525474.485,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525476.6794,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_close",
+    "t": 1792806525478.2073
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806525479.0803,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806525487.463,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806525487.6384,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_close",
+    "t": 1792806525505.6401
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806525507.1804,
+    "to": "http://localhost:8638/oauth2/end_session?state=52-28DZi4vc3VjwaBwk3v3UQypHpSosoSdZpvFQspxVQVX2kiyS6R5eX65NLPzHxYStNdoW0KmvS2wNOUb8FMg&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InJWZXZoQnhUTC1JbXRSdHpOWXBKS1BKWlNyVkMzbFNLaHR1SlR2UEZ2RTQifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTAxMjEsImlhdCI6MTc5MjgwNjUyMSwiYXV0aF90aW1lIjoxNzkyODA2NTIxLCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiJ5c1ZNN2d2STlIQnRSZDJZMHl0UDd3IiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.ENsAtMM009PKbYmDt3_73GaiqoAyxr2sD88o2l7KZ8wilBldtpMfTrV1ccfbSvSdQVSxI6oYTHyuFD0CAr7SCakUTSp5wrluAXajQF3_BK4Kg1T8gcvtpbsJIuzFm0zBkpsPyGZ95sHcpKxF-968WZYQ08X_PI_FiMpHlhvEAlgQqLhDqddGoY5daaGdO48n3kCvhxSSGb-zQ3zmcUWi6RYOfJgoXfAY8_v2JekjVkK2kvvt3f22yNGj-wTpRtgqxy1j2pf6kMOypjEagWf7_Caw8nuQa_ksRLO2XJl7GLhCnrZRPOPS0qJSaSQ-Lco9fly5dmSoxGewI-2RkbPn5g&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806525742.438,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806525742.579,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806525877.4915,
+    "to": "http://localhost:3620/?state=52-28DZi4vc3VjwaBwk3v3UQypHpSosoSdZpvFQspxVQVX2kiyS6R5eX65NLPzHxYStNdoW0KmvS2wNOUb8FMg"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806526123.1116,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806526215.7712,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806526216.0085,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806526266.3584,
+    "url": "ws://localhost:8620/_event/?token=0c0b5649-bd31-43a9-e5b8-b67c1c24751d&EIO=4&tra"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526276.2039,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806526276.5605,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806526276.8967,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526278.6147,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"0tSfrX_k3qJhCekFAAB4\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806526305.4185,
+    "to": "http://localhost:3620/?state=52-28DZi4vc3VjwaBwk3v3UQypHpSosoSdZpvFQspxVQVX2kiyS6R5eX65NLPzHxYStNdoW0KmvS2wNOUb8FMg"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526315.1296,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "app_state_rx_state_": "",
+     "code_verifier_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526321.179,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"RuYChX1BSOd1R6AXAAB5\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526332.6606,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526332.7656,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526336.552,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806526340.8486,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534694.4849,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "add_entry"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534705.7908,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806534712.8162,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534729.8113,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "5W_TOicP1qWnz3Rb...",
+     "code_verifier_rx_state_": "enCOKnFKQRCxNvvo..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534731.778,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534739.9783,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534740.1257,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806534740.201,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806538841.3481,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806538845.4924,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806538846.9116
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806538869.462
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806538869.8772,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806538898.2637,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806539003.529,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806539035.0225,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806539045.8013,
+    "url": "ws://localhost:8620/_event/?token=3e56217a-e8d3-47c0-8d3d-e3987a9d932f&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539045.9336,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806539046.1501,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806539046.3418,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539049.1504,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"3bxeYk30XnGeWl0KAAB6\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539068.0261,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "5W_TOicP1qWnz3Rb...",
+     "code_verifier_rx_state_": "enCOKnFKQRCxNvvo..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539096.017,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"anJ8GI7ZeOE1lHqtAAB7\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539096.2607,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539096.4204,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539097.3535,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806539097.4321,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806546211.1404,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806546249.9768,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806546476.4448,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws_open",
+    "t": 1792806546544.741,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws_open",
+    "t": 1792806546545.1013,
+    "url": "ws://localhost:8620/_event/?token=a226da8e-263d-4326-94db-d35ba53f7b70&EIO=4&tra"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546551.6345,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806546552.8071,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546557.52,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"9yED_pDs_80toepbAAB8\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806546673.575,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806546691.882,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546734.9937,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546741.4358,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"Y9ptsC03vY_Mar_BAAB9\"}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546757.8906,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546758.0981,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "",
+     "has_any_token": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546758.1765,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546769.3533,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546770.938,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806546791.5425,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546808.4124,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546808.5347,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546808.612,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546818.518,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546819.0012,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546819.9897,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546820.1692,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806546821.3057,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806550556.6294,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806550571.4001,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806550571.601,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806550571.679,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806550572.1865,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   }
+  ]
+ },
+ {
+  "rep": 2,
+  "login": true,
+  "tab1_hash_after_login": "e79c91e47da060c4...",
+  "cookies_after_login": [
+   "_oidc_generic_access_token_data_partitioned",
+   "_oidc_generic_granted_scopes_partitioned",
+   "_oidc_generic_id_token_partitioned",
+   "_oidc_generic_refresh_token_partitioned"
+  ],
+  "tab2_logged_in": true,
+  "t_logout_click": 1792806557714.732,
+  "tab2_boot_events": [
+   "hydrate_and_load",
+   "reconcile_tokens_after_sync"
+  ],
+  "tab1_who_before_add": "",
+  "tab1_path_before_add": "/vault",
+  "cookies_after_logout": [],
+  "ls_hash_after_logout": "",
+  "tab1_path_after_add": "/login",
+  "tab1_clicks": [
+   "0",
+   null
+  ],
+  "tab1_entries": [],
+  "add_response": [
+   {
+    "dir": "sent",
+    "events": [
+     "add_entry"
+    ],
+    "delta": null,
+    "chained": null
+   },
+   {
+    "dir": "recv",
+    "events": null,
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "dir": "sent",
+    "events": [
+     "update_vars_internal"
+    ],
+    "delta": null,
+    "chained": null
+   },
+   {
+    "dir": "sent",
+    "events": [
+     "on_load_internal"
+    ],
+    "delta": null,
+    "chained": null
+   },
+   {
+    "dir": "recv",
+    "events": null,
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "dir": "recv",
+    "events": null,
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   }
+  ],
+  "tab1_boot_events_reload": [
+   "hydrate_and_load"
+  ],
+  "tab1_path_after_reload": "/login",
+  "tab1_who_after_reload": null,
+  "tab3_path": "/login",
+  "tab1_event_accepted": false,
+  "tab1_logged_out": true,
+  "timeline": [
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557764.298,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "logout"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557767.9128,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806557761,
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557776.187,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "storage_event",
+    "t": 1792806557773,
+    "old": "e79c91e47da060c40da01e3caa6851c44a8878892c5164112c9e7440009da11c",
+    "new": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806557778.2695,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806557784.1465,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806557796.7305,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806557797.3987,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806557798.423,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557798.5244,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557805.449,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806557802,
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557835.2573,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806557835.4104,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "e79c91e47da060c4..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1792806557807,
+    "key": "hash",
+    "value": "e79c91e47da060c40da01e3caa6851c44a8878892c5164112c9e7440009da11c"
+   },
+   {
+    "tab": "tab2",
+    "kind": "storage_event",
+    "t": 1792806557815,
+    "old": "",
+    "new": "e79c91e47da060c40da01e3caa6851c44a8878892c5164112c9e7440009da11c"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557850.39,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "e79c91e47da060c4...",
+     "app_state_rx_state_": "",
+     "code_verifier_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557858.496,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "e79c91e47da060c4..."
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557872.4695,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": false,
+     "hash": "e79c91e47da060c4...",
+     "user_sub": "",
+     "clicks": 0,
+     "entries": []
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806557908.8606,
+    "to": "http://localhost:8638/oauth2/end_session?state=SH3ixMuU09JhV7YqVD5tESQ7RWVN5f3vDGrcF0tHERMYBY0VTr1TWJIIQIBG0qt_IUq_KtmWJ9hlLoh96-dLtw&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InJWZXZoQnhUTC1JbXRSdHpOWXBKS1BKWlNyVkMzbFNLaHR1SlR2UEZ2RTQifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTAxNTIsImlhdCI6MTc5MjgwNjU1MiwiYXV0aF90aW1lIjoxNzkyODA2NTUyLCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiI1NXlSNUgyZ1lNUU5vQjQ4cW1oUnhBIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.n3HSG-Pc4FMphBNzkEqxhzX09Saa_3CUR-Qem8pQCARjoIPHcpByIi8Pd0qzP3bAd-Oc4qJfKP7gVTRnu7KvIgVUlSU1L3SYGzNxc3II7oOI17Rog0RpKL0IPKIvEuSWbirl8VMz6vzrXXTHLrkSqubRvvN695tK7kOa_jjKmYM-xP-O049nxqOktNcekKgoGYp--o1-ON8iebw985-Q1ZySwVjtFEE5R98aQMa1sGMb_BbQi_XFrBDfSrLWeu_qOCbQ2XhBs26gvJuVKtL5su9O53TQwEa03QnKUEcoAePhnWlAy2wvuBPbF9gzJT9x65P5C8U1ZPfZ3baiiO4nJg&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806558286.6746,
+    "to": "http://localhost:3620/?state=SH3ixMuU09JhV7YqVD5tESQ7RWVN5f3vDGrcF0tHERMYBY0VTr1TWJIIQIBG0qt_IUq_KtmWJ9hlLoh96-dLtw"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806558658.4956,
+    "to": "http://localhost:3620/?state=SH3ixMuU09JhV7YqVD5tESQ7RWVN5f3vDGrcF0tHERMYBY0VTr1TWJIIQIBG0qt_IUq_KtmWJ9hlLoh96-dLtw"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558695.0022,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "e79c91e47da060c4...",
+     "app_state_rx_state_": "",
+     "code_verifier_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558722.5664,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "hash": "e79c91e47da060c4..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558726.012,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806558766.6416,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558766.8906,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558768.7727,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806558762,
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "storage_event",
+    "t": 1792806558763,
+    "old": "e79c91e47da060c40da01e3caa6851c44a8878892c5164112c9e7440009da11c",
+    "new": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558772.2678,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558772.656,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558790.597,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806558802.377,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806558809.434,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558809.6326,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558819.1973,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558824.9253,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806558839.0095,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567112.1567,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "add_entry"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567121.396,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806567128.791,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567142.4275,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "tRcwD5u1Kl_rEz-1...",
+     "code_verifier_rx_state_": "__FVgkKvH0VmzUdw..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567142.7004,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567145.5435,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806571179.0903,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571300.8062,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "tRcwD5u1Kl_rEz-1...",
+     "code_verifier_rx_state_": "__FVgkKvH0VmzUdw..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571312.432,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806578372.9233,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806578785.9404,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578815.7004,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578826.2317,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "",
+     "has_any_token": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578832.3591,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806578859.4028,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578867.442,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578867.558,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578867.6328,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578878.426,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578878.5935,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578878.6924,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   }
+  ],
+  "console_errors": [
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806552054.1584,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806558160.341,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   }
+  ],
+  "requestfailed": [
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806552053.9946,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806552550.6536,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806557800.7585,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806557800.8462,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806558160.1199,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806558767.3374,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806558803.1746,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806558810.1794,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806558839.2412,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   }
+  ],
+  "http_errors": [],
+  "cookie_sync_statuses": [
+   [
+    "tab1",
+    200,
+    null
+   ],
+   [
+    "tab1",
+    200,
+    null
+   ],
+   [
+    "tab2",
+    200,
+    null
+   ],
+   [
+    "tab2",
+    200,
+    null
+   ],
+   [
+    "tab2",
+    200,
+    null
+   ],
+   [
+    "tab1",
+    200,
+    null
+   ],
+   [
+    "tab1",
+    200,
+    null
+   ]
+  ],
+  "_full_log": [
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806550768.5562,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806550818.3467,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806551069.4985,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806551114.3152,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806551120.4084,
+    "url": "ws://localhost:8620/_event/?token=6a0f7e10-6ae6-465b-9903-c08850f3a8ed&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551120.7551,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806551121.0466,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551121.2102,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"t93vNj4l-XajX6ShAAB-\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806551287.1038,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806551298.6963,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551329.602,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {}
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551333.5688,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"sSpK3gAqn_EAg9D1AAB_\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551338.019,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551338.8323,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551342.9944,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551344.7905,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806551417.4792,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551437.016,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551437.2024,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551462.5662,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551462.719,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551462.8716,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551463.028,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551702.7644,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "redirect_to_login"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551708.7058,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806551709.0269,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806551714.2144,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806551714.3713
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806551723.7373
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806551725.4707,
+    "to": "http://localhost:8638/oauth2/authorize?client_id=vauth-client&redirect_uri=http%3A%2F%2Flocalhost%3A3620%2Fcallback&scope=openid+email+profile&state=tRcwD5u1Kl_rEz-1vH-fzBgo5uqMYGE_wi9AZNz8o4gcWCpI6hBKT-FPKNIiRRVAsWpM_c92YYr5irylGiU2iQ&code_challenge=H35dLESvZ6JNKx3RADNCoko47hQYJB6HyRSFbz5M5TU&code_challenge_method=S256&response_type=code&response_mode=query"
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806552053.9946,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806552054.1584,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806552229.1511,
+    "to": "http://localhost:3620/callback?code=pjmucW8O1PpqUXns045QmGmbxr54fZY64UwRAVnUT8VthXrn&state=tRcwD5u1Kl_rEz-1vH-fzBgo5uqMYGE_wi9AZNz8o4gcWCpI6hBKT-FPKNIiRRVAsWpM_c92YYr5irylGiU2iQ"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806552253.8435,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806552294.5417,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806552302.1572,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806552413.592,
+    "url": "ws://localhost:8620/_event/?token=6a0f7e10-6ae6-465b-9903-c08850f3a8ed&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552413.759,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806552413.896,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806552417.527,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552468.1052,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"JTrNfFaXt8hPCpoeAACA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806552471.7646,
+    "to": "http://localhost:3620/callback?code=pjmucW8O1PpqUXns045QmGmbxr54fZY64UwRAVnUT8VthXrn&state=tRcwD5u1Kl_rEz-1vH-fzBgo5uqMYGE_wi9AZNz8o4gcWCpI6hBKT-FPKNIiRRVAsWpM_c92YYr5irylGiU2iQ"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552482.2563,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "tRcwD5u1Kl_rEz-1...",
+     "code_verifier_rx_state_": "__FVgkKvH0VmzUdw..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552512.7104,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"dUZKosr0Qm0-3ekdAACB\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552512.8416,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552513.021,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552513.123,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552537.937,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552538.0735,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552539.4644,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806552550.461,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552550.5718,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806552550.6536,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552562.0833,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "e79c91e47da060c4..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1792806552560,
+    "url": "/callback",
+    "key": "hash",
+    "value": "e79c91e47da060c40da01e3caa6851c44a8878892c5164112c9e7440009da11c"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552567.802,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552568.508,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806552592.6157,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552592.7668,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "e79c91e47da060c4...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "tRcwD5u1Kl_rEz-1...",
+     "code_verifier_rx_state_": "__FVgkKvH0VmzUdw..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552592.844,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552601.4287,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "e79c91e47da060c4..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552602.7634,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552607.3188,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806552608.939,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806554500.348,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806554566.0928,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806554895.898,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806554943.1506,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806554975.0505,
+    "url": "ws://localhost:8620/_event/?token=d2cd4a25-085c-47e9-b8f5-49818248777f&EIO=4&tra"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806554975.3838,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806554975.62,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806554975.7332,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"eVnSSCNaEiuSua6cAACC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806555354.3193,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806555408.705,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806555475.7488,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "e79c91e47da060c4..."
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806555490.2402,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"nGoN8rMXjDaOp9MTAACD\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806555537.271,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": true,
+     "hash": "e79c91e47da060c4...",
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806555554.6255,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "e79c91e47da060c4..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806555554.7585,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "alice"
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806555557.3188,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806555561.1606,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806555564.7336,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806555568.435,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557764.298,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "logout"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557767.9128,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806557761,
+    "url": "/vault",
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557776.187,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "storage_event",
+    "t": 1792806557773,
+    "url": "/vault",
+    "old": "e79c91e47da060c40da01e3caa6851c44a8878892c5164112c9e7440009da11c",
+    "new": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806557778.2695,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806557784.1465,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806557796.7305,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806557797.3987,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806557798.423,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557798.5244,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_access_token_hash_in_browser"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806557800.7585,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806557800.8462,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557805.449,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806557802,
+    "url": "/vault",
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557835.2573,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806557835.4104,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "e79c91e47da060c4..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ls_set",
+    "t": 1792806557807,
+    "url": "/vault",
+    "key": "hash",
+    "value": "e79c91e47da060c40da01e3caa6851c44a8878892c5164112c9e7440009da11c"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806557836.2666,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557836.5176,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab2",
+    "kind": "storage_event",
+    "t": 1792806557815,
+    "url": "/vault",
+    "old": "",
+    "new": "e79c91e47da060c40da01e3caa6851c44a8878892c5164112c9e7440009da11c"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_close",
+    "t": 1792806557836.7454
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806557850.147,
+    "url": "ws://localhost:8620/_event/?token=d2cd4a25-085c-47e9-b8f5-49818248777f&EIO=4&tra"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557850.2927,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"5CAiIOOQbGT_TkDUAACE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557850.39,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "e79c91e47da060c4...",
+     "app_state_rx_state_": "",
+     "code_verifier_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557858.3496,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"jmy4LSAMnLuDJxFWAACF\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557858.496,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "e79c91e47da060c4..."
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557872.4695,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "has_any_token": false,
+     "hash": "e79c91e47da060c4...",
+     "user_sub": "",
+     "clicks": 0,
+     "entries": []
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806557907.411,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806557907.5334,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_close",
+    "t": 1792806557907.6357
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_close",
+    "t": 1792806557907.6953
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806557908.8606,
+    "to": "http://localhost:8638/oauth2/end_session?state=SH3ixMuU09JhV7YqVD5tESQ7RWVN5f3vDGrcF0tHERMYBY0VTr1TWJIIQIBG0qt_IUq_KtmWJ9hlLoh96-dLtw&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InJWZXZoQnhUTC1JbXRSdHpOWXBKS1BKWlNyVkMzbFNLaHR1SlR2UEZ2RTQifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojg2MzgiLCJleHAiOjE3OTI4MTAxNTIsImlhdCI6MTc5MjgwNjU1MiwiYXV0aF90aW1lIjoxNzkyODA2NTUyLCJhdWQiOlsidmF1dGgtY2xpZW50Il0sImF0X2hhc2giOiI1NXlSNUgyZ1lNUU5vQjQ4cW1oUnhBIiwibmFtZSI6IkFsaWNlIEFkbWluIiwiZW1haWwiOiJhbGljZUBleGFtcGxlLmNvbSIsImdyb3VwcyI6WyJhZG1pbnMiLCJzdGFmZiJdLCJzdWIiOiJhbGljZSJ9.n3HSG-Pc4FMphBNzkEqxhzX09Saa_3CUR-Qem8pQCARjoIPHcpByIi8Pd0qzP3bAd-Oc4qJfKP7gVTRnu7KvIgVUlSU1L3SYGzNxc3II7oOI17Rog0RpKL0IPKIvEuSWbirl8VMz6vzrXXTHLrkSqubRvvN695tK7kOa_jjKmYM-xP-O049nxqOktNcekKgoGYp--o1-ON8iebw985-Q1ZySwVjtFEE5R98aQMa1sGMb_BbQi_XFrBDfSrLWeu_qOCbQ2XhBs26gvJuVKtL5su9O53TQwEa03QnKUEcoAePhnWlAy2wvuBPbF9gzJT9x65P5C8U1ZPfZ3baiiO4nJg&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A3620%2F"
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806558160.1199,
+    "url": "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
+    "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806558160.341,
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806558286.6746,
+    "to": "http://localhost:3620/?state=SH3ixMuU09JhV7YqVD5tESQ7RWVN5f3vDGrcF0tHERMYBY0VTr1TWJIIQIBG0qt_IUq_KtmWJ9hlLoh96-dLtw"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806558377.573,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806558439.9316,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806558459.8687,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws_open",
+    "t": 1792806558552.606,
+    "url": "ws://localhost:8620/_event/?token=d2cd4a25-085c-47e9-b8f5-49818248777f&EIO=4&tra"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558561.503,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806558561.8452,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558562.044,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"HBztS57SW-d576HVAACG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806558562.331,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab2",
+    "kind": "nav",
+    "t": 1792806558658.4956,
+    "to": "http://localhost:3620/?state=SH3ixMuU09JhV7YqVD5tESQ7RWVN5f3vDGrcF0tHERMYBY0VTr1TWJIIQIBG0qt_IUq_KtmWJ9hlLoh96-dLtw"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558695.0022,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "e79c91e47da060c4...",
+     "app_state_rx_state_": "",
+     "code_verifier_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558712.377,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"T2PXBOf9S6e0XvjwAACH\"}"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558722.5664,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false,
+     "hash": "e79c91e47da060c4..."
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558726.012,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558726.2085,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558726.3135,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806558766.6416,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558766.8906,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806558767.3374,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558768.7727,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "ls_set",
+    "t": 1792806558762,
+    "url": "/",
+    "key": "hash",
+    "value": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "storage_event",
+    "t": 1792806558763,
+    "url": "/vault",
+    "old": "e79c91e47da060c40da01e3caa6851c44a8878892c5164112c9e7440009da11c",
+    "new": ""
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558772.2678,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806558772.656,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558790.597,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558798.2883,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "has_any_token": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab2",
+    "kind": "cookie_sync",
+    "t": 1792806558802.377,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab2",
+    "kind": "requestfailed",
+    "t": 1792806558803.1746,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806558809.434,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558809.6326,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "reconcile_tokens_after_sync"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806558810.1794,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558819.1973,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "user_sub": "",
+     "hash": "",
+     "has_any_token": false,
+     "entries": [],
+     "clicks": 0
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806558824.9253,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_script"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "cookie_sync",
+    "t": 1792806558839.0095,
+    "status": 200,
+    "pid": null
+   },
+   {
+    "tab": "tab1",
+    "kind": "requestfailed",
+    "t": 1792806558839.2412,
+    "url": "http://localhost:8620/_reflex/cookies/sync",
+    "failure": "net::ERR_ABORTED"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567112.1567,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "add_entry"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567121.396,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806567128.791,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567142.4275,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "tRcwD5u1Kl_rEz-1...",
+     "code_verifier_rx_state_": "__FVgkKvH0VmzUdw..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567142.7004,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567145.5435,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567149.0525,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806567153.8086,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806571160.1448,
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571162.327,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806571167.905
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806571178.6343
+   },
+   {
+    "tab": "tab1",
+    "kind": "nav",
+    "t": 1792806571179.0903,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806571207.684,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806571249.7097,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806571259.3513,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_open",
+    "t": 1792806571265.495,
+    "url": "ws://localhost:8620/_event/?token=6a0f7e10-6ae6-465b-9903-c08850f3a8ed&EIO=4&tra"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571271.19,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806571271.534,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806571273.3914,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571273.5925,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"34Q4NSMGNuBiAyXcAACI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571300.8062,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": "",
+     "pending_event_rx_state_": "{\"name\": \"reflex...",
+     "redirect_to_url_rx_state_": "/vault",
+     "app_state_rx_state_": "tRcwD5u1Kl_rEz-1...",
+     "code_verifier_rx_state_": "__FVgkKvH0VmzUdw..."
+    }
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571309.2073,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"FWoP1KWK7c2XPtk5AACJ\"}"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571311.5007,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571312.432,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571312.5835,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806571321.62,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806578372.9233,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806578402.2114,
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806578571.6697,
+    "type": "debug",
+    "text": "[vite] connecting..."
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws_open",
+    "t": 1792806578629.6536,
+    "url": "ws://localhost:3620/?token=v4_3kXKAp5gK"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws_open",
+    "t": 1792806578634.1577,
+    "url": "ws://localhost:8620/_event/?token=7b6b5d13-1be5-4b01-8b70-09bf6a1df8b0&EIO=4&tra"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578634.3606,
+    "dir": "recv",
+    "ptype": "",
+    "raw": "{\"type\":\"connected\"}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806578634.6306,
+    "type": "debug",
+    "text": "[vite] connected."
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578634.7546,
+    "dir": "recv",
+    "ptype": "0",
+    "raw": "0{\"sid\":\"Yr2vCBcg0WhnOAjcAACK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806578770.2239,
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806578785.9404,
+    "to": "http://localhost:3620/vault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578815.7004,
+    "dir": "sent",
+    "ptype": "40",
+    "events": [
+     "hydrate_and_load"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578823.64,
+    "dir": "recv",
+    "ptype": "40",
+    "raw": "40/_event,{\"sid\":\"MQjJAs2rqUfDHUf4AACL\"}"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578825.2415,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578826.2317,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": "",
+     "has_any_token": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578827.2769,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578832.3591,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_redirect"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578838.7788,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "nav",
+    "t": 1792806578859.4028,
+    "to": "http://localhost:3620/login?redirect_to=%2Fvault"
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578867.442,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578867.558,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "update_vars_internal"
+    ],
+    "vars": {
+     "latest_access_token_hash_ls_rx_state_": ""
+    }
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578867.6328,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "on_load_internal"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578878.426,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {},
+    "chained": [
+     "_call_function"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578878.5935,
+    "dir": "sent",
+    "ptype": "42",
+    "events": [
+     "check_if_iframed_cb"
+    ]
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578878.6924,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "hash": ""
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578880.7644,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": false
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab3",
+    "kind": "ws",
+    "t": 1792806578891.1975,
+    "dir": "recv",
+    "ptype": "42",
+    "delta": {
+     "is_hydrated": true
+    },
+    "chained": []
+   },
+   {
+    "tab": "tab1",
+    "kind": "console",
+    "t": 1792806582649.122,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws",
+    "t": 1792806582649.613,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab2",
+    "kind": "console",
+    "t": 1792806582650.0637,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   },
+   {
+    "tab": "tab2",
+    "kind": "ws",
+    "t": 1792806582650.2537,
+    "dir": "sent",
+    "ptype": "41",
+    "raw": "41/_event,"
+   },
+   {
+    "tab": "tab1",
+    "kind": "ws_close",
+    "t": 1792806582650.3708
+   },
+   {
+    "tab": "tab3",
+    "kind": "console",
+    "t": 1792806582650.6636,
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+   }
+  ]
+ }
+]

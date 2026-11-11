@@ -1,0 +1,151 @@
+{
+ "base": "http://localhost:3302",
+ "console": [
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "errors": [],
+ "scenarios": {
+  "onload_navigate": {
+   "steps_before_leave": "s1",
+   "url_after": "http://localhost:3302/",
+   "server_log_after_leave": [
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792806916.513
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 1,
+     "t": 1792806916.517
+    }
+   ],
+   "slow_load_steps_logged": [
+    1
+   ],
+   "bg_steps_logged": []
+  },
+  "onload_close": {
+   "steps_before_leave": "s1",
+   "server_log_after_leave": [
+    {
+     "who": "start_bg",
+     "step": "dispatch",
+     "t": 1792806925.373
+    },
+    {
+     "who": "slow_load",
+     "step": 1,
+     "loads": 1,
+     "t": 1792806925.386
+    }
+   ],
+   "slow_load_steps_logged": [
+    1
+   ],
+   "bg_steps_logged": []
+  },
+  "onload_plain_close": {
+   "steps_before_leave": "plain-end",
+   "server_log_after_leave": [
+    {
+     "who": "plain_slow_load",
+     "step": "start",
+     "t": 1792806933.947
+    },
+    {
+     "who": "plain_slow_load",
+     "step": "end",
+     "t": 1792806936.449
+    }
+   ],
+   "slow_load_steps_logged": [
+    "start",
+    "end"
+   ],
+   "bg_steps_logged": []
+  },
+  "expire": {
+   "loads_initial": "1",
+   "pref": "chosen",
+   "short_task": {
+    "status": "done",
+    "count": "11"
+   },
+   "long_started": {
+    "status": "started",
+    "count": "12"
+   },
+   "after_long": {
+    "status": "done",
+    "count": "10",
+    "loads": "0",
+    "pref": "unset",
+    "url": "http://localhost:3302/expire"
+   },
+   "storage_ev_pref": "chosen",
+   "after_next_event": {
+    "status": "manual",
+    "count": "10",
+    "loads": "1",
+    "pref": "unset",
+    "url": "http://localhost:3302/expire"
+   },
+   "after_reload": {
+    "status": "manual",
+    "count": "10",
+    "loads": "2",
+    "pref": "chosen"
+   },
+   "server_log": [
+    {
+     "who": "exp.on_load",
+     "loads": 1,
+     "t": 1792806945.499
+    },
+    {
+     "who": "long_task",
+     "step": "started",
+     "count": 1,
+     "t": 1792806946.114
+    },
+    {
+     "who": "long_task",
+     "step": "done",
+     "count": 11,
+     "loads": 1,
+     "pref": "chosen",
+     "t": 1792806948.119
+    },
+    {
+     "who": "long_task",
+     "step": "started",
+     "count": 12,
+     "t": 1792806948.747
+    },
+    {
+     "who": "long_task",
+     "step": "done",
+     "count": 10,
+     "loads": 0,
+     "pref": "unset",
+     "t": 1792806956.765
+    },
+    {
+     "who": "exp.on_load",
+     "loads": 1,
+     "t": 1792806959.327
+    },
+    {
+     "who": "exp.on_load",
+     "loads": 2,
+     "t": 1792806962.245
+    }
+   ]
+  }
+ }
+}

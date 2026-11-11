@@ -1,0 +1,45 @@
+{
+ "tag": "rest_spoof_one",
+ "hdrs": {
+  "X-Forwarded-For": "6.6.6.6"
+ },
+ "token_status": 200,
+ "token_len": 43,
+ "event_status": 200,
+ "event_ct": "application/x-ndjson",
+ "n_lines": 1,
+ "seen_raw": [
+  "{\"asgi-scope-client\": \"127.0.0.1\", \"authorization\": null, \"client_token_len\": 36, \"cookie\": \"qa_cookie=COOKIEVALUE123\", \"cookie_attr\": \"qa_cookie=COOKIEVALUE123\", \"forwarded\": null, \"ip\": \"6.6.6.6\", \"pid\": 1494, \"raw_n\": 9, \"session_id_len\": 0, \"tag\": \"rest_spoof_one\", \"x-dup\": null, \"x-forwarded-for\": \"6.6.6.6\", \"x-real-ip\": null}"
+ ],
+ "snap": {
+  "asgi-scope-client": "127.0.0.1",
+  "authorization": null,
+  "client_token_len": 36,
+  "cookie": "qa_cookie=COOKIEVALUE123",
+  "cookie_attr": "qa_cookie=COOKIEVALUE123",
+  "forwarded": null,
+  "ip": "6.6.6.6",
+  "pid": 1494,
+  "raw_n": 9,
+  "session_id_len": 0,
+  "tag": "rest_spoof_one",
+  "x-dup": null,
+  "x-forwarded-for": "6.6.6.6",
+  "x-real-ip": null
+ },
+ "retrieve_status": 200,
+ "retrieve_len": 1781,
+ "retrieve_has_token": false,
+ "retrieve_client_token_values": [
+  ""
+ ],
+ "retrieve_session_id_values": [
+  ""
+ ],
+ "retrieve_cookie_echo": true,
+ "retrieve_authz_echo": false,
+ "retrieve_secret_note": true,
+ "event_body_has_token": false,
+ "event_body_cookie_echo": true,
+ "event_body_head": "{\"reflex___state____state\": {\"rx_router_url\": {\"scheme\": \"\", \"netloc\": \"\", \"origin\": \"://\", \"path\": \"/_reflex/event/hnet___hnet___ip_state/rec\", \"query\": \"\", \"query_parameters\": {}, \"fragment\": \"\", \"href\": \"/_reflex/event/hnet___hnet___ip_state/rec\"}, \"rx_router_headers\": {\"host\": \"localhost:8610\", "
+}

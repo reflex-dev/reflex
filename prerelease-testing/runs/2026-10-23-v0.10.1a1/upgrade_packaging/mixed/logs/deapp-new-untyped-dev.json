@@ -1,0 +1,71 @@
+{
+ "label": "deapp-new-untyped-dev",
+ "steps": [
+  {
+   "step": "initial sweep",
+   "new_page_errors": 0,
+   "nrows": "3",
+   "ncols": "2",
+   "cell": "",
+   "canvas": 2
+  },
+  {
+   "step": "append (in-place) -> 4 rows",
+   "new_page_errors": 0,
+   "nrows": "4",
+   "ncols": "2",
+   "cell": "",
+   "canvas": 2
+  },
+  {
+   "step": "append again -> 5 rows",
+   "new_page_errors": 0,
+   "nrows": "5",
+   "ncols": "2",
+   "cell": "",
+   "canvas": 2
+  },
+  {
+   "step": "assign (new list) -> 6 rows",
+   "new_page_errors": 0,
+   "nrows": "6",
+   "ncols": "2",
+   "cell": "",
+   "canvas": 2
+  },
+  {
+   "step": "more_cols (in-place column append + data reassign)",
+   "new_page_errors": 0,
+   "nrows": "6",
+   "ncols": "3",
+   "cell": "",
+   "canvas": 2
+  },
+  {
+   "step": "reset -> 3 rows",
+   "new_page_errors": 0,
+   "nrows": "3",
+   "ncols": "2",
+   "cell": "",
+   "canvas": 2
+  },
+  {
+   "step": "append after reset -> 4 rows",
+   "new_page_errors": 0,
+   "nrows": "4",
+   "ncols": "2",
+   "cell": "",
+   "canvas": 2
+  },
+  {
+   "step": "after reload sweep",
+   "new_page_errors": 0,
+   "nrows": "4",
+   "ncols": "2",
+   "cell": "",
+   "canvas": 2
+  }
+ ],
+ "console": [],
+ "page_errors": []
+}

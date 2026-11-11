@@ -1,0 +1,19 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/verify_up-uv
+Resolved 15 packages in 157ms
+Installed 15 packages in 9ms
+ + anyio==4.15.1
+ + idna==3.20
+ + markdown-it-py==4.2.0
+ + mdurl==0.1.2
+ + packaging==26.3
+ + platformdirs==4.13.5
+ + pygments==2.21.0
+ + python-multipart==0.0.32
+ + reflex-base==0.10.1a1
+ + reflex-components-core==0.10.1a1
+ + reflex-components-lucide==1.1.1a1
+ + reflex-components-sonner==0.10.0
+ + rich==15.0.0
+ + starlette==1.9.0
+ + typing-extensions==4.16.0

@@ -1,0 +1,10 @@
+started pid=2518 (pgid) venv=upgrade_packaging-tp app=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/run/new/ga_dev fp=3463 bp=8463 log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/logs/ga-new-dev.log
+UP after 4s (http://localhost:3463/)
+  ANOMALY bad_responses: {"where": "protected", "page": "main", "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefine
+  ANOMALY bad_responses: {"where": "partially", "page": "main", "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undefine
+  ANOMALY bad_responses: {"where": "after-inject", "page": "main", "url": "https://accounts.google.com/gsi/button?type=standard&theme=outline&size=large&text=undefined&shape=undefined&logo_alignment=undefined&width=undef
+stopped 2518
+checks A=13 B=13 failing A=1 B=1 differing=0
+base /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/expected/google_auth-dev.json: 11 distinct anomalies
+== /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/out/google_auth/new-dev-report.json: 11 distinct; only-in-base=0 only-in-this=0
+ga-new-dev.log: tracebacks=0 TypeError=0

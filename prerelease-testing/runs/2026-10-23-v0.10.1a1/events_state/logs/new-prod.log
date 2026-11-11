@@ -1,0 +1,354 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='formsapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:3301', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+trusted_proxy_hops=0, db_url=None, async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+react_compiler=False, frontend_compression_formats=['gzip'], 
+frontend_packages=[], frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'loglevel', 
+'api_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.10.1a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs
+/events_state-new/bin/python)]
+Debug: [Node 22.22.0 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.4 (Minimum: 1.4.4) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.5 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3301
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3301
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3301 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 3301 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 3301 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Submitting the form control with id 'io_email' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='io_email'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_ta' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_ta'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_cb' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_cb'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_sw' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_sw'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_rg' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_rg'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_sl' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_sl'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_hid' by its `id` has
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_hid'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_hcb' by its `id` has
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='io_hcb'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'io_hcb_checked' by its 
+`id` has been deprecated in version 0.10.1. Form data will only include controls
+with a `name`. Set `name='io_hcb_checked'` to keep submitting its value; a 
+checkbox or switch then submits 'on' or nothing rather than True or False, so 
+read it as a `bool` field of a TypedDict to keep a bool. It will be completely 
+removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'rangeid' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='rangeid'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'ctrl2' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='ctrl2'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'which_id' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='which_id'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'b' by its `id` has been
+deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='b'` to keep submitting its value; a checkbox or switch then 
+submits 'on' or nothing rather than True or False, so read it as a `bool` field 
+of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'femail' by its `id` has
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='femail'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'uid' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='uid'` to keep submitting its value; a checkbox or switch then
+submits 'on' or nothing rather than True or False, so read it as a `bool` field 
+of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'lid' by its `id` has 
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='lid'` to keep submitting its value; a checkbox or switch then
+submits 'on' or nothing rather than True or False, so read it as a `bool` field 
+of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'hsel_id' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='hsel_id'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Submitting the form control with id 'idonly' by its `id` has
+been deprecated in version 0.10.1. Form data will only include controls with a 
+`name`. Set `name='idonly'` to keep submitting its value; a checkbox or switch 
+then submits 'on' or nothing rather than True or False, so read it as a `bool` 
+field of a TypedDict to keep a bool. It will be completely removed in 0.11.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_core/el/elemen
+ts/forms.py:517)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_components_radix/plugin.p
+y:76)
+Debug: [timing] Compile pages: 0.30s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 22/21 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/react-form@0.3.0', '@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 
+'react-debounce-input@3.3.0', 'react-dropzone@17.0.0', 
+'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.1'), ('react-dom', '19.3.1'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.30'), ('postcss-import', '17.0.1'),
+('vite', '8.3.4')],[]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/events_state/formsapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/events_state/formsapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.09s
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 
+'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: transforming...
+Debug: ✓ 447 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+gzip:  0.94 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-BBpaWbmf.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_index-BAr2u4R5.js                       0.37 kB │ 
+gzip:  0.27 kB
+Debug: build/client/assets/_404_._index-Dfwd_-i3.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_upload_._index-wecnK9fU.js              0.58 kB │ 
+gzip:  0.40 kB
+Debug: build/client/assets/_future_._index-CMqGIqwC.js              1.59 kB │ 
+gzip:  0.73 kB
+Debug: build/client/assets/text-area-DBwgZL0F.js                    1.87 kB │ 
+gzip:  0.92 kB
+Debug: build/client/assets/dist-J2bTH5KA.js                         5.33 kB │ 
+gzip:  2.16 kB
+Debug: build/client/assets/_new_._index-JZm8bl9d.js                 5.39 kB │ 
+gzip:  1.37 kB
+Debug: build/client/assets/newforms-cwpDeqT4.js                     5.42 kB │ 
+gzip:  0.88 kB
+Debug: build/client/assets/text-D9sZIoeC.js                         8.49 kB │ 
+gzip:  3.25 kB
+Debug: build/client/assets/slider-kqDZRcvT.js                      11.22 kB │ 
+gzip:  4.40 kB
+Debug: build/client/assets/_legacy_._index-BKdx3sZV.js             14.91 kB │ 
+gzip:  2.92 kB
+Debug: build/client/assets/emotion-react.browser.esm-Df3cQleM.js   20.70 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/switch-kBbI-MOq.js                      21.20 kB │ 
+gzip:  7.34 kB
+Debug: build/client/assets/errorBoundaries-DN6tktrp.js             35.89 kB │ 
+gzip: 12.42 kB
+Debug: build/client/assets/formsapp-BTGx88Fx.js                    75.23 kB │ 
+gzip: 19.62 kB
+Debug: build/client/assets/components-BkVO-4Gy.js                  86.79 kB │ 
+gzip: 28.72 kB
+Debug: build/client/assets/select-D9aoPaw2.js                     104.07 kB │ 
+gzip: 33.49 kB
+Debug: build/client/assets/text-field-Dy5MbjQl.js                 135.43 kB │ 
+gzip: 41.08 kB
+Debug: build/client/assets/root-BEJisB83.js                       160.33 kB │ 
+gzip: 41.90 kB
+Debug: build/client/assets/entry.client-BcBPaK_9.js               210.87 kB │ 
+gzip: 66.25 kB
+Debug: 
+Debug: ✓ built in 1.78s
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 31 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-BBpaWbmf.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                    107.52 kB │ 
+gzip: 24.22 kB
+Debug: 
+Debug: ✓ built in 658ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /future -> build/client/future/index.html
+Debug: Prerender (html): /legacy -> build/client/legacy/index.html
+Debug: Prerender (html): /upload -> build/client/upload/index.html
+Debug: Prerender (html): /new -> build/client/new/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Copying .web/build/client/new/index.html to .web/build/client/new.html
+Debug: Copying .web/build/client/upload/index.html to 
+.web/build/client/upload.html
+Debug: Copying .web/build/client/future/index.html to 
+.web/build/client/future.html
+Debug: Copying .web/build/client/legacy/index.html to 
+.web/build/client/legacy.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratch
+pad/qa/apps/events_state/formsapp/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratch
+pad/qa/apps/events_state/formsapp/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3301/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 8645)
+[INFO] Listening at: http://0.0.0.0:3301
+[INFO] Spawning worker-1 with PID: 8715
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

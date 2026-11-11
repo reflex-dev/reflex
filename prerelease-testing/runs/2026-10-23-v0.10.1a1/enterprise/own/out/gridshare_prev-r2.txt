@@ -1,0 +1,46 @@
+[PASS] initial: grid A (row_id_key) == state
+[PASS] initial: grid B (index ids) == state
+[PASS] initial: foreach == state
+[PASS] initial: total == sum
+[PASS] bump_first: grid A (row_id_key) == state
+[PASS] bump_first: grid B (index ids) == state
+[PASS] bump_first: foreach == state
+[PASS] bump_first: total == sum
+[PASS] sort_price: grid A (row_id_key) == state
+[PASS] sort_price: grid B (index ids) == state
+[PASS] sort_price: foreach == state
+[PASS] sort_price: total == sum
+[PASS] reverse: grid A (row_id_key) == state
+[PASS] reverse: grid B (index ids) == state
+[PASS] reverse: foreach == state
+[PASS] reverse: total == sum
+[PASS] add_row: grid A (row_id_key) == state
+[PASS] add_row: grid B (index ids) == state
+[PASS] add_row: foreach == state
+[PASS] add_row: total == sum
+[PASS] remove_first: grid A (row_id_key) == state
+[PASS] remove_first: grid B (index ids) == state
+[PASS] remove_first: foreach == state
+[PASS] remove_first: total == sum
+[PASS] rename_all: grid A (row_id_key) == state
+[PASS] rename_all: grid B (index ids) == state
+[PASS] rename_all: foreach == state
+[PASS] rename_all: total == sum
+[PASS] sort_price: grid A (row_id_key) == state
+[PASS] sort_price: grid B (index ids) == state
+[PASS] sort_price: foreach == state
+[PASS] sort_price: total == sum
+[PASS] bump_first: grid A (row_id_key) == state
+[PASS] bump_first: grid B (index ids) == state
+[PASS] bump_first: foreach == state
+[PASS] bump_first: total == sum
+[PASS] cell edit grid A -> 777: grid A (row_id_key) == state
+[PASS] cell edit grid A -> 777: grid B (index ids) == state
+[PASS] cell edit grid A -> 777: foreach == state
+[PASS] cell edit grid A -> 777: total == sum
+[PASS] swap_cols: grid A header order follows in-place list swap
+[PASS] after reload: grid A (row_id_key) == state
+[PASS] after reload: grid B (index ids) == state
+[PASS] after reload: foreach == state
+[PASS] after reload: total == sum
+SUMMARY prev-r2 gridshare: 45/45 pass; errors=[]

@@ -1,0 +1,9 @@
+panicThreshold=none             id_refs_write          -> ok, compiled=false
+panicThreshold=none             on_mount_iife          -> ok, compiled=false
+panicThreshold=none             cond_optional_ternary  -> ok, compiled=false
+panicThreshold=critical_errors  id_refs_write          -> THROWS: Found 1 error:
+panicThreshold=critical_errors  on_mount_iife          -> THROWS: Found 1 error:
+panicThreshold=critical_errors  cond_optional_ternary  -> ok, compiled=false
+panicThreshold=all_errors       id_refs_write          -> THROWS: Found 1 error:
+panicThreshold=all_errors       on_mount_iife          -> THROWS: Found 1 error:
+panicThreshold=all_errors       cond_optional_ternary  -> THROWS: Found 1 error:

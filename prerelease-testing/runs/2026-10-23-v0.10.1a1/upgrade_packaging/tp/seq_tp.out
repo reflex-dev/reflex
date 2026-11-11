@@ -1,0 +1,62 @@
+### la dev 02:03:03
+migrate la_dev rc=0
+started pid=30927 (pgid) venv=upgrade_packaging-tp app=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/run/new/la_dev fp=3463 bp=8463 log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/logs/la-new-dev.log
+UP after 5s (http://localhost:3463/)
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:3463/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 30927
+### la prod 02:03:49
+migrate la_prod rc=0
+started pid=31622 (pgid) venv=upgrade_packaging-tp app=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/run/new/la_prod fp=8467 bp=8467 log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/logs/la-new-prod.log
+UP after 7s (http://localhost:8467/)
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:8467/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 31622
+### la prodredis 02:04:33
+migrate la_prodredis rc=0
+started pid=32248 (pgid) venv=upgrade_packaging-tp app=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/run/new/la_prodredis fp=8467 bp=8467 log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/logs/la-new-prodredis.log
+UP after 7s (http://localhost:8467/)
+PASS new tab while session valid -> protected content
+PASS new tab after session expiry -> /login :: http://localhost:8467/login
+SUMMARY checks=38 failed=2 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+redis keys: 24
+stopped 32248
+### ml dev 02:05:17
+migrate ml_dev rc=0
+started pid=338 (pgid) venv=upgrade_packaging-tp app=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/run/new/ml_dev fp=3463 bp=8463 log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/logs/ml-new-dev.log
+UP after 4s (http://localhost:3463/)
+Send Magic Link
+PASS per-IP rate limit eventually triggers :: limited at attempt 6
+SUMMARY checks=11 failed=1 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 338
+### ml prod 02:05:48
+migrate ml_prod rc=0
+started pid=1418 (pgid) venv=upgrade_packaging-tp app=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/run/new/ml_prod fp=8467 bp=8467 log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/logs/ml-new-prod.log
+UP after 10s (http://localhost:8467/)
+Built with Reflex
+PASS per-IP rate limit eventually triggers :: limited at attempt 6
+SUMMARY checks=11 failed=1 console_err/warn=0 pageerrors=0 failedreq=0 badresp=0
+stopped 1418
+--- cmp expected vs new local_auth dev: checks A=38 B=38 failing A=2 B=2 differing=0 
+base /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/expected/local_auth-dev.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/out/local_auth/new-dev-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp expected vs new local_auth prod: checks A=38 B=38 failing A=2 B=2 differing=0 
+base /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/expected/local_auth-prod.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/out/local_auth/new-prod-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp expected vs new local_auth prodredis: checks A=38 B=38 failing A=2 B=2 differing=0 
+base /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/expected/local_auth-prodredis.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/out/local_auth/new-prodredis-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp expected vs new magic_link dev: checks A=11 B=11 failing A=1 B=1 differing=0 
+base /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/expected/magic_link-dev.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/out/magic_link/new-dev-report.json: 0 distinct; only-in-base=0 only-in-this=0
+--- cmp expected vs new magic_link prod: checks A=11 B=11 failing A=1 B=1 differing=0 
+base /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/expected/magic_link-prod.json: 0 distinct anomalies
+== /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/tp/out/magic_link/new-prod-report.json: 0 distinct; only-in-base=0 only-in-this=0
+la-new-dev.log: tracebacks=0 TypeError=0
+la-new-prod.log: tracebacks=0 TypeError=0
+la-new-prodredis.log: tracebacks=0 TypeError=0
+ml-new-dev.log: tracebacks=0 TypeError=0
+ml-new-prod.log: tracebacks=0 TypeError=0
+### tp done 02:06:21

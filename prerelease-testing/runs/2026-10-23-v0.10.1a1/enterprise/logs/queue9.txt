@@ -1,0 +1,14 @@
+PONG
+oidc pid 7765 redis pid 7764
+OK
+started pid=7809 pgid=7809
+ready after 7s
+check_mcp_anon exit=0
+{"probe_nobearer_/_reflex/mcp": {"status": 307, "www": null, "body": ""}, "probe_nobearer_/_reflex/mcp/": {"status": 401, "www": "Bearer error=\"invalid_token\", error_description=\"Authentication required\", resource_metadata=\"http://localhost:8620/.well-known/oauth-protected-resource/_reflex/mcp\
+check_mcp_oauth_redis exit=0
+{"metadata_scopes": ["profile:read", "items:write"], "prm": {"status": 200, "body": {"resource": "http://localhost:8620/_reflex/mcp", "authorization_servers": ["http://localhost:8620/"], "scopes_supported": ["profile:read", "items:write"], "bearer_methods_supported": ["header"]}}, "register_a": 201,
+BROWSER_ERRORS {"partial": {"page_errors": [], "http_errors": [], "console_err": [{"type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:8638/oauth2/authorize"}]}, "deny": {"page_errors": [], "http_errors": [], "console_err": []}, "unregister
+stopped
+stopped-infra
+server log: tracebacks=2
+##### QUEUE9 DONE

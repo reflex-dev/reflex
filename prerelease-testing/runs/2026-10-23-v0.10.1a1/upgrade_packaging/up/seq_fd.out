@@ -1,0 +1,105 @@
+### fd base 0.10.0 01:48:54
+migrate rc=0
+started reflex pid=11149 (01:48:59) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/fd-base.server.log
+UP after 13s (frontend 200, backend /ping 200)
+[ANOMALY] login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3490/login
+[ANOMALY] re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3490/login
+== fd-base-full: {'pass': 18, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=55 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=321
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 12.023, "type": "error", "text": "Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toS
+== fd-base-entry: {'pass': 14, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=25 unexpected_console=6 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=67
+  UNEXPECTED CONSOLE: error Received `%s` for a non-boolean attribute `%s`.
+  UNEXPECTED CONSOLE: error In HTML, %s cannot be a descendant of <%s>.
+  UNEXPECTED CONSOLE: error <%s> cannot contain a nested %s.
+  UNEXPECTED CONSOLE: error The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  UNEXPECTED CONSOLE: error The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+  UNEXPECTED CONSOLE: error The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Try changing it to ":first-of-type".
+PASS text visible: 'Existing Forms' | Form Designer | Existing Forms | New Form | Form Name | Built with
+PASS no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored) | []
+ "n_changing_app": 0,
+CHANGING WRITE: removeItem debug prev= None new= None
+CHANGING WRITE: setItem token prev= None new= 'c1151bdd-e69d-4347-8645-0adc25bc2a79'
+idempotent write x1: setItem _auth_token
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 11149 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### fd upgrade -> 0.10.1a1 01:50:17
+freeze diff fd: < reflex==0.10.0 < reflex-base==0.10.0 < reflex-build-sdk==0.1.0 < reflex-components-code==0.10.0 < reflex-components-core==0.10.0 < reflex-components-dataeditor==0.10.0 > reflex==0.10.1a1 > reflex-base==0.10.1a1 > reflex-build-sdk==0.1.1a1 > reflex-components-code==0.10.1a1 > reflex-components-core==0.10.1a1 > reflex-components-dataeditor==0.10.1a1 < reflex-components-lucide==1.1.0 > reflex-components-lucide==1.1.1a1 < reflex-components-moment==0.10.0 > reflex-components-moment==0.10.1a1 < reflex-components-radix==0.10.0 > reflex-components-radix==0.10.1a1 < reflex-hosting-cli==0.2.0 > reflex-hosting-cli==0.2.1a1 < wrapt==2.5.1 > wrapt==2.5.2rc1 
+Checked 53 packages in 1ms
+All installed packages are compatible
+### fd up 01:50:18
+started reflex pid=12358 (01:50:18) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/fd-up.server.log
+UP after 7s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json fd-base -> fd-up: < "@radix-ui/react-accordion": "1.2.20", < "@radix-ui/react-form": "0.1.16", > "@radix-ui/react-accordion": "1.3.1", > "@radix-ui/react-form": "0.3.0", < "react": "19.3.0", > "react": "19.3.1", < "react-dom": "19.3.0", > "react-dom": "19.3.1", < "react-syntax-highlighter": "16.1.1", > "react-syntax-highlighter": "16.1.2", < "postcss": "8.5.29", < "postcss-import": "17.0.0", < "vite": "8.3.2" > "postcss": "8.5.30", > "postcss-import": "17.0.1", > "vite": "8.3.4" 
+.web file list differs:
+45c45
+< .web/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx
+---
+> .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+58a59
+> .web/vite-plugin-react-compiler.js
+auth token from base snapshot: dba80d9a-ec5...
+PASS text visible: 'Existing Forms' | Form Designer | Existing Forms | New Form | Form Name | Built with
+PASS kept _auth_token | start='dba80d9a-ec5b-4647-fb74-b1391ed06f98' end='dba80d9a-ec5b-4647-fb74-b1391ed06f98'
+PASS no CHANGING app storage/cookie writes during first load (framework keys token/theme/last_compiled_theme/debug ignored) | []
+ "n_changing_app": 0,
+CHANGING WRITE: removeItem debug prev= None new= None
+CHANGING WRITE: setItem token prev= None new= '5d75eeae-ddaf-4fe4-e3b3-0bdb9bb6ea18'
+idempotent write x1: setItem _auth_token
+[ANOMALY] re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3490/login
+== fd-up-up: {'pass': 12, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=35 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=146
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 12.574, "type": "error", "text": "In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <button> button \n\n  ...\n    <Collapsible data-orien
+== fd-up-entry: {'pass': 14, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=22 unexpected_console=3 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=66
+  UNEXPECTED CONSOLE: error In HTML, %s cannot be a descendant of <%s>.
+  UNEXPECTED CONSOLE: error <%s> cannot contain a nested %s.
+  UNEXPECTED CONSOLE: error Received `%s` for a non-boolean attribute `%s`.
+SHUTDOWN: main pid 12358 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+makemigrations rc=0 version files: 2 (expected 2: no new revision)
+### fd prod 01:51:13
+started reflex pid=14376 (01:51:13) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/fd-up-prod.server.log
+UP after 9s (frontend 200, backend /ping 200)
+prod /edit/form/1 -> 200
+prod /form/1 -> 200
+prod /responses/1 -> 200
+prod /nope -> 404
+prod /login -> 307
+[ANOMALY] re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3490/login/
+== fd-up-prod-up: {'pass': 12, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=9 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=136
+== fd-up-prod-entry: {'pass': 15, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=3 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=63
+SHUTDOWN: main pid 14376 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### fd cold 01:51:54
+started reflex pid=15423 (01:51:54) log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/upgrade_packaging/upgrade/up/logs/fd-cold.server.log
+UP after 7s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json fd-up -> fd-cold: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/react-accordion": "1.3.1", < "@radix-ui/react-form": "0.3.0", < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.26.0", < "mergician": "v2.0.2", < "moment": "2.31.0", < "react": "19.3.1", < "react-debounce-input": "3.3.0", < "react-dom": "19.3.1", < "react-error-boundary": "6.1.6", < "react-helmet": "6.1.0", < "react-markdown": "10.1.0", < "react-moment": "2.0.2", < "react-router": "8.4.0", < "react-syntax-highlighter": "16.1.2", < "rehype-katex": "7.0.1", < "rehype-raw": "7.0.0", < "rehype-unwrap-images": "1.0.0", < "remark-gfm": "4.0.1", < "remark-math": "6.0.0", < "socket.io-client": "4.8.4", < "sonner": "2.0.8", < "universal-cookie": "8.1.2" < }, < "devDependencies": { < "@emotion/react": "11.14.0", < "@react-router/dev": "8.4.0", < "@react-router/fs-routes": "8.4.0", < "autoprefixer": "10.6.1", < "postcss": "8.5.30", < "postcss-import": "17.0.1", < "vite": "8.3.4" < }, < "overrides": {} < } > {"name": "reflex", "type": "module", "scripts": {"dev": "react-router dev --host", "export": "react-router build"}, "dependencies": {"@radix-ui/react-accordion": "1.3.1", "@radix-ui/react-form": "0.3.0", "@radix-ui/themes": "3.3.0", "@react-router/node": "8.4.0", "isbot": "5.2.2", "lucide-react": "1.26.0", "mergician": "v2.0.2", "moment": "2.31.0", "react": "19.3.1", "react-debounce-input": "3.3.0", "react-dom": "19.3.1", "react-error-boundary": "6.1.6", "react-helmet": "6.1.0", "react-markdown": "10.1.0", "react-moment": "2.0.2", "react-router": "8.4.0", "react-syntax-highlighter": "16.1.2", "rehype-katex": "7.0.1", "rehype-raw": "7.0.0", "rehype-unwrap-images": "1.0.0", "remark-gfm": "4.0.1", "remark-math": "6.0.0", "socket.io-client": "4.8.4", "sonner": "2.0.8", "universal-cookie": "8.1.2"}, "devDependencies": {"@emotion/react": "11.14.0", "@react-router/dev": "8.4.0", "@react-router/fs-routes": "8.4.0", "autoprefixer": "10.6.1", "postcss": "8.5.30", "postcss-import": "17.0.1", "vite": "8.3.4"}, "overrides": {}} 
+.web file list identical
+[ANOMALY] re-login: auto-redirects away from /login (pre-existing FAIL on 0.9.x): http://localhost:3490/login
+== fd-cold-up: {'pass': 12, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=35 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=149
+SHUTDOWN: main pid 15423 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- fd-base server-log warnings:
+      5 /tmp/claude-0/-home-user/<tok>/scratchpad/qa/envs/upgrade_packaging-fd/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+      3 Debug: 1:50:01 AM [vite] (client) [console.error] The pseudo class 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: This will cause a hydration error.
+      1 Debug: 1:50:01 AM [vite] (client) [console.error] Received `true` for a 
+      1 Debug: 1:50:01 AM [vite] (client) [console.error] In HTML, <button> cannot be a 
+      1 Debug: 1:50:01 AM [vite] (client) [console.error] <button> cannot contain a 
+--- fd-up server-log warnings:
+      2 /tmp/claude-0/-home-user/<tok>/scratchpad/qa/envs/upgrade_packaging-fd/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: This will cause a hydration error.
+      1 Debug: 1:51:03 AM [vite] (client) [console.error] Received `true` for a 
+      1 Debug: 1:51:03 AM [vite] (client) [console.error] In HTML, <button> cannot be a 
+      1 Debug: 1:51:03 AM [vite] (client) [console.error] <button> cannot contain a 
+--- fd-up-prod server-log warnings:
+      2 /tmp/claude-0/-home-user/<tok>/scratchpad/qa/envs/upgrade_packaging-fd/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+      1 build.chunkSizeWarningLimit.
+      1 Debug: - Adjust chunk size limit for this warning via 
+--- fd-cold server-log warnings:
+      2 /tmp/claude-0/-home-user/<tok>/scratchpad/qa/envs/upgrade_packaging-fd/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+      1 [INFO] Failed to close websocket with error Io(Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" })
+      1 Debug: error: script "dev" exited with code 143
+### fd done 01:52:25

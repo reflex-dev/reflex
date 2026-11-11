@@ -1,0 +1,192 @@
+{
+ "rows": [
+  {
+   "pid": 18489,
+   "imported_here": true,
+   "threads": [
+    "APScheduler",
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader",
+    "Thread-1 (_monitor)",
+    "ThreadPoolExecutor-3_0"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 7,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": true,
+   "job_runs_first": 3,
+   "job_runs_last": 8,
+   "job_pid": 18489,
+   "qlistener_alive": true,
+   "queue_depth": 1
+  },
+  {
+   "pid": 18491,
+   "imported_here": true,
+   "threads": [
+    "APScheduler",
+    "AnyIO worker thread",
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader",
+    "Thread-1 (_monitor)",
+    "ThreadPoolExecutor-3_0"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 4,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": true,
+   "job_runs_first": 2,
+   "job_runs_last": 8,
+   "job_pid": 18491,
+   "qlistener_alive": true,
+   "queue_depth": 1
+  },
+  {
+   "pid": 18493,
+   "imported_here": true,
+   "threads": [
+    "APScheduler",
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader",
+    "Thread-1 (_monitor)",
+    "ThreadPoolExecutor-3_0"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 5,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": true,
+   "job_runs_first": 3,
+   "job_runs_last": 8,
+   "job_pid": 18493,
+   "qlistener_alive": true,
+   "queue_depth": 1
+  },
+  {
+   "pid": 18495,
+   "imported_here": true,
+   "threads": [
+    "APScheduler",
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader",
+    "Thread-1 (_monitor)",
+    "ThreadPoolExecutor-3_0"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 5,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": true,
+   "job_runs_first": 2,
+   "job_runs_last": 8,
+   "job_pid": 18495,
+   "qlistener_alive": true,
+   "queue_depth": 1
+  },
+  {
+   "pid": 18497,
+   "imported_here": true,
+   "threads": [
+    "APScheduler",
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader",
+    "Thread-1 (_monitor)",
+    "ThreadPoolExecutor-3_0"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 5,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": true,
+   "job_runs_first": 3,
+   "job_runs_last": 8,
+   "job_pid": 18497,
+   "qlistener_alive": true,
+   "queue_depth": 1
+  },
+  {
+   "pid": 18499,
+   "imported_here": true,
+   "threads": [
+    "APScheduler",
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader",
+    "Thread-1 (_monitor)",
+    "ThreadPoolExecutor-3_0"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 8,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": true,
+   "job_runs_first": 3,
+   "job_runs_last": 8,
+   "job_pid": 18499,
+   "qlistener_alive": true,
+   "queue_depth": 1
+  },
+  {
+   "pid": 18501,
+   "imported_here": true,
+   "threads": [
+    "APScheduler",
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader",
+    "Thread-1 (_monitor)",
+    "ThreadPoolExecutor-3_0"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 9,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": true,
+   "job_runs_first": 3,
+   "job_runs_last": 8,
+   "job_pid": 18501,
+   "qlistener_alive": true,
+   "queue_depth": 1
+  },
+  {
+   "pid": 18503,
+   "imported_here": true,
+   "threads": [
+    "APScheduler",
+    "MainThread",
+    "OtelBatchSpanRecordProcessor",
+    "OtelPeriodicExportingMetricReader",
+    "Thread-1 (_monitor)",
+    "ThreadPoolExecutor-3_0"
+   ],
+   "spans_exported_here_first": 1,
+   "spans_exported_here_last": 6,
+   "metrics_exported_here_last": 3,
+   "sched_running": true,
+   "sched_thread_alive": true,
+   "job_runs_first": 3,
+   "job_runs_last": 8,
+   "job_pid": 18503,
+   "qlistener_alive": true,
+   "queue_depth": 0
+  }
+ ],
+ "summary": {
+  "workers_seen": 8,
+  "imported_in_worker": 8,
+  "spans_exported_in_worker": 8,
+  "metrics_exported_in_worker": 8,
+  "sched_running_flag": 8,
+  "sched_thread_alive": 8,
+  "job_advancing": 8,
+  "qlistener_alive": 8,
+  "max_queue_depth": 1
+ }
+}

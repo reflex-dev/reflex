@@ -1,0 +1,212 @@
+`rx._x` contains experimental features and might be removed at any time in the future.
+`rx._x` contains experimental features and might be removed at any time in the future.
+{
+ "radix_versions": {
+  "accordion": "@radix-ui/react-accordion@1.2.20",
+  "dialog": "@radix-ui/react-dialog@1.1.23",
+  "drawer_deps": [
+   "@radix-ui/react-dialog@1.1.23"
+  ],
+  "form": "@radix-ui/react-form@0.1.16",
+  "progress": "@radix-ui/react-progress@1.1.16",
+  "slider": "@radix-ui/react-slider@1.4.7"
+ },
+ "shiki_tree": [
+  {
+   "depth": 0,
+   "type": "Box",
+   "name": "RadixThemesBox",
+   "props": [
+    "css:({ [\"pre\"] : ({ [\"margin\"] : \"0\", [\"padding\"] : \"24px\", [\"background\"] : \"transparent\", [\"overflowX\"] : \"auto\", [\"borderRadius\"] : \"6px\" }) })"
+   ]
+  },
+  {
+   "depth": 1,
+   "type": "ShikiCodeBlock",
+   "name": "ShikiCode",
+   "props": [
+    "code:\"print('x')  # [!code highlight]\"",
+    "decorations:[]",
+    "language:\"python\"",
+    "theme:((resolvedColorMode?.valueOf?.() === \"light\"?.valueOf?.()) ? \"one-light\" : \"one-dark-pro\")",
+    "transformers:[]"
+   ]
+  }
+ ],
+ "shiki_custom_code": [],
+ "shiki_imports": {
+  "@radix-ui/themes@3.3.0": [
+   "ImportVar(tag='Box', is_default=False, alias='RadixThemesBox', install=True, render=True, package_path='/')"
+  ],
+  "shiki@4.5.0": [
+   "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+  ],
+  "": [
+   "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+  ],
+  "/components/shiki/code": [
+   "ImportVar(tag='Code', is_default=False, alias='ShikiCode', install=True, render=True, package_path='/')"
+  ],
+  "$/utils/context": [
+   "ImportVar(tag='ColorModeContext', is_default=False, alias=None, install=True, render=True, package_path='/')"
+  ],
+  "react": [
+   "ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/')"
+  ]
+ },
+ "shiki_plain_tree": [
+  {
+   "depth": 0,
+   "type": "Box",
+   "name": "RadixThemesBox",
+   "props": [
+    "css:({ [\"pre\"] : ({ [\"margin\"] : \"0\", [\"padding\"] : \"24px\", [\"background\"] : \"transparent\", [\"overflowX\"] : \"auto\", [\"borderRadius\"] : \"6px\" }) })"
+   ]
+  },
+  {
+   "depth": 1,
+   "type": "ShikiCodeBlock",
+   "name": "ShikiCode",
+   "props": [
+    "code:\"print('x')\"",
+    "decorations:[]",
+    "language:\"python\"",
+    "theme:((resolvedColorMode?.valueOf?.() === \"light\"?.valueOf?.()) ? \"one-light\" : \"one-dark-pro\")",
+    "transformers:[]"
+   ]
+  }
+ ],
+ "moment_bad_filter": [
+  "css:({ [\"filter\"] : (c)=>c })",
+  "locale:\"en\""
+ ],
+ "moment_bad_settings": [
+  "css:({ [\"settings\"] : ({ [\"a\"] : 1 }) })",
+  "locale:\"en\""
+ ],
+ "moment_bad_form_at": [
+  "css:({ [\"formAt\"] : \"x\" })",
+  "locale:\"en\""
+ ],
+ "moment_provider_bad_filter": "n/a",
+ "moment_props_summary": {
+  "utc": [
+   "css:({ [\"utc\"] : true })",
+   "locale:\"en\""
+  ],
+  "calendar": [
+   "css:({ [\"calendar\"] : true })",
+   "locale:\"en\""
+  ],
+  "calendar_dict": [
+   "css:({ [\"calendar\"] : ({ [\"sameDay\"] : \"[Today]\" }) })",
+   "locale:\"en\""
+  ],
+  "from_": [
+   "css:({ [\"from\"] : \"2024-03-10\" })",
+   "locale:\"en\""
+  ],
+  "to": [
+   "css:({ [\"to\"] : \"2024-03-20\" })",
+   "locale:\"en\""
+  ],
+  "ago": [
+   "css:({ [\"ago\"] : true })",
+   "fromNow:true",
+   "locale:\"en\""
+  ],
+  "element": [
+   "css:({ [\"element\"] : \"span\" })",
+   "locale:\"en\""
+  ],
+  "fallback": [
+   "css:({ [\"fallback\"] : \"x\" })",
+   "locale:\"en\""
+  ],
+  "filters": [
+   "css:({ [\"@media screen and (min-width: 0)\"] : ({ [\"filters\"] : (c) => c }) })",
+   "locale:\"en\""
+  ],
+  "renderers": [
+   "css:({ [\"@media screen and (min-width: 0)\"] : ({ [\"renderers\"] : (p, d) => null }) })",
+   "locale:\"en\""
+  ],
+  "locale_fr": [
+   "locale:\"fr\""
+  ],
+  "locale_en": [
+   "locale:\"en\""
+  ],
+  "locale_var": [
+   "locale:reflex___state____state____main_____s.loc_rx_state_"
+  ],
+  "tz": [
+   "locale:\"en\"",
+   "tz:\"Europe/Paris\""
+  ],
+  "bad_filter": [
+   "css:({ [\"filter\"] : true })",
+   "locale:\"en\""
+  ],
+  "bad_settings": [
+   "css:({ [\"settings\"] : true })",
+   "locale:\"en\""
+  ],
+  "bad_form_at": [
+   "css:({ [\"formAt\"] : true })",
+   "locale:\"en\""
+  ]
+ },
+ "moment_props_css": {
+  "utc": [
+   "css:({ [\"utc\"] : true })"
+  ],
+  "calendar": [
+   "css:({ [\"calendar\"] : true })"
+  ],
+  "calendar_dict": [
+   "css:({ [\"calendar\"] : ({ [\"sameDay\"] : \"[Today]\" }) })"
+  ],
+  "from_": [
+   "css:({ [\"from\"] : \"2024-03-10\" })"
+  ],
+  "to": [
+   "css:({ [\"to\"] : \"2024-03-20\" })"
+  ],
+  "ago": [
+   "css:({ [\"ago\"] : true })"
+  ],
+  "element": [
+   "css:({ [\"element\"] : \"span\" })"
+  ],
+  "fallback": [
+   "css:({ [\"fallback\"] : \"x\" })"
+  ],
+  "filters": [
+   "css:({ [\"@media screen and (min-width: 0)\"] : ({ [\"filters\"] : (c) => c }) })"
+  ],
+  "renderers": [
+   "css:({ [\"@media screen and (min-width: 0)\"] : ({ [\"renderers\"] : (p, d) => null }) })"
+  ]
+ },
+ "moment_locale_var_imports": {
+  "$/utils/context": [
+   "ImportVar(tag='ClientSide', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/')"
+  ],
+  "moment@2.31.0": [
+   "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+  ],
+  "react-moment@2.0.2": [
+   "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+  ],
+  "react": [
+   "ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/')"
+  ],
+  "": [
+   "ImportVar(tag='moment/min/locales', is_default=False, alias=None, install=True, render=True, package_path='/')"
+  ]
+ },
+ "moment_locale_var_custom_code": [],
+ "moment_locale_fr_custom_code": []
+}

@@ -1,0 +1,394 @@
+{
+ "checks": {
+  "big_300k_roundtrip": {
+   "ok": true,
+   "ls_len": 300000,
+   "reload_hydrate_s": 0.42
+  },
+  "big_oversize_reported_once": {
+   "ok": true,
+   "n_ws_opens": 1,
+   "open_gaps": [],
+   "n_connect_frames_sent": 0,
+   "hydration_errors": [
+    "Hydration payload (1100569 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."
+   ],
+   "n_console_errors": 1,
+   "hydrated": "false",
+   "size": 1100000
+  },
+  "big_oversize_toast_shown_and_stays": {
+   "ok": true,
+   "first_toast": [
+    "Hydration payload (1100569 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."
+   ],
+   "toast_at_s": 0.4,
+   "final_toasts": [
+    "Hydration payload (1100569 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."
+   ]
+  },
+  "big_recovery_after_shrink": {
+   "ok": true,
+   "big_len": "len:100",
+   "ws_opens_after": 1,
+   "toasts": []
+  },
+  "big_click_after_recovery": {
+   "ok": true
+  },
+  "shared_initial": {
+   "ok": true,
+   "t1": [
+    "pref-default",
+    "pref-default",
+    "plain-default"
+   ],
+   "t2": [
+    "pref-default",
+    "pref-default",
+    "plain-default"
+   ],
+   "other": [
+    "other-default",
+    "other-default"
+   ]
+  },
+  "shared_set_a_syncs_all_in_other_tab": {
+   "ok": false,
+   "t1": [
+    "from-a",
+    "pref-default",
+    "plain-default"
+   ],
+   "t2": [
+    "from-a",
+    "from-a",
+    "from-a"
+   ],
+   "ls": "from-a"
+  },
+  "shared_set_plain_syncs_all_in_other_tab": {
+   "ok": false,
+   "t1": [
+    "from-plain",
+    "from-plain",
+    "from-plain"
+   ],
+   "t2": [
+    "from-a",
+    "from-a",
+    "from-plain"
+   ]
+  },
+  "shared_typed_b_syncs_all": {
+   "ok": false,
+   "t1": [
+    "typed-b",
+    "typed-b",
+    "typed-b"
+   ],
+   "t2": [
+    "from-a",
+    "typed-b",
+    "from-plain"
+   ]
+  },
+  "shared_other_name_unaffected": {
+   "ok": false,
+   "t1": [
+    "typed-b",
+    "typed-b",
+    "typed-b"
+   ],
+   "t2": [
+    "from-a",
+    "typed-b",
+    "from-plain"
+   ],
+   "other2": "from-other"
+  },
+  "shared_quiet_after": {
+   "ok": true,
+   "frames_in_2s": 0,
+   "total_frames": 30
+  },
+  "shared_new_tab_sees_value": {
+   "ok": true,
+   "t3": [
+    "typed-b",
+    "typed-b",
+    "typed-b"
+   ]
+  },
+  "cv_storage_dependents_once_per_load": {
+   "ok": true,
+   "evals": {
+    "sib_len": 1,
+    "tok_len": 1,
+    "uncached": 4
+   },
+   "shown": [
+    "tok_len:8",
+    "sib_len:6",
+    "unc:6"
+   ]
+  },
+  "cv_storage_dependents_once_per_load_2": {
+   "ok": true,
+   "evals": {
+    "sib_len": 1,
+    "tok_len": 1,
+    "uncached": 4
+   }
+  },
+  "typed_defaults": {
+   "ok": false,
+   "summary": {
+    "ann_ls": [
+     "ls-d",
+     "LocalStorage"
+    ],
+    "ann_ck": [
+     "ck-d",
+     "Cookie"
+    ],
+    "ann_ss": [
+     "ss-d",
+     "SessionStorage"
+    ],
+    "ann_opt": [
+     "opt-d",
+     "LocalStorage"
+    ],
+    "ann_fld": [
+     "fld-d",
+     "LocalStorage"
+    ],
+    "n_int": [
+     "3",
+     "LocalStorage"
+    ],
+    "n_bool": [
+     "true",
+     "Cookie"
+    ],
+    "j_dict": [
+     "{\"a\": 1}",
+     "LocalStorage"
+    ]
+   },
+   "console": []
+  },
+  "typed_write_w1": {
+   "ok": false,
+   "summary": {
+    "ann_ls": [
+     "ls-w1",
+     "str"
+    ],
+    "ann_ck": [
+     "ck-w1",
+     "str"
+    ],
+    "ann_ss": [
+     "ss-w1",
+     "str"
+    ],
+    "ann_opt": [
+     "opt-w1",
+     "str"
+    ],
+    "ann_fld": [
+     "fld-w1",
+     "str"
+    ],
+    "n_int": [
+     2,
+     "int"
+    ],
+    "n_bool": [
+     true,
+     "bool"
+    ],
+    "j_dict": [
+     "{'s': 'w1'}",
+     "MutableProxy"
+    ]
+   },
+   "storage": {
+    "ls": {
+     "hnet_ann_opt": "opt-w1",
+     "hnet_int": "2",
+     "hnet_ann_fld": "fld-w1",
+     "hnet_ann_ls": "ls-w1",
+     "hnet_json": "[object Object]"
+    },
+    "ss": {
+     "hnet_ann_ss": "ss-w1"
+    },
+    "ck": "hnet_bool=true; hnet_ann_ck=ck-w1"
+   }
+  },
+  "typed_reload_hydrates_w1": {
+   "ok": false,
+   "summary": {
+    "ann_ls": [
+     "ls-w1",
+     "str"
+    ],
+    "ann_ck": [
+     "ck-w1",
+     "str"
+    ],
+    "ann_ss": [
+     "ss-w1",
+     "str"
+    ],
+    "ann_opt": [
+     "opt-w1",
+     "str"
+    ],
+    "ann_fld": [
+     "fld-w1",
+     "str"
+    ],
+    "n_int": [
+     "2",
+     "str"
+    ],
+    "n_bool": [
+     "true",
+     "str"
+    ],
+    "j_dict": [
+     "[object Object]",
+     "str"
+    ]
+   },
+   "shown": [
+    "ls-w1",
+    "2",
+    "\"true\"",
+    "\"[object Object]\""
+   ]
+  },
+  "typed_opt_none_roundtrip": {
+   "ok": true,
+   "after_none": [
+    null,
+    "NoneType"
+   ],
+   "ls_after_none": "null",
+   "after_reload": [
+    "null",
+    "str"
+   ]
+  },
+  "typed_reload_hydrates_w2": {
+   "ok": false,
+   "summary": {
+    "ann_ls": [
+     "ls-w2",
+     "str"
+    ],
+    "ann_ck": [
+     "ck-w2",
+     "str"
+    ],
+    "ann_ss": [
+     "ss-w2",
+     "str"
+    ],
+    "ann_opt": [
+     "opt-w2",
+     "str"
+    ],
+    "ann_fld": [
+     "fld-w2",
+     "str"
+    ],
+    "n_int": [
+     "2",
+     "str"
+    ],
+    "n_bool": [
+     "false",
+     "str"
+    ],
+    "j_dict": [
+     "[object Object]",
+     "str"
+    ]
+   }
+  },
+  "typed_console_clean": {
+   "ok": true,
+   "anomalies": {
+    "console_err_warn": [],
+    "pageerrors": [],
+    "failed": [],
+    "http_errors": []
+   }
+  },
+  "ovr_good_persists": {
+   "ok": true,
+   "tok_ok": "ok:True:good-1",
+   "tok": "[good-1]"
+  },
+  "ovr_bad_sanitised_dependents_follow": {
+   "ok": true,
+   "tok_ok": "ok:False:",
+   "tok": "[]",
+   "plain_dep": "plain:sanitised",
+   "ls": "",
+   "calls": "{\"calls\": 3, \"dep_evals\": 41}"
+  },
+  "ovr_after_sanitise_reload": {
+   "ok": true,
+   "tok_ok": "ok:False:",
+   "tok": "[]",
+   "ls": ""
+  },
+  "ovr_event_bad_sanitised": {
+   "ok": true,
+   "tok_ok": "ok:False:",
+   "tok": "[]",
+   "plain_dep": "plain:sanitised",
+   "ls": ""
+  },
+  "cs_push_before_reader_no_error": {
+   "ok": true,
+   "errors": []
+  },
+  "cs_late_reader_sees_pushed": {
+   "ok": true,
+   "flag": "flag=[pushed-on-load]",
+   "count": "count=5"
+  },
+  "cs_late_reader_follows_set_back_to_default": {
+   "ok": true,
+   "flag": "flag=[initial]"
+  },
+  "cs_reader_mounted_after_set_then_default": {
+   "ok": true,
+   "flag": "flag=[initial]"
+  },
+  "cs_push_none_and_backend": {
+   "ok": true,
+   "flag": "flag=[]"
+  },
+  "cs_count_int": {
+   "ok": true,
+   "count": "count=6"
+  },
+  "cs_gate_push_during_onload": {
+   "ok": true,
+   "flag": "flag=[pushed-on-load]",
+   "errors": []
+  },
+  "cs_gate_set_default": {
+   "ok": true,
+   "flag": "flag=[initial]"
+  }
+ }
+}

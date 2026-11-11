@@ -1,0 +1,10 @@
+--- new dev run 1
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 1, "t2": 0, "t3": 1, "t4": 0, "t5": 0, "t6": 1}, "frames_total": 59, "frames_in_quiet_2s": 0, "converged": true}
+--- new dev run 2
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 1, "t2": 0, "t3": 1, "t4": 1, "t5": 2, "t6": 1}, "frames_total": 65, "frames_in_quiet_2s": 0, "converged": true}
+--- new dev run 3
+S: {"observe_windows_5s": [], "finals": {"t0": "s5", "t1": "s5", "t2": "s5", "t3": "s5", "t4": "s5", "t5": "s5", "t6": "s5"}, "ls_final": "s5", "storage_events_per_tab": {"t0": 0, "t1": 5, "t2": 5, "t3": 5, "t4": 5, "t5": 5, "t6": 5}, "uvi_per_tab": {"t0": 0, "t1": 2, "t2": 2, "t3": 1, "t4": 0, "t5": 0, "t6": 0}, "frames_total": 63, "frames_in_quiet_2s": 0, "converged": true}
+storm_new_dev_S_6_*: storms 0/3 (files 3)
+   storm_new_dev_S_6_1.json: storm=False frames_total=59 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_new_dev_S_6_2.json: storm=False frames_total=65 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_new_dev_S_6_3.json: storm=False frames_total=63 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5

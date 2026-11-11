@@ -1,0 +1,154 @@
+`rx._x` contains experimental features and might be removed at any time in the future.
+`rx._x` contains experimental features and might be removed at any time in the future.
+{
+ "radix_versions": {
+  "accordion": "@radix-ui/react-accordion@1.3.1",
+  "dialog": "@radix-ui/react-dialog@1.3.1",
+  "drawer_deps": [
+   "@radix-ui/react-dialog@1.3.1"
+  ],
+  "form": "@radix-ui/react-form@0.3.0",
+  "progress": "@radix-ui/react-progress@1.2.1",
+  "slider": "@radix-ui/react-slider@1.6.1"
+ },
+ "shiki_tree": [
+  {
+   "depth": 0,
+   "type": "Box",
+   "name": "RadixThemesBox",
+   "props": [
+    "css:({ [\"code\"] : ({ [\"lineHeight\"] : \"1.7\", [\"fontSize\"] : \"0.875em\", [\"display\"] : \"grid\" }), [\".diff\"] : ({ [\"margin\"] : \"0 -24px\", [\"padding\"] : \"0 24px\", [\"width\"] : \"calc(100% + 48px)\", [\"display\"] : \"inline-block\" }), [\".diff.add\"] : ({ [\"backgroundColor\"] : \"rgba(16, 185, 129, .14)\", [\"posit"
+   ]
+  },
+  {
+   "depth": 1,
+   "type": "ShikiCodeBlock",
+   "name": "ShikiCode",
+   "props": [
+    "code:\"print('x')  # [!code highlight]\"",
+    "decorations:[]",
+    "language:\"python\"",
+    "theme:((resolvedColorMode?.valueOf?.() === \"light\"?.valueOf?.()) ? \"one-light\" : \"one-dark-pro\")",
+    "transformers:[(transformerCompactLineOptions()), (transformerMetaHighlight()), (transformerMetaWordHighlight()), (transformerNotationDiff()), (transformerNotationErrorLevel()), (transformerNotationFocus()), (transformerNotationHighlight()), (transformerNotationWordHighlight()), (transformerRemoveNot"
+   ]
+  }
+ ],
+ "shiki_custom_code": [],
+ "shiki_imports": {
+  "@radix-ui/themes@3.3.0": [
+   "ImportVar(tag='Box', is_default=False, alias='RadixThemesBox', install=True, render=True, package_path='/')"
+  ],
+  "shiki@4.5.0": [
+   "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')"
+  ],
+  "@shikijs/transformers@4.5.0": [
+   "ImportVar(tag=None, is_default=False, alias=None, install=True, render=False, package_path='/')",
+   "ImportVar(tag='transformerCompactLineOptions', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='transformerMetaHighlight', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='transformerMetaWordHighlight', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='transformerNotationDiff', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='transformerNotationErrorLevel', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='transformerNotationFocus', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='transformerNotationHighlight', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='transformerNotationWordHighlight', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='transformerRemoveNotationEscape', is_default=False, alias=None, install=True, render=True, package_path='/')",
+   "ImportVar(tag='transformerRenderWhitespace', is_default=False, alias=None, install=True, render=True, package_path='/')"
+  ],
+  "/components/shiki/code": [
+   "ImportVar(tag='Code', is_default=False, alias='ShikiCode', install=True, render=True, package_path='/')"
+  ],
+  "$/utils/context": [
+   "ImportVar(tag='ColorModeContext', is_default=False, alias=None, install=True, render=True, package_path='/')"
+  ],
+  "react": [
+   "ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/')"
+  ]
+ },
+ "shiki_plain_tree": [
+  {
+   "depth": 0,
+   "type": "Box",
+   "name": "RadixThemesBox",
+   "props": [
+    "css:({ [\"pre\"] : ({ [\"margin\"] : \"0\", [\"padding\"] : \"24px\", [\"background\"] : \"transparent\", [\"overflowX\"] : \"auto\", [\"borderRadius\"] : \"6px\" }) })"
+   ]
+  },
+  {
+   "depth": 1,
+   "type": "ShikiCodeBlock",
+   "name": "ShikiCode",
+   "props": [
+    "code:\"print('x')\"",
+    "decorations:[]",
+    "language:\"python\"",
+    "theme:((resolvedColorMode?.valueOf?.() === \"light\"?.valueOf?.()) ? \"one-light\" : \"one-dark-pro\")",
+    "transformers:[]"
+   ]
+  }
+ ],
+ "moment_bad_filter": [
+  "css:({ [\"filter\"] : (c)=>c })"
+ ],
+ "moment_bad_settings": [
+  "css:({ [\"settings\"] : ({ [\"a\"] : 1 }) })"
+ ],
+ "moment_bad_form_at": [
+  "css:({ [\"formAt\"] : \"x\" })"
+ ],
+ "moment_provider_bad_filter": [
+  "css:({ [\"filter\"] : (c)=>c })"
+ ],
+ "moment_props_summary": {
+  "utc": [
+   "utc:true"
+  ],
+  "calendar": [
+   "calendar:true"
+  ],
+  "calendar_dict": [
+   "calendar:({ [\"sameDay\"] : \"[Today]\" })"
+  ],
+  "from_": [
+   "from:\"2024-03-10\""
+  ],
+  "to": [
+   "to:\"2024-03-20\""
+  ],
+  "ago": [
+   "ago:true",
+   "fromNow:true"
+  ],
+  "element": [
+   "element:\"span\""
+  ],
+  "fallback": [
+   "fallback:\"x\""
+  ],
+  "filters": [
+   "filters:[(c) => c]"
+  ],
+  "renderers": [
+   "renderers:[(p, d) => null]"
+  ],
+  "locale_fr": [
+   "locale:\"fr\""
+  ],
+  "locale_en": [
+   "locale:\"en\""
+  ],
+  "locale_var": [
+   "locale:reflex___state____state____main_____s.loc_rx_state_"
+  ],
+  "tz": [
+   "tz:\"Europe/Paris\""
+  ],
+  "bad_filter": [
+   "css:({ [\"filter\"] : true })"
+  ],
+  "bad_settings": [
+   "css:({ [\"settings\"] : true })"
+  ],
+  "bad_form_at": [
+   "css:({ [\"formAt\"] : true })"
+  ]
+ }

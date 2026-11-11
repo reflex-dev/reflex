@@ -1,0 +1,40 @@
+{
+ "label": "mantine-dev-prev",
+ "report": {
+  "app/routes/[qa-mantine]._index.jsx": [
+   {
+    "fn_line": 17,
+    "hook": "useRef",
+    "line": 18,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 17,
+    "hook": "useRef",
+    "line": 19,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 17,
+    "hook": "useRef",
+    "line": 20,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 17,
+    "hook": "useRef",
+    "line": 21,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   }
+  ]
+ },
+ "bad": {}
+}

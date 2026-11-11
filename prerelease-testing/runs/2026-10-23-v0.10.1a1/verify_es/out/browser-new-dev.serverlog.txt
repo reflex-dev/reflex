@@ -1,0 +1,204 @@
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.4 (38afee6c8)
+Debug: 
+Debug: + @emotion/react@11.14.0
+Debug: + @react-router/dev@8.4.0
+Debug: + @react-router/fs-routes@8.4.0
+Debug: + autoprefixer@10.6.1
+Debug: + postcss@8.5.29
+Debug: + postcss-import@17.0.0
+Debug: + vite@8.3.2
+Debug: + @radix-ui/react-form@0.1.16
+Debug: + @radix-ui/themes@3.3.0
+Debug: + @react-router/node@8.4.0
+Debug: + isbot@5.2.2
+Debug: + lucide-react@1.26.0
+Debug: + mergician@2.0.2
+Debug: + react@19.3.0
+Debug: + react-debounce-input@3.3.0
+Debug: + react-dom@19.3.0
+Debug: + react-dropzone@17.0.0
+Debug: + react-error-boundary@6.1.6
+Debug: + react-helmet@6.1.0
+Debug: + react-router@8.4.0
+Debug: + socket.io-client@4.8.4
+Debug: + sonner@2.0.8
+Debug: + universal-cookie@8.1.2
+Debug: 
+Debug: 235 packages installed [134.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-D', 'postcss@8.5.30', 'postcss-import@17.0.1', 
+'@react-router/dev@8.4.0', 'vite@8.3.4', '@emotion/react@11.14.0', 
+'autoprefixer@10.6.1', '@react-router/fs-routes@8.4.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.4 (38afee6c8)
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.30
+Debug: installed postcss-import@17.0.1
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed vite@8.3.4 with binaries:
+Debug:  - vite
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: 
+Debug: 7 packages installed [18.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-debounce-input@3.3.0', '@react-router/node@8.4.0', 
+'isbot@5.2.2', 'mergician@v2.0.2', 'universal-cookie@8.1.2', 'react-dom@19.3.1',
+'react-helmet@6.1.0', 'react@19.3.1', '@radix-ui/themes@3.3.0', 
+'@radix-ui/react-form@0.3.0', 'react-error-boundary@6.1.6', 
+'lucide-react@1.26.0', 'react-dropzone@17.0.0', 'react-router@8.4.0', 
+'socket.io-client@4.8.4', 'sonner@2.0.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.4 (38afee6c8)
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-debounce-input@3.3.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed isbot@5.2.2
+Debug: installed mergician@2.0.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-dom@19.3.1
+Debug: installed react-helmet@6.1.0
+Debug: installed react@19.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed @radix-ui/react-form@0.3.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed lucide-react@1.26.0
+Debug: installed react-dropzone@17.0.0
+Debug: installed react-router@8.4.0
+Debug: installed socket.io-client@4.8.4
+Debug: installed sonner@2.0.8
+Debug: 
+Debug: 16 packages installed [90.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_es/formsapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps
+/verify_es/formsapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.27s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/ap
+ps/verify_es/formsapp/requirements.txt', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/verify_es/formsapp/formsapp', 
+'/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/app
+s/verify_es/formsapp/rxconfig.py']
+[INFO] Starting granian (main PID: 17408)
+[INFO] Listening at: http://0.0.0.0:8760
+[INFO] Spawning worker-1 with PID: 17459
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3760/
+App running at: http://localhost:3760/
+Backend running at: http://0.0.0.0:8760
+Debug:   ➜  Network: http://192.0.2.2:3760/  eth0
+Debug: 2:20:05 AM [vite] (ssr) connected.
+Warning: Error transforming event payload for handler State.collide_second: 
+Error transforming event argument 'form_data' with value 
+'{'__reflex_form_data__': 'x', 'a': '1'}' and type hint '<class 'dict'>'
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 184, in _transform_event_payload
+    transformed[arg] = _transform_event_arg(value, hinted_args)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 126, in _transform_event_arg
+    value = transform_form_data(value, hinted_args)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+358, in transform_form_data
+    return dict(entries)
+           ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 211, in _prepare_event_payload
+    return _transform_event_payload(payload, type_hints)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 187, in _transform_event_payload
+    raise ValueError(msg) from ex
+ValueError: Error transforming event argument 'form_data' with value 
+'{'__reflex_form_data__': 'x', 'a': '1'}' and type hint '<class 'dict'>'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 960, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 949, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/even
+t_processor.py", line 748, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 600, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 335, in process_event
+    payload = _prepare_event_payload(handler, payload)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/event/processor/base
+_state_processor.py", line 216, in _prepare_event_payload
+    return {arg: form_data_as_dict(value) for arg, value in payload.items()}
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/events_state-new/lib/python3.12/site-packages/reflex_base/utils/form.py", line
+377, in form_data_as_dict
+    return value if entries is None else dict(entries)
+                                         ^^^^^^^^^^^^^
+ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+

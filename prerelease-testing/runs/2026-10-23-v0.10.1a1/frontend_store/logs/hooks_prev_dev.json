@@ -1,0 +1,168 @@
+{
+ "checks": [
+  {
+   "name": "reader.doubled initial",
+   "ok": true,
+   "got": "2",
+   "want": "2"
+  },
+  {
+   "name": "reader.plain initial",
+   "ok": true,
+   "got": "3",
+   "want": "3"
+  },
+  {
+   "name": "custom code ran once",
+   "ok": true,
+   "got": 1,
+   "want": 1
+  },
+  {
+   "name": "reader.doubled after inc",
+   "ok": true,
+   "got": "4",
+   "want": "4"
+  },
+  {
+   "name": "reader.plain after inc",
+   "ok": true,
+   "got": "5",
+   "want": "5"
+  },
+  {
+   "name": "window.__hr_plain",
+   "ok": true,
+   "got": 5,
+   "want": 5
+  },
+  {
+   "name": "resize",
+   "ok": true,
+   "got": "777x555",
+   "want": "777x555"
+  },
+  {
+   "name": "keydown",
+   "ok": true,
+   "got": "Escape",
+   "want": "Escape"
+  },
+  {
+   "name": "clipboard paste",
+   "ok": true,
+   "got": "[[\"text/plain\", \"pasted-text\"]]",
+   "want": null
+  },
+  {
+   "name": "call_script callback",
+   "ok": true,
+   "got": "42",
+   "want": "42"
+  },
+  {
+   "name": "component state c1",
+   "ok": true,
+   "got": "2",
+   "want": "2"
+  },
+  {
+   "name": "component state c2",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "client_state late reader sees 2",
+   "ok": true,
+   "got": "2",
+   "want": "2"
+  },
+  {
+   "name": "client_state late reader follows set back to default",
+   "ok": false,
+   "got": "2",
+   "want": "0"
+  },
+  {
+   "name": "client_state push 7 (main)",
+   "ok": true,
+   "got": "7",
+   "want": "7"
+  },
+  {
+   "name": "client_state push 7 (late)",
+   "ok": true,
+   "got": "7",
+   "want": "7"
+  },
+  {
+   "name": "client_state local (info)",
+   "ok": true,
+   "got": "loc",
+   "want": "typed?"
+  },
+  {
+   "name": "memo reader name",
+   "ok": true,
+   "got": "memo-item",
+   "want": "memo-item"
+  },
+  {
+   "name": "memo reader count",
+   "ok": true,
+   "got": "2",
+   "want": "2"
+  },
+  {
+   "name": "memo renders after unrelated MemoHost var",
+   "ok": true,
+   "got": 0,
+   "want": "info"
+  },
+  {
+   "name": "memo reader sees HookState.count",
+   "ok": true,
+   "got": "3",
+   "want": "3"
+  },
+  {
+   "name": "memo reader sees renamed object prop",
+   "ok": true,
+   "got": "memo-item.",
+   "want": "memo-item."
+  },
+  {
+   "name": "dyn pid",
+   "ok": true,
+   "got": "42",
+   "want": "42"
+  },
+  {
+   "name": "dyn where",
+   "ok": true,
+   "got": "path=/dyn/42",
+   "want": "path=/dyn/42"
+  },
+  {
+   "name": "dyn HookState.count persisted",
+   "ok": true,
+   "got": "3",
+   "want": "3"
+  },
+  {
+   "name": "index after client nav",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  }
+ ],
+ "n_fail": 1,
+ "console": [
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "pageerrors": []
+}

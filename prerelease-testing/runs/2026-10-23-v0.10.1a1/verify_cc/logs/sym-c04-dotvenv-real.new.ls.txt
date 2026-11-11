@@ -1,0 +1,3 @@
+lrwxrwxrwx 1 root root 19 Oct 24 01:37 /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_cc/sym/c04-dotvenv-real-new/.venv/bin/python -> /usr/bin/python3.12
+lrwxrwxrwx 1 root root  6 Oct 24 01:37 /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_cc/sym/c04-dotvenv-real-new/.venv/bin/python3 -> python
+lrwxrwxrwx 1 root root  6 Oct 24 01:37 /tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_cc/sym/c04-dotvenv-real-new/.venv/bin/python3.12 -> python

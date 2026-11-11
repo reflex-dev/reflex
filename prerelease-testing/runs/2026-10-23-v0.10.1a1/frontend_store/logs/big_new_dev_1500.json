@@ -1,0 +1,26 @@
+{
+ "url": "http://localhost:3226/",
+ "read": 50,
+ "load_ms": 1310,
+ "hydrated_ms": 2109,
+ "n_vals": 50,
+ "first_vals": [
+  "0",
+  "1",
+  "2"
+ ],
+ "last_val": "49",
+ "bump_ms": 97,
+ "bump_correct": true,
+ "inc_last_ms": 50,
+ "reload_hydrated_ms": 322,
+ "after_reload_last": "51",
+ "console": [
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "pageerrors": [],
+ "stack_overflow": false
+}

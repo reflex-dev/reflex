@@ -1,0 +1,52 @@
+  ok   app/root.jsx fn=ReflexProviders@L26
+  BAIL app/routes/[withid]._index.jsx fn=Component@L11 line=12 :: Immutability: This value cannot be modified
+       const ref_count = useRef(null); refs["ref_count"] = ref_count;
+  BAIL app_components/rc_app/rc_app.jsx fn=MemoId_c213f5df@L32 line=33 :: Immutability: This value cannot be modified
+       const ref_memo_id_el = useRef(null); refs["ref_memo_id_el"] = ref_memo_id_el;
+  BAIL app_components/rc_app/rc_app.jsx fn=Vstack_flex_ffd77f039a4ae02047cb6059705d8f00_c213f5df@L87 line=? :: Invariant: Expected temporaries to be promoted to named identifiers in an earlier pass
+       
+  BAIL app_components/rc_app/rc_app.jsx fn=Form_root_55420f6840914a862f21f9e708579038_c213f5df@L170 line=? :: Invariant: Expected temporaries to be promoted to named identifiers in an earlier pass
+       
+  BAIL app_components/rc_app/rc_app.jsx fn=Styledupload_comp_45ae9a6e31bb881fc673069bbe3c4c00_c213f5df@L205 line=206 :: Immutability: This value cannot be modified
+       const ref_upl = useRef(null); refs["ref_upl"] = ref_upl;
+  ok   app_components/rc_app/rc_app.jsx fn=Bare_comp_8b8e1b7bb0e15cc6784e2c354edf7f9a_c213f5df@L43
+  ok   app_components/rc_app/rc_app.jsx fn=Button_button_246a320a3b75532f3e0a7cd60313dcd9_c213f5df@L54
+  ok   app_components/rc_app/rc_app.jsx fn=Cond_comp_cf44148ba47add8babf14872ef516aab_c213f5df@L65
+  ok   app_components/rc_app/rc_app.jsx fn=Foreach_comp_57daecd1a1af019757f37195812047b7_c213f5df@L76
+  ok   app_components/rc_app/rc_app.jsx fn=Memocomponent_memoplain_c213f5df_3dd0d3968b85980f6b06a46f0e6c0212_c213f5df@L104
+  ok   app_components/rc_app/rc_app.jsx fn=Memocomponent_memoid_c213f5df_f30650d897a8ab68625c031ca09ee427_c213f5df@L115
+  ok   app_components/rc_app/rc_app.jsx fn=Bare_comp_fea9217b6c2eb6d177104c8a75cb977a_c213f5df@L126
+  ok   app_components/rc_app/rc_app.jsx fn=Button_button_ac659c8ccaa12ae7731372bbb3b781eb_c213f5df@L137
+  ok   app_components/rc_app/rc_app.jsx fn=Bare_comp_5fbc47992a9e08824eeb068a5bb92ecc_c213f5df@L148
+  ok   app_components/rc_app/rc_app.jsx fn=Button_button_920a9e115f537fe6ca35f2173286d915_c213f5df@L159
+  ok   app_components/rc_app/rc_app.jsx fn=Debounceinput_debounceinput_5aa9fe316b379010c8ab0ad88c222618_c213f5df@L193
+  ok   app_components/reflex/app.jsx fn=DefaultOverlayComponents_04c36749@L17
+  BAIL app_components/reflex/compiler/compiler.jsx fn=MemoizedToastProvider_18b15038@L16 line=18 :: Immutability: This value cannot be modified
+       refs['__toast'] = toast
+  ok   utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx fn=Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3@L15
+
+## rc_app/.web : 18 files in scope
+file | functions | compiled | bailed | skipped | _c( calls | has id: | has refs[ | bailed fns
+app/_document.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.embed.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/root.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+app/routes.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[404]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[cs]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[form]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[input]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[memo]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[noid]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[upload]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[withid]._index.jsx | 1 | 0 | 1 | 0 | 0 | true | true | Component@L11
+app/routes/_index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app_components/rc_app/rc_app.jsx | 15 | 11 | 4 | 0 | 5 | true | true | MemoId_c213f5df@L32,Vstack_flex_ffd77f039a4ae02047cb6059705d8f00_c213f5df@L87,Form_root_55420f6840914a862f21f9e708579038_c213f5df@L170,Styledupload_comp_45ae9a6e31bb881fc673069bbe3c4c00_c213f5df@L205
+app_components/reflex/app.jsx | 1 | 1 | 0 | 0 | 1 | true | true | 
+app_components/reflex/compiler/compiler.jsx | 1 | 0 | 1 | 0 | 0 | false | true | MemoizedToastProvider_18b15038@L16
+utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+
+TOTAL functions=20 compiled=14 bailed=6
+bail-out reasons:
+  4  Immutability: This value cannot be modified
+  2  Invariant: Expected temporaries to be promoted to named identifiers in an earlier pass

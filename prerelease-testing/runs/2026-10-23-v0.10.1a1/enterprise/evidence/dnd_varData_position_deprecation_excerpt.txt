@@ -1,0 +1,19 @@
+request id: dbc373a7a2ad4101be77eb982941ecb2)
+DeprecationWarning: VarData(position=...) has been deprecated in version 0.10.1.
+Hooks render in the order they are declared and merged. Remove the position 
+argument. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/new-ent/lib/python3.12/site-packages/reflex_enterprise/components/dnd/dnd.py:1
+44)
+DeprecationWarning: VarData(position=...) has been deprecated in version 0.10.1.
+Hooks render in the order they are declared and merged. Remove the position 
+argument. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/new-ent/lib/python3.12/site-packages/reflex_enterprise/components/dnd/dnd.py:3
+56)
+DeprecationWarning: VarData(position=...) has been deprecated in version 0.10.1.
+Hooks render in the order they are declared and merged. Remove the position 
+argument. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/env
+s/new-ent/lib/python3.12/site-packages/reflex_enterprise/components/dnd/dnd.py:5
+88)

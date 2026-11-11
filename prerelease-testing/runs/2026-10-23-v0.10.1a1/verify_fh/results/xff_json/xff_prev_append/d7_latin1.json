@@ -1,0 +1,35 @@
+{
+ "args": [
+  "--port",
+  "8701",
+  "--version",
+  "0.10.0",
+  "--tag",
+  "d7_latin1",
+  "--out",
+  "/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/verify_fh/results/xff_prev_append/d7_latin1.json",
+  "--hdr-hex",
+  "X-Forwarded-For:e9e8",
+  "--hdr",
+  "X-Forwarded-For: 7.7.7.7"
+ ],
+ "frames_in": [
+  "0{\"sid\":\"7oFWHOtA0-dRW4z0AAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+ ],
+ "seen": [],
+ "errors": [],
+ "token": "fff3c662-3809-4cfc-8f39-ca2bc72f957e",
+ "local": [
+  "127.0.0.1",
+  46472
+ ],
+ "upgrade_status": "HTTP/1.1 101 Switching Protocols",
+ "open": {
+  "sid": "7oFWHOtA0-dRW4z0AAAM",
+  "upgrades": [],
+  "pingTimeout": 120000,
+  "pingInterval": 25000,
+  "maxPayload": 1000000
+ },
+ "seen_parsed": []
+}

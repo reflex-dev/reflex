@@ -1,0 +1,76 @@
+
+##### gridshare new 06:53:00
+[start.sh] venv=new-ent reflex=0.10.1a1 reflex-base=0.10.1a1 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=27136 pgid=27136
+ready after 6s (frontend 200, /ping 200)
+driver exit=0
+[FAIL] initial: grid A (row_id_key) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 40}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}], "ga": null}
+[FAIL] initial: grid B (index ids) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 40}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}], "gb": null}
+[FAIL] bump_first: grid A (row_id_key) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}], "ga": nu
+[FAIL] bump_first: grid B (index ids) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}], "gb": nul
+[FAIL] sort_price: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-3", "name": "echo", "price": 50}], "ga": nu
+[FAIL] sort_price: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-3", "name": "echo", "price": 50}], "gb": nul
+[FAIL] reverse: grid A (row_id_key) == state: {"state": [{"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}], "ga": null}
+[FAIL] reverse: grid B (index ids) == state: {"state": [{"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}], "gb": null}
+[FAIL] add_row: grid A (row_id_key) == state: {"state": [{"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-6
+[FAIL] add_row: grid B (index ids) == state: {"state": [{"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-6"
+[FAIL] remove_first: grid A (row_id_key) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-6", "name": "new6", "price": 600}], "ga":
+[FAIL] remove_first: grid B (index ids) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-6", "name": "new6", "price": 600}], "gb": 
+[FAIL] rename_all: grid A (row_id_key) == state: {"state": [{"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-2", "name": "ALPHA", "price": 10}, {"uid": "u-6", "name": "NEW6", "price": 600}], "ga": n
+[FAIL] rename_all: grid B (index ids) == state: {"state": [{"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-2", "name": "ALPHA", "price": 10}, {"uid": "u-6", "name": "NEW6", "price": 600}], "gb": nu
+[FAIL] sort_price: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 10}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "ga": n
+[FAIL] sort_price: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 10}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "gb": nu
+[FAIL] bump_first: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 11}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "ga": n
+[FAIL] bump_first: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 11}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "gb": nu
+[FAIL] cell edit grid A -> 777: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 
+[FAIL] cell edit grid A -> 777: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 6
+[FAIL] swap_cols: grid A header order follows in-place list swap: ["Uid", "Price", "Name"]
+[FAIL] after reload: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "ga"
+[FAIL] after reload: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "gb":
+SUMMARY new gridshare: 22/45 pass; errors=[]
+server log: tracebacks=0 errors=1 reload=1
+reserved ports free
+
+##### gridshare prev 06:53:23
+[start.sh] venv=prev-ent reflex=0.10.0 reflex-base=0.10.0 reflex-enterprise=0.9.8 reflex_from=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/envs/prev-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=28268 pgid=28268
+ready after 8s (frontend 200, /ping 200)
+driver exit=0
+[FAIL] initial: grid A (row_id_key) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 40}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}], "ga": null}
+[FAIL] initial: grid B (index ids) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 40}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}], "gb": null}
+[FAIL] bump_first: grid A (row_id_key) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}], "ga": nu
+[FAIL] bump_first: grid B (index ids) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}], "gb": nul
+[FAIL] sort_price: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-3", "name": "echo", "price": 50}], "ga": nu
+[FAIL] sort_price: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-3", "name": "echo", "price": 50}], "gb": nul
+[FAIL] reverse: grid A (row_id_key) == state: {"state": [{"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}], "ga": null}
+[FAIL] reverse: grid B (index ids) == state: {"state": [{"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}], "gb": null}
+[FAIL] add_row: grid A (row_id_key) == state: {"state": [{"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-6
+[FAIL] add_row: grid B (index ids) == state: {"state": [{"uid": "u-3", "name": "echo", "price": 50}, {"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-6"
+[FAIL] remove_first: grid A (row_id_key) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-6", "name": "new6", "price": 600}], "ga":
+[FAIL] remove_first: grid B (index ids) == state: {"state": [{"uid": "u-1", "name": "delta", "price": 41}, {"uid": "u-4", "name": "charlie", "price": 30}, {"uid": "u-5", "name": "bravo", "price": 20}, {"uid": "u-2", "name": "alpha", "price": 10}, {"uid": "u-6", "name": "new6", "price": 600}], "gb": 
+[FAIL] rename_all: grid A (row_id_key) == state: {"state": [{"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-2", "name": "ALPHA", "price": 10}, {"uid": "u-6", "name": "NEW6", "price": 600}], "ga": n
+[FAIL] rename_all: grid B (index ids) == state: {"state": [{"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-2", "name": "ALPHA", "price": 10}, {"uid": "u-6", "name": "NEW6", "price": 600}], "gb": nu
+[FAIL] sort_price: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 10}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "ga": n
+[FAIL] sort_price: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 10}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "gb": nu
+[FAIL] bump_first: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 11}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "ga": n
+[FAIL] bump_first: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 11}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "gb": nu
+[FAIL] cell edit grid A -> 777: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 
+[FAIL] cell edit grid A -> 777: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 6
+[FAIL] swap_cols: grid A header order follows in-place list swap: ["Uid", "Price", "Name"]
+[FAIL] after reload: grid A (row_id_key) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "ga"
+[FAIL] after reload: grid B (index ids) == state: {"state": [{"uid": "u-2", "name": "ALPHA", "price": 777}, {"uid": "u-5", "name": "BRAVO", "price": 20}, {"uid": "u-4", "name": "CHARLIE", "price": 30}, {"uid": "u-1", "name": "DELTA", "price": 41}, {"uid": "u-6", "name": "NEW6", "price": 600}], "gb":
+SUMMARY prev gridshare: 22/45 pass; errors=[]
+server log: tracebacks=0 errors=1 reload=1
+reserved ports free
+
+##### mcp oauth memory new 06:53:48
+ready after 7s
+check_mcp_oauth_redis (memory) exit=0
+{"metadata_scopes": ["profile:read", "items:write"], "prm": {"status": 200, "body": {"resource": "http://localhost:8620/_reflex/mcp", "authorization_servers": ["http://localhost:8620/"], "scopes_supported": ["profile:read", "items:write"], "bearer_methods_supported": ["header"]}}, "register_a": 201,
+BROWSER_ERRORS {"partial": {"page_errors": [], "http_errors": [], "console_err": [{"type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED", "url": "http://localhost:8638/oauth2/authorize"}]}, "deny": {"page_errors": [], "http_errors": [], "console_err": []}, "unregister
+stopped
+stopped-infra
+189:                             b] ─ Auth callback succeeded; user                 
+190:                             logged in, redirecting to                          
+
+##### QUEUE5 DONE 06:55:16

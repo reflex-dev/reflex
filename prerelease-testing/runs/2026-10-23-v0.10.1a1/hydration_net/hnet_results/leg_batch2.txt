@@ -1,0 +1,183 @@
+
+######## dev_close (22:02:58)
+started hnet-dev pid=25413 venv=new mode=dev env=[REFLEX_API_URL=http://localhost:8143] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-dev-11.log
+left running: hnet-dev FP=3142 BP=8142 proxy=
+[pass] bigproxy_backoff_no_tight_loop: {"n_ws_opens": 12, "open_gaps": [0.27, 0.431, 0.627, 0.816, 1.017, 1.217, 1.418, 1.622, 1.829, 2.016, 2.023], "hydrated": "false", "console_errors": [], "observe_s": 15.0}
+[pass] bigproxy_toast_shown: {"first_toast": ["Cannot connect to server: connection closed before connecting (transport close).\nCheck if server is reachable at ws://localhost:8143/_event"], "toast_at_s": 0.69, "final": ["Cannot connect to server: connection closed before connecting (transport close).\nCheck if server is reachable at ws://localhost:8143/_event"]}
+[pass] bigproxy_recovery: {"big_len": "len:10"}
+SUMMARY 3/3 pass; fail=[]
+stopped hnet-dev (pgid 25413)
+proxy closes: 12
+
+######## prod_h1 (22:03:25)
+started hnet-prod pid=25646 venv=new mode=prod env=[REFLEX_API_URL=http://localhost:3145 HNET_HOPS=1] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-prod-1.log
+left running: hnet-prod FP=3144 BP=3144 proxy=3145:append
+## direct -> 3144 (peer 127.0.0.1)
+d0_none                            HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d1_xff_one                         HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                              asc=127.0.0.1 err=[] {"raw_n": 10}
+d2_xff_chain                       HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d3_xff_two_lines                   HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d4_xff_ws_garbage                  HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6 ,, ,  7.7.7.7'                asc=127.0.0.1 err=[] {"raw_n": 10}
+d4b_xff_junk                       HTTP/1.1 101 ip=not an ip!! <script> xff='not an ip!! <script>'                 asc=127.0.0.1 err=[] {"raw_n": 10}
+d4c_xff_empty                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d5_xff_ipv6                        HTTP/1.1 101 ip=2001:db8::1    xff='2001:db8::1'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d5b_xff_ipv6_port                  HTTP/1.1 101 ip=1.2.3.4:5678   xff='[2001:db8::1]:443, 1.2.3.4:5678'      asc=127.0.0.1 err=[] {"raw_n": 10}
+d6_xrealip_fwd                     HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"forwarded": "for=8.8.8.8;proto=https", "raw_n": 11, "x-real-ip": "9.9.9.9"}
+d7_xff_latin1                      HTTP/1.1 101 ip=éè             xff='7.7.7.7, éè'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d8_dup_cookie                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "a=1; b=2; c=3", "cookie_attr": "a=1; b=2; c=3", "raw_n": 11, "x-dup": "one, two"}
+d9_bad_utf8_value                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "z=9; a=é", "cookie_attr": "z=9; a=é", "raw_n": 11, "x-bad": "ÿþ"}
+d10_bad_utf8_name                  HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d11_name_latin1                    HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d12_cookie_secret                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "cookie_attr": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "raw_n": 11}
+## via xff_proxy 3145 -> 3144 (proxy binds 127.0.0.2, client from 127.0.0.3)
+p0_none                            HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 10}
+p1_spoof_one                       HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 127.0.0.3'                   asc=127.0.0.2 err=[] {"raw_n": 10}
+p2_spoof_chain                     HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p3_spoof_two_lines                 HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p4_spoof_ipv6                      HTTP/1.1 101 ip=127.0.0.3      xff='2001:db8::1, 127.0.0.3'               asc=127.0.0.2 err=[] {"raw_n": 10}
+p5_xrealip                         HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 11, "x-real-ip": "9.9.9.9"}
+[pass] ip_frontend_and_handlers: {"f_ip": "127.0.0.1", "cv_ip": "127.0.0.1", "handler_ips": [["on_load", "127.0.0.1", "127.0.0.1", "127.0.0.2"], ["click", "127.0.0.1", "127.0.0.1", "127.0.0.2"], ["upload:1", "127.0.0.1", "127.0.0.1", "127.0.0.2"]]}
+SUMMARY 1/1 pass; fail=[]
+## /whoami direct:
+{"client":["127.0.0.1","48238"],"xff":null,"all_xff":[]}
+## /whoami via proxy 3145 (spoofed XFF 6.6.6.6):
+{"client":["127.0.0.2","48655"],"xff":"6.6.6.6, 127.0.0.1","all_xff":["6.6.6.6, 127.0.0.1"]}
+stopped hnet-prod (pgid 25646)
+
+######## prod_plain (22:04:54)
+started hnet-prod pid=26375 venv=new mode=prod env=[] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-prod-2.log
+left running: hnet-prod FP=3144 BP=3144 proxy=
+[pass] big_300k_roundtrip: {"ls_len": 300000, "reload_hydrate_s": 0.23}
+[pass] big_oversize_reported_once: {"n_ws_opens": 1, "open_gaps": [], "n_connect_frames_sent": 0, "hydration_errors": ["Hydration payload (1100571 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."], "n_console_errors": 2, "hydrated": "false", "size": 1100000}
+[pass] big_oversize_toast_shown_and_stays: {"first_toast": ["Hydration payload (1100571 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."], "toast_at_s": 0.39, "final_toasts": ["Hydration payload (1100571 characters) exceeds the server limit (1000000 characters). Reduce browser storage data and reload."]}
+[pass] big_recovery_after_shrink: {"big_len": "len:100", "ws_opens_after": 1, "toasts": []}
+[pass] big_click_after_recovery: {}
+[pass] shared_initial: {"t1": ["pref-default", "pref-default", "plain-default"], "t2": ["pref-default", "pref-default", "plain-default"], "other": ["other-default", "other-default"]}
+[pass] shared_set_a_syncs_all_in_other_tab: {"writing_tab": ["from-a", "pref-default", "plain-default"], "other_tab": ["from-a", "from-a", "from-a"], "ls": "from-a"}
+[pass] shared_set_plain_syncs_all_in_other_tab: {"other_tab": ["from-plain", "from-plain", "from-plain"], "writing_tab": ["from-a", "from-a", "from-plain"]}
+[pass] shared_typed_b_syncs_all_in_other_tab: {"other_tab": ["typed-b", "typed-b", "typed-b"], "writing_tab": ["from-a", "typed-b", "from-plain"]}
+[pass] shared_other_name_unaffected: {"t1": ["typed-b", "typed-b", "typed-b"], "t2": ["from-a", "typed-b", "from-plain"], "other2": "from-other"}
+[pass] shared_quiet_after: {"frames_in_2s": 0, "total_frames": 26}
+[pass] shared_new_tab_sees_value: {"t3": ["typed-b", "typed-b", "typed-b"]}
+[pass] cv_storage_dependents_once_per_load: {"evals": {"sib_len": 1, "tok_len": 1, "uncached": 4}, "shown": ["tok_len:8", "sib_len:6", "unc:6"]}
+[pass] cv_storage_dependents_once_per_load_2: {"evals": {"sib_len": 1, "tok_len": 1, "uncached": 4}}
+[pass] typed_defaults: {"summary": {"ann_ls": ["ls-d", "LocalStorage"], "ann_ck": ["ck-d", "Cookie"], "ann_ss": ["ss-d", "SessionStorage"], "ann_opt": ["opt-d", "LocalStorage"], "ann_fld": ["fld-d", "LocalStorage"], "n_int": ["3", "LocalStorage"], "n_bool": ["true", "Cookie"], "j_dict": ["{\"a\": 1}", "LocalStorage"]}, "console": []}
+[pass] typed_write_w1: {"summary": {"ann_ls": ["ls-w1", "str"], "ann_ck": ["ck-w1", "str"], "ann_ss": ["ss-w1", "str"], "ann_opt": ["opt-w1", "str"], "ann_fld": ["fld-w1", "str"], "n_int": [2, "int"], "n_bool": [true, "bool"], "j_dict": ["{'s': 'w1'}", "MutableProxy"]}, "storage": {"ls": {"hnet_ann_opt": "opt-w1", "hnet_ann_fld": "fld-w1", "hnet_json": "[object Object]", "hnet_ann_ls": "ls-w1", "h
+[pass] typed_reload_hydrates_w1: {"summary": {"ann_ls": ["ls-w1", "str"], "ann_ck": ["ck-w1", "str"], "ann_ss": ["ss-w1", "str"], "ann_opt": ["opt-w1", "str"], "ann_fld": ["fld-w1", "str"], "n_int": ["2", "str"], "n_bool": ["true", "str"], "j_dict": ["[object Object]", "str"]}, "shown": ["ls-w1", "2", "\"true\"", "\"[object Object]\""]}
+[pass] typed_nonstr_storage_roundtrip_INFO: {"n_int": ["2", "str"], "n_bool": ["true", "str"], "j_dict": ["[object Object]", "str"], "ls_json": "[object Object]"}
+[pass] typed_opt_none_roundtrip: {"after_none": [null, "NoneType"], "ls_after_none": "null", "after_reload": ["null", "str"]}
+[pass] typed_reload_hydrates_w2: {"summary": {"ann_ls": ["ls-w2", "str"], "ann_ck": ["ck-w2", "str"], "ann_ss": ["ss-w2", "str"], "ann_opt": ["opt-w2", "str"], "ann_fld": ["fld-w2", "str"], "n_int": ["2", "str"], "n_bool": ["false", "str"], "j_dict": ["[object Object]", "str"]}}
+[pass] typed_console_clean: {"anomalies": {"console_err_warn": [], "pageerrors": [], "failed": [], "http_errors": []}}
+[pass] ovr_good_persists: {"tok_ok": "ok:True:good-1", "tok": "[good-1]"}
+[pass] ovr_bad_sanitised_dependents_follow: {"tok_ok": "ok:False:", "tok": "[]", "plain_dep": "plain:sanitised", "ls": "", "calls": "{\"calls\": 3, \"dep_evals\": 20}"}
+[pass] ovr_after_sanitise_reload: {"tok_ok": "ok:False:", "tok": "[]", "ls": ""}
+[pass] ovr_event_bad_sanitised: {"tok_ok": "ok:False:", "tok": "[]", "plain_dep": "plain:sanitised", "ls": ""}
+[pass] cs_push_before_reader_no_error: {"errors": []}
+[pass] cs_late_reader_sees_pushed: {"flag": "flag=[pushed-on-load]", "count": "count=5"}
+[pass] cs_late_reader_follows_set_back_to_default: {"flag": "flag=[initial]"}
+[pass] cs_reader_mounted_after_set_then_default: {"flag": "flag=[initial]"}
+[pass] cs_push_none_and_backend: {"flag": "flag=[]"}
+[pass] cs_count_int: {"count": "count=6"}
+[pass] cs_gate_push_during_onload: {"flag": "flag=[pushed-on-load]", "errors": []}
+[pass] cs_gate_set_default: {"flag": "flag=[initial]"}
+[pass] ip_frontend_and_handlers: {"f_ip": "127.0.0.1", "cv_ip": "127.0.0.1", "handler_ips": [["on_load", "127.0.0.1", null, "127.0.0.1"], ["click", "127.0.0.1", null, "127.0.0.1"], ["upload:1", "127.0.0.1", null, "127.0.0.1"]]}
+SUMMARY 34/34 pass; fail=[]
+stopped hnet-prod (pgid 26375)
+
+######## prev_dev (22:05:40)
+started hnet-prev pid=26820 venv=prev mode=dev env=[REFLEX_API_URL=http://localhost:8143] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-prev-1.log
+left running: hnet-prev FP=3142 BP=8142 proxy=8143:append
+## direct -> 8142 (peer 127.0.0.1)
+d0_none                            HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d1_xff_one                         HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                              asc=127.0.0.1 err=[] {"raw_n": 10}
+d2_xff_chain                       HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d3_xff_two_lines                   HTTP/1.1 101 ip=7.7.7.7        xff='7.7.7.7'                              asc=127.0.0.1 err=[] {"raw_n": 10}
+d4_xff_ws_garbage                  HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6 ,, ,  7.7.7.7'                asc=127.0.0.1 err=[] {"raw_n": 10}
+d4b_xff_junk                       HTTP/1.1 101 ip=not an ip!! <script> xff='not an ip!! <script>'                 asc=127.0.0.1 err=[] {"raw_n": 10}
+d4c_xff_empty                      HTTP/1.1 101 ip=               xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d5_xff_ipv6                        HTTP/1.1 101 ip=2001:db8::1    xff='2001:db8::1'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d5b_xff_ipv6_port                  HTTP/1.1 101 ip=[2001:db8::1]:443 xff='[2001:db8::1]:443, 1.2.3.4:5678'      asc=127.0.0.1 err=[] {"raw_n": 10}
+d6_xrealip_fwd                     HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"forwarded": "for=8.8.8.8;proto=https", "raw_n": 11, "x-real-ip": "9.9.9.9"}
+d7_xff_latin1                      HTTP/1.1 101 ip=None           xff=None                                   asc=None err=[] {}
+d8_dup_cookie                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "b=2; c=3", "cookie_attr": "b=2; c=3", "raw_n": 11, "x-dup": "two"}
+d9_bad_utf8_value                  HTTP/1.1 101 ip=None           xff=None                                   asc=None err=[] {}
+d10_bad_utf8_name                  HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d11_name_latin1                    HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d12_cookie_secret                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "third=COOKIESECRET3", "cookie_attr": "third=COOKIESECRET3", "raw_n": 11}
+## via xff_proxy 8143 -> 8142 (proxy binds 127.0.0.2, client from 127.0.0.3)
+p0_none                            HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 10}
+p1_spoof_one                       HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 127.0.0.3'                   asc=127.0.0.2 err=[] {"raw_n": 10}
+p2_spoof_chain                     HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p3_spoof_two_lines                 HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p4_spoof_ipv6                      HTTP/1.1 101 ip=2001:db8::1    xff='2001:db8::1, 127.0.0.3'               asc=127.0.0.2 err=[] {"raw_n": 10}
+p5_xrealip                         HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 11, "x-real-ip": "9.9.9.9"}
+[pass] ip_frontend_and_handlers: {"f_ip": "127.0.0.1", "cv_ip": "127.0.0.1", "handler_ips": [["on_load", "127.0.0.1", "127.0.0.1", "127.0.0.2"], ["click", "127.0.0.1", "127.0.0.1", "127.0.0.2"], ["upload:1", "127.0.0.1", "127.0.0.1", "127.0.0.2"]]}
+SUMMARY 1/1 pass; fail=[]
+## /whoami direct:
+{"client":["127.0.0.1","38398"],"xff":null,"all_xff":[]}
+## /whoami via proxy 8143 (spoofed XFF 6.6.6.6):
+{"client":["127.0.0.2","41813"],"xff":"6.6.6.6, 127.0.0.1","all_xff":["6.6.6.6, 127.0.0.1"]}
+[pass] big_300k_roundtrip: {"ls_len": 300000, "reload_hydrate_s": 0.41}
+[FAIL] big_oversize_reported_once: {"n_ws_opens": 326, "open_gaps": [0.076, 0.047, 0.034, 0.024, 0.034, 0.032, 0.042, 0.05, 0.042, 0.031, 0.025, 0.038, 0.029, 0.031, 0.03, 0.037, 0.031, 0.036, 0.043, 0.03], "n_connect_frames_sent": 325, "hydration_errors": [], "n_console_errors": 0, "hydrated": "false", "size": 1100000}
+[FAIL] big_oversize_toast_shown_and_stays: {"first_toast": null, "toast_at_s": null, "final_toasts": []}
+[pass] big_recovery_after_shrink: {"big_len": "len:100", "ws_opens_after": 2, "toasts": []}
+[pass] big_click_after_recovery: {}
+[pass] shared_initial: {"t1": ["pref-default", "pref-default", "plain-default"], "t2": ["pref-default", "pref-default", "plain-default"], "other": ["other-default", "other-default"]}
+[FAIL] shared_set_a_syncs_all_in_other_tab: {"writing_tab": ["from-a", "pref-default", "plain-default"], "other_tab": ["pref-default", "pref-default", "from-a"], "ls": "from-a"}
+[FAIL] shared_set_plain_syncs_all_in_other_tab: {"other_tab": ["from-a", "pref-default", "from-plain"], "writing_tab": ["pref-default", "pref-default", "from-plain"]}
+[FAIL] shared_typed_b_syncs_all_in_other_tab: {"other_tab": ["from-a", "pref-default", "typed-b"], "writing_tab": ["pref-default", "typed-b", "from-plain"]}
+[FAIL] shared_other_name_unaffected: {"t1": ["from-a", "pref-default", "typed-b"], "t2": ["pref-default", "typed-b", "from-plain"], "other2": "from-other"}
+[pass] shared_quiet_after: {"frames_in_2s": 0, "total_frames": 30}
+[pass] shared_new_tab_sees_value: {"t3": ["typed-b", "typed-b", "typed-b"]}
+[FAIL] cv_storage_dependents_once_per_load: {"evals": {"sib_len": 2, "tok_len": 2, "uncached": 4}, "shown": ["tok_len:8", "sib_len:6", "unc:6"]}
+[FAIL] cv_storage_dependents_once_per_load_2: {"evals": {"sib_len": 2, "tok_len": 2, "uncached": 4}}
+[pass] typed_defaults: {"summary": {"ann_ls": ["ls-d", "LocalStorage"], "ann_ck": ["ck-d", "Cookie"], "ann_ss": ["ss-d", "SessionStorage"], "ann_opt": ["opt-d", "LocalStorage"], "ann_fld": ["fld-d", "LocalStorage"], "n_int": ["3", "LocalStorage"], "n_bool": ["true", "Cookie"], "j_dict": ["{\"a\": 1}", "LocalStorage"]}, "console": []}
+[pass] typed_write_w1: {"summary": {"ann_ls": ["ls-w1", "str"], "ann_ck": ["ck-w1", "str"], "ann_ss": ["ss-w1", "str"], "ann_opt": ["opt-w1", "str"], "ann_fld": ["fld-w1", "str"], "n_int": [2, "int"], "n_bool": [true, "bool"], "j_dict": ["{'s': 'w1'}", "MutableProxy"]}, "storage": {"ls": {"hnet_ann_opt": "opt-w1", "hnet_json": "[object Object]", "hnet_ann_fld": "fld-w1", "hnet_ann_ls": "ls-w1", "h
+[pass] typed_reload_hydrates_w1: {"summary": {"ann_ls": ["ls-w1", "str"], "ann_ck": ["ck-w1", "str"], "ann_ss": ["ss-w1", "str"], "ann_opt": ["opt-w1", "str"], "ann_fld": ["fld-w1", "str"], "n_int": ["2", "str"], "n_bool": ["true", "str"], "j_dict": ["[object Object]", "str"]}, "shown": ["ls-w1", "2", "\"true\"", "\"[object Object]\""]}
+[pass] typed_nonstr_storage_roundtrip_INFO: {"n_int": ["2", "str"], "n_bool": ["true", "str"], "j_dict": ["[object Object]", "str"], "ls_json": "[object Object]"}
+[pass] typed_opt_none_roundtrip: {"after_none": [null, "NoneType"], "ls_after_none": "null", "after_reload": ["null", "str"]}
+[pass] typed_reload_hydrates_w2: {"summary": {"ann_ls": ["ls-w2", "str"], "ann_ck": ["ck-w2", "str"], "ann_ss": ["ss-w2", "str"], "ann_opt": ["opt-w2", "str"], "ann_fld": ["fld-w2", "str"], "n_int": ["2", "str"], "n_bool": ["false", "str"], "j_dict": ["[object Object]", "str"]}}
+[pass] typed_console_clean: {"anomalies": {"console_err_warn": [], "pageerrors": [], "failed": [], "http_errors": []}}
+[pass] ovr_good_persists: {"tok_ok": "ok:True:good-1", "tok": "[good-1]"}
+[pass] ovr_bad_sanitised_dependents_follow: {"tok_ok": "ok:False:", "tok": "[]", "plain_dep": "plain:sanitised", "ls": "", "calls": "{\"calls\": 3, \"dep_evals\": 40}"}
+[pass] ovr_after_sanitise_reload: {"tok_ok": "ok:False:", "tok": "[]", "ls": ""}
+[pass] ovr_event_bad_sanitised: {"tok_ok": "ok:False:", "tok": "[]", "plain_dep": "plain:sanitised", "ls": ""}
+[pass] cs_push_before_reader_no_error: {"errors": []}
+[FAIL] cs_late_reader_sees_pushed: {"flag": "flag=[initial]", "count": "count=0"}
+[FAIL] cs_late_reader_follows_set_back_to_default: {"flag": "flag=[clicked]"}
+[FAIL] cs_reader_mounted_after_set_then_default: {"flag": "flag=[clicked]"}
+[FAIL] cs_push_none_and_backend: {"flag": "flag=[initial]"}
+[FAIL] cs_count_int: {"count": "count=1"}
+[FAIL] cs_gate_push_during_onload: {"flag": "flag=[initial]", "errors": []}
+[pass] cs_gate_set_default: {"flag": "flag=[initial]"}
+SUMMARY 19/33 pass; fail=['big_oversize_reported_once', 'big_oversize_toast_shown_and_stays', 'shared_set_a_syncs_all_in_other_tab', 'shared_set_plain_syncs_all_in_other_tab', 'shared_typed_b_syncs_all_in_other_tab', 'shared_other_name_unaffected', 'cv_storage_dependents_once_per_load', 'cv_storage_dependents_once_per_load_2', 'cs_late_reader_sees_pushed', 'cs_late_reader_follows_set_back_to_defau
+stopped hnet-prev (pgid 26820)
+
+######## prev_close (22:08:41)
+started hnet-prev pid=27525 venv=prev mode=dev env=[REFLEX_API_URL=http://localhost:8143] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-prev-2.log
+left running: hnet-prev FP=3142 BP=8142 proxy=
+[FAIL] bigproxy_backoff_no_tight_loop: {"n_ws_opens": 1051, "open_gaps": [0.059, 0.016, 0.018, 0.013, 0.015, 0.014, 0.01, 0.017, 0.012, 0.016, 0.012, 0.014, 0.013, 0.016, 0.013, 0.015, 0.013, 0.017, 0.014, 0.008, 0.022, 0.022, 0.01, 0.011, 0.014], "hydrated": "false", "console_errors": [], "observe_s": 15.0}
+[FAIL] bigproxy_toast_shown: {"first_toast": null, "toast_at_s": null, "final": []}
+[pass] bigproxy_recovery: {"big_len": "len:10"}
+SUMMARY 1/3 pass; fail=['bigproxy_backoff_no_tight_loop', 'bigproxy_toast_shown']
+stopped hnet-prev (pgid 27525)
+proxy closes: 1062
+
+######## h4_c21 (22:09:09)
+started h4-new-dev pid=27739 venv=new mode=dev env=[C21,C23] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/h4-new-dev-1.log
+server not up
+env: 'C21,C23': No such file or directory
+stopped h4-new-dev (pgid 27739)
+started h4-prev-dev pid=27848 venv=prev mode=dev env=[C21,C23] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/h4-prev-dev-1.log
+server not up
+env: 'C21,C23': No such file or directory
+stopped h4-prev-dev (pgid 27848)
+
+######## storm_R (22:25:51)
+storm_hydration_net-0.10.0a3_dev_R_6_*: storms 0/0 (files 2)
+   storm_hydration_net-0.10.0a3_dev_R_6_1.json: NO RESULT (driver crash?)
+   storm_hydration_net-0.10.0a3_dev_R_6_2.json: NO RESULT (driver crash?)
+storm_new_dev_R_6_*: storms 0/0 (files 2)
+   storm_new_dev_R_6_1.json: NO RESULT (driver crash?)
+   storm_new_dev_R_6_2.json: NO RESULT (driver crash?)
+BATCH EXIT 0

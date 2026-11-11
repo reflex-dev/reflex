@@ -1,0 +1,258 @@
+{
+ "label": "mantine_demo_newent",
+ "report": {
+  "app/routes/[qa-mantine]._index.jsx": [
+   {
+    "fn_line": 17,
+    "hook": "useRef",
+    "line": 18,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 17,
+    "hook": "useRef",
+    "line": 19,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 17,
+    "hook": "useRef",
+    "line": 20,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 17,
+    "hook": "useRef",
+    "line": 21,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   }
+  ],
+  "app_components/mantine/qa_mantine.jsx": [
+   {
+    "fn_line": 23,
+    "hook": "useStateContext",
+    "line": 24,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 34,
+    "hook": "useCallback",
+    "line": 35,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 34,
+    "hook": "useStateContext",
+    "line": 36,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 46,
+    "hook": "useContext",
+    "line": 47,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 57,
+    "hook": "useContext",
+    "line": 58,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 57,
+    "hook": "useCallback",
+    "line": 59,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 69,
+    "hook": "useRef",
+    "line": 70,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 69,
+    "hook": "useCallback",
+    "line": 71,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 69,
+    "hook": "useCombobox",
+    "line": 72,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 82,
+    "hook": "useStateContext",
+    "line": 83,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 93,
+    "hook": "useRef",
+    "line": 94,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 93,
+    "hook": "useCallback",
+    "line": 95,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 93,
+    "hook": "useStateContext",
+    "line": 96,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 106,
+    "hook": "useStateContext",
+    "line": 107,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 117,
+    "hook": "useStateContext",
+    "line": 118,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 117,
+    "hook": "useRef",
+    "line": 119,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 129,
+    "hook": "useRef",
+    "line": 130,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 129,
+    "hook": "useCallback",
+    "line": 131,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 141,
+    "hook": "useRef",
+    "line": 142,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 141,
+    "hook": "useCallback",
+    "line": 143,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 141,
+    "hook": "useStateContext",
+    "line": 144,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 154,
+    "hook": "useStateContext",
+    "line": 155,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 165,
+    "hook": "useStateContext",
+    "line": 166,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 176,
+    "hook": "useRef",
+    "line": 177,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 176,
+    "hook": "useCallback",
+    "line": 178,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 188,
+    "hook": "useStateContext",
+    "line": 189,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   },
+   {
+    "fn_line": 199,
+    "hook": "useContext",
+    "line": 200,
+    "refs": [],
+    "use_before_declare": [],
+    "ref_lines": {}
+   }
+  ]
+ },
+ "bad": {}
+}

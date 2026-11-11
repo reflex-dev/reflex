@@ -1,0 +1,252 @@
+{
+ "tag": "smoke-upgrade_packaging-n001-pip311-dev",
+ "results": [
+  {
+   "name": "GET / 200",
+   "status": "pass",
+   "detail": "200",
+   "t": 1.967
+  },
+  {
+   "name": "welcome page renders",
+   "status": "pass",
+   "detail": "Welcome to Reflex!\n\nGet started by editing app/app.py\n\nCheck out our docs!",
+   "t": 2.274
+  },
+  {
+   "name": "colour-mode button toggles",
+   "status": "pass",
+   "detail": "'light light' -> 'dark dark'",
+   "t": 5.845
+  },
+  {
+   "name": "colour mode survives reload",
+   "status": "pass",
+   "detail": "'dark dark'",
+   "t": 8.015
+  },
+  {
+   "name": "unknown route answers 404",
+   "status": "fail",
+   "detail": "200",
+   "t": 8.175
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 8.338
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 8.338
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 1.716,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 1.933,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 1.978,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.266,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 5.886,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 5.939,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 5.985,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 8.005,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 8.005,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 8.02,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 8.107,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 8.157,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 8.177,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 8.211,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 1.978,
+   "dir": "open",
+   "payload": "ws://localhost:8488/_event/?token=490a702c-0b42-4e9d-9dab-56da27623ebe&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.978,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"bpGOacyx1qr9QaKAAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 2.266,
+   "dir": "out",
+   "len": 321,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"aa05309e87fa25d9\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"c4095f49ced8343145186b3dc5d19d3c\"}"
+  },
+  {
+   "page": "main",
+   "t": 2.266,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"78frYCeyl-ePLdqnAAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 2.266,
+   "dir": "in",
+   "len": 1772,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8488\",\"origin\":\"http://localhost:3488\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"yoDZ8l6UIo6LXdNcWp1h7w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8488\",\"origin\":\"http://localhost:3488\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"yoDZ8l6UIo6LXdNcWp1h7w==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3488\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3488/index\",\"full_raw_path\":\"http://localhost:3488/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"490a702c-0b42-4e9d-9dab-56da27623ebe\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"78frYCeyl-ePLdqnAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3488\",\"origin\":\"http://localhost:3488\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3488/\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.266,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 5.9,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 5.9,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 8.005,
+   "dir": "open",
+   "payload": "ws://localhost:8488/_event/?token=490a702c-0b42-4e9d-9dab-56da27623ebe&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 8.005,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"pHAdxAq0TcwXQ-wNAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 8.005,
+   "dir": "out",
+   "len": 321,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"aa05309e87fa25d9\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"c4095f49ced8343145186b3dc5d19d3c\"}"
+  },
+  {
+   "page": "main",
+   "t": 8.006,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"M5u0OnDnLrcNJYiXAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 8.006,
+   "dir": "in",
+   "len": 1772,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8488\",\"origin\":\"http://localhost:3488\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"QojBUBs92C6uiCYoVUoYjg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8488\",\"origin\":\"http://localhost:3488\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"QojBUBs92C6uiCYoVUoYjg==\",\"sec-websocket-protocol\":\"0.10.1a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3488\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3488/index\",\"full_raw_path\":\"http://localhost:3488/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"490a702c-0b42-4e9d-9dab-56da27623ebe\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"M5u0OnDnLrcNJYiXAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3488\",\"origin\":\"http://localhost:3488\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3488/\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.006,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 8.028,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 8.028,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 8.176,
+   "dir": "open",
+   "payload": "ws://localhost:8488/_event/?token=490a702c-0b42-4e9d-9dab-56da27623ebe&EIO=4&transport=websocket"
+  }
+ ],
+ "notes": {}
+}

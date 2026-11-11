@@ -1,0 +1,182 @@
+
+######## dev_h0m (21:53:48)
+started hnet-dev pid=18661 venv=new mode=dev env=[REFLEX_API_URL=http://localhost:8143 HNET_HOPS=0] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-dev-5.log
+left running: hnet-dev FP=3142 BP=8142 proxy=8143:append
+## direct -> 8142 (peer 127.0.0.1)
+d0_none                            HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d1_xff_one                         HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6'                              asc=127.0.0.1 err=[] {"raw_n": 10}
+d2_xff_chain                       HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d3_xff_two_lines                   HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d4_xff_ws_garbage                  HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6 ,, ,  7.7.7.7'                asc=127.0.0.1 err=[] {"raw_n": 10}
+d4b_xff_junk                       HTTP/1.1 101 ip=127.0.0.1      xff='not an ip!! <script>'                 asc=127.0.0.1 err=[] {"raw_n": 10}
+d4c_xff_empty                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d5_xff_ipv6                        HTTP/1.1 101 ip=127.0.0.1      xff='2001:db8::1'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d5b_xff_ipv6_port                  HTTP/1.1 101 ip=127.0.0.1      xff='[2001:db8::1]:443, 1.2.3.4:5678'      asc=127.0.0.1 err=[] {"raw_n": 10}
+d6_xrealip_fwd                     HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"forwarded": "for=8.8.8.8;proto=https", "raw_n": 11, "x-real-ip": "9.9.9.9"}
+d7_xff_latin1                      HTTP/1.1 101 ip=127.0.0.1      xff='7.7.7.7, éè'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d8_dup_cookie                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "a=1; b=2; c=3", "cookie_attr": "a=1; b=2; c=3", "raw_n": 11, "x-dup": "one, two"}
+d9_bad_utf8_value                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "z=9; a=é", "cookie_attr": "z=9; a=é", "raw_n": 11, "x-bad": "ÿþ"}
+d10_bad_utf8_name                  HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d11_name_latin1                    HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d12_cookie_secret                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "cookie_attr": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "raw_n": 11}
+## via xff_proxy 8143 -> 8142 (proxy binds 127.0.0.2, client from 127.0.0.3)
+p0_none                            HTTP/1.1 101 ip=127.0.0.2      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 10}
+p1_spoof_one                       HTTP/1.1 101 ip=127.0.0.2      xff='6.6.6.6, 127.0.0.3'                   asc=127.0.0.2 err=[] {"raw_n": 10}
+p2_spoof_chain                     HTTP/1.1 101 ip=127.0.0.2      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p3_spoof_two_lines                 HTTP/1.1 101 ip=127.0.0.2      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p4_spoof_ipv6                      HTTP/1.1 101 ip=127.0.0.2      xff='2001:db8::1, 127.0.0.3'               asc=127.0.0.2 err=[] {"raw_n": 10}
+p5_xrealip                         HTTP/1.1 101 ip=127.0.0.2      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 11, "x-real-ip": "9.9.9.9"}
+stopped hnet-dev (pgid 18661)
+
+######## dev_h1 (21:55:08)
+started hnet-dev pid=20012 venv=new mode=dev env=[REFLEX_API_URL=http://localhost:8143 HNET_HOPS=1] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-dev-6.log
+left running: hnet-dev FP=3142 BP=8142 proxy=8143:append
+## direct -> 8142 (peer 127.0.0.1)
+d0_none                            HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d1_xff_one                         HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                              asc=127.0.0.1 err=[] {"raw_n": 10}
+d2_xff_chain                       HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d3_xff_two_lines                   HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d4_xff_ws_garbage                  HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6 ,, ,  7.7.7.7'                asc=127.0.0.1 err=[] {"raw_n": 10}
+d4b_xff_junk                       HTTP/1.1 101 ip=not an ip!! <script> xff='not an ip!! <script>'                 asc=127.0.0.1 err=[] {"raw_n": 10}
+d4c_xff_empty                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d5_xff_ipv6                        HTTP/1.1 101 ip=2001:db8::1    xff='2001:db8::1'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d5b_xff_ipv6_port                  HTTP/1.1 101 ip=1.2.3.4:5678   xff='[2001:db8::1]:443, 1.2.3.4:5678'      asc=127.0.0.1 err=[] {"raw_n": 10}
+d6_xrealip_fwd                     HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"forwarded": "for=8.8.8.8;proto=https", "raw_n": 11, "x-real-ip": "9.9.9.9"}
+d7_xff_latin1                      HTTP/1.1 101 ip=éè             xff='7.7.7.7, éè'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d8_dup_cookie                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "a=1; b=2; c=3", "cookie_attr": "a=1; b=2; c=3", "raw_n": 11, "x-dup": "one, two"}
+d9_bad_utf8_value                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "z=9; a=é", "cookie_attr": "z=9; a=é", "raw_n": 11, "x-bad": "ÿþ"}
+d10_bad_utf8_name                  HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d11_name_latin1                    HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d12_cookie_secret                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "cookie_attr": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "raw_n": 11}
+## via xff_proxy 8143 -> 8142 (proxy binds 127.0.0.2, client from 127.0.0.3)
+p0_none                            HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 10}
+p1_spoof_one                       HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 127.0.0.3'                   asc=127.0.0.2 err=[] {"raw_n": 10}
+p2_spoof_chain                     HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p3_spoof_two_lines                 HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p4_spoof_ipv6                      HTTP/1.1 101 ip=127.0.0.3      xff='2001:db8::1, 127.0.0.3'               asc=127.0.0.2 err=[] {"raw_n": 10}
+p5_xrealip                         HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 11, "x-real-ip": "9.9.9.9"}
+[pass] ip_frontend_and_handlers: {"f_ip": "127.0.0.1", "cv_ip": "127.0.0.1", "handler_ips": [["on_load", "127.0.0.1", "127.0.0.1", "127.0.0.2"], ["click", "127.0.0.1", "127.0.0.1", "127.0.0.2"], ["upload:1", "127.0.0.1", "127.0.0.1", "127.0.0.2"]]}
+SUMMARY 1/1 pass; fail=[]
+## /whoami direct:
+{"client":["127.0.0.1","35800"],"xff":null,"all_xff":[]}
+## /whoami via proxy 8143 (spoofed XFF 6.6.6.6):
+{"client":["127.0.0.2","47835"],"xff":"6.6.6.6, 127.0.0.1","all_xff":["6.6.6.6, 127.0.0.1"]}
+stopped hnet-dev (pgid 20012)
+
+######## dev_h2 (21:56:32)
+started hnet-dev pid=21426 venv=new mode=dev env=[REFLEX_API_URL=http://localhost:8143 HNET_HOPS=2] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-dev-7.log
+left running: hnet-dev FP=3142 BP=8142 proxy=8143:append
+## direct -> 8142 (peer 127.0.0.1)
+d0_none                            HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d1_xff_one                         HTTP/1.1 101 ip=127.0.0.1      xff='6.6.6.6'                              asc=127.0.0.1 err=[] {"raw_n": 10}
+d2_xff_chain                       HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d3_xff_two_lines                   HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d4_xff_ws_garbage                  HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6 ,, ,  7.7.7.7'                asc=127.0.0.1 err=[] {"raw_n": 10}
+d4b_xff_junk                       HTTP/1.1 101 ip=127.0.0.1      xff='not an ip!! <script>'                 asc=127.0.0.1 err=[] {"raw_n": 10}
+d4c_xff_empty                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d5_xff_ipv6                        HTTP/1.1 101 ip=127.0.0.1      xff='2001:db8::1'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d5b_xff_ipv6_port                  HTTP/1.1 101 ip=[2001:db8::1]:443 xff='[2001:db8::1]:443, 1.2.3.4:5678'      asc=127.0.0.1 err=[] {"raw_n": 10}
+d6_xrealip_fwd                     HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"forwarded": "for=8.8.8.8;proto=https", "raw_n": 11, "x-real-ip": "9.9.9.9"}
+d7_xff_latin1                      HTTP/1.1 101 ip=7.7.7.7        xff='7.7.7.7, éè'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d8_dup_cookie                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "a=1; b=2; c=3", "cookie_attr": "a=1; b=2; c=3", "raw_n": 11, "x-dup": "one, two"}
+d9_bad_utf8_value                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "z=9; a=é", "cookie_attr": "z=9; a=é", "raw_n": 11, "x-bad": "ÿþ"}
+d10_bad_utf8_name                  HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d11_name_latin1                    HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d12_cookie_secret                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "cookie_attr": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "raw_n": 11}
+## via xff_proxy 8143 -> 8142 (proxy binds 127.0.0.2, client from 127.0.0.3)
+p0_none                            HTTP/1.1 101 ip=127.0.0.2      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 10}
+p1_spoof_one                       HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6, 127.0.0.3'                   asc=127.0.0.2 err=[] {"raw_n": 10}
+p2_spoof_chain                     HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p3_spoof_two_lines                 HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p4_spoof_ipv6                      HTTP/1.1 101 ip=2001:db8::1    xff='2001:db8::1, 127.0.0.3'               asc=127.0.0.2 err=[] {"raw_n": 10}
+p5_xrealip                         HTTP/1.1 101 ip=127.0.0.2      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 11, "x-real-ip": "9.9.9.9"}
+[pass] ip_frontend_and_handlers: {"f_ip": "127.0.0.2", "cv_ip": "127.0.0.2", "handler_ips": [["on_load", "127.0.0.2", "127.0.0.1", "127.0.0.2"], ["click", "127.0.0.2", "127.0.0.1", "127.0.0.2"], ["upload:1", "127.0.0.2", "127.0.0.1", "127.0.0.2"]]}
+SUMMARY 1/1 pass; fail=[]
+stopped hnet-dev (pgid 21426)
+
+######## dev_line (21:57:58)
+started hnet-dev pid=22342 venv=new mode=dev env=[REFLEX_API_URL=http://localhost:8143 HNET_HOPS=1] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-dev-8.log
+left running: hnet-dev FP=3142 BP=8142 proxy=8143:line
+## direct -> 8142 (peer 127.0.0.1)
+d0_none                            HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d1_xff_one                         HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                              asc=127.0.0.1 err=[] {"raw_n": 10}
+d2_xff_chain                       HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d3_xff_two_lines                   HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d4_xff_ws_garbage                  HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6 ,, ,  7.7.7.7'                asc=127.0.0.1 err=[] {"raw_n": 10}
+d4b_xff_junk                       HTTP/1.1 101 ip=not an ip!! <script> xff='not an ip!! <script>'                 asc=127.0.0.1 err=[] {"raw_n": 10}
+d4c_xff_empty                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d5_xff_ipv6                        HTTP/1.1 101 ip=2001:db8::1    xff='2001:db8::1'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d5b_xff_ipv6_port                  HTTP/1.1 101 ip=1.2.3.4:5678   xff='[2001:db8::1]:443, 1.2.3.4:5678'      asc=127.0.0.1 err=[] {"raw_n": 10}
+d6_xrealip_fwd                     HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"forwarded": "for=8.8.8.8;proto=https", "raw_n": 11, "x-real-ip": "9.9.9.9"}
+d7_xff_latin1                      HTTP/1.1 101 ip=éè             xff='7.7.7.7, éè'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d8_dup_cookie                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "a=1; b=2; c=3", "cookie_attr": "a=1; b=2; c=3", "raw_n": 11, "x-dup": "one, two"}
+d9_bad_utf8_value                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "z=9; a=é", "cookie_attr": "z=9; a=é", "raw_n": 11, "x-bad": "ÿþ"}
+d10_bad_utf8_name                  HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d11_name_latin1                    HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d12_cookie_secret                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "cookie_attr": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "raw_n": 11}
+## via xff_proxy 8143 -> 8142 (proxy binds 127.0.0.2, client from 127.0.0.3)
+p0_none                            HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 10}
+p1_spoof_one                       HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 127.0.0.3'                   asc=127.0.0.2 err=[] {"raw_n": 10}
+p2_spoof_chain                     HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p3_spoof_two_lines                 HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p4_spoof_ipv6                      HTTP/1.1 101 ip=127.0.0.3      xff='2001:db8::1, 127.0.0.3'               asc=127.0.0.2 err=[] {"raw_n": 10}
+p5_xrealip                         HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 11, "x-real-ip": "9.9.9.9"}
+stopped hnet-dev (pgid 22342)
+
+######## dev_env (21:59:18)
+started hnet-dev pid=23362 venv=new mode=dev env=[REFLEX_API_URL=http://localhost:8143 REFLEX_TRUSTED_PROXY_HOPS=1] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-dev-9.log
+left running: hnet-dev FP=3142 BP=8142 proxy=8143:append
+## direct -> 8142 (peer 127.0.0.1)
+d0_none                            HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d1_xff_one                         HTTP/1.1 101 ip=6.6.6.6        xff='6.6.6.6'                              asc=127.0.0.1 err=[] {"raw_n": 10}
+d2_xff_chain                       HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d3_xff_two_lines                   HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6, 7.7.7.7'                     asc=127.0.0.1 err=[] {"raw_n": 10}
+d4_xff_ws_garbage                  HTTP/1.1 101 ip=7.7.7.7        xff='6.6.6.6 ,, ,  7.7.7.7'                asc=127.0.0.1 err=[] {"raw_n": 10}
+d4b_xff_junk                       HTTP/1.1 101 ip=not an ip!! <script> xff='not an ip!! <script>'                 asc=127.0.0.1 err=[] {"raw_n": 10}
+d4c_xff_empty                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"raw_n": 9}
+d5_xff_ipv6                        HTTP/1.1 101 ip=2001:db8::1    xff='2001:db8::1'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d5b_xff_ipv6_port                  HTTP/1.1 101 ip=1.2.3.4:5678   xff='[2001:db8::1]:443, 1.2.3.4:5678'      asc=127.0.0.1 err=[] {"raw_n": 10}
+d6_xrealip_fwd                     HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"forwarded": "for=8.8.8.8;proto=https", "raw_n": 11, "x-real-ip": "9.9.9.9"}
+d7_xff_latin1                      HTTP/1.1 101 ip=éè             xff='7.7.7.7, éè'                          asc=127.0.0.1 err=[] {"raw_n": 10}
+d8_dup_cookie                      HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "a=1; b=2; c=3", "cookie_attr": "a=1; b=2; c=3", "raw_n": 11, "x-dup": "one, two"}
+d9_bad_utf8_value                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "z=9; a=é", "cookie_attr": "z=9; a=é", "raw_n": 11, "x-bad": "ÿþ"}
+d10_bad_utf8_name                  HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d11_name_latin1                    HTTP/1.1 400 ip=None           xff=None                                   asc=None err=[] {}
+d12_cookie_secret                  HTTP/1.1 101 ip=127.0.0.1      xff=None                                   asc=127.0.0.1 err=[] {"cookie": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "cookie_attr": "sid=COOKIESECRET1; other=COOKIESECRET2; third=COOKIESECRET3", "raw_n": 11}
+## via xff_proxy 8143 -> 8142 (proxy binds 127.0.0.2, client from 127.0.0.3)
+p0_none                            HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 10}
+p1_spoof_one                       HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 127.0.0.3'                   asc=127.0.0.2 err=[] {"raw_n": 10}
+p2_spoof_chain                     HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p3_spoof_two_lines                 HTTP/1.1 101 ip=127.0.0.3      xff='6.6.6.6, 7.7.7.7, 127.0.0.3'          asc=127.0.0.2 err=[] {"raw_n": 10}
+p4_spoof_ipv6                      HTTP/1.1 101 ip=127.0.0.3      xff='2001:db8::1, 127.0.0.3'               asc=127.0.0.2 err=[] {"raw_n": 10}
+p5_xrealip                         HTTP/1.1 101 ip=127.0.0.3      xff='127.0.0.3'                            asc=127.0.0.2 err=[] {"raw_n": 11, "x-real-ip": "9.9.9.9"}
+stopped hnet-dev (pgid 23362)
+
+######## dev_bad (22:00:39)
+## HNET_HOPS=-1
+47:    raise ConfigError(msg)
+48:reflex_base.utils.exceptions.ConfigError: trusted_proxy_hops must be a non-negative integer.
+## REFLEX_TRUSTED_PROXY_HOPS=abc
+8:ValueError: invalid literal for int() with base 10: 'abc'
+64:    raise EnvironmentVarValueError(msg) from ve
+65:reflex_base.utils.exceptions.EnvironmentVarValueError: Invalid integer value: 'abc' for trusted_proxy_hops
+## REFLEX_TRUSTED_PROXY_HOPS=-2
+4:Debug: Overriding config value trusted_proxy_hops with env var 
+5:TRUSTED_PROXY_HOPS=-2
+49:    raise ConfigError(msg)
+50:reflex_base.utils.exceptions.ConfigError: trusted_proxy_hops must be a non-negative integer.
+## REFLEX_TRUSTED_PROXY_HOPS=true
+8:ValueError: invalid literal for int() with base 10: 'true'
+64:    raise EnvironmentVarValueError(msg) from ve
+65:reflex_base.utils.exceptions.EnvironmentVarValueError: Invalid integer value: 'true' for trusted_proxy_hops
+
+######## dev_close (22:01:27)
+started hnet-dev pid=24429 venv=new mode=dev env=[REFLEX_API_URL=http://localhost:8143] log=/tmp/claude-0/-home-user/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/qa/apps/hydration_net/logs/hnet-dev-10.log
+left running: hnet-dev FP=3142 BP=8142 proxy=
+[FAIL] bigproxy_backoff_no_tight_loop: {"n_ws_opens": 1, "open_gaps": [], "hydrated": "true", "console_errors": [], "observe_s": 15.0}
+[FAIL] bigproxy_toast_shown: {"first_toast": null, "toast_at_s": null, "final": []}
+[pass] bigproxy_recovery: {"big_len": "len:10"}
+SUMMARY 1/3 pass; fail=['bigproxy_backoff_no_tight_loop', 'bigproxy_toast_shown']
+stopped hnet-dev (pgid 24429)
+proxy closes: 0
+BATCH EXIT 0

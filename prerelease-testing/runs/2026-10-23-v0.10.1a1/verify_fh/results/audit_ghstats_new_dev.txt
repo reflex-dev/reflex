@@ -1,0 +1,40 @@
+  ok   app/root.jsx fn=ReflexProviders@L26
+  BAIL app_components/github_stats/github_stats.jsx fn=Cond_comp_ca57bf910541d8ab66114abd37794349_c3eec2d7@L19 line=22 :: Todo: Unexpected terminal kind `optional` for ternary test block
+       ((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.())?(children?.at?.(0)):(children?.at?.(1)))
+  BAIL app_components/github_stats/github_stats.jsx fn=Debounceinput_debounceinput_eb900cbd4ead23408014258856988a01_c3eec2d7@L64 line=65 :: Immutability: This value cannot be modified
+       const ref_username = useRef(null); refs["ref_username"] = ref_username;
+  ok   app_components/github_stats/github_stats.jsx fn=Iconbutton_iconbutton_db18ecf04859f231c6e13b4d7e4be22d_c3eec2d7@L30
+  ok   app_components/github_stats/github_stats.jsx fn=Foreach_comp_ec6ef3135224de39a6b7178534e6e218_c3eec2d7@L42
+  ok   app_components/github_stats/github_stats.jsx fn=Cond_comp_85a217565bec8577cf10b118aee515cb_c3eec2d7@L53
+  ok   app_components/github_stats/github_stats.jsx fn=Button_button_ecee846ec6250b8bec9612135759f61d_c3eec2d7@L77
+  ok   app_components/github_stats/github_stats.jsx fn=Responsivecontainer_responsivecontainer_3cd339963431f91c23c1175d0442e9e0_c3eec2d7@L88
+  ok   app_components/github_stats/github_stats.jsx fn=Textarea_textarea_d2daf18470814055b3353ea12bbc2048_c3eec2d7@L99
+  ok   app_components/github_stats/widget.jsx fn=Bare_comp_57e7e2403ecea54a874d245cb655ba6b_249516d1@L19
+  ok   app_components/github_stats/widget.jsx fn=Cond_comp_2abd1b7decd5be35d1d758406e91fc54_249516d1@L30
+  ok   app_components/github_stats/widget.jsx fn=Responsivecontainer_responsivecontainer_7854a22ac3221b12971370aac1559415_249516d1@L41
+  ok   app_components/github_stats/widget.jsx fn=Theme_theme_a48c78bda436967188f562d8721ceea9_249516d1@L52
+  ok   app_components/reflex/app.jsx fn=DefaultOverlayComponents_04c36749@L17
+  BAIL app_components/reflex/compiler/compiler.jsx fn=MemoizedToastProvider_18b15038@L16 line=18 :: Immutability: This value cannot be modified
+       refs['__toast'] = toast
+  ok   utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx fn=Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3@L15
+
+## github-stats/.web : 13 files in scope
+file | functions | compiled | bailed | skipped | _c( calls | has id: | has refs[ | bailed fns
+app/_document.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.embed.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/entry.client.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/root.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+app/routes.js | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[404]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/[widget].$[selected_user_param]._index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app/routes/_index.jsx | 0 | 0 | 0 | 0 | 0 | false | false | 
+app_components/github_stats/github_stats.jsx | 8 | 6 | 2 | 0 | 4 | true | true | Cond_comp_ca57bf910541d8ab66114abd37794349_c3eec2d7@L19,Debounceinput_debounceinput_eb900cbd4ead23408014258856988a01_c3eec2d7@L64
+app_components/github_stats/widget.jsx | 4 | 4 | 0 | 0 | 1 | false | false | 
+app_components/reflex/app.jsx | 1 | 1 | 0 | 0 | 1 | true | true | 
+app_components/reflex/compiler/compiler.jsx | 1 | 0 | 1 | 0 | 0 | false | true | MemoizedToastProvider_18b15038@L16
+utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx | 1 | 1 | 0 | 0 | 1 | false | false | 
+
+TOTAL functions=16 compiled=13 bailed=3
+bail-out reasons:
+  2  Immutability: This value cannot be modified
+  1  Todo: Unexpected terminal kind `optional` for ternary test block

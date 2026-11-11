@@ -1,0 +1,603 @@
+{
+ "url": "http://localhost:3225/",
+ "hydrate_ms": 242,
+ "results": [
+  {
+   "op": "append",
+   "ok": true,
+   "step": 1,
+   "ms": 280,
+   "diffs": [],
+   "card_renders": {
+    "1": "1",
+    "2": "1",
+    "3": "1",
+    "4": "1"
+   }
+  },
+  {
+   "op": "pop",
+   "ok": true,
+   "step": 2,
+   "ms": 230,
+   "diffs": [],
+   "card_renders": {
+    "1": "1",
+    "2": "1",
+    "3": "1"
+   }
+  },
+  {
+   "op": "pop0",
+   "ok": true,
+   "step": 3,
+   "ms": 221,
+   "diffs": [],
+   "card_renders": {
+    "2": "2",
+    "3": "2"
+   }
+  },
+  {
+   "op": "insert1",
+   "ok": true,
+   "step": 4,
+   "ms": 216,
+   "diffs": [],
+   "card_renders": {
+    "2": "2",
+    "5": "3",
+    "3": "1"
+   }
+  },
+  {
+   "op": "sort_qty",
+   "ok": true,
+   "step": 5,
+   "ms": 216,
+   "diffs": [],
+   "card_renders": {
+    "5": "3",
+    "2": "4",
+    "3": "1"
+   }
+  },
+  {
+   "op": "sort_qty_desc",
+   "ok": true,
+   "step": 6,
+   "ms": 213,
+   "diffs": [],
+   "card_renders": {
+    "3": "4",
+    "2": "4",
+    "5": "2"
+   }
+  },
+  {
+   "op": "reverse",
+   "ok": true,
+   "step": 7,
+   "ms": 205,
+   "diffs": [],
+   "card_renders": {
+    "5": "5",
+    "2": "4",
+    "3": "3"
+   }
+  },
+  {
+   "op": "replace_equal",
+   "ok": true,
+   "step": 8,
+   "ms": 200,
+   "diffs": [],
+   "card_renders": {
+    "5": "5",
+    "2": "4",
+    "3": "3"
+   }
+  },
+  {
+   "op": "bump0",
+   "ok": true,
+   "step": 9,
+   "ms": 201,
+   "diffs": [],
+   "card_renders": {
+    "5": "6",
+    "2": "4",
+    "3": "3"
+   }
+  },
+  {
+   "op": "tag0",
+   "ok": true,
+   "step": 10,
+   "ms": 210,
+   "diffs": [],
+   "card_renders": {
+    "5": "7",
+    "2": "4",
+    "3": "3"
+   }
+  },
+  {
+   "op": "meta0",
+   "ok": true,
+   "step": 11,
+   "ms": 212,
+   "diffs": [],
+   "card_renders": {
+    "5": "8",
+    "2": "4",
+    "3": "3"
+   }
+  },
+  {
+   "op": "meta0_del",
+   "ok": true,
+   "step": 12,
+   "ms": 201,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "3"
+   }
+  },
+  {
+   "op": "rename_last",
+   "ok": true,
+   "step": 13,
+   "ms": 208,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "same_twice",
+   "ok": true,
+   "step": 14,
+   "ms": 224,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "noop",
+   "ok": true,
+   "step": 15,
+   "ms": 201,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "nested_add",
+   "ok": true,
+   "step": 16,
+   "ms": 217,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "nested_upd",
+   "ok": true,
+   "step": 17,
+   "ms": 220,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "nested_del_inner",
+   "ok": true,
+   "step": 18,
+   "ms": 210,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "nested_del",
+   "ok": true,
+   "step": 19,
+   "ms": 199,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "nested_reset",
+   "ok": true,
+   "step": 20,
+   "ms": 206,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "nested_reorder",
+   "ok": true,
+   "step": 21,
+   "ms": 204,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "set_same_nested",
+   "ok": true,
+   "step": 22,
+   "ms": 217,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "blob_none",
+   "ok": true,
+   "step": 23,
+   "ms": 217,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "blob_dict",
+   "ok": true,
+   "step": 24,
+   "ms": 224,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "poly_obj",
+   "ok": true,
+   "step": 25,
+   "ms": 210,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "poly_arr",
+   "ok": true,
+   "step": 26,
+   "ms": 222,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "matrix_mut",
+   "ok": true,
+   "step": 27,
+   "ms": 210,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "matrix_row",
+   "ok": true,
+   "step": 28,
+   "ms": 218,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "matrix_pop_inner",
+   "ok": true,
+   "step": 29,
+   "ms": 220,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "bases_mut",
+   "ok": true,
+   "step": 30,
+   "ms": 203,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "bases_replace",
+   "ok": true,
+   "step": 31,
+   "ms": 207,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "pyd_mut",
+   "ok": true,
+   "step": 32,
+   "ms": 215,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "when_tick",
+   "ok": true,
+   "step": 33,
+   "ms": 215,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "tags_add",
+   "ok": true,
+   "step": 34,
+   "ms": 217,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "tags_rm",
+   "ok": true,
+   "step": 35,
+   "ms": 209,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "pair_swap",
+   "ok": true,
+   "step": 36,
+   "ms": 210,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "big_fill",
+   "ok": true,
+   "step": 37,
+   "ms": 343,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "big_mut_mid",
+   "ok": true,
+   "step": 38,
+   "ms": 297,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "big_append",
+   "ok": true,
+   "step": 39,
+   "ms": 280,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "big_pop0",
+   "ok": true,
+   "step": 40,
+   "ms": 285,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "both",
+   "ok": true,
+   "step": 41,
+   "ms": 260,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "deep_bump",
+   "ok": true,
+   "step": 42,
+   "ms": 263,
+   "diffs": [],
+   "card_renders": {
+    "5": "9",
+    "2": "4",
+    "3": "4"
+   }
+  },
+  {
+   "op": "many",
+   "ok": true,
+   "step": 43,
+   "ms": 279,
+   "diffs": [],
+   "card_renders": {
+    "6": "10",
+    "3": "5",
+    "2": "5",
+    "5": "1"
+   }
+  },
+  {
+   "op": "clear",
+   "ok": true,
+   "step": 44,
+   "ms": 264,
+   "diffs": [],
+   "card_renders": {}
+  },
+  {
+   "op": "reset",
+   "ok": true,
+   "step": 45,
+   "ms": 304,
+   "diffs": [],
+   "card_renders": {
+    "1": "1",
+    "2": "1",
+    "3": "1"
+   }
+  },
+  {
+   "op": "bg_run",
+   "ok": true,
+   "step": 50,
+   "ms": 490,
+   "diffs": [],
+   "card_renders": {
+    "1": "4",
+    "2": "1",
+    "3": "1",
+    "4": "1",
+    "5": "1",
+    "6": "1",
+    "7": "1",
+    "8": "1"
+   }
+  },
+  {
+   "op": "pop",
+   "ok": true,
+   "step": 51,
+   "ms": 256,
+   "diffs": [],
+   "card_renders": {
+    "1": "4",
+    "2": "1",
+    "3": "1",
+    "4": "1",
+    "5": "1",
+    "6": "1",
+    "7": "1"
+   }
+  },
+  {
+   "op": "append",
+   "ok": true,
+   "step": 52,
+   "ms": 249,
+   "diffs": [],
+   "card_renders": {
+    "1": "4",
+    "2": "1",
+    "3": "1",
+    "4": "1",
+    "5": "1",
+    "6": "1",
+    "7": "1",
+    "9": "1"
+   }
+  }
+ ],
+ "n_fail": 0,
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "pageerrors": [],
+ "requestfailed": [],
+ "http_errors": []
+}

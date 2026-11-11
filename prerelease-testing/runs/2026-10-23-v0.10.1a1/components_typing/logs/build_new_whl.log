@@ -1,0 +1,238 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+DEBUG uv 0.11.32 (x86_64-unknown-linux-gnu)
+Using Python 3.12.3 environment at: envs/components_typing-new-whl
+DEBUG At least one requirement is not satisfied: ty
+DEBUG Using request connect timeout of 10s and read timeout of 30s
+DEBUG Solving with installed Python version: 3.12.3
+DEBUG Solving with target Python version: >=3.12.3
+DEBUG Adding direct dependency: reflex[db]>=0.10.1a1, <0.10.1a1+
+DEBUG Adding direct dependency: pydantic<2.15
+DEBUG Adding direct dependency: pyright*
+DEBUG Adding direct dependency: ty*
+DEBUG Found stale response for: https://pypi.org/simple/reflex/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex/
+DEBUG Found stale response for: https://pypi.org/simple/pydantic/
+DEBUG Sending revalidation request for: https://pypi.org/simple/pydantic/
+DEBUG Found stale response for: https://pypi.org/simple/pyright/
+DEBUG Sending revalidation request for: https://pypi.org/simple/pyright/
+DEBUG Found stale response for: https://pypi.org/simple/ty/
+DEBUG Sending revalidation request for: https://pypi.org/simple/ty/
+DEBUG Found not-modified response for: https://pypi.org/simple/pyright/
+DEBUG Found not-modified response for: https://pypi.org/simple/pydantic/
+DEBUG Found not-modified response for: https://pypi.org/simple/ty/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex/
+DEBUG Selecting: reflex==0.10.1a1 [compatible] (reflex-0.10.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex==0.10.1a1 [compatible] (reflex-0.10.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex==0.10.1a1 [compatible] (reflex-0.10.1a1-py3-none-any.whl)
+DEBUG Found stale response for: https://pypi.org/simple/click/
+DEBUG Sending revalidation request for: https://pypi.org/simple/click/
+DEBUG Found stale response for: https://pypi.org/simple/httpx/
+DEBUG Sending revalidation request for: https://pypi.org/simple/httpx/
+DEBUG Found stale response for: https://pypi.org/simple/python-socketio/
+DEBUG Sending revalidation request for: https://pypi.org/simple/python-socketio/
+DEBUG Found stale response for: https://pypi.org/simple/granian/
+DEBUG Sending revalidation request for: https://pypi.org/simple/granian/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-dataeditor/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-dataeditor/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-code/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-code/
+DEBUG Found stale response for: https://pypi.org/simple/redis/
+DEBUG Sending revalidation request for: https://pypi.org/simple/redis/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-gridjs/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-gridjs/
+DEBUG Found not-modified response for: https://pypi.org/simple/click/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-markdown/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-markdown/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-plotly/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-plotly/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-react-player/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-react-player/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-moment/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-moment/
+DEBUG Found not-modified response for: https://pypi.org/simple/httpx/
+DEBUG Found not-modified response for: https://pypi.org/simple/python-socketio/
+DEBUG Found not-modified response for: https://pypi.org/simple/granian/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-components-recharts/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-components-recharts/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-hosting-cli/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-hosting-cli/
+DEBUG Found stale response for: https://pypi.org/simple/alembic/
+DEBUG Sending revalidation request for: https://pypi.org/simple/alembic/
+DEBUG Selecting: reflex-base==0.10.1a1 [compatible] (reflex_base-0.10.1a1-py3-none-any.whl)
+DEBUG Found stale response for: https://pypi.org/simple/sqlmodel/
+DEBUG Sending revalidation request for: https://pypi.org/simple/sqlmodel/
+DEBUG Found stale response for: https://pypi.org/simple/greenlet/
+DEBUG Sending revalidation request for: https://pypi.org/simple/greenlet/
+DEBUG Found stale response for: https://pypi.org/simple/wrapt/
+DEBUG Sending revalidation request for: https://pypi.org/simple/wrapt/
+DEBUG Selecting: pydantic==2.14.1 [compatible] (pydantic-2.14.1-py3-none-any.whl)
+DEBUG Found not-modified response for: https://pypi.org/simple/redis/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-moment/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-gridjs/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-markdown/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-dataeditor/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-plotly/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-react-player/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-code/
+DEBUG Found stale response for: https://pypi.org/simple/pydantic-core/
+DEBUG Sending revalidation request for: https://pypi.org/simple/pydantic-core/
+DEBUG Found not-modified response for: https://pypi.org/simple/greenlet/
+DEBUG Found not-modified response for: https://pypi.org/simple/wrapt/
+DEBUG Found not-modified response for: https://pypi.org/simple/pydantic-core/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-hosting-cli/
+DEBUG Found not-modified response for: https://pypi.org/simple/sqlmodel/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-components-recharts/
+DEBUG Found not-modified response for: https://pypi.org/simple/alembic/
+DEBUG Selecting: pydantic-core==2.50.1 [compatible] (pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl)
+DEBUG Selecting: pyright==1.1.414 [compatible] (pyright-1.1.414-py3-none-any.whl)
+DEBUG Selecting: ty==0.0.91 [compatible] (ty-0.0.91-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl)
+DEBUG Selecting: click==8.5.0 [compatible] (click-8.5.0-py3-none-any.whl)
+DEBUG Selecting: granian==2.8.5 [compatible] (granian-2.8.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl)
+DEBUG Selecting: granian==2.8.5 [compatible] (granian-2.8.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl)
+DEBUG Selecting: granian==2.8.5 [compatible] (granian-2.8.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl)
+DEBUG Selecting: httpx==0.28.1 [compatible] (httpx-0.28.1-py3-none-any.whl)
+DEBUG Found stale response for: https://pypi.org/simple/nodeenv/
+DEBUG Sending revalidation request for: https://pypi.org/simple/nodeenv/
+DEBUG Selecting: packaging==26.3 [compatible] (packaging-26.3-py3-none-any.whl)
+DEBUG Selecting: python-multipart==0.0.32 [compatible] (python_multipart-0.0.32-py3-none-any.whl)
+DEBUG Selecting: python-socketio==5.17.0 [compatible] (python_socketio-5.17.0-py3-none-any.whl)
+DEBUG Selecting: redis==7.4.1 [compatible] (redis-7.4.1-py3-none-any.whl)
+DEBUG Selecting: reflex-components-code==0.10.1a1 [compatible] (reflex_components_code-0.10.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-components-core==0.10.1a1 [compatible] (reflex_components_core-0.10.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-components-dataeditor==0.10.1a1 [compatible] (reflex_components_dataeditor-0.10.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-components-gridjs==0.10.0 [compatible] (reflex_components_gridjs-0.10.0-py3-none-any.whl)
+DEBUG Selecting: reflex-components-lucide==1.1.1a1 [compatible] (reflex_components_lucide-1.1.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-components-markdown==0.10.0 [compatible] (reflex_components_markdown-0.10.0-py3-none-any.whl)
+DEBUG Selecting: reflex-components-moment==0.10.1a1 [compatible] (reflex_components_moment-0.10.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-components-plotly==0.10.0 [compatible] (reflex_components_plotly-0.10.0-py3-none-any.whl)
+DEBUG Selecting: reflex-components-radix==0.10.1a1 [compatible] (reflex_components_radix-0.10.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-components-react-player==0.10.0 [compatible] (reflex_components_react_player-0.10.0-py3-none-any.whl)
+DEBUG Selecting: reflex-components-recharts==0.10.0 [compatible] (reflex_components_recharts-0.10.0-py3-none-any.whl)
+DEBUG Selecting: reflex-components-sonner==0.10.0 [compatible] (reflex_components_sonner-0.10.0-py3-none-any.whl)
+DEBUG Selecting: reflex-hosting-cli==0.2.1a1 [compatible] (reflex_hosting_cli-0.2.1a1-py3-none-any.whl)
+DEBUG Selecting: rich==15.0.0 [compatible] (rich-15.0.0-py3-none-any.whl)
+DEBUG Selecting: starlette==1.9.0 [compatible] (starlette-1.9.0-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: wrapt==2.5.2rc1 [compatible] (wrapt-2.5.2rc1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl)
+DEBUG Selecting: alembic==1.20.1 [compatible] (alembic-1.20.1-py3-none-any.whl)
+DEBUG Selecting: greenlet==3.5.6 [compatible] (greenlet-3.5.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl)
+DEBUG Selecting: sqlmodel==0.0.48 [compatible] (sqlmodel-0.0.48-py3-none-any.whl)
+DEBUG Selecting: platformdirs==4.13.5 [compatible] (platformdirs-4.13.5-py3-none-any.whl)
+DEBUG Selecting: annotated-types==0.8.0 [compatible] (annotated_types-0.8.0-py3-none-any.whl)
+DEBUG Selecting: typing-inspection==0.4.4 [compatible] (typing_inspection-0.4.4-py3-none-any.whl)
+DEBUG Found stale response for: https://pypi.org/simple/httpcore/
+DEBUG Sending revalidation request for: https://pypi.org/simple/httpcore/
+DEBUG Found stale response for: https://pypi.org/simple/watchfiles/
+DEBUG Sending revalidation request for: https://pypi.org/simple/watchfiles/
+DEBUG Found stale response for: https://pypi.org/simple/certifi/
+DEBUG Sending revalidation request for: https://pypi.org/simple/certifi/
+DEBUG Found stale response for: https://pypi.org/simple/bidict/
+DEBUG Sending revalidation request for: https://pypi.org/simple/bidict/
+DEBUG Found stale response for: https://pypi.org/simple/python-engineio/
+DEBUG Sending revalidation request for: https://pypi.org/simple/python-engineio/
+DEBUG Found stale response for: https://pypi.org/simple/mako/
+DEBUG Sending revalidation request for: https://pypi.org/simple/mako/
+DEBUG Found stale response for: https://pypi.org/simple/reflex-build-sdk/
+DEBUG Sending revalidation request for: https://pypi.org/simple/reflex-build-sdk/
+DEBUG Found not-modified response for: https://pypi.org/simple/nodeenv/
+DEBUG Found not-modified response for: https://pypi.org/simple/certifi/
+DEBUG Found not-modified response for: https://pypi.org/simple/watchfiles/
+DEBUG Found not-modified response for: https://pypi.org/simple/mako/
+DEBUG Found not-modified response for: https://pypi.org/simple/httpcore/
+DEBUG Found not-modified response for: https://pypi.org/simple/bidict/
+DEBUG Found not-modified response for: https://pypi.org/simple/reflex-build-sdk/
+DEBUG Found not-modified response for: https://pypi.org/simple/python-engineio/
+DEBUG Found stale response for: https://pypi.org/simple/sqlalchemy/
+DEBUG Sending revalidation request for: https://pypi.org/simple/sqlalchemy/
+DEBUG Selecting: nodeenv==1.11.0 [compatible] (nodeenv-1.11.0-py2.py3-none-any.whl)
+DEBUG Selecting: watchfiles==1.3.0 [compatible] (watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl)
+DEBUG Selecting: anyio==4.15.1 [compatible] (anyio-4.15.1-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: typing-extensions==4.16.0 [compatible] (typing_extensions-4.16.0-py3-none-any.whl)
+DEBUG Selecting: certifi==2026.10.23 [compatible] (certifi-2026.10.23-py3-none-any.whl)
+DEBUG Selecting: httpcore==1.0.9 [compatible] (httpcore-1.0.9-py3-none-any.whl)
+DEBUG Selecting: idna==3.20 [compatible] (idna-3.20-py3-none-any.whl)
+DEBUG Selecting: bidict==0.24.1 [compatible] (bidict-0.24.1-py3-none-any.whl)
+DEBUG Selecting: python-engineio==4.14.0 [compatible] (python_engineio-4.14.0-py3-none-any.whl)
+DEBUG Selecting: reflex-build-sdk==0.1.1a1 [compatible] (reflex_build_sdk-0.1.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-build-sdk==0.1.1a1 [compatible] (reflex_build_sdk-0.1.1a1-py3-none-any.whl)
+DEBUG Selecting: reflex-build-sdk==0.1.1a1 [compatible] (reflex_build_sdk-0.1.1a1-py3-none-any.whl)
+DEBUG Selecting: markdown-it-py==4.2.0 [compatible] (markdown_it_py-4.2.0-py3-none-any.whl)
+DEBUG Selecting: pygments==2.21.0 [compatible] (pygments-2.21.0-py3-none-any.whl)
+DEBUG Found stale response for: https://pypi.org/simple/simple-websocket/
+DEBUG Sending revalidation request for: https://pypi.org/simple/simple-websocket/
+DEBUG Found stale response for: https://pypi.org/simple/h11/
+DEBUG Sending revalidation request for: https://pypi.org/simple/h11/
+DEBUG Found not-modified response for: https://pypi.org/simple/sqlalchemy/
+DEBUG Found not-modified response for: https://pypi.org/simple/h11/
+DEBUG Found not-modified response for: https://pypi.org/simple/simple-websocket/
+DEBUG Selecting: sqlalchemy==2.1.6 [compatible] (sqlalchemy-2.1.6-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl)
+DEBUG Selecting: mako==1.4.3 [compatible] (mako-1.4.3-py3-none-any.whl)
+DEBUG Selecting: h11==0.16.0 [compatible] (h11-0.16.0-py3-none-any.whl)
+DEBUG Selecting: simple-websocket==1.1.0 [compatible] (simple_websocket-1.1.0-py3-none-any.whl)
+DEBUG Selecting: mdurl==0.1.2 [compatible] (mdurl-0.1.2-py3-none-any.whl)
+DEBUG Selecting: markupsafe==3.0.4 [compatible] (markupsafe-3.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl)
+DEBUG Found stale response for: https://pypi.org/simple/wsproto/
+DEBUG Sending revalidation request for: https://pypi.org/simple/wsproto/
+DEBUG Found not-modified response for: https://pypi.org/simple/wsproto/
+DEBUG Selecting: wsproto==1.3.2 [compatible] (wsproto-1.3.2-py3-none-any.whl)
+DEBUG marker environment resolution took 3.768s
+Resolved 54 packages in 3.77s
+Installed 54 packages in 1.23s
+ + alembic==1.20.1
+ + annotated-types==0.8.0
+ + anyio==4.15.1
+ + bidict==0.24.1
+ + certifi==2026.10.23
+ + click==8.5.0
+ + granian==2.8.5
+ + greenlet==3.5.6
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + mako==1.4.3
+ + markdown-it-py==4.2.0
+ + markupsafe==3.0.4
+ + mdurl==0.1.2
+ + nodeenv==1.11.0
+ + packaging==26.3
+ + platformdirs==4.13.5
+ + pydantic==2.14.1
+ + pydantic-core==2.50.1
+ + pygments==2.21.0
+ + pyright==1.1.414
+ + python-engineio==4.14.0
+ + python-multipart==0.0.32
+ + python-socketio==5.17.0
+ + redis==7.4.1
+ + reflex==0.10.1a1
+ + reflex-base==0.10.1a1
+ + reflex-build-sdk==0.1.1a1
+ + reflex-components-code==0.10.1a1
+ + reflex-components-core==0.10.1a1
+ + reflex-components-dataeditor==0.10.1a1
+ + reflex-components-gridjs==0.10.0
+ + reflex-components-lucide==1.1.1a1
+ + reflex-components-markdown==0.10.0
+ + reflex-components-moment==0.10.1a1
+ + reflex-components-plotly==0.10.0
+ + reflex-components-radix==0.10.1a1
+ + reflex-components-react-player==0.10.0
+ + reflex-components-recharts==0.10.0
+ + reflex-components-sonner==0.10.0
+ + reflex-hosting-cli==0.2.1a1
+ + rich==15.0.0
+ + simple-websocket==1.1.0
+ + sqlalchemy==2.1.6
+ + sqlmodel==0.0.48
+ + starlette==1.9.0
+ + ty==0.0.91
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.4
+ + watchfiles==1.3.0
+ + wrapt==2.5.2rc1
+ + wsproto==1.3.2
+EXIT=0

@@ -1,0 +1,4 @@
+{
+ "out": "{\"dict\":\"{\\\"g_both\\\": null, \\\"g_id\\\": null, \\\"rad_id\\\": null, \\\"txt_id\\\": \\\"\\\"}\",\"td\":\"{\\\"g_both\\\": null, \\\"g_id\\\": null, \\\"rad_id\\\": null, \\\"txt_id\\\": \\\"\\\"} types={\\\"g_id\\\": \\\"NoneType\\\", \\\"g_both\\\": \\\"NoneType\\\", \\\"rad_id\\\": \\\"NoneType\\\", \\\"txt_id\\\": \\\"str\\\"}\"}",
+ "errors": []
+}

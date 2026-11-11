@@ -1,0 +1,231 @@
+{
+ "checks": [
+  {
+   "name": "first load: no mismatch warning",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "first load: no banner",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "first load: navigation type",
+   "ok": true,
+   "got": "navigate",
+   "want": "navigate"
+  },
+  {
+   "name": "after 1 reloads: no mismatch warning",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "after reloads: no banner",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "after reloads: count kept",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "after reloads: tally kept",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "second: tally t3 renders",
+   "ok": true,
+   "got": "0",
+   "want": "0"
+  },
+  {
+   "name": "prerendered routes: no mismatch warning",
+   "ok": true,
+   "got": 0,
+   "want": 0
+  },
+  {
+   "name": "prerendered /item/5 iid",
+   "ok": true,
+   "got": "5",
+   "want": "5"
+  },
+  {
+   "name": "no page errors so far",
+   "ok": true,
+   "got": [],
+   "want": []
+  },
+  {
+   "name": "timeline after restart",
+   "ok": true,
+   "got": [
+    {
+     "t": 2.6,
+     "loads": 5,
+     "nav": "navigate",
+     "banner": 0,
+     "hydrated": "true",
+     "free_input": "typed-free",
+     "mismatch": 0,
+     "unknown": 0
+    },
+    {
+     "t": 3.1,
+     "loads": 6,
+     "nav": "reload",
+     "banner": 1,
+     "hydrated": "true",
+     "free_input": "",
+     "mismatch": 1,
+     "unknown": 2
+    }
+   ],
+   "want": "info"
+  },
+  {
+   "name": "reloads caused by restart (loads delta)",
+   "ok": true,
+   "got": 1,
+   "want": 1
+  },
+  {
+   "name": "last_reloaded cooldown key set",
+   "ok": true,
+   "got": true,
+   "want": true
+  },
+  {
+   "name": "events still work after restart",
+   "ok": true,
+   "got": "1",
+   "want": "1"
+  },
+  {
+   "name": "banner still present after the event",
+   "ok": true,
+   "got": 1,
+   "want": 1
+  },
+  {
+   "name": "no reload loop after the cooldown",
+   "ok": true,
+   "got": 6,
+   "want": 6
+  },
+  {
+   "name": "banner Reload button reloads (loads +1)",
+   "ok": true,
+   "got": 7,
+   "want": 7
+  },
+  {
+   "name": "banner shows again after the manual reload (same skew)",
+   "ok": true,
+   "got": 1,
+   "want": 1
+  },
+  {
+   "name": "new mismatch warnings after restart",
+   "ok": true,
+   "got": 2,
+   "want": 2
+  }
+ ],
+ "n_fail": 0,
+ "console": [
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805746.0433047
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805746.9982147
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805747.6254466
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805748.1520138
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=28ce7aa7-71cc-4def-bcc5-70ee71388ad9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805750.8737383
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=28ce7aa7-71cc-4def-bcc5-70ee71388ad9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805750.8739793
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=28ce7aa7-71cc-4def-bcc5-70ee71388ad9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805750.8741927
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=28ce7aa7-71cc-4def-bcc5-70ee71388ad9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805750.8743935
+  },
+  {
+   "type": "error",
+   "text": "WebSocket connection to 'ws://localhost:8227/_event/?token=28ce7aa7-71cc-4def-bcc5-70ee71388ad9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+   "t": 1792805750.8745668
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805751.392439
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "t": 1792805751.3939917
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get the new version.",
+   "t": 1792805751.4167671
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805751.4172304
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "t": 1792805772.4271226
+  },
+  {
+   "type": "warning",
+   "text": "This page was built for another version of the app than the backend it connected to (state schema 9dedbb55279cd89a392387c4357d3b95, backend 6244d367f808d059885c0cd4d3bb29ed). Reload the page to get the new version.",
+   "t": 1792805772.472433
+  },
+  {
+   "type": "warning",
+   "text": "Skipping state update for unknown substate(s): no dispatch function for \"reflex___state____state.schema_app___schema_app____extra\", \"reflex___state____state.schema_app___schema_app____base.schema_app___schema_app____sub.schema_app___schema_app____sub_extra\". Try refreshing the page or clearing your browser cache. This usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.",
+   "t": 1792805772.4760232
+  }
+ ],
+ "pageerrors": [],
+ "mismatch_warnings": 2,
+ "unknown_substate_warnings": 3
+}
