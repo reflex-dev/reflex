@@ -226,7 +226,7 @@ As each PR merges into `main`:
 | 009, 037/038, 039 | fix/migrate-skips-initial-state-compile, fix/backend-var-str-hint-and-storage-factory, fix/foreach-lifecycle-without-key-warning | agent running (opens PRs) |
 | 010 (stack on 015) | (new) | to start after #7796 settles |
 | #7816 024/014/020 | docs/011-changelog-and-guide-fixes (b852d73ab; greptile compare_digest UTF-8 fixed), /home/user/reflex-fix-docs | PR open, watch. 024 as `news/7624.breaking.md` (links to #7624); 006 note covered by #7809 fragment |
-| issues for "file after release" | — | to file; filed so far: #7805 (fair redis lock hand-off). Add: public ref helper instead of `Var._as_ref()` (003 docs point at a private API; no new public API in a fix-up); rxe `collect_page_info` lists relative paths on 0.11 (`deploy_url or ""`); rxe `/.well-known/oauth-protected-resource/_reflex/mcp` returns app HTML in single-port prod (also 0.10.1) |
+| issues for "file after release" | — | to file; filed so far: #7805 (fair redis lock hand-off), #7819 (Windows supervise_output waits for lingering descendant — test_supervisor flake on #7803/#7807; new in 0.11 via #7650, may delay `reflex run` shutdown on Windows: owner to decide if blocker). Add: public ref helper instead of `Var._as_ref()` (003 docs point at a private API; no new public API in a fix-up); rxe `collect_page_info` lists relative paths on 0.11 (`deploy_url or ""`); rxe `/.well-known/oauth-protected-resource/_reflex/mcp` returns app HTML in single-port prod (also 0.10.1) |
 | Phase 7 + close-out (REGISTRY, history, fixtures, testing/prerelease) | — | after the owner cuts the next pre-release |
 
 ## Suggested sequencing
