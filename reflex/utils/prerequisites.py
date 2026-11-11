@@ -872,7 +872,7 @@ def check_schema_up_to_date():
 
     from reflex.utils import migrations
 
-    if migrations.is_legacy_env():
+    if migrations.check_env() == "legacy":
         logger.error(migrations.LEGACY_ENV_HINT, extra={"dedupe": True, "rich": True})
         return
     try:
@@ -885,6 +885,10 @@ def check_schema_up_to_date():
         )
     except CommandError as command_error:
         logger.error(migrations.describe_error(command_error), extra={"rich": True})
+    except Exception as error:
+        # Reported, not raised: the app starts without the check, as it did when
+        # earlier releases never ran env.py.
+        migrations.report_failure(error)
 
 
 @once
