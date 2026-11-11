@@ -57,6 +57,8 @@ docs/                   # documentation site (separate workspace member)
 
 - Write comprehensive tests for new/changed features; extend existing test files where possible.
 - Test functions at module level, not wrapped in classes.
+- Assert exact values, never substrings. Compare the full error message, warning, or produced output (rendered code, compiled JS, CLI output) with `==`, or `pytest.raises(..., match=...)` with an anchored, `re.escape`d full message. Never `assert "x" in str(err)`, `assert "snippet" in code`, or an unanchored `match=`: a substring check still passes when the output is wrong around it, which hides real regressions and makes tests flaky.
+- Prefer a few thorough tests that pin down exact behavior over many shallow ones.
 - **Unit tests:** `tests/units/`, run with `uv run pytest tests/units`.
   - unit tests should primarily cover a single module, and should be named accordingly, including subdirectories (e.g. `tests/units/istate/test_manager.py` for `reflex/istate/manager.py`). For subpackages, also include the corresponding path below `src/` (e.g. `tests/units/reflex_base/event/test_context.py` for `packages/reflex-base/src/reflex_base/event/context.py`).
 - **Integration tests:** prefer Playwright (`tests/integration/tests_playwright/`). Integration tests are slow — extend existing test apps rather than creating new ones for trivial functionality. Multiple test cases sharing one app is fine.
