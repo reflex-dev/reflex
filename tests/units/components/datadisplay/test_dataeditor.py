@@ -189,6 +189,20 @@ console.log(JSON.stringify([
     ]
 
 
+def test_dataeditor_template_displays_values_for_unsupported_column_types():
+    """Display a cell's value when its column type falls back to text."""
+    test_script = f"""{_helpers_js()}
+console.log = () => {{}};
+process.stdout.write(JSON.stringify(formatCell(125, {{ type: "currency" }})));
+"""
+
+    assert _run_node(test_script) == {
+        "kind": "text",
+        "data": 125,
+        "displayData": "125",
+    }
+
+
 def test_dataeditor_literal_columns_defaults():
     """A literal column gets the default id, type and overlay icon.
 

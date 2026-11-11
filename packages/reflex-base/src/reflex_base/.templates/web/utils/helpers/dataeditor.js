@@ -77,7 +77,7 @@ export function formatCell(value, column) {
       return {
         kind: GridCellKind.Text,
         data: value,
-        displayData: column.type,
+        displayData: String(value),
       };
   }
 }
