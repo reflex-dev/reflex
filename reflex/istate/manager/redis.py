@@ -3,7 +3,6 @@
 import asyncio
 import contextlib
 import dataclasses
-import inspect
 import logging
 import os
 import time
@@ -262,8 +261,8 @@ class StateManagerRedis(StateManager):
     _cached_state_handoffs: dict[str, asyncio.Event] = dataclasses.field(
         default_factory=dict, init=False
     )
-    # The unique ID for this state manager, the domain for _local_leases. It
-    # registers the instance as a contender for a lock while it has waiters.
+    # This instance's member in the lock waiter sets. It registers the
+    # instance as a contender for a lock while it has waiters.
     _instance_id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
 
     # Under the dev hot reloader, the keys of the states this process has
@@ -1172,9 +1171,10 @@ class StateManagerRedis(StateManager):
             # deregister again once they are gone. A cancellation of this
             # cleanup leaves the registration to expire with its pexpire.
             while self._n_lock_waiters(lock_key) <= 1:
-                res = self.redis.srem(lock_key + b"_waiters", self._instance_id)
-                if inspect.isawaitable(res):
-                    await res
+                await cast(
+                    "Awaitable[int]",
+                    self.redis.srem(lock_key + b"_waiters", self._instance_id),
+                )
                 if self._n_lock_waiters(lock_key) <= 1:
                     break
                 # A waiter that queued meanwhile may have registered before the SREM.
