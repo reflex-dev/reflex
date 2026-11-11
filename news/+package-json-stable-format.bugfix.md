@@ -1,0 +1,1 @@
+Write `.web/package.json` (and the copy persisted to `reflex.lock/package.json`) with 2-space indentation and a trailing newline, the layout bun uses, so the persisted file no longer flips between formats and produces whitespace-only VCS diffs.

@@ -16,7 +16,7 @@ from pathlib import Path
 from reflex_base.environment import environment
 from rich.markup import escape
 
-from reflex.utils.prerequisites import get_app, get_compiled_app
+from reflex.utils.prerequisites import get_and_validate_app, get_app
 
 logger = logging.getLogger(__name__)
 
@@ -93,9 +93,12 @@ def evaluate_pages() -> None:
     Models that pages or plugin route hooks import lazily are registered only
     once the pages run. A plain skip-compile load evaluates just the routes the
     stateful-pages marker of an earlier run names; the dry run evaluates them all.
+    The initial state is not serialized: without a frontend compile, the libraries
+    that compiler plugins bundle are not registered for its components.
     """
     environment.REFLEX_SKIP_COMPILE.set(True)
-    get_compiled_app(dry_run=True)
+    app, _ = get_and_validate_app()
+    app._compile(dry_run=True, compile_initial_state=False)
 
 
 def load_app(with_pages: bool = False) -> None:

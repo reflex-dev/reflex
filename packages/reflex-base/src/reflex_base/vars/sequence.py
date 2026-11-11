@@ -66,6 +66,16 @@ VALUE_TYPE = TypeVar("VALUE_TYPE")
 class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
     """Base class for immutable array vars."""
 
+    def _or_empty(self) -> ArrayVar:
+        """View an optional array as an empty array while it holds None.
+
+        Returns:
+            The array, guarded against None if its type allows None.
+        """
+        if types.is_optional(self._var_type):
+            return array_or_empty_operation(self)
+        return self
+
     def join(self, sep: StringVar | str = "") -> StringVar:
         """Join the elements of the array.
 
@@ -97,7 +107,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
                     i._var_value if isinstance(i, LiteralStringVar) else i for i in args
                 )
             )
-        return array_join_operation(self, sep)
+        return array_join_operation(self._or_empty(), sep)
 
     def reverse(self) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Reverse the array.
@@ -105,7 +115,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         Returns:
             The reversed array.
         """
-        return array_reverse_operation(self)
+        return array_reverse_operation(self._or_empty())
 
     def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Concatenate two arrays.
@@ -123,7 +133,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
                 return other.__radd__(self)
             raise_unsupported_operand_types("+", (type(self), type(other)))
 
-        return array_concat_operation(self, other)
+        return array_concat_operation(self._or_empty(), other._or_empty())
 
     @overload
     def __getitem__(self, i: slice) -> ArrayVar[ARRAY_VAR_TYPE]: ...
@@ -223,7 +233,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             The array slice operation.
         """
         if isinstance(i, slice):
-            return ArraySliceOperation.create(self, i)
+            return ArraySliceOperation.create(self._or_empty(), i)
         if not isinstance(i, (int, NumberVar)) or (
             isinstance(i, NumberVar) and i._is_strict_float()
         ):
@@ -236,7 +246,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         Returns:
             The length of the array.
         """
-        return array_length_operation(self)
+        return array_length_operation(self._or_empty())
 
     @overload
     @classmethod
@@ -314,8 +324,8 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         if field is not None:
             if not isinstance(field, (StringVar, str)):
                 raise_unsupported_operand_types("contains", (type(self), type(field)))
-            return array_contains_field_operation(self, other, field)
-        return array_contains_operation(self, other)
+            return array_contains_field_operation(self._or_empty(), other, field)
+        return array_contains_operation(self._or_empty(), other)
 
     def pluck(self, field: StringVar | str) -> ArrayVar:
         """Pluck a field from the array.
@@ -326,7 +336,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         Returns:
             The array pluck operation.
         """
-        return array_pluck_operation(self, field)
+        return array_pluck_operation(self._or_empty(), field)
 
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
@@ -342,7 +352,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         ):
             raise_unsupported_operand_types("*", (type(self), type(other)))
 
-        return repeat_array_operation(self, other)
+        return repeat_array_operation(self._or_empty(), other)
 
     __rmul__ = __mul__
 
@@ -493,7 +503,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
 
         args, return_expr = self._trace_element_fn(fn, "map")
         return map_array_operation(
-            self, ArgsFunctionOperation.create(args, return_expr)
+            self._or_empty(), ArgsFunctionOperation.create(args, return_expr)
         )
 
     if TYPE_CHECKING:
@@ -553,7 +563,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             if not isinstance(return_expr, BooleanVar):
                 return_expr = boolify(return_expr)
             predicate = ArgsFunctionOperation.create(args, return_expr)
-        return filter_array_operation(self, predicate)
+        return filter_array_operation(self._or_empty(), predicate)
 
     def reduce(self, fn: Any, initial: Any = types.Unset()):
         """Reduce the array to a single value, like functools.reduce.
@@ -598,8 +608,8 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             ],
         )
         if initial_var is None:
-            return reduce_array_operation(self, function_var)
-        return reduce_array_operation(self, function_var, initial_var)
+            return reduce_array_operation(self._or_empty(), function_var)
+        return reduce_array_operation(self._or_empty(), function_var, initial_var)
 
     def flat_map(self, fn: Any):
         """Apply a function to each element of the array and flatten the results.
@@ -619,7 +629,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
 
         args, return_expr = self._trace_element_fn(fn, "flat_map")
         return flat_map_array_operation(
-            self, ArgsFunctionOperation.create(args, return_expr)
+            self._or_empty(), ArgsFunctionOperation.create(args, return_expr)
         )
 
 
@@ -1948,6 +1958,22 @@ def array_ge_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
         The array greater than or equal operation.
     """
     return var_operation_return(js_expression=f"{lhs!s} >= {rhs!s}", var_type=bool)
+
+
+@var_operation
+def array_or_empty_operation(array: Var) -> CustomVarOperationReturn[Sequence]:
+    """View an optional array (or set) as an empty array while it holds None.
+
+    Args:
+        array: The optional array.
+
+    Returns:
+        The guarded array operation, typed without None.
+    """
+    return var_operation_return(
+        js_expression=f"({array!s} ?? [])",
+        var_type=types.value_inside_optional(array._var_type),
+    )
 
 
 @var_operation

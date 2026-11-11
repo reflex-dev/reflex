@@ -561,6 +561,31 @@ _STACKED_HANDLER_ATTRIBUTES = (
 )
 
 
+def _method_above_handler(value: Any) -> staticmethod | classmethod | None:
+    """Restore a staticmethod or classmethod stacked above ``@rx.event``.
+
+    Such a method is never an event handler: as with ``@rx.event`` below it,
+    the decorator has no effect and is deprecated.
+
+    Args:
+        value: A class attribute.
+
+    Returns:
+        The plain method, or None when ``value`` is not one wrapping a handler.
+    """
+    if not isinstance(value, (staticmethod, classmethod)) or not isinstance(
+        value.__func__, EventHandler
+    ):
+        return None
+    console.deprecate(
+        feature_name="@rx.event on a staticmethod or classmethod",
+        reason="The decorator has no effect there; remove it.",
+        deprecation_version="0.11.0",
+        removal_version="1.0",
+    )
+    return type(value)(value.__func__.fn)
+
+
 class BaseState(EvenMoreBasicBaseState, state_root=True):
     """The state of the app."""
 
@@ -831,6 +856,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 # another state is an alias and stays that state's.
                 if fn.state is cls and name not in cls.event_handlers:
                     cls.event_handlers[name] = fn
+            elif (method := _method_above_handler(fn)) is not None:
+                setattr(cls, name, method)
             elif cls._item_is_event_handler(name, fn):
                 handler = cls._create_event_handler(fn)
                 cls.event_handlers[name] = handler
@@ -898,6 +925,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     fn = cls._copy_fn(value.fn)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
                     setattr(cls, name, fn)
+                elif (method := _method_above_handler(value)) is not None:
+                    setattr(cls, name, method)
                 elif cls._item_is_event_handler(name, value):
                     fn = cls._copy_fn(value)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
@@ -2369,7 +2398,9 @@ def _shared_storage_groups(
     from reflex.compiler.utils import _compile_client_storage_recursive
 
     by_name: dict[str, list[tuple[type[BaseState], str, bool]]] = {}
-    for state_key, options in _compile_client_storage_recursive(root)[1].items():
+    # The compile already rejected factories that produce browser storage.
+    local_storage = _compile_client_storage_recursive(root, check_factories=False)[1]
+    for state_key, options in local_storage.items():
         if name := options.get("name"):
             state_name, _, var_name = state_key.removesuffix(FIELD_MARKER).rpartition(
                 "."

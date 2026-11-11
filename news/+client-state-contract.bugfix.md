@@ -1,0 +1,1 @@
+The deprecated `rx._x.client_state` and `reflex.experimental.client_state.ClientStateVar.create` apply the same `name` rule as `rx.client_state` (an ASCII identifier without `$`), and an app whose pages declare one client state name with two different defaults now fails to compile with an error naming both declarations.

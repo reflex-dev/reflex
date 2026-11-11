@@ -1,0 +1,1 @@
+pyright on Python 3.11–3.13 types a bare `@rx.event` handler with its arguments again (`EventCallback[int]` instead of `EventCallback[*tuple[Unknown, ...]]`). pyright and mypy accept generic annotations through the event namespace, such as `rx.event.EventCallback[int]` or `rx.event.EventType[str]`.

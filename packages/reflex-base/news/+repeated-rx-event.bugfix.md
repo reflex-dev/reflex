@@ -1,0 +1,1 @@
+A second `@rx.event` on a handler, such as `@rx.event` stacked above `@rx.event(background=True)`, no longer fails at class creation: both decorators apply to one handler, which is a background task if either says so and takes the outer decorator's event actions where both set one.

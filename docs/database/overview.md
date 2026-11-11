@@ -11,7 +11,7 @@ Connect a Reflex Python app to **MySQL, PostgreSQL, SQL Server, or SQLite** to b
 - Define tables as SQLAlchemy models on a shared dataclass-mapped base. Reflex serializes those models, so they can be stored in state and rendered directly.
 - Create one async engine and one async session factory for the app, and open a short-lived session inside each event handler that reads or writes the database. Blocking database calls in an event handler stall every other event the server is handling.
 - Configure the database URL and install the driver for your chosen database. Check dialect-specific types, queries, and migrations when switching databases.
-- Register the model base with Reflex to manage schema changes with the `reflex db` migration commands.
+- Manage schema changes with the `reflex db` migration commands, which find the app's model bases; register bases with Reflex only to limit which ones they manage.
 - Use ordinary Python clients or REST APIs for external data sources such as Airtable, Databricks, and Snowflake.
 
 ## Supported databases
@@ -121,9 +121,6 @@ class Base(MappedAsDataclass, DeclarativeBase):
     """Base class for the app's tables."""
 
 
-rx.ModelRegistry.register(Base)
-
-
 class User(Base):
     __tablename__ = "user"
 
@@ -132,8 +129,16 @@ class User(Base):
     email: Mapped[str]
 ```
 
-`rx.ModelRegistry.register(Base)` tells the `reflex db` commands which tables
-to manage. See [Tables](/docs/database/tables/) for column types and
+Until a base is registered, the `reflex db` commands manage the tables of every
+`DeclarativeBase` subclass defined at module level or in a class body of a
+module that the app or its pages import, alongside those of `rx.Model`,
+including a base that an installed library defines. Only a base that its module
+holds under its qualified name, such as `Base` or `Namespace.Base`, counts, so
+one made by a factory and bound to a different name, or one made with the legacy
+`declarative_base()`, is not detected: register it. To manage only some bases,
+for example when another one belongs to a different database or to a library,
+register each with `rx.ModelRegistry.register(Base)`: once a base is registered,
+unregistered bases are left out. See [Tables](/docs/database/tables/) for column types and
 [Relationships](/docs/database/relationships/) for foreign keys.
 
 ## Migrations

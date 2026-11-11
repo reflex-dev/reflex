@@ -15,7 +15,7 @@ on the Reflex backend; this page shows how.
 ## Install starlette-admin
 
 ```bash
-pip install "reflex[db]" starlette-admin
+pip install "reflex[db]" "starlette-admin>=1.0"
 ```
 
 The `db` extra provides SQLModel and `get_engine()`. starlette-admin is a
@@ -27,16 +27,20 @@ Build the `Admin` from the engine Reflex already configures from
 `rx.Config.db_url`, register a `ModelView` per table, mount it on a
 `Starlette` app, and pass that app to
 [`api_transformer`](/docs/api-routes/overview/). Reflex serves the
-dashboard from the backend at `/admin`.
+dashboard from the backend at `/admin/`, with the trailing slash: `/admin`
+without it returns 404.
 
 ```python
 import os
+import secrets
 
 import reflex as rx
 from sqlmodel import Field, SQLModel
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.requests import Request
+from starlette_admin.auth import AdminUser, AuthProvider, LoginFailed
 from starlette_admin.contrib.sqla import Admin, ModelView
 
 from reflex.model import get_engine
@@ -46,6 +50,30 @@ class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     username: str
     email: str
+
+
+class MyAuthProvider(AuthProvider):
+    async def login(
+        self, username: str, password: str, remember_me: bool, request: Request
+    ) -> None:
+        if not (
+            secrets.compare_digest(
+                username.encode(), os.environ["ADMIN_USERNAME"].encode()
+            )
+            and secrets.compare_digest(
+                password.encode(), os.environ["ADMIN_PASSWORD"].encode()
+            )
+        ):
+            raise LoginFailed("Invalid username or password")
+        request.session["admin_user"] = username
+
+    async def authenticate(self, request: Request) -> AdminUser | None:
+        if username := request.session.get("admin_user"):
+            return AdminUser(username=username)
+        return None
+
+    async def logout(self, request: Request) -> None:
+        request.session.clear()
 
 
 secret_key = os.environ["ADMIN_SECRET_KEY"]
@@ -70,15 +98,22 @@ its place.
 
 The backend serves the dashboard, so in a deployment with separate frontend
 and backend hosts the dashboard lives on the backend host, such as
-`https://api.example.com/admin`.
+`https://api.example.com/admin/`.
+
+starlette-admin's "New" form calls the model with no arguments and then sets
+each submitted field. A `MappedAsDataclass` model, such as the
+[tables](/docs/database/tables/) in these docs, can only be created this way
+when every field its constructor takes has a default or is declared with
+`init=False`; otherwise saving the form fails with a 500 error.
 
 ## Require authentication
 
 `Admin()` without `auth_provider` serves unauthenticated read and write access
-to every registered table. Always pass an `AuthProvider` (`MyAuthProvider`
-above), set a stable `secret_key` so CSRF tokens and sessions survive restarts,
-and put the backend behind the same network and session rules as the rest of
-your admin tooling.
+to every registered table. Always pass an `AuthProvider`. `MyAuthProvider`
+above checks one username and password from environment variables. Set a
+stable `secret_key` so CSRF tokens and sessions survive restarts, and put the
+backend behind the same network and session rules as the rest of your admin
+tooling.
 The starlette-admin [authentication guide](https://jowilf.github.io/starlette-admin/user-guide/auth/)
 shows how to implement `login`, `authenticate`, and `logout` against your
 own user store, and how to restrict individual views and actions. Its
@@ -127,5 +162,7 @@ admin.mount_to(admin_app)
 app = rx.App(api_transformer=admin_app)
 ```
 
-The old integration mounted the dashboard at `/admin` as well, so existing
-links keep working once the app starts again.
+The old integration also served the dashboard at `/admin/`, so links to it
+keep working. It redirected `/admin` to `/admin/`; with `api_transformer`,
+`/admin` without the trailing slash returns 404, so update links that leave
+the slash out.
