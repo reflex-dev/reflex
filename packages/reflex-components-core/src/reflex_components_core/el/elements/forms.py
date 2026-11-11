@@ -527,7 +527,7 @@ class Form(BaseHTML):
                         "TypedDict to keep a bool"
                     ),
                     deprecation_version="0.10.1",
-                    removal_version="0.11.0",
+                    removal_version="0.12.0",
                 )
 
     def _validate_on_submit_typed_dict_fields(self) -> None:

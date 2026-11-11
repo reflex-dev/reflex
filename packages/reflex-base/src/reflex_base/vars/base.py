@@ -7,6 +7,7 @@ import contextlib
 import copy
 import dataclasses
 import datetime
+import decimal
 import functools
 import hashlib
 import inspect
@@ -14,11 +15,13 @@ import json
 import logging
 import re
 import string
+import sys
 import warnings
 from abc import ABCMeta
-from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from dataclasses import MISSING
 from decimal import Decimal
+from itertools import islice
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -43,10 +46,11 @@ from typing import (
 from typing_extensions import dataclass_transform, override
 
 from reflex_base import constants
+from reflex_base.constants.colors import Color
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import _on_env_var_set, environment
-from reflex_base.utils import exceptions, imports, serializers, types
+from reflex_base.utils import console, exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -85,12 +89,13 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.components.component import BaseComponent
-    from reflex_base.constants.colors import Color
+    from reflex_base.vars.function import FunctionArgs
 
     from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
     from .object import LiteralObjectVar, ObjectVar
     from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
+    from .set import LiteralSetVar, SetVar
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
@@ -98,6 +103,7 @@ OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 STRING_T = TypeVar("STRING_T", bound=str)
 LITERAL_STRING_T = TypeVar("LITERAL_STRING_T", bound=LiteralString)
 SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
+SET_TYPE = TypeVar("SET_TYPE", bound=set | frozenset)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
@@ -152,8 +158,10 @@ def _literal_var_for(value: Any) -> type[LiteralVar] | None:
         ),
         None,
     )
-    # A class object's type is its metaclass, which other classes share.
-    if not isinstance(value, type):
+    # A class object's type is its metaclass, which other classes share, and a
+    # proxy (such as a MutableProxy) reports the wrapped value's __class__, so
+    # its type says nothing about which literal class claims it.
+    if not isinstance(value, type) and value.__class__ is value_type:
         _literal_var_by_type[value_type] = literal_subclass
     return literal_subclass
 
@@ -344,9 +352,6 @@ class VarData:
     # Dependencies of the var
     deps: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
 
-    # Position of the hook in the component
-    position: Hooks.HookPosition | None = None
-
     # Components that are part of this var
     components: tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
 
@@ -378,7 +383,8 @@ class VarData:
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
             deps: Dependencies of the var for useCallback.
-            position: Position of the hook in the component.
+            position: Deprecated and ignored: hooks render in the order they
+                are declared and merged.
             components: Components that are part of this var.
             app_wraps: App-level wrapper components this var requires when used.
             field_dependencies: Every state field this var is built from,
@@ -387,6 +393,14 @@ class VarData:
                 single field. Keyword-only in practice: it trails the older
                 parameters so positional callers of those are unaffected.
         """
+        if position is not None:
+            console.deprecate(
+                feature_name="VarData(position=...)",
+                reason="Hooks render in the order they are declared and merged. "
+                "Remove the position argument.",
+                deprecation_version="0.10.1",
+                removal_version="1.0",
+            )
         if isinstance(hooks, str):
             hooks = [hooks]
         if not isinstance(hooks, dict):
@@ -402,7 +416,6 @@ class VarData:
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
         object.__setattr__(self, "deps", tuple(deps or []))
-        object.__setattr__(self, "position", position or None)
         object.__setattr__(self, "components", tuple(components or []))
         object.__setattr__(self, "app_wraps", tuple(app_wraps or []))
 
@@ -418,7 +431,6 @@ class VarData:
                 object.__setattr__(self, "imports", merged_var_data.imports)
                 object.__setattr__(self, "hooks", merged_var_data.hooks)
                 object.__setattr__(self, "deps", merged_var_data.deps)
-                object.__setattr__(self, "position", merged_var_data.position)
                 object.__setattr__(self, "components", merged_var_data.components)
                 object.__setattr__(self, "app_wraps", merged_var_data.app_wraps)
 
@@ -508,21 +520,6 @@ class VarData:
             }.values()
         )
 
-        positions = list(
-            dict.fromkeys(
-                var_data.position
-                for var_data in all_var_datas
-                if var_data.position is not None
-            )
-        )
-        if positions:
-            if len(positions) > 1:
-                msg = f"Cannot merge var data with different positions: {positions}"
-                raise exceptions.ReflexError(msg)
-            position = positions[0]
-        else:
-            position = None
-
         components = tuple(
             component for var_data in all_var_datas for component in var_data.components
         )
@@ -536,7 +533,6 @@ class VarData:
             imports=imports_,
             hooks=hooks,
             deps=deps,
-            position=position,
             components=components,
             app_wraps=tuple(
                 (priority, wrapper) for (priority, _tag), wrapper in app_wraps.items()
@@ -554,7 +550,6 @@ class VarData:
             or self.imports
             or self.hooks
             or self.deps
-            or self.position
             or self.components
             or self.app_wraps
         )
@@ -582,7 +577,6 @@ class VarData:
             self.imports,
             self.hooks,
             tuple(dep._hash_key() for dep in self.deps),
-            self.position,
             tuple(id(component) for component in self.components),
             frozenset(
                 (priority, component.tag or type(component).__name__)
@@ -1062,6 +1056,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(
         cls,
+        value: SET_TYPE,
+        _var_data: VarData | None = None,
+    ) -> LiteralSetVar[SET_TYPE]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
         value: OTHER_VAR_TYPE,
         _var_data: VarData | None = None,
     ) -> Var[OTHER_VAR_TYPE]: ...
@@ -1123,6 +1125,12 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         self,
         output: type[SEQUENCE_TYPE],
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
+
+    @overload
+    def to(
+        self,
+        output: type[SET_TYPE],
+    ) -> SetVar[SET_TYPE]: ...
 
     @overload
     def to(
@@ -1818,6 +1826,21 @@ class ToOperation:
         )
 
 
+def _unsupported_literal_error(value: Any) -> TypeError:
+    """Build the error for a value that no LiteralVar supports.
+
+    Args:
+        value: The unsupported value.
+
+    Returns:
+        The backend var error for a field with no frontend var, else a TypeError.
+    """
+    if isinstance(value, Field):
+        return value._no_frontend_var_error()
+    msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
+    return TypeError(msg)
+
+
 class LiteralVar(Var[VAR_TYPE]):
     """Base class for immutable literal vars."""
 
@@ -1889,6 +1912,7 @@ class LiteralVar(Var[VAR_TYPE]):
             The var.
 
         Raises:
+            BackendVarFormatError: If the value is a field with no frontend var.
             TypeError: If the value is not a supported type for LiteralVar.
         """
         if (literal_subclass := _literal_var_by_type.get(type(value))) is not None:
@@ -1903,6 +1927,7 @@ class LiteralVar(Var[VAR_TYPE]):
         # (EMPTY_VAR_STR is built while base.py is still loading).
         from .object import LiteralObjectVar
         from .sequence import ArrayVar, LiteralStringVar
+        from .set import LiteralSetVar  # noqa: F401
 
         if (literal_subclass := _literal_var_for(value)) is not None:
             return literal_subclass.create(value, _var_data=_var_data)
@@ -1947,8 +1972,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return ArrayVar.range(value.start, value.stop, value.step)
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
-        raise TypeError(msg)
+        raise _unsupported_literal_error(value)
 
     if not TYPE_CHECKING:
         create = _create_literal_var
@@ -1977,6 +2001,7 @@ class LiteralVar(Var[VAR_TYPE]):
             The var data or None.
 
         Raises:
+            BackendVarFormatError: If the value is a field with no frontend var.
             TypeError: If the value is not a supported type for LiteralVar.
         """
         from .object import LiteralObjectVar
@@ -2026,8 +2051,7 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, range):
             return None
 
-        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value!r}."
-        raise TypeError(msg)
+        raise _unsupported_literal_error(value)
 
     @property
     def _var_value(self) -> Any:
@@ -2124,6 +2148,13 @@ def var_operation(
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[SET_TYPE]]
+    | Callable[P, CustomVarOperationReturn[SET_TYPE | None]],
+) -> Callable[P, SetVar[SET_TYPE]]: ...
+
+
 OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 
@@ -2193,7 +2224,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
-    if isinstance(value, (list, set, tuple, Mapping, Var)):
+    if isinstance(value, (list, set, frozenset, tuple, Mapping, Var)):
         if isinstance(value, Var):
             return value._var_type
         if has_args(value_type := type(value)):
@@ -2202,8 +2233,11 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Sequence[NoReturn]
             return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
-        if isinstance(value, set):
-            return set[unionize(*{figure_out_type(v) for v in value})]
+        if isinstance(value, (set, frozenset)):
+            element_type = unionize(*{figure_out_type(v) for v in value})
+            if isinstance(value, frozenset):
+                return frozenset[element_type]
+            return set[element_type]
         if isinstance(value, tuple):
             if not value:
                 return tuple[NoReturn, ...]
@@ -2214,8 +2248,8 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Mapping[NoReturn, NoReturn]
             return Mapping[
-                unionize(*{figure_out_type(k) for k in list(value.keys())[:100]}),
-                unionize(*{figure_out_type(v) for v in list(value.values())[:100]}),
+                unionize(*{figure_out_type(k) for k in islice(value.keys(), 100)}),
+                unionize(*{figure_out_type(v) for v in islice(value.values(), 100)}),
             ]
     return type(value)
 
@@ -2910,6 +2944,20 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
+        self: ComputedVar[set[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[set[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
+        self: ComputedVar[frozenset[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[frozenset[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
         self: ComputedVar[SQLA_TYPE],
         instance: None,
         owner: type,
@@ -3224,6 +3272,20 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[set[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[set[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[frozenset[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[frozenset[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
@@ -3564,6 +3626,189 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
         )
 
 
+# Literal values that render to the same constant on every evaluation.
+_CONSTANT_TYPES = (
+    str,
+    int,
+    float,
+    bool,
+    type(None),
+    range,
+    datetime.date,
+    datetime.time,
+    datetime.timedelta,
+    decimal.Decimal,
+)
+
+# Literal values that hold other values.
+_CONTAINER_TYPES = (tuple, list, set, frozenset, Mapping)
+
+# The fields every var has; an operation's operands are in the others.
+_VAR_FIELDS = frozenset(field.name for field in dataclasses.fields(Var))
+
+
+def _items_in(value: Any) -> Iterator[Any]:
+    """Yield the items a value holds, flattening containers.
+
+    Args:
+        value: The value to look into.
+
+    Yields:
+        Each item, a var or a raw value, in order.
+    """
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            yield from _items_in(key)
+            yield from _items_in(item)
+    elif isinstance(value, _CONTAINER_TYPES):
+        for item in value:
+            yield from _items_in(item)
+    else:
+        yield value
+
+
+def _parameter_names(args: FunctionArgs) -> set[str]:
+    """Collect the names a function's parameters bind.
+
+    Args:
+        args: The function's parameters.
+
+    Returns:
+        Every bound name, destructured fields and rest parameters included.
+    """
+    names = {args.rest} if args.rest else set()
+    for arg in args.args:
+        if isinstance(arg, str):
+            names.add(arg)
+        else:
+            names.update(arg.fields)
+            if arg.rest:
+                names.add(arg.rest)
+    return names
+
+
+def _function_reads(function: Any) -> list[Var] | None:
+    """Get the vars a function reads other than its parameters.
+
+    Args:
+        function: An ``ArgsFunctionOperation`` or its builder, with a var body.
+
+    Returns:
+        The leaves of the body that are not parameters, or None when the function
+        has to stay whole: a leaf that is no parameter itself may still read one,
+        such as a var built from a formatted parameter or a nested function
+        closing over it, and hoisting it out would name something bound only
+        inside the function.
+    """
+    parameters = _parameter_names(function._args)
+    free = [
+        leaf
+        for leaf in get_leaf_vars(function._return_expr)
+        if leaf._js_expr not in parameters
+    ]
+    if parameters:
+        bound = re.compile(
+            rf"(?<![\w$.])(?:{'|'.join(map(re.escape, parameters))})(?![\w$])"
+        )
+        if any(bound.search(str(leaf)) for leaf in free):
+            return None
+    return free
+
+
+def _operands(var: Var) -> list[Any] | None:
+    """Get the values a var reads, or None when it is a leaf.
+
+    A cast reads what the var it wraps reads, so a cast of a leaf is a leaf
+    itself, as the caller holds it. A ``CustomVarOperation`` reads its operands.
+    A function reads what its body reads other than its parameters, or is a
+    leaf when a leaf of the body still reads one. A literal container reads
+    what it holds, a color its parts, a constant nothing; any other literal
+    value, an event or a component, stays whole as a leaf, since what it reads
+    is not known. So does a state field access, since its field is no
+    expression on its own, and a named function. Every other cached operation
+    reads what its own fields hold: an array slice, an object item, a string
+    concatenation, a function call.
+
+    The values come back as they are stored. A raw one, such as the arguments
+    of a call or the items of a container, is rendered through
+    ``LiteralVar.create``, which the caller mirrors to see what it reads.
+
+    Args:
+        var: The var to look into.
+
+    Returns:
+        The values read, vars or raw, in order; None for a leaf.
+    """
+    # function.py imports this module.
+    from reflex_base.vars.function import (
+        ArgsFunctionOperation,
+        ArgsFunctionOperationBuilder,
+        FunctionVar,
+    )
+
+    if isinstance(var, ToOperation):
+        return _operands(var._original)
+    if isinstance(var, CustomVarOperation):
+        return [arg for _, arg in var._args]
+    if (
+        isinstance(var, (ArgsFunctionOperation, ArgsFunctionOperationBuilder))
+        and not isinstance(var, LiteralVar)
+        and isinstance(var._return_expr, Var)
+    ):
+        return _function_reads(var)
+    if isinstance(var, LiteralVar):
+        value = var._var_value
+        if isinstance(value, Color):
+            return [value.color, value.shade, value.alpha]
+        if isinstance(value, _CONTAINER_TYPES):
+            return list(_items_in(value))
+        return [] if isinstance(value, _CONSTANT_TYPES) else None
+    if isinstance(var, (FunctionVar, StateOperation)) or not isinstance(
+        var, CachedVarOperation
+    ):
+        return None
+    return [
+        item
+        for field in dataclasses.fields(var)
+        if field.name not in _VAR_FIELDS
+        for item in _items_in(getattr(var, field.name))
+    ]
+
+
+def get_leaf_vars(var: Var) -> Sequence[Var]:
+    """Collect the leaf vars a var reads.
+
+    A var operation such as ``state.items.filter(...)`` or ``state.items[1:]``
+    renders to a fresh value every time it is evaluated, so a React hook reading
+    one has to depend on the vars it reads instead. This unwraps an operation
+    into its operands, a cast into what it wraps and a literal container into
+    the vars it holds, recursively, converting a raw value the way the renderer
+    does; a plain literal is a constant and yields nothing. A leaf comes back as
+    the caller holds it, cast included. A function yields what its body reads
+    other than its own parameters, so a predicate closing over nothing yields
+    nothing and one closing over a loop var yields that var; it stays whole when
+    a leaf of its body still reads a parameter, since hoisting that leaf out
+    would name something bound only inside the function.
+
+    Args:
+        var: The var to take apart.
+
+    Returns:
+        The leaves, in order of first appearance and without duplicates. A var
+        that is no operation is its own only leaf.
+    """
+    leaves: dict[tuple[Any, ...], Var] = {}
+    stack = [var]
+    while stack:
+        current = stack.pop()
+        operands = _operands(current)
+        if operands is None:
+            leaves.setdefault(current._hash_key(), current)
+        else:
+            stack.extend(LiteralVar.create(operand) for operand in reversed(operands))
+    return list(leaves.values())
+
+
 class NoneVar(Var[None], python_types=type(None)):
     """A var representing None."""
 
@@ -3713,7 +3958,7 @@ def get_uuid_string_var() -> Var:
             f"$/{constants.Dirs.STATE_PATH}": ImportVar(tag="generateUUID"),
             "react": "useMemo",
         },
-        hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
+        hooks={f"const {unique_uuid_var} = useMemo(() => generateUUID(), [])": None},
     )
 
     return Var(
@@ -4176,9 +4421,30 @@ class Field(Generic[FIELD_TYPE]):
         Raises:
             BackendVarFormatError: Always; the field has no frontend var.
         """
+        raise self._no_frontend_var_error()
+
+    def __str__(self) -> str:
+        """Refuse to convert the field to text, as ``__format__`` does.
+
+        Raises:
+            BackendVarFormatError: Always; the field has no frontend var.
+        """
+        raise self._no_frontend_var_error()
+
+    def _no_frontend_var_error(self) -> BackendVarFormatError:
+        """Build the error for using the field where a frontend var is needed.
+
+        Returns:
+            The error naming the field and how to use it in the UI instead.
+        """
         path = f"{self._owner.__name__}.{self._name}" if self._owner else None
         name = f"'{path}'" if path else repr(self)
-        if self._backend:
+        if self._var is not None:
+            msg = (
+                f"{name} is the field of a state var, not the var. Use {path}"
+                " to use it in the UI."
+            )
+        elif self._backend:
             msg = (
                 f"Backend var {name} exists only on the server and has no"
                 " frontend value, so it cannot be used in the UI. Use"
@@ -4194,7 +4460,7 @@ class Field(Generic[FIELD_TYPE]):
             )
         else:
             msg = f"{name} has no frontend var, so it cannot be used in the UI."
-        raise BackendVarFormatError(msg)
+        return BackendVarFormatError(msg)
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
@@ -4293,10 +4559,7 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[list[V]]
-        | Field[set[V]]
-        | Field[list[V] | None]
-        | Field[set[V] | None],
+        self: Field[list[V]] | Field[list[V] | None],
         instance: None,
         owner: Any,
     ) -> ArrayVar[Sequence[V]]: ...
@@ -4310,23 +4573,45 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE] | Field[MAPPING_TYPE | None],
+        self: Field[SET_TYPE] | Field[SET_TYPE | None],
         instance: None,
         owner: Any,
+    ) -> SetVar[SET_TYPE]: ...
+
+    # The bounds of these type variables admit `None` (for computed vars of an
+    # optional object). Matched against `Field[X | None]`, a `self` union of
+    # `Field[T]` and `Field[T | None]` lets a checker solve `T` to `X | None`, so
+    # the optional overload comes first, on its own.
+    @overload
+    def __get__(
+        self: Field[MAPPING_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[SQLA_TYPE] | Field[SQLA_TYPE | None], instance: None, owner: Any
+        self: Field[MAPPING_TYPE], instance: None, owner: Any
+    ) -> ObjectVar[MAPPING_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE | None], instance: None, owner: Any
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SQLA_TYPE], instance: None, owner: Any
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     if TYPE_CHECKING:
 
         @overload
         def __get__(
-            self: Field[DATACLASS_TYPE] | Field[DATACLASS_TYPE | None],
-            instance: None,
-            owner: Any,
+            self: Field[DATACLASS_TYPE | None], instance: None, owner: Any
+        ) -> ObjectVar[DATACLASS_TYPE]: ...
+
+        @overload
+        def __get__(
+            self: Field[DATACLASS_TYPE], instance: None, owner: Any
         ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
@@ -4502,11 +4787,14 @@ def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
     return members
 
 
-def _validate_state_name(root: BaseStateMeta, name: str, value: Any = None) -> None:
+def _validate_state_name(
+    root: BaseStateMeta | None, name: str, value: Any = None
+) -> None:
     """Reject declarations that replace framework methods or bookkeeping.
 
     Args:
-        root: The state class whose namespace is reserved.
+        root: The state class whose namespace is reserved, or None for a state
+            outside any hierarchy, which reserves nothing.
         name: The declared or dynamically registered name.
         value: The raw class declaration, when available.
 
@@ -4514,10 +4802,17 @@ def _validate_state_name(root: BaseStateMeta, name: str, value: Any = None) -> N
         StateValueError: If a declaration uses a reserved name.
         EventHandlerShadowsBuiltInStateMethodError: If a method overrides a builtin.
     """
+    if root is None:
+        return
     members = _reserved_state_members(root)
     if name not in members:
         return
+    from reflex_base.event import EventHandler
+
     method = value.__func__ if isinstance(value, (classmethod, staticmethod)) else value
+    if isinstance(method, EventHandler):
+        # A decorated method shadows like the function it wraps.
+        method = method.fn
     if isinstance(method, FunctionType):
         if value is members[name] or getattr(method, "__override_base_method__", False):
             return
@@ -4642,6 +4937,7 @@ def _annotated_fields(
     namespace: Mapping[str, Any],
     lookup_order: Sequence[type],
     private: tuple[str, ...],
+    strict: bool = False,
 ) -> dict[str, Field]:
     """Get the fields a class namespace declares by annotation.
 
@@ -4649,16 +4945,16 @@ def _annotated_fields(
         namespace: The class namespace.
         lookup_order: The bases of the class in method resolution order.
         private: The prefixes of names that are fields only when declared as such.
+        strict: Whether an annotation naming an undefined symbol raises.
 
     Returns:
         The fields by name.
     """
     slots = _slot_names(namespace)
+    base_globals = getattr(sys.modules.get(namespace["__module__"]), "__dict__", None)
     fields = {}
-    for key, annotation in types.resolve_annotations(
-        annotations_from_namespace(namespace), namespace["__module__"]
-    ).items():
-        if types.is_classvar(annotation) or key in slots:
+    for key, annotation in annotations_from_namespace(namespace).items():
+        if key in slots:
             continue
         value = namespace.get(key, MISSING)
         inherited = _inherited_value(lookup_order, key)
@@ -4682,6 +4978,11 @@ def _annotated_fields(
             if isinstance(declared, Field) or not callable(declared):
                 # Declared by a mixin or plain base: its default applies here.
                 value = declared
+        # Only a field's annotation is resolved, so a symbol imported only for
+        # type checking may annotate any other attribute.
+        annotation = types._resolve_annotation(annotation, base_globals, strict=strict)
+        if types.is_classvar(annotation):
+            continue
         if value is MISSING:
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
@@ -4784,13 +5085,28 @@ def _is_tree_state(cls: Any) -> bool:
     return (
         isinstance(cls, BaseStateMeta)
         and not cls._mixin
-        and getattr(cls, "_reflex_state_root", cls) is not cls
+        and (root := cls._reflex_state_root) is not None
+        and root is not cls
     )
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
-    """Meta class for BaseState."""
+    """Metaclass of every state class, including ``rx.State``.
+
+    ``type(rx.State) is BaseStateMeta`` is a supported contract: a downstream
+    metaclass that customizes state classes must derive from this one.
+
+    It understands two class keywords:
+
+    - ``state_root=True`` makes the class the root of a state hierarchy; its
+      members are reserved and its subclasses may not shadow them.
+    - ``mixin=True`` marks a state mixin, which is never instantiated. A class
+      whose state bases are all mixins is a mixin too.
+
+    ``_reflex_state_root`` is a reserved name: it holds the root of the class's
+    hierarchy (the class itself on a root), or None outside any hierarchy.
+    """
 
     if TYPE_CHECKING:
         __inherited_fields__: Mapping[str, Field]
@@ -4800,9 +5116,9 @@ class BaseStateMeta(ABCMeta):
         # Whether this state class is a mixin and should not be instantiated.
         _mixin: bool = False
 
-        # The state declared with ``state_root=True`` that this class descends
-        # from; its namespace is reserved for the whole hierarchy.
-        _reflex_state_root: BaseStateMeta
+    # The state declared with ``state_root=True`` that this class descends
+    # from; its namespace is reserved for the whole hierarchy. None outside one.
+    _reflex_state_root: BaseStateMeta | None = None
 
     def __setattr__(cls, name: str, value: Any) -> None:
         """Set a class attribute, refusing to replace a state var.
@@ -4873,15 +5189,14 @@ class BaseStateMeta(ABCMeta):
             The new class.
         """
         lookup_order = _linearize_bases(bases)
-        for base in bases:
-            root = getattr(base, "_reflex_state_root", None)
-            if root is not None:
-                _validate_state_declaration(root, lookup_order, namespace)
-                break
-
         state_bases = [
             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
         ]
+        for base in state_bases:
+            if (root := base._reflex_state_root) is not None:
+                _validate_state_declaration(root, lookup_order, namespace)
+                break
+
         mixin = mixin or (
             bool(state_bases) and all(base._mixin for base in state_bases)
         )
@@ -4901,7 +5216,7 @@ class BaseStateMeta(ABCMeta):
                 )
         private = _private_prefixes(name)
         own_fields = _unannotated_fields(namespace, private) | _annotated_fields(
-            namespace, lookup_order, private
+            namespace, lookup_order, private, strict=True
         )
         annotations = annotations_from_namespace(namespace)
         for key, value in namespace.items():

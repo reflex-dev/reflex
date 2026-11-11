@@ -828,6 +828,7 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         hooks=page_ctx.hooks,
         render=page_ctx.root_component.render(),
         route=page_ctx.route,
+        client_state_owns=sorted(page_ctx.client_state_names),
     )
     return output_path, code
 
@@ -1273,7 +1274,9 @@ def compile_app(
 
     app.style = evaluate_style_namespaces(app.style)
 
-    if not should_compile and not dry_run:
+    # With compilation skipped, every page is evaluated but none is rendered. A
+    # dry run writes no marker either, so a later backend start evaluates afresh.
+    if not should_compile:
         with (
             log.timing(logger, "Evaluate Pages (Backend)"),
             otel.span("reflex.compile.evaluate_pages"),
@@ -1282,7 +1285,8 @@ def compile_app(
                 logger.debug(f"Evaluating page: {route}")
                 app._compile_page(route, save_page=False)
 
-        app._write_stateful_pages_marker()
+        if not dry_run:
+            app._write_stateful_pages_marker()
         if app._state is not None:
             utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
@@ -1313,7 +1317,11 @@ def compile_app(
         app=app,
         pages=list(app._unevaluated_pages.values()),
         hooks=CompilerHooks(
-            plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
+            plugins=default_page_plugins(
+                style=app.style,
+                plugins=compiler_plugins,
+                auto_memoize=config.auto_memoize,
+            )
         ),
     )
 

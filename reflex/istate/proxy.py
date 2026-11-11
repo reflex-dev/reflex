@@ -9,19 +9,31 @@ import functools
 import inspect
 import json
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import (
+    Callable,
+    ItemsView,
+    Iterable,
+    Iterator,
+    Mapping,
+    MappingView,
+    Sequence,
+    ValuesView,
+)
 from importlib import import_module
 from importlib.util import find_spec
-from types import MethodType
+from types import MappingProxyType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
+    Generic,
     Literal,
     NoReturn,
     Self,
     SupportsIndex,
     TypeVar,
     cast,
+    overload,
 )
 
 import wrapt
@@ -48,6 +60,8 @@ if TYPE_CHECKING:
 
 T_STATE = TypeVar("T_STATE", bound="BaseState")
 T = TypeVar("T")
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
 _AccessSpec = (
     tuple[Literal["attr"], str]
     | tuple[Literal["item"], Any]
@@ -244,10 +258,15 @@ class StateProxy(wrapt.ObjectProxy):
             parent_state = (
                 await self._self_parent_state_proxy.__aenter__()
             ).__wrapped__
-            super().__setattr__(
-                "__wrapped__",
-                await parent_state.get_state(self._self_substate_token.cls),
-            )
+            try:
+                super().__setattr__(
+                    "__wrapped__",
+                    await parent_state.get_state(self._self_substate_token.cls),
+                )
+            except (Exception, asyncio.CancelledError):
+                # The parent holds the state lock, and __aexit__ will not be called when __aenter__ raises.
+                await self._self_parent_state_proxy.__aexit__(*sys.exc_info())
+                raise
             self._self_entered_context = True
             return self
         current_task = asyncio.current_task()
@@ -272,6 +291,18 @@ class StateProxy(wrapt.ObjectProxy):
             super().__setattr__(
                 "__wrapped__", mutable_state.get_substate(self._self_substate_path)
             )
+            # An awaited handler runs inline on this tree while the lock is held.
+            ctx.set_locked_root(mutable_state)
+            from reflex.state import State
+
+            if type(mutable_state) is State and not mutable_state.router_data:
+                # The tree expired while the lock was released: rehydrate it, so
+                # the client drops stale values. The task's route may be a page
+                # the client left, so the tree stays routeless and the client's
+                # next event loads its current page.
+                from reflex_base.event.processor import BaseStateEventProcessor
+
+                await BaseStateEventProcessor._rehydrate_snapshot(mutable_state)
         except (Exception, asyncio.CancelledError):
             # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
             await self.__aexit__(*sys.exc_info())
@@ -301,7 +332,12 @@ class StateProxy(wrapt.ObjectProxy):
         finally:
             try:
                 if self._self_mutable and self._self_actx is not None:
-                    await self._self_actx.__aexit__(*exc_info)
+                    try:
+                        await EventContext.get().release_lock()
+                    finally:
+                        # Waiting for inline runs may be cancelled; the state
+                        # manager's lock must be released regardless.
+                        await self._self_actx.__aexit__(*exc_info)
             finally:
                 self._self_actx = None
                 self._self_mutable = False
@@ -608,6 +644,111 @@ def _new_proxy(
     return proxy
 
 
+def _proxied_items(
+    proxy: MutableProxy, pairs: Iterable[tuple[_KT, _VT]], with_keys: bool
+) -> Iterator[tuple[_KT, _VT] | _VT]:
+    """Read the values of a proxied dict's items back through the proxy.
+
+    Args:
+        proxy: The proxy of the dict.
+        pairs: The key-value pairs of the wrapped dict, in the order to yield.
+        with_keys: Whether to yield each key with its value, or the value alone.
+
+    Yields:
+        Each value, wrapped under its key if mutable, with its key if requested.
+    """
+    path = proxy._self_path
+    for key, value in pairs:
+        value_type = type(value)
+        if value_type not in _SCALAR_TYPES and (
+            issubclass(value_type, MutableProxy) or is_mutable_type(value_type)
+        ):
+            value = proxy._wrap_mutable(value, (*path, ("item", key)))
+        yield (key, value) if with_keys else value
+
+
+class _ProxyDictView(MappingView, Generic[_KT, _VT]):
+    """A view of a proxied dict that reads each value back through the proxy.
+
+    `dict.values` and `dict.items` hand out the nested values unwrapped, so a
+    mutation made through a native view escapes dirty tracking. Reading each
+    value through the proxy wraps it under its key, as the `Mapping` mixins do
+    for a pure-Python mapping whose methods are rebound to the proxy.
+    """
+
+    __slots__ = ()
+
+    _mapping: MutableProxy
+    # Whether each element pairs the key with its value, as an items view does.
+    _with_keys: ClassVar[bool] = False
+
+    @property
+    def mapping(self) -> MappingProxyType[_KT, _VT]:
+        """The proxied dict, read-only, like the native view's `mapping`.
+
+        Returns:
+            A mapping proxy over the dict's proxy, so the nested values it
+            hands out keep tracking mutations.
+        """
+        return MappingProxyType(cast("Mapping[_KT, _VT]", self._mapping))
+
+    def __repr__(self) -> str:
+        """Represent the view as the native view of the wrapped dict does.
+
+        Returns:
+            The native view's representation.
+        """
+        wrapped = self._mapping.__wrapped__
+        return repr(wrapped.items() if self._with_keys else wrapped.values())
+
+    @overload
+    def __iter__(self: _ProxyItemsView[_KT, _VT]) -> Iterator[tuple[_KT, _VT]]: ...
+    @overload
+    def __iter__(self: _ProxyValuesView[_KT, _VT]) -> Iterator[_VT]: ...
+    def __iter__(self) -> Iterator[tuple[_KT, _VT] | _VT]:
+        """Iterate the view in key order.
+
+        Returns:
+            An iterator over the elements, each value read through the proxy.
+        """
+        return _proxied_items(
+            self._mapping, self._mapping.__wrapped__.items(), self._with_keys
+        )
+
+    @overload
+    def __reversed__(
+        self: _ProxyItemsView[_KT, _VT],
+    ) -> Iterator[tuple[_KT, _VT]]: ...
+    @overload
+    def __reversed__(self: _ProxyValuesView[_KT, _VT]) -> Iterator[_VT]: ...
+    def __reversed__(self) -> Iterator[tuple[_KT, _VT] | _VT]:
+        """Iterate the view in reverse key order, like a native dict view.
+
+        Returns:
+            An iterator over the elements, each value read through the proxy.
+        """
+        return _proxied_items(
+            self._mapping, reversed(self._mapping.__wrapped__.items()), self._with_keys
+        )
+
+
+class _ProxyValuesView(_ProxyDictView[_KT, _VT], ValuesView[_VT]):
+    """The values of a proxied dict."""
+
+    __slots__ = ()
+
+
+class _ProxyItemsView(_ProxyDictView[_KT, _VT], ItemsView[_KT, _VT]):
+    """The items of a proxied dict."""
+
+    __slots__ = ()
+
+    _with_keys = True
+
+
+_DICT_VIEWS = {"items": _ProxyItemsView, "values": _ProxyValuesView}
+
+
 class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
 
@@ -817,6 +958,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         state = self._dirty_state()
         type(state).__fields__[self._self_field_name]._mark_dirty(state)
+        state._note_in_place_change()
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
         return None
@@ -932,6 +1074,13 @@ class MutableProxy(wrapt.ObjectProxy):
                 # Checked before wrapping: attributes of a `FunctionWrapper` are
                 # forwarded through a failing lookup that costs far more.
                 return functools.partial(func, self)
+
+            if (view_cls := _DICT_VIEWS.get(__name)) is not None and isinstance(
+                self.__wrapped__, dict
+            ):
+                # `dict.values`/`dict.items` hand out the nested values unwrapped:
+                # serve views that read each value back through this proxy.
+                return functools.partial(view_cls, self)
 
             if __name in type(self).__mark_dirty_attrs__:
                 # Wrap special callables, like "append", which should mark state dirty.

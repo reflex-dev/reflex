@@ -67,6 +67,57 @@ def test_frozen_lockfile_default(base_config_values):
     assert config.frozen_lockfile is True
 
 
+def test_trusted_proxy_hops_defaults_to_zero(base_config_values):
+    """Do not trust client-controlled forwarded headers by default."""
+    assert rx.Config(**base_config_values).trusted_proxy_hops == 0
+
+
+def test_event_loop_blocking_threshold_defaults_to_development_threshold(
+    base_config_values,
+):
+    """Enable useful blocking diagnostics by default in development."""
+    config = rx.Config(**base_config_values)
+    assert config.event_loop_blocking_threshold == pytest.approx(0.2)
+
+
+@pytest.mark.parametrize("threshold", [-1, float("inf"), float("nan"), True, "1", None])
+def test_event_loop_blocking_threshold_must_be_non_negative_finite(
+    base_config_values, threshold
+):
+    """Reject invalid event-loop blocking thresholds."""
+    with pytest.raises(
+        ConfigError,
+        match="event_loop_blocking_threshold must be a non-negative finite number",
+    ):
+        rx.Config(**base_config_values, event_loop_blocking_threshold=threshold)
+
+
+def test_event_loop_blocking_detection_can_be_disabled(base_config_values):
+    """Allow apps to disable event-loop blocking detection with 0."""
+    config = rx.Config(**base_config_values, event_loop_blocking_threshold=0)
+    assert config.event_loop_blocking_threshold == 0
+
+
+def test_event_loop_blocking_detection_can_be_disabled_from_env(
+    base_config_values, monkeypatch: pytest.MonkeyPatch
+):
+    """Allow the environment to disable event-loop blocking detection."""
+    monkeypatch.setenv("REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD", "0")
+    config = rx.Config(**base_config_values)
+    assert config.update_from_env()["event_loop_blocking_threshold"] == 0
+
+
+@pytest.mark.parametrize("trusted_proxy_hops", [-1, True, False, 1.5, "2", None])
+def test_trusted_proxy_hops_must_be_non_negative(
+    base_config_values, trusted_proxy_hops
+):
+    """Reject invalid trusted proxy hop counts."""
+    with pytest.raises(
+        ConfigError, match="trusted_proxy_hops must be a non-negative integer"
+    ):
+        rx.Config(**base_config_values, trusted_proxy_hops=trusted_proxy_hops)
+
+
 def test_react_compiler_default(base_config_values):
     """Keep React Compiler disabled unless the app opts in.
 
@@ -75,6 +126,90 @@ def test_react_compiler_default(base_config_values):
     """
     assert rx.Config(**base_config_values).react_compiler is False
     assert rx.Config(**base_config_values, react_compiler=True).react_compiler is True
+
+
+@pytest.mark.parametrize("react_compiler", [False, True])
+def test_warns_that_react_compiler_is_experimental(
+    base_config_values: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    react_compiler: bool,
+):
+    """Warn once that React Compiler is experimental, only when it is enabled.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: Fixture for resetting the warn-once flag.
+        caplog: Captured log records.
+        react_compiler: Whether React Compiler is enabled.
+    """
+    monkeypatch.setattr(reflex_base.config, "_warned_react_compiler", False)
+    rx.Config(**base_config_values, react_compiler=react_compiler)
+    rx.Config(**base_config_values, react_compiler=react_compiler)
+
+    warnings = [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING and "experimental" in record.getMessage()
+    ]
+    assert len(warnings) == int(react_compiler)
+
+
+def test_auto_memoize_default(base_config_values):
+    """Keep Reflex auto-memoization enabled unless the app opts out.
+
+    Args:
+        base_config_values: Config values.
+    """
+    assert rx.Config(**base_config_values).auto_memoize is True
+    assert rx.Config(**base_config_values, auto_memoize=False).auto_memoize is False
+
+
+@pytest.mark.parametrize("from_env", [False, True])
+@pytest.mark.parametrize(
+    ("auto_memoize", "react_compiler"),
+    [(True, False), (True, True), (False, True), (False, False)],
+)
+def test_warns_when_all_memoization_is_disabled(
+    base_config_values: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    from_env: bool,
+    auto_memoize: bool,
+    react_compiler: bool,
+):
+    """Warn only when the effective config disables both memoization options.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: Fixture for overriding environment variables.
+        caplog: Captured log records.
+        from_env: Whether environment variables override opposite config values.
+        auto_memoize: Effective Reflex memoization setting.
+        react_compiler: Effective React Compiler setting.
+    """
+    values = {"auto_memoize": auto_memoize, "react_compiler": react_compiler}
+    if from_env:
+        for name, value in values.items():
+            monkeypatch.setenv(f"REFLEX_{name.upper()}", str(value))
+        values = {name: not value for name, value in values.items()}
+
+    config = rx.Config(
+        **base_config_values,
+        auto_memoize=values["auto_memoize"],
+        react_compiler=values["react_compiler"],
+    )
+
+    assert config.auto_memoize is auto_memoize
+    assert config.react_compiler is react_compiler
+    warnings = [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING and "auto_memoize" in record.getMessage()
+    ]
+    assert bool(warnings) is (not auto_memoize and not react_compiler)
+    if warnings:
+        assert "react_compiler=True" in warnings[0]
 
 
 @pytest.mark.parametrize(
@@ -88,6 +223,7 @@ def test_react_compiler_default(base_config_values):
         ("REFLEX_API_URL", "https://mybackend.com:8000"),
         ("REFLEX_DEPLOY_URL", "https://myfrontend.com"),
         ("REFLEX_BACKEND_HOST", "127.0.0.1"),
+        ("REFLEX_TRUSTED_PROXY_HOPS", 2),
         ("REFLEX_DB_URL", "postgresql://user:pass@localhost:5432/db"),
         ("REFLEX_REDIS_URL", "redis://localhost:6379"),
         ("REFLEX_TELEMETRY_ENABLED", False),
@@ -96,7 +232,10 @@ def test_react_compiler_default(base_config_values):
         ("REFLEX_FROZEN_LOCKFILE", True),
         ("REFLEX_REACT_COMPILER", False),
         ("REFLEX_REACT_COMPILER", True),
+        ("REFLEX_AUTO_MEMOIZE", False),
+        ("REFLEX_AUTO_MEMOIZE", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
+        ("REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD", 0.35),
     ],
 )
 def test_update_from_env(
@@ -414,7 +553,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8001",
                 "backend_port": 8001,
-                "deploy_url": "http://localhost:3001",
+                "deploy_url": None,
                 "frontend_port": 3001,
             },
         ),
@@ -426,7 +565,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8002",
                 "backend_port": 8002,
-                "deploy_url": "http://localhost:3001",
+                "deploy_url": None,
                 "frontend_port": 3001,
             },
         ),
@@ -438,7 +577,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
             {
                 "api_url": "http://localhost:8002",
                 "backend_port": 8002,
-                "deploy_url": "http://localhost:3005",
+                "deploy_url": None,
                 "frontend_port": 3005,
             },
         ),
@@ -1684,3 +1823,25 @@ def test_get_config_reload_deprecated(mocker: MockerFixture):
         # The freshly loaded config stays cached on the context afterwards.
         assert reflex_base.config.get_config() is second
         deprecate.assert_called_once()
+
+
+def test_frontend_url_falls_back_to_localhost_frontend_port(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """frontend_url is deploy_url when set, otherwise localhost on the frontend port.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    monkeypatch.delenv("REFLEX_FRONTEND_PORT", raising=False)
+    config = rx.Config(app_name="a")
+    assert config.deploy_url is None
+    assert config.frontend_url == "http://localhost:3000"
+
+    config = rx.Config(app_name="a", frontend_port=3005)
+    assert config.deploy_url is None
+    assert config.frontend_url == "http://localhost:3005"
+
+    config = rx.Config(app_name="a", deploy_url="https://example.com")
+    assert config.frontend_url == "https://example.com"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import functools
 import inspect
@@ -31,7 +32,7 @@ from reflex_base.utils.types import is_non_string_sequence
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from reflex.state import BaseState
+    from reflex.state import BaseState, State
 
 # Resolved once at import: find_spec on a missing package scans sys.path (~90us),
 # far too slow for the per-event-argument path below.
@@ -66,6 +67,60 @@ def _connect_supersedes() -> tuple[str, str]:
     )
 
 
+_EVENT_LIKE_TYPES = (Event, EventHandler, EventSpec)
+
+
+def _is_event_like(value: Any) -> bool:
+    """Whether a handler's return value is an event or a sequence of events.
+
+    Args:
+        value: The value a handler returned or yielded.
+
+    Returns:
+        True for an Event, EventHandler or EventSpec, or a sequence of them.
+    """
+    if isinstance(value, _EVENT_LIKE_TYPES):
+        return True
+    if not is_non_string_sequence(value):
+        return False
+    try:
+        return all(isinstance(e, _EVENT_LIKE_TYPES) for e in value)
+    except TypeError:
+        return False
+
+
+def _is_empty_sequence(value: Any) -> bool:
+    """Whether a handler returned an empty sequence.
+
+    Args:
+        value: The value a handler returned.
+
+    Returns:
+        True for an empty non-string sequence.
+    """
+    return is_non_string_sequence(value) and len(value) == 0
+
+
+def _holds_events_or_coroutines(value: Any) -> bool:
+    """Whether a sequence holds an event or an unawaited coroutine.
+
+    Args:
+        value: The value a handler returned.
+
+    Returns:
+        True for a sequence ``_is_event_like`` rejects that still holds an
+        event (mixed with other values) or a coroutine.
+    """
+    if not is_non_string_sequence(value):
+        return False
+    try:
+        return any(
+            isinstance(e, _EVENT_LIKE_TYPES) or inspect.iscoroutine(e) for e in value
+        )
+    except TypeError:
+        return False
+
+
 def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     """Check if the events yielded are valid. They must be EventHandlers or EventSpecs.
 
@@ -79,21 +134,11 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     Raises:
         TypeError: If any of the events are not valid.
     """
-
-    def _is_valid_type(events: Any) -> bool:
-        return isinstance(events, (Event, EventHandler, EventSpec))
-
-    if events is None or _is_valid_type(events):
+    if events is None or _is_event_like(events):
         return events
 
     if not is_non_string_sequence(events):
         events = [events]
-
-    try:
-        if all(_is_valid_type(e) for e in events):
-            return events
-    except TypeError:
-        pass
 
     coroutines = [e for e in events if inspect.iscoroutine(e)]
 
@@ -135,10 +180,9 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
 
         if issubclass(hinted_args, Model):
             # Remove non-fields from the payload
+            model_fields = hinted_args.model_fields
             return hinted_args(**{
-                key: value
-                for key, value in value.items()
-                if key in hinted_args.__fields__
+                key: value for key, value in value.items() if key in model_fields
             })
         if dataclasses.is_dataclass(hinted_args):
             return hinted_args(**value)
@@ -217,6 +261,54 @@ def _prepare_event_payload(
         return {arg: form_data_as_dict(value) for arg, value in payload.items()}
 
 
+def _written_snapshot(root_state: BaseState) -> dict[tuple[str, str], Any]:
+    """Capture the value of every dirty field in the tree, by identity.
+
+    Args:
+        root_state: The root of the state tree.
+
+    Returns:
+        The raw value of each dirty field of the root and its dirty substates,
+        keyed by state and field name, plus each state's in-place change count
+        under an empty field name. Comparing two snapshots with
+        ``_written_since`` tells whether a field was assigned or changed in
+        place in between.
+    """
+    snapshot: dict[tuple[str, str], Any] = {}
+    stack = [root_state]
+    while stack:
+        state = stack.pop()
+        cls = type(state)
+        fields = cls.__fields__
+        full_name = cls.get_full_name()
+        snapshot[full_name, ""] = state._mutations
+        for name in state.dirty_vars:
+            if (field := fields.get(name)) is not None:
+                snapshot[full_name, name] = field._get_raw(state)
+        substates = state.substates
+        stack.extend(substates[n] for n in state.dirty_substates if n in substates)
+    return snapshot
+
+
+def _written_since(
+    before: dict[tuple[str, str], Any], after: dict[tuple[str, str], Any]
+) -> bool:
+    """Whether a field was assigned between two snapshots.
+
+    Args:
+        before: The earlier snapshot.
+        after: The later snapshot.
+
+    Returns:
+        True if a field became dirty, holds a different object than before,
+        or a state's in-place change count moved (its own object, so unequal
+        counts are different objects too).
+    """
+    return before.keys() != after.keys() or any(
+        before[key] is not value for key, value in after.items()
+    )
+
+
 async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
     """Emit frontend events to the client and queue backend events.
 
@@ -238,6 +330,34 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         await ctx.emit_event(*frontend_events)
     if backend_events:
         await ctx.enqueue(*backend_events)
+
+
+async def _process_middleware(
+    ctx: EventContext, state: BaseState, event: Event
+) -> bool:
+    """Pass an event through the middleware before its handler runs.
+
+    A middleware blocks the event by returning an update, which is sent on in
+    the handler's place.
+
+    Args:
+        ctx: The event context, carrying the middleware.
+        state: The locked state the event runs against.
+        event: The event about to run.
+
+    Returns:
+        Whether a middleware blocked the event.
+    """
+    if (
+        ctx.middleware is None
+        or (update := await ctx.middleware._preprocess(state, event)) is None
+    ):
+        return False
+    if update.delta:
+        await ctx.emit_delta(update.delta)
+    if update.events:
+        await _route_events(ctx, update.events)
+    return True
 
 
 async def chain_updates(
@@ -267,11 +387,27 @@ async def chain_updates(
         # machinery, so cleaning earlier would fan out a stale set (see
         # tests/integration/test_linked_state.py).
         try:
+            # Resolving suspends on async computed vars. While inline runs
+            # exist (this one included), a gathered sibling can assign a
+            # field meanwhile, after the delta was snapshotted; the clean
+            # below would drop that value unsent, so pick late assignments
+            # up until none happened during the resolve. A plain event has
+            # no inline runs and skips this. The clean runs before the emit:
+            # a write during the emit's await re-dirties its field instead
+            # of being cleaned, and the next flush sends it.
+            concurrent = bool(ctx.inline_tasks)
+            seen = _written_snapshot(root_state) if concurrent else {}
             delta = await root_state._get_resolved_delta()
-            if delta:
-                await ctx.emit_delta(delta)
+            while concurrent and _written_since(
+                seen, written := _written_snapshot(root_state)
+            ):
+                seen = written
+                for name, late in (await root_state._get_resolved_delta()).items():
+                    delta[name] = {**delta.get(name, {}), **late}
         finally:
             root_state._clean()
+        if delta:
+            await ctx.emit_delta(delta)
 
     # Convert valid EventHandler and EventSpec into Event
     if events is not None and (
@@ -280,6 +416,27 @@ async def chain_updates(
         )
     ):
         await _route_events(ctx, fixed_events)
+
+
+async def _flush_failed_handler(root_state: BaseState, handler_name: str) -> None:
+    """Send the writes a cancelled or failing handler made after its last yield.
+
+    The next handler's delta does not carry them when it loads a fresh copy of
+    the state, as redis does. Without a pending write there is nothing to send,
+    which also covers a handler whose own delta failed: that delta already
+    cleaned the state. A flush failure is logged, so the handler's own
+    exception stays the one that propagates.
+
+    Args:
+        root_state: The locked root state of the handler.
+        handler_name: The name of the handler, used for error messages.
+    """
+    if not root_state.dirty_vars and not root_state.dirty_substates:
+        return
+    try:
+        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+    except Exception:
+        logger.exception(f"Error flushing delta after handler {handler_name} failed:")
 
 
 def ensure_locked(
@@ -309,12 +466,96 @@ def ensure_locked(
     return None
 
 
+async def execute_event_inline(spec: EventSpec) -> Any:
+    """Run the event a spec describes from inside the active EventContext.
+
+    This is what awaiting an EventHandler or EventSpec does. While the current
+    task holds the token's state lock (a foreground handler, ``async with
+    self`` in a background handler, ``app.modify_state``), the handler runs
+    inline on the locked state tree under the caller's context: its yields
+    emit deltas and the events it yields chain under the caller's event. With
+    no lock held, the event is enqueued and its future awaited.
+
+    Args:
+        spec: The event spec to execute.
+
+    Returns:
+        The handler's return value.
+
+    Raises:
+        EventHandlerTypeError: If there is no active EventContext, the spec is
+            a frontend-only or upload event, or a background handler is
+            awaited while the state lock is held (which would deadlock).
+    """
+    from reflex_base.registry import RegistrationContext
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    try:
+        ctx = EventContext.get()
+    except LookupError as le:
+        msg = (
+            f"Event handler `{format_event_handler(spec.handler)}` can only be "
+            "awaited from an event handler or inside `app.modify_state`; use it "
+            "as an event trigger or yield it instead."
+        )
+        raise EventHandlerTypeError(msg) from le
+    event = spec._to_event(ctx.router_data)
+    name = event.name
+    if spec.client_handler_name:
+        msg = f"Upload event `{name}` cannot be awaited; use it as an event trigger."
+        raise EventHandlerTypeError(msg)
+    registered = RegistrationContext.get().event_handlers.get(name)
+    if registered is None:
+        msg = (
+            f"`{name}` is a frontend-only event, so it cannot be awaited; "
+            "yield or return it instead."
+        )
+        raise EventHandlerTypeError(msg)
+    handler = registered.handler
+    root_state = ctx.locked_root
+    if root_state is None:
+        (future,) = await ctx.enqueue(event)
+        return await future
+    if handler.is_background:
+        msg = (
+            f"Background event handler `{name}` cannot be awaited while the "
+            "state lock is held, as it would wait for that lock; yield it instead."
+        )
+        raise EventHandlerTypeError(msg)
+    # The lock stays held until this run is done, even if the task that
+    # started it finishes first. Registered before the first await, so a
+    # task that starts while the lock is held is always seen by its release.
+    # A nested inline run on an already registered task leaves the outer
+    # run's registration in place.
+    task = asyncio.current_task()
+    if task is None or task in ctx.inline_tasks:
+        # Nothing to register here, and nothing to unregister after.
+        task = None
+    else:
+        ctx.inline_tasks.add(task)
+    try:
+        # Inside the registered run, so the lock stays held while a
+        # middleware awaits.
+        if await _process_middleware(ctx, root_state, event):
+            return None
+        substate = await root_state.get_state(registered.states[0])
+        return await process_event(
+            handler=handler,
+            payload=event.payload,
+            state=substate,
+            root_state=root_state,
+        )
+    finally:
+        if task is not None:
+            ctx.inline_tasks.discard(task)
+
+
 async def process_event(
     handler: EventHandler,
     payload: dict,
     state: BaseState | StateProxy,
     root_state: BaseState | None,
-):
+) -> Any:
     """Process event.
 
     Args:
@@ -327,6 +568,10 @@ async def process_event(
             concurrent events on a shared state tree, and background state
             changes are emitted by the ``async with self`` context exits
             instead.
+
+    Returns:
+        The handler's return value, None when it returned nothing or events
+        (which are chained instead).
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -350,9 +595,7 @@ async def process_event(
                 root_state=ensure_locked(state, root_state),
                 handler_name=handler_name,
             )
-        await chain_updates(
-            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
-        )
+        events = None
 
     # Handle regular generators.
     elif inspect.isgenerator(events):
@@ -366,23 +609,28 @@ async def process_event(
         except StopIteration as si:
             # the "return" value of the generator is not available
             # in the loop, we must catch StopIteration to access it
-            if si.value is not None:
-                await chain_updates(
-                    si.value,
-                    root_state=ensure_locked(state, root_state),
-                    handler_name=handler_name,
-                )
-        await chain_updates(
-            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
-        )
+            events = si.value
 
-    # Handle regular event chains.
-    else:
+    # Chain a returned event (or events); anything else, an empty sequence
+    # included (a result such as no search hits, not an empty chain), is the
+    # result.
+    if events is None or (_is_event_like(events) and not _is_empty_sequence(events)):
         await chain_updates(
             events,
             root_state=ensure_locked(state, root_state),
             handler_name=handler_name,
         )
+        return None
+    # A coroutine that was never awaited, or events mixed with other values,
+    # is a bug, not a result: chain_updates flushes the delta and then raises
+    # for it, as it does for any invalid yield.
+    invalid = inspect.iscoroutine(events) or _holds_events_or_coroutines(events)
+    await chain_updates(
+        events if invalid else None,
+        root_state=ensure_locked(state, root_state),
+        handler_name=handler_name,
+    )
+    return events
 
 
 class BaseStateEventProcessor(EventProcessor):
@@ -393,23 +641,18 @@ class BaseStateEventProcessor(EventProcessor):
     frontend.
     """
 
-    async def _rehydrate(self, root_state: BaseState):
-        """Rehydrate the state by calling the hydrate event handler.
+    @staticmethod
+    async def _rehydrate_snapshot(root_state: State) -> None:
+        """Send hydration data, finishing hydration when no page is available.
 
         Args:
             root_state: The root state to rehydrate.
         """
-        from reflex.state import OnLoadInternalState, State
+        from reflex.state import State
 
-        if type(root_state) is not State:
-            return
-
-        # A backend-initiated event carries no route, so nothing sets
-        # router_data and every one of them would rehydrate again.
         routeless = not root_state.router_data
         if routeless and root_state.is_hydrated:
             return
-
         await process_event(
             handler=State.event_handlers["hydrate"],
             payload={},
@@ -417,20 +660,70 @@ class BaseStateEventProcessor(EventProcessor):
             root_state=root_state,
         )
         if routeless:
-            # No page to load, but hydration still has to finish.
             await process_event(
                 handler=State.event_handlers["set_is_hydrated"],
                 payload={"value": True},
                 state=root_state,
                 root_state=root_state,
             )
+
+    @functools.cached_property
+    def _pending_hydrates(self) -> dict[str, dict[str, EventFuture]]:
+        """Hydrations cancellable on disconnect, but never by a navigation.
+
+        Returns:
+            Pending hydration futures indexed by client token and transaction id.
+        """
+        return {}
+
+    async def _rehydrate(self, root_state: BaseState):
+        """Rehydrate the state by calling the hydrate event handler.
+
+        Args:
+            root_state: The root state to rehydrate.
+        """
+        from reflex.event import Event
+        from reflex.state import OnLoadInternalState, State
+
+        if type(root_state) is not State:
             return
-        await process_event(
-            handler=OnLoadInternalState.event_handlers["on_load_internal"],
-            payload={},
-            state=await root_state.get_state(OnLoadInternalState),
-            root_state=root_state,
-        )
+
+        # A backend-initiated event carries no route, so nothing sets
+        # router_data and every one of them would rehydrate again.
+        if not root_state.router_data:
+            await self._rehydrate_snapshot(root_state)
+            return
+
+        ctx = EventContext.get()
+        # Disconnect cancels this marker without cancelling the ordinary event.
+        pending = EventFuture(txid=ctx.txid)
+        self._pending_hydrates.setdefault(ctx.token, {})[pending.txid] = pending
+        try:
+            await self._rehydrate_snapshot(root_state)
+            if pending.cancelled():
+                return
+            parent = self._futures[ctx.txid]
+            first_child = len(parent.children)
+            handler = OnLoadInternalState.event_handlers["on_load_internal"]
+            await process_event(
+                handler=handler,
+                payload={},
+                state=await root_state.get_state(OnLoadInternalState),
+                root_state=root_state,
+            )
+            # Inline rehydration bypasses enqueue's page-load registration. Track
+            # only its children so the ordinary event remains independent.
+            load_event = Event(name=format_event_handler(handler))
+            for index in range(first_child, len(parent.children)):
+                child = parent.children[index]
+                if pending.cancelled():
+                    child.cancel()
+                else:
+                    self._supersede_previous(
+                        token=ctx.token, event=load_event, tracked=child
+                    )
+        finally:
+            self._forget_hydrate(ctx.token, pending)
 
     def _supersede_previous(
         self, *, token: str, event: Event, tracked: EventFuture
@@ -454,11 +747,39 @@ class BaseStateEventProcessor(EventProcessor):
         boot_name, on_load_name = _connect_supersedes()
         if event.name == boot_name:
             self._cancel_older_chains((on_load_name, token), tracked.root_gen)
+            self._pending_hydrates.setdefault(token, {})[tracked.txid] = tracked
+            tracked.add_done_callback(functools.partial(self._forget_hydrate, token))
         return super()._supersede_previous(token=token, event=event, tracked=tracked)
+
+    def _forget_hydrate(self, token: str, future: EventFuture) -> None:
+        """Stop tracking a completed hydration invocation.
+
+        Its page-load descendants have their own supersession registration.
+
+        Args:
+            token: The client token.
+            future: The completed hydration future.
+        """
+        if (pending := self._pending_hydrates.get(token)) is not None:
+            pending.pop(future.txid, None)
+            if not pending:
+                del self._pending_hydrates[token]
+
+    def _on_disconnect(self, token: str) -> None:
+        """Cancel hydration and unfinished page-load chains for a disconnected client.
+
+        Args:
+            token: The disconnected client token.
+        """
+        _, on_load_name = _connect_supersedes()
+        for future in self._pending_hydrates.pop(token, {}).values():
+            future.cancel()
+        for future in self._superseded.pop((on_load_name, token), {}).values():
+            future.cancel()
 
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
-    ) -> None:
+    ) -> Any:
         """Execute the handler for a single event queue entry with full state management.
 
         The ``EventContext`` has already been set by ``_process_event_queue_entry``
@@ -467,6 +788,9 @@ class BaseStateEventProcessor(EventProcessor):
         Args:
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
+
+        Returns:
+            The handler's return value, which resolves the event's future.
         """
         ctx = entry.ctx
         event = entry.event
@@ -503,35 +827,36 @@ class BaseStateEventProcessor(EventProcessor):
                 if merged_router_data != previous_router_data:
                     state.router_data = merged_router_data
 
-            # Preprocess the event.
-            if (
-                self.middleware is not None
-                and (update := await self.middleware._preprocess(state, event))
-                is not None
-            ):
-                # If there was an update, yield it.
-                if update.delta:
-                    await ctx.emit_delta(update.delta)
-                if update.events:
-                    await _route_events(ctx, update.events)
-                return
+            if await _process_middleware(ctx, state, event):
+                return None
 
             # Get the event's substate.
             substate = await state.get_state(registered_handler.states[0])
             root_state = state._get_root_state()
 
-            if needs_to_rehydrate:
-                await self._rehydrate(root_state)
+            # Not `holding_lock`: this is the hot path of every event, and
+            # the plain try/finally spares the context manager's overhead.
+            ctx.set_locked_root(root_state)
+            try:
+                if needs_to_rehydrate:
+                    await self._rehydrate(root_state)
 
-            # Process non-background events while holding the lock.
-            if not registered_handler.handler.is_background:
-                await process_event(
-                    handler=registered_handler.handler,
-                    payload=event.payload,
-                    state=substate,
-                    root_state=root_state,
-                )
-                return
+                # Process non-background events while holding the lock.
+                if not registered_handler.handler.is_background:
+                    try:
+                        return await process_event(
+                            handler=registered_handler.handler,
+                            payload=event.payload,
+                            state=substate,
+                            root_state=root_state,
+                        )
+                    except (Exception, asyncio.CancelledError):
+                        await _flush_failed_handler(
+                            root_state, registered_handler.handler.fn.__qualname__
+                        )
+                        raise
+            finally:
+                await ctx.release_lock()
         # Otherwise drop the state lock and start processing the background task
         # with a proxy state. No root_state: the lock is no longer held, and
         # under a shared state tree (opportunistic locking, in-memory manager)
@@ -546,8 +871,9 @@ class BaseStateEventProcessor(EventProcessor):
         # lock, so these locals would pin an extra copy for the whole task.
         del state, substate, root_state
         handler_error: BaseException | None = None
+        result = None
         try:
-            await process_event(
+            result = await process_event(
                 handler=registered_handler.handler,
                 state=proxy,
                 payload=event.payload,
@@ -587,6 +913,7 @@ class BaseStateEventProcessor(EventProcessor):
                         "Error flushing delta after background handler "
                         f"{registered_handler.handler.fn.__qualname__} raised:"
                     )
+        return result
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None
@@ -611,4 +938,9 @@ class BaseStateEventProcessor(EventProcessor):
                 )
 
 
-__all__ = ["BaseStateEventProcessor", "chain_updates", "process_event"]
+__all__ = [
+    "BaseStateEventProcessor",
+    "chain_updates",
+    "execute_event_inline",
+    "process_event",
+]

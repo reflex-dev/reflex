@@ -13,13 +13,16 @@ from typing import TYPE_CHECKING, Any
 from rich.markup import escape as escape_markup
 
 from reflex_base import constants
-from reflex_base.utils import exceptions
+from reflex_base.utils import console
 from reflex_base.utils.types import is_non_string_sequence
 
 if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
     from reflex_base.components.component import ComponentStyle
     from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
     from reflex_base.utils.types import ArgsSpec
+    from reflex_base.vars import Var
 
 WRAP_MAP = {
     "{": "}",
@@ -369,7 +372,7 @@ def format_match(
 
 def format_prop(
     prop: Var | EventChain | ComponentStyle | str,
-) -> int | float | str:
+) -> str:
     """Format a prop.
 
     Args:
@@ -379,13 +382,10 @@ def format_prop(
         The formatted prop to display within a tag.
 
     Raises:
-        exceptions.InvalidStylePropError: If the style prop value is not a valid type.
         TypeError: If the prop is not valid.
-        ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
     from reflex_base.event import EventChain
-    from reflex_base.utils import serializers
     from reflex_base.vars import Var
 
     try:
@@ -403,23 +403,13 @@ def format_prop(
                 return prop
             return json_dumps(prop)
 
-        # For dictionaries, convert any properties to strings.
-        if isinstance(prop, dict):
-            prop = serializers.serialize_dict(prop)  # pyright: ignore [reportAttributeAccessIssue]
-
-        else:
-            # Dump the prop as JSON.
-            prop = json_dumps(prop)
-    except exceptions.InvalidStylePropError:
-        raise
+        # Dump the prop as JSON.
+        prop = json_dumps(prop)
     except TypeError as e:
         msg = f"Could not format prop: {prop} of type {type(prop)}"
         raise TypeError(msg) from e
 
     # Wrap the variable in braces.
-    if not isinstance(prop, str):
-        msg = f"Invalid prop: {prop}. Expected a string."
-        raise ValueError(msg)
     return wrap(prop, "{", check_first=False)
 
 
@@ -534,7 +524,7 @@ def format_queue_events(
     The resulting code can be passed to interfaces that expect a callback
     function and when triggered it dispatches the events through `addEvents`.
     The name resolves via the attached imports in compiled modules and via a
-    local alias in the `applyEvent` eval context.
+    local alias in the `applyResultCallback` eval context.
 
     Args:
         events: The events to queue.
@@ -649,8 +639,21 @@ def format_state_name(state_name: str) -> str:
     return state_name.replace(".", "__")
 
 
+# The marker Var.__format__ puts before a Var's expression in an f-string.
+_VAR_MARKER = re.compile(
+    re.escape(constants.REFLEX_VAR_OPENING_TAG)
+    + ".*?"
+    + re.escape(constants.REFLEX_VAR_CLOSING_TAG),
+    flags=re.DOTALL,
+)
+
+
 def format_ref(ref: str) -> str:
     """Format a ref.
+
+    A Var formatted into an f-string leaves a marker holding its hash, which
+    changes from one run to the next; the marker is dropped and the Var's
+    expression after it names the ref, so the name is the same in every build.
 
     Args:
         ref: The ref to format.
@@ -658,6 +661,7 @@ def format_ref(ref: str) -> str:
     Returns:
         The formatted ref.
     """
+    ref = _VAR_MARKER.sub("", ref)
     # Replace all non-word characters with underscores.
     clean_ref = re.sub(r"[^\w]+", "_", ref)
     return f"ref_{clean_ref}"
@@ -783,6 +787,10 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
 def format_array_ref(refs: str, idx: Var | None) -> str:
     """Format a ref accessed by array.
 
+    A Var formatted into an f-string leaves a marker holding its hash; like
+    `format_ref`, the marker is dropped so the name is the same in every
+    build.
+
     Args:
         refs : The ref array to access.
         idx : The index of the ref in the array.
@@ -790,43 +798,67 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     Returns:
         The formatted ref.
     """
+    refs = _VAR_MARKER.sub("", refs)
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
         return f"refs_{clean_ref}[{idx!s}]"
     return f"refs_{clean_ref}"
 
 
-def format_data_editor_column(col: str | dict):
-    """Format a given column into the proper format.
+if TYPE_CHECKING:
 
-    Args:
-        col: The column.
+    @deprecated("rx.data_editor fills in its column defaults itself.")
+    def format_data_editor_column(col: str | dict) -> dict | Var:
+        """Format a given column into the proper format (deprecated).
 
-    Returns:
-        The formatted column.
+        Args:
+            col: The column.
 
-    Raises:
-        ValueError: invalid type provided for column.
-    """
-    from reflex_base.vars import Var
+        Returns:
+            The formatted column.
+        """
+        ...
 
-    if isinstance(col, str):
-        return {"title": col, "id": col.lower(), "type": "str"}
+else:
 
-    if isinstance(col, (dict,)):
-        if "id" not in col:
-            col["id"] = col["title"].lower()
-        if "type" not in col:
-            col["type"] = "str"
-        if "overlayIcon" not in col:
-            col["overlayIcon"] = None
-        return col
+    def format_data_editor_column(col: str | dict):
+        """Format a given column into the proper format (deprecated).
 
-    if isinstance(col, Var):
-        return col
+        Args:
+            col: The column.
 
-    msg = f"unexpected type ({(type(col).__name__)}: {col}) for column header in data_editor"
-    raise ValueError(msg)
+        Returns:
+            The formatted column.
+
+        Raises:
+            ValueError: invalid type provided for column.
+        """
+        from reflex_base.vars import Var
+
+        console.deprecate(
+            feature_name="format_data_editor_column",
+            reason="Upgrade reflex-components-dataeditor; rx.data_editor now fills in its column defaults itself.",
+            deprecation_version="0.10.1",
+            removal_version="1.0",
+        )
+
+        if isinstance(col, str):
+            return {"title": col, "id": col.lower(), "type": "str"}
+
+        if isinstance(col, (dict,)):
+            if "id" not in col:
+                col["id"] = col["title"].lower()
+            if "type" not in col:
+                col["type"] = "str"
+            if "overlayIcon" not in col:
+                col["overlayIcon"] = None
+            return col
+
+        if isinstance(col, Var):
+            return col
+
+        msg = f"unexpected type ({(type(col).__name__)}: {col}) for column header in data_editor"
+        raise ValueError(msg)
 
 
 def format_data_editor_cell(cell: Any):

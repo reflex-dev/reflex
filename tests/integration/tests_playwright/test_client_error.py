@@ -9,7 +9,8 @@ processing events.
 A frontend compiled for another state tree is also detected when it connects:
 it sends the hash of its tree, and the backend answers a mismatch with the
 ``state_mismatch`` event. In prod the page reloads once per cooldown window and
-otherwise shows a "new version available" banner; in dev it only warns.
+otherwise shows a "new version available" banner, unless the app cancels the
+``reflex:state-mismatch`` window event; in dev it only warns.
 """
 
 from __future__ import annotations
@@ -71,6 +72,16 @@ def ClientErrorApp():
                 on_click=ClientErrorState.send_unprocessable_delta,
                 id="break-btn",
             ),
+        )
+
+    @rx.page("/handled")
+    def handled():
+        return rx.fragment(
+            rx.script(
+                "window.addEventListener('reflex:state-mismatch', (event) => {"
+                " event.preventDefault(); window.__state_mismatch = event.detail; });"
+            ),
+            index(),
         )
 
     app = rx.App()
@@ -232,6 +243,44 @@ def client_error_app_env(
         yield harness
 
 
+@pytest.fixture
+def mismatch_reports(
+    client_error_app_env: AppHarness, monkeypatch: pytest.MonkeyPatch
+) -> Generator[list[str], None, None]:
+    """Give the backend a state the compiled frontend lacks.
+
+    Args:
+        client_error_app_env: Running AppHarness instance.
+        monkeypatch: pytest fixture for patching the exception handler.
+
+    Yields:
+        The frontend exceptions reported to the backend.
+    """
+    assert client_error_app_env.app_instance is not None
+    reports: list[str] = []
+    monkeypatch.setattr(
+        client_error_app_env.app_instance,
+        "frontend_exception_handler",
+        lambda exc: reports.append(str(exc)),
+    )
+
+    class ClientErrorExtraState(State):
+        extra: int = 0
+
+    try:
+        yield reports
+    finally:
+        context = RegistrationContext.get()
+        context.get_substates(State).discard(ClientErrorExtraState)
+        context.base_states.pop(ClientErrorExtraState.get_full_name(), None)
+        for name, registered in list(context.event_handlers.items()):
+            if ClientErrorExtraState in registered.states:
+                del context.event_handlers[name]
+        all_base_state_classes.pop(ClientErrorExtraState.get_full_name(), None)
+        State.get_class_substate.cache_clear()
+        _frontend_schema.cache_clear()
+
+
 def _is_mismatch_warning(msg: ConsoleMessage) -> bool:
     """Whether a console message is the frontend's state mismatch warning.
 
@@ -271,9 +320,7 @@ def test_matching_schema_shows_nothing(client_error_app_env: AppHarness, page: P
 
 
 def test_state_mismatch_prompts_reload(
-    client_error_app_env: AppHarness,
-    page: Page,
-    monkeypatch: pytest.MonkeyPatch,
+    client_error_app_env: AppHarness, page: Page, mismatch_reports: list[str]
 ):
     """A frontend compiled without a state the backend has is told to reload.
 
@@ -287,50 +334,70 @@ def test_state_mismatch_prompts_reload(
     Args:
         client_error_app_env: Running AppHarness instance.
         page: Playwright page fixture.
-        monkeypatch: pytest fixture for patching the exception handler.
+        mismatch_reports: The frontend exceptions reported to the backend.
     """
     assert client_error_app_env.frontend_url is not None
-    assert client_error_app_env.app_instance is not None
-    reports: list[str] = []
-    monkeypatch.setattr(
-        client_error_app_env.app_instance,
-        "frontend_exception_handler",
-        lambda exc: reports.append(str(exc)),
-    )
-
-    class ClientErrorExtraState(State):
-        extra: int = 0
-
-    try:
-        if isinstance(client_error_app_env, AppHarnessProd):
+    if isinstance(client_error_app_env, AppHarnessProd):
+        page.goto(client_error_app_env.frontend_url)
+        # The first mismatch reloads the page at once.
+        page.wait_for_function(f"{NAVIGATION_TYPE} === 'reload'")
+        # The reload hits the same mismatch inside the cooldown: a banner.
+        banner = page.locator(NEW_VERSION_BANNER)
+        expect(banner).to_be_visible()
+        expect(banner).to_contain_text("new version")
+        page.evaluate("() => { window.__same_document = true; }")
+        page.wait_for_timeout(1500)
+        assert page.evaluate("() => window.__same_document") is True
+        expect(page.locator(NEW_VERSION_BANNER)).to_have_count(1)
+        # The button reloads and restarts the cooldown.
+        banner.get_by_role("button", name="Reload").click()
+        page.wait_for_function("() => window.__same_document === undefined")
+        expect(page.locator(NEW_VERSION_BANNER)).to_be_visible()
+    else:
+        with page.expect_console_message(_is_mismatch_warning):
             page.goto(client_error_app_env.frontend_url)
-            # The first mismatch reloads the page at once.
-            page.wait_for_function(f"{NAVIGATION_TYPE} === 'reload'")
-            # The reload hits the same mismatch inside the cooldown: a banner.
-            banner = page.locator(NEW_VERSION_BANNER)
-            expect(banner).to_be_visible()
-            expect(banner).to_contain_text("new version")
-            page.evaluate("() => { window.__same_document = true; }")
-            page.wait_for_timeout(1500)
-            assert page.evaluate("() => window.__same_document") is True
-            expect(page.locator(NEW_VERSION_BANNER)).to_have_count(1)
-            # The button reloads and restarts the cooldown.
-            banner.get_by_role("button", name="Reload").click()
-            page.wait_for_function("() => window.__same_document === undefined")
-            expect(page.locator(NEW_VERSION_BANNER)).to_be_visible()
-        else:
-            with page.expect_console_message(_is_mismatch_warning):
-                page.goto(client_error_app_env.frontend_url)
-            page.wait_for_timeout(1000)
-            assert page.evaluate(NAVIGATION_TYPE) == "navigate"
-            expect(page.locator(NEW_VERSION_BANNER)).to_have_count(0)
-        # The unknown-substate fallback stays in place next to the detection.
-        assert AppHarness._poll_for(lambda: reports)
-        assert "no dispatch function" in reports[0]
-    finally:
-        context = RegistrationContext.get()
-        context.get_substates(State).discard(ClientErrorExtraState)
-        context.base_states.pop(ClientErrorExtraState.get_full_name(), None)
-        all_base_state_classes.pop(ClientErrorExtraState.get_full_name(), None)
-        State.get_class_substate.cache_clear()
-        _frontend_schema.cache_clear()
+        page.wait_for_timeout(1000)
+        assert page.evaluate(NAVIGATION_TYPE) == "navigate"
+        expect(page.locator(NEW_VERSION_BANNER)).to_have_count(0)
+    # The unknown-substate fallback stays in place next to the detection.
+    assert AppHarness._poll_for(lambda: mismatch_reports)
+    assert "no dispatch function" in mismatch_reports[0]
+
+
+def test_state_mismatch_handled_by_app(
+    client_error_app_env: AppHarness, page: Page, mismatch_reports: list[str]
+):
+    """An app that cancels the mismatch window event keeps the page as it is.
+
+    In prod the page dispatches ``reflex:state-mismatch`` before it reloads or
+    shows the banner; the page's listener calls preventDefault(), so neither
+    happens and the page keeps working. In dev the event is not dispatched and
+    the page only warns, as without a listener.
+
+    Args:
+        client_error_app_env: Running AppHarness instance.
+        page: Playwright page fixture.
+        mismatch_reports: The frontend exceptions reported to the backend.
+    """
+    assert client_error_app_env.frontend_url is not None
+    url = f"{client_error_app_env.frontend_url.rstrip('/')}/handled"
+    if isinstance(client_error_app_env, AppHarnessProd):
+        # The console names both hashes although the app handles the mismatch.
+        with page.expect_console_message(_is_mismatch_warning):
+            page.goto(url)
+        page.wait_for_function("() => window.__state_mismatch !== undefined")
+        detail = page.evaluate("() => window.__state_mismatch")
+        assert detail["frontend"]
+        assert detail["backend"]
+        assert detail["frontend"] != detail["backend"]
+    else:
+        with page.expect_console_message(_is_mismatch_warning):
+            page.goto(url)
+        assert page.evaluate("() => window.__state_mismatch") is None
+    expect(page.locator("#token")).not_to_have_value("")
+    page.click("#bump-btn")
+    expect(page.locator("#counter")).to_have_text("1")
+    assert page.evaluate(NAVIGATION_TYPE) == "navigate"
+    expect(page.locator(NEW_VERSION_BANNER)).to_have_count(0)
+    assert page.evaluate(f"sessionStorage.getItem('{LAST_RELOADED_KEY}')") is None
+    assert AppHarness._poll_for(lambda: mismatch_reports)

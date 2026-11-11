@@ -49,6 +49,11 @@ has_too_many_connection_errors = Var(
     _js_expr="(connectErrors.length >= 2)", _var_data=connect_error_var_data
 ).to(BooleanVar)
 
+has_hydration_payload_error = Var(
+    _js_expr=f"connectErrors.some((error) => error.code === '{constants.ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE}')",
+    _var_data=connect_error_var_data,
+).to(BooleanVar)
+
 
 class WebsocketTargetURL(Var):
     """A component that renders the websocket target URL."""
@@ -96,6 +101,8 @@ class ConnectionToaster(Fragment):
             The hooks for the connection toaster.
         """
         toast_id = "websocket-error"
+        # Its own id, so a pending dismiss of the connection toast cannot remove it.
+        hydration_toast_id = "hydration-payload-error"
         target_url = WebsocketTargetURL.create()
         props = ToastProps(
             description=LiteralVar.create(
@@ -159,7 +166,9 @@ setTimeout(() => {{
                 Var(
                     _js_expr=f"""
 () => {{
-    if ({has_too_many_connection_errors!s}) {{
+    if ({has_hydration_payload_error!s}) {{
+        toast?.error({connection_error!s}, {{id: "{hydration_toast_id}", closeButton: true, duration: Infinity}});
+    }} else if ({has_too_many_connection_errors!s}) {{
         if (!userDismissed) {{
             {toast_var!s}
         }}

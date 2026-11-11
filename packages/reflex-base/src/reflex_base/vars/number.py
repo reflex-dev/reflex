@@ -6,6 +6,7 @@ import dataclasses
 import decimal
 import json
 import math
+import re
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, overload
 
@@ -38,6 +39,7 @@ NUMBER_T = TypeVarExt(
 
 if TYPE_CHECKING:
     from .sequence import ArrayVar
+    from .set import SetVar
 
 
 def raise_unsupported_operand_types(
@@ -131,7 +133,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     def __mul__(self, other: number_types | boolean_types) -> NumberVar: ...
 
     @overload
-    def __mul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
+    def __mul__(self, other: list | tuple | set | ArrayVar | SetVar) -> ArrayVar: ...
 
     def __mul__(self, other: Any):
         """Multiply two numbers.
@@ -143,9 +145,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
             The number multiplication operation.
         """
         from .sequence import ArrayVar, LiteralArrayVar
+        from .set import SetVar
 
-        if isinstance(other, (list, tuple, ArrayVar)):
-            if isinstance(other, ArrayVar):
+        if isinstance(other, (list, tuple, ArrayVar, SetVar)):
+            if isinstance(other, (ArrayVar, SetVar)):
                 return other * self
             return LiteralArrayVar.create(other) * self
 
@@ -158,7 +161,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     def __rmul__(self, other: number_types | boolean_types) -> NumberVar: ...
 
     @overload
-    def __rmul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
+    def __rmul__(self, other: list | tuple | set | ArrayVar | SetVar) -> ArrayVar: ...
 
     def __rmul__(self, other: Any):
         """Multiply two numbers.
@@ -170,9 +173,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
             The number multiplication operation.
         """
         from .sequence import ArrayVar, LiteralArrayVar
+        from .set import SetVar
 
-        if isinstance(other, (list, tuple, ArrayVar)):
-            if isinstance(other, ArrayVar):
+        if isinstance(other, (list, tuple, ArrayVar, SetVar)):
+            if isinstance(other, (ArrayVar, SetVar)):
                 return other * self
             return LiteralArrayVar.create(other) * self
 
@@ -647,6 +651,9 @@ def number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
     return f"({lhs!s} % {rhs!s})"
 
 
+_STARTS_WITH_UNARY_OPERATOR = re.compile(r"[-+!~]|(?:typeof|void|delete|await)\b")
+
+
 @binary_number_operation
 def number_exponent_operation(lhs: NumberVar, rhs: NumberVar):
     """Exponentiate two numbers.
@@ -658,7 +665,12 @@ def number_exponent_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number exponent operation.
     """
-    return f"({lhs!s} ** {rhs!s})"
+    base = str(lhs)
+    # JavaScript rejects a unary expression as the base of `**` (`-2 ** 2` is a
+    # SyntaxError), so a negative literal or a negated var must be parenthesized.
+    if _STARTS_WITH_UNARY_OPERATOR.match(base):
+        base = f"({base})"
+    return f"({base} ** {rhs!s})"
 
 
 @var_operation
