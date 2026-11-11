@@ -6,6 +6,29 @@ security-relevant, or significant user impact / trivially small; everything else
 put it there; items the release owner pulled forward say so. All PRs opened from this pass carry the label `on deck` and
 the milestone `v0.11.0`.
 
+## Verdict (2026-11-11, after Phase 7 on 0.11.0a2 + reflex-enterprise 0.9.12)
+
+**GO: the train is good to finalize as 0.11.0; no further fix iteration is required.** Every finding that was fixed
+for this train passes its original repro on the published 0.11.0a2 (+ reflex-enterprise 0.9.12), against a clean a1
+control that still reproduces it, including all 15 regressions against 0.10.1. No new regression was found. The new
+issues from Phase 7 are LOW and not regressions (reflex #7856, #7857, #7858; rxe #296), and every remaining finding is
+tracked (`TRACKING.md`; label `release-train`). Details: `FINDINGS.md` → "Phase 7".
+
+Owner decisions still open (none blocks on its own):
+1. reflex-dev/reflex#7819 (Windows `supervise_output` may wait for a lingering descendant on shutdown; new in 0.11 via
+   #7650) — ship with it filed, or fix first. Not exercised by Phase 7 (no Windows box).
+2. reflex-dev/reflex#7856 is a ~2-line fix (resolve both paths) to the #7809 hint; optional before the final.
+
+Final-release mechanics: `release-from-prerelease` lifts each prerelease sibling floor only to an already-**tagged**
+final and holds back a package it cannot satisfy, so the final publishes in dependency order:
+1. reflex-base, reflex-components-code, reflex-components-radix, reflex-components-lucide, reflex-hosting-cli (final
+   floors only; reflex-otel / reflex-release are also alpha-topped and would be finalized by an unselected run).
+2. reflex-components-core (needs `reflex-base >= 0.11.0a1` → lifted to 0.11.0).
+3. reflex (needs code / core / radix / lucide / hosting-cli finals; reflex-base is pinned exactly as the lockstep
+   `publish-last` member). This also lifts `reflex-components-core >= 0.11.0a1`, which closes the a1→a2 in-place gap
+   noted in Phase 7.
+Then the Phase 7 close-out step: a stock `pip install reflex==0.11.0` (no `--pre`) smoke confirming an all-final graph.
+
 ## Status at a glance (last updated 2026-11-11)
 | Finding | What | Status |
 |---|---|---|
