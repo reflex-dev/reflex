@@ -554,6 +554,21 @@ def _host_authority(host: str, default_port: int) -> tuple[str | None, int] | No
     return parts.hostname, port or default_port
 
 
+_MAX_LOGGED_HEADER = 200
+
+
+def _clip(value: str | None) -> str:
+    """Quote a request header value for a log line, cut to a bounded length.
+
+    Args:
+        value: The header value, if any.
+
+    Returns:
+        The quoted, possibly shortened value.
+    """
+    return repr(value if value is None else value[:_MAX_LOGGED_HEADER])
+
+
 def _trusted_forwarded_value(value: str, trusted_proxy_hops: int) -> str | None:
     """Pick the entry a trusted proxy chain wrote into a comma-separated header.
 
@@ -675,6 +690,8 @@ class _SocketOriginCheck:
             return True
         if self._warned:
             return False
+        # Only the warning below uses it from here on; keep the log line short.
+        origin = origin[:_MAX_LOGGED_HEADER]
         if (
             not hops
             and forwarded_host
@@ -696,8 +713,9 @@ class _SocketOriginCheck:
         self._warn(
             origin,
             "in prod mode the backend accepts only its own origin (request Host "
-            f"{host!r}, X-Forwarded-Host {forwarded_host!r}, trusted_proxy_hops "
-            f"{hops})"
+            f"{_clip(host)}, X-Forwarded-Host {_clip(forwarded_host)} "
+            + ("trusted" if hops else "ignored as trusted_proxy_hops is 0")
+            + ")"
             + (f" and {sorted(self._origins)}" if self._origins else "")
             + f"; {fix}",
         )
@@ -714,7 +732,7 @@ class _SocketOriginCheck:
             return
         self._warned = True
         logger.warning(
-            f"Rejected an event websocket from origin {origin!r}: {reason}. "
+            f"Rejected an event websocket from origin {_clip(origin)}: {reason}. "
             "This warning is logged once per worker."
         )
 
@@ -727,10 +745,12 @@ def _socket_cors_allowed_origins() -> list[str] | _SocketOriginCheck:
     ``deploy_url`` never locks out a frontend served by the backend itself.
 
     Returns:
-        The resolved origins when they allow any origin, otherwise a check.
+        The resolved origins when they allow any origin or are an explicit
+        empty list (which engine.io treats as no origin check), otherwise a
+        check.
     """
     origins = _cors_allowed_origins()
-    if origins is not None and "*" in origins:
+    if origins is not None and (not origins or "*" in origins):
         return origins
     config = get_config()
     return _SocketOriginCheck(

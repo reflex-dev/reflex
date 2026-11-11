@@ -6398,12 +6398,18 @@ def test_socketio_rejection_warns_once_with_fix(
 
 
 @pytest.mark.parametrize(
-    ("origin", "accepted"),
-    [("https://app.example.com", True), ("https://evil.example", False)],
+    ("config_kwargs", "origin", "accepted"),
+    [
+        ({}, "https://app.example.com", True),
+        ({}, "https://evil.example", False),
+        # engine.io skips its origin check for an empty list, as before #7641.
+        ({"cors_allowed_origins": []}, "https://evil.example", True),
+    ],
 )
 def test_event_websocket_handshake_behind_tls_proxy(
     mocker: MockerFixture,
     monkeypatch: pytest.MonkeyPatch,
+    config_kwargs: dict[str, Any],
     origin: str,
     accepted: bool,
 ):
@@ -6412,10 +6418,11 @@ def test_event_websocket_handshake_behind_tls_proxy(
     Args:
         mocker: The pytest mocker fixture.
         monkeypatch: The pytest monkeypatch fixture.
+        config_kwargs: Extra config values.
         origin: The Origin header of the handshake.
         accepted: Whether the handshake should be accepted.
     """
-    app = _socket_app(mocker, monkeypatch)
+    app = _socket_app(mocker, monkeypatch, **config_kwargs)
     mocker.patch.object(app, "_compile")
     # The proxy forwards plain ws with the public Host and no forwarded headers.
     client = TestClient(app())
@@ -6430,6 +6437,26 @@ def test_event_websocket_handshake_behind_tls_proxy(
             client.websocket_connect(url, headers=headers),
         ):
             pass
+
+
+def test_socketio_rejection_warning_bounds_logged_headers(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """The rejection warning cuts oversized Origin and Host values.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    app = _socket_app(mocker, monkeypatch)
+    long_host = "h" * 5000
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert not _socket_accepts(app, f"https://{long_host}.evil", long_host)
+    (warning,) = [r.getMessage() for r in caplog.records if r.name == "reflex.app"]
+    assert len(warning) < 2000
 
 
 def _polling_engine_app(max_size: int):
