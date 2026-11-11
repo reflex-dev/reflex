@@ -141,3 +141,7 @@ was only reached through the cancel variant. Positive control never reproduced -
   `from_url`; checked on redis-py 7.4.1 / 8.1.0 / 8.2.0b1) — a usable mitigation for half-open connections.
 - No "attached to a different loop", "Task was destroyed", "never awaited" in any server log (#7751; dev hot reload +
   Redis and multi-worker prod both fine).
+- Table C with `REFLEX_OPLOCK_ENABLED=true`, 2 workers: 0.11.0a1 raise/supersedes/reload/bg/disconnect PASS; 0.10.1:
+  raise_mid UI r2=0 while the server has r2=1 (client/server divergence, #7696 fixed). The #7738 rows are not meaningful
+  under oplock (the lease serves the cached state, so the armed unpickle never runs; the left-over armed CLIENT PAUSE then
+  fires on a later load and delays that event 3 s — a harness artifact, not a finding).
