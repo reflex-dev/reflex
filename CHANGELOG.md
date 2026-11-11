@@ -66,7 +66,7 @@
 ### Performance
 
 - Lazy bundled libraries now load only the modules required by each dynamic component instead of loading every registered optional library at once. ([#7276](https://github.com/reflex-dev/reflex/issues/7276))
-- The backend no longer wraps the app in an extra `Starlette` application to run lifespan tasks, which removes a routing layer from every request. As a result, calling the `rx.App` instance returns a plain ASGI app rather than a `Starlette` instance. ([#7624](https://github.com/reflex-dev/reflex/issues/7624))
+- The backend no longer wraps the app in an extra `Starlette` application to run lifespan tasks, which removes a routing layer from every request. ([#7624](https://github.com/reflex-dev/reflex/issues/7624))
 
 
 ## v0.10.1 (2026-10-26)
