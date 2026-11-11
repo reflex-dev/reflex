@@ -57,8 +57,12 @@ class MyAuthProvider(AuthProvider):
         self, username: str, password: str, remember_me: bool, request: Request
     ) -> None:
         if not (
-            secrets.compare_digest(username, os.environ["ADMIN_USERNAME"])
-            and secrets.compare_digest(password, os.environ["ADMIN_PASSWORD"])
+            secrets.compare_digest(
+                username.encode(), os.environ["ADMIN_USERNAME"].encode()
+            )
+            and secrets.compare_digest(
+                password.encode(), os.environ["ADMIN_PASSWORD"].encode()
+            )
         ):
             raise LoginFailed("Invalid username or password")
         request.session["admin_user"] = username
