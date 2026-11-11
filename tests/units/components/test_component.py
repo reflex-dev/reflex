@@ -2610,9 +2610,5 @@ def test_ref_hook_registers_through_state_helper():
     assert hook is not None
     assert str(hook) == 'const ref_my_box = useRegisteredRef("ref_my_box");'
     hook_imports = component._get_hooks_imports()
-    # ``refs`` rides along for 0.10-era code that reads ``refs[...]`` unimported.
-    assert set(hook_imports["$/utils/state"]) == {
-        ImportVar(tag="useRegisteredRef"),
-        ImportVar(tag="refs"),
-    }
+    assert list(hook_imports["$/utils/state"]) == [ImportVar(tag="useRegisteredRef")]
     assert "react" not in hook_imports
