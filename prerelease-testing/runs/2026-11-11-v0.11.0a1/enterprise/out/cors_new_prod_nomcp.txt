@@ -1,0 +1,11 @@
+endpoint                                                 preflight                ACAO(pre) status                     ACAO ACAC
+GET /ping                                                      405                     None    200                     None None
+POST /_reflex/auth/token                                       405                     None    200                     None None
+POST /_reflex/event/xcut___xcut____pub/probe                   405                     None    200                     None None
+POST /_reflex/retrieve_state                                   405                     None    200                     None None
+POST /_reflex/mcp/                                             405                     None    405                     None None
+GET /.well-known/oauth-authorization-server                    405                     None    404                     None None
+POST /_reflex/cookies/sync                                     405                     None    405                     None None
+GET /_event/?EIO=4&transport=polling                           400                     None    400                     None true
+cross_origin {"ping": "BLOCKED Failed to fetch", "token": "BLOCKED Failed to fetch", "event": "BLOCKED Failed to fetch", "mcp": "BLOCKED Failed to fetch", "cookie_sync": "BLOCKED Failed to fetch", "socketio_poll": "BLOCKED Failed to fetch"}
+same_origin {"ping": "200 \"pong\"", "token": "200 {\"access_token\": \"<redacted>\", \"token_type\": \"B", "event": "200 {\"reflex___state____state\": {\"rx_router_headers\": {\"host\": \"localhost:8380\", \"or", "mcp": "405 Method Not Allowed", "cookie_sync": "405 Method Not Allowed", "socketio_poll": "400 \"Invalid transport\""}

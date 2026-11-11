@@ -1,0 +1,22 @@
+reflex 0.11.0a1
+- event                                        ok class-attr=EventHandler registered=True fn=function bg=False actions={}
+- event / logged                               ok class-attr=EventHandler registered=True fn=function bg=False actions={}
+- logged / event                               ok class-attr=EventHandler registered=True fn=function bg=False actions={}
+    warning: Decorators above @rx.event has been deprecated in version 0.11.0. `h` is decorated above @rx.event; apply other decorators below it. It will be completely removed in 1.0. (apps/events_await/probes/deco_matrix.py:76)
+- no_wraps / event                             ok class-attr=EventHandler registered=True fn=function bg=False actions={}
+- event / event                                FAILS at class creation: AttributeError: 'EventHandler' object has no attribute '__qualname__'
+- event / event(background=True)  [overkey]    FAILS at class creation: AttributeError: 'EventHandler' object has no attribute '__qualname__'
+- event(background=True) / event               FAILS at class creation: TypeError: Background task must be async function or generator.
+- event / event(throttle=300)                  FAILS at class creation: AttributeError: 'EventHandler' object has no attribute '__qualname__'
+- event(throttle=300) / event                  FAILS at class creation: FrozenInstanceError: cannot assign to field '_rx_event_actions'
+- event(background=True) / alogged             ok class-attr=EventHandler registered=True fn=function bg=True actions={}
+- alogged / event(background=True)             ok class-attr=EventHandler registered=True fn=function bg=True actions={}
+- logged / event(background=True)              ok class-attr=EventHandler registered=True fn=function bg=True actions={}
+- staticmethod / event                         ok class-attr=staticmethod registered=False
+- event / staticmethod                         ok class-attr=staticmethod registered=False
+    warning: @rx.event on a staticmethod or classmethod has been deprecated in version 0.11.0. The decorator has no effect there; remove it. It will be completely removed in 1.0. (apps/events_await/probes/deco_matrix.py:57)
+- classmethod / event                          ok class-attr=classmethod registered=False
+- event / classmethod                          ok class-attr=classmethod registered=False
+    warning: @rx.event on a staticmethod or classmethod has been deprecated in version 0.11.0. The decorator has no effect there; remove it. It will be completely removed in 1.0. (apps/events_await/probes/deco_matrix.py:59)
+- functools.partialmethod(event)               ok class-attr=partialmethod registered=False
+- property / event                             ok class-attr=property registered=False

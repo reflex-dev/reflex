@@ -1,0 +1,87 @@
+{
+ "label": "new_prod_nomcp",
+ "raw": {
+  "GET /ping": {
+   "preflight": 405,
+   "pre_acao": null,
+   "status": 200,
+   "acao": null,
+   "acac": null,
+   "body": "\"pong\""
+  },
+  "POST /_reflex/auth/token": {
+   "preflight": 405,
+   "pre_acao": null,
+   "status": 200,
+   "acao": null,
+   "acac": null,
+   "body": "{\"access_token\": \"<redacted>\", \"token_type\": \"Bearer\", \"expires_in\": 3600, \"session\": \"anonymous\"}"
+  },
+  "POST /_reflex/event/xcut___xcut____pub/probe": {
+   "preflight": 405,
+   "pre_acao": null,
+   "status": 200,
+   "acao": null,
+   "acac": null,
+   "body": "{\"reflex___state____state\": {\"rx_router_headers\": {\"host\": \"localhost:8380\", \"origin\": \"http://localhost:3399\", \"upgrade\": \"\", \"connection\": \"keep-alive\", \"prag"
+  },
+  "POST /_reflex/retrieve_state": {
+   "preflight": 405,
+   "pre_acao": null,
+   "status": 200,
+   "acao": null,
+   "acac": null,
+   "body": "{\"reflex___state____state\": {\"is_hydrated\": false, \"rx_router_headers\": {\"host\": \"localhost:8380\", \"origin\": \"http://localhost:3399\", \"upgrade\": \"\", \"connection"
+  },
+  "POST /_reflex/mcp/": {
+   "preflight": 405,
+   "pre_acao": null,
+   "status": 405,
+   "acao": null,
+   "acac": null,
+   "body": "Method Not Allowed"
+  },
+  "GET /.well-known/oauth-authorization-server": {
+   "preflight": 405,
+   "pre_acao": null,
+   "status": 404,
+   "acao": null,
+   "acac": null,
+   "body": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta content=\"width=device-width, initial-scale=1\" name=\"viewport\"/><link as=\"style\" href=\"/assets/"
+  },
+  "POST /_reflex/cookies/sync": {
+   "preflight": 405,
+   "pre_acao": null,
+   "status": 405,
+   "acao": null,
+   "acac": null,
+   "body": "Method Not Allowed"
+  },
+  "GET /_event/?EIO=4&transport=polling": {
+   "preflight": 400,
+   "pre_acao": null,
+   "status": 400,
+   "acao": null,
+   "acac": "true",
+   "body": "\"http://localhost:3399 is not an accepted origin.\""
+  }
+ },
+ "browser": {
+  "cross_origin": {
+   "ping": "BLOCKED Failed to fetch",
+   "token": "BLOCKED Failed to fetch",
+   "event": "BLOCKED Failed to fetch",
+   "mcp": "BLOCKED Failed to fetch",
+   "cookie_sync": "BLOCKED Failed to fetch",
+   "socketio_poll": "BLOCKED Failed to fetch"
+  },
+  "same_origin": {
+   "ping": "200 \"pong\"",
+   "token": "200 {\"access_token\": \"<redacted>\", \"token_type\": \"B",
+   "event": "200 {\"reflex___state____state\": {\"rx_router_headers\": {\"host\": \"localhost:8380\", \"or",
+   "mcp": "405 Method Not Allowed",
+   "cookie_sync": "405 Method Not Allowed",
+   "socketio_poll": "400 \"Invalid transport\""
+  }
+ }
+}

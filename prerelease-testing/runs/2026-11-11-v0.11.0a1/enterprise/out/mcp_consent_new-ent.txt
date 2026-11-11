@@ -1,0 +1,4 @@
+issuer http://localhost:8393/ authorization_endpoint http://localhost:8393/authorize
+register 201
+authorize -> 302 Location: http://localhost:8393/agent-consent?txn=-_arQqx2FwnQa-80Yrus54_A4ffn4jKQdG4iwhJiKmw
+consent URL -> 404 text/plain; charset=utf-8 'Not Found'

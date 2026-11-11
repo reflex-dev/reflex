@@ -1,0 +1,33 @@
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[Reflex Frontend Exception]
+ ReferenceError: refs is not defined
+ReferenceError: refs is not defined
+    at Object.function (http://localhost:8380/assets/_index-DK0DnlIF.js:1:1)
+    at applyEvent (http://localhost:8380/assets/button-DGtr6ad-.js:3:3733)
+    at processEvent (http://localhost:8380/assets/button-DGtr6ad-.js:3:5624)
+    at queueEvents (http://localhost:8380/assets/button-DGtr6ad-.js:3:5418)
+    at http://localhost:8380/assets/button-DGtr6ad-.js:3:14655
+    at y (http://localhost:8380/assets/button-DGtr6ad-.js:3:11925)
+    at applyEventActions 
+(http://localhost:8380/assets/button-DGtr6ad-.js:3:12044)
+    at Object.addEvents 
+(http://localhost:8380/assets/button-DGtr6ad-.js:3:14633)
+    at addEvents (http://localhost:8380/assets/button-DGtr6ad-.js:6:8231)
+    at http://localhost:8380/assets/_index-DK0DnlIF.js:74:150701
+
+[Reflex Frontend Exception]
+ ReferenceError: refs is not defined
+ReferenceError: refs is not defined
+    at Object.function (http://localhost:8380/assets/_index-DK0DnlIF.js:1:1)
+    at applyEvent (http://localhost:8380/assets/button-DGtr6ad-.js:3:3733)
+    at processEvent (http://localhost:8380/assets/button-DGtr6ad-.js:3:5624)
+    at queueEvents (http://localhost:8380/assets/button-DGtr6ad-.js:3:5418)
+    at http://localhost:8380/assets/button-DGtr6ad-.js:3:14655
+    at y (http://localhost:8380/assets/button-DGtr6ad-.js:3:11925)
+    at applyEventActions 
+(http://localhost:8380/assets/button-DGtr6ad-.js:3:12044)
+    at Object.addEvents 
+(http://localhost:8380/assets/button-DGtr6ad-.js:3:14633)
+    at addEvents (http://localhost:8380/assets/button-DGtr6ad-.js:6:8231)
+    at http://localhost:8380/assets/_index-DK0DnlIF.js:74:151559

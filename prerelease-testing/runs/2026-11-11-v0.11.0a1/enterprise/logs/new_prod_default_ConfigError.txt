@@ -1,0 +1,33 @@
+222-Warning: Page index is being redefined with the same component.
+223-Warning: Page vault is being redefined with the same component.
+224:Process granian-worker:
+225-Traceback (most recent call last):
+226-  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+227-    self.run()
+228-  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+229-    self._target(*self._args, **self._kwargs)
+230-  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new-ent/lib/python3.12/site-packages/granian/server/mp.py", line 92, in wrapped
+231-    callback = callback_loader()
+232-               ^^^^^^^^^^^^^^^^^
+233-  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new-ent/lib/python3.12/site-packages/granian/_internal.py", line 70, in load_target
+234-    rv = rv()
+235-         ^^^^
+236-  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new-ent/lib/python3.12/site-packages/reflex/utils/exec.py", line 519, in _backend_app
+237-    return getattr(app_module, constants.CompileVars.APP)()
+238-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+239-  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new-ent/lib/python3.12/site-packages/reflex/app.py", line 961, in __call__
+240-    plugin.post_compile(app=self)
+241-  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new-ent/lib/python3.12/site-packages/reflex_enterprise/plugins/mcp.py", line 1826, in post_compile
+242-    authorization_server = self._build_authorization_server(app)
+243-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+244-  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new-ent/lib/python3.12/site-packages/reflex_enterprise/plugins/mcp.py", line 1579, in _build_authorization_server
+245-    issuer_url = self._resolve_issuer_url()
+246-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+247-  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new-ent/lib/python3.12/site-packages/reflex_enterprise/plugins/mcp.py", line 1478, in _resolve_issuer_url
+248-    raise ConfigError(
+249-reflex_base.utils.exceptions.ConfigError: MCP OAuth needs the app's public origin for the RFC 8414 issuer, but neither MCPPlugin(issuer_url=...) nor the config's deploy_url/api_url is set. Configure one of them.
+250-[ERROR] Unexpected exit from worker-1
+251-[INFO] Shutting down granian
+252-[INFO] Stopped worker-1
+253-Process granian-worker:
+254-Traceback (most recent call last):

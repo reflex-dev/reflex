@@ -3,7 +3,7 @@
 ## Status / resume here
 - DONE: step 1 static scan + import sweep; ENT-29 (entv + aggrid_min prod on new-ent).
 - DONE also: demos dnd/flow/mantine/map prod, xcut (CORS/lifespan/await/parity/Redis), auth parts 1-3 new + part 3 prev, ISSUE 1-3.
-- RUNNING/NEXT: ag_grid + tickets + highcharts demos prod (new), dev runs of demos, prev baselines for anything failing, report.
+- COMPLETE (2026-11-11 ~01:55 UTC). Report: ../reports/enterprise.md. All servers/Redis/IdP/stub stopped.
 - Venvs: `$SB/envs/new-ent` (reflex 0.11.0a1 + rxe 0.9.11[mcp], redis 8.2.0b1), `$SB/envs/prev-ent` (reflex 0.10.1 + rxe 0.9.11, redis 7.4.1).
   Both: mcp 1.30.0, oidc-provider-mock 0.4.8, starlette 1.10.0, granian 2.8.7, asgiproxy+aiohttp+PyYAML present, no fastapi, no pytest.
 - Ports: fe 3380-3399, be 8380-8399; Redis 8399, mock IdP 8398, account stub 8397 (127.0.0.1).
@@ -228,3 +228,35 @@ that run (expected, #7742): "Updated env.py to load the app; the previous one is
 stock env.py). Fix: reflex (dry-run/skip-compile evaluation should collect bundled libraries before compiling state, or not
 compile initial state for `reflex db`), or rxe (defer the bundled-library check). Label both; reflex first (regression from the
 new `evaluate_pages` step).
+
+## Dev-mode runs, new-ent (`logs/seq_dev_new.txt`)
+- dnd **27/27**, flow **22/22** (dev has no "Built with Reflex" index entry, so the prod-only driver miss is absent),
+  mantine **23/23** (0 page errors), map **4/4** (tiles blocked) — 0 tracebacks each.
+- aggrid_min dev **4/4** (ENT-29 also fine in dev).
+- `seq_deeplink.sh new-ent new dev` (vauthd, Redis): A-G **3/3 each** (G = no cookie / HttpOnly token value inside
+  `rx_router_headers`, ENT-16/DOC-14 browser side), 108 audit records, 0 page_load on a stale route; 0 tracebacks.
+- `expiry_matrix.sh new-ent new proactive` (75 s tokens, 120 s idle): still Alice, `reveal_after_120s: allowed:revealed-alice`,
+  reload stays on /dashboard, 4 OIDC cookies = 0.10.0 record (the OIDC refresh timer's `refs[...]` runs via `rx.call_script`
+  inside state.js, so ISSUE 4 does not reach it).
+- Dev log noise worth knowing:
+  - rxe's own code prints `VarData(position=...) has been deprecated in version 0.10.1` from `components/dnd/dnd.py` (x3)
+    and `components/mantine/combobox.py` on every compile. The deprecation exists on 0.10.1 too (not new) -> rxe tracker, low.
+  - reflex's new dev event-loop blocking monitor (#7672) warned once on the flow demo: `Event handler
+    AddNodesOnEdgeDropState.handle_connect_end is blocking the event loop (threshold: 0.200s)` with the stack ending in
+    reflex's own lazy `from reflex.model import Model` inside `base_state_processor._transform_event_arg` (0.219 s on the
+    first typed-payload event). Reflex-side anomaly (the monitor blames the user's handler for reflex's first-use import), low.
+  - Upstream demos' own deprecations (strings in `disable_plugins`, `@rx.memo` without annotations, `ArrayVar.foreach`,
+    `App(theme=...)`, implicit Radix) are demo-side.
+- No rxe-originated deprecation from the 0.11 train (#7673/#7770 decorator order, stateless handlers, #6936, #7642) was
+  printed anywhere; `rxe.event` stacked over `rx.event` is silent. rxe declares no set/frozenset state vars (#7642 n/a).
+
+## Account: token vs stub
+Runs with the real token (`ACCT=token`, `$SB/secrets/reflex_access_token`, never written to the repo): all xcut prod runs,
+agapi prod runs, `repro_mcp_prod.sh ... token`. Fixture-driven prod runs (seq_grid, demo.sh, ag_demo.sh) used the account stub.
+The only side-by-side (`repro_mcp_prod.sh new-ent token` vs `stub`) behaved identically; no behaviour difference seen.
+Logs copied here were grepped for `rfx_` (none) and anonymous REST `access_token` values were redacted.
+
+## Not covered
+- prod OIDC suites of the fixtures (`seq_n032_prod.sh`, `prod_suite.sh`, `seq_n033.sh`): xcut covered prod login/logout with
+  2 workers + Redis instead; `prod_suite.sh` uses entauth (MCPPlugin), which cannot start on 0.11 prod without deploy_url (ISSUE 1).
+- vauthx/vea storage suites (ENT-39/ENT-40), azure, highcharts/tickets dev, flow N-026 A/B, `reflex export` of an rxe app.

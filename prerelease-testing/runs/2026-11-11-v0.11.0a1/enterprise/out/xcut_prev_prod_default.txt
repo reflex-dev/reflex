@@ -1,0 +1,37 @@
+[PASS] index renders (anonymous): anonymous
+[INFO] ws probe: {'via': 'ws', 'client_ip': '127.0.0.1', 'client_token_len': '36', 'session_id_set': 'True', 'host': 'localhost:8380', 'origin': 'http://localhost:8380', 'user_agent_set': 'True', 'cookie_len': '0', 'xff': '', 'page': '/', 'pid': '16676'}
+[PASS] REST anonymous token issued: 200
+[PASS] REST probe 200: 200 {"reflex___state____state": {"rx_router_headers": {"host": "localhost:8380", "origin": "", "upgrade": "", "connection": "keep-alive", "pragma": "", "cache_control": "", "user_agent": "xcut-rest", "sec
+[INFO] rest probe: {'via': 'rest', 'client_ip': '127.0.0.1', 'client_token_len': '36', 'session_id_set': 'False', 'host': 'localhost:8380', 'origin': '', 'user_agent_set': 'True', 'cookie_len': '0', 'xff': '203.0.113.9', 'page': '/_reflex/event/xcut___xcut____pub/probe', 'pid': '16680'}
+[INFO] parity ws vs rest (client_ip, token len, session_id set, xff): {'client_ip': ('127.0.0.1', '127.0.0.1'), 'client_token_len': ('36', '36'), 'session_id_set': ('True', 'False'), 'xff': ('', '203.0.113.9')}
+[PASS] client_ip same over ws and REST (spoofed XFF ignored): ('127.0.0.1', '127.0.0.1')
+[PASS] REST responses: client_token/session_id redacted (empty): []
+[PASS] REST responses do not contain the REST bearer token: 
+[PASS] browser token not in REST bodies: 8ead87
+[PASS] page DOM has no client token: 
+[INFO] anon: url after awaited protected call (ws): http://localhost:8380/
+[FAIL] anon: await Vault.secret_action() returns None: 
+[PASS] anon: protected handler did not run (ws, awaited): RAN 0x
+[INFO] anon: url after bg awaited protected call: http://localhost:8380/
+[FAIL] anon: background-task await returns None: 
+[PASS] anon: protected handler did not run (bg awaited): RAN 0x
+[INFO] REST anon call_protected: 200 {"error": "Error processing event: object EventSpec can't be used in 'await' expression. Check server logs for more details."}
+[INFO] REST anon direct Vault.secret_action: 200 
+[PASS] anon REST: protected handler did not run (awaited or direct): RAN 0x
+[PASS] ws: 5 rapid slow_inc -> n == 5 (serialized per token): 5
+[PASS] ws: background task -> bg == 10: 10
+[PASS] rxe.event stacked over rx.event works: 1
+[PASS] REST: 5 concurrent slow_inc on one token -> n == 5: codes=[200, 200, 200, 200, 200] n=5 dt=1.07s
+[PASS] login as alice via mock IdP lands on /vault: http://localhost:8380/vault/
+[FAIL] alice: await Vault.secret_action() returns value: 
+[FAIL] alice: protected handler ran once: RAN 0x
+[FAIL] alice: direct protected click updates Vault.ran: 1
+[INFO] cookies after login: []
+[INFO] url after logout: http://localhost:8380/?state=NoxsmPm7frIKI8lcSG--ztOWz3eaISYnSfVJLE4xC0T2Dr2fnjrblVNUVU8Fc9NaMLocCfcsV_9WO1ajgHBZhA
+[INFO] after logout: url after awaited protected call: http://localhost:8380/
+[FAIL] after logout: awaited protected returns None and does not run:  RAN 0x
+console errors/warnings: [{"type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}, {"type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"}, {"type": "error", "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"}, {"type": "error", "text": "Failed to load resource: the server responded with a status of 405 (Method Not Allowed)"}, {"type": "error", "text": "Failed to load resource: the server responded with a status of 405 (Method Not Allowed)"}, {"type": "error", "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"}]
+page errors: []
+http>=400: [{'url': 'http://localhost:8380/_reflex/cookies/sync', 'status': 405}, {'url': 'http://localhost:8380/_reflex/cookies/sync', 'status': 405}]
+failed requests: [{'url': 'https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css', 'failure': 'net::ERR_TUNNEL_CONNECTION_FAILED'}, {'url': 'http://localhost:8380/_reflex/cookies/sync', 'failure': 'net::ERR_ABORTED'}, {'url': 'https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css', 'failure': 'net::ERR_TUNNEL_CONNECTION_FAILED'}]
+SUMMARY prev_prod_default: 16/22 pass

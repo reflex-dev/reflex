@@ -1,0 +1,4 @@
+issuer http://localhost:8393/ authorization_endpoint http://localhost:8393/authorize
+register 201
+authorize -> 302 Location: http://localhost:3393/agent-consent?txn=ZXXMl35FsyXCjPotMGiY0kI-UjeTx0_rNXLDQxNPidY
+consent URL -> 200 text/html '<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width'

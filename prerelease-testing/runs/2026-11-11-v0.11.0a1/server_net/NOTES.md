@@ -106,3 +106,28 @@ REFLEX_API_URL=http://localhost:8348 reflex run --env prod --frontend-only --fro
 - 0.10.1: 3/3 OK. 0.11.0a1 + `REFLEX_DEPLOY_URL=http://localhost:3348` on the backend: 3/3 OK.
 - The doc page (and `docker-example/app-platform-backend/README.md`, unchanged since 0.10.1, which tells the user to set only `REFLEX_API_URL` at export time for a CDN-hosted frontend) was not updated for #7641. -> ISSUE.
 - Sitemap (export with deploy_url unset, frontend_port unset): `<loc>http://localhost:3000/...</loc>` on both versions (Config.frontend_url fallback) — unchanged; a prod sitemap with localhost links unless deploy_url is set.
+
+### #7599 case-insensitive routes (`NA_CASE_DUP=1`, `drv.py <base> routes`, dev 3349/8349 and prod 3349)
+| direct load | 0.11.0a1 dev | 0.11.0a1 prod | 0.10.1 prod |
+|---|---|---|---|
+| `/About`, `/ABOUT` | about page, on_load ran, router path `/about`, raw path kept | same, HTTP 200 | HTTP 404, page renders about but router path `/404`, **no on_load** |
+| `/ITEMS/b2`, `/Items/C3/` | item page, on_load ran with `id=b2`/`C3` (param case kept) | same, HTTP 200 | HTTP 404, router `/404`, no on_load |
+| `/nonexistent` | 404 page (HTTP 200 dev) | 404 page HTTP 404 | same |
+| client nav `/About`, `/ITEMS/b2` (prod, `basic`) | on_load ran, router path `/about` / `/items/[id]` | | |
+| `/Assets/x.js` (prod curl) | | 404 | 404 |
+- Two pages differing only in case (`/Foo` + `/foo`): no warning or error at compile on either version. 0.11.0a1: every
+  spelling shows the `/Foo` page AND runs `/Foo`'s on_load (consistent; `/foo`'s page is silently unreachable).
+  0.10.1: `/foo` renders the `/Foo` page (React Router) but runs `/foo`'s on_load (frontend/backend mismatch); `/FOO` 404.
+  -> anomaly/low: a case-colliding `add_page` should be rejected now that matching is case-insensitive (not a regression).
+- note: `router.page.path` for `/` is `/index` (pre-existing naming).
+
+### #7670 hosting-cli `reflex cloud config` (own venvs `server_net-hc` = reflex 0.11.0a1 + hosting-cli 0.2.2a1, `server_net-hcold` = + hosting-cli 0.2.1; network blocked with `HTTPS_PROXY=http://127.0.0.1:9`, HOME=scratch)
+| case | 0.2.2a1 | 0.2.1 |
+|---|---|---|
+| no PyYAML | rc=1, stderr "Please install PyYAML ...", no stdout | rc=0 |
+| no PyYAML `--json` | rc=1, **no stdout document** | rc=0, stdout `{"generated": false, "path": null}` |
+| PyYAML + existing cloud.yml | rc=0 "cloud.yml already exists." (`--json`: `{"generated": false, "path": null}`) | |
+| PyYAML, no cloud.yml, no token, `--no-interactive` | rc=1 "Token is required for non-interactive mode." nothing written | |
+- PyYAML is not a dependency of reflex/hosting-cli (absent from the shared `new` venv), so the first case is what a
+  default install sees. reflex 0.11.0a1 requires only `reflex-hosting-cli>=0.2.1`, so an in-place upgrade keeps 0.2.1
+  (campaign-level note in CAMPAIGN_STATE).

@@ -1,0 +1,41 @@
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/bin/reflex", line 10, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/click/core.py", line 1653, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/click/core.py", line 1560, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/click/core.py", line 2054, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/click/core.py", line 2054, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/click/core.py", line 1414, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/click/core.py", line 911, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/reflex.py", line 1200, in migrate
+    migrations.evaluate_pages()
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/utils/migrations.py", line 98, in evaluate_pages
+    get_compiled_app(dry_run=True)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/app.py", line 1885, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1292, in compile_app
+    utils._compile_initial_state(app._state)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/compiler/utils.py", line 286, in _compile_initial_state
+    initial_state = compile_state(state)
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/compiler/utils.py", line 252, in compile_state
+    cache_initial_snapshot(state, resolved_initial_state)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/state.py", line 2777, in cache_initial_snapshot
+    names_digest, *state_hashes = state_snapshot_hashes(snapshot)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/state.py", line 2724, in state_snapshot_hashes

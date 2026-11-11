@@ -1,0 +1,30 @@
+PONG
+oidc pid 8082 redis pid 8081
+### part 3 a4 auth matrix 01:24:47
+{"attempt": 2, "passed": true, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-data"}}
+{"attempt": 3, "passed": true, "final_values": {"secret": "initial-secret", "secret-view": "computed:initial-secret", "admin-view": "admin-data", "async-admin-view": "async-admin-data"}}
+ready after 3s
+{"case": "iframe_popup", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8393/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8393/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8393/_reflex/cookies/s
+{"case": "iframe_pending_event_replay", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8393/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8393/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8393/_r
+{"attempt": 2, "passed": true, "frame_url": "http://localhost:3393/"}
+{"attempt": 3, "passed": true, "frame_url": "http://localhost:3393/"}
+waiting for navigation to "re.compile('/login')" until 'load'
+============================================================
+ready after 3s
+{"case": "iframe_popup", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8393/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8393/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8393/_reflex/cookies/s
+{"case": "iframe_pending_event_replay", "passed": true, "page_errors": [], "failed_requests": [{"url": "http://localhost:8393/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8393/_reflex/cookies/sync", "failure": "net::ERR_ABORTED"}, {"url": "http://localhost:8393/_r
+Anonymous MCP token rejection, events, computed reads, redaction and session isolation passed
+A4_MATRIX_DONE
+auth-full: 22/22
+reload-repeat: 3/3
+auth-min-default: 4/4
+iframe-repeat: 3/3
+auth-min-extra: 4/4
+============================================================
+Anonymous MCP token rejection, events, computed reads, redaction and session isolation passed
+auth-full-server.log: tracebacks=0
+auth-min-default-server.log: tracebacks=0
+auth-min-extra-server.log: tracebacks=0
+mcp-anonymous-server.log: tracebacks=0
+stopped-infra
+### ent auth done 01:27:05

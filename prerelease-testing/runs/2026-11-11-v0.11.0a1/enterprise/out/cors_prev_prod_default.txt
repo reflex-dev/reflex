@@ -1,0 +1,11 @@
+endpoint                                                 preflight                ACAO(pre) status                     ACAO ACAC
+GET /ping                                                      200    http://localhost:3399    200    http://localhost:3399 true
+POST /_reflex/auth/token                                       200    http://localhost:3399    200    http://localhost:3399 true
+POST /_reflex/event/xcut___xcut____pub/probe                   200    http://localhost:3399    200    http://localhost:3399 true
+POST /_reflex/retrieve_state                                   200    http://localhost:3399    200    http://localhost:3399 true
+POST /_reflex/mcp/                                             200    http://localhost:3399    200    http://localhost:3399 true
+GET /.well-known/oauth-authorization-server                    200    http://localhost:3399    200    http://localhost:3399 true
+POST /_reflex/cookies/sync                                     200    http://localhost:3399    405    http://localhost:3399 true
+GET /_event/?EIO=4&transport=polling                           200    http://localhost:3399    400 http://localhost:3399, http://localhost:3399 true, true
+cross_origin {"ping": "200 \"pong\"", "token": "200 {\"access_token\": \"<redacted>\", \"token_type\": \"B", "event": "200 {\"reflex___state____state\": {\"rx_router_headers\": {\"host\": \"localhost:8380\", \"or", "mcp": "200 {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":", "cookie_sync": "405 Method Not Allowed", "socketio_poll": "BLOCKED Failed to fetch"}
+same_origin {"ping": "200 \"pong\"", "token": "200 {\"access_token\": \"<redacted>\", \"token_type\": \"B", "event": "200 {\"reflex___state____state\": {\"rx_router_page\": {\"host\": \"http://localhost:8380\",", "mcp": "200 {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":", "cookie_sync": "405 Method Not Allowed", "socketio_poll": "400 \"Invalid transport\""}

@@ -1,0 +1,87 @@
+{
+ "label": "new_prod_corsstar",
+ "raw": {
+  "GET /ping": {
+   "preflight": 200,
+   "pre_acao": "http://localhost:3399",
+   "status": 200,
+   "acao": "http://localhost:3399",
+   "acac": "true",
+   "body": "\"pong\""
+  },
+  "POST /_reflex/auth/token": {
+   "preflight": 200,
+   "pre_acao": "http://localhost:3399",
+   "status": 200,
+   "acao": "http://localhost:3399",
+   "acac": "true",
+   "body": "{\"access_token\": \"<redacted>\", \"token_type\": \"Bearer\", \"expires_in\": 3600, \"session\": \"anonymous\"}"
+  },
+  "POST /_reflex/event/xcut___xcut____pub/probe": {
+   "preflight": 200,
+   "pre_acao": "http://localhost:3399",
+   "status": 200,
+   "acao": "http://localhost:3399",
+   "acac": "true",
+   "body": "{\"reflex___state____state\": {\"rx_router_page\": {\"host\": \"http://localhost:3399\", \"path\": \"/_reflex/event/xcut___xcut____pub/probe\", \"raw_path\": \"/_reflex/event/"
+  },
+  "POST /_reflex/retrieve_state": {
+   "preflight": 200,
+   "pre_acao": "http://localhost:3399",
+   "status": 200,
+   "acao": "http://localhost:3399",
+   "acac": "true",
+   "body": "{\"reflex___state____state\": {\"is_hydrated\": false, \"rx_router_headers\": {\"host\": \"localhost:8380\", \"origin\": \"http://localhost:3399\", \"upgrade\": \"\", \"connection"
+  },
+  "POST /_reflex/mcp/": {
+   "preflight": 200,
+   "pre_acao": "http://localhost:3399",
+   "status": 200,
+   "acao": "http://localhost:3399",
+   "acac": "true",
+   "body": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{\"experimental\":{},\"prompts\":{\"listChanged\":false},\"resources\":{\"subscribe\":fals"
+  },
+  "GET /.well-known/oauth-authorization-server": {
+   "preflight": 200,
+   "pre_acao": "http://localhost:3399",
+   "status": 200,
+   "acao": "http://localhost:3399",
+   "acac": "true",
+   "body": "{\"issuer\":\"http://localhost:8380/\",\"authorization_endpoint\":\"http://localhost:8380/authorize\",\"token_endpoint\":\"http://localhost:8380/token\",\"registration_endpo"
+  },
+  "POST /_reflex/cookies/sync": {
+   "preflight": 200,
+   "pre_acao": "http://localhost:3399",
+   "status": 405,
+   "acao": "http://localhost:3399",
+   "acac": "true",
+   "body": "Method Not Allowed"
+  },
+  "GET /_event/?EIO=4&transport=polling": {
+   "preflight": 200,
+   "pre_acao": "http://localhost:3399",
+   "status": 400,
+   "acao": "http://localhost:3399, http://localhost:3399",
+   "acac": "true, true",
+   "body": "\"Invalid transport\""
+  }
+ },
+ "browser": {
+  "cross_origin": {
+   "ping": "200 \"pong\"",
+   "token": "200 {\"access_token\": \"<redacted>\", \"token_type\": \"B",
+   "event": "200 {\"reflex___state____state\": {\"rx_router_headers\": {\"host\": \"localhost:8380\", \"or",
+   "mcp": "200 {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":",
+   "cookie_sync": "405 Method Not Allowed",
+   "socketio_poll": "BLOCKED Failed to fetch"
+  },
+  "same_origin": {
+   "ping": "200 \"pong\"",
+   "token": "200 {\"access_token\": \"<redacted>\", \"token_type\": \"B",
+   "event": "200 {\"reflex___state____state\": {\"rx_router_page\": {\"host\": \"http://localhost:8380\",",
+   "mcp": "200 {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":",
+   "cookie_sync": "405 Method Not Allowed",
+   "socketio_poll": "400 \"Invalid transport\""
+  }
+ }
+}

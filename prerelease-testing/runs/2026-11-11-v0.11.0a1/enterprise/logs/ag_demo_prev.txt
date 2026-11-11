@@ -1,0 +1,15 @@
+[start.sh] venv=enterprise-demo-prev reflex=0.10.1 reflex-base=0.10.1 reflex-enterprise=0.9.11 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-prev/lib/python3.12/site-packages/reflex/__init__.py
+started pid=31288 pgid=31288
+ready after 14s (frontend 200, /ping 200)
+smoke: 20 pass / 0 fail
+coldefs: 7 pass / 0 fail
+features: 46 pass / 1 fail
+[FAIL] clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event: {'golds': ['8', '6', '4', '1', '2'], 'toasts': []}
+model: 24 pass / 5 fail
+[FAIL] ssrm: rows render on reload right after generate (row_count_cached interval=10s): TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')
+[FAIL] ssrm: filtered rows all match and count matches db: {'sub': 'Rich', 'shown': 22, 'blank_rows': 20, 'db_matches': 2, 'sample': ['Richard Jones', 'Danielle Richardson', '', '', '']}
+[FAIL] infinite: text filter matches db: {'sub': 'Stri', 'shown': 23, 'blank_rows': 22, 'db': 1}
+[FAIL] infinite: add dialog inserts row: {'before': 50, 'after': 50, 'row': None}
+[FAIL] infinite: add dialog closes after submit: 1
+server tracebacks: 2
+reserved ports free

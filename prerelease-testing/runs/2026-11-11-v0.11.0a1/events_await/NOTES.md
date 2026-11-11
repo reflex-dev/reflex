@@ -2,8 +2,9 @@
 
 ## Status / resume here
 - [x] awaitapp (await matrix + middleware + upload + on_load) written; dev + memory run done (`out/new_dev_mem.json`)
-- [ ] awaitapp prod + memory, dev + redis, prod + redis
-- [ ] legacyapp (decorator stacking + failure paths) on 0.11.0a1 and 0.10.1, memory + redis
+- [x] awaitapp prod + memory, dev + redis, prod + redis (identical to dev + memory except `sup_bg_await_x2`, see anomalies)
+- [x] legacyapp (decorator stacking + failure paths) on 0.11.0a1 (dev mem, dev redis, prod redis) and 0.10.1 (dev mem, dev redis)
+- [x] `probes/deco_matrix.py` on both versions; reflex-examples `overkey` import on both versions
 - [ ] typing module (pyright + mypy, 0.11.0a1 vs 0.10.1)
 - [ ] report written to `../reports/events_await.md`
 
@@ -19,3 +20,58 @@ NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python scripts/drive_await.py h
 scripts/srv.sh stop new_dev_mem
 ```
 `srv.sh` starts `reflex run` under `setsid`, waits for 200, and `stop` sends SIGINT to the group and reports how long shutdown took.
+
+legacyapp (runs on both versions; `legacyapp_prev/` is a byte-identical copy initialised with the 0.10.1 venv so the two `.web` dirs do not fight):
+```
+scripts/srv.sh start new  $SB/apps/events_await/legacyapp      dev 3184 8184 leg_new_dev_mem [redis]
+scripts/srv.sh start prev $SB/apps/events_await/legacyapp_prev dev 3185 8185 leg_prev_dev_mem [redis]
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python scripts/drive_legacy.py http://localhost:3184 logs/leg_new_dev_mem.log out/leg_new_dev_mem.json [deco] [fail]
+$SB/envs/driver/bin/python scripts/summ_legacy.py out/leg_new_dev_redis.json out/leg_prev_dev_redis.json
+cd $SB && EXPECT_VENV=$SB/envs/new $SB/envs/new/bin/python -I apps/events_await/probes/deco_matrix.py    # and envs/prev
+```
+
+## Results so far
+
+### FINDING A (HIGH, regression): any second `@rx.event` on a handler crashes the app at import
+`probes/deco_matrix.py` (`out/deco_matrix_{prev,new}.txt`): on 0.10.1 all 18 patterns create the class. On 0.11.0a1:
+| pattern (top / bottom) | 0.11.0a1 |
+|---|---|
+| `@rx.event` / `@rx.event` | `AttributeError: 'EventHandler' object has no attribute '__qualname__'` (state registration, `reflex_base/utils/format.py:448`) |
+| `@rx.event` / `@rx.event(background=True)` (reflex-examples `overkey/overkey.py:164`) | same AttributeError |
+| `@rx.event` / `@rx.event(throttle=300)` | same AttributeError |
+| `@rx.event(background=True)` / `@rx.event` | `TypeError: Background task must be async function or generator.` |
+| `@rx.event(throttle=300)` / `@rx.event` | `FrozenInstanceError: cannot assign to field '_rx_event_actions'` |
+Real app: `overkey_copy/` (copy of reflex-examples `overkey` @ ebe19ff) — `python -c "import overkey.overkey"` imports on 0.10.1 (`tick` is background),
+raises the AttributeError on 0.11.0a1. The changelog promises "A decorator stacked above `@rx.event` is deprecated: the method still runs and
+registers under its own name, with a deprecation warning, until 1.0".
+Cause (read from the installed wheel): `EventNamespace.__new__.wrapper` wraps whatever it is given in `EventHandler(fn=func)`; when `func` is already an
+`EventHandler`, `BaseState._item_is_event_handler` skips it (`isinstance(value, EventHandler)`), and `format_event_handler` then reads `handler.fn.__qualname__`.
+
+### Decorator stacking, other patterns (legacyapp `/`, both versions)
+- `@logged` (functools.wraps) above `@rx.event`, sync / async / generator / with args: all still run on 0.11.0a1, event name unchanged (`...d.above`), state updated.
+  One import-time `DeprecationWarning: Decorators above @rx.event ... \`above\` is decorated above @rx.event` and one call-time
+  `Calling an event handler with a state instance ... \`D.above\`` per wrapper function, not per call (3 more clicks: no new log lines).
+  LOW: the import-time warning is deduped on feature name + the `class D` line, so only the FIRST of 4 stacked methods is named; a user fixes one per run.
+- `@staticmethod` above `@rx.event` (`D.static_over`, `Helper.static_over_event`): 0.10.1 returns `x * 2`; 0.11.0a1 silently returns an `EventSpec`, no warning
+  (the changelog only covers `@rx.event` above `@staticmethod`, which warns and keeps working).
+- `Helper.compute(Helper(), 3)` on a non-state class: 0.10.1 -> 9; 0.11.0a1 -> `EventHandlerTypeError: Arguments to event handlers must be Vars or JSON-serializable` (documented as unsupported).
+- plain-python mixin method with `@rx.event` used as `on_click=D.mix_plain`: broken on both (0.10.1: `TypeError: super(type, obj)` at compile; 0.11.0a1: compiles,
+  click logs `KeyError: 'No registered handler found for event: PlainMixin.mix_plain'`, nothing in the UI).
+- module-level `@rx.event def helper_fn(x: int)`: stays a plain function on both, 0.11.0a1 warns once. Decentralized handlers (`state: D` and `state: "D"`) work on both.
+
+### Failure paths (#7696 / #7412 / #7738) — legacyapp `/fail`, `scripts/summ_legacy.py`
+| scenario | 0.10.1 memory | 0.10.1 redis | 0.11.0a1 memory | 0.11.0a1 redis (dev and prod) |
+|---|---|---|---|---|
+| `a=1; yield; b=2; raise` | b reaches the page only with the next event (1567 ms) | server rolled back to a=0 b=0 while the page shows a=1 | b=2 and its computed var at ~33 ms | same, server a=1 b=2 |
+| `c=3; raise` (no yield) | with next event | lost | immediately | immediately, persisted |
+| write to another state, raise | with next event | lost | immediately | immediately, persisted |
+| `supersedes=True` handler cancelled after its last yield | writes kept | count=1, partial=[b] (first run's writes lost) | writes at cancel time | count=2, partial=[a,b], sent at cancel (1550 ms) |
+| bg task: `async with linked` fails while loading | every later event hangs (no reply in 20 s) | 9 s (lock expiry) | 0.05 s | 0.05 s |
+| bg task superseded while loading | hangs | 7.5 s / 10 s | 0.06 s | 0.05 s |
+`srv.sh stop` after these scenarios: 1.5-2.6 s on every 0.11.0a1 run (no shutdown hang).
+The bg scenarios use a test hook (`F.get_state` overridden with `_override_base_method`) to make loading `Other` slow or failing after the parent took the lock.
+
+### Handler return values from the frontend (new in #7673)
+`return self.a` (int), `return rx.redirect` (forgot the call) and `return self.chained` (bound method — the documented pitfall) raised
+`TypeError: Your handler F.ret_value must only return/yield: None, Events or other EventHandlers referenced by their class...` on 0.10.1.
+On 0.11.0a1 all three are silently accepted as "the handler's result": no log line, no toast, the event the user meant to chain never runs.

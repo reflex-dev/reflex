@@ -1,0 +1,37 @@
+[start.sh] venv=enterprise-demo-new reflex=0.11.0a1 reflex-base=0.11.0a1 reflex-enterprise=0.9.11 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/enterprise-demo-new/lib/python3.12/site-packages/reflex/__init__.py
+started pid=21390 pgid=21390
+ready after 14s (frontend 200, /ping 200)
+smoke: 20 pass / 0 fail
+coldefs: 7 pass / 0 fail
+features: 39 pass / 9 fail
+[FAIL] tree: Save column state writes LocalStorage var: {}
+[FAIL] tree: Load column state button enabled after save (computed var from LocalStorage): False
+[FAIL] tree: Load column state still enabled after reload: 
+[FAIL] tree: scenario completed: exception: TimeoutError('Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator("button:has-text(\'Load column state\')")\n    - locator resolved to
+[FAIL] clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event: {'golds': ['8', '6', '4', '1', '2'], 'toasts': []}
+[FAIL] aligned: expanding Medals group in grid1 also expands grid2: {'before': (0, 0), 'after': (1, 0)}
+[FAIL] aligned: resizing athlete column in grid1 resizes grid2: {'w1_before': 200, 'w1_after': 318, 'w2_after': 200}
+[FAIL] state-grid: on_row_data_updated event chain selected all rows (select_all_on_load): ['false', 'false', 'false', 'false', 'false']
+[FAIL] selected-items: Select All -> on_selection_changed -> State count: Selected Items (0)
+model: 24 pass / 5 fail
+[FAIL] ssrm: rows render on reload right after generate (row_count_cached interval=10s): TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')
+[FAIL] ssrm: filtered rows all match and count matches db: {'sub': 'Dona', 'shown': 22, 'blank_rows': 21, 'db_matches': 1, 'sample': ['Donald Mason', '', '', '', '']}
+[FAIL] infinite: text filter matches db: {'sub': 'John', 'shown': 23, 'blank_rows': 20, 'db': 3}
+[FAIL] infinite: add dialog inserts row: {'before': 50, 'after': 50, 'row': None}
+[FAIL] infinite: add dialog closes after submit: 1
+server tracebacks: 2
+reserved ports free
+[start.sh] venv=new-ent reflex=0.11.0a1 reflex-base=0.11.0a1 reflex-enterprise=0.9.11 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=29476 pgid=29476
+ready after 6s (frontend 200, /ping 200)
+driver exit=0 18 pass / 0 fail
+"console_errors":1,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 3
+reserved ports free
+[start.sh] venv=new-ent reflex=0.11.0a1 reflex-base=0.11.0a1 reflex-enterprise=0.9.11 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new-ent/lib/python3.12/site-packages/reflex/__init__.py
+started pid=30272 pgid=30272
+ready after 6s (frontend 200, /ping 200)
+driver exit=0 13 pass / 0 fail
+"console_errors":1,"console_warnings":5,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free

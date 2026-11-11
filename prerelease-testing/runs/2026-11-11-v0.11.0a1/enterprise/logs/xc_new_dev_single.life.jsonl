@@ -1,0 +1,8 @@
+{"t": 1794359419.382, "pid": 25879, "ev": "module_import"}
+{"t": 1794359421.21, "pid": 25942, "ev": "module_import"}
+{"t": 1794359421.3, "pid": 25942, "ev": "user_task_start", "app_type": "AppEnterprise"}
+{"t": 1794359421.3, "pid": 25942, "ev": "transformer_start"}
+{"t": 1794359421.308, "pid": 25942, "ev": "transformer_start"}
+{"t": 1794359425.476, "pid": 25942, "ev": "transformer_stop"}
+{"t": 1794359425.478, "pid": 25942, "ev": "transformer_stop"}
+{"t": 1794359425.478, "pid": 25942, "ev": "user_task_stop"}

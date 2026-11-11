@@ -1,0 +1,16 @@
+venv=new-ent acct=token extra= ping=000 alive=no
+reflex_base.utils.exceptions.ConfigError: MCP OAuth needs the app's public origin for the RFC 8414 issuer, but neither MCPPlugin(issuer_url=...) nor the config's deploy_url/api_url is set. Configure one of them.
+
+venv=new-ent acct=stub extra= ping=000 alive=no
+reflex_base.utils.exceptions.ConfigError: MCP OAuth needs the app's public origin for the RFC 8414 issuer, but neither MCPPlugin(issuer_url=...) nor the config's deploy_url/api_url is set. Configure one of them.
+
+venv=prev-ent acct=token extra= ping=200 alive=yes
+
+
+
+
+venv=new-ent acct=token extra=REFLEX_DEPLOY_URL=http://localhost:8381 ping=200 alive=yes
+
+
+
+
