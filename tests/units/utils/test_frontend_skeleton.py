@@ -176,7 +176,7 @@ def test_write_package_json_atomic_utf8_lf(
         monkeypatch: Pytest monkeypatch fixture.
     """
     original = package_json_path.read_bytes()
-    content = '{\n  "description": "caf\u00e9"\n}\n'
+    content = '{\n  "description": "café"\n}\n'
     original_replace = Path.replace
     replacements = []
 
