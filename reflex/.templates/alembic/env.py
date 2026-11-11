@@ -9,12 +9,13 @@ commands and the ``alembic`` command line run it.
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 from logging.config import fileConfig
 from typing import TYPE_CHECKING, Literal
 
 import sqlalchemy
-from alembic import command, context
+from alembic import command, context, util
 from alembic.autogenerate.rewriter import Rewriter
 from alembic.operations import ops
 from reflex_base.config import get_config
@@ -65,6 +66,39 @@ target_metadata = ModelRegistry.get_metadata()
 writer = Rewriter()
 
 
+def has_default_factory(op: ops.AddColumnOp) -> bool:
+    """Whether a dataclass model fills the added column with a ``default_factory``.
+
+    Such a default belongs to the dataclass alone: the column does not carry it.
+
+    Args:
+        op: The add-column operation.
+
+    Returns:
+        True if a mapped dataclass gives the column's attribute a default factory.
+    """
+    registries = {
+        registry
+        for model in ModelRegistry.get_models()
+        if (registry := getattr(model, "registry", None)) is not None
+    }
+    for registry in registries:
+        for mapper in registry.mappers:
+            table = mapper.local_table
+            if (table.name, table.schema) != (op.table_name, op.schema) or (
+                not dataclasses.is_dataclass(mapper.class_)
+            ):
+                continue
+            column = table.c.get(op.column.name)
+            keys = {key for key, mapped in mapper.columns.items() if mapped is column}
+            if any(
+                field.name in keys and field.default_factory is not dataclasses.MISSING
+                for field in dataclasses.fields(mapper.class_)
+            ):
+                return True
+    return False
+
+
 @writer.rewrites(ops.AddColumnOp)
 def add_column_with_server_default(
     context: MigrationContext, revision: str | Iterable[str | None], op: ops.AddColumnOp
@@ -73,7 +107,9 @@ def add_column_with_server_default(
 
     Existing rows then get that value when the column is added, so a NOT NULL
     column can be added to a table that already holds data. A callable default
-    is evaluated once, when the migration script is generated.
+    is evaluated once, when the migration script is generated. A dataclass
+    ``default_factory`` is not on the column, so a NOT NULL column with one and
+    no other default is refused rather than added without a value.
 
     Args:
         context: The migration context.
@@ -82,11 +118,27 @@ def add_column_with_server_default(
 
     Returns:
         The same operation, with ``server_default`` filled in.
+
+    Raises:
+        CommandError: If the column is NOT NULL and its only default is a
+            dataclass ``default_factory``.
     """
-    default = op.column.default
-    if default is not None and op.column.server_default is None:
+    column = op.column
+    if column.server_default is not None:
+        return op
+    default = column.default
+    if default is not None:
         value = default.arg(None) if default.is_callable else default.arg
-        op.column.server_default = sqlalchemy.DefaultClause(sqlalchemy.literal(value))
+        column.server_default = sqlalchemy.DefaultClause(sqlalchemy.literal(value))
+    elif not column.nullable and has_default_factory(op):
+        name = ".".join(filter(None, (op.schema, op.table_name, column.name)))
+        msg = (
+            f"Cannot add the NOT NULL column {name!r}: its default_factory gives "
+            "the rows the table already holds no value. Give the column a "
+            "server_default=..., or a literal default= or insert_default=, or "
+            "make it nullable."
+        )
+        raise util.CommandError(msg)
     return op
 
 
