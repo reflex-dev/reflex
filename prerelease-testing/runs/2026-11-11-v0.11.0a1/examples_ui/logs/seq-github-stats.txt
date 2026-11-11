@@ -1,0 +1,82 @@
+### github-stats base 02:20:10
+started reflex pid=1559 (02:20:10) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/github-stats/base.server.log
+UP after 4s (frontend 200, backend /ping 200)
+drive github-stats-base rc=0
+[PASS   ] reload: users + stats restored from LocalStorage: chips=['alice', 'ghost1'] logins=['alice'] expected=['alice', 'ghost1']/['alice']
+[ANOMALY] widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12): ['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 1.935, "type": "error", "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mut
+== github-stats-base: {'pass': 14, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=22 unexpected_console=3 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=411
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 1559 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### github-stats upgrade 02:20:31
+ - reflex==0.10.1
+ + reflex==0.11.0a1
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a1
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+Using Python 3.12.3 environment at: envs/examples_ui-github-stats
+Checked 41 packages in 1ms
+All installed packages are compatible
+### github-stats up 02:20:31
+started reflex pid=2726 (02:20:31) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/github-stats/up.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json github-stats-base -> github-stats-up: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.26.0", < "mergician": "v2.0.2", < "react": "19.3.1", < "react-debounce-input": "3.3.0", < "react-dom": "19.3.1", < "react-error-boundary": "6.1.6", < "react-helmet": "6.1.0", < "react-router": "8.4.0", < "recharts": "3.10.1", < "socket.io-client": "4.8.4", < "sonner": "2.0.8", < "universal-cookie": "8.1.2" < }, < "devDependencies": { < "@emotion/react": "11.14.0", < "@react-router/dev": "8.4.0", < "@react-router/fs-routes": "8.4.0", < "autoprefixer": "10.6.1", < "postcss": "8.5.30", < "postcss-import": "17.0.1", < "vite": "8.3.4" < }, < "overrides": {} < } > {"name": "reflex", "type": "module", "scripts": {"dev": "react-router dev --host", "export": "react-router build"}, "dependencies": {"@radix-ui/themes": "3.3.0", "@react-router/node": "8.4.0", "isbot": "5.2.2", "lucide-react": "1.26.0", "mergician": "v2.0.2", "react": "19.3.1", "react-debounce-input": "3.3.0", "react-dom": "19.3.1", "react-error-boundary": "6.1.6", "react-helmet": "6.1.0", "react-router": "8.4.0", "recharts": "3.10.1", "socket.io-client": "4.8.4", "sonner": "2.0.8", "universal-cookie": "8.1.2"}, "devDependencies": {"@emotion/react": "11.14.0", "@react-router/dev": "8.4.0", "@react-router/fs-routes": "8.4.0", "autoprefixer": "10.6.1", "postcss": "8.5.30", "postcss-import": "17.0.1", "vite": "8.3.4"}, "overrides": {}} 
+.web file list differs:
+34c34,35
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+42a44
+> .web/utils/helpers/set.js
+drive github-stats-up rc=0
+[PASS   ] persist: selected users restored from LocalStorage written by previous run: chips=['alice', 'ghost1'] localstorage=['alice', 'ghost1']
+[PASS   ] persist: user stats restored (textarea JSON + chart): logins=['alice'] expected(LocalStorage)=['alice'] bars=4
+[PASS   ] reload: users + stats restored from LocalStorage: chips=['alice', 'carol'] logins=['alice', 'carol'] expected=['alice', 'carol']/['alice', 'carol']
+[ANOMALY] widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12): ['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 1.856, "type": "error", "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mut
+== github-stats-up: {'pass': 12, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=22 unexpected_console=3 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=346
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+SHUTDOWN: main pid 2726 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### github-stats prod 02:20:49
+started reflex pid=3585 (02:20:49) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/github-stats/prod.server.log
+UP after 9s (frontend 200, backend /ping 200)
+drive github-stats-prod rc=0
+[PASS   ] persist: selected users restored from LocalStorage written by previous run: chips=['alice', 'carol'] localstorage=['alice', 'carol']
+[PASS   ] persist: user stats restored (textarea JSON + chart): logins=['alice', 'carol'] expected(LocalStorage)=['alice', 'carol'] bars=8
+[PASS   ] reload: users + stats restored from LocalStorage: chips=['alice', 'carol'] logins=['alice', 'carol'] expected=['alice', 'carol']/['alice', 'carol']
+[ANOMALY] widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12): ['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']
+== github-stats-prod: {'pass': 13, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=3 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=49
+SHUTDOWN: main pid 3585 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### github-stats cold 02:21:10
+started reflex pid=4380 (02:21:10) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/github-stats/cold.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json github-stats-up -> github-stats-cold: 
+package.json identical
+.web file list identical
+drive github-stats-cold rc=0
+[PASS   ] reload: users + stats restored from LocalStorage: chips=['alice', 'ghost1'] logins=['alice'] expected=['alice', 'ghost1']/['alice']
+[ANOMALY] widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12): ['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 2.029, "type": "error", "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mut
+== github-stats-cold: {'pass': 14, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=22 unexpected_console=3 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=376
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+SHUTDOWN: main pid 4380 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+eu/seq_eu.sh: line 81: unexpected EOF while looking for matching `"'

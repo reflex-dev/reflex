@@ -1,0 +1,105 @@
+### quiz base 02:45:29
+started reflex pid=5082 (02:45:29) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/quiz/base.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive quiz-base rc=0
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 5.145, "type": "warning", "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Dec
+== quiz-base: {'pass': 12, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=19 unexpected_console=6 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=65
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 5082 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### quiz baseprod 02:45:56
+started reflex pid=5485 (02:45:56) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/quiz/baseprod.server.log
+UP after 10s (frontend 200, backend /ping 200)
+drive quiz-baseprod rc=0
+== quiz-baseprod: {'pass': 13, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=1 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=65
+SHUTDOWN: main pid 5485 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### quiz upgrade 02:46:23
+ - reflex==0.10.1
+ + reflex==0.11.0a1
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a1
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+Using Python 3.12.3 environment at: envs/examples_ui-quiz
+Checked 41 packages in 0.78ms
+All installed packages are compatible
+### quiz up 02:46:24
+started reflex pid=5922 (02:46:24) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/quiz/up.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json quiz-base -> quiz-up: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.26.0", 
+.web file list differs:
+33c33,34
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+41a43
+> .web/utils/helpers/set.js
+semantic package.json diff: IDENTICAL (formatting only)
+drive quiz-up rc=0
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 6.274, "type": "warning", "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Dec
+== quiz-up: {'pass': 12, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=19 unexpected_console=6 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=65
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+SHUTDOWN: main pid 5922 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### quiz prod 02:46:51
+started reflex pid=6637 (02:46:51) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/quiz/prod.server.log
+UP after 7s (frontend 200, backend /ping 200)
+drive quiz-prod rc=0
+== quiz-prod: {'pass': 13, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=1 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=65
+SHUTDOWN: main pid 6637 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### quiz cold 02:47:14
+started reflex pid=7192 (02:47:15) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/quiz/cold.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json quiz-up -> quiz-cold: 
+package.json identical
+.web file list identical
+semantic package.json diff: IDENTICAL
+drive quiz-cold rc=0
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 5.673, "type": "warning", "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Dec
+== quiz-cold: {'pass': 12, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=19 unexpected_console=6 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=65
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+  UNEXPECTED CONSOLE: warning Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.
+SHUTDOWN: main pid 7192 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- quiz-base server-log warnings:
+      3 Debug: 2:45:41 AM [vite] (client) [console.warn] Checkbox is changing from 
+      2 Debug: 2:45:46 AM [vite] (client) [console.warn] Checkbox is changing from 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: 2:45:45 AM [vite] (client) [console.warn] Checkbox is changing from 
+--- quiz-baseprod server-log warnings:
+--- quiz-up server-log warnings:
+      3 Debug: 2:46:34 AM [vite] (client) [console.warn] Checkbox is changing from 
+      2 Debug: 2:46:39 AM [vite] (client) [console.warn] Checkbox is changing from 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: 2:46:40 AM [vite] (client) [console.warn] Checkbox is changing from 
+--- quiz-prod server-log warnings:
+--- quiz-cold server-log warnings:
+      3 Debug: 2:47:30 AM [vite] (client) [console.warn] Checkbox is changing from 
+      2 Debug: 2:47:25 AM [vite] (client) [console.warn] Checkbox is changing from 
+      1 Debug: error: script "dev" exited with code 143
+      1 Debug: 2:47:24 AM [vite] (client) [console.warn] Checkbox is changing from 
+### quiz done 02:47:41

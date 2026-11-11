@@ -1,0 +1,22 @@
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+localhost:8733. Connect call failed ('127.0.0.1', 8733).
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+to localhost:8733. Connect call failed ('127.0.0.1', 8733).
+--
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+to localhost:8733. Connect call failed ('127.0.0.1', 8733).
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+localhost:8733. Connect call failed ('127.0.0.1', 8733).
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+to localhost:8733. Connect call failed ('127.0.0.1', 8733).
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+localhost:8733. Connect call failed ('127.0.0.1', 8733).
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+to localhost:8733. Connect call failed ('127.0.0.1', 8733).
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+localhost:8733. Connect call failed ('127.0.0.1', 8733).
+--
+_subscribe_lost_and_found_updates: task exceeded exception limit 5 within 60.0s:
+Error 111 connecting to localhost:8733. Connect call failed ('127.0.0.1', 8733).
+_subscribe_socket_record_updates: task exceeded exception limit 5 within 60.0s: 
+Error 111 connecting to localhost:8733. Connect call failed ('127.0.0.1', 8733).

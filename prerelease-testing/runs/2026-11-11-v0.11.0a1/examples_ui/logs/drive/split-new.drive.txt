@@ -1,0 +1,39 @@
+[PASS   ] initial: 'No files selected', QA extras rendered: selected=['No files selected'] disk=['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'héllo wörld 测试 файл (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']
+[PASS   ] select 2 files -> names rendered (rx.selected_files): ['hello.txt', 'héllo wörld 测试 файл (1).txt']
+[PASS   ] re-select replaces the selection: ['after cancel.txt']
+[PASS   ] Clear (rx.clear_selected_files) empties the selection: ['No files selected']
+[PASS   ] drag & drop onto the dropzone selects files: ['dropped_one.txt', 'dropped two.txt']
+[FAIL   ] dropped files upload and land on disk (this run's bytes): ['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'héllo wörld 测试 файл (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']
+[FAIL   ] hostile names sanitized into the upload dir (no traversal), content intact: {"saved": {"../x_traversal.txt": false, "..\\..\\win_traversal.txt": false, "/abs/root_abs.txt": false, "sub/dir/nested.txt": false}, "escaped_outside": [], "disk": ["after cancel.txt", "big12mb.bin", "dropped two.txt", "dropped_one.txt", "héllo wörld 测试 файл (1).txt", "nested.txt", "root_abs.txt", "win_traversal.txt", "x_traversal.txt"]}
+[FAIL   ] unicode+spaces+parens filename roundtrip: héllo wörld 测试 файл (1).txt
+[PASS   ] 12 MB binary upload: sha256 matches: 60.59s size=12582912
+[FAIL   ] progress bar at 100 after a completed upload: aria-valuenow=0 uploading_text=0
+[FAIL   ] throttled upload shows 'Uploading... cancel': 
+[FAIL   ] progress advances during the throttled upload: ['0', '0']
+[ANOMALY] event sent DURING an in-flight upload is processed before the upload ends (#7357): pings 0->0 latency=8.19s upload_still_in_flight=False
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/up/scripts/drive_upload.py", line 177, in <module>
+    page.get_by_text("cancel", exact=True).click()
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 11045, in click
+    self._sync(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 124, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/locator.py", line 222, in click
+    return await self._frame.click(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/frame.py", line 587, in click
+    return await self._channel.click(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/channel_owner.py", line 387, in finish
+    raise e from None
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/channel_owner.py", line 352, in finish
+    result = await zone.run_async(lambda: awaitable)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/driver/lib/python3.12/site-packages/playwright/_impl/utils/zones.py", line 58, in run_async
+    return await func()
+           ^^^^^^^^^^^^
+playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for get_by_text("cancel", exact=True)
+

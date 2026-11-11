@@ -1,0 +1,20 @@
+[PASS   ] A: page loads with no tasks: []
+[PASS   ] B: 3 task cards appear (task_ids newest first): [{'id': '2', 'len': 21, 'toggle': '⏯️', 'now': '1', 'max': '7'}, {'id': '1', 'len': 20, 'toggle': '⏯️', 'now': '1', 'max': '10'}, {'id': '0', 'len': 23, 'toggle': '⏯️', 'now': '1', 'max': '8'}]
+[PASS   ] C: all 3 stream concurrently (text grows over 2 s): {'2': 21, '1': 20, '0': 23} -> {'2': 114, '1': 113, '0': 103}
+[PASS   ] D: all 3 run to completion (🔄, progress == max): [{'id': '2', 'len': 161, 'toggle': '🔄', 'now': '7', 'max': '7'}, {'id': '1', 'len': 238, 'toggle': '🔄', 'now': '10', 'max': '10'}, {'id': '0', 'len': 172, 'toggle': '🔄', 'now': '8', 'max': '8'}]
+[PASS   ] E: restart a completed task resets and streams again: {'id': '1', 'len': 238, 'toggle': '🔄', 'now': '10', 'max': '10'} -> {'id': '1', 'len': 50, 'toggle': '⏯️', 'now': '2', 'max': '7'}
+[PASS   ] F: paused task stops streaming: {'id': '1', 'len': 50, 'toggle': '⏯️', 'now': '2', 'max': '7'} -> {'id': '1', 'len': 50, 'toggle': '⏯️', 'now': '2', 'max': '7'}
+[PASS   ] G: resumed task streams again: 50 -> 127
+[PASS   ] G2: resumed task completes: {'id': '1', 'len': 170, 'toggle': '🔄', 'now': '7', 'max': '7'}
+[PASS   ] H: kill removes the card: ['2', '1']
+[PASS   ] I: after reload mid-stream the running bg tasks keep streaming into the tab: before reload {'4': 47, '3': 77, '2': 161, '1': 170}; {'4': 73, '3': 77, '2': 161, '1': 170} -> {'4': 131, '3': 155, '2': 161, '1': 170}
+[PASS   ] I2: streams started before the reload complete (progress == max): {'4': ('10', '10'), '3': ('7', '7'), '2': ('7', '7'), '1': ('7', '7')}
+[PASS   ] J: 2nd tab has its own token and an empty task list: tok1=7769c9fc-db6c-4a58-bf10-3f38b715ca1d tok2=36aafd8b-e80b-42f7-b6a5-6348a3f48576 tasks=[]
+[PASS   ] J2: 2nd tab streams its own task; tab 1 unaffected: tab2=[{'id': '0', 'len': 100, 'toggle': '⏯️', 'now': '4', 'max': '7'}] tab1_count=4
+[PASS   ] K: duplicated-token tab gets a new_token and its own (empty) state: tok3=525c4ded-7a6e-451c-98fc-775a03453833 same_as_tab1=False tasks=[]
+[PASS   ] K2: tab 1 still works after the duplicate connected: 5 tasks, tok=True
+[PASS   ] K3: duplicated tab shows none of tab 1's tasks afterwards: []
+[PASS   ] console: no unexpected errors/warnings + no page errors: []
+[PASS   ] network: no unexpected failed/4xx/5xx requests: []
+
+== lorem-stream-cold: {'pass': 18, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=17 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=125

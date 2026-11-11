@@ -1,0 +1,4 @@
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3721/
+[ERROR] Unexpected exit from worker-2
+Info: Reflex app stopped.

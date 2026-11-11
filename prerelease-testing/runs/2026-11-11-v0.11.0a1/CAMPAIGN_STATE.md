@@ -91,7 +91,7 @@ items in its area. Known and filed items: do NOT re-report unless changed.
 | 6 server_net | DONE + verified: #1 CORS CONFIRMED WIDER → HIGH (TLS-proxied same-origin prod + all documented split/CDN guides); #2/#3 NARROWED; #4/#5 CONFIRMED low | `reports/server_net.md`, `reports/verify_net.md` |
 | 4 client_vars | explore DONE (high = dup of FINDING-001; 9 low non-regressions; HYD-08/09/12/13 fixed); verifier `verify_cv` running | `reports/client_vars.md` |
 | 5 compile_memo | explore running (opus high; also checks reflex's own `refs` surface after the rxe ReferenceError) | `reports/compile_memo.md` |
-| 8 examples_ui | not started — launch next | |
+| 8 examples_ui | DONE (no new regressions; overkey = FINDING-001; 2 low verified inline: FINDING-028/-029) | `reports/examples_ui.md` |
 
 To resume an interrupted cluster: read its `NOTES.md` "Status / resume here", reuse its venvs under `$SB/envs/<cluster>-*`, and
 continue; a cluster whose `reports/<item>.md` exists is finished. Each finished cluster's issues go to a verifier

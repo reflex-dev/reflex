@@ -1,0 +1,101 @@
+Debug: [pid=10982 t=1794365441.788 task=-] transforming...
+Debug: [pid=10982 t=1794365442.735 task=-] ✓ 432 modules transformed.
+Debug: [pid=10982 t=1794365442.847 task=-] rendering chunks...
+Debug: [pid=10982 t=1794365442.925 task=-] computing gzip size...
+Debug: [pid=10982 t=1794365442.933 task=-] build/client/.vite/manifest.json     
+3.55 kB │ gzip:  0.68 kB
+Debug: [pid=10982 t=1794365442.934 task=-] 
+build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ gzip: 
+84.10 kB
+Debug: [pid=10982 t=1794365442.934 task=-] 
+build/client/assets/reflex-env-CYlfbQVi.js                   0.33 kB │ gzip:  
+0.22 kB
+Debug: [pid=10982 t=1794365442.935 task=-] 
+build/client/assets/_404_._index-Dfwd_-i3.js                 0.41 kB │ gzip:  
+0.29 kB
+Debug: [pid=10982 t=1794365442.935 task=-] 
+build/client/assets/_other_._index-Cwux5rz2.js               0.61 kB │ gzip:  
+0.42 kB
+Debug: [pid=10982 t=1794365442.936 task=-] 
+build/client/assets/react-dom-C1Trl0Td.js                    3.86 kB │ gzip:  
+1.39 kB
+Debug: [pid=10982 t=1794365442.936 task=-] 
+build/client/assets/_index-0bBNMsx0.js                       6.30 kB │ gzip:  
+1.28 kB
+Debug: [pid=10982 t=1794365442.937 task=-] 
+build/client/assets/button-BzHTRsVa.js                       9.34 kB │ gzip:  
+3.49 kB
+Debug: [pid=10982 t=1794365442.937 task=-] 
+build/client/assets/emotion-react.browser.esm-Df3cQleM.js   20.70 kB │ gzip:  
+8.12 kB
+Debug: [pid=10982 t=1794365442.937 task=-] 
+build/client/assets/errorBoundaries-DJAbRMkv.js             32.07 kB │ gzip: 
+11.24 kB
+Debug: [pid=10982 t=1794365442.938 task=-] 
+build/client/assets/components-BkVO-4Gy.js                  86.79 kB │ gzip: 
+28.72 kB
+Debug: [pid=10982 t=1794365442.938 task=-] build/client/assets/link-BKeozC6r.js 
+116.97 kB │ gzip: 36.04 kB
+Debug: [pid=10982 t=1794365442.939 task=-] 
+build/client/assets/entry.client-DMqNtF3h.js               210.90 kB │ gzip: 
+66.27 kB
+Debug: [pid=10982 t=1794365442.939 task=-] build/client/assets/root-BcfyCCdK.js 
+311.20 kB │ gzip: 87.70 kB
+Debug: [pid=10982 t=1794365442.940 task=-] 
+Debug: [pid=10982 t=1794365442.941 task=-] ✓ built in 1.17s
+Debug: [pid=10982 t=1794365442.942 task=-] vite v8.3.4 building ssr environment 
+for production...
+Debug: [pid=10982 t=1794365442.951 task=-] transforming...
+Debug: [pid=10982 t=1794365443.276 task=-] ⚠️ Paths with dynamic/splat params 
+cannot be prerendered when using `prerender: true`. You may want to use the 
+`prerender()` API to prerender the following paths:
+Debug: [pid=10982 t=1794365443.277 task=-]   - *
+Debug: [pid=10982 t=1794365443.284 task=-] ✓ 27 modules transformed.
+Debug: [pid=10982 t=1794365443.333 task=-] rendering chunks...
+Debug: [pid=10982 t=1794365443.343 task=-] 
+Debug: [pid=10982 t=1794365443.344 task=-] ✓ 1 asset cleaned from React Router 
+server build.
+Debug: [pid=10982 t=1794365443.345 task=-] 
+build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: [pid=10982 t=1794365443.345 task=-] 
+Debug: [pid=10982 t=1794365443.345 task=-] computing gzip size...
+Debug: [pid=10982 t=1794365443.351 task=-] build/server/.vite/manifest.json     
+0.79 kB │ gzip:  0.31 kB
+Debug: [pid=10982 t=1794365443.351 task=-] 
+build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ gzip: 84.10
+kB
+Debug: [pid=10982 t=1794365443.352 task=-] 
+build/server/assets/reflex-env-CYlfbQVi.js                 0.33 kB │ gzip:  0.22
+kB
+Debug: [pid=10982 t=1794365443.353 task=-] build/server/index.js                
+63.06 kB │ gzip: 18.97 kB
+Debug: [pid=10982 t=1794365443.354 task=-] 
+Debug: [pid=10982 t=1794365443.355 task=-] ✓ built in 409ms
+Debug: [pid=10982 t=1794365443.758 task=-] Prerender (html): / -> 
+build/client/index.html
+Debug: [pid=10982 t=1794365443.774 task=-] Prerender (html): /other -> 
+build/client/other/index.html
+Debug: [pid=10982 t=1794365443.791 task=-] Prerender (html): SPA Fallback -> 
+build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: [pid=10982 t=1794365443.812 task=-] Copying 
+.web/build/client/other/index.html to .web/build/client/other.html
+Debug: [pid=10982 t=1794365443.813 task=-] Running command: 
+[PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/
+scratchpad/apps/verify_rds/run/lock-vrds-new/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/
+scratchpad/apps/verify_rds/run/lock-vrds-new/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3720/
+Debug: [pid=10982 t=1794365443.888 task=-] Using Granian for backend
+[INFO] [pid=10982 t=1794365443.937 task=-] Starting granian (main PID: 10982)
+[INFO] [pid=10982 t=1794365443.945 task=-] Listening at: http://0.0.0.0:3720
+[INFO] [pid=10982 t=1794365443.948 task=-] Spawning worker-1 with PID: 11033
+[INFO] [pid=10982 t=1794365443.951 task=-] Spawning worker-2 with PID: 11035
+Debug: [pid=11033 t=1794365443.966 task=Task-8] Started lifespan task: 
+_setup_event_processor as asynccontextmanager
+[INFO] [pid=11033 t=1794365443.968 task=-] Started worker-1
+Debug: [pid=11035 t=1794365443.968 task=Task-8] Started lifespan task: 
+_setup_event_processor as asynccontextmanager
+[INFO] [pid=11035 t=1794365443.970 task=-] Started worker-2

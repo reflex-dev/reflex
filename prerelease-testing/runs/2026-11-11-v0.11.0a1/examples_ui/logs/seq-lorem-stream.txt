@@ -1,0 +1,82 @@
+### lorem-stream base 02:58:00
+started reflex pid=20004 (02:58:00) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/lorem-stream/base.server.log
+UP after 4s (frontend 200, backend /ping 200)
+drive lorem-stream-base rc=0
+== lorem-stream-base: {'pass': 18, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=17 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=136
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 20004 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### lorem-stream baseprod 02:58:40
+started reflex pid=20919 (02:58:40) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/lorem-stream/baseprod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive lorem-stream-baseprod rc=0
+== lorem-stream-baseprod: {'pass': 18, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=1 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=142
+SHUTDOWN: main pid 20919 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### lorem-stream upgrade 02:59:22
+ - reflex==0.10.1
+ + reflex==0.11.0a1
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a1
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+Using Python 3.12.3 environment at: envs/examples_ui-lorem-stream
+Checked 42 packages in 0.88ms
+All installed packages are compatible
+### lorem-stream up 02:59:23
+started reflex pid=21720 (02:59:23) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/lorem-stream/up.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json lorem-stream-base -> lorem-stream-up: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-re
+.web file list differs:
+32c32,33
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+40a42
+> .web/utils/helpers/set.js
+semantic package.json diff: IDENTICAL (formatting only)
+drive lorem-stream-up rc=0
+== lorem-stream-up: {'pass': 18, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=17 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=134
+SHUTDOWN: main pid 21720 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### lorem-stream prod 03:00:02
+started reflex pid=22647 (03:00:02) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/lorem-stream/prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive lorem-stream-prod rc=0
+== lorem-stream-prod: {'pass': 18, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=1 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=141
+SHUTDOWN: main pid 22647 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### lorem-stream cold 03:00:44
+started reflex pid=23446 (03:00:44) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/lorem-stream/cold.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json lorem-stream-up -> lorem-stream-cold: 
+package.json identical
+.web file list identical
+semantic package.json diff: IDENTICAL
+drive lorem-stream-cold rc=0
+== lorem-stream-cold: {'pass': 18, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=17 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=125
+SHUTDOWN: main pid 23446 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- lorem-stream-base server-log warnings:
+      1 Warning: Attempting to send delta to disconnected client 
+      1 Debug: error: script "dev" exited with code 143
+--- lorem-stream-baseprod server-log warnings:
+      1 Warning: Page index is being redefined with the same component.
+      1 Warning: Attempting to send delta to disconnected client 
+--- lorem-stream-up server-log warnings:
+      1 Warning: Attempting to send delta to disconnected client 
+      1 Debug: error: script "dev" exited with code 143
+--- lorem-stream-prod server-log warnings:
+      1 Warning: Page index is being redefined with the same component.
+      1 Warning: Attempting to send delta to disconnected client 
+--- lorem-stream-cold server-log warnings:
+      1 Warning: Attempting to send delta to disconnected client 
+      1 Debug: error: script "dev" exited with code 143
+### lorem-stream done 03:01:23

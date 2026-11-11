@@ -1,0 +1,144 @@
+0e1896b56ed1428f8097b3a7741870e2
+Debug: [pid=10173 t=1794365402.841 
+task=reflex_ensure_task|StateManagerRedis._lo] [SMR:10119] [5.550] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock NOTIFY 1 / 2 waiters 
+event=<asyncio.locks.Event object at 0x7f32901471a0 [set, waiters:1]>
+Debug: [pid=10173 t=1794365402.841 task=Task-150] [SMR:10119] [5.551] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock acquired by 
+07c435a313bf44349d75e0aedcbdfb93 event=<asyncio.locks.Event object at 
+0x7f32901471a0 [unset]>
+Debug: [pid=10173 t=1794365402.842 task=Task-150] [SMR:10119] [5.552] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e lock 07c435a313bf44349d75e0aedcbdfb93 still
+held, doing single update...
+Debug: [pid=10171 t=1794365402.842 task=Task-16] [SMR:10119] [5.552] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock waiting for 
+4e25265af1784160a019047bb8c6422a
+Debug: [pid=10173 t=1794365402.844 task=Task-150] [SMR:10119] [5.553] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock released by 
+07c435a313bf44349d75e0aedcbdfb93
+Debug: [pid=10173 t=1794365402.844 task=Task-150] [SMR:10119] [5.553] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock NOTIFY 1 / 1 waiters 
+event=<asyncio.locks.Event object at 0x7f3290170140 [set, waiters:1]>
+Debug: [pid=10173 t=1794365402.845 
+task=reflex_event|reflex___state____state.loc] [SMR:10119] [5.554] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock acquired by 
+reflex___state____state.lockapp___lockapp____counter.incr:9874509cf4ab492d8a3cea
+f0d9fbb427 event=<asyncio.locks.Event object at 0x7f3290170140 [unset]>
+Debug: [pid=10171 t=1794365402.845 
+task=reflex_ensure_task|StateManagerRedis._lo] [SMR:10119] [5.555] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock NOTIFY 1 / 1 waiters 
+event=<asyncio.locks.Event object at 0x7f3293afc590 [set, waiters:1]>
+Debug: [pid=10173 t=1794365402.846 
+task=reflex_event|reflex___state____state.loc] [SMR:10119] [5.556] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e obtained lock 
+reflex___state____state.lockapp___lockapp____counter.incr:9874509cf4ab492d8a3cea
+f0d9fbb427.
+Debug: [pid=10171 t=1794365402.846 task=Task-16] [SMR:10119] [5.556] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock waiting for 
+4e25265af1784160a019047bb8c6422a
+Debug: [pid=10173 t=1794365402.847 
+task=reflex_lease_breaker|fa04f1d2-2558-46c9-] [SMR:10119] [5.556] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e lease breaker 
+reflex___state____state.lockapp___lockapp____counter.incr:9874509cf4ab492d8a3cea
+f0d9fbb427 started, sleeping for 5.0s
+Debug: [pid=10173 t=1794365402.847 
+task=reflex_event|reflex___state____state.loc] [SMR:10119] [5.557] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock NOTIFY 1 / 1 waiters 
+event=<asyncio.locks.Event object at 0x7f3290d18080 [set]>
+Debug: [pid=10173 t=1794365402.850 
+task=reflex_ensure_task|StateManagerRedis._lo] [SMR:10119] [5.560] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e OPLOCK CONTEND - lease break task cancelled
+lease_task=<Task cancelling 
+name='reflex_lease_breaker|fa04f1d2-2558-46c9-a47f-939ee3e4373e|reflex___state__
+__state.lockapp___lockapp____counter.incr:9874509cf4ab492d8a3ceaf0d9fbb427' 
+coro=<_Lease.run() running at 
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/
+envs/vrds-new/lib/python3.12/site-packages/reflex/istate/manager/redis.py:1413> 
+wait_for=<Future cancelled> cb=[_Lease._on_done()]>
+Debug: [pid=10173 t=1794365402.851 
+task=reflex_event|reflex___state____state.loc] [SMR:10119] [5.560] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e no active lease task found
+Debug: [pid=10173 t=1794365402.851 task=Task-222] [SMR:10119] [5.561] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e lease breaker 
+reflex___state____state.lockapp___lockapp____counter.incr:9874509cf4ab492d8a3cea
+f0d9fbb427 flushing state
+Debug: [pid=10173 t=1794365402.851 task=Task-199] [SMR:10119] [5.561] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock waiting for 
+e96abe288d69473e97da9f3f90abdd02
+Debug: [pid=10173 t=1794365402.852 
+task=reflex_event|reflex___state____state.loc] [SMR:10119] [5.562] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock waiting for 
+reflex___state____state.lockapp___lockapp____counter.incr:95725074f6e04a57a59cac
+63d7e20e11
+Debug: [pid=10173 t=1794365402.854 
+task=reflex_lease_breaker|fa04f1d2-2558-46c9-] [SMR:10119] [5.563] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock released by 
+reflex___state____state.lockapp___lockapp____counter.incr:9874509cf4ab492d8a3cea
+f0d9fbb427
+Debug: [pid=10173 t=1794365402.854 
+task=reflex_lease_breaker|fa04f1d2-2558-46c9-] [SMR:10119] [5.564] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock NOTIFY 1 / 2 waiters 
+event=<asyncio.locks.Event object at 0x7f3290d18080 [set, waiters:1]>
+Debug: [pid=10171 t=1794365402.856 
+task=reflex_ensure_task|StateManagerRedis._lo] [SMR:10119] [5.565] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock NOTIFY 1 / 1 waiters 
+event=<asyncio.locks.Event object at 0x7f3293afc590 [set, waiters:1]>
+Debug: [pid=10173 t=1794365402.856 
+task=reflex_ensure_task|StateManagerRedis._lo] [SMR:10119] [5.566] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock NOTIFY 1 / 2 waiters 
+event=<asyncio.locks.Event object at 0x7f3290d18080 [set]>
+Debug: [pid=10173 t=1794365402.857 task=Task-199] [SMR:10119] [5.566] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock acquired by 
+e96abe288d69473e97da9f3f90abdd02 event=<asyncio.locks.Event object at 
+0x7f3290d18080 [set]>
+Debug: [pid=10171 t=1794365402.857 task=Task-16] [SMR:10119] [5.567] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock waiting for 
+4e25265af1784160a019047bb8c6422a
+Debug: [pid=10173 t=1794365402.861 task=Task-199] [SMR:10119] [5.571] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e obtained lock 
+e96abe288d69473e97da9f3f90abdd02.
+Debug: [pid=10173 t=1794365402.862 
+task=reflex_lease_breaker|fa04f1d2-2558-46c9-] [SMR:10119] [5.571] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e lease breaker 
+e96abe288d69473e97da9f3f90abdd02 started, sleeping for 5.0s
+Debug: [pid=10173 t=1794365402.862 task=Task-199] [SMR:10119] [5.572] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock NOTIFY 1 / 1 waiters 
+event=<asyncio.locks.Event object at 0x7f3290170fb0 [set, waiters:1]>
+Debug: [pid=10171 t=1794365403.860 task=Task-16] [SMR:10119] [6.569] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock wait timeout for 
+4e25265af1784160a019047bb8c6422a
+Debug: [pid=10171 t=1794365403.861 task=Task-16] [SMR:10119] [6.571] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock waiting for 
+4e25265af1784160a019047bb8c6422a
+Debug: [pid=10173 t=1794365403.861 
+task=reflex_ensure_task|StateManagerRedis._lo] [SMR:10119] [6.570] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e OPLOCK CONTEND - lease break task cancelled
+lease_task=<Task cancelling 
+name='reflex_lease_breaker|fa04f1d2-2558-46c9-a47f-939ee3e4373e|e96abe288d69473e
+97da9f3f90abdd02' coro=<_Lease.run() running at 
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/
+envs/vrds-new/lib/python3.12/site-packages/reflex/istate/manager/redis.py:1413> 
+wait_for=<Future cancelled> cb=[_Lease._on_done()]>
+Debug: [pid=10173 t=1794365403.865 task=Task-831] [SMR:10119] [6.574] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e lease breaker 
+e96abe288d69473e97da9f3f90abdd02 flushing state
+Debug: [pid=10173 t=1794365403.871 
+task=reflex_lease_breaker|fa04f1d2-2558-46c9-] [SMR:10119] [6.580] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock released by 
+e96abe288d69473e97da9f3f90abdd02
+Debug: [pid=10171 t=1794365403.871 
+task=reflex_ensure_task|StateManagerRedis._lo] [SMR:10119] [6.580] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock NOTIFY 1 / 1 waiters 
+event=<asyncio.locks.Event object at 0x7f3293afc590 [set, waiters:1]>
+Debug: [pid=10171 t=1794365403.873 task=Task-16] [SMR:10119] [6.582] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e_lock acquired by 
+4e25265af1784160a019047bb8c6422a event=<asyncio.locks.Event object at 
+0x7f3293afc590 [unset]>
+Debug: [pid=10171 t=1794365403.875 task=Task-16] [SMR:10119] [6.584] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e obtained lock 
+4e25265af1784160a019047bb8c6422a.
+Debug: [pid=10171 t=1794365403.877 
+task=reflex_lease_breaker|fa04f1d2-2558-46c9-] [SMR:10119] [6.586] 
+fa04f1d2-2558-46c9-a47f-939ee3e4373e lease breaker 
+4e25265af1784160a019047bb8c6422a started, sleeping for 5.0s
+RDS_SLOW_BUMP pid=10171 ms=1036 start=1794365402.841 end=1794365403.877

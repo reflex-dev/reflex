@@ -1,0 +1,20 @@
+60-Debug: Fullstack port: 3420 is not in use.
+61:DeprecationWarning: ClientStateVar.create has been deprecated in version 0.11.0.
+62-Use rx.client_state(default, name=...) instead. Naming a var makes it global; an
+63-unnamed var is owned by the outermost page or `@rx.memo` that uses it, so 
+64-`global_ref` is no longer needed. It will be completely removed in 1.0. 
+65-(overkey/overkey.py:80)
+66-Warning: Mutable default values are not recommended. Use default_factory instead
+67-to avoid unexpected behavior.
+--
+82-Debug: Registered lifespan task: _setup_event_processor
+83:DeprecationWarning: ClientStateVar.set_value has been deprecated in version 
+84-0.11.0. Use .set instead -- `cs.set` for the bare setter, `cs.set(value)` to 
+85-bind a value. It will be completely removed in 1.0. (overkey/overkey.py:286)
+86:DeprecationWarning: ClientStateVar.set_value has been deprecated in version 
+87-0.11.0. Use .set instead -- `cs.set` for the bare setter, `cs.set(value)` to 
+88-bind a value. It will be completely removed in 1.0. 
+89-(/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+90-/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex_components_core/el
+91-/elements/forms.py:857)
+92-Debug: [timing] Compile pages: 0.08s

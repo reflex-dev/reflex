@@ -1,0 +1,31 @@
+[PASS   ] load: words rendered after hydration: 790
+[PASS   ] load: two selects (language, time): 2
+[PASS   ] time select -> 5 seconds: 5 seconds
+[PASS   ] time select regenerates fewer words (25 words): 122
+[PASS   ] game1: typed 12 chars -> input value matches: 'oldxof you b' vs 'oldxof you b'
+[PASS   ] game1: letters in bounds == typed length (ClientStateVar drives render): 12
+[PASS   ] game1: wrong letter highlighted pink: 1
+[PASS   ] game1: no websocket event per keystroke (client-side state): ['start_timer']
+[PASS   ] game1: background tick counts down (sees >=3 distinct values, decreasing): ['5', '4', '3', '2', '1', '26.4 WPM, 91.67% accuracy']
+[PASS   ] game1: result line shows WPM + accuracy: ['26.4 WPM, 91.67% accuracy']
+[PASS   ] game1: WPM/accuracy values: ['26.4 WPM, 91.67% accuracy']
+[PASS   ] game1: Time's up! overlay: 
+[FAIL   ] game1: tick events re-queued by the background task (>=4): ['hydrate_and_load', 'set_time_limit', 'start_timer', 'receive_user_input']
+[PASS   ] restart: selects come back: 
+[PASS   ] restart: typed ClientStateVar input cleared (examples#324): ''
+[PASS   ] language select -> Deutsch: Deutsch
+[PASS   ] language change regenerates words: alle vor und drei ohne vor allem werde i
+[PASS   ] game2 (15s): timer started: 15
+[PASS   ] reload mid-game: timer reset by on_load (selects shown, no countdown): {'status': None, 'input': '', 'in_bounds': 0, 'selects': 2, 'time_select': '15 seconds', 'language': 'Deutsch', 'same_words': False}
+[PASS   ] reload mid-game: ClientStateVar input reset to default '': {'status': None, 'input': '', 'in_bounds': 0, 'selects': 2, 'time_select': '15 seconds', 'language': 'Deutsch', 'same_words': False}
+[PASS   ] reload mid-game: stale background tick does not restart the countdown: {'status': None, 'selects': 2}
+[PASS   ] game3: typed 10 chars -> input value matches: 'wir eine n' vs 'wir eine n'
+[PASS   ] game3: letters in bounds == typed length (ClientStateVar drives render): 10
+[PASS   ] game3: no websocket event per keystroke (client-side state): ['start_timer']
+[PASS   ] game3: result after reload: 24 WPM, 100.00% accuracy
+[PASS   ] game3: 100% accuracy: 24 WPM, 100.00% accuracy
+{"initial_letters": 790, "game1_status_seq": ["5", "4", "3", "2", "1", "26.4 WPM, 91.67% accuracy"], "game1_seconds_to_result": 5.13, "game1_events": ["hydrate_and_load", "set_time_limit", "start_timer", "receive_user_input"], "after_restart_input": "", "after_restart_in_bounds": 0, "game2_before_reload": {"status": "13", "input": "geht s", "in_bounds": 6}, "game2_after_reload": {"status": null, "input": "", "in_bounds": 0, "selects": 2, "time_select": "15 seconds", "language": "Deutsch", "same_words": false}, "game2_after_reload_3s": {"status": null, "selects": 2}}
+[PASS   ] console: no unexpected errors/warnings + no page errors: []
+[PASS   ] network: no unexpected failed/4xx/5xx requests: []
+
+== overkey-baseprod: {'pass': 27, 'fail': 1, 'anomaly': 0, 'skipped': 0}  console_total=27 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=54

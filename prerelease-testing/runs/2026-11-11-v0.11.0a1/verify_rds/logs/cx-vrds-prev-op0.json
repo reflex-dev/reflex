@@ -1,0 +1,120 @@
+{
+ "checks": {
+  "raise_mid_ui": {
+   "ok": false,
+   "ui": {
+    "count": "0",
+    "bg_count": "0",
+    "sup_calls": "0",
+    "sup_progress": "0",
+    "sup_done": "0",
+    "r1": "1",
+    "r2": "0",
+    "linked": "idle",
+    "other_v": "0",
+    "slow_done": "0"
+   },
+   "server": {
+    "r1": 0,
+    "r2": 0
+   }
+  },
+  "raise_mid_server": {
+   "ok": false,
+   "server": {
+    "r1": 0,
+    "r2": 0
+   }
+  },
+  "supersedes_ui_matches_server": {
+   "ok": true,
+   "ui": {
+    "sup_calls": "1",
+    "sup_progress": "5",
+    "sup_done": "1"
+   },
+   "server": {
+    "sup_calls": 1,
+    "sup_progress": 5,
+    "sup_done": 1
+   }
+  },
+  "supersedes_first_progress_kept": {
+   "ok": false,
+   "server": {
+    "sup_calls": 1,
+    "sup_progress": 5,
+    "sup_done": 1
+   }
+  },
+  "reload_keeps": {
+   "ok": false,
+   "ui": {
+    "count": "0",
+    "bg_count": "0",
+    "sup_calls": "1",
+    "sup_progress": "5",
+    "sup_done": "1",
+    "r1": "0",
+    "r2": "0",
+    "linked": "idle",
+    "other_v": "0",
+    "slow_done": "0"
+   }
+  },
+  "linked_fail_then_event": {
+   "ok": false,
+   "linked": {
+    "pid": 30651,
+    "result": {
+     "mode": "fail",
+     "status": "ok",
+     "t": 1794366335.2296536
+    },
+    "paused_at": null
+   },
+   "next_event_s": 0.05580087300040759,
+   "count": "1"
+  },
+  "linked_cancel_then_event": {
+   "ok": true,
+   "cancelled": {
+    "pid": 30651,
+    "cancelled": true
+   },
+   "linked": {
+    "pid": 30651,
+    "result": {
+     "mode": "cancel",
+     "status": "cancelled",
+     "t": 1794366336.7190902,
+     "paused_at": 1794366335.8674698
+    },
+    "paused_at": 1794366335.8674698
+   },
+   "next_event_s": 0.05514129199946183,
+   "since_cancel_s": 3.27
+  },
+  "linked_ok": {
+   "ok": true,
+   "linked": "ok:ok",
+   "s": 0.059118876999491476
+  },
+  "bg_across_nav": {
+   "ok": true,
+   "bg": "50",
+   "count": "52"
+  },
+  "disconnect_mid_event": {
+   "ok": true,
+   "slow_done_server": 1,
+   "slow_done_before": 0,
+   "next_event_s": 0.05649483399974997
+  }
+ },
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "failed_requests": [],
+ "token": "2bd87654-c9aa-486e-b2a3-852833343947"
+}

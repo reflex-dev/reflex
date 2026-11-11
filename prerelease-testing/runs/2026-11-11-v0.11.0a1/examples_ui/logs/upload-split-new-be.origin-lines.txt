@@ -1,0 +1,2 @@
+21:cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+74:http://localhost:3420 is not an accepted origin. (further occurrences of this error will be logged with level INFO)

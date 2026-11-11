@@ -1,0 +1,65 @@
+### counter base 02:18:39
+started reflex pid=30823 (02:18:39) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/counter/base.server.log
+UP after 7s (frontend 200, backend /ping 200)
+drive counter-base rc=0
+== counter-base: {'pass': 8, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=9 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=24
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 30823 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### counter upgrade 02:18:55
+ - reflex==0.10.1
+ + reflex==0.11.0a1
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a1
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+Using Python 3.12.3 environment at: envs/examples_ui-counter
+Checked 41 packages in 0.80ms
+All installed packages are compatible
+### counter up 02:18:55
+started reflex pid=31690 (02:18:55) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/counter/up.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json counter-base -> counter-up: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.26.0", < "mergician": "v2.0.2", < "react": "19.3.1", < "react-dom": "19.3.1", < "react-error-boundary": "6.1.6", < "react-helmet": "6.1.0", < "react-router": "8.4.0", < "socket.io-client": "4.8.4", < "sonner": "2.0.8", < "universal-cookie": "8.1.2" < }, < "devDependencies": { < "@emotion/react": "11.14.0", < "@react-router/dev": "8.4.0", < "@react-router/fs-routes": "8.4.0", < "autoprefixer": "10.6.1", < "postcss": "8.5.30", < "postcss-import": "17.0.1", < "vite": "8.3.4" < }, < "overrides": {} < } > {"name": "reflex", "type": "module", "scripts": {"dev": "react-router dev --host", "export": "react-router build"}, "dependencies": {"@radix-ui/themes": "3.3.0", "@react-router/node": "8.4.0", "isbot": "5.2.2", "lucide-react": "1.26.0", "mergician": "v2.0.2", "react": "19.3.1", "react-dom": "19.3.1", "react-error-boundary": "6.1.6", "react-helmet": "6.1.0", "react-router": "8.4.0", "socket.io-client": "4.8.4", "sonner": "2.0.8", "universal-cookie": "8.1.2"}, "devDependencies": {"@emotion/react": "11.14.0", "@react-router/dev": "8.4.0", "@react-router/fs-routes": "8.4.0", "autoprefixer": "10.6.1", "postcss": "8.5.30", "postcss-import": "17.0.1", "vite": "8.3.4"}, "overrides": {}} 
+.web file list differs:
+32c32,33
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+40a42
+> .web/utils/helpers/set.js
+drive counter-up rc=0
+== counter-up: {'pass': 8, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=9 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=24
+SHUTDOWN: main pid 31690 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### counter prod 02:19:08
+started reflex pid=32128 (02:19:08) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/counter/prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive counter-prod rc=0
+== counter-prod: {'pass': 8, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=1 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=24
+SHUTDOWN: main pid 32128 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### counter cold 02:19:21
+started reflex pid=32477 (02:19:21) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/counter/cold.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json counter-up -> counter-cold: 
+package.json identical
+.web file list identical
+drive counter-cold rc=0
+== counter-cold: {'pass': 8, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=9 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=24
+SHUTDOWN: main pid 32477 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- counter-base server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- counter-up server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- counter-prod server-log warnings:
+--- counter-cold server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+### counter done 02:19:33

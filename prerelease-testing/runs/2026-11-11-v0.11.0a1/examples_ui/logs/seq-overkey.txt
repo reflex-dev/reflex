@@ -1,0 +1,74 @@
+### overkey base 02:32:34
+started reflex pid=16912 (02:32:34) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/overkey/base.server.log
+UP after 16s (frontend 200, backend /ping 200)
+drive overkey-base rc=1
+[FAIL   ] game1: tick events re-queued by the background task (>=4): ['hydrate_and_load', 'set_time_limit', 'start_timer', 'receive_user_input', 'receive_user_input']
+== overkey-base: {'pass': 27, 'fail': 1, 'anomaly': 0, 'skipped': 0}  console_total=35 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=59
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 16912 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### overkey baseprod 02:33:36
+started reflex pid=17866 (02:33:36) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/overkey/baseprod.server.log
+UP after 17s (frontend 200, backend /ping 200)
+drive overkey-baseprod rc=1
+[FAIL   ] game1: tick events re-queued by the background task (>=4): ['hydrate_and_load', 'set_time_limit', 'start_timer', 'receive_user_input']
+== overkey-baseprod: {'pass': 27, 'fail': 1, 'anomaly': 0, 'skipped': 0}  console_total=27 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=54
+SHUTDOWN: main pid 17866 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### overkey upgrade 02:34:27
+ - reflex==0.10.1
+ + reflex==0.11.0a1
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a1
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+Using Python 3.12.3 environment at: envs/examples_ui-overkey
+Checked 41 packages in 8ms
+All installed packages are compatible
+### overkey up 02:34:28
+started reflex pid=19231 (02:34:28) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/overkey/up.server.log
+SERVER DIED after 7s
+Use rx.client_state(default, name=...) instead. Naming a var makes it global; an
+unnamed var is owned by the outermost page or `@rx.memo` that uses it, so 
+`global_ref` is no longer needed. It will be completely removed in 1.0. 
+(overkey/overkey.py:80)
+Warning: Mutable default values are not recommended. Use default_factory instead
+to avoid unexpected behavior.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 335, in get_compiled_app
+    app, app_module = get_and_validate_app(reload=reload)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 302, in get_and_validate_app
+    app_module = get_app(reload=reload)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 262, in get_app
+    __import__(module, fromlist=(constants.CompileVars.APP,))
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/up/apps/overkey/overkey/overkey.py", line 92, in <module>
+    class OverkeyState(rx.State):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex_base/vars/base.py", line 5234, in __new__
+    new_cls = super().__new__(cls, name, bases, namespace)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen abc>", line 106, in __new__
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex/state.py", line 839, in __init_subclass__
+    RegistrationContext.register_base_state(cls)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex_base/registry.py", line 204, in register_base_state
+    return cls.ensure_context()._register_base_state(state_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex_base/registry.py", line 219, in _register_base_state
+    self._register_event_handler(event_handler, states=(state_cls,))
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex_base/registry.py", line 268, in _register_event_handler
+    full_name = format_event_handler(handler)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex_base/utils/format.py", line 472, in format_event_handler
+    state, name = get_event_handler_parts(handler)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/examples_ui-overkey/lib/python3.12/site-packages/reflex_base/utils/format.py", line 448, in get_event_handler_parts
+    name = handler.fn.__qualname__
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'EventHandler' object has no attribute '__qualname__'. Did you mean: '__set_name__'?

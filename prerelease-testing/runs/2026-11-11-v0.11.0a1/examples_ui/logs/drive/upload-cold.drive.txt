@@ -1,0 +1,23 @@
+[PASS   ] initial: 'No files selected', QA extras rendered: selected=['No files selected'] disk=['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'héllo wörld 测试 файл (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']
+[PASS   ] select 2 files -> names rendered (rx.selected_files): ['hello.txt', 'héllo wörld 测试 файл (1).txt']
+[PASS   ] re-select replaces the selection: ['after cancel.txt']
+[PASS   ] Clear (rx.clear_selected_files) empties the selection: ['No files selected']
+[PASS   ] drag & drop onto the dropzone selects files: ['dropped_one.txt', 'dropped two.txt']
+[PASS   ] dropped files upload and land on disk (this run's bytes): ['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'héllo wörld 测试 файл (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']
+[PASS   ] hostile names sanitized into the upload dir (no traversal), content intact: {"saved": {"../x_traversal.txt": true, "..\\..\\win_traversal.txt": true, "/abs/root_abs.txt": true, "sub/dir/nested.txt": true}, "escaped_outside": [], "disk": ["after cancel.txt", "big12mb.bin", "dropped two.txt", "dropped_one.txt", "héllo wörld 测试 файл (1).txt", "nested.txt", "root_abs.txt", "win_traversal.txt", "x_traversal.txt"]}
+[PASS   ] unicode+spaces+parens filename roundtrip: héllo wörld 测试 файл (1).txt
+[PASS   ] 12 MB binary upload: sha256 matches: 0.76s size=12582912
+[PASS   ] progress bar at 100 after a completed upload: aria-valuenow=100 uploading_text=0
+[PASS   ] throttled upload shows 'Uploading... cancel': 
+[PASS   ] progress advances during the throttled upload: ['10', '20']
+[PASS   ] event sent DURING an in-flight upload is processed before the upload ends (#7357): pings 0->1 latency=0.06s upload_still_in_flight=True
+[PASS   ] cancel hides 'Uploading...' and no file is saved: uploading_hidden=True slow6mb_on_disk=False progress=21
+[PASS   ] upload after cancel works: ['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'héllo wörld 测试 файл (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']
+[PASS   ] events still processed after cancel: 2
+[PASS   ] reload: state kept (pings counter survives): 2
+[PASS   ] fresh context lists every uploaded file: ['after cancel.txt', 'big12mb.bin', 'dropped two.txt', 'dropped_one.txt', 'héllo wörld 测试 файл (1).txt', 'nested.txt', 'root_abs.txt', 'win_traversal.txt', 'x_traversal.txt']
+[PASS   ] rendered /_upload links serve the exact bytes (spaces, unicode, nested, 12 MB): {"dropped two.txt": [200, "http://localhost:8420/_upload/dropped two.txt", true], "héllo wörld 测试 файл (1).txt": [200, "http://localhost:8420/_upload/héllo wörld 测试 файл (1).txt", true], "nested.txt": [200, "http://localhost:8420/_upload/nested.txt", true], "big12mb.bin": [200, "http://localhost:8420/_upload/big12mb.bin", true]}
+[PASS   ] console: no unexpected errors/warnings + no page errors: []
+[PASS   ] network: no unexpected failed/4xx/5xx requests: []
+
+== upload-cold: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=101

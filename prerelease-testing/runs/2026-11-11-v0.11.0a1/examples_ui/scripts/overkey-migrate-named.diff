@@ -1,0 +1,37 @@
+--- overkey/overkey/overkey.py	2026-11-11 02:35:11.029881214 +0000
++++ overkey-mig-named/overkey/overkey.py	2026-11-11 02:40:21.284145491 +0000
+@@ -7,7 +7,6 @@
+ from pathlib import Path
+ 
+ import reflex as rx
+-from reflex.experimental.client_state import ClientStateVar
+ from reflex.vars.number import NumberVar
+ from reflex.vars.sequence import StringVar
+ 
+@@ -77,7 +76,7 @@
+     INCOMPLETE = "incomplete"
+ 
+ 
+-user_input_state = ClientStateVar.create("user_input", default="")
++user_input_state = rx.client_state("", name="user_input")
+ 
+ 
+ @dataclasses.dataclass
+@@ -283,7 +282,7 @@
+ def witness_is_reset():
+     """Render a witness for the reset of the Overkey app."""
+     return rx.el.div(
+-        on_mount=user_input_state.set_value(""),
++        on_mount=user_input_state.set(""),
+     )
+ 
+ 
+@@ -356,7 +355,7 @@
+                         time_is_up(),
+                         rx.el.input(
+                             value=user_input_state.value,
+-                            on_change=user_input_state.set_value,
++                            on_change=user_input_state.set,
+                             on_key_down=lambda _: rx.cond(
+                                 user_input_state.value == "",
+                                 OverkeyState.start_timer(),

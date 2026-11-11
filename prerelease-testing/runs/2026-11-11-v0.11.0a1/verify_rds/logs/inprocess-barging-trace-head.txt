@@ -1,0 +1,40 @@
+   255.9 None Using selector: EpollSelector
+   256.9 Task-1 Overriding config value telemetry_enabled with env var TELEMETRY_ENABLED=false
+   261.1 reflex_ensure_task|StateManagerRedis._lock_task=_subscribe_lock_updates|1794365093.489069 Failed to enable maintenance notifications: unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+   264.2 reflex_ensure_task|StateManagerRedis._lock_task=_subscribe_lock_updates|1794365093.4945369 Failed to enable maintenance notifications: unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+   266.4 A-side Failed to enable maintenance notifications: unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+   266.7 A-side [SMR:3862] [0.013] e1fea475-c959-455c-82f8-9d23b627289b_lock instaque by 3fe5acebf87440908323e62381ef6223
+   267.3 A-side [SMR:3862] [0.014] e1fea475-c959-455c-82f8-9d23b627289b obtained lock 3fe5acebf87440908323e62381ef6223.
+   267.5 reflex_lease_breaker|e1fea475-c959-455c-82f8-9d23b627289b|3fe5acebf87440908323e62381ef6223 [SMR:3862] [0.014] e1fea475-c959-455c-82f8-9d23b627289b lease breaker 3fe5acebf87440908323e62381ef6223 started, sleeping for 5.0s
+   316.0 B-side B ROUND 0 start
+   318.3 Task-7 Failed to enable maintenance notifications: unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+   319.1 Task-7 [SMR:3862] [0.066] e1fea475-c959-455c-82f8-9d23b627289b_lock waiting for 165d5667c33c4ae4aa41af66991f9164
+   320.3 reflex_ensure_task|StateManagerRedis._lock_task=_subscribe_lock_updates|1794365093.489069 [SMR:3862] [0.067] e1fea475-c959-455c-82f8-9d23b627289b OPLOCK CONTEND - lease break task cancelled lease_task=<Task cancelling name='reflex_lease_breaker|e1fea475-c959-455c-82f8-9d23b627289b|3fe5acebf87440908323e62381ef6223' coro=<_Lease.run() running at /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/vrds-new/lib/python3.12/site-packages/reflex/istate/manager/redis.py:1413> wait_for=<Future cancelled> cb=[_Lease._on_done()]>
+   320.5 A-side [SMR:3862] [0.067] e1fea475-c959-455c-82f8-9d23b627289b no active lease task found
+   320.7 Task-9 [SMR:3862] [0.067] e1fea475-c959-455c-82f8-9d23b627289b lease breaker 3fe5acebf87440908323e62381ef6223 flushing state
+   324.8 Task-9 Failed to enable maintenance notifications: unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+   325.0 A-side [SMR:3862] [0.072] e1fea475-c959-455c-82f8-9d23b627289b_lock waiting for f42aa4ca0c6041af9455e05f22af4c0d
+   325.2 Task-10 Failed to enable maintenance notifications: unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+   326.2 reflex_lease_breaker|e1fea475-c959-455c-82f8-9d23b627289b|3fe5acebf87440908323e62381ef6223 Failed to enable maintenance notifications: unknown subcommand 'MAINT_NOTIFICATIONS'. Try CLIENT HELP.
+   326.5 reflex_lease_breaker|e1fea475-c959-455c-82f8-9d23b627289b|3fe5acebf87440908323e62381ef6223 [SMR:3862] [0.073] e1fea475-c959-455c-82f8-9d23b627289b_lock released by 3fe5acebf87440908323e62381ef6223
+   326.5 reflex_lease_breaker|e1fea475-c959-455c-82f8-9d23b627289b|3fe5acebf87440908323e62381ef6223 [SMR:3862] [0.073] e1fea475-c959-455c-82f8-9d23b627289b_lock NOTIFY 1 / 1 waiters event=<asyncio.locks.Event object at 0x7f963a750b90 [set, waiters:1]>
+   326.7 reflex_ensure_task|StateManagerRedis._lock_task=_subscribe_lock_updates|1794365093.4945369 [SMR:3862] [0.073] e1fea475-c959-455c-82f8-9d23b627289b_lock NOTIFY 1 / 1 waiters event=<asyncio.locks.Event object at 0x7f963a750080 [set, waiters:1]>
+   326.7 reflex_ensure_task|StateManagerRedis._lock_task=_subscribe_lock_updates|1794365093.489069 [SMR:3862] [0.073] e1fea475-c959-455c-82f8-9d23b627289b_lock NOTIFY 1 / 1 waiters event=<asyncio.locks.Event object at 0x7f963a750b90 [set]>
+   326.9 A-side [SMR:3862] [0.073] e1fea475-c959-455c-82f8-9d23b627289b_lock acquired by f42aa4ca0c6041af9455e05f22af4c0d event=<asyncio.locks.Event object at 0x7f963a750b90 [set]>
+   327.0 Task-7 [SMR:3862] [0.074] e1fea475-c959-455c-82f8-9d23b627289b_lock waiting for 165d5667c33c4ae4aa41af66991f9164
+   327.2 A-side [SMR:3862] [0.074] e1fea475-c959-455c-82f8-9d23b627289b has contention, not leasing
+   330.6 A-side [SMR:3862] [0.077] e1fea475-c959-455c-82f8-9d23b627289b_lock released by f42aa4ca0c6041af9455e05f22af4c0d
+   330.8 reflex_ensure_task|StateManagerRedis._lock_task=_subscribe_lock_updates|1794365093.4945369 [SMR:3862] [0.077] e1fea475-c959-455c-82f8-9d23b627289b_lock NOTIFY 1 / 1 waiters event=<asyncio.locks.Event object at 0x7f963a750080 [set, waiters:1]>
+   331.1 A-side [SMR:3862] [0.078] e1fea475-c959-455c-82f8-9d23b627289b_lock instaque by 68b725e7dea140c49afb608a32cbc2d9
+   331.3 Task-7 [SMR:3862] [0.078] e1fea475-c959-455c-82f8-9d23b627289b_lock waiting for 165d5667c33c4ae4aa41af66991f9164
+   331.3 A-side [SMR:3862] [0.078] e1fea475-c959-455c-82f8-9d23b627289b has contention, not leasing
+   334.8 A-side [SMR:3862] [0.081] e1fea475-c959-455c-82f8-9d23b627289b_lock released by 68b725e7dea140c49afb608a32cbc2d9
+   335.1 reflex_ensure_task|StateManagerRedis._lock_task=_subscribe_lock_updates|1794365093.4945369 [SMR:3862] [0.082] e1fea475-c959-455c-82f8-9d23b627289b_lock NOTIFY 1 / 1 waiters event=<asyncio.locks.Event object at 0x7f963a750080 [set, waiters:1]>
+   335.4 A-side [SMR:3862] [0.082] e1fea475-c959-455c-82f8-9d23b627289b_lock instaque by 434c3e46bd9043dbb7bceb480a289e41
+   335.6 Task-7 [SMR:3862] [0.082] e1fea475-c959-455c-82f8-9d23b627289b_lock waiting for 165d5667c33c4ae4aa41af66991f9164
+   335.7 A-side [SMR:3862] [0.082] e1fea475-c959-455c-82f8-9d23b627289b has contention, not leasing
+   339.0 A-side [SMR:3862] [0.086] e1fea475-c959-455c-82f8-9d23b627289b_lock released by 434c3e46bd9043dbb7bceb480a289e41
+   339.3 reflex_ensure_task|StateManagerRedis._lock_task=_subscribe_lock_updates|1794365093.4945369 [SMR:3862] [0.086] e1fea475-c959-455c-82f8-9d23b627289b_lock NOTIFY 1 / 1 waiters event=<asyncio.locks.Event object at 0x7f963a750080 [set, waiters:1]>
+   339.5 A-side [SMR:3862] [0.086] e1fea475-c959-455c-82f8-9d23b627289b_lock instaque by b64fde2597f84c4989f86ef597477e07
+   339.7 Task-7 [SMR:3862] [0.086] e1fea475-c959-455c-82f8-9d23b627289b_lock waiting for 165d5667c33c4ae4aa41af66991f9164
+   339.7 A-side [SMR:3862] [0.086] e1fea475-c959-455c-82f8-9d23b627289b has contention, not leasing

@@ -1,0 +1,80 @@
+### upload base 02:40:29
+started reflex pid=30101 (02:40:30) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/upload/base.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive upload-base rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-base: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=105
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 30101 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload baseprod 02:40:54
+started reflex pid=30952 (02:40:54) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/upload/baseprod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive upload-baseprod rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-baseprod: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=2 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=107
+SHUTDOWN: main pid 30952 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload upgrade 02:41:17
+ - reflex==0.10.1
+ + reflex==0.11.0a1
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a1
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+Using Python 3.12.3 environment at: envs/examples_ui-upload
+Checked 41 packages in 0.80ms
+All installed packages are compatible
+### upload up 02:41:17
+started reflex pid=31720 (02:41:17) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/upload/up.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json upload-base -> upload-up: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.26.
+.web file list differs:
+32c32,33
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+40a42
+> .web/utils/helpers/set.js
+semantic package.json diff: IDENTICAL (formatting only)
+drive upload-up rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-up: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=105
+SHUTDOWN: main pid 31720 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload prod 02:41:39
+started reflex pid=32273 (02:41:39) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/upload/prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive upload-prod rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-prod: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=2 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=107
+SHUTDOWN: main pid 32273 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### upload cold 02:42:02
+started reflex pid=32722 (02:42:02) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/upload/cold.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json upload-up -> upload-cold: 
+package.json identical
+.web file list identical
+semantic package.json diff: IDENTICAL
+drive upload-cold rc=0
+[PASS   ] reload: state kept (pings counter survives): 2
+== upload-cold: {'pass': 21, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=1 (unexpected 0) ws_frames=101
+SHUTDOWN: main pid 32722 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- upload-base server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- upload-baseprod server-log warnings:
+--- upload-up server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- upload-prod server-log warnings:
+--- upload-cold server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+### upload done 02:42:24

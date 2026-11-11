@@ -1,0 +1,94 @@
+### reflexle base 02:38:21
+started reflex pid=24154 (02:38:21) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/reflexle/base.server.log
+UP after 7s (frontend 200, backend /ping 200)
+drive reflexle-base rc=0
+== reflexle-base: {'pass': 19, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=104
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 24154 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### reflexle baseprod 02:38:49
+started reflex pid=25033 (02:38:49) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/reflexle/baseprod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive reflexle-baseprod rc=0
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 1.823, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}]
+== reflexle-baseprod: {'pass': 18, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=3 unexpected_console=1 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=104
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+SHUTDOWN: main pid 25033 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### reflexle upgrade 02:39:14
+ - reflex==0.10.1
+ + reflex==0.11.0a1
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a1
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+Using Python 3.12.3 environment at: envs/examples_ui-reflexle
+Checked 42 packages in 0.78ms
+All installed packages are compatible
+### reflexle up 02:39:14
+started reflex pid=26103 (02:39:14) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/reflexle/up.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json reflexle-base -> reflexle-up: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1
+.web file list differs:
+33c33,34
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+41a43
+> .web/utils/helpers/set.js
+semantic package.json diff: IDENTICAL (formatting only)
+drive reflexle-up rc=0
+== reflexle-up: {'pass': 19, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=104
+SHUTDOWN: main pid 26103 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### reflexle prod 02:39:37
+started reflex pid=26838 (02:39:37) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/reflexle/prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive reflexle-prod rc=0
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 1.528, "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"}]
+== reflexle-prod: {'pass': 18, 'fail': 0, 'anomaly': 1, 'skipped': 0}  console_total=3 unexpected_console=1 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=104
+  UNEXPECTED CONSOLE: error Failed to load resource: the server responded with a status of 404 (Not Found)
+SHUTDOWN: main pid 26838 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### reflexle cold 02:40:02
+started reflex pid=28365 (02:40:02) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/reflexle/cold.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json reflexle-up -> reflexle-cold: 
+package.json identical
+.web file list identical
+semantic package.json diff: IDENTICAL
+drive reflexle-cold rc=0
+== reflexle-cold: {'pass': 19, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=104
+SHUTDOWN: main pid 28365 exited after SIGTERM in ~3s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- reflexle-base server-log warnings:
+      4 has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+      2 DeprecationWarning: `@rx.memo` on `keyboard_button` without explicit annotations
+      2 DeprecationWarning: `@rx.memo` on `character_box` without explicit annotations 
+      1 Debug: error: script "dev" exited with code 143
+--- reflexle-baseprod server-log warnings:
+      2 has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+      1 DeprecationWarning: `@rx.memo` on `keyboard_button` without explicit annotations
+      1 DeprecationWarning: `@rx.memo` on `character_box` without explicit annotations 
+--- reflexle-up server-log warnings:
+      4 has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+      2 DeprecationWarning: `@rx.memo` on `keyboard_button` without explicit annotations
+      2 DeprecationWarning: `@rx.memo` on `character_box` without explicit annotations 
+      1 Debug: error: script "dev" exited with code 143
+--- reflexle-prod server-log warnings:
+      2 has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+      1 DeprecationWarning: `@rx.memo` on `keyboard_button` without explicit annotations
+      1 DeprecationWarning: `@rx.memo` on `character_box` without explicit annotations 
+--- reflexle-cold server-log warnings:
+      4 has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+      2 DeprecationWarning: `@rx.memo` on `keyboard_button` without explicit annotations
+      2 DeprecationWarning: `@rx.memo` on `character_box` without explicit annotations 
+      1 Debug: error: script "dev" exited with code 143
+### reflexle done 02:40:29

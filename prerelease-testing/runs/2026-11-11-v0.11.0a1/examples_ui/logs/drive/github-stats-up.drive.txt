@@ -1,0 +1,19 @@
+[PASS   ] persist: selected users restored from LocalStorage written by previous run: chips=['alice', 'ghost1'] localstorage=['alice', 'ghost1']
+[PASS   ] persist: user stats restored (textarea JSON + chart): logins=['alice'] expected(LocalStorage)=['alice'] bars=4
+[PASS   ] persist: alice NOT refetched on load (data came from LocalStorage): before={'alice': 2, 'bob': 1, 'ghost1': 187} after={'alice': 2, 'bob': 1, 'ghost1': 318}
+[PASS   ] persist: add carol after restart: logins=['alice', 'carol']
+[PASS   ] persist: remove ghost1: ['alice', 'carol']
+[PASS   ] reload: users + stats restored from LocalStorage: chips=['alice', 'carol'] logins=['alice', 'carol'] expected=['alice', 'carol']/['alice', 'carol']
+[PASS   ] reload: no refetch for users already in user_stats_json: refetched={} (ghost* refetch is expected app behaviour)
+[PASS   ] widget: dynamic route renders heading (param lower-cased): 
+[PASS   ] widget: chart bars + legend: bars=4
+[ANOMALY] widget: ?appearance=dark applied via nested rx.theme (pre-existing: not applied on 0.9.12): ['radix-themes css-0 light root=true', 'radix-themes css-0 root=false']
+[PASS   ] widget: last_fetch LocalStorage written: 
+[PASS   ] widget: reload within 60s served from LocalStorage cache (no refetch): first load fetched 0, reload fetched 0, bars=4
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 1.856, "type": "error", "text": "You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`."}, {"page": "main", "t": 1.868, "type": "error", "text": "You provided a `value` prop to a form field without an `onChange` handler. T
+[PASS   ] network: no unexpected failed/4xx/5xx requests: []
+
+== github-stats-up: {'pass': 12, 'fail': 0, 'anomaly': 2, 'skipped': 0}  console_total=22 unexpected_console=3 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=346
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+  UNEXPECTED CONSOLE: error You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.

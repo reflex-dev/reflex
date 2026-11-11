@@ -1,0 +1,85 @@
+### clock base 02:42:25
+started reflex pid=934 (02:42:25) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/clock/base.server.log
+UP after 9s (frontend 200, backend /ping 200)
+drive clock-base rc=1
+[FAIL   ] time correct for US/Pacific: ['6', ':', '42', ':', '44', 'PM']
+[FAIL   ] zone change while stopped (Europe/Paris): Europe/Paris ['3', ':', '42', ':', '50', 'AM']
+== clock-base: {'pass': 15, 'fail': 2, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=46
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 934 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### clock baseprod 02:43:06
+started reflex pid=1699 (02:43:06) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/clock/baseprod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive clock-baseprod rc=1
+[FAIL   ] time correct for US/Pacific: ['6', ':', '43', ':', '21', 'PM']
+[FAIL   ] zone change while stopped (Europe/Paris): Europe/Paris ['3', ':', '43', ':', '27', 'AM']
+== clock-baseprod: {'pass': 15, 'fail': 2, 'anomaly': 0, 'skipped': 0}  console_total=2 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=46
+SHUTDOWN: main pid 1699 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### clock upgrade 02:43:42
+ - reflex==0.10.1
+ + reflex==0.11.0a1
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a1
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+Using Python 3.12.3 environment at: envs/examples_ui-clock
+Checked 42 packages in 0.82ms
+All installed packages are compatible
+### clock up 02:43:42
+started reflex pid=2458 (02:43:42) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/clock/up.server.log
+UP after 4s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json clock-base -> clock-up: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.26.0"
+.web file list differs:
+32c32,33
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+40a42
+> .web/utils/helpers/set.js
+semantic package.json diff: IDENTICAL (formatting only)
+drive clock-up rc=1
+[FAIL   ] time correct for US/Pacific: ['6', ':', '43', ':', '56', 'PM']
+[FAIL   ] zone change while stopped (Europe/Paris): Europe/Paris ['3', ':', '44', ':', '02', 'AM']
+== clock-up: {'pass': 15, 'fail': 2, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=46
+SHUTDOWN: main pid 2458 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### clock prod 02:44:17
+started reflex pid=3048 (02:44:17) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/clock/prod.server.log
+UP after 7s (frontend 200, backend /ping 200)
+drive clock-prod rc=1
+[FAIL   ] time correct for US/Pacific: ['6', ':', '44', ':', '33', 'PM']
+[FAIL   ] zone change while stopped (Europe/Paris): Europe/Paris ['3', ':', '44', ':', '38', 'AM']
+== clock-prod: {'pass': 15, 'fail': 2, 'anomaly': 0, 'skipped': 0}  console_total=2 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=46
+SHUTDOWN: main pid 3048 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### clock cold 02:44:53
+started reflex pid=3884 (02:44:54) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/clock/cold.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json clock-up -> clock-cold: 
+package.json identical
+.web file list identical
+semantic package.json diff: IDENTICAL
+drive clock-cold rc=1
+[FAIL   ] time correct for US/Pacific: ['6', ':', '45', ':', '07', 'PM']
+[FAIL   ] zone change while stopped (Europe/Paris): Europe/Paris ['3', ':', '45', ':', '13', 'AM']
+== clock-cold: {'pass': 15, 'fail': 2, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=46
+SHUTDOWN: main pid 3884 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- clock-base server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+--- clock-baseprod server-log warnings:
+--- clock-up server-log warnings:
+      1 Debug: error: script "dev" was terminated by signal SIGTERM (Polite quit 
+--- clock-prod server-log warnings:
+--- clock-cold server-log warnings:
+      1 Debug: error: script "dev" exited with code 143
+### clock done 02:45:28

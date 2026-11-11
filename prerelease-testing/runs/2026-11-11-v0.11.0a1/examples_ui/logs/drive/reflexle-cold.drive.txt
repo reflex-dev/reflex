@@ -1,0 +1,21 @@
+[PASS   ] load: grid renders 6x5: rows=6
+[PASS   ] load: grid initially blank: 
+[PASS   ] hotkey: keydown reaches backend state: 
+[PASS   ] type 'crane': tiles echo letters: crane
+[PASS   ] submit guess: row0 coloured: [["c", "INCORRECT"], ["r", "INCORRECT"], ["a", "INCORRECT"], ["n", "INCORRECT"], ["e", "CORRECT"]]
+[PASS   ] on-screen keyboard recoloured after guess: 
+[PASS   ] short guess: rx.toast shown: 
+[PASS   ] invalid word: background task auto-clears row: seen-before-clear=True row1='     '
+[PASS   ] Backspace removes last letter: a    
+[PASS   ] on-screen key click types letter (@rx.memo keyboard_button): q    
+[PASS   ] on-screen backspace click: 
+[PASS   ] high-contrast toggle recolours tiles: 
+[PASS   ] colour-mode toggle flips theme: 'light' -> 'dark'
+[PASS   ] reload: guess 'crane' survives (same session token, on_load keeps game): crane
+[PASS   ] second context: independent blank game:      
+[PASS   ] play-again resets grid: 
+[PASS   ] post-reset guess coloured: [["s", "INCORRECT"], ["l", "WRONG_POSITION"], ["a", "INCORRECT"], ["t", "INCORRECT"], ["e", "CORRECT"]]
+[PASS   ] console: no unexpected errors/warnings + no page errors: []
+[PASS   ] network: no unexpected failed/4xx/5xx requests: []
+
+== reflexle-cold: {'pass': 19, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=14 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=104

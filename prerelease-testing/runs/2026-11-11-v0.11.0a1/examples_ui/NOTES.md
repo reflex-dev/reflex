@@ -8,10 +8,9 @@
   no servers); the sandbox refused my `rm -rf` of it — leave it for a human to delete.
 - [x] base venvs `$SB/envs/examples_ui-<app>` = `reflex==0.10.1` + requirements.txt, `-c $W/prev_constraints.txt`
   (freeze of `$SB/envs/prev`), no --prerelease, `--only-binary :all:`. Freezes in `$W/up/freeze/<app>-base.txt`.
-- [x] counter, github-stats, overkey (stacked fail + minimal fix) — done
-- [ ] reflexle, upload, clock, quiz — running (`$W/logs/seq-<app>.txt`)
-- [x] fresh-install matrix n001 (uv/pip x 3.11/3.14/3.15 + plain pip 3.12) + dbcli; pip/uv in-place paths
-- [ ] fresh `reflex init --template blank` + run per python; overkey fully-migrated API check; copy artifacts
+- [x] DONE. All 9 apps (counter, github-stats, overkey, reflexle, upload, clock, quiz, snakegame, lorem-stream) base ->
+  in-place -> prod -> cold; overkey fix + migration; split-origin prod (#7641) on upload; install matrix; blank init.
+  Final report: `reports/examples_ui.md`. All servers stopped (ports 3420-3439/8420-8439 free).
 
 ## How to rerun
 ```bash
@@ -44,6 +43,8 @@ server-log lines new in b. `eu/pkgjson_cmp.py` = semantic package.json diff.
 | reflexle (reflex-global-hotkey 1.2.3) | 19/0/0 | 18/0/1 | 19/0/0 | 18/0/1 | 19/0/0 | same (prod: favicon 404 console line) |
 | upload | 21/0/0 | 21/0/0 | 21/0/0 | 21/0/0 | 21/0/0 | same |
 | clock (rx.Cookie, bg tick) | 15/2/0 | 15/2/0 | 15/2/0 | 15/2/0 | 15/2/0 | same; the 2 fails are the driver's October (PDT/CEST) offsets, app shows correct PST/CET |
+| snakegame (bg game loop, key watcher) | 13/0/0 | 13/0/0 | 13/0/0 | 13/0/0 | 13/0/0 | same |
+| lorem-stream (bg streaming tasks) | 18/0/0 | 18/0/0 | 18/0/0 | 18/0/0 | 18/0/0 | same |
 | quiz (code_block, redirect) | 12/0/1 | 13/0/0 | 12/0/1 | 13/0/0 | 12/0/1 | same (dev Checkbox uncontrolled->controlled warning, pre-existing) |
 
 \* the 0.10.1 overkey "fail" was a driver assumption (expected the client to send `tick` events); on both versions a
@@ -91,3 +92,60 @@ Minimal fix = delete the outer `@rx.event` (`eu/overkey-minimal-fix.diff`). Full
 ClientStateVar on reload mid-game: identical on 0.10.1 / 0.11.0a1 dev+prod — the typed input resets to `""`, on_load
 resets the timer (selects back), the pre-reload background tick does not resume the countdown, the next game works.
 Restart (rotate-ccw) clears the typed input on both versions (TP-04 / examples#324 did not reproduce with this driver).
+
+### TP-04 (examples#324) — `eu/probe_overkey_restart.py`
+Restart clicked mid-game (timer running, 8 chars typed): input cleared and letters reset on 0.10.1 (`overkey-b010` copy of
+the unmodified app, `$SB/envs/prev`) and on 0.11.0a1 (fixed app). Typing again starts a new timer. Not reproducible at
+reflex-examples ebe19ff on either version (the `witness_is_reset` memo clears it).
+
+### github-stats LocalStorage across the upgrade (`storage_probe.py`, profile written by 0.10.1)
+First 0.11.0a1 load: users + stats restored, no changing app-storage writes (PASS). Both versions keep writing
+`github_stats_state.user_stats_json` with the same value ~40 times/s while the page is open (8 s window: 338 writes on
+0.10.1, 383 on 0.11.0a1; profile copies `$W/profiles/gh-fl-{b010,new}`) — **pre-existing anomaly**, not a regression.
+
+### Split-origin prod (#7641) on a real app — `eu/split_prod.sh <key> <appdir> <venv>`
+`reflex run --env prod --frontend-port 3420 --backend-port 8420` is refused on both versions ("In prod mode, frontend and
+backend must run on the same port."), so no fixture/app here used two prod ports. The documented split is
+`--backend-only --backend-port 8420` + `--frontend-only --frontend-port 3420`, `REFLEX_API_URL=http://localhost:8420`,
+deploy_url unset:
+- 0.10.1 (`$SB/envs/prev`, `up/apps/upload-b010`): upload driver 21/0/0; `/_event` polling and `/_upload` preflight
+  answer `access-control-allow-origin: http://localhost:3420`.
+- 0.11.0a1: page renders, client-only features work (file selection, drag & drop), but every backend interaction is dead:
+  websocket rejected, uploads never land (6 FAIL + the driver times out waiting for "cancel"); `/_upload` preflight
+  `405 Method Not Allowed`, no ACAO. Backend log: one line `http://localhost:3420 is not an accepted origin. (further
+  occurrences of this error will be logged with level INFO)` — no `Warning:` prefix, no hint at deploy_url /
+  cors_allowed_origins; nothing at startup. The `--loglevel debug` Config dump shows `cors_allowed_origins=('*',)` while
+  the effective value is "none" (`reflex.app._cors_allowed_origins()` -> None; probe in NOTES above). Already filed by
+  server_net (split deployment, high after verify_net); this is the same behaviour on the reflex-examples upload app.
+  `REFLEX_CORS_ALLOWED_ORIGINS=...` / `REFLEX_DEPLOY_URL=...` env overrides are honoured (checked at Python level).
+
+### Fresh-install matrix (PKG-09 / PKG-05) — `$W/inst/bin/n001.sh` + `dbcli.sh`, `INST_VERSION=0.11.0a1`
+| install | rc | sqlalchemy / greenlet / aiosqlite / sqlmodel / alembic | lucide / hosting-cli / redis | pip check |
+|---|---|---|---|---|
+| uv 3.11 / 3.14 / 3.15 `reflex[db]==0.11.0a1 --prerelease=allow` | 0 | 2.1.8 / 3.5.6 / 0.22.1 / 0.0.48 / 1.20.1 | 1.1.2a1 / 0.2.2a1 / **8.2.0b1** | clean |
+| pip 3.11 / 3.14 / 3.15 `reflex[db]==0.11.0a1` (no --pre) | 0 | same | 1.1.1 / 0.2.1 / 8.1.0 | clean |
+| pip 3.12 `reflex==0.11.0a1` (no --pre) | 0 | not installed (expected) | 1.1.1 / 0.2.1 / 8.1.0 | clean |
+`dbcli.sh` (uv311 uv315 pip311 pip314 pip315): `reflex db init / makemigrations / migrate / makemigrations(noop)` all rc 0,
+1 version file, tables alembic_version + note. `reflex init --template blank` + dev run (uv311 pip314 uv315 pip315): init
+rc 0, no npmmirror lines, 200, welcome page, colour mode toggle + survives reload; identical `.web/package.json` across
+Python versions; dev answers `/nope` with 200 (SPA fallback, pre-existing). Python 3.15 is downloaded by uv on demand.
+pip accepts the exact alpha pin without --pre and resolves the 0.11.0a1 siblings it pins (`reflex-base==`, core/code/
+radix `>=0.11.0a1`); `pip install -U reflex` in a 0.10.1 venv stays on 0.10.1.
+
+## Anomalies (benign or pre-existing)
+1. `reflex.lock/package.json` (committed to VCS) is rewritten from indented to one-line JSON on the first 0.11 run —
+   a no-op diff in every upgraded project's repo; bun.lock unchanged.
+2. `ClientStateVar.set_value` deprecation for `on_change=cs.set_value` is attributed to
+   `site-packages/reflex_components_core/el/elements/forms.py:857`: `reflex_base/utils/log.py`
+   `_get_first_non_framework_frame` excludes `reflex` and `reflex_base` roots but not the `reflex_components_*` packages.
+3. Three redis-py versions depending on install path: in-place without -U keeps 7.4.1, pip fresh 8.1.0, uv
+   `--prerelease=allow` fresh or -U 8.2.0b1 (beta).
+4. Debug Config dump shows `cors_allowed_origins=('*',)` in prod while the effective default is no CORS.
+5. github-stats writes the same LocalStorage value ~40/s on both versions (above).
+6. Pre-existing on both: github-stats widget `?appearance=dark` not applied + React `value` without `onChange` (3x);
+   quiz dev `Checkbox is changing from uncontrolled to controlled` (6x); reflexle prod favicon 404 console line;
+   `Initializing the web directory` + `Success: Initialized <app>...` printed by every dev `reflex run`.
+7. Fixture drift: staged `up/scripts/harness.py` lacks `Run.expected_bad` that `drive_upload.py` uses (harness_b.py has
+   it) — copied harness_b.py over harness.py. `clock_common.py` hardcodes October UTC offsets (2 clock fails on every
+   version in November). The fixture `upgrade()` helper uses `-U`; this cluster's seq_eu.sh upgrades without -U.
+8. Sandbox: `rsync` is not installed (use tar); GitHub blocked (GraphQL stub `up/scripts/github_stub.py`).

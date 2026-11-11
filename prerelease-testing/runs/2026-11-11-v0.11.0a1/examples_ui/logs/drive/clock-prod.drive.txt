@@ -1,0 +1,19 @@
+[PASS   ] render: switch + select + 6-part digital clock: ['6', ':', '44', ':', '25', 'PM']
+[PASS   ] stopped on load (on_load sets running=False): ['6', ':', '44', ':', '25', 'PM'] -> ['6', ':', '44', ':', '25', 'PM']
+[PASS   ] initial zone US/Pacific shown in select: US/Pacific
+[PASS   ] switch on -> background tick task advances seconds: ['6', ':', '44', ':', '30', 'PM'] -> ['6', ':', '44', ':', '33', 'PM']
+[FAIL   ] time correct for US/Pacific: ['6', ':', '44', ':', '33', 'PM']
+[PASS   ] zone change to Asia/Tokyo applies while ticking: ['11', ':', '44', ':', '33', 'AM']
+[PASS   ] still ticking after zone change: ['11', ':', '44', ':', '33', 'AM'] -> ['11', ':', '44', ':', '35', 'AM']
+[PASS   ] rx.Cookie zone written (Asia/Tokyo): {'reflex___state____state.clock___clock____state.zone_rx_state_': 'Asia%2FTokyo'}
+[PASS   ] reload: zone cookie sticks (Asia/Tokyo): Asia/Tokyo
+[PASS   ] reload: switch reset to off by on_load: unchecked
+[PASS   ] reload: clock not ticking: ['11', ':', '44', ':', '35', 'AM'] -> ['11', ':', '44', ':', '35', 'AM']
+[PASS   ] reload: displayed time is Tokyo (refresh() on load): ['11', ':', '44', ':', '35', 'AM']
+[PASS   ] switch off stops the tick loop: ['11', ':', '44', ':', '38', 'AM'] -> ['11', ':', '44', ':', '38', 'AM']
+[FAIL   ] zone change while stopped (Europe/Paris): Europe/Paris ['3', ':', '44', ':', '38', 'AM']
+[PASS   ] fresh context: default zone US/Pacific (no cookie): US/Pacific
+[PASS   ] console: no unexpected errors/warnings + no page errors: []
+[PASS   ] network: no unexpected failed/4xx/5xx requests: []
+
+== clock-prod: {'pass': 15, 'fail': 2, 'anomaly': 0, 'skipped': 0}  console_total=2 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=46

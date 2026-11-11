@@ -1,0 +1,79 @@
+### overkey up 02:35:21
+started reflex pid=19999 (02:35:21) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/overkey/up.server.log
+UP after 8s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json overkey-base -> overkey-up: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": "1.2
+.web file list differs:
+32c32,33
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+40a42
+> .web/utils/helpers/set.js
+semantic package.json diff: IDENTICAL (formatting only)
+drive overkey-up rc=0
+== overkey-up: {'pass': 27, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=35 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=58
+SHUTDOWN: main pid 19999 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### overkey prod 02:36:18
+started reflex pid=20540 (02:36:18) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/overkey/prod.server.log
+UP after 20s (frontend 200, backend /ping 200)
+drive overkey-prod rc=0
+== overkey-prod: {'pass': 27, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=26 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=54
+SHUTDOWN: main pid 20540 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### overkey cold 02:37:15
+started reflex pid=21474 (02:37:17) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/overkey/cold.server.log
+UP after 11s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json overkey-up -> overkey-cold: 
+package.json identical
+.web file list identical
+semantic package.json diff: IDENTICAL
+drive overkey-cold rc=0
+== overkey-cold: {'pass': 27, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=35 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=58
+SHUTDOWN: main pid 21474 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- overkey-base server-log warnings:
+      2 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      2 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      2 Warning: Mutable default values are not recommended. Use default_factory instead
+      2 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      2 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+      1 Warning: Attempting to send delta to disconnected client 
+      1 Debug: error: script "dev" exited with code 143
+--- overkey-baseprod server-log warnings:
+      1 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      1 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      1 Warning: Mutable default values are not recommended. Use default_factory instead
+      1 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      1 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+--- overkey-up server-log warnings:
+      2 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      2 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      2 Warning: Mutable default values are not recommended. Use default_factory instead
+      2 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      2 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+      2 DeprecationWarning: ClientStateVar.set_value has been deprecated in version 
+      2 DeprecationWarning: ClientStateVar.create has been deprecated in version 0.11.0.
+      1 Warning: Attempting to send delta to disconnected client 
+      1 Debug: error: script "dev" was terminated by signal SIGTERM (Polite quit 
+--- overkey-prod server-log warnings:
+      2 DeprecationWarning: ClientStateVar.set_value has been deprecated in version 
+      1 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      1 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      1 Warning: Mutable default values are not recommended. Use default_factory instead
+      1 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      1 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+      1 DeprecationWarning: ClientStateVar.create has been deprecated in version 0.11.0.
+--- overkey-cold server-log warnings:
+      2 been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+      2 annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+      2 Warning: Mutable default values are not recommended. Use default_factory instead
+      2 DeprecationWarning: `@rx.memo` on `witness_is_reset` without explicit 
+      2 DeprecationWarning: `@rx.memo` on `time_is_up` without explicit annotations has 
+      2 DeprecationWarning: ClientStateVar.set_value has been deprecated in version 
+      2 DeprecationWarning: ClientStateVar.create has been deprecated in version 0.11.0.
+      1 Debug: error: script "dev" exited with code 143
+### overkey done 02:38:00

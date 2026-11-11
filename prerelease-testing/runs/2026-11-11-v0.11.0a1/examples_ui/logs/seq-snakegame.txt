@@ -1,0 +1,79 @@
+### snakegame base 02:55:24
+started reflex pid=16163 (02:55:25) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/snakegame/base.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive snakegame-base rc=0
+== snakegame-base: {'pass': 13, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=9 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=98
+reflex.lock/package.json == .web/package.json
+SHUTDOWN: main pid 16163 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### snakegame baseprod 02:55:58
+started reflex pid=17255 (02:55:58) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/snakegame/baseprod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive snakegame-baseprod rc=0
+== snakegame-baseprod: {'pass': 13, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=1 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=98
+SHUTDOWN: main pid 17255 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### snakegame upgrade 02:56:29
+ - reflex==0.10.1
+ + reflex==0.11.0a1
+ - reflex-base==0.10.1
+ + reflex-base==0.11.0a1
+ - reflex-components-code==0.10.1
+ + reflex-components-code==0.11.0a1
+ - reflex-components-core==0.10.1
+ + reflex-components-core==0.11.0a1
+ - reflex-components-radix==0.10.1
+ + reflex-components-radix==0.11.0a1
+Using Python 3.12.3 environment at: envs/examples_ui-snakegame
+Checked 41 packages in 0.86ms
+All installed packages are compatible
+### snakegame up 02:56:29
+started reflex pid=18145 (02:56:29) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/snakegame/up.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json snakegame-base -> snakegame-up: < { < "name": "reflex", < "type": "module", < "scripts": { < "dev": "react-router dev --host", < "export": "react-router build" < }, < "dependencies": { < "@radix-ui/themes": "3.3.0", < "@react-router/node": "8.4.0", < "isbot": "5.2.2", < "lucide-react": 
+.web file list differs:
+32c32,33
+< .web/utils/components/Errorboundary_errorboundary_71c9c4d90c1a40b6ed86624e52613ee3.jsx
+---
+> .web/utils/client_state.js
+> .web/utils/components/Errorboundary_errorboundary_fd51d99ee2737697d6e13bbdc826359c.jsx
+40a42
+> .web/utils/helpers/set.js
+semantic package.json diff: IDENTICAL (formatting only)
+drive snakegame-up rc=0
+== snakegame-up: {'pass': 13, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=9 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=98
+SHUTDOWN: main pid 18145 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### snakegame prod 02:56:59
+started reflex pid=18890 (02:56:59) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/snakegame/prod.server.log
+UP after 6s (frontend 200, backend /ping 200)
+drive snakegame-prod rc=0
+== snakegame-prod: {'pass': 13, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=1 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=97
+SHUTDOWN: main pid 18890 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+### snakegame cold 02:57:30
+started reflex pid=19365 (02:57:30) log=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/examples_ui/logs/snakegame/cold.server.log
+UP after 3s (frontend 200, backend /ping 200)
+reflex.lock/package.json == .web/package.json
+package.json snakegame-up -> snakegame-cold: 
+package.json identical
+.web file list identical
+semantic package.json diff: IDENTICAL
+drive snakegame-cold rc=0
+== snakegame-cold: {'pass': 13, 'fail': 0, 'anomaly': 0, 'skipped': 0}  console_total=9 unexpected_console=0 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=97
+SHUTDOWN: main pid 19365 exited after SIGTERM in ~2s
+SHUTDOWN: all ports free after SIGTERM of main pid
+--- snakegame-base server-log warnings:
+      1 Warning: Attempting to send delta to disconnected client 
+      1 Debug: error: script "dev" exited with code 143
+--- snakegame-baseprod server-log warnings:
+--- snakegame-up server-log warnings:
+      1 Warning: Attempting to send delta to disconnected client 
+      1 Debug: error: script "dev" exited with code 143
+--- snakegame-prod server-log warnings:
+      1 Warning: Attempting to send delta to disconnected client 
+--- snakegame-cold server-log warnings:
+      1 Warning: Attempting to send delta to disconnected client 
+      1 Debug: error: script "dev" exited with code 143
+### snakegame done 02:58:00

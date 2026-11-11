@@ -1,7 +1,7 @@
 # Findings — reflex 0.11.0a1 pre-release testing (2026-11-11) — DRAFT
 
 **Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. Done, verification
-running: `redis_runtime`; `server_net` verified. Still exploring: `client_vars`, `compile_memo`, `examples_ui`.
+running: `redis_runtime`; `server_net` verified. Still exploring: `compile_memo`. `client_vars` and `examples_ui` done (client_vars verifier running).
 Findings marked *(unverified)* have not yet been through an independent verifier. Numbering is provisional; the final
 pass re-ranks by severity.
 
@@ -61,6 +61,8 @@ Index:
 - FINDING-025: A middleware that fails on non-http scopes silently skips a FastAPI transformer's lifespan (LOW)
 - FINDING-026: Routes differing only in case are accepted silently; one is unreachable (LOW, not a regression)
 - FINDING-027: Prod `reflex run`: repeated Ctrl-C does not force exit while lifespan cleanup is stuck (LOW, not a regression)
+- FINDING-028: Deprecation warnings for handlers passed as props point into `site-packages/reflex_components_*` (LOW)
+- FINDING-029: First 0.11 run rewrites the committed `reflex.lock/package.json` as one-line JSON (LOW, cosmetic regression)
 - PKG-A (maintainer decision): reflex 0.11.0a1 requires only `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`
 
 ---
@@ -287,6 +289,8 @@ Index:
   default | Verifier: NARROWED
 - Repro: `server_net/bin/cors.sh server_net-main A_unset` — toast "Cannot connect to server: websocket error. Check if
   server is reachable at ws://localhost:8346/_event" while `/ping` answers 200; server logs one engineio WARNING then INFO.
+- Also (examples_ui): the backend's debug Config dump still prints `cors_allowed_origins=('*',)` while the effective prod
+  value is none, and the rejection line has no Reflex prefix.
 - Code: `reflex_components_core/core/banner.py:80-91,107-110`. Fix shape: Reflex-side WARNING naming the rejected origin,
   what the backend saw and the setting to change; optionally a `no-cors` ping to say "reachable but refused".
 
@@ -313,6 +317,21 @@ Index:
 - Cluster: `server_net` | Not separately verified. Lifespan task sleeping 60 s after `yield`, prod, Ctrl-C ×3 → exits only
   after 60 s. The force-exit handler (`_REPEAT_IGNORE_SECONDS`) is installed only in `_run_dev` (reflex/reflex.py). The
   #7650 changelog implies a later Ctrl-C forces the exit.
+
+## FINDING-028: Deprecation warnings for handlers passed as props point into `site-packages/reflex_components_*` (LOW)
+- Cluster: `examples_ui` | Regression: no (frame filter unchanged; `set_value` deprecation is new, so unchanged user code now
+  hits it) | Verified by the orchestrator against the tag source
+- Repro: reflex-examples overkey (outer `@rx.event` removed) on 0.11.0a1: `on_change=user_input_state.set_value`
+  (overkey.py:359) logs `ClientStateVar.set_value has been deprecated ... (.../site-packages/reflex_components_core/el/elements/forms.py:857)`.
+- Root cause: `reflex_base/utils/log.py` `_exclude_paths_from_frame_info` excludes click, reflex, typing_extensions,
+  socketio, granian, reflex_base and the stdlib, but not the `reflex_components_*` packages split out of reflex.
+- Fix shape: add every installed `reflex_components_*` (or any `reflex_*` distribution of the train) to the exclude roots.
+
+## FINDING-029: First 0.11 run rewrites the committed `reflex.lock/package.json` as one-line JSON (LOW)
+- Cluster: `examples_ui` | Regression: yes (cosmetic) | Not separately verified
+- Any app run once on 0.10.1, then upgraded: `reflex.lock/package.json` (and `.web/package.json`) become compact JSON;
+  content identical (`examples_ui/scripts/pkgjson_cmp.py`), `bun.lock` byte-identical. Every upgraded project gets a
+  content-free VCS diff. Fix: keep indented output.
 
 ## PKG-A: sibling floors (maintainer decision)
 reflex 0.11.0a1 requires `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`. A stock `pip install
@@ -345,6 +364,25 @@ moves them. Stock pip resolves redis 8.1.0; `uv --prerelease=allow` resolves the
 | PKG-15 | rx.Model deprecation warning location | still broken (points at pydantic internals) | db_models |
 | TP-05 | form-designer /login no auto-redirect | still broken (both versions) | db_upgrade |
 | TP-07 | basic_crud / twitter ship no alembic dir | unchanged | db_upgrade |
+| PKG-09 | fresh reflex[db] on 3.11/3.14/3.15 via pip and uv | fixed (greenlet + aiosqlite present, migrations apply) | examples_ui |
+| PKG-05 | pip without --pre resolves the pinned train | fixed | examples_ui |
+| PKG-08 | sqlmodel / sqlalchemy cap | fixed (unchanged) | examples_ui |
+| TP-04 | overkey restart clears input | changed (no longer reproduces on either version) | examples_ui |
+| HYD-08 / HYD-09 | sync=True LocalStorage storms | fixed (0/3; control 0.10.0a3 storms) | client_vars |
+| HYD-12 | removeItem of synced key → TypeError in computed var | fixed | client_vars |
+| HYD-13 | shared-name synced vars only sync the last | fixed | client_vars |
+| STATE-10 | backend-var misuse errors | changed (str/%/!s, id=, add_page now raise; child/typed-prop/event-arg unchanged) | client_vars |
+| STATE-22 | storage default_factory on str var | changed (now a compile error; int/list still silent) | client_vars |
+| STATE-23 | storage-typed var hydration error | changed (does not reproduce on either version) | client_vars |
+| HYD-06 | pre-connect navigation runs left page's on_load | fixed | server_net |
+| CLI-16 | dev backend refuses fast while broken | still fixed | server_net |
+| CLI-27 (#7510) | `--json` truncated records on TERM | fixed | server_net |
+| CLI-26 (#7509) | `--json` SIGINT to pid | changed (control no longer reproduces) | server_net |
+| EVT-04 | prod + Redis bg deltas 6/6 | fixed | redis_runtime |
+| STATE-20 | schema hash stable; sessions survive 0.10.1 ↔ 0.11.0a1 | fixed | redis_runtime |
+| STATE-21 | hash depends on Python version | changed (3.11 vs 3.12 identical) | redis_runtime |
+| STATE-26 | py3.14 / spawn state_auto_setters | fixed | redis_runtime |
+| HYD-07 | kill -9 worker → reconnect gets new_token | changed (reproducible on demand; same on 0.10.1) | redis_runtime |
 
 ## Cluster summaries
 ### `db_upgrade` (pass:20, anomaly:6, fail:1)
@@ -357,6 +395,21 @@ prod + Redis, hot reload; AdminDash error; deprecated helpers. Issues: FINDING-0
 ### `enterprise` (pass:14, anomaly:4, fail:2)
 rxe 0.9.11 imports clean; OIDC 36/36 + N-032 + deeplink; demos dnd/flow/mantine/map/highcharts/tickets; awaited protected
 handlers; REST/WS parity; Redis; lifespan; CORS. Issues: FINDING-002/-003/-008/-009/-021.
+### `examples_ui` (pass:13, anomaly:3, fail:2)
+Nine non-DB reflex-examples apps (counter, github-stats, overkey, reflexle, upload, clock, quiz, snakegame, lorem-stream)
+upgraded in place 0.10.1 → 0.11.0a1, dev/prod/cold: identical results except overkey (FINDING-001; fixed with a one-line
+diff, 27/27). Fresh installs 3.11/3.14/3.15 pip+uv OK. Issues: FINDING-028/-029; split-origin prod = FINDING-022.
+### `client_vars` (pass:16, anomaly:5, fail:1)
+rx.client_state 91/91 + edge 51/51 (incl. auto_memoize=False + react_compiler), SetVar 29 ops × 17 mutations = Python,
+storage declaration / shared-name sync / cross-tab clear, @property and backend-var errors, code-point strings; HYD-08/09/12/13
+fixed. Issues: dup of FINDING-001; 9 low (verifier running): wrong client_state name hint, client_state identifier
+collisions break every page, rx.match on sets order-dependent, set handler args arrive as list, `set | None` ops break prod
+build, `split()` UTF-16, int/list storage factories, remaining cryptic backend-var errors, row-index client state in foreach.
+### `redis_runtime` (pass:17, anomaly:5, fail:1)
+Lock correctness exact across redis-py 7/8/beta × workers 1/2/4 × oplock; contention stalls 5-10 s → ~1 s; lost release
+notification 8.35 s → 0.33 s; #7412/#7696/#7616/#7590 fixed vs failing 0.10.1; py3.11 shutdown no hang. Issues (verifier
+running, none regressions): cross-worker updates lost after > 5 s Redis outage (medium), kill -9 of one worker stops the
+server (medium), oplock same-instance waiter 1 s stall contradicts #7534 wording (low).
 ### `server_net` (pass:19, anomaly:9, fail:1)
 CORS matrix, lifespan forwarding, case-insensitive routes, HYD-06 prenav, oversized events, state-mismatch event, signals
 and `--json`, `--frontend-only/--backend-only` ports, blocking monitor, otel trace ids, hosting-cli exit code. Issues:
