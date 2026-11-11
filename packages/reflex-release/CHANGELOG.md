@@ -1,3 +1,10 @@
+## v0.2.2a1 (2026-11-10)
+
+### Miscellaneous
+
+- Generated release workflows now default to uv 0.13.6 and Python 3.14.10, which reject the compromised eMudhra intermediate CA certificates. ([#7661](https://github.com/reflex-dev/reflex/issues/7661))
+
+
 ## v0.2.1 (2026-10-26)
 
 ### Miscellaneous

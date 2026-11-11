@@ -1,3 +1,10 @@
+## v1.1.2a1 (2026-11-10)
+
+### Bug Fixes
+
+- Fix `rx.icon` with a Var tag rendering blank for digit-x-digit icons such as `grid_2x_2`, `grid_2x_2_check` and `grid_3x_3`. ([#7674](https://github.com/reflex-dev/reflex/issues/7674))
+
+
 ## v1.1.1 (2026-10-26)
 
 ### Bug Fixes
