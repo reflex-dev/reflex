@@ -63,10 +63,12 @@ affects the Uvicorn backend.
 The frontend and backend can also run as separate processes, for example to
 serve the frontend from a CDN and scale the backend independently. The
 frontend-only server only serves static files, so tell it where the backend
-is when compiling the frontend — otherwise it assumes its own port:
+is when compiling the frontend — otherwise it assumes its own port. The
+backend accepts websocket connections only from its own origin and from
+`deploy_url`, so tell it the frontend's public URL, scheme included:
 
 ```bash
-reflex run --env prod --backend-only --backend-port 8000
+REFLEX_DEPLOY_URL=http://localhost:3000 reflex run --env prod --backend-only --backend-port 8000
 REFLEX_API_URL=http://localhost:8000 reflex run --env prod --frontend-only --frontend-port 3000
 ```
 
@@ -84,6 +86,8 @@ clear the store (or point the app at a fresh one) when rolling back.
 ```md alert warning
 # Reverse Proxy and Websockets
 Because the backend uses websockets, some reverse proxy servers, like [nginx](https://nginx.org/en/docs/http/websocket.html) or [apache](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#protoupgrade), must be configured to pass the `Upgrade` header to allow backend connectivity.
+
+In prod mode the backend accepts a websocket only from the origin named by the request's `Host` header, so the proxy must also pass the original `Host` (nginx rewrites it unless configured with `proxy_set_header Host $http_host;`). A proxy that sends the original host as `X-Forwarded-Host` instead works when the backend trusts it through [`trusted_proxy_hops`](/docs/advanced-onboarding/configuration/#client-ip-behind-proxies). Otherwise set `REFLEX_DEPLOY_URL` on the backend to the public URL, e.g. `REFLEX_DEPLOY_URL=https://app.example.com`.
 ```
 
 ## API URL
@@ -92,11 +96,14 @@ The frontend connects to the backend at `api_url`. When `api_url` points at
 `localhost` (the default), the frontend substitutes the hostname it was loaded
 from, and when the page is served over HTTPS it also drops the port and
 connects to its own origin. So a single-port production deployment behind a
-TLS-terminating proxy needs no `api_url` configuration at all.
+TLS-terminating proxy that keeps the `Host` header needs no `api_url`
+configuration at all.
 
 Set `api_url` explicitly when the backend is reachable at a different address
 than the frontend, for example when the frontend is exported to a static host
-and the backend runs elsewhere:
+and the backend runs elsewhere. The backend then also needs the frontend's
+origin as `deploy_url` (e.g. `REFLEX_DEPLOY_URL=https://example.com` where the
+backend runs) to accept its websocket connections:
 
 ```python
 config = rx.Config(
@@ -141,6 +148,9 @@ to an accessible backend URL when the frontend is exported.
 ```bash
 REFLEX_API_URL=https://api.example.com reflex export
 ```
+
+Run the backend with `REFLEX_DEPLOY_URL` set to the URL the static frontend is
+served from, as described under [API URL](#api-url).
 
 This will create a `frontend.zip` file with your app's minified HTML,
 Javascript, and CSS build that can be uploaded to your static hosting service.

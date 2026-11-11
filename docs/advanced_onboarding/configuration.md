@@ -100,7 +100,7 @@ The imported module must still define `app` at module level.
 
 ## CORS
 
-The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. By default any origin is allowed in dev mode. In prod mode the backend serves the frontend from its own origin, so by default no cross-origin requests are allowed at all and same-origin requests pass; when `deploy_url` is set, only that origin is allowed. Set `cors_allowed_origins` explicitly when the frontend is reachable from several origins, or to `["*"]` to allow any origin in production:
+The backend only accepts cross-origin requests from origins listed in `cors_allowed_origins`. By default any origin is allowed in dev mode. In prod mode the backend serves the frontend from its own origin, so by default it accepts only that origin: the host named by the request's `Host` header, over http or https, so a TLS-terminating proxy that keeps `Host` needs no further configuration. `X-Forwarded-Host` and `X-Forwarded-Proto` are honored only when [`trusted_proxy_hops`](#client-ip-behind-proxies) is set; a trusted `X-Forwarded-Proto: https` then also rejects pages served over plain http. When `deploy_url` is set, its origin is accepted as well. A frontend served from a different origin than the backend therefore needs `REFLEX_DEPLOY_URL` set on the **backend** to the frontend's public URL, scheme included (e.g. `REFLEX_DEPLOY_URL=https://app.example.com`). So does a reverse proxy that rewrites `Host`, unless it sends the original host as `X-Forwarded-Host` and `trusted_proxy_hops` is set (e.g. Azure Front Door). The backend logs a warning naming the rejected origin when it refuses a websocket connection. Set `cors_allowed_origins` explicitly when the frontend is reachable from several origins, or to `["*"]` to allow any origin in production:
 
 ```python
 config = rx.Config(
@@ -139,7 +139,7 @@ config = rx.Config(
 )
 ```
 
-For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
+For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The same entry of `X-Forwarded-Host` and `X-Forwarded-Proto` is used when the backend checks the origin of a WebSocket connection (see [CORS](#cors)). The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
 
 ## Plugins
 

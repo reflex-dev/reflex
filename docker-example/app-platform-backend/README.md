@@ -36,7 +36,9 @@ Deploy a `redis` instance on the vnet.
 
 The backend is built by the `Dockerfile` in this directory. When deploying the
 backend, be sure to set REFLEX_REDIS_URL=redis://internal-redis-hostname to connect to
-the redis service.
+the redis service, and REFLEX_DEPLOY_URL to the public URL of the static frontend
+(e.g. `https://app.example.com`). The backend only accepts websocket connections
+from its own origin and from that URL.
 
 With redis available, each replica runs up to 8 workers by default
 (`2 * cpu_count + 1`, capped at 8). When using Granian, set `GRANIAN_WORKERS`

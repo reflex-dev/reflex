@@ -58,6 +58,7 @@ from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, PlainTextResponse, StreamingResponse
 from starlette.routing import Mount, Route
 from starlette.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 import reflex as rx
 from reflex import constants
@@ -5978,8 +5979,8 @@ def test_add_cors_and_socketio_use_resolved_origins(
 
     app = App(_state=rx.State)
     app._setup_state()
-    assert app.sio is not None
-    assert app.sio.eio.cors_allowed_origins == ["https://example.com"]
+    assert _socket_accepts(app, "https://example.com", "api.example.com")
+    assert not _socket_accepts(app, "https://evil.example", "api.example.com")
 
 
 @pytest.mark.parametrize(
@@ -6033,7 +6034,7 @@ def test_cors_left_unconfigured_in_prod_without_deploy_url(
     """Without deploy_url in prod mode, only same-origin requests reach the backend.
 
     No CORS middleware is installed, so browsers refuse cross-origin reads, and
-    Socket.IO falls back to its same-origin default.
+    Socket.IO accepts only the backend's own origin.
 
     Args:
         mocker: The pytest mocker fixture.
@@ -6051,17 +6052,384 @@ def test_cors_left_unconfigured_in_prod_without_deploy_url(
 
     app = App(_state=rx.State)
     app._setup_state()
-    assert app.sio is not None
-    assert app.sio.eio.cors_allowed_origins is None
-    environ = {"wsgi.url_scheme": "https", "HTTP_HOST": "app.example.com"}
-    allowed = app.sio.eio._cors_allowed_origins(environ)
-    assert "https://app.example.com" in allowed
-    assert "https://evil.example" not in allowed
+    assert _socket_accepts(
+        app, "https://app.example.com", "app.example.com", "X-Forwarded-Proto: https"
+    )
+    assert not _socket_accepts(
+        app, "https://evil.example", "app.example.com", "X-Forwarded-Proto: https"
+    )
 
     mocker.patch.object(app, "_compile")
     asgi_app = app()
     assert isinstance(asgi_app, _RootMiddleware)
     assert not isinstance(asgi_app.app, CORSMiddleware)
+
+
+def _socket_app(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    prod: bool = True,
+    **config_kwargs: Any,
+) -> App:
+    """Build an app whose Socket.IO server resolves origins from the given config.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        prod: Whether to resolve in prod mode.
+        **config_kwargs: Extra config values.
+
+    Returns:
+        The app, with its Socket.IO server set up.
+    """
+    monkeypatch.delenv("REFLEX_CORS_ALLOWED_ORIGINS", raising=False)
+    monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
+    monkeypatch.delenv("REFLEX_TRUSTED_PROXY_HOPS", raising=False)
+    config = rx.Config(app_name="cors_app", **config_kwargs)
+    mocker.patch("reflex.app.get_config", return_value=config)
+    mocker.patch("reflex.app.is_prod_mode", return_value=prod)
+    app = App(_state=rx.State)
+    app._setup_state()
+    return app
+
+
+def _socket_accepts(app: App, origin: str, host: str, *headers: str) -> bool:
+    """Whether the app's Socket.IO server accepts a handshake from origin.
+
+    Args:
+        app: The app with a set-up Socket.IO server.
+        origin: The Origin header of the handshake.
+        host: The Host header of the handshake.
+        *headers: Extra "Name: value" request headers.
+
+    Returns:
+        Whether engine.io lets the origin through.
+    """
+    environ = {"HTTP_ORIGIN": origin, "HTTP_HOST": host}
+    for header in headers:
+        name, value = header.split(": ", 1)
+        environ["HTTP_" + name.upper().replace("-", "_")] = value
+    # engine.io's ASGI driver derives the scheme from X-Forwarded-Proto only.
+    environ["wsgi.url_scheme"] = environ.get("HTTP_X_FORWARDED_PROTO", "http")
+    assert app.sio is not None
+    allowed = app.sio.eio._cors_allowed_origins(environ)
+    # None means engine.io allows any origin.
+    return allowed is None or origin in allowed
+
+
+_XFP_HTTPS = "X-Forwarded-Proto: https"
+_XFH_APP = "X-Forwarded-Host: app.example.com"
+
+
+@pytest.mark.parametrize(
+    ("origin", "host", "headers", "hops", "accepted"),
+    [
+        # A TLS-terminating proxy that keeps Host but sends no X-Forwarded-Proto.
+        ("https://app.example.com", "app.example.com", (), 0, True),
+        ("https://app.example.com", "App.Example.COM", (), 0, True),
+        ("https://app.example.com", "app.example.com:443", (), 0, True),
+        ("https://app.example.com:8443", "app.example.com:8443", (), 0, True),
+        ("http://app.example.com", "app.example.com", (), 0, True),
+        ("http://localhost:3000", "localhost:3000", (), 0, True),
+        ("http://[::1]:3000", "[::1]:3000", (), 0, True),
+        ("https://app.example.com", "app.example.com", (_XFP_HTTPS,), 0, True),
+        # Caddy behind another TLS edge replaces the proto with http.
+        (
+            "https://app.example.com",
+            "app.example.com",
+            ("X-Forwarded-Proto: http",),
+            1,
+            True,
+        ),
+        (
+            "https://app.example.com",
+            "app.example.com",
+            ("X-Forwarded-Proto: wss",),
+            1,
+            True,
+        ),
+        # Forwarded headers count only through trusted_proxy_hops proxies.
+        ("http://app.example.com", "app.example.com", (_XFP_HTTPS,), 0, True),
+        ("http://app.example.com", "app.example.com", (_XFP_HTTPS,), 1, False),
+        (
+            "http://app.example.com",
+            "app.example.com",
+            ("X-Forwarded-Proto: wss",),
+            1,
+            False,
+        ),
+        (
+            "http://app.example.com",
+            "app.example.com",
+            ("X-Forwarded-Proto: http",),
+            1,
+            True,
+        ),
+        (
+            "https://app.example.com",
+            "origin.internal:8000",
+            (_XFP_HTTPS, _XFH_APP),
+            0,
+            False,
+        ),
+        (
+            "https://app.example.com",
+            "origin.internal:8000",
+            (_XFP_HTTPS, _XFH_APP),
+            1,
+            True,
+        ),
+        # A trusted chain takes the entry trusted_proxy_hops from the right.
+        (
+            "https://app.example.com",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: evil.example, app.example.com",),
+            1,
+            True,
+        ),
+        (
+            "https://evil.example",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: evil.example, app.example.com",),
+            1,
+            False,
+        ),
+        (
+            "https://app.example.com",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: app.example.com, edge.internal",),
+            2,
+            True,
+        ),
+        ("https://app.example.com", "origin.internal:8000", (_XFH_APP,), 2, False),
+        (
+            "https://evil.example",
+            "app.example.com",
+            (_XFP_HTTPS, "X-Forwarded-Host: evil.example"),
+            0,
+            False,
+        ),
+        ("https://app.example.com:8443", "app.example.com", (), 0, False),
+        ("https://app.example.com", "app.example.com:8443", (), 0, False),
+        ("http://127.0.0.1:3000", "localhost:3000", (), 0, False),
+        ("https://app.example.com", "127.0.0.1:8000", (), 0, False),
+        ("https://evil.example", "app.example.com", (), 0, False),
+        ("https://evil.example", "app.example.com", (_XFP_HTTPS,), 1, False),
+        ("https://app.example.com.evil.example", "app.example.com", (), 0, False),
+        ("https://evil.example@app.example.com", "app.example.com", (), 0, False),
+        ("https://app.example.com/path", "app.example.com", (), 0, False),
+        ("null", "app.example.com", (), 0, False),
+        ("chrome-extension://app.example.com", "app.example.com", (), 0, False),
+        ("https://app.example.com:99999", "app.example.com", (), 0, False),
+        ("https://app.example.com", "app.example.com:bad", (), 0, False),
+        ("https://[::1", "[::1", (), 0, False),
+        ("http://[::1]:3000", "[::1", (), 0, False),
+    ],
+)
+def test_socketio_prod_default_accepts_own_host_behind_tls_proxy(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    origin: str,
+    host: str,
+    headers: tuple[str, ...],
+    hops: int,
+    accepted: bool,
+):
+    """In prod without deploy_url, the websocket accepts the origin naming its own host.
+
+    An https Origin matches a request that arrived over http, as a TLS
+    terminator need not send X-Forwarded-Proto. X-Forwarded-Host and
+    X-Forwarded-Proto are read only through trusted_proxy_hops proxies; a
+    trusted proto of https rejects an http Origin.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        origin: The Origin header of the handshake.
+        host: The Host header of the handshake.
+        headers: Extra request headers.
+        hops: The configured trusted_proxy_hops.
+        accepted: Whether the handshake should be accepted.
+    """
+    app = _socket_app(mocker, monkeypatch, trusted_proxy_hops=hops)
+    assert _socket_accepts(app, origin, host, *headers) is accepted
+
+
+@pytest.mark.parametrize(
+    ("prod", "config_kwargs", "origin", "host", "accepted"),
+    [
+        # deploy_url adds the frontend origin on top of the backend's own one.
+        (
+            True,
+            {"deploy_url": "https://app.example.com"},
+            "https://app.example.com",
+            "api.example.com",
+            True,
+        ),
+        (
+            True,
+            {"deploy_url": "https://app.example.com"},
+            "http://localhost:3000",
+            "localhost:3000",
+            True,
+        ),
+        (
+            True,
+            {"deploy_url": "https://app.example.com"},
+            "https://evil.example",
+            "api.example.com",
+            False,
+        ),
+        # An explicit list is used exactly as given.
+        (
+            True,
+            {"cors_allowed_origins": ["https://a.com"]},
+            "https://a.com",
+            "api.example.com",
+            True,
+        ),
+        (
+            True,
+            {"cors_allowed_origins": ["https://a.com"]},
+            "http://api:8000",
+            "api:8000",
+            False,
+        ),
+        (
+            False,
+            {"cors_allowed_origins": ["https://a.com"]},
+            "https://evil.example",
+            "a.com",
+            False,
+        ),
+        (
+            True,
+            {"cors_allowed_origins": ["*"]},
+            "https://evil.example",
+            "api.example.com",
+            True,
+        ),
+        (False, {}, "https://evil.example", "api.example.com", True),
+    ],
+)
+def test_socketio_origins_with_deploy_url_or_explicit_list(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    prod: bool,
+    config_kwargs: dict[str, Any],
+    origin: str,
+    host: str,
+    accepted: bool,
+):
+    """deploy_url extends the same-origin default; explicit lists and dev mode are unchanged.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        prod: Whether to resolve in prod mode.
+        config_kwargs: Extra config values.
+        origin: The Origin header of the handshake.
+        host: The Host header of the handshake.
+        accepted: Whether the handshake should be accepted.
+    """
+    app = _socket_app(mocker, monkeypatch, prod=prod, **config_kwargs)
+    assert _socket_accepts(app, origin, host) is accepted
+
+
+@pytest.mark.parametrize(
+    ("config_kwargs", "origin", "host", "headers", "hint"),
+    [
+        (
+            {},
+            "https://cdn.example.com",
+            "api.example.com",
+            (),
+            "REFLEX_DEPLOY_URL=https://cdn.example.com",
+        ),
+        # The origin is named only by an X-Forwarded-Host the backend does not trust.
+        (
+            {},
+            "https://app.example.com",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: app.example.com",),
+            "set trusted_proxy_hops (REFLEX_TRUSTED_PROXY_HOPS)",
+        ),
+        (
+            {"cors_allowed_origins": ["https://a.com"]},
+            "https://cdn.example.com",
+            "api.example.com",
+            (),
+            "add it to cors_allowed_origins (REFLEX_CORS_ALLOWED_ORIGINS)",
+        ),
+    ],
+)
+def test_socketio_rejection_warns_once_with_fix(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    config_kwargs: dict[str, Any],
+    origin: str,
+    host: str,
+    headers: tuple[str, ...],
+    hint: str,
+):
+    """A rejected origin logs one warning naming the origin and the setting to change.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+        config_kwargs: Extra config values.
+        origin: The Origin header of the handshake.
+        host: The Host header of the handshake.
+        headers: Extra request headers.
+        hint: Text the warning must contain.
+    """
+    app = _socket_app(mocker, monkeypatch, **config_kwargs)
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert not _socket_accepts(app, origin, host, *headers)
+        assert not _socket_accepts(app, origin, host, *headers)
+    warnings = [r.getMessage() for r in caplog.records if r.name == "reflex.app"]
+    assert len(warnings) == 1
+    assert repr(origin) in warnings[0]
+    assert hint in warnings[0]
+    if not config_kwargs:
+        assert repr(host) in warnings[0]
+
+
+@pytest.mark.parametrize(
+    ("origin", "accepted"),
+    [("https://app.example.com", True), ("https://evil.example", False)],
+)
+def test_event_websocket_handshake_behind_tls_proxy(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    origin: str,
+    accepted: bool,
+):
+    """The prod event websocket opens for its own https origin without X-Forwarded-Proto.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        origin: The Origin header of the handshake.
+        accepted: Whether the handshake should be accepted.
+    """
+    app = _socket_app(mocker, monkeypatch)
+    mocker.patch.object(app, "_compile")
+    # The proxy forwards plain ws with the public Host and no forwarded headers.
+    client = TestClient(app())
+    headers = {"Origin": origin, "Upgrade": "websocket"}
+    url = f"ws://app.example.com{constants.Endpoint.EVENT}/?EIO=4&transport=websocket"
+    if accepted:
+        with client.websocket_connect(url, headers=headers) as ws:
+            assert ws.receive_text().startswith("0")
+    else:
+        with (
+            pytest.raises(WebSocketDisconnect),
+            client.websocket_connect(url, headers=headers),
+        ):
+            pass
 
 
 def _polling_engine_app(max_size: int):
