@@ -217,12 +217,14 @@ def _iter_form_controls(
     A control submits under its own ``name``. The control a form field control
     (``rx.form.control``) renders takes the form field control's ``name``
     instead, or else that of the enclosing form field (``rx.form.field``),
-    which Radix passes to the control at runtime.
+    which Radix passes to the control at runtime. Components set
+    ``_is_form_field`` and ``_is_form_field_control`` to take these roles.
 
     Args:
         component: The component tree to walk.
         field_name: The ``name`` of the enclosing form field, if any.
-        control_name: The ``name`` the enclosing form field control passes on.
+        control_name: The ``name`` passed to this component by the form field
+            control rendering it, if any.
 
     Yields:
         Each form control and its ``name``, which is None when it has none.
@@ -231,25 +233,29 @@ def _iter_form_controls(
     if isinstance(form_control_source, BaseComponent):
         yield from _iter_form_controls(form_control_source, field_name, control_name)
         return
+    # A form field control names the child it renders, not what that child nests.
+    child_control_name = None
     if isinstance(component, Component):
         if _has_form_role(component, "_is_form_field"):
             field_name = _get_control_prop(component, "name")
         if _has_form_role(component, "_is_form_field_control"):
-            control_name = _get_control_prop(component, "name")
-            if control_name is None:
-                control_name = field_name
+            child_control_name = _get_control_prop(component, "name")
+            if child_control_name is None:
+                child_control_name = field_name
             # Without a child to render as the control, it renders an input.
             if not component.children:
-                yield component, control_name
+                yield component, child_control_name
         elif _is_form_control_component(component):
             name = _get_control_prop(component, "name")
             yield component, control_name if name is None else name
     for child in component.children:
         if isinstance(child, BaseComponent):
-            yield from _iter_form_controls(child, field_name, control_name)
+            yield from _iter_form_controls(child, field_name, child_control_name)
     if isinstance(component, Component):
         for component_in_props in component._get_components_in_props():
-            yield from _iter_form_controls(component_in_props, field_name, control_name)
+            yield from _iter_form_controls(
+                component_in_props, field_name, child_control_name
+            )
 
 
 def _get_form_control_refs(component: BaseComponent) -> set[str]:

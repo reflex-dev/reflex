@@ -391,6 +391,19 @@ def test_on_submit_does_not_warn_for_controls_named_by_form_field(control, caplo
             "unnamed_field_input",
         ),
         (lambda: rx.form.control(id="bare_control"), "bare_control"),
+        # The form control names the input it renders, not one nested in it.
+        (
+            lambda: rx.form.field(
+                rx.form.control(
+                    rx.input(
+                        rx.input.slot(rx.el.input(id="slot_input", type="hidden"))
+                    ),
+                    as_child=True,
+                ),
+                name="field",
+            ),
+            "slot_input",
+        ),
     ],
 )
 def test_on_submit_warns_for_controls_not_named_by_a_form_field(
