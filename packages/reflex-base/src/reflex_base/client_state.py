@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import inspect
 import itertools
 import json
 import re
-from collections.abc import Callable
+import sys
+from collections.abc import Callable, Iterable, Iterator
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any
 
 from reflex_base.components.client_state_context import get_client_state_app_wraps
@@ -56,42 +59,179 @@ _placeholder_counter = itertools.count()
 
 # Raised for every path that addresses a var by name from outside its tree.
 _NOT_GLOBAL_MSG = (
-    "Cannot {action}: this client state var is scoped to the component tree "
-    'that uses it. Give it a name -- rx.client_state("my_name") -- to make it '
-    "global and addressable."
+    "Cannot {action}: this client state var is unnamed, so it is scoped to the "
+    "component tree that uses it. Give it a name to make it global and "
+    'addressable: rx.client_state(default, name="my_name").'
+)
+
+# Appended to _NOT_GLOBAL_MSG when the default could have been meant as a name,
+# as in the name-first order of the deprecated `rx._x.client_state`.
+_NAME_AS_DEFAULT_MSG = (
+    " Its default is {default}: the first positional argument is the default, "
+    "so if that was meant as the name, write "
+    "rx.client_state(default, name={default})."
 )
 
 # Default prefix for generated names.
 _DEFAULT_NAME_PREFIX = "cs"
 
-_VALID_NAME = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*\Z")
+# Names and prefixes are emitted inside javascript identifiers. `$` is left out:
+# it separates a generated name's prefix from its counter, so a chosen name can
+# never equal a generated one.
+_VALID_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
+
+# The javascript bindings of a var are its name plus a fixed suffix each, so
+# they are injective in the name and the three kinds never coincide (the
+# getter ends in `State`, the others in `Set` and `Arg`).
+_GETTER_SUFFIX = CAMEL_CASE_CLIENT_STATE_MARKER
+_SETTER_SUFFIX = f"{CAMEL_CASE_CLIENT_STATE_MARKER}Set"
+_PLACEHOLDER_SUFFIX = f"{CAMEL_CASE_CLIENT_STATE_MARKER}Arg"
+
+# A `useClientState` declaration: the default expression, then the name.
+_DECLARATION = re.compile(r'= useClientState\((.*), "([A-Za-z0-9_$]+)"(?:, true)?\)\Z')
+
+# The declarations rendered so far in the current compile, by name. Unset
+# outside a compile, where only declarations within one body are compared.
+_compile_declarations: ContextVar[dict[str, str] | None] = ContextVar(
+    "_compile_declarations", default=None
+)
+
+# Where each named declaration was last created, by its hook line, for the
+# conflict error. Bounded by the distinct named declarations in the process.
+_declaration_sites: dict[str, str] = {}
+
+# Modules whose frames sit between the user's call and `_create`.
+_FACTORY_MODULES = frozenset({__name__, "reflex.experimental.client_state"})
+
+
+def _validate_name(value: Any, kind: str) -> str:
+    """Check that a name or prefix can be emitted in a javascript identifier.
+
+    Args:
+        value: The name or prefix.
+        kind: ``"name"`` or ``"prefix"``, for the error message.
+
+    Returns:
+        The value, now known to be a valid string.
+
+    Raises:
+        ValueError: If the value is not a string or breaks the naming rule.
+    """
+    if isinstance(value, Var):
+        msg = (
+            f"{kind} must be a string, not a Var. The name keys the client "
+            "state store and is embedded in the events that `push`, "
+            "`retrieve` and `global_set` send, so it has to be known at "
+            "compile time."
+        )
+        raise ValueError(msg)
+    if not isinstance(value, str):
+        msg = f"{kind} must be a string, got {type(value).__name__}: {value!r}"
+        raise ValueError(msg)
+    if not _VALID_NAME.match(value):
+        msg = (
+            f"{kind} {value!r} is not a valid client state {kind}: it must be "
+            "an ASCII identifier, a letter or underscore followed by letters, "
+            "digits or underscores. It must not contain '$', which is "
+            "reserved for generated names."
+        )
+        raise ValueError(msg)
+    return value
 
 
 def _generate_name(prefix: str = _DEFAULT_NAME_PREFIX) -> str:
     """Build the name of an unnamed var from a prefix and the shared counter.
 
     ``$`` separates the two and is not allowed in the prefix, so two generated
-    names are equal only when both their prefixes and their counters are.
+    names are equal only when both their prefixes and their counters are, and
+    never equal a chosen name.
 
     Args:
         prefix: The readable part of the name.
 
     Returns:
         The generated name, a valid javascript identifier.
+    """
+    return f"{_validate_name(prefix, 'prefix')}${next(_name_counter)}"
+
+
+def _caller_site() -> str:
+    """Locate the user code that created a client state var.
+
+    Returns:
+        ``file:line`` of the first frame outside the client state factories.
+    """
+    frame = sys._getframe(1)
+    while frame.f_back is not None and frame.f_globals.get("__name__") in (
+        _FACTORY_MODULES
+    ):
+        frame = frame.f_back
+    return f"{frame.f_code.co_filename}:{frame.f_lineno}"
+
+
+def _describe_declaration(hook: str) -> str:
+    """Describe a declaration by its default and where it was created.
+
+    Args:
+        hook: A ``useClientState`` hook line.
+
+    Returns:
+        The default expression, and the creation site when known.
+    """
+    match = _DECLARATION.search(hook)
+    default = f"`{match[1]}`" if match else repr(hook)
+    site = _declaration_sites.get(hook)
+    return f"{default} (declared at {site})" if site else default
+
+
+def _check_declarations(hooks: Iterable[str]) -> None:
+    """Reject a client state name declared with two different defaults.
+
+    Called on every body's hooks as it is rendered. During a compile (see
+    `_collect_declarations`) the comparison spans every body; otherwise it
+    covers the one body.
+
+    Args:
+        hooks: The hook lines of one body.
 
     Raises:
-        ValueError: If the prefix contains ``$`` or is not an identifier.
+        ValueError: If a name is declared with a different default than before.
     """
-    if "$" in prefix:
-        msg = f"prefix {prefix!r} must not contain '$', which separates it from the counter."
-        raise ValueError(msg)
-    if not _VALID_NAME.match(prefix):
-        msg = (
-            f"prefix {prefix!r} is not a valid javascript identifier; it "
-            "is emitted as one in the compiled app."
-        )
-        raise ValueError(msg)
-    return f"{prefix}${next(_name_counter)}"
+    seen = _compile_declarations.get()
+    if seen is None:
+        seen = {}
+    for hook in hooks:
+        if "= useClientState(" not in hook or not (match := _DECLARATION.search(hook)):
+            continue
+        name = match[2]
+        first = seen.setdefault(name, hook)
+        if first != hook:
+            msg = (
+                f"Client state var {name!r} is declared with two different "
+                f"defaults: {_describe_declaration(first)} and "
+                f"{_describe_declaration(hook)}. A named client state var is "
+                "one app-wide value, so every declaration of it must use the "
+                "same default. Declare it once and import it where it is used, "
+                "or give the declarations different names."
+            )
+            raise ValueError(msg)
+
+
+@contextlib.contextmanager
+def _collect_declarations() -> Iterator[None]:
+    """Compare client state declarations across every body rendered inside.
+
+    A fresh record per compile, so a declaration edited before a hot reload
+    is not compared against its old self.
+
+    Yields:
+        Nothing; the record is dropped on exit.
+    """
+    token = _compile_declarations.set({})
+    try:
+        yield
+    finally:
+        _compile_declarations.reset(token)
 
 
 # The store's entry point on the global `refs` object. This is the only binding
@@ -187,7 +327,7 @@ class ClientStateSetter(FunctionVar[Any]):
         if num_args == 0:
             return Var.create(fn())
         placeholder = Var(
-            _js_expr=f"prev{next(_placeholder_counter)}{CAMEL_CASE_CLIENT_STATE_MARKER}",
+            _js_expr=f"prev{next(_placeholder_counter)}{_PLACEHOLDER_SUFFIX}",
             _var_type=self._value_type,
         ).guess_type()
         return ArgsFunctionOperationBuilder.create(
@@ -244,9 +384,12 @@ class ClientStateVar(Var):
 
         Whether the state is shared app-wide follows from whether you name it:
 
-        - ``rx.client_state("my_name")`` is **global**. It resolves in one
-          app-wide store, so any component and the backend can read and write
-          it, and `push`, `retrieve`, `global_value` and `global_set` work.
+        - ``rx.client_state(default, name="my_name")`` is **global**. It
+          resolves in one app-wide store, so any component and the backend can
+          read and write it, and `push`, `retrieve`, `global_value` and
+          `global_set` work. The name must be an ASCII identifier without
+          ``$``. Declaring one name in several places is allowed only with the
+          same default; the compile fails on two different defaults.
         - ``rx.client_state()`` is **tree-scoped**. It gets a compile-time name
           and is owned by the outermost page or ``@rx.memo`` body that uses
           it, so each instance of that component gets its own state -- like
@@ -282,25 +425,22 @@ class ClientStateVar(Var):
             ValueError: If name or prefix is not a valid identifier string.
         """
         # Named -> global, unnamed -> tree-scoped.
-        is_global = name is not None
-        var_name = _generate_name(prefix) if name is None else name
-        if isinstance(var_name, Var):
-            msg = (
-                "name must be a string, not a Var. The name keys the client "
-                "state store and is embedded in the events that `push`, "
-                "`retrieve` and `global_set` send, so it has to be known at "
-                "compile time."
-            )
-            raise ValueError(msg)
-        if not isinstance(var_name, str):
-            msg = "name must be a string."
-            raise ValueError(msg)
-        if not _VALID_NAME.match(var_name):
-            msg = (
-                f"name {var_name!r} is not a valid javascript identifier; it "
-                "is emitted as one in the compiled app."
-            )
-            raise ValueError(msg)
+        if name is None:
+            return cls._create(default, _generate_name(prefix), is_global=False)
+        return cls._create(default, _validate_name(name, "name"), is_global=True)
+
+    @classmethod
+    def _create(cls, default: Any, var_name: str, *, is_global: bool) -> ClientStateVar:
+        """Build a client state var for an already validated name.
+
+        Args:
+            default: The default value of the variable, or ``NoValue``.
+            var_name: The store key, a chosen or generated name.
+            is_global: Whether the name resolves in the app-wide root scope.
+
+        Returns:
+            The client state var.
+        """
         if default is NoValue:
             # Explicit `undefined` rather than an empty expression: the name is
             # passed as a second argument, so an empty first argument would emit
@@ -310,18 +450,20 @@ class ClientStateVar(Var):
             default_var = LiteralVar.create(default)
         else:
             default_var = default
-        # The marker keeps a user-chosen name from colliding with a JS reserved
-        # word; the store key stays the bare name.
-        getter_name = f"{var_name}{CAMEL_CASE_CLIENT_STATE_MARKER}"
-        setter_name = f"set{var_name[0].upper()}{var_name[1:]}"
+        # The suffixes keep a user-chosen name from colliding with a JS reserved
+        # word, and with each other; the store key stays the bare name.
+        getter_name = f"{var_name}{_GETTER_SUFFIX}"
+        setter_name = f"{var_name}{_SETTER_SUFFIX}"
         # The name is always passed: it identifies the slot within whichever
         # scope owns it. The trailing flag is what escapes to the root scope.
         args = f"{default_var!s}, {LiteralVar.create(var_name)!s}"
         if is_global:
             args += ", true"
-        hooks: dict[str, VarData | None] = {
-            f"const [{getter_name}, {setter_name}] = useClientState({args})": None,
-        }
+        hook = f"const [{getter_name}, {setter_name}] = useClientState({args})"
+        if is_global:
+            # Only a named var can be declared twice, so only its site is kept.
+            _declaration_sites[hook] = _caller_site()
+        hooks: dict[str, VarData | None] = {hook: None}
         app_wraps = get_client_state_app_wraps()
         return cls(
             _js_expr="null",
@@ -347,6 +489,34 @@ class ClientStateVar(Var):
                 app_wraps=app_wraps,
             ),
         )
+
+    def _require_global(self, action: str) -> None:
+        """Reject addressing an unnamed var by name.
+
+        Args:
+            action: What the caller tried to do.
+
+        Raises:
+            ValueError: If the var is unnamed, pointing out a default that
+                looks like a misplaced name.
+        """
+        if self._is_global:
+            return
+        msg = _NOT_GLOBAL_MSG.format(action=action)
+        # Read back from the hook: this is an error path, so no field is
+        # spent on remembering the default.
+        for hook in self._var_data.hooks if self._var_data else ():
+            match = _DECLARATION.search(hook)
+            if match and match[2] == self._state_name:
+                default = match[1]
+                if (
+                    len(default) > 2
+                    and default[0] == default[-1] == '"'
+                    and _VALID_NAME.match(default[1:-1])
+                ):
+                    msg += _NAME_AS_DEFAULT_MSG.format(default=default)
+                break
+        raise ValueError(msg)
 
     @property
     def value(self) -> Var:
@@ -437,9 +607,7 @@ class ClientStateVar(Var):
         Raises:
             ValueError: If the ClientStateVar is not global.
         """
-        if not self._is_global:
-            msg = _NOT_GLOBAL_MSG.format(action="read the value from outside the tree")
-            raise ValueError(msg)
+        self._require_global("read the value from outside the tree")
         return Var(
             _js_expr=f"getClientState({LiteralVar.create(self._state_name)!s})",
             _var_data=self._escape_var_data,
@@ -459,9 +627,7 @@ class ClientStateVar(Var):
         Raises:
             ValueError: If the ClientStateVar is not global.
         """
-        if not self._is_global:
-            msg = _NOT_GLOBAL_MSG.format(action="set the value from outside the tree")
-            raise ValueError(msg)
+        self._require_global("set the value from outside the tree")
         return Var(
             _js_expr=(
                 f"((value) => setClientState({LiteralVar.create(self._state_name)!s}, value))"
@@ -483,9 +649,7 @@ class ClientStateVar(Var):
         Raises:
             ValueError: If the ClientStateVar is not global.
         """
-        if not self._is_global:
-            msg = _NOT_GLOBAL_MSG.format(action="retrieve the value")
-            raise ValueError(msg)
+        self._require_global("retrieve the value")
         callback_kwargs = {"callback": None}
         if callback is not None:
             callback_kwargs = {
@@ -517,9 +681,7 @@ class ClientStateVar(Var):
         Raises:
             ValueError: If the ClientStateVar is not global.
         """
-        if not self._is_global:
-            msg = _NOT_GLOBAL_MSG.format(action="push a value")
-            raise ValueError(msg)
+        self._require_global("push a value")
         if isinstance(value, Var):
             # A Var is a client-side expression, which cannot survive the JSON
             # event payload -- it would arrive as its own source text. Evaluate
