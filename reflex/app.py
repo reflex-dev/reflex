@@ -34,6 +34,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
 from reflex_base import constants, otel
+from reflex_base.client_state import _collect_declarations
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
@@ -1881,7 +1882,8 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex_base.utils.deterministic_hash import clear_hash_caches
 
-        with otel.compile_span(trigger, dry_run):
+        # One record of client state declarations spans the whole compile.
+        with otel.compile_span(trigger, dry_run), _collect_declarations():
             ctx = TelemetryContext.start(trigger=trigger)
             try:
                 if ctx is None:
