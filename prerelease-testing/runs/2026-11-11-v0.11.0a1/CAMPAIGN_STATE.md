@@ -83,5 +83,11 @@ items in its area. Known and filed items: do NOT re-report unless changed.
 | item | status | report |
 |---|---|---|
 | preflight | done (see `preflight/NOTES.md`) | |
-| 0 db_upgrade, 1 db_models, 7 enterprise | running (wave 1) | `reports/<item>.md` |
-| 2–6, 8 | not started | |
+| 1 db_models | explore DONE (9 issues, 1 HIGH, no runtime regression); verifier `verify_dbm` running | `reports/db_models.md`, `reports/verify_dbm.md` |
+| 0 db_upgrade, 7 enterprise | explore running (wave 1) | `reports/<item>.md` |
+| 2 events_await | explore running (fable high) | `reports/events_await.md` |
+| 3, 4, 5, 6, 8 | not started — launch in order 3 redis_runtime, 6 server_net, 4 client_vars, 5 compile_memo, 8 examples_ui | |
+
+To resume an interrupted cluster: read its `NOTES.md` "Status / resume here", reuse its venvs under `$SB/envs/<cluster>-*`, and
+continue; a cluster whose `reports/<item>.md` exists is finished. Each finished cluster's issues go to a verifier
+(`verify_<short>`), which appends `## VERIFICATION` to the cluster NOTES.md.
