@@ -81,7 +81,7 @@ from reflex_base.vars.sequence import (
     LiteralRangeVar,
     StringVar,
 )
-from reflex_base.vars.set import LiteralSetVar
+from reflex_base.vars.set import LiteralSetVar, SetVar
 from typing_extensions import TypeAliasType, TypeVarTuple
 
 import reflex as rx
@@ -2628,3 +2628,53 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
         LiteralEventVar,
         LiteralEventChainVar,
     })
+
+
+def test_optional_collection_computed_vars_are_typed_by_collection():
+    """A computed var of an optional collection reads as that collection's var."""
+
+    class OptionalCollectionState(rx.State):
+        @rx.var
+        def opt_list(self) -> list[str] | None:
+            return None
+
+        @rx.var
+        def opt_tuple(self) -> tuple[int, ...] | None:
+            return None
+
+        @rx.var
+        def opt_set(self) -> set[str] | None:
+            return None
+
+        @rx.var
+        def opt_frozenset(self) -> frozenset[int] | None:
+            return None
+
+        @rx.var
+        async def async_opt_list(self) -> list[str] | None:
+            return None
+
+        @rx.var
+        async def async_opt_set(self) -> set[str] | None:
+            return None
+
+    typing.assert_type(OptionalCollectionState.opt_list, ArrayVar[list[str]])
+    typing.assert_type(OptionalCollectionState.opt_tuple, ArrayVar[tuple[int, ...]])
+    typing.assert_type(OptionalCollectionState.opt_set, SetVar[set[str]])
+    typing.assert_type(OptionalCollectionState.opt_frozenset, SetVar[frozenset[int]])
+    typing.assert_type(OptionalCollectionState.async_opt_list, ArrayVar[list[str]])
+    typing.assert_type(OptionalCollectionState.async_opt_set, SetVar[set[str]])
+    for var in (
+        OptionalCollectionState.opt_list,
+        OptionalCollectionState.opt_tuple,
+        OptionalCollectionState.async_opt_list,
+    ):
+        assert isinstance(var, ArrayVar)
+    for var in (
+        OptionalCollectionState.opt_set,
+        OptionalCollectionState.opt_frozenset,
+        OptionalCollectionState.async_opt_set,
+    ):
+        assert isinstance(var, SetVar)
+    assert str(OptionalCollectionState.opt_list.length()).endswith(" ?? []).length")
+    assert str(OptionalCollectionState.opt_set.length()).endswith(" ?? []).length")

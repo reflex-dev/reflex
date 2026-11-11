@@ -2922,28 +2922,30 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[list[LIST_INSIDE]],
+        self: ComputedVar[list[LIST_INSIDE]] | ComputedVar[list[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[tuple[LIST_INSIDE, ...]],
+        self: ComputedVar[tuple[LIST_INSIDE, ...]]
+        | ComputedVar[tuple[LIST_INSIDE, ...] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[set[LIST_INSIDE]],
+        self: ComputedVar[set[LIST_INSIDE]] | ComputedVar[set[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[frozenset[LIST_INSIDE]],
+        self: ComputedVar[frozenset[LIST_INSIDE]]
+        | ComputedVar[frozenset[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[frozenset[LIST_INSIDE]]: ...
@@ -3253,28 +3255,32 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: AsyncComputedVar[list[LIST_INSIDE]],
+        self: AsyncComputedVar[list[LIST_INSIDE]]
+        | AsyncComputedVar[list[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: AsyncComputedVar[tuple[LIST_INSIDE, ...]],
+        self: AsyncComputedVar[tuple[LIST_INSIDE, ...]]
+        | AsyncComputedVar[tuple[LIST_INSIDE, ...] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(
-        self: AsyncComputedVar[set[LIST_INSIDE]],
+        self: AsyncComputedVar[set[LIST_INSIDE]]
+        | AsyncComputedVar[set[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: AsyncComputedVar[frozenset[LIST_INSIDE]],
+        self: AsyncComputedVar[frozenset[LIST_INSIDE]]
+        | AsyncComputedVar[frozenset[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[frozenset[LIST_INSIDE]]: ...

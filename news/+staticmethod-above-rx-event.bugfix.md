@@ -1,0 +1,1 @@
+A `@staticmethod` or `@classmethod` stacked above `@rx.event` on a state runs the method again instead of returning an event spec. Like `@rx.event` below them, the decorator has no effect there and warns; remove it.
