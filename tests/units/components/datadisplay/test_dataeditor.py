@@ -8,6 +8,9 @@ from typing import Any, cast
 import pandas as pd
 import pytest
 import reflex_base
+from reflex_base.compiler.templates import _merge_state_hooks
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.utils.format import format_state_name
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import ArrayVar
 from reflex_components_dataeditor.dataeditor import DataEditor
@@ -90,7 +93,7 @@ def _set_prop(editor: DataEditor, name: str) -> Var:
 
 
 def _hooks(editor: DataEditor) -> list[str]:
-    """Collect the hooks the grid renders.
+    """Collect the hooks the grid renders, one state hook per state.
 
     Args:
         editor: The grid component.
@@ -98,7 +101,7 @@ def _hooks(editor: DataEditor) -> list[str]:
     Returns:
         The hooks, in order.
     """
-    return list(editor._get_all_hooks())
+    return list(_merge_state_hooks(editor._get_all_hooks()))
 
 
 def _react_imports(editor: DataEditor) -> set[str]:
@@ -302,8 +305,12 @@ def test_dataeditor_reactive_columns():
     assert re.fullmatch(r"columns_\w+", columns)
     state_var_data = cast(Var, GridState.columns)._get_all_var_data()
     assert state_var_data is not None
+    state_name = GridState.get_full_name()
     assert _hooks(editor) == [
-        *state_var_data.hooks,
+        (
+            f"const {format_state_name(state_name)} = useStateContext("
+            f'"{state_name}", ["data{FIELD_MARKER}", "columns{FIELD_MARKER}"])'
+        ),
         (
             f"const {columns} = useMemo(() => ({GridState.columns!s}).map("
             '(col) => typeof col === "string" ? { title: col, id: col.toLowerCase(), type: "str" } '
