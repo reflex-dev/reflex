@@ -20,9 +20,6 @@ class Base(MappedAsDataclass, DeclarativeBase):
     """Base class for the app's tables."""
 
 
-rx.ModelRegistry.register(Base)
-
-
 class User(Base):
     __tablename__ = "user"
 
@@ -34,8 +31,12 @@ class User(Base):
 Each `Mapped[...]` annotation becomes a column whose SQL type is derived from the
 Python type. `MappedAsDataclass` makes the model a dataclass, so `User(username="test", email="test@example.com")`
 constructs a row and Reflex can store `User` instances in state and render their
-fields in components. `rx.ModelRegistry.register(Base)` lets the `reflex db`
-[migration commands](/docs/database/overview/#migrations) find the tables.
+fields in components. Until a base is registered with
+`rx.ModelRegistry.register(Base)`, the `reflex db`
+[migration commands](/docs/database/overview/#migrations) find the tables of every
+`DeclarativeBase` subclass defined at module level or in a class body of a module
+that the app imports; see
+[Database Overview](/docs/database/overview/) for when to register bases.
 
 Dataclass fields without a default must come before fields with one, so declare
 required columns first and optional columns, with `default=None` or
@@ -105,18 +106,25 @@ strips the microseconds from `update_ts`, which is `None` until the row has been
 inserted:
 
 ```python
-import dataclasses
-
 import reflex as rx
+import sqlalchemy
 
 
 @rx.serializer
 def serialize_post(post: Post) -> dict:
-    data = dataclasses.asdict(post)
+    data = {
+        attr.key: getattr(post, attr.key)
+        for attr in sqlalchemy.inspect(post).mapper.column_attrs
+    }
     if post.update_ts is not None:
         data["update_ts"] = post.update_ts.replace(microsecond=0).isoformat()
     return data
 ```
+
+The serializer reads only the column attributes. `dataclasses.asdict(post)`
+would also follow the model's [relationships](/docs/database/relationships/),
+which raises `DetachedInstanceError` for one the query did not load and
+`RecursionError` for a loaded one that links back, such as `post.user.posts`.
 
 ## Existing `rx.Model` apps
 

@@ -90,7 +90,7 @@ state.
 ```md alert info
 # Rules for awaiting event handlers
 
-- Only inside an event handler (or `app.modify_state`); awaiting a handler anywhere else raises an error.
+- Only inside an event handler (or `app.modify_state`); awaiting a handler anywhere else, such as in an API route outside `app.modify_state`, raises an error.
 - Calling the handler, like `State.add(5)`, only binds its arguments. Nothing runs until it is awaited, so it can still be returned or yielded as before. Each `await` runs it again.
 - A background task awaiting a handler outside `async with self` queues the event and waits for it to finish; inside `async with self` the handler runs right away on the locked state.
 - A background handler cannot be awaited while the state lock is held, as it would wait for that lock. `yield` it instead.

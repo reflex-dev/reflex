@@ -1,0 +1,1 @@
+An upload handler that raises now gets a clean HTTP 500 when no update was streamed yet, or ends the stream with an `{"error": ...}` frame that `rx.upload_files` reports, instead of a truncated response; the server no longer logs the exception a second time.
