@@ -2,3 +2,96 @@
 [start.sh] venv=ent-0912 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.12 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0912/lib/python3.12/site-packages/reflex/__init__.py
 started pid=7832 pgid=7832
 ready after 8s (frontend 200, /ping 200)
+smoke: 20 pass / 0 fail
+coldefs: 7 pass / 0 fail
+features: 46 pass / 1 fail
+[FAIL] clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event: {'golds': ['8', '6', '4', '1', '2'], 'toasts': []}
+model: 24 pass / 5 fail
+[FAIL] ssrm: rows render on reload right after generate (row_count_cached interval=10s): TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')
+[FAIL] ssrm: filtered rows all match and count matches db: {'sub': 'Virg', 'shown': 22, 'blank_rows': 21, 'db_matches': 1, 'sample': ['Virginia Cook', '', '', '', '']}
+[FAIL] infinite: text filter matches db: {'sub': 'Hugh', 'shown': 23, 'blank_rows': 22, 'db': 1}
+[FAIL] infinite: add dialog inserts row: {'before': 50, 'after': 50, 'row': None}
+[FAIL] infinite: add dialog closes after submit: 1
+server tracebacks: 2
+reserved ports free
+##### ag:ent-0911:prod 22:27:13
+[start.sh] venv=ent-0911 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.11 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0911/lib/python3.12/site-packages/reflex/__init__.py
+started pid=12924 pgid=12924
+ready after 16s (frontend 200, /ping 200)
+smoke: 20 pass / 0 fail
+coldefs: 7 pass / 0 fail
+features: 46 pass / 1 fail
+[FAIL] clipboard: Ctrl+C/Ctrl+V copies gold row0 -> row4 and fires change event: {'golds': ['8', '6', '4', '1', '2'], 'toasts': []}
+model: 24 pass / 5 fail
+[FAIL] ssrm: rows render on reload right after generate (row_count_cached interval=10s): TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')
+[FAIL] ssrm: filtered rows all match and count matches db: {'sub': 'Mary', 'shown': 22, 'blank_rows': 21, 'db_matches': 1, 'sample': ['Mary Carter', '', '', '', '']}
+[FAIL] infinite: text filter matches db: {'sub': 'Gome', 'shown': 23, 'blank_rows': 22, 'db': 1}
+[FAIL] infinite: add dialog inserts row: {'before': 50, 'after': 50, 'row': None}
+[FAIL] infinite: add dialog closes after submit: 1
+server tracebacks: 2
+reserved ports free
+##### d:ent-0912:prod:dnd 22:32:24
+[start.sh] venv=ent-0912 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.12 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0912/lib/python3.12/site-packages/reflex/__init__.py
+started pid=16055 pgid=16055
+ready after 12s (frontend 200, /ping 200)
+driver exit=0 27 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+##### d:ent-0912:dev:dnd 22:33:20
+[start.sh] venv=ent-0912 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.12 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0912/lib/python3.12/site-packages/reflex/__init__.py
+started pid=16956 pgid=16956
+ready after 6s (frontend 200, /ping 200)
+driver exit=0 27 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+##### d:ent-0912:prod:flow 22:34:17
+[start.sh] venv=ent-0912 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.12 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0912/lib/python3.12/site-packages/reflex/__init__.py
+started pid=17768 pgid=17768
+ready after 8s (frontend 200, /ping 200)
+driver exit=0 21 pass / 1 fail
+[FAIL] index lists 6 flow demos: ['Add Node on Edge Drop Demo', 'Connection Limit Demo', 'Custom Node Demo', 'Drag Handle Demo', 'Intersections', 'Feature Overview', 'Built with Reflex']
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+##### d:ent-0912:dev:flow 22:35:05
+[start.sh] venv=ent-0912 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.12 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0912/lib/python3.12/site-packages/reflex/__init__.py
+started pid=18177 pgid=18177
+ready after 4s (frontend 200, /ping 200)
+driver exit=0 22 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+##### d:ent-0912:prod:mantine 22:35:54
+[start.sh] venv=ent-0912 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.12 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0912/lib/python3.12/site-packages/reflex/__init__.py
+started pid=19054 pgid=19054
+ready after 10s (frontend 200, /ping 200)
+driver exit=0 23 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+##### d:ent-0912:dev:mantine 22:36:31
+[start.sh] venv=ent-0912 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.12 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0912/lib/python3.12/site-packages/reflex/__init__.py
+started pid=19716 pgid=19716
+ready after 6s (frontend 200, /ping 200)
+driver exit=0 23 pass / 0 fail
+"console_errors":0,"console_warnings":0,"page_errors":0,"failed_requests":0,"http_errors":0
+server tracebacks: 0
+reserved ports free
+##### d:ent-0912:prod:map 22:37:11
+[start.sh] venv=ent-0912 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.12 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0912/lib/python3.12/site-packages/reflex/__init__.py
+started pid=20153 pgid=20153
+ready after 8s (frontend 200, /ping 200)
+driver exit=0 4 pass / 0 fail
+"console_errors":54,"console_warnings":0,"page_errors":0,"failed_requests":54,"http_errors":0
+server tracebacks: 0
+reserved ports free
+##### d:ent-0912:dev:map 22:37:35
+[start.sh] venv=ent-0912 reflex=0.11.0a2 reflex-base=0.11.0a2 reflex-enterprise=0.9.12 reflex_from=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/ent/fxsb/envs/ent-0912/lib/python3.12/site-packages/reflex/__init__.py
+started pid=20712 pgid=20712
+ready after 6s (frontend 200, /ping 200)
+driver exit=0 4 pass / 0 fail
+"console_errors":54,"console_warnings":0,"page_errors":0,"failed_requests":54,"http_errors":0
+server tracebacks: 0
+reserved ports free
