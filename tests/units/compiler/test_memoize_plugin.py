@@ -1881,7 +1881,7 @@ def test_client_state_setter_in_call_function_event_imports_hook() -> None:
         code for path, code in memo_files if Path(path).name == f"{wrapper_tag}.jsx"
     )
 
-    assert "setCounter(42)" in memo_code, (
+    assert "counterRxClientStateSet(42)" in memo_code, (
         "Expected the memo body to call the client-state setter.\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
@@ -1945,7 +1945,7 @@ def test_client_state_setter_only_sibling_memo_initializes_state(
     )
     # A global var passes ``true`` as the third argument; a scoped var omits it.
     hook = re.search(
-        r'const \[[\w$]+, (set[\w$]+)\] = useClientState\("a", "([\w$]+)"(, true)?\)',
+        r'const \[[\w$]+, ([\w$]+RxClientStateSet)\] = useClientState\("a", "([\w$]+)"(, true)?\)',
         button_memo,
     )
     assert hook is not None, button_memo

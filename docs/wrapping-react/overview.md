@@ -137,6 +137,11 @@ private = rx.client_state("")  # scoped to the component tree using it
 A **named** var resolves in one app-wide store, so any component can read and write it and
 `push`, `retrieve`, `global_value` and `global_set` all work against it.
 
+A name is an ASCII identifier: letters, digits and underscores, not starting with a digit.
+Several modules may each declare the same named var, but only with the same default; two
+different defaults fail the compile, since only one of them could take effect. Declaring the
+var once in a shared module and importing it is simplest.
+
 An **unnamed** var gets a compile-time name and is scoped: the outermost page or `@rx.memo`
 whose body uses it owns it, so each instance of that component gets its own state, the way
 React's `useState` does. Nothing outside the tree can address it, and a page's unnamed vars
