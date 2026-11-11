@@ -22,8 +22,6 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 
-import { normalizeSearchQuery } from "./search-query.mjs";
-
 const ALGOLIA_APP_ID = "WLK9YABRW4";
 const ALGOLIA_SEARCH_API_KEY = "7abb638647d3aa25e7a6d29dfdca2212";
 const ALGOLIA_INDEX_NAME = "reflex_dev_wlk9yabrw4_pages";
@@ -449,7 +447,7 @@ export function AlgoliaSearch() {
             "X-Algolia-Application-Id": ALGOLIA_APP_ID,
           },
           body: JSON.stringify({
-            query: normalizeSearchQuery(trimmedQuery),
+            query: trimmedQuery,
             hitsPerPage: 10,
             attributesToRetrieve: [
               "objectID",
