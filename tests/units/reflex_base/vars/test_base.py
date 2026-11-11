@@ -1514,6 +1514,40 @@ def test_backend_field_format_error_names_the_fix(name: str, default: int, mixin
     assert getattr(Model, name).default_value() == default
 
 
+@pytest.mark.parametrize("kind", ["backend", "mixin", "state_var", "unbound"])
+def test_field_format_error_suggests_repr(kind: str):
+    """Printing a field in server code raises an error that points to repr().
+
+    Args:
+        kind: Which field without a frontend var to convert to text.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    class Plain(BaseState):
+        count: int = 0
+
+    fields = {
+        "backend": lambda: Model._secret,
+        "mixin": lambda: Mixin.count,
+        "state_var": lambda: Plain.get_fields()["count"],
+        "unbound": lambda: field(default=0),
+    }
+    the_field = fields[kind]()
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        str(the_field)
+
+    assert str(exc_info.value).endswith(
+        " To print or log the field itself in server code, use repr()."
+    )
+    assert repr(the_field).startswith("Field(")
+
+
 def test_mixin_field_format_raises():
     """A mixin's frontend field has no Var, and the error says to use the including state."""
 
