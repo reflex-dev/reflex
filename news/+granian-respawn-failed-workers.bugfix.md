@@ -1,0 +1,1 @@
+In production, Granian now replaces a backend worker that dies (for example one killed by the OOM killer) instead of stopping the whole server; if a replaced worker dies again within a few seconds, the server still exits. Set `GRANIAN_RESPAWN_FAILED_WORKERS=false` to keep the old fail-fast behavior, for example when a process supervisor restarts the server.

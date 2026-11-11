@@ -8,7 +8,7 @@ from reflex_base.client_state import ClientStateVar, client_state
 from reflex_base.components.client_state_context import CLIENT_STATE_APP_WRAP_PRIORITY
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants import Dirs
-from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
 from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.function import FunctionVar
 
@@ -69,7 +69,7 @@ def test_single_hook_no_useState() -> None:
     cs = client_state(0, name="counter")
     hook = _hook(cs)
     assert hook == (
-        'const [counterRxClientState, setCounter] = useClientState(0, "counter", true)'
+        'const [counterRxClientState, counterRxClientStateSet] = useClientState(0, "counter", true)'
     )
     assert "useState(" not in hook
     assert "useId" not in hook
@@ -87,7 +87,7 @@ def test_omitted_default_emits_valid_javascript() -> None:
     hook = _hook(cs)
     assert "(," not in hook
     assert hook == (
-        "const [counterRxClientState, setCounter] = "
+        "const [counterRxClientState, counterRxClientStateSet] = "
         'useClientState(undefined, "counter", true)'
     )
 
@@ -145,14 +145,14 @@ def test_set_bare_is_event_chain() -> None:
     from reflex_base.event import EventChain
 
     cs = client_state(0, name="counter")
-    assert str(cs.set) == "setCounter"
+    assert str(cs.set) == "counterRxClientStateSet"
     assert cs.set._var_type is EventChain
 
 
 def test_set_bound_value() -> None:
     """Calling ``set`` binds a value in a zero-arg wrapper."""
     cs = client_state(0, name="counter")
-    assert str(cs.set(42)) == "(() => (setCounter(42)))"
+    assert str(cs.set(42)) == "(() => (counterRxClientStateSet(42)))"
 
 
 @pytest.mark.parametrize("name", ["counter", None])
@@ -186,17 +186,17 @@ def test_set_carries_hook_import_and_app_wrap(name: str | None) -> None:
         (
             0,
             lambda v: v + 1,
-            "(() => (setX(((prev{n}RxClientState) => (prev{n}RxClientState + 1)))))",
+            "(() => (xRxClientStateSet(((prev{n}RxClientStateArg) => (prev{n}RxClientStateArg + 1)))))",
         ),
         (
             False,
             lambda v: ~v,  # noqa: FURB118 - a lambda is what is under test
-            "(() => (setX(((prev{n}RxClientState) => !(prev{n}RxClientState)))))",
+            "(() => (xRxClientStateSet(((prev{n}RxClientStateArg) => !(prev{n}RxClientStateArg)))))",
         ),
         (
             "",
             lambda v: v.upper(),
-            "(() => (setX(((prev{n}RxClientState) => prev{n}RxClientState.toUpperCase()))))",
+            "(() => (xRxClientStateSet(((prev{n}RxClientStateArg) => prev{n}RxClientStateArg.toUpperCase()))))",
         ),
     ],
 )
@@ -212,7 +212,7 @@ def test_set_functional_updater_is_typed(default: Any, fn: Any, expected: str) -
 def test_set_zero_arg_callable_is_plain_value() -> None:
     """A zero-argument callable is treated as the value, not an updater."""
     cs = client_state(0, name="x")
-    assert str(cs.set(lambda: 7)) == "(() => (setX(7)))"
+    assert str(cs.set(lambda: 7)) == "(() => (xRxClientStateSet(7)))"
 
 
 def test_set_rejects_multi_arg_callable() -> None:
@@ -226,7 +226,7 @@ def test_set_passes_function_var_through() -> None:
     """A FunctionVar is passed straight through as a runtime updater."""
     cs = client_state(0, name="x")
     updater = Var("(p) => p + 1").to(FunctionVar)
-    assert str(cs.set(updater)) == "(() => (setX((p) => p + 1)))"
+    assert str(cs.set(updater)) == "(() => (xRxClientStateSet((p) => p + 1)))"
 
 
 def test_set_declares_event_arg() -> None:
@@ -238,7 +238,7 @@ def test_set_declares_event_arg() -> None:
     # trigger's ``_e`` placeholder.
     fn: Any = lambda value: cs.set(value)  # noqa: E731
     chain = str(Var.create(EventChain.create(fn, args_spec=cast("Any", input_event))))
-    assert '((_e) => (setX(_e?.["target"]?.["value"])))' in chain
+    assert '((_e) => (xRxClientStateSet(_e?.["target"]?.["value"])))' in chain
 
 
 def _bound(fn: Any, *arg_types: type) -> str:
@@ -261,21 +261,25 @@ def _bound(fn: Any, *arg_types: type) -> str:
 def test_set_declares_event_arg_read_through_an_operation() -> None:
     """A trigger argument used in a compound value is declared by the wrapper."""
     cs = client_state(0, name="x")
-    assert "((_ev_0) => (setX((_ev_0 + 42))))" in _bound(lambda x: cs.set(x + 42), int)
+    assert "((_ev_0) => (xRxClientStateSet((_ev_0 + 42))))" in _bound(
+        lambda x: cs.set(x + 42), int
+    )
 
 
 def test_set_declares_every_trigger_arg_up_to_the_last_one_read() -> None:
     """Arguments arrive positionally, so the declaration keeps the trigger's order."""
     cs = client_state(0, name="x")
-    assert "((_ev_0, _ev_1) => (setX((_ev_1 - _ev_0))))" in _bound(
+    assert "((_ev_0, _ev_1) => (xRxClientStateSet((_ev_1 - _ev_0))))" in _bound(
         lambda a, b: cs.set(b - a), int, int
     )
     # A skipped leading argument is still declared, or the one read would bind
     # to the wrong position.
-    assert "((_ev_0, _ev_1) => (setX(_ev_1)))" in _bound(
+    assert "((_ev_0, _ev_1) => (xRxClientStateSet(_ev_1)))" in _bound(
         lambda a, b: cs.set(b), int, int
     )
-    assert "((_ev_0) => (setX(_ev_0)))" in _bound(lambda a, b: cs.set(a), int, int)
+    assert "((_ev_0) => (xRxClientStateSet(_ev_0)))" in _bound(
+        lambda a, b: cs.set(a), int, int
+    )
 
 
 def test_trigger_arg_inside_a_nested_lambda_is_declared() -> None:
@@ -284,7 +288,7 @@ def test_trigger_arg_inside_a_nested_lambda_is_declared() -> None:
     items = Var.create([1, 2]).to(list[int])
     chain = _bound(lambda e: cs.set(items.map(lambda item: item + e).length()), int)
     assert re.search(
-        r"\(\(_ev_0\) => \(setX\(\[1, 2\]\.map\(\(\(\w+\) => \(\w+ \+ _ev_0\)\)\)\.length\)\)\)",
+        r"\(\(_ev_0\) => \(xRxClientStateSet\(\[1, 2\]\.map\(\(\(\w+\) => \(\w+ \+ _ev_0\)\)\)\.length\)\)\)",
         chain,
     ), chain
 
@@ -294,7 +298,7 @@ def test_updater_closing_over_a_trigger_arg_declares_it() -> None:
     cs = client_state(0, name="x")
     chain = _bound(lambda e: cs.set(lambda prev: prev + e), int)
     assert re.search(
-        r"\(\(_ev_0\) => \(setX\(\(\((prev\d+RxClientState)\) => \(\1 \+ _ev_0\)\)\)\)\)",
+        r"\(\(_ev_0\) => \(xRxClientStateSet\(\(\((prev\d+RxClientStateArg)\) => \(\1 \+ _ev_0\)\)\)\)\)",
         chain,
     ), chain
 
@@ -303,7 +307,10 @@ def test_underscore_named_var_is_not_mistaken_for_event_arg() -> None:
     """A marked identifier is an in-scope binding, never a trigger parameter."""
     private = client_state("", name="_private")
     other = client_state("", name="other")
-    assert str(other.set(private.value)) == "(() => (setOther(_privateRxClientState)))"
+    assert (
+        str(other.set(private.value))
+        == "(() => (otherRxClientStateSet(_privateRxClientState)))"
+    )
 
 
 @pytest.mark.parametrize(
@@ -508,13 +515,16 @@ def test_set_binds_memo_prop_var_without_declaring_an_arg() -> None:
 
     comp(value="x")
     cs = rx.client_state("", name="target")
-    assert str(cs.set(captured["value"])) == "(() => (setTarget(valueRxMemo)))"
+    assert (
+        str(cs.set(captured["value"]))
+        == "(() => (targetRxClientStateSet(valueRxMemo)))"
+    )
 
 
 def test_set_with_no_argument_is_the_bare_setter() -> None:
     """``cs.set()`` is the same forwarding setter as ``cs.set``."""
     cs = client_state(0, name="counter")
-    assert str(cs.set()) == str(cs.set) == "setCounter"
+    assert str(cs.set()) == str(cs.set) == "counterRxClientStateSet"
 
 
 def test_hash_distinguishes_vars() -> None:
@@ -561,7 +571,7 @@ def test_derived_var_default_brings_its_hook_and_import() -> None:
     # The declaration comes first; ``useClientState`` reading it comes last.
     assert _hooks_ending_with_client_state(cs) == [
         "const seed = useSeed()",
-        'const [seededRxClientState, setSeeded] = useClientState(seed, "seeded", true)',
+        'const [seededRxClientState, seededRxClientStateSet] = useClientState(seed, "seeded", true)',
     ]
     var_data = cs._get_all_var_data()
     assert var_data is not None
@@ -717,7 +727,9 @@ def test_generated_name_separates_prefix_from_counter() -> None:
     assert re.fullmatch(r"row\$\d+", client_state(0, prefix="row")._state_name)
     # The identifiers derived from it stay valid javascript.
     cs = client_state(0, prefix="row")
-    assert _hook(cs).startswith(f"const [{cs._state_name}RxClientState, setRow$")
+    assert _hook(cs).startswith(
+        f"const [{cs._state_name}RxClientState, {cs._state_name}RxClientStateSet]"
+    )
     with pytest.raises(ValueError, match=r"must not contain '\$'"):
         client_state(0, prefix="row$1")
 
@@ -746,3 +758,229 @@ def test_client_state_inside_a_memo_body_reaches_the_app_wraps() -> None:
         CLIENT_STATE_APP_WRAP_PRIORITY,
         "ClientStateProvider",
     ) in toggle()._get_app_wrap_components()
+
+
+@pytest.mark.parametrize("accessor", ["push", "retrieve", "global_value", "global_set"])
+def test_not_global_hint_names_the_var_by_keyword(accessor: str) -> None:
+    """The hint must show a call that names the var.
+
+    Regression: it said ``rx.client_state("my_name")``, which passes the
+    default, so following it made another unnamed var and the same error.
+
+    Args:
+        accessor: The name-addressed path to exercise.
+    """
+    cs = client_state(0)
+    with pytest.raises(ValueError) as err:
+        if accessor == "push":
+            cs.push(1)
+        elif accessor == "retrieve":
+            cs.retrieve()
+        else:
+            getattr(cs, accessor)
+    message = str(err.value)
+    assert 'rx.client_state(default, name="my_name")' in message
+    assert 'rx.client_state("my_name")' not in message
+
+
+def test_create_docstring_names_the_var_by_keyword() -> None:
+    """The docstring's global example names the var with ``name=``."""
+    doc = ClientStateVar.create.__doc__
+    assert doc is not None
+    assert 'rx.client_state("my_name")' not in doc
+    assert 'rx.client_state(default, name="my_name")' in doc
+
+
+def test_name_passed_as_the_default_is_pointed_out() -> None:
+    """The old name-first order makes the name the default; the error says so."""
+    trap = ClientStateVar.create("user_input")
+    with pytest.raises(ValueError, match="default") as err:
+        trap.push("x")
+    assert 'name="user_input"' in str(err.value)
+
+
+def test_non_identifier_string_default_gets_no_name_hint() -> None:
+    """Only a default that could be a name gets the name-first hint."""
+    with pytest.raises(ValueError) as err:
+        client_state("hello world").push("x")
+    assert 'name="hello world"' not in str(err.value)
+    assert "first positional" not in str(err.value)
+
+
+def _declared_identifiers(code: str) -> list[str]:
+    """Get every identifier a ``const [a, b] = ...`` line declares.
+
+    Args:
+        code: Compiled javascript.
+
+    Returns:
+        The identifiers, in order, duplicates kept.
+    """
+    return [
+        ident
+        for pair in re.findall(r"const \[([\w$]+), ([\w$]+)\]", code)
+        for ident in pair
+    ]
+
+
+def test_case_only_names_get_distinct_identifiers() -> None:
+    """``item`` and ``Item`` must not share a setter binding.
+
+    Regression: the setter was ``set`` plus the capitalized name, so both
+    became ``setItem`` and the module failed with a duplicate declaration.
+    """
+    lower = client_state("lower", name="item")
+    upper = client_state("upper", name="Item")
+    identifiers = {
+        lower._getter_name,
+        lower._setter_name,
+        upper._getter_name,
+        upper._setter_name,
+    }
+    assert len(identifiers) == 4
+    # Derived from the getter, which is the name plus a fixed marker.
+    assert lower._setter_name.startswith(lower._getter_name)
+    assert upper._setter_name.startswith(upper._getter_name)
+
+
+@pytest.mark.usefixtures("preserve_memo_registries")
+def test_case_only_names_compile_without_duplicate_declarations() -> None:
+    """Both setters on one element compile into one body without a clash."""
+    lower = client_state("lower", name="item_cc")
+    upper = client_state("upper", name="Item_cc")
+
+    @rx.memo
+    def both_setters() -> rx.Component:
+        return rx.el.button(
+            lower.value,
+            upper.value,
+            on_click=[lower.set("a"), upper.set("b")],
+        )
+
+    files, _ = compiler.compile_memo_components((MEMOS["BothSetters", __name__],))
+    code = "\n".join(c for _, c in files)
+    identifiers = _declared_identifiers(code)
+    assert lower._setter_name in identifiers
+    assert upper._setter_name in identifiers
+    assert len(identifiers) == len(set(identifiers)), identifiers
+
+
+def test_updater_placeholder_never_shadows_a_getter() -> None:
+    """A lambda's placeholder must not be spelled like another var's getter."""
+    cs = client_state(0, name="x")
+    rendered = str(cs.set(lambda v: v + 1))
+    placeholder = re.search(r"\(\(([\w$]+)\) =>", rendered)
+    assert placeholder is not None
+    # The name the next placeholder would draw, as a var name.
+    n = int(re.sub(r"\D", "", placeholder[1].split("RxClientState")[0])) + 1
+    other = client_state(1, name=f"prev{n}")
+    rendered = str(cs.set(lambda v: v + other.value))
+    placeholder = re.search(r"\(\(([\w$]+)\) =>", rendered)
+    assert placeholder is not None
+    assert placeholder[1] != other._getter_name
+    assert other._getter_name in rendered
+
+
+@pytest.mark.parametrize(
+    "good",
+    ["color", "search_query", "picker_color", "icon_search", "_private", "myVar", "a1"],
+)
+def test_documented_names_stay_valid(good: str) -> None:
+    """The names the docs use, and ordinary identifiers, are accepted.
+
+    Args:
+        good: A valid name.
+    """
+    assert client_state("", name=good)._state_name == good
+
+
+@pytest.mark.parametrize("bad", ["a$b", "cs$0", "$x", "é"])
+def test_name_rejects_dollar_and_non_ascii(bad: str) -> None:
+    """``$`` is reserved for generated names, so a chosen name cannot equal one.
+
+    Regression: ``name="cs$0"`` was accepted and declared the same bindings as
+    the first unnamed var.
+
+    Args:
+        bad: An invalid name.
+    """
+    with pytest.raises(ValueError, match=re.escape(repr(bad))) as err:
+        client_state(0, name=bad)
+    assert "letter or underscore" in str(err.value)
+
+
+def test_name_type_error_names_the_bad_value() -> None:
+    """A non-string name is rejected with the offending value in the message."""
+    with pytest.raises(ValueError, match=r"must be a string, got int: 5"):
+        client_state(name=5)  # pyright: ignore [reportArgumentType]
+
+
+@pytest.mark.usefixtures("preserve_memo_registries")
+def test_same_body_conflicting_defaults_fail_at_compile() -> None:
+    """One name declared twice with two defaults in one body is a clear error.
+
+    Regression: with ``auto_memoize=False`` this emitted two ``const``
+    declarations of the same binding and every route failed to load.
+    Creating the vars must not raise; only compiling them does.
+    """
+    first = client_state(False, name="open_cc")
+    second = client_state(True, name="open_cc")
+
+    @rx.memo
+    def conflicting() -> rx.Component:
+        return rx.el.div(first.value, second.value)
+
+    with pytest.raises(ClientStateConflictError, match="'open_cc'") as err:
+        compiler.compile_memo_components((MEMOS["Conflicting", __name__],))
+    message = str(err.value)
+    assert "`false`" in message
+    assert "`true`" in message
+    # Both declaration sites are named.
+    assert message.count(f"{__file__}:") == 2
+
+
+@pytest.mark.usefixtures("preserve_memo_registries")
+def test_same_body_identical_declarations_compile() -> None:
+    """Declaring one name twice with the same default stays allowed."""
+    first = client_state(False, name="same_cc")
+    second = client_state(False, name="same_cc")
+
+    @rx.memo
+    def identical() -> rx.Component:
+        return rx.el.div(first.value, second.value)
+
+    files, _ = compiler.compile_memo_components((MEMOS["Identical", __name__],))
+    identifiers = _declared_identifiers("\n".join(c for _, c in files))
+    assert identifiers.count(first._getter_name) == 1
+
+
+@pytest.mark.usefixtures("preserve_memo_registries")
+def test_multiline_default_conflict_fails_at_compile() -> None:
+    """A default whose javascript spans lines is still compared.
+
+    Regression: the declaration pattern did not match across newlines, so
+    such a default skipped the check.
+    """
+    multiline = client_state(Var("(1 +\n2)").to(int), name="multi_cc")
+    plain = client_state(0, name="multi_cc")
+
+    @rx.memo
+    def multiline_conflict() -> rx.Component:
+        return rx.el.div(multiline.value, plain.value)
+
+    with pytest.raises(ClientStateConflictError, match="'multi_cc'"):
+        compiler.compile_memo_components((MEMOS["MultilineConflict", __name__],))
+
+
+def test_generated_global_names_record_no_declaration_site() -> None:
+    """Only chosen names can conflict, so only they keep a declaration site.
+
+    Regression: every legacy unnamed global var added an entry that was never
+    released.
+    """
+    from reflex_base import client_state as client_state_module
+
+    before = len(client_state_module._declaration_sites)
+    for _ in range(3):
+        rx._x.client_state(default=0)
+    assert len(client_state_module._declaration_sites) == before
