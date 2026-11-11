@@ -1,7 +1,6 @@
 # Findings — reflex 0.11.0a1 pre-release testing (2026-11-11) — DRAFT
 
-**Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. Done, verification
-running: `redis_runtime`; `server_net` verified. Still exploring: `compile_memo`. `client_vars` and `examples_ui` done (client_vars verifier running).
+**Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. `server_net`, `redis_runtime` verified. Still exploring: `compile_memo`. `client_vars` and `examples_ui` done (client_vars verifier running).
 Findings marked *(unverified)* have not yet been through an independent verifier. Numbering is provisional; the final
 pass re-ranks by severity.
 
@@ -63,6 +62,10 @@ Index:
 - FINDING-027: Prod `reflex run`: repeated Ctrl-C does not force exit while lifespan cleanup is stuck (LOW, not a regression)
 - FINDING-028: Deprecation warnings for handlers passed as props point into `site-packages/reflex_components_*` (LOW)
 - FINDING-029: First 0.11 run rewrites the committed `reflex.lock/package.json` as one-line JSON (LOW, cosmetic regression)
+- FINDING-030: Forked prod workers share one `StateManagerRedis` instance id; oplock waiters passed over ~1 s; #7534 changelog claim false as written (LOW)
+- FINDING-031: After a Redis outage > ~5 s, cross-worker updates to connected clients are silently dropped (MEDIUM, not a regression)
+- FINDING-032: A dead worker's socket record makes the returning tab look like a duplicate → new token, session lost (MEDIUM, not a regression)
+- FINDING-033: kill -9 of one granian worker stops the whole prod server; no respawn knob through `reflex run` (LOW-MEDIUM, not a regression)
 - PKG-A (maintainer decision): reflex 0.11.0a1 requires only `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`
 
 ---
@@ -333,6 +336,47 @@ Index:
   content identical (`examples_ui/scripts/pkgjson_cmp.py`), `bun.lock` byte-identical. Every upgraded project gets a
   content-free VCS diff. Fix: keep indented output.
 
+## FINDING-030: Forked prod workers share one `StateManagerRedis` instance id; oplock waiters passed over ~1 s (LOW)
+- Cluster: `redis_runtime` | Regression vs 0.10.1: no (0.10.1 stalls 5-10 s) | Verifier: NARROWED to a wider root cause
+- Repro: `verify_rds/bin/` (see `redis_runtime/NOTES.md` VERIFICATION): prod, Redis, `REFLEX_OPLOCK_ENABLED=true`,
+  `GRANIAN_WORKERS=2..4`, pipelined events + `/api/bump` at concurrency 2-4 → 1.0-1.07 s waits in 4/6-5/6 runs (fork);
+  0/6 under `REFLEX_BACKEND_START_METHOD=spawn`. Final counts always exact. A probe route sees 4 worker pids but one
+  state-manager instance id under fork.
+- Root cause: `reflex/istate/manager/redis.py:261` sets `_instance_id` once; the manager is built in the supervisor
+  (`app.py:753`, fork preload `exec.py:1118/1148`) and inherited; `app.py:898-900` re-ids only the token manager. Contenders
+  are a Redis SET of that id: a repeated SADD (`:1161`) emits no event so the lease is not broken (`:988`), and any waiter's
+  SREM (`:1146`) deregisters every worker; the waiter reappears at its `lock_expiration/10` re-check (`:1251`).
+- The #7534 changelog sentence "events waiting on other instances are no longer passed over by the next lease" is false as
+  written for Linux prod with ≥2 workers. Fix shape (small): reset `_instance_id` per worker next to the token manager's;
+  count contenders per waiter (`instance:lock_id` members); or reword the changelog.
+
+## FINDING-031: After a Redis outage > ~5 s, cross-worker updates to connected clients are silently dropped (MEDIUM)
+- Cluster: `redis_runtime` | Regression: no (`reflex/utils/tasks.py`, `token_manager.py` byte-identical to v0.10.1) |
+  Verifier: CONFIRMED, NARROWED (recovers only when a new socket connects to the same worker)
+- Repro: `redis_runtime/bin/faults.sh redis_runtime-stock 0 2 out.jsonl redis_restart` (verifier added `DOWN=`): prod,
+  2 workers, 10 s outage, 10 `/api/bump` via `app.modify_state` → deltas received = 10 − bumps landing on the other worker;
+  3.3 s outage → 10/10. Log: `_subscribe_lost_and_found_updates: task exceeded exception limit 5 within 60.0s`.
+- Root cause: `tasks.py:44-53` re-raises after 5 suppressed errors; `token_manager.py:306-313, 438-453` use the defaults;
+  tasks re-created only in `on_connect` (`app.py:2349-2351`) / `link_token_to_sid` (`token_manager.py:332`).
+- Fix shape: unlimited capped backoff for these long-lived subscribers and/or re-ensure them on the emit path; re-store
+  the worker's socket records after resubscribing.
+
+## FINDING-032: A dead worker's socket record makes the returning tab look like a duplicate → new token (MEDIUM)
+- Cluster: `redis_runtime` | Regression: no | Verifier: RECLASSIFIED out of the kill -9 claim (reflex's own bug; happens even
+  with respawn on). Relates to registry HYD-07.
+- Root cause: the socket record outlives its worker (TTL `redis_token_expiration`, default 3600 s, `token_manager.py:225`);
+  `link_token_to_sid` treats the returning tab as a duplicate (`token_manager.py:342-346`). Deleting the stale record keeps
+  the token. Fix shape: per-worker liveness key with a short TTL; take over a dead worker's record.
+
+## FINDING-033: kill -9 of one granian worker stops the whole prod server (LOW-MEDIUM)
+- Cluster: `redis_runtime` | Regression: no | Verifier: RECLASSIFIED — granian default `respawn_failed_workers=False`
+  (`granian/server/common.py:125`, loop breaks at `:549`); reflex builds `Granian(...)` at `reflex/utils/exec.py:1152-1161`
+  without it, and `GRANIAN_RESPAWN_FAILED_WORKERS` is read only by granian's CLI. Repro: `redis_runtime/bin/kill9.sh`.
+  Fix shape: pass `respawn_failed_workers=True` or expose a setting.
+- Side note (not filed): in-process, a manager doing 1000 back-to-back modifies starves a waiter on another manager for
+  3.9-4.8 s on 0.11.0a1 (0.10.1: 0.03-0.22 s) via "instaque" barging in `_wait_lock`; a 3 ms gap removes it and the real-app
+  matrix is fine. Worth a follow-up look.
+
 ## PKG-A: sibling floors (maintainer decision)
 reflex 0.11.0a1 requires `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`. A stock `pip install
 reflex==0.11.0a1` resolves lucide 1.1.1 and hosting-cli 0.2.1 (without the #7674 / #7670 fixes); `uv pip install -U`
@@ -407,9 +451,7 @@ collisions break every page, rx.match on sets order-dependent, set handler args 
 build, `split()` UTF-16, int/list storage factories, remaining cryptic backend-var errors, row-index client state in foreach.
 ### `redis_runtime` (pass:17, anomaly:5, fail:1)
 Lock correctness exact across redis-py 7/8/beta × workers 1/2/4 × oplock; contention stalls 5-10 s → ~1 s; lost release
-notification 8.35 s → 0.33 s; #7412/#7696/#7616/#7590 fixed vs failing 0.10.1; py3.11 shutdown no hang. Issues (verifier
-running, none regressions): cross-worker updates lost after > 5 s Redis outage (medium), kill -9 of one worker stops the
-server (medium), oplock same-instance waiter 1 s stall contradicts #7534 wording (low).
+notification 8.35 s → 0.33 s; #7412/#7696/#7616/#7590 fixed vs failing 0.10.1; py3.11 shutdown no hang. Issues (verified, none regressions): FINDING-030 … -033.
 ### `server_net` (pass:19, anomaly:9, fail:1)
 CORS matrix, lifespan forwarding, case-insensitive routes, HYD-06 prenav, oversized events, state-mismatch event, signals
 and `--json`, `--frontend-only/--backend-only` ports, blocking monitor, otel trace ids, hosting-cli exit code. Issues:
