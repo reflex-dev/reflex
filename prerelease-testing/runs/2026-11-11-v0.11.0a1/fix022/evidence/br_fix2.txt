@@ -1,0 +1,19 @@
+  [fix2_passthrough] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix2_passthrough]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix2_nginx-default] {"ok": false, "count_text": "count=0"} ws_opens= 12
+  [fix2_nginx-default]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix2_nginx-default]   console: error: WebSocket connection to 'wss://app.test:3910/_event/?token=0f820392-304f-4a81-92b6-5a112a4635bb&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [fix2_nginx-host-xfp] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix2_nginx-host-xfp]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix2_xfp-xfh] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix2_xfp-xfh]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix2_render-wss] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix2_render-wss]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix2_caddy-behind-edge] {"ok": true, "count_text": "count=2"} ws_opens= 1
+  [fix2_caddy-behind-edge]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix2_appgw-override] {"ok": false, "count_text": "count=0"} ws_opens= 12
+  [fix2_appgw-override]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)
+  [fix2_appgw-override]   console: error: WebSocket connection to 'wss://app.test:3910/_event/?token=5b8d73af-c512-4761-e9bf-2617ff0f555b&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [fix2_afd] {"ok": false, "count_text": "count=0"} ws_opens= 12
+  [fix2_afd]   console: error: WebSocket connection to 'wss://app.test:3910/_event/?token=0b76beaf-1f2c-4e21-b079-e4b6b335cc52&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403
+  [fix2_afd]   console: error: Failed to load resource: the server responded with a status of 404 (Not Found)

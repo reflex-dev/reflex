@@ -1,0 +1,44 @@
+=== fix-hops0 (PUB app.test:3910)
+local-localhost        101  Host=localhost:8910 Origin=http://localhost:8910 
+local-127              101  Host=127.0.0.1:8910 Origin=http://127.0.0.1:8910 
+local-cross-127        403  Host=localhost:8910 Origin=http://127.0.0.1:8910 
+passthrough            101  Host=app.test:3910 Origin=https://app.test:3910 
+nginx-default          403  Host=127.0.0.1:8910 Origin=https://app.test:3910 
+nginx-host-xfp         101  Host=app.test:3910 Origin=https://app.test:3910 X-Forwarded-Proto: https
+xfp-xfh                101  Host=app.test:3910 Origin=https://app.test:3910 X-Forwarded-Proto: https X-Forwarded-Host: app.test:3910
+render-wss             101  Host=app.test:3910 Origin=https://app.test:3910 X-Forwarded-Proto: wss
+caddy-behind-edge      101  Host=app.test:3910 Origin=https://app.test:3910 X-Forwarded-Proto: http X-Forwarded-Host: app.test:3910
+appgw-override         403  Host=backend.azurewebsites.test Origin=https://app.test:3910 X-Forwarded-Proto: https X-Original-Host: app.test:3910
+afd                    403  Host=origin.azurewebsites.test Origin=https://app.test:3910 X-Forwarded-Proto: https X-Forwarded-Host: app.test:3910
+split-or-cdn           403  Host=api.test Origin=https://app.test:3910 X-Forwarded-Proto: https
+same-host-other-port   403  Host=app.test:8000 Origin=https://app.test:3910 
+http-plain-proxy       101  Host=app.test:3910 Origin=http://app.test:3910 
+atk-cross-site         403  Host=app.test:3910 Origin=https://evil.example X-Forwarded-Proto: https
+atk-http-downgrade     101  Host=app.test:3910 Origin=http://app.test:3910 X-Forwarded-Proto: https
+atk-null               403  Host=app.test:3910 Origin=null 
+no-origin              101  Host=app.test:3910 Origin=- 
+atk-xfh-nonbrowser     403  Host=app.test:3910 Origin=https://evil.example X-Forwarded-Proto: https X-Forwarded-Host: evil.example
+xfh-chain-own          403  Host=origin.azurewebsites.test Origin=https://app.test:3910 X-Forwarded-Proto: https X-Forwarded-Host: evil.example, app.test:3910
+atk-xfh-chain-evil     403  Host=origin.azurewebsites.test Origin=https://evil.example X-Forwarded-Proto: https X-Forwarded-Host: evil.example, app.test:3910
+=== fix-hops1 (PUB app.test:3911)
+local-localhost        101  Host=localhost:8911 Origin=http://localhost:8911 
+local-127              101  Host=127.0.0.1:8911 Origin=http://127.0.0.1:8911 
+local-cross-127        403  Host=localhost:8911 Origin=http://127.0.0.1:8911 
+passthrough            101  Host=app.test:3911 Origin=https://app.test:3911 
+nginx-default          403  Host=127.0.0.1:8911 Origin=https://app.test:3911 
+nginx-host-xfp         101  Host=app.test:3911 Origin=https://app.test:3911 X-Forwarded-Proto: https
+xfp-xfh                101  Host=app.test:3911 Origin=https://app.test:3911 X-Forwarded-Proto: https X-Forwarded-Host: app.test:3911
+render-wss             101  Host=app.test:3911 Origin=https://app.test:3911 X-Forwarded-Proto: wss
+caddy-behind-edge      101  Host=app.test:3911 Origin=https://app.test:3911 X-Forwarded-Proto: http X-Forwarded-Host: app.test:3911
+appgw-override         403  Host=backend.azurewebsites.test Origin=https://app.test:3911 X-Forwarded-Proto: https X-Original-Host: app.test:3911
+afd                    101  Host=origin.azurewebsites.test Origin=https://app.test:3911 X-Forwarded-Proto: https X-Forwarded-Host: app.test:3911
+split-or-cdn           403  Host=api.test Origin=https://app.test:3911 X-Forwarded-Proto: https
+same-host-other-port   403  Host=app.test:8000 Origin=https://app.test:3911 
+http-plain-proxy       101  Host=app.test:3911 Origin=http://app.test:3911 
+atk-cross-site         403  Host=app.test:3911 Origin=https://evil.example X-Forwarded-Proto: https
+atk-http-downgrade     403  Host=app.test:3911 Origin=http://app.test:3911 X-Forwarded-Proto: https
+atk-null               403  Host=app.test:3911 Origin=null 
+no-origin              101  Host=app.test:3911 Origin=- 
+atk-xfh-nonbrowser     101  Host=app.test:3911 Origin=https://evil.example X-Forwarded-Proto: https X-Forwarded-Host: evil.example
+xfh-chain-own          101  Host=origin.azurewebsites.test Origin=https://app.test:3911 X-Forwarded-Proto: https X-Forwarded-Host: evil.example, app.test:3911
+atk-xfh-chain-evil     403  Host=origin.azurewebsites.test Origin=https://evil.example X-Forwarded-Proto: https X-Forwarded-Host: evil.example, app.test:3911

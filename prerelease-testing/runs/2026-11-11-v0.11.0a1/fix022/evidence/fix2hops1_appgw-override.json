@@ -1,0 +1,36 @@
+{
+ "url": "https://app.test:3911/",
+ "console": [
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403",
+  "error: WebSocket connection to 'wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket' failed: Error during WebSocket handshake: Unexpected response code: 403"
+ ],
+ "ws": [
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket",
+  "wss://app.test:3911/_event/?token=ed966067-7bda-4b56-eb0d-79c23da9e5de&EIO=4&transport=websocket"
+ ],
+ "failed": [],
+ "count_text": "count=0",
+ "body_tail": "Cannot connect to server: websocket error.\nCheck if server is reachable at wss://app.test:3911/_event\nfapp\n\ncount=0\n\ninc\nBuilt with Reflex",
+ "ok": false
+}

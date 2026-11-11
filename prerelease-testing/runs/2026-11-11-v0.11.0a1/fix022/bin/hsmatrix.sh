@@ -21,3 +21,5 @@ row atk-http-downgrade $PUB http://$PUB "X-Forwarded-Proto: https"
 row atk-null $PUB null
 row no-origin $PUB -
 row atk-xfh-nonbrowser $PUB https://evil.example "X-Forwarded-Proto: https" "X-Forwarded-Host: evil.example"
+row xfh-chain-own origin.azurewebsites.test https://$PUB "X-Forwarded-Proto: https" "X-Forwarded-Host: evil.example, $PUB"
+row atk-xfh-chain-evil origin.azurewebsites.test https://evil.example "X-Forwarded-Proto: https" "X-Forwarded-Host: evil.example, $PUB"

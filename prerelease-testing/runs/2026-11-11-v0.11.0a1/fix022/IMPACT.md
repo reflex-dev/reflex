@@ -1,7 +1,46 @@
 # FINDING-022: true impact of the prod CORS default, and the fix
 
 Engagement: fix022 (2026-11-11). Fix branch `fix/same-origin-behind-tls-proxy` in worktree `/home/user/reflex-fix-022`, commit
-`894437913f27f2b9f6be9ed48b8ccc2fc59fb0f5`, based on origin/main `2d71015b7`.
+`eb47c0f8e3f5d6f6f89496771af141bc3d58adea` (revision 2, amended from `894437913`), based on origin/main `2d71015b7`.
+
+## Revision 2 (release-owner review): forwarded headers only through `trusted_proxy_hops`
+
+The release owner ruled that `X-Forwarded-Host` / `X-Forwarded-Proto` "should really only be trusted when the trusted_proxy_hops
+is set". The revision reuses the existing setting: `trusted_proxy_hops: int = 0` (`reflex_base/config.py:225`, env
+`REFLEX_TRUSTED_PROXY_HOPS`, validated as a non-negative int). The client-IP code takes the `X-Forwarded-For` entry
+`trusted_proxy_hops` from the right, and only when the chain has at least that many entries. That logic is now the shared helper
+`_trusted_forwarded_value` (`reflex/app.py:557`), and the client-IP code uses it (`reflex/app.py:2658`). The origin check applies the
+same helper to `X-Forwarded-Host` and `X-Forwarded-Proto` (`reflex/app.py:672-673`). With `trusted_proxy_hops = 0` (the default),
+the decision uses `Host` alone, with the asymmetric rule. An https Origin is accepted on an http-looking request. With no trusted proto, an
+http Origin that matches Host is accepted, as engine.io would do without XFP. A *trusted* `X-Forwarded-Proto: https|wss` rejects an
+http Origin (`reflex/app.py:611`). `Forwarded` (RFC 7239) and `X-Original-Host` are not read.
+
+Rows of the section 3 matrix that change (`evidence/hs_after2.txt`, `br_fix2.txt`, `br_fix2hops1.txt`):
+
+| Row | fix (rev 1) | **rev 2, hops 0 (default)** | **rev 2, `REFLEX_TRUSTED_PROXY_HOPS=1`** |
+|---|---|---|---|
+| `afd` (Azure Front Door: Host rewritten, original in XFH) | ok | **fail** (B count=0, R 403). The warning suggests `trusted_proxy_hops` (`evidence/fix2_afd_warning.txt`) | ok (B count=2, R 101) |
+| `atk-http-downgrade` (`Origin http://host`, `XFP: https`) | 403 | **101** (untrusted XFP is ignored; same as no XFP) | 403 |
+| non-browser forging `XFH: evil.example` + `Origin https://evil.example` | 101 | **403** | 101 when sent straight to the backend (the documented misconfiguration: the backend must be reachable only through the trusted proxies). Through a proxy that overwrites XFH, it is replaced |
+| `XFH: evil.example, <host>` chain, `Origin https://<host>` | 101 | 403 | 101 (rightmost entry) |
+| same chain, `Origin https://evil.example` | 403 | 403 | 403 |
+| all other rows (passthrough, nginx-default, nginx-host-xfp, xfp-xfh, render-wss, caddy-behind-edge, appgw-override, split/CDN, local, attackers) | as in section 3 | unchanged | unchanged |
+
+Which setting each front door now needs:
+- **Zero config:** every profile that keeps `Host`: L4/TLS terminators, nginx with `Host $http_host`, ALB, GCP, Heroku, Fly, Cloudflare, DO,
+  Railway, Render (including `XFP: wss`), Caddy/Traefik/ingress-nginx at the edge or behind another edge (docker-example/production).
+- **`trusted_proxy_hops` (or `REFLEX_DEPLOY_URL`):** proxies that rewrite `Host` but send the original as `X-Forwarded-Host`. Examples are
+  Azure Front Door with the default origin host header, and nginx configs with `proxy_set_header X-Forwarded-Host $host` but the default
+  `Host`. Azure Front Door **worked on 0.11.0a1** through engine.io's unconditional XFH, so this is a deliberate tightening relative to the
+  alpha, not to 0.10.1, where everything was open. Only set it when the backend is reachable *only* through those proxies.
+- **`REFLEX_DEPLOY_URL` only:** split/CDN/other-port frontends, nginx's default `proxy_pass` (no XFH), Azure App Gateway with host override
+  (sends `X-Original-Host`, which is not read), and reflex-enterprise MCP.
+
+Security (revision 2). A browser cannot set `X-Forwarded-*` on a websocket handshake, and on a `fetch` such a header forces a preflight. So
+gating these headers changes nothing for the CSWSH threat model. It closes the non-browser case where engine.io's default trusted
+a client-supplied `X-Forwarded-Host`. That client could forge `Origin` anyway and holds no victim cookies, so it gained nothing before either.
+Ignoring an untrusted `XFP: https` re-admits `http://<host>` exactly as engine.io does when XFP is absent. Sections 5a/5b below describe
+revision 1; where they say X-Forwarded-Host is honoured unconditionally, revision 2 replaces that with the rule above.
 
 Venvs (PyPI, built in `$SB=/tmp/claude-0/-home-user/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/fix022`):
 `envs/a1` = `reflex==0.11.0a1`, `envs/v101` = `reflex==0.10.1`. Both resolve python-engineio 4.15.1, python-socketio 5.18.1,
@@ -180,7 +219,7 @@ export/CDN, a backend on a different port or host, a proxy that rewrites `Host` 
 App Gateway host override), and reflex-enterprise MCP. Several origins: `REFLEX_CORS_ALLOWED_ORIGINS`. Docs updated:
 `docs/hosting/self-hosting.md` (split commands, reverse-proxy note, API URL, static export), `docs/hosting/scaling.md`,
 `docs/advanced_onboarding/configuration.md`, `docker-example/app-platform-backend/README.md`, `docker-example/production/README.md`,
-and the unreleased `news/+cors-prod-default.breaking.md` (now carries the upgrade note).
+and the new `news/+same-origin-behind-tls-proxy.bugfix.md`. Revision 2 restored `news/+cors-prod-default.breaking.md` to main. The 0.11.0a1 CHANGELOG entry exists only on `origin/r/pre-2026.11.10-42931773407`, not on main, so no CHANGELOG.md was edited.
 
 Not changed: the frontend toast text (FINDING-023's optional "reachable but refused" ping); engine.io still prints its own terse ERROR
 line next to the Reflex warning; and the debug Config dump still shows the configured `('*',)`, although the warning now states the effective rule

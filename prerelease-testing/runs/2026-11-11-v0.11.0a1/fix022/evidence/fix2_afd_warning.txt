@@ -1,0 +1,8 @@
+Warning: Rejected an event websocket from origin 'https://app.test:3912': in 
+prod mode the backend accepts only its own origin (request Host 
+'origin.azurewebsites.test', X-Forwarded-Host 'app.test:3912', 
+trusted_proxy_hops 0); the untrusted X-Forwarded-Host names that origin, so if 
+only your reverse proxies can reach the backend, set trusted_proxy_hops 
+(REFLEX_TRUSTED_PROXY_HOPS) to their number, otherwise set 
+REFLEX_DEPLOY_URL=https://app.test:3912 on the backend. This warning is logged 
+once per worker.
