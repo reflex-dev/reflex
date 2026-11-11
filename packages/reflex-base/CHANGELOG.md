@@ -1,3 +1,73 @@
+## v0.11.0a1 (2026-11-10)
+
+### Breaking Changes
+
+- `deploy_url` now defaults to `None` instead of `http://localhost:3000` and is no longer derived from `frontend_port`. The new `Config.frontend_url` property returns `deploy_url` when set and `http://localhost:<frontend_port>` otherwise; the sitemap plugin builds absolute links from it. ([#7641](https://github.com/reflex-dev/reflex/issues/7641))
+- A `set` or `frozenset` state var is now a `SetVar` rather than an `ArrayVar`, so it no longer type-checks as a sequence in frontend code: indexing, slicing, `map`, `filter`, `join`, `reverse`, `+`, `*`, the comparisons `<`, `<=`, `>` and `>=`, and `contains` with a `field` on it are deprecated. They still compile for now with a deprecation warning and will be removed in 1.0. Call `.to_array()` first:
+
+  ```python
+  State.tags[0]  # deprecated
+  State.tags.to_array()[0]
+  ``` ([#7642](https://github.com/reflex-dev/reflex/issues/7642))
+- Reading a plain `@property` of a Pydantic model or dataclass through a state Var now raises `VarAttributeError` at compile time. The default serializer does not send such a property, so the Var always rendered empty. Use `@pydantic.computed_field`, or register an `rx.serializer` that includes the value. ([#7648](https://github.com/reflex-dev/reflex/issues/7648))
+- `@rx.event` now returns an `EventHandler` instead of the decorated function. A decorator stacked above `@rx.event` is deprecated: the method still runs and registers under its own name, with a deprecation warning, until 1.0; apply other decorators below `@rx.event`. `@rx.event` on a method of a class that is not a state keeps working when called through an instance, and on a `staticmethod` or `classmethod` leaves it unchanged; both warn and should be removed, and calling such a method through the class (`Helper.compute(obj, 3)`) is not supported. A module-level function decorated with `@rx.event` whose first parameter is not a state stays a plain function and warns; drop the decorator from plain helper functions. ([#7673](https://github.com/reflex-dev/reflex/issues/7673))
+
+### Features
+
+- Add `rx.client_state` for client-only state. A named var (`rx.client_state("", name="query")`) is global: any component can read and write it, and the backend can `push` and `retrieve` it. An unnamed var is owned by the outermost page or `@rx.memo` that uses it, so each `@rx.memo` instance gets its own value and a page's values reset when it unmounts. Setting a var re-renders only the components that read it. `.set` takes a value, a `FunctionVar`, or a lambda (`count.set(lambda v: v + 1)`) and replaces `.set_value`, which is deprecated and will be removed in 1.0. `rx._x.client_state` remains available with a deprecation warning. ([#6936](https://github.com/reflex-dev/reflex/issues/6936))
+- Add `SetVar` for `set[T]` and `frozenset[T]` state vars, computed vars and literals, with `contains`, `length`, `union`, `intersection`, `difference`, `symmetric_difference`, `issubset`, `issuperset`, `isdisjoint` and `to_array` operations. Elements compare by value, so sets of tuples work. The value still travels to the frontend as a JSON array; `rx.foreach` accepts a set var directly. `frozenset` is now a serializable state var type and is accepted by `LiteralVar.create`. ([#7642](https://github.com/reflex-dev/reflex/issues/7642))
+- On a state schema mismatch, a production page now dispatches a cancelable `reflex:state-mismatch` event on `window` before it reloads or shows the "new version available" banner. A listener that calls `event.preventDefault()` skips both, so the app decides when to reload; `event.detail` carries the `frontend` and `backend` state schema hashes. ([#7653](https://github.com/reflex-dev/reflex/issues/7653))
+- With OpenTelemetry tracing enabled, JSON log records (`REFLEX_LOG_JSON=true`) emitted inside a span now include its `trace_id` and `span_id`, so logs can be correlated with traces. ([#7668](https://github.com/reflex-dev/reflex/issues/7668))
+- Add configurable development-time warnings for event handlers that block the asyncio event loop. ([#7672](https://github.com/reflex-dev/reflex/issues/7672))
+- Event handlers are awaitable: `await State.handler(args)` inside another event handler runs it right away on the same locked state and returns its result, so a handler may return a value to the backend code awaiting it (returned events still chain, a returned coroutine still raises, and return values are not sent to the frontend yet). `@rx.event` returns the `EventHandler` itself, and `self.handler()` keeps calling the plain method as before.
+
+  ```python
+  @rx.event
+  def add(self, amount: int) -> int:
+      self.total += amount
+      return self.total
+
+
+  @rx.event
+  async def add_twice(self, amount: int):
+      first = await type(self).add(amount)
+      yield rx.toast(f"total is now {await type(self).add(amount)}")
+  ``` ([#7673](https://github.com/reflex-dev/reflex/issues/7673))
+- React Compiler now optimizes generated components that use `id` refs, generated UUIDs, and memoized event handlers such as upload callbacks. The `react_compiler` option now installs the experimental `babel-plugin-react-compiler` release. Component `id` refs register through the new `useRegisteredRef` hook in `$/utils/state`. Enabling `react_compiler` now logs a warning that the option is experimental. ([#7694](https://github.com/reflex-dev/reflex/issues/7694))
+- Serialize SQLAlchemy `DeclarativeBase` models without a custom `@rx.serializer`: loaded columns and relationships are sent, and unloaded or expired attributes are left out instead of raising `DetachedInstanceError` or `MissingGreenlet`. ([#7756](https://github.com/reflex-dev/reflex/issues/7756))
+
+### Bug Fixes
+
+- Fix uploads triggered by toast actions or `rx.call_script` callbacks failing with `ReferenceError: filesById is not defined`. Upload callbacks use the current selected files for their upload ID, including changes made after a toast opens. ([#7409](https://github.com/reflex-dev/reflex/issues/7409))
+- Use the browser's current route when building the websocket connection's initial hydration event, so navigation during connection setup cannot run the previous page's `on_load` handler or redirect. ([#7522](https://github.com/reflex-dev/reflex/issues/7522))
+- `StringVar.reversed()` now reverses Unicode code points, so a character such as an emoji is no longer split into lone surrogates. ([#7548](https://github.com/reflex-dev/reflex/issues/7548))
+- Give a component `id` written as an f-string around a Var the same ref name in every build. ([#7564](https://github.com/reflex-dev/reflex/issues/7564))
+- `reflex run --json` shutdown is bounded from the first SIGINT or SIGTERM: every signal is passed on to the app, the app's process tree is killed if it has not exited 15 seconds later, and a consumer that reads slowly or stops reading can no longer hang the supervisor or receive a cut JSON record. ([#7650](https://github.com/reflex-dev/reflex/issues/7650))
+- Passing a backend var where a Var is built from a Python value, e.g. `rx.Var.create([State._secret])`, `rx.toast(State._secret)`, `rx.image(src=State._secret)`, `rx.box(id=State._secret)` or `rx.upload_files(on_upload_progress=State._secret)`, now raises `BackendVarFormatError` with the same explanation as `f"{State._secret}"`, instead of a generic `TypeError` or `ValueError`. Converting a backend var to text with `str()`, `%` or `!s` now raises it too, instead of putting the `Field` text in the page. Using a state var's field from `State.get_fields()` in the UI now says to use the var instead of claiming it has no frontend var. ([#7651](https://github.com/reflex-dev/reflex/issues/7651))
+- Synced `rx.LocalStorage` vars in other tabs now reset to their defaults, like a page load, when localStorage is cleared or their key is removed. ([#7652](https://github.com/reflex-dev/reflex/issues/7652))
+- Fix a `TypeError` when an event handler is called with a proxied state value (such as `self.other(self.items)`) after one was called with a proxied value of a different kind, such as a dict. ([#7673](https://github.com/reflex-dev/reflex/issues/7673))
+- Send the state changes a foreground event handler makes after its last `yield` when it is cancelled or raises, so the frontend receives them right away. With Redis, they were otherwise not sent until the same var changed again or the page reloaded. ([#7696](https://github.com/reflex-dev/reflex/issues/7696))
+- The array variant of the ref formatter dropped the f-string Var marker the same way as the singular one, so array ref names no longer contain a per-run hash and stay identical across builds. ([#7707](https://github.com/reflex-dev/reflex/issues/7707))
+- Under mypy, `@rx.event` handlers are typed as `EventCallback` instead of `EventNamespace`, so calling one directly no longer fails with `"EventNamespace" not callable`, and annotations such as `rx.event.EventSpec` are accepted as types. ([#7709](https://github.com/reflex-dev/reflex/issues/7709))
+- Fix repeated upload updates that could restore values replaced by newer updates. ([#7721](https://github.com/reflex-dev/reflex/issues/7721))
+- The development-time event loop blocking monitor no longer drops its "blocked the event loop for ... in total" report when it is stopped just as the loop recovers. ([#7746](https://github.com/reflex-dev/reflex/issues/7746))
+- Calling an event handler with five to eight positional values now type-checks, binding every argument or the leading ones of a longer handler. ([#7752](https://github.com/reflex-dev/reflex/issues/7752))
+- `FunctionStringVar.create` accepts `_var_type=EventChain`, for a JS function bound to an event trigger as its whole handler. ([#7754](https://github.com/reflex-dev/reflex/issues/7754))
+- An `EventHandler` stored outside a state, e.g. in a dataclass field, now reads back as the handler for type checkers instead of `Any`; read through a state instance it is the bound function. ([#7755](https://github.com/reflex-dev/reflex/issues/7755))
+- Type SQLAlchemy `synonym()` attributes like the attribute they point to, so `State.model.alias` compiles and string operations such as `.upper()` work on it. ([#7756](https://github.com/reflex-dev/reflex/issues/7756))
+- An awaited event handler now passes through app middleware like a queued event, so a handler that a middleware (such as an auth gate) blocks no longer runs when another handler awaits it; the await returns `None`. ([#7782](https://github.com/reflex-dev/reflex/issues/7782))
+- Fix hooks of a component inside `rx.foreach`, such as `on_mount`, `on_unmount`, and hooks from `add_hooks`. A hook that used the loop variable crashed the page, and other hooks ran once for the whole list. Each item now runs its own hooks. A loop inside an `@rx.memo` function is not covered yet. ([#7793](https://github.com/reflex-dev/reflex/issues/7793))
+
+### Performance
+
+- Avoid copying entire mappings when sampling their key and value types during compilation. ([#7057](https://github.com/reflex-dev/reflex/issues/7057))
+- Lazy bundled libraries now load only the modules required by each dynamic component instead of loading every registered optional library at once. ([#7276](https://github.com/reflex-dev/reflex/issues/7276))
+
+### Miscellaneous
+
+- Add `AdminDashRemovedError`, raised by `reflex` when an app uses the removed starlette-admin integration. ([#7739](https://github.com/reflex-dev/reflex/issues/7739))
+
+
 ## v0.10.1 (2026-10-26)
 
 ### Deprecations
