@@ -1,0 +1,9 @@
+{
+ "errors": [
+  "pageerror: refs is not defined"
+ ],
+ "raw_handler_value": "",
+ "call_function_log": "log:",
+ "hook_value": "set by hook",
+ "hook_page_text": "hook page\nBuilt with Reflex"
+}

@@ -1,0 +1,11 @@
+{
+ "errors": [
+  "refs is not defined",
+  "console.error: ReferenceError: refs is not defined\n    at o (http://localhost:3802/assets/_hook_._index-DSqo5nl0.js:1:337)\n    at El (http://localhost:3802/assets/entry.client-DMqNtF3h.js:8:94941)\n    at Uu (http://"
+ ],
+ "raw_handler_value": "",
+ "call_function_log": "log:",
+ "hook_page_heading_visible": false,
+ "hook_value": null,
+ "hook_page_text": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nReferenceError: refs is n"
+}

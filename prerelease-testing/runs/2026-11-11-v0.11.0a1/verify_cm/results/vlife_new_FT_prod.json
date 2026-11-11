@@ -1,0 +1,51 @@
+{
+ "errors": [],
+ "console_warn_err": [],
+ "nokey": {
+  "rows": [
+   "beta",
+   "gamma"
+  ],
+  "events_after_remove_first": "u:gamma"
+ },
+ "withkey": {
+  "rows": [
+   "beta",
+   "gamma"
+  ],
+  "events_after_remove_first": "u:alpha"
+ },
+ "memocond": {
+  "initial_shown": [
+   "shown-x"
+  ],
+  "initial_events": "m:x,m:y",
+  "after_toggle_shown": [
+   "shown-y"
+  ],
+  "after_toggle_events": "",
+  "after_toggle2_events": ""
+ },
+ "pagecond": {
+  "initial_shown": [
+   "shown-x"
+  ],
+  "initial_events": "m:x",
+  "after_toggle_shown": [
+   "shown-y"
+  ],
+  "after_toggle_events": "u:x,m:y",
+  "after_toggle2_events": "u:x,m:y,u:y,m:x"
+ },
+ "icons": {
+  "var": 1,
+  "static": 1,
+  "loop": {
+   "grid_2x_2": 1,
+   "grid_3x_3": 1,
+   "calendar_1": 1,
+   "arrow_up_0_1": 1
+  },
+  "var_after_g3": 1
+ }
+}

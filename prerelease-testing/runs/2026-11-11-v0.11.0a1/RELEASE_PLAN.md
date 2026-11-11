@@ -1,6 +1,6 @@
-# Release plan — what blocks reflex 0.11.0 vs what gets filed — DRAFT
+# Release plan — what blocks reflex 0.11.0 vs what gets filed
 
-Draft from the 0.11.0a1 pass; `compile_memo` still running. Finding numbers
+From the 0.11.0a1 pass (all clusters explored and verified, 2026-11-11). Finding numbers
 refer to `FINDINGS.md`. Rubric (SKILL.md): **fix before release** = confirmed regression vs 0.10.1, security-relevant, or
 significant user impact / trivially small; everything else is filed. Each entry names the arm that put it there.
 
@@ -40,9 +40,10 @@ significant user impact / trivially small; everything else is filed. Each entry 
 - **FINDING-002** (HIGH, rxe): MCPPlugin prod startup crash without `deploy_url`. rxe: `deploy_url or api_url`. reflex:
   Breaking Changes line for code reading `config.deploy_url` (point to `frontend_url`). Release 0.11.0 together with a fixed
   rxe, or have rxe cap `reflex<0.11` until then (rxe currently requires `reflex[db]>=0.9.6`, no upper bound).
-- **FINDING-003** (HIGH, rxe + reflex shim): AG Grid API `refs is not defined`. rxe: attach `refs` var data. reflex
-  (recommended, one line): keep importing `refs` next to `useRegisteredRef` in the 0.11 line so published rxe and
-  third-party libraries keep working; otherwise list under Breaking Changes.
+- **FINDING-003** (HIGH for rxe, MEDIUM for plain reflex): `refs is not defined`. rxe: build the AG Grid ref with
+  `Var._as_ref()` / VarData import. reflex (recommended, zero React Compiler cost, `verify_cm/refs_import.patch`): import
+  `refs` next to `useRegisteredRef`, and in every page / memo module to also cover custom `add_hooks` with
+  auto_memoize=False; then either document `refs` or declare it internal (Breaking Changes line).
 - **FINDING-008** (MEDIUM, rxe): MCP consent redirect to backend in dev. rxe only.
 
 ### High impact and/or trivially small (not regressions)
@@ -59,6 +60,10 @@ significant user impact / trivially small; everything else is filed. Each entry 
   FINDING-006 note, FINDING-014 (admin guide: trailing slash, dataclass models, `MyAuthProvider`), FINDING-020 (serializer
   example), #7534 wording (FINDING-030).
 - **FINDING-028** (LOW, small): exclude `reflex_components_*` frames from deprecation locations.
+- **FINDING-042 / PKG-A** (MEDIUM, trivial): raise floors to `reflex-components-lucide>=1.1.2.dev0` and
+  `reflex-hosting-cli>=0.2.2.dev0` (root `pyproject.toml:40,48`) so an upgrade delivers #7674 / #7670.
+- **FINDING-039** (MEDIUM, small): document foreach index keying; warn when a foreach item with lifecycle events / hooks has
+  no `key`.
 - **FINDING-034** (LOW, trivial): fix the client_state name hint + docstring.
 - **FINDING-037 / -038** (LOW, regressions, small): changelog sentence + `repr()` hint; skip the factory check on the runtime
   storage path.
@@ -76,7 +81,8 @@ significant user impact / trivially small; everything else is filed. Each entry 
   awaited exception still shows the error toast; deprecation names only the first stacked method per class.
 - FINDING-031 (cross-worker updates lost after > 5 s Redis outage), FINDING-032 (dead worker's socket record → new token),
   FINDING-033 (no granian respawn; consider `respawn_failed_workers=True`), the in-process "instaque" barging note.
-- FINDING-035 (client_state identifier collisions), FINDING-036 (optional collection ops crash / fail prod build), and the
+- FINDING-040 (on_mount in cond in memo body), FINDING-041 (foreach with hooks inside memo crashes the page; reword
+  "not covered yet"), FINDING-043 (compile_memo lows), FINDING-035 (client_state identifier collisions), FINDING-036 (optional collection ops crash / fail prod build), and the
   unverified client_vars lows: `rx.match` on sets order-dependent; `set[str]` handler args arrive as list; `split()` UTF-16;
   int/list storage factories; remaining cryptic backend-var errors; foreach row-index client state (docs).
 
@@ -90,8 +96,8 @@ significant user impact / trivially small; everything else is filed. Each entry 
 2. **`refs` compatibility (FINDING-003):** ship the one-line shim for 0.11, or declare the implicit `refs` import gone
    (Breaking Changes)?
 3. **reflex-enterprise coordination (FINDING-002/-003/-008):** release order / rxe upper bound on reflex.
-4. **Sibling floors (PKG-A):** raise `reflex-components-lucide>=1.1.2` and `reflex-hosting-cli>=0.2.2` at final so a plain
-   upgrade delivers #7674 / #7670?
+4. **Sibling floors (PKG-A / FINDING-042):** confirmed that an in-place upgrade keeps lucide 1.1.1 / hosting-cli 0.2.1 —
+   raise the floors (listed under fix-before-release; veto here if intended).
 5. **redis-py beta:** `uv --prerelease=allow` resolves redis-py 8.2.0b1 for alpha testers; acceptable, or cap `redis<8.2`
    until it is final?
 6. **Undocumented behaviour changes:** handler return values silently dropped (FINDING-015), `print(State._x)` in server
@@ -103,5 +109,6 @@ significant user impact / trivially small; everything else is filed. Each entry 
   only — same file as -001: land after it or in one PR), FINDING-005/-006/-017 (reflex/utils/migrations.py, reflex.py,
   model.py — one DB PR or three stacked), FINDING-004/-012/-011 (model.py, env.py template, reflex_base types.py),
   FINDING-009 (compiler.py), FINDING-010 (base_state_processor.py), FINDING-022 docs (docs/hosting, docker-example) and code
-  (app.py), FINDING-003 shim (reflex_base component.py), FINDING-028 (reflex_base log.py).
+  (app.py), FINDING-003 shim (reflex_base component.py), FINDING-028 (reflex_base log.py), FINDING-030 (istate/manager/redis.py +
+  app.py), FINDING-042 floors (pyproject.toml), FINDING-039 (iter_tag.py + docs).
 - Then cut 0.11.0a2 and re-run the original repros (Phase 7), together with a fixed reflex-enterprise build.

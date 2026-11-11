@@ -1,13 +1,12 @@
-# Findings — reflex 0.11.0a1 pre-release testing (2026-11-11) — DRAFT
+# Findings — reflex 0.11.0a1 pre-release testing (2026-11-11)
 
-**Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. `server_net`, `redis_runtime` verified. `compile_memo` done (verification running). `client_vars` (verified) and `examples_ui` done.
-Findings marked *(unverified)* have not yet been through an independent verifier. Numbering is provisional; the final
-pass re-ranks by severity.
+**Status: complete for the 0.11.0a1 pass.** All 9 exploration clusters finished and every claimed issue went through an
+independent verifier (8 verifier agents; `examples_ui`'s two lows were verified by the orchestrator against the tag source).
 
 Method: every package installed from PyPI into isolated venvs (never from the checkout); real apps run end-to-end in
 Chromium (dev and prod, memory and Redis state managers), every behaviour baselined against reflex 0.10.1; every claimed
-issue reproduced by an independent adversarial verifier from the written repro alone. Agents: 4 planning (haiku/sonnet),
-9 exploration + 1 verifier per finished cluster (opus / fable, high effort).
+issue reproduced by an independent adversarial verifier from the written repro alone. Agents: 4 planning (haiku / sonnet,
+low effort), 9 exploration and 8 verification agents (opus / fable, high effort).
 
 ## Versions under test
 - reflex 0.11.0a1, reflex-base 0.11.0a1, reflex-components-core / -radix / -code 0.11.0a1, reflex-components-lucide
@@ -19,23 +18,33 @@ issue reproduced by an independent adversarial verifier from the written repro a
   redis-server; sqlalchemy 2.1.8, sqlmodel 0.0.48, alembic 1.20.1, pydantic 2.14.3; redis-py 8.2.0b1 (`uv --prerelease=allow`)
   / 8.1.0 (stock pip) on 0.11, 7.4.1 on 0.10.1.
 
-## Executive summary (so far)
-Works: in-place upgrade of reflex-examples DB apps with existing migrations to the new alembic `env.py` (both orders,
-no data loss, no spurious revisions, alembic CLI incl. downgrade/upgrade); rewrite of rx.Model apps to
-`MappedAsDataclass` + `DeclarativeBase` with async sessions on the same tables and migration history; the new
-DeclarativeBase serializer (dev, prod + Redis, hot reload); awaitable event handlers across 64 scenarios × {dev, prod} ×
-{memory, Redis}; middleware gating of awaited handlers; failed/cancelled-handler write fixes (#7696/#7412/#7738);
-reflex-enterprise OIDC, demos, REST/WS parity, Redis, lifespan; packaging (.pyi audit, wheel = tag, sdist rebuilds).
+## Executive summary
+**Works.** In-place upgrade of reflex-examples DB apps with existing (0.10.x-era) migrations to the new alembic `env.py` —
+both orders, no data loss, no spurious revisions, alembic CLI incl. downgrade/upgrade, dev/prod/cold. Rewrite of rx.Model
+apps to `MappedAsDataclass` + `DeclarativeBase` with async sessions on the same tables and migration history, with no
+revision; the new DeclarativeBase serializer in dev, prod + Redis and hot reload. Awaitable handlers (64 scenarios × dev/prod
+× memory/Redis), middleware gating, failed/cancelled-handler writes (#7696/#7412/#7738). Redis lock rewrite: exact counts
+across redis-py 7/8/beta × 1/2/4 workers × oplock, stalls 5-10 s → ~1 s. `rx.client_state`, `SetVar`, storage sync,
+var errors, unicode ops. Lifespan forwarding, case-insensitive routes, pre-connect on_load fix, state-mismatch event, CLI
+signals / `--json`. foreach hooks, toast/call_script uploads, reproducible exports, lazy libs, React Compiler matrix.
+reflex-enterprise 0.9.11: OIDC, demos, REST/WS parity, Redis, lifespan, awaited protected handlers. Nine non-DB
+reflex-examples apps upgrade with identical results. Packaging: 20/20 published, wheels = tag, `.pyi` audit and sdist
+rebuilds clean, fresh installs on 3.11/3.14/3.15. 37+ registry items re-verified, most fixed.
 
-Blocks (candidates, see RELEASE_PLAN.md): FINDING-022 (new prod CORS default: TLS-proxied same-origin prod and every documented split/CDN deployment never connect), FINDING-001 (double `@rx.event` crashes import, breaks reflex-examples
-`overkey`), FINDING-002 / -003 (reflex-enterprise 0.9.11 breaks on 0.11: MCP prod startup, AG Grid API), FINDING-004
-(unregistered DeclarativeBase silently drops every table — not a regression but the docs now steer everyone there),
-FINDING-005 / -006 (kept hand-edited env.py).
+**Blocks (see RELEASE_PLAN.md).** FINDING-022 (new prod CORS default: TLS-proxied same-origin prod and every documented
+split/CDN deployment never connect), FINDING-001 (a second `@rx.event` crashes import; breaks reflex-examples `overkey`),
+FINDING-002 / -003 / -008 (reflex-enterprise 0.9.11 breaks on 0.11: MCP prod startup, AG Grid API, MCP consent), FINDING-004
+(unregistered DeclarativeBase silently drops every table — not a regression, but the docs now steer everyone there),
+FINDING-005 / -006 / -007 / -009 / -016 (regressions), plus small fixes and changelog lines listed in the plan.
+
+**Counts.** 43 findings: 5 HIGH, 13 MEDIUM (one MEDIUM-LOW), 2 LOW-MEDIUM, 23 LOW; 15 are regressions against 0.10.1
+(001, 002, 003, 005, 006, 007, 008, 009, 015 (diagnostics), 016, 022, 024, 029, 037, 038). Verifiers refuted, narrowed or
+reclassified 17 claims (listed below); none was refuted outright as non-reproducible.
 
 Index:
 - FINDING-001: A second `@rx.event` on a handler crashes the app at import (HIGH, regression)
 - FINDING-002: [reflex-enterprise] MCPPlugin app dies at prod startup when `deploy_url` is unset (HIGH, regression)
-- FINDING-003: Page code reading `refs[...]` throws `ReferenceError: refs is not defined` (raw Var handlers, `rx.call_function`, custom `add_hooks`; reflex-enterprise AG Grid API) (HIGH, regression) *(reflex-side widening: verification running)*
+- FINDING-003: `ReferenceError: refs is not defined` — reflex-enterprise AG Grid API calls (HIGH) and page code reading `refs[...]` (MEDIUM for plain reflex) (regression)
 - FINDING-004: Unregistered DeclarativeBase → `makemigrations` silently generates `drop_table` for every table (HIGH, not a regression)
 - FINDING-005: Hand-edited 0.10.x `env.py` is now executed; placeholder URL crashes `reflex run` / `reflex db` (MEDIUM, regression)
 - FINDING-006: Kept user `env.py` → every `makemigrations` writes an empty revision (MEDIUM, regression)
@@ -71,10 +80,10 @@ Index:
 - FINDING-036: Operations on a None `set[...] | None` / `list[...] | None` var crash the page and fail the prod build (LOW, not a regression)
 - FINDING-037: `print` / `str` / `%` / logging of a class-level backend var in server code now raises (LOW, regression by design; changelog gap)
 - FINDING-038: Storage-compatible `default_factory` called extra times (once per compile + once per backend worker) (LOW, regression)
-- FINDING-039: Unkeyed `rx.foreach` on_unmount / on_mount payloads name the item at that position, not the removed item (MEDIUM, new with #7793) *(verification running)*
-- FINDING-040: on_mount / on_unmount inside `rx.cond` inside an `@rx.memo` body fire unconditionally; contradicts the #7694 changelog line (MEDIUM, not a regression) *(verification running)*
+- FINDING-039: Unkeyed `rx.foreach` on_unmount / on_mount payloads name the item at that position, not the removed item (MEDIUM, new with #7793)
+- FINDING-040: on_mount / on_unmount inside `rx.cond` inside an `@rx.memo` body fire unconditionally (LOW-MEDIUM, not a regression)
 - FINDING-041: `rx.foreach` with item hooks inside `@rx.memo` crashes the whole page (documented "not covered yet") (MEDIUM, not a regression)
-- FINDING-042: #7674 lucide digit-icon fix does not reach in-place upgraders (lucide floor 1.1.1) (MEDIUM, part of PKG-A) *(verification running)*
+- FINDING-042: #7674 lucide digit-icon fix does not reach in-place upgraders (lucide floor 1.1.1) (MEDIUM, part of PKG-A)
 - FINDING-043: compile_memo lows: f-string ids in foreach all share one ref (set_focus targets the last row); blocking-monitor blames user handler for reflex's lazy sqlalchemy import; repeated auto_memoize warning; upload handler exception cuts the chunked response (LOW)
 - PKG-A (maintainer decision): reflex 0.11.0a1 requires only `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`
 
@@ -113,7 +122,13 @@ Index:
   `reflex[db]>=0.9.6` with no upper bound).
 
 ## FINDING-003: Page code reading `refs[...]` throws `ReferenceError: refs is not defined` (HIGH)
-- WIDENED by `compile_memo` (verification `verify_cm` running): not only reflex-enterprise. On 0.11.0a1 (dev + prod, every
+- WIDENED by `compile_memo`, then NARROWED by `verify_cm`: MEDIUM for plain reflex. `refs[...]` in user code is not a
+  documented pattern (no docs hit at v0.10.1; the one at v0.11.0a1, overview.md:233, runs inside `rx.call_script` where it
+  works; none in reflex-examples), and on 0.10.1 the raw-Var / call_function probes only worked because the module had an
+  `id`'d component (they fail on 0.10.1 without one). The realistic break is a custom component's `add_hooks` reading
+  `refs`. The shim (`ImportVar(tag="refs")` next to `useRegisteredRef`, `component.py:1834-1838`) fixes all three probes
+  with auto_memoize=True at no React Compiler cost (`verify_cm/refs_import.patch`), but not the `add_hooks` probe with
+  auto_memoize=False (hook moves into an `app_components` wrapper); importing `refs` in every page and memo module would. On 0.11.0a1 (dev + prod, every
   auto_memoize × react_compiler cell) a raw `rx.Var("() => { refs['ref_target'].current.value = 'x' }").to(rx.vars.FunctionVar)`
   handler, `rx.call_function(rx.Var("() => refs['ref_target'].current.value"), callback=...)` and a custom component's
   `add_hooks` reading `refs[...]` all throw; 0.10.1 works. Repro app `compile_memo/refsrepro/`,
@@ -432,14 +447,20 @@ Index:
   `reflex/compiler/utils.py:346-358`, `reflex/state.py:2354-2373`. Fix: skip the factory check on the runtime path.
 
 ## FINDING-039: Unkeyed `rx.foreach` lifecycle payloads name the item at that position (MEDIUM)
-- Cluster: `compile_memo` | Regression: no (0.10.1 crashes on this page; behaviour new with #7793) | Verifier: running
+- Cluster: `compile_memo` | Regression: no (0.10.1 crashes on this page; behaviour new with #7793) | Verifier: CONFIRMED
+- Root cause `reflex_base/components/tags/iter_tag.py:132-134` (index key default, unchanged); `key=item` as a default is not
+  feasible (object items, duplicates). Fix shape: document index keying; compile-time warning when a foreach item has
+  lifecycle events / instance hooks but no `key`.
 - cm page /loopnokey: `rx.foreach(S.items, lambda item: rx.text(item, on_mount=S.record_mount(item), on_unmount=S.record_unmount(item)))`,
   items [alpha, beta, gamma], remove first → `record_unmount("gamma")`. foreach keys children by index; the generated
   `useEffect` captures the loop var with `[]` deps. `key=item` fixes it; docs never say a key is needed. Related: the docs'
   per-row `rx.client_state` in an `@rx.memo` row follows the row position (state jumps rows after a removal).
 
-## FINDING-040: on_mount / on_unmount inside `rx.cond` inside an `@rx.memo` body fire unconditionally (MEDIUM)
-- Cluster: `compile_memo` | Regression: no (identical on 0.10.1) | Verifier: running
+## FINDING-040: on_mount / on_unmount inside `rx.cond` inside an `@rx.memo` body fire unconditionally (LOW-MEDIUM)
+- Cluster: `compile_memo` | Regression: no (identical on 0.10.1) | Verifier: RECLASSIFIED — does not contradict #7694 (that
+  sentence is about page compilation with auto_memoize=False; the same cond directly in a page behaves correctly). Root
+  cause `reflex/compiler/utils.py:614` (`render._get_all_hooks()` hoists the branch's effect). Fix: wrap instance-hook
+  descendants of Cond/Foreach inside memo bodies, or document.
 - cm page /memocond: hidden branch's on_mount fires at mount; toggling fires nothing. The cond child's `useEffect(..., [])`
   is hoisted to the memo body's top level. #7694's line "on_mount and on_unmount still follow their rx.cond branch" holds
   only outside `@rx.memo`.
@@ -449,7 +470,8 @@ Index:
 - cm page /loopmemo → error boundary `ReferenceError: it_rx_state_ is not defined`. The changelog says only "not covered yet".
 
 ## FINDING-042: #7674 lucide digit-icon fix does not reach in-place upgraders (MEDIUM)
-- Cluster: `compile_memo` | Regression: no | Verifier: running. With lucide 1.1.1 (what `pip install -U reflex` keeps):
+- Cluster: `compile_memo` | Regression: no | Verifier: CONFIRMED (in-place `pip install -U --pre reflex==0.11.0a1` keeps
+  lucide 1.1.1 and hosting-cli 0.2.1; root `pyproject.toml:40,48`). Fix: floors `>= 1.1.2.dev0` / `>= 0.2.2.dev0` before final. With lucide 1.1.1 (what `pip install -U reflex` keeps):
   `rx.icon(S.icon_name)` with `grid_2x_2` blank, `DynamicIcon not found` ×11; 1.1.2a1 renders. See PKG-A.
 
 ## FINDING-043: compile_memo lows (LOW)
@@ -466,6 +488,16 @@ reflex==0.11.0a1` resolves lucide 1.1.1 and hosting-cli 0.2.1 (without the #7674
 moves them. Stock pip resolves redis 8.1.0; `uv --prerelease=allow` resolves the redis-py beta 8.2.0b1.
 
 ## Refuted / reclassified claims
+- **refs break for plain reflex HIGH** (`compile_memo`): narrowed to MEDIUM — not a documented pattern; worked on 0.10.1 only with an `id`'d component in the module (FINDING-003).
+- **on_mount in cond in memo contradicts #7694** (`compile_memo`): reclassified — the changelog sentence is about page compilation; not a regression (FINDING-040).
+- **TLS / split-deploy CORS MEDIUM** (`server_net`): raised to HIGH by the verifier (FINDING-022).
+- **Oplock stall mechanism** (`redis_runtime`): main cause is the shared instance id under fork, not the reported SREM path (FINDING-030).
+- **kill -9 stops the server** (`redis_runtime`): split into granian's default (FINDING-033) and a reflex stale-socket-record bug (FINDING-032).
+- **Redis outage 0.10.1 vs 0.11 difference** (`redis_runtime`): worker placement, code identical (FINDING-031).
+- **Return value silently accepted** (`events_await`): deliberate; diagnostics-only regression (FINDING-015).
+- **staticmethod above rx.event without warning** (`events_await`): a warning does fire on State classes (FINDING-016).
+- **Case-duplicate routes / CORS toast** (`server_net`): pre-existing behaviour (FINDING-026 / -023).
+- **client_state identifier collision breaks every page** (`client_vars`): only pages importing that module's memo file in dev (FINDING-035).
 - **Admin "New" 500 for dataclass models** (`db_models`): upstream starlette-admin limitation; identical on 0.10.1 rx.AdminDash → docs gap (FINDING-014).
 - **`db init` / `makemigrations` regression on fresh rxe app** (`enterprise`): already failing on 0.10.1; only `db migrate` regressed (FINDING-009).
 - **Hand-edited env.py HIGH** (`db_upgrade`): narrowed to MEDIUM (half-finished edit; no docs told users to edit env.py).

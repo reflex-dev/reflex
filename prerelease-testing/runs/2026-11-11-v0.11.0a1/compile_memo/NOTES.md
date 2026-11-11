@@ -149,3 +149,55 @@ Screenshots: `evidence/refs_*_prod.png`.
 - **enterprise refs survey** (context for the enterprise cluster): `reflex_enterprise/components/map/base.py` carries
   `refs_var_data` (safe); `auth/oidc/state.py` uses `refs[...]` inside `rx.call_script` (safe, state.js scope);
   `ag_grid/aggrid.py:253,902` emit bare `refs[...]` (the known break).
+
+## VERIFICATION
+Independent verifier `verify_cm`, 2026-11-11. It did not read the reporter's conversation. Everything was installed from PyPI with `--only-binary :all:`:
+`$SB/envs/vcm-new` (`reflex==0.11.0a1 plotly`, `--prerelease=allow`, which resolves lucide 1.1.2a1), `$SB/envs/vcm-prev` (`reflex==0.10.1 plotly`, no prerelease flag, lucide 1.1.1),
+`$SB/envs/vcm-l111` (0.10.1, then upgraded in place with `pip install -U --pre reflex==0.11.0a1`, which keeps lucide 1.1.1 and hosting-cli 0.2.1), and
+`$SB/envs/vcm-patch` (a throwaway copy of vcm-new whose installed `reflex_base/components/component.py` was patched; diff in `verify_cm/refs_import.patch`).
+Apps, scripts and results are in `verify_cm/` (`apps/refsrepro` is the reporter's app plus a venv guard; `apps/refsnoid` and `apps/vlife` are the verifier's own probes). Ports 3800-3809 / 8800-8806 only, and every server was stopped.
+Servers: `verify_cm/scripts/srv.sh start <name> <venv> <dev|prod> <appdir> <fp> <bp> [REFLEX_AUTO_MEMOIZE=.. REFLEX_REACT_COMPILER=..]` (the reporter's srv.sh with only the log dir changed).
+Notes gaps: `scripts/srv.sh`/`cell.sh` hardcode `$SB/apps/compile_memo/logs` and port 3300, `refsrepro/requirements.txt` says `reflex==0.10.1` with no newline (misleading for a 0.11 repro), and the cm pages for issues 2/3 needed reading `cm.py`. The NOTES text alone was still enough to rebuild the probes.
+Process slip: one `python -I` text edit of a driver script ran with the default Bash cwd (`/home/user/reflex`). It imported nothing from the checkout (`-I`, no reflex import) and had no effect on results.
+
+### V1 — `refs is not defined` in page code: NARROWED (HIGH → medium for plain reflex; regression yes; the HIGH stays with enterprise AG Grid FINDING-003)
+- Reproduced exactly as written. `refsrepro` on vcm-new prod T,F / F,T / T,T / F,F and dev T,F / F,T: the raw handler leaves `''` with pageerror `refs is not defined`, call_function stays at `log:`, and /hook shows the error boundary.
+  vcm-prev prod and dev: `set by raw var`, `log: typed`, `set by hook` (`results/refs_*.json`, `evidence/refs_new_TF_prod.png` vs `refs_prev_prod.png`).
+- Docs: `git grep -n "refs\[" v0.10.1 -- docs` finds only `doc_edit_hrefs`. At v0.11.0a1 the only hit is `docs/wrapping-react/overview.md:233`, `rx.call_script('refs["__client_state"]...')`, which runs in state.js scope and works.
+  Neither tag documents `rx.call_function`, `get_ref` or bare `refs`. reflex-examples @ebe19ff contains no `refs[` (the snakegame `add_hooks` does not touch refs). `refs` in user code is an undocumented internal global.
+- 0.10.1 never guaranteed `refs`. The import came from `Component._get_hooks_imports` (v0.10.1 component.py:1833-1838) only for a module that contained an id'd component.
+  `apps/refsnoid` is the same probes with the buttons' `id=` removed. On 0.10.1 prod it fails too: raw handler `''` + `refs is not defined`, call_function `log:`. The buttons are memoized into `app_components/refsnoid/refsnoid.jsx`, which imports no `refs`. Probes 1 and 2 passed on 0.10.1 only because the buttons carried `id="raw"` / `id="callfn"`.
+  Probe 3 (`add_hooks` on a page whose module has an id'd component) is the realistic, coincidental-but-reliable 0.10.1 pattern that breaks.
+- Root cause: v0.11.0a1 `packages/reflex-base/src/reflex_base/components/component.py:1834-1838` imports only `useRegisteredRef`, and `_get_ref_hook` (:1953-1962) emits `const ref_x = useRegisteredRef("ref_x")`. `refs[name] = ref` now runs inside state.js (`.templates/web/utils/state.js:73-77`).
+  First-party `refs[...]` emitters all declare the import: `Var._as_ref` vars/base.py:1549-1560, client_state.py:100-105, sonner toast.py:33-36, forms/upload via `_as_ref`. reflex-enterprise ag_grid/aggrid.py:253,902 does not, which is FINDING-003.
+- Shim test (`refs_import.patch`: add `ImportVar(tag="refs")` beside `useRegisteredRef`) on vcm-patch:
+  | cell | raw handler | call_function | add_hooks page |
+  |---|---|---|---|
+  | prod T,F | ok | ok | ok |
+  | prod T,T | ok | ok | ok |
+  | prod F,T | ok | ok | **still `refs is not defined`** |
+  | prod F,F | ok | ok | **still fails** |
+  | dev F,T | ok | ok | **still fails** |
+  With auto_memoize=False, the hook-owning component keeps a wrapper (`app_components/refsrepro/refsrepro.jsx`, which imports only `isTrue`) that contains no id'd component. The shim gives exact 0.10.1 parity (refsnoid on vcm-patch = 0.10.1 result) but does not cover the new auto_memoize=False mode.
+- React Compiler impact of the shim: none measured. Dev F,T, `curl` of the vite-transformed `/app/routes/_index.jsx` and `/app/routes/%5Bhook%5D._index.jsx`: unpatched `_c(28)` / `_c(15)`, patched `_c(28)` / `_c(15)` (identical, both compiled, and patched imports `{ refs, useRegisteredRef }`).
+  0.10.1 with react_compiler=True: no `compiler-runtime` import in either module (whole-page bailout on the `refs["ref_x"] = ref_x` render write). Files: `results/vite_*`. An unused or read-only import does not defeat the compiler. Only the render-time write did, and #7694 moved that write.
+- Fix shape: (a) reflex-enterprise: build the AG Grid ref Var with `Var._as_ref()` or VarData importing `refs` (FINDING-003). (b) reflex compat shim for 0.11: add `ImportVar(tag="refs")` at component.py:1836-1838 (zero compiler cost). To also cover auto_memoize=False wrappers and no-id modules, add `refs` to the default `$/utils/state` imports of every page/memo module. (c) If `refs` is meant for custom components, document it or a public `ref(id)` Var helper. Otherwise name it internal in custom-code-and-hooks.md.
+
+### V2 — unkeyed `rx.foreach` on_unmount payload: CONFIRMED (medium, regression no)
+- `apps/vlife` /nokey (`rx.text(it, on_mount=S.ev("m:"+it), on_unmount=S.ev("u:"+it))`, items alpha/beta/gamma), remove-first: vcm-new prod T,F and F,T give `u:gamma`. /withkey (`key=it`) gives `u:alpha`. vcm-prev: both pages crash (`it_rx_state_ is not defined`), so this is not a regression.
+- Root cause: `reflex_base/components/tags/iter_tag.py:132-134` (`if component.key is None: component.key = index`, unchanged from v0.10.1:113-115), plus the lifecycle `useEffect(..., [])` capturing the loop var at mount. This is ordinary React index-key semantics.
+- Docs: index keying is not documented. `docs/library/dynamic-rendering/foreach.md:139` shows `key=item.id` in an example with no explanation. The #7793 changelog says "Each item now runs its own hooks", but they run per position.
+- `key=item` as a default is not safe. Object items stringify to duplicate keys (`[object Object]`), duplicate primitives (`["a","a"]`) give React duplicate-key errors and row loss, and keying changes state retention for uncontrolled children.
+  Feasible fixes: document "rx.foreach keys by index; pass `key=` with a stable unique value when rows have on_mount/on_unmount, hooks or per-row client_state". Also a compile-time warning when a foreach item subtree has lifecycle events or instance hooks (`_has_instance_hooks`) and no explicit key. Optionally default to the item only when the iterable's type is a primitive and the value is known to be unique (not decidable at compile time, so not recommended).
+
+### V3 — on_mount in rx.cond inside @rx.memo: RECLASSIFIED (pre-existing @rx.memo limitation; low-medium; regression no; not a contradiction of #7694)
+- `apps/vlife` /memocond (`@rx.memo memo_cond(show, label)` with `rx.cond(show, rx.text(..., on_mount/on_unmount))`, x shown, y hidden): new T,F, new F,T and 0.10.1 prod all give initial `m:x,m:y`, and toggling fires nothing. Control /pagecond (the same cond written in the page): `m:x`, toggle `u:x,m:y`, toggle `u:y,m:x` on all three. This is correct.
+- The #7694 changelog sentence sits in the `auto_memoize=False` entry ("Components with lifecycle events or hooks of their own keep a wrapper..."). It describes page compilation without auto-memo, and that holds (pagecond F,T is correct). It makes no claim about user `@rx.memo` bodies, which behave exactly as on 0.10.1.
+- Root cause: `reflex/compiler/utils.py:614` (v0.10.1:551) builds the memo body with `hooks = render._get_all_hooks()`, so a cond branch's lifecycle `useEffect(..., [])` is hoisted to the top of the memo function (compiled `MemoCond_*` in app_components). No wrapper boundary is inserted inside @rx.memo bodies.
+- Fix shape: in `compile_experimental_component_memo`, wrap descendants with `_has_instance_hooks` that sit under a Cond/Foreach branch in their own memo wrapper, as the page path does. Or document the limitation in the @rx.memo docs.
+
+### V4 — #7674 lucide fix does not reach in-place upgraders: CONFIRMED (low-medium; regression no)
+- `vcm-l111`: 0.10.1, then `pip install -U --pre reflex==0.11.0a1`, gives reflex 0.11.0a1 + lucide **1.1.1** + hosting-cli **0.2.1**. Published METADATA: `Requires-Dist: reflex-components-lucide>=1.1.1`, `reflex-hosting-cli>=0.2.1`.
+  On /icons (prod) the Var-tag `rx.icon(S.icon_name)`, `grid_2x_2` and `grid_3x_3` in foreach have 0 svgs, with `[lucide-react]: Name in Lucide DynamicIcon not found` x4. The static `rx.icon("grid_2x_2")` and the non-digit names render. vcm-new (lucide 1.1.2a1): all render.
+- Root cause: root `pyproject.toml:40` `reflex-components-lucide >= 1.1.1` (and :48 hosting-cli). The fix lives only in lucide 1.1.2a1's `dynamic_icon_name_operation` (icon.py, Var tag → `replace(/(\d)x-(\d)/g, "$1x$2")`). It is advertised only in the lucide CHANGELOG, and reflex-release lifts only `.dev` floors, never ordinary ones.
+- Fix shape: raise the floor to `reflex-components-lucide >= 1.1.2.dev0`, which release materialization turns into 1.1.2a1/1.1.2 (and `reflex-hosting-cli >= 0.2.2.dev0` for #7670), before 0.11.0 final.

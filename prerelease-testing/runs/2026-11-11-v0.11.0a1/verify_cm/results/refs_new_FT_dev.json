@@ -1,0 +1,12 @@
+{
+ "errors": [
+  "refs is not defined",
+  "console.error: %o\n\n%s\n\n%s\n ReferenceError: refs is not defined\n    at t1 (http://localhost:3802/app_components/refsrepro/refsrepro.jsx:20:9)\n    at Object.react_stack_bottom_frame (http://localhost:3802/node_modules",
+  "console.error: %o\n\n%s\n\n%s\n ReferenceError: refs is not defined\n    at t1 (http://localhost:3802/app_components/refsrepro/refsrepro.jsx:20:9)\n    at Object.react_stack_bottom_frame (http://localhost:3802/node_modules"
+ ],
+ "raw_handler_value": "",
+ "call_function_log": "log:",
+ "hook_page_heading_visible": false,
+ "hook_value": null,
+ "hook_page_text": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nReferenceError: refs is n"
+}

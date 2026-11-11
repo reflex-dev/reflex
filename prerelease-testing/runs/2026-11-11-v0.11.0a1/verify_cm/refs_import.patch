@@ -1,0 +1,3 @@
+1838a1839,1840
+>             # VERIFIER PATCH: restore the 0.10.1 implicit `refs` import.
+>             imports_[f"$/{Dirs.STATE_PATH}"].add(ImportVar(tag="refs"))
