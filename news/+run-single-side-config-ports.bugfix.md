@@ -1,0 +1,1 @@
+`reflex run --frontend-only` and `reflex run --backend-only` no longer exit with "Cannot specify --backend-port/--frontend-port" when `rxconfig.py` sets `frontend_port` or `backend_port`. Only a port flag given on the command line for the side that does not run is an error.

@@ -1,0 +1,1 @@
+Fix page titles that did not match their pages: the local packages guide no longer reads "Assets", the environment variables reference carries the site suffix, and the special events and props pages drop redundant words.

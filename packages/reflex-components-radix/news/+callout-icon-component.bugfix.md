@@ -1,0 +1,1 @@
+`rx.callout` now accepts a component as `icon`, such as `rx.icon("info")` or an `rx.cond`/`rx.match` of icons, instead of raising `TypeError`. An icon name no longer also lands in the callout's CSS as an `icon` property.

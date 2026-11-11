@@ -49,6 +49,32 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
     ) in app_root_code
 
 
+def test_lazy_dynamic_component_lists_only_its_optional_libraries(mocker) -> None:
+    """List the optional libraries a dynamic component reads on its first line."""
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(
+            app_name="lazy_dynamic_component",
+            frontend_lazy_bundled_libraries=True,
+        ),
+    )
+    with RegistrationContext():
+        bundle_library("unused-library")
+        bundle_library("lucide-react")
+        icon_code = serializers.serialize(rx.icon("apple"))
+        default_only_code = serializers.serialize(rx.el.div("default libraries"))
+        _, app_root_code = compiler.compile_app_root(rx.el.div())
+    assert isinstance(icon_code, str)
+    assert isinstance(default_only_code, str)
+    # Default libraries are always in window.__reflex, so they are not listed.
+    assert icon_code.split("\n", 1)[0] == (
+        '//__reflex_evaluate:["lucide-react/dist/esm/icons/apple.mjs"]'
+    )
+    assert default_only_code.split("\n", 1)[0] == "//__reflex_evaluate:[]"
+    # The app can load the unused library, but the icon does not request it.
+    assert '"unused-library": () => import("unused-library")' in app_root_code
+
+
 @pytest.mark.parametrize("reactive", [False, True])
 @pytest.mark.parametrize("placement", ["direct", "nested", "libraryless", "prop"])
 def test_component_registration_bundles_subpaths_before_serialization(

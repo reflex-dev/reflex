@@ -6,6 +6,7 @@ import logging
 import multiprocessing
 import os
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -19,6 +20,7 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base.environment import environment
 from reflex_base.utils import serializers
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.utils import exec as exec_utils
 from reflex.utils import prerequisites, telemetry
@@ -871,14 +873,15 @@ def test_run_granian_backend_json_logs_in_json_mode(
     )
 
 
-@pytest.mark.parametrize("json_mode", [False, True])
-def test_run_granian_backend_prod_json_logs_in_json_mode(
-    mocker: MockerFixture,
-    monkeypatch: pytest.MonkeyPatch,
-    json_mode: bool,
-):
-    """The production Granian path follows the same JSON stdout contract."""
-    monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, str(json_mode))
+def _granian_prod_options(mocker: MockerFixture) -> dict[str, object]:
+    """Run the production Granian launcher on a stand-in server.
+
+    Args:
+        mocker: The mocker fixture.
+
+    Returns:
+        The keyword arguments the launcher built the server with.
+    """
     mocker.patch.object(
         exec_utils, "get_app_instance_from_file", return_value="app:app"
     )
@@ -899,6 +902,19 @@ def test_run_granian_backend_prod_json_logs_in_json_mode(
     exec_utils.run_granian_backend_prod(
         host="127.0.0.1", port=8000, loglevel=exec_utils.LogLevel.DEBUG
     )
+    return options
+
+
+@pytest.mark.parametrize("json_mode", [False, True])
+def test_run_granian_backend_prod_json_logs_in_json_mode(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    json_mode: bool,
+):
+    """The production Granian path follows the same JSON stdout contract."""
+    monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, str(json_mode))
+
+    options = _granian_prod_options(mocker)
 
     assert options["log_dictconfig"] == (
         {
@@ -910,6 +926,42 @@ def test_run_granian_backend_prod_json_logs_in_json_mode(
         if json_mode
         else None
     )
+
+
+@pytest.mark.parametrize(
+    ("env_value", "expected"),
+    [(None, True), ("true", True), ("on", True), ("false", False), ("off", False)],
+)
+def test_run_granian_backend_prod_respawns_failed_workers(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    env_value: str | None,
+    expected: bool,
+):
+    """A worker that dies is replaced unless GRANIAN_RESPAWN_FAILED_WORKERS is off.
+
+    Granian otherwise stops every worker, and the server, when one of them dies.
+    """
+    if env_value is None:
+        monkeypatch.delenv("GRANIAN_RESPAWN_FAILED_WORKERS", raising=False)
+    else:
+        monkeypatch.setenv("GRANIAN_RESPAWN_FAILED_WORKERS", env_value)
+
+    options = _granian_prod_options(mocker)
+
+    assert options["respawn_failed_workers"] is expected
+
+
+def test_run_granian_backend_prod_rejects_invalid_respawn_setting(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A GRANIAN_RESPAWN_FAILED_WORKERS value that is not a boolean is an error."""
+    monkeypatch.setenv("GRANIAN_RESPAWN_FAILED_WORKERS", "sometimes")
+
+    with pytest.raises(
+        EnvironmentVarValueError, match=r"GRANIAN_RESPAWN_FAILED_WORKERS: .sometimes."
+    ):
+        _granian_prod_options(mocker)
 
 
 def _free_port() -> int:
@@ -1245,3 +1297,62 @@ def test_run_granian_backend_refuses_requests_while_the_app_is_broken(tmp_path: 
             process.kill()
             process.join()
         port_queue.close()
+
+
+def test_backend_worker_target_loads_config_before_app(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A fresh backend worker builds the config before it imports the app.
+
+    Regression for #7483: a spawned worker imported the app module first, so its
+    State classes got no auto-setters even with ``state_auto_setters=True``.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        "import reflex as rx\n\n"
+        "config = rx.Config(app_name='worker_app', state_auto_setters=True)\n"
+    )
+    app_dir = tmp_path / "worker_app"
+    app_dir.mkdir()
+    (app_dir / "__init__.py").touch()
+    (app_dir / "worker_app.py").write_text(
+        "import reflex as rx\n\n\n"
+        "class WorkerState(rx.State):\n"
+        "    extra: str = ''\n\n\n"
+        "def app():\n"
+        "    return 'set_extra' in WorkerState.event_handlers\n"
+    )
+    mocker.patch.object(
+        exec_utils, "get_app_module", return_value="worker_app.worker_app"
+    )
+    monkeypatch.delenv("REFLEX_STATE_AUTO_SETTERS", raising=False)
+
+    # Resolve the target in a fresh interpreter, as granian and uvicorn do.
+    load_target = (
+        "import importlib, sys\n"
+        "module, attr = sys.argv[1].split(':')\n"
+        "print(getattr(importlib.import_module(module), attr)())"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", load_target, exec_utils.get_app_instance()],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert result.stdout.splitlines()[-1] == "True"
+
+
+@pytest.mark.usefixtures("windows_text_io")
+def test_get_package_json_and_hash_reads_utf8(tmp_path: Path):
+    """package.json is read as UTF-8 whatever the locale encoding.
+
+    Args:
+        tmp_path: Temporary directory.
+    """
+    package_json_path = tmp_path / "package.json"
+    package_json_path.write_bytes(
+        '{"description": "\u0101", "dependencies": {}}'.encode()
+    )
+    content, _ = exec_utils.get_package_json_and_hash(package_json_path)
+    assert content == {"description": "\u0101", "dependencies": {}}

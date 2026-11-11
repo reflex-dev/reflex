@@ -1,0 +1,1 @@
+`reflex run --json` shutdown is bounded from the first SIGINT or SIGTERM: every signal is passed on to the app, the app's process tree is killed if it has not exited 15 seconds later, and a consumer that reads slowly or stops reading can no longer hang the supervisor or receive a cut JSON record.

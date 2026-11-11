@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from copy import copy
 from enum import Enum
 from functools import cache, partial, update_wrapper
@@ -346,6 +346,11 @@ class MemoComponentDefinition(MemoDefinition):
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
     # its own and ``None`` pulls in nothing.
     wrapper: Var | None = DEFAULT_MEMO_WRAPPER
+    # Whether each render of this memo is a distinct component instance from
+    # the user's point of view. True only for ``@rx.memo``; the auto-memoize
+    # optimizer's wrappers leave it False so they stay semantically invisible
+    # -- notably to client state, which opens a scope per instance boundary.
+    is_instance_boundary: bool = False
     # Set for definitions the compiler's auto-memoize pass creates (see
     # ``create_passthrough_component_memo``). Instances of such a definition
     # are the auto-memo boundary itself, so the pass must not wrap them again.
@@ -2024,9 +2029,13 @@ def component_hash(component: Component, *, recursive: bool) -> str:
         The hex digest content hash.
     """
     if recursive or not component.children:
-        return deterministic_hash(
-            component.render(), *_component_artifacts(component, recursive=recursive)
-        )
+        artifacts = tuple(_component_artifacts(component, recursive=recursive))
+        if recursive:
+            # The body's hooks, for callers that need them without rendering the
+            # subtree again; ``_component_artifacts`` yields the full set, which
+            # includes the internal hooks, fourth.
+            vars(component)["_memo_body_hooks"] = artifacts[3]
+        return deterministic_hash(component.render(), *artifacts)
     rendered = component.render()
     artifacts = tuple(_component_artifacts(component, recursive=False))
     digest = deterministic_hash(rendered, *artifacts)
@@ -2035,6 +2044,31 @@ def component_hash(component: Component, *, recursive: bool) -> str:
         analyses[digest] = _analyze_memo_body(component, rendered, artifacts)
     vars(component)["_memo_analysis_key"] = digest
     return digest
+
+
+def memo_body_hooks(definition: MemoComponentDefinition) -> Iterable[str]:
+    """Get the hook strings of a generated memo's body.
+
+    Taken from what hashing the body already computed, so no part of the
+    subtree is rendered again.
+
+    Args:
+        definition: A definition made by ``create_passthrough_component_memo``.
+
+    Returns:
+        The hook strings, in no particular order.
+    """
+    component = definition.component
+    if (key := component.__dict__.get("_memo_analysis_key")) is not None:
+        analysis = RegistrationContext.ensure_context()._memo_body_analyses.get(key)
+        if analysis is not None:
+            return (
+                *analysis.internal_hooks,
+                *((analysis.hook,) if analysis.hook else ()),
+                *analysis.added_hooks,
+            )
+    hooks = component.__dict__.get("_memo_body_hooks")
+    return hooks if hooks is not None else component._get_all_hooks()
 
 
 def memo_tag(component: Component) -> str:
@@ -2079,6 +2113,7 @@ _PASSTHROUGH_PARAMS = (
 def create_passthrough_component_memo(
     component: Component,
     source_module: str | None = None,
+    scope_vars: Sequence[str] = (),
 ) -> tuple[
     Callable[..., MemoComponent],
     MemoComponentDefinition,
@@ -2099,6 +2134,8 @@ def create_passthrough_component_memo(
         component: The component to wrap.
         source_module: The user-app Python module that triggered creation of
             this memo (typically the page that contained the wrapped subtree).
+        scope_vars: The loop variables that the body reads; the memo
+            receives each one as a prop.
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -2153,6 +2190,21 @@ def create_passthrough_component_memo(
     params = _PASSTHROUGH_PARAMS
     rest_target_fields: set[str] = set()
     preview = _evaluate_component_body(passthrough, params, rest_target_fields)
+    # The body already holds the scoped vars; only the signature receives them.
+    scoped_params = (
+        *params,
+        *(
+            MemoParam(
+                name=name,
+                kind=MemoParamKind.VALUE,
+                annotation=Var[Any],
+                parameter_kind=inspect.Parameter.KEYWORD_ONLY,
+                js_prop_name=format.to_camel_case(name),
+                placeholder_name=name,
+            )
+            for name in scope_vars
+        ),
+    )
     tag = memo_tag(preview)
 
     passthrough.__name__ = format.to_snake_case(tag)
@@ -2180,7 +2232,7 @@ def create_passthrough_component_memo(
     definition = MemoComponentDefinition(
         fn=passthrough,
         python_name=passthrough.__name__,
-        params=params,
+        params=scoped_params,
         source_module=source_module,
         export_name=tag,
         _component=_LazyBody.ready(preview),
@@ -2358,6 +2410,7 @@ def _memo_impl(
             _rest_target_fields=rest_target_fields,
             _runtime_inferred_params=frozenset(missing_params),
             wrapper=wrapper,
+            is_instance_boundary=True,
         )
         memo_callable = _create_component_wrapper(definition)
     else:

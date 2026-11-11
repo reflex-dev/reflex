@@ -1,0 +1,1 @@
+In prod mode, when `deploy_url` is unset (now the default), the backend no longer sends CORS headers, so browsers cannot read cross-origin responses, and Socket.IO accepts same-origin connections only. With `deploy_url` set, only that origin is allowed. Previously any origin was allowed. Set `cors_allowed_origins` explicitly for other setups (`["*"]` restores the old behavior).

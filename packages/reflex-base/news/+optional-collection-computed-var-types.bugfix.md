@@ -1,0 +1,1 @@
+A computed var that returns an optional list, tuple, set or frozenset (for example `-> set[str] | None`) now reads as `ArrayVar` or `SetVar` for type checkers instead of `ComputedVar`, so its operations type-check.

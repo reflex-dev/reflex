@@ -165,7 +165,7 @@ When using the `name` attribute in form controls like `rx.switch`, `rx.radio_gro
 
 A control with an `id` is also included in the form data under its `id`, even when its value is not set, and that value replaces the value submitted under the same `name`, unless the form submits that `name` more than once. Custom native `input`, `select`, and `textarea` components with an `id` are included automatically. For other custom form controls, set `_is_form_control = True` on the component class to include its ID-based value in submissions.
 
-Including controls by `id` is deprecated and will be removed in Reflex 0.11. From then on, form data holds only what each control submits under its `name`:
+Including controls by `id` is deprecated and will be removed in Reflex 0.12. From then on, form data holds only what each control submits under its `name`:
 
 - A control with an `id` but no `name` is no longer submitted, so give it a `name`. Compiling the form warns about these.
 - A control whose `id` differs from its `name` no longer adds a second field keyed by its `id`.
