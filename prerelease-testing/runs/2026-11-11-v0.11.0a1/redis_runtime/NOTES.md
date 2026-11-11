@@ -1,10 +1,10 @@
 # redis_runtime — 0.11.0a1 (redis locks / redis-py 8 / bg-task cancel / hot reload / spawn)
 
 ## Status / resume here
-- DONE: load/correctness matrix (A). NEXT: fault injection (B: lost notify, kill -9, redis restart, SIGSTOP), Chromium
-  cancellation driver (C: #7412/#7696/#7738), dev hot reload #7616 + spawn #7590 (D), py3.11 shutdown (E), EVT-04/STATE-20 (F).
-- Helpers: `$SB/apps/redis_runtime/bin/lib.sh` (start_app/stop_app/redis_up/wait_up; pids via `setsid sh -c 'echo $$ > pidfile; exec ...'`
-  — plain `setsid cmd & echo $!` records the wrong pid in this shell because setsid forks).
+- DONE (all sections A-F below). Final report: `../reports/redis_runtime.md`. All servers/redis stopped.
+- To rerun from this directory: copy `bin/` to `$SB/apps/redis_runtime/bin/` and `apps/{lockapp,devapp}` to
+  `$SB/apps/redis_runtime/src/` (scripts hard-code those paths via `bin/lib.sh`); each script's docstring/usage line has
+  the command. Drivers: `redis_runtime-drv` venv (python-socketio[asyncio_client], aiohttp, redis) and shared `driver`.
 
 ## Environment
 - `SB=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad`; ports fe 3220-3239, be 8220-8239, redis 8236-8239.
@@ -145,3 +145,27 @@ was only reached through the cancel variant. Positive control never reproduced -
   raise_mid UI r2=0 while the server has r2=1 (client/server divergence, #7696 fixed). The #7738 rows are not meaningful
   under oplock (the lease serves the cached state, so the armed unpickle never runs; the left-over armed CLIENT PAUSE then
   fires on a later load and delays that event 3 s — a harness artifact, not a finding).
+
+
+## ISSUES (details for the report)
+1. **Redis outage > ~5 s silently breaks cross-worker delivery to existing clients until a new socket reaches that worker**
+   (MEDIUM, not a regression: 0.10.1 identical). Repro: `bash bin/faults.sh redis_runtime-stock 0 2 out.jsonl redis_restart`
+   (prod, GRANIAN_WORKERS=2, redis 8237: one raw socket client, `SHUTDOWN SAVE`, 10 s down, restart same dump, then 10
+   `/api/bump` on fresh connections). Result field `cross_worker_after_restart.api_deltas_received` = 10 -
+   `bumps_other_worker` in every run (stock 6/10, r7 5/10, 0.10.1 9/10 with 1 on the other worker); server log:
+   `_subscribe_lost_and_found_updates: task exceeded exception limit 5 within 60.0s` and the same for
+   `_subscribe_socket_record_updates` (`logs/redis_restart-*-server-excerpt.txt`). The tasks are only re-created by
+   `on_connect` / `link_token_to_sid` on that worker, so a single long-lived tab never gets background/out-of-band updates
+   produced on another worker again (state is updated server-side; the UI is stale). `reflex/utils/tasks.py` `_run_forever`
+   (exception_limit=5 in 60 s, 1 s delay) + `reflex/utils/token_manager.py` `ensure_lost_and_found_task`.
+2. **kill -9 of one granian worker stops the whole prod server, and the restarted server gives the returning client a new
+   token (session lost)** (MEDIUM, not a regression). Repro: `bash bin/kill9.sh redis_runtime-stock 2 out.jsonl` (prev
+   identical). Log: `[ERROR] Unexpected exit from worker-1` / `Info: Reflex app stopped.` (`logs/kill9-stock-server-tail.txt`);
+   resume run: `new_token` on connect, count back to 1 (`logs/kill9.jsonl`). The dead worker's
+   `token_manager_socket_record_<token>` key outlives it, so duplicate-tab detection fires. Relates to HYD-07.
+3. **Oplock (`REFLEX_OPLOCK_ENABLED=true`, >= 2 workers): a second waiter on the same instance is passed over by the next
+   lease and waits ~1 s (lock_expiration/10)** (LOW: opt-in, 5-10x better than 0.10.1, but contradicts the #7534
+   changelog "events waiting on other instances are no longer passed over by the next lease"). Repro:
+   `REFLEX_OPLOCK_ENABLED=true GRANIAN_WORKERS=2` prod + Redis, then
+   `load.py BASE --clients 1 --events 300 --mode pipe --api 100 --api-conc 2` x6: 3/6 runs have an api wait of
+   1010-1040 ms; `--api-conc 1`: 0/6. Mechanism: per-instance contender SET + SREM on every waiter exit (section A).
