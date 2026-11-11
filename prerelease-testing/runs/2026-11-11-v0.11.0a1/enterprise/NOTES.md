@@ -260,3 +260,145 @@ Logs copied here were grepped for `rfx_` (none) and anonymous REST `access_token
 - prod OIDC suites of the fixtures (`seq_n032_prod.sh`, `prod_suite.sh`, `seq_n033.sh`): xcut covered prod login/logout with
   2 workers + Redis instead; `prod_suite.sh` uses entauth (MCPPlugin), which cannot start on 0.11 prod without deploy_url (ISSUE 1).
 - vauthx/vea storage suites (ENT-39/ENT-40), azure, highcharts/tickets dev, flow N-026 A/B, `reflex export` of an rxe app.
+
+## VERIFICATION
+Independent adversarial verifier `verify_ent`, 2026-11-11. Fresh PyPI venvs, built with cwd=$SB and `--no-config`:
+`$SB/envs/vent-new` (reflex[db]==0.11.0a1 `--prerelease=allow`, reflex-enterprise[mcp]==0.9.11, redis 8.2.0b1) and
+`$SB/envs/vent-prev` (reflex[db]==0.10.1 without `--prerelease`, every `reflex*` sibling constrained to `$SB/envs/prev`'s freeze,
+reflex-enterprise[mcp]==0.9.11, redis 7.4.1). Both also have faker 36.2.2, pandas 2.2.3, aiosqlite and greenlet for the AG Grid demo.
+`$SB/envs/vent-idp` holds oidc-provider-mock 0.4.8 only. Ports: fe 3880, be/single 8880, mock IdP 8894.
+Scripts, apps and evidence: `../verify_ent/` (= VDEST). Server helper: `VDEST/scripts/srv.sh start <venv> <dev|prod> <src> <label> [ENV=..]` / `srv.sh stop`
+(prod = single port 8880 with the real token read from `$SB/secrets`, never written to a file; every app's rxconfig asserts the venv).
+The reporter's conversation was not read. All servers, the IdP and browsers were stopped. VDEST has no `rfx_` strings.
+
+| # | claim | verdict | severity | regression | fix in |
+|---|---|---|---|---|---|
+| 1 | MCPPlugin app dies at `reflex run --env prod` without deploy_url | **CONFIRMED** (with a nuance: 0.10.1 only appeared to work) | high | yes | reflex-enterprise |
+| 2 | MCP OAuth consent redirect goes to the backend origin in dev (404) | **CONFIRMED** | medium | yes | reflex-enterprise |
+| 3 | AG Grid API / aligned_grids: `ReferenceError: refs is not defined` | **CONFIRMED**; the root bug is a latent rxe bug, which 0.11 widens | high | yes | reflex-enterprise (required); reflex compat shim optional but recommended |
+| 4 | `reflex db migrate/init/makemigrations` exit 1 on a fresh rxe app | **NARROWED**: only `db migrate` regressed; `db init`/`makemigrations` fail the same way on 0.10.1; not reproducible without rxe | medium (low-medium) | yes, `db migrate` only | reflex (the new `migrate` call site and the skip-compile bundled-library gap); rxe hardening optional |
+| P | PASS: anonymous awaited protected handler (#7782) returns None and does not run | **CONFIRMED PASS** | — | — | — |
+
+### V1. MCPPlugin prod startup ConfigError (deploy_url unset)
+```
+cd $SB; VDEST/scripts/srv.sh start vent-new  prod VDEST/src/mcpmin i1_new_prod; VDEST/scripts/srv.sh stop     # "[i1_new_prod] server exited"
+cd $SB; VDEST/scripts/srv.sh start vent-prev prod VDEST/src/mcpmin i1_prev_prod; VDEST/scripts/srv.sh stop    # ready
+# variants: append REFLEX_API_URL=https://myapp.example.com  or  REFLEX_DEPLOY_URL=http://localhost:8880
+```
+- new: `reflex_base.utils.exceptions.ConfigError: MCP OAuth needs the app's public origin ... neither MCPPlugin(issuer_url=...) nor the config's
+  deploy_url/api_url is set`, then `Unexpected exit from worker-1` and `Reflex app stopped` (`VDEST/logs/i1_new_prod_ConfigError.txt`). The stack is
+  rxe `post_compile -> _build_server -> _resolve_issuer_url` (mcp.py:1478). It reproduces with MCPPlugin alone, without AuthPlugin, through the anonymous-session issuer path.
+- new + `REFLEX_API_URL=https://myapp.example.com`: **same crash**, although the message says api_url is enough. new + `REFLEX_DEPLOY_URL`: starts (`out/i1_new_variants.txt`).
+- **Did 0.10.1 actually work?** Only for localhost. 0.10.1 `Config._replace_defaults` derived `deploy_url = http://localhost:<frontend_port>`.
+  Prod `_run_prod` calls `_set_persistent(frontend_port=port)`, so rxe advertised `http://localhost:8880`. With `REFLEX_API_URL=https://myapp.example.com`
+  (a real single-port deploy that leaves deploy_url unset), 0.10.1 **still advertised** `resource_metadata="http://localhost:8880/.well-known/oauth-protected-resource/_reflex/mcp"`
+  (`out/i1_prev_issuer.txt`). `_validate_issuer_security` exempts loopback, so it passed. On 0.10.1 a real deployment without deploy_url/issuer_url therefore
+  started with a wrong issuer, and remote MCP clients could not complete OAuth. 0.11 turns that silent misconfiguration into a loud failure. It also breaks
+  the cases that did work: local `reflex run --env prod`, and deploys that set only `api_url` (the correct public origin in single-port prod).
+- **Changelog coverage:** reflex-base 0.11.0a1 "Breaking Changes" states it plainly: "`deploy_url` now defaults to `None` ... no longer derived from
+  `frontend_port`. The new `Config.frontend_url` property ...". The reflex CHANGELOG only mentions it inside the CORS entry ("when `deploy_url` is unset
+  (now the default)"). Neither entry warns downstream code that reads `config.deploy_url`.
+- **Upgrade exposure:** rxe 0.9.11 declares `Requires-Dist: reflex[db]>=0.9.6` with no cap. Today only `--pre` users get 0.11. Once 0.11.0 final ships,
+  `pip install -U reflex` alone breaks every MCPPlugin prod app on all published rxe versions.
+- Root cause: rxe `plugins/event_handler_api.py:resolve_server_url()` returns `config.deploy_url` whenever `REFLEX_MOUNT_FRONTEND_COMPILED_APP` is set
+  (which is always true in prod single-port, on both versions). Reflex's default change (#7641, reflex-base `config.py:221`) exposes it.
+- Fix shape (rxe): in mount mode, return `config.deploy_url or config.api_url`. In single-port prod, api_url *is* the public origin, and it is what
+  users set via REFLEX_API_URL. A `frontend_url` fallback would only reproduce 0.10.1's `http://localhost:<port>` guess, so api_url is the better
+  fallback. Also fix the error text. `collect_page_info` (`deploy_url or ""`) and the openapi `servers` entry share the cause.
+  Reflex-side: no default restore (the CORS change depends on it). Add a reflex CHANGELOG breaking-change line naming `Config.frontend_url` for
+  downstream readers of `deploy_url`, and ship 0.11.0 final together with an rxe release carrying the fix (or an rxe `reflex<0.11` cap in the meantime).
+
+### V2. MCP OAuth consent redirect to the backend origin (dev)
+```
+cd $SB/apps/verify_ent/run; IDP_VENV=vent-idp MOCK_OIDC_PORT=8894 setsid $SB/envs/vent-idp/bin/python -I VDEST/scripts/mock_oidc.py > ../logs/idp.log 2>&1 &
+OIDC="OIDC_ISSUER_URI=http://localhost:8894 OIDC_CLIENT_ID=reflex-integration-test OIDC_CLIENT_SECRET=reflex-integration-test-secret AUTHLIB_INSECURE_TRANSPORT=1"
+cd $SB; VDEST/scripts/srv.sh start <vent-new|vent-prev> dev VDEST/src/auth_min i2 $OIDC
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python -I VDEST/scripts/mcp_consent_probe.py http://localhost:8880; VDEST/scripts/srv.sh stop
+```
+`out/i2_consent.txt`: new `authorize -> 302 Location: http://localhost:8880/agent-consent?txn=...` -> **404**. prev `-> http://localhost:3880/agent-consent` -> 200.
+new + `REFLEX_DEPLOY_URL=http://localhost:3880` -> 3880, 200. Root cause: rxe `MCPPlugin._resolve_consent_url` (mcp.py:1535) uses `config.deploy_url or issuer_url`,
+and in dev the issuer is the backend. On 0.10.1 deploy_url was the frontend origin, which is correct in dev. Fix (rxe): `deploy_url`, else (split
+dev/prod) `getattr(config, "frontend_url", None)`, else issuer_url. In mount mode the issuer is already the right origin. No reflex change is needed:
+`frontend_url` is the documented replacement.
+
+### V3. AG Grid API `ReferenceError: refs is not defined`
+```
+cd $SB; for V in vent-new vent-prev; do for M in prod dev; do FP=$([ $M = prod ] && echo 8880 || echo 3880)
+  VDEST/scripts/srv.sh start $V $M VDEST/src/agapi i3_${V}_$M && NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python -I VDEST/scripts/agapi_drv.py http://localhost:$FP i3_${V}_$M VDEST/shots; VDEST/scripts/srv.sh stop; done; done
+# variants: VDEST/src/agaligned + agaligned_drv.py (aligned_grids); VDEST/src/agapi_memo{,2,3} + agapi_memo_drv.py / agapi_memo_noid_drv.py
+```
+| app | vent-new | vent-prev |
+|---|---|---|
+| agapi prod (grid.api.select_all, AgGridAPI.create(id).select_all, getSelectedRows callback) | FAIL 0/0/-1, 6 server-log ReferenceErrors | PASS 3/3/3 |
+| agapi dev | FAIL, 6 ReferenceErrors | PASS |
+| agaligned dev (resize a column in the top grid) | FAIL: the bottom grid does not follow, 11 page errors `refs is not defined` | PASS (276/276) |
+| agapi_memo2 dev (API button in an `@rx.memo` in another module, button has an `id`) | FAIL | PASS |
+| **agapi_memo3 dev (same, button WITHOUT an id)** | FAIL | **FAIL on 0.10.1 too** (2 ReferenceErrors) |
+- `$/utils/state` still exports `refs` in 0.11.0a1 (`export const refs = {};` at state.js:66, filled by `useRegisteredRef` at :73-75).
+- The 0.10.1 import was a side effect of the ref hook. `Component._get_hooks_imports` (reflex-base `components/component.py:1833-1838`) added
+  `ImportVar(tag="refs")` whenever the component had an `id`, because the old hook body was `refs['ref_x'] = ref_x`. Any raw `refs[...]` string in the
+  same JS module worked by accident. In 0.11.0a1 that same line imports only `useRegisteredRef` (#7694). Compiled `app_components/agapi/agapi.jsx`:
+  prev `import {...,mergeSlotProps,refs} from "$/utils/state"` vs new `import {...,mergeSlotProps,useRegisteredRef} ...` (`out/i3_compiled_imports.txt`).
+- agapi_memo3 shows the rxe bug is **latent on 0.10.1**: an AG Grid API call in a module with no id'd component fails there identically. 0.11 widens it to every case, including the common one (grid and button on one page).
+- Reflex's own code and docs never rely on the implicit import. Every `refs[...]` Var in reflex attaches VarData: `Var._as_ref()` (vars/base.py:1556),
+  client_state.py:101, sonner toast.py:34. The upload template imports `refs` explicitly, and `docs/wrapping-react/overview.md` uses `refs` only inside
+  `rx.call_script` (evaluated in state.js scope). In rxe, `rxe.map` already attaches `refs_var_data`. The OIDC refresh timer uses `rx.call_script` and is
+  unaffected. The rxe sites that break: `aggrid.py:253` (`AgGridAPI._api`) and `aggrid.py:902` (`_format_props` aligned_grids). Third-party libraries
+  that hand-write `Var(f"refs['ref_{id}']")` (a plausible pattern, never documented) break the same way. This was not measurable here.
+- Which repo: **reflex-enterprise must fix**: attach `VarData(imports={"$/utils/state": [ImportVar(tag="refs")]})` (rxe's own `refs_var_data`) to
+  both vars, or build them with `Var(...)._as_ref()`. **Reflex compat shim:** add `ImportVar(tag="refs")` back next to `useRegisteredRef` in
+  `_get_hooks_imports`. That is one line, costs one named import per module, and restores the 0.10.1 behaviour exactly for every downstream library.
+  I recommend it for the 0.11 line, because published rxe 0.9.11 accepts reflex 0.11 and its users cannot fix this themselves. If the shim is not
+  added, the reflex-base changelog should move the `useRegisteredRef` note to Breaking Changes and say that pages no longer import `refs`.
+
+### V4. `reflex db ...` exit 1 on a fresh rxe app
+```
+cp -r /home/user/reflex-enterprise/demos/ag_grid $SB/apps/verify_ent/src/ag_grid_demo   # copy; never run from the checkout
+cd $SB; VDEST/scripts/dbcmd_matrix.sh $SB/apps/verify_ent/src/ag_grid_demo agdemo vent-new vent-prev
+```
+`out/i4_agdemo_matrix.txt` (fresh copy, no .web, no reflex.db, `REFLEX_DB_URL=sqlite:///reflex.db`):
+| cmd | vent-new | vent-prev |
+|---|---|---|
+| `db migrate` | **exit 1** ValueError (after the upgrade ran) | exit 0 |
+| `db init` (alembic dir removed) | exit 1 ValueError | **exit 1 ValueError** (same stack via 0.10.1 `db_init -> _skip_compile(); get_compiled_app()`) |
+| `db makemigrations` | exit 1 ValueError | **exit 1 ValueError** |
+| `reflex compile` then `db migrate` | exit 0 | exit 0 |
+| `reflex run --env prod --backend-only` on a fresh copy (`out/i4_backend_only_fresh.txt`) | dies, same ValueError | **dies, same ValueError** |
+- So only `db migrate` regressed (#7742 added `migrations.evaluate_pages()` after the upgrade, reflex/reflex.py:1200). The same underlying failure
+  predates 0.11 for `db init`, `makemigrations` and a backend-only start without `.web`. The reporter's "exits 0 on 0.10.1" is true for `migrate` only.
+- **Without reflex-enterprise: not reproducible.** `VDEST/src/dyncomp` (pure reflex: Radix components as state vars, a list of them, a computed var
+  returning a Radix component, and an rx.Model) gives `db init`/`migrate` (fresh)/`makemigrations` exit 0 on both venvs (`out/i4_pure_reflex_dyncomp.txt`).
+  Reflex's dynamic-component serializer never raises on an unbundled library. `_compile_initial_state` bundles the component's imports first, and the
+  serializer falls back to a CDN import. The ValueError is rxe's strict check (`reflex_enterprise/vars.py:166 _validate_and_extend_return_expr` via `serialize_lambda`).
+- Root cause (reflex, v0.11.0a1): `reflex/compiler/compiler.py:1278-1292`, the `not should_compile` (skip-compile / dry-run) branch. It calls
+  `utils._restore_bundled_libraries()` (compiler/utils.py:302), which only reads `.web/<bundled libraries json>` and silently returns when it is missing,
+  and then `_compile_initial_state`. It never runs the `plugin.get_frontend_dependencies()` bundling loop of the real compile (compiler.py:1310-1312),
+  and the Radix plugin's auto-enable (`enter_component`) does not run either. So on a fresh checkout the bundled list holds only the defaults. The new
+  trigger is `reflex.py:1200` -> `migrations.evaluate_pages()` (utils/migrations.py:97-98).
+- Workaround (verified, `out/i4_workaround.txt`): `bundle_library("@radix-ui/themes")` at app import makes the fresh `db migrate` exit 0.
+- Fix shape: reflex should do one of two things. (a) The `reflex db` page evaluation should not compile the initial state: evaluate_pages only needs
+  pages evaluated so lazily imported models register. (b) In the skip/dry-run branch, when no `.web` registry exists, bundle the compiler plugins'
+  frontend dependencies (the same loop as compiler.py:1310) before `_compile_initial_state`. (b) also fixes the pre-existing backend-only case. rxe could
+  additionally downgrade its check to a warning when no compile populated the list. Severity: medium (low-medium). The DB *is* migrated and only the
+  exit status is wrong, but `reflex db migrate && reflex run` in CI/Docker stops there.
+
+### P. PASS re-check: awaited protected handler (#7782), anonymous session
+`VDEST/src/auth_min` (a copy of fixture a4auth auth_min) adds the `/await` page. `Vault.secret_action` is a protected `@rxe.event` that returns a value
+and records each run. `Pub.call_protected` (`auth=False`) does `r = await Vault.secret_action()`. A positive control `Pub.call_public` awaits an
+`auth=False` handler. The probe fields are declared with `rxe.field(..., auth=False)`. Without that, rxe withholds them from anonymous clients and the
+probe would read the initial values, which is a pitfall for anyone re-running this.
+```
+(IdP as in V2) cd $SB; VDEST/scripts/srv.sh start vent-new dev VDEST/src/auth_min pass_await $OIDC
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python -I VDEST/scripts/await_drv.py http://localhost:3880 new_dev; VDEST/scripts/srv.sh stop
+```
+`out/pass_await.txt`: **[PASS]**. After `call`: result `None`, runs 0, browser sent to `/login?redirect_to=%2Fawait`. Direct protected click: runs 0,
+redirected. Control: `'public-value'`. 0 page errors, 0 tracebacks. The claim holds. Dev only; the reporter's prod/2-worker/background/REST legs were
+not re-run. Not tested: a backend-internal `(await self.get_state(Vault)).secret_action()`, which is a plain method call and is outside middleware by design.
+
+### Where NOTES.md was insufficient
+- Numbering differs between the report and NOTES: report issue 3 (refs) = NOTES "ISSUE 4", and report issue 4 (db migrate) = NOTES "ISSUE 5".
+- V2 points to the fixture chain (remap_fixtures, env.sh, fetch_upstream.sh, infra.sh). For auth_min, only `mock_oidc.py`, the app copy and the OIDC env
+  vars are needed. The app's rxconfig hard-codes ports 3623/8623, which the CLI flags override.
+- V4 claims `db init`/`makemigrations` exit 0 on 0.10.1. They do not. The `enterprise-demo-*` venvs' extra deps (faker==36.2.2, pandas==2.2.3, aiosqlite,
+  greenlet from the demo's requirements.txt) are only mentioned in a table.
+- `xc.sh`/`repro_mcp_prod.sh`/`agapi_drv.py` hard-code the reporter's `$SB/apps/enterprise` paths and ports 8380/8381. They are re-usable only by editing.

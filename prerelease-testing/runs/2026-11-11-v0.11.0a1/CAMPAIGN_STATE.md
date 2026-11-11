@@ -90,7 +90,8 @@ items in its area. Known and filed items: do NOT re-report unless changed.
 | 3 redis_runtime | explore running (opus high) | `reports/redis_runtime.md` |
 | 6 server_net | explore running (opus high) | `reports/server_net.md` |
 | 4 client_vars | explore running (fable high) | `reports/client_vars.md` |
-| 5, 8 | not started — launch in order 5 compile_memo, 8 examples_ui | |
+| 5 compile_memo | explore running (opus high; also checks reflex's own `refs` surface after the rxe ReferenceError) | `reports/compile_memo.md` |
+| 8 examples_ui | not started — launch next | |
 
 To resume an interrupted cluster: read its `NOTES.md` "Status / resume here", reuse its venvs under `$SB/envs/<cluster>-*`, and
 continue; a cluster whose `reports/<item>.md` exists is finished. Each finished cluster's issues go to a verifier
