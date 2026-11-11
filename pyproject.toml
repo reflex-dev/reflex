@@ -37,7 +37,7 @@ dependencies = [
   "reflex-components-core >= 0.11.0a1",
   "reflex-components-dataeditor >= 0.10.1",
   "reflex-components-gridjs >= 0.10.0",
-  "reflex-components-lucide >= 1.1.1",
+  "reflex-components-lucide >= 1.1.2.dev0",
   "reflex-components-markdown >= 0.10.0",
   "reflex-components-moment >= 0.10.1",
   "reflex-components-plotly >= 0.10.0",
@@ -45,7 +45,7 @@ dependencies = [
   "reflex-components-react-player >= 0.10.0",
   "reflex-components-recharts >= 0.10.0",
   "reflex-components-sonner >= 0.10.0",
-  "reflex-hosting-cli >= 0.2.1",
+  "reflex-hosting-cli >= 0.2.2.dev0",
 ]
 
 classifiers = [
