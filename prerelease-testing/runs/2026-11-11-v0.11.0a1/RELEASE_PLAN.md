@@ -21,7 +21,8 @@ the milestone `v0.11.0`.
 | 034 + 035 | client_state API contract (wrong name hint, identifier collisions, conflicting defaults) | **PR open** [reflex-dev/reflex#7804](https://github.com/reflex-dev/reflex/pull/7804) |
 | 003 (+002 changelog line) | `refs` not imported in 0.11 pages/memos (rxe AG Grid) | **PR open** [reflex-dev/reflex#7806](https://github.com/reflex-dev/reflex/pull/7806) (compat import, `refs` declared internal) |
 | 002, 003, 008 (rxe side) | MCP prod crash without deploy_url, AG Grid `refs`, MCP consent redirect | **PR open** [reflex-dev/reflex-enterprise#290](https://github.com/reflex-dev/reflex-enterprise/pull/290) (needs an rxe release) |
-| 001+016+007, 005/006/017+012, 044 | see below | agents running (open PRs) |
+| 044 | upload handler error truncates the response | **PR open** [reflex-dev/reflex#7808](https://github.com/reflex-dev/reflex/pull/7808) |
+| 001+016+007, 005/006/017+012 | see below | agents running (open PRs) |
 | 009, 010, 028, 029, 037, 038, 039, 042, 047 + changelog lines 024/006/014/020 | see below | not started |
 
 ## Already in flight (outside this pass)
@@ -216,7 +217,7 @@ As each PR merges into `main`:
 | 001+016+007 | fix/repeated-rx-event (+ maybe fix/event-callback-pyright-typing), /home/user/reflex-fix-001 | agent running (opens PR) |
 | 005/006/017+012 | fix/kept-env-py-errors (stacked on #7797), /home/user/reflex-fix-005 | agent running (opens PR) |
 | 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | PRs open reflex #7806 (f714343c4), rxe #290 (d27d6a14b); watch |
-| 044 | fix/upload-handler-error-response, /home/user/reflex-fix-044 | agent running (opens PR) |
+| #7808 044 | fix/upload-handler-error-response, /home/user/reflex-fix-044 | PR open (5d91c16ae), watch. Cause #7696 (not #7721); browser UX unchanged vs 0.10.1; 500 w/ CORS before any update, else 200 + `{"error"}` frame (owner default); double log removed. Follow-up: upload.js skips parsing non-2xx bodies |
 | 028, 029, 042, 047 | fix/deprecation-frames-skip-component-packages, fix/package-json-stable-format, fix/raise-lucide-hosting-floors, fix/dedupe-auto-memoize-warning (/home/user/reflex-fix-0NN) | agent running (opens 4 PRs) |
 | 009, 010 (stack on 015), 039, 037/038 | (new) | to start |
 | changelog/doc lines 024, 006, 014, 020 | (new) fragment corrections on main | to start |
