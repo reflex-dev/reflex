@@ -1,0 +1,8 @@
+    raise orm_exc.DetachedInstanceError(
+sqlalchemy.orm.exc.DetachedInstanceError: Parent instance <Author at 
+0x7fca3c2920f0> is not bound to a Session; lazy load operation of attribute 
+'posts' cannot proceed (Background on this error at: 
+https://sqlalche.me/e/21/bhk3)
+
+
+Info: Reflex app stopped.

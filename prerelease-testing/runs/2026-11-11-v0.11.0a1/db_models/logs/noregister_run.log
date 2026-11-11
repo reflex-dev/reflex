@@ -1,0 +1,8 @@
+y:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 16/15 0:00:00
+Detected database schema changes. Run reflex db makemigrations to generate 
+migration scripts.
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3140/
+Backend running at: http://0.0.0.0:8140
+Info: Reflex app stopped.

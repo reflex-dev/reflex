@@ -5,9 +5,10 @@
   `reflex db init` + 2nd revision `add bio views`, data created in Chromium. Snapshot of the 0.10.1 project (incl. reflex.db): `$SB/apps/db_models/snap_blog_0101/`.
 - [x] Step 2: in-place upgrade to 0.11.0a1 (PASS)
 - [x] Step 3: model rewrite + migration variants (done; findings F1-F5 below)
-- [ ] Step 4: serializer e2e
-- [ ] Step 5: AdminDash
-- [ ] Step 6: deprecated helpers
+- [x] Step 4: serializer e2e (dev, prod+redis, hot reload, legacy serializer) done
+- [x] Step 5: AdminDash (done)
+- [x] Step 6: deprecated helpers (done)
+- [ ] copy artifacts, write report
 
 ## Setup
 - `SB=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad`
@@ -53,6 +54,7 @@ makes the next migrate fail with "table _alembic_tmp_post already exists". Same 
 ### F3 (HIGH, not a regression) Forgetting `rx.ModelRegistry.register(Base)` -> silent drop_table of every table
 `repros/variant.sh db_models-up noregister v_noregister.py`: makemigrations rc 0, no warning, revision = drop_index + drop_table for author/post/tag/posttaglink.
 `reflex db migrate` rc 0 -> only `alembic_version` left (all data gone). 0.10.1 identical (`variant.sh db_models-old noregister0101 v_noregister_0101.py snap_blog_0101`).
+`reflex run` in that state (before makemigrations) logs only "Detected database schema changes. Run reflex db makemigrations to generate migration scripts." — i.e. it points the user at the command that writes the drop revision (`logs/noregister_run.log`).
 Newly exposed because the 0.11 docs move every app to DeclarativeBase where one missing line = data loss; nothing warns that the target metadata is empty while the DB has tables.
 
 ### F4 (LOW, not a regression) Merged metadata drops Base's naming_convention for UniqueConstraint
@@ -69,3 +71,51 @@ anomaly: adopting a naming_convention on the rewritten Base emits `create_unique
 ### PASS: reflex-local-auth (plain SQLModel tables) + Base-only rewrite
 `v_localauth_old.py` (old app + local-auth -> revision creates localuser/localauthsession) then `v_localauth_rw.py` (Base rewrite, local-auth kept): no revision; local-auth tables are
 still managed because reflex registers `rx.Model` (=SQLModel.metadata) itself.
+
+## Step 4 — DeclarativeBase serializer (#7756) end to end
+App `apps/ser` (models User/Post/Tag/Flag on `Base`, m2m `post_tag`, synonym `nick`, `column_property` name_len, `hybrid_property` upper_name).
+Run: `cd $SB/apps/db_models/ser && reflex db init` (envs/new); `run.sh new $SB/apps/db_models/ser <log> dev`; `cd scripts && $SB/envs/driver/bin/python drive_ser.py http://localhost:3140 <tag> [legacy]`.
+Prod+Redis: `redis-server --port 8159 --save '' --appendonly no`; `REFLEX_REDIS_URL=redis://localhost:8159 run.sh new ... prod`; `drive_ser.py http://localhost:3141 ser_prod_redis`.
+Python probes: `probes/probe_ser.py` and `probes/probe_legacy_ser.py` (`$SB/envs/new/bin/python -I probe_ser.py envs/new`; compare `envs/db_models-old`).
+
+Results (dev, prod+Redis identical):
+- PASS `list[Post]` with selectinload user/tags/flags.user; `rx.foreach(post.flags)`, `post.flags.length()`, nested `flag.user.username`, m2m tags.
+- PASS synonym: `S.user.nick.upper()` renders `ALICE` (0.10.1: `VarAttributeError ... type sqlalchemy.orm.base.Mapped[str] has no attribute 'upper'` -> fixed as advertised).
+- PASS computed var returning `Post | None` and `list[str]` built from models; two tabs; background task (`async with self`) assigning models; `rx.asession()`; `Post | None` detail page (client nav + direct).
+- PASS mutation of model instances held in state (`self.posts[0].title = ...`, `self.user.username = ...`, `self.posts[0].tags.append(Tag(...))`) updates the UI and the dependent computed var.
+- PASS user `@rx.serializer` for a Base subclass (Tag) takes precedence over the built-in one (`LEGACY_SER=1`).
+- PASS Redis prod: models pickled into redis, page reload restores `bg_posts`/`as_posts` with nested users. PASS dev hot reload (`drive_hotreload.py`): models in state survive, events work after reload.
+- PASS (documented) unloaded relationship: `p.user.username` renders blank; `p.flags.length()` -> page shows "An error occurred while rendering this page ... TypeError: Cannot read properties of undefined (reading 'length')" (dev and prod).
+- PASS (#7648) plain `@property` -> `VarAttributeError: The property 'display' on dataclass 'User' is not included in serialized state. Only declared dataclass fields are serialized; register an `rx.serializer` ...` (0.10.1: compiled, rendered blank).
+- anomaly (LOW) `hybrid_property` typed `str`, compiles, but is never serialized -> renders blank silently (no error like @property). Same on 0.10.1 at compile time.
+- anomaly `column_property(func.length(...))` declared `Mapped[int]` is typed `object` (column python_type wins over annotation); value IS sent when loaded.
+- anomaly default `async_sessionmaker(engine)` (expire_on_commit=True) and object stored after commit -> serialized as `{}`, UI silently blank, no log warning (docs warn to use expire_on_commit=False). 0.10.1 raised MissingGreenlet/DetachedInstanceError instead.
+- anomaly sync `rx.session()` + lazy load inside the session: only relationships touched before close are sent (row 1 `| alice`, rows 2-3 `|`). Consistent with "never runs a query".
+- F6 (LOW, docs) tables.md custom serializer example `dataclasses.asdict(post)` fails for any model with a relationship: DetachedInstanceError (relationship not loaded) or RecursionError (back_populates cycle loaded). `probe_legacy_ser.py`.
+- DOC-06 recheck: `rx.asession()` without `async_db_url` -> `ValueError No async database url configured`; overview.md now documents `async_db_url` in Connecting and steers away from rx.asession -> changed/addressed.
+
+### PASS: reflex-local-auth + Base blog e2e (`drive_localauth.py`, variant `localauth_rw`, dev)
+Register `zed`, login, then the Base/async blog page renders; rows in localuser + localauthsession. No errors.
+
+## Step 5 — AdminDash (#7739)
+- `probes/admindash/p.py` (cwd `probes/admindash`): `rx.AdminDash(models=[Thing])`, `rx.AdminDash()`, `rx.App(admin_dash=...)` all raise
+  `reflex_base.utils.exceptions.AdminDashRemovedError: The built-in admin dashboard (rx.AdminDash, rx.App(admin_dash=...)) was removed. Mount starlette-admin yourself with api_transformer: https://reflex.dev/docs/database/admin-dashboard/`
+  at construction (import time). `rx.App(admin_dash=None)` OK. 0.10.1: works. (reflex.dev unreachable from this sandbox: link not verified live.)
+- Docs recipe (`apps/adminapp`, blog Base models, starlette-admin 1.0.3, `ADMIN_SECRET_KEY=k3y run.sh db_models-up .../adminapp <log> dev`, `drive_admin.py http://localhost:8140 http://localhost:3140 admin_dev`):
+  login, Author/Post list with relationships and JSON: PASS; reflex app still serves: PASS.
+  - F7 (LOW, docs) docs leave `MyAuthProvider` undefined; my first attempt with the older starlette-admin signature (`login(..., request, response)`, `is_authenticated`) crashed with
+    `TypeError: MyAuthProvider.login() missing 1 required positional argument: 'response'` -> current starlette-admin 1.0 API is `login(username, password, remember_me, request)`, `authenticate(request) -> AdminUser|None`, `logout(request)`.
+  - F8 (MEDIUM, docs) "New Tag" in the admin -> HTTP 500 `TypeError: __init__() missing 1 required positional argument: 'name'`: starlette-admin instantiates `Model()` without args, which
+    `MappedAsDataclass` models (the docs' recommended base) reject. The admin docs example silently uses a `SQLModel` model instead. Listing/reading works.
+  - F9 (LOW, regression vs rx.AdminDash) `GET /admin` (no slash) -> 404 through `api_transformer`; 0.10.1 `rx.AdminDash` -> 307 to `/admin/`. Docs: "existing links keep working".
+    `probes/probe_admin_slash.py`: plain Starlette 307, via `rx.App(api_transformer=...)` 404 on BOTH 0.10.1 and 0.11 (composition drops redirect_slashes).
+  - benign: starlette-admin pages load `https://rsms.me/inter/inter.css` (blocked by sandbox proxy).
+
+## Step 6 — deprecated helpers from user code (`repros/deprecated_helpers.py`, cwd = copy of the 0.10.1 project `deprec/`, legacy env.py)
+`cd $SB/apps/db_models/deprec && $SB/envs/db_models-up/bin/python -I ../repros/deprecated_helpers.py envs/db_models-up`
+- `get_migration_history()` -> `('5962b6935088', [base, head])` + "reflex.model.get_migration_history has been deprecated in version 0.11.0. Run `alembic history --indicate-current` or `reflex db status`. It will be completely removed in 1.0.0. (<user file>:17)" PASS
+- `format_revision` works (expects chronological iteration), warning points at user line. PASS
+- `alembic_autogenerate(conn, "noop")` -> upgrades legacy env.py ("Updated env.py ... env.old" at WARNING), returns False, no revision. PASS
+- `rx.Model.alembic_autogenerate(conn, "extra table")` with a new rx.Model -> revision written, returns True. PASS
+- PKG-15 (rx.Model deprecation location points into pydantic `_model_construction.py:133`): still present in 0.11.0a1 (seen in every `reflex db` / `reflex run` output).
+- `reflex db makemigrations` with no change prints nothing (same on 0.10.1; not new).

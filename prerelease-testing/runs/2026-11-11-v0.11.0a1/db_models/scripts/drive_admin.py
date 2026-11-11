@@ -1,0 +1,55 @@
+"""Drive starlette-admin mounted via api_transformer (docs recipe) with Base models."""
+import sys
+
+from pwlib import SHOTS, Cap, browser, check
+
+be, fe, tag = sys.argv[1], sys.argv[2], sys.argv[3]
+cap = Cap()
+with browser() as b:
+    page = b.new_page()
+    cap.attach(page)
+    r = page.goto(be + "/admin")
+    print("/admin status", r.status, page.url)
+    page.goto(be + "/admin/")
+    page.wait_for_selector("input[name=username]")
+    page.fill("input[name=username]", "admin")
+    page.fill("input[name=password]", "pw")
+    page.click("button[type=submit]")
+    page.wait_for_timeout(2000)
+    print("after login", page.url)
+    page.goto(be + "/admin/author/list")
+    page.wait_for_timeout(3000)
+    body = page.inner_text("body")
+    check("author list shows alice", "alice" in body, body[:300].replace("\n", " | "))
+    page.screenshot(path=f"{SHOTS}/{tag}_author_list.png", full_page=True)
+    page.goto(be + "/admin/post/list")
+    page.wait_for_timeout(3000)
+    body = page.inner_text("body")
+    check("post list shows Hello World", "Hello World" in body, body[:300].replace("\n", " | "))
+    page.screenshot(path=f"{SHOTS}/{tag}_post_list.png", full_page=True)
+    # create a Tag through the admin (MappedAsDataclass requires ctor args)
+    page.goto(be + "/admin/tag/create")
+    page.wait_for_selector("input[name=name]")
+    page.fill("input[name=name]", "from-admin")
+    page.click("button.btn-primary[type=submit]")
+    page.wait_for_timeout(2500)
+    body = page.inner_text("body")
+    print("after create url", page.url, "body:", body[:400].replace("\n", " | "))
+    page.screenshot(path=f"{SHOTS}/{tag}_tag_create.png", full_page=True)
+    page.goto(be + "/admin/tag/list")
+    page.wait_for_timeout(2500)
+    check("tag created via admin", "from-admin" in page.inner_text("body"))
+    # edit an author
+    page.goto(be + "/admin/author/edit/2")
+    page.wait_for_timeout(2500)
+    if page.query_selector("input[name=bio]"):
+        page.fill("input[name=bio]", "edited in admin")
+        page.click("button.btn-primary[type=submit]")
+        page.wait_for_timeout(2500)
+        print("after edit url", page.url, page.inner_text("body")[:300].replace("\n", " | "))
+    page.screenshot(path=f"{SHOTS}/{tag}_author_edit.png", full_page=True)
+    # reflex app still works
+    page.goto(fe + "/")
+    page.wait_for_selector(".post-row", timeout=20000)
+    check("reflex app still serves with api_transformer", len(page.query_selector_all(".post-row")) >= 3)
+cap.report()

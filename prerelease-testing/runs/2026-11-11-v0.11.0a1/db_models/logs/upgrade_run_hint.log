@@ -1,0 +1,5 @@
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 16/15 0:00:00
+The migration environment was created by an earlier Reflex release and cannot 
+load the app. Run reflex db init to update env.py; existing revisions are kept.
+───────────────────────────────── App Running ──────────────────────────────────
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
