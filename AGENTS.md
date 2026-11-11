@@ -58,8 +58,8 @@ docs/                   # documentation site (separate workspace member)
 - Write comprehensive tests for new/changed features; extend existing test files where possible.
 - Test functions at module level, not wrapped in classes.
 - Assert exact values, never substrings. Compare the full error message, warning, or produced output (rendered code, compiled JS, CLI output) with `==`, or match the full message with `pytest.raises(Err, match=f"^{re.escape(msg)}$")` (`match=` uses `re.search`, so it needs both anchors). Never `assert "x" in str(err)`, `assert "snippet" in code`, or an unanchored `match=`: a substring check still passes when the output around it is wrong, so regressions slip through.
-  - If the output has run-dependent parts (temp paths, hashes, addresses, timestamps), build the expected value from the same inputs (e.g. `f"... {tmp_path} ..."`) or replace those parts with fixed placeholders, then compare the whole string.
-  - Existing tests still contain substring checks; when you touch one, convert it to an exact assertion rather than copying the pattern.
+  - If the output has run-dependent parts (temp paths, hashes, addresses, timestamps), build the expected value from the same inputs (e.g. `f"... {tmp_path} ..."`, passed through `re.escape` as a whole when used in `match=`) or replace those parts with fixed placeholders, then compare the whole string.
+  - Existing tests still contain substring checks; don't copy that pattern into new assertions.
 - Prefer a few thorough tests that pin down exact behavior over many shallow ones.
 - **Unit tests:** `tests/units/`, run with `uv run pytest tests/units`.
   - unit tests should primarily cover a single module, and should be named accordingly, including subdirectories (e.g. `tests/units/istate/test_manager.py` for `reflex/istate/manager.py`). For subpackages, also include the corresponding path below `src/` (e.g. `tests/units/reflex_base/event/test_context.py` for `packages/reflex-base/src/reflex_base/event/context.py`).
