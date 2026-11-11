@@ -368,6 +368,7 @@ def test_get_compiled_app_ignores_stale_nocompile_marker(
     compile_app = mocker.spy(compiler, "compile_app")
 
     def forget_app_modules() -> None:
+        """Clear the temporary config and app modules from the import cache."""
         for name in ("rxconfig", app_name, f"{app_name}.{app_name}"):
             sys.modules.pop(name, None)
 
