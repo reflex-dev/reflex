@@ -1,0 +1,1 @@
+`reflex db makemigrations` refuses to add a NOT NULL column whose only default is a dataclass `default_factory` (`mapped_column(default_factory=...)` on a `MappedAsDataclass` model) and names the column, instead of writing a revision that fails on a table with rows. Give the column a `server_default`, a literal `default=`, or make it nullable.

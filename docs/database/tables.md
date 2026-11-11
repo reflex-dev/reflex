@@ -40,7 +40,10 @@ that the app imports; see
 
 Dataclass fields without a default must come before fields with one, so declare
 required columns first and optional columns, with `default=None` or
-`default_factory`, after them.
+`default_factory`, after them. A `default_factory` belongs to the dataclass alone,
+so the column has no default that a migration could give the rows a table already
+holds: `reflex db makemigrations` refuses to add such a column unless it is
+nullable or also has a `server_default`, or use a literal `default=` instead.
 
 ### Primary Key
 
