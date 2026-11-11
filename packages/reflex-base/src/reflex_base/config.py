@@ -37,8 +37,9 @@ from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
 
 logger = logging.getLogger(__name__)
 
-# The config is built several times in one run; warn about React Compiler once.
+# The config is built several times in one run; warn about each setting once.
 _warned_react_compiler = False
+_warned_auto_memoize = False
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -399,7 +400,7 @@ class Config(BaseConfig):
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
-        global _warned_react_compiler
+        global _warned_auto_memoize, _warned_react_compiler
         if self.react_compiler and not _warned_react_compiler:
             _warned_react_compiler = True
             logger.warning(
@@ -408,7 +409,12 @@ class Config(BaseConfig):
                 "pages can stay unoptimized."
             )
 
-        if not self.auto_memoize and not self.react_compiler:
+        if (
+            not self.auto_memoize
+            and not self.react_compiler
+            and not _warned_auto_memoize
+        ):
+            _warned_auto_memoize = True
             logger.warning(
                 "auto_memoize=False without react_compiler=True disables page "
                 "memoization. Every state change can re-render the whole page. "

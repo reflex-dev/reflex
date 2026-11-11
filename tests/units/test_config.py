@@ -178,11 +178,12 @@ def test_warns_when_all_memoization_is_disabled(
     auto_memoize: bool,
     react_compiler: bool,
 ):
-    """Warn only when the effective config disables both memoization options.
+    """Warn once, only when the effective config disables both memoization options.
 
     Args:
         base_config_values: Config values.
-        monkeypatch: Fixture for overriding environment variables.
+        monkeypatch: Fixture for overriding environment variables and resetting
+            the warn-once flag.
         caplog: Captured log records.
         from_env: Whether environment variables override opposite config values.
         auto_memoize: Effective Reflex memoization setting.
@@ -194,11 +195,15 @@ def test_warns_when_all_memoization_is_disabled(
             monkeypatch.setenv(f"REFLEX_{name.upper()}", str(value))
         values = {name: not value for name, value in values.items()}
 
-    config = rx.Config(
-        **base_config_values,
-        auto_memoize=values["auto_memoize"],
-        react_compiler=values["react_compiler"],
-    )
+    monkeypatch.setattr(reflex_base.config, "_warned_auto_memoize", False)
+    *_, config = [
+        rx.Config(
+            **base_config_values,
+            auto_memoize=values["auto_memoize"],
+            react_compiler=values["react_compiler"],
+        )
+        for _ in range(2)
+    ]
 
     assert config.auto_memoize is auto_memoize
     assert config.react_compiler is react_compiler
@@ -207,7 +212,7 @@ def test_warns_when_all_memoization_is_disabled(
         for record in caplog.records
         if record.levelno == logging.WARNING and "auto_memoize" in record.getMessage()
     ]
-    assert bool(warnings) is (not auto_memoize and not react_compiler)
+    assert len(warnings) == int(not auto_memoize and not react_compiler)
     if warnings:
         assert "react_compiler=True" in warnings[0]
 
