@@ -17,7 +17,7 @@ the milestone `v0.11.0`.
 | 004 | Unregistered DeclarativeBase → silent drop of every table | **PR open** [reflex-dev/reflex#7797](https://github.com/reflex-dev/reflex/pull/7797) (design: auto-detect bases) |
 | 011 | JSON column on DeclarativeBase typed `object` | **PR open** [reflex-dev/reflex#7798](https://github.com/reflex-dev/reflex/pull/7798) |
 | 022 (+023 diagnostics) | Prod CORS default breaks TLS-proxied and split deployments | **PR open** [reflex-dev/reflex#7799](https://github.com/reflex-dev/reflex/pull/7799) |
-| 033 | kill -9 of a worker stops the server | **PR open** [reflex-dev/reflex#7803](https://github.com/reflex-dev/reflex/pull/7803) |
+| 033 | kill -9 of a worker stops the server | **Merged** [reflex-dev/reflex#7803](https://github.com/reflex-dev/reflex/pull/7803) |
 | 034 + 035 | client_state API contract (wrong name hint, identifier collisions, conflicting defaults) | **Merged** [reflex-dev/reflex#7804](https://github.com/reflex-dev/reflex/pull/7804) |
 | 003 (+002 changelog line) | `refs` not imported in 0.11 pages/memos (rxe AG Grid) | **PR open** [reflex-dev/reflex#7806](https://github.com/reflex-dev/reflex/pull/7806) (compat import, `refs` declared internal) |
 | 002, 003, 008 (rxe side) | MCP prod crash without deploy_url, AG Grid `refs`, MCP consent redirect | **PR open** [reflex-dev/reflex-enterprise#290](https://github.com/reflex-dev/reflex-enterprise/pull/290) (needs an rxe release) |
@@ -214,6 +214,7 @@ As each PR merges into `main`:
 | #7802 (045) | 68b522c76 | 2451eac93 (train unit suite 15707 passed) |
 | #7808 (044, incl. reviewer's upload.js non-2xx commit) | 20e9f1acc | 061aec2b7 |
 | #7795 (030) | f0088e058 | df4d1fa39 (train unit suite 15716 passed) |
+| #7803 (033, incl. reviewer's boolean-parsing commit + env-var-named error) | accefd6e8 | 760e9d245 |
 
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
@@ -224,7 +225,7 @@ As each PR merges into `main`:
 | #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, head 51976c4c1; ARRAY(JSON) annotation fallback + lru_cache(1024) + TypedDict test; threads resolved |
 | #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, head 27c2dd954; all bot threads answered + resolved (5 cubic docs/fragment fixes); CodeQL alert auto-marked fixed after 6f621870e, thread shows resolved (not by us); greptile 5/5 |
 | #7800 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | PR open, watch |
-| #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | PR open, head ace8aa2be (cubic: error named the env var again, EnvironmentVarValueError, thread resolved) on top of fb089c108 (reviewer FarhanAliRaza pushed: accept every boolean spelling Granian accepts for GRANIAN_RESPAWN_FAILED_WORKERS; worktree fast-forwarded, do not force-push), greptile 5/5; bot nits fixed b1b99aba4; Windows test_supervisor re-run passed |
+| #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | MERGED accefd6e8, train 760e9d245; head ace8aa2be (cubic: error named the env var again, EnvironmentVarValueError, thread resolved) on top of fb089c108 (reviewer FarhanAliRaza pushed: accept every boolean spelling Granian accepts for GRANIAN_RESPAWN_FAILED_WORKERS; worktree fast-forwarded, do not force-push), greptile 5/5; bot nits fixed b1b99aba4; Windows test_supervisor re-run passed |
 | #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | draft, deferred to #7805; not cherry-picked |
 | #7804 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | MERGED 96de6fedc, train 57f96998c; bot threads fixed 2163da819 + resolved; greptile 5/5 |
 | #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | MERGED 68b522c76, train 2451eac93 (no warm-up needed: check sys.modules instead of importing) |
