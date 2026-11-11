@@ -216,7 +216,7 @@ As each PR merges into `main`:
 | #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | PR open, watch (no warm-up needed: check sys.modules instead of importing) |
 | 001+016+007 | fix/repeated-rx-event (+ maybe fix/event-callback-pyright-typing), /home/user/reflex-fix-001 | agent running (opens PR) |
 | 005/006/017+012 | fix/kept-env-py-errors (stacked on #7797), /home/user/reflex-fix-005 | agent running (opens PR) |
-| 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | PRs open reflex #7806 (f714343c4), rxe #290 (d27d6a14b); watch |
+| 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | PRs open reflex #7806 (1b1d7867c; function-memo refs import added, bot threads resolved), rxe #290 (d27d6a14b, greptile 5/5); watch |
 | #7808 044 | fix/upload-handler-error-response, /home/user/reflex-fix-044 | PR open (5d91c16ae), watch. Cause #7696 (not #7721); browser UX unchanged vs 0.10.1; 500 w/ CORS before any update, else 200 + `{"error"}` frame (owner default); double log removed. Follow-up: upload.js skips parsing non-2xx bodies |
 | 028, 029, 042, 047 | fix/deprecation-frames-skip-component-packages, fix/package-json-stable-format, fix/raise-lucide-hosting-floors, fix/dedupe-auto-memoize-warning (/home/user/reflex-fix-0NN) | agent running (opens 4 PRs) |
 | 009, 010 (stack on 015), 039, 037/038 | (new) | to start |
@@ -234,3 +234,8 @@ As each PR merges into `main`:
   (`iter_tag.py` + docs), FINDING-029 / -047 (trivial), FINDING-003 shim if chosen (`reflex_base/components/component.py`).
 - In-progress fixes land as their agents finish (instaque deferred: #7801 draft, #7805).
 - Then cut 0.11.0a2 and re-run the original repros (Phase 7), together with a fixed reflex-enterprise build.
+
+### Reviewbot sweep (09:10, owner asked to follow up all reviewbot feedback)
+Unresolved bot threads found and dispatched: #7796 ×6 (cubic/greptile, with the CodSpeed fix), #7797 ×5 cubic, #7798 ×2 cubic
+(+ TypedDict test), #7799 ×5 cubic (docs/fragment wording). Clear: #7795, #7800, #7802, #7803, #7804, #7806, #7808, rxe#290.
+#7799 CodeQL thread reads resolved although our reply left it for the owner — confirm who resolved it.
