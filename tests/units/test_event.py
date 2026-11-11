@@ -12,6 +12,7 @@ from reflex_base.constants import LogLevel
 from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
+    EVENT_ACTIONS_MARKER,
     Event,
     EventChain,
     EventChainVar,
@@ -1818,3 +1819,96 @@ def test_rx_event_on_a_non_state_class_method_still_calls_it() -> None:
     )
     assert isinstance(Helper.compute, EventHandler)
     assert Helper().compute(3) == 6  # pyright: ignore [reportCallIssue]
+
+
+@pytest.mark.parametrize(
+    ("outer", "inner", "is_background", "event_actions"),
+    [
+        (event, event, False, {}),
+        (event, event(background=True), True, {}),
+        (event, event(throttle=300), False, {"throttle": 300}),
+        (event(background=True), event, True, {}),
+        (event(throttle=300), event, False, {"throttle": 300}),
+        (event(), event, False, {}),
+    ],
+    ids=[
+        "event/event",
+        "event/event(background)",
+        "event/event(throttle)",
+        "event(background)/event",
+        "event(throttle)/event",
+        "event()/event",
+    ],
+)
+async def test_repeated_rx_event_is_one_handler(
+    outer: Callable, inner: Callable, is_background: bool, event_actions: dict
+):
+    """A second @rx.event on a method silently merges into one registered handler.
+
+    Args:
+        outer: The decorator applied last.
+        inner: The decorator applied first.
+        is_background: Whether the handler should be a background task.
+        event_actions: The event actions the handler should carry.
+    """
+    from reflex.utils import console as state_console
+
+    with (
+        patch.object(console, "deprecate") as event_deprecate,
+        patch.object(state_console, "deprecate") as state_deprecate,
+    ):
+
+        class RepeatedState(BaseState):
+            @outer
+            @inner
+            async def handle(self, value: int) -> int:
+                return value * 2
+
+    event_deprecate.assert_not_called()
+    state_deprecate.assert_not_called()
+    handler = RepeatedState.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is RepeatedState
+    assert RepeatedState.event_handlers["handle"] is handler
+    assert format.format_event_handler(handler).endswith(".handle")
+    assert handler.fn.__qualname__.endswith("RepeatedState.handle")
+    assert handler.is_background is is_background
+    assert handler.event_actions == event_actions
+    assert await handler.fn(RepeatedState(), 3) == 6
+
+
+def test_repeated_rx_event_merges_event_actions():
+    """The outer @rx.event's options win where both decorators set one."""
+
+    class MergedState(BaseState):
+        @event(throttle=300, stop_propagation=True)  # pyright: ignore [reportArgumentType]
+        @event(throttle=100, debounce=50)
+        def handle(self):
+            pass
+
+    expected = {"throttle": 300, "stopPropagation": True, "debounce": 50}
+    assert MergedState.handle.event_actions == expected
+    # A state built from a mixin copies the actions from the function.
+    assert getattr(MergedState.handle.fn, EVENT_ACTIONS_MARKER) == expected
+
+
+def test_repeated_rx_event_on_a_decentralized_handler():
+    """A second @rx.event on a decentralized handler re-registers it under its name."""
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    before = set(RegistrationContext.get().event_handlers)
+
+    @event(stop_propagation=True)  # pyright: ignore [reportArgumentType]
+    @event(throttle=300)
+    def e(s: S):
+        s.field = "foo"
+
+    assert isinstance(e, EventHandler)
+    name = format.format_event_handler(e)
+    assert set(RegistrationContext.get().event_handlers) - before == {name}
+    assert RegistrationContext.get().event_handlers[name].handler is e
+    assert e.event_actions == {"throttle": 300, "stopPropagation": True}
+    assert e.state is S
+    assert S.event_handlers[e.fn.__name__] is e

@@ -7696,6 +7696,47 @@ def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> Non
     assert StaticState.helper(2) == 4  # pyright: ignore [reportCallIssue]
 
 
+def test_static_and_class_methods_above_rx_event_are_deprecated_and_ignored() -> None:
+    """A staticmethod or classmethod above @rx.event warns and stays a plain method."""
+    from reflex.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class StaticAboveState(BaseState):
+            @staticmethod  # pyright: ignore [reportArgumentType]
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def helper(value: int) -> int:
+                return value * 2
+
+            @classmethod  # pyright: ignore [reportArgumentType]
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def cls_helper(cls, value: int) -> str:
+                return f"{cls.__name__}:{value}"
+
+    assert {call.kwargs["feature_name"] for call in mock_deprecate.call_args_list} == {
+        "@rx.event on a staticmethod or classmethod"
+    }
+    assert isinstance(StaticAboveState.__dict__["helper"], staticmethod)
+    assert isinstance(StaticAboveState.__dict__["cls_helper"], classmethod)
+    assert StaticAboveState.helper(3) == 6  # pyright: ignore [reportCallIssue]
+    assert StaticAboveState().helper(3) == 6  # pyright: ignore [reportCallIssue]
+    assert StaticAboveState.cls_helper(3) == "StaticAboveState:3"  # pyright: ignore [reportCallIssue]
+    assert "helper" not in StaticAboveState.event_handlers
+    assert "cls_helper" not in StaticAboveState.event_handlers
+
+    class StaticAboveMixin(BaseState, mixin=True):
+        @staticmethod  # pyright: ignore [reportArgumentType]
+        @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+        def helper(value: int) -> int:
+            return value * 2
+
+    class UsesStaticAboveMixin(StaticAboveMixin, State):
+        pass
+
+    assert UsesStaticAboveMixin.helper(4) == 8  # pyright: ignore [reportCallIssue]
+    assert "helper" not in UsesStaticAboveMixin.event_handlers
+
+
 def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:
     """A state whose base flips the mixin flag on (like ``rx.SharedState``) owns its handlers.
 

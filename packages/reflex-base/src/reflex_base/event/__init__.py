@@ -3648,6 +3648,14 @@ class EventNamespace:
                     removal_version="1.0",
                 )
                 return func  # pyright: ignore [reportReturnType]
+            # A repeated @rx.event decorates the same function again: the
+            # markers accumulate on it and these options win where both set one.
+            inner_actions: Mapping[str, Any] = {}
+            registered = False
+            if isinstance(func, EventHandler):
+                inner_actions = func.event_actions
+                registered = func.state is not None
+                func = func.fn
             if background is True:
                 if not inspect.iscoroutinefunction(
                     func
@@ -3665,6 +3673,8 @@ class EventNamespace:
             # per concrete state from its function, and the handler reads
             # them from there.
             event_actions = _build_event_actions()
+            if inner_actions:
+                event_actions = {**inner_actions, **event_actions}
             if event_actions:
                 setattr(func, EVENT_ACTIONS_MARKER, event_actions)
 
@@ -3695,14 +3705,18 @@ class EventNamespace:
                         removal_version="1.0",
                     )
                     return func  # pyright: ignore [reportReturnType]
-                name = (
-                    (func.__module__ + "." + qualname)
-                    .replace(".", "_")
-                    .replace("<locals>", "_")
-                    .removeprefix("_")
-                )
-                object.__setattr__(func, "__name__", name)
-                object.__setattr__(func, "__qualname__", name)
+                if registered:
+                    # Already renamed: re-register it under the same name.
+                    name = qualname
+                else:
+                    name = (
+                        (func.__module__ + "." + qualname)
+                        .replace(".", "_")
+                        .replace("<locals>", "_")
+                        .removeprefix("_")
+                    )
+                    object.__setattr__(func, "__name__", name)
+                    object.__setattr__(func, "__qualname__", name)
                 state_cls._add_event_handler(name, func)
                 return getattr(state_cls, name)
 
