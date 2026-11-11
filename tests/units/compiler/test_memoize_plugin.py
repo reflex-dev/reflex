@@ -761,8 +761,22 @@ def _index_key_warnings(caplog: pytest.LogCaptureFixture) -> list[logging.LogRec
         lambda item: rx.text(item, on_unmount=rx.console_log(item)),
         lambda item: LabelLogger.create(label=item),
         lambda item, index: rx.text(item, on_unmount=rx.console_log(item), key=index),
+        lambda item: rx.box(
+            rx.foreach(
+                SpecialFormMemoState.items,
+                lambda inner: rx.text(inner, on_unmount=rx.console_log(inner)),
+            ),
+            key=item,
+        ),
     ],
-    ids=["mount_and_unmount", "descendant", "unmount", "add_hooks", "key_is_index"],
+    ids=[
+        "mount_and_unmount",
+        "descendant",
+        "unmount",
+        "add_hooks",
+        "key_is_index",
+        "inner_loop_of_keyed_row",
+    ],
 )
 def test_foreach_item_with_hooks_keyed_by_index_warns(
     render_item: Callable[..., Component], caplog: pytest.LogCaptureFixture

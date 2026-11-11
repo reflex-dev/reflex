@@ -330,6 +330,9 @@ def _scope_instance_hooks(
         children.append(child)
     if all(new is old for new, old in zip(children, component.children, strict=True)):
         return component
+    if isinstance(component, Foreach):
+        # Its item subtree has hooks of one rendered instance.
+        _warn_index_keyed_item(component)
     owned = page_context.own(component)
     owned.children = children
     owned._clear_compile_caches()
@@ -520,10 +523,7 @@ class MemoizeStatefulPlugin(Plugin):
         if _is_structural_memoization_child(comp):
             # A loop seals its subtree, so give each descendant with hooks of
             # its own a wrapper that is called inside the loop body.
-            scoped = _scope_instance_hooks(comp, page_context, compile_context)
-            if scoped is not comp and isinstance(comp, Foreach):
-                _warn_index_keyed_item(comp)
-            comp = scoped
+            comp = _scope_instance_hooks(comp, page_context, compile_context)
         # Loop variables exist only in a loop body, so only a wrapper that is
         # called there can read one.
         scope_vars = (
