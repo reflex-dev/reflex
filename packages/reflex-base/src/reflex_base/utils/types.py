@@ -1109,14 +1109,18 @@ def _get_column_access_type(cls: type, name: str) -> GenericType | None:
     type_ = _get_column_python_type(column.type)
     if type_ is None or type_ is object:
         type_ = _get_mapped_annotation(cls, name) or type_
+    # A parametrized python type, e.g. `List[int]` of an ARRAY column, is kept.
+    # Type parameters and TypedDict keys refine a bare one; a subclass such as
+    # `bool` over `int` does not, as the database returns `type_` itself.
     elif (
         isinstance(type_, type)
         and (declared := _get_mapped_annotation(cls, name)) is not None
+        and (
+            (get_origin(declared) or declared) is type_
+            or (type_ is dict and is_typeddict(declared))
+        )
     ):
-        # A parametrized python type, e.g. `List[int]` of an ARRAY column, is kept.
-        origin = get_origin(declared) or declared
-        if isinstance(origin, type) and issubclass(origin, type_):
-            type_ = declared
+        type_ = declared
     if type_ is not None and getattr(column, "nullable", False):
         return type_ | None
     return type_

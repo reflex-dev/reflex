@@ -531,7 +531,7 @@ import datetime
 import decimal
 import enum
 from collections.abc import Sequence
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, TypedDict
 
 import sqlalchemy
 from sqlalchemy.dialects import postgresql
@@ -546,6 +546,18 @@ from sqlalchemy.orm import (
 
 class Color(enum.Enum):
     RED = "red"
+
+
+class Level(enum.IntEnum):
+    LOW = 1
+
+
+class Tag(enum.StrEnum):
+    A = "a"
+
+
+class Prefs(TypedDict):
+    theme: str
 
 
 class Opaque(sqlalchemy.types.UserDefinedType):
@@ -646,6 +658,10 @@ _DECLARATIVE_MODEL_BODY = """
     object_int: Mapped[object] = mapped_column(sqlalchemy.Integer)
     color: Mapped[Color] = mapped_column(sqlalchemy.Enum(Color))
     color_as_str: Mapped[str] = mapped_column(sqlalchemy.Enum(Color))
+    bool_int: Mapped[bool] = mapped_column(sqlalchemy.Integer)
+    int_enum_int: Mapped[Level] = mapped_column(sqlalchemy.Integer)
+    str_enum_str: Mapped[Tag] = mapped_column(sqlalchemy.String)
+    typed_dict: Mapped[Prefs] = mapped_column(DictType())
     price: Mapped[decimal.Decimal] = mapped_column(sqlalchemy.Numeric)
     float_price: Mapped[float] = mapped_column(sqlalchemy.Numeric)
     at: Mapped[datetime.datetime] = mapped_column()
@@ -722,6 +738,10 @@ def declarative_models(
         pytest.param("object_int", int, id="object-annotation-uses-python-type"),
         pytest.param("color", "Color", id="enum"),
         pytest.param("color_as_str", "Color", id="enum-python-type-over-str"),
+        pytest.param("bool_int", int, id="python-type-over-bool-subclass"),
+        pytest.param("int_enum_int", int, id="python-type-over-int-enum-subclass"),
+        pytest.param("str_enum_str", str, id="python-type-over-str-enum-subclass"),
+        pytest.param("typed_dict", "Prefs", id="typed-dict-refines-dict"),
         pytest.param("price", Decimal, id="decimal"),
         pytest.param("float_price", Decimal, id="decimal-python-type-over-float"),
         pytest.param("at", datetime, id="datetime"),
