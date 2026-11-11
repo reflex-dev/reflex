@@ -1,0 +1,1 @@
+A second `@rx.event` on a handler, such as `@rx.event` stacked above `@rx.event(background=True)`, no longer fails at class creation: both decorators apply to one handler, and where both set an option the outer decorator wins. `@rx.event` on a handler already bound to another state, such as `rx.event(OtherState.handler)`, raises a `TypeError`; decorate the function instead.

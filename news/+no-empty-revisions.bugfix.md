@@ -1,0 +1,1 @@
+`reflex db makemigrations` and `migrate(autogenerate=True)` write a revision only when `alembic check` reports model changes, so an `env.py` that is not the Reflex template no longer gets an empty revision on every call.

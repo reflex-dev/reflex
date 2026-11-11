@@ -1,0 +1,1 @@
+`reflex db init` writes `alembic/env.py` from the template when the file is missing, so an `env.py` edited by hand can be replaced by moving it aside, and it no longer prints alembic's list of generated template files.

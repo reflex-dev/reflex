@@ -180,6 +180,8 @@ doc_markdown_sources: dict[str, str] = {}
 manual_titles = {
     "docs/ai_builder/apis.md": "APIs",
     "docs/ai_builder/urls.md": "URLs",
+    "docs/ai_builder/integrations/custom_oidc.md": "Custom OIDC",
+    "docs/ai_builder/integrations/microsoft_entra_id.md": "Microsoft Entra ID",
     "docs/database/overview.md": "Database Overview",
     "docs/api-routes/overview.md": "API Routes Overview",
     "docs/client_storage/overview.md": "Client Storage Overview",

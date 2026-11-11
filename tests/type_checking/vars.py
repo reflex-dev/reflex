@@ -3,7 +3,11 @@
 import dataclasses
 from typing import Any, Literal, assert_type
 
+from reflex_base.event import EventChain
+from reflex_components_core.el.elements.typography import Div
+
 from reflex.vars.base import Var
+from reflex.vars.function import FunctionStringVar, ReflexCallable
 from reflex.vars.number import (
     BooleanVar,
     LiteralBooleanVar,
@@ -48,3 +52,13 @@ class _Point:
 
 
 LiteralObjectVar.create(_Point(1))
+
+# A JS function typed as an event chain is bound to a trigger as its whole handler.
+_on_mount = FunctionStringVar.create("() => {}", _var_type=EventChain)
+assert_type(_on_mount, FunctionStringVar[ReflexCallable[..., Any]])
+Div.create(on_mount=_on_mount)
+# Any other `_var_type` still names the function's own signature.
+assert_type(
+    FunctionStringVar.create("(x) => x", _var_type=ReflexCallable[[int], int]),
+    FunctionStringVar[ReflexCallable[[int], int]],
+)
