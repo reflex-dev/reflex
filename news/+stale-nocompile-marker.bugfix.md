@@ -1,0 +1,1 @@
+`reflex run`, `reflex export` and `reflex compile` no longer skip the frontend compile, and serve or export the previous pages, after a dev run that was stopped before its backend worker loaded the app.
