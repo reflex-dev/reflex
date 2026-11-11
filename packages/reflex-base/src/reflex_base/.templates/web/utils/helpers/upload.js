@@ -40,37 +40,39 @@ export const uploadFiles = async (
 
   // Track how many partial updates have been processed for this upload.
   let resp_idx = 0;
+  // Set when the server ends the stream with an error frame (handler raised).
+  let stream_error;
   const eventHandler = (progressEvent) => {
     const event_callbacks = socket._callbacks.$event;
     // Whenever called, responseText will contain the entire response so far.
     const chunks = progressEvent.event.target.responseText.trim().split("\n");
     // So only process _new_ chunks beyond resp_idx.
-    chunks.slice(resp_idx).map((chunk_json) => {
+    for (const chunk_json of chunks.slice(resp_idx)) {
+      let chunk;
       try {
-        const chunk = parseJson(chunk_json);
-        event_callbacks.map((f, ix) => {
-          f(chunk)
-            .then(() => {
-              if (ix === event_callbacks.length - 1) {
-                // Mark this chunk as processed.
-                resp_idx += 1;
-              }
-            })
-            .catch((e) => {
-              if (progressEvent.progress === 1) {
-                // Chunk may be incomplete, so only report errors when full response is available.
-                console.log("Error processing chunk", chunk, e);
-              }
-              return;
-            });
-        });
+        chunk = parseJson(chunk_json);
       } catch (e) {
+        // The last chunk may be incomplete; the next progress event parses it
+        // again, so only report errors when the full response is available.
         if (progressEvent.progress === 1) {
           console.log("Error parsing chunk", chunk_json, e);
         }
         return;
       }
-    });
+      // Mark this chunk as processed before it is handled, so no later
+      // progress event handles it again, whether the listener is sync or async.
+      resp_idx += 1;
+      if (chunk.error !== undefined) {
+        stream_error = chunk.error;
+        continue;
+      }
+      for (const f of event_callbacks) {
+        // f runs right away; a failure, thrown or rejected, is reported.
+        (async () => f(chunk))().catch((e) =>
+          console.log("Error processing chunk", chunk, e),
+        );
+      }
+    }
   };
 
   const controller = new AbortController();
@@ -96,7 +98,9 @@ export const uploadFiles = async (
 
     // Set up event handlers
     xhr.onload = function () {
-      if (xhr.status >= 200 && xhr.status < 300) {
+      if (stream_error !== undefined) {
+        reject(new Error(stream_error));
+      } else if (xhr.status >= 200 && xhr.status < 300) {
         resolve({
           data: xhr.responseText,
           status: xhr.status,
@@ -134,6 +138,8 @@ export const uploadFiles = async (
 
     // Handle download progress with streaming response parsing
     xhr.onprogress = function (event) {
+      // Only a 2xx body is an update stream; onload reports an error status.
+      if (xhr.status < 200 || xhr.status >= 300) return;
       if (eventHandler) {
         const progressEvent = {
           event: {
