@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import sys
-from typing import List  # noqa: UP035
+import types
+from collections.abc import Generator
+from datetime import datetime
+from decimal import Decimal
+from typing import Any, Generic, List, NotRequired, TypedDict, TypeVar  # noqa: UP035
 
 import attrs
 import pytest
+import typing_extensions
+from reflex_base.utils import types as types_module
+from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.types import GenericType, get_attribute_access_type
 
 import reflex as rx
@@ -518,3 +525,393 @@ def test_get_attribute_access_type_probe_on_lazy_annotations(
     assert not [
         r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message
     ]
+
+
+_DECLARATIVE_MODELS_SOURCE = """
+import datetime
+import decimal
+import enum
+from collections.abc import Sequence
+from typing import Annotated, Any, Optional, TypedDict
+
+import sqlalchemy
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    MappedAsDataclass,
+    column_property,
+    mapped_column,
+)
+
+
+class Color(enum.Enum):
+    RED = "red"
+
+
+class Level(enum.IntEnum):
+    LOW = 1
+
+
+class Tag(enum.StrEnum):
+    A = "a"
+
+
+class Prefs(TypedDict):
+    theme: str
+
+
+class Opaque(sqlalchemy.types.UserDefinedType):
+    cache_ok = True
+
+    def get_col_spec(self, **kw):
+        return "OPAQUE"
+
+    @property
+    def python_type(self):
+        # The default of SQLAlchemy < 2.1 and of many third-party types.
+        raise NotImplementedError
+
+
+class DictType(sqlalchemy.types.TypeDecorator):
+    impl = sqlalchemy.JSON
+    cache_ok = True
+
+    @property
+    def python_type(self):
+        return dict
+
+
+class ListType(sqlalchemy.types.TypeDecorator):
+    impl = sqlalchemy.JSON
+    cache_ok = True
+
+    @property
+    def python_type(self):
+        return list
+
+
+nullable_str = Annotated[str, mapped_column(nullable=True)]
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class DataclassBase(MappedAsDataclass, DeclarativeBase):
+    pass
+
+
+class StampMixin:
+    stamp: Mapped[datetime.datetime | None] = mapped_column()
+
+
+class Plain(StampMixin, Base):
+    __tablename__ = "plain"
+{body}
+
+class Dataclass(DataclassBase):
+    __tablename__ = "dataclass"
+{body}
+
+class Imperative(Base):
+    __tablename__ = "imperative"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    doc = sqlalchemy.Column(sqlalchemy.JSON)
+    count = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+    docs = sqlalchemy.Column(sqlalchemy.ARRAY(sqlalchemy.JSON))
+"""
+
+_DECLARATIVE_MODEL_BODY = """
+    id: Mapped[int] = mapped_column(primary_key=True)
+    count: Mapped[int] = mapped_column()
+    name: Mapped[str] = mapped_column()
+    note: Mapped[str | None] = mapped_column()
+    annotated_note: Mapped[nullable_str]
+    forced_nullable: Mapped[int] = mapped_column(nullable=True)
+    forced_not_null: Mapped[str | None] = mapped_column(nullable=False)
+    json_forced_not_null: Mapped[dict | None] = mapped_column(
+        sqlalchemy.JSON, nullable=False
+    )
+    json_dict: Mapped[dict] = mapped_column(sqlalchemy.JSON)
+    json_dict_any: Mapped[dict[str, Any]] = mapped_column(sqlalchemy.JSON)
+    json_dict_none: Mapped[dict | None] = mapped_column(sqlalchemy.JSON)
+    json_dict_optional: Mapped[Optional[dict]] = mapped_column(sqlalchemy.JSON)
+    json_dict_str_none: Mapped[dict[str, str] | None] = mapped_column(
+        sqlalchemy.JSON
+    )
+    json_list: Mapped[list[str]] = mapped_column(sqlalchemy.JSON)
+    jsonb_list: Mapped[list[str]] = mapped_column(postgresql.JSONB)
+    array_list: Mapped[list[str]] = mapped_column(sqlalchemy.ARRAY(sqlalchemy.String))
+    array_sequence: Mapped[Sequence[str]] = mapped_column(
+        sqlalchemy.ARRAY(sqlalchemy.String)
+    )
+    array_json: Mapped[list[dict]] = mapped_column(sqlalchemy.ARRAY(sqlalchemy.JSON))
+    array_json_none: Mapped[list[dict[str, int]] | None] = mapped_column(
+        sqlalchemy.ARRAY(sqlalchemy.JSON)
+    )
+    pickled: Mapped[dict | None] = mapped_column(sqlalchemy.PickleType)
+    refined_dict: Mapped[dict[str, int]] = mapped_column(DictType())
+    refined_list_none: Mapped[list[str] | None] = mapped_column(ListType())
+    renamed: Mapped[dict] = mapped_column("payload", sqlalchemy.JSON)
+    opaque: Mapped[dict] = mapped_column(Opaque())
+    any_int: Mapped[Any] = mapped_column(sqlalchemy.Integer)
+    object_int: Mapped[object] = mapped_column(sqlalchemy.Integer)
+    color: Mapped[Color] = mapped_column(sqlalchemy.Enum(Color))
+    color_as_str: Mapped[str] = mapped_column(sqlalchemy.Enum(Color))
+    bool_int: Mapped[bool] = mapped_column(sqlalchemy.Integer)
+    int_enum_int: Mapped[Level] = mapped_column(sqlalchemy.Integer)
+    str_enum_str: Mapped[Tag] = mapped_column(sqlalchemy.String)
+    typed_dict: Mapped[Prefs] = mapped_column(DictType())
+    price: Mapped[decimal.Decimal] = mapped_column(sqlalchemy.Numeric)
+    float_price: Mapped[float] = mapped_column(sqlalchemy.Numeric)
+    at: Mapped[datetime.datetime] = mapped_column()
+    total: Mapped[int] = column_property(count + 1)
+"""
+
+
+@pytest.fixture(scope="module", params=["future", "eager_or_lazy"])
+def declarative_models(
+    request: pytest.FixtureRequest,
+) -> Generator[types.ModuleType, None, None]:
+    """Build the declarative models module with and without string annotations.
+
+    Args:
+        request: The fixture request; its param selects the annotation mode.
+
+    Yields:
+        The module defining the models.
+    """
+    source = _DECLARATIVE_MODELS_SOURCE.format(body=_DECLARATIVE_MODEL_BODY)
+    if request.param == "future":
+        source = "from __future__ import annotations\n" + source
+    name = f"_declarative_models_{request.param}"
+    module = types.ModuleType(name)
+    sys.modules[name] = module
+    # dont_inherit: this test module's `from __future__ import annotations` must
+    # not stringify the annotations of the "eager_or_lazy" variant.
+    exec(compile(source, name, "exec", dont_inherit=True), module.__dict__)
+    yield module
+    del sys.modules[name]
+
+
+@pytest.mark.parametrize("model", ["Plain", "Dataclass"])
+@pytest.mark.parametrize(
+    ("attr", "expected"),
+    [
+        pytest.param("id", int, id="int-pk"),
+        pytest.param("count", int, id="int"),
+        pytest.param("name", str, id="str"),
+        pytest.param("note", str | None, id="str-none"),
+        pytest.param("annotated_note", str | None, id="annotated-str-nullable"),
+        pytest.param("forced_nullable", int | None, id="nullable-column"),
+        pytest.param("forced_not_null", str, id="not-null-column"),
+        pytest.param("json_forced_not_null", dict, id="json-not-null-column"),
+        pytest.param("json_dict", dict, id="json-dict"),
+        pytest.param("json_dict_any", dict[str, Any], id="json-dict-str-any"),
+        pytest.param("json_dict_none", dict | None, id="json-dict-none"),
+        pytest.param("json_dict_optional", dict | None, id="json-optional-dict"),
+        pytest.param(
+            "json_dict_str_none", dict[str, str] | None, id="json-dict-str-str-none"
+        ),
+        pytest.param("json_list", list[str], id="json-list-str"),
+        pytest.param("jsonb_list", list[str], id="jsonb-list-str"),
+        pytest.param("array_list", List[str], id="array-list-str"),  # noqa: UP006
+        pytest.param(
+            "array_sequence",
+            List[str],  # noqa: UP006
+            id="array-python-type-over-coarser-annotation",
+        ),
+        pytest.param("array_json", list[dict], id="array-opaque-item-annotation"),
+        pytest.param(
+            "array_json_none",
+            list[dict[str, int]] | None,
+            id="array-opaque-item-annotation-none",
+        ),
+        pytest.param("pickled", dict | None, id="pickle-dict-none"),
+        pytest.param("refined_dict", dict[str, int], id="annotation-refines-dict"),
+        pytest.param(
+            "refined_list_none", list[str] | None, id="annotation-refines-list"
+        ),
+        pytest.param("renamed", dict, id="json-renamed-column"),
+        pytest.param("opaque", dict, id="python-type-not-implemented"),
+        pytest.param("any_int", int, id="any-annotation-uses-python-type"),
+        pytest.param("object_int", int, id="object-annotation-uses-python-type"),
+        pytest.param("color", "Color", id="enum"),
+        pytest.param("color_as_str", "Color", id="enum-python-type-over-str"),
+        pytest.param("bool_int", int, id="python-type-over-bool-subclass"),
+        pytest.param("int_enum_int", int, id="python-type-over-int-enum-subclass"),
+        pytest.param("str_enum_str", str, id="python-type-over-str-enum-subclass"),
+        pytest.param("typed_dict", "Prefs", id="typed-dict-refines-dict"),
+        pytest.param("price", Decimal, id="decimal"),
+        pytest.param("float_price", Decimal, id="decimal-python-type-over-float"),
+        pytest.param("at", datetime, id="datetime"),
+        pytest.param("total", int, id="column-property"),
+    ],
+)
+def test_get_attribute_access_type_declarative_column(
+    declarative_models: types.ModuleType, model: str, attr: str, expected: Any
+) -> None:
+    """A mapped column has its python type, or its ``Mapped[...]`` type if better.
+
+    Args:
+        declarative_models: The module defining the models.
+        model: The name of the model class.
+        attr: The column attribute.
+        expected: The expected type, or the name of a class of the models module.
+    """
+    if isinstance(expected, str):
+        expected = getattr(declarative_models, expected)
+    cls = getattr(declarative_models, model)
+    assert get_attribute_access_type(cls, attr) == expected
+
+
+def test_get_attribute_access_type_declarative_mixin_column(
+    declarative_models: types.ModuleType,
+) -> None:
+    """A column declared by a mixin has the type of the mixin's annotation.
+
+    Args:
+        declarative_models: The module defining the models.
+    """
+    assert (
+        get_attribute_access_type(declarative_models.Plain, "stamp") == datetime | None
+    )
+
+
+def test_get_attribute_access_type_declarative_imperative_column(
+    declarative_models: types.ModuleType,
+) -> None:
+    """A column without an annotation has the type of the column's ``python_type``.
+
+    Args:
+        declarative_models: The module defining the models.
+    """
+    imperative = declarative_models.Imperative
+    assert get_attribute_access_type(imperative, "doc") == object | None
+    assert get_attribute_access_type(imperative, "count") is int
+    assert get_attribute_access_type(imperative, "docs") == list | None
+
+
+class Prefs(TypedDict):
+    """The JSON document of a TypedDict-typed column."""
+
+    theme: str
+    size: int
+    tags: NotRequired[list[str]]
+
+
+class TypedDictJsonModel(SQLABase):
+    """A declarative model with JSON columns typed by a TypedDict."""
+
+    __tablename__ = "typed_dict_json"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    prefs: Mapped[Prefs] = mapped_column(sqlalchemy.JSON)
+    maybe_prefs: Mapped[Prefs | None] = mapped_column(sqlalchemy.JSON, nullable=True)
+
+
+@pytest.mark.parametrize("column", ["prefs", "maybe_prefs"])
+def test_declarative_typed_dict_json_column_key_access(column: str) -> None:
+    """Keys of a JSON column annotated with a TypedDict have the TypedDict's types.
+
+    Args:
+        column: The JSON column, non-nullable or nullable.
+    """
+    prefs = getattr(rx.Var(_js_expr="model").to(TypedDictJsonModel), column)
+    assert prefs["theme"]._var_type is str
+    assert prefs["size"]._var_type is int
+    assert prefs["tags"]._var_type == list[str]
+    with pytest.raises(VarAttributeError, match="has no attribute 'missing'"):
+        prefs["missing"]
+
+
+class ExtensionsPrefs(typing_extensions.TypedDict):
+    """A JSON document typed by a typing_extensions TypedDict."""
+
+    theme: str
+
+
+_T = TypeVar("_T")
+
+
+class GenericPrefs(TypedDict, Generic[_T]):
+    """A JSON document typed by a generic TypedDict."""
+
+    value: _T
+
+
+class DictColumnType(TypeDecorator):
+    """A column type whose python type is a bare dict."""
+
+    impl = JSON
+    cache_ok = True
+
+    @property
+    def python_type(self) -> type:
+        """The python type of the column.
+
+        Returns:
+            dict.
+        """
+        return dict
+
+
+class OtherTypedDictJsonModel(SQLABase):
+    """A declarative model with dict columns typed by other kinds of TypedDict."""
+
+    __tablename__ = "other_typed_dict_json"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    extensions_prefs: Mapped[ExtensionsPrefs] = mapped_column(DictColumnType())
+    generic_prefs: Mapped[GenericPrefs[int]] = mapped_column(DictColumnType())
+
+
+def test_declarative_json_column_typing_extensions_typed_dict() -> None:
+    """A typing_extensions TypedDict annotation refines a bare dict column too."""
+    assert (
+        get_attribute_access_type(OtherTypedDictJsonModel, "extensions_prefs")
+        is ExtensionsPrefs
+    )
+
+
+def test_declarative_json_column_generic_typed_dict() -> None:
+    """A parametrized generic TypedDict annotation keeps a bare dict column.
+
+    Key access on a parametrized generic TypedDict is unsupported, so refining
+    the column to it would turn working item access into a compile error.
+    """
+    assert get_attribute_access_type(OtherTypedDictJsonModel, "generic_prefs") is dict
+    prefs = rx.Var(_js_expr="model").to(OtherTypedDictJsonModel).generic_prefs
+    assert prefs["value"]._var_type is Any
+
+
+class JsonModelClass(rx.Model):
+    """Reflex model with a JSON column."""
+
+    profile: dict = sqlmodel.Field(
+        default_factory=dict, sa_column=sqlalchemy.Column(JSON)
+    )
+
+
+def test_get_attribute_access_type_rx_model_json_column() -> None:
+    """A JSON column of an rx.Model has the type of its sqlmodel annotation."""
+    assert get_attribute_access_type(JsonModelClass, "profile") is dict
+
+
+def test_get_attribute_access_type_rx_model_skips_declarative_column_typing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The DeclarativeBase column typing is unreachable for an rx.Model.
+
+    Args:
+        monkeypatch: Fixture to make the DeclarativeBase column typing raise.
+    """
+
+    def unreachable(*args: object) -> None:
+        msg = "rx.Model columns are not typed by the DeclarativeBase branch"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(types_module, "_get_column_access_type", unreachable)
+    assert not issubclass(JsonModelClass, DeclarativeBase)
+    assert get_attribute_access_type(JsonModelClass, "profile") is dict
