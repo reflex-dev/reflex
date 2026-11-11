@@ -1,0 +1,4 @@
+{"label": "prev-redis", "mode": "fail", "next_event_s": 0.02, "count": 2}
+{"label": "prev-redis", "mode": "fail_hold", "next_event_s": 0.022, "count": 2}
+{"label": "redis_runtime-stock-redis", "mode": "fail", "next_event_s": 0.022, "count": 2}
+{"label": "redis_runtime-stock-redis", "mode": "fail_hold", "next_event_s": 0.022, "count": 2}

@@ -1,0 +1,27 @@
+{
+ "checks": {
+  "bump": {
+   "ok": true,
+   "label": "V1:3",
+   "label2": "L2[V1:3]",
+   "child_label": "child-V1:3",
+   "n": "3",
+   "pid": "18052",
+   "name_out": ""
+  },
+  "auto_setter_set_name": {
+   "ok": false,
+   "name_out": "",
+   "server_errors": [
+    "Traceback (most recent call last):",
+    "KeyError: 'reflex___state____state.devapp___devapp___s.set_name'",
+    "Traceback (most recent call last):",
+    "    raise KeyError(msg) from ke",
+    "KeyError: 'No registered handler found for event: reflex___state____state.devapp___devapp___s.set_name'"
+   ]
+  }
+ },
+ "console": [
+  "warning: This page was built for another version of the app than the backend it connected to (state schema dda2aae1891db1f0ac2c5e0f84788bb8, backend 82a57643e05fba89af2c3d9e712ee5e5). Reload the page if it stays out of date once the frontend rebuilds."
+ ]
+}

@@ -1,0 +1,67 @@
+{
+ "checks": {
+  "bump": {
+   "ok": true,
+   "label": "V1:3",
+   "label2": "L2[V1:3]",
+   "child_label": "child-V1:3",
+   "n": "3",
+   "pid": "10069",
+   "name_out": ""
+  },
+  "auto_setter_set_name": {
+   "ok": true,
+   "name_out": "hello",
+   "server_errors": []
+  },
+  "hot_reload_cached_recomputed": {
+   "ok": true,
+   "after": {
+    "label": "V2:3",
+    "label2": "L2[V2:3]",
+    "child_label": "child-V2:3",
+    "n": "3",
+    "pid": "10266",
+    "name_out": "hello"
+   },
+   "waited_s": 3.8,
+   "token_same": true
+  },
+  "hot_reload_fields_kept": {
+   "ok": true,
+   "after": {
+    "label": "V2:3",
+    "label2": "L2[V2:3]",
+    "child_label": "child-V2:3",
+    "n": "3",
+    "pid": "10266",
+    "name_out": "hello"
+   }
+  },
+  "after_reload_bump": {
+   "ok": true,
+   "label": "V2:4",
+   "label2": "L2[V2:4]",
+   "child_label": "child-V2:4",
+   "n": "4",
+   "pid": "10266",
+   "name_out": "hello"
+  }
+ },
+ "console": [],
+ "after_reload_log": [
+  "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by ",
+  "default, but not explicitly added to the config. If you want to use it, please ",
+  "add it to the `plugins` list in your config inside of `rxconfig.py`. To disable ",
+  "this plugin, add `SitemapPlugin` to the `disable_plugins` list.",
+  "DeprecationWarning: Implicit Radix Themes enablement has been deprecated in ",
+  "version 0.9.0. a Radix Themes component was detected, which enables the full ",
+  "Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to",
+  "make this explicit, or remove Radix components to avoid loading the stylesheet. ",
+  "It will be completely removed in 1.0. ",
+  "(/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad",
+  "/envs/redis_runtime-stock/lib/python3.12/site-packages/reflex_components_radix/p",
+  "lugin.py:76)",
+  "Compiling: \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 100% 14/13 0:00:00"
+ ]
+}

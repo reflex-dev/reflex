@@ -1,0 +1,66 @@
+{
+ "tabs": [
+  {
+   "tab": 0,
+   "bg_count": "50",
+   "api_count": "10",
+   "count": "60",
+   "pid": "",
+   "ok": true
+  },
+  {
+   "tab": 1,
+   "bg_count": "50",
+   "api_count": "10",
+   "count": "60",
+   "pid": "",
+   "ok": true
+  },
+  {
+   "tab": 2,
+   "bg_count": "50",
+   "api_count": "10",
+   "count": "60",
+   "pid": "",
+   "ok": true
+  },
+  {
+   "tab": 3,
+   "bg_count": "50",
+   "api_count": "10",
+   "count": "60",
+   "pid": "",
+   "ok": true
+  },
+  {
+   "tab": 4,
+   "bg_count": "50",
+   "api_count": "10",
+   "count": "60",
+   "pid": "",
+   "ok": true
+  },
+  {
+   "tab": 5,
+   "bg_count": "50",
+   "api_count": "10",
+   "count": "60",
+   "pid": "",
+   "ok": true
+  }
+ ],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "api_worker_pids": [
+  18529,
+  18531,
+  18533,
+  18535,
+  18537,
+  18545,
+  18550,
+  18555
+ ],
+ "ok": 6
+}

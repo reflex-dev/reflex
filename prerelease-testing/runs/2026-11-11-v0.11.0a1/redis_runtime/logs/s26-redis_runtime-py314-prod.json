@@ -1,0 +1,21 @@
+{
+ "checks": {
+  "bump": {
+   "ok": true,
+   "label": "V1:3",
+   "label2": "L2[V1:3]",
+   "child_label": "child-V1:3",
+   "n": "3",
+   "pid": "27770",
+   "name_out": ""
+  },
+  "auto_setter_set_name": {
+   "ok": true,
+   "name_out": "hello",
+   "server_errors": []
+  }
+ },
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

@@ -1,0 +1,116 @@
+{
+ "checks": {
+  "raise_mid_ui": {
+   "ok": true,
+   "ui": {
+    "count": "0",
+    "bg_count": "0",
+    "sup_calls": "0",
+    "sup_progress": "0",
+    "sup_done": "0",
+    "r1": "1",
+    "r2": "1",
+    "linked": "idle",
+    "other_v": "0",
+    "slow_done": "0"
+   },
+   "server": {
+    "r1": 1,
+    "r2": 1
+   }
+  },
+  "raise_mid_server": {
+   "ok": true,
+   "server": {
+    "r1": 1,
+    "r2": 1
+   }
+  },
+  "supersedes_ui_matches_server": {
+   "ok": true,
+   "ui": {
+    "sup_calls": "2",
+    "sup_progress": "8",
+    "sup_done": "1"
+   },
+   "server": {
+    "sup_calls": 2,
+    "sup_progress": 8,
+    "sup_done": 1
+   }
+  },
+  "supersedes_first_progress_kept": {
+   "ok": true,
+   "server": {
+    "sup_calls": 2,
+    "sup_progress": 8,
+    "sup_done": 1
+   }
+  },
+  "reload_keeps": {
+   "ok": true,
+   "ui": {
+    "count": "0",
+    "bg_count": "0",
+    "sup_calls": "2",
+    "sup_progress": "8",
+    "sup_done": "1",
+    "r1": "1",
+    "r2": "1",
+    "linked": "idle",
+    "other_v": "0",
+    "slow_done": "0"
+   }
+  },
+  "linked_fail_then_event": {
+   "ok": false,
+   "linked": {
+    "pid": 29766,
+    "result": {
+     "mode": "fail",
+     "status": "ok",
+     "t": 1794363493.404824
+    },
+    "paused_at": null
+   },
+   "next_event_s": 0.05527948100007052,
+   "count": "1"
+  },
+  "linked_cancel_then_event": {
+   "ok": false,
+   "cancelled": null,
+   "linked": {
+    "pid": 29766,
+    "result": {
+     "mode": "cancel",
+     "status": "ok",
+     "t": 1794363494.0378299
+    },
+    "paused_at": null
+   },
+   "next_event_s": 3.0641183620000447,
+   "since_cancel_s": 6.3
+  },
+  "linked_ok": {
+   "ok": true,
+   "linked": "ok:ok",
+   "s": 0.05973269199967035
+  },
+  "bg_across_nav": {
+   "ok": true,
+   "bg": "50",
+   "count": "52"
+  },
+  "disconnect_mid_event": {
+   "ok": true,
+   "slow_done_server": 1,
+   "slow_done_before": 0,
+   "next_event_s": 0.005646156999318919
+  }
+ },
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "failed_requests": [],
+ "token": "93cc9a72-5157-466a-fc4a-1640ef67b366"
+}

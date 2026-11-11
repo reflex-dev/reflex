@@ -1,0 +1,4 @@
+Event(name='reflex___state____state.devapp___devapp___s.set_name', 
+KeyError: 'reflex___state____state.devapp___devapp___s.set_name'
+    raise KeyError(msg) from ke
+KeyError: 'No registered handler found for event: reflex___state____state.devapp___devapp___s.set_name'

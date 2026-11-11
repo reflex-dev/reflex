@@ -1,0 +1,19 @@
+App running at: http://0.0.0.0:3221/
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:8237. 
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:8237. 
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+_subscribe_lost_and_found_updates: task error suppressed: Error 111 connecting 
+_subscribe_socket_record_updates: task error suppressed: Error 111 connecting to
+ConnectionError: Error 111 connecting to localhost:8237. Connect call failed ('127.0.0.1', 8237).
+_subscribe_lost_and_found_updates: task exceeded exception limit 5 within 60.0s:
+Error 111 connecting to localhost:8237. Connect call failed ('127.0.0.1', 8237).
+_subscribe_socket_record_updates: task exceeded exception limit 5 within 60.0s: 
+Error 111 connecting to localhost:8237. Connect call failed ('127.0.0.1', 8237).
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:8237. Connect call failed ('127.0.0.1', 8237).
+redis.exceptions.ConnectionError: Error 111 connecting to localhost:8237. Connect call failed ('127.0.0.1', 8237).
+Info: Reflex app stopped.

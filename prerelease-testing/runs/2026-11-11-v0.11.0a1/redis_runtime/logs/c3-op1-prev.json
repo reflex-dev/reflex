@@ -1,0 +1,116 @@
+{
+ "checks": {
+  "raise_mid_ui": {
+   "ok": false,
+   "ui": {
+    "count": "0",
+    "bg_count": "0",
+    "sup_calls": "0",
+    "sup_progress": "0",
+    "sup_done": "0",
+    "r1": "1",
+    "r2": "0",
+    "linked": "idle",
+    "other_v": "0",
+    "slow_done": "0"
+   },
+   "server": {
+    "r1": 1,
+    "r2": 1
+   }
+  },
+  "raise_mid_server": {
+   "ok": true,
+   "server": {
+    "r1": 1,
+    "r2": 1
+   }
+  },
+  "supersedes_ui_matches_server": {
+   "ok": true,
+   "ui": {
+    "sup_calls": "2",
+    "sup_progress": "8",
+    "sup_done": "1"
+   },
+   "server": {
+    "sup_calls": 2,
+    "sup_progress": 8,
+    "sup_done": 1
+   }
+  },
+  "supersedes_first_progress_kept": {
+   "ok": true,
+   "server": {
+    "sup_calls": 2,
+    "sup_progress": 8,
+    "sup_done": 1
+   }
+  },
+  "reload_keeps": {
+   "ok": true,
+   "ui": {
+    "count": "0",
+    "bg_count": "0",
+    "sup_calls": "2",
+    "sup_progress": "8",
+    "sup_done": "1",
+    "r1": "1",
+    "r2": "1",
+    "linked": "idle",
+    "other_v": "0",
+    "slow_done": "0"
+   }
+  },
+  "linked_fail_then_event": {
+   "ok": false,
+   "linked": {
+    "pid": 31107,
+    "result": {
+     "mode": "fail",
+     "status": "ok",
+     "t": 1794363541.6857255
+    },
+    "paused_at": null
+   },
+   "next_event_s": 0.055992716000218934,
+   "count": "1"
+  },
+  "linked_cancel_then_event": {
+   "ok": false,
+   "cancelled": null,
+   "linked": {
+    "pid": 31107,
+    "result": {
+     "mode": "cancel",
+     "status": "ok",
+     "t": 1794363542.3176877
+    },
+    "paused_at": null
+   },
+   "next_event_s": 0.05476187300064339,
+   "since_cancel_s": 3.28
+  },
+  "linked_ok": {
+   "ok": true,
+   "linked": "ok:ok",
+   "s": 2.9546124930002406
+  },
+  "bg_across_nav": {
+   "ok": true,
+   "bg": "50",
+   "count": "52"
+  },
+  "disconnect_mid_event": {
+   "ok": true,
+   "slow_done_server": 1,
+   "slow_done_before": 0,
+   "next_event_s": 0.057379419000426424
+  }
+ },
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "failed_requests": [],
+ "token": "7cf20b8e-45d3-4eeb-e083-ed4375bc38d7"
+}

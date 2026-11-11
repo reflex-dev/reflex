@@ -1,0 +1,762 @@
+[SMR:29883] [5.479] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock instaque by
+[SMR:29883] [5.481] 11452d6b-9325-4dc8-931b-69d3647fe4cd lock 
+[SMR:29883] [5.484] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock released by
+[SMR:29883] [5.489] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock instaque by
+[SMR:29883] [5.495] 11452d6b-9325-4dc8-931b-69d3647fe4cd obtained lock 
+[SMR:29883] [5.497] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [5.498] 11452d6b-9325-4dc8-931b-69d3647fe4cd OPLOCK CONTEND -
+[SMR:29883] [5.499] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [5.500] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.501] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.502] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock released by
+[SMR:29883] [5.503] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [5.503] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [5.503] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [5.504] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock acquired by
+[SMR:29883] [5.504] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.505] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.505] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.505] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.506] 11452d6b-9325-4dc8-931b-69d3647fe4cd obtained lock 
+[SMR:29883] [5.506] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.507] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [5.507] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [5.508] 11452d6b-9325-4dc8-931b-69d3647fe4cd OPLOCK CONTEND -
+[SMR:29883] [5.508] 11452d6b-9325-4dc8-931b-69d3647fe4cd no active lease 
+[SMR:29883] [5.509] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [5.509] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.510] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.511] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock released by
+[SMR:29883] [5.511] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [5.512] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [5.512] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [5.512] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock acquired by
+[SMR:29883] [5.512] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.513] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [5.514] 11452d6b-9325-4dc8-931b-69d3647fe4cd obtained lock 
+[SMR:29883] [5.515] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [5.517] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [5.518] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [5.519] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [6.507] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock wait 
+[SMR:29883] [6.508] 11452d6b-9325-4dc8-931b-69d3647fe4cd OPLOCK CONTEND -
+[SMR:29883] [6.508] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [6.509] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [6.511] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock wait 
+[SMR:29883] [6.512] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock released by
+[SMR:29883] [6.512] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [6.513] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock acquired by
+[SMR:29883] [6.513] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [6.514] 11452d6b-9325-4dc8-931b-69d3647fe4cd obtained lock 
+[SMR:29883] [6.515] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [6.515] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [6.516] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [6.517] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [6.519] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [7.388] 11452d6b-9325-4dc8-931b-69d3647fe4cd OPLOCK CONTEND -
+[SMR:29883] [7.389] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock waiting for
+[SMR:29883] [7.389] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [7.392] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock released by
+[SMR:29883] [7.392] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock NOTIFY 1 / 
+[SMR:29883] [7.393] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock acquired by
+[SMR:29883] [7.395] 11452d6b-9325-4dc8-931b-69d3647fe4cd obtained lock 
+[SMR:29883] [7.396] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [12.404] 11452d6b-9325-4dc8-931b-69d3647fe4cd lease breaker 
+[SMR:29883] [12.406] 11452d6b-9325-4dc8-931b-69d3647fe4cd_lock released 
+[SMR:29883] [53.020] a8b65578-5115-4227-afd0-3e9341304db3_lock instaque 
+[SMR:29883] [53.022] a8b65578-5115-4227-afd0-3e9341304db3 obtained lock 
+[SMR:29883] [53.022] a8b65578-5115-4227-afd0-3e9341304db3 lease breaker 
+[SMR:29883] [53.031] a8b65578-5115-4227-afd0-3e9341304db3 OPLOCK CONTEND 
+[SMR:29883] [53.032] a8b65578-5115-4227-afd0-3e9341304db3 lease breaker 
+[SMR:29883] [53.031] a8b65578-5115-4227-afd0-3e9341304db3_lock waiting 
+[SMR:29883] [53.033] a8b65578-5115-4227-afd0-3e9341304db3 no active lease
+[SMR:29883] [53.034] a8b65578-5115-4227-afd0-3e9341304db3_lock waiting 
+[SMR:29883] [53.036] a8b65578-5115-4227-afd0-3e9341304db3_lock released 
+[SMR:29883] [53.036] a8b65578-5115-4227-afd0-3e9341304db3_lock NOTIFY 1 /
+[SMR:29883] [53.036] a8b65578-5115-4227-afd0-3e9341304db3_lock NOTIFY 1 /
+[SMR:29883] [53.036] a8b65578-5115-4227-afd0-3e9341304db3_lock acquired 
+[SMR:29883] [53.037] a8b65578-5115-4227-afd0-3e9341304db3_lock waiting 
+[SMR:29883] [53.038] a8b65578-5115-4227-afd0-3e9341304db3 obtained lock 
+[SMR:29883] [53.038] a8b65578-5115-4227-afd0-3e9341304db3 lease breaker 
+[SMR:29883] [54.041] a8b65578-5115-4227-afd0-3e9341304db3_lock wait 
+[SMR:29883] [54.042] a8b65578-5115-4227-afd0-3e9341304db3 OPLOCK CONTEND 
+[SMR:29883] [54.042] a8b65578-5115-4227-afd0-3e9341304db3 lease breaker 
+[SMR:29883] [54.043] a8b65578-5115-4227-afd0-3e9341304db3_lock waiting 
+[SMR:29883] [54.050] a8b65578-5115-4227-afd0-3e9341304db3_lock NOTIFY 1 /
+[SMR:29883] [54.050] a8b65578-5115-4227-afd0-3e9341304db3_lock released 
+[SMR:29883] [54.051] a8b65578-5115-4227-afd0-3e9341304db3_lock acquired 
+[SMR:29883] [54.052] a8b65578-5115-4227-afd0-3e9341304db3 obtained lock 
+[SMR:29883] [54.052] a8b65578-5115-4227-afd0-3e9341304db3 lease breaker 
+[SMR:29883] [54.408] a8b65578-5115-4227-afd0-3e9341304db3 OPLOCK CONTEND 
+[SMR:29883] [54.408] a8b65578-5115-4227-afd0-3e9341304db3 lease breaker 
+[SMR:29883] [54.413] a8b65578-5115-4227-afd0-3e9341304db3_lock waiting 
+[SMR:29883] [54.417] a8b65578-5115-4227-afd0-3e9341304db3_lock released 
+[SMR:29883] [54.417] a8b65578-5115-4227-afd0-3e9341304db3_lock NOTIFY 1 /
+[SMR:29883] [54.418] a8b65578-5115-4227-afd0-3e9341304db3_lock acquired 
+[SMR:29883] [54.419] a8b65578-5115-4227-afd0-3e9341304db3 obtained lock 
+[SMR:29883] [54.420] a8b65578-5115-4227-afd0-3e9341304db3 lease breaker 
+[SMR:29883] [54.784] fb44a010-bf8f-47c3-82f2-c40a5bfee38d_lock instaque 
+[SMR:29883] [54.785] fb44a010-bf8f-47c3-82f2-c40a5bfee38d obtained lock 
+[SMR:29883] [54.785] fb44a010-bf8f-47c3-82f2-c40a5bfee38d lease breaker 
+[SMR:29883] [55.606] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock instaque 
+[SMR:29883] [55.607] c40edf20-fb4d-4bd8-ab09-20f876ce350a obtained lock 
+[SMR:29883] [55.608] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [55.627] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock waiting 
+[SMR:29883] [55.627] c40edf20-fb4d-4bd8-ab09-20f876ce350a OPLOCK CONTEND 
+[SMR:29883] [55.628] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [55.629] c40edf20-fb4d-4bd8-ab09-20f876ce350a no active lease
+[SMR:29883] [55.630] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock released 
+[SMR:29883] [55.630] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock NOTIFY 1 /
+[SMR:29883] [55.630] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock NOTIFY 1 /
+[SMR:29883] [55.631] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock acquired 
+[SMR:29883] [55.631] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock waiting 
+[SMR:29883] [55.632] c40edf20-fb4d-4bd8-ab09-20f876ce350a obtained lock 
+[SMR:29883] [55.632] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [55.635] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock waiting 
+[SMR:29883] [55.636] c40edf20-fb4d-4bd8-ab09-20f876ce350a OPLOCK CONTEND 
+[SMR:29883] [55.637] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [55.638] c40edf20-fb4d-4bd8-ab09-20f876ce350a no active lease
+[SMR:29883] [55.639] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock waiting 
+[SMR:29883] [55.641] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock released 
+[SMR:29883] [55.641] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock NOTIFY 1 /
+[SMR:29883] [55.641] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock NOTIFY 1 /
+[SMR:29883] [55.641] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock acquired 
+[SMR:29883] [55.642] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock waiting 
+[SMR:29883] [55.643] c40edf20-fb4d-4bd8-ab09-20f876ce350a obtained lock 
+[SMR:29883] [55.644] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [55.644] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock NOTIFY 1 /
+[SMR:29883] [55.645] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock NOTIFY 1 /
+[SMR:29883] [56.644] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock wait 
+[SMR:29883] [56.645] c40edf20-fb4d-4bd8-ab09-20f876ce350a OPLOCK CONTEND 
+[SMR:29883] [56.645] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [56.647] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock waiting 
+[SMR:29883] [56.647] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock NOTIFY 1 /
+[SMR:29883] [56.648] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock released 
+[SMR:29883] [56.648] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock acquired 
+[SMR:29883] [56.649] c40edf20-fb4d-4bd8-ab09-20f876ce350a obtained lock 
+[SMR:29883] [56.650] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [56.953] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock waiting 
+[SMR:29883] [56.953] c40edf20-fb4d-4bd8-ab09-20f876ce350a OPLOCK CONTEND 
+[SMR:29883] [56.956] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [56.959] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock released 
+[SMR:29883] [56.959] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock NOTIFY 1 /
+[SMR:29883] [56.960] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock acquired 
+[SMR:29883] [56.961] c40edf20-fb4d-4bd8-ab09-20f876ce350a obtained lock 
+[SMR:29883] [56.962] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [57.322] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock instaque 
+[SMR:29883] [57.323] e08fbb5b-6788-4400-9dfe-493c82294d4a obtained lock 
+[SMR:29883] [57.324] e08fbb5b-6788-4400-9dfe-493c82294d4a lease breaker 
+[SMR:29883] [57.333] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [57.334] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [57.334] e08fbb5b-6788-4400-9dfe-493c82294d4a OPLOCK CONTEND 
+[SMR:29883] [57.335] e08fbb5b-6788-4400-9dfe-493c82294d4a lease breaker 
+[SMR:29883] [57.336] e08fbb5b-6788-4400-9dfe-493c82294d4a no active lease
+[SMR:29883] [57.337] e08fbb5b-6788-4400-9dfe-493c82294d4a no active lease
+[SMR:29883] [57.338] e08fbb5b-6788-4400-9dfe-493c82294d4a no active lease
+[SMR:29883] [57.342] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [57.343] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [57.344] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock released 
+[SMR:29883] [57.344] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock NOTIFY 1 /
+[SMR:29883] [57.345] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock NOTIFY 1 /
+[SMR:29883] [57.345] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock NOTIFY 1 /
+[SMR:29883] [57.345] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock acquired 
+[SMR:29883] [57.346] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [57.347] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [57.347] e08fbb5b-6788-4400-9dfe-493c82294d4a obtained lock 
+[SMR:29883] [57.347] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [57.347] e08fbb5b-6788-4400-9dfe-493c82294d4a lease breaker 
+[SMR:29883] [57.348] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock NOTIFY 1 /
+[SMR:29883] [58.348] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock wait 
+[SMR:29883] [58.353] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock wait 
+[SMR:29883] [58.354] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock wait 
+[SMR:29883] [58.354] e08fbb5b-6788-4400-9dfe-493c82294d4a OPLOCK CONTEND 
+[SMR:29883] [58.354] e08fbb5b-6788-4400-9dfe-493c82294d4a lease breaker 
+[SMR:29883] [58.356] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [58.356] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [58.357] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [58.357] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock NOTIFY 1 /
+[SMR:29883] [58.361] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock released 
+[SMR:29883] [58.362] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock acquired 
+[SMR:29883] [58.363] e08fbb5b-6788-4400-9dfe-493c82294d4a obtained lock 
+[SMR:29883] [58.364] e08fbb5b-6788-4400-9dfe-493c82294d4a lease breaker 
+[SMR:29883] [58.364] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock NOTIFY 1 /
+[SMR:29883] [58.366] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock NOTIFY 1 /
+[SMR:29883] [58.367] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock NOTIFY 1 /
+[SMR:29883] [58.714] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock waiting 
+[SMR:29883] [58.714] e08fbb5b-6788-4400-9dfe-493c82294d4a OPLOCK CONTEND 
+[SMR:29883] [58.715] e08fbb5b-6788-4400-9dfe-493c82294d4a lease breaker 
+[SMR:29883] [58.717] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock released 
+[SMR:29883] [58.717] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock NOTIFY 1 /
+[SMR:29883] [58.718] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock acquired 
+[SMR:29883] [58.719] e08fbb5b-6788-4400-9dfe-493c82294d4a obtained lock 
+[SMR:29883] [58.720] e08fbb5b-6788-4400-9dfe-493c82294d4a lease breaker 
+[SMR:29883] [59.052] 683a876c-0865-429e-ae67-31ab11c70e12_lock instaque 
+[SMR:29883] [59.054] 683a876c-0865-429e-ae67-31ab11c70e12 obtained lock 
+[SMR:29883] [59.054] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [59.070] 683a876c-0865-429e-ae67-31ab11c70e12 OPLOCK CONTEND 
+[SMR:29883] [59.070] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.070] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [59.071] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.071] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.071] 683a876c-0865-429e-ae67-31ab11c70e12 no active lease
+[SMR:29883] [59.073] 683a876c-0865-429e-ae67-31ab11c70e12_lock released 
+[SMR:29883] [59.072] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.073] 683a876c-0865-429e-ae67-31ab11c70e12_lock instaque 
+[SMR:29883] [59.074] 683a876c-0865-429e-ae67-31ab11c70e12 has contention,
+[SMR:29883] [59.074] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.075] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.075] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.075] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.076] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.076] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.077] 683a876c-0865-429e-ae67-31ab11c70e12_lock released 
+[SMR:29883] [59.077] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.077] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.077] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.078] 683a876c-0865-429e-ae67-31ab11c70e12_lock acquired 
+[SMR:29883] [59.078] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.078] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.079] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.080] 683a876c-0865-429e-ae67-31ab11c70e12 obtained lock 
+[SMR:29883] [59.080] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [59.080] 683a876c-0865-429e-ae67-31ab11c70e12 OPLOCK CONTEND 
+[SMR:29883] [59.081] 683a876c-0865-429e-ae67-31ab11c70e12 no active lease
+[SMR:29883] [59.081] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [59.083] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.083] 683a876c-0865-429e-ae67-31ab11c70e12_lock released 
+[SMR:29883] [59.083] 683a876c-0865-429e-ae67-31ab11c70e12_lock acquired 
+[SMR:29883] [59.083] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.084] 683a876c-0865-429e-ae67-31ab11c70e12 obtained lock 
+[SMR:29883] [59.085] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [59.085] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.086] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.086] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [59.086] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.087] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.088] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.089] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.090] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.090] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.091] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.092] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.093] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.094] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.094] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.095] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [59.421] a8b65578-5115-4227-afd0-3e9341304db3 lease breaker 
+[SMR:29883] [59.423] a8b65578-5115-4227-afd0-3e9341304db3_lock released 
+[SMR:29883] [59.787] fb44a010-bf8f-47c3-82f2-c40a5bfee38d lease breaker 
+[SMR:29883] [59.790] fb44a010-bf8f-47c3-82f2-c40a5bfee38d_lock released 
+[SMR:29883] [60.088] 683a876c-0865-429e-ae67-31ab11c70e12_lock wait 
+[SMR:29883] [60.089] 683a876c-0865-429e-ae67-31ab11c70e12 OPLOCK CONTEND 
+[SMR:29883] [60.090] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [60.090] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [60.095] 683a876c-0865-429e-ae67-31ab11c70e12_lock released 
+[SMR:29883] [60.095] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [60.096] 683a876c-0865-429e-ae67-31ab11c70e12_lock acquired 
+[SMR:29883] [60.098] 683a876c-0865-429e-ae67-31ab11c70e12 obtained lock 
+[SMR:29883] [60.098] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [60.469] 683a876c-0865-429e-ae67-31ab11c70e12 OPLOCK CONTEND 
+[SMR:29883] [60.470] 683a876c-0865-429e-ae67-31ab11c70e12_lock waiting 
+[SMR:29883] [60.470] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [60.472] 683a876c-0865-429e-ae67-31ab11c70e12_lock released 
+[SMR:29883] [60.473] 683a876c-0865-429e-ae67-31ab11c70e12_lock NOTIFY 1 /
+[SMR:29883] [60.474] 683a876c-0865-429e-ae67-31ab11c70e12_lock acquired 
+[SMR:29883] [60.477] 683a876c-0865-429e-ae67-31ab11c70e12 obtained lock 
+[SMR:29883] [60.478] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [61.964] c40edf20-fb4d-4bd8-ab09-20f876ce350a lease breaker 
+[SMR:29883] [61.967] c40edf20-fb4d-4bd8-ab09-20f876ce350a_lock released 
+[SMR:29883] [63.721] e08fbb5b-6788-4400-9dfe-493c82294d4a lease breaker 
+[SMR:29883] [63.727] e08fbb5b-6788-4400-9dfe-493c82294d4a_lock released 
+[SMR:29883] [65.482] 683a876c-0865-429e-ae67-31ab11c70e12 lease breaker 
+[SMR:29883] [65.484] 683a876c-0865-429e-ae67-31ab11c70e12_lock released 
+[SMR:29883] [66.285] 591beaa8-6913-4e97-9e45-db2bddb1799e_lock instaque 
+[SMR:29883] [66.286] 591beaa8-6913-4e97-9e45-db2bddb1799e obtained lock 
+[SMR:29883] [66.287] 591beaa8-6913-4e97-9e45-db2bddb1799e lease breaker 
+[SMR:29883] [67.138] 661ee8e1-749f-4a40-88a7-41f0c83e27e4_lock instaque 
+[SMR:29883] [67.139] 661ee8e1-749f-4a40-88a7-41f0c83e27e4 obtained lock 
+[SMR:29883] [67.140] 661ee8e1-749f-4a40-88a7-41f0c83e27e4 lease breaker 
+[SMR:29883] [67.966] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock instaque 
+[SMR:29883] [67.968] a139a188-7d9f-4fd4-a4de-0041552f1b10 obtained lock 
+[SMR:29883] [67.968] a139a188-7d9f-4fd4-a4de-0041552f1b10 lease breaker 
+[SMR:29883] [67.976] a139a188-7d9f-4fd4-a4de-0041552f1b10 OPLOCK CONTEND 
+[SMR:29883] [67.976] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock waiting 
+[SMR:29883] [67.977] a139a188-7d9f-4fd4-a4de-0041552f1b10 lease breaker 
+[SMR:29883] [67.980] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock waiting 
+[SMR:29883] [67.982] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock NOTIFY 1 /
+[SMR:29883] [67.982] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock released 
+[SMR:29883] [67.983] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock NOTIFY 1 /
+[SMR:29883] [67.983] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock acquired 
+[SMR:29883] [67.984] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock waiting 
+[SMR:29883] [67.986] a139a188-7d9f-4fd4-a4de-0041552f1b10 obtained lock 
+[SMR:29883] [67.987] a139a188-7d9f-4fd4-a4de-0041552f1b10 lease breaker 
+[SMR:29883] [68.985] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock wait 
+[SMR:29883] [68.989] a139a188-7d9f-4fd4-a4de-0041552f1b10 OPLOCK CONTEND 
+[SMR:29883] [68.990] a139a188-7d9f-4fd4-a4de-0041552f1b10 lease breaker 
+[SMR:29883] [68.990] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock waiting 
+[SMR:29883] [68.996] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock released 
+[SMR:29883] [68.996] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock NOTIFY 1 /
+[SMR:29883] [68.997] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock acquired 
+[SMR:29883] [69.000] a139a188-7d9f-4fd4-a4de-0041552f1b10 obtained lock 
+[SMR:29883] [69.000] a139a188-7d9f-4fd4-a4de-0041552f1b10 lease breaker 
+[SMR:29883] [69.376] a139a188-7d9f-4fd4-a4de-0041552f1b10 OPLOCK CONTEND 
+[SMR:29883] [69.377] a139a188-7d9f-4fd4-a4de-0041552f1b10 lease breaker 
+[SMR:29883] [69.377] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock waiting 
+[SMR:29883] [69.380] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock released 
+[SMR:29883] [69.380] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock NOTIFY 1 /
+[SMR:29883] [69.380] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock acquired 
+[SMR:29883] [69.382] a139a188-7d9f-4fd4-a4de-0041552f1b10 obtained lock 
+[SMR:29883] [69.382] a139a188-7d9f-4fd4-a4de-0041552f1b10 lease breaker 
+[SMR:29883] [69.683] 3990af1d-9a5c-4ffb-b2f3-a67e33508c8e_lock instaque 
+[SMR:29883] [69.686] 3990af1d-9a5c-4ffb-b2f3-a67e33508c8e obtained lock 
+[SMR:29883] [69.687] 3990af1d-9a5c-4ffb-b2f3-a67e33508c8e lease breaker 
+[SMR:29883] [70.490] 7a81b589-4627-4232-b49e-3b692ca4e30f_lock instaque 
+[SMR:29883] [70.491] 7a81b589-4627-4232-b49e-3b692ca4e30f obtained lock 
+[SMR:29883] [70.491] 7a81b589-4627-4232-b49e-3b692ca4e30f lease breaker 
+[SMR:29883] [71.293] 591beaa8-6913-4e97-9e45-db2bddb1799e lease breaker 
+[SMR:29883] [71.295] 591beaa8-6913-4e97-9e45-db2bddb1799e_lock released 
+[SMR:29883] [71.320] 5e6c8960-3243-42b1-9caa-63d8f0b271b7_lock instaque 
+[SMR:29883] [71.321] 5e6c8960-3243-42b1-9caa-63d8f0b271b7 obtained lock 
+[SMR:29883] [71.322] 5e6c8960-3243-42b1-9caa-63d8f0b271b7 lease breaker 
+[SMR:29883] [72.096] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock instaque 
+[SMR:29883] [72.099] 3fc53c6b-35f5-4684-a694-2099fa54a296 obtained lock 
+[SMR:29883] [72.099] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [72.109] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock waiting 
+[SMR:29883] [72.109] 3fc53c6b-35f5-4684-a694-2099fa54a296 OPLOCK CONTEND 
+[SMR:29883] [72.110] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [72.112] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock waiting 
+[SMR:29883] [72.112] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock released 
+[SMR:29883] [72.113] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock NOTIFY 1 /
+[SMR:29883] [72.113] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock acquired 
+[SMR:29883] [72.115] 3fc53c6b-35f5-4684-a694-2099fa54a296 obtained lock 
+[SMR:29883] [72.115] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [72.117] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock NOTIFY 1 /
+[SMR:29883] [72.117] 3fc53c6b-35f5-4684-a694-2099fa54a296 OPLOCK CONTEND 
+[SMR:29883] [72.117] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock NOTIFY 1 /
+[SMR:29883] [72.117] 3fc53c6b-35f5-4684-a694-2099fa54a296 no active lease
+[SMR:29883] [72.118] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [72.118] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock waiting 
+[SMR:29883] [72.119] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock waiting 
+[SMR:29883] [72.119] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock waiting 
+[SMR:29883] [72.120] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock released 
+[SMR:29883] [72.120] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock NOTIFY 1 /
+[SMR:29883] [72.120] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock NOTIFY 1 /
+[SMR:29883] [72.120] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock NOTIFY 1 /
+[SMR:29883] [72.121] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock acquired 
+[SMR:29883] [72.120] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock waiting 
+[SMR:29883] [72.122] 3fc53c6b-35f5-4684-a694-2099fa54a296 obtained lock 
+[SMR:29883] [72.122] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [72.124] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock NOTIFY 1 /
+[SMR:29883] [72.141] 661ee8e1-749f-4a40-88a7-41f0c83e27e4 lease breaker 
+[SMR:29883] [72.144] 661ee8e1-749f-4a40-88a7-41f0c83e27e4_lock released 
+[SMR:29883] [73.123] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock wait 
+[SMR:29883] [73.124] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock waiting 
+[SMR:29883] [73.124] 3fc53c6b-35f5-4684-a694-2099fa54a296 OPLOCK CONTEND 
+[SMR:29883] [73.124] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [73.126] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock released 
+[SMR:29883] [73.127] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock NOTIFY 1 /
+[SMR:29883] [73.127] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock acquired 
+[SMR:29883] [73.128] 3fc53c6b-35f5-4684-a694-2099fa54a296 obtained lock 
+[SMR:29883] [73.129] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [73.433] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock waiting 
+[SMR:29883] [73.433] 3fc53c6b-35f5-4684-a694-2099fa54a296 OPLOCK CONTEND 
+[SMR:29883] [73.434] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [73.437] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock released 
+[SMR:29883] [73.437] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock NOTIFY 1 /
+[SMR:29883] [73.439] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock acquired 
+[SMR:29883] [73.440] 3fc53c6b-35f5-4684-a694-2099fa54a296 obtained lock 
+[SMR:29883] [73.441] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [73.800] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock instaque 
+[SMR:29883] [73.802] 7bf6e263-30a7-4a5e-8529-912a86332ad3 obtained lock 
+[SMR:29883] [73.803] 7bf6e263-30a7-4a5e-8529-912a86332ad3 lease breaker 
+[SMR:29883] [73.811] 7bf6e263-30a7-4a5e-8529-912a86332ad3 OPLOCK CONTEND 
+[SMR:29883] [73.812] 7bf6e263-30a7-4a5e-8529-912a86332ad3 lease breaker 
+[SMR:29883] [73.812] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock waiting 
+[SMR:29883] [73.816] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock waiting 
+[SMR:29883] [73.816] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock waiting 
+[SMR:29883] [73.817] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock NOTIFY 1 /
+[SMR:29883] [73.817] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock released 
+[SMR:29883] [73.817] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock NOTIFY 1 /
+[SMR:29883] [73.818] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock acquired 
+[SMR:29883] [73.818] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock NOTIFY 1 /
+[SMR:29883] [73.818] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock waiting 
+[SMR:29883] [73.819] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock waiting 
+[SMR:29883] [73.820] 7bf6e263-30a7-4a5e-8529-912a86332ad3 obtained lock 
+[SMR:29883] [73.821] 7bf6e263-30a7-4a5e-8529-912a86332ad3 lease breaker 
+[SMR:29883] [74.384] a139a188-7d9f-4fd4-a4de-0041552f1b10 lease breaker 
+[SMR:29883] [74.388] a139a188-7d9f-4fd4-a4de-0041552f1b10_lock released 
+[SMR:29883] [74.688] 3990af1d-9a5c-4ffb-b2f3-a67e33508c8e lease breaker 
+[SMR:29883] [74.690] 3990af1d-9a5c-4ffb-b2f3-a67e33508c8e_lock released 
+[SMR:29883] [74.817] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock wait 
+[SMR:29883] [74.818] 7bf6e263-30a7-4a5e-8529-912a86332ad3 OPLOCK CONTEND 
+[SMR:29883] [74.819] 7bf6e263-30a7-4a5e-8529-912a86332ad3 lease breaker 
+[SMR:29883] [74.820] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock wait 
+[SMR:29883] [74.821] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock waiting 
+[SMR:29883] [74.822] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock released 
+[SMR:29883] [74.822] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock waiting 
+[SMR:29883] [74.823] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock NOTIFY 1 /
+[SMR:29883] [74.823] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock acquired 
+[SMR:29883] [74.824] 7bf6e263-30a7-4a5e-8529-912a86332ad3 obtained lock 
+[SMR:29883] [74.825] 7bf6e263-30a7-4a5e-8529-912a86332ad3 lease breaker 
+[SMR:29883] [74.825] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock NOTIFY 1 /
+[SMR:29883] [74.826] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock NOTIFY 1 /
+[SMR:29883] [75.182] 7bf6e263-30a7-4a5e-8529-912a86332ad3 OPLOCK CONTEND 
+[SMR:29883] [75.182] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock waiting 
+[SMR:29883] [75.182] 7bf6e263-30a7-4a5e-8529-912a86332ad3 lease breaker 
+[SMR:29883] [75.185] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock released 
+[SMR:29883] [75.185] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock NOTIFY 1 /
+[SMR:29883] [75.186] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock acquired 
+[SMR:29883] [75.187] 7bf6e263-30a7-4a5e-8529-912a86332ad3 obtained lock 
+[SMR:29883] [75.187] 7bf6e263-30a7-4a5e-8529-912a86332ad3 lease breaker 
+[SMR:29883] [75.493] 7a81b589-4627-4232-b49e-3b692ca4e30f lease breaker 
+[SMR:29883] [75.494] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock instaque 
+[SMR:29883] [75.495] 7a81b589-4627-4232-b49e-3b692ca4e30f_lock released 
+[SMR:29883] [75.496] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 obtained lock 
+[SMR:29883] [75.496] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 lease breaker 
+[SMR:29883] [75.505] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 OPLOCK CONTEND 
+[SMR:29883] [75.505] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock waiting 
+[SMR:29883] [75.505] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock waiting 
+[SMR:29883] [75.506] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 lease breaker 
+[SMR:29883] [75.506] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 no active lease
+[SMR:29883] [75.510] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock waiting 
+[SMR:29883] [75.512] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock released 
+[SMR:29883] [75.512] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock NOTIFY 1 /
+[SMR:29883] [75.512] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock NOTIFY 1 /
+[SMR:29883] [75.512] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock acquired 
+[SMR:29883] [75.512] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock NOTIFY 1 /
+[SMR:29883] [75.513] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock waiting 
+[SMR:29883] [75.513] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock waiting 
+[SMR:29883] [75.513] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 obtained lock 
+[SMR:29883] [75.514] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 lease breaker 
+[SMR:29883] [75.514] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock NOTIFY 1 /
+[SMR:29883] [76.323] 5e6c8960-3243-42b1-9caa-63d8f0b271b7 lease breaker 
+[SMR:29883] [76.326] 5e6c8960-3243-42b1-9caa-63d8f0b271b7_lock released 
+[SMR:29883] [76.514] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock wait 
+[SMR:29883] [76.515] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 OPLOCK CONTEND 
+[SMR:29883] [76.516] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock waiting 
+[SMR:29883] [76.516] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 lease breaker 
+[SMR:29883] [76.518] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock released 
+[SMR:29883] [76.518] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock NOTIFY 1 /
+[SMR:29883] [76.519] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock acquired 
+[SMR:29883] [76.520] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 obtained lock 
+[SMR:29883] [76.521] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 lease breaker 
+[SMR:29883] [76.893] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock waiting 
+[SMR:29883] [76.893] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 OPLOCK CONTEND 
+[SMR:29883] [76.894] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 lease breaker 
+[SMR:29883] [76.896] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock released 
+[SMR:29883] [76.897] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock NOTIFY 1 /
+[SMR:29883] [76.898] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock acquired 
+[SMR:29883] [76.899] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 obtained lock 
+[SMR:29883] [76.900] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 lease breaker 
+[SMR:29883] [77.214] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock instaque 
+[SMR:29883] [77.216] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab obtained lock 
+[SMR:29883] [77.216] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [77.224] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab OPLOCK CONTEND 
+[SMR:29883] [77.225] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [77.224] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [77.228] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab no active lease
+[SMR:29883] [77.230] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [77.230] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock released 
+[SMR:29883] [77.230] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [77.230] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock acquired 
+[SMR:29883] [77.231] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [77.232] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab obtained lock 
+[SMR:29883] [77.233] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [77.232] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [77.234] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab OPLOCK CONTEND 
+[SMR:29883] [77.235] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [77.236] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab no active lease
+[SMR:29883] [77.237] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock released 
+[SMR:29883] [77.238] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [77.238] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock instaque 
+[SMR:29883] [77.239] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [77.239] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab has contention,
+[SMR:29883] [77.240] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [77.240] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock released 
+[SMR:29883] [77.241] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock acquired 
+[SMR:29883] [77.242] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [77.243] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab obtained lock 
+[SMR:29883] [77.243] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [77.244] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab OPLOCK CONTEND 
+[SMR:29883] [77.244] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab no active lease
+[SMR:29883] [77.245] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [77.246] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [77.248] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock released 
+[SMR:29883] [77.249] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [77.249] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [77.249] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [77.249] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock acquired 
+[SMR:29883] [77.250] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [77.250] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [77.251] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab obtained lock 
+[SMR:29883] [77.251] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [78.247] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock wait 
+[SMR:29883] [78.249] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab OPLOCK CONTEND 
+[SMR:29883] [78.249] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [78.251] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock released 
+[SMR:29883] [78.252] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [78.253] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock wait 
+[SMR:29883] [78.255] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock acquired 
+[SMR:29883] [78.255] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [78.259] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab obtained lock 
+[SMR:29883] [78.259] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [78.260] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [78.261] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [78.442] 3fc53c6b-35f5-4684-a694-2099fa54a296 lease breaker 
+[SMR:29883] [78.445] 3fc53c6b-35f5-4684-a694-2099fa54a296_lock released 
+[SMR:29883] [78.623] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab OPLOCK CONTEND 
+[SMR:29883] [78.623] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock waiting 
+[SMR:29883] [78.624] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [78.627] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock released 
+[SMR:29883] [78.627] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock NOTIFY 1 /
+[SMR:29883] [78.628] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock acquired 
+[SMR:29883] [78.629] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab obtained lock 
+[SMR:29883] [78.630] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [78.934] ba065d7c-e434-4d5c-b527-88b426b3e58e_lock instaque 
+[SMR:29883] [78.935] ba065d7c-e434-4d5c-b527-88b426b3e58e obtained lock 
+[SMR:29883] [78.936] ba065d7c-e434-4d5c-b527-88b426b3e58e lease breaker 
+[SMR:29883] [79.677] f18a93cd-57d5-49d4-be7e-7cc0bc267106_lock instaque 
+[SMR:29883] [79.678] f18a93cd-57d5-49d4-be7e-7cc0bc267106 obtained lock 
+[SMR:29883] [79.679] f18a93cd-57d5-49d4-be7e-7cc0bc267106 lease breaker 
+[SMR:29883] [80.189] 7bf6e263-30a7-4a5e-8529-912a86332ad3 lease breaker 
+[SMR:29883] [80.191] 7bf6e263-30a7-4a5e-8529-912a86332ad3_lock released 
+[SMR:29883] [80.516] 618d398a-853b-408d-95d7-dfca31b79e80_lock instaque 
+[SMR:29883] [80.519] 618d398a-853b-408d-95d7-dfca31b79e80 obtained lock 
+[SMR:29883] [80.519] 618d398a-853b-408d-95d7-dfca31b79e80 lease breaker 
+[SMR:29883] [80.528] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [80.528] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [80.529] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [80.530] 618d398a-853b-408d-95d7-dfca31b79e80 OPLOCK CONTEND 
+[SMR:29883] [80.531] 618d398a-853b-408d-95d7-dfca31b79e80 no active lease
+[SMR:29883] [80.531] 618d398a-853b-408d-95d7-dfca31b79e80 lease breaker 
+[SMR:29883] [80.533] 618d398a-853b-408d-95d7-dfca31b79e80 no active lease
+[SMR:29883] [80.534] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [80.535] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [80.536] 618d398a-853b-408d-95d7-dfca31b79e80_lock released 
+[SMR:29883] [80.537] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [80.537] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [80.537] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [80.537] 618d398a-853b-408d-95d7-dfca31b79e80_lock acquired 
+[SMR:29883] [80.538] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [80.539] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [80.539] 618d398a-853b-408d-95d7-dfca31b79e80 obtained lock 
+[SMR:29883] [80.539] 618d398a-853b-408d-95d7-dfca31b79e80 lease breaker 
+[SMR:29883] [80.540] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [80.541] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [80.542] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [81.540] 618d398a-853b-408d-95d7-dfca31b79e80_lock wait 
+[SMR:29883] [81.541] 618d398a-853b-408d-95d7-dfca31b79e80_lock wait 
+[SMR:29883] [81.541] 618d398a-853b-408d-95d7-dfca31b79e80 OPLOCK CONTEND 
+[SMR:29883] [81.542] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [81.542] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [81.542] 618d398a-853b-408d-95d7-dfca31b79e80 lease breaker 
+[SMR:29883] [81.544] 618d398a-853b-408d-95d7-dfca31b79e80_lock released 
+[SMR:29883] [81.544] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [81.545] 618d398a-853b-408d-95d7-dfca31b79e80_lock acquired 
+[SMR:29883] [81.547] 618d398a-853b-408d-95d7-dfca31b79e80 obtained lock 
+[SMR:29883] [81.547] 618d398a-853b-408d-95d7-dfca31b79e80 lease breaker 
+[SMR:29883] [81.548] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [81.549] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [81.901] 21b4ca9a-dc72-4ef3-829d-f9a45eded693 lease breaker 
+[SMR:29883] [81.903] 21b4ca9a-dc72-4ef3-829d-f9a45eded693_lock released 
+[SMR:29883] [81.928] 618d398a-853b-408d-95d7-dfca31b79e80 OPLOCK CONTEND 
+[SMR:29883] [81.928] 618d398a-853b-408d-95d7-dfca31b79e80_lock waiting 
+[SMR:29883] [81.928] 618d398a-853b-408d-95d7-dfca31b79e80 lease breaker 
+[SMR:29883] [81.930] 618d398a-853b-408d-95d7-dfca31b79e80_lock released 
+[SMR:29883] [81.931] 618d398a-853b-408d-95d7-dfca31b79e80_lock NOTIFY 1 /
+[SMR:29883] [81.931] 618d398a-853b-408d-95d7-dfca31b79e80_lock acquired 
+[SMR:29883] [81.932] 618d398a-853b-408d-95d7-dfca31b79e80 obtained lock 
+[SMR:29883] [81.933] 618d398a-853b-408d-95d7-dfca31b79e80 lease breaker 
+[SMR:29883] [82.241] 1ba188e9-b9e2-4f1f-a530-1b2b4567de0a_lock instaque 
+[SMR:29883] [82.242] 1ba188e9-b9e2-4f1f-a530-1b2b4567de0a obtained lock 
+[SMR:29883] [82.243] 1ba188e9-b9e2-4f1f-a530-1b2b4567de0a lease breaker 
+[SMR:29883] [82.980] ff955385-8e2f-4080-9a68-5a434144e569_lock instaque 
+[SMR:29883] [82.981] ff955385-8e2f-4080-9a68-5a434144e569 obtained lock 
+[SMR:29883] [82.982] ff955385-8e2f-4080-9a68-5a434144e569 lease breaker 
+[SMR:29883] [83.632] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab lease breaker 
+[SMR:29883] [83.633] 0ae9ca4e-cd87-4075-8307-f1efb73a4dab_lock released 
+[SMR:29883] [83.749] 52356c48-916e-430c-9dca-926b68a55b2b_lock instaque 
+[SMR:29883] [83.752] 52356c48-916e-430c-9dca-926b68a55b2b obtained lock 
+[SMR:29883] [83.753] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [83.764] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [83.764] 52356c48-916e-430c-9dca-926b68a55b2b OPLOCK CONTEND 
+[SMR:29883] [83.764] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [83.765] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [83.767] 52356c48-916e-430c-9dca-926b68a55b2b no active lease
+[SMR:29883] [83.767] 52356c48-916e-430c-9dca-926b68a55b2b no active lease
+[SMR:29883] [83.768] 52356c48-916e-430c-9dca-926b68a55b2b no active lease
+[SMR:29883] [83.769] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [83.770] 52356c48-916e-430c-9dca-926b68a55b2b_lock released 
+[SMR:29883] [83.770] 52356c48-916e-430c-9dca-926b68a55b2b_lock acquired 
+[SMR:29883] [83.770] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [83.770] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [83.771] 52356c48-916e-430c-9dca-926b68a55b2b obtained lock 
+[SMR:29883] [83.772] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [83.773] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [83.773] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [83.773] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [83.777] 52356c48-916e-430c-9dca-926b68a55b2b OPLOCK CONTEND 
+[SMR:29883] [83.778] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [83.778] 52356c48-916e-430c-9dca-926b68a55b2b no active lease
+[SMR:29883] [83.779] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [83.781] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [83.782] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [83.783] 52356c48-916e-430c-9dca-926b68a55b2b_lock released 
+[SMR:29883] [83.783] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [83.783] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [83.783] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [83.783] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [83.784] 52356c48-916e-430c-9dca-926b68a55b2b_lock acquired 
+[SMR:29883] [83.786] 52356c48-916e-430c-9dca-926b68a55b2b obtained lock 
+[SMR:29883] [83.786] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [83.787] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [83.937] ba065d7c-e434-4d5c-b527-88b426b3e58e lease breaker 
+[SMR:29883] [83.939] ba065d7c-e434-4d5c-b527-88b426b3e58e_lock released 
+[SMR:29883] [84.680] f18a93cd-57d5-49d4-be7e-7cc0bc267106 lease breaker 
+[SMR:29883] [84.683] f18a93cd-57d5-49d4-be7e-7cc0bc267106_lock released 
+[SMR:29883] [84.775] 52356c48-916e-430c-9dca-926b68a55b2b_lock wait 
+[SMR:29883] [84.776] 52356c48-916e-430c-9dca-926b68a55b2b OPLOCK CONTEND 
+[SMR:29883] [84.776] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [84.776] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [84.779] 52356c48-916e-430c-9dca-926b68a55b2b_lock released 
+[SMR:29883] [84.779] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [84.779] 52356c48-916e-430c-9dca-926b68a55b2b_lock wait 
+[SMR:29883] [84.780] 52356c48-916e-430c-9dca-926b68a55b2b_lock acquired 
+[SMR:29883] [84.781] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [84.782] 52356c48-916e-430c-9dca-926b68a55b2b obtained lock 
+[SMR:29883] [84.782] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [84.783] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [84.784] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [84.785] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [85.160] 52356c48-916e-430c-9dca-926b68a55b2b OPLOCK CONTEND 
+[SMR:29883] [85.160] 52356c48-916e-430c-9dca-926b68a55b2b_lock waiting 
+[SMR:29883] [85.160] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [85.163] 52356c48-916e-430c-9dca-926b68a55b2b_lock released 
+[SMR:29883] [85.163] 52356c48-916e-430c-9dca-926b68a55b2b_lock NOTIFY 1 /
+[SMR:29883] [85.164] 52356c48-916e-430c-9dca-926b68a55b2b_lock acquired 
+[SMR:29883] [85.166] 52356c48-916e-430c-9dca-926b68a55b2b obtained lock 
+[SMR:29883] [85.166] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [85.470] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock instaque 
+[SMR:29883] [85.472] 8fd5b331-33ea-4224-9cb6-8a004393b684 obtained lock 
+[SMR:29883] [85.472] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [85.480] 8fd5b331-33ea-4224-9cb6-8a004393b684 OPLOCK CONTEND 
+[SMR:29883] [85.481] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [85.481] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [85.481] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [85.482] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [85.483] 8fd5b331-33ea-4224-9cb6-8a004393b684 no active lease
+[SMR:29883] [85.483] 8fd5b331-33ea-4224-9cb6-8a004393b684 no active lease
+[SMR:29883] [85.485] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [85.484] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [85.485] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock released 
+[SMR:29883] [85.485] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock acquired 
+[SMR:29883] [85.486] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [85.487] 8fd5b331-33ea-4224-9cb6-8a004393b684 obtained lock 
+[SMR:29883] [85.487] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [85.488] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [85.488] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [85.488] 8fd5b331-33ea-4224-9cb6-8a004393b684 OPLOCK CONTEND 
+[SMR:29883] [85.489] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [85.489] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [85.490] 8fd5b331-33ea-4224-9cb6-8a004393b684 no active lease
+[SMR:29883] [85.491] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [85.492] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock released 
+[SMR:29883] [85.492] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [85.492] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [85.493] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [85.493] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [85.493] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock acquired 
+[SMR:29883] [85.494] 8fd5b331-33ea-4224-9cb6-8a004393b684 obtained lock 
+[SMR:29883] [85.494] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [85.495] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [85.496] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [85.497] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [86.490] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock wait 
+[SMR:29883] [86.491] 8fd5b331-33ea-4224-9cb6-8a004393b684 OPLOCK CONTEND 
+[SMR:29883] [86.492] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [86.492] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [86.494] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock wait 
+[SMR:29883] [86.495] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock released 
+[SMR:29883] [86.497] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [86.498] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock acquired 
+[SMR:29883] [86.500] 8fd5b331-33ea-4224-9cb6-8a004393b684 obtained lock 
+[SMR:29883] [86.502] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [86.502] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [86.882] 8fd5b331-33ea-4224-9cb6-8a004393b684 OPLOCK CONTEND 
+[SMR:29883] [86.882] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock waiting 
+[SMR:29883] [86.883] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [86.885] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock released 
+[SMR:29883] [86.886] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock NOTIFY 1 /
+[SMR:29883] [86.886] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock acquired 
+[SMR:29883] [86.888] 8fd5b331-33ea-4224-9cb6-8a004393b684 obtained lock 
+[SMR:29883] [86.888] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [86.934] 618d398a-853b-408d-95d7-dfca31b79e80 lease breaker 
+[SMR:29883] [86.938] 618d398a-853b-408d-95d7-dfca31b79e80_lock released 
+[SMR:29883] [87.214] a8891286-8f82-4959-96e0-0c49384d267d_lock instaque 
+[SMR:29883] [87.215] a8891286-8f82-4959-96e0-0c49384d267d obtained lock 
+[SMR:29883] [87.216] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [87.222] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [87.222] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [87.223] a8891286-8f82-4959-96e0-0c49384d267d OPLOCK CONTEND 
+[SMR:29883] [87.223] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [87.224] a8891286-8f82-4959-96e0-0c49384d267d no active lease
+[SMR:29883] [87.225] a8891286-8f82-4959-96e0-0c49384d267d no active lease
+[SMR:29883] [87.225] a8891286-8f82-4959-96e0-0c49384d267d no active lease
+[SMR:29883] [87.226] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.226] a8891286-8f82-4959-96e0-0c49384d267d_lock released 
+[SMR:29883] [87.226] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.227] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.227] a8891286-8f82-4959-96e0-0c49384d267d_lock acquired 
+[SMR:29883] [87.228] a8891286-8f82-4959-96e0-0c49384d267d obtained lock 
+[SMR:29883] [87.228] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [87.229] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [87.229] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [87.230] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.230] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [87.230] a8891286-8f82-4959-96e0-0c49384d267d OPLOCK CONTEND 
+[SMR:29883] [87.231] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [87.231] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [87.232] a8891286-8f82-4959-96e0-0c49384d267d no active lease
+[SMR:29883] [87.233] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [87.235] a8891286-8f82-4959-96e0-0c49384d267d_lock released 
+[SMR:29883] [87.235] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.235] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.236] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.236] a8891286-8f82-4959-96e0-0c49384d267d_lock acquired 
+[SMR:29883] [87.236] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [87.237] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [87.237] a8891286-8f82-4959-96e0-0c49384d267d obtained lock 
+[SMR:29883] [87.238] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [87.238] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.239] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.240] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [87.244] 1ba188e9-b9e2-4f1f-a530-1b2b4567de0a lease breaker 
+[SMR:29883] [87.246] 1ba188e9-b9e2-4f1f-a530-1b2b4567de0a_lock released 
+[SMR:29883] [87.984] ff955385-8e2f-4080-9a68-5a434144e569 lease breaker 
+[SMR:29883] [87.987] ff955385-8e2f-4080-9a68-5a434144e569_lock released 
+[SMR:29883] [88.238] a8891286-8f82-4959-96e0-0c49384d267d_lock wait 
+[SMR:29883] [88.239] a8891286-8f82-4959-96e0-0c49384d267d_lock wait 
+[SMR:29883] [88.239] a8891286-8f82-4959-96e0-0c49384d267d OPLOCK CONTEND 
+[SMR:29883] [88.240] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [88.240] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [88.240] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [88.242] a8891286-8f82-4959-96e0-0c49384d267d_lock released 
+[SMR:29883] [88.242] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [88.243] a8891286-8f82-4959-96e0-0c49384d267d_lock acquired 
+[SMR:29883] [88.244] a8891286-8f82-4959-96e0-0c49384d267d obtained lock 
+[SMR:29883] [88.245] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [88.245] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [88.549] a8891286-8f82-4959-96e0-0c49384d267d OPLOCK CONTEND 
+[SMR:29883] [88.550] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [88.550] a8891286-8f82-4959-96e0-0c49384d267d_lock waiting 
+[SMR:29883] [88.552] a8891286-8f82-4959-96e0-0c49384d267d_lock released 
+[SMR:29883] [88.552] a8891286-8f82-4959-96e0-0c49384d267d_lock NOTIFY 1 /
+[SMR:29883] [88.553] a8891286-8f82-4959-96e0-0c49384d267d_lock acquired 
+[SMR:29883] [88.555] a8891286-8f82-4959-96e0-0c49384d267d obtained lock 
+[SMR:29883] [88.555] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [90.168] 52356c48-916e-430c-9dca-926b68a55b2b lease breaker 
+[SMR:29883] [90.170] 52356c48-916e-430c-9dca-926b68a55b2b_lock released 
+[SMR:29883] [91.891] 8fd5b331-33ea-4224-9cb6-8a004393b684 lease breaker 
+[SMR:29883] [91.894] 8fd5b331-33ea-4224-9cb6-8a004393b684_lock released 
+[SMR:29883] [93.557] a8891286-8f82-4959-96e0-0c49384d267d lease breaker 
+[SMR:29883] [93.560] a8891286-8f82-4959-96e0-0c49384d267d_lock released 

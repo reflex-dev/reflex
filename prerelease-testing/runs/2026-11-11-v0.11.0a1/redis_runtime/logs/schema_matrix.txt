@@ -1,0 +1,73 @@
++ SCHEMA_DEFAULT=0 redis_runtime-stock save
+reflex 0.11.0a1 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+saved=redis_runtime-stock        loader=redis_runtime-stock        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-stock        loader=redis_runtime-stock        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-stock        loader=new                        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-stock        loader=new                        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-stock        loader=prev                       d0 -> reflex 0.10.1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-stock        loader=prev                       d5 -> reflex 0.10.1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-stock        loader=redis_runtime-py311        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-stock        loader=redis_runtime-py311        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
++ SCHEMA_DEFAULT=0 new save
+reflex 0.11.0a1 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+saved=new                        loader=redis_runtime-stock        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=new                        loader=redis_runtime-stock        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=new                        loader=new                        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=new                        loader=new                        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=new                        loader=prev                       d0 -> reflex 0.10.1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=new                        loader=prev                       d5 -> reflex 0.10.1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=new                        loader=redis_runtime-py311        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=new                        loader=redis_runtime-py311        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
++ SCHEMA_DEFAULT=0 prev save
+reflex 0.10.1 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+saved=prev                       loader=redis_runtime-stock        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=prev                       loader=redis_runtime-stock        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=prev                       loader=new                        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=prev                       loader=new                        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=prev                       loader=prev                       d0 -> reflex 0.10.1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=prev                       loader=prev                       d5 -> reflex 0.10.1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=prev                       loader=redis_runtime-py311        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=prev                       loader=redis_runtime-py311        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
++ SCHEMA_DEFAULT=0 redis_runtime-py311 save
+reflex 0.11.0a1 default=0: saved count=42 schema=bbd147dc3cdaec5701080b994dc1875a
+saved=redis_runtime-py311        loader=redis_runtime-stock        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-py311        loader=redis_runtime-stock        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-py311        loader=new                        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-py311        loader=new                        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-py311        loader=prev                       d0 -> reflex 0.10.1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-py311        loader=prev                       d5 -> reflex 0.10.1 default=5: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-py311        loader=redis_runtime-py311        d0 -> reflex 0.11.0a1 default=0: LOADED count=42 label='saved' _secret='be'
+saved=redis_runtime-py311        loader=redis_runtime-py311        d5 -> reflex 0.11.0a1 default=5: LOADED count=42 label='saved' _secret='be'
++ pickle contents
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/redis_runtime/cs/run/n004/schema/out/saved-redis_runtime-stock.bin: schema=bbd147dc3cdaec5701080b994dc1875a class=schema_mod.SchemaState
+   '_secret'                = 'be'
+   'count'                  = 42
+   'label'                  = 'saved'
+   contains 'dirty_vars': False
+   contains 'dirty_substates': False
+   contains '_backend_vars': False
+   contains '_replaced_defaults': False
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/redis_runtime/cs/run/n004/schema/out/saved-new.bin: schema=bbd147dc3cdaec5701080b994dc1875a class=schema_mod.SchemaState
+   '_secret'                = 'be'
+   'count'                  = 42
+   'label'                  = 'saved'
+   contains 'dirty_vars': False
+   contains 'dirty_substates': False
+   contains '_backend_vars': False
+   contains '_replaced_defaults': False
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/redis_runtime/cs/run/n004/schema/out/saved-prev.bin: schema=bbd147dc3cdaec5701080b994dc1875a class=schema_mod.SchemaState
+   '_secret'                = 'be'
+   'count'                  = 42
+   'label'                  = 'saved'
+   contains 'dirty_vars': False
+   contains 'dirty_substates': False
+   contains '_backend_vars': False
+   contains '_replaced_defaults': False
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/redis_runtime/cs/run/n004/schema/out/saved-redis_runtime-py311.bin: schema=bbd147dc3cdaec5701080b994dc1875a class=schema_mod.SchemaState
+   '_secret'                = 'be'
+   'count'                  = 42
+   'label'                  = 'saved'
+   contains 'dirty_vars': False
+   contains 'dirty_substates': False
+   contains '_backend_vars': False
+   contains '_replaced_defaults': False
