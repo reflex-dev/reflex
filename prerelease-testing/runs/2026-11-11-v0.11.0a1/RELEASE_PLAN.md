@@ -23,7 +23,7 @@ the milestone `v0.11.0`.
 | 002, 003, 008 (rxe side) | MCP prod crash without deploy_url, AG Grid `refs`, MCP consent redirect | **PR open** [reflex-dev/reflex-enterprise#290](https://github.com/reflex-dev/reflex-enterprise/pull/290) (needs an rxe release) |
 | 044 | upload handler error truncates the response | **PR open** [reflex-dev/reflex#7808](https://github.com/reflex-dev/reflex/pull/7808) |
 | 001+016, 007 | repeated `@rx.event`, staticmethod above `@rx.event`, pyright 3.11–3.13 handler types | **PRs open** [reflex-dev/reflex#7807](https://github.com/reflex-dev/reflex/pull/7807), [reflex-dev/reflex#7810](https://github.com/reflex-dev/reflex/pull/7810) (stacked) |
-| 005/006/017+012 | see below | agent running (opens PR) |
+| 005/006/017, 012 | kept env.py errors / empty revisions / env.old; NOT NULL default_factory column | **PRs open** #7809, #7815 (stacked on #7797) |
 | 028, 029, 042, 047 | deprecation frames, package.json format, lucide/hosting floors, auto_memoize warning dedupe | **PRs open** #7811, #7812, #7813, #7814 |
 | 009, 037/038, 039 | see below | agent running (opens PRs) |
 | 010 + changelog lines 024/006/014/020 | see below | not started |
@@ -218,7 +218,7 @@ As each PR merges into `main`:
 | #7804 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | PR open; bot threads fixed 2163da819 + resolved; greptile 5/5 |
 | #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | PR open, watch (no warm-up needed: check sys.modules instead of importing) |
 | #7807 001+016 / #7810 007 | fix/repeated-rx-event (65e0d0280) + fix/event-callback-pyright-typing (f5bd795e1, stacked on #7807 → rebase onto main after #7807 merges), /home/user/reflex-fix-001 | PRs open, watch. 007 trade-off: mypy rejects `rx.event.EventCallback[int]` again (0.10.1 behaviour; import from reflex_base.event); pyright hooks on 3.11+3.14. Follow-up: type `@rx.event(...)` stacked on `@rx.event` for pyright |
-| 005/006/017+012 | fix/kept-env-py-errors (stacked on #7797), /home/user/reflex-fix-005 | agent running (opens PR) |
+| #7809 005/006/017, #7815 012 | fix/kept-env-py-errors (33b6ac1d2, /home/user/reflex-fix-005), fix/default-factory-not-null (471f8a5de, /home/user/reflex-fix-012); both stacked on #7797 at 33fac50b9 → rebase --onto the new #7797 head (93beac9a3+) once its bot-thread agent finishes; then onto main after #7797 merges | PRs open, watch. Kept callable `Column.default` working (0.10.1 path); custom env.py import-time migrate() logs + continues |
 | 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | PRs open reflex #7806 (1b1d7867c; function-memo refs import added, bot threads resolved), rxe #290 (d27d6a14b, greptile 5/5); watch |
 | #7808 044 | fix/upload-handler-error-response, /home/user/reflex-fix-044 | PR open (5d91c16ae), watch. Cause #7696 (not #7721); browser UX unchanged vs 0.10.1; 500 w/ CORS before any update, else 200 + `{"error"}` frame (owner default); double log removed. Follow-up: upload.js skips parsing non-2xx bodies |
 | 028 #7811, 029 #7812, 042 #7813, 047 #7814 | fix/deprecation-frames-skip-component-packages, fix/package-json-stable-format, fix/raise-lucide-hosting-floors, fix/dedupe-auto-memoize-warning (/home/user/reflex-fix-0NN) | PRs open (175367fb1, 740212ef6, d1baa8569, 4b93f0a13), watch. hosting-cli is a workspace sibling → `.dev0` floor; full unit suite left to CI |
