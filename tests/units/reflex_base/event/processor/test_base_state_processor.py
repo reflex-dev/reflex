@@ -5,14 +5,19 @@ import collections
 import contextlib
 import dataclasses
 import gc
+import importlib.abc
+import importlib.util
 import inspect
 import logging
+import sys
+import time
 import traceback
 import warnings
 import weakref
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, cast
+from types import ModuleType
+from typing import Any, TypedDict, cast
 
 import pytest
 import pytest_asyncio
@@ -2278,6 +2283,138 @@ def test_transform_event_arg_model_drops_non_fields_without_deprecation():
     assert isinstance(post, Post)
     assert (post.title, post.likes) == ("hi", 2)
     assert not post.model_extra
+
+
+class _TagsDict(TypedDict):
+    tag: str
+    name: str
+
+
+@pytest.mark.parametrize(
+    ("hint", "expected"),
+    [
+        (dict, {"tag": "b", "name": "x"}),
+        (_TagsDict, {"tag": "b", "name": "x"}),
+        (_TagsRecord, _TagsRecord(tag="b", name="x")),
+    ],
+)
+def test_transform_event_arg_dict_does_not_import_the_model_module(
+    monkeypatch: pytest.MonkeyPatch, hint: type, expected: Any
+):
+    """A dict payload is transformed without importing reflex.model.
+
+    With the db extra, importing reflex.model loads SQLAlchemy inside the event.
+    No class can subclass rx.Model while the module is not loaded.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        hint: The handler's annotation for the argument.
+        expected: The transformed argument.
+    """
+    # A None entry makes any import of reflex.model raise ImportError.
+    monkeypatch.setitem(sys.modules, "reflex.model", None)
+    assert _transform_event_arg({"tag": "b", "name": "x"}, hint) == expected
+
+
+class _SlowModelImport(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+    """Stand in for reflex.model with an import as slow as loading SQLAlchemy."""
+
+    def __init__(self, seconds: float):
+        """Create the finder.
+
+        Args:
+            seconds: How long executing the module blocks.
+        """
+        self.seconds = seconds
+        self.imported = False
+
+    def find_spec(self, fullname: str, path: Any, target: Any = None):
+        """Find reflex.model only.
+
+        Args:
+            fullname: The module name.
+            path: The parent package path.
+            target: The module being reloaded, if any.
+
+        Returns:
+            The spec of the slow module, or None for any other module.
+        """
+        if fullname != "reflex.model":
+            return None
+        return importlib.util.spec_from_loader(fullname, self)
+
+    def create_module(self, spec: Any) -> None:
+        """Use the default module creation.
+
+        Args:
+            spec: The module spec.
+        """
+
+    def exec_module(self, module: ModuleType) -> None:
+        """Block like a heavy import, then define Model.
+
+        Args:
+            module: The module to execute.
+        """
+        self.imported = True
+        time.sleep(self.seconds)
+        module.Model = type("Model", (), {})  # pyright: ignore[reportAttributeAccessIssue]
+
+
+async def test_dict_arg_handler_first_event_does_not_block_on_the_model_import(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """The first event of a handler taking a dict is not reported as blocking.
+
+    Reflex used to import reflex.model, and with it SQLAlchemy, while it
+    transformed the payload, so the dev monitor blamed the handler.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    slow_import = _SlowModelImport(seconds=0.3)
+    # Record the current entries first, so teardown restores (or removes) them.
+    for namespace, key in ((sys.modules, "reflex.model"), (vars(rx), "model")):
+        monkeypatch.setitem(namespace, key, None)
+        monkeypatch.delitem(namespace, key)
+    monkeypatch.setattr(sys, "meta_path", [slow_import, *sys.meta_path])
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    real_base_state_processor.event_loop_blocking_threshold = 0.05
+    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
+
+    class ProgressState(State):
+        progress: dict[str, int] = {}
+
+        @event
+        def on_progress(self, prog: dict):
+            self.progress = prog
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(
+            token,
+            Event(
+                name=f"{ProgressState.get_full_name()}.on_progress",
+                payload={"prog": {"loaded": 5, "total": 10}},
+                router_data={"pathname": "/", "asPath": "/", "query": {}},
+            ),
+        )
+        await processor.join(2)
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(ProgressState)).progress == {
+            "loaded": 5,
+            "total": 10,
+        }
+    assert not slow_import.imported
+    assert "is blocking the event loop" not in caplog.text
 
 
 def test_prepare_event_payload_transforms_form_data():
