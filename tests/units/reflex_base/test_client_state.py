@@ -956,3 +956,35 @@ def test_same_body_identical_declarations_compile() -> None:
     files, _ = compiler.compile_memo_components((MEMOS["Identical", __name__],))
     identifiers = _declared_identifiers("\n".join(c for _, c in files))
     assert identifiers.count(first._getter_name) == 1
+
+
+@pytest.mark.usefixtures("preserve_memo_registries")
+def test_multiline_default_conflict_fails_at_compile() -> None:
+    """A default whose javascript spans lines is still compared.
+
+    Regression: the declaration pattern did not match across newlines, so
+    such a default skipped the check.
+    """
+    multiline = client_state(Var("(1 +\n2)").to(int), name="multi_cc")
+    plain = client_state(0, name="multi_cc")
+
+    @rx.memo
+    def multiline_conflict() -> rx.Component:
+        return rx.el.div(multiline.value, plain.value)
+
+    with pytest.raises(ClientStateConflictError, match="'multi_cc'"):
+        compiler.compile_memo_components((MEMOS["MultilineConflict", __name__],))
+
+
+def test_generated_global_names_record_no_declaration_site() -> None:
+    """Only chosen names can conflict, so only they keep a declaration site.
+
+    Regression: every legacy unnamed global var added an entry that was never
+    released.
+    """
+    from reflex_base import client_state as client_state_module
+
+    before = len(client_state_module._declaration_sites)
+    for _ in range(3):
+        rx._x.client_state(default=0)
+    assert len(client_state_module._declaration_sites) == before

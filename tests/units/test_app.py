@@ -6316,6 +6316,7 @@ async def test_drain_oversized_body_middleware_passes_regular_requests_through()
 def test_client_state_conflicting_defaults_fail_the_compile(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
 ) -> None:
     """One name declared on two pages with two defaults fails the compile.
 
@@ -6346,6 +6347,7 @@ def test_client_state_conflicting_defaults_fail_the_compile(
 def test_client_state_identical_declarations_compile(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
 ) -> None:
     """Two modules may each declare the same global var with the same default."""
     mocker.patch(
@@ -6363,6 +6365,7 @@ def test_client_state_identical_declarations_compile(
 def test_client_state_conflicts_do_not_outlive_a_compile(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
 ) -> None:
     """A var declared again with an edited default compiles again (hot reload)."""
     mocker.patch(

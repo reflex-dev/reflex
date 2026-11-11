@@ -87,8 +87,11 @@ _GETTER_SUFFIX = CAMEL_CASE_CLIENT_STATE_MARKER
 _SETTER_SUFFIX = f"{CAMEL_CASE_CLIENT_STATE_MARKER}Set"
 _PLACEHOLDER_SUFFIX = f"{CAMEL_CASE_CLIENT_STATE_MARKER}Arg"
 
-# A `useClientState` declaration: the default expression, then the name.
-_DECLARATION = re.compile(r'= useClientState\((.*), "([A-Za-z0-9_$]+)"(?:, true)?\)\Z')
+# A `useClientState` declaration: the default expression, which may span
+# lines, then the name.
+_DECLARATION = re.compile(
+    r'= useClientState\((.*), "([A-Za-z0-9_$]+)"(?:, true)?\)\Z', re.DOTALL
+)
 
 # The declarations rendered so far in the current compile, by name. Unset
 # outside a compile, where only declarations within one body are compared.
@@ -96,8 +99,8 @@ _compile_declarations: ContextVar[dict[str, str] | None] = ContextVar(
     "_compile_declarations", default=None
 )
 
-# Where each named declaration was last created, by its hook line, for the
-# conflict error. Bounded by the distinct named declarations in the process.
+# Where each chosen-name declaration was last created, by its hook line, for
+# the conflict error. Bounded by the distinct declarations written in source.
 _declaration_sites: dict[str, str] = {}
 
 # Modules whose frames sit between the user's call and `_create`.
@@ -461,8 +464,9 @@ class ClientStateVar(Var):
         if is_global:
             args += ", true"
         hook = f"const [{getter_name}, {setter_name}] = useClientState({args})"
-        if is_global:
-            # Only a named var can be declared twice, so only its site is kept.
+        if is_global and "$" not in var_name:
+            # Only a chosen name can be declared twice (a generated one, `$`
+            # and all, is unique), so only its site is kept.
             _declaration_sites[hook] = _caller_site()
         hooks: dict[str, VarData | None] = {hook: None}
         app_wraps = get_client_state_app_wraps()
