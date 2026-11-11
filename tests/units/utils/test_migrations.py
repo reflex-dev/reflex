@@ -556,6 +556,12 @@ DATACLASS_APP = SQLALCHEMY_APP.replace(
     "class Base(DeclarativeBase):", "class Base(MappedAsDataclass, DeclarativeBase):"
 )
 
+LEGACY_MODEL = "class Legacy(rx.Model, table=True):\n    note: str = ''\n\n\n"
+SUBCLASS_MODEL = (
+    "class Special(Thing):\n"
+    "    extra: Mapped[int] = mapped_column(default_factory=lambda: 1)\n\n\n"
+)
+
 
 def test_default_factory_column_is_refused(
     project: Path, caplog: pytest.LogCaptureFixture
@@ -567,9 +573,10 @@ def test_default_factory_column_is_refused(
     server default; a nullable column needs none.
     """
     id_column = "id: Mapped[int] = mapped_column(primary_key=True)"
+    # An rx.Model table beside Base makes the hook see copies of the columns.
     source = DATACLASS_APP.replace(
         id_column, "id: Mapped[int] = mapped_column(primary_key=True, init=False)"
-    )
+    ).replace("app = rx.App()", f"{LEGACY_MODEL}app = rx.App()")
     t1 = "    t1: Mapped[str] = mapped_column()"
     _write_source(project, source.format(columns=t1))
     _db("init")
@@ -606,6 +613,19 @@ def test_default_factory_column_is_refused(
     _db("makemigrations", "--message", "keyed factory", exit_code=1)
     (message,) = _errors(caplog)
     assert "'thing.points'" in message
+    assert len(_versions(project)) == 1
+    caplog.clear()
+
+    # A subclass column on the parent's table is found by the subclass mapper.
+    _write_source(
+        project,
+        source.format(columns=t1).replace(
+            "app = rx.App()", f"{SUBCLASS_MODEL}app = rx.App()"
+        ),
+    )
+    _db("makemigrations", "--message", "subclass factory", exit_code=1)
+    (message,) = _errors(caplog)
+    assert "'thing.extra'" in message
     assert len(_versions(project)) == 1
 
     _write_source(
