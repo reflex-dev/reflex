@@ -1373,4 +1373,4 @@ def test_revision_script_failure_keeps_its_traceback(
     assert "NameError" in record.getMessage()
     assert "not the Reflex template" not in record.getMessage()
     assert record.exc_info is not None
-    assert f"versions/{name}" in caplog.text
+    assert str(Path("versions", name)) in caplog.text
