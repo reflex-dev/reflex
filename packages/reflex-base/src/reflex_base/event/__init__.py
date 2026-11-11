@@ -3647,7 +3647,8 @@ class EventNamespace:
             The wrapped function.
 
         Raises:
-            TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
+            TypeError: If background is True and the function is not a coroutine or async generator,
+                or the function is a handler already bound to a state. # noqa: DAR402
         """
 
         def _explicit_event_actions() -> dict[str, Any]:
@@ -3683,18 +3684,24 @@ class EventNamespace:
             inner_actions: Mapping[str, Any] = {}
             registered = False
             if isinstance(func, EventHandler):
-                inner_actions = func.event_actions
                 registered = func.state is not None
+                if registered and "." in func.fn.__qualname__:
+                    # A method bound to a state: its function is that state's.
+                    msg = f"`{func.fn.__qualname__}` is already an event handler; decorate its function instead."
+                    raise TypeError(msg)
+                inner_actions = func.event_actions
                 func = func.fn
-            if background is True:
-                if not inspect.iscoroutinefunction(
-                    func
-                ) and not inspect.isasyncgenfunction(func):
+            if background is not None:
+                if (
+                    background
+                    and not inspect.iscoroutinefunction(func)
+                    and not inspect.isasyncgenfunction(func)
+                ):
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
-                setattr(func, BACKGROUND_TASK_MARKER, True)
-            if supersedes is True:
-                setattr(func, SUPERSEDES_MARKER, True)
+                setattr(func, BACKGROUND_TASK_MARKER, background)
+            if supersedes is not None:
+                setattr(func, SUPERSEDES_MARKER, supersedes)
             # A registered handler was checked before its rename, which
             # starts with "_" for a module named like `__main__`.
             if not registered and getattr(func, "__name__", "").startswith("_"):
