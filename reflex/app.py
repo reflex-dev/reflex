@@ -1862,6 +1862,7 @@ class App(MiddlewareMixin, LifespanMixin):
         dry_run: bool = False,
         use_rich: bool = True,
         trigger: CompileTrigger | None = None,
+        compile_initial_state: bool = True,
     ):
         """Compile the app and output it to the pages folder.
 
@@ -1871,6 +1872,8 @@ class App(MiddlewareMixin, LifespanMixin):
             use_rich: Whether to use rich progress bars.
             trigger: Label identifying what initiated this compile. Recorded
                 on the ``compile`` telemetry event.
+            compile_initial_state: Whether a skipped compile still serializes
+                the initial state.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -1887,6 +1890,7 @@ class App(MiddlewareMixin, LifespanMixin):
                         prerender_routes=prerender_routes,
                         dry_run=dry_run,
                         use_rich=use_rich,
+                        compile_initial_state=compile_initial_state,
                     )
                     return
 
@@ -1898,6 +1902,7 @@ class App(MiddlewareMixin, LifespanMixin):
                             prerender_routes=prerender_routes,
                             dry_run=dry_run,
                             use_rich=use_rich,
+                            compile_initial_state=compile_initial_state,
                         )
                     except Exception as exc:
                         ctx.set_exception(exc)
