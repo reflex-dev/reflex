@@ -432,6 +432,8 @@ A var annotated as `set` or `frozenset` supports set operations rather than list
 
 Sets have no order or index. To use list operations such as indexing, `map` or `join`, call `to_array()` first; `rx.foreach` accepts a set var directly.
 
+An optional set var (`set[str] | None`) holding `None` acts as an empty set in every operation: `contains` is false, `length` is 0, `union` gives the other set, `issubset` is true, and `to_array()` is an empty list. A set built by `union`, `intersection`, `difference` or `symmetric_difference` is never `None`.
+
 Python's set operators are not set operations on a var: `==` compares the frontend values by reference, and `|` and `&` are the logical `or` and `and` of any var. Use the named methods instead, for example `a.issubset(b) & b.issubset(a)` for equality.
 
 ```python demo exec

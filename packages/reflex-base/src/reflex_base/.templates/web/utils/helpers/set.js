@@ -1,6 +1,8 @@
 // Set operations over the JSON array that a Python set or frozenset
 // serializes to. The array stays the wire value and the state value;
-// these helpers only give it Python set semantics.
+// these helpers only give it Python set semantics. A null or undefined operand
+// (a `set | None` var holding None, or a set field of a missing object) is an
+// empty set.
 
 /**
  * Key a set element by value, so structured elements (tuples, dataclasses)
@@ -20,11 +22,12 @@ export const pySetKey = (x) => {
 
 /**
  * Check whether a set (as an array) contains an element.
- * @param {Array} arr The set.
+ * @param {Array|null|undefined} arr The set.
  * @param {*} x The element to look for.
  * @returns {boolean} Whether the set contains the element.
  */
 export const pySetHas = (arr, x) => {
+  if (arr == null) return false;
   const key = pySetKey(x);
   // SameValueZero, as Set.has uses: NaN matches NaN, without copying arr.
   const isNaNKey = key !== key;
@@ -36,14 +39,14 @@ export const pySetHas = (arr, x) => {
 
 /**
  * The elements of either set, keeping the order of a then b.
- * @param {Array} a The first set.
- * @param {Array} b The second set.
+ * @param {Array|null|undefined} a The first set.
+ * @param {Array|null|undefined} b The second set.
  * @returns {Array} The union.
  */
 export const pySetUnion = (a, b) => {
-  const seen = new Set(a.map(pySetKey));
-  const result = [...a];
-  for (const x of b) {
+  const result = a == null ? [] : [...a];
+  const seen = new Set(result.map(pySetKey));
+  for (const x of b ?? []) {
     const key = pySetKey(x);
     if (!seen.has(key)) {
       seen.add(key);
@@ -55,22 +58,25 @@ export const pySetUnion = (a, b) => {
 
 /**
  * The elements of a that are also in b.
- * @param {Array} a The first set.
- * @param {Array} b The second set.
+ * @param {Array|null|undefined} a The first set.
+ * @param {Array|null|undefined} b The second set.
  * @returns {Array} The intersection.
  */
 export const pySetIntersection = (a, b) => {
+  if (a == null || b == null) return [];
   const keys = new Set(b.map(pySetKey));
   return a.filter((x) => keys.has(pySetKey(x)));
 };
 
 /**
  * The elements of a that are not in b.
- * @param {Array} a The first set.
- * @param {Array} b The second set.
+ * @param {Array|null|undefined} a The first set.
+ * @param {Array|null|undefined} b The second set.
  * @returns {Array} The difference.
  */
 export const pySetDifference = (a, b) => {
+  if (a == null) return [];
+  if (b == null) return [...a];
   const keys = new Set(b.map(pySetKey));
   return a.filter((x) => !keys.has(pySetKey(x)));
 };
@@ -78,8 +84,8 @@ export const pySetDifference = (a, b) => {
 /**
  * The elements in exactly one of a and b, without duplicates even when an
  * operand is a plain array that holds some.
- * @param {Array} a The first set.
- * @param {Array} b The second set.
+ * @param {Array|null|undefined} a The first set.
+ * @param {Array|null|undefined} b The second set.
  * @returns {Array} The symmetric difference.
  */
 export const pySetSymmetricDifference = (a, b) =>
@@ -87,22 +93,25 @@ export const pySetSymmetricDifference = (a, b) =>
 
 /**
  * Whether every element of a is in b.
- * @param {Array} a The first set.
- * @param {Array} b The second set.
+ * @param {Array|null|undefined} a The first set.
+ * @param {Array|null|undefined} b The second set.
  * @returns {boolean} Whether a is a subset of b.
  */
 export const pySetIsSubset = (a, b) => {
+  if (a == null) return true;
+  if (b == null) return a.length === 0;
   const keys = new Set(b.map(pySetKey));
   return a.every((x) => keys.has(pySetKey(x)));
 };
 
 /**
  * Whether a and b have no element in common.
- * @param {Array} a The first set.
- * @param {Array} b The second set.
+ * @param {Array|null|undefined} a The first set.
+ * @param {Array|null|undefined} b The second set.
  * @returns {boolean} Whether the sets are disjoint.
  */
 export const pySetIsDisjoint = (a, b) => {
+  if (a == null || b == null) return true;
   const keys = new Set(b.map(pySetKey));
   return !a.some((x) => keys.has(pySetKey(x)));
 };

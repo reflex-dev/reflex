@@ -15,6 +15,7 @@ def SetOperationsApp():
         points: rx.Field[set[tuple[int, int]]] = rx.field({(1, 2), (3, 4)})
         numbers: rx.Field[set[int]] = rx.field({0, 1})
         maybe: rx.Field[set[str] | None] = rx.field(None)
+        maybe_other: rx.Field[frozenset[str] | None] = rx.field(None)
         received: rx.Field[list[str]] = rx.field([])
 
         @rx.event
@@ -113,6 +114,41 @@ def SetOperationsApp():
                 SetOperationsState.maybe,
                 lambda tag: rx.text(tag, class_name="maybe"),
             ),
+            # Every operation reads an unset optional set as an empty set.
+            rx.text(SetOperationsState.maybe.contains("m"), id="maybe_has_m"),
+            rx.text(SetOperationsState.maybe.length(), id="maybe_length"),
+            sorted_text(SetOperationsState.maybe.union({"z"}), "maybe_union"),
+            sorted_text(
+                SetOperationsState.tags.union(SetOperationsState.maybe),
+                "tags_union_maybe",
+            ),
+            sorted_text(
+                SetOperationsState.maybe.union(SetOperationsState.maybe_other),
+                "maybe_union_other",
+            ),
+            sorted_text(
+                SetOperationsState.maybe.intersection({"m"}), "maybe_intersection"
+            ),
+            sorted_text(SetOperationsState.maybe.difference({"z"}), "maybe_difference"),
+            sorted_text(
+                SetOperationsState.tags.difference(SetOperationsState.maybe),
+                "tags_difference_maybe",
+            ),
+            sorted_text(
+                SetOperationsState.maybe.symmetric_difference({"m", "z"}),
+                "maybe_symmetric_difference",
+            ),
+            rx.text(SetOperationsState.maybe.issubset({"z"}), id="maybe_issubset"),
+            rx.text(
+                SetOperationsState.maybe.issuperset(SetOperationsState.maybe_other),
+                id="maybe_issuperset",
+            ),
+            rx.text(SetOperationsState.maybe.isdisjoint({"m"}), id="maybe_isdisjoint"),
+            rx.cond(
+                SetOperationsState.maybe,
+                rx.text("set", id="maybe_cond"),
+                rx.text("unset", id="maybe_cond"),
+            ),
             rx.text(SetOperationsState.received.join(","), id="received"),
             rx.button("Add", id="add", on_click=SetOperationsState.add_tag),
             rx.button("Remove", id="remove", on_click=SetOperationsState.remove_tag),
@@ -135,16 +171,19 @@ def SetOperationsApp():
 
 
 @pytest.fixture
-def set_operations_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    """Start the set operations app at tmp_path via AppHarness.
+def set_operations_app(
+    tmp_path_factory, app_harness_env: type[AppHarness]
+) -> Generator[AppHarness, None, None]:
+    """Start the set operations app in dev and in prod, whose build prerenders it.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
+        app_harness_env: The dev or prod AppHarness class.
 
     Yields:
         running AppHarness instance
     """
-    with AppHarness.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("set_operations_app"),
         app_source=SetOperationsApp,
     ) as harness:
@@ -155,6 +194,22 @@ def set_operations_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
 def _sorted_text(page: Page, id: str) -> str:
     text = page.locator(f"id={id}").text_content() or ""
     return ",".join(sorted(part for part in text.split(",") if part))
+
+
+def _expect_maybe(page: Page, **expected: str):
+    """Check the operations on the optional set, waiting for the length to settle.
+
+    Args:
+        page: The page under test.
+        **expected: The expected text of each ``maybe_`` element, by suffix.
+    """
+    expect(page.locator("id=maybe_length")).to_have_text(expected["length"])
+    for name, text in expected.items():
+        id = name if name.startswith("tags_") else f"maybe_{name}"
+        if name in {"has_m", "length", "issubset", "issuperset", "isdisjoint", "cond"}:
+            expect(page.locator(f"id={id}")).to_have_text(text)
+        else:
+            assert _sorted_text(page, id) == text, id
 
 
 def test_set_operations(set_operations_app: AppHarness, page: Page):
@@ -187,8 +242,40 @@ def test_set_operations(set_operations_app: AppHarness, page: Page):
     expect(page.locator("id=has_false")).to_have_text("true")
 
     expect(page.locator(".maybe")).to_have_count(0)
+    _expect_maybe(
+        page,
+        has_m="false",
+        length="0",
+        union="z",
+        tags_union_maybe="a,b",
+        union_other="",
+        intersection="",
+        difference="",
+        tags_difference_maybe="a,b",
+        symmetric_difference="m,z",
+        issubset="true",
+        issuperset="true",
+        isdisjoint="true",
+        cond="unset",
+    )
     page.locator("id=set_maybe").click()
     expect(page.locator(".maybe")).to_have_count(1)
+    _expect_maybe(
+        page,
+        has_m="true",
+        length="1",
+        union="m,z",
+        tags_union_maybe="a,b,m",
+        union_other="m",
+        intersection="m",
+        difference="m",
+        tags_difference_maybe="a,b",
+        symmetric_difference="z",
+        issubset="false",
+        issuperset="true",
+        isdisjoint="false",
+        cond="set",
+    )
 
     # A backend mutation of the set re-renders every operation.
     page.locator("id=add").click()
