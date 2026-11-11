@@ -4,13 +4,15 @@ import asyncio
 import collections
 import contextlib
 import dataclasses
+import functools
 import gc
 import inspect
 import logging
 import traceback
+import unittest.mock
 import warnings
 import weakref
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, cast
 
@@ -4030,6 +4032,258 @@ async def test_background_handler_return_value_resolves_future(
             token, Event.from_event_type(BgReturnState.compute(1))[0]
         )
         assert await future == 2
+
+
+def _mistaken_return_state():
+    """Define a state whose handlers return or yield mistaken and valid events.
+
+    Returns:
+        The state class, registered in the test's registration context.
+    """
+
+    class MistakenReturnState(State):
+        """Handlers that return or yield something only mistakable for an event."""
+
+        target_runs: int = 0
+
+        @event
+        def target(self):
+            self.target_runs += 1
+
+        @event(background=True)
+        async def bg_target(self):
+            async with self:
+                self.target_runs += 1
+
+        def _helper(self) -> int:
+            return self.target_runs
+
+        @event
+        def returns_bound_handler(self):
+            return self.target
+
+        @event
+        async def async_returns_bound_handler(self):
+            return self.target
+
+        @event
+        def generator_returns_bound_handler(self):
+            yield
+            return self.target  # noqa: B901
+
+        @event
+        def returns_bound_background_handler(self):
+            return self.bg_target
+
+        @event(background=True)
+        async def background_returns_bound_handler(self):
+            return self.target
+
+        @event
+        def returns_uncalled_redirect(self):
+            return rx.redirect
+
+        @event
+        def returns_uncalled_toast(self):
+            return rx.toast
+
+        @event
+        def returns_uncalled_toast_success(self):
+            return rx.toast.success
+
+        @event
+        def returns_list_holding_bound_handler(self):
+            return [self.target]
+
+        @event
+        def returns_tuple_holding_uncalled_call_script(self):
+            return (rx.call_script,)
+
+        @event
+        def yields_bound_handler(self):
+            yield self.target
+
+        @event
+        async def async_yields_bound_handler(self):
+            yield self.target
+
+        @event
+        def yields_uncalled_redirect(self):
+            yield rx.redirect
+
+        @event
+        async def awaits_bound_handler_return(self):
+            await type(self).returns_bound_handler()
+
+        @event
+        def returns_bound_helper(self):
+            return self._helper
+
+        @event
+        def returns_plain_function(self):
+            return len
+
+        @event
+        def returns_partial(self):
+            return functools.partial(len)
+
+        @event
+        def returns_permissive_callable(self):
+            # Answers every attribute lookup, so a marker check must not be hasattr.
+            return unittest.mock.Mock()
+
+        @event
+        def returns_class_reference(self):
+            return type(self).target
+
+        @event
+        def returns_called_redirect(self):
+            return rx.redirect("/x")
+
+        @event
+        def returns_list_of_class_references(self):
+            return [type(self).target, type(self).target]
+
+    return MistakenReturnState
+
+
+@pytest.mark.parametrize(
+    "handler_name",
+    [
+        "returns_bound_handler",
+        "async_returns_bound_handler",
+        "generator_returns_bound_handler",
+        "returns_bound_background_handler",
+        "background_returns_bound_handler",
+        "returns_uncalled_redirect",
+        "returns_uncalled_toast",
+        "returns_uncalled_toast_success",
+        "returns_list_holding_bound_handler",
+        "returns_tuple_holding_uncalled_call_script",
+        "yields_bound_handler",
+        "async_yields_bound_handler",
+        "yields_uncalled_redirect",
+        "awaits_bound_handler_return",
+    ],
+)
+async def test_returned_mistaken_event_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    handler_name: str,
+):
+    """A bound handler or an uncalled event creator is a mistaken event, never a result.
+
+    ``return self.target`` (for ``type(self).target``) and ``return rx.redirect``
+    (for ``rx.redirect(...)``) raise the error naming the handler, as they did
+    before return values became results, instead of silently doing nothing.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        handler_name: The MistakenReturnState handler to run.
+    """
+    MistakenReturnState = _mistaken_return_state()
+    handler = getattr(MistakenReturnState, handler_name)
+    raising = (
+        "returns_bound_handler"
+        if handler_name == "awaits_bound_handler_return"
+        else handler_name
+    )
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(token, Event.from_event_type(handler())[0])
+        with pytest.raises(
+            TypeError,
+            match=rf"Your handler \S*MistakenReturnState\.{raising} must only return/yield",
+        ):
+            await future
+        await processor.join(5)
+    assert len(captured) == 1
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(MistakenReturnState)).target_runs == 0
+
+
+@pytest.mark.parametrize(
+    ("handler_name", "is_expected"),
+    [
+        ("returns_bound_helper", lambda result, cls: result.__func__ is cls._helper),
+        ("returns_plain_function", lambda result, cls: result is len),
+        (
+            "returns_partial",
+            lambda result, cls: isinstance(result, functools.partial),
+        ),
+        (
+            "returns_permissive_callable",
+            lambda result, cls: isinstance(result, unittest.mock.Mock),
+        ),
+    ],
+)
+async def test_returned_callable_that_is_not_an_event_resolves_future(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    handler_name: str,
+    is_expected: Callable[[Any, Any], bool],
+):
+    """A callable that is not a handler or an event creator is still a result.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        handler_name: The MistakenReturnState handler to run.
+        is_expected: Whether the future resolved to the value returned.
+    """
+    MistakenReturnState = _mistaken_return_state()
+    handler = getattr(MistakenReturnState, handler_name)
+    async with real_base_state_processor as processor:
+        result = await (
+            await processor.enqueue(token, Event.from_event_type(handler())[0])
+        )
+    assert is_expected(result, MistakenReturnState)
+
+
+@pytest.mark.parametrize(
+    ("handler_name", "target_runs", "client_event"),
+    [
+        ("returns_class_reference", 1, None),
+        ("returns_list_of_class_references", 2, None),
+        ("returns_called_redirect", 0, "_redirect"),
+    ],
+)
+async def test_returned_event_reference_still_chains(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_events: list[tuple[str, tuple[Event, ...]]],
+    token: str,
+    handler_name: str,
+    target_runs: int,
+    client_event: str | None,
+):
+    """A class reference to a handler, or a called event creator, chains as before.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_events: List to capture events emitted to the client.
+        token: The client token.
+        handler_name: The MistakenReturnState handler to run.
+        target_runs: How many times the chained ``target`` runs.
+        client_event: The frontend event the handler emits, if any.
+    """
+    MistakenReturnState = _mistaken_return_state()
+    handler = getattr(MistakenReturnState, handler_name)
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(token, Event.from_event_type(handler())[0])
+        assert await future.wait_all() is None
+        await processor.join(5)
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(MistakenReturnState)).target_runs == target_runs
+    if client_event is not None:
+        assert client_event in {e.name for _, events in emitted_events for e in events}
 
 
 async def test_locked_root_is_set_only_while_the_lock_is_held(

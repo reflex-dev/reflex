@@ -12,6 +12,7 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
+from types import FunctionType, MethodType
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.manager.token import BaseStateToken
@@ -19,7 +20,7 @@ from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
 from reflex_base.constants import CompileVars
-from reflex_base.event import Event, EventHandler, EventSpec
+from reflex_base.event import Event, EventHandler, EventSpec, _is_bound_event_handler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
@@ -101,21 +102,71 @@ def _is_empty_sequence(value: Any) -> bool:
     return is_non_string_sequence(value) and len(value) == 0
 
 
-def _holds_events_or_coroutines(value: Any) -> bool:
-    """Whether a sequence holds an event or an unawaited coroutine.
+def _is_event_creator(value: Any) -> bool:
+    """Whether a callable is declared to return an EventSpec, like ``rx.redirect``.
+
+    Reflex does not mark its event creators, but each one (``rx.redirect``,
+    ``rx.call_script``, ``rx.toast`` ...) is annotated to return the EventSpec it
+    creates, as are helpers wrapping them. Returned uncalled, such a callable is a
+    mistake for the event it would create, never a result.
+
+    Args:
+        value: The callable a handler returned.
+
+    Returns:
+        True if the function, or the ``__call__`` of a callable object such as
+        ``rx.toast``, is annotated to return an EventSpec.
+    """
+    fn = (
+        value if isinstance(value, (FunctionType, MethodType)) else type(value).__call__
+    )
+    try:
+        returns = fn.__annotations__.get("return")
+    except (AttributeError, NameError):
+        # Not annotated (a builtin, a class), or a deferred annotation naming
+        # something undefined.
+        return False
+    if isinstance(returns, str):
+        return returns.rpartition(".")[2] == "EventSpec"
+    return isinstance(returns, type) and issubclass(returns, EventSpec)
+
+
+def _is_mistaken_event(value: Any) -> bool:
+    """Whether a value can only be an event its handler failed to reference or call.
 
     Args:
         value: The value a handler returned.
 
     Returns:
-        True for a sequence ``_is_event_like`` rejects that still holds an
-        event (mixed with other values) or a coroutine.
+        True for ``self.handler`` (meant ``type(self).handler``) and for an
+        uncalled event creator such as ``rx.redirect``.
     """
+    return callable(value) and (
+        _is_bound_event_handler(value) or _is_event_creator(value)
+    )
+
+
+def _is_invalid_result(value: Any) -> bool:
+    """Whether a return value ``_is_event_like`` rejects is a bug rather than a result.
+
+    Args:
+        value: The value a handler returned.
+
+    Returns:
+        True for a coroutine that was never awaited, a mistaken event, and a
+        sequence that holds an event (mixed with other values), a coroutine or
+        a mistaken event.
+    """
+    if inspect.iscoroutine(value) or _is_mistaken_event(value):
+        return True
     if not is_non_string_sequence(value):
         return False
     try:
         return any(
-            isinstance(e, _EVENT_LIKE_TYPES) or inspect.iscoroutine(e) for e in value
+            isinstance(e, _EVENT_LIKE_TYPES)
+            or inspect.iscoroutine(e)
+            or _is_mistaken_event(e)
+            for e in value
         )
     except TypeError:
         return False
@@ -621,10 +672,11 @@ async def process_event(
             handler_name=handler_name,
         )
         return None
-    # A coroutine that was never awaited, or events mixed with other values,
-    # is a bug, not a result: chain_updates flushes the delta and then raises
-    # for it, as it does for any invalid yield.
-    invalid = inspect.iscoroutine(events) or _holds_events_or_coroutines(events)
+    # A coroutine that was never awaited, a mistaken event like `self.handler`
+    # or `rx.redirect`, or events mixed with other values, is a bug, not a
+    # result: chain_updates flushes the delta and then raises for it, as it
+    # does for any invalid yield.
+    invalid = _is_invalid_result(events)
     await chain_updates(
         events if invalid else None,
         root_state=ensure_locked(state, root_state),

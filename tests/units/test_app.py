@@ -5211,6 +5211,110 @@ async def test_on_event_falls_back_to_environ_without_connect(
         )
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("outcome", "warns"),
+    [
+        (42, True),
+        ({"rows": []}, True),
+        (None, False),
+        ([], False),
+        ("raise", False),
+        ("cancel", False),
+    ],
+)
+async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+    outcome: Any,
+    warns: bool,
+):
+    """A value returned by a handler the frontend triggered warns, once per handler.
+
+    Only backend code awaiting a handler receives its return value. ``[]`` is
+    how a handler said "no events" before return values were results, so it
+    does not warn.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+        outcome: What the event's future resolves to, or how it ends.
+        warns: Whether the dropped value is warned about.
+    """
+
+    class DroppedResultState(rx.State):
+        @rx.event
+        def handler(self):
+            pass
+
+    event_namespace = event_namespace_with_processor_mock
+    await event_namespace._token_manager.link_token_to_sid(token, "sid1")
+    event_namespace.app.sio = Mock(
+        get_environ=Mock(return_value=_connect_environ(token))
+    )
+    warn = mocker.patch("reflex.app.console.warn")
+    loop = asyncio.get_running_loop()
+    futures = [loop.create_future(), loop.create_future()]
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    enqueue_mock.side_effect = futures
+    payload = {
+        **_client_event_payload(),
+        "name": format.format_event_handler(
+            DroppedResultState.event_handlers["handler"]
+        ),
+    }
+    for future in futures:
+        await event_namespace.on_event("sid1", payload)
+        if outcome == "raise":
+            future.set_exception(ValueError("handler failed"))
+        elif outcome == "cancel":
+            future.cancel()
+        else:
+            future.set_result(outcome)
+    await asyncio.sleep(0)
+
+    if not warns:
+        warn.assert_not_called()
+        return
+    assert warn.call_count == 2
+    (message,), kwargs = warn.call_args
+    assert warn.call_args_list[0] == warn.call_args
+    assert kwargs == {"dedupe": True}
+    assert "DroppedResultState.handler" in message
+    assert "dropped" in message
+    assert "await" in message
+
+
+@pytest.mark.asyncio
+async def test_on_event_does_not_watch_frontend_results_in_prod(
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """In prod, a frontend event's future gets no callback: the check is dev only.
+
+    Args:
+        token: A token.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    app = App()
+    future = Mock()
+    app._event_processor = Mock(enqueue=AsyncMock(return_value=future))
+    event_namespace = EventNamespace("/event", app)
+    try:
+        await event_namespace._token_manager.link_token_to_sid(token, "sid1")
+        event_namespace.app.sio = Mock(
+            get_environ=Mock(return_value=_connect_environ(token))
+        )
+        await event_namespace.on_event("sid1", _client_event_payload())
+    finally:
+        await event_namespace._token_manager.disconnect_all()
+    cast(AsyncMock, app.event_processor.enqueue).assert_awaited_once()
+    future.add_done_callback.assert_not_called()
+
+
 @pytest.mark.parametrize("compile_raises", [False, True])
 def test_compile_releases_memo_naming_caches(
     mocker: MockerFixture, compile_raises: bool
@@ -5501,6 +5605,7 @@ async def test_on_event_uses_frontend_traceparent(otel_exporter):
     async def enqueue(token, event):
         await asyncio.sleep(0)
         seen.append(trace.get_current_span().get_span_context())
+        return Mock()
 
     mock_app.event_processor.enqueue = enqueue
     ns = EventNamespace(namespace="/", app=mock_app)
