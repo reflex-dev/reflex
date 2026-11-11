@@ -18,6 +18,7 @@ from contextlib import closing
 from pathlib import Path
 from typing import Any, Literal, overload
 
+import setproctitle
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
@@ -30,6 +31,27 @@ from reflex.utils.registry import get_npm_registry
 logger = logging.getLogger(__name__)
 
 MAX_BACKEND_WORKERS = 8
+
+
+def get_process_title(label: str) -> str:
+    """Build a Reflex process title independent of multiprocessing's argv.
+
+    Args:
+        label: The process role, such as compiler, backend, or frontend.
+
+    Returns:
+        The interpreter, Reflex command, and process role.
+    """
+    return f"{sys.executable} reflex run [{label}]"
+
+
+def set_process_title(label: str) -> None:
+    """Label the current Reflex child process.
+
+    Args:
+        label: The role of the current process.
+    """
+    setproctitle.setproctitle(get_process_title(label))
 
 
 def kill(pid: int):
