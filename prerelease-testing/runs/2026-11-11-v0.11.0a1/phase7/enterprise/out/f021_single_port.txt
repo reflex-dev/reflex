@@ -1,0 +1,14 @@
+=== ent-0912 dev use_single_port=True
+[f021_ent-0912] ready after 8s
+  backend GET / -> 404 Not Found
+  frontend GET / -> 200
+Info: Single port proxy mode enabled
+/p7/envs/ent-0912/lib/python3.12/site-packages/reflex_enterprise/proxy.py:135)
+stopped
+=== ent-0911 dev use_single_port=True
+[f021_ent-0911] ready after 6s
+  backend GET / -> 404 Not Found
+  frontend GET / -> 200
+Info: Single port proxy mode enabled
+/p7/envs/ent-0911/lib/python3.12/site-packages/reflex_enterprise/proxy.py:135)
+stopped

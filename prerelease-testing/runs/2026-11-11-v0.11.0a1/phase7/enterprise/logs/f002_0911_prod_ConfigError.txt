@@ -1,0 +1,16 @@
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/ent-0911/lib/python3.12/site-packages/reflex_enterprise/plugins/mcp.py", line 1478, in _resolve_issuer_url
+    raise ConfigError(
+reflex_base.utils.exceptions.ConfigError: MCP OAuth needs the app's public origin for the RFC 8414 issuer, but neither MCPPlugin(issuer_url=...) nor the config's deploy_url/api_url is set. Configure one of them.
+[ERROR] Unexpected exit from worker-1
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+--
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/ent-0911/lib/python3.12/site-packages/reflex_enterprise/plugins/mcp.py", line 1478, in _resolve_issuer_url
+    raise ConfigError(
+reflex_base.utils.exceptions.ConfigError: MCP OAuth needs the app's public origin for the RFC 8414 issuer, but neither MCPPlugin(issuer_url=...) nor the config's deploy_url/api_url is set. Configure one of them.
+[ERROR] Unexpected exit from worker-1
+[ERROR] Worker crash loop detected, exiting
+reflex_base.utils.exceptions.ConfigError: MCP OAuth needs the app's public origin for the RFC 8414 issuer, but neither MCPPlugin(issuer_url=...) nor the config's deploy_url/api_url is set. Configure one of them.
+[ERROR] Unexpected exit from worker-1
+reflex_base.utils.exceptions.ConfigError: MCP OAuth needs the app's public origin for the RFC 8414 issuer, but neither MCPPlugin(issuer_url=...) nor the config's deploy_url/api_url is set. Configure one of them.
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

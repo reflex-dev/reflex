@@ -1,0 +1,30 @@
+[f003_aligned_a1ent-clean_dev] ready after 6s
+[FAIL] a1ent-clean_dev {"page_errors": ["refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined", "refs is not defined"], "befor
+  server-log ReferenceError lines: 22
+stopped
+[f003_memo3_a1ent-clean_dev] ready after 6s
+[FAIL] a1ent-clean_dev {"rows_selected_via_memo_button": 0}
+  server-log ReferenceError lines: 2
+stopped
+[f003_aligned_ent-0911_dev] ready after 6s
+[PASS] ent-0911_dev {"page_errors": [], "before": [200, 200], "after": [276, 276]}
+  server-log ReferenceError lines: 0
+stopped
+[f003_memo3_ent-0911_dev] ready after 6s
+[PASS] ent-0911_dev {"rows_selected_via_memo_button": 3}
+  server-log ReferenceError lines: 0
+stopped
+[f003_aligned_ent-0912_dev] ready after 6s
+[PASS] ent-0912_dev {"page_errors": [], "before": [200, 200], "after": [276, 276]}
+  server-log ReferenceError lines: 0
+stopped
+[f003_memo3_ent-0912_dev] ready after 6s
+[PASS] ent-0912_dev {"rows_selected_via_memo_button": 3}
+  server-log ReferenceError lines: 0
+stopped
+[f003_aligned_ent-0912_prod] ready after 8s
+[PASS] ent-0912_prod {"page_errors": [], "before": [200, 200], "after": [276, 276]}
+stopped
+[f003_memo3_ent-0912_prod] ready after 8s
+[PASS] ent-0912_prod {"rows_selected_via_memo_button": 3}
+stopped

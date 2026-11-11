@@ -1,0 +1,5 @@
+# INVALID control: $OLDSB/envs/new-ent is contaminated (reflex_base component.py patched via hardlinked uv cache, implicit refs import). See f003_agapi_a1clean_control.txt for the clean a1 control.
+[f003_agapi_a1ctrl_dev] ready after 6s
+[PASS] a1ctrl_dev {"console": ["error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the 
+  server-log ReferenceError lines: 0
+stopped

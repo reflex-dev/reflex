@@ -1,0 +1,18 @@
+a1ent-clean migrate exit=1 web=yes tables=[] | ValueError: Library @radix-ui/themes is not bundledError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@rad
+a1ent-clean init exit=1 web=yes tables=[] | ValueError: Library @radix-ui/themes is not bundledError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@rad
+a1ent-clean makemig exit=1 web=yes tables=[] | ValueError: Library @radix-ui/themes is not bundledError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@rad
+a1ent-clean migrate_web exit=0 web=yes tables=[] | compile exit=0
+ent-0911 migrate exit=0 web=yes tables=[] | 
+ent-0911 init exit=0 web=yes tables=[] | 
+ent-0911 makemig exit=1 web=yes tables=[] | 
+ent-0911 migrate_web exit=0 web=yes tables=[] | compile exit=0
+ent-0912 migrate exit=0 web=yes tables=[] | 
+ent-0912 init exit=0 web=yes tables=[] | 
+ent-0912 makemig exit=1 web=yes tables=[] | 
+ent-0912 migrate_web exit=0 web=yes tables=[] | compile exit=0
+vent-prev migrate exit=0 web=yes tables=[] | 
+vent-prev init exit=1 web=yes tables=[] | ValueError: Library @radix-ui/themes is not bundledError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@rad
+vent-prev makemig exit=1 web=yes tables=[] | ValueError: Library @radix-ui/themes is not bundledError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@rad
+vent-prev migrate_web exit=0 web=yes tables=[] | compile exit=0
+ent-0912 makemigrations after init (no .web) exit=0 | 
+ent-0911 makemigrations after init (no .web) exit=0 | 

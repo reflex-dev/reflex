@@ -1,0 +1,6 @@
+[f003_agapi_noglobal_ent-0911] ready after 6s
+[FAIL] noglobal_ent-0911  {'page_errors': [], 'rows_after_grid_api': 0, 'state_selected': '-1', 'rows_after_AgGridAPI_create': 0, 'typeof_refs_in_window': 'undefined'}
+stopped
+[f003_agapi_noglobal_ent-0912] ready after 6s
+[PASS] noglobal_ent-0912  {'page_errors': [], 'rows_after_grid_api': 3, 'state_selected': '3', 'rows_after_AgGridAPI_create': 3, 'typeof_refs_in_window': 'undefined'}
+stopped

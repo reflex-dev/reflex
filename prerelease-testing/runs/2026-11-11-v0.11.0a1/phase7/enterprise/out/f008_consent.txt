@@ -1,0 +1,14 @@
+=== ent-0911 dev
+[f008_ent-0911_dev] ready after 8s
+issuer http://localhost:8380/ authorization_endpoint http://localhost:8380/authorize
+register 201
+authorize -> 302 Location: http://localhost:8380/agent-consent?txn=9zoSPlJi8NfepWrE7ZJ8bVnwnX7tHlwlN4VH9kQB9ow
+consent URL -> 404 text/plain; charset=utf-8 'Not Found'
+stopped
+=== ent-0912 dev
+[f008_ent-0912_dev] ready after 6s
+issuer http://localhost:8380/ authorization_endpoint http://localhost:8380/authorize
+register 201
+authorize -> 302 Location: http://localhost:3380/agent-consent?txn=9KJTdFwR3cfAFfchYZgcx_8KOFY6-p7i-xAiZmiH4i8
+consent URL -> 200 text/html '<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width'
+stopped

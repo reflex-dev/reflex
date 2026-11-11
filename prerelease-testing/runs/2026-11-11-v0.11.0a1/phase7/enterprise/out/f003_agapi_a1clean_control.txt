@@ -1,0 +1,5 @@
+[f003_agapi_a1clean_dev] ready after 10s
+[FAIL] a1clean_dev {"console": ["error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the
+import {ReflexEvent,applyEventActions,isTrue,mergeSlotProps,useRegisteredRef} from "$/utils/state"
+  server-log ReferenceError lines: 6
+stopped

@@ -1,0 +1,5 @@
+as-metadata: 404 ct=text/html; charset=utf-8 body='<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width'
+prm /.well-known/oauth-protected-resource/_reflex/mcp: 404 ct=text/html; charset=utf-8 body='<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width'
+prm /.well-known/oauth-protected-resource: 404 ct=text/html; charset=utf-8 body='<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width'
+POST /_reflex/mcp: 405 www-authenticate=None body='Method Not Allowed'
+POST /_reflex/mcp/: 401 www-authenticate='Bearer error="invalid_token", error_description="Authentication required", resource_metadata="http://localhost:8380/.well-known/oauth-protected-resource/_reflex/mcp"' body='{"error": "invalid_token", "error_description": "Authentication required"}'

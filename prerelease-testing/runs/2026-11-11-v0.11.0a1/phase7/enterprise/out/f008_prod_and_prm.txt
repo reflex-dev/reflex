@@ -1,0 +1,40 @@
+=== ent-0912 prod
+[f008_ent-0912_prod] ready after 8s
+issuer http://localhost:8380/ authorization_endpoint http://localhost:8380/authorize
+register 201
+authorize -> 302 Location: http://localhost:8380/agent-consent?txn=waYVRr7sfemj0l-WJuKazwX_Hvm-lh-IIJ3zBZP5lL8
+consent URL -> 307 None ''
+  GET /.well-known/oauth-authorization-server -> 200 application/json {"issuer":"http://localhost:8380/","authorization_endpoint":"http://localhost:8380/authori
+  GET /.well-known/oauth-protected-resource/_reflex/mcp -> 200 application/json {"resource":"http://localhost:8380/_reflex/mcp","authorization_servers":["http://localhost
+  GET /_reflex/mcp/.well-known/oauth-protected-resource -> 404 text/plain; charset=utf-8 Not Found
+stopped
+=== ent-0912 dev
+[f008_ent-0912_dev] ready after 6s
+issuer http://localhost:8380/ authorization_endpoint http://localhost:8380/authorize
+register 201
+authorize -> 302 Location: http://localhost:3380/agent-consent?txn=XNDAuBIj6pfz2klBAKO3UfXJMF2EizvTU9kuXjPe6zk
+consent URL -> 200 text/html '<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width'
+  GET /.well-known/oauth-authorization-server -> 200 application/json {"issuer":"http://localhost:8380/","authorization_endpoint":"http://localhost:8380/authori
+  GET /.well-known/oauth-protected-resource/_reflex/mcp -> 200 application/json {"resource":"http://localhost:8380/_reflex/mcp","authorization_servers":["http://localhost
+  GET /_reflex/mcp/.well-known/oauth-protected-resource -> 404 text/plain; charset=utf-8 Not Found
+stopped
+=== vent-prev prod
+[f008_vent-prev_prod] ready after 8s
+issuer http://localhost:8380/ authorization_endpoint http://localhost:8380/authorize
+register 201
+authorize -> 302 Location: http://localhost:8380/agent-consent?txn=aCpWiYLXhVohT7_KMK3O6wVZGWZppjSjPprJeZ0iWgg
+consent URL -> 307 None ''
+  GET /.well-known/oauth-authorization-server -> 200 application/json {"issuer":"http://localhost:8380/","authorization_endpoint":"http://localhost:8380/authori
+  GET /.well-known/oauth-protected-resource/_reflex/mcp -> 200 application/json {"resource":"http://localhost:8380/_reflex/mcp","authorization_servers":["http://localhost
+  GET /_reflex/mcp/.well-known/oauth-protected-resource -> 404 text/plain; charset=utf-8 Not Found
+stopped
+=== vent-prev dev
+[f008_vent-prev_dev] ready after 6s
+issuer http://localhost:8380/ authorization_endpoint http://localhost:8380/authorize
+register 201
+authorize -> 302 Location: http://localhost:3380/agent-consent?txn=FAkc_hT0vTG1ZKlTNzUo20NWKErL_XEl4JEKSwk1O98
+consent URL -> 200 text/html '<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width'
+  GET /.well-known/oauth-authorization-server -> 200 application/json {"issuer":"http://localhost:8380/","authorization_endpoint":"http://localhost:8380/authori
+  GET /.well-known/oauth-protected-resource/_reflex/mcp -> 200 application/json {"resource":"http://localhost:8380/_reflex/mcp","authorization_servers":["http://localhost
+  GET /_reflex/mcp/.well-known/oauth-protected-resource -> 404 text/plain; charset=utf-8 Not Found
+stopped

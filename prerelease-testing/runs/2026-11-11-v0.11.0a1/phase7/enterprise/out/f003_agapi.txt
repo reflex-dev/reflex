@@ -1,0 +1,16 @@
+[f003_agapi_ent-0911_dev] ready after 6s
+[PASS] ent-0911_dev {"console": ["error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"], "page_errors": [], "rows_after_grid_api": 3, "state_selected": "3", "rows_after_AgGridAPI_create": 3, "typeof_refs_in_window": "object"}
+  server-log ReferenceError lines: 0
+stopped
+[f003_agapi_ent-0911_prod] ready after 8s
+[PASS] ent-0911_prod {"console": ["error: Failed to load resource: the server responded with a status of 404 (Not Found)", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"], "page_errors": [], "rows_after_grid_api": 3, "state_selected": "3", "rows_after_AgGridAPI_create": 3, "typeof_refs_in_window": "object"}
+  server-log ReferenceError lines: 0
+stopped
+[f003_agapi_ent-0912_dev] ready after 6s
+[PASS] ent-0912_dev {"console": ["error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"], "page_errors": [], "rows_after_grid_api": 3, "state_selected": "3", "rows_after_AgGridAPI_create": 3, "typeof_refs_in_window": "object"}
+  server-log ReferenceError lines: 0
+stopped
+[f003_agapi_ent-0912_prod] ready after 12s
+[PASS] ent-0912_prod {"console": ["error: Failed to load resource: the server responded with a status of 404 (Not Found)", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *", "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"], "page_errors": [], "rows_after_grid_api": 3, "state_selected": "3", "rows_after_AgGridAPI_create": 3, "typeof_refs_in_window": "object"}
+  server-log ReferenceError lines: 0
+stopped
