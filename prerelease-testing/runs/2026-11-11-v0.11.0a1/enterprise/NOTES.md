@@ -2,8 +2,8 @@
 
 ## Status / resume here
 - DONE: step 1 static scan + import sweep; ENT-29 (entv + aggrid_min prod on new-ent).
-- RUNNING/NEXT: upstream demos dnd/flow/mantine/map prod (seq_grid part 2) on new-ent; then xcut app (CORS, lifespan,
-  awaited protected handler, REST/WS parity, Redis); auth (entauth + mock IdP); ag_grid/tickets/highcharts demos; prev-ent baselines.
+- DONE also: demos dnd/flow/mantine/map prod, xcut (CORS/lifespan/await/parity/Redis), auth parts 1-3 new + part 3 prev, ISSUE 1-3.
+- RUNNING/NEXT: ag_grid + tickets + highcharts demos prod (new), dev runs of demos, prev baselines for anything failing, report.
 - Venvs: `$SB/envs/new-ent` (reflex 0.11.0a1 + rxe 0.9.11[mcp], redis 8.2.0b1), `$SB/envs/prev-ent` (reflex 0.10.1 + rxe 0.9.11, redis 7.4.1).
   Both: mcp 1.30.0, oidc-provider-mock 0.4.8, starlette 1.10.0, granian 2.8.7, asgiproxy+aiohttp+PyYAML present, no fastapi, no pytest.
 - Ports: fe 3380-3399, be 8380-8399; Redis 8399, mock IdP 8398, account stub 8397 (127.0.0.1).
@@ -147,3 +147,46 @@ Per-check observations (new-ent unless stated):
   `stale_hash_probe` **CORRECTED 3/3 x3**, hydration SUMMARY verbatim the 0.10.0 line; 0 tracebacks / 0 TypeError.
   Console noise only the mock-IdP pico.css tunnel error + cookie-sync keepalive aborts (known benign).
 `enterprise-entdrv` venv = reflex 0.11.0a1 + reflex-enterprise[mcp] 0.9.11 + playwright 1.63.0 + httpx + pytest (PyPI).
+- part 3 (a4 matrix, dev, memory; `seq_ent_auth.sh <venv> <L> 3`): new-ent **36/36** (auth-full 22/22, reload 3/3,
+  auth-min default 4/4, iframe 3/3, extra scopes 4/4) + anonymous MCP pass, BUT **MCP OAuth FAILS** (driver times out
+  waiting for `/login` after opening the authorization URL). prev-ent baseline (same command, label prev): 36/36 + MCP OAuth
+  pass + anonymous MCP pass -> regression, ISSUE 2.
+
+## ISSUE 1 — MCPPlugin app dies at startup under `reflex run --env prod` (deploy_url unset)
+Minimal repro: `src/mcpmin` (rxe.Config(plugins=[rxe.MCPPlugin()]) + one page) and `scripts/repro_mcp_prod.sh`
+(port 8381, 1 worker, REFLEX_API_URL=http://localhost:8381). Output `out/repro_mcp_prod.txt`:
+| venv | acct | extra env | result |
+|---|---|---|---|
+| new-ent | token | — | every worker exits: `ConfigError: MCP OAuth needs the app's public origin for the RFC 8414 issuer, but neither MCPPlugin(issuer_url=...) nor the config's deploy_url/api_url is set` |
+| new-ent | stub | — | same (token vs stub: no difference) |
+| prev-ent | token | — | starts, serves |
+| new-ent | token | REFLEX_DEPLOY_URL=http://localhost:8381 | starts, serves (workaround) |
+Also hit by the xcut app with AuthPlugin+MCPPlugin and with MCPPlugin alone. Cause: reflex 0.11 prod always mounts the
+compiled frontend into the backend (`REFLEX_MOUNT_FRONTEND_COMPILED_APP`), and rxe's `resolve_server_url()` then returns
+`config.deploy_url`, which #7641 changed from "derived from frontend_port" to `None`. The error message even says "api_url
+is set" is enough, but api_url IS set here. Same root cause: openapi.yaml loses its `servers` entry in prod. Fix belongs
+to reflex-enterprise (fall back to `config.frontend_url` / `api_url` when deploy_url is None); a reflex-side mitigation
+would be a breaking-change note naming downstream readers of `deploy_url`.
+
+## ISSUE 2 — MCP OAuth consent redirect goes to the backend origin in dev (deploy_url unset)
+`scripts/mcp_consent_probe.py` against the a4auth `auth_min` app in dev (frontend 3393, backend 8393), out `out/mcp_consent_*.txt`:
+- new-ent: `/authorize` -> `302 Location: http://localhost:8393/agent-consent?txn=...` -> **404 Not Found** (backend origin).
+- prev-ent: `302 Location: http://localhost:3393/agent-consent?txn=...` -> 200 (frontend page).
+- new-ent with `REFLEX_DEPLOY_URL=http://localhost:3393`: 302 to 3393, 200; the full fixture `check_mcp_oauth.py` then passes
+  ("MCP OAuth discovery, registration, browser consent, PKCE, protected event, code replay and refresh rotation passed",
+  `out/mcp_oauth_new_deploy.txt`).
+Cause: rxe `MCPPlugin._resolve_consent_url` uses `config.deploy_url or issuer_url`; deploy_url is None on 0.11 by default,
+so the consent page is addressed on the backend. Fix in reflex-enterprise: use `config.frontend_url` (new in 0.11) when present.
+Repro:
+```
+. <DEST>/scripts/env.sh; ENT_DRV=enterprise-entdrv $F/auth/a4auth/fetch_upstream.sh /home/user/reflex-enterprise
+$F/auth/bin/infra.sh start; cd $WORK/auth/a4auth/apps/auth_min
+CI=true OIDC_ISSUER_URI=http://localhost:8398 OIDC_CLIENT_ID=reflex-integration-test OIDC_CLIENT_SECRET=reflex-integration-test-secret AUTHLIB_INSECURE_TRANSPORT=1 setsid $SB/envs/new-ent/bin/reflex run --frontend-port 3393 --backend-port 8393 &
+$SB/envs/new-ent/bin/python -I <DEST>/scripts/mcp_consent_probe.py http://localhost:8393
+```
+
+## ISSUE 3 (pre-existing) — `rxe.Config(use_single_port=True)` dev proxy never mounts
+new-ent and prev-ent alike: "Unable to find the base Starlette app. Proxying will not be enabled." and the backend port
+answers 404 for `/` (with and without an api_transformer). rxe's `proxy_middleware(app)` lifespan task receives reflex's
+`App` (reflex binds a parameter named `app` to the rx.App), not a Starlette. Upstream AG Grid demo's rxconfig sets
+`use_single_port=True`. Not a 0.11 regression. Repro: `XC_SINGLE=1 $S/xc.sh start <venv> dev l; curl localhost:8380/` -> 404.
