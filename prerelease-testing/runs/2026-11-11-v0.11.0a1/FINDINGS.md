@@ -1,7 +1,7 @@
 # Findings — reflex 0.11.0a1 pre-release testing (2026-11-11) — DRAFT
 
 **Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. Done, verification
-running: `server_net`, `redis_runtime`. Still exploring: `client_vars`, `compile_memo`, `examples_ui`.
+running: `redis_runtime`; `server_net` verified. Still exploring: `client_vars`, `compile_memo`, `examples_ui`.
 Findings marked *(unverified)* have not yet been through an independent verifier. Numbering is provisional; the final
 pass re-ranks by severity.
 
@@ -28,7 +28,7 @@ DeclarativeBase serializer (dev, prod + Redis, hot reload); awaitable event hand
 {memory, Redis}; middleware gating of awaited handlers; failed/cancelled-handler write fixes (#7696/#7412/#7738);
 reflex-enterprise OIDC, demos, REST/WS parity, Redis, lifespan; packaging (.pyi audit, wheel = tag, sdist rebuilds).
 
-Blocks (candidates, see RELEASE_PLAN.md): FINDING-001 (double `@rx.event` crashes import, breaks reflex-examples
+Blocks (candidates, see RELEASE_PLAN.md): FINDING-022 (new prod CORS default: TLS-proxied same-origin prod and every documented split/CDN deployment never connect), FINDING-001 (double `@rx.event` crashes import, breaks reflex-examples
 `overkey`), FINDING-002 / -003 (reflex-enterprise 0.9.11 breaks on 0.11: MCP prod startup, AG Grid API), FINDING-004
 (unregistered DeclarativeBase silently drops every table — not a regression but the docs now steer everyone there),
 FINDING-005 / -006 (kept hand-edited env.py).
@@ -55,6 +55,12 @@ Index:
 - FINDING-019: Merged registry metadata drops the Base `naming_convention` for UniqueConstraint (LOW)
 - FINDING-020: tables.md custom serializer example breaks for models with relationships (LOW, docs)
 - FINDING-021: [reflex-enterprise] `use_single_port=True` dev proxy never mounts (LOW, not a regression)
+- FINDING-022: New prod CORS default breaks same-origin prod behind a TLS proxy and every documented split/CDN deployment (HIGH, regression)
+- FINDING-023: CORS rejection is reported to the user as "server unreachable"; no hint at deploy_url / cors_allowed_origins (LOW)
+- FINDING-024: `rx.App()()` no longer returns Starlette; listed only under Performance (LOW, changelog)
+- FINDING-025: A middleware that fails on non-http scopes silently skips a FastAPI transformer's lifespan (LOW)
+- FINDING-026: Routes differing only in case are accepted silently; one is unreachable (LOW, not a regression)
+- FINDING-027: Prod `reflex run`: repeated Ctrl-C does not force exit while lifespan cleanup is stuck (LOW, not a regression)
 - PKG-A (maintainer decision): reflex 0.11.0a1 requires only `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`
 
 ---
@@ -253,6 +259,61 @@ Index:
 - Cluster: `enterprise` | Regression: no (both versions) | `XC_SINGLE=1 enterprise/scripts/xc.sh start <venv> dev l` →
   `curl localhost:8380/` 404; "Unable to find the base Starlette app".
 
+## FINDING-022: New prod CORS default breaks same-origin prod behind a TLS proxy and every documented split/CDN deployment (HIGH)
+- Cluster: `server_net` | Regression vs 0.10.1: yes | Verifier: CONFIRMED, WIDER (raised from MEDIUM)
+- Repro (split, doc-literal, docs/hosting/self-hosting.md @ v0.11.0a1): `reflex run --env prod --backend-only --backend-port 8348`
+  and `REFLEX_API_URL=http://localhost:8348 reflex run --env prod --frontend-only --frontend-port 3348`; open
+  http://localhost:3348, click → websocket 403 forever, backend log `http://localhost:3348 is not an accepted origin.`
+  0.10.1 works; setting `REFLEX_DEPLOY_URL` (or `REFLEX_CORS_ALLOWED_ORIGINS`) on the backend fixes it. Scripts:
+  `verify_net/bin/split.sh`, `server_net/bin/split_doc.sh`.
+- Repro (same-origin behind TLS): single-port `reflex run --env prod` behind a TLS terminator that keeps Host and adds no
+  `X-Forwarded-*` (`verify_net/bin/tls_run.sh` + `bin/tls_term.py`) → never connects (all 403); raw handshake with
+  `Origin: https://H` → 403, adding `X-Forwarded-Proto: https` → 101. 0.10.1 works. The self-hosting guide says this setup
+  "needs no api_url configuration at all".
+- Root cause: `reflex/app.py:512-515` returns `None` for `cors_allowed_origins` in prod when `deploy_url` is unset;
+  `app.py:761-766` passes it to `AsyncServer`; engine.io then accepts only `{ASGI scheme}://{Host}`
+  (`engineio/base_server.py:284-300`), and behind TLS termination the ASGI scheme is `http`.
+- Affected guides at the tag: self-hosting.md L63-71 (split), L89-109 (API URL), L135-152 (static export), L84-95
+  (reverse proxy/TLS claim); scaling.md L62-72 (CDN frontend); docker-example/app-platform-backend README L58-67;
+  very likely docker-example/production behind a Render/Heroku TLS edge (Caddy replaces untrusted X-Forwarded-Proto; not
+  run end-to-end). OK: docker-example/production-compose (Caddy terminates TLS itself).
+- Fix shape: keep the secure default; before final update every guide above (`REFLEX_DEPLOY_URL` on the backend,
+  X-Forwarded-Proto/Host for reverse proxies, Caddy `trusted_proxies`) and add an upgrade note; recommended code change:
+  a Reflex origin callable for engine.io that also accepts `https://{Host}` behind a TLS proxy and logs a single actionable
+  WARNING on rejection (see FINDING-023).
+
+## FINDING-023: CORS rejection is reported as "server unreachable" (LOW)
+- Cluster: `server_net` | Regression: no for the message (banner text identical at v0.10.1), but #7641 now triggers it by
+  default | Verifier: NARROWED
+- Repro: `server_net/bin/cors.sh server_net-main A_unset` — toast "Cannot connect to server: websocket error. Check if
+  server is reachable at ws://localhost:8346/_event" while `/ping` answers 200; server logs one engineio WARNING then INFO.
+- Code: `reflex_components_core/core/banner.py:80-91,107-110`. Fix shape: Reflex-side WARNING naming the rejected origin,
+  what the backend saw and the setting to change; optionally a `no-cors` ping to say "reachable but refused".
+
+## FINDING-024: `rx.App()()` no longer returns a Starlette app; listed only under Performance (LOW, changelog)
+- Cluster: `server_net` | Regression: yes (by design) | Verifier: CONFIRMED; downstream reliance unlikely (rxe 0.9.11 uses
+  `app._api`; docs/examples never call `app()`)
+- `reflex/app.py:1010-1023` returns `_RootMiddleware` (no `add_middleware`/`routes`/`mount`). Fix: Breaking Changes entry
+  pointing to `api_transformer` / `app._api`.
+
+## FINDING-025: A middleware that fails on non-http scopes silently skips a FastAPI transformer's lifespan (LOW)
+- Cluster: `server_net` | Regression: no (lifespan never ran on 0.10.1) | Verifier: CONFIRMED anomaly
+- `api_transformer=[FastAPI(lifespan=...), old_docs_middleware]` where the middleware reads `scope["path"]` → only
+  `Info: ASGI lifespan appears unsupported by <function ...>: KeyError('path')`. The docs' updated `scope.get("path")`
+  example works. Root cause `reflex/app_mixins/lifespan.py:120-132` (any startup exception → INFO), `app.py:987-1007`
+  (lifespan sent only to the outermost app). Fix: WARNING naming the transformers whose lifespan will not run, or send
+  lifespan to inner Starlette transformers directly; upgrade note.
+
+## FINDING-026: Routes differing only in case are accepted silently (LOW, not a regression)
+- Cluster: `server_net` | Verifier: NARROWED (0.10.1: `/foo` already rendered `/Foo` but ran `/foo`'s on_load; 0.11 makes the
+  backend agree with the frontend). Root cause `reflex/app.py:1295` exact-string comparison, `route.py:185` IGNORECASE.
+  Fix: raise `RouteValueError` on a case-insensitive duplicate.
+
+## FINDING-027: Prod `reflex run`: repeated Ctrl-C does not force exit while lifespan cleanup is stuck (LOW, not a regression)
+- Cluster: `server_net` | Not separately verified. Lifespan task sleeping 60 s after `yield`, prod, Ctrl-C ×3 → exits only
+  after 60 s. The force-exit handler (`_REPEAT_IGNORE_SECONDS`) is installed only in `_run_dev` (reflex/reflex.py). The
+  #7650 changelog implies a later Ctrl-C forces the exit.
+
 ## PKG-A: sibling floors (maintainer decision)
 reflex 0.11.0a1 requires `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`. A stock `pip install
 reflex==0.11.0a1` resolves lucide 1.1.1 and hosting-cli 0.2.1 (without the #7674 / #7670 fixes); `uv pip install -U`
@@ -296,5 +357,9 @@ prod + Redis, hot reload; AdminDash error; deprecated helpers. Issues: FINDING-0
 ### `enterprise` (pass:14, anomaly:4, fail:2)
 rxe 0.9.11 imports clean; OIDC 36/36 + N-032 + deeplink; demos dnd/flow/mantine/map/highcharts/tickets; awaited protected
 handlers; REST/WS parity; Redis; lifespan; CORS. Issues: FINDING-002/-003/-008/-009/-021.
+### `server_net` (pass:19, anomaly:9, fail:1)
+CORS matrix, lifespan forwarding, case-insensitive routes, HYD-06 prenav, oversized events, state-mismatch event, signals
+and `--json`, `--frontend-only/--backend-only` ports, blocking monitor, otel trace ids, hosting-cli exit code. Issues:
+FINDING-022 … -027.
 ### `events_await` (pass:15, anomaly:7, fail:3)
 64 await scenarios × dev/prod × memory/Redis; middleware; failure paths; decorators; typing. Issues: FINDING-001/-007/-010/-015/-016, plus low: memory-manager `CancelledError` for a background task awaiting a superseded handler; background task that catches an awaited exception still shows the error toast; deprecation names only the first stacked method per class.
