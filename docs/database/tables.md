@@ -31,9 +31,11 @@ class User(Base):
 Each `Mapped[...]` annotation becomes a column whose SQL type is derived from the
 Python type. `MappedAsDataclass` makes the model a dataclass, so `User(username="test", email="test@example.com")`
 constructs a row and Reflex can store `User` instances in state and render their
-fields in components. The `reflex db`
+fields in components. Until a base is registered with
+`rx.ModelRegistry.register(Base)`, the `reflex db`
 [migration commands](/docs/database/overview/#migrations) find the tables of every
-`DeclarativeBase` subclass that the app's modules define.
+module-level `DeclarativeBase` subclass that the app imports; see
+[Database Overview](/docs/database/overview/) for when to register bases.
 
 Dataclass fields without a default must come before fields with one, so declare
 required columns first and optional columns, with `default=None` or

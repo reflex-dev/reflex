@@ -1,1 +1,1 @@
-An app with a `DeclarativeBase` meant for another database and no base registered now gets that base's tables as `create_table` in its `db_url` migrations: register the bases of `db_url` with `rx.ModelRegistry.register(Base)` to leave the others out.
+An app with no base registered now migrates the tables of every loaded `DeclarativeBase`, so one meant for another database or defined by an installed library gets `create_table` in its `db_url` migrations: register the bases of `db_url` with `rx.ModelRegistry.register(Base)` to leave the others out.
