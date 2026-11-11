@@ -373,7 +373,7 @@ def sync_root_package_json_to_web() -> bool:
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)
-    output_path.write_text(rendered)
+    _write_package_json(output_path, rendered)
     return changed
 
 
@@ -411,6 +411,16 @@ def sync_web_lockfiles_to_root():
         sync_web_lockfile_to_root(name)
 
 
+def _write_package_json(package_json_path: Path, content: str):
+    """Write package.json as UTF-8 with LF newlines, the way bun writes it.
+
+    Args:
+        package_json_path: The package.json file to write.
+        content: The rendered package.json content.
+    """
+    package_json_path.write_text(content, encoding="utf-8", newline="\n")
+
+
 def _read_package_json_object(package_json_path: Path) -> dict:
     """Read a package.json file as a JSON object.
 
@@ -424,8 +434,8 @@ def _read_package_json_object(package_json_path: Path) -> dict:
     if not package_json_path.exists():
         return {}
     try:
-        parsed = json.loads(package_json_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+        parsed = json.loads(package_json_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         logger.warning(
             f"Failed to read {package_json_path}: {e}; treating it as empty."
         )
@@ -606,14 +616,17 @@ def update_package_json_overrides() -> bool:
 
     package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
     logger.debug(f"Applying framework overrides to {package_json_path}")
-    package_json_path.write_text(json.dumps(package_json))
+    # Match bun's layout so its later rewrites leave the file unchanged.
+    _write_package_json(
+        package_json_path, json.dumps(package_json, indent=2, ensure_ascii=False) + "\n"
+    )
     return True
 
 
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    output_path.write_text(_compile_package_json())
+    _write_package_json(output_path, _compile_package_json())
 
 
 def _compile_vite_config(config: Config):

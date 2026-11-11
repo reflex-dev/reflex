@@ -92,21 +92,75 @@ def test_sync_root_package_json_restores_content(package_json_path: Path, field,
     assert json.loads(package_json_path.read_text()) == original
 
 
-@pytest.mark.parametrize("content", [None, "", "{invalid", "[]", "null"])
+@pytest.mark.parametrize("content", [None, "", "{invalid", "[]", "null", b"\xff{}"])
 def test_sync_root_package_json_repairs_unusable_file(
-    package_json_path: Path, content: str | None
+    package_json_path: Path, content: str | bytes | None
 ):
     """Missing or invalid rendered manifests are replaced with the compiled object.
 
     Args:
         package_json_path: The rendered package.json path.
-        content: Invalid file content, or None to remove the file.
+        content: Invalid file content (bytes that are not UTF-8), or None to
+            remove the file.
     """
     original = json.loads(package_json_path.read_text())
     if content is None:
         package_json_path.unlink()
+    elif isinstance(content, bytes):
+        package_json_path.write_bytes(content)
     else:
         package_json_path.write_text(content)
 
     assert frontend_skeleton.sync_root_package_json_to_web() is (content is not None)
     assert json.loads(package_json_path.read_text()) == original
+
+
+def _assert_bun_format(package_json_path: Path):
+    """Assert a package.json is laid out the way bun rewrites it: UTF-8, LF only.
+
+    Args:
+        package_json_path: The package.json file to check.
+    """
+    raw = package_json_path.read_bytes()
+    assert b"\r" not in raw
+    content = raw.decode("utf-8")
+    assert (
+        content == json.dumps(json.loads(content), indent=2, ensure_ascii=False) + "\n"
+    )
+
+
+@pytest.mark.usefixtures("windows_text_io")
+def test_rendered_package_json_matches_bun_format(package_json_path: Path):
+    """Reflex renders package.json in bun's format, so bun rewrites leave no diff.
+
+    Args:
+        package_json_path: The rendered package.json path.
+    """
+    root_package = frontend_skeleton.get_root_lockfile_path(constants.PackageJson.PATH)
+    root_package.write_text(
+        json.dumps({"description": "Café ☃", "files": ["a", "b"]}), encoding="utf-8"
+    )
+    frontend_skeleton.initialize_package_json()
+    _assert_bun_format(package_json_path)
+    assert "Café ☃" in package_json_path.read_text(encoding="utf-8")
+
+    package_json_path.write_text("{}")
+    assert frontend_skeleton.sync_root_package_json_to_web() is True
+    _assert_bun_format(package_json_path)
+
+
+@pytest.mark.usefixtures("windows_text_io")
+def test_update_package_json_overrides_matches_bun_format(
+    package_json_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Merging the framework overrides writes package.json in bun's format.
+
+    Args:
+        package_json_path: The rendered package.json path.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"test-pkg": "1.0.1"})
+    package_json_path.write_text(json.dumps(json.loads(package_json_path.read_text())))
+
+    assert frontend_skeleton.update_package_json_overrides() is True
+    _assert_bun_format(package_json_path)
