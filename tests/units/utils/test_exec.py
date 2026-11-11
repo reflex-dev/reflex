@@ -1341,3 +1341,18 @@ def test_backend_worker_target_loads_config_before_app(
     )
 
     assert result.stdout.splitlines()[-1] == "True"
+
+
+@pytest.mark.usefixtures("windows_text_io")
+def test_get_package_json_and_hash_reads_utf8(tmp_path: Path):
+    """package.json is read as UTF-8 whatever the locale encoding.
+
+    Args:
+        tmp_path: Temporary directory.
+    """
+    package_json_path = tmp_path / "package.json"
+    package_json_path.write_bytes(
+        '{"description": "\u0101", "dependencies": {}}'.encode()
+    )
+    content, _ = exec_utils.get_package_json_and_hash(package_json_path)
+    assert content == {"description": "\u0101", "dependencies": {}}
