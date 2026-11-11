@@ -24,7 +24,7 @@ the milestone `v0.11.0`.
 | 044 | upload handler error truncates the response | **Merged** [reflex-dev/reflex#7808](https://github.com/reflex-dev/reflex/pull/7808) |
 | 001+016, 007 | repeated `@rx.event`, staticmethod above `@rx.event`, pyright 3.11–3.13 handler types | **PRs open** [reflex-dev/reflex#7807](https://github.com/reflex-dev/reflex/pull/7807), [reflex-dev/reflex#7810](https://github.com/reflex-dev/reflex/pull/7810) (stacked) |
 | 005/006/017, 012 | kept env.py errors / empty revisions / env.old; NOT NULL default_factory column | **PRs open** #7809, #7815 (stacked on #7797) |
-| 028, 029, 042, 047 | deprecation frames, package.json format, lucide/hosting floors, auto_memoize warning dedupe | #7811, #7813, #7814 **merged**; #7812 open |
+| 028, 029, 042, 047 | deprecation frames, package.json format, lucide/hosting floors, auto_memoize warning dedupe | #7811, #7812, #7813, #7814 **merged** |
 | 009, 037/038, 039 | see below | [reflex-dev/reflex#7817](https://github.com/reflex-dev/reflex/pull/7817) (**merged**), [reflex-dev/reflex#7818](https://github.com/reflex-dev/reflex/pull/7818) (**merged** 10dd495ea, train 954a6f6e6), [reflex-dev/reflex#7820](https://github.com/reflex-dev/reflex/pull/7820) (**merged** cc9727f6f, train b5e28e1d3) |
 | 024, 014, 020 | `rx.App()()` breaking entry; admin guide; serializer example | **Merged** [reflex-dev/reflex#7816](https://github.com/reflex-dev/reflex/pull/7816) |
 | 010 | empty token → `EventHandlerTypeError` (stack on #7796) | **Merged** [reflex-dev/reflex#7821](https://github.com/reflex-dev/reflex/pull/7821) (554eb10a6, on train 5ba8287c0) |
@@ -217,6 +217,7 @@ As each PR merges into `main`:
 | #7803 (033, incl. reviewer's boolean-parsing commit + env-var-named error) | accefd6e8 | 760e9d245 |
 | #7820 (039, incl. reviewer's field/page-naming commit) | cc9727f6f | b5e28e1d3 |
 | #7816 (024/014/020 docs + changelog) | 34f8c3c67 | 895c6849e (fragment modify/delete: dropped the moved sentence from the materialized #7624 entry in CHANGELOG.md; kept new `news/7624.breaking.md` for a2; docs/app tests 26 passed) |
+| #7812 (029, incl. reviewer's non-UTF-8 package.json commit) | f13348afa | a9c990e2d |
 
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
