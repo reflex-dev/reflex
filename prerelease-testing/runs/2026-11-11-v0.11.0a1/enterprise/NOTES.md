@@ -138,3 +138,12 @@ Per-check observations (new-ent unless stated):
   new (prev derives deploy_url from the port) -> part of ISSUE 1 (same `resolve_server_url` root cause), low.
 - Server log noise from rxe code on new: none (no deprecations printed from reflex_enterprise). App-side: "Page index is being
   redefined with the same component" warnings in prod on both venvs (rxe's `rxe.page` + App re-registration, pre-existing).
+
+## Auth fixtures (OIDC, mock IdP, dev + Redis), new-ent
+`ENT_DRV=enterprise-entdrv $F/auth/bin/seq_ent_auth.sh new-ent new 12` (log `logs/seq_ent_auth_new_12.txt` in $SB/apps/enterprise):
+- part 1 (vauth N-032/ENT-30 verifier): stale P1/P2/P3/P4 **3/3 each**, away **3/3**, xtab **3/3, 0 accepted-after-logout**
+  (race 0/3, healed), hunt loads = 1 `hydrate_and_load` per boot, relogin ok **2/2**; 0 tracebacks. = 0.10.0 record.
+- part 2 (entauth explorer): `drive_auth_redis` cycle/pubnav/twotab/xtab **ALL_PASSED**, `xtab_probe` **TAB1_LOGGED_OUT 5/5**,
+  `stale_hash_probe` **CORRECTED 3/3 x3**, hydration SUMMARY verbatim the 0.10.0 line; 0 tracebacks / 0 TypeError.
+  Console noise only the mock-IdP pico.css tunnel error + cookie-sync keepalive aborts (known benign).
+`enterprise-entdrv` venv = reflex 0.11.0a1 + reflex-enterprise[mcp] 0.9.11 + playwright 1.63.0 + httpx + pytest (PyPI).
