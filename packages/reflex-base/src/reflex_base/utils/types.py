@@ -11,7 +11,7 @@ import types
 import typing
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum
-from functools import cache, lru_cache
+from functools import lru_cache
 from importlib.util import find_spec
 from types import GenericAlias
 from typing import (  # noqa: UP035
@@ -1070,8 +1070,8 @@ def _get_column_python_type(column_type: Any) -> GenericType | None:
         column_type: The SQLAlchemy column type.
 
     Returns:
-        The python type, parametrized by the item type of an array type, or None
-        if the column type does not implement it.
+        The python type, parametrized by the item type of an array type unless
+        that is uninformative, or None if the column type does not implement it.
     """
     try:
         type_ = column_type.python_type
@@ -1082,12 +1082,13 @@ def _get_column_python_type(column_type: Any) -> GenericType | None:
             item_type = column_type.item_type.python_type
         except NotImplementedError:
             return type_
-        type_ = PrimitiveToAnnotation.get(type_, type_)[item_type]
+        # The bare array type of e.g. ARRAY(JSON) lets `Mapped[...]` refine it.
+        if item_type is not object:
+            type_ = PrimitiveToAnnotation.get(type_, type_)[item_type]
     return type_
 
 
-# Unbounded: keyed by the columns of mapped classes, each typed once.
-@cache
+@lru_cache(maxsize=1024)
 def _get_column_access_type(cls: type, name: str) -> GenericType | None:
     """Get the type of a mapped column of a SQLAlchemy model.
 

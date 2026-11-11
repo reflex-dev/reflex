@@ -5,11 +5,12 @@ import types
 from collections.abc import Generator
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, List  # noqa: UP035
+from typing import Any, List, NotRequired, TypedDict  # noqa: UP035
 
 import attrs
 import pytest
 from reflex_base.utils import types as types_module
+from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.types import GenericType, get_attribute_access_type
 
 import reflex as rx
@@ -605,6 +606,7 @@ class Imperative(Base):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     doc = sqlalchemy.Column(sqlalchemy.JSON)
     count = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+    docs = sqlalchemy.Column(sqlalchemy.ARRAY(sqlalchemy.JSON))
 """
 
 _DECLARATIVE_MODEL_BODY = """
@@ -630,6 +632,10 @@ _DECLARATIVE_MODEL_BODY = """
     array_list: Mapped[list[str]] = mapped_column(sqlalchemy.ARRAY(sqlalchemy.String))
     array_sequence: Mapped[Sequence[str]] = mapped_column(
         sqlalchemy.ARRAY(sqlalchemy.String)
+    )
+    array_json: Mapped[list[dict]] = mapped_column(sqlalchemy.ARRAY(sqlalchemy.JSON))
+    array_json_none: Mapped[list[dict[str, int]] | None] = mapped_column(
+        sqlalchemy.ARRAY(sqlalchemy.JSON)
     )
     pickled: Mapped[dict | None] = mapped_column(sqlalchemy.PickleType)
     refined_dict: Mapped[dict[str, int]] = mapped_column(DictType())
@@ -699,6 +705,12 @@ def declarative_models(
             List[str],  # noqa: UP006
             id="array-python-type-over-coarser-annotation",
         ),
+        pytest.param("array_json", list[dict], id="array-opaque-item-annotation"),
+        pytest.param(
+            "array_json_none",
+            list[dict[str, int]] | None,
+            id="array-opaque-item-annotation-none",
+        ),
         pytest.param("pickled", dict | None, id="pickle-dict-none"),
         pytest.param("refined_dict", dict[str, int], id="annotation-refines-dict"),
         pytest.param(
@@ -757,6 +769,40 @@ def test_get_attribute_access_type_declarative_imperative_column(
     imperative = declarative_models.Imperative
     assert get_attribute_access_type(imperative, "doc") == object | None
     assert get_attribute_access_type(imperative, "count") is int
+    assert get_attribute_access_type(imperative, "docs") == list | None
+
+
+class Prefs(TypedDict):
+    """The JSON document of a TypedDict-typed column."""
+
+    theme: str
+    size: int
+    tags: NotRequired[list[str]]
+
+
+class TypedDictJsonModel(SQLABase):
+    """A declarative model with JSON columns typed by a TypedDict."""
+
+    __tablename__ = "typed_dict_json"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    prefs: Mapped[Prefs] = mapped_column(sqlalchemy.JSON)
+    maybe_prefs: Mapped[Prefs | None] = mapped_column(sqlalchemy.JSON, nullable=True)
+
+
+@pytest.mark.parametrize("column", ["prefs", "maybe_prefs"])
+def test_declarative_typed_dict_json_column_key_access(column: str) -> None:
+    """Keys of a JSON column annotated with a TypedDict have the TypedDict's types.
+
+    Args:
+        column: The JSON column, non-nullable or nullable.
+    """
+    prefs = getattr(rx.Var(_js_expr="model").to(TypedDictJsonModel), column)
+    assert prefs["theme"]._var_type is str
+    assert prefs["size"]._var_type is int
+    assert prefs["tags"]._var_type == list[str]
+    with pytest.raises(VarAttributeError, match="has no attribute 'missing'"):
+        prefs["missing"]
 
 
 class JsonModelClass(rx.Model):
