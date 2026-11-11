@@ -5402,6 +5402,23 @@ async def test_on_event_falls_back_to_environ_without_connect(
         )
 
 
+def _dropped_result_warning(label: str) -> str:
+    """The full warning for a frontend event whose return value is dropped.
+
+    Args:
+        label: How the warning names the handler.
+
+    Returns:
+        The expected warning message.
+    """
+    return (
+        f"Event handler {label} returned a value, but it was triggered from the "
+        "frontend, so the value is dropped: only backend code that awaits the "
+        "handler receives its return value. Return None or events to chain from "
+        "a handler used as an event trigger."
+    )
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("outcome", "warns"),
@@ -5473,11 +5490,12 @@ async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
     if not warns:
         warn.assert_not_called()
         return
-    (message,) = warn.call_args.args
-    warn.assert_called_once_with(message)
-    assert "DroppedResultState.handler" in message
-    assert "dropped" in message
-    assert "await" in message
+    warn.assert_called_once_with(
+        _dropped_result_warning(
+            "test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped"
+            ".<locals>.DroppedResultState.handler"
+        )
+    )
 
 
 @pytest.mark.asyncio
@@ -5525,8 +5543,7 @@ async def test_dropped_result_warning_names_an_unregistered_event(  # noqa: RUF0
     event_namespace_with_processor_mock._warn_dropped_result(
         "unregistered_state.handler", future
     )
-    (message,) = warn.call_args.args
-    assert message.startswith("Event handler unregistered_state.handler returned")
+    warn.assert_called_once_with(_dropped_result_warning("unregistered_state.handler"))
 
 
 @pytest.mark.parametrize("compile_raises", [False, True])
