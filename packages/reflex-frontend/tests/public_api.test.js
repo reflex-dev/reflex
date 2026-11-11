@@ -54,6 +54,7 @@ const PUBLIC_API = {
     "refs",
     "spreadArraysOrObjects",
     "useEventLoop",
+    "useRegisteredRef",
   ],
   "$/utils/client_state": [
     "CLIENT_STATE_REF",

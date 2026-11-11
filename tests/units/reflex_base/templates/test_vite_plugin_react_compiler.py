@@ -6,9 +6,14 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from reflex_base.components.component import Component
+from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.config import Config
 from reflex_base.constants import Templates
 from reflex_base.environment import environment
+from reflex_base.event import EventChain
+from reflex_base.registry import RegistrationContext
+from reflex_base.vars.base import Var
 
 from reflex.utils.frontend_skeleton import _compile_vite_config
 
@@ -35,6 +40,12 @@ try {
     apply: plugin.apply ?? null,
     config: plugin.config(),
     filename: id.split("?")[0],
+    moduleTypes: Object.fromEntries(
+      ["@emotion/react", "react"].map((name) => [
+        name,
+        globalThis.babelCalls[0]?.plugins[1][1].environment.moduleTypeProvider(name),
+      ]),
+    ),
   }));
 } catch (error) {
   process.stdout.write(JSON.stringify({error: error.message}));
@@ -173,14 +184,16 @@ def test_compiles_generated_components(compiler_driver: Path, file: str):
             "sourceMaps": True,
             "parserOpts": {"plugins": ["jsx"]},
             "plugins": [
+                None,
                 [
                     None,
                     {
                         "target": "19",
                         "compilationMode": "infer",
                         "panicThreshold": "none",
+                        "environment": {"enableFunctionOutlining": False},
                     },
-                ]
+                ],
             ],
         }
     ]
@@ -236,6 +249,60 @@ def test_handles_babel_ignored_module(compiler_driver: Path):
         compiler_driver: Adapter driver.
     """
     assert _transform(compiler_driver, "app/root.jsx", "ignored")["result"] is None
+
+
+def test_describes_emotion_jsx_like_jsx_syntax(compiler_driver: Path):
+    """Emotion's ``jsx`` freezes its arguments and returns an immutable element.
+
+    Args:
+        compiler_driver: Adapter driver.
+    """
+    module_types = _transform(compiler_driver, "app/routes/index.jsx")["moduleTypes"]
+
+    jsx_type = module_types["@emotion/react"]["properties"]["jsx"]
+    assert jsx_type["returnValueKind"] == "frozen"
+    assert jsx_type["positionalParams"] == ["freeze", "freeze"]
+    assert jsx_type["restParam"] == "freeze"
+    assert {effect["value"] for effect in jsx_type["aliasing"]["effects"][:3]} == {
+        "@type",
+        "@props",
+        "@rest",
+    }
+    assert module_types["react"] is None
+
+
+def test_generated_callback_pattern_matches_python_names(compiler_driver: Path):
+    """The adapter prunes exactly the callbacks Python names as generated.
+
+    Args:
+        compiler_driver: Adapter driver, beside the copied adapter module.
+    """
+    triggers = ["on_click", "on_value_change"]
+    with RegistrationContext.ensure_context().fork():
+        wrappers = get_memoized_event_triggers(
+            Component._create(
+                children=(),
+                event_triggers=dict.fromkeys(triggers, Var("handler", EventChain)),
+            )
+        )
+    names = [str(wrappers[trigger]) for trigger in triggers]
+    driver = compiler_driver.with_name("pattern.mjs")
+    driver.write_text(
+        'import {GENERATED_EVENT_CALLBACK} from "./plugin.mjs";\n'
+        "const names = JSON.parse(process.argv[2]);\n"
+        "process.stdout.write(JSON.stringify("
+        "names.map((name) => GENERATED_EVENT_CALLBACK.test(name))));\n"
+    )
+
+    result = subprocess.run(
+        ["node", str(driver), json.dumps([*names, "manual_callback"])],
+        cwd=driver.parent,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert json.loads(result.stdout) == [True, True, False]
 
 
 def test_prebundle_merges_with_production_react(

@@ -67,6 +67,17 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
+/**
+ * Create a ref and register it in `refs` under the given name.
+ * @param name The registry key, e.g. "ref_my_id".
+ * @returns The ref object.
+ */
+export const useRegisteredRef = (name) => {
+  const ref = useRef(null);
+  refs[name] = ref;
+  return ref;
+};
+
 // The client state store, for code evaluated outside this module's scope: a
 // `run_script` body pushing a value, or the devtools console. Client only, so
 // a server render never shares a store between requests.
