@@ -105,18 +105,25 @@ strips the microseconds from `update_ts`, which is `None` until the row has been
 inserted:
 
 ```python
-import dataclasses
-
 import reflex as rx
+import sqlalchemy
 
 
 @rx.serializer
 def serialize_post(post: Post) -> dict:
-    data = dataclasses.asdict(post)
+    data = {
+        attr.key: getattr(post, attr.key)
+        for attr in sqlalchemy.inspect(post).mapper.column_attrs
+    }
     if post.update_ts is not None:
         data["update_ts"] = post.update_ts.replace(microsecond=0).isoformat()
     return data
 ```
+
+The serializer reads only the column attributes. `dataclasses.asdict(post)`
+would also follow the model's [relationships](/docs/database/relationships/),
+which raises `DetachedInstanceError` for one the query did not load and
+`RecursionError` for a loaded one that links back, such as `post.user.posts`.
 
 ## Existing `rx.Model` apps
 
