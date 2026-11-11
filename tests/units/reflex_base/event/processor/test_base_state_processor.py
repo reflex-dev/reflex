@@ -32,10 +32,11 @@ from reflex_base.event.processor.base_state_processor import (
 )
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.form import FORM_DATA_ENTRIES_KEY, FormData
+from reflex_base.utils.types import Receive, Scope, Send
 
 import reflex as rx
 from reflex import event
-from reflex.app import App, EventNamespace
+from reflex.app import App, EventNamespace, _RootMiddleware
 from reflex.compiler.utils import compile_state
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.istate.delta import Delta
@@ -4738,6 +4739,82 @@ async def test_await_without_event_context_raises():
         await NoCtxState.handle()
     with pytest.raises(EventHandlerTypeError, match="can only be awaited"):
         await NoCtxState.handle
+
+
+async def test_await_from_a_request_outside_any_event_raises(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+):
+    """Awaiting a handler in a request handler, outside ``app.modify_state``, is an error.
+
+    Every request to the app carries the event processor's root context, which
+    belongs to no client (its token is empty). Running the handler there would
+    share one state between every caller of the route.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+    """
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    class RouteState(State):
+        n: int = 0
+
+        @event
+        def add(self, amount: int) -> int:
+            self.n += amount
+            return self.n
+
+    wired_app._event_processor = real_base_state_processor
+    raised: list[BaseException] = []
+
+    async def route(scope: Scope, receive: Receive, send: Send) -> None:
+        assert not EventContext.get().token
+        try:
+            await RouteState.add(1)
+        except EventHandlerTypeError as ex:
+            raised.append(ex)
+
+    async with real_base_state_processor:
+        await _RootMiddleware(route, wired_app, contextlib.nullcontext)(
+            {"type": "http"}, unittest.mock.AsyncMock(), unittest.mock.AsyncMock()
+        )
+    (error,) = raised
+    assert "can only be awaited from an event handler or inside" in str(error)
+    async with _read_back(real_base_state_processor, "") as root:
+        assert (await root.get_state(RouteState)).n == 0
+
+
+async def test_await_inside_app_modify_state_runs_on_that_token(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Inside ``app.modify_state`` an awaited handler runs on the token being modified.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class ModifyState(State):
+        n: int = 0
+
+        @event
+        def add(self, amount: int) -> int:
+            self.n += amount
+            return self.n
+
+    wired_app._event_processor = real_base_state_processor
+    async with (
+        real_base_state_processor,
+        wired_app.modify_state(BaseStateToken(ident=token, cls=ModifyState)),
+    ):
+        assert await ModifyState.add(2) == 2
+        assert await ModifyState.add(3) == 5
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(ModifyState)).n == 5
 
 
 async def test_await_frontend_only_and_upload_specs_raise(

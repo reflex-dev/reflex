@@ -572,22 +572,28 @@ async def execute_event_inline(spec: EventSpec) -> Any:
         The handler's return value.
 
     Raises:
-        EventHandlerTypeError: If there is no active EventContext, the spec is
-            a frontend-only or upload event, or a background handler is
-            awaited while the state lock is held (which would deadlock).
+        EventHandlerTypeError: If there is no active EventContext for a
+            client (outside an event handler and ``app.modify_state``), the
+            spec is a frontend-only or upload event, or a background handler
+            is awaited while the state lock is held (which would deadlock).
     """
     from reflex_base.registry import RegistrationContext
     from reflex_base.utils.exceptions import EventHandlerTypeError
 
     try:
         ctx = EventContext.get()
-    except LookupError as le:
+    except LookupError:
+        ctx = None
+    # The event processor's root context, which every request to the app
+    # carries, belongs to no client: running there would share one state
+    # between every caller.
+    if ctx is None or not ctx.token:
         msg = (
             f"Event handler `{format_event_handler(spec.handler)}` can only be "
             "awaited from an event handler or inside `app.modify_state`; use it "
             "as an event trigger or yield it instead."
         )
-        raise EventHandlerTypeError(msg) from le
+        raise EventHandlerTypeError(msg)
     event = spec._to_event(ctx.router_data)
     name = event.name
     if spec.client_handler_name:
