@@ -85,7 +85,7 @@ items in its area. Known and filed items: do NOT re-report unless changed.
 | preflight | done (see `preflight/NOTES.md`) | |
 | 1 db_models | DONE + verified (5/5 reproduce; 3 narrowed, 1 reclassified upstream; 0 regressions) | `reports/db_models.md`, `reports/verify_dbm.md` |
 | 0 db_upgrade | DONE + verified: I-1 hand-edited env.py executed/crash NARROWED to medium regression; I-2 empty revisions CONFIRMED wider (medium regression); I-3 env.old overwrite low |
-| 7 enterprise | explore DONE (3 rxe regressions: MCP prod crash w/o deploy_url HIGH, MCP consent redirect dev, AG Grid `refs` ReferenceError HIGH; 1 reflex regression: db migrate on fresh rxe app); verifier `verify_ent` running | `reports/enterprise.md` |
+| 7 enterprise | explore DONE (3 rxe regressions: MCP prod crash w/o deploy_url HIGH, MCP consent redirect dev, AG Grid `refs` ReferenceError HIGH; 1 reflex regression: db migrate on fresh rxe app); DONE + verified: rxe #1 MCP prod crash CONFIRMED high, #2 consent redirect CONFIRMED medium, #3 AG Grid `refs` CONFIRMED high (rxe fix + optional reflex one-line shim), #4 reflex `db migrate` NARROWED medium-low | `reports/enterprise.md`, `reports/verify_ent.md` |
 | 2 events_await | explore DONE (HIGH regression: double @rx.event crashes at import, overkey; medium regression: pyright Unknown args on py3.11-3.13; +5 low); verifier `verify_evt` running | `reports/events_await.md` |
 | 3 redis_runtime | explore running (opus high) | `reports/redis_runtime.md` |
 | 6 server_net | explore running (opus high) | `reports/server_net.md` |
