@@ -1,1 +1,0 @@
-The deprecated `rx._x.client_state` now requires a `name` that is an ASCII identifier without `$`, as `rx.client_state` does, and an app whose pages declare one client state name with two different defaults fails to compile with an error naming both declarations.
