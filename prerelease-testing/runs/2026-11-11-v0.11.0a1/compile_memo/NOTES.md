@@ -6,3 +6,50 @@
 
 `SB=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad`
 Ports: frontend 3300-3319, backend 8300-8319.
+
+## Setup
+- Own venvs (PyPI only, built from the shared envs' `pip freeze` + plotly 7.1.0, `--only-binary :all:`):
+  `$SB/envs/compile_memo-new` (reflex 0.11.0a1 train, lucide 1.1.2a1), `$SB/envs/compile_memo-prev` (0.10.1, lucide 1.1.1).
+- App `cm/` (one rich app, pages `/ /loop /loopmemo /refs /upload /plotly /recharts /editor /dyn /comps /rowfocus`).
+  The same source runs on 0.10.1 (`NEW = hasattr(rx, "client_state")` guards the new-only APIs).
+- Scripts: `scripts/srv.sh` (start/stop server in own process group), `scripts/cell.sh` (one matrix cell:
+  compile/export/prod/dev with `REFLEX_AUTO_MEMOIZE` / `REFLEX_REACT_COMPILER`), `scripts/drive_cm.py` (Playwright,
+  every page, JSON out), `scripts/summ.py` (summary). Rerun a cell:
+  `scripts/cell.sh new_FT compile_memo-new $SB/apps/compile_memo/cm false true "compile export prod dev"`.
+
+## Matrix (prod, Chromium) — n_probe / static_probe render counts: initial -> after 3x inc -> after 2x unrelated bump
+| cell (auto_memoize, react_compiler) | py compile | export wall | js bytes | n_probe | static_probe | notes |
+|---|---|---|---|---|---|---|
+| prev 0.10.1 T,F | 0.62s | 13.5s | 7,787,087 | 3/6/8 | 1/1/1 | baseline |
+| prev 0.10.1 T,T | 0.91s | 15.8s | 7,788,756 | | | export only |
+| new T,F (default) | 0.61s | 11.5s | 7,789,729 | 3/6/8 | 1/1/1 | same as prev |
+| new F,T | 0.65s | 20.3s | 7,843,670 | 1/4/4 | 1/1/1 | best render counts; compiler warning logged once |
+| new T,T | 1.66s* | 19.7s (103s first run under load avg 7 — not reproducible) | 7,856,588 | 3/6/8 | 1/1/1 | |
+| new F,F | — | 22.8s | 7,781,137 | 3/6/8 | 3/6/8 | warning logged ("disables page memoization"); whole page re-renders as warned |
+(*single run under load.) memo_* probes (3 instances of one `@rx.memo` with event props) rendered once in every cell.
+All cells: memo event handlers, cond on_mount/on_unmount branch order (`mA,page,uA,mB,uB,mA`), ComponentState
+independence, client_state named+unnamed (`shared 1`, `A: 2, B: 0`), upload callbacks — correct.
+
+## FINDING R1 (HIGH, regression): page code that references `refs` throws `ReferenceError: refs is not defined`
+#7694 replaced the ref hook `const ref_x = useRef(null); refs['ref_x'] = ref_x;` with `useRegisteredRef("ref_x")`, so a page
+(or the module a component lands in) no longer gets `import {refs} from "$/utils/state"` just because it holds a component
+with an `id`. Any user/third-party JS emitted into the page that reads `refs[...]` now fails:
+- `rx.Var("() => { refs['ref_target'].current.value = ... }").to(rx.vars.FunctionVar)` as an event handler — no-op + pageerror;
+- `rx.call_function(rx.Var("() => refs['ref_target'].current.value"), callback=...)` — callback never fires;
+- a custom component's `add_hooks` / `add_custom_code` reading `refs[...]` — page crashes into the error boundary.
+Same breakage as reflex-enterprise AG Grid (enterprise cluster). `rx.set_focus/set_value/scroll_to`, `rx.call_script`
+(evaluated inside state.js), forms with id'd fields and toasts are NOT affected (they resolve refs in state.js or carry the import).
+Whether it bites depends on which module the code lands in: in the rich `cm` app with auto_memoize=True the raw-Var
+handler worked by accident because its memo wrapper shared `app_components/cm/cm.jsx` with a form that imports `refs`.
+Repro: `refsrepro/` app + `scripts/drive_refs.py`:
+```
+scripts/srv.sh start r compile_memo-new prod $SB/apps/compile_memo/refsrepro 3300 3300
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python scripts/drive_refs.py http://localhost:3300 shot.png
+scripts/srv.sh stop r
+```
+| | raw Var handler | call_function | add_hooks page |
+|---|---|---|---|
+| 0.10.1 dev/prod | `set by raw var` | `log: typed` | renders, `set by hook` |
+| 0.11.0a1 dev/prod, auto_memoize T/F, compiler F/T | `''` + `refs is not defined` | `log:` | error boundary `ReferenceError: refs is not defined` |
+Compiled evidence: `[refs]._index.jsx` imports `{useRegisteredRef}` only (0.10.1: `import {refs} from "$/utils/state"`).
+Screenshots: `evidence/refs_*_prod.png`.

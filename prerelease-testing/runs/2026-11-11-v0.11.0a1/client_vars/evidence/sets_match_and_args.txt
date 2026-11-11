@@ -1,0 +1,28 @@
+new-dev-s1: PASS set var passed to a list[str] handler arg :: list:['a', 'b', 'c', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-dev-s1: PASS INFO set var passed to a set[str] handler arg: type received :: list:['a', '
+new-dev-s1: FAIL set var passed to a set[str] handler arg arrives as set :: list:['a', 'b', 'c', 'd', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-dev-s1: FAIL rx.match on a 2-element set matches regardless of serialization order :: tags JSON order=['d', 'c'] match=match-default
+new-dev-s1: PASS INFO /setnone with maybe=None :: hydrated=False values={'none_len_guard': '<absent>', 'none_contains': '<absent>', 'none_union': '<absent>', 'none_subset': '<absent>'} errors=["%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'some')\n    at pySetHas (http://localhost:3260/utils/helpers/set.js:31:14)\n    at Bare
+new-dev-s2: PASS set var passed to a list[str] handler arg :: list:['a', 'b', 'c', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-dev-s2: PASS INFO set var passed to a set[str] handler arg: type received :: list:['a', '
+new-dev-s2: FAIL set var passed to a set[str] handler arg arrives as set :: list:['a', 'b', 'c', 'd', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-dev-s2: PASS rx.match on a 2-element set matches regardless of serialization order :: tags JSON order=['c', 'd'] match=match-cd
+new-dev-s2: PASS INFO /setnone with maybe=None :: hydrated=False values={'none_len_guard': '<absent>', 'none_contains': '<absent>', 'none_union': '<absent>', 'none_subset': '<absent>'} errors=["%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'some')\n    at pySetHas (http://localhost:3260/utils/helpers/set.js:31:14)\n    at Bare
+new-dev-s3: PASS set var passed to a list[str] handler arg :: list:['a', 'b', 'c', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-dev-s3: PASS INFO set var passed to a set[str] handler arg: type received :: list:['a', '
+new-dev-s3: FAIL set var passed to a set[str] handler arg arrives as set :: list:['a', 'b', 'c', 'd', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-dev-s3: PASS rx.match on a 2-element set matches regardless of serialization order :: tags JSON order=['c', 'd'] match=match-cd
+new-dev-s3: PASS INFO /setnone with maybe=None :: hydrated=False values={'none_len_guard': '<absent>', 'none_contains': '<absent>', 'none_union': '<absent>', 'none_subset': '<absent>'} errors=["%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'some')\n    at pySetHas (http://localhost:3260/utils/helpers/set.js:31:14)\n    at Bare
+new-dev: PASS set var passed to a list[str] handler arg :: list:['a', 'b', 'c', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-dev: FAIL set var passed to a set[str] handler arg arrives as set :: list:['a', 'b', 'c', 'd', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-dev: PASS rx.match on a 2-element set matches regardless of serialization order :: tags JSON order=['c', 'd'] match=match-cd
+new-dev: PASS INFO /setnone with maybe=None :: hydrated=False values={'none_len_guard': '<absent>', 'none_contains': '<absent>', 'none_union': '<absent>', 'none_subset': '<absent>'} errors=["%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'some')\n    at pySetHas (http://localhost:3260/utils/helpers/set.js:31:14)\n    at Bare
+new-prod: PASS set var passed to a list[str] handler arg :: list:['a', 'b', 'c', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-prod: PASS INFO set var passed to a set[str] handler arg: type received :: list:['a', '
+new-prod: FAIL set var passed to a set[str] handler arg arrives as set :: list:['a', 'b', 'c', 'd', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+new-prod: FAIL rx.match on a 2-element set matches regardless of serialization order :: tags JSON order=['d', 'c'] match=match-default
+new-prod: PASS INFO /setnone with maybe=None :: hydrated=False values={'none_len_guard': '<absent>', 'none_contains': '<absent>', 'none_union': '<absent>', 'none_subset': '<absent>'} errors=['Failed to load resource: the server responded with a status of 404 (Not Found)']
+prev-dev: PASS set var passed to a list[str] handler arg :: list:['a', 'b', 'c', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'q', 'x', 'y']
+prev-dev: PASS INFO set var passed to a set[str] handler arg: type received :: list:['a', '
+prev-dev: PASS rx.match on a 2-element set matches regardless of serialization order :: tags JSON order=['c', 'd'] match=match-cd
+prev-dev: PASS INFO /setnone with maybe=None :: hydrated=False values={'none_len_guard': '<absent>', 'none_contains': '<absent>', 'none_union': '<absent>', 'none_subset': '<absent>'} errors=["%o\n\n%s\n\n%s\n TypeError: Cannot read properties of null (reading 'includes')\n    at Bare (http://localhost:3262/app_components/varsapp/varsapp.jsx:1065:

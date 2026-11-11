@@ -1,0 +1,11 @@
+GET http://localhost:3260/ -> 500 (dev, CS_DUP_DIFF=1 CS_AUTO_MEMO=0 CS_COMPILER=1)
+
+$SB/apps/client_vars/csapp/.web/app/routes/_index.jsx: Identifier 'dupRxClientState' has already been declared. (58:7)
+
+  56 | const [dupRxClientState, setDup] = useClientState("dup-default", "dup", true)
+  57 | const ref_dup_a = useRegisteredRef("ref_dup_a");
+> 58 | const [dupRxClientState, setDup] = useClientState("OTHER-default", "dup", true)
+     |        ^
+  59 | const ref_dup_b = useRegisteredRef("ref_dup_b");
+  60 | const ref_dup_set_a = useRegisteredRef("ref_dup_set_a");
+  61 | const ref_dup_set_b = useRegisteredRef("ref_dup_set_b");

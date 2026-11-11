@@ -1,0 +1,39 @@
+[ok] x: str = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: rx.LocalStorage = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: str = rx.Cookie('c', max_age=60, path='/p'): storage={'cookies': {'x_rx_state_': {'path': '/p', 'maxAge': 60, 'sameSite': 'lax'}}} value={'x': ('Cookie', 'c')}
+[ok] x: rx.Cookie = rx.Cookie(): storage={'cookies': {'x_rx_state_': {'path': '/', 'sameSite': 'lax'}}} value={'x': ('Cookie', '')}
+[ok] x: str = rx.SessionStorage('s'): storage={'session_storage': {'x_rx_state_': {}}} value={'x': ('SessionStorage', 's')}
+[ok] x: rx.LocalStorage  (annotation only): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', '')}
+[ok] x: rx.LocalStorage = 'plain str default': storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('str', 'plain')}
+[ok] x: str = rx.field(rx.LocalStorage('a')): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: rx.Field[str] = rx.field(rx.LocalStorage('a')): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: Annotated[str, 'meta'] = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: str | None = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: int = rx.LocalStorage('5'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', '5')}
+[ok] x: set[str] = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: list[str] = rx.LocalStorage('[]'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', '[]')}
+[ok] x: str = rx.LocalStorage('a', name='k', sync=True): storage={'local_storage': {'x_rx_state_': {'name': 'k', 'sync': True}}} value={'x': ('LocalStorage', 'a')}
+--- default_factory shapes (0.11: storage ones must fail at compile)
+[COMPILE-ERR] x: str = rx.field(default_factory=lambda: rx.LocalStorage('a')): VarTypeError: Browser storage var 'T16.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.
+[COMPILE-ERR] x: rx.LocalStorage = rx.field(default_factory=lambda: rx.LocalStorage('a')): VarTypeError: Browser storage var 'T17.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.
+[COMPILE-ERR] x: rx.LocalStorage = rx.field(default_factory=rx.LocalStorage): VarTypeError: Browser storage var 'T18.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.
+[COMPILE-ERR] x: rx.LocalStorage = rx.field(default_factory=lambda: 'plain'): VarTypeError: Browser storage var 'T19.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.
+[COMPILE-ERR] x: str = rx.field(default_factory=lambda: rx.Cookie('c')): VarTypeError: Browser storage var 'T20.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.Cookie("", name='x')`.
+[COMPILE-ERR] x: str = rx.field(default_factory=lambda: rx.SessionStorage('s')): VarTypeError: Browser storage var 'T21.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.SessionStorage("", name='x')`.
+[COMPILE-ERR] x: str | None = rx.field(default_factory=lambda: rx.LocalStorage('a')): VarTypeError: Browser storage var 'T22.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.
+[DEFINE-ERR] x: Any = rx.field(default_factory=lambda: rx.LocalStorage('a')): VarTypeError: State vars must be of a serializable type. Valid types include strings, numbers, booleans, lists, dictionaries, dataclasses, datetime objects, and pydantic models. Found var "reflex___state____state____main_____t23.x_rx_state_" with type typing.Any.
+[COMPILE-ERR] x: Literal['a','b'] = rx.field(default_factory=lambda: rx.LocalStorage('a')): VarTypeError: Browser storage var 'T24.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.
+[COMPILE-ERR] x: Annotated[str,'m'] = rx.field(default_factory=lambda: rx.LocalStorage('a')): VarTypeError: Browser storage var 'T25.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.
+[ok] x: int = rx.field(default_factory=lambda: rx.LocalStorage('5')): storage=NONE (ordinary var) value={'x': ('LocalStorage', '5')}
+[ok] x: list[str] = rx.field(default_factory=lambda: rx.LocalStorage('[]')): storage=NONE (ordinary var) value={'x': ('LocalStorage', '[]')}
+[ok] _x: str = rx.field(default_factory=lambda: rx.LocalStorage('a'))  [backend var]: storage=NONE (ordinary var) value={'_x': ('LocalStorage', 'a')}
+[ok] x: str = rx.field(default_factory=<plain str factory>): storage=NONE (ordinary var) value={'x': ('str', 'plain-2')}
+    plain factory calls so far (compile + instance): 2
+[ok] x: str = rx.field(default_factory=<factory that raises>): storage=NONE (ordinary var) value=<instance error RuntimeError: only works at runtime>
+[ok] x: str = pydantic.Field(default_factory=lambda: rx.LocalStorage('a')): storage=NONE (ordinary var) value={'x': ('FieldInfo', FieldInfo(annotation=NoneType, required=False, default_factory=<lambda>))}
+[ok] x: str = pydantic.Field(default=rx.LocalStorage('a')): storage=NONE (ordinary var) value={'x': ('FieldInfo', FieldInfo(annotation=NoneType, required=False, default='a'))}
+--- inheritance / mixin / ComponentState
+[COMPILE-ERR] factory storage on a parent state, storage on child: VarTypeError: Browser storage var 'Base.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.
+[ok] mixin with LocalStorage default: storage={'local_storage': {'x_rx_state_': {'name': 'mx', 'sync': False}}} value={'x': ('LocalStorage', 'mixed')}
+[COMPILE-ERR] mixin with factory storage: VarTypeError: Browser storage var 'UsesM2.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.
+[COMPILE-ERR] ComponentState with factory storage (compile parent): VarTypeError: Browser storage var 'CS.x' cannot use a default_factory. Declare the storage as the default value instead, such as `x: str = rx.LocalStorage("", name='x')`.

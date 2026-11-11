@@ -1,0 +1,20 @@
+GET / -> 200
+GET /casing -> 200
+GET /casing2 -> 200
+GET /app_components/csedge/csedge.jsx -> 500
+Transform failed with 1 error:
+
+[PARSE_ERROR] Identifier `setItem` has already been declared
+    ╭─[ app_components/csedge/csedge.jsx:79:27 ]
+    │
+ 79 │ const [itemRxClientState, setItem] = useClientState("lower", "item", true)
+    │                           ───┬───  
+    │                              ╰───── `setItem` has already been declared here
+ 80 │ const [ItemRxClientState, setItem] = useClientState("upper", "Item", true)
+    │                           ───┬───  
+    │                              ╰───── It can not be redeclared here
+────╯
+
+browser / body: 
+browser /casing body: Application Error | TypeError: Failed to fetch dynamically imported module: http://localhost:3260/app/routes/[casing]._index.jsx?import
+console errors: ['Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)', 'Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)', 'Failed to load resource: the server responded with a status of 500 (Internal Server Error)', 'Error loading route module `/app/routes/[casing]._index.jsx`, reloading page...']

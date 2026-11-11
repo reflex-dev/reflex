@@ -1,0 +1,25 @@
+PASS fresh profile: nothing written to browser storage :: {'localStorage': {}, 'sessionStorage': {}, 'cookies': []}
+PASS #7637 writing tab: b/c/d follow a (shared name) :: {'a': 'A1', 'b': 'A1', 'c': 'A1', 'd': 'A1'}
+PASS other tabs: a/b/c/d all follow :: {'B': {'a': 'A1', 'b': 'A1', 'c': 'A1', 'd': 'A1'}, 'C': {'a': 'A1', 'b': 'A1', 'c': 'A1', 'd': 'A1'}}
+PASS computed var over the synced var follows in every tab :: {'A': 'A1', 'B': 'A1', 'C': 'A1'}
+PASS #7637 write through a var of another state class propagates to a/b/c in all tabs :: {'A': {'a': 'D2', 'b': 'D2', 'c': 'D2', 'd': 'D2'}, 'B': {'a': 'D2', 'b': 'D2', 'c': 'D2', 'd': 'D2'}, 'C': {'a': 'D2', 'b': 'D2', 'c': 'D2', 'd': 'D2'}}
+PASS #7637 write through a substate var propagates :: {'A': {'a': 'C3', 'b': 'C3', 'c': 'C3', 'd': 'C3'}, 'B': {'a': 'C3', 'b': 'C3', 'c': 'C3', 'd': 'C3'}, 'C': {'a': 'C3', 'b': 'C3', 'c': 'C3', 'd': 'C3'}}
+FAIL INFO conflicting writes in one event converge on one value everywhere :: {'A': {'a': 'both-A', 'b': 'both-B', 'c': 'both-A', 'd': 'both-A'}, 'B': {'a': 'both-A', 'b': 'both-A', 'c': 'both-A', 'd': 'both-A'}, 'C': {'a': 'both-A', 'b': 'both-A', 'c': 'both-A', 'd': 'both-A'}}
+PASS #7637 background-task write propagates to same-name vars in the writing tab :: {'a': 'bg-A', 'b': 'bg-A', 'c': 'bg-A', 'd': 'bg-A'}
+PASS ... and to the other tabs :: {'A': {'a': 'bg-A', 'b': 'bg-A', 'c': 'bg-A', 'd': 'bg-A'}, 'B': {'a': 'bg-A', 'b': 'bg-A', 'c': 'bg-A', 'd': 'bg-A'}}
+PASS plain sync var reaches other tabs :: {'A': ('solo-1', '6'), 'B': ('solo-1', '6'), 'C': ('solo-1', '6')}
+PASS sync var without an explicit name reaches other tabs :: {'A': 'us-1', 'B': 'us-1', 'C': 'us-1'}
+PASS #7652 other tabs reset synced vars to their defaults :: {'B': {'a': 'a-default', 'b': 'b-default', 'c': 'c-default', 'd': 'd-default', 'solo': 'solo-default', 'unnamed_sync': 'us-default', 'mixed_sync': 'ms-default'}, 'C': {'a': 'a-default', 'b': 'b-default', 'c': 'c-default', 'd': 'd-default', 'solo': 'solo-default', 'unnamed_sync': 'us-default', 'mixed_sync': 'ms-default'}}
+PASS #7652 computed var over a cleared synced var recomputes (solo_len=12) :: {'B': '12', 'C': '12'}
+PASS sync works again after a clear :: {'A': {'a': 'after-clear', 'b': 'after-clear', 'c': 'after-clear', 'd': 'after-clear'}, 'B': {'a': 'after-clear', 'b': 'after-clear', 'c': 'after-clear', 'd': 'after-clear'}, 'C': {'a': 'after-clear', 'b': 'after-clear', 'c': 'after-clear', 'd': 'after-clear'}}
+PASS #7652 removeItem: other tabs reset that var to its default :: {'A': ('solo-default', '12'), 'C': ('solo-default', '12')}
+PASS rx.remove_local_storage: other tabs reset to default (HYD-12) :: {'B': ('solo-default', '12'), 'C': ('solo-default', '12')}
+PASS rx.remove_local_storage of a shared name: other tabs reset every var to its own default :: {'B': {'a': 'a-default', 'b': 'b-default', 'c': 'c-default', 'd': 'd-default'}, 'C': {'a': 'a-default', 'b': 'b-default', 'c': 'c-default', 'd': 'd-default'}}
+PASS rx.clear_local_storage: other tabs reset :: {'B': {'a': 'a-default', 'b': 'b-default', 'c': 'c-default', 'd': 'd-default', 'solo': 'solo-default', 'unnamed_sync': 'us-default', 'mixed_sync': 'ms-default'}, 'C': {'a': 'a-default', 'b': 'b-default', 'c': 'c-default', 'd': 'd-default', 'solo': 'solo-default', 'unnamed_sync': 'us-default', 'mixed_sync': 'ms-default'}}
+PASS tab A still processes events after the clears
+PASS tab B still processes events after the clears
+PASS tab C still processes events after the clears
+PASS Cookie max_age=5 -> expires in ~5 s :: {'value': 'ck-1', 'path': '/', 'ttl': 4, 'sameSite': 'Lax'}
+PASS Cookie max_age=30 -> expires in ~30 s :: {'value': 'ck30-1', 'path': '/', 'ttl': 27, 'sameSite': 'Lax'}
+PASS Cookie path='/sub' stored with that path :: {'value': 'ckp-1', 'path': '/sub', 'ttl': None, 'sameSite': 'Lax'}
+SUMMARY new-dev: 23/24 pass; console noise 0

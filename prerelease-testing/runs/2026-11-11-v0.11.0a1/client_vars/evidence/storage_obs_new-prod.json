@@ -1,0 +1,770 @@
+{
+ "00 fresh A values": {
+  "plain": "plain-default",
+  "typed": "typed-default",
+  "ck": "ck-default",
+  "ck30": "ck30-default",
+  "ck_path": "ckp-default",
+  "ck_typed": "ckt-default",
+  "ss": "ss-default",
+  "num": "5",
+  "a": "a-default",
+  "b": "b-default",
+  "c": "c-default",
+  "d": "d-default",
+  "solo": "solo-default",
+  "unnamed_sync": "us-default",
+  "mixed_sync": "ms-default",
+  "mixed_nosync": "mn-default",
+  "solo_len": "12",
+  "a_upper": "A-DEFAULT"
+ },
+ "00 fresh A storage": {
+  "localStorage": {},
+  "sessionStorage": {},
+  "cookies": []
+ },
+ "00 types": "plain:LocalStorage,typed:LocalStorage,ck:Cookie,num:LocalStorage,a:LocalStorage,solo:LocalStorage",
+ "01 A sets a=A1": {
+  "A": {
+   "a": "A1",
+   "b": "A1",
+   "c": "A1",
+   "d": "A1",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "A1"
+  },
+  "B": {
+   "a": "A1",
+   "b": "A1",
+   "c": "A1",
+   "d": "A1",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "A1"
+  },
+  "C": {
+   "a": "A1",
+   "b": "A1",
+   "c": "A1",
+   "d": "A1",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "A1"
+  },
+  "localStorage": {
+   "shared": "A1"
+  }
+ },
+ "02 B sets d=D2 (other state)": {
+  "A": {
+   "a": "D2",
+   "b": "D2",
+   "c": "D2",
+   "d": "D2",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "D2"
+  },
+  "B": {
+   "a": "D2",
+   "b": "D2",
+   "c": "D2",
+   "d": "D2",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "D2"
+  },
+  "C": {
+   "a": "D2",
+   "b": "D2",
+   "c": "D2",
+   "d": "D2",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "D2"
+  },
+  "localStorage": {
+   "shared": "D2"
+  }
+ },
+ "03 C sets c=C3 (substate)": {
+  "A": {
+   "a": "C3",
+   "b": "C3",
+   "c": "C3",
+   "d": "C3",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "C3"
+  },
+  "B": {
+   "a": "C3",
+   "b": "C3",
+   "c": "C3",
+   "d": "C3",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "C3"
+  },
+  "C": {
+   "a": "C3",
+   "b": "C3",
+   "c": "C3",
+   "d": "C3",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "C3"
+  },
+  "localStorage": {
+   "shared": "C3"
+  }
+ },
+ "04 A sets a and b to different values in one event": {
+  "A": {
+   "a": "both-A",
+   "b": "both-B",
+   "c": "both-A",
+   "d": "both-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BOTH-A"
+  },
+  "B": {
+   "a": "both-A",
+   "b": "both-A",
+   "c": "both-A",
+   "d": "both-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BOTH-A"
+  },
+  "C": {
+   "a": "both-A",
+   "b": "both-A",
+   "c": "both-A",
+   "d": "both-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BOTH-A"
+  },
+  "localStorage": {
+   "shared": "both-A"
+  }
+ },
+ "05 C background task sets a": {
+  "A": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BG-A"
+  },
+  "B": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BG-A"
+  },
+  "C": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BG-A"
+  },
+  "localStorage": {
+   "shared": "bg-A"
+  }
+ },
+ "06 A sets mixed_sync (same name as a sync=False var)": {
+  "A": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "M1",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BG-A"
+  },
+  "B": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "M1",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BG-A"
+  },
+  "C": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "M1",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BG-A"
+  },
+  "localStorage": {
+   "mixed": "M1",
+   "shared": "bg-A"
+  }
+ },
+ "07 B sets mixed_nosync": {
+  "A": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "M2",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BG-A"
+  },
+  "B": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "M2",
+   "mixed_nosync": "M2",
+   "solo_len": "12",
+   "a_upper": "BG-A"
+  },
+  "C": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "M2",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "BG-A"
+  },
+  "localStorage": {
+   "mixed": "M2",
+   "shared": "bg-A"
+  }
+ },
+ "08 A sets solo": {
+  "A": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-1",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "M2",
+   "mixed_nosync": "mn-default",
+   "solo_len": "6",
+   "a_upper": "BG-A"
+  },
+  "B": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-1",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "M2",
+   "mixed_nosync": "M2",
+   "solo_len": "6",
+   "a_upper": "BG-A"
+  },
+  "C": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-1",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "M2",
+   "mixed_nosync": "mn-default",
+   "solo_len": "6",
+   "a_upper": "BG-A"
+  },
+  "localStorage": {
+   "mixed": "M2",
+   "solo": "solo-1",
+   "shared": "bg-A"
+  }
+ },
+ "08b A sets unnamed_sync": {
+  "A": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-1",
+   "unnamed_sync": "us-1",
+   "mixed_sync": "M2",
+   "mixed_nosync": "mn-default",
+   "solo_len": "6",
+   "a_upper": "BG-A"
+  },
+  "B": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-1",
+   "unnamed_sync": "us-1",
+   "mixed_sync": "M2",
+   "mixed_nosync": "M2",
+   "solo_len": "6",
+   "a_upper": "BG-A"
+  },
+  "C": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-1",
+   "unnamed_sync": "us-1",
+   "mixed_sync": "M2",
+   "mixed_nosync": "mn-default",
+   "solo_len": "6",
+   "a_upper": "BG-A"
+  },
+  "localStorage": {
+   "mixed": "M2",
+   "solo": "solo-1",
+   "reflex___state____state.stapp___stapp____st.unnamed_sync_rx_state_": "us-1",
+   "shared": "bg-A"
+  }
+ },
+ "09 non-sync writes": {
+  "A": {
+   "plain": "plain-1",
+   "typed": "typed-1",
+   "num": "7"
+  },
+  "B": {
+   "plain": "plain-default",
+   "typed": "typed-default",
+   "num": "5"
+  },
+  "C": {
+   "plain": "plain-default",
+   "typed": "typed-default",
+   "num": "5"
+  }
+ },
+ "10 localStorage.clear() run in tab A (devtools-style)": {
+  "A": {
+   "a": "bg-A",
+   "b": "bg-A",
+   "c": "bg-A",
+   "d": "bg-A",
+   "solo": "solo-1",
+   "unnamed_sync": "us-1",
+   "mixed_sync": "M2",
+   "mixed_nosync": "mn-default",
+   "solo_len": "6",
+   "a_upper": "BG-A"
+  },
+  "B": {
+   "a": "a-default",
+   "b": "b-default",
+   "c": "c-default",
+   "d": "d-default",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "M2",
+   "solo_len": "12",
+   "a_upper": "A-DEFAULT"
+  },
+  "C": {
+   "a": "a-default",
+   "b": "b-default",
+   "c": "c-default",
+   "d": "d-default",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "A-DEFAULT"
+  },
+  "localStorage": {}
+ },
+ "10 tab A after its own clear": {
+  "a": "bg-A",
+  "b": "bg-A",
+  "c": "bg-A",
+  "d": "bg-A",
+  "solo": "solo-1",
+  "unnamed_sync": "us-1",
+  "mixed_sync": "M2"
+ },
+ "10 localStorage after clear": {},
+ "11 B sets a after the clear": {
+  "A": {
+   "a": "after-clear",
+   "b": "after-clear",
+   "c": "after-clear",
+   "d": "after-clear",
+   "solo": "solo-1",
+   "unnamed_sync": "us-1",
+   "mixed_sync": "M2",
+   "mixed_nosync": "mn-default",
+   "solo_len": "6",
+   "a_upper": "AFTER-CLEAR"
+  },
+  "B": {
+   "a": "after-clear",
+   "b": "after-clear",
+   "c": "after-clear",
+   "d": "after-clear",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "M2",
+   "solo_len": "12",
+   "a_upper": "AFTER-CLEAR"
+  },
+  "C": {
+   "a": "after-clear",
+   "b": "after-clear",
+   "c": "after-clear",
+   "d": "after-clear",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "AFTER-CLEAR"
+  },
+  "localStorage": {
+   "shared": "after-clear"
+  }
+ },
+ "12 removeItem('solo') run in tab B": {
+  "A": {
+   "a": "after-clear",
+   "b": "after-clear",
+   "c": "after-clear",
+   "d": "after-clear",
+   "solo": "solo-default",
+   "unnamed_sync": "us-1",
+   "mixed_sync": "M2",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "AFTER-CLEAR"
+  },
+  "B": {
+   "a": "after-clear",
+   "b": "after-clear",
+   "c": "after-clear",
+   "d": "after-clear",
+   "solo": "solo-2",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "M2",
+   "solo_len": "6",
+   "a_upper": "AFTER-CLEAR"
+  },
+  "C": {
+   "a": "after-clear",
+   "b": "after-clear",
+   "c": "after-clear",
+   "d": "after-clear",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "AFTER-CLEAR"
+  },
+  "localStorage": {
+   "shared": "after-clear"
+  }
+ },
+ "12 tab B after its own removeItem": {
+  "solo": "solo-2"
+ },
+ "13 rx.remove_local_storage('solo') from tab A": {
+  "A": {
+   "a": "after-clear",
+   "b": "after-clear",
+   "c": "after-clear",
+   "d": "after-clear",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "AFTER-CLEAR"
+  },
+  "B": {
+   "a": "after-clear",
+   "b": "after-clear",
+   "c": "after-clear",
+   "d": "after-clear",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "M2",
+   "solo_len": "12",
+   "a_upper": "AFTER-CLEAR"
+  },
+  "C": {
+   "a": "after-clear",
+   "b": "after-clear",
+   "c": "after-clear",
+   "d": "after-clear",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "AFTER-CLEAR"
+  },
+  "localStorage": {
+   "shared": "after-clear"
+  }
+ },
+ "13 tab A after rx.remove_local_storage": {
+  "solo": "solo-default",
+  "solo_len": "12"
+ },
+ "13 localStorage": {
+  "shared": "after-clear"
+ },
+ "14 rx.remove_local_storage('shared') from tab A": {
+  "A": {
+   "a": "a-default",
+   "b": "b-default",
+   "c": "c-default",
+   "d": "d-default",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "A-DEFAULT"
+  },
+  "B": {
+   "a": "a-default",
+   "b": "b-default",
+   "c": "c-default",
+   "d": "d-default",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "M2",
+   "solo_len": "12",
+   "a_upper": "A-DEFAULT"
+  },
+  "C": {
+   "a": "a-default",
+   "b": "b-default",
+   "c": "c-default",
+   "d": "d-default",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "A-DEFAULT"
+  },
+  "localStorage": {}
+ },
+ "15 rx.clear_local_storage() from tab A": {
+  "A": {
+   "a": "a-default",
+   "b": "b-default",
+   "c": "c-default",
+   "d": "d-default",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "A-DEFAULT"
+  },
+  "B": {
+   "a": "a-default",
+   "b": "b-default",
+   "c": "c-default",
+   "d": "d-default",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "M2",
+   "solo_len": "12",
+   "a_upper": "A-DEFAULT"
+  },
+  "C": {
+   "a": "a-default",
+   "b": "b-default",
+   "c": "c-default",
+   "d": "d-default",
+   "solo": "solo-default",
+   "unnamed_sync": "us-default",
+   "mixed_sync": "ms-default",
+   "mixed_nosync": "mn-default",
+   "solo_len": "12",
+   "a_upper": "A-DEFAULT"
+  },
+  "localStorage": {}
+ },
+ "15 tab A after rx.clear_local_storage": {
+  "a": "a-default",
+  "b": "b-default",
+  "c": "c-default",
+  "d": "d-default",
+  "solo": "solo-default",
+  "unnamed_sync": "us-default",
+  "mixed_sync": "ms-default"
+ },
+ "15 localStorage after rx.clear_local_storage": {},
+ "16 A after reload": {
+  "plain": "plain-default",
+  "typed": "typed-default",
+  "ck": "ck-default",
+  "ck30": "ck30-default",
+  "ck_path": "ckp-default",
+  "ck_typed": "ckt-default",
+  "ss": "ss-default",
+  "num": "5",
+  "a": "a-default",
+  "b": "b-default",
+  "c": "c-default",
+  "d": "d-default",
+  "solo": "solo-default",
+  "unnamed_sync": "us-default",
+  "mixed_sync": "ms-default",
+  "mixed_nosync": "mn-default",
+  "solo_len": "12",
+  "a_upper": "A-DEFAULT"
+ },
+ "17 sessionStorage": {
+  "A": {
+   "ss": "ss-A"
+  },
+  "B": {
+   "ss": "ss-default"
+  }
+ },
+ "18 raw cookie expiry minus now": {
+  "ck30": 26.71,
+  "ck": 3.74
+ },
+ "18 document.cookie names": [
+  "ck",
+  "ck30",
+  "reflex___state____state.stapp___stapp____st.ck_typed_rx_state_"
+ ],
+ "18 cookies after set": {
+  "ck_path": {
+   "value": "ckp-1",
+   "path": "/sub",
+   "ttl": null,
+   "sameSite": "Lax"
+  },
+  "reflex___state____state.stapp___stapp____st.ck_typed_rx_state_": {
+   "value": "ckt-1",
+   "path": "/",
+   "ttl": null,
+   "sameSite": "Lax"
+  },
+  "ck30": {
+   "value": "ck30-1",
+   "path": "/",
+   "ttl": 27,
+   "sameSite": "Lax"
+  },
+  "ck": {
+   "value": "ck-1",
+   "path": "/",
+   "ttl": 4,
+   "sameSite": "Lax"
+  }
+ },
+ "19 B reload on / (cookie values)": {
+  "ck": "ck-1",
+  "ck30": "ck30-1",
+  "ck_path": "ckp-default",
+  "ck_typed": "ckt-1"
+ },
+ "19 B on /sub (cookie values)": {
+  "ck": "ck-1",
+  "ck_path": "ckp-1",
+  "ck_typed": "ckt-1"
+ },
+ "20 B reload after 6 s (max_age=5 cookie)": {
+  "ck": "ck-default",
+  "ck_path": "ckp-1",
+  "ck_typed": "ckt-1"
+ }
+}

@@ -1,0 +1,15 @@
+80:TypeError: Cannot read properties of null (reading 'includes')
+81-    at 
+82-file:///tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scra
+83-tchpad/apps/client_vars/varsapp/.web/build/server/index.js:30:19466
+84-    at renderWithHooks 
+85-($SB
+86-/apps/client_vars/varsapp/.web/node_modules/react-dom/cjs/react-dom-server.node.
+--
+121:Error: Prerender: Request failed for /setnone/: Prerender (html): Received a 500
+122-status code from `entry.server.tsx` while prerendering the `/setnone/` path.
+123-<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta 
+124-content="width=device-width, initial-scale=1" name="viewport"/><link as="style" 
+125-href="/assets/__reflex_global_styles-NccINl-w.css" rel="preload"/><link 
+126-rel="modulepreload" href="/assets/manifest-badf7f8f.js"/><link 
+127-rel="modulepreload" href="/assets/entry.client-BcBPaK_9.js"/><link 

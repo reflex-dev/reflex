@@ -1,0 +1,103 @@
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. ($SB/envs/prev/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:133)
+=== #7648 @property through a state Var
+[ok ] pydantic .first (field): StringCastedVar :: reflex___state____state____main_____s.pm_rx_state_?.["first"]
+[ok ] pydantic @property: StringCastedVar :: reflex___state____state____main_____s.pm_rx_state_?.["full"]
+[ok ] pydantic @computed_field: StringCastedVar :: reflex___state____state____main_____s.pm_rx_state_?.["cf"]
+[ERR] pydantic cached_property: VarAttributeError: The State var `reflex___state____state____main_____s.pm_rx_state_` of type <class '__main__.PM'> has no attribute 'cached' or may have been annotated wrongly.
+[ERR] pydantic method: VarAttributeError: The State var `reflex___state____state____main_____s.pm_rx_state_` of type <class '__main__.PM'> has no attribute 'method' or may have been annotated wrongly.
+[ok ] pydantic inherited @property: StringCastedVar :: reflex___state____state____main_____s.pmc_rx_state_?.["full"]
+[ok ] pydantic @property + model_dump override: StringCastedVar :: reflex___state____state____main_____s.pmd_rx_state_?.["full"]
+[ok ] pydantic @property + rx.serializer registered: StringCastedVar :: reflex___state____state____main_____s.pms_rx_state_?.["full"]
+[ok ] dataclass @property: StringCastedVar :: reflex___state____state____main_____s.dc_rx_state_?.["full"]
+[ok ] dataclass inherited @property: StringCastedVar :: reflex___state____state____main_____s.dcc_rx_state_?.["full"]
+[ok ] list[PM][0].full: StringCastedVar :: reflex___state____state____main_____s.lst_rx_state_?.at?.(0)?.["full"]
+[ok ] foreach(list[PM], p.full): Foreach :: Array.prototype.map.call(reflex___state____state____main_____s.lst_rx_state_ ?? [],((p_rx_state_,index_afd4ddf6c9f251144946869afd27355c)=>(jsx(RadixThemesText,{as:"p",key:index_afd4ddf6c9f251144946869
+[ok ] Optional[PM].full: StringCastedVar :: reflex___state____state____main_____s.opt_rx_state_?.["full"]
+[ok ] dict[str, DC]['k'].full: StringCastedVar :: reflex___state____state____main_____s.dct_rx_state_?.["k"]?.["full"]
+[ok ] rx.Model @property: StringCastedVar :: reflex___state____state____main_____s.rxm_rx_state_?.["full"]
+[ok ] MappedAsDataclass @property: StringCastedVar :: reflex___state____state____main_____s2.sa_rx_state_?.["full"]
+[ok ] MappedAsDataclass column: StringCastedVar :: reflex___state____state____main_____s2.sa_rx_state_?.["first"]
+[ok ] State plain @property on the class: property :: <property object at 0x7f208968f470>
+[ERR] missing attribute: VarAttributeError: The State var `reflex___state____state____main_____s.pm_rx_state_` of type <class '__main__.PM'> has no attribute 'nope' or may have been annotated wrongly.
+=== #7651 backend var misuse
+[ERR] rx.toast(S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.toast.info(S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.toast(title, description=S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.image(src=S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.box(id=S._t): TypeError: expected string or bytes-like object, got 'Field'
+[ERR] rx.text(S._t) child: ChildrenTypeError: Component Text received child Field(default='secret', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+[ERR] rx.el.div(title=S._t): TypeError: Invalid var passed for prop Div.title, expected type reflex_base.vars.base.Var[str], got value Field(default='secret', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>.
+[ERR] rx.link(href=S._t): TypeError: Invalid var passed for prop ReactRouterLink.to, expected type reflex_base.vars.base.Var[str | reflex_components_core.react_router.dom.To], got value Field(default='secret', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>.
+[ERR] rx.input(value=S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.box(style={'color': S._t}): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.box(color=S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.box(class_name=S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.box(class_name=[S._t, 'a']): TypeError: Invalid class_name passed for prop Box.class_name, expected type str, got value Field(default='secret', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>.
+[ERR] rx.box(custom_attrs={'data-x': S._t}): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.box(key=S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ok ] str(S._t): str :: Field(default='secret', is_var=True, annotated_type=<class 'str'>)
+[ok ] '%s' % S._t: str :: Field(default='secret', is_var=True, annotated_type=<class 'str'>)
+[ok ] f'{S._t!s}': str :: Field(default='secret', is_var=True, annotated_type=<class 'str'>)
+[ERR] f'{S._t}': BackendVarFormatError: Backend var 'S._t' exists only on the server and has no frontend value, so it cannot be used in the UI. Use S._t.default_value() for its default value, declare it as ClassVar[...] for a constant shared by all sessions, or use a regular state var for a value the UI should show and update.
+[ok ] f'{S._t!r}': str :: Field(default='secret', is_var=True, annotated_type=<class 'str'>)
+[ok ] repr(S._t): str :: Field(default='secret', is_var=True, annotated_type=<class 'str'>)
+[ERR] '{}'.format(S._t): BackendVarFormatError: Backend var 'S._t' exists only on the server and has no frontend value, so it cannot be used in the UI. Use S._t.default_value() for its default value, declare it as ClassVar[...] for a constant shared by all sessions, or use a regular state var for a value the UI should show and update.
+[ERR] 'a' + S._t: TypeError: can only concatenate str (not "Field") to str
+[ERR] S._t + 'a': TypeError: unsupported operand type(s) for +: 'Field' and 'str'
+[ERR] S._n + 1: TypeError: unsupported operand type(s) for +: 'Field' and 'int'
+[ok ] S._t == 'x': bool :: False
+[ERR] S._t.upper(): AttributeError: 'Field' object has no attribute 'upper'
+[ERR] len(S._lst): TypeError: object of type 'Field' has no len()
+[ERR] rx.Var.create(S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.Var.create([S._t]): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.Var.create({'k': S._t}): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.Var.create((S._t, 1)): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ok ] rx.cond(S._t == 'x', 'a', 'b')  [== on a Field is a plain bool]: StringCastedVar :: (false ? "a" : "b")
+[ERR] rx.text(S.plain_prop): ChildrenTypeError: Component Text received child <property object at 0x7f208968f470> of type <class 'property'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+[ERR] rx.cond(S._t, 'a', 'b'): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.cond(S.v, S._t, 'b'): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.match(S._t, ...): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.match(S.v, ('x', S._t), 'd'): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.foreach(S._lst, ...): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default_factory=functools.partial(<function deepcopy at 0x7f208eacf600>, ['x']), is_var=True, annotated_type=list[str]).
+[ERR] f-string with frontend var + backend: BackendVarFormatError: Backend var 'S._t' exists only on the server and has no frontend value, so it cannot be used in the UI. Use S._t.default_value() for its default value, declare it as ClassVar[...] for a constant shared by all sessions, or use a regular state var for a value the UI should show and update.
+[ERR] on_click=S.h(S._t): EventHandlerTypeError: Arguments to event handlers must be Vars or JSON-serializable. Got Field(default='secret', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>.
+[ERR] rx.redirect(S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.set_clipboard(S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.console_log(S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.window_alert(S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.call_script(S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.download(url=S._t): TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default='secret', is_var=True, annotated_type=<class 'str'>).
+[ERR] rx.script(S._t): ChildrenTypeError: Component Script received child Field(default='secret', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+[ERR] rx.html(S._t): TypeError: Invalid var passed for prop Html.dangerouslySetInnerHTML, expected type dict[str, str], got value {'__html': Field(default='secret', is_var=True, annotated_type=<class 'str'>)} of type collections.abc.Mapping[str, reflex_base.vars.base.Field].
+[ERR] rx.markdown(S._t): ValueError: Markdown component must have exactly one child containing the markdown source.
+[ERR] rx.el.title(S._t): ChildrenTypeError: Component Title received child Field(default='secret', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+[ok ] rx.client_state(S._t): str :: n/a
+[ok ] rx.LocalStorage(S._t): LocalStorage :: Field(default='secret', is_var=True, annotated_type=<class 'str'>)
+[ok ] S._t.default_value() [suggested fix]: str :: secret
+--- add_page metadata
+[ok ] app.add_page(title=S._t): str :: accepted
+[ok ] app.add_page(description=S._t): str :: accepted
+[ok ] app.add_page(image=S._t): str :: accepted
+[ok ] app.add_page(meta=[{content: S._t}]): str :: accepted
+[ERR] app.add_page(route=S._t): AttributeError: 'Field' object has no attribute 'strip'
+[ok ] app.add_page(on_load=S._t): str :: accepted
+[ok ] app.add_page(title=S.v) [frontend var, allowed]: str :: accepted
+[ok ] @rx.page(title=S._t): str :: accepted (deferred)
+--- legitimate server-side uses of the class attribute
+[ok ] S.get_fields()['_t']: str :: Field
+[ok ] S.get_fields()['_t'].default: str :: secret
+[ok ] str(S.get_fields()['v'])  [frontend var Field]: str :: Field(default='front', is_var=True, annotated_type=<class 'str'>)
+[ERR] rx.text(S.get_fields()['v']): ChildrenTypeError: Component Text received child Field(default='front', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+[ERR] rx.text(S.get_fields()['_t']): ChildrenTypeError: Component Text received child Field(default='secret', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+[ERR] rx.text(S.__fields__['v']): ChildrenTypeError: Component Text received child Field(default='front', is_var=True, annotated_type=<class 'str'>) of type <class 'reflex_base.vars.base.Field'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+[ok ] S.get_fields()['v'] is S.v: bool :: False
+Field(default='secret', is_var=True, annotated_type=<class 'str'>)
+[ok ] print(S._t): str :: printed
+[log] logging.info('%s', S._t) -> "backend field is Field(default='secret', is_var=True, annotated_type=<class 'str'>)\n"
+[ok ] vars(S)['_t'] / S.__dict__: str :: Field
+[ok ] hasattr(S, '_t'): bool :: True
+[ok ] isinstance check: bool :: False
+[ok ] bool(S._t): bool :: True
+[ok ] S._t in ['a']: bool :: False
+[ERR] json.dumps(S._t): TypeError: Object of type Field is not JSON serializable
+[ok ] instance: S(_reflex_internal_init=True)._t: str :: secret

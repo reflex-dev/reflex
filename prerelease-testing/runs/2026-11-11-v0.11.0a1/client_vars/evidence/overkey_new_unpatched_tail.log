@@ -1,0 +1,45 @@
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+default, but not explicitly added to the config. If you want to use it, please 
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: ClientStateVar.create has been deprecated in version 0.11.0.
+Use rx.client_state(default, name=...) instead. Naming a var makes it global; an
+unnamed var is owned by the outermost page or `@rx.memo` that uses it, so 
+`global_ref` is no longer needed. It will be completely removed in 1.0. 
+(overkey/overkey.py:80)
+Warning: Mutable default values are not recommended. Use default_factory instead
+to avoid unexpected behavior.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 335, in get_compiled_app
+    app, app_module = get_and_validate_app(reload=reload)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 302, in get_and_validate_app
+    app_module = get_app(reload=reload)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 262, in get_app
+    __import__(module, fromlist=(constants.CompileVars.APP,))
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/client_vars/overkey_new/overkey/overkey.py", line 92, in <module>
+    class OverkeyState(rx.State):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex_base/vars/base.py", line 5234, in __new__
+    new_cls = super().__new__(cls, name, bases, namespace)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen abc>", line 106, in __new__
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex/state.py", line 839, in __init_subclass__
+    RegistrationContext.register_base_state(cls)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex_base/registry.py", line 204, in register_base_state
+    return cls.ensure_context()._register_base_state(state_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex_base/registry.py", line 219, in _register_base_state
+    self._register_event_handler(event_handler, states=(state_cls,))
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex_base/registry.py", line 268, in _register_event_handler
+    full_name = format_event_handler(handler)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex_base/utils/format.py", line 472, in format_event_handler
+    state, name = get_event_handler_parts(handler)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/envs/new/lib/python3.12/site-packages/reflex_base/utils/format.py", line 448, in get_event_handler_parts
+    name = handler.fn.__qualname__
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'EventHandler' object has no attribute '__qualname__'. Did you mean: '__set_name__'?

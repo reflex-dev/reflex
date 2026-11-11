@@ -1,0 +1,39 @@
+[ok] x: str = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: rx.LocalStorage = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: str = rx.Cookie('c', max_age=60, path='/p'): storage={'cookies': {'x_rx_state_': {'path': '/p', 'maxAge': 60, 'sameSite': 'lax'}}} value={'x': ('Cookie', 'c')}
+[ok] x: rx.Cookie = rx.Cookie(): storage={'cookies': {'x_rx_state_': {'path': '/', 'sameSite': 'lax'}}} value={'x': ('Cookie', '')}
+[ok] x: str = rx.SessionStorage('s'): storage={'session_storage': {'x_rx_state_': {}}} value={'x': ('SessionStorage', 's')}
+[ok] x: rx.LocalStorage  (annotation only): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', '')}
+[ok] x: rx.LocalStorage = 'plain str default': storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('str', 'plain')}
+[ok] x: str = rx.field(rx.LocalStorage('a')): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: rx.Field[str] = rx.field(rx.LocalStorage('a')): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: Annotated[str, 'meta'] = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: str | None = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: int = rx.LocalStorage('5'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', '5')}
+[ok] x: set[str] = rx.LocalStorage('a'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: list[str] = rx.LocalStorage('[]'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', '[]')}
+[ok] x: str = rx.LocalStorage('a', name='k', sync=True): storage={'local_storage': {'x_rx_state_': {'name': 'k', 'sync': True}}} value={'x': ('LocalStorage', 'a')}
+--- default_factory shapes (0.11: storage ones must fail at compile)
+[ok] x: str = rx.field(default_factory=lambda: rx.LocalStorage('a')): storage=NONE (ordinary var) value={'x': ('LocalStorage', 'a')}
+[ok] x: rx.LocalStorage = rx.field(default_factory=lambda: rx.LocalStorage('a')): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] x: rx.LocalStorage = rx.field(default_factory=rx.LocalStorage): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', '')}
+[ok] x: rx.LocalStorage = rx.field(default_factory=lambda: 'plain'): storage={'local_storage': {'x_rx_state_': {'sync': False}}} value={'x': ('str', 'plain')}
+[ok] x: str = rx.field(default_factory=lambda: rx.Cookie('c')): storage=NONE (ordinary var) value={'x': ('Cookie', 'c')}
+[ok] x: str = rx.field(default_factory=lambda: rx.SessionStorage('s')): storage=NONE (ordinary var) value={'x': ('SessionStorage', 's')}
+[ok] x: str | None = rx.field(default_factory=lambda: rx.LocalStorage('a')): storage=NONE (ordinary var) value={'x': ('LocalStorage', 'a')}
+[DEFINE-ERR] x: Any = rx.field(default_factory=lambda: rx.LocalStorage('a')): VarTypeError: State vars must be of a serializable type. Valid types include strings, numbers, booleans, lists, dictionaries, dataclasses, datetime objects, and pydantic models. Found var "reflex___state____state____main_____t23.x_rx_state_" with type typing.Any.
+[ok] x: Literal['a','b'] = rx.field(default_factory=lambda: rx.LocalStorage('a')): storage=NONE (ordinary var) value={'x': ('LocalStorage', 'a')}
+[ok] x: Annotated[str,'m'] = rx.field(default_factory=lambda: rx.LocalStorage('a')): storage=NONE (ordinary var) value={'x': ('LocalStorage', 'a')}
+[ok] x: int = rx.field(default_factory=lambda: rx.LocalStorage('5')): storage=NONE (ordinary var) value={'x': ('LocalStorage', '5')}
+[ok] x: list[str] = rx.field(default_factory=lambda: rx.LocalStorage('[]')): storage=NONE (ordinary var) value={'x': ('LocalStorage', '[]')}
+[ok] _x: str = rx.field(default_factory=lambda: rx.LocalStorage('a'))  [backend var]: storage=NONE (ordinary var) value={'_x': ('LocalStorage', 'a')}
+[ok] x: str = rx.field(default_factory=<plain str factory>): storage=NONE (ordinary var) value={'x': ('str', 'plain-1')}
+    plain factory calls so far (compile + instance): 1
+[ok] x: str = rx.field(default_factory=<factory that raises>): storage=NONE (ordinary var) value=<instance error RuntimeError: only works at runtime>
+[ok] x: str = pydantic.Field(default_factory=lambda: rx.LocalStorage('a')): storage=NONE (ordinary var) value={'x': ('FieldInfo', FieldInfo(annotation=NoneType, required=False, default_factory=<lambda>))}
+[ok] x: str = pydantic.Field(default=rx.LocalStorage('a')): storage=NONE (ordinary var) value={'x': ('FieldInfo', FieldInfo(annotation=NoneType, required=False, default='a'))}
+--- inheritance / mixin / ComponentState
+[ok] factory storage on a parent state, storage on child: storage={'local_storage': {'y_rx_state_': {'sync': False}}} value={'x': ('LocalStorage', 'a')}
+[ok] mixin with LocalStorage default: storage={'local_storage': {'x_rx_state_': {'name': 'mx', 'sync': False}}} value={'x': ('LocalStorage', 'mixed')}
+[ok] mixin with factory storage: storage=NONE (ordinary var) value={'x': ('LocalStorage', 'mixed')}
+[ok] ComponentState with factory storage (compile parent): storage=NONE (ordinary var) value=<instance error ReflexRuntimeError: ComponentState CS is not meant to be initialized directly. Use the `create` method to create a new instance and access t>

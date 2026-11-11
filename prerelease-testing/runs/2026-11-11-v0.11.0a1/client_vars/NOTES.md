@@ -6,9 +6,9 @@
 - Helper: `scripts/srv.sh start <label> <venv> <dev|prod> <appdir> <fport> <bport> [ENV=VAL...]` / `srv.sh stop <label>`
   (own process group, refuses busy ports, logs in `$W/logs/<label>.log`). Drivers run with
   `NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python scripts/<driver>.py ...`.
-- DONE: client_state (csapp, csedge, legacyapp, overkey), SetVar + unicode (varsapp, probes/set_probe.py).
-- IN PROGRESS: storage (declarations probe, multi-tab app, hydration fixtures storm/stamp).
-- TODO: var error probes (#7648, #7651), final report `reports/client_vars.md`.
+- **FINISHED** (2026-11-11). Final report: `../reports/client_vars.md`. Issue list: section 7 below. Evidence: `evidence/`.
+- Nothing left running; no venv to clean except the control `$SB/envs/client_vars-ctrl-a3` (reflex 0.10.0a3 from PyPI).
+- Not done: see "Not covered" at the end.
 - Sources are copied to `src/` here by `scripts/sync_dest.sh` (no `.web`, logs or results).
 
 ## 1. client_state (#6936)
@@ -218,3 +218,66 @@ Server-side fallout of the `str()` change: `print(State._secret)` and `logging.i
 `BackendVarFormatError` ("cannot be used in the UI") where 0.10.1 printed the Field repr; logging swallows it as
 `--- Logging error ---`. `repr()` / `!r` still work. `str(State.get_fields()["v"])` (frontend var) now raises
 `'S.v' is the field of a state var, not the var. Use S.v to use it in the UI.`
+
+## 6. Storage at runtime (#7637, #7652; HYD-08/09/12/13)
+
+### App `stapp` + three tabs (`scripts/drive_storage.py`)
+```
+scripts/srv.sh start st-new new dev $PWD/stapp 3260 8260      # prev: ports 3262 8262; prod: `new prod ... 3261 3261`
+NO_PROXY=... $SB/envs/driver/bin/python scripts/drive_storage.py http://localhost:3260 new-dev   # obs JSON: results/storage/<label>_obs.json
+```
+Vars: `a`, `b` (state `St`), `c` (substate `Sub`), `d` (other state `Other`) all `rx.LocalStorage(..., name="shared", sync=True)`;
+`solo` / `unnamed_sync` (sync), `mixed_sync` + `mixed_nosync` (one name, one synced), plain / `rx.LocalStorage`-annotated /
+int-annotated LocalStorage, SessionStorage, cookies (`max_age=5`, `max_age=30`, `path="/sub"`, `rx.Cookie`-annotated),
+computed vars `len(self.solo)` and `self.a.upper()`.
+
+| check | 0.10.1 dev (control) | 0.11.0a1 dev | 0.11.0a1 prod |
+|---|---|---|---|
+| fresh profile writes nothing | pass | pass | pass |
+| #7637 tab A sets `a`: `b`/`c`/`d` in tab A | stay at their defaults (HYD-13) | all `A1` | all `A1` |
+| write through `Other.d` / `Sub.c` / a background task | writing tab keeps stale siblings | every var in every tab follows | same |
+| `a="both-A"`, `b="both-B"` in ONE event | A: `a=both-A b=both-B c,d stale`; B/C + storage `both-A` | A: `b=both-B`, rest `both-A`; B/C + storage `both-A` | same |
+| #7652 `localStorage.clear()` typed in tab A | B/C keep the old values | B/C reset every synced var to its default, computed vars recompute; tab A itself keeps its values (no storage event in the originating tab) | same |
+| `localStorage.removeItem("solo")` in tab B | A/C keep `solo-2` | A/C -> `solo-default`; B keeps `solo-2` | same |
+| `rx.remove_local_storage("solo")` from A | B/C keep `solo-3`; server log `TypeError: object of type 'NoneType' has no len()` from `solo_len` (HYD-12), 4x | B/C and A -> default, no error in the log | same |
+| `rx.remove_local_storage("shared")`, `rx.clear_local_storage()` | no reset | each var back to ITS OWN default in every tab; localStorage stays empty | same |
+| cookies | `ck` ttl 3.7 s, `ck30` 26.7 s, `ck_path` path `/sub` (value visible on `/sub` only), expired cookie -> default after 6 s | identical | identical |
+| checks | 12/24 | 23/24 (the 1 = the INFO row "conflicting writes") | 23/24 |
+
+Server log on both versions: `Expected field 'St.num' to receive type '<class 'int'>', but got '5' of type '<class
+'...LocalStorage'>'` once per state instantiation for the int-annotated LocalStorage var (known, R101-15, unchanged).
+0.10.1 additionally logs `Expected field 'St.a' ...` when a `null` is synced in; 0.11.0a1 does not.
+STATE-23 (`scripts/drive_state23.py`): setting and re-hydrating `typed: rx.LocalStorage` / `ck_typed: rx.Cookie` logs nothing on
+0.10.1 or 0.11.0a1 -> not reproducible here, so no statement about a fix.
+
+### Hydration fixtures on this cluster's ports (`scripts/run_hyd_fixtures.sh`, output `evidence/hyd_fixtures_storm_stamp.txt`)
+Control `client_vars-ctrl-a3` = `reflex[db]==0.10.0a3` from PyPI (`cd $SB && uv --no-config venv ...; uv --no-config pip install
+--prerelease=allow --only-binary :all: 'reflex[db]==0.10.0a3' 'reflex-base==0.10.0a3'`).
+| run | control 0.10.0a3 | 0.11.0a1 dev | 0.11.0a1 prod |
+|---|---|---|---|
+| `run_storm.sh <v> dev 3 3264 8264 S 6` | storms 2/2 (36k-177k frames, tabs split `s2`/`s3`) | 0/3, 69-81 frames, all 7 tabs + localStorage `s5` | 0/3, 97-101 frames |
+| `run_stamp2.sh <v> dev 3264 8264 3 1 6` | run 1: 2.06 M frames, not converged; run 2: driver timed out | 0/3 storm, 89-205 frames, one value in 6 tabs; `/same` 47 frames | 0/3, 102-125 frames; `/same` 50 |
+`state.js` md5 on 0.11.0a1: `04397de7` (0.10.0: `b7915eda`), i.e. the sync code changed (#7637/#7652) and stays storm-free.
+
+## 7. Issues (details and repro in the sections above)
+| id | title | severity | regression |
+|---|---|---|---|
+| CV-1 | `@rx.event` stacked on `@rx.event(...)` raises `AttributeError: 'EventHandler' object has no attribute '__qualname__'` at class definition; reflex-examples `overkey` does not start | high | yes |
+| CV-2 | "Give it a name -- rx.client_state("my_name")" (error text + `create` docstring) shows the wrong call | low | no (new API) |
+| CV-3 | client state identifiers collide: names differing in first-letter case share a setter (`setItem`) -> generated module fails to parse, every page 500; one name with two defaults -> silently first wins, or `Identifier ... already declared` with `auto_memoize=False` | low | no (new API) |
+| CV-4 | docs: per-row client state in `rx.foreach` follows the index unless the memo gets `key=` | low | no |
+| CV-5 | `rx.match` on a set compares order-dependent JSON; result depends on `PYTHONHASHSEED` | low | no |
+| CV-6 | handler parameter annotated `set[str]` receives a `list` | low | no |
+| CV-7 | `set[str] \| None` var that is `None`: `contains`/`union`/`issubset` throw in the browser and fail the prod prerender | low | no |
+| CV-8 | `StringVar.split()` / `.split("")` still split UTF-16 code units | low | no |
+| CV-9 | #7582 leaves a storage-producing `default_factory` on `int` / `list[str]` vars silently ordinary | low | no |
+| CV-10 | #7651 leaves backend var as child / typed prop / event arg cryptic, and `State._x == ...` silently `False` | low | no |
+
+## Not covered
+- client_state: dev hot reload with client values; `auto_memoize=False` WITHOUT `react_compiler`; SSR-only / embedded second app;
+  `global_set` handed to a real non-React library; Firefox/WebKit.
+- SetVar: `rx.data_table` fed by a set, sets of dataclass/pydantic elements, `set[datetime]`, a LocalStorage-backed `set[str]` at
+  runtime (compiles as storage; value is a str).
+- Storage: prod + Redis legs, the 100 ms RTT / raw-CDP verifier families (`vmatrix.sh`), Cookie `secure` / `same_site` / `domain`,
+  `sessionStorage.clear()`.
+- Var errors: `rx.upload(on_upload_progress=State._x)`, hybrid properties, pydantic v1 models.

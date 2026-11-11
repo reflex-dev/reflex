@@ -1,0 +1,112 @@
+[ok ] type S.tags: ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_
+[ok ] type S.nums: ArrayCastedVar :: reflex___state____state____main_____s.nums_rx_state_
+[ok ] type S.pairs: ArrayCastedVar :: reflex___state____state____main_____s.pairs_rx_state_
+[ok ] type S.colors: ArrayCastedVar :: reflex___state____state____main_____s.colors_rx_state_
+[ok ] type S.maybe: ArrayCastedVar :: reflex___state____state____main_____s.maybe_rx_state_
+[ok ] type S.opt: ArrayCastedVar :: reflex___state____state____main_____s.opt_rx_state_
+[ok ] type S.bare: ArrayCastedVar :: reflex___state____state____main_____s.bare_rx_state_
+[ok ] type S.computed: ArrayCastedVar :: reflex___state____state____main_____s.computed_rx_state_
+[ok ] type S.computed_frozen: ArrayCastedVar :: reflex___state____state____main_____s.computed_frozen_rx_state_
+[ok ] type S.nested: ObjectCastedVar :: reflex___state____state____main_____s.nested_rx_state_
+[ok ] type S.lset: ArrayCastedVar :: reflex___state____state____main_____s.lset_rx_state_
+[ok ] S.dc.tags: ArrayCastedVar :: reflex___state____state____main_____s.dc_rx_state_?.["tags"]
+[ok ] S.pm.tags: ArrayCastedVar :: reflex___state____state____main_____s.pm_rx_state_?.["tags"]
+[ok ] S.pm.frozen: ArrayCastedVar :: reflex___state____state____main_____s.pm_rx_state_?.["frozen"]
+[ok ] S.nested['k']: ArrayCastedVar :: reflex___state____state____main_____s.nested_rx_state_?.["k"]
+[ok ] S.lset[0]: ArrayCastedVar :: reflex___state____state____main_____s.lset_rx_state_?.at?.(0)
+[ok ] Var.create({1,2,3}): LiteralArrayVar :: [1, 2, 3]
+[ERR] Var.create(frozenset): TypeError: Unsupported type <class 'frozenset'> for LiteralVar. Tried to create a LiteralVar from frozenset({'b', 'a'}).
+[ok ] Var.create({(1,'a')}): LiteralArrayVar :: [[2, "b"], [1, "a"]]
+[ok ] Var.create(mixed unsortable): LiteralArrayVar :: [null, 1, "x"]
+[ok ] Var.create({1, True}): LiteralArrayVar :: [1, 2.0]
+[ok ] Var.create(set of Enum): LiteralArrayVar :: ["red", "blue"]
+[ok ] Var.create(empty set): LiteralArrayVar :: []
+--- supported ops
+[ERR] tags.union(set literal): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'union' or may have been annotated wrongly.
+[ERR] tags.union(list var): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'union' or may have been annotated wrongly.
+[ERR] tags.union(python list): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'union' or may have been annotated wrongly.
+[ERR] tags.union(str) [bad operand]: VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'union' or may have been annotated wrongly.
+[ERR] tags.intersection(set literal): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'intersection' or may have been annotated wrongly.
+[ERR] tags.intersection(list var): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'intersection' or may have been annotated wrongly.
+[ERR] tags.intersection(python list): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'intersection' or may have been annotated wrongly.
+[ERR] tags.intersection(str) [bad operand]: VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'intersection' or may have been annotated wrongly.
+[ERR] tags.difference(set literal): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'difference' or may have been annotated wrongly.
+[ERR] tags.difference(list var): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'difference' or may have been annotated wrongly.
+[ERR] tags.difference(python list): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'difference' or may have been annotated wrongly.
+[ERR] tags.difference(str) [bad operand]: VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'difference' or may have been annotated wrongly.
+[ERR] tags.symmetric_difference(set literal): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'symmetric_difference' or may have been annotated wrongly.
+[ERR] tags.symmetric_difference(list var): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'symmetric_difference' or may have been annotated wrongly.
+[ERR] tags.symmetric_difference(python list): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'symmetric_difference' or may have been annotated wrongly.
+[ERR] tags.symmetric_difference(str) [bad operand]: VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'symmetric_difference' or may have been annotated wrongly.
+[ERR] tags.issubset(set literal): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'issubset' or may have been annotated wrongly.
+[ERR] tags.issubset(list var): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'issubset' or may have been annotated wrongly.
+[ERR] tags.issubset(python list): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'issubset' or may have been annotated wrongly.
+[ERR] tags.issubset(str) [bad operand]: VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'issubset' or may have been annotated wrongly.
+[ERR] tags.issuperset(set literal): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'issuperset' or may have been annotated wrongly.
+[ERR] tags.issuperset(list var): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'issuperset' or may have been annotated wrongly.
+[ERR] tags.issuperset(python list): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'issuperset' or may have been annotated wrongly.
+[ERR] tags.issuperset(str) [bad operand]: VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'issuperset' or may have been annotated wrongly.
+[ERR] tags.isdisjoint(set literal): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'isdisjoint' or may have been annotated wrongly.
+[ERR] tags.isdisjoint(list var): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'isdisjoint' or may have been annotated wrongly.
+[ERR] tags.isdisjoint(python list): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'isdisjoint' or may have been annotated wrongly.
+[ERR] tags.isdisjoint(str) [bad operand]: VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'isdisjoint' or may have been annotated wrongly.
+[ok ] tags.contains('a'): BooleanCastedVar :: reflex___state____state____main_____s.tags_rx_state_.includes("a")
+[ok ] tags.length(): NumberCastedVar :: reflex___state____state____main_____s.tags_rx_state_.length
+[ERR] tags.to_array(): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'to_array' or may have been annotated wrongly.ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (set_probe.py:137)
+
+[ok ] pairs.contains((1,'a')): BooleanCastedVar :: reflex___state____state____main_____s.pairs_rx_state_.includes([1, "a"])
+[ok ] colors.contains(Color.RED): BooleanCastedVar :: reflex___state____state____main_____s.colors_rx_state_.includes("red")
+[ok ] maybe.contains: BooleanCastedVar :: reflex___state____state____main_____s.maybe_rx_state_.includes("a")
+[ok ] opt.length: NumberCastedVar :: reflex___state____state____main_____s.opt_rx_state_.length
+[ok ] tags | {'x'}: ArrayCastedVar :: pyOr(reflex___state____state____main_____s.tags_rx_state_, () => (["x"]))
+[ok ] tags & {'x'}: ArrayCastedVar :: pyAnd(reflex___state____state____main_____s.tags_rx_state_, () => (["x"]))
+[ERR] tags - {'x'}: TypeError: unsupported operand type(s) for -: 'ArrayCastedVar' and 'set'
+[ERR] tags ^ {'x'}: TypeError: unsupported operand type(s) for ^: 'ArrayCastedVar' and 'set'
+[ok ] tags == {'a','b'}: BooleanCastedVar :: (reflex___state____state____main_____s.tags_rx_state_?.valueOf?.() === ["b", "a"]?.valueOf?.())
+[ok ] tags != {'a','b'}: BooleanCastedVar :: !((reflex___state____state____main_____s.tags_rx_state_?.valueOf?.() === ["b", "a"]?.valueOf?.()))
+[ERR] len(tags): TypeError: object of type 'ArrayCastedVar' has no len()
+[ERR] 'a' in tags: VarTypeError: 'in' operator not supported for Var types, use Var.contains() instead.
+[ERR] iter(tags): VarTypeError: Cannot iterate over Var 'reflex___state____state____main_____s.tags_rx_state_'. Instead use `rx.foreach`.
+[ERR] bool(tags): VarTypeError: Cannot convert Var 'reflex___state____state____main_____s.tags_rx_state_' to bool for use with `if`, `and`, `or`, and `not`. Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert).
+[ok ] ~tags: BooleanCastedVar :: !(isTrue(reflex___state____state____main_____s.tags_rx_state_))
+[ok ] tags.to_string(): StringCastedVar :: (JSON.stringify(reflex___state____state____main_____s.tags_rx_state_))
+[ok ] f-string: ConcatVarOperation :: ("tags: "+reflex___state____state____main_____s.tags_rx_state_)
+[ok ] rx.foreach(tags): Foreach :: Array.prototype.map.call(reflex___state____state____main_____s.tags_rx_state_ ?? [],((t_rx_state_,index_e9a1e14e1b3823f6018ac360edcea3e4)=>(jsx(RadixThemesText,{as:"p",key:index_e9a1e14e1b3823f6018ac360edcea3e4},t_rx_state_))))
+[ok ] rx.foreach(tags, with index): Foreach :: Array.prototype.map.call(reflex___state____state____main_____s.tags_rx_state_ ?? [],((t_rx_state_,i_rx_state_)=>(jsx(RadixThemesText,{as:"p",key:i_rx_state_},t_rx_state_,i_rx_state_))))
+[ok ] rx.foreach(pairs): Foreach :: Array.prototype.map.call(reflex___state____state____main_____s.pairs_rx_state_ ?? [],((t_rx_state_,index_13089d77f191f5298f6720c71546aa68)=>(jsx(RadixThemesText,{as:"p",key:index_13089d77f191f5298f6720c71546aa68},t_rx_state_?.at?.
+[ok ] rx.cond(tags.contains): StringCastedVar :: (reflex___state____state____main_____s.tags_rx_state_.includes("x") ? "y" : "n")
+[ok ] rx.cond(tags) truthiness: StringCastedVar :: (isTrue(reflex___state____state____main_____s.tags_rx_state_) ? "nonempty" : "empty")
+[ok ] rx.match(tags, ...): Fragment :: jsx(Fragment,{},(() => {
+  switch (JSON.stringify(reflex___state____state____main_____s.tags_rx_state_)) {
+    case JSON.stringify(["b", "a"]):
+      return jsx(RadixThemesText,{as:"p"},"ab");
+      break;
+    default:
+      retur
+[ok ] rx.select(items=tags): SelectRoot :: jsx(RadixThemesSelect.Root,{},jsx(RadixThemesSelect.Trigger,{},),jsx(RadixThemesSelect.Content,{},jsx(RadixThemesSelect.Group,{},"",Array.prototype.map.call(reflex___state____state____main_____s.tags_rx_state_ ?? [],((item_rx_stat
+[ERR] rx.select(items=tags.to_array()): VarAttributeError: The State var reflex___state____state____main_____s.tags_rx_state_ of type set[str] has no attribute 'to_array' or may have been annotated wrongly.
+[ok ] rx.data_table(data=...): DataTable :: jsx(DataTableGrid,{columns:["a"],data:reflex___state____state____main_____s.lset_rx_state_},)
+[ok ] rx.checkbox_group / segmented: SegmentedControlRoot :: jsx(RadixThemesSegmentedControl.Root,{},Array.prototype.map.call(reflex___state____state____main_____s.tags_rx_state_ ?? [],((t_rx_state_,index_7cfd3fdeac557ac73638e40190f8c07c)=>(jsx(RadixThemesSegmentedControl.Item,{key:index_7c
+--- deprecated array ops (each should warn once, pointing at THIS file)
+[ok ] tags[0]: StringCastedVar :: reflex___state____state____main_____s.tags_rx_state_?.at?.(0)
+[ok ] tags[0:1]: ArraySliceOperation :: reflex___state____state____main_____s.tags_rx_state_.slice(0, 1)
+[ok ] tags.join(','): StringCastedVar :: reflex___state____state____main_____s.tags_rx_state_.join(",")
+[ok ] tags.reverse(): ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.slice().reverse()
+[ok ] tags.map: ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.map(((xdvxrcsn) => (xdvxrcsn+"!")))
+[ok ] tags.filter: ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.filter(((bacghqta) => !((bacghqta?.valueOf?.() === "a"?.valueOf?.()))))
+[ERR] tags + ['x']: VarTypeError: Unsupported Operand type(s) for +: ArrayCastedVar, list
+[ok ] ['x'] + tags: ArrayCastedVar :: [...reflex___state____state____main_____s.lst_rx_state_, ...reflex___state____state____main_____s.tags_rx_state_]
+[ok ] tags * 2: ArrayCastedVar :: Array.from({ length: 2 }).flatMap(() => reflex___state____state____main_____s.tags_rx_state_)
+[ok ] tags < other: BooleanCastedVar :: reflex___state____state____main_____s.tags_rx_state_ < reflex___state____state____main_____s.lst_rx_state_
+[ok ] tags >= other: BooleanCastedVar :: reflex___state____state____main_____s.tags_rx_state_ >= reflex___state____state____main_____s.lst_rx_state_
+[ok ] tags.contains('a', field): BooleanCastedVar :: reflex___state____state____main_____s.tags_rx_state_.some(obj => obj["f"] === "a")
+[ok ] tags.pluck: ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.map(e=>e?.["x"])
+[ok ] tags.reduce: StringCastedVar :: reflex___state____state____main_____s.tags_rx_state_.reduce(((osizayzf, rgwuwrnh) => (osizayzf+rgwuwrnh)), "")
+[ok ] tags.flat_map: ArrayCastedVar :: pyFlatMap(reflex___state____state____main_____s.tags_rx_state_, ((wnkiegyk) => [wnkiegyk]))
+[ok ] tags.foreach: ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.map(((dcmdllti) => dcmdllti))
+[ok ] tags[0] second site: StringCastedVar :: reflex___state____state____main_____s.tags_rx_state_?.at?.(0)
+[ok ] nums[0] other var: NumberCastedVar :: reflex___state____state____main_____s.nums_rx_state_?.at?.(0)
+--- storage / misc
+[ok ] LocalStorage-backed set: ArrayCastedVar :: reflex___state____state__reflex___istate___dynamic___t.s_rx_state_
+[ok ] set annotated, list default: ArrayCastedVar :: reflex___state____state__reflex___istate___dynamic___t2.s_rx_state_
+[ok ] set[list[int]]: ArrayCastedVar :: reflex___state____state__reflex___istate___dynamic___t3.s_rx_state_

@@ -1,0 +1,38 @@
+=== storm client_vars-ctrl-a3 dev
+--- client_vars-ctrl-a3 dev run 1
+--- client_vars-ctrl-a3 dev run 2
+storm_client_vars-ctrl-a3_dev_S_6_*: storms 2/2 (files 2)
+   storm_client_vars-ctrl-a3_dev_S_6_1.json: storm=True frames_total=177449 quiet2s=22018 tab_finals=['s2', 's3'] ls=s3 storage_ev_t1=20859
+   storm_client_vars-ctrl-a3_dev_S_6_2.json: storm=True frames_total=36701 quiet2s=12142 tab_finals=['s2', 's3'] ls=s2 storage_ev_t1=4025
+=== stamp client_vars-ctrl-a3 dev
+state.js md5: caea5520
+client_vars-ctrl-a3 dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": false, "storm": false, "windows_5s": [1228722, 0], "frames_total": 2060346, "finals": ["d63924-1", "d84b8f-1", "d63924-1", "a9099e-1", "d84b8f-1", "a9099e-1"], "storage_events": [282790, 282518, 282658, 282710, 282494, 283925]}
+client_vars-ctrl-a3 dev /stamp n=6 run 2: === storm new dev
+--- new dev run 1
+--- new dev run 2
+--- new dev run 3
+storm_new_dev_S_6_*: storms 0/3 (files 3)
+   storm_new_dev_S_6_1.json: storm=False frames_total=69 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_new_dev_S_6_2.json: storm=False frames_total=77 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_new_dev_S_6_3.json: storm=False frames_total=81 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+=== stamp new dev
+state.js md5: 04397de7
+new dev /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 205, "finals": ["af924e-1", "af924e-1", "af924e-1", "af924e-1", "af924e-1", "af924e-1"], "storage_events": [13, 14, 10, 13, 15, 15]}
+new dev /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 89, "finals": ["62dd76-1", "62dd76-1", "62dd76-1", "62dd76-1", "62dd76-1", "62dd76-1"], "storage_events": [6, 6, 6, 5, 6, 6]}
+new dev /stamp n=6 run 3: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 89, "finals": ["6a76d2-1", "6a76d2-1", "6a76d2-1", "6a76d2-1", "6a76d2-1", "6a76d2-1"], "storage_events": [5, 6, 6, 6, 6, 6]}
+new dev /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 47, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [0, 1, 1, 1, 1, 1]}
+=== storm new prod
+--- new prod run 1
+--- new prod run 2
+--- new prod run 3
+storm_new_prod_S_6_*: storms 0/3 (files 3)
+   storm_new_prod_S_6_1.json: storm=False frames_total=97 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_new_prod_S_6_2.json: storm=False frames_total=101 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+   storm_new_prod_S_6_3.json: storm=False frames_total=101 quiet2s=0 tab_finals=['s5'] ls=s5 storage_ev_t1=5
+=== stamp new prod
+state.js md5: 04397de7
+new prod /stamp n=6 run 1: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 125, "finals": ["fdab91-1", "fdab91-1", "fdab91-1", "fdab91-1", "fdab91-1", "fdab91-1"], "storage_events": [8, 7, 8, 6, 8, 8]}
+new prod /stamp n=6 run 2: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 125, "finals": ["e951a8-1", "e951a8-1", "e951a8-1", "e951a8-1", "e951a8-1", "e951a8-1"], "storage_events": [8, 9, 9, 8, 7, 9]}
+new prod /stamp n=6 run 3: {"path": "/stamp", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 102, "finals": ["2a009d-1", "2a009d-1", "2a009d-1", "2a009d-1", "2a009d-1", "2a009d-1"], "storage_events": [7, 6, 7, 6, 7, 7]}
+new prod /same n=6 run 1: {"path": "/same", "n": 6, "converged": true, "storm": false, "windows_5s": [0, 0], "frames_total": 50, "finals": ["same", "same", "same", "same", "same", "same"], "storage_events": [0, 1, 1, 1, 1, 1]}
+=== done

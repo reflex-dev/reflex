@@ -1,0 +1,130 @@
+[ok ] type S.tags: SetCastedVar :: reflex___state____state____main_____s.tags_rx_state_
+[ok ] type S.nums: SetCastedVar :: reflex___state____state____main_____s.nums_rx_state_
+[ok ] type S.pairs: SetCastedVar :: reflex___state____state____main_____s.pairs_rx_state_
+[ok ] type S.colors: SetCastedVar :: reflex___state____state____main_____s.colors_rx_state_
+[ok ] type S.maybe: SetCastedVar :: reflex___state____state____main_____s.maybe_rx_state_
+[ok ] type S.opt: SetCastedVar :: reflex___state____state____main_____s.opt_rx_state_
+[ok ] type S.bare: SetCastedVar :: reflex___state____state____main_____s.bare_rx_state_
+[ok ] type S.computed: SetCastedVar :: reflex___state____state____main_____s.computed_rx_state_
+[ok ] type S.computed_frozen: SetCastedVar :: reflex___state____state____main_____s.computed_frozen_rx_state_
+[ok ] type S.nested: ObjectCastedVar :: reflex___state____state____main_____s.nested_rx_state_
+[ok ] type S.lset: ArrayCastedVar :: reflex___state____state____main_____s.lset_rx_state_
+[ok ] S.dc.tags: SetCastedVar :: reflex___state____state____main_____s.dc_rx_state_?.["tags"]
+[ok ] S.pm.tags: SetCastedVar :: reflex___state____state____main_____s.pm_rx_state_?.["tags"]
+[ok ] S.pm.frozen: SetCastedVar :: reflex___state____state____main_____s.pm_rx_state_?.["frozen"]
+[ok ] S.nested['k']: SetCastedVar :: reflex___state____state____main_____s.nested_rx_state_?.["k"]
+[ok ] S.lset[0]: SetCastedVar :: reflex___state____state____main_____s.lset_rx_state_?.at?.(0)
+[ok ] Var.create({1,2,3}): LiteralSetVar :: [1, 2, 3]
+[ok ] Var.create(frozenset): LiteralSetVar :: ["a", "b"]
+[ok ] Var.create({(1,'a')}): LiteralSetVar :: [[1, "a"], [2, "b"]]
+[ok ] Var.create(mixed unsortable): LiteralSetVar :: [null, 1, "x"]
+[ok ] Var.create({1, True}): LiteralSetVar :: [1, 2.0]
+[ok ] Var.create(set of Enum): LiteralSetVar :: ["blue", "red"]
+[ok ] Var.create(empty set): LiteralSetVar :: []
+--- supported ops
+[ok ] tags.union(set literal): SetCastedVar :: pySetUnion(reflex___state____state____main_____s.tags_rx_state_, ["a", "c"])
+[ok ] tags.union(list var): SetCastedVar :: pySetUnion(reflex___state____state____main_____s.tags_rx_state_, reflex___state____state____main_____s.lst_rx_state_)
+[ok ] tags.union(python list): SetCastedVar :: pySetUnion(reflex___state____state____main_____s.tags_rx_state_, ["a"])
+[ERR] tags.union(str) [bad operand]: VarTypeError: Unsupported Operand type(s) for union: SetCastedVar, str
+[ok ] tags.intersection(set literal): SetCastedVar :: pySetIntersection(reflex___state____state____main_____s.tags_rx_state_, ["a", "c"])
+[ok ] tags.intersection(list var): SetCastedVar :: pySetIntersection(reflex___state____state____main_____s.tags_rx_state_, reflex___state____state____main_____s.lst_rx_state_)
+[ok ] tags.intersection(python list): SetCastedVar :: pySetIntersection(reflex___state____state____main_____s.tags_rx_state_, ["a"])
+[ERR] tags.intersection(str) [bad operand]: VarTypeError: Unsupported Operand type(s) for intersection: SetCastedVar, str
+[ok ] tags.difference(set literal): SetCastedVar :: pySetDifference(reflex___state____state____main_____s.tags_rx_state_, ["a", "c"])
+[ok ] tags.difference(list var): SetCastedVar :: pySetDifference(reflex___state____state____main_____s.tags_rx_state_, reflex___state____state____main_____s.lst_rx_state_)
+[ok ] tags.difference(python list): SetCastedVar :: pySetDifference(reflex___state____state____main_____s.tags_rx_state_, ["a"])
+[ERR] tags.difference(str) [bad operand]: VarTypeError: Unsupported Operand type(s) for difference: SetCastedVar, str
+[ok ] tags.symmetric_difference(set literal): SetCastedVar :: pySetSymmetricDifference(reflex___state____state____main_____s.tags_rx_state_, ["a", "c"])
+[ok ] tags.symmetric_difference(list var): SetCastedVar :: pySetSymmetricDifference(reflex___state____state____main_____s.tags_rx_state_, reflex___state____state____main_____s.lst_rx_state_)
+[ok ] tags.symmetric_difference(python list): SetCastedVar :: pySetSymmetricDifference(reflex___state____state____main_____s.tags_rx_state_, ["a"])
+[ERR] tags.symmetric_difference(str) [bad operand]: VarTypeError: Unsupported Operand type(s) for symmetric_difference: SetCastedVar, str
+[ok ] tags.issubset(set literal): BooleanCastedVar :: pySetIsSubset(reflex___state____state____main_____s.tags_rx_state_, ["a", "c"])
+[ok ] tags.issubset(list var): BooleanCastedVar :: pySetIsSubset(reflex___state____state____main_____s.tags_rx_state_, reflex___state____state____main_____s.lst_rx_state_)
+[ok ] tags.issubset(python list): BooleanCastedVar :: pySetIsSubset(reflex___state____state____main_____s.tags_rx_state_, ["a"])
+[ERR] tags.issubset(str) [bad operand]: VarTypeError: Unsupported Operand type(s) for issubset: SetCastedVar, str
+[ok ] tags.issuperset(set literal): BooleanCastedVar :: pySetIsSubset(["a", "c"], reflex___state____state____main_____s.tags_rx_state_)
+[ok ] tags.issuperset(list var): BooleanCastedVar :: pySetIsSubset(reflex___state____state____main_____s.lst_rx_state_, reflex___state____state____main_____s.tags_rx_state_)
+[ok ] tags.issuperset(python list): BooleanCastedVar :: pySetIsSubset(["a"], reflex___state____state____main_____s.tags_rx_state_)
+[ERR] tags.issuperset(str) [bad operand]: VarTypeError: Unsupported Operand type(s) for issuperset: SetCastedVar, str
+[ok ] tags.isdisjoint(set literal): BooleanCastedVar :: pySetIsDisjoint(reflex___state____state____main_____s.tags_rx_state_, ["a", "c"])
+[ok ] tags.isdisjoint(list var): BooleanCastedVar :: pySetIsDisjoint(reflex___state____state____main_____s.tags_rx_state_, reflex___state____state____main_____s.lst_rx_state_)
+[ok ] tags.isdisjoint(python list): BooleanCastedVar :: pySetIsDisjoint(reflex___state____state____main_____s.tags_rx_state_, ["a"])
+[ERR] tags.isdisjoint(str) [bad operand]: VarTypeError: Unsupported Operand type(s) for isdisjoint: SetCastedVar, str
+[ok ] tags.contains('a'): BooleanCastedVar :: pySetHas(reflex___state____state____main_____s.tags_rx_state_, "a")
+[ok ] tags.length(): NumberCastedVar :: reflex___state____state____main_____s.tags_rx_state_.length
+[ok ] tags.to_array(): ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_
+[ok ] pairs.contains((1,'a')): BooleanCastedVar :: pySetHas(reflex___state____state____main_____s.pairs_rx_state_, [1, "a"])
+[ok ] colors.contains(Color.RED): BooleanCastedVar :: pySetHas(reflex___state____state____main_____s.colors_rx_state_, "red")
+[ok ] maybe.contains: BooleanCastedVar :: pySetHas(reflex___state____state____main_____s.maybe_rx_state_, "a")
+[ok ] opt.length: NumberCastedVar :: reflex___state____state____main_____s.opt_rx_state_.length
+[ok ] tags | {'x'}: SetCastedVar :: pyOr(reflex___state____state____main_____s.tags_rx_state_, () => (["x"]))
+[ok ] tags & {'x'}: SetCastedVar :: pyAnd(reflex___state____state____main_____s.tags_rx_state_, () => (["x"]))
+[ERR] tags - {'x'}: TypeError: unsupported operand type(s) for -: 'SetCastedVar' and 'set'
+[ERR] tags ^ {'x'}: TypeError: unsupported operand type(s) for ^: 'SetCastedVar' and 'set'
+[ok ] tags == {'a','b'}: BooleanCastedVar :: (reflex___state____state____main_____s.tags_rx_state_?.valueOf?.() === ["a", "b"]?.valueOf?.())
+[ok ] tags != {'a','b'}: BooleanCastedVar :: !((reflex___state____state____main_____s.tags_rx_state_?.valueOf?.() === ["a", "b"]?.valueOf?.()))
+[ERR] len(tags): TypeError: object of type 'SetCastedVar' has no len()
+[ERR] 'a' in tags: VarTypeError: 'in' operator not supported for Var types, use Var.contains() instead.
+[ERR] iter(tags): VarTypeError: Cannot iterate over Var 'reflex___state____state____main_____s.tags_rx_state_'. Instead use `rx.foreach`.
+[ERR] bool(tags): VarTypeError: Cannot convert Var 'reflex___state____state____main_____s.tags_rx_state_' to bool for use with `if`, `and`, `or`, and `not`. Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert).
+[ok ] ~tags: BooleanCastedVar :: !(isTrue(reflex___state____state____main_____s.tags_rx_state_))
+[ok ] tags.to_string(): StringCastedVar :: (JSON.stringify(reflex___state____state____main_____s.tags_rx_state_))
+[ok ] f-string: ConcatVarOperation :: ("tags: "+reflex___state____state____main_____s.tags_rx_state_)
+[ok ] rx.foreach(tags): Foreach :: Array.prototype.map.call(reflex___state____state____main_____s.tags_rx_state_ ?? [],((t_rx_state_,index_e9a1e14e1b3823f6018ac360edcea3e4)=>(jsx(RadixThemesText,{as:"p",key:index_e9a1e14e1b3823f6018ac360edcea3e4},t_rx_state_))))SetVar.__getitem__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:122)
+SetVar.__getitem__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:123)
+SetVar.join has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:124)
+SetVar.reverse has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:125)
+SetVar.map has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:126)
+SetVar.filter has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:127)
+SetVar.__add__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:128)
+SetVar.__radd__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:129)
+SetVar.__mul__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:130)
+SetVar.__lt__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:131)
+SetVar.__ge__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:132)
+SetVar.contains(field) has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:133)
+SetVar.pluck has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:134)
+SetVar.reduce has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:135)
+SetVar.flat_map has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:136)
+SetVar.foreach has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:137)
+ArrayVar.foreach has been deprecated in version 0.9.7. Use ArrayVar.map instead. It will be completely removed in 1.0. (set_probe.py:137)
+SetVar.__getitem__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:138)
+SetVar.__getitem__ has been deprecated in version 0.11.0. A set is not a sequence; call .to_array() first to use array operations. It will be completely removed in 1.0. (set_probe.py:139)
+
+[ok ] rx.foreach(tags, with index): Foreach :: Array.prototype.map.call(reflex___state____state____main_____s.tags_rx_state_ ?? [],((t_rx_state_,i_rx_state_)=>(jsx(RadixThemesText,{as:"p",key:i_rx_state_},t_rx_state_,i_rx_state_))))
+[ok ] rx.foreach(pairs): Foreach :: Array.prototype.map.call(reflex___state____state____main_____s.pairs_rx_state_ ?? [],((t_rx_state_,index_13089d77f191f5298f6720c71546aa68)=>(jsx(RadixThemesText,{as:"p",key:index_13089d77f191f5298f6720c71546aa68},t_rx_state_?.at?.
+[ok ] rx.cond(tags.contains): StringCastedVar :: (pySetHas(reflex___state____state____main_____s.tags_rx_state_, "x") ? "y" : "n")
+[ok ] rx.cond(tags) truthiness: StringCastedVar :: (isTrue(reflex___state____state____main_____s.tags_rx_state_) ? "nonempty" : "empty")
+[ok ] rx.match(tags, ...): Fragment :: jsx(Fragment,{},(() => {
+  switch (JSON.stringify(reflex___state____state____main_____s.tags_rx_state_)) {
+    case JSON.stringify(["a", "b"]):
+      return jsx(RadixThemesText,{as:"p"},"ab");
+      break;
+    default:
+      retur
+[ok ] rx.select(items=tags): SelectRoot :: jsx(RadixThemesSelect.Root,{},jsx(RadixThemesSelect.Trigger,{},),jsx(RadixThemesSelect.Content,{},jsx(RadixThemesSelect.Group,{},"",Array.prototype.map.call(reflex___state____state____main_____s.tags_rx_state_ ?? [],((item_rx_stat
+[ok ] rx.select(items=tags.to_array()): SelectRoot :: jsx(RadixThemesSelect.Root,{},jsx(RadixThemesSelect.Trigger,{},),jsx(RadixThemesSelect.Content,{},jsx(RadixThemesSelect.Group,{},"",Array.prototype.map.call(reflex___state____state____main_____s.tags_rx_state_ ?? [],((item_rx_stat
+[ok ] rx.data_table(data=...): DataTable :: jsx(DataTableGrid,{columns:["a"],data:reflex___state____state____main_____s.lset_rx_state_},)
+[ok ] rx.checkbox_group / segmented: SegmentedControlRoot :: jsx(RadixThemesSegmentedControl.Root,{},Array.prototype.map.call(reflex___state____state____main_____s.tags_rx_state_ ?? [],((t_rx_state_,index_7cfd3fdeac557ac73638e40190f8c07c)=>(jsx(RadixThemesSegmentedControl.Item,{key:index_7c
+--- deprecated array ops (each should warn once, pointing at THIS file)
+[ok ] tags[0]: StringCastedVar :: reflex___state____state____main_____s.tags_rx_state_?.at?.(0)
+[ok ] tags[0:1]: ArraySliceOperation :: reflex___state____state____main_____s.tags_rx_state_.slice(0, 1)
+[ok ] tags.join(','): StringCastedVar :: reflex___state____state____main_____s.tags_rx_state_.join(",")
+[ok ] tags.reverse(): ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.slice().reverse()
+[ok ] tags.map: ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.map(((xdvxrcsn) => (xdvxrcsn+"!")))
+[ok ] tags.filter: ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.filter(((bacghqta) => !((bacghqta?.valueOf?.() === "a"?.valueOf?.()))))
+[ERR] tags + ['x']: VarTypeError: Unsupported Operand type(s) for +: ArrayCastedVar, list
+[ok ] ['x'] + tags: ArrayCastedVar :: [...reflex___state____state____main_____s.lst_rx_state_, ...reflex___state____state____main_____s.tags_rx_state_]
+[ok ] tags * 2: ArrayCastedVar :: Array.from({ length: 2 }).flatMap(() => reflex___state____state____main_____s.tags_rx_state_)
+[ok ] tags < other: BooleanCastedVar :: reflex___state____state____main_____s.tags_rx_state_ < reflex___state____state____main_____s.lst_rx_state_
+[ok ] tags >= other: BooleanCastedVar :: reflex___state____state____main_____s.tags_rx_state_ >= reflex___state____state____main_____s.lst_rx_state_
+[ok ] tags.contains('a', field): BooleanCastedVar :: reflex___state____state____main_____s.tags_rx_state_.some(obj => obj["f"] === "a")
+[ok ] tags.pluck: ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.map(e=>e?.["x"])
+[ok ] tags.reduce: StringCastedVar :: reflex___state____state____main_____s.tags_rx_state_.reduce(((osizayzf, rgwuwrnh) => (osizayzf+rgwuwrnh)), "")
+[ok ] tags.flat_map: ArrayCastedVar :: pyFlatMap(reflex___state____state____main_____s.tags_rx_state_, ((wnkiegyk) => [wnkiegyk]))
+[ok ] tags.foreach: ArrayCastedVar :: reflex___state____state____main_____s.tags_rx_state_.map(((dcmdllti) => dcmdllti))
+[ok ] tags[0] second site: StringCastedVar :: reflex___state____state____main_____s.tags_rx_state_?.at?.(0)
+[ok ] nums[0] other var: NumberCastedVar :: reflex___state____state____main_____s.nums_rx_state_?.at?.(0)
+--- storage / misc
+[ok ] LocalStorage-backed set: SetCastedVar :: reflex___state____state__reflex___istate___dynamic___t.s_rx_state_
+[ok ] set annotated, list default: SetCastedVar :: reflex___state____state__reflex___istate___dynamic___t2.s_rx_state_
+[ok ] set[list[int]]: SetCastedVar :: reflex___state____state__reflex___istate___dynamic___t3.s_rx_state_

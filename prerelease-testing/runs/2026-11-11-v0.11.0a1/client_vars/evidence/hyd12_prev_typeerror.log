@@ -1,0 +1,29 @@
+get_delta
+    return build_delta(self)
+           ^^^^^^^^^^^^^^^^^
+  File 
+"$SB
+/envs/prev/lib/python3.12/site-packages/reflex/istate/delta.py", line 285, in 
+build_delta
+    value = state.get_value(prop)
+            ^^^^^^^^^^^^^^^^^^^^^
+  File 
+"$SB
+/envs/prev/lib/python3.12/site-packages/reflex/state.py", line 2005, in 
+get_value
+    if isinstance(val := getattr(self, key), MutableProxy):
+                         ^^^^^^^^^^^^^^^^^^
+  File 
+"$SB
+/envs/prev/lib/python3.12/site-packages/reflex_base/vars/base.py", line 2956, in
+__get__
+    value = cache[cache_attr] = self.fget(instance)
+                                ^^^^^^^^^^^^^^^^^^^
+  File 
+"$SB
+/apps/client_vars/stapp/stapp/stapp.py", line 30, in solo_len
+    return len(self.solo)
+           ^^^^^^^^^^^^^^
+TypeError: object of type 'NoneType' has no len()
+
+

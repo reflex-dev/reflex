@@ -1,0 +1,15 @@
+90:TypeError: Cannot read properties of null (reading 'some')
+91-    at pySetHas 
+92-(file:///tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scr
+93-atchpad/apps/client_vars/varsapp/.web/build/server/index.js:31:1771)
+94-    at 
+95-file:///tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scra
+96-tchpad/apps/client_vars/varsapp/.web/build/server/index.js:31:24664
+--
+130:Error: Prerender: Request failed for /setnone/: Prerender (html): Received a 500
+131-status code from `entry.server.tsx` while prerendering the `/setnone/` path.
+132-<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta 
+133-content="width=device-width, initial-scale=1" name="viewport"/><link as="style" 
+134-href="/assets/__reflex_global_styles-NccINl-w.css" rel="preload"/><link 
+135-rel="modulepreload" href="/assets/manifest-ebd2b80f.js"/><link 
+136-rel="modulepreload" href="/assets/entry.client-BcBPaK_9.js"/><link 

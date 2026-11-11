@@ -1,0 +1,75 @@
+{
+ "01 initial": {
+  "g": "g0",
+  "gd": "{\"n\":1,\"tags\":[\"a\"]}",
+  "loc": "0",
+  "anon": "anon0",
+  "nodef": "",
+  "ni": "ni0",
+  "ltp": "0",
+  "got": ""
+ },
+ "02 after sets": {
+  "g": "g1",
+  "gd": "{\"n\":1,\"tags\":[\"a\"]}",
+  "loc": "2",
+  "anon": "anon1",
+  "nodef": "\"nd1\"",
+  "ni": "ni1",
+  "ltp": "1",
+  "got": ""
+ },
+ "02 rows": "a=g1b=g1",
+ "03 typed": {
+  "g": "typed"
+ },
+ "04 push": {
+  "g": "pushed"
+ },
+ "05 retrieve": {
+  "got": "'pushed'"
+ },
+ "06 push dict": {
+  "gd": "{\"n\":2,\"tags\":[\"a\",\"b\"]}"
+ },
+ "07 retrieve dict": {
+  "got": "{'n': 2, 'tags': ['a', 'b']}"
+ },
+ "08 retrieve not-included var": {
+  "got": "'ni1'"
+ },
+ "09 page two": {
+  "g": "pushed",
+  "ltp": "0",
+  "got": "'ni1'"
+ },
+ "10 retrieve on two": {
+  "got": "'pushed'"
+ },
+ "11 retrieve dict (not mounted on two)": {
+  "got": "{'n': 2, 'tags': ['a', 'b']}"
+ },
+ "12 ltp inc on two": {
+  "ltp": "1"
+ },
+ "13 back home": {
+  "g": "pushed",
+  "gd": "{\"n\":2,\"tags\":[\"a\",\"b\"]}",
+  "loc": "0",
+  "anon": "anon1",
+  "nodef": "\"nd1\"",
+  "ni": "ni1",
+  "ltp": "0",
+  "got": "{'n': 2, 'tags': ['a', 'b']}"
+ },
+ "14 after reload": {
+  "g": "g0",
+  "gd": "{\"n\":1,\"tags\":[\"a\"]}",
+  "loc": "0",
+  "anon": "anon0",
+  "nodef": "",
+  "ni": "ni0",
+  "ltp": "0",
+  "got": "{'n': 2, 'tags': ['a', 'b']}"
+ }
+}

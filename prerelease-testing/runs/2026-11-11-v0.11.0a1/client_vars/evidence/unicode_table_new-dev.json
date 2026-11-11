@@ -1,0 +1,247 @@
+{
+ "default a😀b": {
+  "s": "a😀b",
+  "codepoints": "[\"61\", \"1F600\", \"62\"]",
+  "got": {
+   "reversed": "b😀a",
+   "length": "3",
+   "chars": "[\"a\", \"😀\", \"b\"]",
+   "slice_0_2": "a😀",
+   "slice_1_": "😀b",
+   "slice_neg": "😀b",
+   "at_1": "😀",
+   "at_last": "b",
+   "upper": "A😀B",
+   "lower": "a😀b",
+   "split_none": "[\"a\",\"\\ud83d\",\"\\ude00\",\"b\"]",
+   "contains_emoji": "true"
+  },
+  "split_empty": "[\"a\",\"\\ud83d\",\"\\ude00\",\"b\"]",
+  "diffs": {
+   "split_none": {
+    "frontend": "'[\"a\",\"\\\\ud83d\",\"\\\\ude00\",\"b\"]' [5B 22 61 22 2C 22 5C 75 64 38 33 64 22 2C 22 5C 75 64 65 30 30 22 2C 22 62 22 5D]",
+    "python": "'[\"a😀b\"]' [5B 22 61 1F600 62 22 5D]"
+   }
+  }
+ },
+ "ascii": {
+  "s": "hello",
+  "codepoints": "[\"68\", \"65\", \"6C\", \"6C\", \"6F\"]",
+  "got": {
+   "reversed": "olleh",
+   "length": "5",
+   "chars": "[\"h\", \"e\", \"l\", \"l\", \"o\"]",
+   "slice_0_2": "he",
+   "slice_1_": "ello",
+   "slice_neg": "lo",
+   "at_1": "e",
+   "at_last": "o",
+   "upper": "HELLO",
+   "lower": "hello",
+   "split_none": "[\"h\",\"e\",\"l\",\"l\",\"o\"]",
+   "contains_emoji": "false"
+  },
+  "split_empty": "[\"h\",\"e\",\"l\",\"l\",\"o\"]",
+  "diffs": {
+   "split_none": {
+    "frontend": "'[\"h\",\"e\",\"l\",\"l\",\"o\"]' [5B 22 68 22 2C 22 65 22 2C 22 6C 22 2C 22 6C 22 2C 22 6F 22 5D]",
+    "python": "'[\"hello\"]' [5B 22 68 65 6C 6C 6F 22 5D]"
+   }
+  }
+ },
+ "emoji": {
+  "s": "a😀b",
+  "codepoints": "[\"61\", \"1F600\", \"62\"]",
+  "got": {
+   "reversed": "b😀a",
+   "length": "3",
+   "chars": "[\"a\", \"😀\", \"b\"]",
+   "slice_0_2": "a😀",
+   "slice_1_": "😀b",
+   "slice_neg": "😀b",
+   "at_1": "😀",
+   "at_last": "b",
+   "upper": "A😀B",
+   "lower": "a😀b",
+   "split_none": "[\"a\",\"\\ud83d\",\"\\ude00\",\"b\"]",
+   "contains_emoji": "true"
+  },
+  "split_empty": "[\"a\",\"\\ud83d\",\"\\ude00\",\"b\"]",
+  "diffs": {
+   "split_none": {
+    "frontend": "'[\"a\",\"\\\\ud83d\",\"\\\\ude00\",\"b\"]' [5B 22 61 22 2C 22 5C 75 64 38 33 64 22 2C 22 5C 75 64 65 30 30 22 2C 22 62 22 5D]",
+    "python": "'[\"a😀b\"]' [5B 22 61 1F600 62 22 5D]"
+   }
+  }
+ },
+ "family": {
+  "s": "👨‍👩‍👧",
+  "codepoints": "[\"1F468\", \"200D\", \"1F469\", \"200D\", \"1F467\"]",
+  "got": {
+   "reversed": "👧‍👩‍👨",
+   "length": "5",
+   "chars": "[\"👨\", \"‍\", \"👩\", \"‍\", \"👧\"]",
+   "slice_0_2": "👨‍",
+   "slice_1_": "‍👩‍👧",
+   "slice_neg": "‍👧",
+   "at_1": "‍",
+   "at_last": "👧",
+   "upper": "👨‍👩‍👧",
+   "lower": "👨‍👩‍👧",
+   "split_none": "[\"\\ud83d\",\"\\udc68\",\"‍\",\"\\ud83d\",\"\\udc69\",\"‍\",\"\\ud83d\",\"\\udc67\"]",
+   "contains_emoji": "false"
+  },
+  "split_empty": "[\"\\ud83d\",\"\\udc68\",\"‍\",\"\\ud83d\",\"\\udc69\",\"‍\",\"\\ud83d\",\"\\udc67\"]",
+  "diffs": {
+   "split_none": {
+    "frontend": "'[\"\\\\ud83d\",\"\\\\udc68\",\"\\u200d\",\"\\\\ud83d\",\"\\\\udc69\",\"\\u200d\",\"\\\\ud83d\",\"\\\\udc67\"]' [5B 22 5C 75 64 38 33 64 22 2C 22 5C 75 64 63 36 38 22 2C 22 200D 22 2C 22 5C 75 64 38 33 64 22 2C 22 5C 75 64 63 36 39 22 2C 22 200D 22 2C 22 5C 75 64 38 33 64 22 2C 22 5C 75 64 63 36 37 22 5D]",
+    "python": "'[\"👨\\u200d👩\\u200d👧\"]' [5B 22 1F468 200D 1F469 200D 1F467 22 5D]"
+   }
+  }
+ },
+ "flag": {
+  "s": "🇩🇪x",
+  "codepoints": "[\"1F1E9\", \"1F1EA\", \"78\"]",
+  "got": {
+   "reversed": "x🇪🇩",
+   "length": "3",
+   "chars": "[\"🇩\", \"🇪\", \"x\"]",
+   "slice_0_2": "🇩🇪",
+   "slice_1_": "🇪x",
+   "slice_neg": "🇪x",
+   "at_1": "🇪",
+   "at_last": "x",
+   "upper": "🇩🇪X",
+   "lower": "🇩🇪x",
+   "split_none": "[\"\\ud83c\",\"\\udde9\",\"\\ud83c\",\"\\uddea\",\"x\"]",
+   "contains_emoji": "false"
+  },
+  "split_empty": "[\"\\ud83c\",\"\\udde9\",\"\\ud83c\",\"\\uddea\",\"x\"]",
+  "diffs": {
+   "split_none": {
+    "frontend": "'[\"\\\\ud83c\",\"\\\\udde9\",\"\\\\ud83c\",\"\\\\uddea\",\"x\"]' [5B 22 5C 75 64 38 33 63 22 2C 22 5C 75 64 64 65 39 22 2C 22 5C 75 64 38 33 63 22 2C 22 5C 75 64 64 65 61 22 2C 22 78 22 5D]",
+    "python": "'[\"🇩🇪x\"]' [5B 22 1F1E9 1F1EA 78 22 5D]"
+   }
+  }
+ },
+ "combining": {
+  "s": "éa",
+  "codepoints": "[\"65\", \"301\", \"61\"]",
+  "got": {
+   "reversed": "áe",
+   "length": "3",
+   "chars": "[\"e\", \"́\", \"a\"]",
+   "slice_0_2": "é",
+   "slice_1_": "́a",
+   "slice_neg": "́a",
+   "at_1": "́",
+   "at_last": "a",
+   "upper": "ÉA",
+   "lower": "éa",
+   "split_none": "[\"e\",\"́\",\"a\"]",
+   "contains_emoji": "false"
+  },
+  "split_empty": "[\"e\",\"́\",\"a\"]",
+  "diffs": {
+   "split_none": {
+    "frontend": "'[\"e\",\"́\",\"a\"]' [5B 22 65 22 2C 22 301 22 2C 22 61 22 5D]",
+    "python": "'[\"éa\"]' [5B 22 65 301 61 22 5D]"
+   }
+  }
+ },
+ "skin": {
+  "s": "👍🏽!",
+  "codepoints": "[\"1F44D\", \"1F3FD\", \"21\"]",
+  "got": {
+   "reversed": "!🏽👍",
+   "length": "3",
+   "chars": "[\"👍\", \"🏽\", \"!\"]",
+   "slice_0_2": "👍🏽",
+   "slice_1_": "🏽!",
+   "slice_neg": "🏽!",
+   "at_1": "🏽",
+   "at_last": "!",
+   "upper": "👍🏽!",
+   "lower": "👍🏽!",
+   "split_none": "[\"\\ud83d\",\"\\udc4d\",\"\\ud83c\",\"\\udffd\",\"!\"]",
+   "contains_emoji": "false"
+  },
+  "split_empty": "[\"\\ud83d\",\"\\udc4d\",\"\\ud83c\",\"\\udffd\",\"!\"]",
+  "diffs": {
+   "split_none": {
+    "frontend": "'[\"\\\\ud83d\",\"\\\\udc4d\",\"\\\\ud83c\",\"\\\\udffd\",\"!\"]' [5B 22 5C 75 64 38 33 64 22 2C 22 5C 75 64 63 34 64 22 2C 22 5C 75 64 38 33 63 22 2C 22 5C 75 64 66 66 64 22 2C 22 21 22 5D]",
+    "python": "'[\"👍🏽!\"]' [5B 22 1F44D 1F3FD 21 22 5D]"
+   }
+  }
+ },
+ "cjk": {
+  "s": "漢字𠮷",
+  "codepoints": "[\"6F22\", \"5B57\", \"20BB7\"]",
+  "got": {
+   "reversed": "𠮷字漢",
+   "length": "3",
+   "chars": "[\"漢\", \"字\", \"𠮷\"]",
+   "slice_0_2": "漢字",
+   "slice_1_": "字𠮷",
+   "slice_neg": "字𠮷",
+   "at_1": "字",
+   "at_last": "𠮷",
+   "upper": "漢字𠮷",
+   "lower": "漢字𠮷",
+   "split_none": "[\"漢\",\"字\",\"\\ud842\",\"\\udfb7\"]",
+   "contains_emoji": "false"
+  },
+  "split_empty": "[\"漢\",\"字\",\"\\ud842\",\"\\udfb7\"]",
+  "diffs": {
+   "split_none": {
+    "frontend": "'[\"漢\",\"字\",\"\\\\ud842\",\"\\\\udfb7\"]' [5B 22 6F22 22 2C 22 5B57 22 2C 22 5C 75 64 38 34 32 22 2C 22 5C 75 64 66 62 37 22 5D]",
+    "python": "'[\"漢字𠮷\"]' [5B 22 6F22 5B57 20BB7 22 5D]"
+   }
+  }
+ },
+ "empty": {
+  "s": "",
+  "codepoints": "[]",
+  "got": {
+   "reversed": "",
+   "length": "0",
+   "chars": "[]",
+   "slice_0_2": "",
+   "slice_1_": "",
+   "slice_neg": "",
+   "at_1": "",
+   "at_last": "",
+   "upper": "",
+   "lower": "",
+   "split_none": "[]",
+   "contains_emoji": "false"
+  },
+  "split_empty": "[]",
+  "diffs": {}
+ },
+ "typed x𝒳ýz": {
+  "s": "x𝒳ýz",
+  "codepoints": "[\"78\", \"1D4B3\", \"79\", \"301\", \"7A\"]",
+  "got": {
+   "reversed": "źy𝒳x",
+   "length": "5",
+   "chars": "[\"x\", \"𝒳\", \"y\", \"́\", \"z\"]",
+   "slice_0_2": "x𝒳",
+   "slice_1_": "𝒳ýz",
+   "slice_neg": "́z",
+   "at_1": "𝒳",
+   "at_last": "z",
+   "upper": "X𝒳ÝZ",
+   "lower": "x𝒳ýz",
+   "split_none": "[\"x\",\"\\ud835\",\"\\udcb3\",\"y\",\"́\",\"z\"]",
+   "contains_emoji": "false"
+  },
+  "split_empty": "[\"x\",\"\\ud835\",\"\\udcb3\",\"y\",\"́\",\"z\"]",
+  "diffs": {
+   "split_none": {
+    "frontend": "'[\"x\",\"\\\\ud835\",\"\\\\udcb3\",\"y\",\"́\",\"z\"]' [5B 22 78 22 2C 22 5C 75 64 38 33 35 22 2C 22 5C 75 64 63 62 33 22 2C 22 79 22 2C 22 301 22 2C 22 7A 22 5D]",
+    "python": "'[\"x𝒳ýz\"]' [5B 22 78 1D4B3 79 301 7A 22 5D]"
+   }
+  }
+ }
+}
