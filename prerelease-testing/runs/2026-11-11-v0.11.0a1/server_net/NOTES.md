@@ -161,3 +161,54 @@ REFLEX_API_URL=http://localhost:8348 reflex run --env prod --frontend-only --fro
 | listener + preventDefault | event detail `{frontend, backend}` hashes; **no reload, no banner**; old bundle keeps working against the new backend (inc ok) | no event; reloads |
 | listener without preventDefault | reloads | |
 -> pass.
+
+### #7672/#7746 event-loop blocking monitor (dev 3354/8354; `bin/blk.sh <label> <dev|prod> [ENV=VAL]`, `drv.py block`)
+- Normal flow (`basic`: nav, on_load, upload, downloads) in dev: **0** blocking warnings; startup: none.
+- Default threshold 0.2 s: `short_block` (0.1 s) silent; `ok_async` (await sleep 2) silent; `block_sync` (plain `def`, sleep 1)
+  **warns** (sync handlers run on the loop, so this is accurate); `block_async` (time.sleep 2 in async) warns; `cpu_bg`
+  (3 s CPU loop in a background task) warns. Each warning names `Event handler S.<name>`, the app file:line, a ~25-line
+  stack, then "blocked the event loop for 1.995s in total." (`logs/blk_block_excerpt.log`).
+- 3 dev hot reloads, then block_async: exactly 1 warning + 1 total (no leaked monitor threads).
+- `event_loop_blocking_threshold=0` (rxconfig): silent. `REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD=1.5`: only block_async + cpu_bg.
+  `=abc`: startup fails with a 23-frame traceback ending `EnvironmentVarValueError: Invalid float value: 'abc' for
+  event_loop_blocking_threshold`; `=-1`: traceback ending `ConfigError: event_loop_blocking_threshold must be a
+  non-negative finite number.` (raw tracebacks: anomaly, generic config path).
+- prod: silent (0 warnings for all three).
+- reflex-local-auth 0.5.0 (own venv `server_net-la`, fixture `run_la.sh server_net-la dev la-new 3355 8355`; 36/38 + 14/14
+  as on 0.10.0 baseline): every login prints `Event handler LoginState.on_submit is blocking the event loop
+  (threshold: 0.200s)` + stack ending in `bcrypt.checkpw` (0.27-0.30 s). 7 warnings in one 38-check run. The warning has
+  **no app location** (the handler lives in site-packages) and the app developer cannot fix it -> anomaly: accurate but
+  not actionable; consider naming the package or suppressing for third-party handlers.
+
+### #7668 / #7635 OTel (own venv `server_net-otel`: reflex 0.11.0a1, reflex-otel 0.2.1a1, reflex-workflow 0.0.1a1, opentelemetry-sdk 1.45.2)
+App `src/otelapp` (`ReflexInstrumentor().instrument()` at import), prod 3356, `OTEL_TRACES_EXPORTER=console REFLEX_LOG_JSON=true`, `drivers/otel_drv.py` clicks go / bg / boom.
+- `reflex.*` logger and `console.warn` records inside a handler: `trace_id` + `span_id` present; chained event: same
+  trace_id, new span_id; background task: own trace; `[Reflex Backend Exception]` error record: has ids. Records at import
+  and in a lifespan task: no ids. -> pass.
+- anomaly: an app's own logger (`logging.getLogger("otelapp")`) and `print()` are not records of Reflex's JSON handler —
+  they arrive as `logger: "stderr"/"stdout"` lines captured by the supervisor, **without** trace ids. Apps logging with
+  `logging.getLogger(__name__)` get no correlation. The console span exporter's multi-line JSON becomes one stdout record
+  per line (benign).
+- #7635: offline check — `reflex_workflow.otel.enabled` False -> `instrument()` True -> second instrument no-op ->
+  `uninstrument()` False. A real workflow run was not done (reflex-workflow needs Postgres; not set up in the time box).
+
+### #7693 config ports (`bin/ports.sh <venv>`, rxconfig `frontend_port=3357 backend_port=8357` via NA_CFG_*)
+| command | 0.11.0a1 | 0.10.1 |
+|---|---|---|
+| `--backend-only` | runs on 8357 | exit: "Cannot specify --frontend-port when not running frontend." |
+| `--frontend-only` | runs on 3357 | exit: "Cannot specify --backend-port ..." |
+| `--backend-only --frontend-port 3358` | exit "Cannot specify --frontend-port when not running frontend." (explicit flag still rejected) | same |
+| `--env prod --frontend-only` / `--backend-only` | 3357 / 8357 | exit |
+| `--env prod` (both config ports) | exit "In prod mode, frontend and backend must run on the same port." | same (pre-existing; note the Config docstring example itself sets 3000/8000) |
+
+### Double Ctrl-C with stuck lifespan cleanup (`bin/dblint.sh <venv> <dev|prod>`, `NA_SLOW_STOP=60`: lifespan task sleeps 60 s after yield)
+- dev (both versions): first INT exits in 2.3 s — granian logs `[WARNING] Killing worker-1 after it refused to gracefully
+  stop`; the lifespan cleanup is cut off (`rx_task_stop` never logged; pre-existing).
+- prod (both versions): 2nd and 3rd INT (3 s apart) do **not** force the exit; the process waits the full 60 s cleanup,
+  no message telling the user it is waiting, then exits. The #7650 force-exit handler is only installed in `_run_dev`;
+  the changelog says "`reflex run` ... a later Ctrl-C forces the exit". -> low anomaly (not a regression).
+
+### CLI-16 re-verify (`bin/cli16.sh <venv>`, dev 3357/8357)
+- Healthy /ping 200 ~1.5 ms; after a syntax error is appended (hot reload) the backend **refuses immediately**
+  (connection refused in ~0.1 ms, no hang) for 15 s; after the fix the first 200 comes back within 1 s; SIGTERM ->
+  /ping refused after 0.12 s. Same on 0.10.1. -> still fixed.
