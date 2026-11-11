@@ -1309,15 +1309,33 @@ def test_second_legacy_env_keeps_the_first_backup(
     assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
 
 
-def _write_failing_revision(project: Path) -> None:
+def test_custom_env_syntax_error_is_reported_with_the_fix(
+    project: Path, caplog: pytest.LogCaptureFixture
+):
+    """A hand-edited env.py that does not compile is reported with the hint.
+
+    A SyntaxError leaves no env.py frame in the traceback, only its filename.
+    """
+    _db("init")
+    source = _write_custom_env(project, REGISTRY_METADATA, url=_db_url())
+    (project / "alembic" / "env.py").write_text(source + "\ndef broken(:\n")
+    caplog.clear()
+
+    _db("migrate", exit_code=1)
+
+    _assert_env_failure_reported(caplog, "SyntaxError")
+
+
+def _write_failing_revision(project: Path, name: str = "f00d_broken.py") -> None:
     """Add a revision script on top of the initial one whose upgrade raises.
 
     Args:
         project: The project directory.
+        name: The revision script's file name.
     """
     (initial,) = _versions(project)
     down = initial.name.partition("_")[0]
-    (project / "alembic" / "versions" / "f00d_broken.py").write_text(
+    (project / "alembic" / "versions" / name).write_text(
         f'revision = "f00d"\ndown_revision = "{down}"\n'
         "branch_labels = None\ndepends_on = None\n\n\n"
         "def upgrade():\n    sa.Column('note')\n\n\n"
@@ -1325,24 +1343,28 @@ def _write_failing_revision(project: Path) -> None:
     )
 
 
-@pytest.mark.parametrize("custom", [False, True])
+@pytest.mark.parametrize(
+    ("custom", "name"),
+    [(False, "f00d_broken.py"), (True, "f00d_broken.py"), (True, "env.py")],
+)
 def test_revision_script_failure_keeps_its_traceback(
-    project: Path, caplog: pytest.LogCaptureFixture, custom: bool
+    project: Path, caplog: pytest.LogCaptureFixture, custom: bool, name: str
 ):
     """A failing revision script is logged with its traceback and without the hint.
 
     The fault is in the script, under either env.py, so moving env.py aside
-    would not help.
+    would not help, even when the script is itself named env.py.
 
     Args:
         project: The project directory.
         caplog: The log capture fixture.
         custom: Run the revision under a working hand-edited env.py.
+        name: The revision script's file name.
     """
     _db("init")
     if custom:
         _write_custom_env(project, REGISTRY_METADATA, url=_db_url())
-    _write_failing_revision(project)
+    _write_failing_revision(project, name)
     caplog.clear()
 
     _db("migrate", exit_code=1)
@@ -1351,4 +1373,4 @@ def test_revision_script_failure_keeps_its_traceback(
     assert "NameError" in record.getMessage()
     assert "not the Reflex template" not in record.getMessage()
     assert record.exc_info is not None
-    assert "f00d_broken.py" in caplog.text
+    assert f"versions/{name}" in caplog.text

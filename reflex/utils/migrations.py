@@ -329,13 +329,16 @@ def _raised_in_env_py(error: Exception) -> bool:
         error: The exception raised while alembic ran.
 
     Returns:
-        True if the innermost frame in the script directory is env.py's.
+        True if the innermost frame in the script directory is env.py's, or
+        env.py failed to compile, which leaves only its file name.
     """
     scripts = script_directory()
-    for frame in reversed(traceback.extract_tb(error.__traceback__)):
-        path = Path(frame.filename)
+    paths = [frame.filename for frame in traceback.extract_tb(error.__traceback__)]
+    if isinstance(error, SyntaxError) and error.filename:
+        paths.append(error.filename)
+    for path in map(Path, reversed(paths)):
         if path.is_relative_to(scripts):
-            return path.name == "env.py"
+            return path == scripts / "env.py"
     return False
 
 
