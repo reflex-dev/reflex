@@ -53,3 +53,41 @@ scripts/srv.sh stop r
 | 0.11.0a1 dev/prod, auto_memoize T/F, compiler F/T | `''` + `refs is not defined` | `log:` | error boundary `ReferenceError: refs is not defined` |
 Compiled evidence: `[refs]._index.jsx` imports `{useRegisteredRef}` only (0.10.1: `import {refs} from "$/utils/state"`).
 Screenshots: `evidence/refs_*_prod.png`.
+
+## Per-feature results (new = 0.11.0a1, prev = 0.10.1; both dev and prod unless noted)
+- **#7793 foreach hooks** (`/loop`): on_mount/on_unmount with the loop var, add_hooks reading a loop-var prop (HookItem),
+  nested foreach reading outer+inner var, index var, foreach over a dict — all run once per item in all 4 cells, prod:
+  initial `alpha,alpha-x,alpha-y,idx0,beta,...,kv-one,kv-two`, add -> only `item3*` mounts, remove-first -> only
+  `unmount alpha` / `hu:alpha`, reverse -> nothing remounts (keyed), remove-middle -> only gamma. Dev shows React
+  StrictMode double mount (`m,u,m`) — expected. **prev: the page crashes** (`item_rx_state_ is not defined`,
+  `kv_rx_state_ is not defined`) -> FIXED.
+- **foreach inside `@rx.memo`** (`/loopmemo`, documented gap): page crashes into the error boundary with
+  `ReferenceError: it_rx_state_ is not defined` in every cell, dev and prod; identical crash on 0.10.1. Not a regression;
+  the changelog's "not covered yet" undersells it — it is a whole-page crash, not wrong counts.
+- **#7409 uploads from callbacks** (`/upload`): backend-yielded toast action upload (with on_upload_progress), frontend
+  toast action upload where the selection is changed AFTER the toast is shown (uploads the NEW selection
+  `new1.txt,new2.txt`), frontend `rx.call_script(callback=upload)`, backend-yielded `call_script` callback upload — all work
+  in new; prev: all four upload nothing + `filesById is not defined` pageerror -> FIXED (CMP-34 fixed).
+- **#7721 streamed upload updates**: handler yielding 8 updates after a 20 MB upload: samples monotonic, final `7`,
+  second run appends cleanly — same on prev (no stale restore seen on either).
+- **CMP-01 hostile filenames** (`scripts/hostile_upload.py`, raw multipart to `/_upload` with `../../x`, `..\\..\\x`,
+  `/etc/x`, `C:\\x`, `...`, `..`, `. .`, `sub/../../x`, unicode, RTL override, `%2e%2e%2f`, `nul`, `.hidden`, 300-char):
+  everything lands inside `uploaded_files/` (`..`/`...`/`. .` -> `upload`, `sub/../../evil5` -> `sub/evil5.txt`) on new and
+  prev -> still FIXED. The 300-char name makes the user handler raise `OSError: File name too long`; new: response is
+  cut mid-stream (`incomplete chunked read`) + exception logged twice (event processor and granian "Application callable
+  raised"); prev: HTTP 500 + same double log. Context only.
+- **#7564/#7707/#7691 reproducible builds** (`repro/`): `reflex export --frontend-only` twice with PYTHONHASHSEED 1/2 and a
+  third copy in another directory (seed 77): all 3937 files byte-identical (also with auto_memoize=False+react_compiler).
+  prev: 178 differing files. Zip archives themselves differ (entry mtimes) — files identical. FIXED (CMP-27 memo
+  module names now stable too). f-string ids: new `ref_fin_reflex___state____state__cm___cm___s_suffix_rx_state_`,
+  prev `ref_fin__reflex_Var_4859621978695425598_...`.
+- **f-string ids in foreach** (`/rowfocus`): `rx.set_focus(f"rf_{item}")` / `rx.set_value(...)` from any row always target
+  the LAST row (all rows register the same ref `ref_rf_item_rx_state_`); identical on prev. Pre-existing, context.
+- **#7276 lazy libs** (`CM_BUNDLE=1` adds `bundle_library(icon banana/info, recharts bar_chart)`;
+  `scripts/lazy_probe.py`): lazy=false: every page incl. `/` and `/plotly` loads the recharts chunk `es6-*.js` + banana +
+  info (~2.1 MB JS); lazy=true: `/` 1.59 MB, no recharts/banana/info; clicking the dynamic icon loads only `banana-*.js`,
+  the dynamic callout only `info-*.js`, the dynamic chart only `es6-*.js`. Plotly page never loads recharts with lazy=true.
+  Same totals on prev. `/recharts` with lazy=true is ~70 KB heavier than lazy=false (CMP-35, filed, unchanged).
+  Dynamic recharts `bar_chart` renders an empty box on both versions (no error) — context.
+  Without `bundle_library`, dynamic icons/charts fall back to the jsdelivr CDN (blocked here) on both versions.
+- **CMP-05** module-scope `bundle_library()` survives compile: dynamic icon/callout render from the bundle in prod -> fixed.
