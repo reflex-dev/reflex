@@ -146,6 +146,34 @@ def test_extra_source_dirs_count_as_package_source(repo: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    "spelling", ["assets", "assets/", "./assets", "packages/../assets", "assets//"]
+)
+def test_extra_source_dirs_match_the_paths_git_reports(
+    repo: Path, spelling: str
+) -> None:
+    """However a directory is spelled, a changed file under it has to match."""
+    (repo / "assets").mkdir()
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n'
+        f'extra-source-dirs = {{ widget-core = ["{spelling}"] }}\n',
+    )
+    config = load_config(repo)
+    assert config.package_source_prefixes("widget-core")[-1] == "assets/"
+    assert config.is_package_source("widget-core", "assets/logo.svg")
+
+
+def test_config_with_extra_source_dirs_is_hashable(repo: Path) -> None:
+    (repo / "assets").mkdir()
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n'
+        'extra-source-dirs = { widget-core = ["assets"] }\n',
+    )
+    assert isinstance(hash(load_config(repo)), int)
+
+
+@pytest.mark.parametrize(
     ("body", "message"),
     [
         ('extra-source-dirs = ["assets"]', "must be a table"),
@@ -158,8 +186,28 @@ def test_extra_source_dirs_count_as_package_source(repo: Path) -> None:
             '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["asets"]',
             "'asets', which is not a directory",
         ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["../outside"]',
+            "'../outside' is not a directory inside the repository",
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["/etc"]',
+            "'/etc' is not a directory inside the repository",
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["."]',
+            "'.' is not a directory inside the repository",
+        ),
     ],
-    ids=["not-a-table", "not-a-list", "unknown-package", "missing-directory"],
+    ids=[
+        "not-a-table",
+        "not-a-list",
+        "unknown-package",
+        "missing-directory",
+        "outside-the-repository",
+        "absolute",
+        "the-repository-root",
+    ],
 )
 def test_extra_source_dirs_are_validated(repo: Path, body: str, message: str) -> None:
     (repo / "assets").mkdir()

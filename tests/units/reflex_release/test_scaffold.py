@@ -546,6 +546,24 @@ def test_internal_root_package_without_source_dirs_is_rejected(
         render(INTERNAL_WORKFLOW, load_config(repo))
 
 
+def test_extra_source_dirs_do_not_stand_in_for_root_source_dirs(
+    config: Config, repo: Path
+) -> None:
+    """The trigger must cover the root package's own code, not only its extras."""
+    (repo / "assets").mkdir()
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            'packages-dir = "packages"\ninternal-packages = ["mypkg"]\n'
+            'root-source-dirs = []\nextra-source-dirs = { mypkg = ["assets"] }',
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ReleaseError, match="set root-source-dirs"):
+        render(INTERNAL_WORKFLOW, load_config(repo))
+
+
 def test_the_heading_guard_covers_every_publishing_branch(config: Config) -> None:
     """A merged version heading is a publish trigger wherever it lands."""
     document = yaml.safe_load(render("changelog.yml", config))

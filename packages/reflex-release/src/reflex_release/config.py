@@ -9,6 +9,7 @@ single-package repository needs no more than ``root-package``.
 from __future__ import annotations
 
 import dataclasses
+import posixpath
 import re
 import tomllib
 from pathlib import Path
@@ -224,8 +225,10 @@ class Config:
     uv_version: str = DEFAULT_UV_VERSION
     python_version: str = DEFAULT_PYTHON_VERSION
     never_publish_packages: tuple[str, ...] = ()
+    # A mapping, unlike every other field: left out of the hash so a
+    # configuration stays hashable.
     extra_source_dirs: dict[str, tuple[str, ...]] = dataclasses.field(
-        default_factory=dict
+        default_factory=dict, hash=False
     )
 
     def package_dir(self, package: str) -> str:
@@ -428,8 +431,7 @@ class Config:
             Either is followed by the package's ``extra-source-dirs``.
         """
         extra = [
-            f"{directory.rstrip('/')}/"
-            for directory in self.extra_source_dirs.get(package, ())
+            f"{directory}/" for directory in self.extra_source_dirs.get(package, ())
         ]
         if package == self.root_package:
             return [
@@ -662,7 +664,33 @@ def _extra_source_dirs(table: dict) -> dict[str, tuple[str, ...]]:
             "package name to a list of directories"
         )
     label = f"[tool.{TOOL_TABLE}.extra-source-dirs]"
-    return {package: _string_list(value, package, label) for package in value}
+    return {
+        package: tuple(
+            _repo_relative(directory, label)
+            for directory in _string_list(value, package, label)
+        )
+        for package in value
+    }
+
+
+def _repo_relative(directory: str, label: str) -> str:
+    """Spell a configured directory the way git reports paths under it.
+
+    Changed paths are matched by prefix, so ``./assets`` or ``a/../assets``
+    would name a real directory and still never match a path.
+
+    Args:
+        directory: The directory as written in the configuration.
+        label: How to name the table in an error.
+
+    Returns:
+        The directory relative to the repository root, without ``.`` or ``..``
+        segments or a trailing slash.
+    """
+    normalized = posixpath.normpath(directory)
+    if normalized in {".", ".."} or normalized.startswith(("/", "../")):
+        fail(f"{label} {directory!r} is not a directory inside the repository")
+    return normalized
 
 
 def _string(
