@@ -569,27 +569,34 @@ def _clip(value: str | None) -> str:
     return repr(value if value is None else value[:_MAX_LOGGED_HEADER])
 
 
-def _trusted_forwarded_value(value: str, trusted_proxy_hops: int) -> str | None:
+def _trusted_forwarded_value(
+    value: str, trusted_proxy_hops: int, *, appended: bool = True
+) -> str | None:
     """Pick the entry a trusted proxy chain wrote into a comma-separated header.
 
-    Each trusted proxy appends what it received, so the entry
-    ``trusted_proxy_hops`` from the right was written by the outermost trusted
-    proxy, and any entry left of it came from the client.
+    A proxy that appends what it received makes the entry ``trusted_proxy_hops``
+    from the right the outermost trusted proxy's, and any entry left of it the
+    client's. Proxies set ``X-Forwarded-Host`` and ``X-Forwarded-Proto`` rather
+    than append to them, so for those a chain shorter than
+    ``trusted_proxy_hops`` holds only entries trusted proxies wrote, and its
+    leftmost entry is the outermost one.
 
     Args:
         value: The header value, e.g. of ``X-Forwarded-For``.
         trusted_proxy_hops: The number of trusted reverse proxies; 0 trusts none.
+        appended: Whether every trusted proxy appends an entry, as for
+            ``X-Forwarded-For``.
 
     Returns:
-        The trusted entry, or None when no proxy is trusted or the chain is
-        shorter than ``trusted_proxy_hops``.
+        The trusted entry, or None when no proxy is trusted, the header is
+        empty, or an appended chain is shorter than ``trusted_proxy_hops``.
     """
     if not trusted_proxy_hops:
         return None
     entries = [entry.strip() for entry in value.split(",") if entry.strip()]
-    if len(entries) < trusted_proxy_hops:
-        return None
-    return entries[-trusted_proxy_hops]
+    if len(entries) >= trusted_proxy_hops:
+        return entries[-trusted_proxy_hops]
+    return None if appended or not entries else entries[0]
 
 
 def _origin_matches_request(
@@ -675,8 +682,9 @@ class _SocketOriginCheck:
         if not self._same_origin:
             self._warn(
                 origin,
-                f"it is not in cors_allowed_origins {sorted(self._origins)}; add "
-                "it to cors_allowed_origins (REFLEX_CORS_ALLOWED_ORIGINS)",
+                f"it is not in cors_allowed_origins {sorted(self._origins)}; if it "
+                "is your frontend's origin, add it to cors_allowed_origins "
+                "(REFLEX_CORS_ALLOWED_ORIGINS)",
             )
             return False
         hops = self._trusted_proxy_hops
@@ -684,14 +692,23 @@ class _SocketOriginCheck:
         forwarded_host = environ.get("HTTP_X_FORWARDED_HOST")
         if _origin_matches_request(
             origin,
-            (host, _trusted_forwarded_value(forwarded_host or "", hops)),
-            _trusted_forwarded_value(environ.get("HTTP_X_FORWARDED_PROTO", ""), hops),
+            (
+                host,
+                _trusted_forwarded_value(forwarded_host or "", hops, appended=False),
+            ),
+            _trusted_forwarded_value(
+                environ.get("HTTP_X_FORWARDED_PROTO", ""), hops, appended=False
+            ),
         ):
             return True
         if self._warned:
             return False
-        # Only the warning below uses it from here on; keep the log line short.
-        origin = origin[:_MAX_LOGGED_HEADER]
+        # Any client can send this handshake, so the advice never makes the
+        # rejected origin a setting's value.
+        deploy_url = (
+            "if it is your frontend's origin, set REFLEX_DEPLOY_URL on the backend "
+            "to the frontend's public URL"
+        )
         if (
             not hops
             and forwarded_host
@@ -700,15 +717,12 @@ class _SocketOriginCheck:
             fix = (
                 "the untrusted X-Forwarded-Host names that origin, so if only your "
                 "reverse proxies can reach the backend, set trusted_proxy_hops "
-                "(REFLEX_TRUSTED_PROXY_HOPS) to their number, otherwise set "
-                f"REFLEX_DEPLOY_URL={origin} on the backend"
+                f"(REFLEX_TRUSTED_PROXY_HOPS) to their number; otherwise, {deploy_url}"
             )
         else:
             fix = (
-                f"if the frontend is served from {origin}, set "
-                f"REFLEX_DEPLOY_URL={origin} on the backend or add it to "
-                "cors_allowed_origins; a reverse proxy must forward the original "
-                "Host header"
+                f"{deploy_url} or add it to cors_allowed_origins; a reverse proxy "
+                "must forward the original Host header"
             )
         self._warn(
             origin,

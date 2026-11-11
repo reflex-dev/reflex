@@ -6201,7 +6201,11 @@ _XFH_APP = "X-Forwarded-Host: app.example.com"
             2,
             True,
         ),
-        ("https://app.example.com", "origin.internal:8000", (_XFH_APP,), 2, False),
+        # Proxies set X-Forwarded-Host and -Proto rather than append, so a chain
+        # shorter than the trusted hops is read from its leftmost entry.
+        ("https://app.example.com", "origin.internal:8000", (_XFH_APP,), 2, True),
+        ("http://app.example.com", "app.example.com", (_XFP_HTTPS,), 2, False),
+        ("https://evil.example", "origin.internal:8000", (_XFH_APP,), 2, False),
         (
             "https://evil.example",
             "app.example.com",
@@ -6344,7 +6348,8 @@ def test_socketio_origins_with_deploy_url_or_explicit_list(
             "https://cdn.example.com",
             "api.example.com",
             (),
-            "REFLEX_DEPLOY_URL=https://cdn.example.com",
+            "if it is your frontend's origin, set REFLEX_DEPLOY_URL on the backend "
+            "to the frontend's public URL",
         ),
         # The origin is named only by an X-Forwarded-Host the backend does not trust.
         (
@@ -6354,12 +6359,28 @@ def test_socketio_origins_with_deploy_url_or_explicit_list(
             ("X-Forwarded-Host: app.example.com",),
             "set trusted_proxy_hops (REFLEX_TRUSTED_PROXY_HOPS)",
         ),
+        # Any client can send the first rejected handshake of a worker.
+        (
+            {},
+            "https://evil.example",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: evil.example",),
+            "set trusted_proxy_hops (REFLEX_TRUSTED_PROXY_HOPS)",
+        ),
+        (
+            {"trusted_proxy_hops": 2},
+            "https://evil.example",
+            "origin.internal:8000",
+            ("X-Forwarded-Host: app.example.com",),
+            "X-Forwarded-Host 'app.example.com' trusted",
+        ),
         (
             {"cors_allowed_origins": ["https://a.com"]},
             "https://cdn.example.com",
             "api.example.com",
             (),
-            "add it to cors_allowed_origins (REFLEX_CORS_ALLOWED_ORIGINS)",
+            "if it is your frontend's origin, add it to cors_allowed_origins "
+            "(REFLEX_CORS_ALLOWED_ORIGINS)",
         ),
     ],
 )
@@ -6374,6 +6395,9 @@ def test_socketio_rejection_warns_once_with_fix(
     hint: str,
 ):
     """A rejected origin logs one warning naming the origin and the setting to change.
+
+    The warning never puts the rejected origin into a setting's value, since
+    any client can send the rejected handshake.
 
     Args:
         mocker: The pytest mocker fixture.
@@ -6393,6 +6417,7 @@ def test_socketio_rejection_warns_once_with_fix(
     assert len(warnings) == 1
     assert repr(origin) in warnings[0]
     assert hint in warnings[0]
+    assert f"={origin}" not in warnings[0]
     if not config_kwargs:
         assert repr(host) in warnings[0]
 
