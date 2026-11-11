@@ -1,0 +1,8 @@
+Warning: alembic/env.py is not the Reflex template, so what the template adds 
+server defaults for added columns and warnings for dropped tables. Move it aside
+and run reflex db init to adopt the template; existing revisions are kept.
+Alembic failed with RuntimeError: custom env.py failed: missing env var
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/reflex.py", line 1127, in _alembic_errors
+    yield
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/reflex.py", line 1215, in status

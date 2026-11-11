@@ -1,0 +1,56 @@
+===== new
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:133)
+S.mm.d     type=<class 'dict'>
+S.mm.l     type=list[str]
+S.mm.s     type=<class 'str'>
+S.m.d      type=<class 'dict'>
+S.m.dn     type=dict | None
+S.p.d      type=<class 'dict'>
+S.r.d      type=<class 'dict'>
+S.mm.d['city']           -> OK <reflex.Var>-6284042461890622705</reflex.Var>reflex___state____state____main_____s.mm_rx_state_?.["d"]?.["city"]
+S.m.d['city']            -> OK <reflex.Var>5745532315817094233</reflex.Var>reflex___state____state____main_____s.m_rx_state_?.["d"]?.["city"]
+S.mm.l[0]                -> OK <reflex.Var>-8575560863674029633</reflex.Var>reflex___state____state____main_____s.mm_rx_state_?.["l"]?.at?.(0)
+S.p.d['city']            -> OK <reflex.Var>-4127555093800182211</reflex.Var>reflex___state____state____main_____s.p_rx_state_?.["d"]?.["city"]
+S.r.d['city']            -> OK <reflex.Var>-6689286224181047484</reflex.Var>reflex___state____state____main_____s.r_rx_state_?.["d"]?.["city"]
+S.m.d.to(dict)['city']   -> OK <reflex.Var>5745532315817094233</reflex.Var>reflex___state____state____main_____s.m_rx_state_?.["d"]?.["city"]
+===== ctrl-0.11.0a1
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/ctrl-0.11.0a1/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:133)
+S.mm.d     type=<class 'object'>
+S.mm.l     type=<class 'object'>
+S.mm.s     type=<class 'str'>
+S.m.d      type=<class 'object'>
+S.m.dn     type=object | None
+S.p.d      type=<class 'object'>
+S.r.d      type=<class 'dict'>
+S.mm.d['city']           -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.m.d['city']            -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.mm.l[0]                -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.p.d['city']            -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.r.d['city']            -> OK <reflex.Var>-1590866465655089082</reflex.Var>reflex___state____state____main_____s.r_rx_state_?.["d"]?.["city"]
+S.m.d.to(dict)['city']   -> OK <reflex.Var>-6406963332436533427</reflex.Var>reflex___state____state____main_____s.m_rx_state_?.["d"]?.["city"]
+===== prev
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/prev/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:133)
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/db/scripts/v2_json_types.py", line 40, in <module>
+    class S(rx.State):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/prev/lib/python3.12/site-packages/reflex_base/vars/base.py", line 5131, in __new__
+    new_cls = super().__new__(cls, name, bases, namespace)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen abc>", line 106, in __new__
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/prev/lib/python3.12/site-packages/reflex/state.py", line 799, in __init_subclass__
+    cls._init_var(name, prop)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/prev/lib/python3.12/site-packages/reflex/state.py", line 1305, in _init_var
+    raise VarTypeError(msg)
+reflex_base.utils.exceptions.VarTypeError: State vars must be of a serializable type. Valid types include strings, numbers, booleans, lists, dictionaries, dataclasses, datetime objects, and pydantic models. Found var "reflex___state____state____main_____s.p_rx_state_" with type __main__.P | None.
+===== prev --no-plain
+S.mm.d     type=<class 'object'>
+S.mm.l     type=<class 'object'>
+S.mm.s     type=<class 'str'>
+S.m.d      type=<class 'object'>
+S.m.dn     type=object | None
+S.r.d      type=<class 'dict'>
+S.mm.d['city']           -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.m.d['city']            -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.mm.l[0]                -> ERR TypeError: Var of type <class 'object'> does not support item access.
+S.r.d['city']            -> OK <reflex.Var>3874713262937726813</reflex.Var>reflex___state____state____main_____s.r_rx_state_?.["d"]?.["city"]
+S.m.d.to(dict)['city']   -> OK <reflex.Var>-2395645998190851414</reflex.Var>reflex___state____state____main_____s.m_rx_state_?.["d"]?.["city"]

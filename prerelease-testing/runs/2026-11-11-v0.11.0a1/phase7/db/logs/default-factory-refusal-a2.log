@@ -1,0 +1,4 @@
+Cannot add the NOT NULL column 'item.score' with only a default_factory: the 
+migration has no value for rows that a database already holds. Set 
+server_default=..., a literal default= or insert_default=, or make the column 
+nullable.

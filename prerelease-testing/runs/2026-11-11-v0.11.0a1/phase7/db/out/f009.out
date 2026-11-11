@@ -1,0 +1,21 @@
+===== new
+reflex db init -> rc=0 serializer_calls=0 
+reflex db makemigrations --message m1 -> rc=0 serializer_calls=0 
+reflex db migrate -> rc=0 serializer_calls=0 
+fresh checkout: reflex db migrate -> rc=0 serializer_calls=0 tables=['alembic_version', 'item']
+positive control: reflex compile --dry -> rc=1 serializer_calls=1 initial-state serialization ran
+===== ctrl-0.11.0a1
+reflex db init -> rc=1 serializer_calls=1 initial-state serialization ran
+reflex db makemigrations --message m1 -> rc=1 serializer_calls=1 initial-state serialization ran
+reflex db migrate -> rc=1 serializer_calls=0 
+fresh checkout: reflex db migrate -> rc=1 serializer_calls=0 tables=[]
+positive control: reflex compile --dry -> rc=1 serializer_calls=1 initial-state serialization ran
+===== prev
+reflex db init -> rc=1 serializer_calls=1 initial-state serialization ran
+reflex db makemigrations --message m1 -> rc=1 serializer_calls=1 initial-state serialization ran
+reflex db migrate -> rc=0 serializer_calls=0 
+fresh checkout: reflex db migrate -> rc=0 serializer_calls=0 tables=[]
+positive control: reflex compile --dry -> rc=1 serializer_calls=1 initial-state serialization ran
+ctrl-0.11.0a1: fresh checkout with revisions: reflex db migrate rc=1 serializer_calls=1 tables=['alembic_version', 'item'] RuntimeError: initial-state serialization ran
+prev: fresh checkout with revisions: reflex db migrate rc=0 serializer_calls=0 tables=['alembic_version', 'item'] 
+new: fresh checkout with revisions: reflex db migrate rc=0 serializer_calls=0 tables=['alembic_version', 'item'] 

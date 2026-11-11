@@ -1,0 +1,1618 @@
+{
+ "tag": "base",
+ "results": [
+  {
+   "name": "anon / redirects to /login (on_load check_login)",
+   "status": "pass",
+   "detail": "/login",
+   "t": 2.581
+  },
+  {
+   "name": "alice signup -> redirect to home",
+   "status": "pass",
+   "detail": "/",
+   "t": 4.165
+  },
+  {
+   "name": "home shows alice avatar (State.user set)",
+   "status": "pass",
+   "detail": "al",
+   "t": 4.167
+  },
+  {
+   "name": "alice posts 2 tweets, feed shows them newest-first",
+   "status": "pass",
+   "detail": "[['alice', 'alice tweet two base'], ['alice', 'alice tweet one base']]",
+   "t": 4.849
+  },
+  {
+   "name": "search tweets filters feed (set_search -> get_tweets)",
+   "status": "pass",
+   "detail": "[['alice', 'alice tweet two base']]",
+   "t": 4.93
+  },
+  {
+   "name": "bob signup (2nd context) -> home",
+   "status": "pass",
+   "detail": "/",
+   "t": 7.368
+  },
+  {
+   "name": "bob tweet; feed shows all users' tweets",
+   "status": "pass",
+   "detail": "[['bob', 'bob tweet base'], ['alice', 'alice tweet two base'], ['alice', 'alice tweet one base']]",
+   "t": 7.71
+  },
+  {
+   "name": "search users 'ali' lists alice with follow button",
+   "status": "pass",
+   "detail": "['alice']",
+   "t": 7.991
+  },
+  {
+   "name": "follow alice click",
+   "status": "pass",
+   "detail": "",
+   "t": 7.994
+  },
+  {
+   "name": "bob still logged in after reload (token kept)",
+   "status": "pass",
+   "detail": "bo",
+   "t": 11.492
+  },
+  {
+   "name": "alice still logged in after reload",
+   "status": "pass",
+   "detail": "al",
+   "t": 11.77
+  },
+  {
+   "name": "sign out -> /login",
+   "status": "pass",
+   "detail": "/login",
+   "t": 13.105
+  },
+  {
+   "name": "after sign out, / redirects to /login again",
+   "status": "pass",
+   "detail": "/login",
+   "t": 13.484
+  },
+  {
+   "name": "wrong password -> window_alert",
+   "status": "pass",
+   "detail": "[{'page': 'alice', 'type': 'alert', 'message': 'Invalid username or password.', 't': 14.425}]",
+   "t": 14.619
+  },
+  {
+   "name": "alice re-login -> home",
+   "status": "pass",
+   "detail": "al",
+   "t": 16.234
+  },
+  {
+   "name": "alice Followers lists bob after fresh login",
+   "status": "pass",
+   "detail": "['bob']",
+   "t": 17.239
+  },
+  {
+   "name": "same token kept across logout/login (reset() keeps session)",
+   "status": "pass",
+   "detail": "d0c5e69c-3b90-4598-d51c-69a4ba031f4a -> d0c5e69c-3b90-4598-d51c-69a4ba031f4a",
+   "t": 17.245
+  },
+  {
+   "name": "duplicate username -> alert",
+   "status": "pass",
+   "detail": "[{'page': 'carol0', 'type': 'alert', 'message': 'Username already exists.', 't': 18.921}]",
+   "t": 19.113
+  },
+  {
+   "name": "password mismatch -> alert",
+   "status": "pass",
+   "detail": "[{'page': 'carol0', 'type': 'alert', 'message': 'Passwords do not match.', 't': 20.293}]",
+   "t": 20.479
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 20.658
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 20.658
+  }
+ ],
+ "console": [
+  {
+   "page": "alice",
+   "t": 1.94,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice",
+   "t": 2.167,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice",
+   "t": 2.251,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice",
+   "t": 2.567,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice",
+   "t": 2.643,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 2.653,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 2.709,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice",
+   "t": 2.753,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice",
+   "t": 2.801,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice",
+   "t": 2.804,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice",
+   "t": 2.96,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 2.96,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob",
+   "t": 5.308,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "bob",
+   "t": 5.591,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "bob",
+   "t": 5.679,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "bob",
+   "t": 5.866,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "bob",
+   "t": 6.086,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob",
+   "t": 6.086,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "bob",
+   "t": 9.561,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "bob",
+   "t": 9.597,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "bob",
+   "t": 9.628,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "bob",
+   "t": 9.685,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "bob",
+   "t": 9.688,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice",
+   "t": 11.513,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 11.607,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice",
+   "t": 11.661,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice",
+   "t": 11.724,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice",
+   "t": 11.725,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice",
+   "t": 13.101,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 13.109,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 13.145,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice",
+   "t": 13.171,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice",
+   "t": 13.182,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice",
+   "t": 13.186,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice",
+   "t": 13.478,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "alice",
+   "t": 14.624,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "alice",
+   "t": 14.66,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "alice",
+   "t": 14.951,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "alice",
+   "t": 14.956,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "alice",
+   "t": 14.957,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "alice",
+   "t": 14.966,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol0",
+   "t": 17.454,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "carol0",
+   "t": 17.61,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "carol0",
+   "t": 17.67,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "carol0",
+   "t": 17.778,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "carol0",
+   "t": 17.957,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol0",
+   "t": 17.957,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol0",
+   "t": 19.119,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "carol0",
+   "t": 19.161,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "carol0",
+   "t": 19.186,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "carol0",
+   "t": 19.239,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "carol0",
+   "t": 19.242,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "carol0",
+   "t": 19.385,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol0",
+   "t": 19.385,
+   "type": "verbose",
+   "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+   "page": "carol0",
+   "t": 20.484,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "alice",
+   "t": 2.251,
+   "dir": "open",
+   "payload": "ws://localhost:8100/_event/?token=d0c5e69c-3b90-4598-d51c-69a4ba031f4a&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice",
+   "t": 2.251,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"0nlYc-vIbLJcxFGPAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice",
+   "t": 2.567,
+   "dir": "out",
+   "len": 359,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"41fae506da2daab57237388e9cbced68\"}"
+  },
+  {
+   "page": "alice",
+   "t": 2.567,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"lVyM1PDNWl8F9OCVAAAB\"}"
+  },
+  {
+   "page": "alice",
+   "t": 2.568,
+   "dir": "in",
+   "len": 1770,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"K5AI/kXol3aTKCNSjmYNFA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"K5AI/kXol3aTKCNSjmYNFA==\",\"sec-websocket-protocol\":\"0.10.1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3100/index\",\"full_raw_path\":\"http://localhost:3100/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"d0c5e69c-3b90-4598-d51c-69a4ba031f4a\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"lVyM1PDNWl8F9OCVAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 2.569,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 2.569,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice",
+   "t": 2.569,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 2.57,
+   "dir": "out",
+   "len": 166,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 2.575,
+   "dir": "in",
+   "len": 527,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/login\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/login\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/login\",\"raw_path\":\"/login\",\"full_path\":\"http://localhost:3100/login\",\"full_raw_path\":\"http://localhost:3100/login\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/login\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 2.645,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "alice",
+   "t": 2.645,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "alice",
+   "t": 2.79,
+   "dir": "open",
+   "payload": "ws://localhost:8100/_event/?token=d0c5e69c-3b90-4598-d51c-69a4ba031f4a&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice",
+   "t": 2.802,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"rdbMQk2a0pA4V4rFAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice",
+   "t": 2.835,
+   "dir": "out",
+   "len": 371,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}},\"state_schema\":\"41fae506da2daab57237388e9cbced68\"}"
+  },
+  {
+   "page": "alice",
+   "t": 2.842,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"U8-PUvfWI4B0y2AsAAAD\"}"
+  },
+  {
+   "page": "alice",
+   "t": 2.843,
+   "dir": "in",
+   "len": 1797,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"mO4tj1bePM9CVPyPAqj7Tw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"mO4tj1bePM9CVPyPAqj7Tw==\",\"sec-websocket-protocol\":\"0.10.1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/signup\",\"raw_path\":\"/signup\",\"full_path\":\"http://localhost:3100/signup\",\"full_raw_path\":\"http://localhost:3100/signup\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/signup\",\"rx_router_session_rx_state_\":{\"client_token\":\"d0c5e69c-3b90-4598-d51c-69a4ba031f4a\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"U8-PUvfWI4B0y2AsAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/signup\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/signup\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 2.843,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 3.756,
+   "dir": "out",
+   "len": 223,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_username\",\"payload\":{\"username\":\"alice\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 3.756,
+   "dir": "in",
+   "len": 157,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"username_rx_state_\":\"alice\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 3.809,
+   "dir": "out",
+   "len": 226,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_password\",\"payload\":{\"password\":\"pw-alice\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 3.821,
+   "dir": "in",
+   "len": 160,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"pw-alice\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 3.858,
+   "dir": "out",
+   "len": 242,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_confirm_password\",\"payload\":{\"confirm_password\":\"pw-alice\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 3.871,
+   "dir": "in",
+   "len": 168,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"confirm_password_rx_state_\":\"pw-alice\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 3.894,
+   "dir": "out",
+   "len": 186,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.signup\",\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.15,
+   "dir": "in",
+   "len": 360,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state\":{\"logged_in_rx_state_\":true,\"user_rx_state_\":{\"username\":\"alice\",\"password\":\"pw-alice\",\"id\":1}},\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"following_rx_state_\":[],\"followers_rx_state_\":[],\"search_users_rx_state_\":[]}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.15,
+   "dir": "in",
+   "len": 140,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.154,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.155,
+   "dir": "in",
+   "len": 508,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3100/index\",\"full_raw_path\":\"http://localhost:3100/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.155,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.245,
+   "dir": "out",
+   "len": 220,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_tweet\",\"payload\":{\"tweet\":\"alice tweet one base\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.245,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.post_tweet\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.498,
+   "dir": "in",
+   "len": 169,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweet_rx_state_\":\"alice tweet one base\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.499,
+   "dir": "in",
+   "len": 232,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweets_rx_state_\":[{\"content\":\"alice tweet one base\",\"id\":1,\"author\":\"alice\",\"created_at\":\"11/11 21\"}]}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.579,
+   "dir": "out",
+   "len": 220,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_tweet\",\"payload\":{\"tweet\":\"alice tweet two base\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.58,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.post_tweet\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.838,
+   "dir": "in",
+   "len": 169,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweet_rx_state_\":\"alice tweet two base\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.838,
+   "dir": "in",
+   "len": 315,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweets_rx_state_\":[{\"content\":\"alice tweet two base\",\"id\":2,\"author\":\"alice\",\"created_at\":\"11/11 21\"},{\"content\":\"alice tweet one base\",\"id\":1,\"author\":\"alice\",\"created_at\":\"11/11 21\"}]}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.92,
+   "dir": "out",
+   "len": 210,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_search\",\"payload\":{\"search\":\"two base\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.924,
+   "dir": "in",
+   "len": 262,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweets_rx_state_\":[{\"content\":\"alice tweet two base\",\"id\":2,\"author\":\"alice\",\"created_at\":\"11/11 21\"}],\"search_rx_state_\":\"two base\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.941,
+   "dir": "out",
+   "len": 202,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_search\",\"payload\":{\"search\":\"\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 4.95,
+   "dir": "in",
+   "len": 337,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweets_rx_state_\":[{\"content\":\"alice tweet two base\",\"id\":2,\"author\":\"alice\",\"created_at\":\"11/11 21\"},{\"content\":\"alice tweet one base\",\"id\":1,\"author\":\"alice\",\"created_at\":\"11/11 21\"}],\"search_rx_state_\":\"\"}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 5.678,
+   "dir": "open",
+   "payload": "ws://localhost:8100/_event/?token=0106eccf-6850-4cdd-8426-a7a07b267fc7&EIO=4&transport=websocket"
+  },
+  {
+   "page": "bob",
+   "t": 5.679,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"PhiH4GsCLHE0-Am3AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "bob",
+   "t": 5.936,
+   "dir": "out",
+   "len": 371,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}},\"state_schema\":\"41fae506da2daab57237388e9cbced68\"}"
+  },
+  {
+   "page": "bob",
+   "t": 5.949,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"qNPKk9oUT-Nvt9Z5AAAF\"}"
+  },
+  {
+   "page": "bob",
+   "t": 5.956,
+   "dir": "in",
+   "len": 1797,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"EDCBeTBPggMj9sQWp7LXQA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"EDCBeTBPggMj9sQWp7LXQA==\",\"sec-websocket-protocol\":\"0.10.1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/signup\",\"raw_path\":\"/signup\",\"full_path\":\"http://localhost:3100/signup\",\"full_raw_path\":\"http://localhost:3100/signup\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/signup\",\"rx_router_session_rx_state_\":{\"client_token\":\"0106eccf-6850-4cdd-8426-a7a07b267fc7\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"qNPKk9oUT-Nvt9Z5AAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/signup\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/signup\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 5.966,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 6.944,
+   "dir": "out",
+   "len": 221,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_username\",\"payload\":{\"username\":\"bob\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "bob",
+   "t": 6.953,
+   "dir": "in",
+   "len": 155,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"username_rx_state_\":\"bob\"}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 6.996,
+   "dir": "out",
+   "len": 224,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_password\",\"payload\":{\"password\":\"pw-bob\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.007,
+   "dir": "in",
+   "len": 158,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"pw-bob\"}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.062,
+   "dir": "out",
+   "len": 240,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_confirm_password\",\"payload\":{\"confirm_password\":\"pw-bob\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.062,
+   "dir": "in",
+   "len": 166,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"confirm_password_rx_state_\":\"pw-bob\"}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.094,
+   "dir": "out",
+   "len": 186,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.signup\",\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.349,
+   "dir": "in",
+   "len": 356,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state\":{\"logged_in_rx_state_\":true,\"user_rx_state_\":{\"username\":\"bob\",\"password\":\"pw-bob\",\"id\":2}},\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"following_rx_state_\":[],\"followers_rx_state_\":[],\"search_users_rx_state_\":[]}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.349,
+   "dir": "in",
+   "len": 140,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.353,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.353,
+   "dir": "in",
+   "len": 508,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3100/index\",\"full_raw_path\":\"http://localhost:3100/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\"}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.353,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.445,
+   "dir": "out",
+   "len": 214,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_tweet\",\"payload\":{\"tweet\":\"bob tweet base\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.447,
+   "dir": "out",
+   "len": 178,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.post_tweet\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.7,
+   "dir": "in",
+   "len": 163,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweet_rx_state_\":\"bob tweet base\"}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.7,
+   "dir": "in",
+   "len": 390,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweets_rx_state_\":[{\"content\":\"bob tweet base\",\"id\":3,\"author\":\"bob\",\"created_at\":\"11/11 21\"},{\"content\":\"alice tweet two base\",\"id\":2,\"author\":\"alice\",\"created_at\":\"11/11 21\"},{\"content\":\"alice tweet one base\",\"id\":1,\"author\":\"alice\",\"created_at\":\"11/11 21\"}]}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.727,
+   "dir": "out",
+   "len": 207,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.set_friend\",\"payload\":{\"friend\":\"alice\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.985,
+   "dir": "in",
+   "len": 232,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"friend_rx_state_\":\"alice\",\"search_users_rx_state_\":[{\"id\":1,\"username\":\"alice\",\"password\":\"pw-alice\"}]}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 7.993,
+   "dir": "out",
+   "len": 210,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state.follow_user\",\"payload\":{\"username\":\"alice\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "bob",
+   "t": 9.563,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "bob",
+   "t": 9.563,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "bob",
+   "t": 9.669,
+   "dir": "open",
+   "payload": "ws://localhost:8100/_event/?token=0106eccf-6850-4cdd-8426-a7a07b267fc7&EIO=4&transport=websocket"
+  },
+  {
+   "page": "bob",
+   "t": 9.685,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"NUL4oSATqvXNz7ZcAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "bob",
+   "t": 9.955,
+   "dir": "out",
+   "len": 359,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"41fae506da2daab57237388e9cbced68\"}"
+  },
+  {
+   "page": "bob",
+   "t": 9.956,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Ob93Ey5rMMwi40j3AAAH\"}"
+  },
+  {
+   "page": "bob",
+   "t": 9.956,
+   "dir": "in",
+   "len": 2610,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"E9Xh0JogM9uq0sEd4MgFQw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"E9Xh0JogM9uq0sEd4MgFQw==\",\"sec-websocket-protocol\":\"0.10.1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3100/index\",\"full_raw_path\":\"http://localhost:3100/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"0106eccf-6850-4cdd-8426-a7a07b267fc7\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Ob93Ey5rMMwi40j3AAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.twitter___state___base____state\":{\"logged_in_rx_state_\":true,\"user_rx_state_\":{\"username\":\"bob\",\"password\":\"pw-bob\",\"id\":2}},\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"friend_rx_state_\":\"alice\",\"search_users_rx_state_\":[{\"id\":1,\"username\":\"alice\",\"password\":\"pw-alice\"}],\"tweet_rx_state_\":\"bob tweet base\",\"tweets_rx_state_\":[{\"content\":\"bob tweet base\",\"id\":3,\"author\":\"bob\",\"created_at\":\"11/11 21\"},{\"content\":\"alice tweet two base\",\"id\":2,\"author\":\"alice\",\"created_at\":\"11/11 21\"},{\"content\":\"alice tweet one base\",\"id\":1,\"author\":\"alice\",\"created_at\":\"11/11 21\"}]},\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"confirm_password_rx_state_\":\"pw-bob\",\"password_rx_state_\":\"pw-bob\",\"username_rx_state_\":\"bob\"}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 9.957,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "bob",
+   "t": 9.957,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 11.524,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "alice",
+   "t": 11.524,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "alice",
+   "t": 11.722,
+   "dir": "open",
+   "payload": "ws://localhost:8100/_event/?token=d0c5e69c-3b90-4598-d51c-69a4ba031f4a&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice",
+   "t": 11.724,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"hZHiVebKJpCL522mAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice",
+   "t": 11.724,
+   "dir": "out",
+   "len": 359,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"41fae506da2daab57237388e9cbced68\"}"
+  },
+  {
+   "page": "alice",
+   "t": 11.725,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"UEVuW5BSA2N25yUxAAAJ\"}"
+  },
+  {
+   "page": "alice",
+   "t": 11.726,
+   "dir": "in",
+   "len": 2447,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"WvuXGd/59Lki7srDWso84Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"WvuXGd/59Lki7srDWso84Q==\",\"sec-websocket-protocol\":\"0.10.1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3100/index\",\"full_raw_path\":\"http://localhost:3100/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"d0c5e69c-3b90-4598-d51c-69a4ba031f4a\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"UEVuW5BSA2N25yUxAAAJ\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.twitter___state___base____state\":{\"logged_in_rx_state_\":true,\"user_rx_state_\":{\"username\":\"alice\",\"password\":\"pw-alice\",\"id\":1}},\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"tweet_rx_state_\":\"alice tweet two base\",\"tweets_rx_state_\":[{\"content\":\"alice tweet two base\",\"id\":2,\"author\":\"alice\",\"created_at\":\"11/11 21\"},{\"content\":\"alice tweet one base\",\"id\":1,\"author\":\"alice\",\"created_at\":\"11/11 21\"}]},\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"confirm_password_rx_state_\":\"pw-alice\",\"password_rx_state_\":\"pw-alice\",\"username_rx_state_\":\"alice\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 11.727,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 11.727,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 12.846,
+   "dir": "out",
+   "len": 137,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.logout\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.099,
+   "dir": "in",
+   "len": 580,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state\":{\"logged_in_rx_state_\":false,\"user_rx_state_\":null},\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"search_users_rx_state_\":[],\"friend_rx_state_\":\"\",\"tweet_rx_state_\":\"\",\"following_rx_state_\":[],\"search_rx_state_\":\"\",\"tweets_rx_state_\":[],\"followers_rx_state_\":[]},\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"\",\"username_rx_state_\":\"\",\"confirm_password_rx_state_\":\"\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.1,
+   "dir": "in",
+   "len": 140,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.1,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.1,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.1,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.1,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.101,
+   "dir": "out",
+   "len": 166,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.101,
+   "dir": "in",
+   "len": 527,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/login\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/login\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/login\",\"raw_path\":\"/login\",\"full_path\":\"http://localhost:3100/login\",\"full_raw_path\":\"http://localhost:3100/login\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/login\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.11,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "alice",
+   "t": 13.111,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "alice",
+   "t": 13.182,
+   "dir": "open",
+   "payload": "ws://localhost:8100/_event/?token=d0c5e69c-3b90-4598-d51c-69a4ba031f4a&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice",
+   "t": 13.186,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"GR6XBaDd4PqmGh3PAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice",
+   "t": 13.224,
+   "dir": "out",
+   "len": 359,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}},\"state_schema\":\"41fae506da2daab57237388e9cbced68\"}"
+  },
+  {
+   "page": "alice",
+   "t": 13.476,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"JigAD_cNBWRBNDj-AAAL\"}"
+  },
+  {
+   "page": "alice",
+   "t": 13.476,
+   "dir": "in",
+   "len": 1770,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"ANYUuhkIuJd14X1Iux71IA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"ANYUuhkIuJd14X1Iux71IA==\",\"sec-websocket-protocol\":\"0.10.1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3100/index\",\"full_raw_path\":\"http://localhost:3100/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"d0c5e69c-3b90-4598-d51c-69a4ba031f4a\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"JigAD_cNBWRBNDj-AAAL\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.476,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.477,
+   "dir": "in",
+   "len": 145,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/login\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.477,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.478,
+   "dir": "out",
+   "len": 166,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 13.478,
+   "dir": "in",
+   "len": 527,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/login\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/login\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/login\",\"raw_path\":\"/login\",\"full_path\":\"http://localhost:3100/login\",\"full_raw_path\":\"http://localhost:3100/login\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/login\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 14.328,
+   "dir": "out",
+   "len": 221,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_username\",\"payload\":{\"username\":\"alice\"},\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 14.342,
+   "dir": "in",
+   "len": 157,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"username_rx_state_\":\"alice\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 14.376,
+   "dir": "out",
+   "len": 221,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_password\",\"payload\":{\"password\":\"WRONG\"},\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 14.387,
+   "dir": "in",
+   "len": 157,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"WRONG\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 14.416,
+   "dir": "out",
+   "len": 183,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.login\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 14.424,
+   "dir": "in",
+   "len": 181,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (window?.[\\\"alert\\\"](\\\"Invalid username or password.\\\")))\",\"callback\":null}}]}]"
+  },
+  {
+   "page": "alice",
+   "t": 14.625,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "alice",
+   "t": 14.626,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "alice",
+   "t": 14.954,
+   "dir": "open",
+   "payload": "ws://localhost:8100/_event/?token=d0c5e69c-3b90-4598-d51c-69a4ba031f4a&EIO=4&transport=websocket"
+  },
+  {
+   "page": "alice",
+   "t": 14.956,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"kMPNXw9--b7Uqcx-AAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "alice",
+   "t": 14.957,
+   "dir": "out",
+   "len": 369,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}},\"state_schema\":\"41fae506da2daab57237388e9cbced68\"}"
+  },
+  {
+   "page": "alice",
+   "t": 14.957,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"9sPuq7DcLJh1mfPLAAAN\"}"
+  },
+  {
+   "page": "alice",
+   "t": 14.957,
+   "dir": "in",
+   "len": 1945,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"T1BZYo5aVNPGl/SP/zsV2A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"T1BZYo5aVNPGl/SP/zsV2A==\",\"sec-websocket-protocol\":\"0.10.1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/login\",\"raw_path\":\"/login\",\"full_path\":\"http://localhost:3100/login\",\"full_raw_path\":\"http://localhost:3100/login\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/login\",\"rx_router_session_rx_state_\":{\"client_token\":\"d0c5e69c-3b90-4598-d51c-69a4ba031f4a\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"9sPuq7DcLJh1mfPLAAAN\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/login\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/login\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"WRONG\",\"username_rx_state_\":\"alice\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 14.957,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 15.849,
+   "dir": "out",
+   "len": 221,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_username\",\"payload\":{\"username\":\"alice\"},\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 15.856,
+   "dir": "in",
+   "len": 157,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"username_rx_state_\":\"alice\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 15.915,
+   "dir": "out",
+   "len": 224,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_password\",\"payload\":{\"password\":\"pw-alice\"},\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 15.922,
+   "dir": "in",
+   "len": 160,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"pw-alice\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 15.966,
+   "dir": "out",
+   "len": 183,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.login\",\"router_data\":{\"pathname\":\"/login\",\"asPath\":\"/login\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 16.219,
+   "dir": "in",
+   "len": 415,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state\":{\"logged_in_rx_state_\":true,\"user_rx_state_\":{\"id\":1,\"username\":\"alice\",\"password\":\"pw-alice\"}},\"reflex___state____state.twitter___state___base____state.twitter___state___home____home_state\":{\"following_rx_state_\":[],\"followers_rx_state_\":[{\"followed_username\":\"alice\",\"follower_username\":\"bob\"}],\"search_users_rx_state_\":[]}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 16.219,
+   "dir": "in",
+   "len": 140,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/\",\"external\":false,\"popup\":false,\"replace\":false}}]}]"
+  },
+  {
+   "page": "alice",
+   "t": 16.222,
+   "dir": "out",
+   "len": 156,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "alice",
+   "t": 16.222,
+   "dir": "in",
+   "len": 508,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3100/index\",\"full_raw_path\":\"http://localhost:3100/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\"}}}]"
+  },
+  {
+   "page": "alice",
+   "t": 16.222,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 17.668,
+   "dir": "open",
+   "payload": "ws://localhost:8100/_event/?token=e02499b2-c8e7-4423-de17-4952f1f1c3c3&EIO=4&transport=websocket"
+  },
+  {
+   "page": "carol0",
+   "t": 17.67,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"muwMI1YTZypIjv6gAAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "carol0",
+   "t": 17.825,
+   "dir": "out",
+   "len": 371,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}},\"state_schema\":\"41fae506da2daab57237388e9cbced68\"}"
+  },
+  {
+   "page": "carol0",
+   "t": 17.831,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"LPE_avJL5CsOu2nOAAAP\"}"
+  },
+  {
+   "page": "carol0",
+   "t": 17.834,
+   "dir": "in",
+   "len": 1797,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"hEegm+bWy1/3WUz/GWocSA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"hEegm+bWy1/3WUz/GWocSA==\",\"sec-websocket-protocol\":\"0.10.1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/signup\",\"raw_path\":\"/signup\",\"full_path\":\"http://localhost:3100/signup\",\"full_raw_path\":\"http://localhost:3100/signup\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/signup\",\"rx_router_session_rx_state_\":{\"client_token\":\"e02499b2-c8e7-4423-de17-4952f1f1c3c3\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"LPE_avJL5CsOu2nOAAAP\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/signup\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/signup\"},\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 17.834,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 18.753,
+   "dir": "out",
+   "len": 221,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_username\",\"payload\":{\"username\":\"bob\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 18.754,
+   "dir": "in",
+   "len": 155,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"username_rx_state_\":\"bob\"}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 18.811,
+   "dir": "out",
+   "len": 219,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_password\",\"payload\":{\"password\":\"x\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 18.821,
+   "dir": "in",
+   "len": 153,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"x\"}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 18.866,
+   "dir": "out",
+   "len": 235,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_confirm_password\",\"payload\":{\"confirm_password\":\"x\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 18.87,
+   "dir": "in",
+   "len": 161,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"confirm_password_rx_state_\":\"x\"}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 18.91,
+   "dir": "out",
+   "len": 186,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.signup\",\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 18.92,
+   "dir": "in",
+   "len": 176,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (window?.[\\\"alert\\\"](\\\"Username already exists.\\\")))\",\"callback\":null}}]}]"
+  },
+  {
+   "page": "carol0",
+   "t": 19.125,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "carol0",
+   "t": 19.125,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "carol0",
+   "t": 19.228,
+   "dir": "open",
+   "payload": "ws://localhost:8100/_event/?token=e02499b2-c8e7-4423-de17-4952f1f1c3c3&EIO=4&transport=websocket"
+  },
+  {
+   "page": "carol0",
+   "t": 19.242,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"UJfqH4CrpJbZJmPQAAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "carol0",
+   "t": 19.271,
+   "dir": "out",
+   "len": 371,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"6e9f68eb02c7eeeb\",\"d029e8db883816fc\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"64bdb7f46f21ef56\",\"bef0c87c6f588474\",\"8ebb99f4946c1e66\"]},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}},\"state_schema\":\"41fae506da2daab57237388e9cbced68\"}"
+  },
+  {
+   "page": "carol0",
+   "t": 19.275,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"kRPbcUl8d5A4y9IeAAAR\"}"
+  },
+  {
+   "page": "carol0",
+   "t": 19.276,
+   "dir": "in",
+   "len": 1979,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"D5C+rNpotPxa0LPF47GKpQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8100\",\"origin\":\"http://localhost:3100\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"D5C+rNpotPxa0LPF47GKpQ==\",\"sec-websocket-protocol\":\"0.10.1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3100\",\"path\":\"/signup\",\"raw_path\":\"/signup\",\"full_path\":\"http://localhost:3100/signup\",\"full_raw_path\":\"http://localhost:3100/signup\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/signup\",\"rx_router_session_rx_state_\":{\"client_token\":\"e02499b2-c8e7-4423-de17-4952f1f1c3c3\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"kRPbcUl8d5A4y9IeAAAR\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3100\",\"origin\":\"http://localhost:3100\",\"path\":\"/signup\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3100/signup\"},\"is_hydrated_rx_state_\":false},\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"confirm_password_rx_state_\":\"x\",\"password_rx_state_\":\"x\",\"username_rx_state_\":\"bob\"}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 19.276,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 20.147,
+   "dir": "out",
+   "len": 221,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_username\",\"payload\":{\"username\":\"zed\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 20.155,
+   "dir": "in",
+   "len": 155,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"username_rx_state_\":\"zed\"}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 20.191,
+   "dir": "out",
+   "len": 220,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_password\",\"payload\":{\"password\":\"p1\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 20.207,
+   "dir": "in",
+   "len": 154,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"password_rx_state_\":\"p1\"}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 20.24,
+   "dir": "out",
+   "len": 236,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.set_confirm_password\",\"payload\":{\"confirm_password\":\"p2\"},\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 20.241,
+   "dir": "in",
+   "len": 162,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state\":{\"confirm_password_rx_state_\":\"p2\"}}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 20.278,
+   "dir": "out",
+   "len": 186,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.twitter___state___base____state.twitter___state___auth____auth_state.signup\",\"router_data\":{\"pathname\":\"/signup\",\"asPath\":\"/signup\"}}]"
+  },
+  {
+   "page": "carol0",
+   "t": 20.292,
+   "dir": "in",
+   "len": 175,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (window?.[\\\"alert\\\"](\\\"Passwords do not match.\\\")))\",\"callback\":null}}]}]"
+  }
+ ],
+ "notes": {
+  "expect_session": false,
+  "dialogs": [
+   {
+    "page": "alice",
+    "type": "alert",
+    "message": "Invalid username or password.",
+    "t": 14.425
+   },
+   {
+    "page": "carol0",
+    "type": "alert",
+    "message": "Username already exists.",
+    "t": 18.921
+   },
+   {
+    "page": "carol0",
+    "type": "alert",
+    "message": "Passwords do not match.",
+    "t": 20.293
+   }
+  ],
+  "observations": {
+   "A_feed_initial": [],
+   "A_click_to_load_button": 1,
+   "B_following_after_follow_no_reload": [],
+   "B_following_after_reload": [],
+   "A_followers_before_reload": [],
+   "A_followers_after_reload": [],
+   "A_feed_after_reload": [
+    [
+     "alice",
+     "alice tweet two base"
+    ],
+    [
+     "alice",
+     "alice tweet one base"
+    ]
+   ],
+   "A_feed_after_relogin": []
+  },
+  "tokens": {
+   "alice": "d0c5e69c-3b90-4598-d51c-69a4ba031f4a",
+   "bob": "0106eccf-6850-4cdd-8426-a7a07b267fc7"
+  }
+ }
+}

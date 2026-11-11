@@ -1,0 +1,3 @@
+Warning: The revision drops the tables 'post' and all their data: review it 
+before running reflex db migrate.
+Generating /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/db/apps/noreg_new/alembic/versions/6240639a4ca0_droppost.py ...  done

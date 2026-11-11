@@ -1,0 +1,5 @@
+Info: Updated env.py to load the app; the previous one is kept as 
+alembic/env.old.1.
+481d2a7a6d6f -> 4c92535dbbbd (head) (current), Add hidden to response.
+<base> -> 481d2a7a6d6f, empty message
+[rc=0] (db) reflex db status

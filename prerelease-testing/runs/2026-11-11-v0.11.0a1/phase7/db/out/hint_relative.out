@@ -1,0 +1,2 @@
+script_location = %(here)s/alembic -> reflex db status rc=1 | hint shown: 1 | traceback lines: 0
+script_location = alembic -> reflex db status rc=1 | hint shown: 0 | traceback lines: 15

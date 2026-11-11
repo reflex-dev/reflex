@@ -1,0 +1,15 @@
+GET /admin -> 404
+GET /admin/ -> 200 url http://localhost:8100/admin/login?next=http%3A%2F%2Flocalhost%3A8100%2Fadmin%2F
+bad login -> url http://localhost:8100/admin/login?next=http%3A%2F%2Flocalhost%3A8100%2Fadmin%2F | 'Invalid username' shown: True
+good login -> url http://localhost:8100/admin/
+GET /admin/user/create -> 200
+POST /admin/user/create -> 303
+GET /admin/tag-ok/create -> 200
+POST /admin/tag-ok/create -> 303
+GET /admin/tag-req/create -> 200
+POST /admin/tag-req/create -> 500
+console: ['error: Failed to load resource: the server responded with a status of 404 (Not Found)', 'error: Failed to load resource: the server responded with a status of 404 (Not Found)', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: the server responded with a status of 400 (Bad Request)', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: the server responded with a status of 404 (Not Found)', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: the server responded with a status of 404 (Not Found)', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED', 'error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)', 'error: Failed to load resource: the server responded with a status of 404 (Not Found)', 'error: Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED']
+http>=400: ['404 http://localhost:8100/admin', '400 http://localhost:8100/admin/login?next=http%3A%2F%2Flocalhost%3A8100%2Fadmin%2F', '404 http://localhost:8100/admin/api/user?skip=0&limit=10', '404 http://localhost:8100/admin/api/tag-ok?skip=0&limit=10', '500 http://localhost:8100/admin/tag-req/create', '404 http://localhost:8100/admin/api/tag-req?skip=0&limit=10']
+user [(1, 'qa', 'qa@example.com')]
+tagok [(1, 'ok')]
+tagreq []

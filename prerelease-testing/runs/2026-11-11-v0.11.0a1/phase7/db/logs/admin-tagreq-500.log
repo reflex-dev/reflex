@@ -1,0 +1,4 @@
+    obj = await self._populate_obj(request, self.model(), data)
+                                            ^^^^^^^^^^^^
+TypeError: __init__() missing 1 required positional argument: 'name'
+Info: Reflex app stopped.

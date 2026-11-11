@@ -1,0 +1,8 @@
+== new new-doc serializer
+no rel loaded -> {'id': 1, 'title': 'P1', 'user_id': 1}
+Post.user loaded -> {'id': 1, 'title': 'P1', 'user_id': 1}
+Post.user.posts loaded (cycle) -> {'id': 1, 'title': 'P1', 'user_id': 1}
+== new old-doc serializer
+no rel loaded -> ERR DetachedInstanceError Parent instance <Post at 0x7f469f92c4a0> is not bound to a Session; lazy load operation of attribute 'user' cannot proceed (Background on this error at: https://sqlalche.me/e/21/bhk3)
+Post.user loaded -> ERR DetachedInstanceError Parent instance <User at 0x7f469f92df10> is not bound to a Session; lazy load operation of attribute 'posts' cannot proceed (Background on this error at: https://sqlalche.me/e/21/bhk3)
+Post.user.posts loaded (cycle) -> ERR RecursionError maximum recursion depth exceeded

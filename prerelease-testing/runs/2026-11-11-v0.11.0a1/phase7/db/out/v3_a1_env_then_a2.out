@@ -1,0 +1,7 @@
+# FINDING-012 caveat: app whose env.py was written by 0.11.0a1 `reflex db init`, then makemigrations/migrate on 0.11.0a2
+# (commands in phase7/db.md, section FINDING-012)
+a1 init rc=0
+a2 makemigrations (a1 env.py) rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), nullable=False))
+migrate rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) Cannot add a NOT NULL column with default value NULL

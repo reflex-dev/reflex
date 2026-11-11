@@ -1,0 +1,120 @@
+===== new df
+init rc=0
+    score: Mapped[int] = mapped_column(default_factory=lambda: 7)
+Column.default = None  server_default = None  nullable = False
+makemigrations rc=1
+grep: alembic/versions/*add_score*.py: No such file or directory
+migrate rc=0
+Cannot add the NOT NULL column 'item.score' with only a default_factory: the 
+tables ['alembic_version', 'item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=0
+===== new dfbatch
+init rc=0
+    score: Mapped[int] = mapped_column(default_factory=lambda: 7)
+    name: Mapped[str | None] = mapped_column(default=None)
+Column.default = None  server_default = None  nullable = False
+makemigrations rc=1
+grep: alembic/versions/*add_score*.py: No such file or directory
+migrate rc=0
+Cannot add the NOT NULL column 'item.score' with only a default_factory: the 
+tables ['alembic_version', 'item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=0
+===== new dflt
+init rc=0
+    score: Mapped[int] = mapped_column(default=7)
+Column.default = ScalarElementColumnDefault(7)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== new ins
+init rc=0
+    score: Mapped[int] = mapped_column(insert_default=7, default_factory=lambda: 7)
+Column.default = ScalarElementColumnDefault(7)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== new rxdf
+init rc=0
+    score: int = sqlmodel.Field(default_factory=lambda: 7)
+Column.default = CallableColumnDefault(<function Item.<lambda> at 0x7f3094554400>)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== ctrl-0.11.0a1 df
+init rc=0
+    score: Mapped[int] = mapped_column(default_factory=lambda: 7)
+Column.default = None  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), nullable=False))
+migrate rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) Cannot add a NOT NULL column with default value NULL
+[SQL: ALTER TABLE item ADD COLUMN score INTEGER NOT NULL]
+tables ['alembic_version', 'item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) Cannot add a NOT NULL column with default value NULL
+===== ctrl-0.11.0a1 dfbatch
+init rc=0
+    score: Mapped[int] = mapped_column(default_factory=lambda: 7)
+    name: Mapped[str | None] = mapped_column(default=None)
+Column.default = None  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), nullable=False))
+migrate rc=1
+sqlite3.IntegrityError: NOT NULL constraint failed: _alembic_tmp_item.score
+sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) NOT NULL constraint failed: _alembic_tmp_item.score
+tables ['alembic_version', 'item', '_alembic_tmp_item']
+rows [(1, 'a')]
+--- second migrate
+migrate2 rc=1
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) table _alembic_tmp_item already exists
+===== ctrl-0.11.0a1 dflt
+init rc=0
+    score: Mapped[int] = mapped_column(default=7)
+Column.default = ScalarElementColumnDefault(7)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== ctrl-0.11.0a1 ins
+init rc=0
+    score: Mapped[int] = mapped_column(insert_default=7, default_factory=lambda: 7)
+Column.default = ScalarElementColumnDefault(7)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0
+===== ctrl-0.11.0a1 rxdf
+init rc=0
+    score: int = sqlmodel.Field(default_factory=lambda: 7)
+Column.default = CallableColumnDefault(<function Item.<lambda> at 0x7fef31f44900>)  server_default = None  nullable = False
+makemigrations rc=0
+        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))
+migrate rc=0
+tables ['alembic_version', 'item']
+rows [(1, 'a', 7)]
+--- second migrate
+migrate2 rc=0

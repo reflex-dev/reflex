@@ -1,0 +1,4 @@
+# apps/multibase_mb.py on 0.11.0a2: MainBase, OtherBase, Namespace.NestedBase, nothing registered, then register(MainBase)
+auto-detect: init rc=0 tables=['a', 'alembic_version', 'b', 'c']
+register(MainBase): init rc=0 tables=['a', 'alembic_version']
+makemigrations rc=0 No model changes detected

@@ -1,0 +1,3 @@
+# fresh `reflex db init` on 0.11.0a2 of a Base model with mapped_column(default_factory=...) (create_table path is not refused)
+fresh init rc=0
+['CREATE TABLE item (\n\tid INTEGER NOT NULL, \n\tname VARCHAR NOT NULL, \n\tscore INTEGER NOT NULL, \n\tPRIMARY KEY (id)\n)']
