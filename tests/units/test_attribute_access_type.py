@@ -876,11 +876,14 @@ def test_declarative_json_column_typing_extensions_typed_dict() -> None:
 
 
 def test_declarative_json_column_generic_typed_dict() -> None:
-    """A parametrized generic TypedDict annotation refines a bare dict column too."""
-    assert (
-        get_attribute_access_type(OtherTypedDictJsonModel, "generic_prefs")
-        == GenericPrefs[int]
-    )
+    """A parametrized generic TypedDict annotation keeps a bare dict column.
+
+    Key access on a parametrized generic TypedDict is unsupported, so refining
+    the column to it would turn working item access into a compile error.
+    """
+    assert get_attribute_access_type(OtherTypedDictJsonModel, "generic_prefs") is dict
+    prefs = rx.Var(_js_expr="model").to(OtherTypedDictJsonModel).generic_prefs
+    assert prefs["value"]._var_type is Any
 
 
 class JsonModelClass(rx.Model):

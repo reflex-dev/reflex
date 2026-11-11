@@ -1111,13 +1111,14 @@ def _get_column_access_type(cls: type, name: str) -> GenericType | None:
         type_ = _get_mapped_annotation(cls, name) or type_
     # A parametrized python type, e.g. `List[int]` of an ARRAY column, is kept.
     # Type parameters and TypedDict keys refine a bare one; a subclass such as
-    # `bool` over `int` does not, as the database returns `type_` itself.
+    # `bool` over `int` does not, as the database returns `type_` itself. A
+    # parametrized generic TypedDict does not either: its keys are not resolved.
     elif (
         isinstance(type_, type)
         and (declared := _get_mapped_annotation(cls, name)) is not None
         and (
-            (origin := get_origin(declared) or declared) is type_
-            or (type_ is dict and typing_extensions.is_typeddict(origin))
+            (get_origin(declared) or declared) is type_
+            or (type_ is dict and typing_extensions.is_typeddict(declared))
         )
     ):
         type_ = declared
