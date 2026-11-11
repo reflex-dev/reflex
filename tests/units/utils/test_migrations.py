@@ -591,6 +591,22 @@ def test_default_factory_column_is_refused(
     check = _alembic(project, "check")
     assert check.returncode != 0
     assert "'thing.score'" in check.stderr
+    caplog.clear()
+
+    # A column whose key differs from its name is found by its key.
+    _write_source(
+        project,
+        source.format(
+            columns=(
+                f"{t1}\n    score: Mapped[int] = mapped_column(\n"
+                "        'points', key='points_key', default_factory=lambda: 7\n    )"
+            )
+        ),
+    )
+    _db("makemigrations", "--message", "keyed factory", exit_code=1)
+    (message,) = _errors(caplog)
+    assert "'thing.points'" in message
+    assert len(_versions(project)) == 1
 
     _write_source(
         project,

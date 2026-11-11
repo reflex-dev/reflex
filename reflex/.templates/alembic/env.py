@@ -89,12 +89,17 @@ def has_default_factory(op: ops.AddColumnOp) -> bool:
                 not dataclasses.is_dataclass(mapper.class_)
             ):
                 continue
-            column = table.c.get(op.column.name)
-            keys = {key for key, mapped in mapper.columns.items() if mapped is column}
-            if any(
-                field.name in keys and field.default_factory is not dataclasses.MISSING
-                for field in dataclasses.fields(mapper.class_)
-            ):
+            # Table.c is keyed by Column.key, which may differ from the name.
+            column = table.c.get(op.column.key)
+            if column is None:
+                continue
+            try:
+                key = mapper.get_property_by_column(column).key
+            except sqlalchemy.orm.exc.UnmappedColumnError:
+                # A column of a subclass sharing the table, which its mapper maps.
+                continue
+            field = mapper.class_.__dataclass_fields__.get(key)
+            if field is not None and field.default_factory is not dataclasses.MISSING:
                 return True
     return False
 
