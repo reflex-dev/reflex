@@ -1,0 +1,1 @@
+With `REFLEX_OPLOCK_ENABLED` and several production backend workers, an event waiting for a token's lock on one worker no longer stalls about a second (a tenth of the lock expiration) behind another worker's lease. Each forked worker now waits for redis locks under its own identity, and a waiter that leaves no longer hides the other waiters of its worker from the next lease.

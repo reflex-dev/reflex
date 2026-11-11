@@ -896,6 +896,8 @@ class App(MiddlewareMixin, LifespanMixin):
             None while the event processor is active.
         """
         # The app may have been imported before the server forked its workers.
+        state_manager = self.state_manager
+        state_manager._reset_instance_id()
         event_namespace = self.event_namespace
         if event_namespace is not None:
             event_namespace._token_manager._reset_instance_id()
@@ -906,7 +908,7 @@ class App(MiddlewareMixin, LifespanMixin):
             event_loop_blocking_threshold=get_config().event_loop_blocking_threshold,
         )
         async with self._event_processor.configure(
-            state_manager=self.state_manager,
+            state_manager=state_manager,
             event_namespace=event_namespace,
         ):
             yield

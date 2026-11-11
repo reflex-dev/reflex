@@ -105,6 +105,7 @@ from reflex.utils import exec as exec_utils
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
 from .conftest import active_tracer, chdir, metric_points
+from .mock_redis import mock_redis
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -3790,7 +3791,7 @@ def test_call_app():
 
 
 def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection):
-    """Run the server startup path in a forked worker and report delta routing.
+    """Run the server startup path in a forked worker and report its identities and delta routing.
 
     Args:
         app: The application created before the fork.
@@ -3804,11 +3805,14 @@ def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection)
             assert app.event_namespace is not None
             manager = app.event_namespace._token_manager
             assert isinstance(manager, RedisTokenManager)
+            state_manager = app.state_manager
+            assert isinstance(state_manager, StateManagerRedis)
             published = await manager.emit_lost_and_found(
                 "client", StateUpdate(delta={"state": {"count": 1}})
             )
             sender.send((
                 manager.instance_id,
+                state_manager._instance_id,
                 published,
                 redis.publish.call_args.args if published else None,
             ))
@@ -3824,9 +3828,14 @@ def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection)
     reason="Requires a server that forks after importing the app",
 )
 def test_forked_workers_publish_deltas_to_the_socket_owner():
-    """Give forked workers distinct identities before routing backend deltas."""
+    """Give forked workers distinct identities before routing backend deltas.
+
+    Each worker's state manager also gets its own identity, by which the other
+    workers tell its redis lock waiters from theirs.
+    """
     app = App()
-    app._state_manager = StateManagerMemory()
+    state_manager = app._state_manager = StateManagerRedis(redis=mock_redis())
+    supervisor_state_manager_id = state_manager._instance_id
     redis = AsyncMock()
     manager = RedisTokenManager(redis)
     assert app.event_namespace is not None
@@ -3837,6 +3846,7 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
     )
     workers = multiprocessing.get_context("fork")
     worker_ids = set()
+    worker_state_manager_ids = {supervisor_state_manager_id}
 
     for _ in range(2):
         receiver, sender = workers.Pipe(duplex=False)
@@ -3847,13 +3857,15 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
         sender.close()
         try:
             assert receiver.poll(10), "The forked worker did not report a result"
-            worker_id, published, publish_args = receiver.recv()
+            worker_id, state_manager_id, published, publish_args = receiver.recv()
             process.join(timeout=10)
             assert process.exitcode == 0
             assert published, "A live socket owned by another worker was discarded"
             assert worker_id != owner_id
             assert worker_id not in worker_ids
             worker_ids.add(worker_id)
+            assert state_manager_id not in worker_state_manager_ids
+            worker_state_manager_ids.add(state_manager_id)
             assert publish_args[0] == f"channel:token_manager_lost_and_found_{owner_id}"
             record = pickle.loads(publish_args[1])
             assert record.token == "client"
@@ -3866,6 +3878,7 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
             process.close()
 
     assert manager.instance_id == owner_id
+    assert state_manager._instance_id == supervisor_state_manager_id
 
 
 @pytest.fixture
