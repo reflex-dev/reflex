@@ -12,20 +12,20 @@ the milestone `v0.11.0`.
 | 030 | Forked workers share one redis lock-contender id (oplock ~1 s stalls) | **PR open** [reflex-dev/reflex#7795](https://github.com/reflex-dev/reflex/pull/7795) |
 | 036 | Optional set var ops crash / fail prod build | **PR open** [reflex-dev/reflex#7800](https://github.com/reflex-dev/reflex/pull/7800) |
 | instaque | Redis lock release lets the releaser retake before waiters hear of it | **Deferred** — [reflex-dev/reflex#7801](https://github.com/reflex-dev/reflex/pull/7801) moved to draft (PING+EVAL pipeline costs 10-20% client CPU on every uncontended `modify_state`, CodSpeed -13%); follow-up [reflex-dev/reflex#7805](https://github.com/reflex-dev/reflex/issues/7805) |
-| 045 | Event payload transform imported reflex.model / SQLAlchemy inside the event | **PR open** [reflex-dev/reflex#7802](https://github.com/reflex-dev/reflex/pull/7802) |
+| 045 | Event payload transform imported reflex.model / SQLAlchemy inside the event | **Merged** [reflex-dev/reflex#7802](https://github.com/reflex-dev/reflex/pull/7802) |
 | 015 | Mistaken handler return values silently accepted | **Merged** via [reflex-dev/reflex#7821](https://github.com/reflex-dev/reflex/pull/7821)'s squash (554eb10a6); [reflex-dev/reflex#7796](https://github.com/reflex-dev/reflex/pull/7796) left open for the owner to close (comment posted) |
 | 004 | Unregistered DeclarativeBase → silent drop of every table | **PR open** [reflex-dev/reflex#7797](https://github.com/reflex-dev/reflex/pull/7797) (design: auto-detect bases) |
 | 011 | JSON column on DeclarativeBase typed `object` | **PR open** [reflex-dev/reflex#7798](https://github.com/reflex-dev/reflex/pull/7798) |
 | 022 (+023 diagnostics) | Prod CORS default breaks TLS-proxied and split deployments | **PR open** [reflex-dev/reflex#7799](https://github.com/reflex-dev/reflex/pull/7799) |
 | 033 | kill -9 of a worker stops the server | **PR open** [reflex-dev/reflex#7803](https://github.com/reflex-dev/reflex/pull/7803) |
-| 034 + 035 | client_state API contract (wrong name hint, identifier collisions, conflicting defaults) | **PR open** [reflex-dev/reflex#7804](https://github.com/reflex-dev/reflex/pull/7804) |
+| 034 + 035 | client_state API contract (wrong name hint, identifier collisions, conflicting defaults) | **Merged** [reflex-dev/reflex#7804](https://github.com/reflex-dev/reflex/pull/7804) |
 | 003 (+002 changelog line) | `refs` not imported in 0.11 pages/memos (rxe AG Grid) | **PR open** [reflex-dev/reflex#7806](https://github.com/reflex-dev/reflex/pull/7806) (compat import, `refs` declared internal) |
 | 002, 003, 008 (rxe side) | MCP prod crash without deploy_url, AG Grid `refs`, MCP consent redirect | **PR open** [reflex-dev/reflex-enterprise#290](https://github.com/reflex-dev/reflex-enterprise/pull/290) (needs an rxe release) |
 | 044 | upload handler error truncates the response | **PR open** [reflex-dev/reflex#7808](https://github.com/reflex-dev/reflex/pull/7808) |
 | 001+016, 007 | repeated `@rx.event`, staticmethod above `@rx.event`, pyright 3.11–3.13 handler types | **PRs open** [reflex-dev/reflex#7807](https://github.com/reflex-dev/reflex/pull/7807), [reflex-dev/reflex#7810](https://github.com/reflex-dev/reflex/pull/7810) (stacked) |
 | 005/006/017, 012 | kept env.py errors / empty revisions / env.old; NOT NULL default_factory column | **PRs open** #7809, #7815 (stacked on #7797) |
-| 028, 029, 042, 047 | deprecation frames, package.json format, lucide/hosting floors, auto_memoize warning dedupe | **PRs open** #7811, #7812, #7813, #7814 |
-| 009, 037/038, 039 | see below | **PRs open** [reflex-dev/reflex#7817](https://github.com/reflex-dev/reflex/pull/7817), [reflex-dev/reflex#7818](https://github.com/reflex-dev/reflex/pull/7818) (**merged** 10dd495ea, train 954a6f6e6), [reflex-dev/reflex#7820](https://github.com/reflex-dev/reflex/pull/7820) |
+| 028, 029, 042, 047 | deprecation frames, package.json format, lucide/hosting floors, auto_memoize warning dedupe | #7811, #7813, #7814 **merged**; #7812 open |
+| 009, 037/038, 039 | see below | [reflex-dev/reflex#7817](https://github.com/reflex-dev/reflex/pull/7817) (**merged**), [reflex-dev/reflex#7818](https://github.com/reflex-dev/reflex/pull/7818) (**merged** 10dd495ea, train 954a6f6e6), [reflex-dev/reflex#7820](https://github.com/reflex-dev/reflex/pull/7820) |
 | 024, 014, 020 | `rx.App()()` breaking entry; admin guide; serializer example | **PR open** [reflex-dev/reflex#7816](https://github.com/reflex-dev/reflex/pull/7816) |
 | 010 | empty token → `EventHandlerTypeError` (stack on #7796) | **Merged** [reflex-dev/reflex#7821](https://github.com/reflex-dev/reflex/pull/7821) (554eb10a6, on train 5ba8287c0) |
 
@@ -206,6 +206,12 @@ As each PR merges into `main`:
 |---|---|---|
 | #7821 (010, carries #7796 015 — stacked, so its squash includes #7796's commits) | 554eb10a6 | 5ba8287c0 |
 | #7818 (037/038) | 10dd495ea | 954a6f6e6 (fragment modify/delete: sentence folded into packages/reflex-base/CHANGELOG.md #7651 entry) |
+| #7817 (009) | 81a08eb76 | 736336e09 |
+| #7814 (047) | 682201f3e | fe30de89d |
+| #7813 (042 floors; lucide/hosting-cli `.dev0`, met by the a1 releases) | 4c4ace8a8 | 8c3345516 |
+| #7811 (028) | 8c2cb7d92 | 1086ed401 |
+| #7804 (034/035) | 96de6fedc | 57f96998c |
+| #7802 (045) | 68b522c76 | 2451eac93 (train unit suite 15707 passed) |
 
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
@@ -218,8 +224,8 @@ As each PR merges into `main`:
 | #7800 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | PR open, watch |
 | #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | PR open, watch (bot nits fixed b1b99aba4); Windows test_supervisor re-run passed |
 | #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | draft, deferred to #7805; not cherry-picked |
-| #7804 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | PR open; bot threads fixed 2163da819 + resolved; greptile 5/5 |
-| #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | PR open, watch (no warm-up needed: check sys.modules instead of importing) |
+| #7804 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | MERGED 96de6fedc, train 57f96998c; bot threads fixed 2163da819 + resolved; greptile 5/5 |
+| #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | MERGED 68b522c76, train 2451eac93 (no warm-up needed: check sys.modules instead of importing) |
 | #7807 001+016 / #7810 007 | fix/repeated-rx-event (d502726d0) + fix/event-callback-pyright-typing (d34b69c0c, stacked on #7807 → rebase onto main after #7807 merges), /home/user/reflex-fix-001 | PRs open, watch; all 7 bot threads fixed or tightened (outer False/0 options now override on repeat; `__main__` decentralized handler; mixin + warning tests) and resolved; #7807 Windows #7819 flake re-run once (run 42994958233) — passed. 007 trade-off: mypy rejects `rx.event.EventCallback[int]` again (0.10.1 behaviour; import from reflex_base.event); pyright hooks on 3.11+3.14. Follow-up: type `@rx.event(...)` stacked on `@rx.event` for pyright |
 | #7809 005/006/017, #7815 012 | fix/kept-env-py-errors (75b8f29a0, /home/user/reflex-fix-005), fix/default-factory-not-null (3e9f0a8b5, /home/user/reflex-fix-012); both rebased onto #7797 head 025862563; rebase onto main after #7797 merges | PRs open; all 9 bot threads resolved; #7809 Windows/ubuntu-3.14 red was a test fixture needing SQLite ≥3.53 ALTER COLUMN (fixed); known behaviour documented in bodies |
 | 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | PRs open reflex #7806 (1b1d7867c; function-memo refs import added, bot threads resolved), rxe #290 (d27d6a14b, greptile 5/5); watch |
