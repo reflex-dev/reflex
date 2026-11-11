@@ -96,6 +96,10 @@ class FormControl(FormComponent):
     # ``FormField`` unless the control or its child carries a ``name``.
     _is_form_field_control = True
 
+    name: Var[str] = field(
+        doc="The name of the control, in place of the name of the enclosing form field."
+    )
+
     @classmethod
     def create(cls, *children, **props):
         """Create a Form Control component.

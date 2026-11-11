@@ -382,6 +382,26 @@ def test_on_submit_warns_for_controls_not_named_by_a_form_field(
     assert repr(control_id) in caplog.text
 
 
+def test_form_control_name_is_passed_to_radix_and_names_its_child():
+    """A form control's own name reaches Radix and replaces the field's name."""
+
+    class OtherData(TypedDict):
+        other: str
+
+    class OtherState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: OtherData):
+            pass
+
+    control = rx.form.control(rx.input(), name="other", as_child=True)
+    assert 'name:"other"' in control.render()["props"]
+    assert "name" not in control.style
+    Form.create(
+        rx.form.field(control, name="email"),
+        on_submit=OtherState.on_submit,
+    )
+
+
 def test_on_submit_typed_dict_accepts_form_field_name():
     """A form field's name fills a TypedDict field for the control it names."""
 
