@@ -1843,6 +1843,133 @@ async def test_oplock_contenders_are_the_other_instances_with_a_waiter(
 
 
 @pytest.mark.asyncio
+async def test_oplock_waiter_reregistering_while_the_other_waiter_leaves_deregisters(
+    state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A waiter that re-registered for a waiter that left meanwhile deregisters its instance.
+
+    The waiter that left counted the re-registering one as still there, so it
+    left the instance registered for that one to deregister.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    remote = await other_state_manager()
+    remote._oplock_enabled = True
+
+    async with (
+        contextlib.AsyncExitStack() as first,
+        contextlib.AsyncExitStack() as second,
+    ):
+        await first.enter_async_context(remote._lock_waiter(lock_key))
+        await first.enter_async_context(
+            remote._request_lock_release(lock_key, uuid.uuid4().hex.encode())
+        )
+
+        # The first waiter's registration for the second one pauses.
+        register = remote._register_lock_contender
+        reregistering = asyncio.Event()
+        resume = asyncio.Event()
+
+        async def pause_reregistration(key: bytes) -> None:
+            monkeypatch.setattr(remote, "_register_lock_contender", register)
+            await register(key)
+            reregistering.set()
+            await resume.wait()
+
+        # The second waiter queues while the first one deregisters the instance.
+        srem = remote.redis.srem
+
+        async def queue_during_srem(*args: Any) -> Any:
+            monkeypatch.setattr(remote.redis, "srem", srem)
+            await second.enter_async_context(remote._lock_waiter(lock_key))
+            await second.enter_async_context(
+                remote._request_lock_release(lock_key, uuid.uuid4().hex.encode())
+            )
+            monkeypatch.setattr(
+                remote, "_register_lock_contender", pause_reregistration
+            )
+            return await srem(*args)
+
+        monkeypatch.setattr(remote.redis, "srem", queue_during_srem)
+
+        leaving = asyncio.create_task(first.aclose())
+        await reregistering.wait()
+        await second.aclose()
+        resume.set()
+        await leaving
+
+    assert remote._n_lock_waiters(lock_key) == 0
+    assert await state_manager_redis._n_lock_contenders(lock_key) == 0
+
+
+@pytest.mark.asyncio
+async def test_oplock_waiter_cancelled_while_registering_deregisters(
+    state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A waiter cancelled during its registration deregisters its instance as the last waiter.
+
+    The registered waiter that left before counted the registering one as still
+    there, so it left the instance registered for that one to deregister.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
+        root_state: The root state class.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+    remote = await other_state_manager()
+    remote._oplock_enabled = True
+
+    async with contextlib.AsyncExitStack() as first:
+        await first.enter_async_context(remote._lock_waiter(lock_key))
+        await first.enter_async_context(
+            remote._request_lock_release(lock_key, uuid.uuid4().hex.encode())
+        )
+
+        # The second waiter's registration reaches redis, but never returns.
+        register = remote._register_lock_contender
+        registering = asyncio.Event()
+
+        async def hang_registration(key: bytes) -> None:
+            monkeypatch.setattr(remote, "_register_lock_contender", register)
+            await register(key)
+            registering.set()
+            await asyncio.Event().wait()
+
+        monkeypatch.setattr(remote, "_register_lock_contender", hang_registration)
+
+        async def second_waiter():
+            async with (
+                remote._lock_waiter(lock_key),
+                remote._request_lock_release(lock_key, uuid.uuid4().hex.encode()),
+            ):
+                pytest.fail("The registration was meant to hang.")
+
+        second = asyncio.create_task(second_waiter())
+        await registering.wait()
+    second.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await second
+
+    assert remote._n_lock_waiters(lock_key) == 0
+    assert await state_manager_redis._n_lock_contenders(lock_key) == 0
+
+
+@pytest.mark.asyncio
 async def test_oplock_waiter_leaving_keeps_the_next_lease_from_passing_over_its_instance(
     state_manager_redis: StateManagerRedis,
     other_state_manager: Callable[[], Awaitable[StateManagerRedis]],

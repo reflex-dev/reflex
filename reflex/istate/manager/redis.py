@@ -1163,17 +1163,22 @@ class StateManagerRedis(StateManager):
             yield
             return
 
-        await self._register_lock_contender(lock_key)
         try:
+            # A waiter cancelled while registering still counted for the others.
+            await self._register_lock_contender(lock_key)
             yield  # Waiting for redis/oplock to be acquired.
         finally:
-            if self._n_lock_waiters(lock_key) <= 1:
+            # Waiters that leave while this one awaits count it as staying, so
+            # deregister again once they are gone. A cancellation of this
+            # cleanup leaves the registration to expire with its pexpire.
+            while self._n_lock_waiters(lock_key) <= 1:
                 res = self.redis.srem(lock_key + b"_waiters", self._instance_id)
                 if inspect.isawaitable(res):
                     await res
+                if self._n_lock_waiters(lock_key) <= 1:
+                    break
                 # A waiter that queued meanwhile may have registered before the SREM.
-                if self._n_lock_waiters(lock_key) > 1:
-                    await self._register_lock_contender(lock_key)
+                await self._register_lock_contender(lock_key)
 
     async def _register_lock_contender(self, lock_key: bytes) -> None:
         """Register this instance as a contender for a lock for one lock expiration.
