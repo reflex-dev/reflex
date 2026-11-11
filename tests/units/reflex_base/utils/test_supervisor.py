@@ -1,6 +1,7 @@
 """Tests for the ``reflex run --json`` output supervisor."""
 
 import contextlib
+import faulthandler
 import json
 import os
 import signal
@@ -13,6 +14,34 @@ from unittest import mock
 
 import pytest
 from reflex_base.utils import supervisor
+
+# Seconds any test in this module may take before the run is aborted.
+_TEST_TIMEOUT_SECONDS = 120
+
+
+@pytest.fixture(autouse=True)
+def _abort_on_hang(capfd: pytest.CaptureFixture[str]):
+    """Abort the run, dumping every thread's stack, when a test hangs.
+
+    Several waits here cannot be bounded from Python: a pipe read held open by
+    a stray process, the untimed wait in ``Popen.__exit__``, or a blocked
+    interpreter call. faulthandler's watchdog runs outside the GIL, so a
+    regression fails in minutes with a traceback instead of using up the job.
+
+    Args:
+        capfd: Used to reach the real stderr; during a test, file descriptor 2
+            is pytest's capture file, which is lost when the watchdog exits.
+
+    Yields:
+        None.
+    """
+    with capfd.disabled():
+        stderr_fd = os.dup(2)
+    faulthandler.dump_traceback_later(_TEST_TIMEOUT_SECONDS, exit=True, file=stderr_fd)
+    yield
+    faulthandler.cancel_dump_traceback_later()
+    os.close(stderr_fd)
+
 
 _SUPERVISED_SCRIPT = """
 import logging
@@ -639,3 +668,28 @@ def test_output_pump_drain_grace_ends_with_the_write(monkeypatch):
     finally:
         os.close(write_fd)
         pump.join(5)
+
+
+def test_output_pump_drain_does_not_join_the_reader(monkeypatch):
+    """The drain never waits in Thread.join, whose timeout CPython can ignore.
+
+    On CPython 3.13 to 3.15 a timed join can wait without a timeout
+    (python/cpython#161712), so a reader blocked on a pipe that a lingering
+    descendant holds would keep the drain waiting until that descendant exits.
+    """
+    # The write end stays open, like a descendant that outlives the command.
+    read_fd, write_fd = os.pipe()
+    pump = supervisor._OutputPump(read_fd, 1, "info", "stdout")
+    pump.start()
+    joins = []
+    monkeypatch.setattr(pump, "join", joins.append)
+    try:
+        begin = time.monotonic()
+        pump.drain(begin, 0.0, begin + supervisor._DRAIN_WALL_SECONDS)
+        elapsed = time.monotonic() - begin
+        assert joins == []
+        assert supervisor._DRAIN_IDLE_SECONDS <= elapsed < 2
+    finally:
+        os.close(write_fd)
+        threading.Thread.join(pump, 5)
+    assert not pump.is_alive()
