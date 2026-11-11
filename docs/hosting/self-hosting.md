@@ -49,6 +49,9 @@ from a single server on port `3000`. Pass `--frontend-port` or
 `--backend-port` to listen on a different port. When redis is configured,
 the server runs up to 8 backend workers by default (`2 * cpu_count + 1`, capped at 8).
 When using Granian, set `GRANIAN_WORKERS` to override the default, including to use more workers.
+Granian replaces a worker that dies; if a replaced worker dies again within a few
+seconds, it stops the server. Set `GRANIAN_RESPAWN_FAILED_WORKERS=false` to stop the
+server when any worker dies instead, for example when a process supervisor restarts it.
 
 When using Granian on Linux, backend workers are forked from a supervisor
 process that has already imported the app, so they share its memory instead of

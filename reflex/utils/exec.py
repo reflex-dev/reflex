@@ -22,7 +22,7 @@ from typing import Any, NamedTuple, TypedDict
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
-from reflex_base.environment import environment
+from reflex_base.environment import environment, interpret_boolean_env
 from reflex_base.telemetry_context import CompileTrigger
 from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
@@ -1158,6 +1158,12 @@ def run_granian_backend_prod(
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
         log_dictconfig=_granian_log_dictconfig(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
+        # Granian otherwise stops the server when any one worker dies. It still
+        # exits when a respawned worker dies again within a few seconds.
+        respawn_failed_workers=interpret_boolean_env(
+            os.getenv("GRANIAN_RESPAWN_FAILED_WORKERS", "true"),
+            "GRANIAN_RESPAWN_FAILED_WORKERS",
+        ),
     )
 
     granian_app.serve()
