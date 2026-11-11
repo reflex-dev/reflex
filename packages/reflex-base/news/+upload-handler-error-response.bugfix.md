@@ -1,1 +1,0 @@
-The backend exception handler now receives the failing handler's full traceback even when the event was awaited, e.g. by a streamed upload; the upload helper reports an error frame ending the upload stream instead of treating the upload as successful.
