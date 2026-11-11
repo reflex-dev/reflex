@@ -1,0 +1,3 @@
+Prerender (html): / -> build/client/index.html
+TypeError: Cannot read properties of null (reading 'some')
+Error: Prerender: Request failed for /setnone/: Prerender (html): Received a 500

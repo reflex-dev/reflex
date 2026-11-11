@@ -1,0 +1,21 @@
+[deco] plain                out='plain' own=None calls='' sent=['plain'] toasts=[] log=''
+[deco] undecorated          out='undecorated' own=None calls='' sent=['undecorated'] toasts=[] log=''
+[deco] below                out='below' own=None calls='logged:below' sent=['below'] toasts=[] log=''
+[deco] above                out='above' own=None calls='logged:above' sent=['above'] toasts=[] log='DeprecationWarning: Calling an event handler with a state instance has been deprecated in version 0.11.0. `D.above` is called through a decorator stacked above @rx.event; apply other decorators below it. It will be completely removed in 1.0. (legacyapp/legacya'
+[deco] above_async          out='above_async' own=None calls='alogged:above_async' sent=['above_async'] toasts=[] log='DeprecationWarning: Calling an event handler with a state instance has been deprecated in version 0.11.0. `D.above_async` is called through a decorator stacked above @rx.event; apply other decorators below it. It will be completely removed in 1.0. (legacyapp/l'
+[deco] below_async          out='below_async' own=None calls='alogged:below_async' sent=['below_async'] toasts=[] log=''
+[deco] above_gen            out='above_gen 2' own=None calls='logged:above_gen' sent=['above_gen'] toasts=[] log=''
+[deco] bg_below             out='reset' own=None calls='' sent=['bg_below'] toasts=['An error occurred.ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.\nSee logs for details.'] log='[Reflex Backend Exception] Traceback (most recent call last): File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad /p7/envs/new/lib/python3.12/site-packages/reflex_base/event/processor/event_proc essor.py", line 1004, in _resol'
+[deco] uses_helpers         out="uses_helpers: self.fmt='n=7' | self.above_args=None | self.below=None | static_over=8 | self.static_over=8 | static_under=8 | class_under='D:4' | Helper().compute=9" own=None calls='logged:above_args,logged:below' sent=['uses_helpers'] toasts=[] log=''
+[deco] mix_plain            out='reset' own=None calls='' sent=['mix_plain'] toasts=[] log="Error processing event queue entry for Event(name='PlainMixin.mix_plain', router_data={'pathname': '/index', 'asPath': '/', 'sid': 'NDc-IQNuVZqx3XIVAAAN', 'headers': {'host': 'localhost:8180', 'connection': 'Upgrade', 'pragma': 'no-cache', 'cache-control': 'no"
+[deco] above_args           out="above_args 5 'z'" own=None calls='logged:above_args' sent=['above_args'] toasts=[] log=''
+[deco] decentralized        out='decentralized 5' own=None calls='' sent=['legacyapp_legacyapp_decentralized'] toasts=[] log=''
+[deco] decentralized_str    out='decentralized_str 6' own=None calls='' sent=['legacyapp_legacyapp_decentralized_str'] toasts=[] log=''
+[deco] d-helper_fn-err: [helper_fn: TypeError]
+[deco] d-static_over-err: [static_over: TypeError]
+[deco] double_plain         out='reset' own='double_plain' calls='' sent=['h'] toasts=[] log=''
+[deco] double_bg            out='reset' own='double_bg' calls='' sent=['h'] toasts=[] log=''
+[deco] double_bg_rev        out='reset' own='double_bg_rev' calls='' sent=['h'] toasts=[] log=''
+[deco] double_throttle      out='reset' own='double_throttle' calls='' sent=['h'] toasts=[] log=''
+[deco] double_throttle_rev  out='reset' own='double_throttle_rev' calls='' sent=['h'] toasts=[] log=''
+[deco] above x3 extra log: 

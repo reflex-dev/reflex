@@ -1,0 +1,14 @@
+reflex 0.10.1
+- outer background=False over background=True          bg=True
+- outer background=True over background=False          bg=True
+- outer throttle=0 over throttle=300                   actions={'throttle': 300}
+- debounce=50 over throttle=300 (merge)                actions={'debounce': 50}
+- supersedes=False over supersedes=True                supersedes attrs={'_reflex_supersedes': True}
+- rx.event(Other.handle) in another state              created; registered=False Other.handle.bg=False
+- rx.event(background=True)(Other.handle)              RAISES TypeError: Background task must be async function or generator.
+- rx.event(Other.handle) at module level               EventHandler(event_actions={}, fn=<function Other.handle at 0x7f4dcf5fc040>)
+- staticmethod/classmethod above event [016]           F.static_over(3)=6 F().static_over(3)? cls_over=('F', 9) registered=[]
+- staticmethod above event, class call                 G.s(3)=6
+- staticmethod above event via mixin                   H.ms(1)=101
+- staticmethod above event, non-state class            Helper.static_over_event(3)=6
+- decentralized @rx.event twice                        Other handlers matching dec_twice=['_main___dec_twice'] type=EventHandler

@@ -1,0 +1,19 @@
+reflex 0.10.1
+- event                                        ok class-attr=EventHandler registered=True fn=function bg=False actions={}
+- event / logged                               ok class-attr=EventHandler registered=True fn=function bg=False actions={}
+- logged / event                               ok class-attr=EventHandler registered=True fn=function bg=False actions={}
+- no_wraps / event                             ok class-attr=EventHandler registered=True fn=function bg=False actions={}
+- event / event                                ok class-attr=EventHandler registered=True fn=function bg=False actions={}
+- event / event(background=True)  [overkey]    ok class-attr=EventHandler registered=True fn=function bg=True actions={}
+- event(background=True) / event               ok class-attr=EventHandler registered=True fn=function bg=True actions={}
+- event / event(throttle=300)                  ok class-attr=EventHandler registered=True fn=function bg=False actions={'throttle': 300}
+- event(throttle=300) / event                  ok class-attr=EventHandler registered=True fn=function bg=False actions={'throttle': 300}
+- event(background=True) / alogged             ok class-attr=EventHandler registered=True fn=function bg=True actions={}
+- alogged / event(background=True)             ok class-attr=EventHandler registered=True fn=function bg=True actions={}
+- logged / event(background=True)              ok class-attr=EventHandler registered=True fn=function bg=True actions={}
+- staticmethod / event                         ok class-attr=staticmethod registered=False
+- event / staticmethod                         ok class-attr=staticmethod registered=False
+- classmethod / event                          ok class-attr=classmethod registered=False
+- event / classmethod                          ok class-attr=classmethod registered=False
+- functools.partialmethod(event)               ok class-attr=partialmethod registered=False
+- property / event                             ok class-attr=property registered=False

@@ -1,0 +1,14 @@
+`rx._x` contains experimental features and might be removed at any time in the future.
+rx._x.client_state has been deprecated in version 0.11.0. Use rx.client_state(default, name=...) instead. Naming a var makes it global; an unnamed var is owned by the outermost page or `@rx.memo` that uses it, so `global_ref` is no longer needed. It will be completely removed in 1.0. (probes/cv_names.py:28)
+trap push: my_name"). Its default is "user_input": the first positional argument is the default, so if that was meant as the name, write rx.client_state(default, name="user_input").
+name='a-b': ValueError: name 'a-b' is not a valid client state name: it must be an ASCII identifier, a letter or underscore followed by letters, digits or underscores. It mus
+name='cs$0': ValueError: name 'cs$0' is not a valid client state name: it must be an ASCII identifier, a letter or underscore followed by letters, digits or underscores. It mu
+name='1abc': ValueError: name '1abc' is not a valid client state name: it must be an ASCII identifier, a letter or underscore followed by letters, digits or underscores. It mu
+name='': ValueError: name '' is not a valid client state name: it must be an ASCII identifier, a letter or underscore followed by letters, digits or underscores. It must n
+name='ünï': ValueError: name 'ünï' is not a valid client state name: it must be an ASCII identifier, a letter or underscore followed by letters, digits or underscores. It mus
+item ['const [itemRxClientState, itemRxClientStateSet] = useClientState("d", "item", true)']
+Item ['const [ItemRxClientState, ItemRxClientStateSet] = useClientState("d", "Item", true)']
+prev0 ['const [prev0RxClientState, prev0RxClientStateSet] = useClientState("d", "prev0", true)']
+searchQuery ['const [searchQueryRxClientState, searchQueryRxClientStateSet] = useClientState("d", "searchQuery", true)']
+searchquery ['const [searchqueryRxClientState, searchqueryRxClientStateSet] = useClientState("d", "searchquery", true)']
+rx._x.client_state legacy: True ['const [legacy_nameRxClientState, legacy_nameRxClientStateSet] = useClientState("dflt", "legacy_name", true)']

@@ -1,0 +1,14 @@
+`rx._x` contains experimental features and might be removed at any time in the future.
+rx._x.client_state has been deprecated in version 0.11.0. Use rx.client_state(default, name=...) instead. Naming a var makes it global; an unnamed var is owned by the outermost page or `@rx.memo` that uses it, so `global_ref` is no longer needed. It will be completely removed in 1.0. (probes/cv_names.py:28)
+trap push: annot push a value: this client state var is scoped to the component tree that uses it. Give it a name -- rx.client_state("my_name") -- to make it global and addressable.
+name='a-b': ValueError: name 'a-b' is not a valid javascript identifier; it is emitted as one in the compiled app.
+name='cs$0': accepted, hooks=['const [cs$0RxClientState, setCs$0] = useClientState("x", "cs$0", true)']
+name='1abc': ValueError: name '1abc' is not a valid javascript identifier; it is emitted as one in the compiled app.
+name='': ValueError: name '' is not a valid javascript identifier; it is emitted as one in the compiled app.
+name='ünï': ValueError: name 'ünï' is not a valid javascript identifier; it is emitted as one in the compiled app.
+item ['const [itemRxClientState, setItem] = useClientState("d", "item", true)']
+Item ['const [ItemRxClientState, setItem] = useClientState("d", "Item", true)']
+prev0 ['const [prev0RxClientState, setPrev0] = useClientState("d", "prev0", true)']
+searchQuery ['const [searchQueryRxClientState, setSearchQuery] = useClientState("d", "searchQuery", true)']
+searchquery ['const [searchqueryRxClientState, setSearchquery] = useClientState("d", "searchquery", true)']
+rx._x.client_state legacy: True ['const [legacy_nameRxClientState, setLegacy_name] = useClientState("dflt", "legacy_name", true)']

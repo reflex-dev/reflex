@@ -1,0 +1,17 @@
+##### setnone dev
+up after 2x2s (pid 13010)
+== / status=200 body='HOME-OK |  | casing | inc |  | 0'
+== /setnone status=200 body='SETNONE |  | false |  | 1 |  | fill'
+== /setnone status=200 body='SETNONE |  | false |  | 1 |  | fill'
+    click failed: Page.click: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("#fill")
+
+##### listnone dev
+up after 2x2s (pid 13288)
+== /setnone status=200 body='LISTNONE |  | false |  | 0 |  | fill'
+== /setnone status=200 body='LISTNONE |  | false |  | 0 |  | fill'
+    click failed: Page.click: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator("#fill")
+

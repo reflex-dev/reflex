@@ -1,0 +1,8 @@
+"add":50
+"outside":"EventHandlerTypeError: Event handler `reflex___state____state.awaitapp___awaitapp____main.add` can only be awaited from an event handler or inside `app.modify_state`
+"add":50
+"outside":"EventHandlerTypeError: Event handler `reflex___state____state.awaitapp___awaitapp____main.add` can only be awaited from an event handler or inside `app.modify_state`
+"add":50
+"outside":"EventHandlerTypeError: Event handler `reflex___state____state.awaitapp___awaitapp____main.add` can only be awaited from an event handler or inside `app.modify_state`
+"add":50
+"outside":"EventHandlerTypeError: Event handler `reflex___state____state.awaitapp___awaitapp____main.add` can only be awaited from an event handler or inside `app.modify_state`

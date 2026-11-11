@@ -1,0 +1,9 @@
+unnamed push: Cannot push a value: this client state var is scoped to the component tree that uses it. Give it a name -- rx.client_state("my_name") -- to make it global and addressable.
+hinted _is_global: False state_name: cs$1 hooks: ['const [cs$1RxClientState, setCs$1] = useClientState("my_name", "cs$1")']
+hinted push: SAME ERROR -> Cannot push a value: this client state var is scoped to the 
+docstring: ['- ``rx.client_state("my_name")`` is **global**. It resolves in one']
+correct _is_global: True ['const [my_nameRxClientState, setMy_name] = useClientState("", "my_name", true)']
+correct push OK
+rx.ClientStateVar.create("user_input", default="") -> TypeError: ClientStateVar.create() got multiple values for argument 'default'
+rx.ClientStateVar.create("user_input") -> UNNAMED/scoped default js: ['const [cs$2RxClientState, setCs$2] = useClientState("user_input", "cs$2")']
+rx.client_state("user_input", "") -> TypeError: ClientStateVar.create() takes from 1 to 2 positional arguments but 3 were given

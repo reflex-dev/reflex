@@ -1,0 +1,28 @@
+### ctrl-0.11.0a1
+[RAISE] print(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] str(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] '%s' % S._secret: BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] '{}'.format(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] f'{S._secret}': BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] json.dumps(S._secret, default=str): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] str(Mix.mcount) (mixin field): BackendVarFormatError: Var 'Mix.mcount' is declared on a mixin state, which has no frontend vars. Access it through a state that incl
+[RAISE] str(S.get_fields()['v']): BackendVarFormatError: 'S.v' is the field of a state var, not the var. Use S.v to use it in the UI.
+[RAISE] debug loop: [f'{k}={getattr(S,k)}' for backend vars]: AttributeError: type object 'S' has no attribute 'backend_vars'
+[logging.info('%s', S._secret) / logging.info(S._secret)] stderr: --- Logging error --- (swallowed, app continues)
+FULL str(S._secret): ...ue, declare it as ClassVar[...] for a constant shared by all sessions, or use a regular state var for a value the UI should show and update.
+FULL str(Mix.mcount): ...Var 'Mix.mcount' is declared on a mixin state, which has no frontend vars. Access it through a state that includes the mixin instead.
+FULL str(S.get_fields()['v']): ...'S.v' is the field of a state var, not the var. Use S.v to use it in the UI.
+### new
+[RAISE] print(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] str(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] '%s' % S._secret: BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] '{}'.format(S._secret): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] f'{S._secret}': BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] json.dumps(S._secret, default=str): BackendVarFormatError: Backend var 'S._secret' exists only on the server and has no frontend value, so it cannot be used in the UI. U
+[RAISE] str(Mix.mcount) (mixin field): BackendVarFormatError: Var 'Mix.mcount' is declared on a mixin state, which has no frontend vars. Access it through a state that incl
+[RAISE] str(S.get_fields()['v']): BackendVarFormatError: 'S.v' is the field of a state var, not the var. Use S.v to use it in the UI. To print or log the field itself 
+[RAISE] debug loop: [f'{k}={getattr(S,k)}' for backend vars]: AttributeError: type object 'S' has no attribute 'backend_vars'
+[logging.info('%s', S._secret) / logging.info(S._secret)] stderr: --- Logging error --- (swallowed, app continues)
+FULL str(S._secret): ...sessions, or use a regular state var for a value the UI should show and update. To print or log the field itself in server code, use repr().
+FULL str(Mix.mcount): ...as no frontend vars. Access it through a state that includes the mixin instead. To print or log the field itself in server code, use repr().
+FULL str(S.get_fields()['v']): ...'S.v' is the field of a state var, not the var. Use S.v to use it in the UI. To print or log the field itself in server code, use repr().

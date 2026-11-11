@@ -1,0 +1,210 @@
+### ctrl-a1 py3.12 reveal2.py
+reveal2.py
+  reveal2.py:37:13 - information: Type of "rx.event" is "type[EventNamespace]"
+  reveal2.py:38:13 - information: Type of "S.via_rx" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:39:13 - information: Type of "S.via_reflex_event" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:40:13 - information: Type of "S.via_reflex_base" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:41:13 - information: Type of "S.via_rx_call" is "EventCallback[int]"
+  reveal2.py:42:13 - information: Type of "S.no_args" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:43:13 - information: Type of "S.via_rx_async" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:44:13 - information: Type of "S.via_rx_gen" is "EventCallback[*tuple[Unknown, ...]]"
+  reveal2.py:49:15 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+1 error, 0 warnings, 8 informations
+### prev py3.12 reveal2.py
+reveal2.py
+  reveal2.py:37:13 - information: Type of "rx.event" is "type[EventNamespace]"
+  reveal2.py:38:13 - information: Type of "S.via_rx" is "EventCallback[int]"
+  reveal2.py:39:13 - information: Type of "S.via_reflex_event" is "EventCallback[int]"
+  reveal2.py:40:13 - information: Type of "S.via_reflex_base" is "EventCallback[int]"
+  reveal2.py:41:13 - information: Type of "S.via_rx_call" is "EventCallback[int]"
+  reveal2.py:42:13 - information: Type of "S.no_args" is "EventCallback[*tuple[()]]"
+  reveal2.py:43:13 - information: Type of "S.via_rx_async" is "EventCallback[int]"
+  reveal2.py:44:13 - information: Type of "S.via_rx_gen" is "EventCallback[int]"
+  reveal2.py:46:10 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:47:1 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal[2], Literal[3]) (reportCallIssue)
+  reveal2.py:48:19 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:49:15 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:50:34 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:51:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+    Type "EventCallback[int]" is not assignable to type "EventType[()] | EventType[str] | None"
+      "EventCallback[int]" is incompatible with protocol "LambdaEventCallback[*tuple[()]]"
+        "__code__" is not present
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[list[UploadFile]]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[UploadChunkIterator]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+    ... (reportArgumentType)
+6 errors, 0 warnings, 8 informations
+### new-a2 py3.11 reveal2.py
+reveal2.py
+  reveal2.py:37:13 - information: Type of "rx.event" is "type[EventNamespace]"
+  reveal2.py:38:13 - information: Type of "S.via_rx" is "EventCallback[int]"
+  reveal2.py:39:13 - information: Type of "S.via_reflex_event" is "EventCallback[int]"
+  reveal2.py:40:13 - information: Type of "S.via_reflex_base" is "EventCallback[int]"
+  reveal2.py:41:13 - information: Type of "S.via_rx_call" is "EventCallback[int]"
+  reveal2.py:42:13 - information: Type of "S.no_args" is "EventCallback[*tuple[()]]"
+  reveal2.py:43:13 - information: Type of "S.via_rx_async" is "EventCallback[int]"
+  reveal2.py:44:13 - information: Type of "S.via_rx_gen" is "EventCallback[int]"
+  reveal2.py:46:10 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:47:1 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal[2], Literal[3]) (reportCallIssue)
+  reveal2.py:48:19 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:49:15 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:50:34 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:51:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+    Type "EventCallback[int]" is not assignable to type "EventType[()] | EventType[str] | None"
+      "EventCallback[int]" is incompatible with protocol "LambdaEventCallback[*tuple[()]]"
+        "__code__" is not present
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[list[UploadFile]]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[UploadChunkIterator]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+    ... (reportArgumentType)
+6 errors, 0 warnings, 8 informations
+### new-a2 py3.12 reveal2.py
+reveal2.py
+  reveal2.py:37:13 - information: Type of "rx.event" is "type[EventNamespace]"
+  reveal2.py:38:13 - information: Type of "S.via_rx" is "EventCallback[int]"
+  reveal2.py:39:13 - information: Type of "S.via_reflex_event" is "EventCallback[int]"
+  reveal2.py:40:13 - information: Type of "S.via_reflex_base" is "EventCallback[int]"
+  reveal2.py:41:13 - information: Type of "S.via_rx_call" is "EventCallback[int]"
+  reveal2.py:42:13 - information: Type of "S.no_args" is "EventCallback[*tuple[()]]"
+  reveal2.py:43:13 - information: Type of "S.via_rx_async" is "EventCallback[int]"
+  reveal2.py:44:13 - information: Type of "S.via_rx_gen" is "EventCallback[int]"
+  reveal2.py:46:10 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:47:1 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal[2], Literal[3]) (reportCallIssue)
+  reveal2.py:48:19 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:49:15 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:50:34 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:51:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+    Type "EventCallback[int]" is not assignable to type "EventType[()] | EventType[str] | None"
+      "EventCallback[int]" is incompatible with protocol "LambdaEventCallback[*tuple[()]]"
+        "__code__" is not present
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[list[UploadFile]]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[UploadChunkIterator]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+    ... (reportArgumentType)
+6 errors, 0 warnings, 8 informations
+### new-a2 py3.13 reveal2.py
+reveal2.py
+  reveal2.py:37:13 - information: Type of "rx.event" is "type[EventNamespace]"
+  reveal2.py:38:13 - information: Type of "S.via_rx" is "EventCallback[int]"
+  reveal2.py:39:13 - information: Type of "S.via_reflex_event" is "EventCallback[int]"
+  reveal2.py:40:13 - information: Type of "S.via_reflex_base" is "EventCallback[int]"
+  reveal2.py:41:13 - information: Type of "S.via_rx_call" is "EventCallback[int]"
+  reveal2.py:42:13 - information: Type of "S.no_args" is "EventCallback[*tuple[()]]"
+  reveal2.py:43:13 - information: Type of "S.via_rx_async" is "EventCallback[int]"
+  reveal2.py:44:13 - information: Type of "S.via_rx_gen" is "EventCallback[int]"
+  reveal2.py:46:10 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:47:1 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal[2], Literal[3]) (reportCallIssue)
+  reveal2.py:48:19 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:49:15 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:50:34 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:51:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+    Type "EventCallback[int]" is not assignable to type "EventType[()] | EventType[str] | None"
+      "EventCallback[int]" is incompatible with protocol "LambdaEventCallback[*tuple[()]]"
+        "__code__" is not present
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[list[UploadFile]]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[UploadChunkIterator]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+    ... (reportArgumentType)
+6 errors, 0 warnings, 8 informations
+### new-a2 py3.14 reveal2.py
+reveal2.py
+  reveal2.py:37:13 - information: Type of "rx.event" is "type[EventNamespace]"
+  reveal2.py:38:13 - information: Type of "S.via_rx" is "EventCallback[int]"
+  reveal2.py:39:13 - information: Type of "S.via_reflex_event" is "EventCallback[int]"
+  reveal2.py:40:13 - information: Type of "S.via_reflex_base" is "EventCallback[int]"
+  reveal2.py:41:13 - information: Type of "S.via_rx_call" is "EventCallback[int]"
+  reveal2.py:42:13 - information: Type of "S.no_args" is "EventCallback[*tuple[()]]"
+  reveal2.py:43:13 - information: Type of "S.via_rx_async" is "EventCallback[int]"
+  reveal2.py:44:13 - information: Type of "S.via_rx_gen" is "EventCallback[int]"
+  reveal2.py:46:10 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:47:1 - error: No overloads for "__call__" match the provided arguments
+    Argument types: (Literal[1], Literal[2], Literal[3]) (reportCallIssue)
+  reveal2.py:48:19 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:49:15 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:50:34 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+    Type "Literal['not an int']" is not assignable to type "int | Var[int]"
+      "Literal['not an int']" is not assignable to "int"
+      "Literal['not an int']" is not assignable to "Var[int]" (reportArgumentType)
+  reveal2.py:51:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+    Type "EventCallback[int]" is not assignable to type "EventType[()] | EventType[str] | None"
+      "EventCallback[int]" is incompatible with protocol "LambdaEventCallback[*tuple[()]]"
+        "__code__" is not present
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[list[UploadFile]]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+            "EventCallback[int]" is not assignable to "EventCallback[UploadChunkIterator]"
+          Could not bind method "__call__" because "EventCallback[int]" is not assignable to parameter "self"
+    ... (reportArgumentType)
+6 errors, 0 warnings, 8 informations

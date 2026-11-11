@@ -1,0 +1,3 @@
+none  {'s_contains': 'false', 's_len': '0', 's_union_len': '1', 's_inter_len': '0', 'l_contains': 'false', 'l_len': '0', 'l_join': '', 'l_rev': '', 'l_gt0': 'false', 't_len': '0'} items= []
+fill  {'s_contains': 'true', 's_len': '2', 's_union_len': '3', 's_inter_len': '1', 'l_contains': 'true', 'l_len': '2', 'l_join': 'm,n', 'l_rev': 'n,m', 'l_gt0': 'true', 't_len': '1'} items= ['m', 'n']
+clear {'s_contains': 'false', 's_len': '0', 's_union_len': '1', 's_inter_len': '0', 'l_contains': 'false', 'l_len': '0', 'l_join': '', 'l_rev': '', 'l_gt0': 'false', 't_len': '0'} items= []

@@ -1,0 +1,9 @@
+##### casing dev
+up after 2x2s (pid 11739)
+== /static status=200 body='STATIC-OK'
+== / status=200 body='HOME-OK |  | casing | inc |  | 0'
+== /casing status=200 body='L |  | U |  | both'
+##### camel dev
+up after 2x2s (pid 12155)
+== / status=200 body='HOME-OK |  | casing | inc |  | 0'
+== /casing status=200 body='A |  | B |  | both'

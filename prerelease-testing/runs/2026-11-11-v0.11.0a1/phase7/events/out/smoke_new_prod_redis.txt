@@ -1,0 +1,12 @@
+initial                {'total': '0', 'ticks': '0', 'status': 'idle', 'has_hello': 'false', 'ntags': '0', 'clicks': '0'} log= []
+after add_twice        {'total': '4', 'ticks': '0', 'status': 'idle', 'has_hello': 'false', 'ntags': '0', 'clicks': '1'} log= ['awaited 2->4']
+   toasts: ['total 4']
+after 4x throttled     {'total': '4', 'ticks': '0', 'status': 'idle', 'has_hello': 'true', 'ntags': '1', 'clicks': '1'} log= ['awaited 2->4', 'throttled:hello']
+ticker running         {'total': '4', 'ticks': '1', 'status': 'running', 'has_hello': 'true', 'ntags': '1', 'clicks': '1'} log= ['awaited 2->4', 'throttled:hello']
+ticker done            {'total': '104', 'ticks': '3', 'status': 'done total=104', 'has_hello': 'true', 'ntags': '1', 'clicks': '1'} log= ['awaited 2->4', 'throttled:hello']
+after clear tags       {'total': '104', 'ticks': '3', 'status': 'done total=104', 'has_hello': 'false', 'ntags': '0', 'clicks': '1'} log= ['awaited 2->4', 'throttled:hello']
+other page: OTHER total=104 clicks=1
+back home              {'total': '104', 'ticks': '3', 'status': 'done total=104', 'has_hello': 'false', 'ntags': '0', 'clicks': '1'} log= ['awaited 2->4', 'throttled:hello']
+after reload           {'total': '104', 'ticks': '3', 'status': 'done total=104', 'has_hello': 'false', 'ntags': '0', 'clicks': '0'} log= ['awaited 2->4', 'throttled:hello']
+console: ['console.error: Failed to load resource: the server responded with a status of 404 (Not Found)']
+failed requests: []

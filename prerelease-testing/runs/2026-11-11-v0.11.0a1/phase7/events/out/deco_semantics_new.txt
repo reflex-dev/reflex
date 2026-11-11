@@ -1,0 +1,17 @@
+reflex 0.11.0a2
+- outer background=False over background=True          bg=False
+- outer background=True over background=False          bg=True
+- outer throttle=0 over throttle=300                   actions={'throttle': 0}
+- debounce=50 over throttle=300 (merge)                actions={'throttle': 300, 'debounce': 50}
+- supersedes=False over supersedes=True                supersedes attrs={'_reflex_supersedes': False}
+- rx.event(Other.handle) in another state              RAISES TypeError: `Other.handle` is already an event handler; decorate its function instead.
+- rx.event(background=True)(Other.handle)              RAISES TypeError: `Other.handle` is already an event handler; decorate its function instead.
+- rx.event(Other.handle) at module level               RAISES TypeError: `Other.handle` is already an event handler; decorate its function instead.
+- staticmethod/classmethod above event [016]           F.static_over(3)=6 F().static_over(3)? cls_over=('F', 9) registered=[]
+    out/warn: @rx.event on a staticmethod or classmethod has been deprecated in version 0.11.0. The decorator has no effect there; remove it. It will be completely removed in 1.0. (probes/deco_semantics.py:103)
+- staticmethod above event, class call                 G.s(3)=6
+    out/warn: @rx.event on a staticmethod or classmethod has been deprecated in version 0.11.0. The decorator has no effect there; remove it. It will be completely removed in 1.0. (probes/deco_semantics.py:117)
+- staticmethod above event via mixin                   H.ms(1)=101
+    out/warn: @rx.event on a staticmethod or classmethod has been deprecated in version 0.11.0. The decorator has no effect there; remove it. It will be completely removed in 1.0. (probes/deco_semantics.py:133)
+- staticmethod above event, non-state class            Helper.static_over_event(3)=EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function Helper.static_over_event at 0x7f476ac3d1c0
+- decentralized @rx.event twice                        Other handlers matching dec_twice=['_main___dec_twice'] type=EventHandler

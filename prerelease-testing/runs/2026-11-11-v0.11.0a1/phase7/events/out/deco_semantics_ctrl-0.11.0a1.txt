@@ -1,0 +1,17 @@
+reflex 0.11.0a1
+- outer background=False over background=True          RAISES AttributeError: 'EventHandler' object has no attribute '__qualname__'
+- outer background=True over background=False          RAISES TypeError: Background task must be async function or generator.
+- outer throttle=0 over throttle=300                   RAISES AttributeError: 'EventHandler' object has no attribute '__qualname__'
+- debounce=50 over throttle=300 (merge)                RAISES FrozenInstanceError: cannot assign to field '_rx_event_actions'
+- supersedes=False over supersedes=True                RAISES AttributeError: 'EventHandler' object has no attribute '__qualname__'
+- rx.event(Other.handle) in another state              RAISES AttributeError: 'EventHandler' object has no attribute '__qualname__'
+- rx.event(background=True)(Other.handle)              RAISES TypeError: Background task must be async function or generator.
+- rx.event(Other.handle) at module level               EventHandler(event_actions={}, fn=EventHandler(event_actions={}, fn=<function Other.handle at 0x7f09
+- staticmethod/classmethod above event [016]           F.static_over(3)=EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function static_over.<locals>.F.static_over at 0x7f0950cc3d80>), client_handler_name='', args=((Var(_js_expr='x', _var_type=typing.Any, _var_data=None), LiteralNumberVar(_js_expr='3', _var_type=<class 'int'>, _var_data=None, _var_value=3)),)) F().static_over(3)? cls_over=('F', 9) registered=[]
+    out/warn: Decorators above @rx.event has been deprecated in version 0.11.0. `static_over` is decorated above @rx.event; apply other decorators below it. It will be completely removed in 1.0. (probes/deco_semantics.py:103)
+- staticmethod above event, class call                 G.s(3)=EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function static_over_instance.<locals>.G.s at 0x7f0950cc37e0>), client_handler_name='', args=((Var(_js_expr='x', _var_type=typing.Any, _var_data=None), LiteralNumberVar(_js_expr='3', _var_type=<class 'int'>, _var_data=None, _var_value=3)),))
+    out/warn: Decorators above @rx.event has been deprecated in version 0.11.0. `s` is decorated above @rx.event; apply other decorators below it. It will be completely removed in 1.0. (probes/deco_semantics.py:117)
+- staticmethod above event via mixin                   H.ms(1)=EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function Mix.ms at 0x7f0950cc3560>), client_handler_name='', args=((Var(_js_expr='x', _var_type=typing.Any, _var_data=None), LiteralNumberVar(_js_expr='1', _var_type=<class 'int'>, _var_data=None, _var_value=1)),))
+    out/warn: Decorators above @rx.event has been deprecated in version 0.11.0. `ms` is decorated above @rx.event; apply other decorators below it. It will be completely removed in 1.0. (probes/deco_semantics.py:133)
+- staticmethod above event, non-state class            Helper.static_over_event(3)=EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function Helper.static_over_event at 0x7f0950cc3600
+- decentralized @rx.event twice                        Other handlers matching dec_twice=['_main___dec_twice'] type=EventHandler

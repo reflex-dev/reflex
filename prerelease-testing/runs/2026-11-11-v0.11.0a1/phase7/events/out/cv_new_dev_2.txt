@@ -1,0 +1,100 @@
+##### dup dev
+server died
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/app.py", line 2144, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1421, in compile_app
+    memo_component_files, memo_components_imports = compile_memo_components(
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 848, in compile_memo_components
+    return _compile_memo_components(memos)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 614, in _compile_memo_components
+    code = templates.memo_components_template(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/compiler/templates.py", line 1112, in memo_components_template
+    components_code = "".join(map(_render_memo_component, components))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/compiler/templates.py", line 1059, in _render_memo_component
+    {_render_hooks(component.get("hooks", {}))}
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/compiler/templates.py", line 1215, in _render_hooks
+    _check_declarations(hooks)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/client_state.py", line 221, in _check_declarations
+    raise ClientStateConflictError(msg)
+reflex_base.utils.exceptions.ClientStateConflictError: Client state var 'open' is declared with two different defaults: `false` (declared at /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/evt/apps/cvb/cvb/cvb.py:23) and `true` (declared at /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/evt/apps/cvb/cvb/cvb.py:23). A named client state var is one app-wide value, so every declaration of it must use the same default. Declare it once and import it where it is used, or give the declarations different names.
+##### dupone dev
+server died
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/app.py", line 2144, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1421, in compile_app
+    memo_component_files, memo_components_imports = compile_memo_components(
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 848, in compile_memo_components
+    return _compile_memo_components(memos)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 614, in _compile_memo_components
+    code = templates.memo_components_template(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/compiler/templates.py", line 1112, in memo_components_template
+    components_code = "".join(map(_render_memo_component, components))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/compiler/templates.py", line 1059, in _render_memo_component
+    {_render_hooks(component.get("hooks", {}))}
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/compiler/templates.py", line 1215, in _render_hooks
+    _check_declarations(hooks)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/client_state.py", line 221, in _check_declarations
+    raise ClientStateConflictError(msg)
+reflex_base.utils.exceptions.ClientStateConflictError: Client state var 'open' is declared with two different defaults: `false` (declared at /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/evt/apps/cvb/cvb/cvb.py:23) and `true` (declared at /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/evt/apps/cvb/cvb/cvb.py:23). A named client state var is one app-wide value, so every declaration of it must use the same default. Declare it once and import it where it is used, or give the declarations different names.
+##### dupone dev auto_memoize=False
+server died
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 336, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/app.py", line 2144, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1342, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 773, in compile
+    compiler.compile_page_from_context(page_ctx)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 824, in compile_page_from_context
+    code = templates.page_template(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/compiler/templates.py", line 645, in page_template
+    hooks_str = _render_hooks(hooks)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/compiler/templates.py", line 1215, in _render_hooks
+    _check_declarations(hooks)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/envs/new/lib/python3.12/site-packages/reflex_base/client_state.py", line 221, in _check_declarations
+    raise ClientStateConflictError(msg)
+reflex_base.utils.exceptions.ClientStateConflictError: Client state var 'open' is declared with two different defaults: `false` (declared at /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/evt/apps/cvb/cvb/cvb.py:23) and `true` (declared at /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/p7/work/evt/apps/cvb/cvb/cvb.py:23). A named client state var is one app-wide value, so every declaration of it must use the same default. Declare it once and import it where it is used, or give the declarations different names.
+##### casing dev auto_memoize=False
+up after 2x2s (pid 12580)
+== /static status=200 body='STATIC-OK'
+== /casing status=200 body='L |  | U |  | both'
