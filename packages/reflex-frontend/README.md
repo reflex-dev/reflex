@@ -63,9 +63,15 @@ without it appearing in its arguments. What there is, and where it is pinned:
   and the `socket`, `navigate` and `params` parameters. This is why the file is
   one module, why the linter's unused-variable rules are off for it
   (`lint.biome.jsonc`), and why nothing there is renamed or moved casually.
-- **Globals on `window`**: hooks other code installs (`__reflex_otel`,
-  `__reflex`, `__reflex_load`) and the per-app `$/env.json`. Each is declared
-  in `types/globals.d.ts`; one that is not fails the type check.
+- **Globals the runtime reads**: hooks other code installs on `window`
+  (`__reflex_otel`, `__reflex`, `__reflex_load`) and the per-app `$/env.json`.
+  Each is declared in `types/globals.d.ts`; reading one that is not fails the
+  type check.
+- **Globals the runtime publishes**: `utils/state.js` sets `globalThis.refs`
+  on import, so code written against 0.10 that reads `refs[...]` without
+  importing it keeps working. It is deliberately not declared in
+  `types/globals.d.ts`: a module here that used `refs` without importing it
+  would then pass the type check.
 - **Exported names**: compiled pages and separately published component
   packages import them by name. `tests/public_api.test.js` lists them, so a
   rename or removal is a visible edit.
