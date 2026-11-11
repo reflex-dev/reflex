@@ -1,0 +1,1 @@
+The `cors_allowed_origins` and `trusted_proxy_hops` docstrings now describe the prod websocket origin check: the backend's own origin and `deploy_url`'s origin are accepted, and forwarded host and scheme headers count only through `trusted_proxy_hops` trusted proxies.
