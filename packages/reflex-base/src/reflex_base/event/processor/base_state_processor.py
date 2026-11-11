@@ -152,12 +152,17 @@ def _creator_reference(creator: Any) -> str | None:
 
     Returns:
         ``rx.<name>`` when reflex exports the creator's function under its own
-        name, as for ``rx.redirect``, else None.
+        name, as for ``rx.redirect``; None for another one defined by reflex,
+        whose name is internal (``Toaster.send_toast`` for ``rx.toast``); else
+        the function's qualified name, for an app's own creator.
     """
     fn = _creator_function(creator)
     if getattr(sys.modules.get("reflex"), fn.__name__, None) is creator:
         return f"rx.{fn.__name__}"
-    return None
+    package = fn.__module__.partition(".")[0]
+    if package == "reflex" or package.startswith(("reflex_base", "reflex_components_")):
+        return None
+    return fn.__qualname__
 
 
 def _is_mistaken_event(value: Any) -> bool:

@@ -4172,6 +4172,15 @@ async def test_background_handler_return_value_resolves_future(
         assert await future == 2
 
 
+def _go_home() -> EventSpec:
+    """An app's own event creator, wrapping a reflex one.
+
+    Returns:
+        A redirect to the index page.
+    """
+    return rx.redirect("/")
+
+
 def _mistaken_return_state():
     """Define a state whose handlers return or yield mistaken and valid events.
 
@@ -4224,6 +4233,10 @@ def _mistaken_return_state():
         @event
         def returns_uncalled_toast(self):
             return rx.toast
+
+        @event
+        def returns_uncalled_app_creator(self):
+            return _go_home
 
         @event
         def returns_uncalled_toast_success(self):
@@ -4299,6 +4312,7 @@ def _mistaken_return_state():
         ("background_returns_bound_handler", None),
         ("returns_uncalled_redirect", "Did you mean to call it: rx.redirect(...)?"),
         ("returns_uncalled_toast", "Did you mean to call it?"),
+        ("returns_uncalled_app_creator", "Did you mean to call it: _go_home(...)?"),
         (
             "returns_uncalled_toast_success",
             "Did you mean to call it?",
