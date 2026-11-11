@@ -32,11 +32,19 @@
       // A promise nothing awaits fails somewhere else, or nowhere. In what
       // ships, the ones meant to run on their own say so with `void`. Tests
       // are left out: React's synchronous `act` returns a thenable.
+      //
+      // A name used without being imported is an error here, where the type
+      // check cannot be: state.js publishes `refs` on `globalThis`, which
+      // TypeScript takes as declaring a global, so a bare `refs` in any module
+      // type-checks.
       "includes": ["src/**"],
       "linter": {
         "rules": {
           "nursery": {
             "noFloatingPromises": "error"
+          },
+          "correctness": {
+            "noUndeclaredVariables": "error"
           }
         }
       }

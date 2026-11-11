@@ -69,9 +69,9 @@ without it appearing in its arguments. What there is, and where it is pinned:
   type check.
 - **Globals the runtime publishes**: `utils/state.js` sets `globalThis.refs`
   on import, so code written against 0.10 that reads `refs[...]` without
-  importing it keeps working. It is deliberately not declared in
-  `types/globals.d.ts`: a module here that used `refs` without importing it
-  would then pass the type check.
+  importing it keeps working. TypeScript takes that assignment as declaring a
+  global, so the type check accepts a bare `refs` in any module here. The
+  linter is what rejects one that was not imported (`noUndeclaredVariables`).
 - **Exported names**: compiled pages and separately published component
   packages import them by name. `tests/public_api.test.js` lists them, so a
   rename or removal is a visible edit.
