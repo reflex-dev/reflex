@@ -210,8 +210,8 @@ As each PR merges into `main`:
 |---|---|---|
 | #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open; owner reviewed ("good aside from reviewbot"); bot threads fixed 5f2ea8d10 + test hang-proofing fcabd8562, all resolved; greptile 5/5. Known residual: SADD-in-flight cancel race, bounded by pexpire |
 | #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, watch; "call it" hint pushed (ed2ee8910) |
-| #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, watch; breaking fragment pushed |
-| #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, watch (CodSpeed red = hardware noise, commented; not required) |
+| #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, head 93beac9a3; owner reviewed ("seems legit"); all cubic threads answered + resolved (docs qualified; makemigrations warning declined; library bases = documented trade-off) |
+| #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, head 51976c4c1; ARRAY(JSON) annotation fallback + lru_cache(1024) + TypedDict test; threads resolved |
 | #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, head 27c2dd954; all bot threads answered + resolved (5 cubic docs/fragment fixes); CodeQL alert auto-marked fixed after 6f621870e, thread shows resolved (not by us); greptile 5/5 |
 | #7800 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | PR open, watch |
 | #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | PR open, watch (bot nits fixed b1b99aba4) |
@@ -225,7 +225,7 @@ As each PR merges into `main`:
 | 028 #7811, 029 #7812, 042 #7813, 047 #7814 | fix/deprecation-frames-skip-component-packages, fix/package-json-stable-format, fix/raise-lucide-hosting-floors, fix/dedupe-auto-memoize-warning (/home/user/reflex-fix-0NN) | PRs open (175367fb1, 809be53d4, d1baa8569, 4b93f0a13), watch; #7812 bot threads fixed (UTF-8 readers, LF writes, UnicodeDecodeError, bugfix fragments); #7811 pkgutil-local declined (greptile withdrew). hosting-cli is a workspace sibling → `.dev0` floor; full unit suite left to CI |
 | 009, 037/038, 039 | fix/migrate-skips-initial-state-compile, fix/backend-var-str-hint-and-storage-factory, fix/foreach-lifecycle-without-key-warning | agent running (opens PRs) |
 | 010 (stack on 015) | (new) | to start after #7796 settles |
-| #7816 024/014/020 | docs/011-changelog-and-guide-fixes (622c9eeb4), /home/user/reflex-fix-docs | PR open, watch. 024 as `news/7624.breaking.md` (links to #7624); 006 note covered by #7809 fragment |
+| #7816 024/014/020 | docs/011-changelog-and-guide-fixes (b852d73ab; greptile compare_digest UTF-8 fixed), /home/user/reflex-fix-docs | PR open, watch. 024 as `news/7624.breaking.md` (links to #7624); 006 note covered by #7809 fragment |
 | issues for "file after release" | — | to file; filed so far: #7805 (fair redis lock hand-off). Add: public ref helper instead of `Var._as_ref()` (003 docs point at a private API; no new public API in a fix-up); rxe `collect_page_info` lists relative paths on 0.11 (`deploy_url or ""`); rxe `/.well-known/oauth-protected-resource/_reflex/mcp` returns app HTML in single-port prod (also 0.10.1) |
 | Phase 7 + close-out (REGISTRY, history, fixtures, testing/prerelease) | — | after the owner cuts the next pre-release |
 
