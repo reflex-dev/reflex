@@ -24,7 +24,9 @@ the milestone `v0.11.0`.
 | 044 | upload handler error truncates the response | **PR open** [reflex-dev/reflex#7808](https://github.com/reflex-dev/reflex/pull/7808) |
 | 001+016, 007 | repeated `@rx.event`, staticmethod above `@rx.event`, pyright 3.11–3.13 handler types | **PRs open** [reflex-dev/reflex#7807](https://github.com/reflex-dev/reflex/pull/7807), [reflex-dev/reflex#7810](https://github.com/reflex-dev/reflex/pull/7810) (stacked) |
 | 005/006/017+012 | see below | agent running (opens PR) |
-| 009, 010, 028, 029, 037, 038, 039, 042, 047 + changelog lines 024/006/014/020 | see below | not started |
+| 028, 029, 042, 047 | deprecation frames, package.json format, lucide/hosting floors, auto_memoize warning dedupe | **PRs open** #7811, #7812, #7813, #7814 |
+| 009, 037/038, 039 | see below | agent running (opens PRs) |
+| 010 + changelog lines 024/006/014/020 | see below | not started |
 
 ## Already in flight (outside this pass)
 | PR | Covers | Gap check |
@@ -219,7 +221,7 @@ As each PR merges into `main`:
 | 005/006/017+012 | fix/kept-env-py-errors (stacked on #7797), /home/user/reflex-fix-005 | agent running (opens PR) |
 | 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | PRs open reflex #7806 (1b1d7867c; function-memo refs import added, bot threads resolved), rxe #290 (d27d6a14b, greptile 5/5); watch |
 | #7808 044 | fix/upload-handler-error-response, /home/user/reflex-fix-044 | PR open (5d91c16ae), watch. Cause #7696 (not #7721); browser UX unchanged vs 0.10.1; 500 w/ CORS before any update, else 200 + `{"error"}` frame (owner default); double log removed. Follow-up: upload.js skips parsing non-2xx bodies |
-| 028, 029, 042, 047 | fix/deprecation-frames-skip-component-packages, fix/package-json-stable-format, fix/raise-lucide-hosting-floors, fix/dedupe-auto-memoize-warning (/home/user/reflex-fix-0NN) | agent running (opens 4 PRs) |
+| 028 #7811, 029 #7812, 042 #7813, 047 #7814 | fix/deprecation-frames-skip-component-packages, fix/package-json-stable-format, fix/raise-lucide-hosting-floors, fix/dedupe-auto-memoize-warning (/home/user/reflex-fix-0NN) | PRs open (175367fb1, 740212ef6, d1baa8569, 4b93f0a13), watch. hosting-cli is a workspace sibling → `.dev0` floor; full unit suite left to CI |
 | 009, 037/038, 039 | fix/migrate-skips-initial-state-compile, fix/backend-var-str-hint-and-storage-factory, fix/foreach-lifecycle-without-key-warning | agent running (opens PRs) |
 | 010 (stack on 015) | (new) | to start after #7796 settles |
 | changelog/doc lines 024, 006, 014, 020 | (new) fragment corrections on main | to start |
