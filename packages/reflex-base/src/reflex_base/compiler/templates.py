@@ -1201,4 +1201,8 @@ def _render_hooks(hooks: dict[str, VarData | None]) -> str:
     Returns:
         Rendered hooks code as string.
     """
+    # Imported here: reflex_base.client_state imports this module.
+    from reflex_base.client_state import _check_declarations
+
+    _check_declarations(hooks)
     return "\n".join(hooks)

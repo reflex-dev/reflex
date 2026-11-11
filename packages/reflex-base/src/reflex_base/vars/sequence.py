@@ -63,7 +63,7 @@ KEY_TYPE = TypeVar("KEY_TYPE")
 VALUE_TYPE = TypeVar("VALUE_TYPE")
 
 
-class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
+class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
     """Base class for immutable array vars."""
 
     def join(self, sep: StringVar | str = "") -> StringVar:
@@ -117,6 +117,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
             ArrayConcatOperation: The concatenation of the two arrays.
         """
         if not isinstance(other, ArrayVar):
+            from .set import SetVar
+
+            if isinstance(other, SetVar):
+                return other.__radd__(self)
             raise_unsupported_operand_types("+", (type(self), type(other)))
 
         return array_concat_operation(self, other)
@@ -358,6 +362,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
             The array less than operation.
         """
         if not isinstance(other, (ArrayVar, list, tuple)):
+            if (
+                reflected := _reflect_set_comparison(other, "__gt__", self)
+            ) is not None:
+                return reflected
             raise_unsupported_operand_types("<", (type(self), type(other)))
 
         return array_lt_operation(self, other)
@@ -378,6 +386,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
             The array greater than operation.
         """
         if not isinstance(other, (ArrayVar, list, tuple)):
+            if (
+                reflected := _reflect_set_comparison(other, "__lt__", self)
+            ) is not None:
+                return reflected
             raise_unsupported_operand_types(">", (type(self), type(other)))
 
         return array_gt_operation(self, other)
@@ -398,6 +410,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
             The array less than or equal operation.
         """
         if not isinstance(other, (ArrayVar, list, tuple)):
+            if (
+                reflected := _reflect_set_comparison(other, "__ge__", self)
+            ) is not None:
+                return reflected
             raise_unsupported_operand_types("<=", (type(self), type(other)))
 
         return array_le_operation(self, other)
@@ -418,6 +434,10 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
             The array greater than or equal operation.
         """
         if not isinstance(other, (ArrayVar, list, tuple)):
+            if (
+                reflected := _reflect_set_comparison(other, "__le__", self)
+            ) is not None:
+                return reflected
             raise_unsupported_operand_types(">=", (type(self), type(other)))
 
         return array_ge_operation(self, other)
@@ -603,6 +623,67 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         )
 
 
+def _reflect_set_comparison(
+    other: Any, reflected: str, array: ArrayVar
+) -> BooleanVar | None:
+    """Reflect an array comparison onto a set operand.
+
+    A set var compares as its array view with a deprecation warning, so
+    ``array < set`` is ``set > array`` on the set's deprecated path.
+
+    Args:
+        other: The right-hand operand.
+        reflected: The name of the reflected comparison on the set.
+        array: The left-hand array.
+
+    Returns:
+        The comparison, or None if the operand is not a set var.
+    """
+    from .set import SetVar
+
+    if isinstance(other, SetVar):
+        return getattr(other, reflected)(array)
+    return None
+
+
+def _literal_elements_var_data(elements: Iterable) -> VarData | None:
+    """Merge the VarData of the elements of a literal collection.
+
+    Args:
+        elements: The elements of the collection.
+
+    Returns:
+        The merged VarData, or None if no element carries any.
+    """
+    return VarData.merge(*[
+        LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+        for element in elements
+    ])
+
+
+def _literal_elements_json(elements: Iterable) -> str:
+    """Render the elements of a literal collection as a JSON array.
+
+    Args:
+        elements: The elements of the collection.
+
+    Returns:
+        The JSON array.
+
+    Raises:
+        TypeError: If an element is not a LiteralVar.
+    """
+    rendered = []
+    for element in elements:
+        element_var = LiteralVar.create(element)
+        if not isinstance(element_var, LiteralVar):
+            msg = f"Array elements must be of type LiteralVar, not {type(element_var)}"
+            raise TypeError(msg)
+        rendered.append(element_var.json())
+
+    return "[" + ", ".join(rendered) + "]"
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -640,10 +721,7 @@ class LiteralArrayVar(
         Returns:
             The VarData associated with the Var.
         """
-        return VarData.merge(*[
-            LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
-            for element in value
-        ])
+        return _literal_elements_var_data(value)
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
@@ -653,11 +731,7 @@ class LiteralArrayVar(
             The VarData associated with the Var.
         """
         return VarData.merge(
-            *[
-                LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
-                for element in self._var_value
-            ],
-            self._var_data,
+            _literal_elements_var_data(self._var_value), self._var_data
         )
 
     def json(self) -> str:
@@ -665,19 +739,8 @@ class LiteralArrayVar(
 
         Returns:
             The JSON representation of the var.
-
-        Raises:
-            TypeError: If the array elements are not of type LiteralVar.
         """
-        elements = []
-        for element in self._var_value:
-            element_var = LiteralVar.create(element)
-            if not isinstance(element_var, LiteralVar):
-                msg = f"Array elements must be of type LiteralVar, not {type(element_var)}"
-                raise TypeError(msg)
-            elements.append(element_var.json())
-
-        return "[" + ", ".join(elements) + "]"
+        return _literal_elements_json(self._var_value)
 
     @classmethod
     def create(
@@ -1941,6 +2004,8 @@ def _determine_value_of_array_index(
         Iterable,
         list,
         set,
+        frozenset,
+        collections.abc.Set,
         collections.abc.Sequence,
         collections.abc.Iterable,
     ]:

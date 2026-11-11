@@ -1,0 +1,1 @@
+Upgrading `reflex` in place (`pip install -U reflex`) now also upgrades `reflex-components-lucide` to a release with the fix for blank digit icons such as `grid_2x_2` in a dynamic `rx.icon`, and `reflex-hosting-cli` to a release that fails cloud config clearly when PyYAML is missing.

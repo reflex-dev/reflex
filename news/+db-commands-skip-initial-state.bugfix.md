@@ -1,0 +1,1 @@
+`reflex db init`, `reflex db makemigrations` and `reflex db migrate` no longer serialize the initial state when they evaluate the pages, so they no longer fail on a fresh checkout, before the first compile, with errors such as reflex-enterprise's "Library @radix-ui/themes is not bundled".

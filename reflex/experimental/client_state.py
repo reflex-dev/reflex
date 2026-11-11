@@ -12,7 +12,7 @@ from typing import Any
 
 from reflex_base.client_state import ClientStateVar as _ClientStateVar
 from reflex_base.client_state import NoValue as NoValue
-from reflex_base.client_state import _generate_name
+from reflex_base.client_state import _generate_name, _validate_name
 from reflex_base.utils import console
 
 __all__ = ["ClientStateVar", "NoValue", "client_state"]
@@ -31,32 +31,38 @@ def _deprecate(feature_name: str) -> None:
             "it global; an unnamed var is owned by the outermost page or "
             "`@rx.memo` that uses it, so `global_ref` is no longer needed."
         ),
-        deprecation_version="0.10.2",
+        deprecation_version="0.11.0",
         removal_version="1.0",
     )
 
 
-def _legacy_name(var_name: str | None, global_ref: bool | Any) -> str | None:
-    """Map the legacy ``(var_name, global_ref)`` pair onto the naming rules.
+def _legacy_create(
+    cls: type[_ClientStateVar],
+    var_name: str | None,
+    default: Any,
+    global_ref: bool | Any,
+) -> _ClientStateVar:
+    """Create a var from the legacy ``(var_name, default, global_ref)`` arguments.
 
     ``global_ref`` defaults to true and an omitted ``var_name`` is generated, so
     a legacy var is global unless ``global_ref=False`` is passed, in which case
     its name is dropped and the var is scoped.
 
     Args:
+        cls: The class to instantiate.
         var_name: The legacy name.
+        default: The default value of the variable.
         global_ref: The legacy global flag, or ``NoValue`` when not given.
 
     Returns:
-        The name to create the var with: ``None`` scopes it, anything else
-        makes it global.
+        The client state var.
     """
     if global_ref is not NoValue and not global_ref:
-        return None
-    if var_name is None:
-        # Drawn from the same generator as scoped names, so the two never collide.
-        return _generate_name()
-    return var_name
+        return cls._create(default, _generate_name(), is_global=False)
+    # A generated name is drawn from the same generator as scoped names, so the
+    # two never collide; it is global only because the legacy API made it so.
+    name = _generate_name() if var_name is None else _validate_name(var_name, "name")
+    return cls._create(default, name, is_global=True)
 
 
 class ClientStateVar(_ClientStateVar):
@@ -86,7 +92,7 @@ class ClientStateVar(_ClientStateVar):
             The client state var.
         """
         _deprecate("ClientStateVar.create")
-        return super().create(default, name=_legacy_name(var_name, global_ref))
+        return _legacy_create(cls, var_name, default, global_ref)
 
 
 def client_state(
@@ -107,4 +113,4 @@ def client_state(
         The client state var.
     """
     _deprecate("rx._x.client_state")
-    return _ClientStateVar.create(default, name=_legacy_name(var_name, global_ref))
+    return _legacy_create(_ClientStateVar, var_name, default, global_ref)

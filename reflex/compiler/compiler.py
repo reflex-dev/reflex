@@ -1236,8 +1236,17 @@ def compile_app(
     prerender_routes: bool = False,
     dry_run: bool = False,
     use_rich: bool = True,
+    compile_initial_state: bool = True,
 ) -> bool:
     """Compile an app using the compiler plugin pipeline.
+
+    Args:
+        app: The app to compile.
+        prerender_routes: Whether to prerender the routes.
+        dry_run: Whether to compile the app without saving it.
+        use_rich: Whether to use rich progress bars.
+        compile_initial_state: Whether a skipped compile still serializes the
+            initial state. The ``reflex db`` commands only need the pages evaluated.
 
     Returns:
         ``True`` when a real frontend compile ran, ``False`` when the call
@@ -1263,7 +1272,7 @@ def compile_app(
         for route in stateful_pages:
             logger.debug(f"BE Evaluating stateful page: {route}")
             app._compile_page(route, save_page=False)
-        if app._state is not None:
+        if compile_initial_state and app._state is not None:
             utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
@@ -1274,7 +1283,9 @@ def compile_app(
 
     app.style = evaluate_style_namespaces(app.style)
 
-    if not should_compile and not dry_run:
+    # With compilation skipped, every page is evaluated but none is rendered. A
+    # dry run writes no marker either, so a later backend start evaluates afresh.
+    if not should_compile:
         with (
             log.timing(logger, "Evaluate Pages (Backend)"),
             otel.span("reflex.compile.evaluate_pages"),
@@ -1283,8 +1294,9 @@ def compile_app(
                 logger.debug(f"Evaluating page: {route}")
                 app._compile_page(route, save_page=False)
 
-        app._write_stateful_pages_marker()
-        if app._state is not None:
+        if not dry_run:
+            app._write_stateful_pages_marker()
+        if compile_initial_state and app._state is not None:
             utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
@@ -1314,7 +1326,11 @@ def compile_app(
         app=app,
         pages=list(app._unevaluated_pages.values()),
         hooks=CompilerHooks(
-            plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
+            plugins=default_page_plugins(
+                style=app.style,
+                plugins=compiler_plugins,
+                auto_memoize=config.auto_memoize,
+            )
         ),
     )
 

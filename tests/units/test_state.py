@@ -84,6 +84,7 @@ from reflex.state import (
     _get_client_storage_delta,
     _load_events_for_page,
     _override_base_method,
+    _shared_storage_groups,
     all_base_state_classes,
     is_serializable,
     state_snapshot_hashes,
@@ -2629,6 +2630,11 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     if not isinstance(state_manager, StateManagerRedis):
         # Create a mocked redis client instead of skipping.
         state_manager = StateManagerRedis(redis=mock_redis())
+
+    # Leases are only taken once the lock updates subscription is confirmed.
+    # Best effort: a Redis that rejects CONFIG never confirms it.
+    with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+        await state_manager._ensure_lock_task_subscribed()
 
     yield state_manager
 
@@ -7678,7 +7684,7 @@ def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> Non
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
 
         class StaticState(BaseState):
-            @rx.event
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
             @staticmethod
             def helper(value: int) -> int:
                 return value * 2
@@ -7688,7 +7694,7 @@ def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> Non
         == "@rx.event on a staticmethod or classmethod"
     )
     assert isinstance(StaticState.__dict__["helper"], staticmethod)
-    assert StaticState.helper(2) == 4
+    assert StaticState.helper(2) == 4  # pyright: ignore [reportCallIssue]
 
 
 def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:
@@ -7770,6 +7776,44 @@ async def test_shared_storage_name_syncs_siblings(
     assert await root._get_resolved_delta() == {
         OtherName.get_full_name(): {key: "alone"}
     }
+
+
+def test_shared_storage_groups_do_not_call_default_factories(
+    clean_registration_context: RegistrationContext,
+):
+    """Grouping the storage vars at runtime calls no default_factory.
+
+    The compile already rejected a factory that produces browser storage, so the
+    first event of each backend worker does not call the factories again.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+    calls = []
+
+    def make_token() -> str:
+        """Record the call and return a plain default.
+
+        Returns:
+            The default token.
+        """
+        calls.append(1)
+        return "token"
+
+    class FactoryState(State):
+        token: rx.Field[str] = rx.field(default_factory=make_token)
+        maybe_token: rx.Field[str | None] = rx.field(default_factory=make_token)
+
+    class SharedFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedSecond(State):
+        value: str = rx.LocalStorage("", name="shared")
+
+    groups = _shared_storage_groups(State, clean_registration_context)
+
+    assert calls == []
+    assert groups == (((SharedFirst, "value", True), (SharedSecond, "value", False)),)
 
 
 @pytest.mark.parametrize("second_sync", [True, False])

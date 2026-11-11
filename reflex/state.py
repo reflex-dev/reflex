@@ -968,7 +968,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     f"`{name}` is decorated above @rx.event; apply other "
                     "decorators below it."
                 ),
-                deprecation_version="0.10.2",
+                deprecation_version="0.11.0",
                 removal_version="1.0",
             )
             for attr in _STACKED_HANDLER_ATTRIBUTES:
@@ -2369,7 +2369,9 @@ def _shared_storage_groups(
     from reflex.compiler.utils import _compile_client_storage_recursive
 
     by_name: dict[str, list[tuple[type[BaseState], str, bool]]] = {}
-    for state_key, options in _compile_client_storage_recursive(root)[1].items():
+    # The compile already rejected factories that produce browser storage.
+    local_storage = _compile_client_storage_recursive(root, check_factories=False)[1]
+    for state_key, options in local_storage.items():
         if name := options.get("name"):
             state_name, _, var_name = state_key.removesuffix(FIELD_MARKER).rpartition(
                 "."

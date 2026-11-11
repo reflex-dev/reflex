@@ -21,6 +21,7 @@ from abc import ABCMeta
 from collections.abc import Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from dataclasses import MISSING
 from decimal import Decimal
+from itertools import islice
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -94,6 +95,7 @@ if TYPE_CHECKING:
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
     from .object import LiteralObjectVar, ObjectVar
     from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
+    from .set import LiteralSetVar, SetVar
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
@@ -101,6 +103,7 @@ OTHER_VAR_TYPE = TypeVar("OTHER_VAR_TYPE")
 STRING_T = TypeVar("STRING_T", bound=str)
 LITERAL_STRING_T = TypeVar("LITERAL_STRING_T", bound=LiteralString)
 SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
+SET_TYPE = TypeVar("SET_TYPE", bound=set | frozenset)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
@@ -1052,6 +1055,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(
         cls,
+        value: SET_TYPE,
+        _var_data: VarData | None = None,
+    ) -> LiteralSetVar[SET_TYPE]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
         value: OTHER_VAR_TYPE,
         _var_data: VarData | None = None,
     ) -> Var[OTHER_VAR_TYPE]: ...
@@ -1113,6 +1124,12 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         self,
         output: type[SEQUENCE_TYPE],
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
+
+    @overload
+    def to(
+        self,
+        output: type[SET_TYPE],
+    ) -> SetVar[SET_TYPE]: ...
 
     @overload
     def to(
@@ -1902,6 +1919,7 @@ class LiteralVar(Var[VAR_TYPE]):
         # (EMPTY_VAR_STR is built while base.py is still loading).
         from .object import LiteralObjectVar
         from .sequence import ArrayVar, LiteralStringVar
+        from .set import LiteralSetVar  # noqa: F401
 
         if (literal_subclass := _literal_var_for(value)) is not None:
             return literal_subclass.create(value, _var_data=_var_data)
@@ -2122,6 +2140,13 @@ def var_operation(
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[SET_TYPE]]
+    | Callable[P, CustomVarOperationReturn[SET_TYPE | None]],
+) -> Callable[P, SetVar[SET_TYPE]]: ...
+
+
 OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 
@@ -2191,7 +2216,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
-    if isinstance(value, (list, set, tuple, Mapping, Var)):
+    if isinstance(value, (list, set, frozenset, tuple, Mapping, Var)):
         if isinstance(value, Var):
             return value._var_type
         if has_args(value_type := type(value)):
@@ -2200,8 +2225,11 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Sequence[NoReturn]
             return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
-        if isinstance(value, set):
-            return set[unionize(*{figure_out_type(v) for v in value})]
+        if isinstance(value, (set, frozenset)):
+            element_type = unionize(*{figure_out_type(v) for v in value})
+            if isinstance(value, frozenset):
+                return frozenset[element_type]
+            return set[element_type]
         if isinstance(value, tuple):
             if not value:
                 return tuple[NoReturn, ...]
@@ -2212,8 +2240,8 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Mapping[NoReturn, NoReturn]
             return Mapping[
-                unionize(*{figure_out_type(k) for k in list(value.keys())[:100]}),
-                unionize(*{figure_out_type(v) for v in list(value.values())[:100]}),
+                unionize(*{figure_out_type(k) for k in islice(value.keys(), 100)}),
+                unionize(*{figure_out_type(v) for v in islice(value.values(), 100)}),
             ]
     return type(value)
 
@@ -2908,6 +2936,20 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
+        self: ComputedVar[set[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[set[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
+        self: ComputedVar[frozenset[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[frozenset[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
         self: ComputedVar[SQLA_TYPE],
         instance: None,
         owner: type,
@@ -3222,6 +3264,20 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[set[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[set[LIST_INSIDE]]: ...
+
+    @overload
+    def __get__(
+        self: AsyncComputedVar[frozenset[LIST_INSIDE]],
+        instance: None,
+        owner: type,
+    ) -> SetVar[frozenset[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
@@ -3894,7 +3950,7 @@ def get_uuid_string_var() -> Var:
             f"$/{constants.Dirs.STATE_PATH}": ImportVar(tag="generateUUID"),
             "react": "useMemo",
         },
-        hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
+        hooks={f"const {unique_uuid_var} = useMemo(() => generateUUID(), [])": None},
     )
 
     return Var(
@@ -4396,7 +4452,10 @@ class Field(Generic[FIELD_TYPE]):
             )
         else:
             msg = f"{name} has no frontend var, so it cannot be used in the UI."
-        return BackendVarFormatError(msg)
+        # str() raises too, so print and logging in server code reach this error.
+        return BackendVarFormatError(
+            f"{msg} To print or log the field itself in server code, use repr()."
+        )
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
@@ -4495,10 +4554,7 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[list[V]]
-        | Field[set[V]]
-        | Field[list[V] | None]
-        | Field[set[V] | None],
+        self: Field[list[V]] | Field[list[V] | None],
         instance: None,
         owner: Any,
     ) -> ArrayVar[Sequence[V]]: ...
@@ -4509,6 +4565,13 @@ class Field(Generic[FIELD_TYPE]):
         instance: None,
         owner: Any,
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[SET_TYPE] | Field[SET_TYPE | None],
+        instance: None,
+        owner: Any,
+    ) -> SetVar[SET_TYPE]: ...
 
     # The bounds of these type variables admit `None` (for computed vars of an
     # optional object). Matched against `Field[X | None]`, a `self` union of

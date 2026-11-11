@@ -15,7 +15,7 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Self, TypeVar
 from unittest import mock
@@ -57,7 +57,9 @@ from reflex_base.vars.base import (
     cached_property_no_lock,
     computed_var,
     field,
+    figure_out_type,
     get_leaf_vars,
+    get_uuid_string_var,
     var_operation,
     var_operation_return,
 )
@@ -79,6 +81,7 @@ from reflex_base.vars.sequence import (
     LiteralRangeVar,
     StringVar,
 )
+from reflex_base.vars.set import LiteralSetVar
 from typing_extensions import TypeAliasType, TypeVarTuple
 
 import reflex as rx
@@ -87,6 +90,40 @@ from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
 
 _MARKER_ATTR = "_marker"
+
+
+@pytest.mark.parametrize("size", [0, 1, 100, 101, 1000])
+def test_mapping_type_inference_bounds_iteration(size):
+    """Sampling does not iterate or retrieve values beyond the first 100 items."""
+    keys_seen = []
+    values_seen = []
+
+    class CountingMapping(Mapping):
+        def __len__(self):
+            return size
+
+        def __iter__(self):
+            for index in range(size):
+                keys_seen.append(index)
+                yield index
+
+        def __getitem__(self, key):
+            values_seen.append(key)
+            return str(key)
+
+    expected = Mapping[int, str] if size else Mapping[typing.NoReturn, typing.NoReturn]
+    assert figure_out_type(CountingMapping()) == expected
+    sampled = list(range(min(size, 100)))
+    assert keys_seen == sampled * 2
+    assert values_seen == sampled
+
+
+def test_mapping_type_inference_preserves_sample_boundary():
+    """The hundredth item contributes types, while later items do not."""
+    value: dict[Any, Any] = dict.fromkeys(range(99), 1)
+    value["last sampled"] = "included"
+    value[1.5] = ["not sampled"]
+    assert figure_out_type(value) == Mapping[int | str, int | str]
 
 
 def test_custom_field_attr_survives_annotated_rebuild():
@@ -847,6 +884,17 @@ def test_var_operation_str_interpolation_matches_tagged_form() -> None:
     assert str(tagged) == str(untagged) == "wrap(operandValue)"
 
 
+def test_uuid_string_var_memoizes_with_inline_callback():
+    """The UUID hook passes ``useMemo`` an inline callback, as React Compiler requires."""
+    uuid_var = get_uuid_string_var()
+    var_data = uuid_var._get_all_var_data()
+
+    assert var_data is not None
+    assert list(var_data.hooks) == [
+        f"const {uuid_var._js_expr} = useMemo(() => generateUUID(), [])"
+    ]
+
+
 @pytest.mark.parametrize(
     "name",
     [
@@ -1464,6 +1512,40 @@ def test_backend_field_format_error_names_the_fix(name: str, default: int, mixin
     assert "use a regular state var" in message
     # The suggested call returns the default.
     assert getattr(Model, name).default_value() == default
+
+
+@pytest.mark.parametrize("kind", ["backend", "mixin", "state_var", "unbound"])
+def test_field_format_error_suggests_repr(kind: str):
+    """Printing a field in server code raises an error that points to repr().
+
+    Args:
+        kind: Which field without a frontend var to convert to text.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    class Plain(BaseState):
+        count: int = 0
+
+    fields = {
+        "backend": lambda: Model._secret,
+        "mixin": lambda: Mixin.count,
+        "state_var": lambda: Plain.get_fields()["count"],
+        "unbound": lambda: field(default=0),
+    }
+    the_field = fields[kind]()
+
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        str(the_field)
+
+    assert str(exc_info.value).endswith(
+        " To print or log the field itself in server code, use repr()."
+    )
+    assert repr(the_field).startswith("Field(")
 
 
 def test_mixin_field_format_raises():
@@ -2385,9 +2467,11 @@ def test_get_leaf_vars_dissolves_literals() -> None:
     assert get_leaf_vars(LiteralVar.create(range(3))) == []
     assert get_leaf_vars(LiteralVar.create(datetime.datetime(2020, 1, 1))) == []
     assert get_leaf_vars(LiteralVar.create({1, 2})) == []
+    assert get_leaf_vars(LiteralVar.create(frozenset({1, 2}))) == []
     assert _identical(get_leaf_vars(LiteralVar.create([1, a, [b]])), a, b)
     assert _identical(get_leaf_vars(LiteralVar.create({"k": a, b: 2})), a, b)
     assert _identical(get_leaf_vars(LiteralVar.create({a})), a)
+    assert _identical(get_leaf_vars(LiteralVar.create(frozenset({a}))), a)
     assert _identical(get_leaf_vars(LiteralVar.create([f"{a}-x"])), a)
     # A var that is the whole of a formatted string is decoded into a new object.
     (decoded,) = get_leaf_vars(LiteralVar.create([f"{a}"]))
@@ -2531,6 +2615,7 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
         RouterDataVar,
         # Literals read what their value holds, or nothing for a constant.
         LiteralArrayVar,
+        LiteralSetVar,
         LiteralObjectVar,
         LiteralColorVar,
         LiteralRangeVar,

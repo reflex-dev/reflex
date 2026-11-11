@@ -165,7 +165,7 @@ class PackageJson(SimpleNamespace):
 
     REACT_COMPILER_DEV_DEPENDENCIES = {
         "@babel/core": "7.29.7",
-        "babel-plugin-react-compiler": "1.0.0",
+        "babel-plugin-react-compiler": "0.0.0-experimental-a1856f3-20260507",
     }
 
     # Force specific transitive npm deps to a single resolved version when

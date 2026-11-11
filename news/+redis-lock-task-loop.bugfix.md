@@ -1,0 +1,1 @@
+The Redis state manager now starts its lock subscriber on the event loop that serves the app, not the one running when the app is built. This fixes `RuntimeError: ... attached to a different loop` at backend shutdown, and the occasional `Redis error deleting token` failure, in `AppHarness` tests that use Playwright's sync API with Redis.

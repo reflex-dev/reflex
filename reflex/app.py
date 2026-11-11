@@ -34,6 +34,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
 from reflex_base import constants, otel
+from reflex_base.client_state import _collect_declarations
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
@@ -84,7 +85,6 @@ from typing_extensions import Unpack
 
 from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
-from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
@@ -558,7 +558,7 @@ class App(MiddlewareMixin, LifespanMixin):
         html_lang: The language to add to the html root tag of every page.
         html_custom_attrs: Attributes to add to the html root tag of every page.
         enable_state: Whether to enable [state](https://reflex.dev/docs/state/overview/) for the app. If False, the app will not use state.
-        admin_dash: Admin dashboard to view and manage the database.
+        admin_dash: Removed. rx.AdminDash raises with a link to the migration guide.
         frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         backend_exception_handler: Backend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap.
@@ -638,7 +638,8 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
-    admin_dash: AdminDash | None = None
+    # Removed integration; rx.AdminDash raises with a link to the migration guide.
+    admin_dash: None = None
 
     # The async server name space.
     _event_namespace: EventNamespace | None = None
@@ -725,9 +726,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if self.enable_state:
             self._enable_state()
-
-        # Set up the admin dash.
-        self._setup_admin_dash()
 
         if sys.platform == "win32" and not is_prod_mode():
             # Hack to fix Windows hot reload issue.
@@ -1663,40 +1661,6 @@ class App(MiddlewareMixin, LifespanMixin):
                 break
         return None
 
-    def _setup_admin_dash(self):
-        """Setup the admin dash."""
-        admin_dash = self.admin_dash
-        if not admin_dash or not admin_dash.models:
-            return
-
-        try:
-            from starlette_admin.contrib.sqla.admin import Admin
-            from starlette_admin.contrib.sqla.view import ModelView
-
-            from reflex.model import get_engine
-        except ImportError:
-            return
-
-        # Get the admin dash.
-        if not self._api:
-            return
-
-        # Build the admin dashboard
-        # The first positional argument is `engine` before starlette-admin
-        # 1.0 and `session_provider` (which still accepts an Engine) after,
-        # so pass it positionally to support both.
-        admin = admin_dash.admin or Admin(
-            get_engine(),
-            title="Reflex Admin Dashboard",
-            logo_url="https://reflex.dev/Reflex.svg",
-        )
-
-        for model in admin_dash.models:
-            view = admin_dash.view_overrides.get(model, ModelView)
-            admin.add_view(view(model))
-
-        admin.mount_to(self._api)
-
     def _get_frontend_packages(
         self,
         imports: Mapping[str, Collection[ImportVar]],
@@ -1899,6 +1863,7 @@ class App(MiddlewareMixin, LifespanMixin):
         dry_run: bool = False,
         use_rich: bool = True,
         trigger: CompileTrigger | None = None,
+        compile_initial_state: bool = True,
     ):
         """Compile the app and output it to the pages folder.
 
@@ -1908,6 +1873,8 @@ class App(MiddlewareMixin, LifespanMixin):
             use_rich: Whether to use rich progress bars.
             trigger: Label identifying what initiated this compile. Recorded
                 on the ``compile`` telemetry event.
+            compile_initial_state: Whether a skipped compile still serializes
+                the initial state.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -1915,7 +1882,8 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex_base.utils.deterministic_hash import clear_hash_caches
 
-        with otel.compile_span(trigger, dry_run):
+        # One record of client state declarations spans the whole compile.
+        with otel.compile_span(trigger, dry_run), _collect_declarations():
             ctx = TelemetryContext.start(trigger=trigger)
             try:
                 if ctx is None:
@@ -1924,6 +1892,7 @@ class App(MiddlewareMixin, LifespanMixin):
                         prerender_routes=prerender_routes,
                         dry_run=dry_run,
                         use_rich=use_rich,
+                        compile_initial_state=compile_initial_state,
                     )
                     return
 
@@ -1935,6 +1904,7 @@ class App(MiddlewareMixin, LifespanMixin):
                             prerender_routes=prerender_routes,
                             dry_run=dry_run,
                             use_rich=use_rich,
+                            compile_initial_state=compile_initial_state,
                         )
                     except Exception as exc:
                         ctx.set_exception(exc)
@@ -2351,6 +2321,12 @@ class EventNamespace(AsyncNamespace):
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
 
+        # In dev, warn about values that handlers triggered from the frontend
+        # return, which nothing receives. Read once: on_event is the hot path.
+        self._warn_dropped_results = not is_prod_mode()
+        # The handlers already warned about, so each warns once.
+        self._warned_dropped_results: set[str] = set()
+
     @property
     def token_to_sid(self) -> Mapping[str, str]:
         """Token to SID mapping for backward compatibility.
@@ -2635,10 +2611,42 @@ class EventNamespace(AsyncNamespace):
             else "404"
         ).removeprefix("/")
         if not otel.enabled:
-            await self.app.event_processor.enqueue(token, event)
+            future = await self.app.event_processor.enqueue(token, event)
+        else:
+            with otel.remote_context(fields):
+                future = await self.app.event_processor.enqueue(token, event)
+        if self._warn_dropped_results:
+            future.add_done_callback(
+                functools.partial(self._warn_dropped_result, event.name)
+            )
+
+    def _warn_dropped_result(self, name: str, future: asyncio.Future) -> None:
+        """Warn once per handler that a frontend event's return value is dropped.
+
+        The frontend event discards its future, so only backend code awaiting
+        the handler receives what it returns.
+
+        Args:
+            name: The name of the event the frontend sent.
+            future: The event's future, done.
+        """
+        if future.cancelled() or future.exception() is not None:
             return
-        with otel.remote_context(fields):
-            await self.app.event_processor.enqueue(token, event)
+        result = future.result()
+        # An empty list is how a handler said "no events" before return
+        # values were results.
+        if result is None or (is_non_string_sequence(result) and not result):
+            return
+        if name in self._warned_dropped_results:
+            return
+        self._warned_dropped_results.add(name)
+        handler = self.app._registration_context.event_handlers[name].handler
+        logger.warning(
+            f"Event handler {handler.fn.__qualname__} returned a value, but it was "
+            "triggered from the frontend, so the value is dropped: only backend "
+            "code that awaits the handler receives its return value. Return None "
+            "or events to chain from a handler used as an event trigger."
+        )
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.

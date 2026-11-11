@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import builtins
 import contextlib
 import contextvars
 import functools
@@ -19,7 +18,6 @@ import uuid
 from collections.abc import AsyncGenerator, Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext as does_not_raise
-from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
@@ -58,12 +56,11 @@ from starlette.exceptions import HTTPException
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, PlainTextResponse, StreamingResponse
-from starlette.routing import Route
+from starlette.routing import Mount, Route
 from starlette.testclient import TestClient
-from starlette_admin.auth import AuthProvider
 
 import reflex as rx
-from reflex import AdminDash, constants
+from reflex import constants
 from reflex._upload import upload
 from reflex.app import (
     App,
@@ -114,8 +111,6 @@ from .states.upload import (
 
 if TYPE_CHECKING:
     from multiprocessing.connection import Connection
-
-    from sqlalchemy.engine.base import Engine
 
 
 class EmptyState(BaseState):
@@ -194,68 +189,6 @@ def test_model() -> type[Model]:
     return TestModel
 
 
-@pytest.fixture(scope="session")
-def test_model_auth() -> type[Model]:
-    """A default model.
-
-    Returns:
-        A default model.
-    """
-
-    class TestModelAuth(Model, table=True):
-        """A test model with auth."""
-
-    return TestModelAuth
-
-
-@pytest.fixture
-def test_get_engine():
-    """A default database engine.
-
-    Returns:
-        A default database engine.
-    """
-    import sqlmodel
-
-    enable_admin = True
-    url = "sqlite:///test.db"
-    return sqlmodel.create_engine(
-        url,
-        echo=False,
-        connect_args={"check_same_thread": False} if enable_admin else {},
-    )
-
-
-@pytest.fixture
-def test_custom_auth_admin() -> type[AuthProvider]:
-    """A default auth provider.
-
-    Returns:
-        A default default auth provider.
-    """
-    from starlette_admin.auth import AuthProvider
-
-    class TestAuthProvider(AuthProvider):
-        """A test auth provider."""
-
-        login_path: str = "/login"
-        logout_path: str = "/logout"
-
-        def login(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Login."""
-
-        def is_authenticated(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Is authenticated."""
-
-        def get_admin_user(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Get admin user."""
-
-        def logout(self):  # pyright: ignore [reportIncompatibleMethodOverride]
-            """Logout."""
-
-    return TestAuthProvider
-
-
 def test_app_warns_about_a_deprecated_duration_name_at_startup(
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -287,23 +220,6 @@ def test_default_app(app: App):
     assert app._middlewares == []
     assert app.style == Style()
     assert app.admin_dash is None
-
-
-def test_setup_admin_dash_skips_optional_imports_without_config(
-    app: App, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A default app must not load the optional admin and database stacks."""
-    real_import = builtins.__import__
-
-    def import_without_admin(name, *args, **kwargs):
-        if name.startswith("starlette_admin") or name == "reflex.model":
-            msg = f"unexpected optional import: {name}"
-            raise AssertionError(msg)
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", import_without_admin)
-
-    app._setup_admin_dash()
 
 
 def test_multiple_states_error(
@@ -564,67 +480,6 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
 
 
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-def test_initialize_with_admin_dashboard(
-    test_model: type[Model], mocker: MockerFixture
-):
-    """Test setting the admin dashboard of an app.
-
-    Args:
-        test_model: The default model.
-        mocker: pytest mocker object.
-    """
-    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-    app = App(admin_dash=AdminDash(models=[test_model]))
-    assert app.admin_dash is not None
-    assert len(app.admin_dash.models) > 0
-    assert app.admin_dash.models[0] == test_model
-
-
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-@pytest.mark.parametrize("with_transformer", [False, True])
-def test_admin_dashboard_routes_remain_reversible(
-    test_model: type[Model],
-    mocker: MockerFixture,
-    tmp_path: Path,
-    with_transformer: bool,
-):
-    """Serve admin pages through the public ASGI app with working named routes.
-
-    Args:
-        test_model: A model to list in the dashboard.
-        mocker: The mock fixture for skipping frontend compilation.
-        tmp_path: The directory for the dashboard database.
-        with_transformer: Whether another Starlette application wraps the API.
-    """
-    conf = rx.Config(app_name="testing", db_url=f"sqlite:///{tmp_path / 'admin.db'}")
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-    app = App(
-        admin_dash=AdminDash(models=[test_model]),
-        api_transformer=Starlette() if with_transformer else None,
-    )
-    mocker.patch.object(app, "_compile")
-    api = app()
-    router = app.api_transformer or app._api
-    assert isinstance(router, Starlette)
-    assert str(router.url_path_for("admin:index")) == "/admin/"
-    with TestClient(api) as client:
-        response = client.get("/admin/")
-    assert response.status_code == 200
-    assert "Reflex Admin Dashboard" in response.text
-
-
 def test_api_transformer_lifespans_run(mocker: MockerFixture):
     """Send ASGI lifespan events through the api_transformer apps.
 
@@ -675,6 +530,28 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
         assert client.get("/db").json() == {"db": "conn", "own_app": True}
         assert client.get("/ping").text == '"pong"'
     assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
+
+
+def test_api_transformer_named_routes_resolve(mocker: MockerFixture):
+    """Resolve the named routes of a Starlette api_transformer through the served app.
+
+    Admin UIs mounted this way, such as starlette-admin, build every link with url_for.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+    """
+
+    async def index(request: Request) -> PlainTextResponse:  # noqa: RUF029
+        return PlainTextResponse(str(request.url_for("admin:index")))
+
+    transformer = Starlette(
+        routes=[Mount("/admin", routes=[Route("/", index, name="index")], name="admin")]
+    )
+    app = App(api_transformer=transformer)
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app()) as client:
+        assert client.get("/admin/").text == "http://testserver/admin/"
 
 
 @pytest.mark.parametrize("also_registered", [False, True])
@@ -838,69 +715,6 @@ def test_unhandled_route_error_gets_cors_headers(
     assert response.headers.get_list("access-control-allow-origin") == [
         "http://example.com"
     ]
-
-
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-def test_initialize_with_custom_admin_dashboard(
-    test_get_engine: Engine,
-    test_custom_auth_admin: type[AuthProvider],
-    test_model_auth: Model,
-):
-    """Test setting the custom admin dashboard of an app.
-
-    Args:
-        test_get_engine: The default database engine.
-        test_model_auth: The default model for an auth admin dashboard.
-        test_custom_auth_admin: The custom auth provider.
-    """
-    from starlette_admin.contrib.sqla.admin import Admin
-
-    custom_auth_provider = test_custom_auth_admin()
-    custom_admin = Admin(test_get_engine, auth_provider=custom_auth_provider)
-    app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
-    assert app.admin_dash is not None
-    assert app.admin_dash.admin is not None
-    assert len(app.admin_dash.models) > 0
-    assert app.admin_dash.models[0] == test_model_auth
-    assert app.admin_dash.admin.auth_provider == custom_auth_provider
-
-
-@pytest.mark.skipif(
-    not find_spec("starlette_admin")
-    or not find_spec("sqlmodel")
-    or not find_spec("pydantic"),
-    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
-)
-def test_initialize_admin_dashboard_with_view_overrides(
-    test_model: type[Model], mocker: MockerFixture
-):
-    """Test setting the admin dashboard of an app with view class overridden.
-
-    Args:
-        test_model: The default model.
-        mocker: pytest mocker object.
-    """
-    from starlette_admin.contrib.sqla.view import ModelView
-
-    class TestModelView(ModelView):
-        pass
-
-    conf = rx.Config(app_name="testing", db_url="sqlite:///reflex.db")
-    mocker.patch("reflex_base.config._get_config", return_value=conf)
-
-    app = App(
-        admin_dash=AdminDash(
-            models=[test_model], view_overrides={test_model: TestModelView}
-        )
-    )
-    assert app.admin_dash is not None
-    assert app.admin_dash.models == [test_model]
-    assert app.admin_dash.view_overrides[test_model] == TestModelView
 
 
 @pytest.mark.asyncio
@@ -5397,6 +5211,112 @@ async def test_on_event_falls_back_to_environ_without_connect(
         )
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("outcome", "warns"),
+    [
+        (42, True),
+        ({"rows": []}, True),
+        (None, False),
+        ([], False),
+        ("raise", False),
+        ("cancel", False),
+    ],
+)
+async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
+    token: str,
+    clean_registration_context: RegistrationContext,
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+    outcome: Any,
+    warns: bool,
+):
+    """A value returned by a handler the frontend triggered warns, once per handler.
+
+    Only backend code awaiting a handler receives its return value. ``[]`` is
+    how a handler said "no events" before return values were results, so it
+    does not warn.
+
+    Args:
+        token: A token.
+        clean_registration_context: Keeps the test's state out of the shared
+            registration context; the app below is created inside it.
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+        outcome: What the event's future resolves to, or how it ends.
+        warns: Whether the dropped value is warned about.
+    """
+
+    class DroppedResultState(rx.State):
+        @rx.event
+        def handler(self):
+            pass
+
+    event_namespace = event_namespace_with_processor_mock
+    assert event_namespace.app._registration_context is clean_registration_context
+    await event_namespace._token_manager.link_token_to_sid(token, "sid1")
+    event_namespace.app.sio = Mock(
+        get_environ=Mock(return_value=_connect_environ(token))
+    )
+    warn = mocker.patch("reflex.app.logger.warning")
+    loop = asyncio.get_running_loop()
+    futures = [loop.create_future(), loop.create_future()]
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    enqueue_mock.side_effect = futures
+    payload = {
+        **_client_event_payload(),
+        "name": format.format_event_handler(
+            DroppedResultState.event_handlers["handler"]
+        ),
+    }
+    for future in futures:
+        await event_namespace.on_event("sid1", payload)
+        if outcome == "raise":
+            future.set_exception(ValueError("handler failed"))
+        elif outcome == "cancel":
+            future.cancel()
+        else:
+            future.set_result(outcome)
+    await asyncio.sleep(0)
+
+    if not warns:
+        warn.assert_not_called()
+        return
+    (message,) = warn.call_args.args
+    warn.assert_called_once_with(message)
+    assert "DroppedResultState.handler" in message
+    assert "dropped" in message
+    assert "await" in message
+
+
+@pytest.mark.asyncio
+async def test_on_event_does_not_watch_frontend_results_in_prod(
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """In prod, a frontend event's future gets no callback: the check is dev only.
+
+    Args:
+        token: A token.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    app = App()
+    future = Mock()
+    app._event_processor = Mock(enqueue=AsyncMock(return_value=future))
+    event_namespace = EventNamespace("/event", app)
+    try:
+        await event_namespace._token_manager.link_token_to_sid(token, "sid1")
+        event_namespace.app.sio = Mock(
+            get_environ=Mock(return_value=_connect_environ(token))
+        )
+        await event_namespace.on_event("sid1", _client_event_payload())
+    finally:
+        await event_namespace._token_manager.disconnect_all()
+    cast(AsyncMock, app.event_processor.enqueue).assert_awaited_once()
+    future.add_done_callback.assert_not_called()
+
+
 @pytest.mark.parametrize("compile_raises", [False, True])
 def test_compile_releases_memo_naming_caches(
     mocker: MockerFixture, compile_raises: bool
@@ -5687,6 +5607,7 @@ async def test_on_event_uses_frontend_traceparent(otel_exporter):
     async def enqueue(token, event):
         await asyncio.sleep(0)
         seen.append(trace.get_current_span().get_span_context())
+        return Mock()
 
     mock_app.event_processor.enqueue = enqueue
     ns = EventNamespace(namespace="/", app=mock_app)
@@ -6497,3 +6418,73 @@ async def test_drain_oversized_body_middleware_passes_regular_requests_through()
 
     status, _, _ = await _asgi_http_call(app, "GET", "", b"")
     assert status == 200
+
+
+def test_client_state_conflicting_defaults_fail_the_compile(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
+) -> None:
+    """One name declared on two pages with two defaults fails the compile.
+
+    Regression: this compiled, and whichever page mounted first decided the
+    value silently. Creating the vars must still work (hot reload declares again
+    them), so the error comes from the compile and names both declarations.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing"),
+    )
+    app, _ = compilable_app
+    closed = rx.client_state(False, name="open_app")
+    opened = rx.client_state(True, name="open_app")
+    app.add_page(lambda: rx.text(closed.value), route="/a")
+    app.add_page(lambda: rx.text(opened.value), route="/b")
+
+    with pytest.raises(exceptions.ClientStateConflictError, match="'open_app'") as err:
+        app._compile(dry_run=True)
+    # A compile error, like the compiler's other app-level errors.
+    assert isinstance(err.value, exceptions.ReflexError)
+    message = str(err.value)
+    assert "`false`" in message
+    assert "`true`" in message
+    assert message.count(f"{__file__}:") == 2
+
+
+def test_client_state_identical_declarations_compile(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
+) -> None:
+    """Two modules may each declare the same global var with the same default."""
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing"),
+    )
+    app, _ = compilable_app
+    first = rx.client_state(False, name="shared_app")
+    second = rx.client_state(False, name="shared_app")
+    app.add_page(lambda: rx.text(first.value), route="/a")
+    app.add_page(lambda: rx.text(second.value), route="/b")
+    app._compile(dry_run=True)
+
+
+def test_client_state_conflicts_do_not_outlive_a_compile(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
+) -> None:
+    """A var declared again with an edited default compiles again (hot reload)."""
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing"),
+    )
+    app, _ = compilable_app
+    before = rx.client_state(False, name="edited_app")
+    app.add_page(lambda: rx.text(before.value), route="/a")
+    app._compile(dry_run=True)
+
+    after = rx.client_state(True, name="edited_app")
+    app._unevaluated_pages.clear()
+    app.add_page(lambda: rx.text(after.value), route="/a")
+    app._compile(dry_run=True)

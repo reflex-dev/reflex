@@ -7,11 +7,13 @@ import dataclasses
 import functools
 import inspect
 import logging
+import sys
 import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
+from types import FunctionType, MethodType
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.manager.token import BaseStateToken
@@ -19,7 +21,7 @@ from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
 from reflex_base.constants import CompileVars
-from reflex_base.event import Event, EventHandler, EventSpec
+from reflex_base.event import Event, EventHandler, EventSpec, _is_bound_event_handler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
@@ -101,21 +103,99 @@ def _is_empty_sequence(value: Any) -> bool:
     return is_non_string_sequence(value) and len(value) == 0
 
 
-def _holds_events_or_coroutines(value: Any) -> bool:
-    """Whether a sequence holds an event or an unawaited coroutine.
+def _creator_function(value: Any) -> Any:
+    """The function that runs when a callable is called.
+
+    Args:
+        value: A callable.
+
+    Returns:
+        The callable itself for a function or method, else its class's
+        ``__call__`` (for a callable object such as ``rx.toast``).
+    """
+    return (
+        value if isinstance(value, (FunctionType, MethodType)) else type(value).__call__
+    )
+
+
+def _is_event_creator(value: Any) -> bool:
+    """Whether a callable is declared to return an EventSpec, like ``rx.redirect``.
+
+    Reflex does not mark its event creators, but each one (``rx.redirect``,
+    ``rx.call_script``, ``rx.toast`` ...) is annotated to return the EventSpec it
+    creates, as are helpers wrapping them. Returned uncalled, such a callable is a
+    mistake for the event it would create, never a result.
+
+    Args:
+        value: The callable a handler returned.
+
+    Returns:
+        True if the function, or the ``__call__`` of a callable object such as
+        ``rx.toast``, is annotated to return an EventSpec.
+    """
+    try:
+        returns = _creator_function(value).__annotations__.get("return")
+    except (AttributeError, NameError):
+        # Not annotated (a builtin, a class), or a deferred annotation naming
+        # something undefined.
+        return False
+    if isinstance(returns, str):
+        return returns.rpartition(".")[2] == "EventSpec"
+    return isinstance(returns, type) and issubclass(returns, EventSpec)
+
+
+def _creator_reference(creator: Any) -> str:
+    """How to name an event creator in the hint to call it.
+
+    Args:
+        creator: The uncalled event creator.
+
+    Returns:
+        ``rx.<name>`` when reflex exports the creator's function under its own
+        name, as for ``rx.redirect``, else the function's qualified name.
+    """
+    fn = _creator_function(creator)
+    if getattr(sys.modules.get("reflex"), fn.__name__, None) is creator:
+        return f"rx.{fn.__name__}"
+    return fn.__qualname__
+
+
+def _is_mistaken_event(value: Any) -> bool:
+    """Whether a value can only be an event its handler failed to reference or call.
 
     Args:
         value: The value a handler returned.
 
     Returns:
-        True for a sequence ``_is_event_like`` rejects that still holds an
-        event (mixed with other values) or a coroutine.
+        True for ``self.handler`` (meant ``type(self).handler``) and for an
+        uncalled event creator such as ``rx.redirect``.
     """
+    return callable(value) and (
+        _is_bound_event_handler(value) or _is_event_creator(value)
+    )
+
+
+def _is_invalid_result(value: Any) -> bool:
+    """Whether a return value ``_is_event_like`` rejects is a bug rather than a result.
+
+    Args:
+        value: The value a handler returned.
+
+    Returns:
+        True for a coroutine that was never awaited, a mistaken event, and a
+        sequence that holds an event (mixed with other values), a coroutine or
+        a mistaken event.
+    """
+    if inspect.iscoroutine(value) or _is_mistaken_event(value):
+        return True
     if not is_non_string_sequence(value):
         return False
     try:
         return any(
-            isinstance(e, _EVENT_LIKE_TYPES) or inspect.iscoroutine(e) for e in value
+            isinstance(e, _EVENT_LIKE_TYPES)
+            or inspect.iscoroutine(e)
+            or _is_mistaken_event(e)
+            for e in value
         )
     except TypeError:
         return False
@@ -152,6 +232,15 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
         f"Your handler {handler_name} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
         f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
     )
+    if creators := [
+        e
+        for e in events
+        if callable(e) and not isinstance(e, _EVENT_LIKE_TYPES) and _is_event_creator(e)
+    ]:
+        msg += (
+            f" Did you mean to call {'it' if len(creators) == 1 else 'them'}: "
+            f"{', '.join(f'{_creator_reference(c)}(...)' for c in creators)}?"
+        )
     raise TypeError(msg)
 
 
@@ -176,9 +265,10 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
             return value
         hinted_args = types.value_inside_optional(hinted_args)
     if isinstance(value, dict) and isinstance(hinted_args, type):
-        from reflex.model import Model
-
-        if issubclass(hinted_args, Model):
+        # No class subclasses rx.Model before reflex.model is loaded, so never
+        # import it (and SQLAlchemy with it) here, inside the event.
+        model = getattr(sys.modules.get("reflex.model"), "Model", None)
+        if model is not None and issubclass(hinted_args, model):
             # Remove non-fields from the payload
             model_fields = hinted_args.model_fields
             return hinted_args(**{
@@ -332,6 +422,34 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         await ctx.enqueue(*backend_events)
 
 
+async def _process_middleware(
+    ctx: EventContext, state: BaseState, event: Event
+) -> bool:
+    """Pass an event through the middleware before its handler runs.
+
+    A middleware blocks the event by returning an update, which is sent on in
+    the handler's place.
+
+    Args:
+        ctx: The event context, carrying the middleware.
+        state: The locked state the event runs against.
+        event: The event about to run.
+
+    Returns:
+        Whether a middleware blocked the event.
+    """
+    if (
+        ctx.middleware is None
+        or (update := await ctx.middleware._preprocess(state, event)) is None
+    ):
+        return False
+    if update.delta:
+        await ctx.emit_delta(update.delta)
+    if update.events:
+        await _route_events(ctx, update.events)
+    return True
+
+
 async def chain_updates(
     events: Any,
     handler_name: str,
@@ -390,8 +508,29 @@ async def chain_updates(
         await _route_events(ctx, fixed_events)
 
 
+async def _flush_failed_handler(root_state: BaseState, handler_name: str) -> None:
+    """Send the writes a cancelled or failing handler made after its last yield.
+
+    The next handler's delta does not carry them when it loads a fresh copy of
+    the state, as redis does. Without a pending write there is nothing to send,
+    which also covers a handler whose own delta failed: that delta already
+    cleaned the state. A flush failure is logged, so the handler's own
+    exception stays the one that propagates.
+
+    Args:
+        root_state: The locked root state of the handler.
+        handler_name: The name of the handler, used for error messages.
+    """
+    if not root_state.dirty_vars and not root_state.dirty_substates:
+        return
+    try:
+        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+    except Exception:
+        logger.exception(f"Error flushing delta after handler {handler_name} failed:")
+
+
 def ensure_locked(
-    state: BaseState | StateProxy | None, root_state: BaseState | None
+    state: BaseState | StateProxy, root_state: BaseState | None
 ) -> BaseState | None:
     """The root to flush deltas from, only while the state lock is held.
 
@@ -425,8 +564,7 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     self`` in a background handler, ``app.modify_state``), the handler runs
     inline on the locked state tree under the caller's context: its yields
     emit deltas and the events it yields chain under the caller's event. With
-    no lock held, the event is enqueued and its future awaited. A stateless
-    handler always runs inline.
+    no lock held, the event is enqueued and its future awaited.
 
     Args:
         spec: The event spec to execute.
@@ -435,22 +573,28 @@ async def execute_event_inline(spec: EventSpec) -> Any:
         The handler's return value.
 
     Raises:
-        EventHandlerTypeError: If there is no active EventContext, the spec is
-            a frontend-only or upload event, or a background handler is
-            awaited while the state lock is held (which would deadlock).
+        EventHandlerTypeError: If there is no active EventContext for a
+            client (outside an event handler and ``app.modify_state``), the
+            spec is a frontend-only or upload event, or a background handler
+            is awaited while the state lock is held (which would deadlock).
     """
     from reflex_base.registry import RegistrationContext
     from reflex_base.utils.exceptions import EventHandlerTypeError
 
     try:
         ctx = EventContext.get()
-    except LookupError as le:
+    except LookupError:
+        ctx = None
+    # The event processor's root context, which every request to the app
+    # carries, belongs to no client: running there would share one state
+    # between every caller.
+    if ctx is None or not ctx.token:
         msg = (
             f"Event handler `{format_event_handler(spec.handler)}` can only be "
             "awaited from an event handler or inside `app.modify_state`; use it "
             "as an event trigger or yield it instead."
         )
-        raise EventHandlerTypeError(msg) from le
+        raise EventHandlerTypeError(msg)
     event = spec._to_event(ctx.router_data)
     name = event.name
     if spec.client_handler_name:
@@ -465,23 +609,15 @@ async def execute_event_inline(spec: EventSpec) -> Any:
         raise EventHandlerTypeError(msg)
     handler = registered.handler
     root_state = ctx.locked_root
-    if not registered.states:
-        if root_state is None:
-            return await process_event(
-                handler=handler, payload=event.payload, state=None, root_state=None
-            )
-    elif root_state is None:
+    if root_state is None:
         (future,) = await ctx.enqueue(event)
         return await future
-    elif handler.is_background:
+    if handler.is_background:
         msg = (
             f"Background event handler `{name}` cannot be awaited while the "
             "state lock is held, as it would wait for that lock; yield it instead."
         )
         raise EventHandlerTypeError(msg)
-    # Under the lock, a stateless handler flushes the caller's pending delta
-    # through the locked root before any frontend event it yields, like every
-    # other yield does, so it is covered by the lock like a state handler.
     # The lock stays held until this run is done, even if the task that
     # started it finishes first. Registered before the first await, so a
     # task that starts while the lock is held is always seen by its release.
@@ -494,11 +630,11 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     else:
         ctx.inline_tasks.add(task)
     try:
-        substate = (
-            await root_state.get_state(registered.states[0])
-            if registered.states
-            else None
-        )
+        # Inside the registered run, so the lock stays held while a
+        # middleware awaits.
+        if await _process_middleware(ctx, root_state, event):
+            return None
+        substate = await root_state.get_state(registered.states[0])
         return await process_event(
             handler=handler,
             payload=event.payload,
@@ -513,7 +649,7 @@ async def execute_event_inline(spec: EventSpec) -> Any:
 async def process_event(
     handler: EventHandler,
     payload: dict,
-    state: BaseState | StateProxy | None,
+    state: BaseState | StateProxy,
     root_state: BaseState | None,
 ) -> Any:
     """Process event.
@@ -521,7 +657,7 @@ async def process_event(
     Args:
         handler: EventHandler to process.
         payload: The event payload.
-        state: State to process the handler, or None for a stateless handler.
+        state: State to process the handler.
         root_state: The root state of the app, used for emitting deltas. Pass
             None when the caller does not hold the state lock (background
             tasks): computing and cleaning a delta on an unlocked root races
@@ -540,15 +676,13 @@ async def process_event(
     handler_name = fn.__qualname__
     payload = _prepare_event_payload(handler, payload)
 
-    # A stateless handler takes no state argument.
-    args = () if state is None else (state,)
     # Handle async functions.
     if handler._is_coroutine_function:
-        events = await fn(*args, **payload)
+        events = await fn(state, **payload)
 
     # Handle regular functions.
     else:
-        events = fn(*args, **payload)
+        events = fn(state, **payload)
     # Handle async generators.
     if inspect.isasyncgen(events):
         async for event in events:
@@ -583,10 +717,11 @@ async def process_event(
             handler_name=handler_name,
         )
         return None
-    # A coroutine that was never awaited, or events mixed with other values,
-    # is a bug, not a result: chain_updates flushes the delta and then raises
-    # for it, as it does for any invalid yield.
-    invalid = inspect.iscoroutine(events) or _holds_events_or_coroutines(events)
+    # A coroutine that was never awaited, a mistaken event like `self.handler`
+    # or `rx.redirect`, or events mixed with other values, is a bug, not a
+    # result: chain_updates flushes the delta and then raises for it, as it
+    # does for any invalid yield.
+    invalid = _is_invalid_result(events)
     await chain_updates(
         events if invalid else None,
         root_state=ensure_locked(state, root_state),
@@ -739,20 +874,6 @@ class BaseStateEventProcessor(EventProcessor):
         for future in self._superseded.pop((on_load_name, token), {}).values():
             future.cancel()
 
-    def _runs_unordered(self, registered_handler: RegisteredEventHandler) -> bool:
-        """Whether an event runs immediately instead of in its token's FIFO.
-
-        The FIFO serializes the handlers that take the token's state lock. A
-        stateless handler takes none, so it runs like a background one.
-
-        Args:
-            registered_handler: The registered handler for the event.
-
-        Returns:
-            True for a background or stateless handler.
-        """
-        return registered_handler.handler.is_background or not registered_handler.states
-
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
     ) -> Any:
@@ -770,14 +891,6 @@ class BaseStateEventProcessor(EventProcessor):
         """
         ctx = entry.ctx
         event = entry.event
-        if not registered_handler.states:
-            # A stateless handler holds no lock and gets no state.
-            return await process_event(
-                handler=registered_handler.handler,
-                payload=event.payload,
-                state=None,
-                root_state=None,
-            )
         # The context, not the event: a chained event carries none of its own
         # and inherits the producing view's through fork().
         router_data = ctx.router_data
@@ -811,17 +924,7 @@ class BaseStateEventProcessor(EventProcessor):
                 if merged_router_data != previous_router_data:
                     state.router_data = merged_router_data
 
-            # Preprocess the event.
-            if (
-                self.middleware is not None
-                and (update := await self.middleware._preprocess(state, event))
-                is not None
-            ):
-                # If there was an update, yield it.
-                if update.delta:
-                    await ctx.emit_delta(update.delta)
-                if update.events:
-                    await _route_events(ctx, update.events)
+            if await _process_middleware(ctx, state, event):
                 return None
 
             # Get the event's substate.
@@ -837,12 +940,18 @@ class BaseStateEventProcessor(EventProcessor):
 
                 # Process non-background events while holding the lock.
                 if not registered_handler.handler.is_background:
-                    return await process_event(
-                        handler=registered_handler.handler,
-                        payload=event.payload,
-                        state=substate,
-                        root_state=root_state,
-                    )
+                    try:
+                        return await process_event(
+                            handler=registered_handler.handler,
+                            payload=event.payload,
+                            state=substate,
+                            root_state=root_state,
+                        )
+                    except (Exception, asyncio.CancelledError):
+                        await _flush_failed_handler(
+                            root_state, registered_handler.handler.fn.__qualname__
+                        )
+                        raise
             finally:
                 await ctx.release_lock()
         # Otherwise drop the state lock and start processing the background task
