@@ -1,1 +1,0 @@
-Operations on an optional set var (`set[T] | None`, `frozenset[T] | None`) now treat `None` as an empty set, instead of failing the page render and the production build's prerender. Sets built from optional sets by `union`, `intersection`, `difference` and `symmetric_difference` are typed as non-optional and keep `frozenset`.
