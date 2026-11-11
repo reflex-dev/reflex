@@ -1,3 +1,19 @@
+## v0.11.0a1 (2026-11-10)
+
+### Deprecations
+
+- Removal of form controls submitting their value under their `id` is postponed from 0.11 to 0.12; give each control a `name` before then. ([#7789](https://github.com/reflex-dev/reflex/issues/7789))
+
+### Features
+
+- `rx.foreach` iterates a `set` or `frozenset` var through its array view, so set-typed state vars keep working with the new `SetVar`. ([#7642](https://github.com/reflex-dev/reflex/issues/7642))
+
+### Bug Fixes
+
+- `rx.foreach` over a string now iterates Unicode code points, so a character such as an emoji is no longer split into lone surrogates. ([#7548](https://github.com/reflex-dev/reflex/issues/7548))
+- `rx.match` is now typed as returning a `Component` when its cases return components and a `Var` when they return values, so a function returning it can be annotated with either. ([#7750](https://github.com/reflex-dev/reflex/issues/7750))
+
+
 ## v0.10.1 (2026-10-26)
 
 ### Deprecations
