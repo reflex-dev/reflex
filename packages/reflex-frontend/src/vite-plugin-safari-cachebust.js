@@ -20,7 +20,7 @@ import { StringDecoder } from "node:string_decoder";
  * @typedef {import('vite').ViteDevServer} ViteDevServer
  * @typedef {import('http').IncomingMessage} IncomingMessage
  * @typedef {import('http').ServerResponse} ServerResponse
- * @typedef {import('connect').NextHandleFunction} NextHandleFunction
+ * @typedef {import('vite').Connect.NextHandleFunction} NextHandleFunction
  */
 
 const pluginName = "vite-plugin-safari-cachebust";
@@ -235,7 +235,7 @@ function createSafariMiddleware() {
      * Overridden end method to flush held-back text and finish the response
      * @param {any} chunk - The final chunk to write
      * @param {...any} args - Additional arguments
-     * @returns {ServerResponse<IncomingMessage>} The server response
+     * @returns {ServerResponse} The server response
      */
     res.end = function (chunk, ...args) {
       if (typeof chunk === "function") {

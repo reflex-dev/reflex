@@ -16,8 +16,9 @@ Compiled code imports it through the `$/` alias, which names `.web`:
 In a checkout of the repository there is no embedded copy: reflex-base reads
 `src/` in place, so the next `reflex init` copies an edit without a rebuild.
 
-Everything in `src/` ships to every app. Tests, fixtures and tooling stay
-outside it.
+Everything in `src/` ships to every app, including the build tooling an app
+runs (`compress-static.js`, the PostCSS config, the Vite plugins). Tests,
+fixtures and this package's own lint and type-check setup stay outside it.
 
 A change under `src/` is a change to reflex-base: its news fragment goes in
 `packages/reflex-base/news/`.
@@ -50,11 +51,12 @@ without it appearing in its arguments. What there is, and where it is pinned:
   A test that needs a clean copy reloads the module (`vi.resetModules()`, as
   `tests/state_connection.test.js` does). Code that awaits must not assume the
   queue or the socket is as it left them.
-- **Work done on import**: `utils/state.js` starts a socket transport, creates
-  the cookie reader and publishes the client state store on `refs`. All of it
-  is skipped without a `window`, because a production build evaluates every
-  module in node to prerender pages. `tests/public_api.test.js` imports each
-  module in node to keep it that way.
+- **Work done on import**: `utils/state.js` creates the cookie reader, always;
+  publishes the client state store on `refs`, when there is a `document`; and
+  starts a socket transport, when there is a `window`. A production build
+  evaluates every module in node to prerender pages, so anything added here has
+  to load without either. `tests/public_api.test.js` imports each module in
+  node to keep it that way.
 - **`eval` scope**: event code sent by the backend (`rx.call_script`, event
   callbacks) is evaluated inside `utils/state.js` and resolves names from the
   scopes around the `eval`: `queueEvents`, `processEvent`, `refs`, `addEvents`,
@@ -77,10 +79,11 @@ the versions Reflex installs into an app (`PackageJson.DEPENDENCIES` in
 `reflex_base/constants/installer.py`). A python unit test fails when the two
 drift, so bump them together.
 
-A few modules belong to an optional component or plugin and import a package only
-that component installs: `utils/helpers/dataeditor.js`
-(`@glideapps/glide-data-grid`), `vite-plugin-react-compiler.js` (babel) and
-`app/routes.js` (`@react-router/dev`). Those are not declared here yet.
+A few modules import packages that are not declared here yet.
+`utils/helpers/dataeditor.js` (`@glideapps/glide-data-grid`) and
+`vite-plugin-react-compiler.js` (babel) belong to an optional component or
+plugin, which installs the package. `app/routes.js` imports `@react-router/dev`
+and `@react-router/fs-routes`, which every app installs as dev dependencies.
 
 ## Before this can be published
 
