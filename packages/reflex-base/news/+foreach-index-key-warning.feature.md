@@ -1,1 +1,0 @@
-`rx.foreach` now warns at compile time when an item with lifecycle events (`on_mount`, `on_unmount`) or hooks of its own has no `key`. Such items are keyed by their index, so after an item is removed its `on_unmount` names the item at the last position; set `key=item` or `key=item.id` on the component the render function returns.

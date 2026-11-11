@@ -5,20 +5,16 @@ from __future__ import annotations
 import dataclasses
 import functools
 import inspect
-import logging
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
 from reflex_base.components.tags.tag import CommonTag
-from reflex_base.environment import environment
 from reflex_base.utils.types import GenericType
 from reflex_base.vars import LiteralArrayVar, Var, VarData, get_unique_variable_name
 from reflex_base.vars.sequence import _determine_value_of_array_index
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
-
-logger = logging.getLogger(__name__)
 
 
 @functools.cache
@@ -135,34 +131,6 @@ class IterTag(CommonTag):
 
         # Set the component key.
         if component.key is None:
-            self._warn_index_key(component)
             component.key = index
 
         return component
-
-    def _warn_index_key(self, component: Component) -> None:
-        """Warn once when an item keyed by its index has hooks of its own.
-
-        Lifecycle events and added hooks belong to one rendered instance, which
-        React matches to an item by key. Keyed by index, they follow the
-        position, so after a removal ``on_unmount`` names the item at the end.
-        Only a frontend compile warns, not a process that only evaluates pages.
-
-        Args:
-            component: The rendered item, which has no key.
-        """
-        if environment.REFLEX_SKIP_COMPILE.get():
-            return
-        from reflex.compiler.plugins.memoize import _subtree_has_instance_hooks
-
-        if not _subtree_has_instance_hooks(component):
-            return
-        logger.warning(
-            f"The rx.foreach over `{self.iterable!s}` renders a"
-            f" {type(component).__name__} with lifecycle events or hooks but no"
-            " key, so each item is keyed by its index: after an item is removed"
-            " or moved, its hooks run for the item now at that position. Set a"
-            " unique, stable key on the item, such as key=item or key=item.id."
-            " See https://reflex.dev/docs/library/dynamic-rendering/foreach/",
-            extra={"dedupe": True},
-        )

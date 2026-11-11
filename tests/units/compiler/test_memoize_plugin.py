@@ -1,6 +1,7 @@
 # ruff: noqa: D101
 
 import dataclasses
+import logging
 import re
 from collections.abc import Callable
 from pathlib import Path
@@ -729,6 +730,87 @@ def test_foreach_item_without_own_hooks_renders_inline() -> None:
 
     assert not wrappers
     assert "itemRxState" not in foreach
+
+
+def _index_key_warnings(caplog: pytest.LogCaptureFixture) -> list[logging.LogRecord]:
+    """The warnings about a foreach item keyed by its index logged so far.
+
+    Args:
+        caplog: The log capture fixture.
+
+    Returns:
+        The captured warning records.
+    """
+    return [
+        record
+        for record in caplog.records
+        if record.levelno == logging.WARNING
+        and "keyed by its index" in record.getMessage()
+    ]
+
+
+@pytest.mark.parametrize(
+    "render_item",
+    [
+        lambda item: rx.text(
+            item,
+            on_mount=MemoTriggerState.ping,
+            on_unmount=MemoTriggerState.ping,
+        ),
+        lambda item: rx.box(rx.text(item, on_mount=rx.console_log(item))),
+        lambda item: rx.text(item, on_unmount=rx.console_log(item)),
+        lambda item: LabelLogger.create(label=item),
+        lambda item, index: rx.text(item, on_unmount=rx.console_log(item), key=index),
+    ],
+    ids=["mount_and_unmount", "descendant", "unmount", "add_hooks", "key_is_index"],
+)
+def test_foreach_item_with_hooks_keyed_by_index_warns(
+    render_item: Callable[..., Component], caplog: pytest.LogCaptureFixture
+) -> None:
+    """A foreach item with hooks of its own and an index key warns once per compile."""
+    with caplog.at_level(logging.WARNING):
+        _compile_single_page(
+            lambda: rx.foreach(SpecialFormMemoState.items, render_item)
+        )
+
+    [record] = _index_key_warnings(caplog)
+    assert "key=item.id" in record.getMessage()
+    # Repeat compiles, such as hot reloads, log it once.
+    assert getattr(record, "dedupe", False) is True
+
+
+@pytest.mark.parametrize(
+    "render_item",
+    [
+        lambda item: rx.text(item, on_unmount=rx.console_log(item), key=item),
+        lambda item: rx.text(item),
+        lambda item: rx.text(item, on_click=rx.console_log(item)),
+    ],
+    ids=["keyed", "no_hooks", "click_only"],
+)
+def test_foreach_item_keyed_or_without_hooks_does_not_warn(
+    render_item: Callable[..., Component], caplog: pytest.LogCaptureFixture
+) -> None:
+    """A keyed foreach item, or one without hooks of its own, does not warn."""
+    with caplog.at_level(logging.WARNING):
+        _compile_single_page(
+            lambda: rx.foreach(SpecialFormMemoState.items, render_item)
+        )
+
+    assert _index_key_warnings(caplog) == []
+
+
+def test_evaluating_a_foreach_item_with_hooks_does_not_warn(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Only a frontend compile warns, not evaluating the page, as a backend does."""
+    with caplog.at_level(logging.WARNING):
+        rx.foreach(
+            SpecialFormMemoState.items,
+            lambda item: rx.text(item, on_unmount=rx.console_log(item)),
+        )
+
+    assert _index_key_warnings(caplog) == []
 
 
 def test_foreach_parent_does_not_absorb_sibling_into_snapshot() -> None:

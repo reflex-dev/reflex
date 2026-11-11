@@ -21,6 +21,7 @@ No shared ``stateful_components`` file is produced.
 from __future__ import annotations
 
 import dataclasses
+import logging
 from typing import Any
 
 from reflex_base.components.app_wraps import (
@@ -48,7 +49,10 @@ from reflex_base.plugins.base import Plugin
 from reflex_base.vars.base import Var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.cond import Cond
+from reflex_components_core.core.foreach import Foreach
 from reflex_components_core.core.match import Match
+
+logger = logging.getLogger(__name__)
 
 
 def _subtree_has_reactive_data(
@@ -257,6 +261,32 @@ def _subtree_has_instance_hooks(component: Component) -> bool:
     return _has_instance_hooks(component) or any(
         isinstance(child, Component) and _subtree_has_instance_hooks(child)
         for child in component.children
+    )
+
+
+def _warn_index_keyed_item(foreach: Foreach) -> None:
+    """Warn once when a foreach item with hooks of its own is keyed by its index.
+
+    React matches a rendered instance, and so its lifecycle events and hooks,
+    to an item by key. Keyed by index, they follow the position: after an item
+    is removed, ``on_unmount`` runs for the item that was at the end.
+
+    Args:
+        foreach: A foreach whose item subtree has hooks of one rendered instance.
+    """
+    [item] = foreach.children
+    if not isinstance(item, Component) or str(item.key) != (
+        foreach._render().index_var_name
+    ):
+        return
+    logger.warning(
+        f"The rx.foreach over `{foreach.iterable!s}` renders a"
+        f" {type(item).__name__} with lifecycle events or hooks keyed by its"
+        " index: after an item is removed or moved, its hooks run for the item"
+        " now at that position. Set a unique, stable key on the item, such as"
+        " key=item.id, or key=item for a list of unique strings."
+        " See https://reflex.dev/docs/library/dynamic-rendering/foreach/",
+        extra={"dedupe": True},
     )
 
 
@@ -490,7 +520,10 @@ class MemoizeStatefulPlugin(Plugin):
         if _is_structural_memoization_child(comp):
             # A loop seals its subtree, so give each descendant with hooks of
             # its own a wrapper that is called inside the loop body.
-            comp = _scope_instance_hooks(comp, page_context, compile_context)
+            scoped = _scope_instance_hooks(comp, page_context, compile_context)
+            if scoped is not comp and isinstance(comp, Foreach):
+                _warn_index_keyed_item(comp)
+            comp = scoped
         # Loop variables exist only in a loop body, so only a wrapper that is
         # called there can read one.
         scope_vars = (

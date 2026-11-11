@@ -172,7 +172,7 @@ This matters when an item has lifecycle events (`on_mount`, `on_unmount`), hooks
 An `on_unmount=State.removed(item)` in an unkeyed loop reports the last item, not the removed one.
 
 Set `key` on the component that the render function returns to a value that is unique and stable for each item, such as `key=item` for a list of distinct strings or `key=item.id` as in the todo example above.
-Reflex warns at compile time when an unkeyed item has lifecycle events or hooks.
+Reflex warns at compile time when an item keyed by its index has lifecycle events or hooks.
 
 ## Dictionaries
 
