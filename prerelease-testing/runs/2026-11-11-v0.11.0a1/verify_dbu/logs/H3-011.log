@@ -1,0 +1,15 @@
+edited env.py sha 9c737ca30ce9ad0c, stock e6da64f8b84c2b20
+Info: Updated env.py to load the app; the previous one is kept as 
+alembic/env.old.
+481d2a7a6d6f -> 4c92535dbbbd (head) (current), Add hidden to response.
+env.old 9c737ca30ce9ad0c; has MY_TEAM_HOOK: 1
+Info: Updated env.py to load the app; the previous one is kept as 
+alembic/env.old.
+481d2a7a6d6f -> 4c92535dbbbd (head) (current), Add hidden to response.
+env.old e6da64f8b84c2b20; has MY_TEAM_HOOK: 0
+README
+__pycache__
+env.old
+env.py
+script.py.mako
+versions

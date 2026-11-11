@@ -1,0 +1,15 @@
+95:rx.model.migrate(autogenerate=True)
+== vdbu-prev: reflex run with migrate(autogenerate=True) at import, H2 env.py
+UP after 4s (pid 24601)
+stopped pgid 24601
+revisions after 1 start: 2 (481d2a7a6d6f_.py 4c92535dbbbd_add_hidden_to_response.py __pycache__ )
+95:rx.model.migrate(autogenerate=True)
+== vdbu-a: reflex run with migrate(autogenerate=True) at import, H2 env.py
+UP after 4s (pid 24831)
+stopped pgid 24831
+revisions after 1 start: 5 (0d2f522b7733_.py 481d2a7a6d6f_.py 4c92535dbbbd_add_hidden_to_response.py __pycache__ c9b1562f0e72_.py d7ae4389252c_.py )
+== control vdbu-a: stock (legacy) env.py -> template, migrate(autogenerate=True) at import
+UP after 4s (pid 25057)
+stopped pgid 25057
+revisions after 1 start: 2
+env.py is template

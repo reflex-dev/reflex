@@ -1,0 +1,36 @@
+stock env sha: e6da64f8b84c2b20  pre-upgrade fd-pass env: e6da64f8b84c2b20
+186f56cf9c1a48c7
+304a8bfb6a804e54
+1cf0c1788fd2c463
+386e7f9781988d33
+UP after 7s (pid 20580)
+PASS text 'QA prompt survives upgrade' on http://localhost:3600/form/1
+console: none
+http>=400: none
+stopped pgid 20580
+136:Warning: Updated env.py to load the app; the previous one is kept as 
+137:alembic/env.old.
+after run: env.old e6da64f8b84c2b20 env.py 8072903597410973 template 8072903597410973
+186f56cf9c1a48c7
+304a8bfb6a804e54
+1cf0c1788fd2c463
+386e7f9781988d33
+/home/user/reflex/prerelease-testing/runs/2026-11-11-v0.11.0a1/verify_dbu/scripts/common.sh: line 18: 20582 Killed                  setsid "$V/bin/reflex" run --frontend-port $FP --backend-port $BP --loglevel debug > "$LOG" 2>&1 < /dev/null
+env.old byte-identical to 0.10.1 env.py
+DB dump identical to 0.10.1 seeded dump
+[rc=0] (db) reflex db makemigrations
+481d2a7a6d6f_.py
+4c92535dbbbd_add_hidden_to_response.py
+__pycache__
+481d2a7a6d6f -> 4c92535dbbbd (head) (current), Add hidden to response.
+<base> -> 481d2a7a6d6f, empty message
+[rc=0] (db) reflex db status
+No new upgrade operations detected.
+[rc=0] (check) alembic check
+4c92535dbbbd (head)
+[rc=0] (current) alembic current
+[rc=0] (db) reflex db makemigrations --message again
+481d2a7a6d6f_.py
+4c92535dbbbd_add_hidden_to_response.py
+__pycache__
+DB still identical

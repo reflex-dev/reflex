@@ -1,0 +1,24 @@
+===== prev-h1 (0.10.1)
+<base>
+  [✓] 481d2a7a6d6f, empty message
+  [✓] 4c92535dbbbd (head), Add hidden to response.
+[rc=0] (db) reflex db status
+[rc=0] (db) reflex db migrate
+[rc=0] (db) reflex db makemigrations --message qa
+481d2a7a6d6f_.py
+4c92535dbbbd_add_hidden_to_response.py
+__pycache__
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] (check) alembic check
+===== prev-h2 (0.10.1)
+<base>
+  [✓] 481d2a7a6d6f, empty message
+  [✓] 4c92535dbbbd (head), Add hidden to response.
+[rc=0] (db) reflex db status
+[rc=0] (db) reflex db migrate
+[rc=0] (db) reflex db makemigrations --message qa
+481d2a7a6d6f_.py
+4c92535dbbbd_add_hidden_to_response.py
+__pycache__
+FAILED: New upgrade operations detected: [('remove_index', Index('ix_localuser_username', Column('username', VARCHAR(), table=<localuser>, nullable=False), unique=True)), ('remove_table', Table('localuser', MetaData(), Column('id', INTEGER(), table=<localuser>, primary_key=True, nullable=False), Column('username', VARCHAR(), table=<localuser>, nullable=False), Column('password_hash', BLOB(), table=<localuser>, nullable=False), Column('enabled', BOOLEAN(), table=<localuser>, nullable=False), schema=None)), ('remove_table', Table('response', MetaData(), Column('id', INTEGER(), table=<response>, primary_key=True, nullable=False), Column('client_token', VARCHAR(), table=<response>, nullable=False), Column('form_id', INTEGER(), ForeignKey('form.id'), table=<response>, nullable=False), Column('ts', DATETIME(), table=<response>, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x7f4ed6efda00>, for_update=False)), Column('hidden', BOOLEAN(), table=<response>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x7f4ed6efc6b0>, for_update=False)), schema=None)), ('remove_table', Table('field', MetaData(), Column('id', INTEGER(), table=<field>, primary_key=True, nullable=False), Column('name', VARCHAR(), table=<field>, nullable=False), Column('type_', VARCHAR(length=8), table=<field>, nullable=False), Column('required', BOOLEAN(), table=<field>, nullable=False), Column('prompt', VARCHAR(), table=<field>, nullable=False), Column('form_id', INTEGER(), ForeignKey('form.id'), table=<field>, nullable=False), schema=None)), ('remove_table', Table('form', MetaData(), Column('id', INTEGER(), table=<form>, primary_key=True, nullable=False), Column('name', VARCHAR(), table=<form>, nullable=False), Column('owner_id', INTEGER(), ForeignKey('localuser.id'), table=<form>, nullable=False), schema=None)), ('remove_table', Table('fieldvalue', MetaData(), Column('id', INTEGER(), table=<fieldvalue>, primary_key=True, nullable=False), Column('field_id', INTEGER(), ForeignKey('field.id'), table=<fieldvalue>, nullable=False), Column('response_id', INTEGER(), ForeignKey('response.id'), table=<fieldvalue>, nullable=False), Column('value', VARCHAR(), table=<fieldvalue>, nullable=False), schema=None)), ('remove_index', Index('ix_localauthsession_session_id', Column('session_id', VARCHAR(), table=<localauthsession>, nullable=False), unique=True)), ('remove_index', Index('ix_localauthsession_user_id', Column('user_id', INTEGER(), table=<localauthsession>, nullable=False))), ('remove_table', Table('localauthsession', MetaData(), Column('id', INTEGER(), table=<localauthsession>, primary_key=True, nullable=False), Column('user_id', INTEGER(), table=<localauthsession>, nullable=False), Column('session_id', VARCHAR(), table=<localauthsession>, nullable=False), Column('expiration', DATETIME(), table=<localauthsession>, nullable=False, server_default=DefaultClause(<sqlalchemy.sql.elements.TextClause object at 0x7f4ed6efe8a0>, for_update=False)), schema=None)), ('remove_table', Table('option', MetaData(), Column('id', INTEGER(), table=<option>, primary_key=True, nullable=False), Column('label', VARCHAR(), table=<option>, nullable=False), Column('value', VARCHAR(), table=<option>, nullable=False), Column('field_id', INTEGER(), ForeignKey('field.id'), table=<option>, nullable=False), schema=None))]
+[rc=255] (check) alembic check

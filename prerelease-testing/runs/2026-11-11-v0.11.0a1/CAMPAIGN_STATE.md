@@ -84,12 +84,13 @@ items in its area. Known and filed items: do NOT re-report unless changed.
 |---|---|---|
 | preflight | done (see `preflight/NOTES.md`) | |
 | 1 db_models | DONE + verified (5/5 reproduce; 3 narrowed, 1 reclassified upstream; 0 regressions) | `reports/db_models.md`, `reports/verify_dbm.md` |
-| 0 db_upgrade | explore DONE (1 HIGH regression: hand-edited env.py executed; 1 medium regression); verifier `verify_dbu` running |
+| 0 db_upgrade | DONE + verified: I-1 hand-edited env.py executed/crash NARROWED to medium regression; I-2 empty revisions CONFIRMED wider (medium regression); I-3 env.old overwrite low |
 | 7 enterprise | explore running (wave 1) | `reports/<item>.md` |
 | 2 events_await | explore running (fable high) | `reports/events_await.md` |
 | 3 redis_runtime | explore running (opus high) | `reports/redis_runtime.md` |
 | 6 server_net | explore running (opus high) | `reports/server_net.md` |
-| 4, 5, 8 | not started — launch in order, 4 client_vars, 5 compile_memo, 8 examples_ui | |
+| 4 client_vars | explore running (fable high) | `reports/client_vars.md` |
+| 5, 8 | not started — launch in order 5 compile_memo, 8 examples_ui | |
 
 To resume an interrupted cluster: read its `NOTES.md` "Status / resume here", reuse its venvs under `$SB/envs/<cluster>-*`, and
 continue; a cluster whose `reports/<item>.md` exists is finished. Each finished cluster's issues go to a verifier

@@ -1,0 +1,28 @@
+===== fd-h1b (0.11.0a1)
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] (db) reflex db status
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] (db) reflex db migrate
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] (db) reflex db makemigrations
+change scripts and reflex db migrate to apply migrations to a new or existing 
+database.
+[rc=0] (db) reflex db init
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/verify_dbu/fd-h1b/alembic: README __pycache__ env.py script.py.mako versions  /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/verify_dbu/fd-h1b/alembic/versions: 481d2a7a6d6f_.py 4c92535dbbbd_add_hidden_to_response.py 
+===== fd-h1 (0.11.0a1)
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] (db) reflex db status
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] (db) reflex db migrate
+Traceback (most recent call last):
+sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:driver
+[rc=1] (db) reflex db makemigrations
+change scripts and reflex db migrate to apply migrations to a new or existing 
+database.
+[rc=0] (db) reflex db init
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/verify_dbu/fd-h1/alembic: README __pycache__ env.py script.py.mako versions  /tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/apps/verify_dbu/fd-h1/alembic/versions: 481d2a7a6d6f_.py 4c92535dbbbd_add_hidden_to_response.py 

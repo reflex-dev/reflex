@@ -1,0 +1,13 @@
+== remedy on copy of fd-h1b
+Info: Created alembic/env.py from the template. Existing revisions are kept.
+[rc=0] (db) reflex db init
+env.py == template: yes
+<base> -> 481d2a7a6d6f, empty message
+[rc=0] (db) reflex db status
+[rc=0] (db) reflex db makemigrations
+481d2a7a6d6f_.py 4c92535dbbbd_add_hidden_to_response.py __pycache__ 
+UP after 7s (pid 23353)
+PASS text 'QA prompt survives upgrade' on http://localhost:3600/form/1
+console: none
+http>=400: none
+stopped pgid 23353
