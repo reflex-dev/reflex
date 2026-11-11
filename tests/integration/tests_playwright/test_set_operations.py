@@ -31,6 +31,10 @@ def SetOperationsApp():
             self.maybe = {"m"}
 
         @rx.event
+        def unset_maybe(self):
+            self.maybe = None
+
+        @rx.event
         def receive(self, tags: set[str]):
             # The frontend sends the set back as a JSON array.
             self.received = sorted(tags)
@@ -156,6 +160,9 @@ def SetOperationsApp():
                 "Set maybe", id="set_maybe", on_click=SetOperationsState.set_maybe
             ),
             rx.button(
+                "Unset maybe", id="unset_maybe", on_click=SetOperationsState.unset_maybe
+            ),
+            rx.button(
                 "Send",
                 id="send",
                 on_click=SetOperationsState.receive(SetOperationsState.tags),
@@ -241,23 +248,23 @@ def test_set_operations(set_operations_app: AppHarness, page: Page):
     expect(page.locator("id=numbers_union_true_length")).to_have_text("2")
     expect(page.locator("id=has_false")).to_have_text("true")
 
+    unset = {
+        "has_m": "false",
+        "length": "0",
+        "union": "z",
+        "tags_union_maybe": "a,b",
+        "union_other": "",
+        "intersection": "",
+        "difference": "",
+        "tags_difference_maybe": "a,b",
+        "symmetric_difference": "m,z",
+        "issubset": "true",
+        "issuperset": "true",
+        "isdisjoint": "true",
+        "cond": "unset",
+    }
     expect(page.locator(".maybe")).to_have_count(0)
-    _expect_maybe(
-        page,
-        has_m="false",
-        length="0",
-        union="z",
-        tags_union_maybe="a,b",
-        union_other="",
-        intersection="",
-        difference="",
-        tags_difference_maybe="a,b",
-        symmetric_difference="m,z",
-        issubset="true",
-        issuperset="true",
-        isdisjoint="true",
-        cond="unset",
-    )
+    _expect_maybe(page, **unset)
     page.locator("id=set_maybe").click()
     expect(page.locator(".maybe")).to_have_count(1)
     _expect_maybe(
@@ -276,6 +283,10 @@ def test_set_operations(set_operations_app: AppHarness, page: Page):
         isdisjoint="false",
         cond="set",
     )
+    # A set reset to None by the backend reads as empty again.
+    page.locator("id=unset_maybe").click()
+    expect(page.locator(".maybe")).to_have_count(0)
+    _expect_maybe(page, **unset)
 
     # A backend mutation of the set re-renders every operation.
     page.locator("id=add").click()
