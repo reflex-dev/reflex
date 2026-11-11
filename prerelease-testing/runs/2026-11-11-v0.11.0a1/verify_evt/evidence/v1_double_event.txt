@@ -1,0 +1,21 @@
+reflex 0.10.1 3.12.3
+event/event                      OK registered=True bg=False actions={}
+event/event(background=True)     OK registered=True bg=True actions={}
+event/event(throttle=300)        OK registered=True bg=False actions={'throttle': 300}
+event(background=True)/event     OK registered=True bg=True actions={}
+event(throttle=300)/event        OK registered=True bg=False actions={'throttle': 300}
+event()/event                    OK registered=True bg=False actions={}
+reflex 0.11.0a1 3.12.3
+event/event                      FAIL AttributeError: 'EventHandler' object has no attribute '__qualname__'  @ reflex_base/utils/format.py:448
+event/event(background=True)     FAIL AttributeError: 'EventHandler' object has no attribute '__qualname__'  @ reflex_base/utils/format.py:448
+event/event(throttle=300)        FAIL AttributeError: 'EventHandler' object has no attribute '__qualname__'  @ reflex_base/utils/format.py:448
+event(background=True)/event     FAIL TypeError: Background task must be async function or generator.  @ reflex_base/event/__init__.py:3656
+event(throttle=300)/event        FAIL FrozenInstanceError: cannot assign to field '_rx_event_actions'  @ ../../../../../<string>:4
+event()/event                    FAIL AttributeError: 'EventHandler' object has no attribute '__qualname__'  @ reflex_base/utils/format.py:448
+[patched scratch copy] reflex 0.11.0a1 3.12.3
+event/event                      OK registered=True bg=False actions={}
+event/event(background=True)     OK registered=True bg=True actions={}
+event/event(throttle=300)        OK registered=True bg=False actions={'throttle': 300}
+event(background=True)/event     OK registered=True bg=True actions={}
+event(throttle=300)/event        OK registered=True bg=False actions={'throttle': 300}
+event()/event                    OK registered=True bg=False actions={}

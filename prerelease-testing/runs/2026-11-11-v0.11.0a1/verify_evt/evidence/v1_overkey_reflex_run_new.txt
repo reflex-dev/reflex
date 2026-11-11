@@ -1,0 +1,10 @@
+# 0.11.0a1: `reflex run --frontend-port 3680 --backend-port 8680` in a copy of reflex-examples overkey exits 1 during startup:
+48-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+49-  File "$SB/envs/vevt-new/lib/python3.12/site-packages/reflex_base/utils/format.py", line 472, in format_event_handler
+50-    state, name = get_event_handler_parts(handler)
+51-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+52-  File "$SB/envs/vevt-new/lib/python3.12/site-packages/reflex_base/utils/format.py", line 448, in get_event_handler_parts
+53-    name = handler.fn.__qualname__
+54-           ^^^^^^^^^^^^^^^^^^^^^^^
+55-AttributeError: 'EventHandler' object has no attribute '__qualname__'. Did you mean: '__set_name__'?
+0.10.1 'reflex run' of the same copy: frontend 200 on 3681, typing a key starts the stacked background tick: timer 29 -> 26 over 2.5 s, no console errors (scripts/v1_drive_overkey.py)

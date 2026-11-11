@@ -1,0 +1,16 @@
+reflex 0.10.1
+S.static_over(3)           -> int: 6
+S.event_over(3)            -> int: 9
+Helper.static_over(3)      -> int: 6
+Helper().static_over(3)    -> int: 6
+'static_over' in S.event_handlers: False
+
+@rx.event on a staticmethod or classmethod has been deprecated in version 0.11.0. The decorator has no effect there; remove it. It will be completely removed in 1.0. (apps/verify_evt/scripts/v5_staticmethod.py:23)
+Decorators above @rx.event has been deprecated in version 0.11.0. `static_over` is decorated above @rx.event; apply other decorators below it. It will be completely removed in 1.0. (apps/verify_evt/scripts/v5_staticmethod.py:17)
+reflex 0.11.0a1
+S.static_over(3)           -> EventSpec: EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function S.static_o
+S.event_over(3)            -> int: 9
+Helper.static_over(3)      -> EventSpec: EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function Helper.sta
+Helper().static_over(3)    -> EventSpec: EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function Helper.sta
+'static_over' in S.event_handlers: False
+

@@ -1,0 +1,19 @@
+# 0.11.0a1 dev, memory: curl localhost:8682/outside/<who> then /inside/<token>
+alice: {"add":1,"prev_secret":"","token_seen_by_handler":""}
+bob: {"add":2,"prev_secret":"alice","token_seen_by_handler":""}
+carol: {"add":3,"prev_secret":"bob","token_seen_by_handler":""}
+inside tokA: {"add":1} / tokA: {"add":2} / tokB: {"add":1}
+      8 Warning: Attempting to send delta to disconnected client ''
+      2 Warning: Attempting to send delta to disconnected client 'tokA'
+      1 Warning: Attempting to send delta to disconnected client 'tokB'
+# 0.11.0a1 prod + Redis (single port 3683)
+caller1: {"add":1,"prev_secret":"","token_seen_by_handler":""}
+caller2: {"add":2,"prev_secret":"caller1","token_seen_by_handler":""}
+caller3: {"add":3,"prev_secret":"caller2","token_seen_by_handler":""}
+caller4: {"add":4,"prev_secret":"caller3","token_seen_by_handler":""}
+caller5: {"add":5,"prev_secret":"caller4","token_seen_by_handler":""}
+caller6: {"add":6,"prev_secret":"caller5","token_seen_by_handler":""}
+redis keys: _reflex___state____state, _reflex___state____state.vapp___vapp____main (plus the browser's <uuid>_reflex___state____state...)
+browser page on load: total=0 (dev and prod) -> the '' state is not visible to socket clients
+# 0.10.1 dev
+alice: {"error":"TypeError: object EventSpec can't be used in 'await' expression"}

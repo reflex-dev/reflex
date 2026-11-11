@@ -1,0 +1,12 @@
+# scripts/v4_drive_returns.py against vapp (Chromium), one click per button, 1.5 s each
+## 0.11.0a1 dev + memory (same in prod + Redis)
+ret_value          last='last=ret_value ran'             b='b=0'  toasts=[] log=[]
+ret_garbage        last='last=ret_garbage ran'           b='b=0'  toasts=[] log=[]
+ret_self_handler   last='last=ret_self_handler ran'      b='b=0'  toasts=[] log=[]
+ret_class_handler  last='last=ret_class_handler ran'     b='b=1'  toasts=[] log=[]
+console warnings/errors: []
+## 0.10.1 dev + memory
+ret_value          toast 'An error occurred. TypeError: Your handler Main.ret_value mu...'  log 'TypeError: Your handler Main.ret_value must only return/yield: None, Events or other EventHandlers referenced by their class ...'
+ret_garbage        toast + log TypeError (Main.ret_garbage)
+ret_self_handler   toast + log TypeError (Main.ret_self_handler) ; b stays 0
+ret_class_handler  b=1, no new error

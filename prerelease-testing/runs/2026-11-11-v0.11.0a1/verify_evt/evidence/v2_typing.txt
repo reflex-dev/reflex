@@ -1,0 +1,86 @@
+== prev
+-- pyright 1.1.414 --pythonversion 3.11
+  mini.py:20:21 - information: Type of "self.bare" is "(int) -> Any"
+  mini.py:23:13 - information: Type of "S.bare" is "EventCallback[int]"
+  mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  mini.py:25:13 - information: Type of "S.bare(1)" is "EventCallback[*tuple[()]]"
+  mini.py:26:8 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+  mini.py:27:1 - error: No overloads for "__call__" match the provided arguments
+  mini.py:28:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+3 errors, 0 warnings, 4 informations
+-- pyright 1.1.414 --pythonversion 3.12
+  mini.py:20:21 - information: Type of "self.bare" is "(int) -> Any"
+  mini.py:23:13 - information: Type of "S.bare" is "EventCallback[int]"
+  mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  mini.py:25:13 - information: Type of "S.bare(1)" is "EventCallback[*tuple[()]]"
+  mini.py:26:8 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+  mini.py:27:1 - error: No overloads for "__call__" match the provided arguments
+  mini.py:28:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+3 errors, 0 warnings, 4 informations
+-- pyright 1.1.414 --pythonversion 3.13
+  mini.py:20:21 - information: Type of "self.bare" is "(int) -> Any"
+  mini.py:23:13 - information: Type of "S.bare" is "EventCallback[int]"
+  mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  mini.py:25:13 - information: Type of "S.bare(1)" is "EventCallback[*tuple[()]]"
+  mini.py:26:8 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+  mini.py:27:1 - error: No overloads for "__call__" match the provided arguments
+  mini.py:28:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+3 errors, 0 warnings, 4 informations
+-- pyright 1.1.414 --pythonversion 3.14
+  mini.py:20:21 - information: Type of "self.bare" is "(int) -> Any"
+  mini.py:23:13 - information: Type of "S.bare" is "EventCallback[int]"
+  mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  mini.py:25:13 - information: Type of "S.bare(1)" is "EventCallback[*tuple[()]]"
+  mini.py:26:8 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+  mini.py:27:1 - error: No overloads for "__call__" match the provided arguments
+  mini.py:28:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+3 errors, 0 warnings, 4 informations
+-- mypy
+mini.py:20: note: Revealed type is "Any"
+mini.py:20: note: 'reveal_type' always outputs 'Any' in unchecked functions
+mini.py:23: note: Revealed type is "reflex_base.event.EventNamespace"
+mini.py:24: note: Revealed type is "EventCallback?[Any]"
+mini.py:25: error: "EventNamespace" not callable  [operator]
+mini.py:25: note: Revealed type is "Any"
+mini.py:26: error: "EventNamespace" not callable  [operator]
+mini.py:27: error: "EventNamespace" not callable  [operator]
+Found 3 errors in 1 file (checked 1 source file)
+== new
+-- pyright 1.1.414 --pythonversion 3.11
+  mini.py:20:21 - information: Type of "self.bare" is "(*Unknown) -> Any"
+  mini.py:23:13 - information: Type of "S.bare" is "EventCallback[*tuple[Unknown, ...]]"
+  mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  mini.py:25:13 - information: Type of "S.bare(1)" is "Unknown"
+0 errors, 0 warnings, 4 informations
+-- pyright 1.1.414 --pythonversion 3.12
+  mini.py:20:21 - information: Type of "self.bare" is "(*Unknown) -> Any"
+  mini.py:23:13 - information: Type of "S.bare" is "EventCallback[*tuple[Unknown, ...]]"
+  mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  mini.py:25:13 - information: Type of "S.bare(1)" is "Unknown"
+0 errors, 0 warnings, 4 informations
+-- pyright 1.1.414 --pythonversion 3.13
+  mini.py:20:21 - information: Type of "self.bare" is "(*Unknown) -> Any"
+  mini.py:23:13 - information: Type of "S.bare" is "EventCallback[*tuple[Unknown, ...]]"
+  mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  mini.py:25:13 - information: Type of "S.bare(1)" is "Unknown"
+0 errors, 0 warnings, 4 informations
+-- pyright 1.1.414 --pythonversion 3.14
+  mini.py:20:21 - information: Type of "self.bare" is "(int) -> Any"
+  mini.py:23:13 - information: Type of "S.bare" is "EventCallback[int]"
+  mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  mini.py:25:13 - information: Type of "S.bare(1)" is "EventCallback[*tuple[()]]"
+  mini.py:26:8 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+  mini.py:27:1 - error: No overloads for "__call__" match the provided arguments
+  mini.py:28:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+3 errors, 0 warnings, 4 informations
+-- mypy
+mini.py:20: note: Revealed type is "Any"
+mini.py:20: note: 'reveal_type' always outputs 'Any' in unchecked functions
+mini.py:23: note: Revealed type is "reflex_base.event.EventCallback[int]"
+mini.py:24: note: Revealed type is "reflex_base.event.EventCallback[int]"
+mini.py:25: note: Revealed type is "reflex_base.event.EventCallback[()]"
+mini.py:26: error: No overload variant of "__call__" of "EventCallback" matches argument type "str"  [call-overload]
+mini.py:26: note: Possible overload variants:
+mini.py:27: error: No overload variant of "__call__" of "EventCallback" matches argument types "int", "int", "int"  [call-overload]
+mini.py:27: note: Possible overload variants:
+Found 2 errors in 1 file (checked 1 source file)

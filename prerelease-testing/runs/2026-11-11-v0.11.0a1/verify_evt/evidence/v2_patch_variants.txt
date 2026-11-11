@@ -1,0 +1,39 @@
+== control
+  control/proj/alias_use.py:4:11 - error: Type "EventCallback[*tuple[Unknown, ...]]" is already specialized (reportInvalidTypeArguments)
+  control/proj/alias_use.py:5:11 - error: Type "EventCallback[*tuple[Unknown, ...]]" is already specialized (reportInvalidTypeArguments)
+  control/proj/mini.py:20:21 - information: Type of "self.bare" is "(*Unknown) -> Any"
+  control/proj/mini.py:23:13 - information: Type of "S.bare" is "EventCallback[*tuple[Unknown, ...]]"
+  control/proj/mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  control/proj/mini.py:25:13 - information: Type of "S.bare(1)" is "Unknown"
+2 errors, 0 warnings, 4 informations
+== patched
+  patched/proj/alias_use.py:4:20 - error: Cannot access attribute "EventCallback" for class "event"
+  patched/proj/alias_use.py:5:26 - error: Cannot access attribute "EventCallback" for class "type[EventNamespace]"
+  patched/proj/mini.py:20:21 - information: Type of "self.bare" is "(int) -> Any"
+  patched/proj/mini.py:23:13 - information: Type of "S.bare" is "EventCallback[int]"
+  patched/proj/mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  patched/proj/mini.py:25:13 - information: Type of "S.bare(1)" is "EventCallback[*tuple[()]]"
+  patched/proj/mini.py:26:8 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+  patched/proj/mini.py:27:1 - error: No overloads for "__call__" match the provided arguments
+  patched/proj/mini.py:28:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+5 errors, 0 warnings, 4 informations
+== patched_plain
+  patched_plain/proj/mini.py:20:21 - information: Type of "self.bare" is "(int) -> Any"
+  patched_plain/proj/mini.py:23:13 - information: Type of "S.bare" is "EventCallback[int]"
+  patched_plain/proj/mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  patched_plain/proj/mini.py:25:13 - information: Type of "S.bare(1)" is "EventCallback[*tuple[()]]"
+  patched_plain/proj/mini.py:26:8 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+  patched_plain/proj/mini.py:27:1 - error: No overloads for "__call__" match the provided arguments
+  patched_plain/proj/mini.py:28:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+3 errors, 0 warnings, 4 informations
+== patched_modalias
+  patched_modalias/proj/alias_use.py:4:11 - error: Type "EventCallback[*tuple[Unknown, ...]]" is already specialized (reportInvalidTypeArguments)
+  patched_modalias/proj/alias_use.py:5:11 - error: Type "EventCallback[*tuple[Unknown, ...]]" is already specialized (reportInvalidTypeArguments)
+  patched_modalias/proj/mini.py:20:21 - information: Type of "self.bare" is "(int) -> Any"
+  patched_modalias/proj/mini.py:23:13 - information: Type of "S.bare" is "EventCallback[int]"
+  patched_modalias/proj/mini.py:24:13 - information: Type of "S.paren" is "EventCallback[int]"
+  patched_modalias/proj/mini.py:25:13 - information: Type of "S.bare(1)" is "EventCallback[*tuple[()]]"
+  patched_modalias/proj/mini.py:26:8 - error: Argument of type "Literal['not an int']" cannot be assigned to parameter "value" of type "int | Var[int]" in function "__call__"
+  patched_modalias/proj/mini.py:27:1 - error: No overloads for "__call__" match the provided arguments
+  patched_modalias/proj/mini.py:28:20 - error: Argument of type "EventCallback[int]" cannot be assigned to parameter "on_change" of type "EventType[()] | EventType[str] | None" in function "__call__"
+5 errors, 0 warnings, 4 informations

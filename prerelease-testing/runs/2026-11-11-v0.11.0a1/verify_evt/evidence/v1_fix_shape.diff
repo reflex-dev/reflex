@@ -1,0 +1,21 @@
+--- $SB/envs/vevt-new/lib/python3.12/site-packages/reflex_base/event/__init__.py	2026-11-11 00:39:37.175648226 +0000
++++ $SB/apps/verify_evt/fixlib/reflex_base/event/__init__.py	2026-11-11 02:25:23.126030983 +0000
+@@ -3639,6 +3639,9 @@
+             return event_actions
+ 
+         def wrapper(func: Callable[..., Any]) -> EventCallback:
++            if isinstance(func, EventHandler):
++                # A second @rx.event: apply its options to the same function.
++                func = func.fn
+             if isinstance(func, (staticmethod, classmethod)):
+                 # Never an event handler; left as it is, like before.
+                 console.deprecate(
+@@ -3664,7 +3667,7 @@
+             # The markers stay on the function: a mixin's handler is copied
+             # per concrete state from its function, and the handler reads
+             # them from there.
+-            event_actions = _build_event_actions()
++            event_actions = {**getattr(func, EVENT_ACTIONS_MARKER, {}), **_build_event_actions()}
+             if event_actions:
+                 setattr(func, EVENT_ACTIONS_MARKER, event_actions)
+ 

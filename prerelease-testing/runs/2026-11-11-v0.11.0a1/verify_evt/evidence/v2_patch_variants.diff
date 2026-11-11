@@ -1,0 +1,43 @@
+--- $V/typing/control/lib/reflex_base/event/__init__.py	2026-11-11 02:19:31.305361573 +0000
++++ $V/typing/patched/lib/reflex_base/event/__init__.py	2026-11-11 02:19:31.325693042 +0000
+@@ -3499,7 +3499,7 @@
+     LiteralEventVar: TypeAlias = LiteralEventVar
+     EventChainVar: TypeAlias = EventChainVar
+     LiteralEventChainVar: TypeAlias = LiteralEventChainVar
+-    EventCallback: TypeAlias = EventCallback
++    # removed for verification
+     LambdaEventCallback: TypeAlias = LambdaEventCallback
+ 
+     # Javascript Event Classes
+--- $V/typing/control/lib/reflex_base/event/__init__.py	2026-11-11 02:19:31.305361573 +0000
++++ $V/typing/patched_plain/lib/reflex_base/event/__init__.py	2026-11-11 02:19:45.862679914 +0000
+@@ -3499,7 +3499,7 @@
+     LiteralEventVar: TypeAlias = LiteralEventVar
+     EventChainVar: TypeAlias = EventChainVar
+     LiteralEventChainVar: TypeAlias = LiteralEventChainVar
+-    EventCallback: TypeAlias = EventCallback
++    EventCallback = EventCallback
+     LambdaEventCallback: TypeAlias = LambdaEventCallback
+ 
+     # Javascript Event Classes
+--- $V/typing/control/lib/reflex_base/event/__init__.py	2026-11-11 02:19:31.305361573 +0000
++++ $V/typing/patched_modalias/lib/reflex_base/event/__init__.py	2026-11-11 02:20:54.025786324 +0000
+@@ -3485,6 +3485,9 @@
+         ...
+ 
+ 
++_EventCallback = EventCallback
++
++
+ class EventNamespace:
+     """A namespace for event related classes."""
+ 
+@@ -3574,7 +3577,7 @@
+         throttle: int | None = None,
+         debounce: int | None = None,
+         temporal: bool | None = None,
+-    ) -> EventCallback[*P]: ...
++    ) -> _EventCallback[*P]: ...
+ 
+     def __new__(
+         cls,

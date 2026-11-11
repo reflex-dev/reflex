@@ -197,3 +197,100 @@ the first task gets `'BGFIRST'`. A background task that does not catch `BaseExce
 ### Not covered
 `ty`; Python 3.11 / 3.13 / 3.14 runtimes; reflex-enterprise `AuthMiddleware` with awaited handlers; SharedState / linked states with await; chunked upload
 handlers; a real store failure for #7738 (a `get_state` override stands in for it); client disconnect mid-await other than a page reload.
+
+## VERIFICATION
+Independent verifier `verify_evt`, 2026-11-11. I did not read the reporter's conversation. Own venvs, all from PyPI, Python 3.12.3, built with cwd=`$SB` and `uv --no-config`:
+`$SB/envs/vevt-new` (`reflex==0.11.0a1 --prerelease=allow --only-binary :all:` -> reflex-base 0.11.0a1, redis 8.2.0b1), `$SB/envs/vevt-prev` (`reflex==0.10.1`, no `--prerelease` -> all 0.10.1 finals, redis 7.4.1),
+`$SB/envs/vevt-typing-{new,prev}` (the same plus `pyright==1.1.414` and `mypy` 2.4.1). Ports: fe 3680-3684, be 8680-8684, redis 8695. Scripts, evidence and the verifier app are in
+`../verify_evt/` (`scripts/`, `evidence/`, `vapp/`, `typing/`). I ran everything from `$SB` or an app dir, never from the checkout. One exception: system `python3` did a plain text edit of a scratch file (no reflex import) with the checkout as cwd. It cannot have affected any result.
+Every server, browser and the redis on 8695 is stopped, and all the ports were checked free afterwards.
+
+| # | claim | verdict | severity | regression |
+|---|---|---|---|---|
+| 1 | second `@rx.event` crashes at class creation | CONFIRMED (+1 pattern) | high (rare pattern, trivial fix) | yes |
+| 2 | pyright Unknown args for bare `@rx.event` on py3.11-3.13 | CONFIRMED (+ side finding) | medium | yes |
+| 3 | `await State.h()` in an API route runs on shared `''` token | CONFIRMED, leak scoped to API callers | medium | no (new feature) |
+| 4 | non-event return from a clicked handler silently accepted | RECLASSIFIED: deliberate design, lost diagnostic | low | yes (diagnostic only) |
+| 5 | `@staticmethod` above `@rx.event` returns EventSpec, no warning | NARROWED: a State warns (misleadingly); a non-state class does not | low | yes |
+
+### 1. Double `@rx.event`: CONFIRMED
+- `cd $SB && EXPECT_VENV=$SB/envs/vevt-new $SB/envs/vevt-new/bin/python -I apps/verify_evt/scripts/v1_double_event.py` (and `vevt-prev`). This is my own probe, which writes each pattern as ordinary class syntax.
+  0.10.1: all 6 patterns OK, with background and throttle kept. 0.11.0a1: `event/event`, `event/event(background=True)`, `event/event(throttle=300)` and also `event()/event` (not in the
+  report) fail with `AttributeError: 'EventHandler' object has no attribute '__qualname__'` at `reflex_base/utils/format.py:448`. `event(background=True)/event` fails with
+  `TypeError: Background task must be async function or generator.` (`event/__init__.py:3656`). `event(throttle=300)/event` fails with `FrozenInstanceError: cannot assign to field '_rx_event_actions'`. `evidence/v1_double_event.txt`
+- overkey: I made a fresh copy of `$SB/downloads/reflex-examples/overkey`. `python -c "import overkey.overkey"` works on 0.10.1 and gives the AttributeError on 0.11.0a1. `reflex run --frontend-port 3680 --backend-port 8680`
+  on 0.11.0a1 exits 1 at startup with the same traceback (`registry.py:268` -> `format.py:448`). On 0.10.1, `reflex run` (3681/8681) serves the page, and typing a key in Chromium starts the stacked background `tick`
+  (the timer goes 29 -> 26 in 2.5 s, no console errors; `scripts/v1_drive_overkey.py`). `evidence/v1_overkey_reflex_run_new.txt`
+- Within the changelog promise? Yes. The entry says "A decorator stacked above `@rx.event` is deprecated: the method still runs and registers under its own name, with a deprecation warning, until 1.0".
+  A second `@rx.event` is a decorator stacked above `@rx.event`. Instead of warning, the class fails to build with an error that does not name the user's code.
+- Prevalence: rare. reflex-examples @ ebe19ff has one instance (`overkey/overkey.py:164`). `docs/` (and every .py/.md in the tree) at v0.10.1 and v0.11.0a1 has none. I ran one `gh api search/code` query
+  (`"@rx.event" "@rx.event(background=True)" language:python`, 1524 hits). It matches the two strings anywhere in a file, so I fetched the first 100 hits (raw.githubusercontent) and scanned them for
+  consecutive decorator lines: the only adjacent pair is overkey itself (1/100).
+- Root cause (v0.11.0a1): `packages/reflex-base/src/reflex_base/event/__init__.py:3641-3711`. `EventNamespace.__new__.wrapper` does not handle a `func` that is already an `EventHandler`.
+  `getattr(func, "__qualname__", None)` is None at 3671, so it returns `EventHandler(fn=<EventHandler>)` at 3711. `BaseState._item_is_event_handler` skips EventHandlers, and registration then reads
+  `handler.fn.__qualname__`. When the outer decorator has options, the `inspect.iscoroutinefunction` check (3652) or the `setattr(func, EVENT_ACTIONS_MARKER, …)` on the frozen dataclass (3669) fails first.
+  In 0.10.1, `wrapper` set markers on and returned the plain function, so stacking was idempotent.
+- Fix shape: trivial. Tested on a scratch copy (`$SB/apps/verify_evt/fixlib`, put first on `sys.path` by `scripts/v1_with_fix.py`; the shared venvs are untouched). The patch adds
+  `if isinstance(func, EventHandler): func = func.fn` at the top of `wrapper` and merges `event_actions` with any existing `EVENT_ACTIONS_MARKER`. All 6 patterns then register with the right
+  background flag and actions, and overkey imports with `tick.is_background=True`. `evidence/v1_fix_shape.diff`. Whether the second decorator should also warn is a separate choice.
+
+### 2. pyright Unknown on Python 3.11-3.13: CONFIRMED
+- `typing/mini.py` (bare and parenthesised handler, `reveal_type`, three mistakes that should be errors):
+  `cd $SB/apps/verify_evt/typing && $SB/envs/vevt-typing-<v>/bin/pyright --pythonpath $SB/envs/vevt-typing-<v>/bin/python --pythonversion <pv> mini.py`.
+  0.10.1, all of 3.11-3.14: `S.bare` is `EventCallback[int]`, 3 errors. 0.11.0a1 on 3.11, 3.12 and 3.13: `EventCallback[*tuple[Unknown, ...]]`, `S.bare(1)` is `Unknown`, `self.bare` is `(*Unknown) -> Any`, 0 errors.
+  0.11.0a1 on 3.14: correct, 3 errors. `@rx.event()` is `EventCallback[int]` everywhere. mypy is unaffected: on 0.11.0a1 it gives `EventCallback[int]` and catches the bad argument and the extra arguments.
+  0.10.1 mypy is worse (`"EventNamespace" not callable`), so for mypy this is an improvement. `evidence/v2_typing.txt`
+- Cause: I copied `reflex_base` from vevt-typing-new into `typing/{control,patched,…}/lib`, with `extraPaths: ["../lib"]` and `pythonVersion: 3.12` in each `proj/pyrightconfig.json`.
+  The unpatched control copy reproduces Unknown, which proves the copy is what pyright resolves. Deleting only line 3502 (`EventCallback: TypeAlias = EventCallback` in `class EventNamespace`, from #7715)
+  restores `EventCallback[int]` and the 3 errors. The shadowed use is the `__new__` overload's return annotation `-> EventCallback[*P]` at line 3577, inside the class body. `evidence/v2_patch_variants.{txt,diff}`
+- Side finding (new, low, regression): the alias itself is broken under pyright. `def f(cb: rx.event.EventCallback[int])` and `EventNamespace.EventCallback[int]` give
+  `Type "EventCallback[*tuple[Unknown, ...]]" is already specialized` on 0.11.0a1 on every Python version (3.14 too). On 0.10.1 there are 0 errors (`typing/alias_use.py`). mypy accepts it on 0.11.0a1.
+- Fix variants, measured: (a) a module-level `_EventCallback = EventCallback` used in the overload annotation fixes handler typing in pyright and mypy, but the alias error remains. (b) the 0.10.1 form
+  `EventCallback = EventCallback` (no `TypeAlias`) fixes both under pyright, but mypy then rejects `rx.event.EventCallback[...]` (`valid-type`). (c) deleting the line breaks attribute access.
+  Suggested: (a), plus a test run under `--pythonversion 3.12`. CI checks only 3.14 semantics, which hides the bug. Resolving the alias for pyright needs its own look.
+
+### 3. `await` in an API route outside `modify_state`: CONFIRMED, not a regression, leak limited to API callers
+- My own minimal app `vapp` (`../verify_evt/vapp`), a Starlette `api_transformer` with two routes. `/outside/{who}` runs `await Main.add(1)`, `await Main.swap_secret(who)` (stores the value and returns the
+  previous one) and `await Main.whoami()` (returns `self.router.session.client_token`). `/inside/{token}` runs the documented `app.modify_state` form.
+  `scripts/srv.sh start vevt-new $SB/apps/verify_evt/vapp dev 3682 8682 vapp_new_dev; curl -s --noproxy '*' localhost:8682/outside/alice` (then bob, carol).
+- 0.11.0a1 dev+memory: alice `{"add":1,"prev_secret":"","token_seen_by_handler":""}`, bob `{"add":2,"prev_secret":"alice",…}`, carol `{"add":3,"prev_secret":"bob",…}`. Each caller gets the previous caller's
+  value. Log: `Attempting to send delta to disconnected client ''`. prod+Redis (`… prod 3683 3683 … redis://localhost:8695`, multiple granian workers): 6 callers count 1..6, each sees the previous caller's secret,
+  and the state persists in Redis under `_reflex___state____state` / `…vapp___vapp____main`. `/inside/tokA` twice and then `/inside/tokB` give 1, 2, 1, which is correct and isolated. 0.10.1:
+  `TypeError: object EventSpec can't be used in 'await' expression` (the feature is new, so no regression). `evidence/v3_api_outside_modify_state.txt`
+- Security: every caller of such a route shares one state, and a handler that keys on `client_token` sees `''`. Browser sessions are not affected: the page's `total` stayed 0 after the API calls (dev and prod),
+  and a socket client cannot attach to `''`. `on_connect` uses `urllib.parse.parse_qs`, which drops `?token=` (blank) values, so it never links a sid to `''` (`reflex/app.py:2381-2390`).
+  So the exposure exists only in apps that misuse the API, but there the cross-user read is real and persists under Redis. Medium fits.
+- Root cause: `reflex/app.py:390-391`. `_RootMiddleware.__call__` calls `_set_contexts_internal()` on every ASGI request (API routes included), and that attaches the event processor's root `EventContext`
+  (`app.py:855-863`; created with `token=""` at `reflex_base/event/processor/event_processor.py:218-227`). `execute_event_inline` (`base_state_processor.py:469`) raises only on `LookupError` (493-500).
+  Here a context exists with no lock held, so it enqueues the event under `ctx.token == ""` (516-517).
+- Fix shape: in `execute_event_inline`, treat the root context (`not ctx.token`) like a missing context and raise the existing `EventHandlerTypeError`. That is one condition, and it matches the docs.
+
+### 4. Non-event return value: RECLASSIFIED as a deliberate design whose diagnostic was lost (low regression)
+- `vapp` in Chromium, `NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python scripts/v4_drive_returns.py http://localhost:3682/ logs/vapp_new_dev.log`. On 0.11.0a1 (dev+memory and prod+Redis), `ret_value` (`return self.a`),
+  `ret_garbage` (`return rx.redirect`) and `ret_self_handler` (`return self.chained`) run with no log line, no toast and no console error. `chained` never runs (`b=0`); `return Main.chained` does (`b=1`).
+  0.10.1 (`vapp_prev`, 3684/8684): each of the three gives `TypeError: Your handler Main.<h> must only return/yield: None, Events or other EventHandlers referenced by their class …` in the log, plus an error toast.
+  `evidence/v4_returns.txt`, `evidence/v4_{new,prev}.png`
+- Deliberate: `base_state_processor.py:614-633`. The code comment says "anything else … is the result", and the result resolves the event's future. It is pinned by the unit test
+  `test_handler_return_value_resolves_future` (`tests/units/reflex_base/event/processor/test_base_state_processor.py:3713`). The processor cannot tell whether anyone awaits a queued event,
+  so a frontend click and a background `await` look the same. The changelog says "a handler may return a value to the backend code awaiting it … return values are not sent to the frontend yet".
+  It does not say the old TypeError is gone, or that `return self.handler` / `return rx.redirect` now do nothing silently. Yields of non-events still raise.
+- Fix shape: keep rejecting values that can only be mistaken events. A bound method whose name is a handler on its state's class (`return self.chained`) and a callable from the event namespace
+  (`rx.redirect`) can raise the old message. Optionally, log a dev-mode warning when a frontend-originated event with no awaiter returns a non-None value. Add a changelog line.
+
+### 5. `@staticmethod` above `@rx.event`: NARROWED
+- `cd $SB && EXPECT_VENV=$SB/envs/vevt-<v> $SB/envs/vevt-<v>/bin/python -I apps/verify_evt/scripts/v5_staticmethod.py`. 0.10.1: `S.static_over(3)`, `Helper.static_over(3)` and `Helper().static_over(3)` all return 6.
+  0.11.0a1: all three return an `EventSpec`, and the function never runs. On a State class there IS a warning, the generic "Decorators above @rx.event … `static_over` is decorated above @rx.event" (at the class line).
+  Its wording implies the method still runs, but it does not. On a non-state class there is no warning at all. In the reporter's legacyapp the State warning was hidden by the per-class-line dedupe (their anomaly
+  "names only the first stacked method"), which explains "no warning". `@rx.event` above `@staticmethod` warns and keeps working (returns 9), as the changelog says. `evidence/v5_staticmethod.txt`
+- Prevalence: 0 instances in reflex-examples or in the 100-file GitHub sample.
+- Root cause: `reflex/state.py:946-983` (`_item_is_event_handler`). `staticmethod` has `__wrapped__`, so `inspect.unwrap` reaches the EventHandler and the warning fires. But a staticmethod has no `__code__`,
+  so the stacked-wrapper path that treats a wrapper as its plain method does not apply. The attribute stays `staticmethod(EventHandler)`, and the call goes to `EventHandler.__call__`
+  (`event/__init__.py:756`), which builds an EventSpec. On a non-state class nothing inspects the attribute.
+- Fix shape: in the State path, replace `staticmethod`/`classmethod` wrapping an EventHandler with the same wrapper around `inner.fn`, as 0.10.1 effectively had. For non-state classes, have
+  `EventHandler.__call__` warn when `self.state is None` and the function is a method. Or document the pattern as unsupported in the changelog.
+
+### Where NOTES.md was not enough
+- Issue 5's "no warning" holds only for non-state classes. The legacyapp mixes several stacked methods in one class, and the dedupe hides the State warning. A one-pattern-per-class probe is needed.
+- Issue 3's repro needs the whole awaitapp, and it does not show the cross-caller read. `vapp` reduces it to two routes and shows one caller reading another's value.
+- Issue 1 was shown at import only. I added `reflex run` (exit 1) and the 0.10.1 runtime check that the stacked background `tick` really runs.
+- Issue 2's typing venvs were frozen copies of the shared venvs, so a fresh PyPI install was needed. The scratch-copy method was described in one line; mine is in `typing/` with control + variants.

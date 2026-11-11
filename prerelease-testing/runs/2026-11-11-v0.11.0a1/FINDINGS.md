@@ -1,7 +1,7 @@
 # Findings — reflex 0.11.0a1 pre-release testing (2026-11-11) — DRAFT
 
-**Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. Done, verification
-running: `events_await`. Still exploring: `redis_runtime`, `server_net`, `client_vars`, `compile_memo`, `examples_ui`.
+**Status: DRAFT, in progress.** Clusters done and verified: `db_models`, `db_upgrade`, `enterprise`. `events_await` verified. Done, verification
+running: `server_net`, `redis_runtime`. Still exploring: `client_vars`, `compile_memo`, `examples_ui`.
 Findings marked *(unverified)* have not yet been through an independent verifier. Numbering is provisional; the final
 pass re-ranks by severity.
 
@@ -34,22 +34,22 @@ Blocks (candidates, see RELEASE_PLAN.md): FINDING-001 (double `@rx.event` crashe
 FINDING-005 / -006 (kept hand-edited env.py).
 
 Index:
-- FINDING-001: A second `@rx.event` on a handler crashes the app at import (HIGH, regression) *(verification running)*
+- FINDING-001: A second `@rx.event` on a handler crashes the app at import (HIGH, regression)
 - FINDING-002: [reflex-enterprise] MCPPlugin app dies at prod startup when `deploy_url` is unset (HIGH, regression)
 - FINDING-003: [reflex-enterprise / reflex compat] AG Grid API calls throw `ReferenceError: refs is not defined` (HIGH, regression)
 - FINDING-004: Unregistered DeclarativeBase → `makemigrations` silently generates `drop_table` for every table (HIGH, not a regression)
 - FINDING-005: Hand-edited 0.10.x `env.py` is now executed; placeholder URL crashes `reflex run` / `reflex db` (MEDIUM, regression)
 - FINDING-006: Kept user `env.py` → every `makemigrations` writes an empty revision (MEDIUM, regression)
-- FINDING-007: pyright on Python 3.11–3.13 loses the argument types of bare-`@rx.event` handlers (MEDIUM, regression) *(verification running)*
+- FINDING-007: pyright on Python 3.11–3.13 loses the argument types of bare-`@rx.event` handlers (MEDIUM, regression)
 - FINDING-008: [reflex-enterprise] MCP OAuth consent redirect points at the backend in dev (404) (MEDIUM, regression)
 - FINDING-009: `reflex db migrate` exits 1 on a fresh reflex-enterprise app (MEDIUM-LOW, regression for `migrate` only)
-- FINDING-010: `await State.handler()` outside an event handler / `modify_state` runs on a shared empty-token session (MEDIUM) *(verification running)*
+- FINDING-010: `await State.handler()` outside an event handler / `modify_state` runs on a shared empty-token session (MEDIUM)
 - FINDING-011: JSON column on a DeclarativeBase model is typed `object`; item access is a compile error (MEDIUM)
 - FINDING-012: `mapped_column(default_factory=...)` added to a non-empty table → NOT NULL migration failure (MEDIUM)
 - FINDING-013: Same table in two registered metadatas → compared definition random per process (LOW)
 - FINDING-014: Admin-dashboard guide gaps: `/admin` 404 without slash; create fails for dataclass models (upstream) (LOW, docs)
-- FINDING-015: Clicked handler returning a non-event value is now silently accepted (LOW, regression) *(verification running)*
-- FINDING-016: `@staticmethod` above `@rx.event` returns an `EventSpec` instead of the result (LOW, regression) *(verification running)*
+- FINDING-015: Clicked handler returning a non-event value is now silently accepted (LOW, regression)
+- FINDING-016: `@staticmethod` above `@rx.event` returns an `EventSpec` instead of the result (LOW, regression)
 - FINDING-017: A second legacy `env.py` replacement silently overwrites `env.old` (LOW)
 - FINDING-018: Serializer silent blanks: `hybrid_property` never sent; expired objects sent as `{}` (LOW)
 - FINDING-019: Merged registry metadata drops the Base `naming_convention` for UniqueConstraint (LOW)
@@ -60,7 +60,7 @@ Index:
 ---
 
 ## FINDING-001: A second `@rx.event` on a handler crashes the app at import (HIGH)
-- Cluster: `events_await` | Regression vs 0.10.1: yes | Verifier: running (`reports/verify_evt.md`)
+- Cluster: `events_await` | Regression vs 0.10.1: yes | Verifier: CONFIRMED (6th pattern too: `@rx.event()` over `@rx.event`; overkey `reflex run` exits 1; rare in the wild — 1 hit in reflex-examples, none in docs or a 100-file GitHub sample)
 - Repro: `cd $SB && $SB/envs/new/bin/python -I events_await/probes/deco_matrix.py` (copy of
   `runs/2026-11-11-v0.11.0a1/events_await/probes/deco_matrix.py`); same with `envs/prev`: all 18 patterns create the
   class. Real app: copy reflex-examples `overkey` (@ebe19ff) and `python -c "import overkey.overkey"`.
@@ -71,6 +71,11 @@ Index:
   function or generator.`; `@rx.event(throttle=300)`/`@rx.event` → `FrozenInstanceError`. Changelog: a decorator stacked
   above `@rx.event` "still runs and registers under its own name, with a deprecation warning, until 1.0".
   `events_await/evidence/deco_matrix_{new,prev}.txt`, `evidence/overkey_import.txt`.
+- Root cause: `reflex_base/event/__init__.py:3641-3711` — `wrapper` has no case for an input that is already an
+  `EventHandler` and builds `EventHandler(fn=EventHandler)` (3711); with options the background check (3652/3656) or the
+  frozen-dataclass `setattr` (3669) fails first.
+- Fix shape (verified on a scratch copy): `if isinstance(func, EventHandler): func = func.fn` at the top of `wrapper`,
+  merging the existing `EVENT_ACTIONS_MARKER`; all six patterns register with the right background flag; overkey imports.
 
 ## FINDING-002: [reflex-enterprise] MCPPlugin app dies at `reflex run --env prod` startup when `deploy_url` is unset (HIGH)
 - Cluster: `enterprise` | Regression vs 0.10.1: yes | Verifier: CONFIRMED (0.10.1 only worked on localhost)
@@ -136,14 +141,18 @@ Index:
   `alembic_autogenerate` do); CHANGELOG note (docs/database/overview.md mentions it, the changelog does not).
 
 ## FINDING-007: pyright on Python 3.11–3.13 loses the argument types of every bare-`@rx.event` handler (MEDIUM)
-- Cluster: `events_await` | Regression vs 0.10.1: yes | Verifier: running
+- Cluster: `events_await` | Regression vs 0.10.1: yes | Verifier: CONFIRMED (cause confirmed with patched + unpatched scratch copies)
 - Repro: `events_await/typing/run_typing.sh new reveal2.py` vs `prev`; `strict_app.py` (`# pyright: strict`) goes from 4
   to 18 errors on an unchanged app. pyright 1.1.414 / 1.1.411, Python 3.12.
 - Evidence: 0.10.1 `S.via_rx` is `EventCallback[int]`; 0.11.0a1 `EventCallback[*tuple[Unknown, ...]]`, wrong-type calls
   not reported. `@rx.event()` with parentheses unaffected; mypy correct; `--pythonversion 3.14` correct (why CI passes).
 - Root cause (reporter, confirmed on a scratch copy): `EventCallback: TypeAlias = EventCallback` inside
   `class EventNamespace` (reflex_base/event/__init__.py:3502, #7715) shadows the name in the `__new__` overload's return
-  annotation.
+  annotation (line 3577).
+- Side finding (low, regression): the annotation `rx.event.EventCallback[int]` is a pyright error ("already
+  specialized") on every Python version incl. 3.14; 0.10.1 clean.
+- Fix shape: point the overload's return annotation at a module-level alias; add a CI pyright run with
+  `--pythonversion 3.12` (CI only exercises 3.14 semantics, which hides this).
 
 ## FINDING-008: [reflex-enterprise] MCP OAuth consent redirect points at the backend origin in dev (404) (MEDIUM)
 - Cluster: `enterprise` | Regression vs 0.10.1: yes | Verifier: CONFIRMED
@@ -165,7 +174,12 @@ Index:
 - Fix shape: don't compile the initial state in `evaluate_pages`, or bundle plugin frontend deps in the skip branch.
 
 ## FINDING-010: `await State.handler()` outside an event handler / `app.modify_state` runs on a shared empty-token session (MEDIUM)
-- Cluster: `events_await` | Regression vs 0.10.1: no (new feature) | Verifier: running
+- Cluster: `events_await` | Regression vs 0.10.1: no (new feature; 0.10.1 raised TypeError) | Verifier: CONFIRMED — a real
+  cross-caller read between callers of a misusing route; browser sessions not exposed (a blank `?token=` socket is never
+  linked: `parse_qs` drops blanks, `app.py:2381-2390`)
+- Root cause: `reflex/app.py:390-391` `_RootMiddleware` attaches the event processor's root context (token `""`,
+  `event_processor.py:218`) to every request; `execute_event_inline` (`base_state_processor.py:493-517`) only raises when
+  no context exists. Fix shape: treat `not ctx.token` as no context and raise the existing `EventHandlerTypeError`.
 - Repro: `events_await/scripts/srv.sh start new $SB/apps/events_await/awaitapp dev 3180 8180 t`;
   `for i in 1 2 3; do curl -s --noproxy '*' localhost:8180/poke/any-$i; done` (route `poke` does
   `res["outside"] = await Main.add(1)` after its `modify_state` block).
@@ -203,13 +217,19 @@ Index:
   never defines `MyAuthProvider`. Repro: `verify_dbm/v5_admin.sh`.
 
 ## FINDING-015: A clicked handler returning a non-event value is now silently accepted (LOW)
-- Cluster: `events_await` | Regression: yes | Verifier: running
+- Cluster: `events_await` | Regression: diagnostics only | Verifier: RECLASSIFIED — deliberate (`base_state_processor.py:614-633`,
+  unit test `test_handler_return_value_resolves_future`); the changelog allows return values but does not say the
+  TypeError is gone or that `return self.handler` now does nothing. Fix shape: keep raising for values that can only be
+  mistaken events (bound handler method, `rx.*` event creator); dev-mode warning when a frontend event's return value is
+  dropped; changelog line.
 - Repro: legacyapp `/fail`, buttons ret_value / ret_garbage / ret_self_handler
   (`events_await/scripts/drive_legacy.py`). 0.10.1 logs `TypeError: Your handler ... must only return/yield: None, Events
   or other EventHandlers ...`; 0.11.0a1 logs nothing and `chained` never runs.
 
 ## FINDING-016: `@staticmethod` above `@rx.event` returns an `EventSpec` instead of the result (LOW)
-- Cluster: `events_await` | Regression: yes | Verifier: running
+- Cluster: `events_await` | Regression: yes | Verifier: NARROWED — on a State class the generic "Decorators above @rx.event"
+  warning does fire (wrongly implying the method still runs); on a non-state class none. Root cause `reflex/state.py:946-983`
+  (staticmethod has no `__code__`, not converted back). Fix: re-wrap as `staticmethod(inner.fn)`.
 - Repro: legacyapp `D.static_over(3)`: 0.10.1 `6`, 0.11.0a1 `EventSpec(...)`, no warning
   (`events_await/evidence/deco_page_new_vs_prev.txt`).
 
