@@ -184,16 +184,32 @@ add a reflex INFO line on respawn only if simple; instaque fix ships (follow-up 
 `ReflexError` for conflicts, keep `bugfix` fragment; 036 fold the note into `+set-var.feature.md`, `to_array()`
 non-optional OK, file the ComputedVar `set | None` typing gap and the optional-list follow-up.
 
+### Merge procedure (release owner, 2026-11-11)
+As each PR merges into `main`:
+1. Cherry-pick its squash commit from `main` onto the pre-release train branch **`r/pre-2026.11.11`** (created from
+   `r/pre-2026.11.10-42931773407` = `v0.11.0a1`, worktree `/home/user/reflex-train`): `git fetch origin main
+   r/pre-2026.11.11 && git -C /home/user/reflex-train cherry-pick -x <squash sha>`, then push. Conflicts on unreleased
+   fragments that the release branch already materialized (modify/delete on `news/*.md`, e.g. #7799's
+   `+cors-prod-default.breaking.md`, #7800's `+set-var.feature.md`, the 002 `+deploy-url-default.breaking.md` edit): apply
+   the corrected wording to the matching entry in the train branch's `CHANGELOG.md` / `packages/*/CHANGELOG.md` and keep the
+   fragment deleted; new fragments stay as new files. Record each cherry-pick in the table below.
+2. Rebase every PR stacked on the merged one onto the new `main` (which has the squash commit, not the original commits):
+   `git rebase --onto origin/main <old base tip> <branch>` and `--force-with-lease` (our branches only).
+3. When everything is in, the owner cuts the next pre-release from the train branch; then Phase 7.
+
+| PR | squash sha on main | cherry-picked to r/pre-2026.11.11 |
+|---|---|---|
+
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
 |---|---|---|
-| #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open, watch |
+| #7795 030 | fix/redis-instance-id-per-worker, /home/user/reflex-fix-030 | PR open, watch (CodSpeed red = hardware noise on route benchmarks, commented; not required) |
 | #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, watch; "call it" hint pushed (ed2ee8910) |
 | #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, watch; breaking fragment pushed |
-| #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, watch |
-| #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, watch; deploy_url sentence in `news/+cors-prod-default.breaking.md` corrected |
+| #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, watch (CodSpeed red = hardware noise, commented; not required) |
+| #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open; agent fixing CodeQL clear-text-logging alert (thread stays open for owner) + empty `cors_allowed_origins` list semantics + checking unit-tests-gate |
 | #7800 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | PR open, watch |
-| #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | PR open, watch (no INFO line: no granian hook; docs point at GRANIAN_LOG_LEVEL=info) |
+| #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | PR open, watch (bot nits fixed b1b99aba4) |
 | #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | PR open, watch |
 | #7804 034/035 | fix/client-state-api-contract, /home/user/reflex-fix-034 | PR open, watch (ClientStateConflictError) |
 | #7802 045 | fix/no-model-import-in-event-transform, /home/user/reflex-fix-045 | PR open, watch (no warm-up needed: check sys.modules instead of importing) |
