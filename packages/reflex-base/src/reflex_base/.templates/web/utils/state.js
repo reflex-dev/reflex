@@ -327,6 +327,13 @@ export const applyEvent = async (event, socket, navigate, params) => {
       );
     }
     a.download = event.payload.filename;
+    // iOS WebKit ignores the download attribute of data: urls and only shows
+    // the file, so save inline data through a blob: url instead.
+    if (a.href.startsWith("data:")) {
+      a.href = URL.createObjectURL(await (await fetch(a.href)).blob());
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    }
+    document.body.appendChild(a);
     a.click();
     a.remove();
     return;
