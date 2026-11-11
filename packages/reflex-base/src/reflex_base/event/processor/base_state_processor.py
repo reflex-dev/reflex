@@ -7,6 +7,7 @@ import dataclasses
 import functools
 import inspect
 import logging
+import sys
 import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
@@ -131,6 +132,29 @@ def _is_event_creator(value: Any) -> bool:
     return isinstance(returns, type) and issubclass(returns, EventSpec)
 
 
+def _creator_reference(creator: Any) -> str:
+    """How user code names an event creator, for the hint to call it.
+
+    Only built for an error message, so looking the creator up by identity in
+    its module costs nothing that matters.
+
+    Args:
+        creator: The uncalled event creator.
+
+    Returns:
+        ``rx.<name>`` when the creator is exported under that name, else its
+        qualified name.
+    """
+    name = getattr(creator, "__name__", None)
+    if name is None and (module := sys.modules.get(type(creator).__module__)):
+        # A callable object like rx.toast: the module-level name bound to it.
+        name = next((n for n, v in vars(module).items() if v is creator), None)
+    rx = sys.modules.get("reflex")
+    if name is not None and getattr(rx, name, None) is creator:
+        return f"rx.{name}"
+    return getattr(creator, "__qualname__", None) or name or type(creator).__qualname__
+
+
 def _is_mistaken_event(value: Any) -> bool:
     """Whether a value can only be an event its handler failed to reference or call.
 
@@ -203,6 +227,15 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
         f"Your handler {handler_name} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
         f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
     )
+    if creators := [
+        e
+        for e in events
+        if callable(e) and not isinstance(e, _EVENT_LIKE_TYPES) and _is_event_creator(e)
+    ]:
+        msg += (
+            f" Did you mean to call {'it' if len(creators) == 1 else 'them'}: "
+            f"{', '.join(f'{_creator_reference(c)}(...)' for c in creators)}?"
+        )
     raise TypeError(msg)
 
 

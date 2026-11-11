@@ -4100,6 +4100,10 @@ def _mistaken_return_state():
             return (rx.call_script,)
 
         @event
+        def returns_list_holding_uncalled_creators(self):
+            return [rx.redirect, rx.toast]
+
+        @event
         def yields_bound_handler(self):
             yield self.target
 
@@ -4148,22 +4152,32 @@ def _mistaken_return_state():
 
 
 @pytest.mark.parametrize(
-    "handler_name",
+    ("handler_name", "hint"),
     [
-        "returns_bound_handler",
-        "async_returns_bound_handler",
-        "generator_returns_bound_handler",
-        "returns_bound_background_handler",
-        "background_returns_bound_handler",
-        "returns_uncalled_redirect",
-        "returns_uncalled_toast",
-        "returns_uncalled_toast_success",
-        "returns_list_holding_bound_handler",
-        "returns_tuple_holding_uncalled_call_script",
-        "yields_bound_handler",
-        "async_yields_bound_handler",
-        "yields_uncalled_redirect",
-        "awaits_bound_handler_return",
+        ("returns_bound_handler", None),
+        ("async_returns_bound_handler", None),
+        ("generator_returns_bound_handler", None),
+        ("returns_bound_background_handler", None),
+        ("background_returns_bound_handler", None),
+        ("returns_uncalled_redirect", "Did you mean to call it: rx.redirect(...)?"),
+        ("returns_uncalled_toast", "Did you mean to call it: rx.toast(...)?"),
+        (
+            "returns_uncalled_toast_success",
+            "Did you mean to call it: Toaster.toast_success(...)?",
+        ),
+        ("returns_list_holding_bound_handler", None),
+        (
+            "returns_tuple_holding_uncalled_call_script",
+            "Did you mean to call it: rx.call_script(...)?",
+        ),
+        (
+            "returns_list_holding_uncalled_creators",
+            "Did you mean to call them: rx.redirect(...), rx.toast(...)?",
+        ),
+        ("yields_bound_handler", None),
+        ("async_yields_bound_handler", None),
+        ("yields_uncalled_redirect", "Did you mean to call it: rx.redirect(...)?"),
+        ("awaits_bound_handler_return", None),
     ],
 )
 async def test_returned_mistaken_event_raises_type_error(
@@ -4171,18 +4185,21 @@ async def test_returned_mistaken_event_raises_type_error(
     real_base_state_processor: BaseStateEventProcessor,
     token: str,
     handler_name: str,
+    hint: str | None,
 ):
     """A bound handler or an uncalled event creator is a mistaken event, never a result.
 
     ``return self.target`` (for ``type(self).target``) and ``return rx.redirect``
     (for ``rx.redirect(...)``) raise the error naming the handler, as they did
-    before return values became results, instead of silently doing nothing.
+    before return values became results, instead of silently doing nothing. An
+    uncalled event creator adds a hint naming it.
 
     Args:
         wired_app: The App wired to the processor's state manager.
         real_base_state_processor: The unmocked BaseStateEventProcessor.
         token: The client token.
         handler_name: The MistakenReturnState handler to run.
+        hint: The hint that ends the message, or None when there is none.
     """
     MistakenReturnState = _mistaken_return_state()
     handler = getattr(MistakenReturnState, handler_name)
@@ -4198,10 +4215,15 @@ async def test_returned_mistaken_event_raises_type_error(
         with pytest.raises(
             TypeError,
             match=rf"Your handler \S*MistakenReturnState\.{raising} must only return/yield",
-        ):
+        ) as exc_info:
             await future
         await processor.join(5)
     assert len(captured) == 1
+    message = str(exc_info.value)
+    if hint is None:
+        assert "Did you mean" not in message
+    else:
+        assert message.endswith(f". {hint}")
     async with _read_back(real_base_state_processor, token) as root:
         assert (await root.get_state(MistakenReturnState)).target_runs == 0
 
