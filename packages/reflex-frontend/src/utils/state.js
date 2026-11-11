@@ -1154,7 +1154,7 @@ export const connect = async (
 
   function checkVisibility() {
     if (!socket.current) {
-      // The event loop that owned this socket unmounted and released it.
+      // The socket was released without stopWatchingVisibility being called.
       // Connecting here would open a socket nothing listens to any more.
       document.removeEventListener("visibilitychange", checkVisibility);
       return;
@@ -1347,6 +1347,10 @@ export const connect = async (
   socket.current.on(STATE_MISMATCH_EVENT, handleStateMismatch);
 
   document.addEventListener("visibilitychange", checkVisibility);
+  // Called by whoever releases the socket: the listener lives on the document,
+  // so it would otherwise outlive the socket and everything it closes over.
+  socket.current.stopWatchingVisibility = () =>
+    document.removeEventListener("visibilitychange", checkVisibility);
   socket.current.connect();
 };
 
@@ -1737,6 +1741,7 @@ export const useEventLoop = (
       if (socket.current) {
         socket.current.disconnect();
         socket.current.off();
+        socket.current.stopWatchingVisibility();
         socket.current = null;
       }
     };

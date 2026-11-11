@@ -86,10 +86,13 @@ const params = { current: {} };
 
 let state;
 let registry;
+// Sockets connected without an event loop around them, which nothing unmounts.
+let looseSockets;
 
 beforeEach(async () => {
   vi.resetModules();
   io.mockReset().mockImplementation(fakeSocket);
+  looseSockets = [];
   sessionStorage.clear();
   state = await import("$/utils/state");
   registry = await import("$/utils/context-registry");
@@ -109,6 +112,12 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  // Release what a mounted loop's cleanup would, so no listener of this test
+  // answers an event dispatched by the next.
+  for (const socketRef of looseSockets) {
+    socketRef.current?.stopWatchingVisibility();
+    socketRef.current = null;
+  }
   vi.restoreAllMocks();
   document.body.replaceChildren();
 });
@@ -125,6 +134,7 @@ const connectSocket = async () => {
     navigate,
     params,
   );
+  looseSockets.push(socketRef);
   return socketRef;
 };
 
@@ -241,6 +251,21 @@ test("an unmounted event loop is not reconnected when the page becomes visible",
 
   expect(document.visibilityState).toBe("visible");
   expect(io).toHaveBeenCalledTimes(1);
+});
+
+test("unmounting the event loop removes its visibility listener at once", async () => {
+  const added = vi.spyOn(document, "addEventListener");
+  const removed = vi.spyOn(document, "removeEventListener");
+  const loop = await mountEventLoop();
+  const listener = added.mock.calls.find(
+    ([type]) => type === "visibilitychange",
+  )[1];
+
+  await loop.unmount();
+
+  // Not at the next visibility change: a page that stays visible would keep
+  // the listener, and everything it closes over, for good.
+  expect(removed).toHaveBeenCalledWith("visibilitychange", listener);
 });
 
 test("a mounted event loop reconnects its socket when the page becomes visible", async () => {
