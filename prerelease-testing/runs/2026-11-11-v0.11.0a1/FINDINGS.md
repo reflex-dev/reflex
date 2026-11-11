@@ -37,8 +37,8 @@ FINDING-002 / -003 / -008 (reflex-enterprise 0.9.11 breaks on 0.11: MCP prod sta
 (unregistered DeclarativeBase silently drops every table — not a regression, but the docs now steer everyone there),
 FINDING-005 / -006 / -007 / -009 / -016 (regressions), plus small fixes and changelog lines listed in the plan.
 
-**Counts.** 43 findings: 5 HIGH, 13 MEDIUM (one MEDIUM-LOW), 2 LOW-MEDIUM, 23 LOW; 14 are regressions against 0.10.1
-(001, 002, 003, 005, 006, 007, 008, 009, 015 (diagnostics), 016, 022, 024, 037, 038). Verifiers refuted, narrowed or
+**Counts.** 47 findings (FINDING-043 split into -044 … -048): 5 HIGH, 13 MEDIUM (one MEDIUM-LOW), 3 LOW-MEDIUM, 26 LOW;
+15 are regressions against 0.10.1 (001, 002, 003, 005, 006, 007, 008, 009, 015 (diagnostics), 016, 022, 024, 037, 038, 044). Verifiers refuted, narrowed or
 reclassified 17 claims (listed below); none was refuted outright as non-reproducible.
 
 Index:
@@ -84,7 +84,12 @@ Index:
 - FINDING-040: on_mount / on_unmount inside `rx.cond` inside an `@rx.memo` body fire unconditionally (LOW-MEDIUM, not a regression)
 - FINDING-041: `rx.foreach` with item hooks inside `@rx.memo` crashes the whole page (documented "not covered yet") (MEDIUM, not a regression)
 - FINDING-042: #7674 lucide digit-icon fix does not reach in-place upgraders (lucide floor 1.1.1) (MEDIUM, part of PKG-A)
-- FINDING-043: compile_memo lows: f-string ids in foreach all share one ref (set_focus targets the last row); blocking-monitor blames user handler for reflex's lazy sqlalchemy import; repeated auto_memoize warning; upload handler exception cuts the chunked response (LOW)
+- FINDING-043: (split into FINDING-044 … -048)
+- FINDING-044: An upload handler that raises now cuts the `/_upload` response mid-body (`incomplete chunked read`) instead of returning HTTP 500 (LOW-MEDIUM, regression — behaviour change) *(to investigate)*
+- FINDING-045: Dev blocking monitor blames user handlers for reflex's own lazy imports (LOW, new in 0.11 — #7672) *(to investigate)*
+- FINDING-046: Blocking-monitor warnings for third-party handlers carry no app location; an invalid threshold env var gives a raw traceback (LOW, new in 0.11 — #7672) *(to investigate)*
+- FINDING-047: "auto_memoize=False without react_compiler=True" warning is not deduplicated (2× per compile, 5× per dev run) (LOW, new in 0.11 — #7694)
+- FINDING-048: f-string `id` inside `rx.foreach` gives every row the same ref; `rx.set_focus` / `rx.set_value` target the last row (LOW, pre-existing) *(to investigate)*
 - PKG-A (maintainer decision): reflex 0.11.0a1 requires only `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`
 
 ---
@@ -479,13 +484,55 @@ Index:
   lucide 1.1.1 and hosting-cli 0.2.1; root `pyproject.toml:40,48`). Fix: floors `>= 1.1.2.dev0` / `>= 0.2.2.dev0` before final. With lucide 1.1.1 (what `pip install -U reflex` keeps):
   `rx.icon(S.icon_name)` with `grid_2x_2` blank, `DynamicIcon not found` ×11; 1.1.2a1 renders. See PKG-A.
 
-## FINDING-043: compile_memo lows (LOW)
-- f-string id in foreach (`rx.set_focus(f"rf_{item}")`) → every row registers `ref_rf_item_rx_state_`; focus/set_value hit
-  the last row (same on 0.10.1).
-- Blocking monitor blames a trivial handler for `_transform_event_arg`'s lazy `from reflex.model import Model` (0.2-0.9 s
-  sqlalchemy import) on the first dict-arg event (also seen by enterprise).
-- "auto_memoize=False without react_compiler=True" warning logged 2× per compile, 5× per dev run (no dedupe guard).
-- Upload handler raising: response cut mid-body (`incomplete chunked read`; 0.10.1 returned 500); exception logged twice.
+## FINDING-043: split
+Split into FINDING-044 … -048 (the original entry mixed a regression, issues in new 0.11 features and a pre-existing
+defect). Two related blocking-monitor observations from other clusters were folded into FINDING-045 / -046.
+
+## FINDING-044: An upload handler that raises cuts the `/_upload` response mid-body instead of returning HTTP 500 (LOW-MEDIUM)
+- Cluster: `compile_memo` | Regression vs 0.10.1: yes (behaviour change; the double log is pre-existing) | Not verified
+- Repro: `compile_memo/scripts/hostile_upload.py` — raw multipart to `/_upload` with a 300-char filename makes the user's
+  upload handler raise `OSError: File name too long`. 0.11.0a1: the client sees the response cut mid-stream (`incomplete
+  chunked read`); 0.10.1: HTTP 500. Both log the exception twice (event processor and granian "Application callable raised").
+- To investigate: which PR changed the upload response to a stream that is already committed when the handler raises (likely
+  the streamed upload updates of #7721 / #7409); what the browser `rx.upload` UI shows in each version for a failing handler
+  (error callback, toast, stuck progress?); whether a `rx.upload_files(on_upload_error=...)`-style path still fires; whether
+  the response can end with an explicit error frame instead of a truncated body; dedupe the double log.
+
+## FINDING-045: Dev blocking monitor blames user handlers for reflex's own lazy imports (LOW)
+- Cluster: `compile_memo` (also seen by `enterprise`) | Regression: no — new in 0.11 (#7672 monitor); the lazy import exists
+  in 0.10.1 | Not verified
+- Repro: cm dev server, `/upload` page: the first event whose handler takes a `dict` arg (`on_progress(self, prog: dict)`)
+  runs `from reflex.model import Model` (imports sqlalchemy, 0.2-0.9 s) inside `_transform_event_arg`; dev logs
+  `Warning: Event handler S.on_progress is blocking the event loop (threshold: 0.200s)` with a stack through sqlalchemy
+  imports (`compile_memo/NOTES.md`, logs `new_dev_T_F.log` in the QA scratch dir). The enterprise flow demo got the same
+  kind of warning for `AddNodesOnEdgeDropState.handle_connect_end` with 0.219 s spent in reflex's lazy `reflex.model`
+  import (`enterprise/NOTES.md` ~244).
+- To investigate: every lazy import on the event path (`_transform_event_arg` and others); fix shape: import them at
+  backend startup in dev (or when the monitor is enabled), or attribute time spent in framework import frames to reflex
+  rather than the handler.
+
+## FINDING-046: Blocking-monitor warnings for third-party handlers carry no app location; invalid threshold gives a raw traceback (LOW)
+- Cluster: `server_net` (also `db_upgrade`) | Regression: no — new in 0.11 (#7672) | Not verified
+- Repro: reflex-local-auth 0.5.0 login: every login prints a ~30-line `LoginState.on_submit is blocking the event loop`
+  warning (bcrypt.checkpw, 0.27-0.30 s) with no app file/line; the app developer cannot fix it (`server_net/NOTES.md`
+  "#7672/#7746 event-loop blocking monitor", `bin/blk.sh`). `REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD=abc` / `-1` print a raw
+  traceback before the clear error.
+- To investigate: name the handler's package when it is not the app's, shorten the stack to the first user/third-party
+  frame, a way to silence a known third-party handler; validate the env var without a traceback.
+
+## FINDING-047: "auto_memoize=False without react_compiler=True" warning is not deduplicated (LOW)
+- Cluster: `compile_memo` | Regression: no — new in 0.11 (#7694) | Not verified (trivial)
+- `REFLEX_AUTO_MEMOIZE=false REFLEX_REACT_COMPILER=false reflex compile` logs it 2×; `reflex run` (dev) 5×. The
+  react_compiler warning is guarded by `_warned_react_compiler`; this one has no guard. Fix: same once-per-process guard.
+
+## FINDING-048: f-string `id` inside `rx.foreach` gives every row the same ref (LOW)
+- Cluster: `compile_memo` | Regression: no (identical on 0.10.1) | Not verified
+- Repro: cm page `/rowfocus`: `rx.foreach(S.items, lambda item: rx.hstack(rx.input(id=f"rf_{item}"),
+  rx.button("f", on_click=rx.set_focus(f"rf_{item}"))))` — each button focuses the last input; `rx.set_value` sets only the
+  last input. All rows register `useRegisteredRef("ref_rf_item_rx_state_")` while the DOM ids are distinct.
+- To investigate: 0.11 rewrote f-string ref naming for reproducible builds (#7564/#7691/#7707) — the per-item value is
+  still dropped from the ref name; should refs for ids built from a loop var be keyed at runtime (e.g. a ref map keyed by the
+  evaluated id) so per-row `set_focus` / `set_value` / `scroll_to` work?
 
 ## PKG-A: sibling floors (maintainer decision)
 reflex 0.11.0a1 requires `reflex-components-lucide>=1.1.1` and `reflex-hosting-cli>=0.2.1`. A stock `pip install
@@ -571,7 +618,7 @@ handlers; REST/WS parity; Redis; lifespan; CORS. Issues: FINDING-002/-003/-008/-
 ### `compile_memo` (pass:17, anomaly:6, fail:4)
 auto_memoize × react_compiler matrix in dev + prod (F,T best render counts, 2.2× faster Python compile); #7793 foreach
 hooks, #7409 uploads, reproducible exports, per-component lazy libs, callout / code_block / match typing / mapping perf
-verified. Issues: FINDING-003 widening (HIGH), FINDING-039 … -043.
+verified. Issues: FINDING-003 widening (HIGH), FINDING-039 … -042, FINDING-044, -045, -047, -048.
 ### `examples_ui` (pass:13, anomaly:3, fail:2)
 Nine non-DB reflex-examples apps (counter, github-stats, overkey, reflexle, upload, clock, quiz, snakegame, lorem-stream)
 upgraded in place 0.10.1 → 0.11.0a1, dev/prod/cold: identical results except overkey (FINDING-001; fixed with a one-line

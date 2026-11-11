@@ -82,7 +82,7 @@ significant user impact / trivially small; everything else is filed. Each entry 
 - FINDING-031 (cross-worker updates lost after > 5 s Redis outage), FINDING-032 (dead worker's socket record → new token),
   FINDING-033 (no granian respawn; consider `respawn_failed_workers=True`), the in-process "instaque" barging note.
 - FINDING-040 (on_mount in cond in memo body), FINDING-041 (foreach with hooks inside memo crashes the page; reword
-  "not covered yet"), FINDING-043 (compile_memo lows), FINDING-035 (client_state identifier collisions), FINDING-036 (optional collection ops crash / fail prod build), and the
+  "not covered yet"), FINDING-044 (failing upload handler now truncates the response instead of HTTP 500 — regression, investigate first), FINDING-045 / -046 (blocking-monitor attribution and noise), FINDING-047 (dedupe a warning — trivial), FINDING-048 (per-row refs in foreach), FINDING-035 (client_state identifier collisions), FINDING-036 (optional collection ops crash / fail prod build), and the
   unverified client_vars lows: `rx.match` on sets order-dependent; `set[str]` handler args arrive as list; `split()` UTF-16;
   int/list storage factories; remaining cryptic backend-var errors; foreach row-index client state (docs).
 
