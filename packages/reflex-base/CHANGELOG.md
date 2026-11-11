@@ -2,7 +2,7 @@
 
 ### Breaking Changes
 
-- `deploy_url` now defaults to `None` instead of `http://localhost:3000` and is no longer derived from `frontend_port`. The new `Config.frontend_url` property returns `deploy_url` when set and `http://localhost:<frontend_port>` otherwise; the sitemap plugin builds absolute links from it. ([#7641](https://github.com/reflex-dev/reflex/issues/7641))
+- `deploy_url` now defaults to `None` instead of `http://localhost:3000` and is no longer derived from `frontend_port`. The new `Config.frontend_url` property returns `deploy_url` when set and `http://localhost:<frontend_port>` otherwise; the sitemap plugin builds absolute links from it. Code that reads `config.deploy_url` must now handle `None`: use `config.frontend_url` for the frontend's origin, or `config.api_url` when the backend serves the frontend from its own origin (single-port `--env prod`). ([#7641](https://github.com/reflex-dev/reflex/issues/7641))
 - A `set` or `frozenset` state var is now a `SetVar` rather than an `ArrayVar`, so it no longer type-checks as a sequence in frontend code: indexing, slicing, `map`, `filter`, `join`, `reverse`, `+`, `*`, the comparisons `<`, `<=`, `>` and `>=`, and `contains` with a `field` on it are deprecated. They still compile for now with a deprecation warning and will be removed in 1.0. Call `.to_array()` first:
 
   ```python
@@ -33,7 +33,7 @@
       first = await type(self).add(amount)
       yield rx.toast(f"total is now {await type(self).add(amount)}")
   ``` ([#7673](https://github.com/reflex-dev/reflex/issues/7673))
-- React Compiler now optimizes generated components that use `id` refs, generated UUIDs, and memoized event handlers such as upload callbacks. The `react_compiler` option now installs the experimental `babel-plugin-react-compiler` release. Component `id` refs register through the new `useRegisteredRef` hook in `$/utils/state`. Enabling `react_compiler` now logs a warning that the option is experimental. ([#7694](https://github.com/reflex-dev/reflex/issues/7694))
+- React Compiler now optimizes generated components that use `id` refs, generated UUIDs, and memoized event handlers such as upload callbacks. The `react_compiler` option now installs the experimental `babel-plugin-react-compiler` release. Component `id` refs register through the new `useRegisteredRef` hook in `$/utils/state`. The `refs` object it fills is internal and not covered by compatibility guarantees. Enabling `react_compiler` now logs a warning that the option is experimental. ([#7694](https://github.com/reflex-dev/reflex/issues/7694))
 - Serialize SQLAlchemy `DeclarativeBase` models without a custom `@rx.serializer`: loaded columns and relationships are sent, and unloaded or expired attributes are left out instead of raising `DetachedInstanceError` or `MissingGreenlet`. ([#7756](https://github.com/reflex-dev/reflex/issues/7756))
 
 ### Bug Fixes
