@@ -1,8 +1,30 @@
 # server_net — reflex 0.11.0a1 (CORS, lifespan/api_transformer, routes, hydration, CLI shutdown/ports, blocking monitor, otel, hosting-cli)
 
 ## Status / resume here
-- In progress. Done: harness, prod same-origin smoke, signal shutdown prod (INT group / TERM pid / INT pid, new vs prev).
-- Next: dev signals + --json, lifespan matrix, CORS split-origin matrix, routes, HYD-06, #7621, #7653, blocking monitor, otel, hosting-cli.
+- DONE (2026-11-11). Report: `../reports/server_net.md`. All servers/browsers stopped; ports 3340-3359/8340-8359 free.
+- Scratch (full logs, run dirs with .web): `$SB/apps/server_net/` (`logs/`, `res/`, `run/<venv>/netapp`, `hyd/`, `static/`).
+- Own venvs: `$SB/envs/server_net-{main,prev,otel,hc,hcold,la}`.
+- Not done: real reflex-workflow run (needs Postgres; scratch dir not traversable by the postgres user), Windows/macOS,
+  reverse-proxy Host rewriting, enterprise REST/MCP CORS (enterprise cluster).
+
+## Issues (details in the sections below)
+1. MEDIUM, regression: documented split deployment (docs/hosting/self-hosting.md "frontend and backend as separate
+   processes"; docker-example/app-platform-backend README) never connects on 0.11.0a1 — websocket 403 — because the docs
+   were not updated for #7641 (`deploy_url`/`cors_allowed_origins` needed). Repro `bin/split_doc.sh`.
+2. LOW, regression: the CORS rejection is hard to diagnose — browser toast says "Cannot connect to server: websocket
+   error. Check if server is reachable at ws://..." while /ping works; the server logs one engineio line "X is not an
+   accepted origin." (then INFO), no Reflex hint at `deploy_url` / `cors_allowed_origins`. Evidence
+   `evidence/shots/cors_A_unset_basic_end.png`, `evidence/logs/cors_server_origin_lines.log`.
+3. LOW: case-colliding pages (`/Foo` + `/foo`) are accepted silently; with #7599 one of them is unreachable.
+4. LOW: prod `reflex run`: repeated Ctrl-C does not force the exit while lifespan cleanup is stuck (force path only in
+   `_run_dev`), though the #7650 changelog says "`reflex run` ... a later Ctrl-C forces the exit". Not a regression.
+5. LOW (docs): `rx.App()()` now returns `reflex.app._RootMiddleware` (no Starlette API) — breaking for code using
+   `.routes/.add_middleware`, but the changelog files it under Performance only.
+Anomalies: blocking-monitor warnings for third-party handlers (reflex-local-auth bcrypt) carry no app location and are
+not actionable; app loggers (`logging.getLogger(__name__)`) and print() get no trace ids under REFLEX_LOG_JSON; a
+transformer middleware that does not forward lifespan makes Reflex skip the FastAPI lifespan with only an Info line;
+oversized events are dropped silently (pre-existing); invalid `REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD` gives a raw
+traceback; prod `reflex run` refuses rxconfig `frontend_port`/`backend_port` that differ (pre-existing).
 
 ## Setup (reproduce)
 ```
@@ -212,3 +234,16 @@ App `src/otelapp` (`ReflexInstrumentor().instrument()` at import), prod 3356, `O
 - Healthy /ping 200 ~1.5 ms; after a syntax error is appended (hot reload) the backend **refuses immediately**
   (connection refused in ~0.1 ms, no hang) for 15 s; after the fix the first 200 comes back within 1 s; SIGTERM ->
   /ping refused after 0.12 s. Same on 0.10.1. -> still fixed.
+
+### CORS with `transport="polling"` (static export re-made with `NA_TRANSPORT=polling` in `$W/static/server_net-main-poll`; `STATIC=... bin/cors.sh ...`)
+- H_poll_deploy (`REFLEX_DEPLOY_URL=http://localhost:3346`): browser 11/11 over polling; polling GET answers 200 with
+  ACAO only for the deploy origin. engine.io origin checks are off for polling (`cors_allowed_origins=[]`), so a polling
+  session is created for any Origin (unreadable cross-origin; same as before).
+- H_poll_unset: never connects; 53 failed requests in ~2 min; browser console has the clear Chromium message "blocked by
+  CORS policy: No 'Access-Control-Allow-Origin' header"; nothing in the server log.
+
+## Artifacts in this dir
+`src/netapp`, `src/otelapp` (apps), `bin/*.sh` (runners), `drivers/*.py` (Playwright / raw probes), `evidence/logs`
+(json matrix, lifespan matrices, prenav, blocking excerpts, otel JSON records, lifespan-fail rc=1 log, CORS origin
+lines), `evidence/res` (probe/driver JSON), `evidence/shots` (CORS rejection toast, documented split deployment,
+hydration-too-large toast), `new_constraints.txt` / `prev_constraints.txt` (freeze of the shared venvs used as -c).

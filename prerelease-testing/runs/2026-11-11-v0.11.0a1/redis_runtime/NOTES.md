@@ -88,3 +88,56 @@ Raw: `logs/faults_lost.jsonl`, `faults2.jsonl`, `faults3.jsonl`, `faults4.jsonl`
   `pool.get_connection()` -> `connection.connect()` -> `asyncio/selector_events.py writelines -> self._write_ready()`
   `TypeError: 'NoneType' object is not callable` (the shielded re-release of #7534 opens a new connection while the loop's
   transports are being torn down). Log overwritten by a rerun (tag reuse, fixed since); excerpt recorded here.
+
+## C. Cancellation / failed handlers in Chromium (`bin/drive_cancel.py BASE OUT SHOTS`; prod + Redis 8237, 1 worker, 3221)
+Rerun: `REFLEX_REDIS_URL=redis://localhost:8237 REFLEX_API_URL=http://localhost:3221 GRANIAN_WORKERS=1 reflex run --env prod --frontend-port 3221 --backend-port 3221`
+in a copy of `apps/lockapp`, then `$SB/envs/driver/bin/python bin/drive_cancel.py http://localhost:3221 out.json shots/`.
+| check | 0.11.0a1 (stock, redis 8.1.0) | 0.10.1 |
+|---|---|---|
+| raise_mid (`r1+=1; yield; r2+=1; raise`): UI and server r1=r2=1, survives reload | PASS | FAIL: UI r1=1/r2=0, server r1=0/r2=0 (rollback; EVT-16) |
+| `supersedes=True` twice (2nd cancels 1st after 0.75 s): first call's progress kept, UI == server | PASS (calls 2, progress 8, done 1) | FAIL: server calls 1 / progress 5 (first invocation's writes lost; EVT-08) |
+| #7738 linked `get_state` load fails, then incr | 0.055 s | 0.055 s (control does not reproduce, see below) |
+| #7738 cancel while the linked state loads (redis CLIENT PAUSE 3 s opened from inside the parent's unpickle; `paused_at` confirms), then incr | 0.06 s | 0.06 s |
+| bg task (50 increments) while navigating / -> /other -> / | PASS | PASS |
+| close the tab mid `slow(3000)`, reopen same token | event completed server-side; next event 4 ms | same |
+Console: only the favicon 404. 0.10.1 server log also shows `RuntimeError: aclose(): asynchronous generator is already running`
+after the raise path (first driver version re-entered `self`).
+#7738 note: in a real app the 0.10.1 bug is masked: once the bg task ends (or even while it lives on, `linked_hold.py
+fail_hold`, 0.02 s), the leaked parent context is finalized by the loop's async-generator hook and the lock released.
+The armed failure first fired at SAVE time (`__getstate__` deep-copies defaults) — fixed by `Bomb.__deepcopy__`; the final
+variant's second load did not raise at all (Other apparently not re-unpickled), so the true linked-load failure path
+was only reached through the cancel variant. Positive control never reproduced -> #7738 "verified no regression", not
+"verified fixed".
+
+## D. Dev hot reload #7616 and auto setters #7590 (`bin/drive_dev.py BASE APP_DIR LOG OUT [--setter-only]`, apps/devapp)
+- #7616 (dev, 3222/8222): bump n to 3, edit `CODE_VERSION = "V1"` -> `"V2"`, reload the page (same token):
+  0.11.0a1 disk manager and Redis: label `V2:3`, label2 `L2[V2:3]` (cached var depending on a cached var), child
+  `child-V2:3`, fields n=3 / name kept. FIXED. 0.10.1 disk and Redis: still `V1:3` 110 s after the edit (stale until the
+  next write). Note: 0.11.0a1 restarts the worker on reload (pid changes), 0.10.1 kept the pid.
+- #7590 `state_auto_setters=True` + `on_change=S.set_name`:
+  | mode | 0.11.0a1 | 0.10.1 |
+  |---|---|---|
+  | prod `REFLEX_BACKEND_START_METHOD=spawn GRANIAN_WORKERS=2` | PASS | FAIL `KeyError: 'No registered handler found for event: ...s.set_name'` + frontend "state schema" mismatch warning |
+  | dev `REFLEX_STRICT_HOT_RELOAD=1` | PASS | FAIL (same) |
+  | dev `REFLEX_BACKEND_START_METHOD=spawn` | PASS | FAIL (same) |
+  | Python 3.14.6 dev default / prod 2 workers (STATE-26) | PASS / PASS | PASS (dev default; control does not reproduce on Linux) |
+- Docs/Dockerfiles: `docker-example/*/Dockerfile` and `docs/hosting/*.md` only use `reflex run`; no hard-coded
+  `app:app` granian/uvicorn targets, so the `reflex.utils.exec:_backend_app` factory change breaks nothing documented.
+
+## F. Registry re-verification
+- EVT-04 (`bin/drive_evt04.py`, prod + Redis, DEFAULT workers = 8): 6 Chromium tabs each start bg_incr(50) and get 10
+  `/api/bump` from all 8 workers: 6/6 tabs show bg 50 / api 10 / count 60, both 0.11.0a1 and 0.10.1.
+- STATE-20: `fixtures/class_state/bin/n004_redis_chain.sh prev redis_runtime-stock prev redis_runtime-stock` (overrides:
+  `W=$SB/apps/redis_runtime/cs REDIS_PORT=8238 CHAIN_PORT=3224 PORT_LO_F=3220 PORT_HI_F=3239 PORT_LO_B=8220 PORT_HI_B=8239`):
+  one token survives 0.10.1 -> 0.11.0a1 -> 0.10.1 -> 0.11.0a1 (limit 10->11->12->13->14, items/mixin carried), no server errors.
+  `n004_matrix.sh` (stock, new, prev, py311): schema hashes identical everywhere (HBase=2efae263… HChild=f2d2a961…
+  HCfg=472cb6c5… HSd=cb3b6199…), all 32 save/load pairs LOADED, including Python 3.11 <-> 3.12 (STATE-21 not reproduced
+  for these shapes).
+- EVT-08 / EVT-16 (supersedes / raise rollback under Redis): fixed (table C).
+- HYD-07 (token reassigned after an unclean stop): reproducible on demand: kill -9 a worker -> restart -> `new_token` (B).
+
+## Misc
+- `REFLEX_REDIS_URL=...?socket_timeout=2` overrides Reflex's `socket_timeout=None` (URL query wins in redis-py
+  `from_url`; checked on redis-py 7.4.1 / 8.1.0 / 8.2.0b1) — a usable mitigation for half-open connections.
+- No "attached to a different loop", "Task was destroyed", "never awaited" in any server log (#7751; dev hot reload +
+  Redis and multi-worker prod both fine).

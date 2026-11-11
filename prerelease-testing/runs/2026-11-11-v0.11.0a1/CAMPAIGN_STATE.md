@@ -88,7 +88,7 @@ items in its area. Known and filed items: do NOT re-report unless changed.
 | 7 enterprise | explore DONE (3 rxe regressions: MCP prod crash w/o deploy_url HIGH, MCP consent redirect dev, AG Grid `refs` ReferenceError HIGH; 1 reflex regression: db migrate on fresh rxe app); DONE + verified: rxe #1 MCP prod crash CONFIRMED high, #2 consent redirect CONFIRMED medium, #3 AG Grid `refs` CONFIRMED high (rxe fix + optional reflex one-line shim), #4 reflex `db migrate` NARROWED medium-low | `reports/enterprise.md`, `reports/verify_ent.md` |
 | 2 events_await | explore DONE (HIGH regression: double @rx.event crashes at import, overkey; medium regression: pyright Unknown args on py3.11-3.13; +5 low); verifier `verify_evt` running | `reports/events_await.md` |
 | 3 redis_runtime | explore running (opus high) | `reports/redis_runtime.md` |
-| 6 server_net | explore running (opus high) | `reports/server_net.md` |
+| 6 server_net | explore DONE (medium regression: documented split deployment 403 under new CORS default; low: CORS error says unreachable, case-dup routes, prod double Ctrl-C, App()() not Starlette); verifier `verify_net` running | `reports/server_net.md` |
 | 4 client_vars | explore running (fable high) | `reports/client_vars.md` |
 | 5 compile_memo | explore running (opus high; also checks reflex's own `refs` surface after the rxe ReferenceError) | `reports/compile_memo.md` |
 | 8 examples_ui | not started — launch next | |
