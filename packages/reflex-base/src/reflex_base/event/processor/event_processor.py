@@ -13,6 +13,7 @@ import sys
 import time
 from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequence
 from contextvars import Token, copy_context
+from types import TracebackType
 from typing import TYPE_CHECKING, Any, Self, TypeVar
 
 from reflex.app_mixins.middleware import MiddlewareMixin
@@ -936,6 +937,21 @@ class EventProcessor:
                 EventContext.set(ev_ctx)
             self.backend_exception_handler(ex)
 
+    async def _handle_raised_exception(
+        self, ex: Exception, tb: TracebackType | None, ev_ctx: EventContext
+    ) -> None:
+        """Handle an event's exception with the traceback it was raised with.
+
+        A caller awaiting the event's future (e.g. an upload stream) re-raises
+        the exception before this runs, which replaces the handler's frames.
+
+        Args:
+            ex: The exception the event raised.
+            tb: The traceback captured when the event's task finished.
+            ev_ctx: The event context of the failed event.
+        """
+        await self._handle_backend_exception(ex.with_traceback(tb), ev_ctx=ev_ctx)
+
     def _finish_task(self, task: asyncio.Task):
         """Callback for finishing a _process_event_queue_entry task.
 
@@ -990,6 +1006,7 @@ class EventProcessor:
         except Exception as ex:
             from reflex.utils import telemetry
 
+            tb = ex.__traceback__
             if future is not None and not future.done():
                 future.set_exception(ex)
                 with contextlib.suppress(BaseException):
@@ -1002,7 +1019,7 @@ class EventProcessor:
             ):
                 # Create a new task in the same context to invoke the exception handler.
                 t = self._tasks[task_ctx.txid] = asyncio.create_task(
-                    self._handle_backend_exception(ex, ev_ctx=task_ctx),
+                    self._handle_raised_exception(ex, tb, task_ctx),
                     name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
                 )
                 if sys.version_info < (3, 12):

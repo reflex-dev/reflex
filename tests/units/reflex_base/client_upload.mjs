@@ -142,3 +142,37 @@ for (const [kind, fail] of Object.entries(failures)) {
     );
   });
 }
+
+test("an error frame ending the stream fails the upload, not the listener", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const socket = {
+    _callbacks: { $event: [(update) => handled.push(update.delta.state.n)] },
+  };
+  const uploaded = uploadFiles(
+    "state.handle_upload",
+    [],
+    "upload",
+    undefined,
+    {},
+    {},
+    socket,
+    {},
+    (url) => url,
+    () => "token",
+  );
+  const request = StreamedRequest.sent.at(-1);
+  request.receive(
+    '{"delta": {"state": {"n": 1}}}\n{"error": "handler failed"}\n',
+    {
+      done: true,
+    },
+  );
+  request.finish();
+  assert.equal(await uploaded, false);
+  assert.deepEqual(handled, [1]);
+  assert.deepEqual(
+    log.mock.calls.map((call) => call.arguments),
+    [["Upload error:", "handler failed"]],
+  );
+});

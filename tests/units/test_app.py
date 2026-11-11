@@ -13,6 +13,7 @@ import pickle
 import re
 import tempfile
 import threading
+import traceback
 import unittest.mock
 import uuid
 from collections.abc import AsyncGenerator, Generator
@@ -22,6 +23,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
 
+import httpx
 import pytest
 import pytest_asyncio
 import reflex_base
@@ -1719,6 +1721,102 @@ async def test_upload_file_unknown_handler_returns_400(
     # The form should never have been read: the handler lookup fails first.
     request_mock.form.assert_not_called()
     await app.state_manager.close()
+
+
+async def _post_failing_upload(
+    handler: str,
+    token: str,
+    processor: BaseStateEventProcessor,
+) -> tuple[httpx.Response, list[tuple[Exception, list[str]]]]:
+    """POST an upload to a failing handler through a real ASGI app.
+
+    The transport re-raises any exception that escapes the app, which the
+    server would otherwise log a second time.
+
+    Args:
+        handler: The FileUploadState handler to upload to.
+        token: The client token.
+        processor: The event processor serving the upload.
+
+    Returns:
+        The response, and each exception the backend exception handler
+        received, with the names of its traceback's frames at that time.
+    """
+    handled: list[tuple[Exception, list[str]]] = []
+
+    def _handle(ex: Exception) -> None:
+        handled.append((ex, [f.name for f in traceback.extract_tb(ex.__traceback__)]))
+
+    processor.backend_exception_handler = _handle
+    api = Starlette(
+        routes=[
+            Route("/_upload", upload(Mock(event_processor=processor)), methods=["POST"])
+        ]
+    )
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=api), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/_upload",
+            files=[("files", ("a.txt", b"data", "text/plain"))],
+            headers={
+                "reflex-client-token": token,
+                "reflex-event-handler": f"{FileUploadState.get_full_name()}.{handler}",
+            },
+        )
+    await processor.join()
+    return response, handled
+
+
+@pytest.mark.asyncio
+async def test_upload_handler_error_before_any_update_returns_500(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A handler that raises before streaming anything gets a clean 500 response.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+    """
+    response, handled = await _post_failing_upload(
+        "failing_upload",
+        token,
+        attached_mock_base_state_event_processor,
+    )
+    assert response.status_code == 500, response.text
+    # Handled once, by the backend exception handler, with the handler's frame.
+    ((error, frames),) = handled
+    assert isinstance(error, OSError)
+    assert "failing_upload" in frames
+
+
+@pytest.mark.asyncio
+async def test_upload_handler_error_after_update_ends_stream_with_error_frame(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A handler that raises after streaming an update ends the stream with an error frame.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+    """
+    response, handled = await _post_failing_upload(
+        "yield_then_fail_upload",
+        token,
+        attached_mock_base_state_event_processor,
+    )
+    assert response.status_code == 200
+    *updates, last = [json.loads(line) for line in response.text.splitlines()]
+    assert updates[0]["delta"] == {
+        FileUploadState.get_full_name(): {"img_list" + FIELD_MARKER: ["partial"]}
+    }
+    # An explicit error frame, not a truncated body.
+    assert list(last) == ["error"]
+    ((error, frames),) = handled
+    assert isinstance(error, OSError)
+    assert "yield_then_fail_upload" in frames
 
 
 @pytest.mark.asyncio

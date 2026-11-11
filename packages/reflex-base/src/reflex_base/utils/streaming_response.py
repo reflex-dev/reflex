@@ -11,7 +11,7 @@ import anyio
 from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
 
-from reflex_base.utils.types import Receive, Scope, Send
+from reflex_base.utils.types import Message, Receive, Scope, Send
 
 
 def _parse_asgi_spec_version(scope: Scope) -> tuple[int, ...]:
@@ -84,6 +84,29 @@ class DisconnectAwareStreamingResponse(StreamingResponse):
         aclose = getattr(self.body_iterator, "aclose", None)
         if aclose is not None:
             await aclose()
+
+    async def stream_response(self, send: Send) -> None:
+        """Stream the body, holding the response start until the first body message.
+
+        A body iterator that raises before yielding then leaves the response
+        unstarted, so the app can still answer with an error status.
+
+        Args:
+            send: The ASGI send callable.
+        """
+        start: Message | None = None
+
+        async def send_start_with_body(message: Message) -> None:
+            nonlocal start
+            if message["type"] == "http.response.start":
+                start = message
+                return
+            if start is not None:
+                await send(start)
+                start = None
+            await send(message)
+
+        await super().stream_response(send_start_with_body)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Serve the response and always run the finish callback."""

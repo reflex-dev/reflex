@@ -40,6 +40,8 @@ export const uploadFiles = async (
 
   // Track how many partial updates have been processed for this upload.
   let resp_idx = 0;
+  // Set when the server ends the stream with an error frame (handler raised).
+  let stream_error;
   const eventHandler = (progressEvent) => {
     const event_callbacks = socket._callbacks.$event;
     // Whenever called, responseText will contain the entire response so far.
@@ -60,6 +62,10 @@ export const uploadFiles = async (
       // Mark this chunk as processed before it is handled, so no later
       // progress event handles it again, whether the listener is sync or async.
       resp_idx += 1;
+      if (chunk.error !== undefined) {
+        stream_error = chunk.error;
+        continue;
+      }
       for (const f of event_callbacks) {
         // f runs right away; a failure, thrown or rejected, is reported.
         (async () => f(chunk))().catch((e) =>
@@ -92,7 +98,9 @@ export const uploadFiles = async (
 
     // Set up event handlers
     xhr.onload = function () {
-      if (xhr.status >= 200 && xhr.status < 300) {
+      if (stream_error !== undefined) {
+        reject(new Error(stream_error));
+      } else if (xhr.status >= 200 && xhr.status < 300) {
         resolve({
           data: xhr.responseText,
           status: xhr.status,
