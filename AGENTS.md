@@ -57,8 +57,8 @@ docs/                   # documentation site (separate workspace member)
 
 - Write comprehensive tests for new/changed features; extend existing test files where possible.
 - Test functions at module level, not wrapped in classes.
-- Assert exact values, never substrings. Compare the full error message, warning, or produced output (rendered code, compiled JS, CLI output) with `==`, or match the full message with `pytest.raises(Err, match=f"^{re.escape(msg)}$")` (`match=` uses `re.search`, so it needs both anchors). Never `assert "x" in str(err)`, `assert "snippet" in code`, or an unanchored `match=`: a substring check still passes when the output around it is wrong, so regressions slip through.
-  - If the output has run-dependent parts (temp paths, hashes, addresses, timestamps), build the expected value from the same inputs (e.g. `f"... {tmp_path} ..."`, passed through `re.escape` as a whole when used in `match=`) or replace those parts with fixed placeholders, then compare the whole string.
+- Assert exact values, never substrings. Every error message, warning, or produced output (rendered code, compiled JS, CLI output) a test checks must be compared in full against the complete expected value. Never check that a fragment appears somewhere inside it, including through a partial regex match: a substring check still passes when the output around it is wrong, so regressions slip through.
+  - If the output has run-dependent parts (temp paths, hashes, addresses, timestamps), derive the expected value from the same inputs or normalize those parts to fixed placeholders, then compare the whole value.
   - Existing tests still contain substring checks; don't copy that pattern into new assertions.
 - Prefer a few thorough tests that pin down exact behavior over many shallow ones.
 - **Unit tests:** `tests/units/`, run with `uv run pytest tests/units`.
