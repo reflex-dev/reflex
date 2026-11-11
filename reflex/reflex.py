@@ -1117,7 +1117,7 @@ def _alembic_errors() -> Generator[None, None, None]:
         None, while the alembic commands run.
 
     Raises:
-        Exit: With status 1 when alembic reports a CommandError.
+        Exit: With status 1 when alembic, or env.py as it runs, raises.
     """
     from alembic.util.exc import CommandError
 
@@ -1127,6 +1127,9 @@ def _alembic_errors() -> Generator[None, None, None]:
         yield
     except CommandError as error:
         logger.error(migrations.describe_error(error), extra={"rich": True})
+        raise click.exceptions.Exit(1) from None
+    except Exception as error:
+        migrations.report_failure(error)
         raise click.exceptions.Exit(1) from None
 
 
@@ -1226,11 +1229,7 @@ def makemigrations(message: str | None):
     if not prerequisites.check_db_initialized():
         raise click.exceptions.Exit(1)
     with _alembic_errors():
-        migrations.run(
-            "revision",
-            "--autogenerate",
-            *(("--message", message) if message else ()),
-        )
+        migrations.autogenerate(message)
 
 
 @cli.command()

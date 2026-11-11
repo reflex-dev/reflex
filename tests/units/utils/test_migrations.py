@@ -12,7 +12,7 @@ from unittest import mock
 import click.testing
 import pytest
 from reflex_base import constants
-from reflex_base.config import reload_config
+from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
@@ -1053,3 +1053,241 @@ def test_deprecated_migration_helpers_run_through_env_py(
     assert lines[-1].endswith(f"{current} (head), add t2")
     for name in ("alembic_autogenerate", "get_migration_history", "format_revision"):
         assert f"reflex.model.{name}" in caplog.text
+
+
+# What a 0.10.x user made of the stock env.py: models wired in, URL left as is.
+HAND_EDITED_METADATA = (
+    "from sqlmodel import SQLModel\ntarget_metadata = SQLModel.metadata"
+)
+REGISTRY_METADATA = (
+    "from reflex.model import ModelRegistry\n"
+    "target_metadata = ModelRegistry.get_metadata()"
+)
+PLACEHOLDER_URL = "driver://user:pass@localhost/dbname"
+
+
+def _stock_env_py() -> str:
+    """Alembic's stock env.py, which earlier Reflex releases wrote and never ran.
+
+    Returns:
+        The source of the stock env.py.
+    """
+    import alembic.config
+
+    return Path(
+        alembic.config.Config().get_template_directory(), "generic", "env.py"
+    ).read_text()
+
+
+def _write_custom_env(project: Path, metadata: str, url: str | None = None) -> str:
+    """Replace env.py with an edited stock one, as 0.10.x users wrote by hand.
+
+    Args:
+        project: The project directory.
+        metadata: The code that sets ``target_metadata``.
+        url: The ``sqlalchemy.url`` to write to alembic.ini instead of the
+            placeholder, if any.
+
+    Returns:
+        The source of the written env.py.
+    """
+    source = _stock_env_py().replace("target_metadata = None", metadata)
+    (project / "alembic" / "env.py").write_text(source)
+    # Without the template's render_item, revisions need sqlmodel imported.
+    mako = project / "alembic" / "script.py.mako"
+    mako.write_text(
+        mako.read_text().replace(
+            "import sqlalchemy as sa", "import sqlalchemy as sa\nimport sqlmodel"
+        )
+    )
+    if url is not None:
+        ini = project / "alembic.ini"
+        ini.write_text(ini.read_text().replace(PLACEHOLDER_URL, url))
+    return source
+
+
+def _db_url() -> str:
+    """The database URL of the project's rxconfig.py.
+
+    Returns:
+        The configured ``db_url``.
+    """
+    url = get_config().db_url
+    assert url is not None
+    return url
+
+
+def _assert_env_failure_reported(caplog: pytest.LogCaptureFixture, error: str) -> None:
+    """Check that the env.py failure was logged once, with its cause and the fix.
+
+    Args:
+        caplog: The log capture fixture.
+        error: The exception class name the message must name.
+    """
+    (message,) = [message for message in _errors(caplog) if error in message]
+    assert "not the Reflex template" in message
+    assert "reflex db init" in message
+
+
+def test_custom_env_failure_is_reported_with_the_fix(
+    project: Path, caplog: pytest.LogCaptureFixture
+):
+    """A hand-edited env.py that fails is reported with the hint, not a traceback.
+
+    The startup check logs it and lets the app start, as 0.10.x, which never ran
+    env.py, did; the commands exit with status 1. env.py itself is kept.
+    """
+    _db("init")
+    source = _write_custom_env(project, HAND_EDITED_METADATA)
+    caplog.clear()
+
+    # What `reflex run` does before serving: compile with the schema check.
+    _forget_app()
+    prerequisites.get_compiled_app(dry_run=True, check_if_schema_up_to_date=True)
+    _assert_env_failure_reported(caplog, "NoSuchModuleError")
+    caplog.clear()
+
+    for args in (["status"], ["migrate"], ["makemigrations"]):
+        result = _db(*args, exit_code=1)
+        assert isinstance(result.exception, SystemExit), result.exception
+        _assert_env_failure_reported(caplog, "NoSuchModuleError")
+        caplog.clear()
+
+    # `rx.model.migrate()` at module level does not stop the app from importing.
+    assert reflex.model.migrate(autogenerate=True) is False
+    _assert_env_failure_reported(caplog, "NoSuchModuleError")
+    assert (project / "alembic" / "env.py").read_text() == source
+    assert len(_versions(project)) == 1
+
+
+def test_template_env_failure_is_reported_without_the_hint(
+    project: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """A failure under the template env.py is an error of its own, not the hint's.
+
+    The commands exit with status 1 and the error; `migrate()` raises it.
+    """
+    _db("init")
+
+    def unreachable():
+        msg = "database unreachable"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(reflex.model, "get_engine", unreachable)
+    caplog.clear()
+
+    _db("migrate", exit_code=1)
+    (message,) = _errors(caplog)
+    assert "RuntimeError: database unreachable" in message
+    assert "not the Reflex template" not in message
+    caplog.clear()
+    prerequisites.check_schema_up_to_date()
+    (message,) = _errors(caplog)
+    assert "database unreachable" in message
+    with pytest.raises(RuntimeError, match="database unreachable"):
+        reflex.model.migrate()
+
+
+@pytest.mark.parametrize("orm", ["sqlmodel", "sqlalchemy"])
+def test_custom_env_warns_once_that_it_is_not_the_template(
+    project: Path, caplog: pytest.LogCaptureFixture, orm: str
+):
+    """A kept env.py that is not the template is pointed out, once per process.
+
+    It still runs, and the process keeps the logging it set up, although the
+    stock env.py applies the logging settings in alembic.ini.
+
+    Args:
+        project: The project directory.
+        caplog: The log capture fixture.
+        orm: Which ORM the app's models use.
+    """
+    _write_app(project, orm, COLUMNS[orm][0])
+    _db("init")
+    caplog.clear()
+    prerequisites.check_schema_up_to_date()
+    assert _warnings(caplog, "not the Reflex template") == []
+
+    _write_custom_env(project, REGISTRY_METADATA, url=_db_url())
+    for check in (
+        lambda: _db("status"),
+        prerequisites.check_schema_up_to_date,
+        reflex.model.migrate,
+    ):
+        check()
+        (warning,) = _warnings(caplog, "not the Reflex template")
+        assert "reflex db init" in warning
+        (record,) = [r for r in caplog.records if r.getMessage() == warning]
+        assert getattr(record, "dedupe", False)
+        caplog.clear()
+    assert _errors(caplog) == []
+    logging.getLogger("reflex.utils.migrations").warning("still logging")
+    assert "still logging" in caplog.text
+
+
+@pytest.mark.parametrize("orm", ["sqlmodel", "sqlalchemy"])
+def test_custom_env_writes_no_empty_revision(project: Path, orm: str):
+    """Without the template's empty-revision skip, unchanged models write nothing.
+
+    Args:
+        project: The project directory.
+        orm: Which ORM the app's models use.
+    """
+    v1, v2, _ = COLUMNS[orm]
+    _write_app(project, orm, v1)
+    _db("init")
+    _write_custom_env(project, REGISTRY_METADATA, url=_db_url())
+
+    _db("makemigrations", "--message", "nothing")
+    _db("makemigrations")
+    assert reflex.model.migrate(autogenerate=True) is True
+    with get_engine().connect() as connection:
+        assert not reflex.model.alembic_autogenerate(connection)
+    assert len(_versions(project)) == 1
+
+    _write_app(project, orm, v2)
+    _db("makemigrations", "--message", "add t2")
+    assert len(_versions(project)) == 2
+    _db("migrate")
+    _db("makemigrations")
+    assert len(_versions(project)) == 2
+
+
+def test_custom_env_import_time_autogenerate_writes_no_empty_revision(project: Path):
+    """`migrate(autogenerate=True)` at module level writes nothing for unchanged models."""
+    _db("init")
+    _write_custom_env(project, HAND_EDITED_METADATA, url=_db_url())
+    (project / APP_NAME / f"{APP_NAME}.py").write_text(
+        "import reflex as rx\n\n\n"
+        f"class Thing(rx.Model, table=True):\n{COLUMNS['sqlmodel'][0]}\n\n\n"
+        "rx.Model.migrate(autogenerate=True)\n\n\napp = rx.App()\n"
+    )
+    for _ in range(3):
+        _forget_app()
+        # What `reflex run` does first: import the app.
+        prerequisites.get_app()
+
+    assert len(_versions(project)) == 1
+
+
+def test_second_legacy_env_keeps_the_first_backup(
+    project: Path, caplog: pytest.LogCaptureFixture
+):
+    """Replacing a stock env.py again keeps the earlier env.old, using a free name."""
+    caplog.set_level(logging.INFO)
+    _db("init")
+    env_py = project / "alembic" / "env.py"
+    alembic_dir = project / "alembic"
+    first = _stock_env_py() + "\n# first\n"
+    second = _stock_env_py() + "\n# second\n"
+    third = _stock_env_py() + "\n# third\n"
+
+    for source in (first, second, third):
+        env_py.write_text(source)
+        assert prerequisites.check_db_initialized()
+
+    assert (alembic_dir / "env.old").read_text() == first
+    assert (alembic_dir / "env.old.1").read_text() == second
+    assert (alembic_dir / "env.old.2").read_text() == third
+    assert "env.old.2" in caplog.text
+    assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
