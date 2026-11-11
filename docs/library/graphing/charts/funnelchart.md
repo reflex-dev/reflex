@@ -157,6 +157,6 @@ def funnel_animation():
 
 Explore more chart types you can build with Reflex and Recharts in pure Python:
 
-- [Pie Chart](/docs/library/graphing/charts/piechart)
-- [Bar Chart](/docs/library/graphing/charts/barchart)
-- [Composed Chart](/docs/library/graphing/charts/composedchart)
+- [Pie Chart](/docs/library/graphing/charts/piechart/)
+- [Bar Chart](/docs/library/graphing/charts/barchart/)
+- [Composed Chart](/docs/library/graphing/charts/composedchart/)

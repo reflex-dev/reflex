@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Callable
-from dataclasses import _MISSING_TYPE, MISSING
+from dataclasses import MISSING
 from typing import Any, TypeVar, get_args, get_origin
 
 from typing_extensions import dataclass_transform
@@ -12,6 +12,7 @@ from typing_extensions import dataclass_transform
 from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.event import EventChain, args_specs_from_fields
 from reflex_base.utils import format
+from reflex_base.utils.compat import MISSING_TYPE
 from reflex_base.utils.exceptions import InvalidPropValueError
 from reflex_base.utils.serializers import serializer
 from reflex_base.utils.types import is_union
@@ -76,9 +77,9 @@ class PropsField(BaseField[PROPS_FIELD_TYPE]):
 
     def __init__(
         self,
-        default: PROPS_FIELD_TYPE | _MISSING_TYPE = MISSING,
+        default: PROPS_FIELD_TYPE | MISSING_TYPE = MISSING,
         default_factory: Callable[[], PROPS_FIELD_TYPE] | None = None,
-        annotated_type: type[Any] | _MISSING_TYPE = MISSING,
+        annotated_type: type[Any] | MISSING_TYPE = MISSING,
     ) -> None:
         """Initialize the field.
 
@@ -141,7 +142,7 @@ class PropsField(BaseField[PROPS_FIELD_TYPE]):
 
 
 def props_field(
-    default: PROPS_FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: PROPS_FIELD_TYPE | MISSING_TYPE = MISSING,
     default_factory: Callable[[], PROPS_FIELD_TYPE] | None = None,
 ) -> PROPS_FIELD_TYPE:
     """Create a field for a props class.

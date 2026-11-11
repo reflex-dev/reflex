@@ -2,6 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
 
+import reflex as rx
 from reflex.app import App
 from reflex.route import get_route_args, get_router, verify_route_validity
 
@@ -132,3 +133,69 @@ def test_get_router_splat_catchall(path: str, expected: str | None):
     # the route and its descendants but not paths that merely share the prefix.
     router = get_router(["posts/[[...splat]]"])
     assert router(path) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/About", "about"),
+        ("/ABOUT/", "about"),
+        ("/Posts/42", "posts/[id]"),
+        ("/team", "Team"),
+        ("/", "index"),
+        # React Router folds ASCII case only.
+        ("/k\u0131t", None),
+        ("/K\u0130T", None),
+        ("/\u212ait", None),
+    ],
+)
+def test_get_router_ignores_case(path: str, expected: str | None):
+    # React Router renders a page for any casing of its path, so the backend
+    # must resolve the same route to run its on_load events.
+    router = get_router(["index", "about", "posts/[id]", "Team", "kit"])
+    assert router(path) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/apple", "apple"),
+        ("/app", "app"),
+        ("/", "index"),
+    ],
+)
+def test_get_router_ignores_frontend_path(
+    mocker: MockerFixture, path: str, expected: str | None
+):
+    # The frontend sends basename-relative paths, so a route that starts with the
+    # frontend_path text must not have that text stripped again.
+    conf = rx.Config(app_name="testing", frontend_path="/app")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    router = get_router(["index", "app", "apple"])
+    assert router(path) == expected
+
+
+@pytest.mark.parametrize(
+    ("url_path", "expected"),
+    [
+        ("/app", ["index"]),
+        ("/app/", ["index"]),
+        ("/app/apple", ["apple"]),
+        ("/app/app", ["app"]),
+        ("/apple", ["404"]),
+    ],
+)
+def test_get_load_events_strips_frontend_path(
+    mocker: MockerFixture, url_path: str, expected: list[str]
+):
+    conf = rx.Config(app_name="testing", frontend_path="/app")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App()
+    app._unevaluated_pages = dict.fromkeys(["index", "app", "apple"])  # pyright: ignore[reportAttributeAccessIssue]
+    app._load_events = {  # pyright: ignore[reportAttributeAccessIssue]
+        "index": ["index"],
+        "app": ["app"],
+        "apple": ["apple"],
+        "404": ["404"],
+    }
+    assert app.get_load_events(url_path) == expected

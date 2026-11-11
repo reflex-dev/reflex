@@ -3,14 +3,15 @@
 import dataclasses
 import importlib
 import logging
+import math
 import os
 import sys
 import threading
 import urllib.parse
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
-from importlib.util import find_spec
-from pathlib import Path
+from importlib.machinery import PathFinder
+from pathlib import Path, PureWindowsPath
 from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
@@ -35,6 +36,9 @@ from reflex_base.utils import console, log
 from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
 
 logger = logging.getLogger(__name__)
+
+# The config is built several times in one run; warn about React Compiler once.
+_warned_react_compiler = False
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -163,8 +167,9 @@ class BaseConfig:
         backend_port: The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
         backend_path: The path prefix for backend routes. For example, "/api" mounts the event websocket, /ping, /_upload, /_health, and /_all_routes under /api, and is automatically included in URLs baked into the frontend. Changing this requires a full `reflex run` restart — routes are registered at startup.
         api_url: The backend url the frontend will connect to. Only needs to be set when the backend is listening on a different address than the frontend.
-        deploy_url: The url the frontend will be hosted on. Used to build absolute frontend URLs, e.g. links in the generated sitemap.xml.
+        deploy_url: The public url the frontend is hosted on, when it differs from the backend origin. Unset by default: in prod mode the backend then serves the frontend from its own origin, and frontend_url falls back to http://localhost:<frontend_port>.
         backend_host: The url the backend will be hosted on.
+        trusted_proxy_hops: Number of trusted reverse proxies used to resolve client IPs from X-Forwarded-For. Defaults to 0, which ignores X-Forwarded-For.
         db_url: The database url used by rx.Model.
         async_db_url: The async database url used by rx.Model.
         redis_url: The redis url.
@@ -172,11 +177,14 @@ class BaseConfig:
         bun_path: The bun path.
         frozen_lockfile: Run frontend package manager in lockfile-enforcing mode (only honored by bun).
         static_page_generation_timeout: Timeout to do a production build of a frontend page.
-        cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API.
+        cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API. The default allows any origin in dev mode; in prod mode it allows only the origin of deploy_url, or only same-origin requests when deploy_url is unset.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
         react_strict_mode: Whether to use React strict mode.
+        react_compiler: Enable experimental React Compiler memoization for generated components in development and production. Defaults to False.
+        auto_memoize: Wrap stateful page components in generated memo components. Disable only together with react_compiler, which then memoizes whole pages; without it, every state change re-renders the whole page. Defaults to True.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
+        frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Defaults to False for compatibility with scripts that read window.__reflex directly.
         state_manager_mode: Indicate which type of state manager to use.
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
@@ -191,6 +199,7 @@ class BaseConfig:
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
+        event_loop_blocking_threshold: Minimum event-loop blocking duration in seconds to report in development. Set to 0 to disable detection.
     """
 
     app_name: str
@@ -209,9 +218,11 @@ class BaseConfig:
 
     api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
-    deploy_url: str | None = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
+    deploy_url: str | None = None
 
     backend_host: str = "0.0.0.0"
+
+    trusted_proxy_hops: int = 0
 
     db_url: str | None = None
 
@@ -236,12 +247,18 @@ class BaseConfig:
 
     react_strict_mode: bool = True
 
+    react_compiler: bool = False
+
+    auto_memoize: bool = True
+
     frontend_compression_formats: Annotated[
         list[str],
         SequenceOptions(delimiter=",", strip=True),
     ] = dataclasses.field(default_factory=lambda: ["gzip"])
 
     frontend_packages: list[str] = dataclasses.field(default_factory=list)
+
+    frontend_lazy_bundled_libraries: bool = False
 
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
 
@@ -276,6 +293,8 @@ class BaseConfig:
 
     transport: Literal["websocket", "polling"] = "websocket"
 
+    event_loop_blocking_threshold: float = 0.2
+
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
 
@@ -285,6 +304,22 @@ class BaseConfig:
 _PLUGINS_ENABLED_BY_DEFAULT = [
     SitemapPlugin,
 ]
+
+
+def _is_plain_path_segment(segment: str) -> bool:
+    """Whether a URL path segment maps to a single directory name on every platform.
+
+    Args:
+        segment: One slash-delimited, non-empty segment of a configured path prefix.
+
+    Returns:
+        False for empty segments, trailing dots or spaces, and anything Windows
+        would treat as a separator, drive, or root.
+    """
+    if segment.endswith((".", " ")):
+        return False
+    windows = PureWindowsPath(segment)
+    return not windows.anchor and windows.parts == (segment,)
 
 
 @dataclasses.dataclass(kw_only=True, init=False)
@@ -364,7 +399,40 @@ class Config(BaseConfig):
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
+        global _warned_react_compiler
+        if self.react_compiler and not _warned_react_compiler:
+            _warned_react_compiler = True
+            logger.warning(
+                "react_compiler=True is experimental. React Compiler skips a "
+                "component that it cannot compile and reports nothing, so some "
+                "pages can stay unoptimized."
+            )
+
+        if not self.auto_memoize and not self.react_compiler:
+            logger.warning(
+                "auto_memoize=False without react_compiler=True disables page "
+                "memoization. Every state change can re-render the whole page. "
+                "Enable react_compiler=True or restore auto_memoize=True."
+            )
+
         self._normalize_frontend_compression_formats()
+
+        if (
+            isinstance(self.trusted_proxy_hops, bool)
+            or not isinstance(self.trusted_proxy_hops, int)
+            or self.trusted_proxy_hops < 0
+        ):
+            msg = "trusted_proxy_hops must be a non-negative integer."
+            raise ConfigError(msg)
+
+        threshold = self.event_loop_blocking_threshold
+        if (
+            isinstance(threshold, bool)
+            or not isinstance(threshold, (int, float))
+            or not 0 <= threshold < math.inf
+        ):
+            msg = "event_loop_blocking_threshold must be a non-negative finite number."
+            raise ConfigError(msg)
 
         # Normalize route prefixes to ensure they start with a slash.
         self._normalize_paths()
@@ -583,9 +651,28 @@ class Config(BaseConfig):
         self.frontend_compression_formats = normalized
 
     def _normalize_paths(self):
-        """Ensure frontend and backend paths start with a slash if provided."""
+        """Ensure frontend and backend paths start with a slash if provided.
+
+        Raises:
+            ConfigError: If a frontend_path segment is not a plain directory name.
+        """
         if self.frontend_path and not self.frontend_path.startswith("/"):
             self.frontend_path = f"/{self.frontend_path}"
+        # frontend_path also names the directory below the build output that the
+        # built frontend is relocated into and served from, so every segment must
+        # be a plain directory name on POSIX and Windows alike.
+        if self.frontend_path not in ("", "/"):
+            for segment in (
+                self.frontend_path.removeprefix("/").removesuffix("/").split("/")
+            ):
+                if not _is_plain_path_segment(segment):
+                    msg = (
+                        f"frontend_path {self.frontend_path!r} contains {segment!r}, "
+                        "which is not a plain directory name "
+                        "(no empty segments, trailing dots or spaces, backslashes, "
+                        "or drive letters)."
+                    )
+                    raise ConfigError(msg)
 
         if self.backend_path and not self.backend_path.startswith("/"):
             self.backend_path = f"/{self.backend_path}"
@@ -682,6 +769,18 @@ class Config(BaseConfig):
         return self._prepend_path(path, self.backend_path)
 
     @property
+    def frontend_url(self) -> str:
+        """The public url the frontend is reachable at.
+
+        Returns:
+            ``deploy_url`` when set, otherwise ``http://localhost:<frontend_port>``.
+        """
+        return (
+            self.deploy_url
+            or f"http://localhost:{self.frontend_port or constants.DefaultPorts.FRONTEND_PORT}"
+        )
+
+    @property
     def app_module(self) -> ModuleType | None:
         """The app module if `app_module_import` is set.
 
@@ -766,12 +865,6 @@ class Config(BaseConfig):
         if "api_url" not in self._non_default_attributes and "backend_port" in kwargs:
             self.api_url = f"http://localhost:{kwargs['backend_port']}"
 
-        if (
-            "deploy_url" not in self._non_default_attributes
-            and "frontend_port" in kwargs
-        ):
-            self.deploy_url = f"http://localhost:{kwargs['frontend_port']}"
-
         if "api_url" not in self._non_default_attributes:
             # If running in Github Codespaces, override API_URL
             codespace_name = os.getenv("CODESPACE_NAME")
@@ -803,10 +896,14 @@ class Config(BaseConfig):
         self._replace_defaults(**kwargs)
 
 
-# Project-local modules first imported while loading rxconfig.py; evicted
-# before the next load so projects don't reuse each other's dependencies.
-# Only mutated under _load_config_lock.
+# Project-local modules first imported while loading rxconfig.py, and the
+# project root they were recorded under. Evicted before a load from a different
+# root so projects don't reuse each other's dependencies. A load from the same
+# root keeps them: re-executing them would create a second copy of every class
+# they define, distinct from the one the app already imported. Only mutated
+# under _load_config_lock.
 _config_module_deps: set[str] = set()
+_config_module_deps_root: Path | None = None
 
 
 class _ImportRecorder:
@@ -844,6 +941,28 @@ class _ImportRecorder:
 
 
 _import_recorder = _ImportRecorder()
+
+
+def _project_local_modules(names: Iterable[str], project_root: Path) -> set[str]:
+    """Filter recorded import names down to modules that live in the project.
+
+    Args:
+        names: Module names observed by the import recorder.
+        project_root: The root that classifies a module as project-local.
+
+    Returns:
+        The names whose module file is under project_root and not installed.
+    """
+    project_local: set[str] = set()
+    for name in names:
+        origin = getattr(sys.modules.get(name), "__file__", None)
+        if (
+            origin
+            and (path := Path(origin)).is_relative_to(project_root)
+            and "site-packages" not in path.parts
+        ):
+            project_local.add(name)
+    return project_local
 
 
 @contextmanager
@@ -911,6 +1030,8 @@ def _get_config(project_root: Path | None = None) -> Config:
     Returns:
         The app config.
     """
+    global _config_module_deps_root
+
     project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
         # A fresh str object, so the exact inserted entry can be removed by
@@ -919,35 +1040,35 @@ def _get_config(project_root: Path | None = None) -> Config:
         cwd = str(project_root)
         sys.path.insert(0, cwd)
         try:
-            # Never cache rxconfig or its project-local dependencies — each load
-            # goes to disk so different RegistrationContexts hold independent
-            # Config instances resolved against the current project. Evict
-            # before probing: find_spec answers from sys.modules, so modules
-            # left behind by another project directory would fake the existence
-            # check below.
+            # Never cache rxconfig itself — each load goes to disk so different
+            # RegistrationContexts hold independent Config instances.
             sys.modules.pop(constants.Config.MODULE, None)
-            for dep in _config_module_deps:
-                sys.modules.pop(dep, None)
-            _config_module_deps.clear()
-            # only import the module if it exists. If a module spec exists then
-            # the module exists.
-            if not find_spec(constants.Config.MODULE):
-                # we need this condition to ensure that a ModuleNotFound error is not thrown when
-                # running unit/integration tests or during `reflex init`.
+            if _config_module_deps_root != project_root:
+                # Evict the previous project's dependencies so this project's
+                # rxconfig.py imports its own, not same-named modules another
+                # project directory left behind. Same-root loads skip this so
+                # the modules the app imported stay the ones rxconfig.py sees.
+                for dep in _config_module_deps:
+                    sys.modules.pop(dep, None)
+                _config_module_deps.clear()
+                _config_module_deps_root = project_root
+            # Only the requested project may supply rxconfig; searching all of
+            # sys.path can pick up an unrelated editable app during reflex init.
+            # PathFinder also supports a project-local rxconfig package.
+            if PathFinder.find_spec(constants.Config.MODULE, [cwd]) is None:
                 return Config(app_name="", _skip_plugins_checks=True)
             with _record_imports() as recorder:
                 try:
                     rxconfig = importlib.import_module(constants.Config.MODULE)
                 finally:
-                    # Record even on failure so a retry evicts partially-imported deps.
-                    for name in recorder.names:
-                        origin = getattr(sys.modules.get(name), "__file__", None)
-                        if (
-                            origin
-                            and (path := Path(origin)).is_relative_to(project_root)
-                            and "site-packages" not in path.parts
-                        ):
-                            _config_module_deps.add(name)
+                    # Record even on failure so a later load from another root
+                    # evicts what this one imported. Nothing is evicted here:
+                    # Python already drops a module whose execution failed, and
+                    # one that imported completely may be held by another
+                    # thread, so it is kept like on any same-root reload.
+                    _config_module_deps.update(
+                        _project_local_modules(recorder.names, project_root)
+                    )
             return rxconfig.config
         finally:
             for i, entry in enumerate(sys.path):

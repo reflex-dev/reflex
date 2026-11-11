@@ -3,21 +3,38 @@
 from __future__ import annotations
 
 import dataclasses
+import functools
 import inspect
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.utils.types import GenericType
-from reflex_base.vars import LiteralArrayVar, Var, get_unique_variable_name
+from reflex_base.vars import LiteralArrayVar, Var, VarData, get_unique_variable_name
 from reflex_base.vars.sequence import _determine_value_of_array_index
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
 
 
+@functools.cache
+def _loop_var_data(name: str) -> VarData:
+    """Get the var data that makes a loop variable name itself as a dependency.
+
+    Every var built from the loop variable carries the name, so a generated
+    function that reads it can receive it as a prop.
+
+    Args:
+        name: The JavaScript name of the loop variable.
+
+    Returns:
+        The var data, shared by every var with this name.
+    """
+    return VarData(deps=[Var(_js_expr=name)])
+
+
 @dataclasses.dataclass(frozen=True)
-class IterTag(Tag):
+class IterTag(CommonTag):
     """An iterator tag."""
 
     # The var to iterate over.
@@ -53,6 +70,7 @@ class IterTag(Tag):
         return Var(
             _js_expr=self.index_var_name,
             _var_type=int,
+            _var_data=_loop_var_data(self.index_var_name),
         ).guess_type()
 
     def get_arg_var(self) -> Var:
@@ -66,6 +84,7 @@ class IterTag(Tag):
         return Var(
             _js_expr=self.arg_var_name,
             _var_type=self.get_iterable_var_type(),
+            _var_data=_loop_var_data(self.arg_var_name),
         ).guess_type()
 
     def render_component(self) -> Component:

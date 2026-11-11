@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import dataclasses
+import inspect
 from collections.abc import Callable, Sequence
 from importlib.util import find_spec
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 import click
 import reflex as rx
@@ -349,11 +350,44 @@ def generate_docs(source: str, title: str):
     )
 
 
+def command_source_path(name: str) -> str | None:
+    """Locate the callback supplying a documented command's help text.
+
+    Args:
+        name: Full command name, including the leading ``reflex``.
+
+    Returns:
+        Callback source path, or None for commands without a callback.
+    """
+    command = cli
+    for part in name.split()[1:]:
+        # Creating a parsing-only context resolves lazy commands without
+        # invoking their callbacks or authenticating with the hosting service.
+        with command.make_context(command.name, [], resilient_parsing=True) as ctx:
+            command = cast(click.Group, ctx.command).get_command(ctx, part)
+        if command is None:
+            return None
+    return (
+        inspect.getsourcefile(inspect.unwrap(command.callback))
+        if command.callback is not None
+        else None
+    )
+
+
 pages = []
 for module_name, module_value in modules.items():
     title = module_name.replace("_", " ").title()
     docs = generate_docs(module_value, title)
-    page_data = docpage(f"/hosting/cli/{module_name}/", title)(docs)
+    sources = {
+        source
+        for name in categories[module_name]
+        if name in cli_to_doc and (source := command_source_path(name)) is not None
+    }
+    # A category spanning several modules is maintained in this aggregation file.
+    source_path = next(iter(sources)) if len(sources) == 1 else __file__
+    page_data = docpage(f"/hosting/cli/{module_name}/", title, source_path=source_path)(
+        docs
+    )
     # Keep the short sidebar/nav label (e.g. "Deploy"), but emit a descriptive
     # HTML <title> for SEO.
     page_data.title = title

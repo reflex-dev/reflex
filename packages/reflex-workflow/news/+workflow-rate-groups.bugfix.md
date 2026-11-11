@@ -1,0 +1,1 @@
+A rate-limit group too long to name in the bucket key is named by a digest of itself, rather than failing the insert; a group the engine cannot claim no longer stops the rest of its table from being claimed.

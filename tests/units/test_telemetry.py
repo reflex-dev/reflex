@@ -1,7 +1,12 @@
 import asyncio
 import importlib.metadata
+import json
+import os
+import sys
 import threading
+import time
 import uuid
+import warnings
 from types import SimpleNamespace
 
 import pytest
@@ -63,13 +68,25 @@ def event_defaults(mocker: MockerFixture) -> dict:
 
 
 @pytest.fixture
-def httpx_post(mocker: MockerFixture):
-    """Mock ``httpx.post`` used by ``telemetry._send``.
+def urlopen(mocker: MockerFixture):
+    """Mock ``urllib.request.urlopen`` used by ``telemetry._send_event``.
 
     Returns:
-        The mock for ``httpx.post`` so tests can assert on the posted payload.
+        The mock for ``urlopen`` so tests can assert on the posted payload.
     """
-    return mocker.patch("httpx.post")
+    return mocker.patch("reflex.utils.telemetry.urllib.request.urlopen")
+
+
+def posted_json(call) -> dict:
+    """Decode the JSON body of one recorded ``urlopen`` call.
+
+    Args:
+        call: A ``mock.call`` recorded by the ``urlopen`` fixture.
+
+    Returns:
+        The decoded request body.
+    """
+    return json.loads(call.args[0].data)
 
 
 def test_telemetry():
@@ -193,16 +210,16 @@ def test_get_reflex_package_versions_handles_missing_reflex_metadata(
         ),
     ],
 )
-def test_send(event_defaults, httpx_post, event, kwargs, expected_props):
+def test_send(event_defaults, urlopen, event, kwargs, expected_props):
     telemetry._send(event, telemetry_enabled=True, **kwargs)
-    httpx_post.assert_called_once()
-    posted = httpx_post.call_args.kwargs["json"]
+    urlopen.assert_called_once()
+    posted = posted_json(urlopen.call_args)
     assert posted["event"] == event
     for key, value in expected_props.items():
         assert posted["properties"][key] == value
 
 
-def test_send_does_not_leak_kwargs_between_events(event_defaults, httpx_post):
+def test_send_does_not_leak_kwargs_between_events(event_defaults, urlopen):
     """Per-event kwargs must not leak into a subsequent event's payload."""
     telemetry._send("export", telemetry_enabled=True, status="success", duration=1.0)
     telemetry._send(
@@ -213,9 +230,9 @@ def test_send_does_not_leak_kwargs_between_events(event_defaults, httpx_post):
         duration=2.0,
     )
 
-    assert httpx_post.call_count == 2
-    first_props = httpx_post.call_args_list[0].kwargs["json"]["properties"]
-    second_props = httpx_post.call_args_list[1].kwargs["json"]["properties"]
+    assert urlopen.call_count == 2
+    first_props = posted_json(urlopen.call_args_list[0])["properties"]
+    second_props = posted_json(urlopen.call_args_list[1])["properties"]
 
     assert first_props["status"] == "success"
     assert first_props["duration"] == pytest.approx(1.0)
@@ -231,16 +248,16 @@ def test_send_does_not_leak_kwargs_between_events(event_defaults, httpx_post):
     assert "detail" not in event_defaults["properties"]
 
 
-def test_send_drops_unknown_kwargs(event_defaults, httpx_post):
+def test_send_drops_unknown_kwargs(event_defaults, urlopen):
     """Unknown kwargs must not land in the posted payload."""
     telemetry._send("export", telemetry_enabled=True, foo="bar", secret="leak")
-    httpx_post.assert_called_once()
-    props = httpx_post.call_args.kwargs["json"]["properties"]
+    urlopen.assert_called_once()
+    props = posted_json(urlopen.call_args)["properties"]
     assert "foo" not in props
     assert "secret" not in props
 
 
-def test_send_drops_none_kwargs(event_defaults, httpx_post):
+def test_send_drops_none_kwargs(event_defaults, urlopen):
     """None-valued kwargs for allowed keys are omitted from the posted payload."""
     telemetry._send(
         "export",
@@ -252,8 +269,8 @@ def test_send_drops_none_kwargs(event_defaults, httpx_post):
         build_duration=0.05,
         zip_duration=None,
     )
-    httpx_post.assert_called_once()
-    props = httpx_post.call_args.kwargs["json"]["properties"]
+    urlopen.assert_called_once()
+    props = posted_json(urlopen.call_args)["properties"]
     assert props["status"] == "success"
     assert props["build_duration"] == pytest.approx(0.05)
     assert "detail" not in props
@@ -535,13 +552,16 @@ def test_maybe_alias_sends_create_alias_for_legacy_install(mocker: MockerFixture
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=12345)
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=False)
     mark = mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
+    queued = mocker.patch.object(telemetry, "send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
 
     send_mock.assert_called_once_with(
         "$create_alias", True, properties={"alias": 12345}
     )
+    # The alias goes out on the calling thread, never through the pool.
+    queued.assert_not_called()
     mark.assert_called_once()
 
 
@@ -550,7 +570,7 @@ def test_maybe_alias_skips_for_uuid_native_install(mocker: MockerFixture):
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=12345)
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=True)
     mark = mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
 
@@ -563,7 +583,7 @@ def test_maybe_alias_skips_without_installation_id(mocker: MockerFixture):
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=None)
     has = mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics")
     mark = mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
 
@@ -575,7 +595,7 @@ def test_maybe_alias_skips_without_installation_id(mocker: MockerFixture):
 def test_maybe_alias_skips_when_telemetry_disabled(mocker: MockerFixture):
     """Disabled telemetry does no work and leaves the marker unwritten."""
     ensure = mocker.patch.object(telemetry, "ensure_reflex_installation_id")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=False)
 
@@ -588,7 +608,7 @@ def test_maybe_alias_runs_at_most_once_per_process(mocker: MockerFixture):
     mocker.patch.object(telemetry, "ensure_reflex_installation_id", return_value=7)
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=False)
     mocker.patch.object(telemetry, "mark_uuid_distinct_id_semantics")
-    send_mock = mocker.patch.object(telemetry, "send")
+    send_mock = mocker.patch.object(telemetry, "_send")
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
@@ -597,7 +617,7 @@ def test_maybe_alias_runs_at_most_once_per_process(mocker: MockerFixture):
 
 
 def test_maybe_alias_create_alias_payload(
-    event_defaults, httpx_post, mocker: MockerFixture
+    event_defaults, urlopen, mocker: MockerFixture
 ):
     """The posted $create_alias pairs the new UUID distinct_id with the legacy int."""
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=False)
@@ -608,11 +628,9 @@ def test_maybe_alias_create_alias_payload(
     )
 
     telemetry._maybe_alias_legacy_distinct_id(telemetry_enabled=True)
-    # The $create_alias is now sent on the telemetry worker thread; wait for it.
-    telemetry._flush()
 
-    httpx_post.assert_called_once()
-    payload = httpx_post.call_args.kwargs["json"]
+    urlopen.assert_called_once()
+    payload = posted_json(urlopen.call_args)
     assert payload["event"] == "$create_alias"
     props = payload["properties"]
     # The legacy integer is sent at full precision so PostHog re-coerces it to
@@ -801,3 +819,147 @@ def test_flush_returns_false_when_worker_does_not_drain_in_time():
     finally:
         release.set()
         blocker.result(timeout=5)
+
+
+def test_executor_is_recreated_after_fork():
+    """A forked child drops the inherited pool, whose thread it does not own."""
+    inherited = telemetry._get_telemetry_executor()
+
+    telemetry._reset_executor_after_fork()
+
+    fresh = telemetry._get_telemetry_executor()
+    assert fresh is not inherited
+    assert fresh.submit(lambda: 1).result(timeout=5) == 1
+    # In this process the orphaned pool's thread is real; stop it.
+    inherited.shutdown()
+
+
+def test_executor_lock_is_recreated_after_fork():
+    """A lock held by another thread at fork time does not block the child."""
+    orphaned = telemetry._get_telemetry_executor()
+    held = telemetry._executor_lock
+    held.acquire()
+    try:
+        telemetry._reset_executor_after_fork()
+    finally:
+        held.release()
+        orphaned.shutdown()
+
+    assert telemetry._executor_lock is not held
+    assert not telemetry._executor_lock.locked()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_forked_child_starts_with_fresh_executor_state():
+    """The at-fork hook is registered and runs in a real forked child."""
+    telemetry._get_telemetry_executor()
+    with warnings.catch_warnings():
+        # The telemetry worker thread is alive, which is the point of the test.
+        warnings.simplefilter("ignore", DeprecationWarning)
+        with telemetry._executor_lock:
+            pid = os.fork()
+            if pid == 0:
+                clean = (
+                    telemetry._executor is None
+                    and not telemetry._executor_lock.locked()
+                )
+                os._exit(0 if clean else 1)
+    _, status = os.waitpid(pid, 0)
+    assert os.waitstatus_to_exitcode(status) == 0
+
+
+def test_shutdown_executor_drains_queued_work_and_stops_the_thread():
+    """Queued events are delivered and no telemetry thread survives the call."""
+    done = threading.Event()
+    executor = telemetry._get_telemetry_executor()
+    executor.submit(done.set)
+    workers = list(executor._threads)
+
+    assert telemetry._shutdown_executor()
+
+    assert done.is_set()
+    assert telemetry._executor is None
+    assert workers
+    assert not any(worker.is_alive() for worker in workers)
+
+
+def test_shutdown_executor_keeps_the_pool_published_until_it_stops(
+    mocker: MockerFixture,
+):
+    """A send racing the shutdown cannot start a second pool before the fork."""
+    executor = telemetry._get_telemetry_executor()
+    seen = []
+    stop = executor.shutdown
+
+    def shutdown(*args, **kwargs):
+        # What a concurrent send() would submit to while the pool stops.
+        seen.append(telemetry._get_telemetry_executor())
+        stop(*args, **kwargs)
+
+    mocker.patch.object(executor, "shutdown", side_effect=shutdown)
+
+    telemetry._shutdown_executor()
+
+    assert seen == [executor]
+    assert telemetry._executor is None
+
+
+def test_shutdown_executor_gives_up_on_a_stalled_task():
+    """A send that hangs (e.g. on DNS) cannot block the fork past the timeout."""
+    running = threading.Event()
+    release = threading.Event()
+
+    def stall():
+        running.set()
+        release.wait(10)
+
+    executor = telemetry._get_telemetry_executor()
+    workers = list(executor._threads)
+    executor.submit(stall)
+    queued = executor.submit(lambda: None)
+    # Only a task the worker has picked up keeps it alive; a queued one would
+    # just be cancelled.
+    assert running.wait(5)
+    started = time.monotonic()
+    try:
+        # The stalled send's thread is still alive, so forking is unsafe.
+        assert not telemetry._shutdown_executor(timeout=0.05)
+        elapsed = time.monotonic() - started
+    finally:
+        release.set()
+        for worker in workers:
+            worker.join(5)
+
+    assert elapsed < 2
+    assert telemetry._executor is None
+    assert queued.cancelled()
+
+
+def test_shutdown_executor_without_executor_is_a_noop():
+    """Nothing to drain when no telemetry was ever sent."""
+    assert telemetry._shutdown_executor()
+    assert telemetry._shutdown_executor()
+
+    assert telemetry._executor is None
+
+
+def test_send_event_posts_json_without_httpx(mocker: MockerFixture):
+    """Delivery goes through urllib, so backend workers never import httpx."""
+    urlopen = mocker.patch("reflex.utils.telemetry.urllib.request.urlopen")
+    mocker.patch.dict(sys.modules, {"httpx": None})
+
+    assert telemetry._send_event({"api_key": "k", "event": "e"})  # pyright: ignore[reportArgumentType]
+
+    request = urlopen.call_args.args[0]
+    assert request.full_url == telemetry.POSTHOG_API_URL
+    assert request.get_header("Content-type") == "application/json"
+    assert json.loads(request.data) == {"api_key": "k", "event": "e"}
+    urlopen.return_value.close.assert_called_once()
+
+
+def test_send_event_swallows_delivery_errors(mocker: MockerFixture):
+    """A failed request is reported as False, never raised."""
+    mocker.patch(
+        "reflex.utils.telemetry.urllib.request.urlopen", side_effect=OSError("down")
+    )
+    assert not telemetry._send_event({"api_key": "k", "event": "e"})  # pyright: ignore[reportArgumentType]

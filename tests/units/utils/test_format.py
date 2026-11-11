@@ -6,6 +6,7 @@ from typing import Any
 
 import plotly.graph_objects as go
 import pytest
+from reflex_base import constants
 from reflex_base.components.tags.tag import Tag
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -579,6 +580,25 @@ def test_format_prop(prop: Var, formatted: str):
 
 
 @pytest.mark.parametrize(
+    ("prop", "formatted"),
+    [
+        ({"a": 1}, '{{"a": 1}}'),
+        ({"nested": {"b": [1, 2]}}, '{{"nested": {"b": [1, 2]}}}'),
+        ({}, "{{}}"),
+        ({"d": datetime.date(2026, 1, 2)}, '{{"d": "2026-01-02"}}'),
+    ],
+)
+def test_format_prop_raw_dict(prop: dict, formatted: str):
+    """Test that a raw dict prop is JSON-dumped and wrapped in braces.
+
+    Args:
+        prop: The dict prop to test.
+        formatted: The expected formatted value.
+    """
+    assert format.format_prop(prop) == formatted
+
+
+@pytest.mark.parametrize(
     ("single_props", "key_value_props", "output"),
     [
         (
@@ -657,9 +677,9 @@ def test_format_query_params(input, output):
     assert format.format_query_params(input) == output
 
 
-formatted_router = {
-    "route_id": "",
-    "url": {
+formatted_router_vars = {
+    "rx_router_route_id" + FIELD_MARKER: "",
+    "rx_router_url" + FIELD_MARKER: {
         "scheme": "",
         "netloc": "",
         "origin": "://",
@@ -669,13 +689,16 @@ formatted_router = {
         "fragment": "",
         "href": "",
     },
-    "session": {"client_token": "", "client_ip": "", "session_id": ""},
-    "headers": {
+    "rx_router_session" + FIELD_MARKER: {
+        "client_token": "",
+        "client_ip": "",
+        "session_id": "",
+    },
+    "rx_router_headers" + FIELD_MARKER: {
         "host": "",
         "origin": "",
         "upgrade": "",
         "connection": "",
-        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",
@@ -686,7 +709,7 @@ formatted_router = {
         "accept_language": "",
         "raw_headers": {},
     },
-    "page": {
+    "rx_router_page" + FIELD_MARKER: {
         "host": "",
         "path": "",
         "raw_path": "",
@@ -720,7 +743,7 @@ formatted_router = {
                     "obj" + FIELD_MARKER: {"prop1": 42, "prop2": "hello"},
                     "sum" + FIELD_MARKER: 3.15,
                     "upper" + FIELD_MARKER: "",
-                    "router" + FIELD_MARKER: formatted_router,
+                    **formatted_router_vars,
                     "asynctest" + FIELD_MARKER: 0,
                 },
                 ChildState.get_full_name(): {
@@ -742,7 +765,7 @@ formatted_router = {
                     "dt" + FIELD_MARKER: "1989-11-09 18:53:00+01:00",
                     "t" + FIELD_MARKER: "18:53:00+01:00",
                     "td" + FIELD_MARKER: "11 days, 0:11:00",
-                    "router" + FIELD_MARKER: formatted_router,
+                    **formatted_router_vars,
                 },
             },
         ),
@@ -778,12 +801,43 @@ def test_format_ref(input, output):
     assert format.format_ref(input) == output
 
 
+@pytest.mark.parametrize("var_type", [str, int])
+def test_format_ref_names_an_f_string_var_by_its_expression(var_type: type):
+    """A Var in an f-string id gives a ref name free of its run-dependent hash.
+
+    Args:
+        var_type: The type of the Var, which does not change the name.
+    """
+    var = Var(_js_expr="item", _var_type=var_type)
+
+    assert format.format_ref(f"zone-{var}") == "ref_zone_item"
+
+
+@pytest.mark.parametrize("key", ["xyz", "123"])
+def test_format_ref_drops_a_marker_of_no_known_var(key: str):
+    """A ref string can hold a marker that no Var in this process wrote.
+
+    Args:
+        key: The marker content: not a hash, or a hash of no known Var.
+    """
+    ref = (
+        f"a-{constants.REFLEX_VAR_OPENING_TAG}{key}{constants.REFLEX_VAR_CLOSING_TAG}b"
+    )
+
+    assert format.format_ref(ref) == "ref_a_b"
+
+
 @pytest.mark.parametrize(
     ("input", "output"),
     [
         (("my_array", None), "refs_my_array"),
         (("my_array", LiteralVar.create(0)), "refs_my_array[0]"),
         (("my_array", LiteralVar.create(1)), "refs_my_array[1]"),
+        (("item_{}".format(Var(_js_expr="someVar")), None), "refs_item_someVar"),
+        (
+            ("item_{}".format(Var(_js_expr="someVar")), LiteralVar.create(0)),
+            "refs_item_someVar[0]",
+        ),
     ],
 )
 def test_format_array_ref(input, output):

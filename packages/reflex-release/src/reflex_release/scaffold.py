@@ -57,9 +57,10 @@ CORE_WORKFLOWS = (
     "publish.yml",
 )
 
-#: ``workflow_dispatch`` accepts at most twenty inputs, one of which is the
-#: action.
-MAX_DISPATCH_CHECKBOXES = 19
+#: ``workflow_dispatch`` accepts at most twenty-five inputs, one of which is the
+#: action. The limit was raised from ten on 4 December 2025, so a repository on
+#: an older GitHub Enterprise Server may still be held to the smaller number.
+MAX_DISPATCH_CHECKBOXES = 24
 
 #: Workflow scaffolded only for repositories that declare internal packages.
 INTERNAL_WORKFLOW = "auto_release_internal.yml"
@@ -172,7 +173,8 @@ class DispatchInput:
         input_id: The ``workflow_dispatch`` input name.
         description: The label GitHub shows next to the checkbox.
         packages: The packages the checkbox selects — more than one for a
-            lockstep group, whose members can only be released together.
+            lockstep group without ``publish-last``, whose members only ever
+            release together.
     """
 
     input_id: str
@@ -195,9 +197,10 @@ def _input_id(package: str) -> str:
 def dispatch_inputs(config: Config) -> list[DispatchInput]:
     """List the package checkboxes the Dispatch release workflow offers.
 
-    Lockstep members share one checkbox: they can only be released together, so
+    Lockstep members that only ever release together share one checkbox;
     offering them separately would invite a selection the planner has to
-    silently widen anyway.
+    silently widen anyway. Members of a ``publish-last`` group release
+    separately, so each gets its own.
 
     Args:
         config: The repository configuration.
@@ -210,7 +213,12 @@ def dispatch_inputs(config: Config) -> list[DispatchInput]:
     for package in releasable_packages(config):
         if package in covered:
             continue
-        partners = config.lockstep_partners(package)
+        group = config.lockstep_group(package)
+        partners = (
+            ()
+            if group is not None and group.publish_last
+            else config.lockstep_partners(package)
+        )
         covered.add(package)
         covered.update(partners)
         inputs.append(

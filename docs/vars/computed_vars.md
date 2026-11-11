@@ -46,6 +46,10 @@ expensive computations, but in some cases it may not update when you expect it t
 To create a computed var that recomputes on every state update regardless of
 dependencies, use `@rx.var(cache=False)`.
 
+An uncached var is recomputed for every state update, but the recomputed value is
+only sent to the frontend when it differs from the value that was last sent, so a
+recomputation that yields the same value does not trigger a re-render.
+
 Previous versions of Reflex had a `@rx.cached_var` decorator, which is now replaced
 by the `cache` argument of `@rx.var` (which defaults to `True`).
 

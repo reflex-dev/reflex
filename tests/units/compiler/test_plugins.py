@@ -31,10 +31,12 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.fragment import Fragment
 
+import reflex as rx
 from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
 from reflex.compiler.plugins import (
     ApplyStylePlugin,
+    ClientStateScopePlugin,
     DefaultCollectorPlugin,
     DefaultPagePlugin,
     default_page_plugins,
@@ -624,34 +626,50 @@ def test_context_lifecycle_and_cleanup() -> None:
         root_component=Fragment.create(),
     )
 
-    with pytest.raises(RuntimeError, match="No active CompileContext"):
+    with pytest.raises(LookupError, match=r"CompileContext\.get.*compilation"):
         CompileContext.get()
-    with pytest.raises(
-        RuntimeError, match="must be entered with 'with' or 'async with'"
-    ):
+    with pytest.raises(RuntimeError, match="must be entered"):
         compile_ctx.ensure_context_attached()
 
     with compile_ctx:
         assert CompileContext.get() is compile_ctx
-        with pytest.raises(RuntimeError, match="No active PageContext"):
+        with pytest.raises(LookupError, match=r"PageContext\.get.*page compilation"):
             PageContext.get()
         with page_ctx:
             assert CompileContext.get() is compile_ctx
             assert PageContext.get() is page_ctx
             page_ctx.ensure_context_attached()
-        with pytest.raises(RuntimeError, match="No active PageContext"):
+        with pytest.raises(LookupError, match=r"PageContext\.get.*page compilation"):
             PageContext.get()
         assert CompileContext.get() is compile_ctx
 
-    with pytest.raises(RuntimeError, match="No active CompileContext"):
+    with pytest.raises(LookupError, match=r"CompileContext\.get.*compilation"):
         CompileContext.get()
 
     with pytest.raises(ValueError, match="boom"), compile_ctx:
         msg = "boom"
         raise ValueError(msg)
 
-    with pytest.raises(RuntimeError, match="No active CompileContext"):
+    with pytest.raises(LookupError, match=r"CompileContext\.get.*compilation"):
         CompileContext.get()
+
+
+@pytest.mark.parametrize(
+    ("context_class", "activity"),
+    [
+        (PageContext, "page compilation"),
+        (CompileContext, "compilation"),
+    ],
+)
+def test_compilation_context_get_outside_compile_raises_descriptive_error(
+    context_class: type[PageContext] | type[CompileContext], activity: str
+) -> None:
+    """Context access outside compilation explains when the context is available."""
+    with pytest.raises(
+        LookupError,
+        match=rf"{context_class.__name__}\.get\(\).*{activity}",
+    ):
+        context_class.get()
 
 
 def test_page_context_default_factories_are_isolated() -> None:
@@ -711,7 +729,21 @@ def test_base_context_subclasses_initialize_distinct_context_vars() -> None:
     class AnotherDynamicContext(BaseContext):
         pass
 
-    assert DynamicContext.__context_var__ is not AnotherDynamicContext.__context_var__
+    assert DynamicContext._context_var is not AnotherDynamicContext._context_var
+
+
+def test_compiler_contexts_use_identity_equality() -> None:
+    root = Fragment.create()
+    page_a = PageContext(name="page", route="/eq", root_component=root)
+    page_b = PageContext(name="page", route="/eq", root_component=root)
+    hooks = CompilerHooks()
+    compile_a = CompileContext(pages=[], hooks=hooks)
+    compile_b = CompileContext(pages=[], hooks=hooks)
+
+    for a, b in ((page_a, page_b), (compile_a, compile_b)):
+        assert a == a
+        assert a != b
+        assert len({a, b}) == 2
 
 
 def test_apply_style_plugin_matches_legacy_style_behavior() -> None:
@@ -910,11 +942,14 @@ def test_default_page_plugins_are_minimal_and_ordered() -> None:
 
     plugins = default_page_plugins(style=page_style())
 
-    assert len(plugins) == 4
+    assert len(plugins) == 5
     assert isinstance(plugins[0], DefaultPagePlugin)
     assert isinstance(plugins[1], ApplyStylePlugin)
-    assert isinstance(plugins[2], DefaultCollectorPlugin)
-    assert isinstance(plugins[3], MemoizeStatefulPlugin)
+    # Scopes the page from the collected hooks, so it runs its compile_page
+    # before the collector collapses the imports it adds.
+    assert isinstance(plugins[2], ClientStateScopePlugin)
+    assert isinstance(plugins[3], DefaultCollectorPlugin)
+    assert isinstance(plugins[4], MemoizeStatefulPlugin)
 
 
 def test_compile_context_collects_artifacts_from_leave_replacement_plugins() -> None:
@@ -1148,9 +1183,7 @@ def test_compile_context_requires_attached_context() -> None:
         hooks=CompilerHooks(),
     )
 
-    with pytest.raises(
-        RuntimeError, match="must be entered with 'with' or 'async with'"
-    ):
+    with pytest.raises(RuntimeError, match="must be entered"):
         compile_ctx.compile()
 
 
@@ -1367,3 +1400,166 @@ def test_apply_style_plugin_preserves_apply_overrides() -> None:
 
     assert component is not None
     assert normalize_style(component)["color"] == '"purple"'
+
+
+def test_default_page_plugins_keep_scope_wrappers_without_auto_memoization() -> None:
+    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+
+    plugins = default_page_plugins(style=page_style(), auto_memoize=False)
+
+    assert [type(plugin) for plugin in plugins] == [
+        DefaultPagePlugin,
+        ApplyStylePlugin,
+        ClientStateScopePlugin,
+        DefaultCollectorPlugin,
+        MemoizeStatefulPlugin,
+    ]
+    assert plugins[-1] == MemoizeStatefulPlugin(scope_only=True)
+
+
+def _compile_without_auto_memoize(
+    component: Callable[[], Component],
+) -> tuple[str, CompileContext]:
+    """Compile one page with ``auto_memoize=False``.
+
+    Args:
+        component: The page function.
+
+    Returns:
+        The page code and the compile context.
+    """
+    compile_ctx = CompileContext(
+        pages=[FakePage(route="/page", component=component)],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=False)),
+    )
+    with compile_ctx:
+        compile_ctx.compile()
+    return compile_ctx.compiled_pages["/page"].output_code or "", compile_ctx
+
+
+def test_lifecycle_stays_inside_cond_branch_without_auto_memoization() -> None:
+    """A branch's lifecycle hook compiles into a wrapper, not into the page."""
+    code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.cond(
+            Var("flag", _var_type=bool),
+            rx.text(
+                "shown",
+                on_mount=rx.console_log("mounted"),
+                on_unmount=rx.console_log("unmounted"),
+            ),
+            rx.text("hidden"),
+        )
+    )
+
+    assert "useEffect(" not in code
+    (wrapper,) = compile_ctx.memoize_wrappers
+    assert code.index("?(") < code.index(f"jsx({wrapper},") < code.index('"hidden"')
+
+
+def test_cond_branches_get_distinct_lifecycle_wrappers_without_auto_memoization() -> (
+    None
+):
+    """Each branch has its own wrapper, so a branch switch remounts it."""
+    code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.cond(
+            Var("flag", _var_type=bool),
+            rx.text("a", on_mount=rx.console_log("a")),
+            rx.text("b", on_mount=rx.console_log("b")),
+        )
+    )
+
+    first, second = compile_ctx.memoize_wrappers
+    assert first != second
+    assert code.index(f"jsx({first},") < code.index(f"jsx({second},")
+
+
+class SlotHolder(Component):
+    """A component that takes another component in a prop."""
+
+    tag = "SlotHolder"
+    library = "slot-holder-lib"
+
+    slot: Var[Component]
+
+
+def test_prop_component_lifecycle_stays_inside_cond_branch_without_auto_memoization() -> (
+    None
+):
+    """A lifecycle hook of a component held in a prop stays in its branch."""
+    code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.cond(
+            Var("flag", _var_type=bool),
+            SlotHolder.create(slot=rx.text("x", on_mount=rx.console_log("mounted"))),
+            rx.text("hidden"),
+        )
+    )
+
+    assert "useEffect(" not in code
+    (wrapper,) = compile_ctx.memoize_wrappers
+    assert code.index("?(") < code.index(f"jsx({wrapper},") < code.index('"hidden"')
+
+
+def test_foreach_item_lifecycle_gets_loop_var_without_auto_memoization() -> None:
+    """An item's lifecycle hook compiles into a wrapper that gets the loop var."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    _code, compile_ctx = _compile_without_auto_memoize(
+        lambda: rx.foreach(
+            Var("items", _var_type=list[str]),
+            lambda item: rx.text(item, on_mount=rx.console_log(item)),
+        )
+    )
+
+    memo_files, _imports = compile_memo_components(
+        memos=tuple(compile_ctx.auto_memo_components.values())
+    )
+    definitions = "".join(code for _path, code in memo_files).split("\nexport const ")
+    loop = next(d for d in definitions if d.startswith("Foreach_"))
+    item = next(d for d in definitions if d.startswith("Text_"))
+
+    before_loop, _, loop_body = loop.partition("Array.prototype.map.call(")
+    assert "item_rx_state_" not in before_loop
+    assert "itemRxState:item_rx_state_" in loop_body
+    signature, _, body = item.partition("memo((")[2].partition("=> {")
+    assert "itemRxState:item_rx_state_" in signature
+    assert "useEffect(" in body
+
+
+def test_stateful_component_without_hooks_is_not_wrapped_without_auto_memoization() -> (
+    None
+):
+    """Only components with hooks of their own keep a wrapper."""
+    _code, compile_ctx = _compile_without_auto_memoize(create_inline_stateful_component)
+
+    assert not compile_ctx.memoize_wrappers
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_compile_app_passes_auto_memoize_config(
+    auto_memoize: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Page compilation follows the ``auto_memoize`` config."""
+
+    class _StopCompile(Exception):
+        pass
+
+    received: list[bool] = []
+
+    def recording_default_page_plugins(**kwargs):
+        received.append(kwargs["auto_memoize"])
+        raise _StopCompile
+
+    monkeypatch.setattr(
+        compiler, "default_page_plugins", recording_default_page_plugins
+    )
+    monkeypatch.setattr(
+        compiler,
+        "get_config",
+        lambda: rx.Config(app_name="testing", auto_memoize=auto_memoize),
+    )
+    app = rx.App()
+    app.add_page(lambda: rx.box("hi"), route="/")
+    with pytest.raises(_StopCompile):
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+    assert received == [auto_memoize]

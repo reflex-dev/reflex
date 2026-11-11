@@ -1,0 +1,16 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+[17:15:08] Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 21/21 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:13000/
+Backend running at: http://0.0.0.0:18000
+[ERROR] Unexpected exit from worker-1
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:13000/
+  ➜  Network: http://192.0.2.2:13000/
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[17:15:12] Reflex app stopped.                                    console.py:231

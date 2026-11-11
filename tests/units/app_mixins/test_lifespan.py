@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
+from typing import Any
 
 import pytest
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
+from reflex_base.utils.types import Receive, Scope, Send
 from starlette.applications import Starlette
 
 from reflex.app_mixins.lifespan import LifespanMixin
@@ -122,3 +125,376 @@ async def test_lifespan_task_both_app_and_starlette_app_params_are_injected():
 
     assert received["app"] is mixin
     assert received["starlette_app"] is starlette_app
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_closes_health_redis(mocker):
+    """Lifespan shutdown releases the cached health-check redis client."""
+    close = mocker.patch(
+        "reflex.utils.prerequisites.close_health_redis", new_callable=mocker.AsyncMock
+    )
+    mixin = LifespanMixin()
+
+    async with mixin._run_lifespan_tasks(Starlette()):
+        close.assert_not_awaited()
+
+    close.assert_awaited_once()
+
+
+async def _run_coroutine_lifespan_task(task) -> list[dict]:
+    """Run a coroutine lifespan task through startup and shutdown.
+
+    Args:
+        task: The coroutine function to register as a lifespan task.
+
+    Returns:
+        The contexts passed to the event loop exception handler.
+    """
+    loop = asyncio.get_running_loop()
+    reported: list[dict] = []
+    previous_handler = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _, context: reported.append(context))
+    try:
+        mixin = LifespanMixin()
+        mixin.register_lifespan_task(task)
+        async with mixin._run_lifespan_tasks(Starlette()):
+            lifespan_tasks = [
+                t
+                for t in asyncio.all_tasks()
+                if t.get_name().startswith("reflex_lifespan_task|")
+            ]
+            # Shutdown starts before done callbacks of tasks that already ended run.
+            await asyncio.sleep(0)
+        await asyncio.gather(*lifespan_tasks, return_exceptions=True)
+        await asyncio.sleep(0)
+    finally:
+        loop.set_exception_handler(previous_handler)
+    return reported
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_cancellation_is_not_reported_as_error():
+    """Cancelling a running coroutine lifespan task at shutdown is not an error."""
+
+    async def run_forever():
+        await asyncio.Event().wait()
+
+    assert await _run_coroutine_lifespan_task(run_forever) == []
+
+
+@pytest.mark.asyncio
+async def test_lifespan_coroutine_task_exception_is_reported():
+    """An exception raised by a coroutine lifespan task reaches the loop handler."""
+
+    async def fail():  # noqa: RUF029
+        msg = "lifespan task failed"
+        raise ValueError(msg)
+
+    reported = await _run_coroutine_lifespan_task(fail)
+
+    assert [type(context["exception"]) for context in reported] == [ValueError]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_task_self_cancellation_is_reported():
+    """A coroutine lifespan task cancelled before shutdown still reaches the loop handler."""
+
+    async def cancel_itself():  # noqa: RUF029
+        raise asyncio.CancelledError
+
+    reported = await _run_coroutine_lifespan_task(cancel_itself)
+
+    assert [type(context["exception"]) for context in reported] == [
+        asyncio.CancelledError
+    ]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_waits_for_cancelled_tasks():
+    """Shutdown waits until cancelled coroutine lifespan tasks finish their cleanup."""
+    cleaned_up = []
+
+    async def run_forever():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await asyncio.sleep(0)
+            cleaned_up.append(True)
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(run_forever)
+    async with mixin._run_lifespan_tasks(Starlette()):
+        await asyncio.sleep(0)
+
+    assert cleaned_up == [True]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_cancels_all_tasks_before_waiting():
+    """A task whose cleanup waits on a later task does not deadlock shutdown."""
+    second_stopped = asyncio.Event()
+    second_stopped_first = []
+
+    async def first():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            try:
+                await asyncio.wait_for(second_stopped.wait(), timeout=1)
+            except TimeoutError:
+                second_stopped_first.append(False)
+            else:
+                second_stopped_first.append(True)
+
+    async def second():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            second_stopped.set()
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(first)
+    mixin.register_lifespan_task(second)
+    async with mixin._run_lifespan_tasks(Starlette()):
+        await asyncio.sleep(0)
+
+    assert second_stopped_first == [True]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_does_not_wait_forever_for_a_stuck_task(mocker, caplog):
+    """A task that ignores cancellation is logged and shutdown continues after the timeout."""
+    mocker.patch("reflex.app_mixins.lifespan._LIFESPAN_TASK_CANCEL_TIMEOUT", 0.05)
+    close = mocker.patch(
+        "reflex.utils.prerequisites.close_health_redis", new_callable=mocker.AsyncMock
+    )
+    release = asyncio.Event()
+
+    async def ignore_cancel():
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await release.wait()
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(ignore_cancel)
+
+    async def run():
+        async with mixin._run_lifespan_tasks(Starlette()):
+            await asyncio.sleep(0)
+
+    try:
+        await asyncio.wait_for(run(), timeout=1)
+    finally:
+        release.set()
+        await asyncio.sleep(0)
+
+    close.assert_awaited_once()
+    assert any("ignore_cancel" in record.getMessage() for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_lifespan_task_cleanup_error_is_logged_and_shutdown_continues(
+    mocker, caplog
+):
+    """An error raised while a lifespan task handles cancellation does not stop shutdown."""
+    close = mocker.patch(
+        "reflex.utils.prerequisites.close_health_redis", new_callable=mocker.AsyncMock
+    )
+
+    async def fail_on_cancel():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            msg = "cleanup failed"
+            raise RuntimeError(msg)
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(fail_on_cancel)
+    async with mixin._run_lifespan_tasks(Starlette()):
+        await asyncio.sleep(0)
+
+    close.assert_awaited_once()
+    assert any(
+        isinstance(record.exc_info and record.exc_info[1], RuntimeError)
+        for record in caplog.records
+    )
+
+
+@pytest.mark.asyncio
+async def test_lifespan_cleanup_error_is_logged_while_another_task_is_stuck(caplog):
+    """A cleanup error is logged when that task ends, not when shutdown's wait ends."""
+    release = asyncio.Event()
+    cleanup_reported = asyncio.Event()
+
+    async def ignore_cancel():
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await release.wait()
+
+    async def fail_on_cancel():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            task = asyncio.current_task()
+            assert task is not None
+            # Shutdown has already registered its cleanup error callback.
+            task.add_done_callback(lambda _: cleanup_reported.set())
+            msg = "cleanup failed"
+            raise RuntimeError(msg)
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(ignore_cancel)
+    mixin.register_lifespan_task(fail_on_cancel)
+
+    async def run():
+        async with mixin._run_lifespan_tasks(Starlette()):
+            await asyncio.sleep(0)
+
+    shutdown = asyncio.create_task(run())
+    try:
+        await asyncio.wait_for(cleanup_reported.wait(), timeout=1)
+        assert not shutdown.done()
+        assert any(
+            isinstance(record.exc_info and record.exc_info[1], RuntimeError)
+            for record in caplog.records
+        )
+    finally:
+        release.set()
+        await shutdown
+
+
+def _lifespan_scope() -> dict[str, Any]:
+    """Create a server's lifespan scope.
+
+    Returns:
+        The lifespan scope, with an empty state.
+    """
+    return {"type": "lifespan", "asgi": {"version": "3.0"}, "state": {}}
+
+
+def _raw_lifespan_app(events: list[str], name: str, fail: str | None = None):
+    """Create a plain ASGI app that answers lifespan events itself.
+
+    Args:
+        events: The list to record lifespan events in.
+        name: The name of the app in the recorded events.
+        fail: "startup" or "shutdown" to report that phase as failed.
+
+    Returns:
+        The ASGI app.
+    """
+
+    async def app(scope: Scope, receive: Receive, send: Send) -> None:
+        assert scope["type"] == "lifespan"
+        for phase in ("startup", "shutdown"):
+            await receive()
+            events.append(f"{name} {phase}")
+            outcome = "failed" if fail == phase else "complete"
+            await send({"type": f"lifespan.{phase}.{outcome}", "message": "boom"})
+            if fail == phase:
+                return
+            scope["state"][name] = phase
+
+    return app
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_sends_lifespan_events_after_the_tasks():
+    """Apps start after the tasks, in order, stop in reverse, and share the state."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def task():
+        events.append("task start")
+        yield
+        events.append("task stop")
+
+    @contextlib.asynccontextmanager
+    async def starlette_lifespan(app: Starlette):
+        events.append("starlette startup")
+        yield {"db": "conn"}
+        events.append("starlette shutdown")
+
+    mixin.register_lifespan_task(task)
+    scope = _lifespan_scope()
+    apps = [_raw_lifespan_app(events, "raw"), Starlette(lifespan=starlette_lifespan)]
+
+    async with mixin._run_lifespan(Starlette(), apps, scope):
+        assert scope["state"] == {"raw": "startup", "db": "conn"}
+    assert events == [
+        "task start",
+        "raw startup",
+        "starlette startup",
+        "starlette shutdown",
+        "raw shutdown",
+        "task stop",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_skips_apps_without_lifespan_support(caplog):
+    """An app that does not answer the startup event is skipped."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+
+    async def http_only_app(scope: Scope, receive: Receive, send: Send) -> None:  # noqa: RUF029
+        assert scope["type"] == "http"
+
+    async def silent_app(scope: Scope, receive: Receive, send: Send) -> None:
+        pass
+
+    async def http_response_app(scope: Scope, receive: Receive, send: Send) -> None:
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+
+    apps = [
+        http_only_app,
+        silent_app,
+        http_response_app,
+        _raw_lifespan_app(events, "raw"),
+    ]
+    with caplog.at_level(logging.INFO):
+        async with mixin._run_lifespan(Starlette(), apps, _lifespan_scope()):
+            assert events == ["raw startup"]
+    assert events == ["raw startup", "raw shutdown"]
+    assert "appears unsupported" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_startup_failure_stops_started_lifespans():
+    """An app failing to start stops the lifespans already started."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+    apps = [
+        _raw_lifespan_app(events, "first"),
+        _raw_lifespan_app(events, "failing", fail="startup"),
+        _raw_lifespan_app(events, "never"),
+    ]
+
+    with pytest.raises(RuntimeError, match=r"startup of .* failed: boom"):
+        async with mixin._run_lifespan(Starlette(), apps, _lifespan_scope()):
+            pass
+    assert events == ["first startup", "failing startup", "first shutdown"]
+
+
+@pytest.mark.asyncio
+async def test_run_lifespan_shutdown_failure_still_stops_the_rest():
+    """An app failing to stop is reported after the other lifespans stop."""
+    mixin = LifespanMixin()
+    events: list[str] = []
+    apps = [
+        _raw_lifespan_app(events, "first"),
+        _raw_lifespan_app(events, "failing", fail="shutdown"),
+    ]
+
+    with pytest.raises(RuntimeError, match=r"shutdown of .* failed: boom"):
+        async with mixin._run_lifespan(Starlette(), apps, _lifespan_scope()):
+            pass
+    assert events == [
+        "first startup",
+        "failing startup",
+        "failing shutdown",
+        "first shutdown",
+    ]

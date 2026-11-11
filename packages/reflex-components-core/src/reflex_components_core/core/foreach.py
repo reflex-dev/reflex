@@ -14,10 +14,26 @@ from reflex_base.constants import MemoizationMode
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import UntypedVarError
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import LiteralVar, Var, var_operation, var_operation_return
 
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.cond import cond
+
+
+@var_operation
+def _string_chars_operation(string: Var[Any]):
+    """Convert a string to an array of Unicode code points.
+
+    Args:
+        string: The string to convert.
+
+    Returns:
+        A Var representing the string's Unicode code points.
+    """
+    return var_operation_return(
+        js_expression=f'Array.from(({string!s}) ?? "")',
+        var_type=list[str],
+    )
 
 
 class ForeachVarError(TypeError):
@@ -64,7 +80,7 @@ class Foreach(Component):
         # noqa: DAR401 with_traceback
         # noqa: DAR402 UntypedVarError
         """
-        from reflex_base.vars import ArrayVar, ObjectVar, StringVar
+        from reflex_base.vars import ArrayVar, ObjectVar, SetVar, StringVar
 
         from reflex.state import ComponentState
 
@@ -93,7 +109,10 @@ class Foreach(Component):
             iterable = iterable.entries()
 
         if isinstance(iterable, StringVar):
-            iterable = iterable.split()
+            iterable = _string_chars_operation(iterable)
+
+        if isinstance(iterable, SetVar):
+            iterable = iterable.to_array()
 
         if not isinstance(iterable, ArrayVar):
             msg = (

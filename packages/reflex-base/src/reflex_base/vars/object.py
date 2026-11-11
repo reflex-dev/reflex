@@ -72,6 +72,33 @@ def _determine_value_type(var_type: GenericType):
     return Any
 
 
+def _unserialized_property_error(var_type: GenericType, name: str) -> VarAttributeError:
+    """Build the error for a property that is never sent to the frontend.
+
+    Args:
+        var_type: The object var type that declares the property.
+        name: The property name.
+
+    Returns:
+        The error to raise.
+    """
+    if types.is_union(var_type):
+        detail = f"union type '{var_type}' may not be included in serialized state."
+    elif isinstance(var_type, type) and dataclasses.is_dataclass(var_type):
+        detail = (
+            f"dataclass '{var_type.__name__}' is not included in serialized state. "
+            "Only declared dataclass fields are serialized; register an "
+            "`rx.serializer` for the dataclass to include it."
+        )
+    else:
+        detail = (
+            f"Pydantic model '{var_type.__name__}' is not included in serialized "
+            "state. Use `@pydantic.computed_field` to include the computed value in "
+            "model_dump()."
+        )
+    return VarAttributeError(f"The property '{name}' on {detail}")
+
+
 PYTHON_TYPES = (Mapping,)
 if find_spec("pydantic"):
     import pydantic
@@ -330,6 +357,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
         fixed_type = get_origin(var_type) or var_type
 
+        if fixed_type in types.UnionTypes and types.is_unserialized_property(
+            var_type, name
+        ):
+            raise _unserialized_property_error(var_type, name)
         if isinstance(fixed_type, type) and not safe_issubclass(fixed_type, Mapping):
             # Resolve the raw descriptor once and reuse it. A HybridProperty resolves to a
             # frontend Var with this object var substituted as `self` (e.g. `State.info.a_b`);
@@ -345,6 +376,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
                     )
                     raise VarAttributeError(msg)
                 return hybrid_var
+            if isinstance(descriptor, property) and types.is_unserialized_property(
+                fixed_type, name, descriptor
+            ):
+                raise _unserialized_property_error(fixed_type, name)
             attribute_type = get_attribute_access_type(var_type, name, descriptor)
         elif is_typeddict(fixed_type) or fixed_type in types.UnionTypes:
             attribute_type = get_attribute_access_type(var_type, name)
@@ -463,14 +498,6 @@ class LiteralObjectVar(
             keys_and_values.append(f"{key.json()}:{value.json()}")
         return "{" + ", ".join(keys_and_values) + "}"
 
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((type(self).__name__, self._js_expr))
-
     @classmethod
     def _get_all_var_data_without_creating_var(
         cls,
@@ -507,14 +534,15 @@ class LiteralObjectVar(
     @classmethod
     def create(
         cls,
-        _var_value: Mapping,
+        _var_value: object,
         _var_type: type[OBJECT_TYPE] | None = None,
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar[OBJECT_TYPE]:
         """Create the literal object var.
 
         Args:
-            _var_value: The value of the var.
+            _var_value: The value of the var: a mapping, or a value that serializes
+                to one, such as a dataclass.
             _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
@@ -558,7 +586,7 @@ def object_keys_operation(value: ObjectVar):
         The keys of the object.
     """
     return var_operation_return(
-        js_expression=f"Object.keys({value} ?? {{}})",
+        js_expression=f"Object.keys({value!s} ?? {{}})",
         var_type=list[str],
     )
 
@@ -574,7 +602,7 @@ def object_values_operation(value: ObjectVar):
         The values of the object.
     """
     return var_operation_return(
-        js_expression=f"Object.values({value} ?? {{}})",
+        js_expression=f"Object.values({value!s} ?? {{}})",
         var_type=list[value._value_type()],
     )
 
@@ -590,7 +618,7 @@ def object_entries_operation(value: ObjectVar):
         The entries of the object.
     """
     return var_operation_return(
-        js_expression=f"Object.entries({value} ?? {{}})",
+        js_expression=f"Object.entries({value!s} ?? {{}})",
         var_type=list[tuple[str, value._value_type()]],
     )
 
@@ -607,7 +635,7 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
         The merged object.
     """
     return var_operation_return(
-        js_expression=f"({{...{lhs}, ...{rhs}}})",
+        js_expression=f"({{...{lhs!s}, ...{rhs!s}}})",
         var_type=Mapping[
             lhs._key_type() | rhs._key_type(),
             lhs._value_type() | rhs._value_type(),
@@ -677,6 +705,6 @@ def object_has_own_property_operation(object: ObjectVar, key: Var):
         The result of the check.
     """
     return var_operation_return(
-        js_expression=f"{object}.hasOwnProperty({key})",
+        js_expression=f"{object!s}.hasOwnProperty({key!s})",
         var_type=bool,
     )

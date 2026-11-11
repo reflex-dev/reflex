@@ -23,7 +23,7 @@ Choose based on what starts the work and what it operates on:
   runs independent of any user or session — it starts when the app starts and is
   not tied to UI state. Examples: polling an external API on an interval,
   monitoring a service, refreshing a shared cache, scheduled maintenance.
-- Use a [background event](/docs/events/background-events)
+- Use a [background event](/docs/events/background-events/)
   (`@rx.event(background=True)`) for user-triggered, session-bound work that
   reads or updates that user's UI state. Examples: processing a file after a
   user clicks submit, calling an API on demand, showing progress during a
@@ -62,7 +62,8 @@ If the task accepts the special argument, `app`, it will be passed the Reflex ap
 instance (`rx.App`/`LifespanMixin`).
 
 If the task accepts the special argument, `starlette_app`, it will be passed the
-underlying `Starlette` application instance.
+`Starlette` application that serves Reflex's own routes (the one a Starlette or
+FastAPI `api_transformer` mounts and a callable `api_transformer` wraps).
 
 ```python
 app = rx.App()

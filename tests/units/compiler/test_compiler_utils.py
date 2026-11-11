@@ -1,15 +1,178 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
+from typing import Annotated, Literal, TypedDict
 
 import pytest
+from reflex_base import constants
+from reflex_base.components.memo import create_passthrough_component_memo
+from reflex_base.registry import RegistrationContext
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
+from reflex_components_core.el.elements.metadata import Link
+from reflex_components_core.el.elements.typography import Div
 
+import reflex as rx
+from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
+from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
-from reflex.state import State
+from reflex.state import State, state_snapshot_hashes
+from reflex.utils.exceptions import VarTypeError
+from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
+
+
+def test_memo_root_prop_forwarding_preserves_cached_analysis() -> None:
+    """Repeated emission of shared memo bodies must not accumulate prop merges."""
+    with RegistrationContext.ensure_context().fork() as context:
+        _, first = create_passthrough_component_memo(Div.create("first", id="root"))
+        _, second = create_passthrough_component_memo(Div.create("second", id="root"))
+        assert first.export_name == second.export_name
+        analysis = context._memo_body_analyses[
+            first.component.__dict__["_memo_analysis_key"]
+        ]
+        original_render = deepcopy(analysis.rendered)
+
+        for definition in (first, first, second):
+            compiled, _ = utils.compile_experimental_component_memo(definition)
+            props = ", ".join(compiled["render"]["props"])
+            assert props.count("mergeSlotProps(") == 1
+            assert "ref:ref_root" in props
+            assert analysis.rendered == original_render
+
+
+def test_write_file_reexport() -> None:
+    """Existing compiler callers retain the shared file-writing helper."""
+    assert compiler_write_file is write_file
+
+
+def test_bundled_libraries_artifact_round_trip(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Backend-only workers can restore the registry from the frontend build."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    with RegistrationContext() as context:
+        context.bundled_libraries.append("@radix-ui/themes")
+        output_path, output = utils._compile_bundled_libraries()
+        artifact_path = tmp_path / output_path
+        artifact_path.parent.mkdir()
+        artifact_path.write_text(output, encoding="utf-8")
+        context.bundled_libraries[:] = ["react"]
+
+        utils._restore_bundled_libraries()
+
+        assert context.bundled_libraries == [
+            "react",
+            "@emotion/react",
+            "$/utils/context",
+            f"$/{constants.Dirs.UTILS}/context-registry",
+            "$/utils/state",
+            "@radix-ui/themes",
+        ]
+
+
+def test_restore_bundled_libraries_preserves_page_registrations(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Restoring frontend metadata retains libraries discovered by page evaluation."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_text('["@radix-ui/themes"]', encoding="utf-8")
+    with RegistrationContext() as context:
+        context.bundled_libraries.append("page-library")
+
+        utils._restore_bundled_libraries()
+
+        assert "@radix-ui/themes" in context.bundled_libraries
+        assert "page-library" in context.bundled_libraries
+
+
+def test_restore_bundled_libraries_ignores_invalid_utf8(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Malformed registry artifacts do not interrupt backend-only startup."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_bytes(b"\xff")
+
+    utils._restore_bundled_libraries()
+
+
+@pytest.mark.parametrize(
+    "contents",
+    ["{", '"@radix-ui/themes"', '["@radix-ui/themes", 1]'],
+)
+def test_restore_bundled_libraries_ignores_invalid_json(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, contents: str
+) -> None:
+    """Malformed registry data does not change backend registrations."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_text(contents, encoding="utf-8")
+    with RegistrationContext() as context:
+        original = list(context.bundled_libraries)
+
+        utils._restore_bundled_libraries()
+
+        assert context.bundled_libraries == original
+
+
+def test_restore_bundled_libraries_ignores_missing_artifact(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A missing frontend artifact does not interrupt backend-only startup."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+
+    utils._restore_bundled_libraries()
+
+
+def _global_stylesheet_links() -> list[list[str]]:
+    """Render the framework link tags of a fresh document head.
+
+    Returns:
+        The rendered props of every ``Link`` in the head.
+    """
+    head = create_document_root().children[0]
+    return [
+        child.render()["props"] for child in head.children if isinstance(child, Link)
+    ]
+
+
+def test_document_preloads_the_global_stylesheet_in_prod(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Production builds hint the render-blocking CSS ahead of the stylesheet link.
+
+    Args:
+        monkeypatch: Selects prod mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    links = _global_stylesheet_links()
+    preload = next(props for props in links if 'rel:"preload"' in props)
+    stylesheet = next(props for props in links if 'rel:"stylesheet"' in props)
+    assert next(prop for prop in preload if prop.startswith("href:")) == next(
+        prop for prop in stylesheet if prop.startswith("href:")
+    )
+    assert 'as:"style"' in preload
+
+
+def test_document_does_not_preload_the_global_stylesheet_in_dev(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Dev builds link the stylesheet once so Vite's css-update swaps that link.
+
+    Args:
+        monkeypatch: Selects dev mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    links = _global_stylesheet_links()
+    assert not any('rel:"preload"' in props for props in links)
+    assert sum('rel:"stylesheet"' in props for props in links) == 1
 
 
 class CompileStateState(State):
@@ -50,6 +213,174 @@ async def test_compile_state_resolves_async_computed_vars_with_running_event_loo
     assert values[f"a{FIELD_MARKER}"] == 1
     assert values[f"b{FIELD_MARKER}"] == 2
     assert values[f"async_value{FIELD_MARKER}"] == "resolved"
+
+
+def test_compile_state_hashes_dict_with_mixed_key_types(
+    forked_registration_context: RegistrationContext,
+):
+    """A dict default mixing int and str keys compiles and hashes without comparing keys.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+
+    class MixedKeyState(State):
+        mapping: dict[str | int, str] = {1: "one", "two": "two"}
+
+    compiled = compile_state(MixedKeyState)
+    assert _get_state_values(compiled, MixedKeyState) == {
+        f"mapping{FIELD_MARKER}": {1: "one", "two": "two"}
+    }
+    assert len(state_snapshot_hashes(compiled)) == len(compiled) + 1
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [rx.Cookie, rx.LocalStorage, rx.SessionStorage],
+    ids=lambda t: t.__name__,
+)
+def test_compile_client_storage_rejects_factory_on_storage_annotation(
+    annotation: type,
+    forked_registration_context: RegistrationContext,
+):
+    """A browser storage var annotated with a storage type takes no default_factory.
+
+    Args:
+        annotation: The browser storage type the var is annotated with.
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+    # Built with type() so the annotation is the parametrized storage type.
+    StorageState = type(
+        "StorageState",
+        (State,),
+        {
+            "__module__": __name__,
+            "__qualname__": "test_rejects_factory_on_storage_annotation.<locals>.StorageState",
+            "__annotations__": {"value": annotation},
+            "value": rx.field(default_factory=lambda: annotation("new", name="key")),
+        },
+    )
+
+    with pytest.raises(VarTypeError, match=r"\.value' cannot use a default_factory"):
+        utils.compile_client_storage(StorageState)
+
+
+def test_compile_client_storage_rejects_factory_on_set_default(
+    forked_registration_context: RegistrationContext,
+):
+    """set_default with a default_factory is rejected on a browser storage var.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+
+    class StorageState(State):
+        value: rx.LocalStorage = rx.LocalStorage("declared", name="storage-key")
+
+    StorageState.__fields__["value"].set_default(
+        default_factory=lambda: rx.LocalStorage("new", name="storage-key")
+    )
+    with pytest.raises(VarTypeError, match=r"\.value' cannot use a default_factory"):
+        utils.compile_client_storage(StorageState)
+
+
+def test_compile_client_storage_rejects_factory_producing_storage(
+    forked_registration_context: RegistrationContext,
+):
+    """A plain-annotated var whose default_factory produces browser storage is rejected.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+
+    class StorageState(State):
+        theme: rx.Field[str] = rx.field(
+            default_factory=lambda: rx.LocalStorage("light", name="theme")
+        )
+
+    class OptionalStorageState(State):
+        theme: rx.Field[str | None] = rx.field(
+            default_factory=lambda: rx.LocalStorage("light", name="theme")
+        )
+
+    class OptionalAnnotatedStorageState(State):
+        theme: rx.Field[rx.LocalStorage | None] = rx.field(
+            default_factory=lambda: rx.LocalStorage("light", name="theme")
+        )
+
+    class LiteralStorageState(State):
+        theme: rx.Field[Literal["light", "dark"]] = rx.field(  # pyright: ignore[reportAssignmentType]
+            default_factory=lambda: rx.LocalStorage("light", name="theme")
+        )
+
+    class MetadataStorageState(State):
+        theme: rx.Field[Annotated[str, "meta"]] = rx.field(
+            default_factory=lambda: rx.LocalStorage("light", name="theme")
+        )
+
+    for state in (
+        StorageState,
+        OptionalStorageState,
+        OptionalAnnotatedStorageState,
+        LiteralStorageState,
+        MetadataStorageState,
+    ):
+        with pytest.raises(
+            VarTypeError, match=r"\.theme' cannot use a default_factory"
+        ):
+            utils.compile_client_storage(state)
+
+
+class Node(TypedDict):
+    """A typed dict default, which issubclass refuses to check."""
+
+    name: str
+
+
+def test_compile_client_storage_skips_plain_factories(
+    forked_registration_context: RegistrationContext,
+):
+    """A default_factory producing a plain value compiles as an ordinary var.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+    calls = []
+
+    def make_text() -> str:
+        """Record the call and return a plain default.
+
+        Returns:
+            The default text.
+        """
+        calls.append(1)
+        return "plain"
+
+    def missing_at_compile() -> str:
+        """Fail: a factory that only works at runtime is skipped while compiling.
+
+        Raises:
+            RuntimeError: Always.
+        """
+        msg = "only available at runtime"
+        raise RuntimeError(msg)
+
+    class PlainState(State):
+        text: rx.Field[str] = rx.field(default_factory=make_text)
+        _token: rx.Field[str] = rx.field(default_factory=missing_at_compile)
+        runtime_only: rx.Field[str] = rx.field(default_factory=missing_at_compile)
+        items: rx.Field[list[str]] = rx.field(default_factory=list)
+        # issubclass against a TypedDict raises, so the check must not ask it.
+        node: rx.Field[Node] = rx.field(default_factory=lambda: Node(name="root"))
+        local: str = rx.LocalStorage("declared", name="local-key")
+
+    compiled = utils.compile_client_storage(PlainState)
+    name = PlainState.get_full_name()
+    assert compiled[constants.LOCAL_STORAGE] == {
+        f"{name}.local{FIELD_MARKER}": {"name": "local-key", "sync": False}
+    }
+    assert compiled[constants.COOKIES] == compiled[constants.SESSION_STORAGE] == {}
+    assert calls == [1]
 
 
 def test_document_root_allows_static_id_on_head_script():

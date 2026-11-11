@@ -34,20 +34,12 @@ console.log(customVariable);
 Custom hooks are any hooks that need to be included in your component. This can include things like `useEffect`, `useState`, or any other hooks from the library you are wrapping.
 
 - Simple hooks can be added as strings.
-- More complex hooks that need to have special import or be written in a specific order can be added as `rx.Var` with a `VarData` object to specify the position of the hook.
-  - The `imports` attribute of the `VarData` object can be used to specify any imports that need to be included in the component.
-  - The `position` attribute of the `VarData` object can be set to `Hooks.HookPosition.PRE_TRIGGER` or `Hooks.HookPosition.POST_TRIGGER` to specify the position of the hook in the component.
+- Hooks that need an import can be added as `rx.Var` with a `VarData` object. The `imports` attribute of the `VarData` object specifies any imports that need to be included in the component.
 
-```md alert info
-# The `position` attribute is only used for hooks that need to be written in a specific order.
-
-- If an event handler need to refer to a variable defined in a hook, the hook should be written before the event handler.
-- If a hook need to refer to the memoized event handler by name, the hook should be written after the event handler.
-```
+Hooks render in the order they are declared. The hooks the framework manages (refs, `on_mount`, and the state hooks that props read) come first, then the hooks returned by `add_hooks` in the order of the list, with a base class's hooks before a subclass's.
 
 ```python
 from reflex.vars.base import Var, VarData
-from reflex_base.constants import Hooks
 from reflex.components.el.elements import Div
 
 
@@ -60,34 +52,19 @@ class ComponentWithHooks(Div, MyBaseComponent):
         hooks1 = """const customHookVariable = "some value";"""
         hooks.append(hooks1)
 
-        # A hook that need to be written before the memoized event handlers.
+        # A hook that reads the variable declared by the hook before it.
         hooks2 = Var(
             """useEffect(() => {
-                console.log("PreTrigger: " + customHookVariable);
+                console.log(customHookVariable);
             }, []);
             """,
             _var_data=VarData(
                 imports={
                     "react": ["useEffect"],
                 },
-                position=Hooks.HookPosition.PRE_TRIGGER,
             ),
         )
         hooks.append(hooks2)
-
-        hooks3 = Var(
-            """useEffect(() => {
-                console.log("PostTrigger: " + customHookVariable);
-            }, []);
-            """,
-            _var_data=VarData(
-                imports={
-                    "react": ["useEffect"],
-                },
-                position=Hooks.HookPosition.POST_TRIGGER,
-            ),
-        )
-        hooks.append(hooks3)
         return hooks
 ```
 
@@ -98,19 +75,82 @@ export function Div_7178f430b7b371af8a12d8265d65ab9b() {
   const customHookVariable = "some value";
 
   useEffect(() => {
-    console.log("PreTrigger: " + customHookVariable);
-  }, []);
-
-  /* memoized triggers such as on_click, on_change, etc will render here */
-
-  useEffect(() => {
-    console.log("PostTrigger: "+ customHookVariable);
+    console.log(customHookVariable);
   }, []);
 
   return jsx("div", {});
 }
 ```
 
+### Hooks that read other hooks
+
+When a hook reads a value that another hook declares, list that declaration in the `hooks` attribute of its `VarData`. Each entry maps a hook's code to its own `VarData` (or `None`). A hook's dependencies always render before it, in whichever component the hook ends up in, so a hook `Var` can be reused across components or passed in through a prop without caring about where its dependency is declared.
+
+```python
+from reflex.vars.base import Var, VarData
+from reflex.components.el.elements import Div
+
+
+class CountLogger(Div, MyBaseComponent):
+    """MyComponent."""
+
+    def add_hooks(self) -> list[str | Var]:
+        """Add hooks to the component."""
+        use_count = VarData(
+            imports={"react": ["useState"]},
+        )
+        log_count = Var(
+            """useEffect(() => {
+                console.log(count);
+            }, [count]);
+            """,
+            _var_data=VarData(
+                imports={"react": ["useEffect"]},
+                hooks={"const [count, setCount] = useState(0);": use_count},
+            ),
+        )
+        return [log_count]
+```
+
+The `useState` declaration renders before the `useEffect` that reads it, and both imports are included:
+
+```javascript
+export function Div_2b1c5f3e9a7d4c6e8f0a1b2c3d4e5f60() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    console.log(count);
+  }, [count]);
+
+  return jsx("div", {});
+}
+```
+
+```md alert warning
+# The `position` attribute of `VarData` and `Hooks.HookPosition` are deprecated.
+
+Earlier versions sorted hooks into `PRE_TRIGGER` and `POST_TRIGGER` groups. Passing `position` now warns and has no effect on the order. To place a hook after another one, list the hook it reads in its `VarData(hooks=...)` as shown above.
+```
+
 ```md alert info
 # You can mix custom code and hooks in the same component. Hooks can access a variable defined in the custom code, but custom code cannot access a variable defined in a hook.
 ```
+
+## Using a Hook's Return Value
+
+`add_hooks` inserts hook statements into the component, but the values they define are not directly accessible from Python. When you need the return value of a no-argument hook, use `rx.vars.use_hook_var()`, which binds the hook call to a unique variable name and returns it as a `Var`. The hook statement and its import are automatically included in any component where the var is used, so it composes with regular props and var operations.
+
+```python
+import reflex as rx
+
+
+def use_chart_width() -> rx.Var[int | None]:
+    """Get the width of the enclosing recharts chart as a var."""
+    return rx.vars.use_hook_var(
+        library="recharts@3.8.1", hook="useChartWidth", _var_type=int | None
+    )
+```
+
+For React's built-in [`useId`](https://react.dev/reference/react/useId), `rx.vars.use_id()` returns a `Var[str]` with a stable unique id for the component being rendered, e.g. for linking SVG elements to gradient or filter definitions.
+
+A hook var is evaluated once per compiled component, so every element that reads it must render inside the same one. An `rx.el.svg` root, an `@rx.memo` body, and a custom renderer body each compile into a single component and satisfy this.

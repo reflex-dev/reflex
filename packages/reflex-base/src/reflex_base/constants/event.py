@@ -50,6 +50,9 @@ class SocketEvent(SimpleNamespace):
     PING = "ping"
     EVENT = "event"
     CLIENT_ERROR = "client_error"
+    # Sent on connect when the frontend was compiled for another state tree
+    # (must match STATE_MISMATCH_EVENT in .templates/web/utils/state.js).
+    STATE_MISMATCH = "state_mismatch"
 
     def __str__(self) -> str:
         """Get the string representation of the event name.
@@ -61,13 +64,16 @@ class SocketEvent(SimpleNamespace):
 
 
 class ClientErrorType(SimpleNamespace):
-    """Error types reported by the frontend via the client_error socket event.
+    """Error types reported by the frontend.
 
+    The backend receives them via the client_error socket event, and the
+    connection banners read them from the connection errors.
     Must match the ERROR_TYPE_* constants in .templates/web/utils/state.js.
     """
 
     DISPATCH_MISSING = "dispatch_function_missing"
     STATE_UPDATE = "state_update_processing_error"
+    HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large"
 
 
 class EventTriggers(SimpleNamespace):

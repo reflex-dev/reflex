@@ -2,6 +2,7 @@
 
 import sys
 from textwrap import dedent
+from typing import Any, cast
 
 import pytest
 from reflex_base.config import Config, get_config, reload_config
@@ -421,3 +422,17 @@ def test_bundled_libraries_isolated_between_contexts():
 
     with RegistrationContext() as ctx_b:
         assert "some-extra-lib" not in ctx_b.bundled_libraries
+
+
+def test_reset_compile_caches_empties_per_compile_maps(
+    clean_registration_context: RegistrationContext,
+):
+    """A compile starts without entries retained from the previous compile."""
+    entry = cast("Any", object())
+    clean_registration_context._memo_body_analyses["digest"] = entry
+    clean_registration_context._memoized_event_triggers["on_click", 1] = entry, entry
+    clean_registration_context._bound_event_chains[1, 2, None] = entry, entry, entry
+    clean_registration_context._reset_compile_caches()
+    assert not clean_registration_context._memo_body_analyses
+    assert not clean_registration_context._memoized_event_triggers
+    assert not clean_registration_context._bound_event_chains

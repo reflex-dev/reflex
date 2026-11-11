@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import List  # noqa: UP035
 
 import attrs
@@ -23,6 +24,7 @@ from sqlalchemy.orm import (
     MappedAsDataclass,
     mapped_column,
     relationship,
+    synonym,
 )
 
 
@@ -420,3 +422,99 @@ def test_get_attribute_access_type_no_default(cls: type) -> None:
         cls: Class to test.
     """
     assert get_attribute_access_type(cls, "no_default") == int | None
+
+
+def test_get_attribute_access_type_sqlalchemy_synonyms() -> None:
+    """A synonym has the type of its annotated getter, else of its target attribute."""
+
+    def status_length(member) -> int:
+        return len(member.raw_status)
+
+    class SynonymBase(DeclarativeBase):
+        pass
+
+    class SynonymWriter(SynonymBase):
+        __tablename__ = "synonym_type_writer"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+    class SynonymMember(SynonymBase):
+        __tablename__ = "synonym_type_member"
+        id: Mapped[int] = mapped_column(primary_key=True)
+        raw_status: Mapped[str] = mapped_column("status")
+        note: Mapped[str | None]
+        writer_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey(SynonymWriter.id))
+        writer: Mapped[SynonymWriter] = relationship()
+        status = synonym("raw_status")
+        nick: Mapped[str] = synonym("raw_status")
+        remark = synonym("note")
+        alias = synonym("nick")
+        author = synonym("writer")
+        status_size = synonym("raw_status", descriptor=property(status_length))
+        shout = synonym(
+            "raw_status", descriptor=property(lambda self: self.raw_status.upper())
+        )
+
+    assert get_attribute_access_type(SynonymMember, "status") is str
+    assert get_attribute_access_type(SynonymMember, "nick") is str
+    assert get_attribute_access_type(SynonymMember, "remark") == str | None
+    assert get_attribute_access_type(SynonymMember, "alias") is str
+    assert get_attribute_access_type(SynonymMember, "author") == SynonymWriter | None
+    assert get_attribute_access_type(SynonymMember, "status_size") is int
+    assert get_attribute_access_type(SynonymMember, "shout") is str
+
+
+class UnresolvableRefClass:
+    """Class with an unresolvable forward-ref annotation."""
+
+    broken: UndefinedElsewhere  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+    count: int = 0
+
+
+def test_get_attribute_access_type_unannotated_name_skips_hint_resolution(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """An unannotated name resolves to None without ForwardRef warnings."""
+    assert get_attribute_access_type(UnresolvableRefClass, "_is_coroutine_marker") is (
+        None
+    )
+    assert not [
+        r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message
+    ]
+
+
+def test_get_attribute_access_type_unresolvable_annotation_warns(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """An annotated name whose hints cannot be resolved still warns and returns None."""
+    assert get_attribute_access_type(UnresolvableRefClass, "broken") is None
+    assert [r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 14), reason="PEP 649 lazy annotations require 3.14+"
+)
+def test_get_attribute_access_type_probe_on_lazy_annotations(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Probing a class with lazy (PEP 649) annotations must not raise.
+
+    Compiled with ``dont_inherit=True``: ``exec`` inherits this module's
+    ``from __future__ import annotations`` flag by default, which would
+    stringify the annotations instead of leaving them lazily evaluated.
+    """
+    code = compile(
+        "class Lazy:\n    broken: UndefinedElsewhere\n    count: int = 0",
+        "<lazy>",
+        "exec",
+        dont_inherit=True,
+    )
+    ns: dict[str, object] = {}
+    exec(code, ns)
+    lazy_cls = ns["Lazy"]
+    assert isinstance(lazy_cls, type)
+    with pytest.raises(NameError):
+        lazy_cls.__annotations__  # prove annotations are genuinely lazy
+    assert get_attribute_access_type(lazy_cls, "_is_coroutine_marker") is None
+    assert not [
+        r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message
+    ]

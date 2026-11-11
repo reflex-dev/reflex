@@ -3,7 +3,7 @@
 from typing import Any
 
 from reflex_base.components.component import Component, field
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.utils import format
 from reflex_base.vars.base import Var
 
@@ -19,7 +19,7 @@ class RadixPrimitiveComponent(Component):
 class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
     """Basic component for radix Primitives with a class name prop."""
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         return (
             super()
             ._render()

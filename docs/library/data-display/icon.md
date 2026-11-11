@@ -7,9 +7,8 @@ components:
 import reflex as rx
 
 from reflex_components_lucide.icon import LUCIDE_ICON_LIST
-from reflex.experimental.client_state import ClientStateVar
 
-icon_search_cs = ClientStateVar.create("icon_search", default="")
+icon_search_cs = rx.client_state("", name="icon_search")
 
 
 @rx.memo
@@ -20,14 +19,14 @@ def lucide_icons() -> rx.Component:
                 rx.icon(
                     tag="search",
                     size=20,
-                    class_name="shrink-0 !text-secondary-11",
+                    class_name="shrink-0 !text-muted-foreground",
                 ),
                 class_name="absolute left-2 top-1/2 transform -translate-y-1/2 z-[1] shrink-0 flex items-center justify-center pb-2",
             ),
             rx.el.input(
                 placeholder="Search icons...",
-                on_change=icon_search_cs.set_value,
-                class_name="relative box-border border-secondary-4 focus:border-violet-9 focus:border-1 bg-secondary-2 p-[0.5rem_0.75rem] border rounded-xl font-base text-secondary-11 placeholder:text-secondary-9 outline-none focus:outline-none w-full mb-2 pl-10",
+                on_change=icon_search_cs.set,
+                class_name="relative box-border border-border-subtle focus:border-border-strong focus:border-1 bg-muted p-[0.5rem_0.75rem] border rounded-xl font-base text-muted-foreground placeholder:text-subtle-foreground outline-none focus:outline-none w-full mb-2 pl-10",
             ),
             class_name="relative flex items-center",
         ),
@@ -37,17 +36,15 @@ def lucide_icons() -> rx.Component:
                     LUCIDE_ICON_LIST,
                     lambda icon: rx.cond(
                         icon.startswith(icon_search_cs.value),
-                        rx.tooltip(
-                            rx.box(
-                                rx.icon(tag=icon),
-                                class_name="flex items-center justify-center rounded-md hover:bg-secondary-3 transition-bg p-2 cursor-pointer",
-                                on_click=[
-                                    rx.set_clipboard(icon),
-                                    rx.toast.success(f"Copied {icon} to clipboard"),
-                                ],
-                                key=icon,
-                            ),
-                            content=icon,
+                        rx.box(
+                            rx.icon(tag=icon),
+                            title=icon,
+                            class_name="flex items-center justify-center rounded-md hover:bg-accent transition-bg p-2 cursor-pointer",
+                            on_click=[
+                                rx.set_clipboard(icon),
+                                rx.toast.success(f"Copied {icon} to clipboard"),
+                            ],
+                            key=icon,
                         ),
                         None,
                     ),

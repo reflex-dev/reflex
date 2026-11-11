@@ -3,11 +3,14 @@
 from typing import Literal
 
 from reflex_components_core.core.foreach import foreach
+from reflex_components_core.el.elements.forms import Input as ReflexInput
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportVar
-from reflex.vars.base import Var
+from reflex.vars.base import NoneVar, Var
+from reflex.vars.function import FunctionVar
+from reflex.vars.object import ObjectVar
 from reflex_components_internal.components.base.button import button
 from reflex_components_internal.components.base_ui import PACKAGE_NAME, BaseUIComponent
 from reflex_components_internal.components.icons.others import select_arrow
@@ -32,12 +35,31 @@ LiteralCollisionAvoidance = Literal["flip", "shift", "auto"]
 LiteralMenuSize = Literal["xs", "sm", "md", "lg", "xl"]
 
 
+def _on_item_highlighted_spec(
+    _highlighted_item: Var[object], event_details: ObjectVar[dict[str, str | None]]
+) -> tuple[Var[str | None], Var[str]]:
+    """Return serializable menu highlight information.
+
+    Args:
+        _highlighted_item: The highlighted DOM element, unused by Python handlers.
+        event_details: The label and reason supplied by Base UI.
+
+    Returns:
+        The item label, or None when unhighlighted, and the change reason.
+    """
+    return (
+        Var(f"({event_details['label']} ?? null)", _var_type=str | None),
+        event_details["reason"].to(str),
+    )
+
+
 class ClassNames:
     """Class names for menu components."""
 
     TRIGGER = "flex min-w-48 items-center justify-between gap-3 select-none text-sm [&>span]:line-clamp-1 cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary-4 group/trigger"
     PORTAL = "relative"
     ICON = "flex size-4 text-secondary-10 group-data-[disabled]/trigger:text-current"
+    INPUT = "w-full bg-transparent px-2 py-1.5 text-sm font-medium text-secondary-12 placeholder:text-secondary-10 outline-none focus-visible:ring-1 focus-visible:ring-primary-4"
     POPUP = "group/popup max-h-[17.25rem] overflow-y-auto origin-(--transform-origin) p-1 border border-secondary-a4 bg-secondary-1 shadow-large transition-[transform,scale,opacity] data-[ending-style]:scale-95 data-[starting-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 outline-none [scrollbar-width:thin]"
     ITEM = "grid min-w-(--anchor-width) grid-cols-[1fr_auto] items-center gap-2 text-sm select-none font-medium group-data-[side=none]/popup:min-w-[calc(var(--anchor-width)+1rem)] text-secondary-12 cursor-pointer outline-none data-[highlighted]:bg-secondary-3 scroll-m-1 text-start"
     ITEM_INDICATOR = "text-current"
@@ -66,6 +88,45 @@ class MenuBaseComponent(BaseUIComponent):
         return ImportVar(tag="Menu", package_path="", install=False)
 
 
+class MenuFilterProvider(MenuBaseComponent):
+    """Enable filtering for the menu or submenu wrapped by this provider."""
+
+    tag = "Menu.FilterProvider"
+
+    # The initial uncontrolled filter query.
+    default_value: Var[str]
+
+    # The controlled filter query. Resets to an empty string when the menu closes.
+    value: Var[str]
+
+    # Called with the new query when it changes.
+    on_value_change: EventHandler[passthrough_event_spec(str)]
+
+    # Highlight the first match while filtering, or always when set to "always".
+    auto_highlight: Var[bool | Literal["always"]]
+
+    # A frontend function matching an item's text against the query, or null for external filtering.
+    filter: FunctionVar | NoneVar
+
+    # The locale or locales used by the default text comparison.
+    locale: Var[str | list[str]]
+
+    @classmethod
+    def create(cls, *children, **props) -> BaseUIComponent:
+        """Create a filter provider, preserving explicit None as JavaScript null.
+
+        Args:
+            *children: The menu or submenu root to make filterable.
+            **props: The filtering properties. Set filter to None for external filtering.
+
+        Returns:
+            The filter provider component.
+        """
+        if "filter" in props and props["filter"] is None:
+            props["filter"] = Var.create(None)
+        return super().create(*children, **props)
+
+
 class MenuRoot(MenuBaseComponent):
     """Groups all parts of the menu. Doesn't render its own HTML element."""
 
@@ -82,6 +143,9 @@ class MenuRoot(MenuBaseComponent):
 
     # Event handler called after any animations complete when the menu is closed.
     on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+
+    # Called with the item label (or None) and reason: "keyboard", "pointer", or "none".
+    on_item_highlighted: EventHandler[_on_item_highlighted_spec]
 
     # When in a submenu, determines whether pressing the Escape key closes the entire menu, or only the current child menu. Defaults to True.
     close_parent_on_esc: Var[bool]
@@ -108,6 +172,53 @@ class MenuRoot(MenuBaseComponent):
             The component.
         """
         props["data-slot"] = "menu"
+        return super().create(*children, **props)
+
+
+class MenuInput(MenuBaseComponent, ReflexInput):
+    """Filter menu items through the surrounding Menu.FilterProvider."""
+
+    tag = "Menu.Input"
+
+    # The render prop.
+    render_: Var[Component]
+
+    @classmethod
+    def create(cls, *children, **props) -> BaseUIComponent:
+        """Create the menu filter input.
+
+        Args:
+            *children: The children of the component.
+            **props: The input properties, including an accessible label.
+
+        Returns:
+            The filter input component.
+        """
+        props["data-slot"] = "menu-input"
+        cls.set_class_name(ClassNames.INPUT, props)
+        return super().create(*children, **props)
+
+
+class MenuList(MenuBaseComponent):
+    """Group menu items separately from the filter input in the popup."""
+
+    tag = "Menu.List"
+
+    # The render prop.
+    render_: Var[Component]
+
+    @classmethod
+    def create(cls, *children, **props) -> BaseUIComponent:
+        """Create the menu item list.
+
+        Args:
+            *children: The menu items and groups.
+            **props: Additional properties of the list.
+
+        Returns:
+            The menu list component.
+        """
+        props["data-slot"] = "menu-list"
         return super().create(*children, **props)
 
 
@@ -349,6 +460,9 @@ class MenuSubMenuRoot(MenuBaseComponent):
 
     # Event handler called after any animations complete when the menu is closed.
     on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+
+    # Called with the item label (or None) and reason: "keyboard", "pointer", or "none".
+    on_item_highlighted: EventHandler[_on_item_highlighted_spec]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]
@@ -758,6 +872,9 @@ class Menu(ComponentNamespace):
     """Namespace for Menu components."""
 
     root = staticmethod(MenuRoot.create)
+    filter_provider = staticmethod(MenuFilterProvider.create)
+    input = staticmethod(MenuInput.create)
+    list = staticmethod(MenuList.create)
     trigger = staticmethod(MenuTrigger.create)
     portal = staticmethod(MenuPortal.create)
     positioner = staticmethod(MenuPositioner.create)

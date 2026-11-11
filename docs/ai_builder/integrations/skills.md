@@ -6,10 +6,12 @@ import reflex as rx
 
 def _summary_card(kicker: str, title: str, body: str) -> rx.Component:
     return rx.el.div(
-        rx.el.div(kicker, class_name="text-xs font-semibold uppercase text-primary-10"),
-        rx.el.h3(title, class_name="text-base font-semibold text-secondary-12"),
-        rx.el.p(body, class_name="text-sm leading-6 text-secondary-11"),
-        class_name="flex flex-col gap-2 rounded-lg border border-secondary-a4 bg-white-1 p-4",
+        rx.el.div(
+            kicker, class_name="text-xs font-semibold uppercase text-primary-hover"
+        ),
+        rx.el.h3(title, class_name="text-base font-semibold text-foreground"),
+        rx.el.p(body, class_name="text-sm leading-6 text-muted-foreground"),
+        class_name="flex flex-col gap-2 rounded-lg border border-border-subtle bg-white-1 p-4",
     )
 
 
@@ -197,7 +199,7 @@ pip install reflex
 reflex init
 ```
 
-The workflow checks for an existing `.venv`, verifies Python 3.10 or newer, and installs Reflex only when needed.
+The workflow checks for an existing `.venv`, verifies Python 3.11 or newer, and installs Reflex only when needed.
 
 
 ## Process
@@ -302,7 +304,7 @@ Ask the assistant to use the Reflex docs skill, or pair the skill pack with the 
 Ask the assistant to follow the `setup-python-env` skill again and verify:
 
 - The virtual environment is active.
-- Python is version 3.10 or newer.
+- Python is version 3.11 or newer.
 - Reflex is installed in the active environment.
 - The command is being run from the project root.
 

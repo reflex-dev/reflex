@@ -1,0 +1,1 @@
+An event `key` is remembered when the run runs the event, not when it is buffered, so a resend of an event the run discarded unrun is accepted instead of being refused forever. A run going round an `every(...)` schedule no longer holds a buffered event it will never reach, which used to refuse every later delivery.

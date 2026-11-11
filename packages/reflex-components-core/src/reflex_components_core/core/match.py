@@ -1,11 +1,12 @@
 """rx.match."""
 
 import textwrap
-from typing import Any, cast
+from collections.abc import Iterator
+from typing import Any, cast, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.match_tag import MatchTag
 from reflex_base.style import Style
 from reflex_base.utils import format
@@ -33,6 +34,20 @@ class Match(Component):
     default: BaseComponent = field(
         default_factory=Fragment.create, is_javascript_property=False
     )
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        cond: Any,
+        case: tuple[Any, *tuple[Any, ...], BaseComponent],
+        /,
+        *cases: Any,
+    ) -> Component: ...
+
+    @overload
+    @classmethod
+    def create(cls, cond: Any, case: tuple[Any, ...], /, *cases: Any) -> Var: ...
 
     @classmethod
     def create(cls, cond: Any, *cases) -> Component | Var:
@@ -266,7 +281,7 @@ class Match(Component):
             ),
         )
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         # Reconstruct match_cases and default from self.children, which may have
         # been updated by the compiler walker to include memoized wrappers.
         # self.children contains: [case_1_return, case_2_return, ..., default]
@@ -309,6 +324,28 @@ class Match(Component):
             The dictionary for template of component.
         """
         return dict(self._render())
+
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        """Walk all Vars used in this component, including the case conditions.
+
+        The case conditions live in ``match_cases``, which is not a JavaScript
+        property, so they are yielded here to count toward memoization and to
+        emit the hooks they need.
+
+        Args:
+            include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
+
+        Yields:
+            Each Var referenced by the component, plus the case conditions.
+        """
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
+        for conditions, _ in self.match_cases:
+            yield from conditions
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Match component.

@@ -52,6 +52,12 @@ A state class is made up of two parts: vars and event handlers.
 
 **Event handlers** are functions that modify these vars in response to events.
 
+State declarations cannot reuse framework method or bookkeeping names, such as
+`get_state`, `get_delta`, or `dirty_vars`. Reflex checks these names when
+creating a state class and when adding vars, event handlers, or route arguments
+dynamically. Rename a conflicting declaration and update its references. Ordinary
+backend names such as `_count` remain supported.
+
 These are the main concepts to understand how state works in Reflex:
 
 ```python eval
@@ -116,7 +122,7 @@ Click the text to change its color.
 ```python demo exec
 class ExampleState(rx.State):
     # A base var for the list of colors to cycle through.
-    colors: list[str] = ["black", "red", "green", "blue", "purple"]
+    colors: list[str] = ["var(--gray-12)", "red", "green", "blue", "purple"]
 
     # A base var for the index of the current color.
     index: int = 0

@@ -1,5 +1,5 @@
-import JSON5 from "json5";
 import env from "$/env.json";
+import { parseJson } from "$/utils/helpers/json";
 
 /**
  * Upload files to the server.
@@ -45,32 +45,28 @@ export const uploadFiles = async (
     // Whenever called, responseText will contain the entire response so far.
     const chunks = progressEvent.event.target.responseText.trim().split("\n");
     // So only process _new_ chunks beyond resp_idx.
-    chunks.slice(resp_idx).map((chunk_json) => {
+    for (const chunk_json of chunks.slice(resp_idx)) {
+      let chunk;
       try {
-        const chunk = JSON5.parse(chunk_json);
-        event_callbacks.map((f, ix) => {
-          f(chunk)
-            .then(() => {
-              if (ix === event_callbacks.length - 1) {
-                // Mark this chunk as processed.
-                resp_idx += 1;
-              }
-            })
-            .catch((e) => {
-              if (progressEvent.progress === 1) {
-                // Chunk may be incomplete, so only report errors when full response is available.
-                console.log("Error processing chunk", chunk, e);
-              }
-              return;
-            });
-        });
+        chunk = parseJson(chunk_json);
       } catch (e) {
+        // The last chunk may be incomplete; the next progress event parses it
+        // again, so only report errors when the full response is available.
         if (progressEvent.progress === 1) {
           console.log("Error parsing chunk", chunk_json, e);
         }
         return;
       }
-    });
+      // Mark this chunk as processed before it is handled, so no later
+      // progress event handles it again, whether the listener is sync or async.
+      resp_idx += 1;
+      for (const f of event_callbacks) {
+        // f runs right away; a failure, thrown or rejected, is reported.
+        (async () => f(chunk))().catch((e) =>
+          console.log("Error processing chunk", chunk, e),
+        );
+      }
+    }
   };
 
   const controller = new AbortController();
@@ -156,6 +152,12 @@ export const uploadFiles = async (
     xhr.open("POST", getBackendURL(env.UPLOAD));
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
+    // Instrumentation hook (installed by reflex-otel): may add trace headers.
+    const trace_headers = {};
+    window.__reflex_otel?.onUploadSend?.(handler, trace_headers);
+    for (const [key, value] of Object.entries(trace_headers)) {
+      xhr.setRequestHeader(key, value);
+    }
     for (const [key, value] of Object.entries(extra_headers || {})) {
       xhr.setRequestHeader(key, value);
     }

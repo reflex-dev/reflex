@@ -12,7 +12,9 @@ import inspect
 import json
 import logging
 import operator
+import os
 import sys
+import tempfile
 import time
 import traceback
 import urllib.parse
@@ -21,18 +23,21 @@ from collections.abc import (
     Callable,
     Collection,
     Coroutine,
+    Iterable,
     Mapping,
     Sequence,
 )
 from contextvars import Token
+from datetime import timedelta
+from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
-from reflex_base.environment import environment
+from reflex_base.environment import auto_reload_cooldown, environment
 from reflex_base.event import (
     _EVENT_FIELDS,
     Event,
@@ -47,7 +52,16 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
-from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from reflex_base.utils.types import (
+    ASGIApp,
+    Message,
+    Receive,
+    Scope,
+    Send,
+    is_non_string_sequence,
+)
+from reflex_base.vars.base import Field
+from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.banner import (
@@ -61,6 +75,7 @@ from reflex_components_sonner.toast import toast
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
+from starlette.datastructures import Headers
 from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -69,11 +84,10 @@ from typing_extensions import Unpack
 
 from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
-from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
-from reflex.istate.data import RouterData
+from reflex.istate.data import SessionData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
@@ -97,7 +111,7 @@ from reflex.utils.exec import (
     is_testing_env,
     should_prerender_routes,
 )
-from reflex.utils.misc import run_in_thread
+from reflex.utils.misc import is_page_meta_set, run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 logger = logging.getLogger(__name__)
@@ -108,6 +122,7 @@ else:
     from warnings import deprecated
 
 if TYPE_CHECKING:
+    from engineio import AsyncServer as AsyncEngineIOServer
     from reflex_base.plugins import Plugin
     from reflex_base.plugins.base import AddPageProtocol
     from reflex_base.vars import Var
@@ -273,6 +288,20 @@ def default_error_boundary(*children: Component, **props) -> Component:
     )
 
 
+def _reject_page_meta_fields(*values: Any) -> None:
+    """Reject page metadata given as a field with no frontend var.
+
+    Args:
+        *values: The page metadata values.
+
+    Raises:
+        BackendVarFormatError: If a value is a field with no frontend var.
+    """
+    for value in values:
+        if isinstance(value, Field):
+            raise value._no_frontend_var_error()
+
+
 @dataclasses.dataclass(
     frozen=True,
 )
@@ -332,6 +361,169 @@ def _route_arg_label(arg_type: str) -> str:
     return "list" if arg_type == constants.RouteArgType.LIST else "single"
 
 
+class _RootMiddleware:
+    """The outermost ASGI layer: attach Reflex contexts and serve the lifespan.
+
+    Many ASGI servers start each request with a fresh contextvars scope, so this
+    middleware re-applies the RegistrationContext and EventContext that are
+    needed for Reflex state and event processing. It answers the server's
+    lifespan events itself, entering the given lifespan context in between.
+    """
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        reflex_app: App,
+        lifespan: Callable[[Scope], contextlib.AbstractAsyncContextManager[Any]],
+    ):
+        """Wrap an ASGI app so that it runs with the Reflex contexts set.
+
+        Args:
+            app: The next ASGI app in the middleware stack.
+            reflex_app: The Reflex app owning the contexts to attach.
+            lifespan: Returns the context to enter for the server's lifespan scope.
+        """
+        self.app = app
+        self.reflex_app = reflex_app
+        self.lifespan = lifespan
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        self.reflex_app._set_contexts_internal()
+        if scope["type"] == "lifespan":
+            await self._serve_lifespan(scope, receive, send)
+        else:
+            await self.app(scope, receive, send)
+
+    async def _serve_lifespan(self, scope: Scope, receive: Receive, send: Send):
+        """Answer the server's lifespan events around the lifespan context.
+
+        Args:
+            scope: The lifespan scope.
+            receive: Receives the server's lifespan events.
+            send: Reports the outcome of startup and shutdown to the server.
+
+        Raises:
+            BaseException: Whatever made startup or shutdown fail, once reported.
+        """
+        started = False
+        await receive()
+        try:
+            async with self.lifespan(scope):
+                await send({"type": "lifespan.startup.complete"})
+                started = True
+                await receive()
+        except BaseException:
+            await send({
+                "type": "lifespan.shutdown.failed"
+                if started
+                else "lifespan.startup.failed",
+                "message": traceback.format_exc(),
+            })
+            raise
+        await send({"type": "lifespan.shutdown.complete"})
+
+
+class _DrainOversizedBodyMiddleware:
+    """Drain an oversized polling POST, answer 400, and close its session.
+
+    engine.io rejects a POST over ``max_http_buffer_size`` without reading its
+    body, which strands the browser mid-send, and holds the 400 until a poll
+    takes the session's CLOSE packet. This middleware reads the body first,
+    answers itself, and closes the session without waiting for a poll.
+    """
+
+    def __init__(self, app: ASGIApp, eio: AsyncEngineIOServer) -> None:
+        """Wrap the socket app.
+
+        Args:
+            app: The socket ASGI app.
+            eio: The engine.io server whose buffer limit and sessions apply.
+        """
+        self.app = app
+        self.eio = eio
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Drain and reject an oversized POST; pass other requests through.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        if (
+            scope["type"] != "http"
+            or scope["method"] != "POST"
+            or int(Headers(scope=scope).get("content-length", 0))
+            <= self.eio.max_http_buffer_size
+        ):
+            await self.app(scope, receive, send)
+            return
+        while (await receive()).get("more_body"):
+            pass
+        await send({
+            "type": "http.response.start",
+            "status": 400,
+            "headers": [(b"content-type", b"text/plain")],
+        })
+        await send({"type": "http.response.body", "body": b'"Bad Request"'})
+        sid = urllib.parse.parse_qs(scope["query_string"].decode("latin-1")).get(
+            "sid", [""]
+        )[0]
+        if socket := self.eio.sockets.get(sid):
+            await socket.close(wait=False)
+
+
+def _is_location_specifier(specifier: str) -> bool:
+    """Check whether a dependency specifier points at a location.
+
+    A location specifier names where a package comes from (a local path, a
+    protocol like ``file:``/``github:``/``git+ssh:``, or a git ref) instead of
+    naming a version. Its slashes belong to the location, so it must be kept
+    whole rather than split into a version and a package subpath.
+
+    Args:
+        specifier: The part of an import name following ``package@``.
+
+    Returns:
+        Whether the specifier is a location rather than a version or dist-tag.
+    """
+    return (
+        ":" in specifier or "#" in specifier or specifier.startswith((".", "/", "~/"))
+    )
+
+
+_DEFAULT_PORTS = {"http": 80, "https": 443}
+
+
+def _cors_allowed_origins() -> list[str] | None:
+    """Resolve the origins the backend accepts cross-origin requests from.
+
+    An explicitly configured ``cors_allowed_origins`` is used as is. The
+    ``["*"]`` default stays open in dev mode, but in prod mode it narrows to
+    the origin of ``deploy_url`` so only the configured frontend can reach
+    the backend. Without a ``deploy_url`` the backend serves the frontend
+    itself, so CORS is left unconfigured and only same-origin requests pass.
+
+    Returns:
+        The allowed origins, where ``["*"]`` means any origin, or None to
+        leave CORS unconfigured.
+    """
+    config = get_config()
+    if "cors_allowed_origins" in config._non_default_attributes or not is_prod_mode():
+        return list(config.cors_allowed_origins)
+    if not config.deploy_url:
+        return None
+    # Match the browser's Origin serialization: lowercase host, no default port.
+    parts = urllib.parse.urlsplit(config.deploy_url)
+    host = parts.hostname or ""
+    if ":" in host:
+        host = f"[{host}]"
+    port = parts.port
+    if port is None or port == _DEFAULT_PORTS.get(parts.scheme):
+        return [f"{parts.scheme}://{host}"]
+    return [f"{parts.scheme}://{host}:{port}"]
+
+
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
@@ -365,7 +557,7 @@ class App(MiddlewareMixin, LifespanMixin):
         html_lang: The language to add to the html root tag of every page.
         html_custom_attrs: Attributes to add to the html root tag of every page.
         enable_state: Whether to enable [state](https://reflex.dev/docs/state/overview/) for the app. If False, the app will not use state.
-        admin_dash: Admin dashboard to view and manage the database.
+        admin_dash: Removed. rx.AdminDash raises with a link to the migration guide.
         frontend_exception_handler: Frontend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         backend_exception_handler: Backend [error handler](https://reflex.dev/docs/utility-methods/exception-handlers/) function.
         toaster: Put the [toast](https://reflex.dev/docs/library/overlay/toast/) provider in the app wrap.
@@ -445,7 +637,8 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
-    admin_dash: AdminDash | None = None
+    # Removed integration; rx.AdminDash raises with a link to the migration guide.
+    admin_dash: None = None
 
     # The async server name space.
     _event_namespace: EventNamespace | None = None
@@ -533,9 +726,6 @@ class App(MiddlewareMixin, LifespanMixin):
         if self.enable_state:
             self._enable_state()
 
-        # Set up the admin dash.
-        self._setup_admin_dash()
-
         if sys.platform == "win32" and not is_prod_mode():
             # Hack to fix Windows hot reload issue.
             from reflex.utils.compat import windows_hot_reload_lifespan_hack
@@ -562,26 +752,24 @@ class App(MiddlewareMixin, LifespanMixin):
         # Set up the state manager.
         self._state_manager = StateManager.create()
 
+        # Read the auto-reload cooldown now so a deprecated name warns at startup
+        # rather than on the first frontend error that consults it.
+        auto_reload_cooldown()
+
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
-                    (
-                        "*"
-                        if config.cors_allowed_origins == ("*",)
-                        else list(config.cors_allowed_origins)
-                    )
-                    if config.transport == "websocket"
-                    else []
+                    _cors_allowed_origins() if config.transport == "websocket" else []
                 ),
                 cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
-                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
-                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
+                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get().total_seconds(),
+                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
-                    loads=staticmethod(json.loads),
+                    dumps=staticmethod(_sio_dumps),
+                    loads=staticmethod(_sio_loads),
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],
@@ -596,6 +784,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         socket_app = EngineIOApp(self.sio, socketio_path="")
+        # Drain oversized polling POST bodies before engine.io rejects them, so
+        # the 400 response does not strand a half-sent request on the client.
+        drained_socket_app = _DrainOversizedBodyMiddleware(socket_app, self.sio.eio)
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.
@@ -631,7 +822,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
                     return await self.app(scope, receive, modified_send)
 
-            socket_app_with_headers = HeaderMiddleware(socket_app)
+            socket_app_with_headers = HeaderMiddleware(drained_socket_app)
             self._api.mount(
                 config.prepend_backend_path(str(constants.Endpoint.EVENT)),
                 socket_app_with_headers,
@@ -696,35 +887,26 @@ class App(MiddlewareMixin, LifespanMixin):
             stack.callback(ctx_cls.reset, tok)
         return stack
 
-    def _context_middleware(self, app: ASGIApp) -> ASGIApp:
-        """Ensure Reflex contexts are attached for each ASGI request.
-
-        Many ASGI servers start each request with a fresh contextvars scope,
-        so this middleware re-applies the RegistrationContext and EventContext
-        that are needed for Reflex state and event processing.
-
-        Args:
-            app: The ASGI app to attach the middleware to.
-
-        Returns:
-            The ASGI app with the middleware attached.
-        """
-
-        async def context_middleware(scope: Scope, receive: Receive, send: Send):
-            self._set_contexts_internal()
-            await app(scope, receive, send)
-
-        return context_middleware
-
     @contextlib.asynccontextmanager
     async def _setup_event_processor(self) -> AsyncIterator[None]:
+        """Configure event processing with a fresh worker socket identity.
+
+        Yields:
+            None while the event processor is active.
+        """
+        # The app may have been imported before the server forked its workers.
+        event_namespace = self.event_namespace
+        if event_namespace is not None:
+            event_namespace._token_manager._reset_instance_id()
         # Create the event processor.
         self._event_processor = BaseStateEventProcessor(
-            middleware=self, backend_exception_handler=self.backend_exception_handler
+            middleware=self,
+            backend_exception_handler=self.backend_exception_handler,
+            event_loop_blocking_threshold=get_config().event_loop_blocking_threshold,
         )
         async with self._event_processor.configure(
             state_manager=self.state_manager,
-            event_namespace=self.event_namespace,
+            event_namespace=event_namespace,
         ):
             yield
 
@@ -785,13 +967,16 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "The app has not been initialized."
             raise ValueError(msg)
 
-        asgi_app = self._api
+        api = asgi_app = self._api
 
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
             from reflex.utils.exec import get_frontend_mount
 
-            asgi_app.routes.append(get_frontend_mount())
+            asgi_app.routes.append(get_frontend_mount(router=self.router))
 
+        # Lifespan events go to the outermost app, which may forward them, and to
+        # each app a Starlette transformer mounts, as Starlette does not forward them.
+        lifespan_apps: list[ASGIApp] = []
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
                 [self.api_transformer]
@@ -801,6 +986,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
+                    if api_transformer.router.lifespan_context in self._lifespan_tasks:
+                        logger.warning(
+                            f"The lifespan of api_transformer {api_transformer!r} is "
+                            "also registered with register_lifespan_task, so it runs "
+                            "twice: Reflex now runs a transformer's own lifespan. "
+                            "Remove the register_lifespan_task call."
+                        )
+                    if asgi_app is not api:
+                        lifespan_apps.append(asgi_app)
                     # Mount the api to the starlette app.
                     App._add_cors(api_transformer)
                     api_transformer.mount("", asgi_app)
@@ -809,13 +1003,23 @@ class App(MiddlewareMixin, LifespanMixin):
                     # Transform the asgi app.
                     asgi_app = api_transformer(asgi_app)
 
-        top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
-        # Make sure Reflex contexts are attached for each request.
-        top_asgi_app.mount(
-            "",
-            self._context_middleware(asgi_app),
+            if asgi_app is not api:
+                lifespan_apps.append(asgi_app)
+
+        cors_options = App._cors_options()
+        top_asgi_app = _RootMiddleware(
+            # Covers the routes a callable transformer adds and the 500 responses
+            # that the outermost Starlette app's error handler sends.
+            (
+                cors.CORSMiddleware(asgi_app, **cors_options)
+                if cors_options is not None
+                else asgi_app
+            ),
+            reflex_app=self,
+            lifespan=functools.partial(self._run_lifespan, api, lifespan_apps),
         )
-        App._add_cors(top_asgi_app)
+        if otel.asgi_middleware is not None:
+            return otel.asgi_middleware(top_asgi_app)
         return top_asgi_app
 
     def _add_default_endpoints(self):
@@ -873,19 +1077,34 @@ class App(MiddlewareMixin, LifespanMixin):
             self.add_all_routes_endpoint()
 
     @staticmethod
+    def _cors_options() -> dict[str, Any] | None:
+        """Get the options of the CORS middleware.
+
+        Returns:
+            The keyword arguments for ``CORSMiddleware``, or None when CORS is
+            left unconfigured so only same-origin requests are served.
+        """
+        allow_origins = _cors_allowed_origins()
+        if allow_origins is None:
+            return None
+        return {
+            "allow_credentials": True,
+            "allow_methods": ["*"],
+            "allow_headers": ["*"],
+            "allow_origins": allow_origins,
+        }
+
+    @staticmethod
     def _add_cors(api: Starlette):
         """Add CORS middleware to the app.
 
         Args:
             api: The Starlette app to add CORS middleware to.
         """
-        api.add_middleware(
-            cors.CORSMiddleware,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-            allow_origins=get_config().cors_allowed_origins,
-        )
+        options = App._cors_options()
+        if options is None:
+            return
+        api.add_middleware(cors.CORSMiddleware, **options)
 
     @property
     def state_manager(self) -> StateManager:
@@ -962,6 +1181,7 @@ class App(MiddlewareMixin, LifespanMixin):
             context: Values passed to page for custom page-specific logic.
 
         Raises:
+            BackendVarFormatError: When title, description or image is a field with no frontend var.
             PageValueError: When the component is not set for a non-404 page.
             RouteValueError: When the specified route name already exists.
             ValueError: When the route syntax is invalid.
@@ -1014,6 +1234,7 @@ class App(MiddlewareMixin, LifespanMixin):
             RouteValueError: When a route cannot be derived.
             ValueError: When the route syntax is invalid.
         """
+        _reject_page_meta_fields(title, description, image)
         route = self._page_route_key(component, route)
         if route is None:
             msg = "Route must be set if component is not a callable."
@@ -1024,8 +1245,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
-            title = title or constants.Page404.TITLE
-            description = description or constants.Page404.DESCRIPTION
+            if not is_page_meta_set(title):
+                title = constants.Page404.TITLE
+            if not is_page_meta_set(description):
+                description = constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
         else:
             if component is None:
@@ -1117,7 +1340,11 @@ class App(MiddlewareMixin, LifespanMixin):
             state.setup_dynamic_args(prepared.route_args)
 
         self._load_events[page.route] = (
-            (page.on_load if isinstance(page.on_load, list) else [page.on_load])
+            (
+                list(page.on_load)
+                if is_non_string_sequence(page.on_load)
+                else [page.on_load]
+            )
             if page.on_load is not None
             else []
         )
@@ -1318,6 +1545,15 @@ class App(MiddlewareMixin, LifespanMixin):
         if save_page:
             self._pages[route] = component
 
+    @property
+    def _page_routes(self) -> list[str]:
+        """All registered page routes in registration order.
+
+        Returns:
+            The deduplicated list of page routes.
+        """
+        return list(dict.fromkeys([*self._unevaluated_pages, *self._pages]))
+
     @functools.cached_property
     def router(self) -> Callable[[str], str | None]:
         """The route computer function.
@@ -1327,7 +1563,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.route import get_router
 
-        return get_router(list(dict.fromkeys([*self._unevaluated_pages, *self._pages])))
+        return get_router(self._page_routes)
 
     def get_load_events(self, path: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
@@ -1339,6 +1575,13 @@ class App(MiddlewareMixin, LifespanMixin):
             The load events for the route.
         """
         four_oh_four_load_events = self._load_events.get("404", [])
+        # The path is the browser URL path, which includes frontend_path, while the
+        # router matches paths relative to it. A URL outside frontend_path is not a page.
+        frontend_path = get_config().frontend_path.rstrip("/")
+        if frontend_path:
+            if path != frontend_path and not path.startswith(frontend_path + "/"):
+                return four_oh_four_load_events
+            path = path.removeprefix(frontend_path)
         route = self.router(path)
         if not route:
             # If the path is not a valid route, return the 404 page load events.
@@ -1417,39 +1660,6 @@ class App(MiddlewareMixin, LifespanMixin):
                 break
         return None
 
-    def _setup_admin_dash(self):
-        """Setup the admin dash."""
-        try:
-            from starlette_admin.contrib.sqla.admin import Admin
-            from starlette_admin.contrib.sqla.view import ModelView
-
-            from reflex.model import get_engine
-        except ImportError:
-            return
-
-        # Get the admin dash.
-        if not self._api:
-            return
-
-        admin_dash = self.admin_dash
-
-        if admin_dash and admin_dash.models:
-            # Build the admin dashboard
-            # The first positional argument is `engine` before starlette-admin
-            # 1.0 and `session_provider` (which still accepts an Engine) after,
-            # so pass it positionally to support both.
-            admin = admin_dash.admin or Admin(
-                get_engine(),
-                title="Reflex Admin Dashboard",
-                logo_url="https://reflex.dev/Reflex.svg",
-            )
-
-            for model in admin_dash.models:
-                view = admin_dash.view_overrides.get(model, ModelView)
-                admin.add_view(view(model))
-
-            admin.mount_to(self._api)
-
     def _get_frontend_packages(
         self,
         imports: Mapping[str, Collection[ImportVar]],
@@ -1517,13 +1727,11 @@ class App(MiddlewareMixin, LifespanMixin):
             package_name = library_name.split("/", maxsplit=1)[0]
 
         if import_name.startswith(f"{library_name}@"):
-            version_and_maybe_subpath = import_name[len(library_name) + 1 :]
-            version, slash, _ = version_and_maybe_subpath.partition("/")
-            if slash and ":" not in version:
+            specifier = import_name[len(library_name) + 1 :]
+            version, slash, _ = specifier.partition("/")
+            if slash and not _is_location_specifier(specifier):
                 return f"{package_name}@{version}"
-            if package_name == library_name:
-                return import_name
-            return f"{package_name}@{version_and_maybe_subpath}"
+            return f"{package_name}@{specifier}"
 
         if package_name == library_name:
             return import_name
@@ -1604,7 +1812,11 @@ class App(MiddlewareMixin, LifespanMixin):
             sticky_badge._add_style_recursive({})
             return sticky_badge
 
-        self.app_wraps[0, "StickyBadge"] = lambda _: memoized_badge()
+        # The badge memo renders no children, and `_app_root` nests every
+        # lower-priority wrap inside the previous one, so keep the badge inside
+        # a Fragment: wraps below it (e.g. the `rx.data_editor` portal at
+        # priority -1) then stay siblings of the badge and reach the DOM.
+        self.app_wraps[0, "StickyBadge"] = lambda _: Fragment.create(memoized_badge())
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app."""
@@ -1637,7 +1849,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     else state
                 )
                 for dep in dep_set:
-                    if dep not in state_cls.vars and dep not in state_cls.backend_vars:
+                    if not is_dependency(state_cls, dep):
                         msg = f"ComputedVar {var._name} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
                         raise exceptions.VarDependencyError(msg)
 
@@ -1666,51 +1878,78 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex_base.utils.deterministic_hash import clear_hash_caches
 
-        ctx = TelemetryContext.start(trigger=trigger)
-        try:
-            if ctx is None:
-                compiler.compile_app(
-                    self,
-                    prerender_routes=prerender_routes,
-                    dry_run=dry_run,
-                    use_rich=use_rich,
-                )
-                return
-
-            with ctx:
-                did_real_compile = False
-                try:
-                    did_real_compile = compiler.compile_app(
+        with otel.compile_span(trigger, dry_run):
+            ctx = TelemetryContext.start(trigger=trigger)
+            try:
+                if ctx is None:
+                    compiler.compile_app(
                         self,
                         prerender_routes=prerender_routes,
                         dry_run=dry_run,
                         use_rich=use_rich,
                     )
-                except Exception as exc:
-                    ctx.set_exception(exc)
-                    did_real_compile = True
-                    raise
-                finally:
-                    if did_real_compile:
-                        telemetry_accounting.record_compile(self, ctx)
-        finally:
-            # Auto-memoization named every wrapper it will ever name during the
-            # compile, so its encoding caches are dead weight from here. This is
-            # the single funnel every compile goes through -- the CLI and export
-            # paths reach it via ``get_compiled_app`` and never touch
-            # ``App.__call__`` -- and the ``finally`` keeps a failed compile
-            # from leaving them behind.
-            clear_hash_caches()
+                    return
+
+                with ctx:
+                    did_real_compile = False
+                    try:
+                        did_real_compile = compiler.compile_app(
+                            self,
+                            prerender_routes=prerender_routes,
+                            dry_run=dry_run,
+                            use_rich=use_rich,
+                        )
+                    except Exception as exc:
+                        ctx.set_exception(exc)
+                        did_real_compile = True
+                        raise
+                    finally:
+                        if did_real_compile:
+                            telemetry_accounting.record_compile(self, ctx)
+            finally:
+                # Auto-memoization named every wrapper it will ever name during the
+                # compile, so its encoding caches are dead weight from here. This is
+                # the single funnel every compile goes through -- the CLI and export
+                # paths reach it via ``get_compiled_app`` and never touch
+                # ``App.__call__`` -- and the ``finally`` keeps a failed compile
+                # from leaving them behind.
+                clear_hash_caches()
 
     def _write_stateful_pages_marker(self):
-        """Write list of routes that create dynamic states for the backend to use later."""
-        if self._state is not None:
-            stateful_pages_marker = (
-                prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
-            )
-            stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
-            with stateful_pages_marker.open("w") as f:
+        """Write list of routes that create dynamic states for the backend to use later.
+
+        Multiple backend workers may write the marker at the same time, so the
+        content is written to a temporary file and swapped into place with
+        ``Path.replace`` to ensure readers only ever see a complete marker.
+        """
+        stateful_pages_marker = (
+            prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+        )
+        stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(
+            dir=stateful_pages_marker.parent,
+            prefix=f"{stateful_pages_marker.name}.",
+            suffix=".tmp",
+        )
+        os.close(fd)
+        tmp_marker = Path(tmp_path)
+        try:
+            with tmp_marker.open("w", encoding="utf-8") as f:
                 json.dump(list(self._stateful_pages), f)
+            tmp_marker.chmod(0o644)
+            for attempt in range(100):
+                try:
+                    tmp_marker.replace(stateful_pages_marker)
+                    break
+                except PermissionError:
+                    if not constants.IS_WINDOWS or attempt == 99:
+                        raise
+                    # Windows readers temporarily prevent replacing their open file.
+                    # Wait 10 milliseconds before retrying.
+                    time.sleep(0.01)
+        except BaseException:
+            tmp_marker.unlink(missing_ok=True)
+            raise
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""
@@ -1755,7 +1994,11 @@ class App(MiddlewareMixin, LifespanMixin):
         """Modify the state out of band.
 
         Args:
-            token: The token to modify the state for.
+            token: The token to modify the state for. Use
+                ``rx.BaseStateToken(ident=client_token, cls=StateClass)``.
+                Deprecated string tokens must include the state path in the
+                format ``<client_token>_<state_full_name>``; a bare client token
+                is not supported.
             background: Whether the modification is happening in a background task.
             previous_dirty_vars: Vars that are considered dirty from a previous operation.
 
@@ -1764,6 +2007,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Raises:
             RuntimeError: If the app has not been initialized yet.
+            ValueError: If a legacy string token has no state path or its state
+                class cannot be found.
         """
         if self.event_namespace is None:
             msg = "App has not been initialized yet."
@@ -1782,7 +2027,7 @@ class App(MiddlewareMixin, LifespanMixin):
             try:
                 forked_context = EventContext.get().fork(token=token.ident)
             except LookupError:
-                pass
+                forked_context = None
             else:
                 reset_token = EventContext.set(forked_context)
                 rebind.callback(EventContext.reset, reset_token)
@@ -1791,7 +2036,16 @@ class App(MiddlewareMixin, LifespanMixin):
                 token, previous_dirty_vars=previous_dirty_vars, **context
             ) as state:
                 # No other event handler can modify the state while in this context.
-                yield state
+                if forked_context is None:
+                    yield state
+                else:
+                    # An awaited handler runs inline on the locked tree. A plain
+                    # try/finally: this is also the shared-state fan-out path.
+                    forked_context.set_locked_root(state._get_root_state())
+                    try:
+                        yield state
+                    finally:
+                        await forked_context.release_lock()
                 delta = await state._get_resolved_delta()
                 state._clean()
                 if delta:
@@ -1945,6 +2199,81 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+def _utf8_size(data: str) -> int:
+    """Size of a serialized message in UTF-8 bytes.
+
+    ASCII payloads (the common case) are sized without encoding a copy.
+
+    Args:
+        data: The serialized message.
+
+    Returns:
+        The number of bytes the message occupies on the wire.
+    """
+    return len(data) if data.isascii() else len(data.encode())
+
+
+def _sio_dumps(obj: Any, **kwargs: Any) -> str:
+    """Serialize an outgoing Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        obj: The packet payload.
+        **kwargs: Options forwarded to the JSON encoder.
+
+    Returns:
+        The JSON string.
+    """
+    data = format.json_dumps(obj, **kwargs)
+    if otel.enabled:
+        otel.record_message_size(_utf8_size(data), "transmit")
+    return data
+
+
+def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
+    """Deserialize an incoming Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        data: The JSON string.
+        **kwargs: Options forwarded to the JSON decoder.
+
+    Returns:
+        The decoded payload.
+    """
+    if otel.enabled:
+        otel.record_message_size(
+            _utf8_size(data) if isinstance(data, str) else len(data), "receive"
+        )
+    return json.loads(data, **kwargs)
+
+
+def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
+    """Decode raw ASGI scope header pairs into a str-keyed dict.
+
+    ASGI keeps a repeated header as separate pairs, so their values are combined in
+    order: cookies with "; " (RFC 9113 section 8.2.3), any other field with ", "
+    (RFC 9110 section 5.3). Header values that are not valid UTF-8 are decoded as
+    Latin-1.
+
+    Args:
+        headers: Raw (name, value) byte pairs from the ASGI scope.
+
+    Returns:
+        A dict mapping decoded header names to decoded values.
+    """
+    decoded: dict[str, str] = {}
+    for raw_name, raw_value in headers:
+        name = raw_name.decode()
+        try:
+            value = raw_value.decode()
+        except UnicodeDecodeError:
+            value = raw_value.decode("latin-1")
+        if name in decoded:
+            decoded[name] += ("; " if name == "cookie" else ", ") + value
+        else:
+            decoded[name] = value
+    return decoded
+
+
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
@@ -1977,6 +2306,10 @@ class EventNamespace(AsyncNamespace):
         # Number of client_error reports logged per SID, for rate limiting.
         self._client_error_counts: dict[str, int] = {}
 
+        # Connection-scoped router_data entries per SID, computed once at
+        # connect time instead of for every event on the connection.
+        self._static_router_data: dict[str, dict[str, Any]] = {}
+
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
@@ -2003,20 +2336,56 @@ class EventNamespace(AsyncNamespace):
         # For backward compatibility, expose the underlying dict
         return self._token_manager.sid_to_token
 
-    async def on_connect(self, sid: str, environ: dict):
+    async def on_connect(self, sid: str, environ: dict, auth: Any = None):
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
+            auth: The payload of the socket.io CONNECT packet. The frontend
+                puts its hydrate event here so it is processed without waiting
+                for the connect acknowledgement round trip.
         """
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
+        boot_event = frontend_schema = None
+        if isinstance(auth, dict):
+            boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
+            frontend_schema = auth.get(constants.CompileVars.CONNECT_AUTH_STATE_SCHEMA)
+        # A frontend compiled for another state tree is told so before it
+        # hydrates; an older frontend sends no hash and is left alone. The
+        # backend hash is cached on the state class, so this is one lookup.
+        if (
+            frontend_schema is not None
+            and self.app._state is not None
+            and frontend_schema
+            != (backend_schema := self.app._state._to_frontend_schema())
+        ):
+            logger.warning(
+                "Frontend state schema "
+                f"{format.sanitize_client_log_value(frontend_schema, max_length=64)} "
+                f"for session {sid} does not match the backend state schema "
+                f"{backend_schema}: the frontend was built for another version of "
+                "the app and is told to reload."
+            )
+            await self.emit(
+                str(constants.SocketEvent.STATE_MISMATCH),
+                {
+                    "backend": backend_schema,
+                    "reload_cooldown_ms": auto_reload_cooldown()
+                    // timedelta(milliseconds=1),
+                },
+                to=sid,
+            )
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         if token_list:
-            await self.link_token_to_sid(sid, token_list[0])
+            # The boot event is the connection's first event: processing it
+            # records the new sid and token on the state under the state lock.
+            await self.link_token_to_sid(
+                sid, token_list[0], update_state=boot_event is None
+            )
         else:
             logger.warning(f"No token provided in connection for session {sid}")
 
@@ -2025,6 +2394,62 @@ class EventNamespace(AsyncNamespace):
             logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
+        if otel.enabled:
+            otel.record_connection(1)
+
+        # Headers, client IP, and session id cannot change for the lifetime of
+        # the connection; compute them once instead of on every event.
+        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+
+        if boot_event is not None:
+            try:
+                await self.on_event(sid, boot_event)
+            except Exception:
+                # A refused connect never reaches on_disconnect, so drop the
+                # token link and connection data made above before the error
+                # refuses the connect.
+                self._static_router_data.pop(sid, None)
+                if (linked_token := self.sid_to_token.get(sid)) is not None:
+                    await self._token_manager.disconnect_token(linked_token, sid)
+                raise
+
+    def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
+        """Build the connection-scoped router_data entries for a socket.
+
+        Args:
+            sid: The Socket.IO session id.
+            environ: The request information, including HTTP headers.
+
+        Returns:
+            The router_data entries that are constant for the connection.
+        """
+        asgi_scope = environ.get("asgi.scope", {})
+
+        # Get the client headers.
+        headers = _decode_asgi_headers(asgi_scope.get("headers", []))
+
+        # Get the client IP
+        try:
+            client_ip: str = asgi_scope["client"][0]
+            headers["asgi-scope-client"] = client_ip
+        except (KeyError, IndexError):
+            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
+
+        # X-Forwarded-For is client-controlled unless the request arrived through
+        # a configured chain of trusted reverse proxies.
+        trusted_proxy_hops = get_config().trusted_proxy_hops
+        if trusted_proxy_hops:
+            forwarded_for = headers.get("x-forwarded-for", "")
+            forwarded_ips = [
+                ip.strip() for ip in forwarded_for.split(",") if ip.strip()
+            ]
+            if len(forwarded_ips) >= trusted_proxy_hops:
+                client_ip = forwarded_ips[-trusted_proxy_hops]
+        return {
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        }
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
@@ -2035,10 +2460,21 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        if otel.enabled:
+            otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
+        self._static_router_data.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
+            socket_record = self._token_manager.token_to_socket.get(disconnect_token)
+            if (
+                socket_record is not None
+                and socket_record.sid == sid
+                and socket_record.instance_id == self._token_manager.instance_id
+                and (processor := self.app._event_processor) is not None
+            ):
+                processor._on_disconnect(disconnect_token)
             # Use async cleanup through token manager
             task = asyncio.create_task(
                 self._token_manager.disconnect_token(disconnect_token, sid),
@@ -2128,52 +2564,44 @@ class EventNamespace(AsyncNamespace):
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
 
-        # Get the event environment.
-        if self.app.sio is None:
-            msg = "Socket.IO is not initialized."
-            raise RuntimeError(msg)
-        environ = self.app.sio.get_environ(sid, self.namespace)
-        if environ is None:
-            msg = "Socket.IO environ is not initialized."
-            raise RuntimeError(msg)
-
-        # Get the client headers.
-        headers = {
-            k.decode("utf-8"): v.decode("utf-8")
-            for (k, v) in environ["asgi.scope"]["headers"]
-        }
-
-        # Get the client IP
-        try:
-            client_ip = environ["asgi.scope"]["client"][0]
-            headers["asgi-scope-client"] = client_ip
-        except (KeyError, IndexError):
-            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
-
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
+        static_router_data = self._static_router_data.get(sid)
+        if static_router_data is None:
+            # The connection was not seen by on_connect (e.g. namespace created
+            # after the socket connected); fall back to the connection environ.
+            if self.app.sio is None:
+                msg = "Socket.IO is not initialized."
+                raise RuntimeError(msg)
+            environ = self.app.sio.get_environ(sid, self.namespace)
+            if environ is None:
+                msg = "Socket.IO environ is not initialized."
+                raise RuntimeError(msg)
+            static_router_data = self._static_router_data[sid] = (
+                self._build_static_router_data(sid, environ)
             )
-            .partition(",")[0]
-            .strip()
-        )
         router_data = event.router_data
+        router_data.update(static_router_data)
+        # The cached headers reach the event, and from there `state.router_data`,
+        # which is a plain mutable dict: sharing the mapping would let a handler
+        # mutating `self.router_data["headers"]` corrupt the connection cache for
+        # every later event on this socket. The shallow copy is ~17x cheaper than
+        # the per-event header decode it replaced, so the cache still pays off.
+        router_data[constants.RouteVar.HEADERS] = static_router_data[
+            constants.RouteVar.HEADERS
+        ].copy()
         router_data.update({
             constants.RouteVar.QUERY: format.format_query_params(event.router_data),
             constants.RouteVar.CLIENT_TOKEN: token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
         })
         router_data[constants.RouteVar.PATH] = "/" + (
             self.app.router(path) or "404"
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
-        await self.app.event_processor.enqueue(token, event)
+        if not otel.enabled:
+            await self.app.event_processor.enqueue(token, event)
+            return
+        with otel.remote_context(fields):
+            await self.app.event_processor.enqueue(token, event)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
@@ -2250,8 +2678,8 @@ class EventNamespace(AsyncNamespace):
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
             substate = format.sanitize_client_log_value(data.get("substate", ""))
             report = (
-                f"[SID: {sid}] State update failed: "
-                f"no dispatch function for substate(s) '{substate}'. "
+                f"[SID: {sid}] Skipped state update for unknown substate(s) "
+                f"'{substate}': no dispatch function registered. "
                 "This indicates a frontend/backend state mismatch. "
                 "Rebuild the frontend or check that api_url points to the matching backend."
             )
@@ -2264,12 +2692,18 @@ class EventNamespace(AsyncNamespace):
         # handlers (e.g. error trackers) receive client errors too.
         self.app.frontend_exception_handler(Exception(report))
 
-    async def link_token_to_sid(self, sid: str, token: str):
+    async def link_token_to_sid(
+        self, sid: str, token: str, *, update_state: bool = True
+    ):
         """Link a token to a session id.
 
         Args:
             sid: The Socket.IO session id.
             token: The client token.
+            update_state: Whether to record the new sid and token on the state
+                now. The connect skips it when the CONNECT packet carries the
+                boot event, which records them as the connection's first event
+                without an extra load and save of the whole state tree.
         """
         # Use TokenManager for duplicate detection and Redis support
         new_token = await self._token_manager.link_token_to_sid(token, sid)
@@ -2279,9 +2713,16 @@ class EventNamespace(AsyncNamespace):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        if self.app._state is not None:
+        if update_state and self.app._state is not None:
             async with self.app.state_manager.modify_state(
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
-                state.router = RouterData.from_router_data(state.router_data)
+                # Record the identity the state was loaded under; duplicate-token
+                # handling can hand back a fresh one here.
+                state.router_data[constants.RouteVar.CLIENT_TOKEN] = new_token or token
+                # Rebuild from router_data to keep the session var in step with it.
+                if (
+                    session := SessionData.from_router_data(state.router_data)
+                ) != state.rx_router_session:
+                    state.rx_router_session = session

@@ -5,8 +5,8 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING, Any
 
+from reflex_base.components import dynamic as dynamic_components
 from reflex_base.components.component import BaseComponent, Component
-from reflex_base.components.dynamic import bundle_library
 from reflex_base.plugins.base import Plugin
 from reflex_base.utils import console
 
@@ -21,6 +21,10 @@ RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
 RADIX_THEMES_PACKAGE = "@radix-ui/themes@3.3.0"
 _DEPRECATION_VERSION = "0.9.0"
 _REMOVAL_VERSION = "1.0"
+# Older reflex-base versions only expose the public registration helper.
+_bundle_library = getattr(
+    dynamic_components, "_bundle_library", dynamic_components.bundle_library
+)
 
 
 @dataclasses.dataclass
@@ -67,7 +71,7 @@ class RadixThemesPlugin(Plugin):
             return
 
         self.enabled = True
-        bundle_library(RADIX_THEMES_PACKAGE)
+        _bundle_library(RADIX_THEMES_PACKAGE)
         if not self._explicit and not self._app_theme_warning_emitted:
             console.deprecate(
                 feature_name="Implicit Radix Themes enablement",
