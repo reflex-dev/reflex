@@ -1064,6 +1064,11 @@ REGISTRY_METADATA = (
     "target_metadata = ModelRegistry.get_metadata()"
 )
 PLACEHOLDER_URL = "driver://user:pass@localhost/dbname"
+# A column every SQLite build can add without the template's batch mode.
+NULLABLE_T2 = {
+    "sqlmodel": "\n    t2: str | None = None",
+    "sqlalchemy": "\n    t2: Mapped[str | None] = mapped_column()",
+}
 
 
 def _stock_env_py() -> str:
@@ -1226,19 +1231,27 @@ def test_custom_env_warns_once_that_it_is_not_the_template(
 
 
 @pytest.mark.parametrize("orm", ["sqlmodel", "sqlalchemy"])
-def test_custom_env_writes_no_empty_revision(project: Path, orm: str):
+def test_custom_env_writes_no_empty_revision(
+    project: Path, caplog: pytest.LogCaptureFixture, orm: str
+):
     """Without the template's empty-revision skip, unchanged models write nothing.
 
     Args:
         project: The project directory.
+        caplog: The log capture fixture.
         orm: Which ORM the app's models use.
     """
-    v1, v2, _ = COLUMNS[orm]
+    caplog.set_level(logging.INFO)
+    v1 = COLUMNS[orm][0]
+    # Only a nullable column is added: without the template's batch mode, older
+    # SQLite builds can neither alter a column nor add a NOT NULL one.
+    v2 = v1 + NULLABLE_T2[orm]
     _write_app(project, orm, v1)
     _db("init")
     _write_custom_env(project, REGISTRY_METADATA, url=_db_url())
 
     _db("makemigrations", "--message", "nothing")
+    assert "no revision was written" in caplog.text
     _db("makemigrations")
     assert reflex.model.migrate(autogenerate=True) is True
     with get_engine().connect() as connection:
@@ -1248,6 +1261,9 @@ def test_custom_env_writes_no_empty_revision(project: Path, orm: str):
     _write_app(project, orm, v2)
     _db("makemigrations", "--message", "add t2")
     assert len(_versions(project)) == 2
+    script = _versions(project)[-1].read_text().split("def downgrade")[0]
+    assert "add_column('thing'" in script
+    assert "alter_column" not in script
     _db("migrate")
     _db("makemigrations")
     assert len(_versions(project)) == 2

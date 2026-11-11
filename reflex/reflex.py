@@ -1229,7 +1229,8 @@ def makemigrations(message: str | None):
     if not prerequisites.check_db_initialized():
         raise click.exceptions.Exit(1)
     with _alembic_errors():
-        migrations.autogenerate(message)
+        if not migrations.autogenerate(message):
+            logger.info("No model changes detected; no revision was written.")
 
 
 @cli.command()
