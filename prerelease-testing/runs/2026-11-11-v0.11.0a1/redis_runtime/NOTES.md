@@ -169,3 +169,106 @@ was only reached through the cancel variant. Positive control never reproduced -
    `REFLEX_OPLOCK_ENABLED=true GRANIAN_WORKERS=2` prod + Redis, then
    `load.py BASE --clients 1 --events 300 --mode pipe --api 100 --api-conc 2` x6: 3/6 runs have an api wait of
    1010-1040 ms; `--api-conc 1`: 0/6. Mechanism: per-instance contender SET + SREM on every waiter exit (section A).
+
+## VERIFICATION
+Independent verifier `verify_rds` (2026-11-11). Own PyPI venvs, `--only-binary :all:`, cwd=$SB, `--no-config`:
+`$SB/envs/vrds-new` = reflex 0.11.0a1 + reflex-base 0.11.0a1 + redis 8.1.0 + granian 2.8.7 (`--prerelease=allow`, redis pinned);
+`$SB/envs/vrds-prev` = reflex 0.10.1 + redis 7.4.1 + granian 2.8.7 (no `--prerelease`); `$SB/envs/vrds-drv` = python-socketio,
+aiohttp, redis; Chromium checks with the shared `driver`. Ports: prod 3720-3722, Redis 8733. Scripts, the app (with
+test-only hooks, each env-gated and off by default) and trimmed evidence: `../verify_rds/` (`bin/`, `apps/lockapp`, `respawn_hook/`, `logs/`).
+To rerun: copy `../verify_rds/bin` to `$SB/apps/verify_rds/bin` and `../verify_rds/apps/lockapp` to `$SB/apps/verify_rds/src/lockapp`
+(paths are hard-coded in `bin/lib.sh`, as in the reporter's scripts).
+
+**Gaps in this NOTES.md that the repro needed filled in:** (1) scripts hard-code `$SB/apps/redis_runtime`, ports 3220-3239/8236-8239
+and the `redis_runtime-drv` venv name (assert); a stranger must sed all three. (2) `faults.sh` cannot set the outage length
+(`--down` exists only in faults.py, and the `during` wait hard-codes 3 s, so the outage is never shorter than ~4 s). Verifier copy: `DOWN=<s>`.
+(3) The kill9 numbers depend on which worker the socket lands on; nothing says so. (4) The issue 1 mechanism is incomplete (below).
+
+### V1. Oplock "second waiter on the same instance passed over" -> NARROWED to a wider root cause, low, not a regression
+Root cause at v0.11.0a1, confirmed with a probe route (`/api/iid`, `bin/iid.sh`, 60 requests across 4 workers):
+**every forked granian worker shares ONE `StateManagerRedis._instance_id`** (`logs/iid.jsonl`: fork -> 4 pids, 1 state-manager id,
+4 token-manager ids; `REFLEX_BACKEND_START_METHOD=spawn` -> 4 / 4 / 4; 0.10.1 fork -> 4 / 1 / 4).
+- `reflex/istate/manager/redis.py:261` picks `_instance_id` once per manager. The manager is created in `App._setup_state` (`reflex/app.py:753`),
+  and that runs in the supervisor when prod fork preloads the app (`reflex/utils/exec.py:1118` `prerequisites.get_app()` via `_preload_for_fork`, called at :1148).
+  Forked workers inherit it. `App._setup_event_processor` (`app.py:898-900`) resets only the *token manager's* id per worker.
+- The oplock contender registry is a Redis SET of that id: SADD at `redis.py:1161`, SREM on every waiter exit at `redis.py:1146`, SCARD at
+  `:1123`, consulted at `:697-700` (single update vs lease) and `:880-884` (lease creation). Lease breaking reacts only to a `sadd` keyspace event (`:988`).
+  With one shared id: a waiter on worker B whose id is already in the set does a no-op SADD. Redis emits no `sadd` event, so the lease is not broken. A waiter exiting
+  on ANY worker deregisters ALL workers. A queued waiter is then invisible until its `lock_expiration/10` re-check re-registers it (`:1251`), so
+  it stalls ~1 s.
+- The reporter's same-instance SREM mechanism is real but secondary. A 2x2 on the real app (`bin/oplock.sh`, prod, oplock on, 2 workers,
+  `load.py --clients 1 --events 300 --mode pipe --api 100`, 6 runs per api-conc, plus 3 spot loads; `logs/oplock.jsonl`). The figures count runs with any api wait over 500 ms:
+  | start method / test-only SREM patch | conc1 | conc2 | conc4 | spot (8x50+bg+api etc.) |
+  |---|---|---|---|---|
+  | fork (default) / unpatched | 1/6 | 4/6 | 5/6 | 3/3 |
+  | fork / patched (`RDS_PATCH_SREM=1`: SREM only when this is the instance's last local waiter) | 0/6 | 3/6 | 6/6 | - |
+  | spawn (distinct ids) / unpatched | 0/6 | 0/6 | 1/6 | 3/3 |
+  | spawn / patched | - | 0/6 | 0/6 | 0/3 (max 182 ms) |
+  Every stall measured 1009-1074 ms, and every final count was exact. On fork the patch cannot help, because "another instance" is the same id.
+  Debug trace (`logs/oplock-fork-stall-trace-excerpt.txt`, records tagged with the worker pid by the `RDS_LOG_PID=1` hook): worker 10173 takes a 5 s lease ("obtained lock" -> "lease breaker ... sleeping for 5.0s") while worker 10171's
+  single api waiter is queued. That waiter's "wait timeout" fires 1.0 s later, then "OPLOCK CONTEND - lease break task cancelled", and then it acquires.
+  The reporter's conc1 = 0/6 does not hold: 1/6 here, which the SREM theory cannot explain (one api waiter at a time).
+- Changelog #7534 sentence "events waiting on other instances are no longer passed over by the next lease": **false as written for the
+  default Linux prod deployment (fork, >=2 workers)**. Waiters on other workers are passed over by the next lease. #7534's 1/10 re-check
+  only bounds the wait to ~1 s, down from the 5 s hold. It holds only under spawn (macOS/Windows default) with one waiter per worker.
+- 0.10.1 shares the id too (fork) and stalls 5-10 s (reporter's matrix) -> not a regression. Severity low: oplock is opt-in, the stall is bounded at 1 s, and no update is lost.
+  Fix shape: give each worker its own `StateManagerRedis._instance_id` (reset it next to `_token_manager._reset_instance_id()` in
+  `_setup_event_processor`, or after fork). Also count contenders per waiter, e.g. SET members `instance_id:lock_id` or a hash counter, so an
+  exit removes only itself. Or reword the changelog.
+- Side observation (in-process only, `bin/oplock_pass_over.py --stream 1 --a-events 1000 [--no-oplock]`, `logs/barging.jsonl`): two managers
+  in one loop. Manager A does 1000 back-to-back modifies with no gap. Manager B's single waiter is starved for the whole loop on 0.11.0a1 (3.9-4.8 s, oplock on and off)
+  and on 0.10.1 waits only 0.03-0.22 s. The cause is `_wait_lock` "instaque" barging (`redis.py` `_wait_lock`: an instance with no *local* waiters
+  SET-NXes at once, ahead of remote waiters that are still being notified; trace `logs/inprocess-barging-trace-head.txt`, 277 instaque wins vs 1).
+  A 3 ms gap between A's modifies removes it entirely (0/20 rounds stalled), and the reporter's real-app matrix (oplock off, contended) shows p99 < 300 ms on
+  both versions. Recorded as an anomaly to follow up, not as an issue: not reproduced in an app.
+
+### V2. Cross-worker updates lost after a Redis outage > ~5 s -> CONFIRMED (narrowed), medium, not a regression
+`DOWN=<s> bash bin/faults.sh <venv> 0 <workers> logs/rr_matrix.jsonl redis_restart` (prod, SHUTDOWN SAVE, restart on the same dump):
+| venv, workers, outage | after restart: bumps on other worker -> deltas received (of 10) | `exceeded exception limit` lines |
+|---|---|---|
+| new w2 10 s | 4 -> 6 | 2 |
+| new w4 10 s (x2) | 8 -> 2, 9 -> 1 | 2, 2 |
+| new w2 3.3 s | 4 -> 10 | 0 (6 suppressed) |
+| prev w4 10 s (x2) | 6 -> 4, 9 -> 1 | 2, 2 |
+| prev w2 3.3 s | 5 -> 10 | 0 |
+The invariant "received = 10 - bumps that landed on another worker" held in every >5 s run on both versions. The reporter's prev 9/10 vs
+stock 6/10 is only the random bump distribution (1 vs 4 bumps on the other worker), not a behaviour difference.
+- Narrowing: recovery needs a new socket on the *same* worker as the stale client. In the `after_new_client` phase with 4 workers, 3 of 4 runs recovered only partly
+  (3 -> 7, 6 -> 4, 5 -> 5), because the new client landed elsewhere. A busy app reconnects often and self-heals quickly. A low-traffic app, or one tab per worker,
+  stays broken.
+- Root cause (code byte-identical between v0.10.1 and v0.11.0a1: `diff` of `reflex/utils/tasks.py` and `reflex/utils/token_manager.py` is empty):
+  `reflex/utils/tasks.py:44-53` re-raises after `exception_limit` (default 5, `:67`) suppressed errors with `exception_delay=1 s`.
+  `RedisTokenManager.ensure_lost_and_found_task` (`token_manager.py:438-453`) and `_ensure_socket_record_task` (`:306-313`) use those defaults.
+  They are re-created only from `on_connect` (`app.py:2349-2351`) and `link_token_to_sid` (`token_manager.py:332`). Note `:38-41`: the first error
+  after a long healthy run resets the counter, so a long-running worker tolerates ~6 failures; separate short blips within 60 s add up.
+  A dead `_subscribe_socket_record_updates` also stops `_handle_socket_record_del` re-storing expiring records (reasoned, not tested).
+- Fix shape: run these long-lived pubsub subscribers without an exception limit (capped backoff), and/or `ensure_*` them from the
+  emit / `emit_lost_and_found` path. After a resubscribe, re-store the worker's own socket records, since keyspace events were missed while it was down.
+
+### V3. kill -9 of one worker stops the server and the client gets a new token -> RECLASSIFIED into two parts, not a regression
+`bash bin/kill9.sh <venv> 2 logs/kill9.jsonl` reproduces on both versions: `[ERROR] Unexpected exit from worker-2` / `Info: Reflex app stopped.`, resume -> `new_token`, count 1.
+Separating the parts (`bin/kill9b.sh vrds-new 2 logs/kill9b.jsonl <mode>`):
+| mode | server alive 3 s after | stale socket record | resume |
+|---|---|---|---|
+| `respawn`: test-only `respawn_hook/sitecustomize.py` forces granian `respawn_failed_workers=True` | **yes** | 1 | **new_token**, count 1 |
+| `delrec`: server stopped; DEL `token_manager_socket_record_<tok>` before restart | no | deleted | **same token, count 2** |
+| `clean`: SIGTERM with the socket connected, restart | no | 0 | same token, count 2 |
+- (a) "Whole server stops" is **granian's default**, not reflex code: `granian/server/common.py:125` `respawn_failed_workers=False`, and at `:549` the supervisor
+  breaks its serve loop on a child exit. Reflex builds `Granian(...)` (`reflex/utils/exec.py:1152-1161`, same in 0.10.1) without that option. The
+  `GRANIAN_RESPAWN_FAILED_WORKERS` env var is read only by granian's click CLI (`cli(auto_envvar_prefix='GRANIAN')`); `Server()` reads no env.
+  So a `reflex run --env prod` user has no knob. Low/medium: fail-fast is acceptable behind a process supervisor. Fix shape: pass
+  `respawn_failed_workers=True` (granian has crash-loop detection, 5.5 s) or expose an env/config option.
+- (b) The session loss is **reflex's own** and happens even when the server survives (respawn row): the dead worker's socket record
+  (TTL `redis_token_expiration`, default 3600 s, `token_manager.py:225`) makes `link_token_to_sid` treat the returning tab as a duplicate
+  (`token_manager.py:342-346` `if token_exists_in_redis: token = new_token`). Every client of a crashed or OOM-killed worker that returns within
+  1 h loses its state. Medium, not a regression (HYD-07 on demand). Fix shape: a per-instance liveness key (heartbeat with a short TTL). On
+  link, take over a record whose instance is dead instead of issuing a new token, or keep socket records on a short TTL refreshed by the owner.
+
+### V4. PASS spot-checks -> CONFIRMED
+- Lock correctness, oplock on, 2 workers, new (fork and spawn, patched and unpatched): every load reached the exact final count, server-side
+  (locked `/api/get`) and in the client's delta stream: 75/75 loads in `logs/oplock.jsonl`, including `pipe8x50+bg40+api40` 8/8,
+  `pipe1x300+bg200+api200` 1/1 and `seq4x50+bg100+api50` 4/4 in each of the 3 spot runs (fork, spawn, spawn+patch).
+- #7412 under Redis (Chromium, prod, 1 worker, `bin/cancel.sh <venv> 0`, `logs/cx-*.json`): new: raise_mid r1=r2=1 (UI == server),
+  `supersedes=True` calls 2 / progress 8 / done 1, kept after reload. 0.10.1: raise_mid server r1=r2=0 (UI r2=0), supersedes calls 1 / progress 5
+  (first call's writes lost) -> control fails as claimed. `linked_fail_then_event` reports FAIL on BOTH versions because the armed failure never
+  fires (status "ok"). That is the reporter's known harness limitation, not a finding.
