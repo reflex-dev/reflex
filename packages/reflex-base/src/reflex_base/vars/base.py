@@ -4452,7 +4452,10 @@ class Field(Generic[FIELD_TYPE]):
             )
         else:
             msg = f"{name} has no frontend var, so it cannot be used in the UI."
-        return BackendVarFormatError(msg)
+        # str() raises too, so print and logging in server code reach this error.
+        return BackendVarFormatError(
+            f"{msg} To print or log the field itself in server code, use repr()."
+        )
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
