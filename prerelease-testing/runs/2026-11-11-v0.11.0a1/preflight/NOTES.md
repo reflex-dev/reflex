@@ -20,7 +20,6 @@ All commands run from `$SB` (=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73
 - radix 0.11.0a1: `reflex-base>=0.10.1`, `reflex-components-core>=0.10.1`; code 0.11.0a1: `>=0.10.0` floors.
 - reflex-enterprise 0.9.11: `reflex[db]>=0.9.6`, requires_python `<4.0,>=3.10`.
 
-## Not done here
-- reflex-enterprise source checkout: `add_repo reflex-dev/reflex-enterprise` was denied in this session, so upstream
-  enterprise demos (fixtures/enterprise/grid/bin/fetch_demos.sh) are unavailable; the enterprise cluster writes its own
-  demo apps against the published wheel.
+## reflex-enterprise source
+- Cloned at the user's request to `/home/user/reflex-enterprise` (HEAD `b9ec0a9`, tag `v0.9.11`) for upstream demos and
+  tests. `REFLEX_ACCESS_TOKEN` is not in this container's environment; prod runs use the account stub.
