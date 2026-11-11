@@ -1,0 +1,1 @@
+`rx.toast.provider(hotkey=...)` now takes a list of KeyboardEvent keys and codes, such as `["altKey", "KeyT"]`, which is what sonner expects; the previous `str` type was rejected for lists and crashed the page when a string was passed.
