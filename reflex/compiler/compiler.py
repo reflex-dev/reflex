@@ -70,6 +70,17 @@ def _set_progress_total(
     progress.update(task, total=total)
 
 
+# ``refs``, the id ref registry in state.js, is an internal detail with no
+# compatibility guarantee. Every page and memo module imports it only so code
+# written against 0.10 that reads ``refs[...]`` without declaring the import
+# (a raw ``Var`` handler, an ``add_hooks`` string) keeps working in 0.11. New
+# code should build ref expressions with ``Var._as_ref()``, whose var data
+# carries the import.
+_PAGE_BASE_IMPORTS: dict[str, list[ImportVar]] = {
+    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="refs")],
+}
+
+
 def _apply_common_imports(
     imports: dict[str, list[ImportVar]],
 ):
@@ -298,6 +309,7 @@ def _compile_page(component: BaseComponent, route: str) -> str:
         The compiled component.
     """
     imports = component._get_all_imports()
+    _extend_imports_in_place(imports, _PAGE_BASE_IMPORTS)
     _apply_common_imports(imports)
     imports = utils.compile_imports(imports)
 
@@ -516,12 +528,13 @@ class _MemoGroup:
 
 
 # Imports every memo module needs regardless of its body: ``isTrue`` for prop
-# coercion. The component wrapper import (``memo`` from React by default)
-# rides on each definition's ``wrapper`` var data instead, so a module whose
-# memos swap or drop the default wrapper doesn't import it. Shared by the
-# grouped and un-mirrored compile paths so they can't drift apart.
+# coercion, and ``refs`` (see ``_PAGE_BASE_IMPORTS``). The component wrapper
+# import (``memo`` from React by default) rides on each definition's
+# ``wrapper`` var data instead, so a module whose memos swap or drop the
+# default wrapper doesn't import it. Shared by the grouped and un-mirrored
+# compile paths so they can't drift apart.
 _MEMO_BASE_IMPORTS: dict[str, list[ImportVar]] = {
-    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue"), ImportVar(tag="refs")],
 }
 
 
@@ -819,6 +832,7 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
             page_ctx.frontend_imports or page_ctx.merged_imports(collapse=True)
         ).items()
     }
+    _extend_imports_in_place(imports, _PAGE_BASE_IMPORTS)
     _apply_common_imports(imports)
 
     code = templates.page_template(

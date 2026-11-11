@@ -1832,10 +1832,14 @@ class Component(BaseComponent, ABC):
         imports_ = {}
 
         if self._get_ref_hook() is not None:
-            # Handle hooks needed for attaching react refs to DOM nodes.
-            imports_.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
-                ImportVar(tag="useRegisteredRef")
-            )
+            # Handle hooks needed for attaching react refs to DOM nodes. The
+            # internal ``refs`` registry is imported too, only so code written
+            # against 0.10 that reads ``refs[...]`` without declaring the
+            # import keeps working; new code should use ``Var._as_ref()``.
+            imports_.setdefault(f"$/{Dirs.STATE_PATH}", set()).update((
+                ImportVar(tag="useRegisteredRef"),
+                ImportVar(tag="refs"),
+            ))
 
         if self._get_mount_lifecycle_hook():
             # Handle hooks for `on_mount` / `on_unmount`.

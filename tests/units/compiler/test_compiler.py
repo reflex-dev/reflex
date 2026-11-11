@@ -2,16 +2,20 @@ import dataclasses
 import importlib.util
 import json
 import os
+import re
 import sys
+from collections.abc import Callable
 from pathlib import Path, PureWindowsPath
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.components.component import Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
 from reflex_base.environment import environment
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -20,6 +24,7 @@ from reflex_base.utils.exceptions import (
 )
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
+from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base import Description, document
 from reflex_components_core.base.document import Links, Scripts
@@ -28,6 +33,7 @@ from reflex_components_core.el.elements.other import Html
 
 import reflex as rx
 from reflex.compiler import compiler, utils
+from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
 from reflex.utils import prerequisites
 
@@ -1962,3 +1968,84 @@ def test_compile_app_resolves_show_built_with_reflex(
     assert get_user_tier.called is (
         compile_context == constants.CompileContext.DEPLOY and configured is None
     )
+
+
+class _RefsHook(rx.Fragment):
+    """A wrapped component whose hook reads the ``refs`` registry directly."""
+
+    def add_imports(self) -> dict[str, list[str]]:
+        """Import the hook's own dependency.
+
+        Returns:
+            The React import the hook uses.
+        """
+        return {"react": ["useEffect"]}
+
+    def add_hooks(self) -> list[str]:
+        """Read a registered id ref without declaring the ``refs`` import.
+
+        Returns:
+            The hook reading ``refs``.
+        """
+        return ["useEffect(() => { refs['ref_target'].current.value = 'x'; }, [])"]
+
+
+_IMPORTS_REFS = re.compile(
+    r'^import\s*\{[^}]*\brefs\b[^}]*\}\s*from\s*"\$/utils/state"', re.MULTILINE
+)
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+@pytest.mark.parametrize(
+    "page",
+    [
+        pytest.param(
+            lambda: rx.el.div(
+                rx.el.input(id="target"),
+                rx.el.button(
+                    on_click=Var(
+                        "() => { refs['ref_target'].current.value = 'x'; }"
+                    ).to(FunctionVar)
+                ),
+                _RefsHook.create(),
+            ),
+            id="with_id",
+        ),
+        pytest.param(lambda: rx.el.div(_RefsHook.create()), id="without_id"),
+    ],
+)
+def test_page_and_memo_modules_import_refs(
+    page: Callable[[], Component], auto_memoize: bool
+):
+    """Every page and memo module imports ``refs``, as 0.10 modules with an id did.
+
+    Code that reads ``refs[...]`` without declaring the import (a raw ``Var``
+    handler, an ``add_hooks`` string) keeps working wherever the compiler puts
+    it, including the wrapper a hook-owning component keeps without auto-memo.
+
+    Args:
+        page: The page's component factory.
+        auto_memoize: Whether stateful components are auto-memoized.
+    """
+    page_ctx = PageContext(name="page", route="/page", root_component=page())
+    hooks = CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize))
+    compile_ctx = CompileContext(pages=[], hooks=hooks)
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        hooks.compile_page(page_ctx, compile_context=compile_ctx)
+        _, page_code = compiler.compile_page_from_context(page_ctx)
+        memo_files, _ = compiler.compile_memo_components(
+            compile_ctx.auto_memo_components.values()
+        )
+
+    assert _IMPORTS_REFS.search(page_code), page_code
+    assert _IMPORTS_REFS.search(compiler._compile_page(page(), "/page"))
+    if not auto_memoize:
+        # The hook-owning component keeps its own wrapper module.
+        assert memo_files
+    for _, code in memo_files:
+        assert _IMPORTS_REFS.search(code), code
