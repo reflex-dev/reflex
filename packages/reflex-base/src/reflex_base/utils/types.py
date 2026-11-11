@@ -45,7 +45,7 @@ from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
-from reflex_base.utils.compat import declares_annotation
+from reflex_base.utils.compat import annotations_from_namespace, declares_annotation
 
 logger = logging.getLogger(__name__)
 
@@ -1027,6 +1027,106 @@ def is_unserialized_property(
     )
 
 
+def _get_mapped_annotation(cls: type, name: str) -> GenericType | None:
+    """Get the type that a SQLAlchemy model declares for an attribute with ``Mapped[...]``.
+
+    Only the annotation of ``name`` is resolved, in the module of the class that
+    declares it, so a symbol imported only for type checking may annotate any
+    other attribute.
+
+    Args:
+        cls: The mapped class.
+        name: The attribute name.
+
+    Returns:
+        The type ``T`` of a resolvable ``Mapped[T]`` annotation without ``None``, as
+        the column decides nullability, else None, also when ``T`` is ``Any`` or
+        ``object``.
+    """
+    from sqlalchemy.orm import Mapped
+
+    for klass in cls.__mro__:
+        annotations = annotations_from_namespace(klass.__dict__)
+        if name in annotations:
+            break
+    else:
+        return None
+    hint = _resolve_annotation(
+        annotations[name],
+        getattr(sys.modules.get(klass.__module__), "__dict__", None),
+    )
+    origin = get_origin(hint)
+    if not (isinstance(origin, type) and issubclass(origin, Mapped)):
+        return None
+    type_ = value_inside_optional(resolve_type_alias(get_args(hint)[0]))
+    # `Mapped[Any]` defers to the column type.
+    return None if type_ is Any or type_ is object else type_
+
+
+def _get_column_python_type(column_type: Any) -> GenericType | None:
+    """Get the python type of a SQLAlchemy column type.
+
+    Args:
+        column_type: The SQLAlchemy column type.
+
+    Returns:
+        The python type, parametrized by the item type of an array type unless
+        that is uninformative, or None if the column type does not implement it.
+    """
+    try:
+        type_ = column_type.python_type
+    except NotImplementedError:
+        return None
+    if hasattr(column_type, "item_type"):
+        try:
+            item_type = column_type.item_type.python_type
+        except NotImplementedError:
+            return type_
+        # The bare array type of e.g. ARRAY(JSON) lets `Mapped[...]` refine it.
+        if item_type is not object:
+            type_ = PrimitiveToAnnotation.get(type_, type_)[item_type]
+    return type_
+
+
+@lru_cache(maxsize=1024)
+def _get_column_access_type(cls: type, name: str) -> GenericType | None:
+    """Get the type of a mapped column of a SQLAlchemy model.
+
+    The python type of the column type wins, unless it is uninformative (``object``
+    for JSON, or not implemented) or the ``Mapped[...]`` annotation refines it, e.g.
+    ``Mapped[dict[str, int]]`` over ``dict``. The column decides nullability.
+
+    Args:
+        cls: The mapped class.
+        name: The column attribute name.
+
+    Returns:
+        The type of the column, or None if unknown.
+    """
+    import sqlalchemy
+
+    column = sqlalchemy.inspect(cls).columns[name]
+    type_ = _get_column_python_type(column.type)
+    if type_ is None or type_ is object:
+        type_ = _get_mapped_annotation(cls, name) or type_
+    # A parametrized python type, e.g. `List[int]` of an ARRAY column, is kept.
+    # Type parameters and TypedDict keys refine a bare one; a subclass such as
+    # `bool` over `int` does not, as the database returns `type_` itself. A
+    # parametrized generic TypedDict does not either: its keys are not resolved.
+    elif (
+        isinstance(type_, type)
+        and (declared := _get_mapped_annotation(cls, name)) is not None
+        and (
+            (get_origin(declared) or declared) is type_
+            or (type_ is dict and typing_extensions.is_typeddict(declared))
+        )
+    ):
+        type_ = declared
+    if type_ is not None and getattr(column, "nullable", False):
+        return type_ | None
+    return type_
+
+
 def get_attribute_access_type(
     cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR
 ) -> GenericType | None:
@@ -1076,27 +1176,11 @@ def get_attribute_access_type(
                 if hint is not None and hint is not Any:
                     return hint
                 return get_attribute_access_type(cls, synonym.name)
-            if name in insp.columns:
-                # check for list types
-                column = insp.columns[name]
-                column_type = column.type
-                try:
-                    type_ = insp.columns[name].type.python_type
-                except NotImplementedError:
-                    type_ = None
-                if type_ is not None:
-                    if hasattr(column_type, "item_type"):
-                        try:
-                            item_type = column_type.item_type.python_type  # pyright: ignore [reportAttributeAccessIssue]
-                        except NotImplementedError:
-                            item_type = None
-                        if item_type is not None:
-                            if type_ in PrimitiveToAnnotation:
-                                type_ = PrimitiveToAnnotation[type_]
-                            type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
-                    if hasattr(column, "nullable") and column.nullable:
-                        type_ = type_ | None
-                    return type_
+            if (
+                name in insp.columns
+                and (type_ := _get_column_access_type(cls, name)) is not None
+            ):
+                return type_
             if name in insp.all_orm_descriptors:
                 descriptor = insp.all_orm_descriptors[name]
                 if hint := get_property_hint(descriptor):
