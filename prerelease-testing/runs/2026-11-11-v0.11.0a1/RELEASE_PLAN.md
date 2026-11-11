@@ -208,7 +208,7 @@ As each PR merges into `main`:
 | #7796 015 | fix/mistaken-handler-return-values, /home/user/reflex-fix-015 | PR open, watch; "call it" hint pushed (ed2ee8910) |
 | #7797 004 | fix/autogenerate-never-drops-tables, /home/user/reflex-fix-004 | PR open, watch; breaking fragment pushed |
 | #7798 011 | fix/declarative-json-column-type, /home/user/reflex-fix-011 | PR open, watch (CodSpeed red = hardware noise, commented; not required) |
-| #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open; CodeQL fix + empty-list semantics pushed 6f621870e (CodeQL thread left open for owner); greptile 5/5 |
+| #7799 022 | fix/same-origin-behind-tls-proxy, /home/user/reflex-fix-022 | PR open, head 27c2dd954; all bot threads answered + resolved (5 cubic docs/fragment fixes); CodeQL alert auto-marked fixed after 6f621870e, thread shows resolved (not by us); greptile 5/5 |
 | #7800 036 | fix/optional-set-var-ops, /home/user/reflex-fix-036 | PR open, watch |
 | #7803 033 A | fix/respawn-failed-prod-workers, /home/user/reflex-fix-033 | PR open, watch (bot nits fixed b1b99aba4) |
 | #7801 instaque | fix/redis-lock-fair-handoff, /home/user/reflex-fix-instaque | draft, deferred to #7805; not cherry-picked |
@@ -238,4 +238,4 @@ As each PR merges into `main`:
 ### Reviewbot sweep (09:10, owner asked to follow up all reviewbot feedback)
 Unresolved bot threads found and dispatched: #7796 ×6 (cubic/greptile, with the CodSpeed fix), #7797 ×5 cubic, #7798 ×2 cubic
 (+ TypedDict test), #7799 ×5 cubic (docs/fragment wording). Clear: #7795, #7800, #7802, #7803, #7804, #7806, #7808, rxe#290.
-#7799 CodeQL thread reads resolved although our reply left it for the owner — confirm who resolved it.
+#7799 CodeQL thread: not resolved by us; code scanning marked alert 37 fixed after 6f621870e, so likely auto-resolved. #7799 threads all cleared (27c2dd954).
