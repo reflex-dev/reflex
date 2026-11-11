@@ -1,3 +1,10 @@
+## v0.11.0a1 (2026-11-10)
+
+### Bug Fixes
+
+- `rx.callout` now accepts a component as `icon`, such as `rx.icon("info")` or an `rx.cond`/`rx.match` of icons, instead of raising `TypeError`. An icon name no longer also lands in the callout's CSS as an `icon` property. ([#7716](https://github.com/reflex-dev/reflex/issues/7716))
+
+
 ## v0.10.1 (2026-10-26)
 
 ### Features

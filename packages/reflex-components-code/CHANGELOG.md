@@ -1,3 +1,10 @@
+## v0.11.0a1 (2026-11-10)
+
+### Bug Fixes
+
+- Accept `"text"` as `rx.code_block`'s `language`, the plain-text value react-syntax-highlighter renders without highlighting. ([#7753](https://github.com/reflex-dev/reflex/issues/7753))
+
+
 ## v0.10.1 (2026-10-26)
 
 ### Bug Fixes
