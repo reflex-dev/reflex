@@ -1,3 +1,17 @@
+## v0.11.0a2 (2026-11-11)
+
+### Bug Fixes
+
+- A column of a SQLAlchemy `DeclarativeBase` model whose column type gives no useful Python type, such as `JSON`, `JSONB` or `PickleType`, now has the type of its `Mapped[...]` annotation when read through a state var, so `data: Mapped[dict] = mapped_column(JSON)` supports `State.model.data["key"]`, and a `Mapped[list[str]]` JSON column supports `rx.foreach` and array operations, without `.to(dict)`. An annotation that refines the column's Python type, such as `Mapped[dict[str, int]]` over `dict`, is used too; otherwise the column type still decides. ([#7798](https://github.com/reflex-dev/reflex/issues/7798))
+- Operations on an optional list var (`list[T] | None`) holding `None` no longer crash the page or the production prerender: the list acts as an empty list, so `contains` is false, `length` is 0 and `join` gives an empty string. As with any empty list, `reduce` without an `initial` value still raises; pass `initial=` when the list can be `None`. ([#7800](https://github.com/reflex-dev/reflex/issues/7800))
+- A computed var that returns an optional list, tuple, set or frozenset (for example `-> set[str] | None`) now reads as `ArrayVar` or `SetVar` for type checkers instead of `ComputedVar`, so its operations type-check. ([#7800](https://github.com/reflex-dev/reflex/issues/7800))
+- Deprecation warnings now point at the app line that triggered them when the deprecated call runs inside a `reflex_components_*` package (for example `on_change=client_state.set_value`), instead of a file in `site-packages`. ([#7811](https://github.com/reflex-dev/reflex/issues/7811))
+
+### Performance
+
+- The first event of a handler that takes a `dict`, dataclass, `TypedDict` or Pydantic model argument no longer imports SQLAlchemy on the event loop. ([#7802](https://github.com/reflex-dev/reflex/issues/7802))
+
+
 ## v0.11.0a1 (2026-11-10)
 
 ### Breaking Changes

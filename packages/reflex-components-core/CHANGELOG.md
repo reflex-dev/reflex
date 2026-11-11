@@ -1,3 +1,10 @@
+## v0.11.0a2 (2026-11-11)
+
+### Bug Fixes
+
+- An upload handler that raises now gets an HTTP 500 when no update was streamed yet, or ends the stream with an `{"error": ...}` frame that `rx.upload_files` reports, instead of a truncated response that looked successful. The backend exception handler receives the full traceback, and the server no longer logs the exception twice. ([#7808](https://github.com/reflex-dev/reflex/issues/7808))
+
+
 ## v0.11.0a1 (2026-11-10)
 
 ### Deprecations

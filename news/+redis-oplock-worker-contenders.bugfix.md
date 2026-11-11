@@ -1,1 +1,0 @@
-With `REFLEX_OPLOCK_ENABLED` and several production backend workers, an event waiting for a token's lock on one worker no longer stalls for about a tenth of the lock expiration behind another worker's lease.
