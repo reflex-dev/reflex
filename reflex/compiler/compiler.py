@@ -532,7 +532,8 @@ class _MemoGroup:
 # import (``memo`` from React by default) rides on each definition's
 # ``wrapper`` var data instead, so a module whose memos swap or drop the
 # default wrapper doesn't import it. Shared by the grouped and un-mirrored
-# compile paths so they can't drift apart.
+# compile paths, for component and function memos alike, so they can't drift
+# apart.
 _MEMO_BASE_IMPORTS: dict[str, list[ImportVar]] = {
     f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue"), ImportVar(tag="refs")],
 }
@@ -675,7 +676,7 @@ def _compile_single_memo_function(
     Returns:
         The file contents and the full import dict used to compile it.
     """
-    imports = utils.merge_imports({}, function_imports)
+    imports = utils.merge_imports(_MEMO_BASE_IMPORTS, function_imports)
     code = templates.memo_single_function_template(
         imports=utils.compile_imports(imports),
         function=function_render,

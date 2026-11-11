@@ -12,6 +12,7 @@ from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
 from reflex_base.environment import environment
@@ -2049,3 +2050,25 @@ def test_page_and_memo_modules_import_refs(
         assert memo_files
     for _, code in memo_files:
         assert _IMPORTS_REFS.search(code), code
+
+
+def test_standalone_function_memo_module_imports_refs():
+    """A function memo compiled to its own module imports ``refs`` too.
+
+    Memos without a mirrorable source module (``__main__``, unsafe names) land
+    in one file per memo; a raw ``Var`` body reading ``refs[...]`` needs the
+    import there as well.
+    """
+
+    @rx.memo
+    def read_target_ref() -> rx.Var[str]:
+        return Var("refs['ref_target'].current.value").to(str)
+
+    definition = dataclasses.replace(
+        MEMOS["read_target_ref", __name__], source_module=None
+    )
+    (_, code), *rest = compiler.compile_memo_components((definition,))[0]
+
+    assert not rest
+    assert "refs['ref_target']" in code
+    assert _IMPORTS_REFS.search(code), code
