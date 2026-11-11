@@ -50,7 +50,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import console, memo_paths
+from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import (
     ASGIApp,
@@ -2317,6 +2317,8 @@ class EventNamespace(AsyncNamespace):
         # In dev, warn about values that handlers triggered from the frontend
         # return, which nothing receives. Read once: on_event is the hot path.
         self._warn_dropped_results = not is_prod_mode()
+        # The handlers already warned about, so each warns once.
+        self._warned_dropped_results: set[str] = set()
 
     @property
     def token_to_sid(self) -> Mapping[str, str]:
@@ -2628,13 +2630,15 @@ class EventNamespace(AsyncNamespace):
         # values were results.
         if result is None or (is_non_string_sequence(result) and not result):
             return
+        if name in self._warned_dropped_results:
+            return
+        self._warned_dropped_results.add(name)
         handler = self.app._registration_context.event_handlers[name].handler
-        console.warn(
+        logger.warning(
             f"Event handler {handler.fn.__qualname__} returned a value, but it was "
             "triggered from the frontend, so the value is dropped: only backend "
             "code that awaits the handler receives its return value. Return None "
-            "or events to chain from a handler used as an event trigger.",
-            dedupe=True,
+            "or events to chain from a handler used as an event trigger."
         )
 
     async def on_ping(self, sid: str):

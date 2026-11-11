@@ -437,8 +437,14 @@ def on_event_harness():
     """
     from reflex.app import App, EventNamespace
 
+    loop = asyncio.new_event_loop()
+    # A real, already resolved future, like the EventFuture enqueue returns:
+    # the mock's default return value would bill on_event's use of the future
+    # (a done callback in dev mode) as mock call bookkeeping.
+    done = loop.create_future()
+    done.set_result(None)
     app = App()
-    app._event_processor = mock.Mock(enqueue=mock.AsyncMock())
+    app._event_processor = mock.Mock(enqueue=mock.AsyncMock(return_value=done))
     namespace = EventNamespace("/event", app)
 
     sid = "benchmark-sid"
@@ -478,7 +484,6 @@ def on_event_harness():
                 },
             )
 
-    loop = asyncio.new_event_loop()
     loop.run_until_complete(namespace.on_connect(sid, environ))
     yield run_events, loop
     loop.close()

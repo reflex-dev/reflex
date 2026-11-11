@@ -4160,7 +4160,7 @@ def _mistaken_return_state():
         ("returns_bound_background_handler", None),
         ("background_returns_bound_handler", None),
         ("returns_uncalled_redirect", "Did you mean to call it: rx.redirect(...)?"),
-        ("returns_uncalled_toast", "Did you mean to call it: rx.toast(...)?"),
+        ("returns_uncalled_toast", "Did you mean to call it: Toaster.send_toast(...)?"),
         (
             "returns_uncalled_toast_success",
             "Did you mean to call it: Toaster.toast_success(...)?",
@@ -4172,7 +4172,7 @@ def _mistaken_return_state():
         ),
         (
             "returns_list_holding_uncalled_creators",
-            "Did you mean to call them: rx.redirect(...), rx.toast(...)?",
+            "Did you mean to call them: rx.redirect(...), Toaster.send_toast(...)?",
         ),
         ("yields_bound_handler", None),
         ("async_yields_bound_handler", None),

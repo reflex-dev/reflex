@@ -5225,6 +5225,7 @@ async def test_on_event_falls_back_to_environ_without_connect(
 )
 async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
     token: str,
+    clean_registration_context: RegistrationContext,
     event_namespace_with_processor_mock: EventNamespace,
     mocker: MockerFixture,
     outcome: Any,
@@ -5238,6 +5239,8 @@ async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
 
     Args:
         token: A token.
+        clean_registration_context: Keeps the test's state out of the shared
+            registration context; the app below is created inside it.
         event_namespace_with_processor_mock: The event namespace fixture.
         mocker: pytest-mock fixture.
         outcome: What the event's future resolves to, or how it ends.
@@ -5250,11 +5253,12 @@ async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
             pass
 
     event_namespace = event_namespace_with_processor_mock
+    assert event_namespace.app._registration_context is clean_registration_context
     await event_namespace._token_manager.link_token_to_sid(token, "sid1")
     event_namespace.app.sio = Mock(
         get_environ=Mock(return_value=_connect_environ(token))
     )
-    warn = mocker.patch("reflex.app.console.warn")
+    warn = mocker.patch("reflex.app.logger.warning")
     loop = asyncio.get_running_loop()
     futures = [loop.create_future(), loop.create_future()]
     enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
@@ -5278,10 +5282,8 @@ async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
     if not warns:
         warn.assert_not_called()
         return
-    assert warn.call_count == 2
-    (message,), kwargs = warn.call_args
-    assert warn.call_args_list[0] == warn.call_args
-    assert kwargs == {"dedupe": True}
+    (message,) = warn.call_args.args
+    warn.assert_called_once_with(message)
     assert "DroppedResultState.handler" in message
     assert "dropped" in message
     assert "await" in message

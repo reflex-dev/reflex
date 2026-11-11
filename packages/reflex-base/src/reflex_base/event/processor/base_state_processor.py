@@ -103,6 +103,21 @@ def _is_empty_sequence(value: Any) -> bool:
     return is_non_string_sequence(value) and len(value) == 0
 
 
+def _creator_function(value: Any) -> Any:
+    """The function that runs when a callable is called.
+
+    Args:
+        value: A callable.
+
+    Returns:
+        The callable itself for a function or method, else its class's
+        ``__call__`` (for a callable object such as ``rx.toast``).
+    """
+    return (
+        value if isinstance(value, (FunctionType, MethodType)) else type(value).__call__
+    )
+
+
 def _is_event_creator(value: Any) -> bool:
     """Whether a callable is declared to return an EventSpec, like ``rx.redirect``.
 
@@ -118,11 +133,8 @@ def _is_event_creator(value: Any) -> bool:
         True if the function, or the ``__call__`` of a callable object such as
         ``rx.toast``, is annotated to return an EventSpec.
     """
-    fn = (
-        value if isinstance(value, (FunctionType, MethodType)) else type(value).__call__
-    )
     try:
-        returns = fn.__annotations__.get("return")
+        returns = _creator_function(value).__annotations__.get("return")
     except (AttributeError, NameError):
         # Not annotated (a builtin, a class), or a deferred annotation naming
         # something undefined.
@@ -133,26 +145,19 @@ def _is_event_creator(value: Any) -> bool:
 
 
 def _creator_reference(creator: Any) -> str:
-    """How user code names an event creator, for the hint to call it.
-
-    Only built for an error message, so looking the creator up by identity in
-    its module costs nothing that matters.
+    """How to name an event creator in the hint to call it.
 
     Args:
         creator: The uncalled event creator.
 
     Returns:
-        ``rx.<name>`` when the creator is exported under that name, else its
-        qualified name.
+        ``rx.<name>`` when reflex exports the creator's function under its own
+        name, as for ``rx.redirect``, else the function's qualified name.
     """
-    name = getattr(creator, "__name__", None)
-    if name is None and (module := sys.modules.get(type(creator).__module__)):
-        # A callable object like rx.toast: the module-level name bound to it.
-        name = next((n for n, v in vars(module).items() if v is creator), None)
-    rx = sys.modules.get("reflex")
-    if name is not None and getattr(rx, name, None) is creator:
-        return f"rx.{name}"
-    return getattr(creator, "__qualname__", None) or name or type(creator).__qualname__
+    fn = _creator_function(creator)
+    if getattr(sys.modules.get("reflex"), fn.__name__, None) is creator:
+        return f"rx.{fn.__name__}"
+    return fn.__qualname__
 
 
 def _is_mistaken_event(value: Any) -> bool:
