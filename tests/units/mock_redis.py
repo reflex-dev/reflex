@@ -188,10 +188,19 @@ def mock_redis() -> Redis:
         def pexpire(self, key: KeyT, px: int, xx: bool = False):
             self.results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
 
+        def ping(self):
+            self.results.append(mock_ping())
+
+        def eval(self, script: str, numkeys: int, *keys_and_args: Any):
+            self.results.append(mock_eval(script, numkeys, *keys_and_args))
+
         async def execute(self):
             results = await asyncio.gather(*self.results)
             self.results = []
             return results
+
+    async def mock_ping() -> bool:  # noqa: RUF029
+        return True
 
     def pipeline(transaction: bool = True):
         return _Pipeline()

@@ -1326,15 +1326,38 @@ class StateManagerRedis(StateManager):
         Returns:
             The ID holding the lock before the release, None if nobody held it.
         """
-        # redis-py types EVAL arguments as str; the lock key and ID are bytes here.
-        release = cast("Callable[..., Awaitable[bytes | None]]", self.redis.eval)
         try:
-            return await release(_RELEASE_LOCK_SCRIPT, 1, lock_key, lock_id)
+            return await self._send_lock_release(lock_key, lock_id)
         except asyncio.CancelledError:
             # The release may not have reached redis, so run it again where the
             # cancellation cannot stop it; only this path pays for the extra task.
-            await asyncio.shield(release(_RELEASE_LOCK_SCRIPT, 1, lock_key, lock_id))
+            await asyncio.shield(self._send_lock_release(lock_key, lock_id))
             raise
+
+    async def _send_lock_release(self, lock_key: bytes, lock_id: bytes) -> bytes | None:
+        """Run the lock release script behind a PING, in one round trip.
+
+        Redis sends the replies it has queued in one pass in the reverse order of
+        each client's first queued reply. The PING queues this client's reply
+        before the release notifies the lock's waiters on other instances, so
+        they learn of the release no later than this instance, which retakes a
+        free lock at once when it has no local waiter. Otherwise a back-to-back
+        loop of modifies on one instance passes over their waiters.
+
+        Args:
+            lock_key: The redis key for the lock.
+            lock_id: The ID of the lock to release.
+
+        Returns:
+            The ID holding the lock before the release, None if nobody held it.
+        """
+        pipeline = self.redis.pipeline(transaction=False)
+        pipeline.ping()
+        # redis-py types EVAL arguments as str; the lock key and ID are bytes here.
+        cast("Callable[..., object]", pipeline.eval)(
+            _RELEASE_LOCK_SCRIPT, 1, lock_key, lock_id
+        )
+        return (await pipeline.execute())[1]
 
     async def close(self):
         """Explicitly close the redis connection and connection_pool.

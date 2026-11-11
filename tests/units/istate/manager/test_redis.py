@@ -21,7 +21,6 @@ from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredEr
 from reflex_base.vars.base import computed_var
 
 from reflex.istate.manager.redis import (
-    _RELEASE_LOCK_SCRIPT,
     StateManagerRedis,
     _default_lock_expiration,
     _default_oplock_hold_time_ms,
@@ -1364,16 +1363,15 @@ async def test_cancel_while_releasing_lock_releases_it(
     """
     token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
     releasing = asyncio.Event()
-    # redis-py types EVAL replies as str; the lock release replies with bytes.
-    redis_eval = cast("Callable[..., Awaitable[Any]]", state_manager_redis.redis.eval)
+    send_lock_release = state_manager_redis._send_lock_release
 
-    async def first_release_hangs(script: str, *args: Any) -> Any:
-        if script == _RELEASE_LOCK_SCRIPT and not releasing.is_set():
+    async def first_release_hangs(lock_key: bytes, lock_id: bytes) -> bytes | None:
+        if not releasing.is_set():
             releasing.set()
             await asyncio.Event().wait()
-        return await redis_eval(script, *args)
+        return await send_lock_release(lock_key, lock_id)
 
-    monkeypatch.setattr(state_manager_redis.redis, "eval", first_release_hangs)
+    monkeypatch.setattr(state_manager_redis, "_send_lock_release", first_release_hangs)
 
     async def hold_lock():
         async with state_manager_redis._lock(token):
@@ -1977,6 +1975,61 @@ async def test_waiter_rechecks_a_lock_released_without_notice(
     await holding
 
     assert await waiting < state_manager_redis.lock_expiration / 1000 / 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("oplock", [False, True])
+async def test_remote_waiter_not_passed_over_by_back_to_back_modifies(
+    state_manager_redis: StateManagerRedis,
+    other_state_manager: Callable[[], Awaitable[StateManagerRedis]],
+    root_state: type[RedisTestState],
+    oplock: bool,
+):
+    """A waiter on another instance gets the lock while one instance modifies in a loop.
+
+    The looping instance has no local waiter, so it retakes a released lock at
+    once; the waiter must still be woken by the release before that.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        other_state_manager: Creates the managers of other app instances.
+        root_state: The root state class.
+        oplock: Whether opportunistic locking is enabled.
+    """
+    if "keys" in getattr(state_manager_redis.redis, "_internals", {}):
+        pytest.skip("The order of a release's reply and notification needs redis.")
+    loops = 200
+    other = await other_state_manager()
+    state_manager_redis._oplock_enabled = other._oplock_enabled = oplock
+    await _subscribed(state_manager_redis)
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    looped = 0
+    looping = asyncio.Event()
+
+    async def loop():
+        nonlocal looped
+        for _ in range(loops):
+            async with state_manager_redis.modify_state(token) as state:
+                assert isinstance(state, root_state)
+                state.count += 1
+                # Holding the lock a moment makes the waiter queue behind it.
+                await asyncio.sleep(0.002)
+            looped += 1
+            if looped == 5:
+                looping.set()
+
+    loop_task = asyncio.create_task(loop())
+    await looping.wait()
+    async with other.modify_state(token) as state:
+        looped_before_waiter = looped
+        assert isinstance(state, root_state)
+        state.count += 1
+    await loop_task
+
+    assert looped_before_waiter < loops / 2
+    async with other.modify_state(token) as state:
+        assert isinstance(state, root_state)
+        assert state.count == loops + 1
 
 
 @pytest.mark.asyncio

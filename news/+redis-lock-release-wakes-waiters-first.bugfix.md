@@ -1,0 +1,1 @@
+With the Redis state manager, an event waiting for a token's lock on one backend worker is no longer passed over again and again while another worker modifies the same token back to back, for example in a loop of `app.modify_state` calls: the waiting workers now hear of each release before the releasing worker can take the lock again.
