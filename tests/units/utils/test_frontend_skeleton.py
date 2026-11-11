@@ -110,3 +110,50 @@ def test_sync_root_package_json_repairs_unusable_file(
 
     assert frontend_skeleton.sync_root_package_json_to_web() is (content is not None)
     assert json.loads(package_json_path.read_text()) == original
+
+
+def _assert_bun_format(package_json_path: Path):
+    """Assert a package.json is laid out the way bun rewrites it.
+
+    Args:
+        package_json_path: The package.json file to check.
+    """
+    content = package_json_path.read_text(encoding="utf-8")
+    assert (
+        content == json.dumps(json.loads(content), indent=2, ensure_ascii=False) + "\n"
+    )
+
+
+def test_rendered_package_json_matches_bun_format(package_json_path: Path):
+    """Reflex renders package.json in bun's format, so bun rewrites leave no diff.
+
+    Args:
+        package_json_path: The rendered package.json path.
+    """
+    root_package = frontend_skeleton.get_root_lockfile_path(constants.PackageJson.PATH)
+    root_package.write_text(
+        json.dumps({"description": "Café ☃", "files": ["a", "b"]}), encoding="utf-8"
+    )
+    frontend_skeleton.initialize_package_json()
+    _assert_bun_format(package_json_path)
+    assert "Café ☃" in package_json_path.read_text(encoding="utf-8")
+
+    package_json_path.write_text("{}")
+    assert frontend_skeleton.sync_root_package_json_to_web() is True
+    _assert_bun_format(package_json_path)
+
+
+def test_update_package_json_overrides_matches_bun_format(
+    package_json_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Merging the framework overrides writes package.json in bun's format.
+
+    Args:
+        package_json_path: The rendered package.json path.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"test-pkg": "1.0.1"})
+    package_json_path.write_text(json.dumps(json.loads(package_json_path.read_text())))
+
+    assert frontend_skeleton.update_package_json_overrides() is True
+    _assert_bun_format(package_json_path)
