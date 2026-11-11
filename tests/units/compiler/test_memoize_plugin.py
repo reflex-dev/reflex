@@ -788,8 +788,9 @@ def test_foreach_item_with_hooks_keyed_by_index_warns(
         )
 
     [record] = _index_key_warnings(caplog)
+    assert "over `items` on page `/p`" in record.getMessage()
     assert "key=item.id" in record.getMessage()
-    # Repeat compiles, such as hot reloads, log it once.
+    # Identical warnings in one process, such as two loops over one field, log once.
     assert getattr(record, "dedupe", False) is True
 
 
@@ -812,6 +813,28 @@ def test_foreach_item_keyed_or_without_hooks_does_not_warn(
         )
 
     assert _index_key_warnings(caplog) == []
+
+
+@pytest.mark.parametrize(
+    ("iterable", "warns"),
+    [
+        (["a", "b"], False),
+        ([SpecialFormMemoState.items, ["b"]], True),
+    ],
+    ids=["constant", "literal_with_state_var"],
+)
+def test_foreach_over_literal_list_warns_only_with_state(
+    iterable: list, warns: bool, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A constant list never reorders, so its index keys are stable; one with a state var can."""
+    with caplog.at_level(logging.WARNING):
+        _compile_single_page(
+            lambda: rx.foreach(
+                iterable, lambda item: rx.text(item, on_unmount=rx.console_log("x"))
+            )
+        )
+
+    assert len(_index_key_warnings(caplog)) == warns
 
 
 def test_evaluating_a_foreach_item_with_hooks_does_not_warn(

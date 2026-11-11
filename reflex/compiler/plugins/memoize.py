@@ -46,7 +46,7 @@ from reflex_base.components.tags.iter_tag import _loop_var_data
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
-from reflex_base.vars.base import Var
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.cond import Cond
 from reflex_components_core.core.foreach import Foreach
@@ -264,8 +264,8 @@ def _subtree_has_instance_hooks(component: Component) -> bool:
     )
 
 
-def _warn_index_keyed_item(foreach: Foreach) -> None:
-    """Warn once when a foreach item with hooks of its own is keyed by its index.
+def _warn_index_keyed_item(foreach: Foreach, route: str) -> None:
+    """Warn when a foreach item with hooks of its own is keyed by its index.
 
     React matches a rendered instance, and so its lifecycle events and hooks,
     to an item by key. Keyed by index, they follow the position: after an item
@@ -273,14 +273,26 @@ def _warn_index_keyed_item(foreach: Foreach) -> None:
 
     Args:
         foreach: A foreach whose item subtree has hooks of one rendered instance.
+        route: The route of the page that renders it.
     """
     [item] = foreach.children
-    if not isinstance(item, Component) or str(item.key) != (
-        foreach._render().index_var_name
+    var_data = foreach.iterable._get_all_var_data()
+    if (
+        not isinstance(item, Component)
+        # A constant list never reorders, so index keys are stable.
+        or (
+            var_data is None
+            and isinstance(getattr(foreach.iterable, "_original", None), LiteralVar)
+        )
+        or str(item.key) != foreach._render().index_var_name
     ):
         return
+    fields = var_data.field_dependencies.values() if var_data else ()
+    name = ", ".join(field for names in fields for field in names) or str(
+        foreach.iterable
+    )
     logger.warning(
-        f"The rx.foreach over `{foreach.iterable!s}` renders a"
+        f"The rx.foreach over `{name}` on page `{route}` renders a"
         f" {type(item).__name__} with lifecycle events or hooks keyed by its"
         " index: after an item is removed or moved, its hooks run for the item"
         " now at that position. Set a unique, stable key on the item, such as"
@@ -332,7 +344,7 @@ def _scope_instance_hooks(
         return component
     if isinstance(component, Foreach):
         # Its item subtree has hooks of one rendered instance.
-        _warn_index_keyed_item(component)
+        _warn_index_keyed_item(component, page_context.route)
     owned = page_context.own(component)
     owned.children = children
     owned._clear_compile_caches()
