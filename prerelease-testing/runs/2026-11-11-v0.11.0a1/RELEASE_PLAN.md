@@ -15,7 +15,7 @@ the milestone `v0.11.0`.
 | 045 | Event payload transform imported reflex.model / SQLAlchemy inside the event | **Merged** [reflex-dev/reflex#7802](https://github.com/reflex-dev/reflex/pull/7802) |
 | 015 | Mistaken handler return values silently accepted | **Merged** via [reflex-dev/reflex#7821](https://github.com/reflex-dev/reflex/pull/7821)'s squash (554eb10a6); [reflex-dev/reflex#7796](https://github.com/reflex-dev/reflex/pull/7796) now carries FarhanAliRaza's follow-up 254040205 (toast hint, dropped-result `.get()`), approved: **merge it, then cherry-pick** |
 | 004 | Unregistered DeclarativeBase → silent drop of every table | **merged** [reflex-dev/reflex#7797](https://github.com/reflex-dev/reflex/pull/7797) (design: auto-detect bases) |
-| 011 | JSON column on DeclarativeBase typed `object` | **PR open** [reflex-dev/reflex#7798](https://github.com/reflex-dev/reflex/pull/7798) |
+| 011 | JSON column on DeclarativeBase typed `object` | **merged** [reflex-dev/reflex#7798](https://github.com/reflex-dev/reflex/pull/7798) |
 | 022 (+023 diagnostics) | Prod CORS default breaks TLS-proxied and split deployments | **PR open** [reflex-dev/reflex#7799](https://github.com/reflex-dev/reflex/pull/7799) |
 | 033 | kill -9 of a worker stops the server | **Merged** [reflex-dev/reflex#7803](https://github.com/reflex-dev/reflex/pull/7803) |
 | 034 + 035 | client_state API contract (wrong name hint, identifier collisions, conflicting defaults) | **Merged** [reflex-dev/reflex#7804](https://github.com/reflex-dev/reflex/pull/7804) |
@@ -220,6 +220,7 @@ As each PR merges into `main`:
 | #7812 (029, incl. reviewer's non-UTF-8 package.json commit) | f13348afa | a9c990e2d |
 | #7797 (004, incl. final head cb42ebe41: class-nested bases) | a6f2f8cf0 | 791356a4d |
 | #7800 (036; owner merged with the None guard, i.e. its cost accepted; set-var fragment sentence folded into reflex-base CHANGELOG #7642 entry) | 384b63f70 | 81de29f44 |
+| #7798 (011, incl. reviewer's scalar-subclass commit; generic TypedDict kept as dict) | 45ee83cac | 4ec43f78b |
 
 ### Work queue (update as items move; a fresh agent resumes from here)
 | item | branch / worktree | state |
