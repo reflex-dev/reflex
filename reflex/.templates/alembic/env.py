@@ -138,10 +138,10 @@ def add_column_with_server_default(
     elif not column.nullable and has_default_factory(op):
         name = ".".join(filter(None, (op.schema, op.table_name, column.name)))
         msg = (
-            f"Cannot add the NOT NULL column {name!r}: its default_factory gives "
-            "the rows the table already holds no value. Give the column a "
-            "server_default=..., or a literal default= or insert_default=, or "
-            "make it nullable."
+            f"Cannot add the NOT NULL column {name!r} with only a default_factory: "
+            "the migration has no value for rows that a database already holds. "
+            "Set server_default=..., a literal default= or insert_default=, or "
+            "make the column nullable."
         )
         raise util.CommandError(msg)
     return op
