@@ -1902,10 +1902,12 @@ async def test_oplock_waiter_reregistering_while_the_other_waiter_leaves_deregis
         monkeypatch.setattr(remote.redis, "srem", queue_during_srem)
 
         leaving = asyncio.create_task(first.aclose())
-        await reregistering.wait()
-        await second.aclose()
-        resume.set()
-        await leaving
+        try:
+            await asyncio.wait_for(reregistering.wait(), timeout=5)
+            await second.aclose()
+        finally:
+            resume.set()
+            await asyncio.wait_for(leaving, timeout=5)
 
     assert remote._n_lock_waiters(lock_key) == 0
     assert await state_manager_redis._n_lock_contenders(lock_key) == 0
@@ -1960,10 +1962,13 @@ async def test_oplock_waiter_cancelled_while_registering_deregisters(
                 pytest.fail("The registration was meant to hang.")
 
         second = asyncio.create_task(second_waiter())
-        await registering.wait()
-    second.cancel()
-    with pytest.raises(asyncio.CancelledError):
-        await second
+        try:
+            await asyncio.wait_for(registering.wait(), timeout=5)
+            await first.aclose()
+        finally:
+            second.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await second
 
     assert remote._n_lock_waiters(lock_key) == 0
     assert await state_manager_redis._n_lock_contenders(lock_key) == 0
