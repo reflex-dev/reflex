@@ -8,7 +8,14 @@
 - [x] Step 4: serializer e2e (dev, prod+redis, hot reload, legacy serializer) done
 - [x] Step 5: AdminDash (done)
 - [x] Step 6: deprecated helpers (done)
-- [ ] copy artifacts, write report
+- [x] artifacts copied, report at `../reports/db_models.md`. All my servers/redis stopped. CLUSTER DONE.
+
+## Rerun from this directory
+Scripts assume `$SB/apps/db_models/` as root: `mkdir -p $SB/apps/db_models && cp -a apps/* scripts/*.sh $SB/apps/db_models/ && cp -a scripts $SB/apps/db_models/scripts && cp -a repros probes $SB/apps/db_models/`.
+Snapshots used by `repros/variant.sh`: `snap_blog_0101` = `apps/blog_as_built_on_0101` (0.10.1 project, legacy env.py, 2 revisions); `snap_blog_011up` = same after
+`reflex db status` on 0.11 (env.py upgraded); `snap_blog_rw` = `apps/blog` minus revision `fc3bc0a55fc1` and the `summary/score/update_ts` columns. `*.db` files are not copied:
+recreate with `reflex db migrate` (empty tables still show the drop_table / random-merge results); data rows came from `drive_blog.py create`.
+Extra: `apps/blog_0101_models.py` / `blog_0101_app.py` are the old-style sources; rewritten app `rw0101` = `snap_blog_rw` + `snap_env_0101.py` run on 0.10.1 (DetachedInstanceError, logs/rewrite_on_0101_detached.log).
 
 ## Setup
 - `SB=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad`
@@ -119,3 +126,7 @@ Register `zed`, login, then the Base/async blog page renders; rows in localuser 
 - `rx.Model.alembic_autogenerate(conn, "extra table")` with a new rx.Model -> revision written, returns True. PASS
 - PKG-15 (rx.Model deprecation location points into pydantic `_model_construction.py:133`): still present in 0.11.0a1 (seen in every `reflex db` / `reflex run` output).
 - `reflex db makemigrations` with no change prints nothing (same on 0.10.1; not new).
+
+## Baseline: the rewritten (Base/async) app on 0.10.1
+`snap_blog_rw` with the 0.10.1 env.py on `db_models-old`: index renders no posts, server `sqlalchemy.orm.exc.DetachedInstanceError: Parent instance <Author ...>` — the documented 0.11 pattern
+has no working 0.10.1 equivalent (#7756 is what makes it work). `logs/rewrite_on_0101_detached.log`.
