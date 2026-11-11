@@ -26,7 +26,8 @@ the milestone `v0.11.0`.
 | 005/006/017, 012 | kept env.py errors / empty revisions / env.old; NOT NULL default_factory column | **PRs open** #7809, #7815 (stacked on #7797) |
 | 028, 029, 042, 047 | deprecation frames, package.json format, lucide/hosting floors, auto_memoize warning dedupe | **PRs open** #7811, #7812, #7813, #7814 |
 | 009, 037/038, 039 | see below | agent running (opens PRs) |
-| 010 + changelog lines 024/006/014/020 | see below | not started |
+| 024, 014, 020 | `rx.App()()` breaking entry; admin guide; serializer example | **PR open** [reflex-dev/reflex#7816](https://github.com/reflex-dev/reflex/pull/7816) |
+| 010 | empty token → `EventHandlerTypeError` (stack on #7796) | not started (after #7796 settles) |
 
 ## Already in flight (outside this pass)
 | PR | Covers | Gap check |
@@ -224,7 +225,7 @@ As each PR merges into `main`:
 | 028 #7811, 029 #7812, 042 #7813, 047 #7814 | fix/deprecation-frames-skip-component-packages, fix/package-json-stable-format, fix/raise-lucide-hosting-floors, fix/dedupe-auto-memoize-warning (/home/user/reflex-fix-0NN) | PRs open (175367fb1, 809be53d4, d1baa8569, 4b93f0a13), watch; #7812 bot threads fixed (UTF-8 readers, LF writes, UnicodeDecodeError, bugfix fragments); #7811 pkgutil-local declined (greptile withdrew). hosting-cli is a workspace sibling → `.dev0` floor; full unit suite left to CI |
 | 009, 037/038, 039 | fix/migrate-skips-initial-state-compile, fix/backend-var-str-hint-and-storage-factory, fix/foreach-lifecycle-without-key-warning | agent running (opens PRs) |
 | 010 (stack on 015) | (new) | to start after #7796 settles |
-| changelog/doc lines 024, 006, 014, 020 | (new) fragment corrections on main | to start |
+| #7816 024/014/020 | docs/011-changelog-and-guide-fixes (622c9eeb4), /home/user/reflex-fix-docs | PR open, watch. 024 as `news/7624.breaking.md` (links to #7624); 006 note covered by #7809 fragment |
 | issues for "file after release" | — | to file; filed so far: #7805 (fair redis lock hand-off). Add: public ref helper instead of `Var._as_ref()` (003 docs point at a private API; no new public API in a fix-up); rxe `collect_page_info` lists relative paths on 0.11 (`deploy_url or ""`); rxe `/.well-known/oauth-protected-resource/_reflex/mcp` returns app HTML in single-port prod (also 0.10.1) |
 | Phase 7 + close-out (REGISTRY, history, fixtures, testing/prerelease) | — | after the owner cuts the next pre-release |
 
