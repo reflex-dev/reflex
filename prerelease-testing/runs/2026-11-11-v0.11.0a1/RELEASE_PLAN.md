@@ -217,7 +217,8 @@ As each PR merges into `main`:
 | 005/006/017+012 | fix/kept-env-py-errors (stacked on #7797), /home/user/reflex-fix-005 | agent running (opens PR) |
 | 003 shim + rxe 002/003/008 + 002 changelog line | fix/refs-compat-shim (/home/user/reflex-fix-003) + rxe fix/reflex-011-compat (/home/user/rxe-fix-mcp-refs) | PRs open reflex #7806 (f714343c4), rxe #290 (d27d6a14b); watch |
 | 044 | fix/upload-handler-error-response, /home/user/reflex-fix-044 | agent running (opens PR) |
-| 009, 010 (stack on 015), 039, 037/038, 028, 029, 042, 047 | (new) | to start |
+| 028, 029, 042, 047 | fix/deprecation-frames-skip-component-packages, fix/package-json-stable-format, fix/raise-lucide-hosting-floors, fix/dedupe-auto-memoize-warning (/home/user/reflex-fix-0NN) | agent running (opens 4 PRs) |
+| 009, 010 (stack on 015), 039, 037/038 | (new) | to start |
 | changelog/doc lines 024, 006, 014, 020 | (new) fragment corrections on main | to start |
 | issues for "file after release" | — | to file; filed so far: #7805 (fair redis lock hand-off). Add: public ref helper instead of `Var._as_ref()` (003 docs point at a private API; no new public API in a fix-up); rxe `collect_page_info` lists relative paths on 0.11 (`deploy_url or ""`); rxe `/.well-known/oauth-protected-resource/_reflex/mcp` returns app HTML in single-port prod (also 0.10.1) |
 | Phase 7 + close-out (REGISTRY, history, fixtures, testing/prerelease) | — | after the owner cuts the next pre-release |
