@@ -31,18 +31,34 @@ StateStoreContext.displayName = "StateStoreContext";
 /**
  * Subscribe a component to one Python substate in the shared store.
  *
+ * With ``fields``, the component re-renders only when one of those fields
+ * changes, and the returned object may hold stale values for other fields.
+ *
  * @param {string} name - The dotted Python state name.
+ * @param {string[]} [fields] - The substate fields the component reads.
  * @returns {object} The current state value for the named substate.
  */
-export function useStateContext(name) {
+export function useStateContext(name, fields) {
   const store = useContext(StateStoreContext);
-  const [subscribe, getSnapshot] = useMemo(
-    () => [
+  // The compiler passes a new array literal on each render, so key on content.
+  const fieldsKey = fields?.join(",");
+  const [subscribe, getSnapshot] = useMemo(() => {
+    let last;
+    return [
       (listener) => store.subscribe(name, listener),
-      () => store.getSnapshot(name) ?? app.initialState?.[name],
-    ],
-    [store, name],
-  );
+      () => {
+        const next = store.getSnapshot(name) ?? app.initialState?.[name];
+        if (
+          fields !== undefined &&
+          last !== undefined &&
+          fields.every((field) => Object.is(last[field], next[field]))
+        ) {
+          return last;
+        }
+        return (last = next);
+      },
+    ];
+  }, [store, name, fieldsKey]);
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 

@@ -373,3 +373,65 @@ process.stdout.write(JSON.stringify({
         "firstNotifications": 0,
         "secondNotifications": 2,
     }
+
+
+@requires_node
+def test_use_state_context_skips_changes_to_unread_fields(tmp_path: Path) -> None:
+    """A field subscription keeps its snapshot until a listed field changes.
+
+    Args:
+        tmp_path: Directory for the generated modules.
+    """
+    registry_path = (
+        Path(__file__).parents[3]
+        / "packages/reflex-base/src/reflex_base/.templates/web/utils/context-registry.js"
+    )
+    (tmp_path / "registry.mjs").write_text(
+        registry_path.read_text().replace('from "react"', 'from "./react.mjs"')
+    )
+    # One component: useMemo keeps its value while the deps are unchanged.
+    (tmp_path / "react.mjs").write_text(
+        """
+export let store;
+export const setStore = (value) => (store = value);
+let memo;
+export const useMemo = (fn, deps) => {
+  if (!memo || deps.some((dep, i) => !Object.is(dep, memo.deps[i]))) {
+    memo = { deps, value: fn() };
+  }
+  return memo.value;
+};
+export const useContext = () => store;
+export const useSyncExternalStore = (subscribe, getSnapshot) => getSnapshot();
+export const createContext = (defaultValue) => ({ defaultValue });
+"""
+    )
+    driver = tmp_path / "driver.mjs"
+    driver.write_text(
+        """
+import * as react from "./react.mjs";
+import { useStateContext } from "./registry.mjs";
+const state = { s: { a: 1, b: 1 } };
+react.setStore({
+  getSnapshot: (name) => state[name],
+  subscribe: () => () => {},
+});
+const first = useStateContext("s", ["a"]);
+state.s = { ...state.s, b: 2 };
+const afterUnread = useStateContext("s", ["a"]);
+state.s = { ...state.s, a: 2 };
+const afterRead = useStateContext("s", ["a"]);
+process.stdout.write(JSON.stringify({
+  unreadKeepsSnapshot: afterUnread === first,
+  readTakesSnapshot: afterRead === state.s,
+}));
+"""
+    )
+    result = subprocess.run(
+        ["node", str(driver)], capture_output=True, encoding="utf-8"
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {
+        "unreadKeepsSnapshot": True,
+        "readTakesSnapshot": True,
+    }
