@@ -3485,18 +3485,13 @@ class EventDecorator(Protocol):
         ...
 
 
-# The handler type for EventNamespace's annotations, whose class body shadows
-# the name with its re-export.
-_EventCallback = EventCallback
-
-
 class EventNamespace:
     """A namespace for event related classes."""
 
     # The re-exports are explicit aliases, so mypy reads `rx.event.EventSpec` as
-    # a type. A generic one is a plain assignment instead: pyright reads an
-    # explicit alias of a generic in a class body as already specialized, which
-    # rejects `rx.event.EventCallback[int]`.
+    # a type. A generic one is re-imported instead, so `rx.event.EventCallback[int]`
+    # is valid for every checker: pyright reads an explicit alias of a generic as
+    # already specialized, and mypy reads a plain assignment here as a variable.
 
     # Core Event Classes
     Event: TypeAlias = Event
@@ -3509,8 +3504,8 @@ class EventNamespace:
     LiteralEventVar: TypeAlias = LiteralEventVar
     EventChainVar: TypeAlias = EventChainVar
     LiteralEventChainVar: TypeAlias = LiteralEventChainVar
-    EventCallback = EventCallback
-    LambdaEventCallback = LambdaEventCallback
+    from reflex_base.event import EventCallback as EventCallback
+    from reflex_base.event import LambdaEventCallback as LambdaEventCallback
 
     # Javascript Event Classes
     JavascriptHTMLInputElement: TypeAlias = JavascriptHTMLInputElement
@@ -3523,17 +3518,18 @@ class EventNamespace:
     KeyInputInfo: TypeAlias = KeyInputInfo
     MouseEventInfo: TypeAlias = MouseEventInfo
     PointerEventInfo: TypeAlias = PointerEventInfo
-    IdentityEventReturn = IdentityEventReturn
+    from reflex_base.event import IdentityEventReturn as IdentityEventReturn
 
     # File Upload
     FileUpload: TypeAlias = FileUpload
     UploadFilesChunk: TypeAlias = UploadFilesChunk
 
     # Type Aliases
-    EventType = EventType
-    LAMBDA_OR_STATE = LAMBDA_OR_STATE
+    from reflex_base.event import LAMBDA_OR_STATE as LAMBDA_OR_STATE
+    from reflex_base.event import EventType as EventType
+
     BASIC_EVENT_TYPES: TypeAlias = BASIC_EVENT_TYPES
-    IndividualEventType = IndividualEventType
+    from reflex_base.event import IndividualEventType as IndividualEventType
 
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
@@ -3584,7 +3580,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> _EventCallback[*P]: ...
+    ) -> EventCallback[*P]: ...
 
     def __new__(
         cls,
@@ -3597,7 +3593,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> "_EventCallback | EventDecorator":
+    ) -> "EventCallback | EventDecorator":
         """Wrap a function to be used as an event.
 
         Args:
@@ -3638,7 +3634,7 @@ class EventNamespace:
                 if value is not None
             }
 
-        def wrapper(func: Callable[..., Any]) -> _EventCallback:
+        def wrapper(func: Callable[..., Any]) -> EventCallback:
             if isinstance(func, (staticmethod, classmethod)):
                 # Never an event handler; left as it is, like before.
                 console.deprecate(
