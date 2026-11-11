@@ -1116,8 +1116,8 @@ def _get_column_access_type(cls: type, name: str) -> GenericType | None:
         isinstance(type_, type)
         and (declared := _get_mapped_annotation(cls, name)) is not None
         and (
-            (get_origin(declared) or declared) is type_
-            or (type_ is dict and is_typeddict(declared))
+            (origin := get_origin(declared) or declared) is type_
+            or (type_ is dict and typing_extensions.is_typeddict(origin))
         )
     ):
         type_ = declared

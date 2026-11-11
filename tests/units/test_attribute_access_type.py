@@ -5,10 +5,11 @@ import types
 from collections.abc import Generator
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, List, NotRequired, TypedDict  # noqa: UP035
+from typing import Any, Generic, List, NotRequired, TypedDict, TypeVar  # noqa: UP035
 
 import attrs
 import pytest
+import typing_extensions
 from reflex_base.utils import types as types_module
 from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.types import GenericType, get_attribute_access_type
@@ -823,6 +824,63 @@ def test_declarative_typed_dict_json_column_key_access(column: str) -> None:
     assert prefs["tags"]._var_type == list[str]
     with pytest.raises(VarAttributeError, match="has no attribute 'missing'"):
         prefs["missing"]
+
+
+class ExtensionsPrefs(typing_extensions.TypedDict):
+    """A JSON document typed by a typing_extensions TypedDict."""
+
+    theme: str
+
+
+_T = TypeVar("_T")
+
+
+class GenericPrefs(TypedDict, Generic[_T]):
+    """A JSON document typed by a generic TypedDict."""
+
+    value: _T
+
+
+class DictColumnType(TypeDecorator):
+    """A column type whose python type is a bare dict."""
+
+    impl = JSON
+    cache_ok = True
+
+    @property
+    def python_type(self) -> type:
+        """The python type of the column.
+
+        Returns:
+            dict.
+        """
+        return dict
+
+
+class OtherTypedDictJsonModel(SQLABase):
+    """A declarative model with dict columns typed by other kinds of TypedDict."""
+
+    __tablename__ = "other_typed_dict_json"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    extensions_prefs: Mapped[ExtensionsPrefs] = mapped_column(DictColumnType())
+    generic_prefs: Mapped[GenericPrefs[int]] = mapped_column(DictColumnType())
+
+
+def test_declarative_json_column_typing_extensions_typed_dict() -> None:
+    """A typing_extensions TypedDict annotation refines a bare dict column too."""
+    assert (
+        get_attribute_access_type(OtherTypedDictJsonModel, "extensions_prefs")
+        is ExtensionsPrefs
+    )
+
+
+def test_declarative_json_column_generic_typed_dict() -> None:
+    """A parametrized generic TypedDict annotation refines a bare dict column too."""
+    assert (
+        get_attribute_access_type(OtherTypedDictJsonModel, "generic_prefs")
+        == GenericPrefs[int]
+    )
 
 
 class JsonModelClass(rx.Model):
