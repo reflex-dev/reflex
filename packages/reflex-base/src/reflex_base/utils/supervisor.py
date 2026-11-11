@@ -224,10 +224,11 @@ class _OutputPump(threading.Thread):
                 *lines, pending = _LINE_END.split(data[:cut])
                 pending += data[cut:]
                 self._write(lines, traceback, final=False)
-            os.close(self.read_fd)
             pending = pending.removesuffix(b"\r")
             self._write([pending] if pending else [], traceback, final=True)
         finally:
+            with contextlib.suppress(OSError):
+                os.close(self.read_fd)
             self._finished.set()
 
     def _write(self, lines: list[bytes], traceback: list[str], final: bool):

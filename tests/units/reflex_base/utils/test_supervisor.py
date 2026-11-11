@@ -693,3 +693,29 @@ def test_output_pump_drain_does_not_join_the_reader(monkeypatch):
         os.close(write_fd)
         threading.Thread.join(pump, 5)
     assert not pump.is_alive()
+
+
+def test_output_pump_closes_the_pipe_when_forwarding_fails(monkeypatch):
+    """The reader closes its end of the pipe even when forwarding raises."""
+    read_fd, write_fd = os.pipe()
+    pump = supervisor._OutputPump(read_fd, 1, "info", "stdout")
+
+    def fail(*_args, **_kwargs):
+        msg = "forwarding failed"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(pump, "_write", fail)
+    errors = []
+    monkeypatch.setattr(threading, "excepthook", errors.append)
+    pump.start()
+    try:
+        os.write(write_fd, b"line\n")
+        assert pump._finished.wait(5)
+        # The write end fails only once the pipe has no reader left.
+        with pytest.raises(OSError):
+            os.write(write_fd, b"line\n")
+    finally:
+        os.close(write_fd)
+        threading.Thread.join(pump, 5)
+    assert not pump.is_alive()
+    assert [str(error.exc_value) for error in errors] == ["forwarding failed"]
