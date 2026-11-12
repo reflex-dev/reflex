@@ -9,9 +9,14 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+import reflex_components_lucide
+from reflex_base import otel
 from reflex_base.constants import LogLevel
 from reflex_base.utils import console, log
+from reflex_components_core.el.elements import forms
 from rich.console import Console
+
+from tests.units.conftest import active_tracer
 
 logger = logging.getLogger("reflex_base.tests.logs")
 
@@ -154,6 +159,54 @@ def test_json_mode_success_level(monkeypatch, capsys):
     logger.log(log.SUCCESS, "done")
     out, _ = capsys.readouterr()
     assert json.loads(out)["level"] == "success"
+
+
+def test_json_mode_adds_trace_ids(monkeypatch, capsys, otel_sdk):
+    """Records emitted inside a span carry the span's W3C trace and span ids."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    with active_tracer().start_as_current_span("outer") as span:
+        logger.info("inside")
+        logger.error("failed inside")
+    span_context = span.get_span_context()
+    out, err = capsys.readouterr()
+    for record in (json.loads(out), json.loads(err)):
+        assert record["trace_id"] == f"{span_context.trace_id:032x}"
+        assert record["span_id"] == f"{span_context.span_id:016x}"
+
+
+def test_console_print_json_mode_adds_trace_ids(monkeypatch, capsys, otel_sdk):
+    """Plain console output in JSON mode carries the current span's ids too."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    with active_tracer().start_as_current_span("outer") as span:
+        console.print("printed inside")
+    span_context = span.get_span_context()
+    record = json.loads(capsys.readouterr().out)
+    assert record["message"] == "printed inside"
+    assert record["trace_id"] == f"{span_context.trace_id:032x}"
+    assert record["span_id"] == f"{span_context.span_id:016x}"
+
+
+def test_json_mode_omits_trace_ids_outside_span(monkeypatch, capsys, otel_sdk):
+    """With tracing on but no current span, records carry no trace ids."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    logger.info("outside")
+    record = json.loads(capsys.readouterr().out)
+    assert "trace_id" not in record
+    assert "span_id" not in record
+
+
+def test_json_mode_omits_trace_ids_when_tracing_disabled(monkeypatch, capsys):
+    """With tracing off, records carry no trace ids."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    log.configure()
+    assert otel.enabled is False
+    logger.info("untraced")
+    record = json.loads(capsys.readouterr().out)
+    assert "trace_id" not in record
+    assert "span_id" not in record
 
 
 def test_configure_idempotent():
@@ -329,6 +382,12 @@ def test_an_ordinary_path_is_still_classified_by_location(tmp_path):
         tmp_path: pytest temporary directory fixture.
     """
     assert not log._is_framework_filename(str(tmp_path / "app.py"))
+
+
+def test_component_packages_are_framework_code():
+    """A file in a split-out ``reflex_components_*`` package is not a user call site."""
+    assert log._is_framework_filename(forms.__file__)
+    assert log._is_framework_filename(reflex_components_lucide.__file__)
 
 
 def test_deprecate_skips_frames_compiled_from_strings(capsys):

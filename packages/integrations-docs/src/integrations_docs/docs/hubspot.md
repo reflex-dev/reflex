@@ -8,17 +8,22 @@ The **HubSpot Integration** allows your app to use [HubSpot](https://www.hubspot
 
 ## Step 1: Obtain a HubSpot Access Token
 
-1. Go to your [HubSpot Developer Account](https://developers.hubspot.com/).  
-2. Navigate to **App → Private Apps** in your account settings.  
-3. Click **Create Private App**, configure scopes (e.g., `crm.objects.contacts.read/write`, `crm.schemas.companies.read`), and save.  
-4. Copy the **Access Token** from the Auth tab.
-   * **Example:** `pat-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+1. Log in to your [HubSpot account](https://app.hubspot.com/).  
+2. Go to **Development → Keys → Service Keys** (also linked from **Settings → Integrations → Service Keys**).  
+3. Click **Create service key** and give it a name. Click **Add new scope**, check the scopes your app needs (e.g., `crm.objects.contacts.read`, `crm.objects.contacts.write`), click **Update**, then **Create** and confirm.  
+
+   ![Creating a HubSpot service key](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/hubspot_service_key.webp)
+
+4. Open the new key and click **Copy** (or **Show** to see it).
+   * **Example:** `pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+
+> 💡 HubSpot no longer allows creating new legacy private apps, but you can still use the access token of an existing one.
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add HubSpot** in your app settings.  
-2. Paste your **HubSpot Access Token** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **HubSpot** card.
+2. Click **Add connection** and paste your access token into **HUBSPOT_ACCESS_TOKEN**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can sync and manage HubSpot data directly from workflows and UI actions.
 

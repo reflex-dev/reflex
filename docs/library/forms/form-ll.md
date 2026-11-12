@@ -170,7 +170,7 @@ The `on_submit` prop of the Form Root accepts an event handler. It is called wit
 
 ## Data Submission
 
-As previously mentioned, the various pieces of data in the form are submitted together as a dictionary. The form control or the input components must have the `name` attribute. This `name` is the key to get the value from the form data dictionary. If no validation is needed, the form type components such as Checkbox, Radio Groups, TextArea can be included directly under the Form Root instead of inside a Form Control.
+As previously mentioned, the various pieces of data in the form are submitted together as a dictionary. The form control or the input components must have the `name` attribute. This `name` is the key to get the value from the form data dictionary. A control rendered by a Form Control takes the `name` of its Form Field when neither the control nor the Form Control sets one. If no validation is needed, the form type components such as Checkbox, Radio Groups, TextArea can be included directly under the Form Root instead of inside a Form Control.
 
 ```python demo exec
 import reflex as rx

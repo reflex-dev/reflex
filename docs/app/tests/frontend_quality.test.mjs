@@ -17,7 +17,7 @@ const moduleUrl = (source) => "data:text/javascript;base64," + Buffer.from(sourc
 test("Shiki server rendering includes escaped, readable code", async () => {
   const { createElement } = await import(resolve("react"));
   const { renderToStaticMarkup } = await import(resolve("react-dom/server"));
-  const filename = path.join(root, "packages/reflex-base/src/reflex_base/.templates/web/components/shiki/code.js");
+  const filename = path.join(root, "packages/reflex-frontend/src/components/shiki/code.js");
   // Effects do not run during SSR; this checks React's escaped fallback only.
   const source = (await readFile(filename, "utf8"))
     .replaceAll('from "react"', `from "${resolve("react")}"`);
@@ -45,7 +45,7 @@ test("Shiki invalidates every highlight input and ignores replaced work", async 
   `);
   const hooks = await import(hooksUrl);
   const highlighter = await import(highlighterUrl);
-  const filename = path.join(root, "packages/reflex-base/src/reflex_base/.templates/web/components/shiki/code.js");
+  const filename = path.join(root, "packages/reflex-frontend/src/components/shiki/code.js");
   const source = (await readFile(filename, "utf8"))
     .replaceAll('from "react"', `from "${hooksUrl}"`)
     .replaceAll('import("shiki")', `import("${highlighterUrl}")`);
@@ -137,22 +137,32 @@ for name, wrapper in [('Used', 'memo'), ('Unused', 'memo'), ('Tracked', 'track')
 });
 
 test("optional registries load on demand, share requests, and retry failures", async () => {
-  const rootCode = execFileSync("uv", ["run", "--no-sync", "python", "-c", `
+  // Compile the app root and a dynamic component with the real Python code generator.
+  const generated = JSON.parse(execFileSync("uv", ["run", "--no-sync", "python", "-c", `
+import json
 from unittest.mock import patch
 import reflex as rx
 from reflex.compiler.compiler import compile_app_root
 from reflex_base.components.dynamic import bundle_library
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import serializers
+class Quality(rx.Component):
+    library = 'quality-lazy-fixture'
+    tag = 'Quality'
 with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_value=rx.Config(app_name='quality', frontend_lazy_bundled_libraries=True)):
     bundle_library('quality-lazy-fixture')
-    print(compile_app_root(rx.el.div('Quality'))[1])
-`], {cwd: root, encoding: "utf8"});
-  const setup = new Function("window", "React", "emotion_react", "utils_context", "utils_context_registry", "utils_state", "loadFixture",
-    rootCode.replace(/^import .*$/gm, "")
+    bundle_library('constructor')
+    print(json.dumps({'root': compile_app_root(rx.el.div('Quality'))[1], 'component': serializers.serialize(Quality.create())}))
+`], {cwd: root, encoding: "utf8"}).trim().split("\n").at(-1));
+  const setup = new Function("window", "React", "emotion_react", "utils_context", "utils_context_registry", "utils_state", "loadFixture", "loadConstructor",
+    generated.root.replace(/^import .*$/gm, "")
       .replace(/^export default function/gm, "function")
       .replace(/^export /gm, "")
-      .replace('import("quality-lazy-fixture")', 'loadFixture()'));
-  const stateSource = await readFile(path.join(root, "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"), "utf8");
+      .replace('import("quality-lazy-fixture")', 'loadFixture()')
+      .replace('import("constructor")', 'loadConstructor()'));
+  // Render the component's jsx call directly, so a component returns the fixture's value.
+  const emotion = {jsx: (type, props) => type(props)};
+  const stateSource = await readFile(path.join(root, "packages/reflex-frontend/src/utils/state.js"), "utf8");
   // Parse the complete module so nested statements cannot truncate the export.
   const { parseAst } = await import(resolve("rolldown/parseAst"));
   const stateModule = parseAst(stateSource);
@@ -165,11 +175,11 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
   try {
     let calls = 0;
     globalThis.window = {};
-    setup(window, react, {}, {}, {}, {}, async () => {calls++; return {value: 42};});
+    setup(window, react, emotion, {}, {}, {}, async () => {calls++; return {Quality: () => 42};});
     assert.equal(calls, 0);
     assert.equal(window.__reflex.react, react);
     assert.equal(window.__reflex["quality-lazy-fixture"], undefined);
-    const source = 'const {value} = window.__reflex["quality-lazy-fixture"]; export default function Quality(){ return value; }';
+    const source = generated.component;
     const components = await Promise.all([evaluate(source), evaluate(source)]);
     assert.equal(calls, 1);
     assert.deepEqual(components.map(component => component()), [42, 42]);
@@ -179,14 +189,24 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
 
     let attempts = 0;
     globalThis.window = {};
-    setup(window, react, {}, {}, {}, {}, async () => {
+    setup(window, react, emotion, {}, {}, {}, async () => {
       if (++attempts === 1) throw new Error("Temporary download failure");
-      return {value: 43};
+      return {Quality: () => 43};
     });
-    await assert.rejects(evaluate(source), /Temporary download failure/);
-    const recovered = await evaluate(source + "\n// retry fixture");
+    const retrySource = source + "\n// retry fixture";
+    await assert.rejects(evaluate(retrySource), /Temporary download failure/);
+    const recovered = await evaluate(retrySource);
     assert.equal(attempts, 2);
     assert.equal(recovered(), 43);
+
+    // A library named like an Object.prototype member still loads.
+    let constructorCalls = 0;
+    globalThis.window = {};
+    const constructorModule = {name: "constructor library"};
+    setup(window, react, emotion, {}, {}, {}, async () => ({}), async () => {constructorCalls++; return constructorModule;});
+    await window.__reflex_load(["constructor"]);
+    assert.equal(constructorCalls, 1);
+    assert.equal(window.__reflex.constructor, constructorModule);
 
     globalThis.window = {__reflex: {react}};
     const legacy = await evaluate('export default function Legacy(){ return window.__reflex.react.quality; }');

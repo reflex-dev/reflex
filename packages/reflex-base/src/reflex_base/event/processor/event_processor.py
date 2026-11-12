@@ -13,12 +13,14 @@ import sys
 import time
 from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequence
 from contextvars import Token, copy_context
+from types import TracebackType
 from typing import TYPE_CHECKING, Any, Self, TypeVar
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
 from reflex_base import constants, otel
 from reflex_base.environment import environment
+from reflex_base.event import EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.blocking import (
     EVENT_TASK_PREFIX,
@@ -32,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.app import EventNamespace
-    from reflex.event import Event, EventSpec
+    from reflex.event import Event
 
 if hasattr(asyncio, "QueueShutDown"):
 
@@ -223,6 +225,7 @@ class EventProcessor:
             enqueue_impl=self.enqueue_many,
             emit_delta_impl=emit_delta_impl,
             emit_event_impl=emit_event_impl,
+            middleware=self.middleware,
         )
         return self
 
@@ -562,6 +565,7 @@ class EventProcessor:
                 enqueue_impl=root.enqueue_impl,
                 emit_delta_impl=_emit_delta_impl,
                 emit_event_impl=root.emit_event_impl,
+                middleware=root.middleware,
                 # Like fork(): the handler span nests under the caller's span
                 # (the upload request, a custom route).
                 otel_context=otel.capture_context(),
@@ -725,7 +729,7 @@ class EventProcessor:
 
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
-    ) -> None:
+    ) -> Any:
         """Execute the handler for a single event queue entry.
 
         This method contains the actual event-processing logic.  The base
@@ -740,15 +744,23 @@ class EventProcessor:
         Args:
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
+
+        Returns:
+            The handler's return value, which resolves the event's future.
         """
         event = entry.event
         result = registered_handler.handler.fn(**event.payload)
-        if inspect.isawaitable(result):
-            await result
+        # An awaitable EventSpec or EventHandler the handler returns is a
+        # description of an event, not work to do here.
+        if inspect.isawaitable(result) and not isinstance(
+            result, (EventSpec, EventHandler)
+        ):
+            result = await result
+        return result
 
     async def _process_event_queue_entry(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
-    ) -> None:
+    ) -> Any:
         """Process a single event queue entry.
 
         This function runs in a new task for each event.  It sets up the
@@ -763,16 +775,18 @@ class EventProcessor:
         Args:
             entry: The event queue entry to process.
             registered_handler: The registered handler for the event.
+
+        Returns:
+            The handler's return value, which resolves the event's future.
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
         if not otel.enabled:
-            await self._execute_event(
+            return await self._execute_event(
                 entry=entry, registered_handler=registered_handler
             )
-            return
         with otel.event_span(entry.event, entry.ctx, registered_handler):
-            await self._execute_event(
+            return await self._execute_event(
                 entry=entry, registered_handler=registered_handler
             )
 
@@ -923,6 +937,23 @@ class EventProcessor:
                 EventContext.set(ev_ctx)
             self.backend_exception_handler(ex)
 
+    async def _handle_raised_exception(
+        self, ex: Exception, tb: TracebackType | None, ev_ctx: EventContext
+    ) -> None:
+        """Handle an event's exception with the traceback it was raised with.
+
+        A caller awaiting the event's future (e.g. an upload stream) re-raises
+        the exception before this runs. CPython's C ``asyncio.Future`` raises it
+        there with a fresh traceback of the awaiting frames only, dropping the
+        handler's frames (the pure-Python future would prepend them instead).
+
+        Args:
+            ex: The exception the event raised.
+            tb: The traceback captured when the event's task finished.
+            ev_ctx: The event context of the failed event.
+        """
+        await self._handle_backend_exception(ex.with_traceback(tb), ev_ctx=ev_ctx)
+
     def _finish_task(self, task: asyncio.Task):
         """Callback for finishing a _process_event_queue_entry task.
 
@@ -977,6 +1008,7 @@ class EventProcessor:
         except Exception as ex:
             from reflex.utils import telemetry
 
+            tb = ex.__traceback__
             if future is not None and not future.done():
                 future.set_exception(ex)
                 with contextlib.suppress(BaseException):
@@ -989,7 +1021,7 @@ class EventProcessor:
             ):
                 # Create a new task in the same context to invoke the exception handler.
                 t = self._tasks[task_ctx.txid] = asyncio.create_task(
-                    self._handle_backend_exception(ex, ev_ctx=task_ctx),
+                    self._handle_raised_exception(ex, tb, task_ctx),
                     name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
                 )
                 if sys.version_info < (3, 12):
