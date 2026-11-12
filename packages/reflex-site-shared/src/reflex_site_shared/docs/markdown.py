@@ -3,12 +3,16 @@
 # Transformer overrides inherit their contracts from DocumentTransformer.
 # ruff: noqa: D102, D107, DOC201
 
+import dataclasses
+import hashlib
 import json
 import re
 import sys
 import textwrap
 import types
+from collections.abc import Iterator
 from pathlib import Path
+from typing import TypeGuard
 
 from reflex_base.constants.colors import ColorType
 from reflex_docgen.markdown import (
@@ -235,6 +239,121 @@ def _spans_to_plaintext(spans: tuple[Span, ...]) -> str:
     return "".join(parts)
 
 
+# Flag marking a ``python test`` block: browser tests for the demo above it.
+TEST_FLAG = "test"
+# DOM attribute identifying a tested demo, so its tests can scope a locator to it.
+DEMO_TEST_ATTR = "data-docs-demo"
+# Flags of the python code blocks that render a component a test can target.
+_DEMO_FLAGS = frozenset({"demo", "demo-only", "eval"})
+_FENCED_BLOCK_RE = re.compile(
+    r"^(?P<open>(?P<fence>`{3,})(?P<info>[^\n]*)\n)(?P<body>.*?)"
+    r"(?P<close>^(?P=fence)[ \t]*(?:\n|\Z))",
+    re.MULTILINE | re.DOTALL,
+)
+
+
+def _is_test_block(block: Block) -> TypeGuard[CodeBlock]:
+    return (
+        isinstance(block, CodeBlock)
+        and block.language == "python"
+        and TEST_FLAG in block.flags
+    )
+
+
+def _is_demo_block(block: Block) -> bool:
+    return (
+        isinstance(block, CodeBlock)
+        and block.language == "python"
+        and not _DEMO_FLAGS.isdisjoint(block.flags)
+    )
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class DocDemo:
+    """A code block that renders a component, with the test blocks that follow it.
+
+    Attributes:
+        block: The ``python demo``/``demo-only``/``eval`` block.
+        tests: The ``python test`` blocks directly following ``block``.
+        key: Identifies the rendered demo via :data:`DEMO_TEST_ATTR`; derived
+            from the test source so it is stable regardless of block order.
+            Empty when the demo has no tests.
+    """
+
+    block: CodeBlock
+    tests: tuple[CodeBlock, ...]
+    key: str
+
+
+def _doc_demo(block: CodeBlock, tests: list[CodeBlock]) -> DocDemo:
+    source = "\n".join(test.content for test in tests)
+    key = hashlib.sha1(source.encode()).hexdigest()[:12] if tests else ""
+    return DocDemo(block=block, tests=tuple(tests), key=key)
+
+
+def iter_doc_demos(blocks: tuple[Block, ...]) -> Iterator[DocDemo]:
+    """Yield every demo block in document order, paired with its test blocks.
+
+    A ``python test`` block belongs to the demo block directly before it in the
+    same block sequence; consecutive test blocks all belong to that demo.
+
+    Args:
+        blocks: The block sequence to search, including nested blocks.
+
+    Yields:
+        Each demo block with the test blocks that follow it.
+
+    Raises:
+        ValueError: If a test block does not follow a demo block.
+    """
+    demo: CodeBlock | None = None
+    tests: list[CodeBlock] = []
+    for block in blocks:
+        if _is_test_block(block):
+            if demo is None:
+                msg = (
+                    "A `python test` block must directly follow a `python demo`, "
+                    f"`python demo-only` or `python eval` block:\n{block.content[:200]}"
+                )
+                raise ValueError(msg)
+            tests.append(block)
+            continue
+        if demo is not None:
+            yield _doc_demo(demo, tests)
+            demo, tests = None, []
+        match block:
+            case CodeBlock() if _is_demo_block(block):
+                demo = block
+            case DirectiveBlock() | QuoteBlock():
+                yield from iter_doc_demos(block.children)
+            case ListBlock():
+                for item in block.items:
+                    yield from iter_doc_demos(item.children)
+            case _:
+                pass
+    if demo is not None:
+        yield _doc_demo(demo, tests)
+
+
+def strip_doc_tests(source: str) -> str:
+    """Remove ``python test`` blocks from markdown source, e.g. before serving it.
+
+    Args:
+        source: The markdown source.
+
+    Returns:
+        The source without its test blocks.
+    """
+
+    def replace(match: re.Match[str]) -> str:
+        language, *flags = match["info"].split() or [""]
+        if language == "python" and TEST_FLAG in flags:
+            return ""
+        return match["open"] + strip_doc_tests(match["body"]) + match["close"]
+
+    return _FENCED_BLOCK_RE.sub(replace, source)
+
+
 class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     """Transforms a reflex_docgen Document into Reflex components.
 
@@ -247,6 +366,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         self.filename = filename
         self.env: dict = {}
         self.deferred_demos = 0
+        # id() of each tested demo block in the document being transformed.
+        self._tested_demos: dict[int, DocDemo] = {}
 
     # ------------------------------------------------------------------
     # Top-level
@@ -258,6 +379,11 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             for preview in document.frontmatter.component_previews:
                 self.env[preview.name] = preview.source
             self.env["REFLEX_ASSETS_CDN"] = REFLEX_ASSETS_CDN
+        self._tested_demos = {
+            id(demo.block): demo
+            for demo in iter_doc_demos(document.blocks)
+            if demo.tests
+        }
 
         children: list[rx.Component] = []
         for block in document.blocks:
@@ -270,6 +396,23 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     # ------------------------------------------------------------------
     # Blocks
     # ------------------------------------------------------------------
+
+    def transform_block(self, block: Block) -> rx.Component:
+        comp = super().transform_block(block)
+        demo = self._tested_demos.get(id(block))
+        if demo is None:
+            return comp
+        if "eval" in demo.block.flags:
+            # An eval block may render any component, so wrap it in an element
+            # that does not take part in layout.
+            return rx.el.div(
+                comp,
+                custom_attrs={DEMO_TEST_ATTR: demo.key},
+                style={"display": "contents"},
+            )
+        # Every demo variant renders inside a box that can carry the attribute.
+        comp.custom_attrs[DEMO_TEST_ATTR] = demo.key
+        return comp
 
     def frontmatter(self, block: FrontMatter) -> rx.Component:
         return rx.fragment()
@@ -304,6 +447,10 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     def code_block(self, block: CodeBlock) -> rx.Component:
         flags = set(block.flags)
         language = block.language or "plain"
+
+        # ``python test`` — browser tests for the demo above, not rendered.
+        if _is_test_block(block):
+            return rx.fragment()
 
         # ``python demo`` or ``python demo exec``
         if language == "python" and "demo" in flags:

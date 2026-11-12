@@ -406,7 +406,12 @@ def sync_web_lockfile_to_root(filename: str):
 
 
 def sync_web_lockfiles_to_root():
-    """Persist every ``.web`` lockfile back to the app root."""
+    """Persist every ``.web`` lockfile back to the app root.
+
+    Does nothing when ``REFLEX_PERSIST_LOCKFILES`` is disabled.
+    """
+    if not environment.REFLEX_PERSIST_LOCKFILES.get():
+        return
     for name in LOCKFILE_NAMES + NO_PRUNE_LOCKFILE_NAMES:
         sync_web_lockfile_to_root(name)
 

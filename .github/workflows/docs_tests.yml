@@ -63,7 +63,7 @@ jobs:
           working-directory: ./docs/app
       - name: Run docs app tests
         working-directory: ./docs/app
-        run: uv run --no-sync pytest tests/ -v
+        run: uv run --no-sync pytest tests/ -v --ignore=tests/demos
 
   # The one status check the branch rules require from this workflow. Naming the
   # jobs above directly does not survive: check names follow the matrix and the

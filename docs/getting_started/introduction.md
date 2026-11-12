@@ -138,10 +138,32 @@ rx.hstack(
 )
 ```
 
+```python test
+def test_counter_counts_up_and_down(demo):
+    count = demo.get_by_role("heading")
+    expect(count).to_have_text("0")
+    demo.get_by_role("button", name="Increment").click()
+    demo.get_by_role("button", name="Increment").click()
+    expect(count).to_have_text("2")
+    demo.get_by_role("button", name="Decrement").click()
+    expect(count).to_have_text("1")
+```
+
 Here is the full code for this example:
 
 ```python eval
 tabs()
+```
+
+```python test
+def test_tabs_switch_content(demo):
+    expect(demo.get_by_text("The frontend is built declaratively")).to_be_visible()
+    demo.get_by_role("tab", name="Backend").click()
+    expect(demo.get_by_role("tab", name="Backend")).to_have_attribute(
+        "aria-selected", "true"
+    )
+    expect(demo.get_by_text("Write your backend in the")).to_be_visible()
+    expect(demo.get_by_text("The frontend is built declaratively")).to_be_hidden()
 ```
 
 ```python eval

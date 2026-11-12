@@ -1,0 +1,1 @@
+Docs markdown can hold browser tests in `python test` blocks directly below a `python demo`, `demo-only` or `eval` block. Test blocks are not rendered, `strip_doc_tests` removes them from served markdown, and each tested demo carries a `data-docs-demo` attribute that `iter_doc_demos` keys.

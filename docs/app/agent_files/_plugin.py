@@ -278,7 +278,9 @@ def generate_markdown_file_content(entry: MarkdownFileEntry) -> str:
     Returns:
         The generated markdown content.
     """
-    source = entry.source_path.read_text(encoding="utf-8").lstrip()
+    from reflex_site_shared.docs.markdown import strip_doc_tests
+
+    source = strip_doc_tests(entry.source_path.read_text(encoding="utf-8")).lstrip()
     component_reference = _component_api_reference_markdown(entry.source_path)
     body = source.rstrip()
     if component_reference:

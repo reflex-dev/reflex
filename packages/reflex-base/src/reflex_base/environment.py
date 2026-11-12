@@ -675,6 +675,11 @@ class EnvironmentVariables:
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
 
+    # Whether to write the lockfiles of a frontend install back to the app's
+    # reflex.lock/ directory. They are always read from it. Disable when the app
+    # runs from a checkout that must stay unchanged, e.g. under a test harness.
+    REFLEX_PERSIST_LOCKFILES: EnvVar[bool] = env_var(True)
+
     # The working directory for the frontend directory.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
 

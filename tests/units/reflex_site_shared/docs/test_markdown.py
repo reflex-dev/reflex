@@ -4,14 +4,18 @@ from pathlib import Path
 
 import pytest
 from reflex_base.components.component import BaseComponent
+from reflex_docgen.markdown import parse_document
 from reflex_site_shared.components.blocks.demo import DeferredDemo
 from reflex_site_shared.docs.markdown import (
+    DEMO_TEST_ATTR,
     get_docgen_toc,
     get_markdown_toc,
+    iter_doc_demos,
     render_docgen_document,
     render_inline_markdown,
     render_markdown,
     render_markdown_with_toc,
+    strip_doc_tests,
 )
 
 import reflex as rx
@@ -443,3 +447,122 @@ def test_demo_block_reports_source_document_on_errors() -> None:
         )
 
     assert "tests/broken-demo.md" in "".join(error.value.__notes__)
+
+
+_TESTED_DEMOS = """```python exec
+import reflex as rx
+```
+
+```python demo box
+rx.button("Boxed")
+```
+
+```python test
+def test_boxed(demo):
+    pass
+```
+
+```python test
+def test_boxed_again(demo):
+    pass
+```
+
+```python eval
+rx.text("Evaluated")
+```
+
+```python test
+def test_evaluated(demo):
+    pass
+```
+
+```python demo
+rx.text("Untested")
+```
+
+````md alert
+# Nested
+
+```python demo
+rx.text("Nested")
+```
+
+```python test
+def test_nested(demo):
+    pass
+```
+````
+"""
+
+
+def _tagged(component: BaseComponent) -> dict[str, rx.Component]:
+    """Collect the components tagged as tested demos, by key.
+
+    Args:
+        component: The rendered component tree.
+
+    Returns:
+        Each tagged component keyed by its demo key.
+    """
+    pending = [component]
+    tagged = {}
+    while pending:
+        child = pending.pop()
+        if isinstance(child, rx.Component) and DEMO_TEST_ATTR in child.custom_attrs:
+            tagged[str(child.custom_attrs[DEMO_TEST_ATTR])] = child
+        pending.extend(child.children)
+    return tagged
+
+
+def test_iter_doc_demos_pairs_test_blocks_with_the_demo_above() -> None:
+    """Test blocks belong to the preceding demo, also inside directives."""
+    demos = list(iter_doc_demos(parse_document(_TESTED_DEMOS).blocks))
+
+    assert [demo.block.content for demo in demos] == [
+        'rx.button("Boxed")',
+        'rx.text("Evaluated")',
+        'rx.text("Untested")',
+        'rx.text("Nested")',
+    ]
+    assert [len(demo.tests) for demo in demos] == [2, 1, 0, 1]
+    assert demos[2].key == ""
+    keys = [demos[0].key, demos[1].key, demos[3].key]
+    assert all(keys)
+    assert len(set(keys)) == 3
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "```python test\ndef test_orphan(demo):\n    pass\n```",
+        "```python exec\nx = 1\n```\n\n```python test\ndef test_x(demo):\n    pass\n```",
+        "```python demo\nrx.text('a')\n```\n\ntext\n\n```python test\ndef test_a(demo):\n    pass\n```",
+    ],
+)
+def test_iter_doc_demos_rejects_test_blocks_without_a_demo(source: str) -> None:
+    """A test block must directly follow a block rendering a component."""
+    with pytest.raises(ValueError, match="must directly follow"):
+        list(iter_doc_demos(parse_document(source).blocks))
+
+
+def test_tested_demos_are_tagged_and_tests_not_rendered() -> None:
+    """Tested demos carry their key; test blocks render nothing."""
+    demos = list(iter_doc_demos(parse_document(_TESTED_DEMOS).blocks))
+    component = render_markdown(_TESTED_DEMOS, virtual_filepath="tests/tested.md")
+    tagged = _tagged(component)
+
+    assert set(tagged) == {demo.key for demo in demos if demo.tests}
+    # An eval block is wrapped by an element that does not affect layout.
+    assert "contents" in str(tagged[demos[1].key].style["display"])
+    assert "test_boxed" not in str(component)
+
+
+def test_strip_doc_tests_removes_only_test_blocks() -> None:
+    """Served markdown keeps demos but drops their tests, also when nested."""
+    stripped = strip_doc_tests(_TESTED_DEMOS)
+
+    assert "def test_" not in stripped
+    assert "```python test" not in stripped
+    assert 'rx.button("Boxed")' in stripped
+    assert 'rx.text("Nested")' in stripped
+    assert stripped.rstrip().endswith("````")

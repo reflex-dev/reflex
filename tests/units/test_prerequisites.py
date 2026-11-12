@@ -2181,6 +2181,39 @@ def test_bun_install_drops_stale_npm_lock_instead_of_persisting_both(
     assert implies_npm is False
 
 
+def test_install_leaves_root_lockfiles_alone_when_not_persisting(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """An install does not write or prune reflex.lock/ when persistence is off.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    monkeypatch.setenv(environment.REFLEX_PERSIST_LOCKFILES.name, "false")
+    env.root_lock.write_text("committed bun lock")
+    env.root_package_json.write_text('{"dependencies": {"react": "19.0.0"}}')
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    root_npm_lock.write_text('{"lockfileVersion": 3}')
+    root_files = {path: path.read_bytes() for path in env.root_lock.parent.iterdir()}
+
+    def run_bun(args, **kwargs):
+        env.web_lock.write_text("pruned bun lock")
+        env.web_package_json.write_text('{"dependencies": {}}')
+
+    env.patch_pm(["bun"], run_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+
+    assert env.web_lock.read_text() == "pruned bun lock"
+    assert {
+        path: path.read_bytes() for path in env.root_lock.parent.iterdir()
+    } == root_files
+
+
 def test_install_keeps_the_running_managers_lockfile_untouched(
     install_packages_env: InstallPackagesEnv, monkeypatch
 ):
