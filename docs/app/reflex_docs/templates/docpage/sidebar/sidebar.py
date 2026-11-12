@@ -512,7 +512,7 @@ def sidebar_comp() -> rx.Component:
 
 def sidebar() -> rx.Component:
     """Render the sidebar navigation for the current route."""
-    return rx.box(
+    return rx.el.div(
         sidebar_comp(),
         id="sidebar-container",
         class_name="flex justify-end w-full h-full",
