@@ -2222,7 +2222,7 @@ def figure_out_type(value: Any) -> types.GenericType:
             return value_type
         if isinstance(value, list):
             if not value:
-                return Sequence[Any]
+                return Sequence[NoReturn]
             return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
         if isinstance(value, (set, frozenset)):
             element_type = unionize(*{figure_out_type(v) for v in value})
@@ -2231,18 +2231,36 @@ def figure_out_type(value: Any) -> types.GenericType:
             return set[element_type]
         if isinstance(value, tuple):
             if not value:
-                return tuple[Any, ...]
+                return tuple[NoReturn, ...]
             if len(value) <= 5:
                 return tuple[tuple(figure_out_type(v) for v in value)]
             return tuple[unionize(*{figure_out_type(v) for v in value[:100]}), ...]
         if isinstance(value, Mapping):
             if not value:
-                return Mapping[Any, Any]
+                return Mapping[NoReturn, NoReturn]
             return Mapping[
                 unionize(*{figure_out_type(k) for k in list(value.keys())[:100]}),
                 unionize(*{figure_out_type(v) for v in list(value.values())[:100]}),
             ]
     return type(value)
+
+
+def _infer_field_type(default: Any) -> types.GenericType:
+    """Infer the type of an unannotated field from its default.
+
+    An empty container says nothing about its elements, so the field takes the
+    bare container type and accepts any contents.
+
+    Args:
+        default: The default value of the field.
+
+    Returns:
+        The type of the field.
+    """
+    type_ = figure_out_type(default)
+    if isinstance(default, (list, tuple, Mapping)) and not default:
+        return get_origin(type_) or type_
+    return type_
 
 
 GLOBAL_CACHE = {}
@@ -4912,7 +4930,7 @@ def _unannotated_fields(
                 fields[key] = value._replace(
                     annotated_type=Any
                     if value.default is MISSING
-                    else figure_out_type(value.default)
+                    else _infer_field_type(value.default)
                 )
         elif (
             not key.startswith(private)
@@ -4920,7 +4938,7 @@ def _unannotated_fields(
             and not isinstance(value, (staticmethod, classmethod, Var))
             and not _is_descriptor(value)
         ):
-            fields[key] = Field._with_default(value, figure_out_type(value))
+            fields[key] = Field._with_default(value, _infer_field_type(value))
     return fields
 
 

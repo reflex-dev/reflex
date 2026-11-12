@@ -6907,6 +6907,15 @@ def test_setattr_unannotated_empty_containers(mocker: MockerFixture) -> None:
     error_mock.assert_not_called()
 
 
+def test_unannotated_nested_empty_container_keeps_element_type() -> None:
+    """An empty container next to a typed one keeps the typed element type."""
+
+    class NestedEmptyState(rx.State):
+        nested = [[], [1]]
+
+    assert NestedEmptyState.nested[0][0]._var_type is int
+
+
 def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
     """A substate redeclaring an inherited var gets its own var, stored on the substate."""
 

@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, NoReturn
 
 import pytest
 from reflex_base.vars.base import computed_var, figure_out_type
@@ -33,9 +33,9 @@ class ChildGenericDict(GenericDict):
         ([1, 2.0, "a"], Sequence[int | float | str]),
         ({"a": 1, "b": 2}, Mapping[str, int]),
         ({"a": 1, 2: "b"}, Mapping[int | str, str | int]),
-        ([], Sequence[Any]),
-        ({}, Mapping[Any, Any]),
-        ((), tuple[Any, ...]),
+        ([], Sequence[NoReturn]),
+        ({}, Mapping[NoReturn, NoReturn]),
+        ((), tuple[NoReturn, ...]),
         (set(), set[Any]),
         (CustomDict(), CustomDict),
         (ChildCustomDict(), ChildCustomDict),
