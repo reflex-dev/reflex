@@ -176,27 +176,54 @@ def test_config_with_extra_source_dirs_is_hashable(repo: Path) -> None:
 @pytest.mark.parametrize(
     ("body", "message"),
     [
-        ('extra-source-dirs = ["assets"]', "must be a table"),
-        ('[tool.reflex-release.extra-source-dirs]\nwidget-core = "assets"', "list"),
+        (
+            'extra-source-dirs = ["assets"]',
+            (
+                "[tool.reflex-release] extra-source-dirs must be a table mapping a "
+                "package name to a list of directories"
+            ),
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = "assets"',
+            (
+                "[tool.reflex-release.extra-source-dirs] widget-core must be a list "
+                "of strings"
+            ),
+        ),
         (
             '[tool.reflex-release.extra-source-dirs]\nwidget-cor = ["assets"]',
-            "unknown package 'widget-cor'",
+            (
+                "[tool.reflex-release] extra-source-dirs lists unknown package "
+                "'widget-cor'"
+            ),
         ),
         (
             '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["asets"]',
-            "'asets', which is not a directory",
+            (
+                "[tool.reflex-release] extra-source-dirs of widget-core names "
+                "'asets', which is not a directory of this repository"
+            ),
         ),
         (
             '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["../outside"]',
-            "'../outside' is not a directory inside the repository",
+            (
+                "[tool.reflex-release.extra-source-dirs] '../outside' is not a "
+                "directory inside the repository"
+            ),
         ),
         (
             '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["/etc"]',
-            "'/etc' is not a directory inside the repository",
+            (
+                "[tool.reflex-release.extra-source-dirs] '/etc' is not a directory "
+                "inside the repository"
+            ),
         ),
         (
             '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["."]',
-            "'.' is not a directory inside the repository",
+            (
+                "[tool.reflex-release.extra-source-dirs] '.' is not a directory "
+                "inside the repository"
+            ),
         ),
     ],
     ids=[
@@ -212,8 +239,9 @@ def test_config_with_extra_source_dirs_is_hashable(repo: Path) -> None:
 def test_extra_source_dirs_are_validated(repo: Path, body: str, message: str) -> None:
     (repo / "assets").mkdir()
     write_config(repo, f'root-package = "mypkg"\npackages-dir = "packages"\n{body}\n')
-    with pytest.raises(ReleaseError, match=re.escape(message)):
+    with pytest.raises(ReleaseError) as raised:
         load_config(repo)
+    assert str(raised.value) == message
 
 
 @pytest.mark.parametrize(

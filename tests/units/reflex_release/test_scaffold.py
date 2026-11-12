@@ -560,8 +560,13 @@ def test_extra_source_dirs_do_not_stand_in_for_root_source_dirs(
         ),
         encoding="utf-8",
     )
-    with pytest.raises(ReleaseError, match="set root-source-dirs"):
+    with pytest.raises(ReleaseError) as raised:
         render(INTERNAL_WORKFLOW, load_config(repo))
+    assert str(raised.value) == (
+        "mypkg is the repository-root package and is listed in "
+        "internal-packages, so its auto-release trigger needs to know which "
+        "paths are its source: set root-source-dirs"
+    )
 
 
 def test_the_heading_guard_covers_every_publishing_branch(config: Config) -> None:

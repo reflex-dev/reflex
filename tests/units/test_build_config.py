@@ -376,10 +376,16 @@ def test_reflex_base_wheel_embeds_the_frontend(
 ):
     """A wheel built in the repository carries the frontend's `src`, and only that."""
     names = build_wheel(reflex_base_checkout, tmp_path / "dist")
-    assert f"{WEB_TEMPLATE}/utils/state.js" in names
-    assert f"{WEB_TEMPLATE}/.gitignore" in names
-    assert not any("test" in name or name.endswith("package.json") for name in names)
-    assert "hatch_build.py" not in names
+    # The whole wheel: the frontend's tests and manifest, and the build hook,
+    # are not in it.
+    assert names == {
+        "reflex_base/__init__.py",
+        f"{WEB_TEMPLATE}/.gitignore",
+        f"{WEB_TEMPLATE}/utils/state.js",
+        "reflex_base-0.0.0.dist-info/METADATA",
+        "reflex_base-0.0.0.dist-info/RECORD",
+        "reflex_base-0.0.0.dist-info/WHEEL",
+    }
 
 
 def test_reflex_base_wheel_builds_from_its_sdist(
@@ -391,8 +397,15 @@ def test_reflex_base_wheel_builds_from_its_sdist(
     with tarfile.open(artifact) as archive:
         names = set(archive.getnames())
         archive.extractall(tmp_path / "unpacked", filter="data")
-    assert f"reflex_base-0.0.0/src/{WEB_TEMPLATE}/utils/state.js" in names
-    assert "reflex_base-0.0.0/hatch_build.py" in names
+    assert names == {
+        "reflex_base-0.0.0/PKG-INFO",
+        "reflex_base-0.0.0/README.md",
+        "reflex_base-0.0.0/hatch_build.py",
+        "reflex_base-0.0.0/pyproject.toml",
+        "reflex_base-0.0.0/src/reflex_base/__init__.py",
+        f"reflex_base-0.0.0/src/{WEB_TEMPLATE}/.gitignore",
+        f"reflex_base-0.0.0/src/{WEB_TEMPLATE}/utils/state.js",
+    }
 
     unpacked = tmp_path / "unpacked" / "reflex_base-0.0.0"
     assert build_wheel(unpacked, tmp_path / "from-sdist") == build_wheel(
@@ -427,9 +440,13 @@ def test_reflex_base_refuses_to_build_without_a_frontend(
     reflex_base_checkout: Path, tmp_path: Path
 ):
     """A wheel with no web template could not initialize an app."""
-    shutil.rmtree(reflex_base_checkout.parent / "reflex-frontend")
-    with pytest.raises(FileNotFoundError, match="No frontend to embed"):
+    frontend = reflex_base_checkout.parent / "reflex-frontend"
+    shutil.rmtree(frontend)
+    with pytest.raises(FileNotFoundError) as raised:
         build_wheel(reflex_base_checkout, tmp_path / "dist")
+    assert str(raised.value) == (
+        f"No frontend to embed: neither {frontend / 'src'} nor an sdist's copy exists."
+    )
 
 
 def test_frontend_package_is_where_the_build_hook_looks():
