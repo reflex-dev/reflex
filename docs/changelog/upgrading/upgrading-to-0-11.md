@@ -29,7 +29,7 @@ def logged(fn):
 class State(rx.State):
     count: int = 0
 
-    @logged  # Deprecated: `increment` is decorated above @rx.event.
+    @logged  # Deprecated: `@logged` is applied above `@rx.event`.
     @rx.event
     def increment(self):
         self.count += 1
@@ -60,7 +60,7 @@ The same change affects `@rx.event` outside a state:
 On 0.10 a handler could return only `None`, an event or a list of events, and any other value raised `TypeError`. In 0.11 a handler may return any value ([#7673](https://github.com/reflex-dev/reflex/pull/7673), [#7782](https://github.com/reflex-dev/reflex/pull/7782), [#7821](https://github.com/reflex-dev/reflex/pull/7821)):
 
 - Backend code that awaits the handler, such as `total = await type(self).add(5)` in another handler, receives the value. See [Awaiting Event Handlers](/docs/events/chaining-events/#awaiting-event-handlers).
-- When an event trigger such as `on_click` runs the handler, a value that is not an event is dropped, and in dev mode a warning names the handler once. Return values are not sent to the frontend. Returned events still chain.
+- When an event trigger such as `on_click` runs the handler, a value that is not an event is dropped, and in dev mode a warning names the handler once. Such values are not sent to the frontend. Returned events still chain: a returned `rx.redirect("/")` still runs in the browser.
 
 A return value that can only be a mistaken event still raises `TypeError`, naming the handler: a bound handler such as `self.target` instead of `type(self).target`, an uncalled event creator such as `rx.redirect`, a coroutine, or a list that mixes events with other values. Yielded values must still be events.
 
@@ -118,7 +118,7 @@ In prod mode the backend now accepts browser requests only from its own origin a
 | Frontend on another origin: `--frontend-only` and `--backend-only`, a CDN, or a static host serving `reflex export` output | Set `REFLEX_DEPLOY_URL` on the backend to the frontend's public URL, scheme included |
 | Proxy that rewrites `Host` and sends the original as `X-Forwarded-Host`, such as Azure Front Door | Set `trusted_proxy_hops`, for example `REFLEX_TRUSTED_PROXY_HOPS=1` |
 | Proxy that rewrites `Host` without `X-Forwarded-Host` | Pass the original `Host` (nginx: `proxy_set_header Host $http_host;`), or set `REFLEX_DEPLOY_URL` on the backend |
-| Frontend reachable from several origins | List them in `cors_allowed_origins` |
+| Frontend reachable from several origins | Set `cors_allowed_origins` to every accepted origin. An explicit list replaces the backend's own origin, so include it when the backend also serves the frontend, or use `["*"]` |
 
 For a split frontend and backend:
 
@@ -288,13 +288,20 @@ Install `starlette-admin` and mount it yourself with `api_transformer`. Always g
 
 ```python
 from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.middleware.sessions import SessionMiddleware
 from starlette_admin.contrib.sqla import Admin, ModelView
 
 from reflex.model import get_engine
 
 # MyAuthProvider and secret_key as defined in the admin dashboard guide.
 admin_app = Starlette()
-admin = Admin(get_engine(), auth_provider=MyAuthProvider(), secret_key=secret_key)
+admin = Admin(
+    get_engine(),
+    auth_provider=MyAuthProvider(),
+    secret_key=secret_key,
+    middlewares=[Middleware(SessionMiddleware, secret_key=secret_key)],
+)
 admin.add_view(ModelView(User))
 admin.mount_to(admin_app)
 
