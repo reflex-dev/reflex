@@ -253,7 +253,7 @@ def _write_json(payload: dict, *, stderr: bool):
     """Write one JSON record to the output stream.
 
     A record written inside an OpenTelemetry span also carries the span's
-    ``trace_id`` and ``span_id``.
+    ``trace_id``, ``span_id`` and ``trace_flags``.
 
     Args:
         payload: The record fields.
