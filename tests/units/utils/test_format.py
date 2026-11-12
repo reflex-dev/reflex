@@ -6,6 +6,7 @@ from typing import Any
 
 import plotly.graph_objects as go
 import pytest
+from reflex_base import constants
 from reflex_base.components.tags.tag import Tag
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -800,12 +801,43 @@ def test_format_ref(input, output):
     assert format.format_ref(input) == output
 
 
+@pytest.mark.parametrize("var_type", [str, int])
+def test_format_ref_names_an_f_string_var_by_its_expression(var_type: type):
+    """A Var in an f-string id gives a ref name free of its run-dependent hash.
+
+    Args:
+        var_type: The type of the Var, which does not change the name.
+    """
+    var = Var(_js_expr="item", _var_type=var_type)
+
+    assert format.format_ref(f"zone-{var}") == "ref_zone_item"
+
+
+@pytest.mark.parametrize("key", ["xyz", "123"])
+def test_format_ref_drops_a_marker_of_no_known_var(key: str):
+    """A ref string can hold a marker that no Var in this process wrote.
+
+    Args:
+        key: The marker content: not a hash, or a hash of no known Var.
+    """
+    ref = (
+        f"a-{constants.REFLEX_VAR_OPENING_TAG}{key}{constants.REFLEX_VAR_CLOSING_TAG}b"
+    )
+
+    assert format.format_ref(ref) == "ref_a_b"
+
+
 @pytest.mark.parametrize(
     ("input", "output"),
     [
         (("my_array", None), "refs_my_array"),
         (("my_array", LiteralVar.create(0)), "refs_my_array[0]"),
         (("my_array", LiteralVar.create(1)), "refs_my_array[1]"),
+        (("item_{}".format(Var(_js_expr="someVar")), None), "refs_item_someVar"),
+        (
+            ("item_{}".format(Var(_js_expr="someVar")), LiteralVar.create(0)),
+            "refs_item_someVar[0]",
+        ),
     ],
 )
 def test_format_array_ref(input, output):

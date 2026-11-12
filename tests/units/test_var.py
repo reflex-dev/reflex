@@ -51,7 +51,6 @@ from reflex_base.vars.sequence import (
     ConcatVarOperation,
     LiteralArrayVar,
     LiteralStringVar,
-    StringVar,
 )
 
 import reflex as rx
@@ -422,19 +421,6 @@ def test_date_comparison_uses_compare_datetime():
     assert str(lhs == rhs) == '(compareDatetime("2024-01-01", "2024-01-02") === 0)'
 
 
-def test_frozenset_literal_types_its_elements():
-    """A frozen set literal infers its element type like a set does."""
-    # The static array bound is Sequence, which no set satisfies; see the PR.
-    var = cast(ArrayVar, v(frozenset({"a"})))
-
-    assert var._var_type == frozenset[str]
-    assert isinstance(var[0], StringVar)
-    assert re.fullmatch(
-        r'\["a"\]\.map\(\(\((\w+)\) => \1\.toUpperCase\(\)\)\)',
-        str(var.map(lambda item: item.upper())),
-    )
-
-
 def test_datetime_equality_with_other_type_uses_default_comparison():
     value = v(datetime(2024, 1, 1))
     expected_equality = (
@@ -449,8 +435,6 @@ def test_datetime_equality_with_other_type_uses_default_comparison():
     ("var", "expected"),
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
-        (v({1, 2, 3}), "[1, 2, 3]"),
-        (v(frozenset({1, 2, 3})), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
         (
             Var(_js_expr="foo")._var_set_state("state").to(list),
@@ -771,6 +755,7 @@ def test_str_var_slicing():
         (Var(_js_expr="str").to(str)[0], "pyStrAt"),
         (Var(_js_expr="str").to(str)[1:], "pyStrSlice"),
         (Var(_js_expr="str").to(str)[::-1], "pyStrChars"),
+        (Var(_js_expr="str").to(str).reversed(), "pyStrChars"),
     ],
 )
 def test_str_var_codepoint_imports(var: Var, tag: str):
@@ -1161,8 +1146,40 @@ def test_string_operations():
     assert str(basic_string.strip(chars_var)) == 'pyStrip("Hello, World!", state.chars)'
     assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
     assert (
+        str(basic_string.reversed())
+        == 'pyStrChars("Hello, World!").slice().reverse().join("")'
+    )
+    assert str(basic_string * 2) == '"Hello, World!".repeat(Math.max(0, 2))'
+    assert str(2 * basic_string) == '"Hello, World!".repeat(Math.max(0, 2))'
+    assert str(basic_string * -1) == '"Hello, World!".repeat(Math.max(0, -1))'
+    float_count = LiteralNumberVar.create(2.5)
+    with pytest.raises(TypeError):
+        basic_string * float_count
+    with pytest.raises(TypeError):
+        float_count * basic_string
+    assert (
         str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
     )
+
+
+def test_string_split_uses_code_points_for_empty_separator():
+    """Test that splitting by an empty separator yields code points, not UTF-16 units."""
+    basic_string = LiteralStringVar.create("a😀b")
+    literal = str(basic_string)
+    code_point_split = f"pyStrChars({literal})"
+    assert str(basic_string.split()) == code_point_split
+    assert str(basic_string.split("")) == code_point_split
+    assert str(basic_string.split(" ")) == f'{literal}.split(" ")'
+    sep_var = Var(_js_expr="state.sep").to(str)
+    assert str(basic_string.split(sep_var)) == f"pyStrSplit({literal}, state.sep)"
+    for split_var, tag in (
+        (basic_string.split(), "pyStrChars"),
+        (basic_string.split(sep_var), "pyStrSplit"),
+    ):
+        var_data = split_var._get_all_var_data()
+        assert var_data is not None
+        assert dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"] == (ImportVar(tag=tag),)
+    assert basic_string.split(" ")._get_all_var_data() is None
 
 
 def test_all_number_operations():

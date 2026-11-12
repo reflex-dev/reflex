@@ -39,6 +39,10 @@ def get_components_for_category(category: str, components: list) -> list:
     )
 
 
+# Previews the assets CDN does not serve; both theme variants ship in assets/.
+BUNDLED_PREVIEWS = {("charts", "treemap"), ("charts", "sankeychart")}
+
+
 def get_preview_asset(name: str, section: str) -> tuple[str, str]:
     if to_snake_case(section) == "html":
         return HTML_CARD_PREVIEWS.get(to_snake_case(name), ("layout", "box"))
@@ -68,7 +72,7 @@ def component_card(name: str, link: str, section: str) -> rx.Component:
             Image asset URL.
         """
         path = f"components_previews/{preview_section}/{mode}/{preview_name}.svg"
-        if (preview_section, preview_name) == ("charts", "treemap"):
+        if (preview_section, preview_name) in BUNDLED_PREVIEWS:
             return rx.asset(path)
         return f"{REFLEX_ASSETS_CDN}{path}"
 

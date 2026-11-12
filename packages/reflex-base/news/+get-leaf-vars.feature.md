@@ -1,1 +1,0 @@
-Add `reflex_base.vars.get_leaf_vars`, which returns the vars a var reads by unwrapping var operations, casts, literal containers and function bodies, for example to list a derived var's dependencies in a React hook's dependency array.
