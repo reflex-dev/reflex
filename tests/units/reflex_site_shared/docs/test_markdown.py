@@ -500,13 +500,13 @@ def test_nested(demo):
 
 
 def _tagged(component: BaseComponent) -> dict[str, rx.Component]:
-    """Collect the components tagged as tested demos, by key.
+    """Collect the elements tagged as demos, by demo index.
 
     Args:
         component: The rendered component tree.
 
     Returns:
-        Each tagged component keyed by its demo key.
+        Each tagged element keyed by its demo index.
     """
     pending = [component]
     tagged = {}
@@ -531,10 +531,6 @@ def test_iter_doc_demos_pairs_test_blocks_with_the_demo_above() -> None:
     ]
     assert [len(demo.tests) for demo in demos] == [2, 1, 0, 0, 1]
     assert [demo.untested for demo in demos] == [False, False, True, False, False]
-    assert demos[2].key == demos[3].key == ""
-    keys = [demos[0].key, demos[1].key, demos[4].key]
-    assert all(keys)
-    assert len(set(keys)) == 3
 
 
 @pytest.mark.parametrize(
@@ -565,15 +561,21 @@ def test_iter_doc_demos_rejects_test_blocks_after_a_notest_demo() -> None:
     )
 
 
-def test_tested_demos_are_tagged_and_tests_not_rendered() -> None:
-    """Tested demos carry their key; test blocks render nothing."""
-    demos = list(iter_doc_demos(parse_document(_TESTED_DEMOS).blocks))
+def test_demos_are_tagged_by_index_and_tests_not_rendered() -> None:
+    """Each demo's own component is wrapped by an element carrying its index."""
     component = render_markdown(_TESTED_DEMOS, virtual_filepath="tests/tested.md")
     tagged = _tagged(component)
 
-    assert set(tagged) == {demo.key for demo in demos if demo.tests}
-    # An eval block is wrapped by an element that does not affect layout.
-    assert "contents" in str(tagged[demos[1].key].style["display"])
+    assert sorted(tagged) == ["0", "1", "2", "3", "4"]
+    # The wrapper takes no part in layout and holds only what the block renders,
+    # not the code tabs of the demo box around it.
+    assert {str(wrapper.style["display"]) for wrapper in tagged.values()} == {
+        '"contents"'
+    }
+    assert [
+        type(wrapper.children[0]).__name__ for _, wrapper in sorted(tagged.items())
+    ] == ["Button", "Text", "Text", "Box", "Text"]
+    assert all(len(wrapper.children) == 1 for wrapper in tagged.values())
     assert "test_boxed" not in str(component)
 
 

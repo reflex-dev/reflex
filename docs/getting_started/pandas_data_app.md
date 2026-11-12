@@ -598,28 +598,27 @@ def pandas_preview():
 
 ```python test
 def test_sample_data_filter_and_download(page, demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    status = view.get_by_role("status").first
-    totals = view.get_by_label("Regional totals").locator(".rt-Badge")
+    status = demo.get_by_role("status").first
+    totals = demo.get_by_label("Regional totals").locator(".rt-Badge")
     expect(status).to_have_text(
         "Matching orders4Total units33Records loaded4", timeout=30000
     )
     expect(totals).to_have_text(["North: 17 units", "South: 7 units", "West: 9 units"])
-    view.get_by_label("Region", exact=True).select_option("North")
-    view.get_by_label("Product contains").fill("tea")
-    view.get_by_role("button", name="Apply filters").click()
+    demo.get_by_label("Region", exact=True).select_option("North")
+    demo.get_by_label("Product contains").fill("tea")
+    demo.get_by_role("button", name="Apply filters").click()
     expect(status).to_have_text("Matching orders1Total units12Records loaded4")
     expect(totals).to_have_text(["North: 12 units"])
     with page.expect_download() as download_info:
-        view.get_by_role("button", name="Download summary").click()
+        demo.get_by_role("button", name="Download summary").click()
     download = download_info.value
     assert download.suggested_filename == "region-summary.csv"
     with open(download.path()) as summary:
         assert summary.read() == "region,units\nNorth,12\n"
-    view.get_by_label("Product contains").fill("juice")
-    view.get_by_role("button", name="Apply filters").click()
-    expect(view.get_by_text("No matching orders", exact=True)).to_be_visible()
-    expect(view.get_by_role("button", name="Download summary")).to_be_disabled()
+    demo.get_by_label("Product contains").fill("juice")
+    demo.get_by_role("button", name="Apply filters").click()
+    expect(demo.get_by_text("No matching orders", exact=True)).to_be_visible()
+    expect(demo.get_by_role("button", name="Download summary")).to_be_disabled()
     expect(totals).to_have_count(0)
 ```
 

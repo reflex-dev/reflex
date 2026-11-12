@@ -26,7 +26,7 @@ rx.flex(
 
 ```python test
 def test_three_equal_columns(demo):
-    row = demo.locator(".docs-demo-preview > .rt-Flex")
+    row = demo.locator("> .rt-Flex")
     expect(row).to_have_css("flex-direction", "row")
     expect(row).to_have_css("height", "600px")
     columns = row.locator("> div")
@@ -60,7 +60,7 @@ rx.flex(
 
 ```python test
 def test_four_columns_two_narrow(demo):
-    row = demo.locator(".docs-demo-preview > .rt-Flex")
+    row = demo.locator("> .rt-Flex")
     expect(row).to_have_css("flex-direction", "row")
     columns = row.locator("> div")
     expect(columns).to_have_count(4)
@@ -93,7 +93,7 @@ rx.flex(
 
 ```python test
 def test_row_above_two_stacked_boxes(demo):
-    outer = demo.locator(".docs-demo-preview > .rt-Flex")
+    outer = demo.locator("> .rt-Flex")
     expect(outer).to_have_css("flex-direction", "column")
     expect(outer.locator("> div")).to_have_count(3)
     inner = outer.locator("> .rt-Flex")

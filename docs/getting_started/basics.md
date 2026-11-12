@@ -37,8 +37,7 @@ def my_button():
 
 ```python test
 def test_my_button(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("button")).to_have_text(["Click Me"])
+    expect(demo.get_by_role("button")).to_have_text(["Click Me"])
 ```
 
 Components can be nested inside each other to create complex UIs.
@@ -56,9 +55,8 @@ def my_container():
 
 ```python test
 def test_nested_components(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("paragraph")).to_have_text("This is a page")
-    expect(view.get_by_role("button")).to_have_text(["Click Me"])
+    expect(demo.get_by_role("paragraph")).to_have_text("This is a page")
+    expect(demo.get_by_role("button")).to_have_text(["Click Me"])
 ```
 
 You can also use any base HTML element through the [rx.el](/docs/library/html/) namespace. This allows you to use standard HTML elements directly in your Reflex app when you need more control or when a specific component isn't available in the Reflex component library.
@@ -72,7 +70,7 @@ def my_div():
 
 ```python test
 def test_base_html_elements(demo):
-    paragraph = demo.get_by_role("tabpanel", name="View").locator("div > p")
+    paragraph = demo.locator("div > p")
     expect(paragraph).to_have_text("Use base html!")
 ```
 
@@ -91,7 +89,7 @@ def half_filled_progress():
 
 ```python test
 def test_half_filled_progress(demo):
-    progress = demo.get_by_role("tabpanel", name="View").get_by_role("progressbar")
+    progress = demo.get_by_role("progressbar")
     expect(progress).to_have_attribute("aria-valuenow", "50")
 ```
 
@@ -104,7 +102,7 @@ def round_button():
 
 ```python test
 def test_styled_button(demo):
-    button = demo.get_by_role("tabpanel", name="View").get_by_role("button")
+    button = demo.get_by_role("button")
     expect(button).to_have_text("Click Me")
     expect(button).to_have_css("border-radius", "15px")
     expect(button).to_have_css("font-size", "18px")
@@ -164,7 +162,7 @@ def counter():
 
 ```python test
 def test_state_vars_render(demo):
-    headings = demo.get_by_role("tabpanel", name="View").get_by_role("heading")
+    headings = demo.get_by_role("heading")
     expect(headings).to_have_text(["Count:", "0"])
     expect(headings.first).to_have_css("color", "rgb(255, 0, 0)")
 ```
@@ -199,11 +197,10 @@ def counter_increment():
 
 ```python test
 def test_increment_handler(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    count = view.get_by_role("heading")
+    count = demo.get_by_role("heading")
     expect(count).to_have_text("0")
-    view.get_by_role("button", name="Increment").click()
-    view.get_by_role("button", name="Increment").click()
+    demo.get_by_role("button", name="Increment").click()
+    demo.get_by_role("button", name="Increment").click()
     expect(count).to_have_text("2")
 ```
 
@@ -238,12 +235,11 @@ def counter_variable():
 
 ```python test
 def test_increment_with_arguments(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    count = view.get_by_role("heading")
+    count = demo.get_by_role("heading")
     expect(count).to_have_text("0")
-    view.get_by_role("button", name="Increment by 5").click()
+    demo.get_by_role("button", name="Increment by 5").click()
     expect(count).to_have_text("5")
-    view.get_by_role("button", name="Increment by 1").click()
+    demo.get_by_role("button", name="Increment by 1").click()
     expect(count).to_have_text("6")
 ```
 
@@ -267,12 +263,11 @@ def text_input():
 
 ```python test
 def test_text_updates_on_blur(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    heading = view.get_by_role("heading")
+    heading = demo.get_by_role("heading")
     expect(heading).to_have_text("")
-    view.get_by_role("textbox").fill("Hello Reflex")
+    demo.get_by_role("textbox").fill("Hello Reflex")
     expect(heading).to_have_text("")
-    view.get_by_role("textbox").blur()
+    demo.get_by_role("textbox").blur()
     expect(heading).to_have_text("Hello Reflex")
 ```
 
@@ -325,9 +320,8 @@ def count_and_check():
 
 ```python test
 def test_even_odd_text(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    heading = view.get_by_role("heading")
-    button = view.get_by_role("button", name="Increment")
+    heading = demo.get_by_role("heading")
+    button = demo.get_by_role("button", name="Increment")
     expect(heading).to_have_text("even")
     button.click()
     expect(heading).to_have_text("even")
@@ -344,7 +338,7 @@ def show_numbers():
 
 ```python test
 def test_numbers_with_parity(demo):
-    rows = demo.get_by_role("tabpanel", name="View").locator(".rx-Stack .rx-Stack")
+    rows = demo.locator(".rx-Stack .rx-Stack")
     expect(rows).to_have_text([
         f"{i}{'true' if i % 2 == 0 else 'false'}" for i in range(10)
     ])
@@ -425,12 +419,11 @@ def show_login():
 
 ```python test
 def test_toggle_login(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    heading = view.get_by_role("heading")
+    heading = demo.get_by_role("heading")
     expect(heading).to_have_text("Not Logged In")
-    view.get_by_role("button", name="Toggle Login").click()
+    demo.get_by_role("button", name="Toggle Login").click()
     expect(heading).to_have_text("Logged In")
-    view.get_by_role("button", name="Toggle Login").click()
+    demo.get_by_role("button", name="Toggle Login").click()
     expect(heading).to_have_text("Not Logged In")
 ```
 
@@ -459,7 +452,7 @@ def show_fruits():
 
 ```python test
 def test_foreach_fruits(demo):
-    items = demo.get_by_role("tabpanel", name="View").get_by_role("listitem")
+    items = demo.get_by_role("listitem")
     expect(items).to_have_text(["Apple", "Banana", "Cherry"])
 ```
 
@@ -495,13 +488,12 @@ def count_if_even():
 
 ```python test
 def test_count_even_odd(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Count:")
-    expect(view.get_by_role("paragraph")).to_have_text("Even")
-    view.get_by_role("button", name="Increment").click()
-    expect(view.get_by_role("paragraph")).to_have_text("Odd")
-    view.get_by_role("button", name="Increment").click()
-    expect(view.get_by_role("paragraph")).to_have_text("Even")
+    expect(demo.get_by_role("heading")).to_have_text("Count:")
+    expect(demo.get_by_role("paragraph")).to_have_text("Even")
+    demo.get_by_role("button", name="Increment").click()
+    expect(demo.get_by_role("paragraph")).to_have_text("Odd")
+    demo.get_by_role("button", name="Increment").click()
+    expect(demo.get_by_role("paragraph")).to_have_text("Even")
 ```
 
 ## App and Pages

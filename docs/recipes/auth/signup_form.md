@@ -89,17 +89,16 @@ def signup_default() -> rx.Component:
 
 ```python test
 def test_signup_form(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Create an account")
-    expect(view.get_by_placeholder("Enter your password")).to_have_attribute(
+    expect(demo.get_by_role("heading")).to_have_text("Create an account")
+    expect(demo.get_by_placeholder("Enter your password")).to_have_attribute(
         "type", "password"
     )
-    terms = view.get_by_role("checkbox", name="Agree to Terms and Conditions")
+    terms = demo.get_by_role("checkbox", name="Agree to Terms and Conditions")
     expect(terms).to_be_checked()
     terms.click()
     expect(terms).not_to_be_checked()
-    expect(view.get_by_role("button", name="Register")).to_be_visible()
-    expect(view.get_by_role("link")).to_have_text(["Sign in"])
+    expect(demo.get_by_role("button", name="Register")).to_be_visible()
+    expect(demo.get_by_role("link")).to_have_text(["Sign in"])
 ```
 
 ## Icons
@@ -191,14 +190,13 @@ def signup_default_icons() -> rx.Component:
 
 ```python test
 def test_signup_form_with_icons(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Create an account")
-    expect(view.locator("svg.lucide-user")).to_have_count(1)
-    expect(view.locator("svg.lucide-lock")).to_have_count(1)
+    expect(demo.get_by_role("heading")).to_have_text("Create an account")
+    expect(demo.locator("svg.lucide-user")).to_have_count(1)
+    expect(demo.locator("svg.lucide-lock")).to_have_count(1)
     expect(
-        view.get_by_role("checkbox", name="Agree to Terms and Conditions")
+        demo.get_by_role("checkbox", name="Agree to Terms and Conditions")
     ).to_be_checked()
-    expect(view.get_by_role("button", name="Register")).to_be_visible()
+    expect(demo.get_by_role("button", name="Register")).to_be_visible()
 ```
 
 ## Third-party auth
@@ -304,10 +302,9 @@ def signup_single_thirdparty() -> rx.Component:
 
 ```python test
 def test_signup_form_with_github(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Create an account")
-    expect(view.get_by_role("button", name="Register")).to_be_visible()
-    expect(view.get_by_role("button", name="Sign in with GitHub")).to_be_visible()
+    expect(demo.get_by_role("heading")).to_have_text("Create an account")
+    expect(demo.get_by_role("button", name="Register")).to_be_visible()
+    expect(demo.get_by_role("button", name="Sign in with GitHub")).to_be_visible()
 ```
 
 ## Multiple third-party auth
@@ -408,9 +405,8 @@ def signup_multiple_thirdparty() -> rx.Component:
 
 ```python test
 def test_signup_form_with_providers(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Create an account")
-    expect(view.get_by_role("button").filter(has_not_text="Register")).to_have_text([
+    expect(demo.get_by_role("heading")).to_have_text("Create an account")
+    expect(demo.get_by_role("button").filter(has_not_text="Register")).to_have_text([
         "GH",
         "f",
         "X",

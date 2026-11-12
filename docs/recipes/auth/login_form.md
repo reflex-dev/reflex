@@ -81,16 +81,15 @@ def login_default() -> rx.Component:
 
 ```python test
 def test_login_form(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Sign in to your account")
-    expect(view.get_by_placeholder("user@reflex.dev")).to_have_attribute(
+    expect(demo.get_by_role("heading")).to_have_text("Sign in to your account")
+    expect(demo.get_by_placeholder("user@reflex.dev")).to_have_attribute(
         "type", "email"
     )
-    expect(view.get_by_placeholder("Enter your password")).to_have_attribute(
+    expect(demo.get_by_placeholder("Enter your password")).to_have_attribute(
         "type", "password"
     )
-    expect(view.get_by_role("button")).to_have_text(["Sign in"])
-    expect(view.get_by_role("link")).to_have_text(["Forgot password?", "Sign up"])
+    expect(demo.get_by_role("button")).to_have_text(["Sign in"])
+    expect(demo.get_by_role("link")).to_have_text(["Forgot password?", "Sign up"])
 ```
 
 ## Icons
@@ -173,13 +172,12 @@ def login_default_icons() -> rx.Component:
 
 ```python test
 def test_login_form_with_icons(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Sign in to your account")
-    expect(view.locator("svg.lucide-user")).to_have_count(1)
-    expect(view.locator("svg.lucide-lock")).to_have_count(1)
-    view.get_by_placeholder("user@reflex.dev").fill("user@reflex.dev")
-    expect(view.get_by_placeholder("user@reflex.dev")).to_have_value("user@reflex.dev")
-    expect(view.get_by_role("button")).to_have_text(["Sign in"])
+    expect(demo.get_by_role("heading")).to_have_text("Sign in to your account")
+    expect(demo.locator("svg.lucide-user")).to_have_count(1)
+    expect(demo.locator("svg.lucide-lock")).to_have_count(1)
+    demo.get_by_placeholder("user@reflex.dev").fill("user@reflex.dev")
+    expect(demo.get_by_placeholder("user@reflex.dev")).to_have_value("user@reflex.dev")
+    expect(demo.get_by_role("button")).to_have_text(["Sign in"])
 ```
 
 ## Third-party auth
@@ -277,10 +275,9 @@ def login_single_thirdparty() -> rx.Component:
 
 ```python test
 def test_login_form_with_github(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Sign in to your account")
-    expect(view.get_by_text("Or continue with")).to_be_visible()
-    expect(view.get_by_role("button")).to_have_text([
+    expect(demo.get_by_role("heading")).to_have_text("Sign in to your account")
+    expect(demo.get_by_text("Or continue with")).to_be_visible()
+    expect(demo.get_by_role("button")).to_have_text([
         "Sign in",
         "GHSign in with GitHub",
     ])
@@ -376,8 +373,7 @@ def login_multiple_thirdparty() -> rx.Component:
 
 ```python test
 def test_login_form_with_providers(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Sign in to your account")
-    expect(view.get_by_text("Or continue with")).to_be_visible()
-    expect(view.get_by_role("button")).to_have_text(["Sign in", "GH", "f", "X"])
+    expect(demo.get_by_role("heading")).to_have_text("Sign in to your account")
+    expect(demo.get_by_text("Or continue with")).to_be_visible()
+    expect(demo.get_by_role("button")).to_have_text(["Sign in", "GH", "f", "X"])
 ```

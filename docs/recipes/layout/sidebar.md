@@ -145,16 +145,15 @@ def sidebar() -> rx.Component:
 
 ```python test
 def test_basic_sidebar(page, demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("Reflex")
-    expect(view.get_by_role("link")).to_have_text([
+    expect(demo.get_by_role("heading")).to_have_text("Reflex")
+    expect(demo.get_by_role("link")).to_have_text([
         "Dashboard",
         "Projects",
         "Analytics",
         "Messages",
     ])
     page.set_viewport_size({"width": 600, "height": 800})
-    view.locator("svg[class*='align-justify']").click()
+    demo.locator("svg[class*='align-justify']").click()
     expect(page.get_by_role("dialog").get_by_role("link")).to_have_text([
         "Dashboard",
         "Projects",
@@ -334,8 +333,7 @@ def sidebar_bottom_profile() -> rx.Component:
 
 ```python test
 def test_bottom_profile_sidebar(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("link")).to_have_text([
+    expect(demo.get_by_role("link")).to_have_text([
         "Dashboard",
         "Projects",
         "Analytics",
@@ -343,8 +341,8 @@ def test_bottom_profile_sidebar(demo):
         "Settings",
         "Log out",
     ])
-    expect(view.get_by_text("My account")).to_be_visible()
-    expect(view.get_by_text("user@reflex.dev")).to_be_visible()
+    expect(demo.get_by_text("My account")).to_be_visible()
+    expect(demo.get_by_text("user@reflex.dev")).to_be_visible()
 ```
 
 ## Top user profile
@@ -494,15 +492,14 @@ def sidebar_top_profile() -> rx.Component:
 
 ```python test
 def test_top_profile_sidebar(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_count(0)
-    expect(view.get_by_role("link")).to_have_text([
+    expect(demo.get_by_role("heading")).to_have_count(0)
+    expect(demo.get_by_role("link")).to_have_text([
         "Dashboard",
         "Projects",
         "Analytics",
         "Messages",
         "Help & Support",
     ])
-    expect(view.get_by_role("button")).to_have_count(2)
-    expect(view.get_by_text("My account")).to_be_visible()
+    expect(demo.get_by_role("button")).to_have_count(2)
+    expect(demo.get_by_text("My account")).to_be_visible()
 ```

@@ -79,14 +79,13 @@ def stats(
 
 ```python test
 def test_users_stat_card(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("4,200")
-    expect(view.get_by_role("paragraph")).to_have_text([
+    expect(demo.get_by_role("heading")).to_have_text("4,200")
+    expect(demo.get_by_role("paragraph")).to_have_text([
         "Users",
         "40.0%",
         "increase from last month",
     ])
-    expect(view.locator("svg.lucide-trending-up")).to_have_count(1)
+    expect(demo.locator("svg.lucide-trending-up")).to_have_count(1)
 ```
 
 ## Variant 2
@@ -165,12 +164,11 @@ def stats_2(
 
 ```python test
 def test_orders_stat_card(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("heading")).to_have_text("6,500")
-    expect(view.get_by_role("paragraph")).to_have_text([
+    expect(demo.get_by_role("heading")).to_have_text("6,500")
+    expect(demo.get_by_role("paragraph")).to_have_text([
         "Orders",
         "-45.83%",
         "from 12,000",
     ])
-    expect(view.locator("svg.lucide-trending-down")).to_have_count(1)
+    expect(demo.locator("svg.lucide-trending-down")).to_have_count(1)
 ```

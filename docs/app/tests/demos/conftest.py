@@ -24,6 +24,7 @@ set (set it empty to compile every page).
 import ast
 import os
 import re
+import socket
 import types
 from dataclasses import dataclass
 from pathlib import Path
@@ -38,6 +39,21 @@ from reflex_site_shared.docs.markdown import DEMO_TEST_ATTR, DocDemo, iter_doc_d
 
 SUITE_PATH = Path(__file__).with_name("test_doc_demos.py")
 WHITELIST_ENV = "REFLEX_DOCS_WHITELIST"
+# Flags hydration once the backend sends its first event (a socket.io "42" frame):
+# the response to the hydrate the client sends with its connection.
+_HYDRATION_SCRIPT = """
+const NativeWebSocket = window.WebSocket;
+window.WebSocket = class extends NativeWebSocket {
+  constructor(...args) {
+    super(...args);
+    this.addEventListener("message", ({ data }) => {
+      if (typeof data === "string" && data.startsWith("42")) {
+        window.__docsDemoHydrated = true;
+      }
+    });
+  }
+};
+"""
 # Every collected demo, tested or not, for the coverage summary.
 _DEMOS_KEY = pytest.StashKey[list["LocatedDemo"]]()
 
@@ -50,6 +66,8 @@ class LocatedDemo:
         route: The docs route the demo is rendered at.
         source_path: The markdown file defining the demo.
         demo: The demo and its test blocks.
+        index: The demo's index among its document's demos, which the rendered
+            demo carries in its ``DEMO_TEST_ATTR``.
         line: The first line of the demo's code (0 if not found).
         test_lines: The first line of each test block's code (0 if not found).
     """
@@ -57,8 +75,22 @@ class LocatedDemo:
     route: str
     source_path: Path
     demo: DocDemo
+    index: int
     line: int
     test_lines: tuple[int, ...]
+
+    @property
+    def compiled_route(self) -> str:
+        """The route whose compilation builds this demo's page.
+
+        A low-level ``-ll.md`` doc is only built with its high-level page.
+
+        Returns:
+            The route to whitelist for this demo.
+        """
+        if self.source_path.name.endswith("-ll.md"):
+            return self.route.removesuffix("low/")
+        return self.route
 
 
 def _locate_demos(route: str, source_path: Path) -> list[LocatedDemo]:
@@ -88,10 +120,10 @@ def _locate_demos(route: str, source_path: Path) -> list[LocatedDemo]:
         err.add_note(f"In {source_path}")
         raise
     located = []
-    for demo in demos:
+    for index, demo in enumerate(demos):
         line = locate(demo.block)
         test_lines = tuple(locate(test) for test in demo.tests)
-        located.append(LocatedDemo(route, source_path, demo, line, test_lines))
+        located.append(LocatedDemo(route, source_path, demo, index, line, test_lines))
     return located
 
 
@@ -202,7 +234,7 @@ class DemoModule(pytest.Module):
             The module defining the demo's tests.
         """
         path = str(self.demo.source_path)
-        module = types.ModuleType(f"docs_demo_{self.demo.demo.key}")
+        module = types.ModuleType(f"docs_demo_{self.name}")
         module.__file__ = path
         namespace = vars(module)
         namespace.update(expect=expect, pytest=pytest, re=re)
@@ -243,15 +275,33 @@ def _configure_docs_app(
         **settings.extra_env,
         environment.REFLEX_PERSIST_LOCKFILES.name: "false",
     }
-    if WHITELIST_ENV not in os.environ and WHITELIST_ENV not in extra_env:
-        extra_env[WHITELIST_ENV] = ",".join(
-            sorted({
-                module.demo.route.rstrip("/")
-                for item in request.session.items
-                if (module := item.getparent(DemoModule)) is not None
-            })
-        )
+    routes = {
+        module.demo.compiled_route.rstrip("/")
+        for item in request.session.items
+        if (module := item.getparent(DemoModule)) is not None
+    }
+    defaults = {
+        WHITELIST_ENV: ",".join(sorted(routes)),
+        # Ports the OS hands out lie outside the range dev servers default to,
+        # so the app neither collides with them nor follows one to a taken port.
+        "REFLEX_FRONTEND_PORT": str(_free_port()),
+        "REFLEX_BACKEND_PORT": str(_free_port()),
+    }
+    for name, value in defaults.items():
+        if name not in os.environ and name not in extra_env:
+            extra_env[name] = value
     settings.extra_env = extra_env
+
+
+def _free_port() -> int:
+    """Ask the OS for a free port.
+
+    Returns:
+        A port nothing listened on when asked.
+    """
+    with socket.socket() as sock:
+        sock.bind(("", 0))
+        return sock.getsockname()[1]
 
 
 @pytest.fixture
@@ -264,9 +314,12 @@ def page(page: Page, reflex_app: ReflexApp, request: pytest.FixtureRequest) -> P
         request: The pytest fixture request.
 
     Returns:
-        The page, at the demo's route.
+        The page, hydrated at the demo's route.
     """
+    page.add_init_script(_HYDRATION_SCRIPT)
     page.goto(reflex_app.url + _demo_of(request).route)
+    # Events sent before the backend hydrated the page would be lost.
+    page.wait_for_function("() => window.__docsDemoHydrated === true")
     return page
 
 
@@ -281,12 +334,9 @@ def demo(page: Page, request: pytest.FixtureRequest) -> Locator:
     Returns:
         A locator for the demo, scrolled into view so deferred demos mount.
     """
-    locator = page.locator(f'[{DEMO_TEST_ATTR}="{_demo_of(request).demo.key}"]')
-    # A wrapped eval demo has no box of its own, so scroll to its content.
-    locator.evaluate(
-        "el => (getComputedStyle(el).display === 'contents'"
-        " ? el.firstElementChild : el)?.scrollIntoView({block: 'center'})"
-    )
+    locator = page.locator(f'[{DEMO_TEST_ATTR}="{_demo_of(request).index}"]')
+    # The wrapper takes no part in layout, so scroll to the demo's content.
+    locator.evaluate("el => el.firstElementChild?.scrollIntoView({block: 'center'})")
     return locator
 
 

@@ -95,8 +95,7 @@ def render_vertical():
 
 ```python test
 def test_vertical_speed_dial(page, demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    buttons = view.get_by_role("button")
+    buttons = demo.get_by_role("button")
     expect(buttons).to_have_count(1)
     buttons.first.hover()
     expect(buttons).to_have_count(4)
@@ -194,8 +193,7 @@ def render_horizontal():
 
 ```python test
 def test_horizontal_speed_dial(page, demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    buttons = view.get_by_role("button")
+    buttons = demo.get_by_role("button")
     expect(buttons).to_have_count(1)
     buttons.first.hover()
     expect(buttons).to_have_count(4)
@@ -299,11 +297,10 @@ def render_vertical_text():
 
 ```python test
 def test_vertical_text_speed_dial(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_text("Copy")).to_have_count(0)
-    view.get_by_role("button").first.hover()
-    expect(view.get_by_role("paragraph")).to_have_text(["Copy", "Download", "Share"])
-    expect(view.get_by_role("button")).to_have_count(4)
+    expect(demo.get_by_text("Copy")).to_have_count(0)
+    demo.get_by_role("button").first.hover()
+    expect(demo.get_by_role("paragraph")).to_have_text(["Copy", "Download", "Share"])
+    expect(demo.get_by_role("button")).to_have_count(4)
 ```
 
 ## Reveal animation
@@ -411,8 +408,7 @@ def render_reveal():
 
 ```python test
 def test_reveal_speed_dial(page, demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    buttons = view.get_by_role("button")
+    buttons = demo.get_by_role("button")
     expect(buttons).to_have_count(1)
     buttons.first.hover()
     expect(buttons).to_have_count(4)
@@ -519,8 +515,7 @@ def render_menu():
 
 ```python test
 def test_menu_speed_dial(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_role("paragraph")).to_have_count(0)
-    view.get_by_role("button").hover()
-    expect(view.get_by_role("paragraph")).to_have_text(["Copy", "Download", "Share"])
+    expect(demo.get_by_role("paragraph")).to_have_count(0)
+    demo.get_by_role("button").hover()
+    expect(demo.get_by_role("paragraph")).to_have_text(["Copy", "Download", "Share"])
 ```

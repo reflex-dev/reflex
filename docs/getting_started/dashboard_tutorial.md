@@ -582,10 +582,9 @@ rx.form(
 
 ```python test
 def test_form_fields(page, demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    expect(view.get_by_placeholder("User Name")).to_have_attribute("required", "")
-    expect(view.get_by_placeholder("user@reflex.dev")).to_be_editable()
-    gender = view.get_by_role("combobox", name="Gender")
+    expect(demo.get_by_placeholder("User Name")).to_have_attribute("required", "")
+    expect(demo.get_by_placeholder("user@reflex.dev")).to_be_editable()
+    gender = demo.get_by_role("combobox", name="Gender")
     expect(gender).to_have_text("Male")
     gender.click()
     page.get_by_role("option", name="Female").click()
@@ -620,10 +619,9 @@ rx.form(
 
 ```python test
 def test_stacked_form_fields(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    name = view.get_by_placeholder("User Name")
-    email = view.get_by_placeholder("user@reflex.dev")
-    gender = view.get_by_role("combobox", name="Gender")
+    name = demo.get_by_placeholder("User Name")
+    email = demo.get_by_placeholder("user@reflex.dev")
+    gender = demo.get_by_role("combobox", name="Gender")
     expect(gender).to_have_text("Male")
     name_box, email_box = name.bounding_box(), email.bounding_box()
     assert email_box["y"] > name_box["y"]

@@ -4,7 +4,6 @@
 # ruff: noqa: D102, D107, DOC201
 
 import dataclasses
-import hashlib
 import json
 import re
 import sys
@@ -243,7 +242,8 @@ def _spans_to_plaintext(spans: tuple[Span, ...]) -> str:
 TEST_FLAG = "test"
 # Flag marking a demo block as deliberately untested, e.g. a screenshot or spacer.
 NO_TEST_FLAG = "notest"
-# DOM attribute identifying a tested demo, so its tests can scope a locator to it.
+# DOM attribute holding a demo's index among the demos of its document, on an
+# element wrapping the rendered component, so tests can scope a locator to it.
 DEMO_TEST_ATTR = "data-docs-demo"
 # Flags of the python code blocks that render a component a test can target.
 _DEMO_FLAGS = frozenset({"demo", "demo-only", "eval"})
@@ -252,6 +252,23 @@ _FENCED_BLOCK_RE = re.compile(
     r"(?P<close>^(?P=fence)[ \t]*(?:\n|\Z))",
     re.MULTILINE | re.DOTALL,
 )
+
+
+def _tag_demo(comp: rx.Component, index: int | None) -> rx.Component:
+    """Wrap a demo's rendered component in an element carrying its index.
+
+    Args:
+        comp: The component the demo block renders.
+        index: The demo's index among its document's demos, if known.
+
+    Returns:
+        The component, wrapped by an element that takes no part in layout.
+    """
+    if index is None:
+        return comp
+    return rx.el.div(
+        comp, custom_attrs={DEMO_TEST_ATTR: str(index)}, style={"display": "contents"}
+    )
 
 
 def _is_test_block(block: Block) -> TypeGuard[CodeBlock]:
@@ -277,14 +294,10 @@ class DocDemo:
     Attributes:
         block: The ``python demo``/``demo-only``/``eval`` block.
         tests: The ``python test`` blocks directly following ``block``.
-        key: Identifies the rendered demo via :data:`DEMO_TEST_ATTR`; derived
-            from the test source so it is stable regardless of block order.
-            Empty when the demo has no tests.
     """
 
     block: CodeBlock
     tests: tuple[CodeBlock, ...]
-    key: str
 
     @property
     def untested(self) -> bool:
@@ -303,13 +316,13 @@ def _doc_demo(block: CodeBlock, tests: list[CodeBlock]) -> DocDemo:
             f"blocks:\n{block.content[:200]}"
         )
         raise ValueError(msg)
-    source = "\n".join(test.content for test in tests)
-    key = hashlib.sha1(source.encode()).hexdigest()[:12] if tests else ""
-    return DocDemo(block=block, tests=tuple(tests), key=key)
+    return DocDemo(block=block, tests=tuple(tests))
 
 
 def iter_doc_demos(blocks: tuple[Block, ...]) -> Iterator[DocDemo]:
     """Yield every demo block in document order, paired with its test blocks.
+
+    A demo's position in this order is the value of its :data:`DEMO_TEST_ATTR`.
 
     A ``python test`` block belongs to the demo block directly before it in the
     same block sequence; consecutive test blocks all belong to that demo.
@@ -385,7 +398,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         self.env: dict = {}
         self.deferred_demos = 0
         # id() of each tested demo block in the document being transformed.
-        self._tested_demos: dict[int, DocDemo] = {}
+        # The index of each demo block among the document's demos, by block id.
+        self._demo_indexes: dict[int, int] = {}
 
     # ------------------------------------------------------------------
     # Top-level
@@ -397,10 +411,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             for preview in document.frontmatter.component_previews:
                 self.env[preview.name] = preview.source
             self.env["REFLEX_ASSETS_CDN"] = REFLEX_ASSETS_CDN
-        self._tested_demos = {
-            id(demo.block): demo
-            for demo in iter_doc_demos(document.blocks)
-            if demo.tests
+        self._demo_indexes = {
+            id(demo.block): index
+            for index, demo in enumerate(iter_doc_demos(document.blocks))
         }
 
         children: list[rx.Component] = []
@@ -414,23 +427,6 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     # ------------------------------------------------------------------
     # Blocks
     # ------------------------------------------------------------------
-
-    def transform_block(self, block: Block) -> rx.Component:
-        comp = super().transform_block(block)
-        demo = self._tested_demos.get(id(block))
-        if demo is None:
-            return comp
-        if "eval" in demo.block.flags:
-            # An eval block may render any component, so wrap it in an element
-            # that does not take part in layout.
-            return rx.el.div(
-                comp,
-                custom_attrs={DEMO_TEST_ATTR: demo.key},
-                style={"display": "contents"},
-            )
-        # Every demo variant renders inside a box that can carry the attribute.
-        comp.custom_attrs[DEMO_TEST_ATTR] = demo.key
-        return comp
 
     def frontmatter(self, block: FrontMatter) -> rx.Component:
         return rx.fragment()
@@ -470,13 +466,15 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         if _is_test_block(block):
             return rx.fragment()
 
+        index = self._demo_indexes.get(id(block))
+
         # ``python demo`` or ``python demo exec``
         if language == "python" and "demo" in flags:
-            return self._render_demo(block.content, flags)
+            return self._render_demo(block.content, flags, index)
 
         # ``python demo-only`` or ``python demo-only exec``
         if language == "python" and "demo-only" in flags:
-            return self._render_demo_only(block.content, flags)
+            return self._render_demo_only(block.content, flags, index)
 
         # ``python exec`` only — execute code, produce nothing visible.
         if language == "python" and "exec" in flags:
@@ -485,7 +483,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         # ``python eval`` (standalone) — eval and return the component directly.
         if language == "python" and "eval" in flags:
-            return eval(block.content, self.env, self.env)
+            return _tag_demo(eval(block.content, self.env, self.env), index)
 
         # Regular code block (includes unknown flags like ``python box``).
 
@@ -672,7 +670,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             raise TypeError(msg)
         return last()
 
-    def _render_demo(self, content: str, flags: set[str]) -> rx.Component:
+    def _render_demo(
+        self, content: str, flags: set[str], index: int | None
+    ) -> rx.Component:
         """Render a ``python demo`` block — code + live component."""
         comp_id = None
         for flag in flags:
@@ -683,13 +683,15 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             if "exec" in flags:
                 comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
-                comp = self._exec_and_get_last_callable(content)
+                comp = _tag_demo(self._exec_and_get_last_callable(content), index)
                 before, sep, after = content.rpartition("\ndef ")
                 data, code = (before, "def " + after) if sep else ("", content)
                 return docgraphing(code, comp=comp, data=data)
             elif "box" in flags:
                 comp = eval(content, self.env, self.env)
-                return rx.box(docdemobox(comp), margin_y="1.5em", id=comp_id)
+                return rx.box(
+                    docdemobox(_tag_demo(comp, index)), margin_y="1.5em", id=comp_id
+                )
             else:
                 comp = eval(content, self.env, self.env)
         except Exception as e:
@@ -703,6 +705,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             comp = DeferredDemo.create(
                 comp, demo_id=f"{self.virtual_filepath}#{self.deferred_demos}"
             )
+        comp = _tag_demo(comp, index)
 
         demobox_props: dict = {}
         for flag in flags:
@@ -711,7 +714,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 demobox_props[k] = v
         return docdemo(content, comp=comp, demobox_props=demobox_props, id=comp_id)
 
-    def _render_demo_only(self, content: str, flags: set[str]) -> rx.Component:
+    def _render_demo_only(
+        self, content: str, flags: set[str], index: int | None
+    ) -> rx.Component:
         """Render a ``python demo-only`` block — component only, no code."""
         comp_id = None
         for flag in flags:
@@ -722,7 +727,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             if "exec" in flags:
                 comp = self._exec_and_get_last_callable(content)
             elif "graphing" in flags:
-                comp = self._exec_and_get_last_callable(content)
+                comp = _tag_demo(self._exec_and_get_last_callable(content), index)
                 before, sep, after = content.rpartition("\ndef ")
                 data, code = (before, "def " + after) if sep else ("", content)
                 return docgraphing(code, comp=comp, data=data)
@@ -736,7 +741,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             )
             raise
 
-        return rx.box(comp, margin_y="1.5em", id=comp_id)
+        return rx.box(_tag_demo(comp, index), margin_y="1.5em", id=comp_id)
 
     def _render_children(self, blocks: tuple[Block, ...]) -> rx.Component:
         """Render a sequence of parsed blocks into a single component."""

@@ -75,12 +75,11 @@ top_banner_basic = TopBannerBasic.create
 
 ```python test
 def test_basic_banner_hides_and_shows(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    message = view.get_by_text("ReflexCon 2024 -")
+    message = demo.get_by_text("ReflexCon 2024 -")
     expect(message).to_have_text("ReflexCon 2024 - Join us at the event!")
-    view.locator("svg.lucide-x").click()
+    demo.locator("svg.lucide-x").click()
     expect(message).to_be_hidden()
-    view.get_by_role("button").click()
+    demo.get_by_role("button").click()
     expect(message).to_be_visible()
 ```
 
@@ -154,13 +153,12 @@ top_banner_signup = TopBannerSignup.create
 
 ```python test
 def test_signup_banner_hides_and_shows(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    message = view.get_by_text("Web apps in pure Python.")
-    expect(view.get_by_role("img", name="Reflex logo")).to_be_visible()
-    expect(view.get_by_role("button", name="Sign up")).to_be_visible()
-    view.locator("svg.lucide-x").click()
+    message = demo.get_by_text("Web apps in pure Python.")
+    expect(demo.get_by_role("img", name="Reflex logo")).to_be_visible()
+    expect(demo.get_by_role("button", name="Sign up")).to_be_visible()
+    demo.locator("svg.lucide-x").click()
     expect(message).to_be_hidden()
-    view.get_by_role("button").click()
+    demo.get_by_role("button").click()
     expect(message).to_be_visible()
 ```
 
@@ -226,12 +224,11 @@ top_banner_gradient = TopBannerGradient.create
 
 ```python test
 def test_gradient_banner_hides_and_shows(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    message = view.get_by_text("The new Reflex version is now available!")
-    expect(view.get_by_role("link")).to_have_text("Read the release notes")
-    view.locator("svg.lucide-x").click()
+    message = demo.get_by_text("The new Reflex version is now available!")
+    expect(demo.get_by_role("link")).to_have_text("Read the release notes")
+    demo.locator("svg.lucide-x").click()
     expect(message).to_be_hidden()
-    view.get_by_role("button").click()
+    demo.get_by_role("button").click()
     expect(message).to_be_visible()
 ```
 
@@ -310,13 +307,12 @@ top_banner_newsletter = TopBannerNewsletter.create
 
 ```python test
 def test_newsletter_banner_hides_and_shows(demo):
-    view = demo.get_by_role("tabpanel", name="View")
-    email = view.get_by_placeholder("Your email address")
-    expect(view.get_by_text("Join our newsletter")).to_be_visible()
+    email = demo.get_by_placeholder("Your email address")
+    expect(demo.get_by_text("Join our newsletter")).to_be_visible()
     email.fill("ada@reflex.dev")
     expect(email).to_have_value("ada@reflex.dev")
-    view.locator("svg.lucide-x").click()
+    demo.locator("svg.lucide-x").click()
     expect(email).to_be_hidden()
-    view.get_by_role("button").click()
+    demo.get_by_role("button").click()
     expect(email).to_be_visible()
 ```
