@@ -7640,6 +7640,50 @@ def test_wrapper_above_rx_event_is_deprecated_and_still_runs() -> None:
         )
 
 
+def test_wrapper_above_rx_event_warning_names_every_method(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Each method decorated above @rx.event is named, not just the first of the class."""
+    class_body_values: list = []
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+
+        class ManyWrappedState(BaseState):
+            @_logged
+            @rx.event
+            def first_wrapped(self):
+                pass
+
+            class_body_values.append(first_wrapped)
+
+            @_logged
+            @rx.event
+            def second_wrapped(self):
+                pass
+
+    messages = [
+        record.getMessage()
+        for record in caplog.records
+        if "Decorators above @rx.event" in record.getMessage()
+    ]
+    assert len(messages) == 2
+    assert "`first_wrapped`" in messages[0]
+    assert "`second_wrapped`" in messages[1]
+
+    # Repeating the setup of an already-warned method is deduplicated.
+    wrapper = class_body_values[0]
+    caplog.clear()
+    with caplog.at_level("WARNING", logger="reflex.deprecation"):
+        ManyWrappedState._item_is_event_handler("first_wrapped", wrapper)
+        ManyWrappedState._item_is_event_handler("not_yet_warned", wrapper)
+    repeat_messages = [
+        record.getMessage()
+        for record in caplog.records
+        if "Decorators above @rx.event" in record.getMessage()
+    ]
+    assert len(repeat_messages) == 1
+    assert "`not_yet_warned`" in repeat_messages[0]
+
+
 def test_stacked_wrappers_above_rx_event_still_run() -> None:
     """Decorators stacked above @rx.event are found through the whole __wrapped__ chain."""
     from reflex.utils import console
