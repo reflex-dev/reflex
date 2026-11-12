@@ -1,9 +1,11 @@
+import hashlib
 import importlib
 import importlib.util
 import logging
 import multiprocessing
 import os
 import pickle
+import re
 import sys
 import textwrap
 import threading
@@ -1282,7 +1284,9 @@ def test_rx_asset_after_config_in_rxconfig_uses_it(
 
     with RegistrationContext():
         assert reflex_base.config.get_config().app_name == "asset_in_config"
-    assert sys.modules["rxconfig"].ASSET.startswith("/sub/favicon.ico")
+    expected_hash = hashlib.sha256(b"").hexdigest()[:8]
+    asset = sys.modules["rxconfig"].ASSET
+    assert asset == f"/sub/favicon.ico?v={expected_hash}"
 
 
 def test_rxconfig_failing_after_a_read_is_not_cached(
@@ -1314,7 +1318,7 @@ def test_rxconfig_failing_after_a_read_is_not_cached(
 
     with RegistrationContext():
         for _ in range(2):
-            with pytest.raises(RuntimeError, match="rxconfig failed"):
+            with pytest.raises(RuntimeError, match=r"\Arxconfig failed\Z"):
                 reflex_base.config.get_config()
 
 
@@ -1344,9 +1348,14 @@ def test_rx_asset_before_config_in_rxconfig_raises(
     )
     monkeypatch.chdir(tmp_path)
 
+    expected_error = (
+        "rxconfig.py read the config (for example with rx.asset) before"
+        " `config = rx.Config(...)` ran. Move that call below the config"
+        " assignment, or into the app module."
+    )
     with (
         RegistrationContext(),
-        pytest.raises(ConfigError, match=r"before `config = rx\.Config"),
+        pytest.raises(ConfigError, match=rf"\A{re.escape(expected_error)}\Z"),
     ):
         reflex_base.config.get_config()
 
