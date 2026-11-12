@@ -249,6 +249,17 @@ class DemoModule(pytest.Module):
 
 
 def _demo_of(request: pytest.FixtureRequest) -> LocatedDemo:
+    """Find the demo whose test is requesting a fixture.
+
+    Args:
+        request: The pytest fixture request.
+
+    Returns:
+        The demo the requesting test was written below.
+
+    Raises:
+        RuntimeError: If the test is not a docs demo test.
+    """
     module = request.node.getparent(DemoModule)
     if module is None:
         msg = f"{request.fixturename} is only available to docs demo tests"
@@ -260,11 +271,12 @@ def _demo_of(request: pytest.FixtureRequest) -> LocatedDemo:
 def _configure_docs_app(
     request: pytest.FixtureRequest, reflex_app_manager: AppManager
 ) -> None:
-    """Keep the checkout unchanged and compile only the pages under test.
+    """Keep the checkout unchanged, and compile only the pages under test.
 
     The app runs from the docs app directory, so a frontend install would
     otherwise rewrite its committed ``reflex.lock/``; with a whitelist, down to
-    the packages of the compiled pages.
+    the packages of the compiled pages. The app also gets free ports, unless
+    the environment sets them.
 
     Args:
         request: The pytest fixture request.

@@ -272,6 +272,14 @@ def _tag_demo(comp: rx.Component, index: int | None) -> rx.Component:
 
 
 def _is_test_block(block: Block) -> TypeGuard[CodeBlock]:
+    """Whether a block holds browser tests for the demo above it.
+
+    Args:
+        block: The block to check.
+
+    Returns:
+        True for a ``python test`` code block.
+    """
     return (
         isinstance(block, CodeBlock)
         and block.language == "python"
@@ -280,6 +288,14 @@ def _is_test_block(block: Block) -> TypeGuard[CodeBlock]:
 
 
 def _is_demo_block(block: Block) -> bool:
+    """Whether a block renders a component that tests can target.
+
+    Args:
+        block: The block to check.
+
+    Returns:
+        True for a ``python demo``, ``demo-only`` or ``eval`` code block.
+    """
     return (
         isinstance(block, CodeBlock)
         and block.language == "python"
@@ -310,6 +326,18 @@ class DocDemo:
 
 
 def _doc_demo(block: CodeBlock, tests: list[CodeBlock]) -> DocDemo:
+    """Pair a demo block with the test blocks following it.
+
+    Args:
+        block: The demo block.
+        tests: The test blocks directly following it.
+
+    Returns:
+        The demo with its tests.
+
+    Raises:
+        ValueError: If the demo is flagged ``notest`` but has tests.
+    """
     if tests and NO_TEST_FLAG in block.flags:
         msg = (
             f"A `{NO_TEST_FLAG}` demo block must not be followed by `python test` "
@@ -322,10 +350,9 @@ def _doc_demo(block: CodeBlock, tests: list[CodeBlock]) -> DocDemo:
 def iter_doc_demos(blocks: tuple[Block, ...]) -> Iterator[DocDemo]:
     """Yield every demo block in document order, paired with its test blocks.
 
-    A demo's position in this order is the value of its :data:`DEMO_TEST_ATTR`.
-
     A ``python test`` block belongs to the demo block directly before it in the
-    same block sequence; consecutive test blocks all belong to that demo.
+    same block sequence; consecutive test blocks all belong to that demo. A
+    demo's position in this order is the value of its :data:`DEMO_TEST_ATTR`.
 
     Args:
         blocks: The block sequence to search, including nested blocks.
