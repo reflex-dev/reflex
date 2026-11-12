@@ -1173,7 +1173,8 @@ def test_string_split_uses_code_points_for_empty_separator():
     sep_var = Var(_js_expr="state.sep").to(str)
     assert (
         str(basic_string.split(sep_var))
-        == f'(state.sep === "" ? {code_point_split} : {literal}.split(state.sep))'
+        == '(((s, sep) => sep === "" ? pyStrChars(s) : s.split(sep))('
+        f"{literal}, state.sep))"
     )
     for split_var in (basic_string.split(), basic_string.split(sep_var)):
         var_data = split_var._get_all_var_data()

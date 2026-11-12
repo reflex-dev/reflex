@@ -1766,13 +1766,15 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
     Returns:
         The split string. An empty separator splits by code points.
     """
-    code_points = f"pyStrChars({string!s})"
     if isinstance(sep, LiteralStringVar):
         js_expression = (
-            code_points if sep._var_value == "" else f"{string!s}.split({sep!s})"
+            f"pyStrChars({string!s})"
+            if sep._var_value == ""
+            else f"{string!s}.split({sep!s})"
         )
     else:
-        js_expression = f'({sep!s} === "" ? {code_points} : {string!s}.split({sep!s}))'
+        # Evaluate the separator once: it may be any expression, e.g. a function call.
+        js_expression = f'(((s, sep) => sep === "" ? pyStrChars(s) : s.split(sep))({string!s}, {sep!s}))'
     return var_operation_return(
         js_expression=js_expression,
         var_type=list[str],
