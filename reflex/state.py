@@ -546,6 +546,8 @@ all_base_state_classes: dict[str, None] = {}
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
 
+_WRAPPED_HANDLER_DEPRECATION = "Decorators above @rx.event"
+
 # What a wrapper stacked above @rx.event takes over from the function it
 # wraps: what functools.wraps copied from a plain function (its name, module,
 # docstring and the annotations the payload coercion reads, which it took
@@ -996,13 +998,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             # location, which would name only the first method of a class.
             # Dedupe per method instead, so repeated class setup in one process stays quiet.
             if dedupe_once((
-                "Decorators above @rx.event",
+                _WRAPPED_HANDLER_DEPRECATION,
                 cls.__module__,
                 cls.__qualname__,
                 name,
             )):
                 console.deprecate(
-                    feature_name="Decorators above @rx.event",
+                    feature_name=_WRAPPED_HANDLER_DEPRECATION,
                     reason=(
                         f"`{name}` is decorated above @rx.event; apply other "
                         "decorators below it."

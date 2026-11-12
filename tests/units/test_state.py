@@ -7640,6 +7640,41 @@ def test_wrapper_above_rx_event_is_deprecated_and_still_runs() -> None:
         )
 
 
+def _wrapped_handler_warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    """Collect the messages of the deprecation warnings that were logged.
+
+    Args:
+        caplog: The log capture fixture.
+
+    Returns:
+        The full message of every captured deprecation warning.
+    """
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == "reflex.deprecation"
+    ]
+
+
+def _expected_wrapped_handler_warning(name: str, record: logging.LogRecord) -> str:
+    """Build the full warning expected for a method decorated above @rx.event.
+
+    Args:
+        name: The method name.
+        record: The captured record, which supplies the run-dependent location.
+
+    Returns:
+        The complete expected message.
+    """
+    location = getattr(record, "location", None)
+    suffix = f" ({location})" if location else ""
+    return (
+        "Decorators above @rx.event has been deprecated in version 0.11.0. "
+        f"`{name}` is decorated above @rx.event; apply other decorators below it. "
+        f"It will be completely removed in 1.0.{suffix}"
+    )
+
+
 def test_wrapper_above_rx_event_warning_names_every_method(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -7660,14 +7695,10 @@ def test_wrapper_above_rx_event_warning_names_every_method(
             def second_wrapped(self):
                 pass
 
-    messages = [
-        record.getMessage()
-        for record in caplog.records
-        if "Decorators above @rx.event" in record.getMessage()
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("first_wrapped", caplog.records[0]),
+        _expected_wrapped_handler_warning("second_wrapped", caplog.records[1]),
     ]
-    assert len(messages) == 2
-    assert "`first_wrapped`" in messages[0]
-    assert "`second_wrapped`" in messages[1]
 
     # Repeating the setup of an already-warned method is deduplicated.
     wrapper = class_body_values[0]
@@ -7675,13 +7706,9 @@ def test_wrapper_above_rx_event_warning_names_every_method(
     with caplog.at_level("WARNING", logger="reflex.deprecation"):
         ManyWrappedState._item_is_event_handler("first_wrapped", wrapper)
         ManyWrappedState._item_is_event_handler("not_yet_warned", wrapper)
-    repeat_messages = [
-        record.getMessage()
-        for record in caplog.records
-        if "Decorators above @rx.event" in record.getMessage()
+    assert _wrapped_handler_warnings(caplog) == [
+        _expected_wrapped_handler_warning("not_yet_warned", caplog.records[0]),
     ]
-    assert len(repeat_messages) == 1
-    assert "`not_yet_warned`" in repeat_messages[0]
 
 
 def test_stacked_wrappers_above_rx_event_still_run() -> None:
