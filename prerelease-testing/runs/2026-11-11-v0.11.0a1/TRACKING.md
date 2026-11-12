@@ -70,7 +70,7 @@ Applied to 191 reflex items and 34 rxe items (list at the end).
 | client_vars CV-10 remaining backend-var misuse paths | reflex#7843 | open (new) | filed |
 | test isolation leak `REFLEX_MANAGED_LOGGING` | reflex#7844 | open (new) | filed (leak confirmed in-process) |
 | flaky `test_redis_token_manager_lost_and_found` | reflex#7845 | open (new) | filed |
-| Windows `supervise_output` lingering descendant | reflex#7819 | open | tracked (filed earlier this pass) |
+| Windows `supervise_output` lingering descendant | reflex#7819 | closed | fixed by #7855, shipped in 0.11.0 |
 | generic TypedDict key access (found on #7798) | reflex#7846 | open (new) | filed (reproduced on the checkout) |
 | pyright rejects stacked `@rx.event(...)` | reflex#7847 | open (new) | filed |
 | public ref helper instead of `Var._as_ref()` | reflex#7848 | open (new) | filed (enhancement) |

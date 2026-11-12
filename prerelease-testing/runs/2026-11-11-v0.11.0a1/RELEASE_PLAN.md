@@ -15,8 +15,7 @@ issues from Phase 7 are LOW and not regressions (reflex #7856, #7857, #7858; rxe
 tracked (`TRACKING.md`; label `release-train`). Details: `FINDINGS.md` → "Phase 7".
 
 Owner decisions still open (none blocks on its own):
-1. reflex-dev/reflex#7819 (Windows `supervise_output` may wait for a lingering descendant on shutdown; new in 0.11 via
-   #7650) — ship with it filed, or fix first. Not exercised by Phase 7 (no Windows box).
+1. ~~reflex-dev/reflex#7819~~ resolved: fixed by #7855 (materialized under reflex-base 0.11.0a2), shipped in 0.11.0.
 2. reflex-dev/reflex#7856 is a ~2-line fix (resolve both paths) to the #7809 hint; optional before the final.
 
 Final-release mechanics: `release-from-prerelease` lifts each prerelease sibling floor only to an already-**tagged**
@@ -291,3 +290,10 @@ As each PR merges into `main`:
 Unresolved bot threads found and dispatched: #7796 ×6 (cubic/greptile, with the CodSpeed fix), #7797 ×5 cubic, #7798 ×2 cubic
 (+ TypedDict test), #7799 ×5 cubic (docs/fragment wording). Clear: #7795, #7800, #7802, #7803, #7804, #7806, #7808, rxe#290.
 #7799 CodeQL thread: not resolved by us; code scanning marked alert 37 fixed after 6f621870e, so likely auto-resolved. #7799 threads all cleared (27c2dd954).
+
+## Owner decisions (2026-11-12, after 0.11.0)
+
+- Keep the "See Upgrading to Reflex 0.11" links in the released 0.11.0 notes (merged in #7865).
+- The upgrade guide does not mention that `EventSpec` is now awaitable.
+- #7819 shipped in 0.11.0 via #7855.
+- reflex-enterprise `release-train` label colour should match reflex's (`#231dcc`).
