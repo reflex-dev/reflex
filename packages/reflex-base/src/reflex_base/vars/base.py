@@ -2246,6 +2246,24 @@ def figure_out_type(value: Any) -> types.GenericType:
     return type(value)
 
 
+def _infer_field_type(default: Any) -> types.GenericType:
+    """Infer the type of an unannotated field from its default.
+
+    An empty container says nothing about its elements, so the field takes the
+    bare container type and accepts any contents.
+
+    Args:
+        default: The default value of the field.
+
+    Returns:
+        The type of the field.
+    """
+    type_ = figure_out_type(default)
+    if isinstance(default, (list, tuple, Mapping)) and not default:
+        return get_origin(type_) or type_
+    return type_
+
+
 GLOBAL_CACHE = {}
 
 
@@ -4922,7 +4940,7 @@ def _unannotated_fields(
                 fields[key] = value._replace(
                     annotated_type=Any
                     if value.default is MISSING
-                    else figure_out_type(value.default)
+                    else _infer_field_type(value.default)
                 )
         elif (
             not key.startswith(private)
@@ -4930,7 +4948,7 @@ def _unannotated_fields(
             and not isinstance(value, (staticmethod, classmethod, Var))
             and not _is_descriptor(value)
         ):
-            fields[key] = Field._with_default(value, figure_out_type(value))
+            fields[key] = Field._with_default(value, _infer_field_type(value))
     return fields
 
 
