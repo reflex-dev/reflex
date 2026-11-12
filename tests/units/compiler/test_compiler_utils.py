@@ -141,9 +141,10 @@ def test_sync_app_assets_scan_failure_preserves_copies(
         return scandir(path)
 
     monkeypatch.setattr(os, "scandir", unreadable_scandir)
-    with pytest.raises(PermissionError, match="unreadable assets"):
+    with pytest.raises(PermissionError) as error:
         utils._sync_app_assets()
 
+    assert str(error.value) == "unreadable assets"
     assert (public / "nested" / "asset.txt").read_text() == "keep"
     assert manifest.read_bytes() == previous_manifest
 
