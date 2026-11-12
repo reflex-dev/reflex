@@ -161,6 +161,67 @@ def MemoEdgeCasesApp():
         def set_markdown_alt(self):
             self.markdown_source = "Updated **memo-md-away** text"
 
+    class LoopState(rx.State):
+        """State for hooks of components inside ``rx.foreach``."""
+
+        items: list[str] = ["alpha", "beta", "gamma"]
+        tags: list[str] = ["x", "y"]
+        mounted: rx.Field[list[str]] = rx.field(default_factory=list)
+        unmounted: rx.Field[list[str]] = rx.field(default_factory=list)
+        submitted: str = ""
+
+        @rx.event
+        def record_mount(self, name: str):
+            self.mounted.append(name)
+
+        @rx.event
+        def record_unmount(self, name: str):
+            self.unmounted.append(name)
+
+        @rx.event
+        def clear_log(self):
+            self.mounted = []
+            self.unmounted = []
+
+        @rx.event
+        def add_item(self):
+            self.items.append("delta")
+
+        @rx.event
+        def remove_item(self):
+            self.items.pop()
+
+        @rx.event
+        def handle_submit(self, index: int, form_data: dict):
+            self.submitted = f"{index}:{form_data['note']}"
+
+    def loop_item(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
+        return rx.box(
+            rx.text(
+                item,
+                on_mount=LoopState.record_mount(item),
+                on_unmount=LoopState.record_unmount(item),
+                class_name="loop-item",
+            ),
+            # A hook in a nested loop reads the outer and the inner loop variable.
+            rx.foreach(
+                LoopState.tags,
+                lambda tag: rx.text(
+                    tag, on_mount=LoopState.record_mount(f"{item}-{tag}")
+                ),
+            ),
+            # A snapshot wrapper passes the loop variable to a wrapper inside it.
+            rx.auto_scroll(
+                rx.text("s", on_mount=LoopState.record_mount(f"{item}-scroll"))
+            ),
+            # Mirrors reflex-dev/reflex#3210: the submit hook reads the index.
+            rx.form(
+                rx.input(name="note"),
+                rx.button("save", type="submit", class_name="loop-submit"),
+                on_submit=lambda form_data: LoopState.handle_submit(index, form_data),
+            ),
+        )
+
     def index():
         return rx.box(
             rx.el.style("body { --memo-marker: " + MemoState.css_marker + "; }"),
@@ -268,6 +329,13 @@ def MemoEdgeCasesApp():
                 "unrelated", on_click=OtherState.bump_unrelated, id="probe-unrelated"
             ),
             rx.text(OtherState.unrelated, id="unrelated-out"),
+            rx.foreach(LoopState.items, loop_item),
+            rx.button("add", on_click=LoopState.add_item, id="loop-add"),
+            rx.button("remove", on_click=LoopState.remove_item, id="loop-remove"),
+            rx.button("clear", on_click=LoopState.clear_log, id="loop-clear"),
+            rx.text(LoopState.mounted.join(","), id="loop-mounted"),
+            rx.text(LoopState.unmounted.join(","), id="loop-unmounted"),
+            rx.text(LoopState.submitted, id="loop-submitted"),
         )
 
     app = rx.App()
@@ -778,3 +846,70 @@ def test_slot_transparency_adds_no_rerenders(memo_app: AppHarness, page: Page) -
         "() => [...document.querySelectorAll('[data-probe]')]"
         ".every((n) => n.__mountTag === 'mounted')"
     ), "re-rendering must not remount the probe nodes"
+
+
+def test_foreach_item_hooks_run_per_item_with_loop_vars(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Hooks of components inside ``rx.foreach`` run per item with the loop vars.
+
+    Regression for reflex-dev/reflex#7791 and reflex-dev/reflex#3210: such a
+    hook was compiled outside the loop, so reading the loop variable crashed
+    the page with a ``ReferenceError`` and other hooks ran once for the list.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
+    page.goto(memo_app.frontend_url)
+
+    mounted = page.locator("#loop-mounted")
+    unmounted = page.locator("#loop-unmounted")
+    expect(page.locator(".loop-item")).to_have_text(["alpha", "beta", "gamma"])
+
+    # Each item, nested loop item and snapshot-wrapped item mounts by itself.
+    initial = {
+        f"{item}{suffix}"
+        for item in ("alpha", "beta", "gamma")
+        for suffix in ("", "-x", "-y", "-scroll")
+    }
+    for name in initial:
+        expect(mounted).to_contain_text(re.compile(rf"(^|,){name}(,|$)"))
+    assert set(mounted.inner_text().split(",")) == initial
+
+    # A new item fires only its own hooks. Strict mode may run an effect twice.
+    page.click("#loop-clear")
+    expect(mounted).to_have_text("")
+    page.click("#loop-add")
+    expect(page.locator(".loop-item")).to_have_count(4)
+    expect(mounted).to_contain_text("delta-scroll")
+    expect(mounted).to_contain_text("delta-y")
+    assert set(mounted.inner_text().split(",")) == {
+        "delta",
+        "delta-x",
+        "delta-y",
+        "delta-scroll",
+    }
+
+    # A removed item fires its own unmount hook, and no other item remounts.
+    page.click("#loop-clear")
+    expect(mounted).to_have_text("")
+    expect(unmounted).to_have_text("")
+    page.click("#loop-remove")
+    expect(page.locator(".loop-item")).to_have_count(3)
+    expect(unmounted).to_have_text(re.compile(r"^delta(,delta)*$"))
+    expect(mounted).to_have_text("")
+
+    # Each form submits with the index of its own item.
+    submitted = page.locator("#loop-submitted")
+    page.locator("input[name='note']").nth(2).fill("third")
+    page.locator(".loop-submit").nth(2).click()
+    expect(submitted).to_have_text("2:third")
+    page.locator("input[name='note']").nth(0).fill("first")
+    page.locator(".loop-submit").nth(0).click()
+    expect(submitted).to_have_text("0:first")
+
+    assert not page_errors

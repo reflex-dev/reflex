@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs
-from reflex_base.constants.compiler import Hooks
 from reflex_base.vars.base import VarData
 
 
@@ -62,7 +61,4 @@ def get_events_hooks_var_data() -> VarData:
     Returns:
         A new VarData carrying both providers as app_wraps.
     """
-    return VarData(
-        position=Hooks.HookPosition.INTERNAL,
-        app_wraps=get_event_app_wraps(),
-    )
+    return VarData(app_wraps=get_event_app_wraps())

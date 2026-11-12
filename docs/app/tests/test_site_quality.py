@@ -1,5 +1,6 @@
 """Regression checks for shared documentation presentation."""
 
+import pytest
 import reflex as rx
 
 from reflex_docs.pages.docs.source import stacked_description_rows
@@ -57,17 +58,16 @@ def test_deferred_demo_preserves_code_and_defers_only_the_preview():
     assert "rx.text" in rendered
 
 
-def test_treemap_previews_are_bundled():
+@pytest.mark.parametrize("name", ["treemap", "sankeychart"])
+def test_chart_previews_are_bundled(name):
     """Both theme previews exist locally instead of pointing at missing CDN files."""
     from pathlib import Path
 
     from reflex_docs.pages.library_previews import component_card
 
-    rendered = str(
-        component_card("treemap", "/library/graphing/charts/treemap/", "charts")
-    )
+    rendered = str(component_card(name, f"/library/graphing/charts/{name}/", "charts"))
     for mode in ("light", "dark"):
-        path = f"components_previews/charts/{mode}/treemap.svg"
+        path = f"components_previews/charts/{mode}/{name}.svg"
         assert (Path(__file__).parents[1] / "assets" / path).is_file()
         assert path in rendered
     assert "web.reflex-assets.dev/components_previews/charts" not in rendered

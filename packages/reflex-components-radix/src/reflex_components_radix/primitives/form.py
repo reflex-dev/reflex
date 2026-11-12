@@ -19,7 +19,7 @@ from .base import RadixPrimitiveComponentWithClassName
 class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
-    library = "@radix-ui/react-form@0.1.16"
+    library = "@radix-ui/react-form@0.3.0"
 
 
 class FormRoot(FormComponent, HTMLForm):
@@ -48,6 +48,9 @@ class FormField(FormComponent):
     tag = "Field"
 
     alias = "RadixFormField"
+
+    # Radix passes the field's name to the control its ``FormControl`` renders.
+    _is_form_field = True
 
     name: Var[str] = field(
         doc="The name of the form field, that is passed down to the control and used to match with validation messages."
@@ -88,6 +91,14 @@ class FormControl(FormComponent):
     tag = "Control"
 
     alias = "RadixFormControl"
+
+    # Renders an input, or its child with ``as_child``, named by the enclosing
+    # ``FormField`` unless the control or its child carries a ``name``.
+    _is_form_field_control = True
+
+    name: Var[str] = field(
+        doc="The name of the control, in place of the name of the enclosing form field."
+    )
 
     @classmethod
     def create(cls, *children, **props):

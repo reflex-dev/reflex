@@ -51,7 +51,7 @@ class SocketEvent(SimpleNamespace):
     EVENT = "event"
     CLIENT_ERROR = "client_error"
     # Sent on connect when the frontend was compiled for another state tree
-    # (must match STATE_MISMATCH_EVENT in .templates/web/utils/state.js).
+    # (must match STATE_MISMATCH_EVENT in packages/reflex-frontend/src/utils/state.js).
     STATE_MISMATCH = "state_mismatch"
 
     def __str__(self) -> str:
@@ -64,13 +64,16 @@ class SocketEvent(SimpleNamespace):
 
 
 class ClientErrorType(SimpleNamespace):
-    """Error types reported by the frontend via the client_error socket event.
+    """Error types reported by the frontend.
 
-    Must match the ERROR_TYPE_* constants in .templates/web/utils/state.js.
+    The backend receives them via the client_error socket event, and the
+    connection banners read them from the connection errors.
+    Must match the ERROR_TYPE_* constants in packages/reflex-frontend/src/utils/state.js.
     """
 
     DISPATCH_MISSING = "dispatch_function_missing"
     STATE_UPDATE = "state_update_processing_error"
+    HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large"
 
 
 class EventTriggers(SimpleNamespace):

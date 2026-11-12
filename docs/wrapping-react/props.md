@@ -1,5 +1,5 @@
 ---
-title: Props - Wrapping React
+title: Props
 ---
 
 # Props

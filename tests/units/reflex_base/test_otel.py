@@ -63,6 +63,7 @@ def test_trace_points_carry_no_import_statement():
         otel.record_state_acquired,
         otel.record_message_size,
         otel.record_connection,
+        otel.trace_fields,
     )
     for trace_point in trace_points:
         opnames = {inst.opname for inst in dis.get_instructions(trace_point)}
@@ -112,6 +113,24 @@ def test_capture_context_returns_current(otel_exporter: InMemorySpanExporter):
     assert captured is not None
     assert trace.get_current_span(captured) is span
     assert otel_context.get_current() is not captured
+
+
+def test_trace_fields_disabled():
+    assert otel.trace_fields() is None
+
+
+def test_trace_fields_without_current_span(otel_exporter: InMemorySpanExporter):
+    assert otel.trace_fields() is None
+
+
+def test_trace_fields_inside_span(otel_exporter: InMemorySpanExporter):
+    with active_tracer().start_as_current_span("outer") as span:
+        fields = otel.trace_fields()
+    span_context = span.get_span_context()
+    assert fields == {
+        "trace_id": f"{span_context.trace_id:032x}",
+        "span_id": f"{span_context.span_id:016x}",
+    }
 
 
 def test_event_span_attributes(otel_exporter: InMemorySpanExporter):
