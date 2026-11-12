@@ -31,6 +31,11 @@ def ConnectionBanner():
 
         @rx.event
         def set_script_result(self, result: str):
+            """Save the result the pending script resolved with.
+
+            Args:
+                result: The script's result.
+            """
             self.script_result = result
 
         @rx.event
