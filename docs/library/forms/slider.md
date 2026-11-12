@@ -12,7 +12,7 @@ import reflex as rx
 
 # Slider
 
-Provides user selection from a range of values. The
+Provides user selection from a range of values.
 
 ## Basic Example
 

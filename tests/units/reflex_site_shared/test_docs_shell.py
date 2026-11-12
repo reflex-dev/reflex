@@ -4,6 +4,9 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from reflex_base.components.component import BaseComponent
+from reflex_components_internal.components.base.input import InputRoot
+from reflex_components_internal.components.base.textarea import Textarea
 from reflex_site_shared.components import docs_shell
 from reflex_site_shared.components.docs_shell import (
     DocsFeedbackState,
@@ -59,6 +62,23 @@ def test_shared_feedback_preserves_the_official_form_structure() -> None:
     assert (
         'docs_feedback_state.open_popover_rx_state_?.valueOf?.() === "toc"' in rendered
     )
+
+
+def test_feedback_fields_and_choices_have_accessible_names_and_state() -> None:
+    """Keep field purposes and selected scores available beyond visual styling."""
+    pending: list[BaseComponent] = [docs_shell._feedback_content()]
+    fields: dict[str, InputRoot | Textarea] = {}
+    while pending:
+        node = pending.pop()
+        pending.extend(node.children)
+        if isinstance(node, (InputRoot, Textarea)):
+            fields["email" if isinstance(node, InputRoot) else "feedback"] = node
+
+    assert fields["feedback"].custom_attrs["aria-label"] == "Feedback"
+    assert fields["email"].custom_attrs["aria-label"] == "Contact email (optional)"
+    rendered = str(docs_feedback_button_toc())
+    assert rendered.count('"aria-pressed"') == 2
+    assert '"aria-pressed"' in str(docs_feedback_button())
 
 
 FOOTER = docs_shell._FOOTER_FEEDBACK_POPOVER
@@ -241,6 +261,24 @@ def test_official_docs_footer_content_is_shared() -> None:
         assert path in rendered
     for path in ("/", "/blog/", "/faq/"):
         assert f'href:"https://reflex.dev{path}"' in rendered
+
+
+def test_footer_theme_and_social_controls_can_wrap() -> None:
+    """Keep the social links reachable when they cannot fit beside theme controls."""
+    pending: list[BaseComponent] = [
+        docs_page_footer(issue_href="/issues/", edit_href="/edit/")
+    ]
+    while pending:
+        node = pending.pop()
+        if (
+            len(node.children) == 2
+            and "Toggle system color mode" in str(node.children[0])
+            and "Social link for Forum" in str(node.children[1])
+        ):
+            assert "flex-wrap" in str(cast(rx.Component, node).class_name)
+            return
+        pending.extend(node.children)
+    pytest.fail("Footer controls were not rendered")
 
 
 def test_docs_layout_uses_page_aware_footer_renderer() -> None:

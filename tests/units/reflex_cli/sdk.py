@@ -46,7 +46,9 @@ def fake_client(**identity: Any) -> FakeClient:
         "tier": "Pro",
     }
     fields.update(identity)
-    return FakeClient(api=MagicMock(), me=Me(**fields))
+    return FakeClient(
+        api=MagicMock(base_url="https://build.reflex.dev"), me=Me(**fields)
+    )
 
 
 def patch_upload_client(mocker: Any, client: FakeClient) -> None:
@@ -64,25 +66,37 @@ def patch_upload_client(mocker: Any, client: FakeClient) -> None:
     mocker.patch("reflex_cli.utils.hosting.upload_client", return_value=uploader)
 
 
-def api_error(status_code: int, detail: str) -> APIStatusError:
+def api_error(
+    status_code: int,
+    detail: str,
+    *,
+    code: str = "",
+    method: str = "GET",
+    path: str = "test",
+    base_url: str = "https://build.reflex.dev",
+) -> APIStatusError:
     """Build the error the SDK raises for a refused request.
 
     Args:
         status_code: The status the API answered with.
         detail: The API's explanation, which the CLI reports.
+        code: The machine-readable refusal code.
+        method: The failed request's method.
+        path: The failed request's path below ``/api/v1/``.
+        base_url: The configured backend URL, including any path prefix.
 
     Returns:
         The error, to raise from a mocked call.
     """
     request = Request(
-        method="GET",
-        url="https://build.reflex.dev/api/v1/test",
+        method=method,
+        url=f"{base_url.rstrip('/')}/api/v1/{path}",
         headers={"X-Request-ID": uuid.uuid4().hex},
     )
     response = Response(
         status_code=status_code,
         reason_phrase="",
-        headers={},
+        headers={"x-reflex-error-code": code} if code else {},
         content=json.dumps({"detail": detail}).encode(),
         request=request,
     )

@@ -14,11 +14,9 @@ from reflex_build_sdk.transports import (
     HttpxTransport,
     Transport,
     _defaults,
-)
-from reflex_build_sdk.transports._defaults import (
-    async_default_transport,
     default_transport,
 )
+from reflex_build_sdk.transports._defaults import async_default_transport
 
 
 def _without(monkeypatch: pytest.MonkeyPatch, *missing: str) -> None:

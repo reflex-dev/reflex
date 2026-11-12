@@ -429,6 +429,14 @@ class State(rx.State):
         await Expense(amount=amount).start(Expense.submit)
 ```
 
+## Tracing
+
+With [`reflex-otel`](../reflex-otel) instrumented, every step attempt is an OpenTelemetry
+span named `<table>.<step>`, linked to the span that scheduled it: the handler or request
+that called `start`, `run` or `deliver`, or the step that returned it. Nothing to configure
+here; `ReflexInstrumentor().instrument()` turns it on, and without it the engine imports
+nothing from `opentelemetry`.
+
 ## Running
 
 Enter `run_workflows` from the app's lifespan. Every process that does so is a worker;

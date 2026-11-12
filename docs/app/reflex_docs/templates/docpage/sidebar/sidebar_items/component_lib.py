@@ -1,16 +1,9 @@
 import reflex as rx
-from reflex.utils.format import to_snake_case, to_title_case
+from reflex.utils.format import to_snake_case
+
+from reflex_docs.utils.library import get_display_name
 
 from ..state import SideBarItem
-
-
-def get_display_name(name: str) -> str:
-    normalized = to_snake_case(name)
-    if normalized == "html":
-        return "HTML"
-    if normalized == "svg":
-        return "SVG"
-    return to_title_case(normalized, sep=" ")
 
 
 def is_html_category(category: str) -> bool:

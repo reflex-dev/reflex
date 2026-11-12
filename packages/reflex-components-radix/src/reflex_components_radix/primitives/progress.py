@@ -16,7 +16,7 @@ from reflex_components_radix.themes.base import LiteralAccentColor, LiteralRadiu
 class ProgressComponent(RadixPrimitiveComponentWithClassName):
     """A Progress component."""
 
-    library = "@radix-ui/react-progress@1.1.16"
+    library = "@radix-ui/react-progress@1.2.1"
 
 
 class ProgressRoot(ProgressComponent):

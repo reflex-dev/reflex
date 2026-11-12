@@ -265,6 +265,7 @@ LiteralCodeLanguage = Literal[
     "t4-vb",
     "tap",
     "tcl",
+    "text",
     "textile",
     "toml",
     "tremor",
@@ -382,7 +383,7 @@ for theme_name in dir(Theme):
 class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
-    library = "react-syntax-highlighter@16.1.1"
+    library = "react-syntax-highlighter@16.1.2"
 
     tag = "PrismAsyncLight"
 

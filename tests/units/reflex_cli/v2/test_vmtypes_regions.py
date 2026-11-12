@@ -327,3 +327,42 @@ def test_generate_cloud_config_json_output_when_nothing_written(mocker: MockFixt
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.stdout) == {"generated": False, "path": None}
+
+
+def test_generate_cloud_config_json_without_pyyaml_writes_no_document(
+    mocker: MockFixture,
+):
+    """Missing PyYAML is a failure, not a config that was already there.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    # A None entry makes `import yaml` raise ImportError.
+    mocker.patch.dict("sys.modules", {"yaml": None})
+    get_client = mocker.patch("reflex_cli.utils.hosting.get_authenticated_client")
+
+    result = runner.invoke(hosting_cli, ["config", "--json"])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    get_client.assert_not_called()
+
+
+def test_generate_cloud_config_without_pyyaml_exits_nonzero(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """Without --json, a missing PyYAML still fails the command.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch.dict("sys.modules", {"yaml": None})
+    mock_console_print = mocker.patch("reflex_cli.utils.console.print")
+
+    result = runner.invoke(hosting_cli, ["config"])
+
+    assert result.exit_code == 1
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Please install PyYAML to use this command: pip install pyyaml"]
+    mock_console_print.assert_not_called()
