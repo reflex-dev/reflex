@@ -1231,6 +1231,10 @@ _PY_STR_CHARS_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrChars")],
 }
 
+_PY_STR_SPLIT_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrSplit")],
+}
+
 _PY_STR_LENGTH_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyStrLength")],
 }
@@ -1766,19 +1770,17 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
     Returns:
         The split string. An empty separator splits by code points.
     """
-    if isinstance(sep, LiteralStringVar):
-        js_expression = (
-            f"pyStrChars({string!s})"
-            if sep._var_value == ""
-            else f"{string!s}.split({sep!s})"
-        )
+    if not isinstance(sep, LiteralStringVar):
+        js_expression = f"pyStrSplit({string!s}, {sep!s})"
+        var_data = VarData(imports=_PY_STR_SPLIT_IMPORT)
+    elif sep._var_value == "":
+        js_expression = f"pyStrChars({string!s})"
+        var_data = VarData(imports=_PY_STR_CHARS_IMPORT)
     else:
-        # Evaluate the separator once: it may be any expression, e.g. a function call.
-        js_expression = f'(((s, sep) => sep === "" ? pyStrChars(s) : s.split(sep))({string!s}, {sep!s}))'
+        js_expression = f"{string!s}.split({sep!s})"
+        var_data = None
     return var_operation_return(
-        js_expression=js_expression,
-        var_type=list[str],
-        var_data=VarData(imports=_PY_STR_CHARS_IMPORT),
+        js_expression=js_expression, var_type=list[str], var_data=var_data
     )
 
 

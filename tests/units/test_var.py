@@ -1171,18 +1171,15 @@ def test_string_split_uses_code_points_for_empty_separator():
     assert str(basic_string.split("")) == code_point_split
     assert str(basic_string.split(" ")) == f'{literal}.split(" ")'
     sep_var = Var(_js_expr="state.sep").to(str)
-    assert (
-        str(basic_string.split(sep_var))
-        == '(((s, sep) => sep === "" ? pyStrChars(s) : s.split(sep))('
-        f"{literal}, state.sep))"
-    )
-    for split_var in (basic_string.split(), basic_string.split(sep_var)):
+    assert str(basic_string.split(sep_var)) == f"pyStrSplit({literal}, state.sep)"
+    for split_var, tag in (
+        (basic_string.split(), "pyStrChars"),
+        (basic_string.split(sep_var), "pyStrSplit"),
+    ):
         var_data = split_var._get_all_var_data()
         assert var_data is not None
-        assert (
-            ImportVar(tag="pyStrChars")
-            in dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"]
-        )
+        assert dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"] == (ImportVar(tag=tag),)
+    assert basic_string.split(" ")._get_all_var_data() is None
 
 
 def test_all_number_operations():
