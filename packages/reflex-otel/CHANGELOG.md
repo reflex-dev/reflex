@@ -2,7 +2,7 @@
 
 <!-- towncrier release notes start -->
 
-## v0.2.1a1 (2026-11-10)
+## v0.2.1 (2026-11-11)
 
 ### Features
 

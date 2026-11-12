@@ -1,11 +1,4 @@
-## v0.11.0a2 (2026-11-11)
-
-### Bug Fixes
-
-- An upload handler that raises now gets an HTTP 500 when no update was streamed yet, or ends the stream with an `{"error": ...}` frame that `rx.upload_files` reports, instead of a truncated response that looked successful. The backend exception handler receives the full traceback, and the server no longer logs the exception twice. ([#7808](https://github.com/reflex-dev/reflex/issues/7808))
-
-
-## v0.11.0a1 (2026-11-10)
+## v0.11.0 (2026-11-11)
 
 ### Deprecations
 
@@ -15,6 +8,7 @@
 
 - `rx.foreach` over a string now iterates Unicode code points, so a character such as an emoji is no longer split into lone surrogates. ([#7548](https://github.com/reflex-dev/reflex/issues/7548))
 - `rx.match` is now typed as returning a `Component` when its cases return components and a `Var` when they return values, so a function returning it can be annotated with either. ([#7750](https://github.com/reflex-dev/reflex/issues/7750))
+- An upload handler that raises now gets an HTTP 500 when no update was streamed yet, or ends the stream with an `{"error": ...}` frame that `rx.upload_files` reports, instead of a truncated response that looked successful. The backend exception handler receives the full traceback, and the server no longer logs the exception twice. ([#7808](https://github.com/reflex-dev/reflex/issues/7808))
 
 
 ## v0.10.1 (2026-10-26)
