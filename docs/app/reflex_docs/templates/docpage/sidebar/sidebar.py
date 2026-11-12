@@ -41,12 +41,23 @@ _SIDEBAR_URL_HOOK = r"""const docsSidebarUrl = useLocation()
   .replace(/^\/docs(?=\/|$)/, "")
   .replace(/^(\/library(?=\/).*)\/low$/, "$1") + "/";"""
 
-# Scroll the active link into view only when it falls outside the sidebar's
-# viewport, so clicking a visible link never moves the sidebar.
+# Groups render open for the route the sidebar first mounted on and the prop
+# never changes after that, so React never collapses a group the reader opened
+# or closed by hand. Navigation only ever opens groups, from this effect.
+_SIDEBAR_INITIAL_URL_HOOK = (
+    "const docsSidebarInitialUrl = useRef(docsSidebarUrl).current;"
+)
+
+# Open the groups around the active link, then scroll it into view only when it
+# falls outside the sidebar's viewport, so clicking a visible link never moves
+# the sidebar.
 _SIDEBAR_SCROLL_HOOK = """useEffect(() => {
   for (const scroller of document.querySelectorAll(".docs-sidebar-scroll")) {
     const active = scroller.querySelector('a[aria-current="page"]');
     if (!active) continue;
+    for (let group = active.closest("details"); group; group = group.parentElement.closest("details")) {
+      group.open = true;
+    }
     const link = active.getBoundingClientRect();
     const box = scroller.getBoundingClientRect();
     const offset = link.top < box.top ? link.top - box.top : Math.max(0, link.bottom - box.bottom);
@@ -54,16 +65,26 @@ _SIDEBAR_SCROLL_HOOK = """useEffect(() => {
   }
 }, [docsSidebarUrl]);"""
 
+_SIDEBAR_VAR_DATA = VarData(
+    imports={
+        "react": [ImportVar(tag="useEffect"), ImportVar(tag="useRef")],
+        "react-router": [ImportVar(tag="useLocation")],
+    },
+    hooks={
+        _SIDEBAR_URL_HOOK: None,
+        _SIDEBAR_INITIAL_URL_HOOK: None,
+        _SIDEBAR_SCROLL_HOOK: None,
+    },
+)
+
+# The current route, for marking the active link.
 SIDEBAR_URL: rx.vars.StringVar[str] = rx.Var(
-    _js_expr="docsSidebarUrl",
-    _var_type=str,
-    _var_data=VarData(
-        imports={
-            "react": [ImportVar(tag="useEffect")],
-            "react-router": [ImportVar(tag="useLocation")],
-        },
-        hooks={_SIDEBAR_URL_HOOK: None, _SIDEBAR_SCROLL_HOOK: None},
-    ),
+    _js_expr="docsSidebarUrl", _var_type=str, _var_data=_SIDEBAR_VAR_DATA
+).to(str)
+
+# The route the sidebar mounted on, for the initial state of each group.
+SIDEBAR_INITIAL_URL: rx.vars.StringVar[str] = rx.Var(
+    _js_expr="docsSidebarInitialUrl", _var_type=str, _var_data=_SIDEBAR_VAR_DATA
 ).to(str)
 
 
@@ -159,7 +180,7 @@ def sidebar_item_comp(
             sidebar_item_comp(item=child, url=url, guide_margin_class="ml-[2.5rem]")
             for child in item.children
         ),
-        open_=rx.Var.create(_descendant_links(item)).contains(url),
+        open_=rx.Var.create(_descendant_links(item)).contains(SIDEBAR_INITIAL_URL),
     )
 
 

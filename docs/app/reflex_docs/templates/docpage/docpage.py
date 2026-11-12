@@ -479,7 +479,7 @@ def docpage(
                 rx.el.main(
                     # The desktop sidebar itself is the persistent app wrap
                     # from ``persistent_sidebar``; this only reserves its column.
-                    rx.box(class_name="docs-sidebar-slot hidden shrink-0 lg:block"),
+                    rx.el.div(class_name="docs-sidebar-slot hidden shrink-0 lg:block"),
                     rx.box(
                         rx.box(
                             breadcrumb(

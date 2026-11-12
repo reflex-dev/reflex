@@ -199,8 +199,8 @@ def test_api_reference_section_order_places_every_page_once():
     assert len(links) == len(set(links)) == len(paths)
 
 
-def test_groups_open_for_any_descendant_of_the_client_route():
-    """Groups expand from the client-side route, so one sidebar serves every page."""
+def test_groups_open_for_any_descendant_of_the_initial_route():
+    """Groups start open around the first route and are never closed by navigation."""
     from reflex_docs.templates.docpage.sidebar.sidebar import (
         SIDEBAR_URL,
         sidebar_item_comp,
@@ -223,6 +223,8 @@ def test_groups_open_for_any_descendant_of_the_client_route():
     details = sidebar_item_comp(group, SIDEBAR_URL).children[0]
     nested = details.children[1].children[1].children[0]
     assert str(details.open) == (
-        '["/postgres/", "/sqlite/", "/files/"].includes(docsSidebarUrl)'
+        '["/postgres/", "/sqlite/", "/files/"].includes(docsSidebarInitialUrl)'
     )
-    assert str(nested.open) == '["/postgres/", "/sqlite/"].includes(docsSidebarUrl)'
+    assert str(nested.open) == (
+        '["/postgres/", "/sqlite/"].includes(docsSidebarInitialUrl)'
+    )

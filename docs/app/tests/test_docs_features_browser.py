@@ -443,6 +443,26 @@ def test_sidebar_persists_across_navigation(page: Page):
     ]
 
 
+def test_hand_opened_sidebar_group_survives_navigation(page: Page):
+    """A group the reader expanded stays open after visiting and leaving it."""
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    sidebar = page.locator(".docs-sidebar-scroll")
+    tutorials = sidebar.locator("details").filter(
+        has=page.locator("summary", has_text="Tutorials")
+    )
+    expect(tutorials).not_to_have_attribute("open", "")
+    tutorials.locator("summary").click()
+    expect(tutorials).to_have_attribute("open", "")
+    tutorial = tutorials.locator('a[href="/docs/getting-started/dashboard-tutorial/"]')
+    tutorial.click()
+    expect(tutorial).to_have_attribute("aria-current", "page")
+    introduction = sidebar.get_by_role("link", name="Introduction", exact=True)
+    introduction.click()
+    expect(introduction).to_have_attribute("aria-current", "page")
+    expect(tutorials).to_have_attribute("open", "")
+
+
 def test_long_active_sidebar_label_stays_on_one_line(page: Page):
     """A long selected label truncates instead of wrapping past its highlight."""
     page.set_viewport_size({"width": 1440, "height": 1000})
