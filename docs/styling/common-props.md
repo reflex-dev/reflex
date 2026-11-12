@@ -280,7 +280,7 @@ Any [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS) prop can be used in 
 
 Hyphens in CSS property names may be replaced by underscores to use as valid python identifiers, i.e. the CSS prop `z-index` would be used as `z_index` in Reflex.
 
-```python eval
+```python eval notest
 rx.table.root(
     rx.table.header(
         rx.table.row(

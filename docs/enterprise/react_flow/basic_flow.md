@@ -93,3 +93,17 @@ def flow_example():
         width="100vw",
     )
 ```
+
+```python test
+def test_basic_flow_nodes_edges_and_controls(demo):
+    flow = demo.get_by_role("application")
+    for label in ["Input Node", "Default Node", "Output Node"]:
+        expect(flow.get_by_role("group").filter(has_text=label)).to_have_text(label)
+    expect(flow.get_by_role("group", name="Edge from 1 to 2")).to_be_attached()
+    expect(flow.get_by_role("group", name="Edge from 2 to 3")).to_be_attached()
+    expect(flow.get_by_role("img", name="Mini Map")).to_be_visible()
+    zoom_in = flow.get_by_role("button", name="Zoom In")
+    expect(zoom_in).to_be_disabled()
+    flow.get_by_role("button", name="Zoom Out").click()
+    expect(zoom_in).to_be_enabled()
+```

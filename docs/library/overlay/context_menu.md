@@ -232,6 +232,26 @@ rx.context_menu.root(
 )
 ```
 
+```python test
+def test_context_menu_items_and_submenu(demo, page):
+    demo.get_by_role("button", name="Right click me").click(button="right")
+    menu = page.get_by_role("menu")
+    expect(menu.get_by_role("menuitem")).to_have_text([
+        "Edit⌘ E",
+        "Duplicate⌘ D",
+        "Archive⌘ N",
+        "More",
+        "Share",
+        "Add to favorites",
+        "Delete⌘ ⌫",
+    ])
+    menu.get_by_role("menuitem", name="More").hover()
+    expect(page.get_by_role("menuitem", name="Move to project…")).to_be_visible()
+    expect(page.get_by_role("menuitem", name="Advanced options…")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.get_by_role("menu")).to_have_count(0)
+```
+
 ````md alert warning
 # `rx.context_menu.item` must be a DIRECT child of `rx.context_menu.content`
 
@@ -370,4 +390,28 @@ def context_menu_call_dialog() -> rx.Component:
         settings_dialog(),
         align="center",
     )
+```
+
+```python test
+def test_context_menu_opens_dialogs(demo, page):
+    trigger = demo.locator("svg.lucide-ellipsis-vertical")
+    trigger.click(button="right")
+    page.get_by_role("menuitem", name="Delete").click()
+    expect(demo.get_by_role("heading", include_hidden=True)).to_have_text(
+        "delete dialog is open"
+    )
+    dialog = page.get_by_role("alertdialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Are you Sure?")
+    dialog.get_by_role("button", name="Delete").click()
+    expect(page.get_by_text("Deleted item")).to_be_visible()
+    expect(dialog).to_be_hidden()
+    expect(demo.get_by_role("heading")).to_have_count(0)
+
+    trigger.click(button="right")
+    page.get_by_role("menuitem", name="Settings").click()
+    dialog = page.get_by_role("dialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Settings")
+    dialog.get_by_role("button", name="Close").click()
+    expect(page.get_by_text("Saved settings")).to_be_visible()
+    expect(dialog).to_be_hidden()
 ```

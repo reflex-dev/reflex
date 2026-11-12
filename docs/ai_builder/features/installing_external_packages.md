@@ -25,7 +25,7 @@ Use the requests package to call this REST endpoint. Add it to the app's
 dependencies and handle timeouts and non-success responses.
 ```
 
-```python eval
+```python eval notest
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/agent_package_install.webp",
@@ -41,7 +41,7 @@ rx.el.div(
 
 Open `requirements.txt` in **Code**, add the package on its own line, and save. Reflex installs the dependency and recompiles the app.
 
-```python eval
+```python eval notest
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/requirements_package_added.webp",

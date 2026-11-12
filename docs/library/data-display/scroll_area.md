@@ -65,6 +65,19 @@ rx.scroll_area(
 )
 ```
 
+```python test
+def test_scroll_area_scrolls_vertically(page, demo):
+    paragraphs = demo.locator(".rt-ScrollAreaViewport p")
+    expect(paragraphs).to_have_count(3)
+    expect(demo.locator(".rt-ScrollAreaScrollbar")).to_have_attribute(
+        "data-orientation", "vertical"
+    )
+    expect(paragraphs.last).not_to_be_in_viewport()
+    demo.locator(".rt-ScrollAreaViewport").hover()
+    page.mouse.wheel(0, 1000)
+    expect(paragraphs.last).to_be_in_viewport()
+```
+
 ## Control the scrollable axes
 
 Use the `scrollbars` prop to limit scrollable axes. This prop can take values `"vertical" | "horizontal" | "both"`.
@@ -156,6 +169,21 @@ rx.grid(
     columns="3",
     spacing="2",
 )
+```
+
+```python test
+def test_scroll_area_axes(demo):
+    roots = demo.locator(".rt-ScrollAreaRoot")
+    expect(roots).to_have_count(3)
+    for i, axes in enumerate([
+        ["vertical"],
+        ["horizontal"],
+        ["horizontal", "vertical"],
+    ]):
+        scrollbars = roots.nth(i).locator(".rt-ScrollAreaScrollbar")
+        expect(scrollbars).to_have_count(len(axes))
+        for j, axis in enumerate(axes):
+            expect(scrollbars.nth(j)).to_have_attribute("data-orientation", axis)
 ```
 
 ## Setting the type of the Scrollbars
@@ -255,4 +283,22 @@ rx.grid(
     columns="4",
     spacing="2",
 )
+```
+
+```python test
+def test_scroll_area_types(demo):
+    roots = demo.locator(".rt-ScrollAreaRoot")
+    expect(roots.locator(".rt-Text.rt-r-weight-bold")).to_have_text([
+        "type = 'auto'",
+        "type = 'always'",
+        "type = 'scroll'",
+        "type = 'hover'",
+    ])
+    scrollbar = ".rt-ScrollAreaScrollbar"
+    expect(roots.nth(0).locator(scrollbar)).to_be_visible()
+    expect(roots.nth(1).locator(scrollbar)).to_be_visible()
+    expect(roots.nth(2).locator(scrollbar)).to_have_count(0)
+    expect(roots.nth(3).locator(scrollbar)).to_have_count(0)
+    roots.nth(3).hover()
+    expect(roots.nth(3).locator(scrollbar)).to_be_visible()
 ```

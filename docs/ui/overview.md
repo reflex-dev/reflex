@@ -28,6 +28,13 @@ Let's take a look at the `rx.text` component.
 rx.text("Hello World!", color="blue", font_size="1.5em")
 ```
 
+```python test
+def test_text_with_props(demo):
+    text = demo.get_by_text("Hello World!", exact=True)
+    expect(text).to_have_css("color", "rgb(0, 0, 255)")
+    expect(text).to_have_css("font-size", "24px")
+```
+
 Here `"Hello World!"` is the child text to display, while `color` and `font_size` are props that modify the appearance of the text.
 
 ```md alert success
@@ -44,6 +51,18 @@ rx.vstack(
     rx.input(placeholder="Name"),
     rx.checkbox("Subscribe to Newsletter"),
 )
+```
+
+```python test
+def test_vstack_form(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Sample Form")
+    name = demo.get_by_placeholder("Name")
+    name.fill("Ada")
+    expect(name).to_have_value("Ada")
+    newsletter = demo.get_by_role("checkbox", name="Subscribe to Newsletter")
+    expect(newsletter).not_to_be_checked()
+    newsletter.click()
+    expect(newsletter).to_be_checked()
 ```
 
 Some props are specific to a component. For example, the `header` and `content` props of the `rx.accordion.item` component show the heading and accordion content details of the accordion respectively.

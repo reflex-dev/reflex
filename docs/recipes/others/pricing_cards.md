@@ -63,6 +63,23 @@ def pricing_card_beginner() -> rx.Component:
     )
 ```
 
+```python test
+def test_single_pricing_card(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_role("paragraph")).to_have_text([
+        "Beginner",
+        "Ideal choice for personal use & for your next project.",
+        "$39",
+        "/month",
+        "24/7 customer support",
+        "Daily backups",
+        "Advanced analytics",
+        "Customizable templates",
+        "Priority email support",
+    ])
+    expect(view.get_by_role("button")).to_have_text(["Get started"])
+```
+
 ## Comparison cards
 
 ```python demo exec
@@ -206,4 +223,21 @@ def pricing_cards() -> rx.Component:
         width="100%",
         align_items="center",
     )
+```
+
+```python test
+def test_credit_pricing_cards(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_text("POPULAR", exact=True)).to_be_visible()
+    expect(view.get_by_text(re.compile(r"^\d+ Image Credits$"))).to_have_text([
+        "40 Image Credits",
+        "250 Image Credits",
+    ])
+    expect(view.get_by_text(re.compile(r"^\$\d+\.\d+$"))).to_have_text([
+        "$14.99",
+        "$3.99",
+        "$69.99",
+        "$18.99",
+    ])
+    expect(view.get_by_role("button", name="Purchase")).to_have_count(2)
 ```

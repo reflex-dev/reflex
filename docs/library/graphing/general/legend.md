@@ -39,6 +39,13 @@ def legend_simple():
     )
 ```
 
+```python test
+def test_legend_lists_every_series(demo):
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["amt", "pv", "uv"])
+    expect(demo.locator(".recharts-area")).to_have_count(1)
+    expect(demo.locator(".recharts-line")).to_have_count(1)
+```
+
 ## Example with Props
 
 The style and layout of the legend can be customized using a set of props. `width` and `height` set the dimensions of the container that wraps the legend, and `layout` can set the legend to display vertically or horizontally. `align` and `vertical_align` set the position relative to the chart container. The type and size of icons can be set using `icon_size` and `icon_type`.
@@ -87,4 +94,14 @@ def legend_props():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_legend_stacks_square_icons_on_the_right(demo):
+    items = demo.locator(".recharts-legend-item")
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["amt", "pv", "uv"])
+    expect(items.first.locator("svg")).to_have_attribute("width", "15")
+    expect(demo.locator(".recharts-legend-wrapper")).to_have_css("width", "60px")
+    first, second = items.first.bounding_box(), items.nth(1).bounding_box()
+    assert second["y"] > first["y"]
 ```

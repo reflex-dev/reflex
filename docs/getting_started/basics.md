@@ -35,6 +35,12 @@ def my_button():
     return rx.button("Click Me")
 ```
 
+```python test
+def test_my_button(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_role("button")).to_have_text(["Click Me"])
+```
+
 Components can be nested inside each other to create complex UIs.
 
 To nest components as children, pass them as positional arguments to the parent component. In the example below, the `rx.text` and `my_button` components are children of the `rx.box` component.
@@ -48,6 +54,13 @@ def my_container():
     )
 ```
 
+```python test
+def test_nested_components(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_role("paragraph")).to_have_text("This is a page")
+    expect(view.get_by_role("button")).to_have_text(["Click Me"])
+```
+
 You can also use any base HTML element through the [rx.el](/docs/library/html/) namespace. This allows you to use standard HTML elements directly in your Reflex app when you need more control or when a specific component isn't available in the Reflex component library.
 
 ```python demo exec
@@ -55,6 +68,12 @@ def my_div():
     return rx.el.div(
         rx.el.p("Use base html!"),
     )
+```
+
+```python test
+def test_base_html_elements(demo):
+    paragraph = demo.get_by_role("tabpanel", name="View").locator("div > p")
+    expect(paragraph).to_have_text("Use base html!")
 ```
 
 If you need a component not provided by Reflex, you can [wrap your own React component](/docs/wrapping-react/library-and-tags/).
@@ -70,11 +89,25 @@ def half_filled_progress():
     return rx.progress(value=50)
 ```
 
+```python test
+def test_half_filled_progress(demo):
+    progress = demo.get_by_role("tabpanel", name="View").get_by_role("progressbar")
+    expect(progress).to_have_attribute("aria-valuenow", "50")
+```
+
 In addition to component-specific props, components can also be styled using CSS properties passed as props.
 
 ```python demo exec
 def round_button():
     return rx.button("Click Me", border_radius="15px", font_size="18px")
+```
+
+```python test
+def test_styled_button(demo):
+    button = demo.get_by_role("tabpanel", name="View").get_by_role("button")
+    expect(button).to_have_text("Click Me")
+    expect(button).to_have_css("border-radius", "15px")
+    expect(button).to_have_css("font-size", "18px")
 ```
 
 ```md alert
@@ -129,6 +162,13 @@ def counter():
     )
 ```
 
+```python test
+def test_state_vars_render(demo):
+    headings = demo.get_by_role("tabpanel", name="View").get_by_role("heading")
+    expect(headings).to_have_text(["Count:", "0"])
+    expect(headings.first).to_have_css("color", "rgb(255, 0, 0)")
+```
+
 Vars can be referenced in multiple components, and will automatically update when the state changes.
 
 ## Responding to events and updating the screen
@@ -155,6 +195,16 @@ def counter_increment():
         rx.heading(CounterState.count, as_="h2"),
         rx.button("Increment", on_click=CounterState.increment),
     )
+```
+
+```python test
+def test_increment_handler(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    count = view.get_by_role("heading")
+    expect(count).to_have_text("0")
+    view.get_by_role("button", name="Increment").click()
+    view.get_by_role("button", name="Increment").click()
+    expect(count).to_have_text("2")
 ```
 
 When an event trigger is activated, the event handler is called, which updates the state. The UI is automatically re-rendered to reflect the new state.
@@ -186,6 +236,17 @@ def counter_variable():
     )
 ```
 
+```python test
+def test_increment_with_arguments(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    count = view.get_by_role("heading")
+    expect(count).to_have_text("0")
+    view.get_by_role("button", name="Increment by 5").click()
+    expect(count).to_have_text("5")
+    view.get_by_role("button", name="Increment by 1").click()
+    expect(count).to_have_text("6")
+```
+
 The `on_click` event trigger doesn't pass any arguments here, but some event triggers do. For example, the `on_blur` event trigger passes the text of an input as an argument to the event handler.
 
 ```python demo exec
@@ -202,6 +263,17 @@ def text_input():
         rx.heading(TextState.text, as_="h2"),
         rx.input(default_value=TextState.text, on_blur=TextState.update_text),
     )
+```
+
+```python test
+def test_text_updates_on_blur(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    heading = view.get_by_role("heading")
+    expect(heading).to_have_text("")
+    view.get_by_role("textbox").fill("Hello Reflex")
+    expect(heading).to_have_text("")
+    view.get_by_role("textbox").blur()
+    expect(heading).to_have_text("Hello Reflex")
 ```
 
 ```md alert
@@ -251,11 +323,31 @@ def count_and_check():
     )
 ```
 
+```python test
+def test_even_odd_text(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    heading = view.get_by_role("heading")
+    button = view.get_by_role("button", name="Increment")
+    expect(heading).to_have_text("even")
+    button.click()
+    expect(heading).to_have_text("even")
+    button.click()
+    expect(heading).to_have_text("odd")
+```
+
 Use any Python function within components, as long as it is defined at compile time (i.e. does not reference any state var)
 
 ```python demo exec
 def show_numbers():
     return rx.vstack(*[rx.hstack(i, check_even(i)) for i in range(10)])
+```
+
+```python test
+def test_numbers_with_parity(demo):
+    rows = demo.get_by_role("tabpanel", name="View").locator(".rx-Stack .rx-Stack")
+    expect(rows).to_have_text([
+        f"{i}{'true' if i % 2 == 0 else 'false'}" for i in range(10)
+    ])
 ```
 
 ### Examples that don't work
@@ -331,6 +423,17 @@ def show_login():
     )
 ```
 
+```python test
+def test_toggle_login(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    heading = view.get_by_role("heading")
+    expect(heading).to_have_text("Not Logged In")
+    view.get_by_role("button", name="Toggle Login").click()
+    expect(heading).to_have_text("Logged In")
+    view.get_by_role("button", name="Toggle Login").click()
+    expect(heading).to_have_text("Not Logged In")
+```
+
 ## Rendering lists
 
 To iterate over a var that is a list, use the [rx.foreach](/docs/components/rendering-iterables/) function to render a list of components.
@@ -352,6 +455,12 @@ def show_fruits():
     return rx.box(
         rx.foreach(ListState.items, render_item),
     )
+```
+
+```python test
+def test_foreach_fruits(demo):
+    items = demo.get_by_role("tabpanel", name="View").get_by_role("listitem")
+    expect(items).to_have_text(["Apple", "Banana", "Cherry"])
 ```
 
 The function that renders each item takes in a `Var`, since this will get compiled up front.
@@ -382,6 +491,17 @@ def count_if_even():
         ),
         rx.button("Increment", on_click=CountEvenState.increment),
     )
+```
+
+```python test
+def test_count_even_odd(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_role("heading")).to_have_text("Count:")
+    expect(view.get_by_role("paragraph")).to_have_text("Even")
+    view.get_by_role("button", name="Increment").click()
+    expect(view.get_by_role("paragraph")).to_have_text("Odd")
+    view.get_by_role("button", name="Increment").click()
+    expect(view.get_by_role("paragraph")).to_have_text("Even")
 ```
 
 ## App and Pages

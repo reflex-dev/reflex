@@ -56,7 +56,7 @@ Regions are the locations where Reflex runs your app. Add regions closer to your
 3. Select **Add new region**.
 4. Choose the region and number of instances, then review the resource change before confirming.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/settings_regions.webp",
     alt="Region settings with the current and available deployment regions",
@@ -69,7 +69,7 @@ You can remove a region when the app has more than one. Removing it makes the ap
 
 The table below lists the Reflex Cloud region codes. A connected Google Cloud account uses the region chosen in the organization's Cloud Provider settings.
 
-```python eval
+```python eval notest
 rx.el.table(
     rx.el.thead(
         rx.el.tr(

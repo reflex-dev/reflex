@@ -19,6 +19,12 @@ You can use `rx.toast` as an event handler for any component that triggers an ac
 rx.button("Show Toast", on_click=rx.toast("Hello, World!"))
 ```
 
+```python test
+def test_toast_shows_message(demo, page):
+    demo.get_by_role("button", name="Show Toast").click()
+    expect(page.get_by_text("Hello, World!")).to_be_visible()
+```
+
 ### Usage in State
 
 You can also use `rx.toast` in a state to show a toast when a specific action is triggered, using `yield`.
@@ -40,6 +46,13 @@ def render():
     return rx.button("Get Data", on_click=ToastState.fetch_data)
 ```
 
+```python test
+def test_toast_from_state(demo, page):
+    demo.get_by_role("button", name="Get Data").click()
+    # The handler sleeps for 2 seconds before yielding the toast.
+    expect(page.get_by_text("Data fetched!")).to_be_visible(timeout=10000)
+```
+
 ## Interaction
 
 If you want to interact with a toast, a few props are available to customize the behavior.
@@ -57,6 +70,21 @@ rx.button(
 )
 ```
 
+```python test
+def test_toast_action_and_cancel(demo, page):
+    demo.get_by_role("button", name="Show Toast").click()
+    toast = page.locator("[data-sonner-toast]").filter(has_text="Item deleted")
+    expect(toast.get_by_role("button")).to_have_text(["Dismiss", "Undo"])
+    with page.expect_console_message(lambda m: m.text == "Undo clicked"):
+        toast.get_by_role("button", name="Undo").click()
+    expect(toast).to_have_count(0)
+
+    demo.get_by_role("button", name="Show Toast").click()
+    with page.expect_console_message(lambda m: m.text == "Dismiss clicked"):
+        toast.get_by_role("button", name="Dismiss").click()
+    expect(toast).to_have_count(0)
+```
+
 ### Presets
 
 `rx.toast` has some presets that you can use to show different types of toasts.
@@ -68,6 +96,14 @@ rx.hstack(
     rx.button("Warning", on_click=rx.toast.warning("Warning!"), color_scheme="orange"),
     rx.button("Info", on_click=rx.toast.info("Info!"), color_scheme="blue"),
 )
+```
+
+```python test
+def test_toast_presets(demo, page):
+    for preset in ["Success", "Error", "Warning", "Info"]:
+        demo.get_by_role("button", name=preset).click()
+        toast = page.locator("[data-sonner-toast]").filter(has_text=f"{preset}!")
+        expect(toast).to_have_attribute("data-type", preset.lower())
 ```
 
 ### Customization
@@ -88,6 +124,16 @@ rx.button(
         },
     ),
 )
+```
+
+```python test
+def test_toast_custom_style(demo, page):
+    demo.get_by_role("button", name="Custom").click()
+    toast = page.locator("[data-sonner-toast]").filter(has_text="Custom Toast!")
+    expect(toast).to_have_css("background-color", "rgb(0, 128, 0)")
+    expect(toast).to_have_css("color", "rgb(255, 255, 255)")
+    expect(toast).to_have_attribute("data-y-position", "top")
+    expect(toast).to_have_attribute("data-x-position", "right")
 ```
 
 The following props are available for customization:

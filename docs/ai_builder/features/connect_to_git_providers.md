@@ -15,7 +15,7 @@ Use this workflow to start from an existing repository by providing its URL and 
 
 ## Before You Connect
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/repos.webp",
     alt="Connected project repositories from several Git providers",

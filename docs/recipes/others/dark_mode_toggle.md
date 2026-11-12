@@ -32,3 +32,16 @@ def dark_mode_toggle() -> rx.Component:
         value=color_mode,
     )
 ```
+
+```python test
+def test_toggle_switches_color_mode(page, demo):
+    radios = demo.get_by_role("tabpanel", name="View").get_by_role("radio")
+    expect(radios).to_have_count(3)
+    html = page.locator("html")
+    radios.nth(2).click()
+    expect(radios.nth(2)).to_be_checked()
+    expect(html).to_have_css("color-scheme", "dark")
+    radios.nth(1).click()
+    expect(radios.nth(1)).to_be_checked()
+    expect(html).to_have_css("color-scheme", "light")
+```

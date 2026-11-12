@@ -215,6 +215,17 @@ app.add_page(index)""",
 )
 ```
 
+```python test
+def test_code_sections_follow_selected_tab(page, demo):
+    sections = demo.locator(".transition-colors")
+    expect(sections).to_have_count(4)
+    expect(sections.nth(3)).to_have_text("app = rx.App()\napp.add_page(index)")
+    state_section = sections.nth(1)
+    expect(state_section).to_have_css("border-left-color", "rgba(0, 0, 0, 0)")
+    page.get_by_role("tab", name="Backend").click()
+    expect(state_section).not_to_have_css("border-left-color", "rgba(0, 0, 0, 0)")
+```
+
 ## The Structure of a Reflex App
 
 Let's break this example down.

@@ -12,7 +12,7 @@ Download creates a one-time source export for local development or self-hosting.
 2. Select **Download**. The action is also available from app **Settings**.
 3. Save and extract the generated archive.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/app_download_action.webp",
     alt="The Download action in the menu next to Deploy",

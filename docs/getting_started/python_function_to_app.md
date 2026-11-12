@@ -224,6 +224,27 @@ def payment_app():
     )
 ```
 
+```python test
+def test_payment_calculator(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    summary = view.get_by_role("status")
+    calculate = view.get_by_role("button", name="Calculate payment")
+    expect(summary).to_have_text("—Enter your details and calculate.", timeout=30000)
+    calculate.click()
+    expect(summary).to_have_text("$299.71per month")
+    view.get_by_label("Loan amount").fill("12000")
+    view.get_by_label("Annual interest").fill("0")
+    view.get_by_label("Loan term").fill("1")
+    calculate.click()
+    expect(summary).to_have_text("$1,000.00per month")
+    view.get_by_label("Loan term").fill("abc")
+    calculate.click()
+    expect(view.get_by_role("alert")).to_have_text(
+        "Enter an amount, interest rate, and whole number of years."
+    )
+    expect(summary).to_have_text("—Enter your details and calculate.")
+```
+
 ```python
 app = rx.App()
 app.add_page(payment_app)

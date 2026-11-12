@@ -34,6 +34,18 @@ rx.flex(
 )
 ```
 
+```python test
+def test_card_sizes(demo):
+    cards = demo.locator(".rt-Card")
+    expect(cards).to_have_text([f"Card {i}" for i in range(1, 6)])
+    for i in range(5):
+        expect(cards.nth(i)).to_have_class(re.compile(rf"\brt-r-size-{i + 1}\b"))
+    paddings = cards.evaluate_all(
+        "els => els.map(e => parseFloat(getComputedStyle(e).paddingTop))"
+    )
+    assert paddings == sorted(set(paddings))
+```
+
 ## Rendering as a Different Element
 
 The `as_child` prop may be used to render the Card as a different element. Link and Button are
@@ -53,6 +65,14 @@ rx.card(
     ),
     as_child=True,
 )
+```
+
+```python test
+def test_card_as_child_link(demo):
+    card = demo.locator("a.rt-Card")
+    expect(card).to_have_count(1)
+    expect(card.get_by_role("heading", level=2)).to_have_text("Quick Start")
+    expect(card.get_by_text("Get started with Reflex in 5 minutes.")).to_be_visible()
 ```
 
 ## Using Inset Content

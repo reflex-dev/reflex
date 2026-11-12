@@ -66,6 +66,22 @@ def label_simple():
     )
 ```
 
+```python test
+def test_bar_values_and_axis_labels_are_shown(demo):
+    expect(demo.locator(".recharts-label-list text")).to_have_text([
+        "4000",
+        "3000",
+        "2000",
+        "2780",
+        "1890",
+        "2390",
+        "3490",
+    ])
+    surface = demo.locator(".recharts-wrapper > .recharts-surface")
+    for text in ["center", "inside left", "inside right"]:
+        expect(surface.get_by_text(text, exact=True)).to_be_visible()
+```
+
 ## Label List Example
 
 `rx.recharts.label_list` takes in a `data_key` where we define the data column to plot.
@@ -103,6 +119,29 @@ def label_list():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_each_bar_series_has_a_label_list(demo):
+    label_lists = demo.locator(".recharts-label-list")
+    expect(label_lists.first.locator("text")).to_have_text([
+        "4000",
+        "3000",
+        "2000",
+        "2780",
+        "1890",
+        "2390",
+        "3490",
+    ])
+    expect(label_lists.last.locator("text")).to_have_text([
+        "2400",
+        "1398",
+        "5800",
+        "3908",
+        "4800",
+        "3800",
+        "4300",
+    ])
 ```
 
 ## Styling Labels
@@ -149,4 +188,12 @@ def label_styled():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_axis_labels_are_bold(demo):
+    labels = demo.locator(".recharts-label")
+    expect(labels).to_have_text(["Pages", "Views"])
+    expect(labels.first).to_have_attribute("font-weight", "700")
+    expect(labels.last).to_have_attribute("font-size", "12px")
 ```

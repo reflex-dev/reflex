@@ -203,6 +203,26 @@ rx.menu.root(
 )
 ```
 
+```python test
+def test_dropdown_menu_items_and_submenu(demo, page):
+    demo.get_by_role("button", name="Options").click()
+    menu = page.get_by_role("menu")
+    expect(menu.get_by_role("menuitem")).to_have_text([
+        "Edit⌘ E",
+        "Duplicate⌘ D",
+        "Archive⌘ N",
+        "More",
+        "Share",
+        "Add to favorites",
+        "Delete⌘ ⌫",
+    ])
+    menu.get_by_role("menuitem", name="More").hover()
+    expect(page.get_by_role("menuitem", name="Move to folder…")).to_be_visible()
+    page.keyboard.press("Escape")
+    page.keyboard.press("Escape")
+    expect(page.get_by_role("menu")).to_have_count(0)
+```
+
 ## Events when the Dropdown Menu opens or closes
 
 The `on_open_change` event, from the `menu.root`, is called when the `open` state of the dropdown menu changes. It is used in conjunction with the `open` prop, which is passed to the event handler.
@@ -242,6 +262,27 @@ def dropdown_menu_example():
         direction="column",
         spacing="3",
     )
+```
+
+```python test
+def test_dropdown_menu_on_open_change_counts(demo, page):
+    # The open modal menu hides the page from the accessibility tree.
+    headings = demo.get_by_role("heading", include_hidden=True)
+    expect(headings).to_have_text([
+        "Number of times Dropdown Menu opened or closed: 0",
+        "Dropdown Menu open: false",
+    ])
+    demo.get_by_role("button", name="Options").click()
+    expect(headings).to_have_text([
+        "Number of times Dropdown Menu opened or closed: 1",
+        "Dropdown Menu open: true",
+    ])
+    page.get_by_role("menuitem", name="Archive").click()
+    expect(page.get_by_role("menu")).to_have_count(0)
+    expect(headings).to_have_text([
+        "Number of times Dropdown Menu opened or closed: 2",
+        "Dropdown Menu open: false",
+    ])
 ```
 
 ```md alert warning
@@ -359,4 +400,27 @@ def menu_call_dialog() -> rx.Component:
         settings_dialog(),
         align="center",
     )
+```
+
+```python test
+def test_dropdown_menu_opens_dialogs(demo, page):
+    trigger = demo.locator("svg.lucide-menu")
+    trigger.click()
+    page.get_by_role("menuitem", name="Delete").click()
+    expect(demo.get_by_role("heading", include_hidden=True)).to_have_text(
+        "delete dialog is open"
+    )
+    dialog = page.get_by_role("alertdialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Are you Sure?")
+    dialog.get_by_role("button", name="Cancel").click()
+    expect(dialog).to_be_hidden()
+    expect(demo.get_by_role("heading")).to_have_count(0)
+
+    trigger.click()
+    page.get_by_role("menuitem", name="Settings").click()
+    dialog = page.get_by_role("dialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Settings")
+    dialog.get_by_role("button", name="Close").click()
+    expect(page.get_by_text("Saved settings")).to_be_visible()
+    expect(dialog).to_be_hidden()
 ```

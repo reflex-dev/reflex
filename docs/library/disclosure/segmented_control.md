@@ -64,6 +64,16 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_segmented_control_updates_card(demo):
+    texts = demo.locator(".rt-Card p")
+    expect(texts).to_have_text(["test", "test", "test"])
+    expect(demo.get_by_role("radio", name="Test")).to_be_checked()
+    demo.get_by_role("radio", name="About").click()
+    expect(texts).to_have_text(["about", "about", "about"])
+    expect(demo.get_by_role("radio", name="About")).to_be_checked()
+```
+
 **In the example above:**
 
 `on_change` is used to specify a callback function that will be called when the user selects a different segment. In this case, the `SegmentedState.set_control` event handler is used to update the `control` state variable when the user changes the selected segment.

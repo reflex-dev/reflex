@@ -48,3 +48,16 @@ rx.box(
     width="100%",
 )
 ```
+
+```python test
+def test_sections_with_vertical_padding(demo):
+    sections = demo.locator("section")
+    expect(sections).to_have_count(2)
+    for i, (name, ordinal) in enumerate([("First", "first"), ("Second", "second")]):
+        expect(sections.nth(i).get_by_role("heading", level=2)).to_have_text(name)
+        expect(sections.nth(i).locator("p")).to_have_text(
+            f"This is the {ordinal} content section"
+        )
+        expect(sections.nth(i)).not_to_have_css("padding-top", "0px")
+        expect(sections.nth(i)).to_have_css("padding-left", "12px")
+```

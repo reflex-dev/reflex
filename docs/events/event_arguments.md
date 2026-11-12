@@ -28,6 +28,14 @@ def slider_max_min_step():
     )
 ```
 
+```python test
+def test_slider_commit_sends_value(demo):
+    value = demo.get_by_role("heading")
+    expect(value).to_have_text("50")
+    demo.get_by_role("slider").press("ArrowRight")
+    expect(value).to_have_text("41")
+```
+
 The event trigger here is `on_value_commit` and it is called when the value changes at the end of an interaction. This event trigger passes one argument, which is the value of the slider. The event handler which is triggered by the event trigger must therefore take one argument, which is `value` here.
 
 Here is a form example:
@@ -60,6 +68,17 @@ def event_arg_example():
         rx.heading("Results", as_="h2"),
         rx.text(EventArgState.form_data.to_string()),
     )
+```
+
+```python test
+def test_form_submit_passes_form_data(demo):
+    results = demo.get_by_text(re.compile(r"^\{.*\}$"))
+    expect(results).to_have_text("{}")
+    demo.get_by_placeholder("Name").fill("Ada")
+    demo.get_by_role("checkbox", name="Checked").click()
+    demo.get_by_role("button", name="Submit").click()
+    expect(results).to_have_text('{"name":"Ada","check":"on"}')
+    expect(demo.get_by_placeholder("Name")).to_have_value("")
 ```
 
 In this example the event trigger is the `on_submit` event of the form. The event handler is `handle_submit`. The `on_submit` event trigger passes one argument, the form data as a dictionary, to the `handle_submit` event handler. The `handle_submit` event handler must take one argument because the `on_submit` event trigger passes one argument.
@@ -99,6 +118,15 @@ def event_arguments_example():
             bg=ArgState.colors[2],
         ),
     )
+```
+
+```python test
+def test_blur_passes_value_and_index(demo):
+    first = demo.get_by_role("textbox").first
+    expect(first).to_have_value("rgba(245,168,152)")
+    first.fill("rgb(0, 0, 255)")
+    first.blur()
+    expect(first.locator("..")).to_have_css("background-color", "rgb(0, 0, 255)")
 ```
 
 In this case, in we want to pass two arguments to the event handler `change_color`, the color and the index of the color to change.

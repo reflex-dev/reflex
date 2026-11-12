@@ -95,6 +95,15 @@ At its simplest, pass a list of string options. The component renders a dropdown
 rx.select(["apple", "grape", "pear"])
 ```
 
+```python test
+def test_select_basic_options(demo, page):
+    trigger = demo.get_by_role("combobox")
+    trigger.click()
+    expect(page.get_by_role("option")).to_have_text(["apple", "grape", "pear"])
+    page.get_by_role("option", name="pear").click()
+    expect(trigger).to_have_text("pear")
+```
+
 The user can click the trigger button to open the dropdown and choose a different option.
 
 ## Tracking the Selected Value
@@ -124,6 +133,16 @@ def select_with_state():
     )
 ```
 
+```python test
+def test_select_tracks_value_in_state(demo, page):
+    badge = demo.locator(".rt-Badge")
+    expect(badge).to_have_text("apple")
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="grape").click()
+    expect(badge).to_have_text("grape")
+    expect(demo.get_by_role("combobox")).to_have_text("grape")
+```
+
 This is the most common pattern. Because the select is bound to a state var, the value always reflects what's stored there, you can update it from anywhere in your app, and the select will re-render automatically.
 
 ## Setting a Default Value
@@ -137,6 +156,11 @@ rx.select(
 )
 ```
 
+```python test
+def test_select_default_value(demo):
+    expect(demo.get_by_role("combobox")).to_have_text("grape")
+```
+
 ## Placeholder Text
 
 When you want the select to start empty, prompting the user to make a choice, omit `default_value` and provide a `placeholder`.
@@ -146,6 +170,15 @@ rx.select(
     ["apple", "grape", "pear"],
     placeholder="Choose a fruit…",
 )
+```
+
+```python test
+def test_select_placeholder_text(demo, page):
+    trigger = demo.get_by_role("combobox")
+    expect(trigger).to_have_text("Choose a fruit…")
+    trigger.click()
+    page.get_by_role("option", name="apple").click()
+    expect(trigger).to_have_text("apple")
 ```
 
 ## Dynamic Options from State
@@ -189,6 +222,26 @@ def select_dynamic():
     )
 ```
 
+```python test
+def test_select_dynamic_options(demo, page):
+    trigger = demo.get_by_role("combobox")
+    expect(trigger).to_have_text("apple")
+    demo.get_by_role("button", name="Add Option").click()
+    demo.get_by_role("button", name="Add Option").click()
+    trigger.click()
+    expect(page.get_by_role("option")).to_have_text([
+        "apple",
+        "grape",
+        "pear",
+        "banana",
+        "orange",
+    ])
+    page.get_by_role("option", name="banana").click()
+    expect(trigger).to_have_text("banana")
+    demo.get_by_role("button", name="Pick Random").click()
+    expect(trigger).to_have_text(re.compile(r"^(apple|grape|pear|banana|orange)$"))
+```
+
 ## Disabled State
 
 To prevent user interaction, set `disabled=True`. The select renders with a muted appearance and cannot be opened.
@@ -199,6 +252,13 @@ rx.select(
     default_value="apple",
     disabled=True,
 )
+```
+
+```python test
+def test_select_disabled_state(demo):
+    trigger = demo.get_by_role("combobox")
+    expect(trigger).to_have_text("apple")
+    expect(trigger).to_be_disabled()
 ```
 
 To disable individual items rather than the whole select, use the [low-level API](/docs/library/forms/select/low/) and set `disabled=True` on specific `rx.select.item` components.
@@ -255,6 +315,21 @@ def select_form():
     )
 ```
 
+```python test
+def test_select_in_form(demo, page):
+    results = demo.locator(".rt-Badge")
+    submit = demo.get_by_role("button", name="Submit Order")
+    fruit = demo.get_by_role("combobox").first
+    expect(fruit).to_have_text("Pick one")
+    expect(demo.get_by_role("combobox").nth(1)).to_have_text("1")
+    submit.click()
+    expect(results).to_have_text("{}")
+    fruit.click()
+    page.get_by_role("option", name="grape").click()
+    submit.click()
+    expect(results).to_have_text('{"fruit":"grape","quantity":"1"}')
+```
+
 For full details on building forms, validation, and submission handling, see the [Form documentation](/docs/library/forms/form/).
 
 ## Mapping Display Labels to Underlying Values
@@ -299,6 +374,15 @@ def select_dict_example():
     )
 ```
 
+```python test
+def test_select_maps_labels_to_ids(demo, page):
+    badge = demo.locator(".rt-Badge")
+    expect(badge).to_have_text("user_001")
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="Carol Davis").click()
+    expect(badge).to_have_text("user_003")
+```
+
 For native label/value separation in the dropdown itself, use the [low-level Select API](/docs/library/forms/select/low/) and pass `value=` and a display label child to each `rx.select.item`.
 
 ## Using Select Inside a Dialog
@@ -321,6 +405,20 @@ rx.dialog.root(
         ),
     ),
 )
+```
+
+```python test
+def test_select_inside_dialog(demo, page):
+    demo.get_by_role("button", name="Open Dialog").click()
+    dialog = page.get_by_role("dialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Pick a fruit")
+    trigger = dialog.get_by_role("combobox")
+    expect(trigger).to_have_text("apple")
+    trigger.click()
+    page.get_by_role("option", name="pear").click()
+    expect(trigger).to_have_text("pear")
+    dialog.get_by_role("button", name="Close").click()
+    expect(dialog).to_have_count(0)
 ```
 
 ## React to Open and Close Events
@@ -356,6 +454,17 @@ def select_open_change():
         ),
         spacing="3",
     )
+```
+
+```python test
+def test_select_open_change(demo, page):
+    expect(demo.get_by_text("Open count: 0")).to_be_visible()
+    expect(demo.locator(".rt-Badge")).to_have_text("Closed")
+    demo.get_by_role("combobox").click()
+    expect(demo.locator(".rt-Badge")).to_have_text("Open")
+    expect(demo.get_by_text("Open count: 1")).to_be_visible()
+    page.get_by_role("option", name="grape").click()
+    expect(demo.locator(".rt-Badge")).to_have_text("Closed")
 ```
 
 ## Common Patterns
@@ -399,6 +508,15 @@ def select_filter():
         spacing="3",
         width="300px",
     )
+```
+
+```python test
+def test_select_filters_list(demo, page):
+    cards = demo.locator(".rt-Card")
+    expect(cards).to_have_text(["MacBook Pro", "Dell XPS"])
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="tablets").click()
+    expect(cards).to_have_text(["iPad Air", "Galaxy Tab"])
 ```
 
 ### Cascading Selects
@@ -447,6 +565,21 @@ def select_cascade():
         ),
         spacing="3",
     )
+```
+
+```python test
+def test_cascading_selects(demo, page):
+    region = demo.get_by_role("combobox").first
+    country = demo.get_by_role("combobox").nth(1)
+    expect(region).to_have_text("North America")
+    expect(country).to_have_text("USA")
+    region.click()
+    page.get_by_role("option", name="Asia").click()
+    expect(country).to_have_text("Japan")
+    country.click()
+    expect(page.get_by_role("option")).to_have_text(["Japan", "Korea", "Singapore"])
+    page.get_by_role("option", name="Korea").click()
+    expect(country).to_have_text("Korea")
 ```
 
 

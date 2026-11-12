@@ -42,6 +42,24 @@ rx.select.root(
 )
 ```
 
+```python test
+def test_select_groups_and_disabled_item(demo, page):
+    trigger = demo.get_by_role("combobox")
+    expect(trigger).to_have_text("Apple")
+    trigger.click()
+    expect(page.get_by_role("option")).to_have_text([
+        "Orange",
+        "Apple",
+        "Grape",
+        "Carrot",
+        "Potato",
+    ])
+    expect(page.get_by_role("option", name="Grape")).to_be_disabled()
+    expect(page.get_by_role("group")).to_have_count(2)
+    page.get_by_role("option", name="Carrot").click()
+    expect(trigger).to_have_text("Carrot")
+```
+
 ## Usage
 
 ## Disabling
@@ -61,6 +79,16 @@ rx.select.root(
 )
 ```
 
+```python test
+def test_select_disabled_item(demo, page):
+    trigger = demo.get_by_role("combobox")
+    expect(trigger).to_have_text("Select a Fruit")
+    trigger.click()
+    expect(page.get_by_role("option", name="Grape")).to_be_disabled()
+    page.get_by_role("option", name="Pineapple").click()
+    expect(trigger).to_have_text("Pineapple")
+```
+
 To prevent the user from interacting with select entirely, set the `disabled` prop to `True` on the `rx.select.root` component.
 
 ```python demo
@@ -74,6 +102,13 @@ rx.select.root(
     ),
     disabled=True,
 )
+```
+
+```python test
+def test_select_root_disabled(demo):
+    trigger = demo.get_by_role("combobox")
+    expect(trigger).to_have_text("This is Disabled")
+    expect(trigger).to_be_disabled()
 ```
 
 ## Setting Defaults
@@ -94,6 +129,15 @@ rx.select.root(
 )
 ```
 
+```python test
+def test_select_placeholder(demo, page):
+    trigger = demo.get_by_role("combobox")
+    expect(trigger).to_have_text("pick a fruit")
+    trigger.click()
+    page.get_by_role("option", name="Grape").click()
+    expect(trigger).to_have_text("Grape")
+```
+
 The `default_value` in the `rx.select.root` specifies the value of the `select` when initially rendered.
 The `default_value` should correspond to the `value` of a child `rx.select.item`.
 
@@ -108,6 +152,16 @@ rx.select.root(
     ),
     default_value="apple",
 )
+```
+
+```python test
+def test_select_default_value(demo, page):
+    trigger = demo.get_by_role("combobox")
+    expect(trigger).to_have_text("Apple")
+    trigger.click()
+    expect(page.get_by_role("option", name="Apple")).to_have_attribute(
+        "aria-selected", "true"
+    )
 ```
 
 ## Fully controlled
@@ -152,6 +206,19 @@ def select_example2():
     )
 ```
 
+```python test
+def test_select_fully_controlled(demo, page):
+    trigger = demo.get_by_role("combobox")
+    expect(trigger).to_have_text("No Selection")
+    trigger.click()
+    page.get_by_role("option", name="pear").click()
+    expect(trigger).to_have_text("pear")
+    demo.get_by_role("button", name="Choose Randomly").click()
+    expect(trigger).to_have_text(re.compile(r"^(apple|grape)$"))
+    demo.get_by_role("button", name="Reset").click()
+    expect(trigger).to_have_text("No Selection")
+```
+
 The `open` prop and `on_open_change` event trigger work similarly to `value` and `on_change` to control the open state of the select.
 If `on_open_change` handler does not alter the `open` prop, the select will not be able to be opened or closed by clicking on the
 `select_trigger`.
@@ -181,6 +248,16 @@ def select_example8():
         rx.button("Toggle", on_click=SelectState8.set_is_open(~SelectState8.is_open)),
         spacing="2",
     )
+```
+
+```python test
+def test_select_controlled_open(demo, page):
+    options = page.get_by_role("option")
+    demo.get_by_role("button", name="Toggle").click()
+    expect(options).to_have_text(["Apple", "Grape"])
+    options.filter(has_text="Grape").click()
+    expect(options).to_have_count(0)
+    expect(demo.get_by_role("combobox")).to_have_text("Grape")
 ```
 
 ### Submitting a Form with Select
@@ -239,6 +316,16 @@ def form_select():
         direction="column",
         spacing="2",
     )
+```
+
+```python test
+def test_select_form_submit(demo, page):
+    results = demo.get_by_text(re.compile(r"^\{"))
+    expect(results).to_have_text("{}")
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="Potato").click()
+    demo.get_by_role("button", name="Submit").click()
+    expect(results).to_have_text('{"select":"potato"}')
 ```
 
 ## Real World Example
@@ -310,4 +397,19 @@ rx.card(
         spacing="2",
     ),
 )
+```
+
+```python test
+def test_select_product_card(demo, page):
+    expect(demo.get_by_role("img", name="Reflex banner image")).to_have_count(1)
+    expect(demo.get_by_role("heading")).to_have_text(["Reflex Swag", "$99"])
+    color = demo.get_by_role("combobox").first
+    size = demo.get_by_role("combobox").nth(1)
+    expect(color).to_have_text("Light")
+    expect(size).to_have_text("30")
+    size.click()
+    expect(page.get_by_role("option", name="28")).to_be_disabled()
+    page.get_by_role("option", name="32").click()
+    expect(size).to_have_text("32")
+    expect(demo.get_by_role("button", name="Add")).to_be_visible()
 ```

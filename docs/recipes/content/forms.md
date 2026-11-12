@@ -78,6 +78,22 @@ def event_form() -> rx.Component:
     )
 ```
 
+```python test
+def test_event_form_alerts_submitted_data(page, demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_role("heading")).to_have_text("Create an event")
+    view.get_by_role("textbox", name="Event Name").fill("Launch")
+    view.get_by_role("textbox", name="Date").fill("2024-05-01")
+    view.get_by_role("textbox", name="Time").fill("09:30")
+    page.once("dialog", lambda dialog: dialog.dismiss())
+    with page.expect_event("dialog") as dialog_info:
+        view.get_by_role("button", name="Create").click()
+    assert dialog_info.value.message == (
+        '{"event_name":"Launch","event_date":"2024-05-01",'
+        '"event_time":"09:30","description":""}'
+    )
+```
+
 ## Contact
 
 ```python demo exec
@@ -165,5 +181,21 @@ def contact_form() -> rx.Component:
             spacing="4",
         ),
         size="3",
+    )
+```
+
+```python test
+def test_contact_form_alerts_submitted_data(page, demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_role("heading")).to_have_text("Send us a message")
+    view.get_by_role("textbox", name="First Name").fill("Ada")
+    view.get_by_role("textbox", name="Email").fill("ada@reflex.dev")
+    view.get_by_role("textbox", name="Message").fill("Hello")
+    page.once("dialog", lambda dialog: dialog.dismiss())
+    with page.expect_event("dialog") as dialog_info:
+        view.get_by_role("button", name="Submit").click()
+    assert dialog_info.value.message == (
+        '{"first_name":"Ada","last_name":"","email":"ada@reflex.dev",'
+        '"phone":"","message":"Hello"}'
     )
 ```

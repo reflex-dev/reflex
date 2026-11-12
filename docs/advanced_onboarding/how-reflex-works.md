@@ -43,6 +43,15 @@ def index():
     )
 ```
 
+```python test
+def test_github_profile_renders(demo):
+    # Only the initial render: blurring the input calls the live GitHub API.
+    expect(demo.locator("a.rt-Link")).to_have_attribute(
+        "href", "https://github.com/reflex-dev"
+    )
+    expect(demo.get_by_placeholder("Your Github username")).to_be_editable()
+```
+
 ## The Reflex Architecture
 
 Full-stack web apps are made up of a frontend and a backend. The frontend is the user interface, and is served as a web page that runs on the user's browser. The backend handles the logic and state management (such as databases and APIs), and is run on a server.
@@ -58,7 +67,7 @@ Under the hood, Reflex compiles the interface to a [React](https://react.dev) fr
 The diagram below provides a detailed overview of how a Reflex app works. We'll go through each part in more detail in the following sections.
 
 
-```python eval
+```python eval notest
 rx.el.a(
     rx.image(
         src="https://web.reflex-assets.dev/other/architecture.webp",
@@ -69,7 +78,7 @@ rx.el.a(
 )
 ```
 
-```python eval
+```python eval notest
 rx.box(height="1em")
 ```
 

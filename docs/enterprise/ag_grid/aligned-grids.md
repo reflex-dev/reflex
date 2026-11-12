@@ -64,6 +64,20 @@ def aligned_grids_page():
     )
 ```
 
+```python test
+def test_expanding_group_in_one_grid_expands_both(demo, page):
+    top, bottom = demo.get_by_role("grid").first, demo.get_by_role("grid").last
+    expect(bottom.get_by_role("columnheader", name="Gold")).to_have_count(0)
+    top.get_by_role("gridcell").first.hover()
+    page.mouse.wheel(3000, 0)
+    medals = top.locator(".ag-header-group-cell", has_text="Medals")
+    medals.locator(".ag-header-expand-icon:visible").click()
+    expect(bottom.get_by_role("columnheader", name="Medals")).to_have_attribute(
+        "aria-expanded", "true"
+    )
+    expect(bottom.get_by_role("columnheader", name="Gold")).to_be_visible()
+```
+
 ```md alert warning
 # The pivot functionality does not work with aligned grids. This is because pivoting data changes the columns, which would make the aligned grids incompatible, as they are no longer sharing the same set of columns.
 ```

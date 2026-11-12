@@ -146,7 +146,7 @@ To deploy updates from your GitHub repository:
 
 ## Configuration Reference
 
-```python eval
+```python eval notest
 rx.table.root(
     rx.table.header(
         rx.table.row(

@@ -19,6 +19,14 @@ rx.audio(
 )
 ```
 
+```python test
+def test_audio_player_source(demo):
+    expect(demo.locator("audio")).to_have_attribute(
+        "src",
+        "https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3",
+    )
+```
+
 If we had a local file in the `assets` folder named `test.mp3` we could set `src="/test.mp3"` to view the audio file.
 
 ```md alert info

@@ -28,3 +28,13 @@ def semi_circle_progress_example():
         rx.button("Randomize", on_click=SemiCircleProgressState.random),
     )
 ```
+
+```python test
+def test_semi_circle_progress_starts_half_full(demo):
+    filled = demo.locator(".mantine-SemiCircleProgress-filledSegment")
+    expect(filled).to_have_css("stroke-dashoffset", "59.6903px")
+    demo.get_by_role("button", name="Randomize").click()
+    # The new value is random (and may be 50 again), so only check the
+    # filled segment is still drawn after the update.
+    expect(filled).to_have_count(1)
+```

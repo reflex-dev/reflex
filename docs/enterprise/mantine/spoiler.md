@@ -21,3 +21,14 @@ def spoiler_example():
         ),
     )
 ```
+
+```python test
+def test_spoiler_expands_and_collapses(demo):
+    region = demo.get_by_role("region")
+    expect(region).to_have_css("max-height", "50px")
+    demo.get_by_role("button", name="Show more").click()
+    expect(demo.get_by_role("button", name="Show less")).to_be_visible()
+    expect(region).not_to_have_css("max-height", "50px")
+    demo.get_by_role("button", name="Show less").click()
+    expect(demo.get_by_role("button", name="Show more")).to_be_visible()
+```

@@ -8,7 +8,7 @@ import reflex as rx
 
 ## Project Knowledge
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/knowledge_project.webp",
     alt="Project Knowledge entries and their automatic enablement state",

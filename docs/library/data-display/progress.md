@@ -28,6 +28,14 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_progress_values(demo):
+    bars = demo.get_by_role("progressbar")
+    expect(bars).to_have_count(3)
+    for i, value in enumerate(["0", "50", "100"]):
+        expect(bars.nth(i)).to_have_attribute("aria-valuenow", value)
+```
+
 For a dynamic progress, you can assign a state variable to the `value` prop instead of a constant value.
 
 ```python demo exec
@@ -53,4 +61,13 @@ def live_progress():
         rx.button("Start", on_click=ProgressState.start_progress),
         width="50%",
     )
+```
+
+```python test
+def test_progress_live_updates(demo):
+    bar = demo.get_by_role("progressbar")
+    expect(bar).to_have_attribute("aria-valuenow", "0")
+    demo.get_by_role("button", name="Start").click()
+    expect(bar).not_to_have_attribute("aria-valuenow", "0")
+    expect(bar).to_have_attribute("aria-valuenow", "100", timeout=30000)
 ```

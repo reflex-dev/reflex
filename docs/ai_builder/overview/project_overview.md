@@ -15,7 +15,7 @@ Open a project from the organization home to see its overview.
 
 ## Project summary
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/project_overview.webp",
     alt="Project overview with app, deployment, credit, and usage summaries",

@@ -105,6 +105,16 @@ rx.alert_dialog.root(
 )
 ```
 
+```python test
+def test_alert_dialog_opens_and_cancels(demo, page):
+    demo.get_by_role("button", name="Revoke access").click()
+    dialog = page.get_by_role("alertdialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Revoke access")
+    expect(dialog.get_by_text("Are you sure? This application")).to_be_visible()
+    dialog.get_by_role("button", name="Cancel").click()
+    expect(dialog).to_be_hidden()
+```
+
 This example has a different color scheme and the `cancel` and `action` buttons are right aligned.
 
 ```python demo
@@ -132,6 +142,15 @@ rx.alert_dialog.root(
         style={"max_width": 450},
     ),
 )
+```
+
+```python test
+def test_alert_dialog_action_closes(demo, page):
+    demo.get_by_role("button", name="Revoke access").click()
+    dialog = page.get_by_role("alertdialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Revoke access")
+    dialog.get_by_role("button", name="Revoke access").click()
+    expect(dialog).to_be_hidden()
 ```
 
 Use the `inset` component to align content flush with the sides of the dialog.
@@ -188,6 +207,20 @@ rx.alert_dialog.root(
 )
 ```
 
+```python test
+def test_alert_dialog_inset_table(demo, page):
+    demo.get_by_role("button", name="Delete Users").click()
+    dialog = page.get_by_role("alertdialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Delete Users")
+    expect(dialog.get_by_role("row")).to_have_count(3)
+    expect(dialog.get_by_role("rowheader")).to_have_text([
+        "Danilo Rosa",
+        "Zahra Ambessa",
+    ])
+    dialog.get_by_role("button", name="Delete users").click()
+    expect(dialog).to_be_hidden()
+```
+
 ## Events when the Alert Dialog opens or closes
 
 The `on_open_change` event is called when the `open` state of the dialog changes. It is used in conjunction with the `open` prop.
@@ -240,6 +273,21 @@ def alert_dialog():
     )
 ```
 
+```python test
+def test_alert_dialog_on_open_change_counts(demo, page):
+    # The open modal hides the page from the accessibility tree.
+    count = demo.get_by_role("heading", include_hidden=True).first
+    is_open = demo.get_by_role("heading", include_hidden=True).last
+    expect(count).to_have_text("Number of times alert dialog opened or closed: 0")
+    expect(is_open).to_have_text("Alert Dialog open: false")
+    demo.get_by_role("button", name="Revoke access").click()
+    expect(count).to_have_text("Number of times alert dialog opened or closed: 1")
+    expect(is_open).to_have_text("Alert Dialog open: true")
+    page.get_by_role("alertdialog").get_by_role("button", name="Cancel").click()
+    expect(count).to_have_text("Number of times alert dialog opened or closed: 2")
+    expect(is_open).to_have_text("Alert Dialog open: false")
+```
+
 ## Controlling Alert Dialog with State
 
 This example shows how to control whether the dialog is open or not with state. This is an easy way to show the dialog without needing to use the `rx.alert_dialog.trigger`.
@@ -281,6 +329,19 @@ def alert_dialog2():
         ),
         rx.button("Button to Open the Dialog", on_click=AlertDialogState2.dialog_open),
     )
+```
+
+```python test
+def test_alert_dialog_controlled_by_state(demo, page):
+    demo.get_by_role("button", name="Button to Open the Dialog").click()
+    dialog = page.get_by_role("alertdialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Revoke access")
+    dialog.get_by_role("button", name="Cancel").click()
+    expect(dialog).to_be_hidden()
+    demo.get_by_role("button", name="Button to Open the Dialog").click()
+    expect(dialog).to_be_visible()
+    dialog.get_by_role("button", name="Revoke access").click()
+    expect(dialog).to_be_hidden()
 ```
 
 ## Form Submission to a Database from an Alert Dialog
@@ -367,4 +428,16 @@ def index() -> rx.Component:
             max_width="450px",
         ),
     )
+```
+
+```python test
+def test_alert_dialog_form_submits(demo, page):
+    demo.get_by_role("button", name="Add User").click()
+    dialog = page.get_by_role("alertdialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Add New User")
+    dialog.get_by_placeholder("User Name").fill("Ada")
+    dialog.get_by_placeholder("user@reflex.dev").fill("ada@example.com")
+    dialog.get_by_role("button", name="Submit").click()
+    expect(dialog).to_be_hidden()
+    expect(page.get_by_text("User Ada has been added.")).to_be_visible()
 ```

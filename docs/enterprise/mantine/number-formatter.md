@@ -26,3 +26,9 @@ def number_formatter_example():
         ),
     )
 ```
+
+```python test
+def test_formatted_numbers(demo):
+    for text in ["$100", "100€", "1,234,567.89"]:
+        expect(demo.get_by_text(text, exact=True)).to_be_visible()
+```

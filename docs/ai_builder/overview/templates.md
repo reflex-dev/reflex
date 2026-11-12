@@ -8,7 +8,7 @@ import reflex as rx
 
 ## Use a Template
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/templates.webp",
     alt="Template gallery in Reflex Build",
@@ -33,7 +33,7 @@ Before saving, remove credentials, personal data, and app-specific content. Keep
 
 ## Team Templates
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/templates_project.webp",
     alt="Templates shared with a Reflex project",
@@ -42,7 +42,7 @@ rx.image(
 )
 ```
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/templates/organization_templates.webp",
     alt="Templates shared across a Reflex organization",

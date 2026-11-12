@@ -138,11 +138,27 @@ rx.form.root(
 )
 ```
 
+```python test
+def test_low_level_form_validates_email(demo, page):
+    email = demo.get_by_placeholder("Email Address")
+    message = demo.get_by_text("Please enter a valid email")
+    expect(message).to_have_count(0)
+    email.fill("not-an-email")
+    demo.get_by_role("button", name="Submit").click()
+    expect(message).to_be_visible()
+    email.fill("ada@example.com")
+    page.on("dialog", lambda dialog: dialog.accept())
+    with page.expect_event("dialog") as dialog:
+        demo.get_by_role("button", name="Submit").click()
+    assert dialog.value.message == '{"email":"ada@example.com"}'
+    expect(email).to_have_value("")
+```
+
 In this example, `type="email"` on `rx.input` enables the browser's email format validation, and `match="typeMismatch"` on `form.message` displays the message when that validation fails. The prop `as_child=True` is required when using other components to construct a Form component. This example has used `rx.input` to construct the Form Control and `button` the Form Submit.
 
 ## Form Anatomy
 
-```python eval
+```python eval notest
 rx.code_block(
     """form.root(
     form.field(
@@ -297,6 +313,24 @@ def radix_form_submission_example():
         direction="column",
         spacing="4",
     )
+```
+
+```python test
+def test_low_level_form_submission(demo):
+    demo.get_by_placeholder("box3 textfield input").fill("hello")
+    demo.get_by_role("combobox").click()
+    demo.page.get_by_role("option", name="Apple").click()
+    demo.get_by_placeholder("Enter for box7 textarea").fill("notes")
+    demo.get_by_role("button", name="Submit").click()
+    expect(demo.get_by_text(re.compile(r"^box\d : "))).to_have_text([
+        "box1 : on",
+        "box2 : 1",
+        "box3 : hello",
+        "box4 : apple",
+        "box5 : on",
+        "box6 : 40",
+        "box7 : notes",
+    ])
 ```
 
 ## Validation
@@ -469,4 +503,26 @@ def radix_form_example():
         direction="column",
         spacing="4",
     )
+```
+
+```python test
+def test_low_level_form_server_validation(demo):
+    username = demo.get_by_placeholder("Username")
+    submit = demo.get_by_role("button", name="Submit")
+    expect(demo.get_by_text("Username cannot be empty")).to_be_visible()
+    expect(submit).to_be_disabled()
+    username.fill("admin")
+    expect(demo.get_by_text("Username already taken")).to_be_visible()
+    username.fill("ada")
+    expect(demo.get_by_text("Username already taken")).to_have_count(0)
+    demo.get_by_placeholder("Email Address").fill("ada@example.com")
+    expect(submit).to_be_enabled()
+    submit.click()
+    expect(demo.get_by_text("Username submitted:")).to_have_text(
+        "Username submitted: ada"
+    )
+    expect(demo.get_by_text("Email submitted:")).to_have_text(
+        "Email submitted: ada@example.com"
+    )
+    expect(username).to_have_value("")
 ```

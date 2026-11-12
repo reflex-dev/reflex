@@ -29,3 +29,11 @@ def multi_select_example():
         )
     )
 ```
+
+```python test
+def test_pick_several_fruits(demo, page):
+    demo.get_by_role("textbox", name="Select fruits").click()
+    page.get_by_role("option", name="Banana").click()
+    page.get_by_role("option", name="Date").click()
+    expect(demo.locator(".mantine-Pill-label")).to_have_text(["Banana", "Date"])
+```

@@ -53,6 +53,20 @@ def axis_simple():
     )
 ```
 
+```python test
+def test_axes_show_their_labels(demo):
+    expect(demo.locator(".recharts-label")).to_have_text(["Pages", "Views"])
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "Page A",
+        "Page B",
+        "Page C",
+        "Page D",
+        "Page E",
+        "Page F",
+        "Page G",
+    ])
+```
+
 ## Multiple Axes
 
 Multiple axes can be used for displaying different data series with varying scales or units on the same chart. This allows for a more comprehensive comparison and analysis of the data.
@@ -93,6 +107,27 @@ def multi_axis():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_left_and_right_y_axes_scale_separately(demo):
+    y_axes = demo.locator(".recharts-yAxis-tick-labels")
+    left_axis, right_axis = y_axes.first, y_axes.last
+    expect(left_axis.locator("text")).to_have_text([
+        "0",
+        "1000",
+        "2000",
+        "3000",
+        "4000",
+    ])
+    expect(right_axis.locator("text")).to_have_text([
+        "0",
+        "2500",
+        "5000",
+        "7500",
+        "10000",
+    ])
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["pv", "uv"])
 ```
 
 ## Styling Axis Ticks
@@ -138,6 +173,19 @@ def axis_styled_ticks():
         height=300,
         margin={"left": 20, "right": 20, "top": 25},
     )
+```
+
+```python test
+def test_ticks_are_styled_without_lines(demo):
+    expect(demo.locator(".recharts-cartesian-axis-tick-line")).to_have_count(0)
+    expect(demo.locator(".recharts-cartesian-axis-line")).to_have_count(0)
+    expect(demo.locator(".recharts-xAxis-tick-labels text").first).to_have_attribute(
+        "font-size", "12px"
+    )
+    expect(demo.locator(".recharts-xAxis-tick-labels text").first).to_have_text(
+        "Page A"
+    )
+    expect(demo.locator(".recharts-xAxis-tick-labels text").last).to_have_text("Page G")
 ```
 
 ## Choosing Location of Labels for Axes
@@ -263,4 +311,25 @@ def axis_labels():
         ),
         width="100%",
     )
+```
+
+```python test
+def test_selects_move_axis_labels(demo, page):
+    pages_label = demo.locator(".recharts-label").filter(has_text="Pages")
+    views_label = demo.locator(".recharts-label").filter(has_text="Views")
+    expect(pages_label).to_have_attribute("y", re.compile(r"\d"))
+    pages_y = pages_label.get_attribute("y")
+    views_x = views_label.get_attribute("x")
+    selects = demo.get_by_role("combobox")
+    x_position, x_offset, y_offset = selects.nth(0), selects.nth(1), selects.nth(3)
+    expect(x_position).to_have_text("bottom")
+    expect(x_offset).to_have_text("0")
+    x_position.click()
+    page.get_by_role("option", name="top", exact=True).click()
+    expect(x_position).to_have_text("top")
+    expect(pages_label).not_to_have_attribute("y", pages_y)
+    y_offset.click()
+    page.get_by_role("option", name="30", exact=True).click()
+    expect(y_offset).to_have_text("30")
+    expect(views_label).not_to_have_attribute("x", views_x)
 ```

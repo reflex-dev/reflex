@@ -29,7 +29,7 @@ Enable **Sensitive** when no team member should be able to view, edit, or delete
 
 Never expose a real value while preparing screenshots or support material.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/settings_secrets.webp",
     alt="Hosted app secret settings with values concealed",

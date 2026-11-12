@@ -57,6 +57,16 @@ def pivot_page():
     )
 ```
 
+```python test
+def test_pivot_by_sport_and_year(demo):
+    labels = demo.get_by_role("listbox", name="Column Labels").get_by_role("option")
+    expect(labels.first).to_have_accessible_name(re.compile("^Sport"))
+    expect(labels.last).to_have_accessible_name(re.compile("^Year"))
+    expect(demo.get_by_role("columnheader", name="Group")).to_be_visible()
+    expect(demo.get_by_role("columnheader", name="Archery")).to_be_visible()
+    expect(demo.get_by_role("gridcell", name="United States (1109)")).to_be_visible()
+```
+
 ## Pivot using State
 
 ```python demo exec
@@ -126,6 +136,22 @@ def sandbox_page():
         ),
         width="100%",
     )
+```
+
+```python test
+def test_toggle_pivot_and_grouping(demo):
+    pivot, grouping = demo.get_by_role("switch").first, demo.get_by_role("switch").last
+    expect(demo.get_by_role("columnheader", name="Direction")).to_be_visible()
+    pivot.click()
+    expect(pivot).to_be_checked()
+    expect(demo.get_by_role("columnheader", name="ENE", exact=True)).to_be_visible()
+    expect(
+        demo.get_by_role("columnheader", name="count(Frequency)").first
+    ).to_be_visible()
+    grouping.click()
+    expect(grouping).to_be_checked()
+    expect(demo.get_by_role("columnheader", name="Group")).to_be_visible()
+    expect(demo.get_by_role("gridcell", name="0.5 (8)")).to_be_visible()
 ```
 
 📊 **Dataset source:** [wind_dataset.csv](https://raw.githubusercontent.com/plotly/datasets/master/wind_dataset.csv)

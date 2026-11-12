@@ -38,6 +38,17 @@ def ag_grid_simple():
     )
 ```
 
+```python test
+def test_first_grid_shows_wind_data(demo):
+    expect(demo.get_by_role("columnheader")).to_have_text([
+        "Direction",
+        "Strength",
+        "Frequency",
+    ])
+    row = demo.get_by_role("row", name="NNE 0-1 0.6", exact=True)
+    expect(row.get_by_role("gridcell")).to_have_text(["NNE", "0-1", "0.6"])
+```
+
 📊 **Dataset source:** [wind_dataset.csv](https://raw.githubusercontent.com/plotly/datasets/master/wind_dataset.csv)
 
 The format of the data passed to the `row_data` prop is a list of dictionaries. Each dictionary represents a row in the grid as seen below.
@@ -68,6 +79,17 @@ def ag_grid_simple_2():
         width="100%",
         height="40vh",
     )
+```
+
+```python test
+def test_columns_come_from_dataframe(demo):
+    expect(demo.get_by_role("columnheader")).to_have_text([
+        "Direction",
+        "Strength",
+        "Frequency",
+    ])
+    row = demo.get_by_role("row", name="N 0-1 0.5", exact=True)
+    expect(row.get_by_role("gridcell")).to_have_text(["N", "0-1", "0.5"])
 ```
 
 📊 **Dataset source:** [wind_dataset.csv](https://raw.githubusercontent.com/plotly/datasets/master/wind_dataset.csv)
@@ -101,6 +123,21 @@ def ag_grid_simple_headers():
     )
 ```
 
+```python test
+def test_custom_header_names(demo):
+    expect(demo.get_by_role("columnheader")).to_have_text([
+        "Country",
+        "Population",
+        "Life Expectancy",
+    ])
+    row = demo.get_by_role("row", name="Afghanistan 31889923 43.828", exact=True)
+    expect(row.get_by_role("gridcell")).to_have_text([
+        "Afghanistan",
+        "31889923",
+        "43.828",
+    ])
+```
+
 📊 **Dataset source:** [gapminder2007.csv](https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv)
 
 ## Column Filtering
@@ -129,6 +166,18 @@ def ag_grid_simple_column_filtering():
         column_defs=column_defs,
         width="100%",
         height="40vh",
+    )
+```
+
+```python test
+def test_filter_country_column(demo, page):
+    demo.get_by_role("columnheader", name="Country").locator(
+        ".ag-header-cell-filter-button"
+    ).click()
+    page.get_by_role("textbox", name="Filter Value").fill("Zimb")
+    expect(demo.get_by_role("row")).to_have_count(2)
+    expect(demo.get_by_role("row").nth(1).get_by_role("gridcell").first).to_have_text(
+        "Zimbabwe"
     )
 ```
 
@@ -164,6 +213,21 @@ def ag_grid_column_filter_types():
         width="100%",
         height="40vh",
     )
+```
+
+```python test
+def test_typed_filters_on_gantt_data(demo):
+    expect(demo.get_by_role("columnheader")).to_have_text([
+        "Task",
+        "Start",
+        "Duration",
+        "Resource",
+    ])
+    for name in ["Task", "Start", "Duration", "Resource"]:
+        header = demo.get_by_role("columnheader", name=name)
+        expect(header.locator(".ag-header-cell-filter-button")).to_have_count(1)
+    row = demo.get_by_role("row", name="Task 2 2/20/2016 25 B", exact=True)
+    expect(row.get_by_role("gridcell")).to_have_text(["Task 2", "2/20/2016", "25", "B"])
 ```
 
 📊 **Dataset source:** [GanttChart-updated.csv](https://raw.githubusercontent.com/plotly/datasets/master/GanttChart-updated.csv)
@@ -222,6 +286,18 @@ def ag_grid_simple_row_sorting():
     )
 ```
 
+```python test
+def test_sort_by_population_but_not_country(demo):
+    country = demo.get_by_role("columnheader", name="Country")
+    population = demo.get_by_role("columnheader", name="Population")
+    country.click()
+    expect(country).not_to_have_attribute("aria-sort", re.compile("."))
+    population.click()
+    expect(population).to_have_attribute("aria-sort", "ascending")
+    first_row = demo.get_by_role("row", name=re.compile("^Sao Tome and Principe "))
+    expect(first_row).to_have_attribute("aria-rowindex", "2")
+```
+
 📊 **Dataset source:** [gapminder2007.csv](https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv)
 
 ## Row Selection
@@ -252,6 +328,22 @@ def ag_grid_simple_row_selection():
         width="100%",
         height="40vh",
     )
+```
+
+```python test
+@pytest.mark.xfail(
+    strict=True,
+    reason="No selection checkboxes render: AG Grid 36 ignores checkboxSelection"
+    " with row_selection={'mode': 'multiple'}",
+)
+def test_select_multiple_rows_with_checkboxes(demo):
+    albania = demo.get_by_role("row", name=re.compile("Albania"))
+    algeria = demo.get_by_role("row", name=re.compile("Algeria"))
+    expect(albania.get_by_role("checkbox")).to_have_count(1)
+    albania.get_by_role("checkbox").check()
+    algeria.get_by_role("checkbox").check()
+    expect(albania).to_have_attribute("aria-selected", "true")
+    expect(algeria).to_have_attribute("aria-selected", "true")
 ```
 
 📊 **Dataset source:** [gapminder2007.csv](https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv)
@@ -385,6 +477,17 @@ def ag_grid_simple_pagination():
         pagination_page_size_selector=[10, 40, 100],
         width="100%",
         height="40vh",
+    )
+```
+
+```python test
+def test_paginate_ten_rows_per_page(demo):
+    expect(demo.get_by_text("1 to 10 of 142. Page 1 of 15")).to_be_attached()
+    expect(demo.get_by_role("row")).to_have_count(11)
+    demo.get_by_role("button", name="Next Page").click()
+    expect(demo.get_by_text("11 to 20 of 142. Page 2 of 15")).to_be_attached()
+    expect(demo.get_by_role("row").nth(1).get_by_role("gridcell").first).to_have_text(
+        "Benin"
     )
 ```
 
@@ -665,6 +768,17 @@ def ag_grid_api_simple():
     )
 ```
 
+```python test
+def test_select_all_and_deselect_all(demo):
+    rows = demo.get_by_role("row", name=re.compile("Afghanistan|Albania|Algeria"))
+    demo.get_by_role("button", name="Select All", exact=True).click()
+    for i in range(3):
+        expect(rows.nth(i)).to_have_attribute("aria-selected", "true")
+    demo.get_by_role("button", name="Deselect All").click()
+    for i in range(3):
+        expect(rows.nth(i)).to_have_attribute("aria-selected", "false")
+```
+
 📊 **Dataset source:** [gapminder2007.csv](https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv)
 
 The react code for the `select_all()` event handler is `selectAll = (source?: SelectionEventSourceType) => void;`.
@@ -715,6 +829,17 @@ def ag_grid_api_simple2():
         spacing="4",
         width="100%",
     )
+```
+
+```python test
+def test_export_csv_and_resize_columns(demo, page):
+    with page.expect_download() as download:
+        demo.get_by_role("button", name="Export").click()
+    assert download.value.suggested_filename == "export.csv"
+    header = demo.get_by_role("columnheader", name="Country")
+    width = header.evaluate("el => el.style.width")
+    demo.get_by_role("button", name="Resize Columns").click()
+    expect(header).not_to_have_css("width", width)
 ```
 
 📊 **Dataset source:** [gapminder2007.csv](https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv)

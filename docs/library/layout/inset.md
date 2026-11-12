@@ -43,6 +43,17 @@ rx.card(
 )
 ```
 
+```python test
+def test_inset_top_bleeds_to_card_edges(demo):
+    card, inset = demo.locator(".rt-Card"), demo.locator(".rt-Inset")
+    expect(inset.get_by_role("img", name="Reflex banner image")).to_have_count(1)
+    expect(card.get_by_text("Reflex is a web framework")).to_be_visible()
+    outer, inner = card.bounding_box(), inset.bounding_box()
+    assert inner["y"] == pytest.approx(outer["y"], abs=2)
+    assert inner["x"] == pytest.approx(outer["x"], abs=2)
+    assert inner["width"] == pytest.approx(outer["width"], abs=2)
+```
+
 ## Other Directions
 
 The `side` prop controls which side the negative margin is applied to. When using a specific side,
@@ -64,6 +75,18 @@ rx.card(
     ),
     width="25vw",
 )
+```
+
+```python test
+def test_inset_bottom_bleeds_to_card_edges(demo):
+    card, inset = demo.locator(".rt-Card"), demo.locator(".rt-Inset")
+    expect(inset.get_by_role("img", name="Reflex banner image")).to_have_count(1)
+    expect(card.get_by_text("The inset below uses a bottom side.")).to_be_visible()
+    outer, inner = card.bounding_box(), inset.bounding_box()
+    assert inner["y"] + inner["height"] == pytest.approx(
+        outer["y"] + outer["height"], abs=2
+    )
+    assert inner["width"] == pytest.approx(outer["width"], abs=2)
 ```
 
 ```python demo
@@ -88,6 +111,18 @@ rx.card(
 )
 ```
 
+```python test
+def test_inset_right_bleeds_to_card_edges(demo):
+    card, inset = demo.locator(".rt-Card"), demo.locator(".rt-Inset")
+    expect(card.get_by_text("This inset uses a right side")).to_be_visible()
+    outer, inner = card.bounding_box(), inset.bounding_box()
+    assert inner["x"] + inner["width"] == pytest.approx(
+        outer["x"] + outer["width"], abs=2
+    )
+    assert inner["y"] == pytest.approx(outer["y"], abs=2)
+    assert inner["height"] == pytest.approx(outer["height"], abs=2)
+```
+
 ```python demo
 rx.card(
     rx.flex(
@@ -108,4 +143,14 @@ rx.card(
     ),
     width="25vw",
 )
+```
+
+```python test
+def test_inset_left_bleeds_to_card_edges(demo):
+    card, inset = demo.locator(".rt-Card"), demo.locator(".rt-Inset")
+    expect(card.get_by_text("This inset uses a left side")).to_be_visible()
+    outer, inner = card.bounding_box(), inset.bounding_box()
+    assert inner["x"] == pytest.approx(outer["x"], abs=2)
+    assert inner["y"] == pytest.approx(outer["y"], abs=2)
+    assert inner["height"] == pytest.approx(outer["height"], abs=2)
 ```

@@ -68,6 +68,17 @@ def chat_ui() -> rx.Component:
     )
 ```
 
+```python test
+def test_chat_echoes_message(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    box = view.get_by_role("textbox", name="Type a message...")
+    box.fill("Hello there")
+    view.get_by_role("button", name="Send").click()
+    expect(view.get_by_text("Hello there", exact=True)).to_be_visible()
+    expect(view.get_by_text("You said: Hello there", exact=True)).to_be_visible()
+    expect(box).to_have_value("")
+```
+
 ## Streaming Responses
 
 When a model streams its reply token by token, show a loading indicator immediately and

@@ -38,6 +38,14 @@ def status_chips_group() -> rx.Component:
     )
 ```
 
+```python test
+def test_status_chips(demo):
+    chips = demo.get_by_role("tabpanel", name="View").locator(".rt-Badge")
+    expect(chips).to_have_text(["Info", "Success", "Warning", "Error"])
+    for i in range(4):
+        expect(chips.nth(i).locator("svg")).to_have_count(1)
+```
+
 ## Single selection
 
 ```python demo exec
@@ -105,6 +113,22 @@ def item_selector() -> rx.Component:
         spacing="4",
         width="100%",
     )
+```
+
+```python test
+def test_single_selection_chips(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_role("heading")).to_have_text("Select your reservation time:")
+    chips = view.locator(".rt-Badge")
+    expect(chips).to_have_text(["2:00", "3:00", "4:00", "5:00"])
+    expect(chips.locator("svg.lucide-check")).to_have_count(0)
+    chips.nth(1).click()
+    expect(chips.nth(1).locator("svg.lucide-check")).to_have_count(1)
+    chips.nth(3).click()
+    expect(chips.nth(3).locator("svg.lucide-check")).to_have_count(1)
+    expect(chips.locator("svg.lucide-check")).to_have_count(1)
+    chips.nth(3).click()
+    expect(chips.locator("svg.lucide-check")).to_have_count(0)
 ```
 
 ## Multiple selection
@@ -255,4 +279,18 @@ def items_selector() -> rx.Component:
         align_items="start",
         width="100%",
     )
+```
+
+```python test
+def test_multiple_selection_chips(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    heading = view.get_by_role("heading")
+    expect(heading).to_have_text("Skills (3)")
+    view.get_by_role("button", name="Add All").click()
+    expect(heading).to_have_text("Skills (10)")
+    view.get_by_role("button", name="Clear All").click()
+    expect(heading).to_have_text("Skills (0)")
+    view.locator(".rt-Badge", has_text="Robotics").click()
+    expect(heading).to_have_text("Skills (1)")
+    expect(view.locator(".rt-Badge").first).to_have_text("Robotics")
 ```

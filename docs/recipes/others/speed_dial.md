@@ -93,6 +93,17 @@ def render_vertical():
     )
 ```
 
+```python test
+def test_vertical_speed_dial(page, demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    buttons = view.get_by_role("button")
+    expect(buttons).to_have_count(1)
+    buttons.first.hover()
+    expect(buttons).to_have_count(4)
+    buttons.nth(1).hover()
+    expect(page.get_by_role("tooltip")).to_have_text("Copy")
+```
+
 ## Horizontal
 
 ```python demo exec
@@ -179,6 +190,17 @@ def render_horizontal():
         position="relative",
         width="100%",
     )
+```
+
+```python test
+def test_horizontal_speed_dial(page, demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    buttons = view.get_by_role("button")
+    expect(buttons).to_have_count(1)
+    buttons.first.hover()
+    expect(buttons).to_have_count(4)
+    buttons.nth(3).hover()
+    expect(page.get_by_role("tooltip")).to_have_text("Share")
 ```
 
 ## Vertical with text
@@ -273,6 +295,15 @@ def render_vertical_text():
         position="relative",
         width="100%",
     )
+```
+
+```python test
+def test_vertical_text_speed_dial(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_text("Copy")).to_have_count(0)
+    view.get_by_role("button").first.hover()
+    expect(view.get_by_role("paragraph")).to_have_text(["Copy", "Download", "Share"])
+    expect(view.get_by_role("button")).to_have_count(4)
 ```
 
 ## Reveal animation
@@ -378,6 +409,18 @@ def render_reveal():
     )
 ```
 
+```python test
+def test_reveal_speed_dial(page, demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    buttons = view.get_by_role("button")
+    expect(buttons).to_have_count(1)
+    buttons.first.hover()
+    expect(buttons).to_have_count(4)
+    expect(buttons.nth(1)).to_have_css("opacity", "1")
+    buttons.nth(2).hover()
+    expect(page.get_by_role("tooltip")).to_have_text("Download")
+```
+
 ## Menu
 
 ```python demo exec
@@ -472,4 +515,12 @@ def render_menu():
         position="relative",
         width="100%",
     )
+```
+
+```python test
+def test_menu_speed_dial(demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    expect(view.get_by_role("paragraph")).to_have_count(0)
+    view.get_by_role("button").hover()
+    expect(view.get_by_role("paragraph")).to_have_text(["Copy", "Download", "Share"])
 ```

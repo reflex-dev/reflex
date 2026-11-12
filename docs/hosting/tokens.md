@@ -8,7 +8,7 @@ A Reflex token authenticates CLI and API requests. Tokens created from the Build
 
 The token is still owned by the person who creates it. For long-running automation that should not depend on a person's membership, use an organization-owned [service account](/docs/ai/organization/service-accounts/).
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/tokens.webp",
     alt="Organization-scoped Reflex tokens with expiration and access details",
@@ -19,7 +19,7 @@ rx.image(
 
 ## Create a token
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/token_create.webp",
     alt="Creating a Reflex token with an expiration and access template",

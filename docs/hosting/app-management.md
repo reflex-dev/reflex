@@ -14,7 +14,7 @@ Use **Stop app** to stop the running deployment. The app becomes unavailable unt
 
 For a stopped app, select **Start app** to restart its latest deployment.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/deployment.webp",
     alt="A running deployment with its app preview and resource summary",
@@ -38,7 +38,7 @@ Use **Logs** to search runtime output and filter by order, timezone, time range,
 
 Every deployment appears under **History** with its deployment ID, state, actor, and timestamp. **Current** identifies the live deployment; older entries are **Historical**.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/history.webp",
     alt="Current and historical deployments in the History page",
@@ -58,7 +58,7 @@ A rollback redeploys a previous deployment's stored image and makes it current w
 3. Review the **Current** and **Rollback target** deployment IDs in the confirmation dialog.
 4. Select **Rollback**. The app briefly restarts while Reflex switches versions.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/rollback_dialog.webp",
     alt="Rollback confirmation comparing the current and target deployments",
@@ -116,7 +116,7 @@ Use **Custom Domain** to add a domain, copy the required DNS records, and check 
 - **Secrets**: app environment variables and Sensitive mode. See [Secrets and Environment Variables](/docs/hosting/secrets-environment-vars/).
 - **Danger**: permanent app deletion.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/settings.webp",
     alt="General settings for a hosted Reflex app",

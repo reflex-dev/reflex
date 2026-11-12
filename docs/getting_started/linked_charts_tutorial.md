@@ -188,6 +188,33 @@ def linked_charts():
     )
 ```
 
+```python test
+def test_box_select_filters_chart_and_table(page, demo):
+    view = demo.get_by_role("tabpanel", name="View")
+    count = view.get_by_text(re.compile(r"^Visible records: \d+$"))
+    expect(count).to_have_text("Visible records: 4", timeout=30000)
+    rows = view.get_by_role("row")
+    expect(rows).to_have_count(5)
+    # Drag a box over the points at 2 and 4 hours.
+    box = view.get_by_role("region", name="Interactive chart").first.bounding_box()
+    page.mouse.move(box["x"] + 70, box["y"] + 230)
+    page.mouse.down()
+    page.mouse.move(box["x"] + 300, box["y"] + 60, steps=10)
+    page.mouse.up()
+    expect(count).to_have_text("Visible records: 2")
+    expect(rows.get_by_role("cell")).to_have_text([
+        "order-a",
+        "2",
+        "120",
+        "order-b",
+        "4",
+        "180",
+    ])
+    view.get_by_role("button", name="Reset selection").click()
+    expect(count).to_have_text("Visible records: 4")
+    expect(rows).to_have_count(5)
+```
+
 Add these lines at the end of the module, then run `uv run reflex run`:
 
 ```python

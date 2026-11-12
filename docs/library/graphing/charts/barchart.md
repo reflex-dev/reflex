@@ -46,6 +46,27 @@ def bar_simple():
     )
 ```
 
+```python test
+def test_bar_chart_draws_a_bar_per_page(demo):
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(7)
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "Page A",
+        "Page B",
+        "Page C",
+        "Page D",
+        "Page E",
+        "Page F",
+        "Page G",
+    ])
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "0",
+        "1000",
+        "2000",
+        "3000",
+        "4000",
+    ])
+```
+
 ## Multiple Bars
 
 Multiple bars can be placed on the same `bar_chart`, using multiple `rx.recharts.bar()` components. Drawn side by side like this, they form a grouped (or clustered) bar chart.
@@ -80,6 +101,19 @@ def bar_double():
         width="100%",
         height=250,
     )
+```
+
+```python test
+def test_grouped_bars_draw_two_series(demo):
+    expect(demo.locator(".recharts-bar")).to_have_count(2)
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(14)
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "0",
+        "2500",
+        "5000",
+        "7500",
+        "10000",
+    ])
 ```
 
 ## Stacked Bar Chart
@@ -119,6 +153,19 @@ def bar_stacked():
     )
 ```
 
+```python test
+def test_stacked_bars_sum_both_series(demo):
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(14)
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["pv", "uv"])
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "0",
+        "3000",
+        "6000",
+        "9000",
+        "12000",
+    ])
+```
+
 ## Ranged Charts
 
 You can also assign a range in the bar by assigning the data_key in the `rx.recharts.bar` to a list with two elements, i.e. here a range of two temperatures for each date.
@@ -150,6 +197,29 @@ def bar_range():
         width="100%",
         height=250,
     )
+```
+
+```python test
+def test_ranged_bars_span_negative_temperatures(demo):
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(9)
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "05-01",
+        "05-02",
+        "05-03",
+        "05-04",
+        "05-05",
+        "05-06",
+        "05-07",
+        "05-08",
+        "05-09",
+    ])
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "-6",
+        "0",
+        "6",
+        "12",
+        "18",
+    ])
 ```
 
 ## Stateful Charts
@@ -191,6 +261,16 @@ def bar_with_state():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_clicking_chart_randomizes_bars(demo):
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["pv", "uv"])
+    bar = demo.locator(".recharts-bar-rectangle path").first
+    expect(bar).to_have_attribute("d", re.compile(r"\S"))
+    original = bar.get_attribute("d")
+    demo.locator(".recharts-wrapper > .recharts-surface").click()
+    expect(bar).not_to_have_attribute("d", original)
 ```
 
 ## Click Events and Drill-Down
@@ -259,6 +339,19 @@ def bar_drilldown():
     )
 ```
 
+```python test
+def test_clicking_a_bar_drills_down_and_back(demo):
+    bars = demo.locator(".recharts-bar-rectangle")
+    ticks = demo.locator(".recharts-xAxis-tick-labels text")
+    genres = ["Fiction", "History", "Science", "Biography", "Fantasy"]
+    expect(ticks).to_have_text(genres)
+    bars.nth(2).click()
+    expect(ticks).to_have_text(["Science"])
+    expect(bars.locator("path")).to_have_attribute("fill", "#1D4ED8")
+    bars.first.click()
+    expect(ticks).to_have_text(genres)
+```
+
 The key points of the pattern:
 
 1. Define a helper function that takes `(item, index)` from `rx.foreach` and returns an `rx.recharts.cell`.
@@ -301,6 +394,18 @@ def bar_features():
     )
 ```
 
+```python test
+@pytest.mark.xfail(
+    strict=True,
+    reason="bar_size and max_bar_size on bar_chart are ignored: bars fill the band",
+)
+def test_bar_props_limit_bar_width(demo):
+    bars = demo.locator(".recharts-bar-rectangle path")
+    expect(bars).to_have_count(6)
+    # max_bar_size=40 caps the requested bar_size of 100.
+    expect(bars.first).to_have_attribute("width", "40")
+```
+
 ## Rounded Bars
 
 The `radius` prop on `rx.recharts.bar` rounds the corners of each bar. Pass a single number to round all four corners, or a list of four values in the order `[top-left, top-right, bottom-right, bottom-left]` — for example `[8, 8, 0, 0]` rounds only the top corners.
@@ -329,6 +434,14 @@ def bar_rounded():
         data=data,
         width="100%",
         height=250,
+    )
+```
+
+```python test
+def test_bars_have_rounded_tops(demo):
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(7)
+    expect(demo.locator(".recharts-bar-rectangle path").first).to_have_attribute(
+        "d", re.compile(r"A ?8,8")
     )
 ```
 
@@ -386,6 +499,20 @@ def bar_gradient():
     )
 ```
 
+```python test
+def test_bars_use_gradient_fills(demo):
+    expect(demo.locator("linearGradient#bar_gradient_uv stop")).to_have_count(2)
+    expect(demo.locator("linearGradient#bar_gradient_pv stop")).to_have_count(2)
+    bars = demo.locator(".recharts-bar")
+    expect(bars.first.locator("path").first).to_have_attribute(
+        "fill", "url(#bar_gradient_uv)"
+    )
+    expect(bars.last.locator("path").first).to_have_attribute(
+        "fill", "url(#bar_gradient_pv)"
+    )
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["pv", "uv"])
+```
+
 ## Vertical Example
 
 The `layout` prop allows you to set the orientation of the graph to be vertical or horizontal, it is set horizontally by default. Setting `layout="vertical"` makes the bars run left-to-right, which is how you create a horizontal bar chart in Reflex.
@@ -421,6 +548,20 @@ def bar_vertical():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_vertical_bars_list_pages_on_y_axis(demo):
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(7)
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "Page A",
+        "Page B",
+        "Page C",
+        "Page D",
+        "Page E",
+        "Page F",
+        "Page G",
+    ])
 ```
 
 To learn how to use the `sync_id`, `stack_id`,`x_axis_id` and `y_axis_id` props check out the of the area chart [documentation](/docs/library/graphing/charts/areachart/), where these props are all described with examples.

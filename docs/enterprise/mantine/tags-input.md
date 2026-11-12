@@ -25,6 +25,16 @@ def tags_input_simple_page():
     )
 ```
 
+```python test
+def test_enter_adds_a_tag(demo):
+    box = demo.get_by_role("textbox", name="Press Enter to ad a tag")
+    box.fill("alpha")
+    box.press("Enter")
+    box.fill("beta")
+    box.press("Enter")
+    expect(demo.locator(".mantine-Pill-label")).to_have_text(["alpha", "beta"])
+```
+
 ## State Example
 
 ```python demo exec
@@ -55,4 +65,16 @@ def tags_input_page():
         size="md",
         radius="xl",
     )
+```
+
+```python test
+def test_tags_are_kept_in_state(demo):
+    pills = demo.locator(".mantine-Pill-label")
+    expect(pills).to_have_text(["Tag1", "Tag2"])
+    box = demo.get_by_role("textbox", name="TagsInput")
+    box.fill("Tag3")
+    box.press("Enter")
+    expect(pills).to_have_text(["Tag1", "Tag2", "Tag3"])
+    box.press("Backspace")
+    expect(pills).to_have_text(["Tag1", "Tag2"])
 ```

@@ -24,6 +24,17 @@ rx.flex(
 )
 ```
 
+```python test
+def test_three_equal_columns(demo):
+    row = demo.locator(".docs-demo-preview > .rt-Flex")
+    expect(row).to_have_css("flex-direction", "row")
+    expect(row).to_have_css("height", "600px")
+    columns = row.locator("> div")
+    expect(columns).to_have_count(3)
+    for i in range(3):
+        expect(columns.nth(i)).to_have_css("height", "568px")
+```
+
 ```python demo
 rx.flex(
     rx.box(bg=rx.color("accent", 3), width="100%", height="100%"),
@@ -47,6 +58,16 @@ rx.flex(
 )
 ```
 
+```python test
+def test_four_columns_two_narrow(demo):
+    row = demo.locator(".docs-demo-preview > .rt-Flex")
+    expect(row).to_have_css("flex-direction", "row")
+    columns = row.locator("> div")
+    expect(columns).to_have_count(4)
+    expect(columns.nth(0)).to_have_css("height", "568px")
+    expect(columns.nth(1)).to_have_css("height", "568px")
+```
+
 ## Row
 
 ```python demo
@@ -68,4 +89,14 @@ rx.flex(
     height="600px",
     width="100%",
 )
+```
+
+```python test
+def test_row_above_two_stacked_boxes(demo):
+    outer = demo.locator(".docs-demo-preview > .rt-Flex")
+    expect(outer).to_have_css("flex-direction", "column")
+    expect(outer.locator("> div")).to_have_count(3)
+    inner = outer.locator("> .rt-Flex")
+    expect(inner).to_have_css("flex-direction", "row")
+    expect(inner.locator("> div")).to_have_count(2)
 ```

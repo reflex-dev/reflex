@@ -25,6 +25,22 @@ rx.text(
 )
 ```
 
+```python test
+@pytest.mark.parametrize(
+    ("width", "color"),
+    [
+        (400, "rgb(255, 165, 0)"),
+        (500, "rgb(255, 0, 0)"),
+        (800, "rgb(128, 0, 128)"),
+        (1000, "rgb(0, 0, 255)"),
+        (1300, "rgb(0, 128, 0)"),
+    ],
+)
+def test_list_breakpoint_colors(demo, page, width, color):
+    page.set_viewport_size({"width": width, "height": 800})
+    expect(demo.get_by_text("Hello World")).to_have_css("color", color)
+```
+
 The text will change color based on your screen size. If you are on desktop, try changing the size of your browser window to see the color change.
 
 _New in 0.5.6_
@@ -40,6 +56,20 @@ rx.text(
         lg="green",
     ),
 )
+```
+
+```python test
+@pytest.mark.parametrize(
+    ("width", "color"),
+    [
+        (400, "rgb(255, 165, 0)"),
+        (800, "rgb(128, 0, 128)"),
+        (1300, "rgb(0, 128, 0)"),
+    ],
+)
+def test_named_breakpoint_colors(demo, page, width, color):
+    page.set_viewport_size({"width": width, "height": 800})
+    expect(demo.get_by_text("Hello World")).to_have_css("color", color)
 ```
 
 Custom breakpoints in CSS units can be mapped to values per component using a dictionary instead of named parameters.
@@ -68,11 +98,21 @@ rx.grid(
 )
 ```
 
+```python test
+@pytest.mark.parametrize(("width", "columns"), [(400, 2), (800, 4), (1300, 6)])
+def test_grid_columns_per_breakpoint(demo, page, width, columns):
+    page.set_viewport_size({"width": width, "height": 800})
+    grid = demo.locator(".rt-Grid")
+    expect(grid).to_have_css(
+        "grid-template-columns", re.compile(rf"^(?:[\d.]+px ?){{{columns}}}$")
+    )
+```
+
 ## Setting Defaults
 
 The default breakpoints are shown below.
 
-```python eval
+```python eval notest
 rx.table.root(
     rx.table.header(
         rx.table.row(
@@ -202,6 +242,31 @@ rx.vstack(
 )
 ```
 
+```python test
+@pytest.mark.parametrize(
+    ("width", "shown"),
+    [
+        (400, ["Mobile View", "Visible on Mobile and Tablet"]),
+        (
+            800,
+            [
+                "Tablet View",
+                "Visible on Mobile and Tablet",
+                "Visible on Desktop and Tablet",
+            ],
+        ),
+        (1300, ["Desktop View", "Visible on Desktop and Tablet"]),
+    ],
+)
+def test_show_by_screen_size(demo, page, width, shown):
+    page.set_viewport_size({"width": width, "height": 800})
+    expect(
+        demo.get_by_text(
+            re.compile(r"^(Mobile|Tablet|Desktop) View$|^Visible on")
+        ).filter(visible=True)
+    ).to_have_text(shown)
+```
+
 ## Specifying Display Breakpoints
 
 You can specify the breakpoints to use for the responsive components by using the `display` style property.
@@ -234,4 +299,30 @@ rx.vstack(
         display=["flex", "flex", "flex", "flex", "flex"],
     ),
 )
+```
+
+```python test
+@pytest.mark.parametrize(
+    ("width", "colors"),
+    [
+        (400, ["yellow"]),
+        (500, ["orange", "yellow"]),
+        (800, ["red", "orange", "yellow"]),
+        (1000, ["blue", "red", "orange", "yellow"]),
+        (1300, ["green", "blue", "red", "orange", "yellow"]),
+    ],
+)
+def test_display_per_breakpoint(demo, page, width, colors):
+    page.set_viewport_size({"width": width, "height": 800})
+    visible = demo.get_by_text("Hello World").filter(visible=True)
+    expect(visible).to_have_count(len(colors))
+    rgb = {
+        "green": "rgb(0, 128, 0)",
+        "blue": "rgb(0, 0, 255)",
+        "red": "rgb(255, 0, 0)",
+        "orange": "rgb(255, 165, 0)",
+        "yellow": "rgb(255, 255, 0)",
+    }
+    for i, color in enumerate(colors):
+        expect(visible.nth(i)).to_have_css("color", rgb[color])
 ```

@@ -30,6 +30,19 @@ It is useful for maintaining the layout's structure and providing users with a s
 )
 ```
 
+```python test
+def test_skeleton_hides_loading_children(demo):
+    skeletons = demo.locator(".rt-Skeleton")
+    expect(skeletons).to_have_text(["button-small", "button-big", "Text is loaded."])
+    for i in range(3):
+        # Loading children are hidden from assistive tech and not interactive.
+        expect(skeletons.nth(i)).to_have_attribute("aria-hidden", "true")
+        expect(skeletons.nth(i)).to_have_attribute("inert", "")
+    loaded = demo.get_by_text("Text is already loaded.")
+    expect(loaded).to_be_visible()
+    expect(loaded).not_to_have_class(re.compile(r"\brt-Skeleton\b"))
+```
+
 When using `Skeleton` with text, wrap the text itself instead of the parent element to have a placeholder of the same size.
 
 Use the loading prop to control whether the skeleton or its children are displayed. Skeleton preserves the dimensions of children when they are hidden and disables interactive elements.
