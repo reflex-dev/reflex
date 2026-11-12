@@ -241,6 +241,8 @@ def _spans_to_plaintext(spans: tuple[Span, ...]) -> str:
 
 # Flag marking a ``python test`` block: browser tests for the demo above it.
 TEST_FLAG = "test"
+# Flag marking a demo block as deliberately untested, e.g. a screenshot or spacer.
+NO_TEST_FLAG = "notest"
 # DOM attribute identifying a tested demo, so its tests can scope a locator to it.
 DEMO_TEST_ATTR = "data-docs-demo"
 # Flags of the python code blocks that render a component a test can target.
@@ -284,8 +286,23 @@ class DocDemo:
     tests: tuple[CodeBlock, ...]
     key: str
 
+    @property
+    def untested(self) -> bool:
+        """Whether the demo lacks tests without being flagged ``notest``.
+
+        Returns:
+            True if the demo has no test blocks and no ``notest`` flag.
+        """
+        return not self.tests and NO_TEST_FLAG not in self.block.flags
+
 
 def _doc_demo(block: CodeBlock, tests: list[CodeBlock]) -> DocDemo:
+    if tests and NO_TEST_FLAG in block.flags:
+        msg = (
+            f"A `{NO_TEST_FLAG}` demo block must not be followed by `python test` "
+            f"blocks:\n{block.content[:200]}"
+        )
+        raise ValueError(msg)
     source = "\n".join(test.content for test in tests)
     key = hashlib.sha1(source.encode()).hexdigest()[:12] if tests else ""
     return DocDemo(block=block, tests=tuple(tests), key=key)
@@ -304,7 +321,8 @@ def iter_doc_demos(blocks: tuple[Block, ...]) -> Iterator[DocDemo]:
         Each demo block with the test blocks that follow it.
 
     Raises:
-        ValueError: If a test block does not follow a demo block.
+        ValueError: If a test block does not follow a demo block, or follows a
+            ``notest`` one.
     """
     demo: CodeBlock | None = None
     tests: list[CodeBlock] = []

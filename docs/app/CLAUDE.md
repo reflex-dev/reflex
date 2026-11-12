@@ -62,6 +62,9 @@ def test_counter(demo):
 - `uv run pytest tests/demos -k <route>` runs them, compiling only the pages
   under test (set `REFLEX_DOCS_WHITELIST` to override; empty compiles all).
   `--docs-demos-untested` lists demos without tests.
+- A block that renders nothing worth testing (a screenshot, a spacer, a fixed
+  reference table) is flagged `notest`, e.g. ```` ```python eval notest ````, so
+  it is not listed as untested. It cannot also have test blocks.
 - Tracebacks point at the markdown file and line.
 
 ## Code patterns

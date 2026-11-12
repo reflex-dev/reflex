@@ -104,7 +104,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--docs-demos-untested",
         action="store_true",
-        help="List the docs demos that have no `python test` block.",
+        help="List the docs demos that have no `python test` block and no `notest` flag.",
     )
 
 
@@ -302,10 +302,12 @@ def pytest_terminal_summary(
     demos = config.stash.get(_DEMOS_KEY, [])
     if not demos:
         return
-    untested = [demo for demo in demos if not demo.demo.tests]
+    tested = sum(1 for demo in demos if demo.demo.tests)
+    untested = [demo for demo in demos if demo.demo.untested]
     terminalreporter.write_sep("-", "docs demos")
     terminalreporter.write_line(
-        f"{len(demos) - len(untested)} of {len(demos)} docs demos have tests"
+        f"{tested} of {len(demos)} docs demos have tests, "
+        f"{len(demos) - tested - len(untested)} are marked notest"
     )
     # The option is only registered when this conftest is loaded at startup.
     if config.getoption("docs_demos_untested", default=False):

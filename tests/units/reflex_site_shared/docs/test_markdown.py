@@ -480,6 +480,10 @@ def test_evaluated(demo):
 rx.text("Untested")
 ```
 
+```python eval notest
+rx.box(height="1em")
+```
+
 ````md alert
 # Nested
 
@@ -522,11 +526,13 @@ def test_iter_doc_demos_pairs_test_blocks_with_the_demo_above() -> None:
         'rx.button("Boxed")',
         'rx.text("Evaluated")',
         'rx.text("Untested")',
+        'rx.box(height="1em")',
         'rx.text("Nested")',
     ]
-    assert [len(demo.tests) for demo in demos] == [2, 1, 0, 1]
-    assert demos[2].key == ""
-    keys = [demos[0].key, demos[1].key, demos[3].key]
+    assert [len(demo.tests) for demo in demos] == [2, 1, 0, 0, 1]
+    assert [demo.untested for demo in demos] == [False, False, True, False, False]
+    assert demos[2].key == demos[3].key == ""
+    keys = [demos[0].key, demos[1].key, demos[4].key]
     assert all(keys)
     assert len(set(keys)) == 3
 
@@ -543,6 +549,20 @@ def test_iter_doc_demos_rejects_test_blocks_without_a_demo(source: str) -> None:
     """A test block must directly follow a block rendering a component."""
     with pytest.raises(ValueError, match="must directly follow"):
         list(iter_doc_demos(parse_document(source).blocks))
+
+
+def test_iter_doc_demos_rejects_test_blocks_after_a_notest_demo() -> None:
+    """A demo flagged notest cannot also have tests."""
+    source = (
+        "```python eval notest\nrx.text('a')\n```\n\n"
+        "```python test\ndef test_a(demo):\n    pass\n```"
+    )
+    with pytest.raises(ValueError) as err:
+        list(iter_doc_demos(parse_document(source).blocks))
+    assert str(err.value) == (
+        "A `notest` demo block must not be followed by `python test` blocks:\n"
+        "rx.text('a')"
+    )
 
 
 def test_tested_demos_are_tagged_and_tests_not_rendered() -> None:
