@@ -14,11 +14,11 @@ This is useful for dynamically rendering a list of items defined in a state.
 ```python demo exec
 class ForeachState(rx.State):
     colors: list[str] = [
-        "#E5484D",
-        "#12A594",
+        "#CE2C31",
+        "#008573",
         "#3E63DD",
         "#AD5700",
-        "#F76B15",
+        "#CC4E00",
         "#8E4EC6",
     ]
 
@@ -182,7 +182,7 @@ Using the color example, we can slightly modify the code to use dicts as shown b
 
 ```python demo exec
 class SimpleDictForeachState(rx.State):
-    color_chart: dict[int, str] = {1: "#3E63DD", 2: "#E5484D", 3: "#12A594"}
+    color_chart: dict[int, str] = {1: "#3E63DD", 2: "#CE2C31", 3: "#008573"}
 
 
 def display_color(color: rx.Var[tuple[str, str]]):
@@ -202,9 +202,9 @@ This example groups related hex colors in a dictionary and renders both the keys
 ```python demo exec
 class ComplexDictForeachState(rx.State):
     color_chart: dict[str, list[str]] = {
-        "#8E4EC6": ["#E5484D", "#3E63DD"],
-        "#F76B15": ["#AD5700", "#E5484D"],
-        "#12A594": ["#3E63DD", "#AD5700"],
+        "#8E4EC6": ["#CE2C31", "#3E63DD"],
+        "#CC4E00": ["#AD5700", "#CE2C31"],
+        "#008573": ["#3E63DD", "#AD5700"],
     }
 
 
