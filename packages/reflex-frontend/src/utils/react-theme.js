@@ -16,7 +16,7 @@ const allowedModes = ["light", "dark", "system"];
 const ThemeContext = createContext({
   theme: "system",
   resolvedTheme: "light",
-  setTheme: () => {},
+  setTheme: /** @type {(theme: string) => void} */ (() => {}),
 });
 ThemeContext.displayName = "ThemeContext";
 
@@ -93,6 +93,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
 
   // Save theme to localStorage whenever it changes
   // Skip saving only if theme key already exists and we haven't initialized yet
+  // biome-ignore lint/correctness/useExhaustiveDependencies: initializing is not a theme change, and must not write
   useEffect(() => {
     const existingTheme = localStorage.getItem("theme");
     if (!isInitialized && existingTheme !== null) return;

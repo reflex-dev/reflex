@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { act } from "react";
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import {
   CLIENT_STATE_REF,
@@ -43,24 +43,6 @@ const mount = (element) => {
     },
   };
 };
-
-/** Values every rendered `ItemState` has reported, oldest first. */
-const itemValues = [];
-
-/** Setter belonging to the most recently rendered `ItemState`. */
-let lastItemSetter;
-
-/** An unnamed client state var, as a loop body would declare one. */
-const ItemState = () => {
-  const [value, set] = useClientState("default", "item_cs0");
-  itemValues.push(value);
-  lastItemSetter = set;
-  return null;
-};
-
-beforeEach(() => {
-  itemValues.length = 0;
-});
 
 describe("store slots", () => {
   test("a name is claimed once and seeded by the first default", () => {

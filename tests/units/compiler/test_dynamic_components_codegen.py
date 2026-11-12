@@ -9,6 +9,7 @@ from reflex_base.components.dynamic import (
     _reset_bundled_libraries_for_compile,
     bundle_library,
 )
+from reflex_base.constants import Templates
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -18,10 +19,7 @@ import reflex as rx
 from reflex.compiler import compiler
 from reflex.state import State
 
-STATE_JS_TEMPLATE = (
-    Path(__file__).parents[3]
-    / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
-)
+STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 
 
 def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
