@@ -302,3 +302,10 @@ reflex issues: 6972–6983, 7088–7104, 7211–7214, 7235, 7244–7266, 7429–
 reflex PRs: 6971, 6984–6987, 6989–6992, 6994, 7085–7087, 7105–7110, 7215–7218, 7456, 7460–7462, 7465, 7466, 7492–7497,
 7505, 7512–7514, 7516, 7519, 7523, 7646, 7662, 7795–7804 (incl. 7801), 7806–7818, 7820, 7821.
 rxe issues: 225–230, 245, 252–254, 260–272, 274, 275, 292–295. rxe PRs: 232, 235, 273, 279, 290.
+
+## Housekeeping (2026-11-12)
+
+Re-verified on the published 0.11.0a2 against 0.10.1 (`phase7/housekeeping.md`):
+- reflex#7476 (EVT-15): fixed by #7696 / #7412 — closed as completed with the measurements.
+- reflex#6122 (EVT-16/17): fixed by #7412 / #7696 — closed as completed; comment notes the chosen semantics (a failed handler's writes are kept and sent, not rolled back).
+- reflex#7262 (CMP-35): stays closed (#7276 fixed the every-page growth). The remaining +71.5 KB decoded / +5.3 KB gzip on a page that uses the deferred library comes from direct `eval` in `utils/state.js` blocking minification of the shared chunk — filed as reflex#7860 (`perf`, `release-train`) and linked from #7262.
