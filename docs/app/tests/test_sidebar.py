@@ -205,3 +205,16 @@ def test_api_reference_section_order_places_every_page_once():
 
     links = [item.link for item in api_reference]
     assert len(links) == len(set(links)) == len(paths)
+
+
+def test_utility_methods_includes_exception_handlers():
+    """Expose the exception-handler guide alongside the other utility methods."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import backend
+
+    utilities = next(item for item in backend if item.names == "Utility Methods")
+    assert [(child.names, child.link) for child in utilities.children] == [
+        ("Router Attributes", "/utility-methods/router-attributes/"),
+        ("Lifespan Tasks", "/utility-methods/lifespan-tasks/"),
+        ("Exception Handlers", "/utility-methods/exception-handlers/"),
+        ("Other Methods", "/utility-methods/other-methods/"),
+    ]
