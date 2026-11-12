@@ -333,6 +333,16 @@ def test_set_env_json_omits_plugin_keys_when_plugin_absent(
     assert env["TRANSPORT"] == "websocket"
 
 
+def test_set_env_json_holds_the_reflex_version(tmp_path: Path, mocker: MockerFixture):
+    """The frontend reads the socket subprotocol from env.json, not reflex.json."""
+    web_dir = _patch_env_json(mocker, tmp_path)
+
+    build.set_env_json()
+
+    env = json.loads((web_dir / "env.json").read_text())
+    assert env["REFLEX_VERSION"] == constants.Reflex.VERSION
+
+
 def test_set_env_json_later_plugin_wins(tmp_path: Path, mocker: MockerFixture):
     """Later plugins override earlier ones on conflicting keys."""
 

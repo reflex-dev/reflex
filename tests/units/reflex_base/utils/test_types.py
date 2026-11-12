@@ -34,6 +34,7 @@ from reflex_base.utils.types import (
     get_required_typed_dict_keys,
     get_typed_dict_field_types,
     is_non_string_sequence,
+    is_unserialized_property,
     resolve_type_alias,
     typehint_issubclass,
 )
@@ -99,6 +100,25 @@ def test_pydantic_property_type_without_deprecation(base_model):
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
         assert get_attribute_access_type(Item, "label") is str
+
+
+def test_unserialized_property_checks_union_members():
+    """The property guard detects an unserialized property in either union member."""
+    base_model = pytest.importorskip("pydantic").BaseModel
+
+    class ItemA(base_model):
+        @property
+        def label(self) -> str:
+            return "a"
+
+    class ItemB(base_model):
+        @property
+        def label(self) -> str:
+            return "b"
+
+    assert is_unserialized_property(ItemA, "label")
+    assert is_unserialized_property(ItemB, "label")
+    assert is_unserialized_property(ItemA | ItemB, "label")
 
 
 @pytest.mark.parametrize("getter", [get_field_type, get_attribute_access_type])
@@ -671,3 +691,49 @@ def test_get_typed_dict_field_types_keeps_redeclared_fields():
         "value": list[str],
         "other": Sequence[str],
     }
+
+
+def test_unserialized_property_on_sqlalchemy_dataclass():
+    """Test that plain properties on SQLAlchemy dataclasses are flagged."""
+    pytest.importorskip("sqlalchemy")
+    from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+    class Base(MappedAsDataclass, DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_property"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        first_name: Mapped[str]
+        last_name: Mapped[str]
+
+        @property
+        def double(self) -> str:
+            """The full name, which is not a mapped attribute."""
+            return f"{self.first_name} {self.last_name}"
+
+    assert is_unserialized_property(User, "double")
+
+
+def test_unserialized_property_on_sqlalchemy_model():
+    """Flag plain SQLAlchemy properties while allowing mapped attributes."""
+    pytest.importorskip("sqlalchemy")
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+    class Base(DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_property"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        first: Mapped[str]
+
+        @property
+        def double(self) -> str:
+            """The first name twice, which is not a mapped attribute."""
+            return self.first * 2
+
+    assert is_unserialized_property(User, "double")
+    assert not is_unserialized_property(User, "first")

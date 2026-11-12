@@ -640,12 +640,18 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 *_render_spans(title_spans),
                 class_name="font-[475]",
                 color=foreground_color(),
+                flex="1",
+                min_width="0",
+                overflow_wrap="anywhere",
+                text_wrap="balance",
             )
 
         trigger: list[rx.Component] = [
             rx.box(
-                rx.icon(tag=icon_tag, size=18, margin_right=".5em"),
+                rx.icon(tag=icon_tag, size=18),
                 color=foreground_color(),
+                flex_shrink="0",
+                margin_top="4px",
             ),
         ]
 
@@ -688,9 +694,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         return rx.vstack(
             rx.hstack(
                 *trigger,
-                align_items="center",
+                align_items="start",
                 width="100%",
-                spacing="1",
+                spacing="3",
                 padding=["16px", "24px"],
             ),
             border=f"1px solid {border_override or rx.color(color, 4)}",
@@ -769,7 +775,13 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         color: ColorType = "blue"
         trigger = [
-            rx.text(title, class_name="font-[475]", color=f"{rx.color(color, 12)}"),
+            rx.text(
+                title,
+                class_name="font-[475]",
+                color=f"{rx.color(color, 12)}",
+                flex="1",
+                min_width="0",
+            ),
         ]
         body = rx.accordion.content(
             rx.video(

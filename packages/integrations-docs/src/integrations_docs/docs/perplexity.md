@@ -17,18 +17,18 @@ With Perplexity, your app can:
 
 ## Step 1: Obtain a Perplexity API Key
 
-1. Go to the [Perplexity](https://www.perplexity.ai/).  
-2. Log in or create an account.  
-3. Navigate to **Account → API → [API Keys](https://www.perplexity.ai/account/api/keys)**.  
-4. Click **Generate Key** and copy the generated key.
+1. Go to the [Perplexity API Console](https://console.perplexity.ai/).
+2. Log in or create an account, then create a project if you don't have one.
+3. Open your project's [API Keys](https://console.perplexity.ai/project/keys) page.
+4. Generate a new key and copy it right away; the full key is shown only once.
 
    * **Example:** `pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Perplexity** in your app settings.  
-2. Paste your **Perplexity API Key** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Perplexity** card.
+2. Click **Add connection** and paste your API key into **PERPLEXITY_API_KEY**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can use Perplexity for retrieval-augmented AI features across workflows and components.
 

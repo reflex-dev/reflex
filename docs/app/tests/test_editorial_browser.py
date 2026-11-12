@@ -241,10 +241,20 @@ def test_navbar_controls_fit_and_search_opens(page: Page, width: int):
         assert bounds["x"] >= 0
         assert bounds["x"] + bounds["width"] <= width + 1
     search = page.get_by_role("button", name="Search Reflex", exact=True)
+    expect(search).to_have_css("border-radius", "8px")
     if width < 1280:
         expect(search.locator("svg")).to_have_css("width", "16px")
     search.click()
     expect(page.get_by_role("dialog")).to_be_visible()
+    if width <= 640:
+        search_input = page.get_by_role("combobox")
+        assert search_input.evaluate("""async input => {
+            await document.fonts.ready;
+            const placeholder = getComputedStyle(input, "::placeholder");
+            const context = document.createElement("canvas").getContext("2d");
+            context.font = `${placeholder.fontWeight} ${placeholder.fontSize} ${placeholder.fontFamily}`;
+            return context.measureText(input.placeholder).width <= input.clientWidth;
+        }""")
     page.keyboard.press("Escape")
     expect(page.get_by_role("dialog")).to_have_count(0)
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
@@ -264,7 +274,27 @@ def test_announcement_dismissal_and_search_shortcuts(page: Page):
         expect(page.get_by_role("dialog")).to_have_count(0)
 
 
-@pytest.mark.parametrize("width", [375, 1440])
+def test_feedback_fields_have_visible_focus_in_forced_colors(page: Page):
+    """System colors must leave a keyboard focus indicator on both feedback fields."""
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.emulate_media(forced_colors="active")
+    page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    page.get_by_role("button", name="Send feedback", exact=True).click()
+    form = page.locator(".docs-feedback-content")
+    expect(form.get_by_role("button", name="Send feedback")).to_have_css(
+        "border-radius", "8px"
+    )
+    feedback = form.get_by_role("textbox", name="Feedback", exact=True)
+    email = form.get_by_role("textbox", name="Contact email (optional)")
+    page.keyboard.press("Tab")
+    for field, surface in ((feedback, feedback), (email, email.locator(".."))):
+        field.focus()
+        expect(field).to_be_focused()
+        expect(surface).to_have_css("outline-style", "solid")
+        expect(surface).to_have_css("outline-width", "2px")
+
+
+@pytest.mark.parametrize("width", [320, 375, 1440])
 def test_footer_links_newsletter_and_theme(page: Page, width: int):
     """Marketing footer links, native email validation, and theme controls work."""
     page.set_viewport_size({"width": width, "height": 1000})
@@ -273,18 +303,59 @@ def test_footer_links_newsletter_and_theme(page: Page, width: int):
     expect(footer.get_by_role("link", name="Blog", exact=False)).to_have_attribute(
         "href", "https://reflex.dev/blog/"
     )
+    expect(footer.get_by_role("heading", name="Industries", exact=True)).to_be_visible()
+    expect(footer.get_by_role("link", name="Workflows", exact=True)).to_have_attribute(
+        "href", "https://reflex.dev/workflows/"
+    )
     email = footer.get_by_label("Email address", exact=True)
-    footer.get_by_role("button", name="Subscribe to updates", exact=True).click()
+    expect(email.locator("..")).to_have_css("border-radius", "8px")
+    expect(email.locator("..")).to_have_css(
+        "height", "36px" if width >= 1024 else "44px"
+    )
+    subscribe = footer.get_by_role("button", name="Subscribe to updates", exact=True)
+    expect(subscribe).to_have_css("border-radius", "8px")
+    subscribe.click()
     assert email.evaluate("el => el.validity.valueMissing")
     expect(email).to_be_focused()
     before = page.locator("header").evaluate(
         "el => getComputedStyle(el).backgroundColor"
     )
-    dark = footer.get_by_role("button", name="Toggle dark color mode", exact=True)
+    theme = footer.get_by_role("group", name="Color theme")
+    expect(theme).to_have_css("border-radius", "8px")
+    dark = theme.get_by_role("button", name="Toggle dark color mode", exact=True)
+    expect(dark).to_have_css("border-radius", "8px")
     dark.click()
     expect(dark).to_have_attribute("aria-pressed", "true")
     expect(page.locator("header")).not_to_have_css("background-color", before)
     expect(page.locator("header")).to_have_css("background-image", "none")
+    expect(subscribe).to_have_css("background-color", "rgb(245, 245, 245)")
+    secondary = page.locator(".docs-hero .docs-action-secondary > div")
+    expect(secondary).to_have_css("background-color", "rgb(29, 29, 29)")
+    expect(secondary).to_have_css("box-shadow", "rgb(57, 57, 57) 0px 0px 0px 1px inset")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [320, 390, 1440])
+def test_landing_actions_match_marketing_homepage(page: Page, width: int):
+    """Keep both action pairs compact with visible focus and room to wrap."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.add_init_script("localStorage.setItem('theme', 'light')")
+    page.goto(f"{PREVIEW_URL}/docs/")
+    for section, label in (
+        (".docs-hero", "Explore Framework"),
+        (".docs-cta", "Try for free"),
+    ):
+        link = page.locator(section).get_by_role("link", name=label, exact=True)
+        expect(link.locator("..")).to_have_css("gap", "8px")
+        surface = link.locator(":scope > div")
+        expect(surface).to_have_css("height", "42px")
+        expect(surface).to_have_css("padding-inline-start", "16px")
+        expect(surface).to_have_css("font-size", "15px")
+        link.focus()
+        expect(link).to_have_css("outline-style", "solid")
+    secondary = page.locator(".docs-hero .docs-action-secondary > div")
+    secondary.hover()
+    expect(secondary).to_have_css("background-color", "rgb(249, 249, 249)")
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
