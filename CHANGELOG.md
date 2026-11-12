@@ -3,7 +3,7 @@
 ### Breaking Changes
 
 - Browser storage vars (`rx.Cookie`, `rx.LocalStorage`, `rx.SessionStorage`) must be declared with a storage value as the default or with a storage type annotation. A `default_factory` on a storage var, or one returning a storage value, now fails at compile time instead of being silently ignored or treated as an ordinary var. ([#7582](https://github.com/reflex-dev/reflex/issues/7582))
-- In prod mode, when `deploy_url` is unset (now the default), the backend no longer sends CORS headers, so browsers cannot read cross-origin responses, and Socket.IO accepts same-origin connections only. With `deploy_url` set, only that origin is allowed. Previously any origin was allowed. Set `cors_allowed_origins` explicitly for other setups (`["*"]` restores the old behavior). ([#7641](https://github.com/reflex-dev/reflex/issues/7641))
+- In prod mode, when `deploy_url` is unset (now the default), the backend no longer sends CORS headers, so browsers cannot read cross-origin responses, and Socket.IO accepts same-origin connections only. With `deploy_url` set, that origin is allowed in addition to the backend's own. A split frontend and backend, a CDN-served frontend or a proxy that rewrites `Host` needs `REFLEX_DEPLOY_URL` set to the frontend's URL on the backend, for example `REFLEX_DEPLOY_URL=https://app.example.com reflex run --env prod --backend-only`. Previously any origin was allowed. Set `cors_allowed_origins` explicitly for other setups (`["*"]` restores the old behavior). ([#7641](https://github.com/reflex-dev/reflex/issues/7641))
 - A `set` or `frozenset` state var is now a `SetVar` rather than an `ArrayVar`, so it no longer type-checks as a sequence in frontend code: indexing, slicing, `map`, `filter`, `join`, `reverse`, `+`, `*`, the comparisons `<`, `<=`, `>` and `>=`, and `contains` with a `field` on it are deprecated. They still compile for now with a deprecation warning and will be removed in 1.0. Call `.to_array()` first:
 
   ```python
@@ -66,7 +66,7 @@
 ### Performance
 
 - Lazy bundled libraries now load only the modules required by each dynamic component instead of loading every registered optional library at once. ([#7276](https://github.com/reflex-dev/reflex/issues/7276))
-- The backend no longer wraps the app in an extra `Starlette` application to run lifespan tasks, which removes a routing layer from every request. As a result, calling the `rx.App` instance returns a plain ASGI app rather than a `Starlette` instance. ([#7624](https://github.com/reflex-dev/reflex/issues/7624))
+- The backend no longer wraps the app in an extra `Starlette` application to run lifespan tasks, which removes a routing layer from every request. ([#7624](https://github.com/reflex-dev/reflex/issues/7624))
 
 
 ## v0.10.1 (2026-10-26)
