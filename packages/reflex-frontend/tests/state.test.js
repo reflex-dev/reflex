@@ -29,6 +29,7 @@ import {
   pyAnd,
   pyFlatMap,
   pyLstrip,
+  pyMod,
   pyOr,
   pyRstrip,
   pyStrAt,
@@ -96,6 +97,26 @@ describe("python truthiness", () => {
     expect(pyAnd(empty, rhs)).toBe(empty);
     expect(rhs).not.toHaveBeenCalled();
     expect(pyAnd("lhs", rhs)).toBe("rhs");
+  });
+});
+
+describe("python number operations", () => {
+  test.each([
+    [-7, 3, 2],
+    [7, -3, -2],
+    [-7, -3, -1],
+    [5.5, -2, -0.5],
+    [-5, Infinity, Infinity],
+  ])("pyMod(%d, %d) is %d, with the sign of the divisor", (a, b, expected) => {
+    expect(pyMod(a, b)).toBe(expected);
+  });
+
+  test("pyMod gives a zero result the divisor's sign only for a float", () => {
+    // Python's int `%` never returns -0; `toBe` tells 0 and -0 apart.
+    expect(pyMod(36, -3)).toBe(0);
+    expect(pyMod(-48, -16)).toBe(0);
+    expect(pyMod(6, -3, true)).toBe(-0);
+    expect(pyMod(-6, 3, true)).toBe(0);
   });
 });
 

@@ -42,6 +42,7 @@ const PUBLIC_API = {
     "pyAnd",
     "pyFlatMap",
     "pyLstrip",
+    "pyMod",
     "pyOr",
     "pyRstrip",
     "pyStrAt",
