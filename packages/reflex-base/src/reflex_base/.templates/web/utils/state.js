@@ -1709,6 +1709,20 @@ export const pyOr = (a, b) => (isTrue(a) ? a : b());
 export const pyAnd = (a, b) => (isTrue(a) ? b() : a);
 
 /***
+ * Python-semantics modulo: the result takes the sign of the divisor
+ * (`pyMod(-7, 3)` is 2), where JavaScript's `%` takes the dividend's (-1).
+ * A zero result takes the divisor's sign, like Python's float `%`.
+ * @param {number} a The dividend.
+ * @param {number} b The divisor.
+ * @returns {number} The remainder of `a / b` with the sign of `b`.
+ */
+export const pyMod = (a, b) => {
+  const r = a % b;
+  if (r === 0) return b < 0 ? -0 : 0;
+  return r < 0 !== b < 0 ? r + b : r;
+};
+
+/***
  * Python-semantics str.lstrip: remove leading characters in the given set.
  * @param {string} s The string to strip.
  * @param {string?} chars Characters to remove; null/undefined strips whitespace.
