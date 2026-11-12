@@ -15,6 +15,8 @@ from .support.states import (
 # One mutation and delta of a small state takes a few microseconds, so the
 # benchmarks built on _mutate_counter repeat it this many times per measured call.
 MUTATIONS = 50
+# Items validated per measured call by test_state_collection_assignment.
+ASSIGNED_ITEMS = 100_000
 
 
 def _mutate_counter(state: Any) -> dict:
@@ -178,20 +180,23 @@ def test_state_tree_delta(shape: str, benchmark: BenchmarkFixture):
     )
 
 
-# Items of exactly the declared type skip the per-item check, so a smaller list
-# would measure little beyond the fixed cost of one assignment.
-@pytest.mark.parametrize("size", [100_000])
+@pytest.mark.parametrize("size", [10, 1000, 100_000])
 def test_state_collection_assignment(size: int, benchmark: BenchmarkFixture):
     """Benchmark state assignment and its type-validation hot path.
+
+    Every size validates ``ASSIGNED_ITEMS`` items per measured call, in
+    ``ASSIGNED_ITEMS // size`` assignments, so the sizes differ only in how the
+    work splits between the cost of an assignment and the cost of an item.
 
     Args:
         size: Assigned list size.
         benchmark: The CodSpeed benchmark fixture.
     """
     values = list(range(size))
+    assignments = ASSIGNED_ITEMS // size
 
     def setup():
-        """Create a fresh state for one assignment.
+        """Create a fresh state for one measured call.
 
         Returns:
             CodSpeed pedantic positional and keyword arguments.
@@ -199,7 +204,7 @@ def test_state_collection_assignment(size: int, benchmark: BenchmarkFixture):
         return ((initialized_state(0),), {})
 
     def assign(state: PerformanceState) -> int:
-        """Assign the representative collection.
+        """Assign the representative collection repeatedly.
 
         Args:
             state: Fresh state.
@@ -207,7 +212,8 @@ def test_state_collection_assignment(size: int, benchmark: BenchmarkFixture):
         Returns:
             Assigned collection size.
         """
-        state.numbers = values
+        for _ in range(assignments):
+            state.numbers = values
         return len(state.numbers)
 
     assert benchmark.pedantic(assign, setup=setup) == size

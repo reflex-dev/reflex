@@ -10,11 +10,12 @@ import pytest
 from pytest_codspeed import BenchmarkFixture
 from reflex_base.utils.format import json_dumps
 
-from reflex.state import StateUpdate
+from reflex.state import StateUpdate, serialize_state_update
 
 from .support.events import PayloadKind, make_payload, wire_edge_cases
 
 EDGE_CASE_ENCODES = 25
+UPDATE_CONVERSIONS = 1000
 
 
 @pytest.mark.parametrize(
@@ -47,6 +48,25 @@ def test_state_update_wire_serialization(
     )
     encoded = benchmark(lambda: [json_dumps(update) for _ in range(encodes)])
     assert encoded == [json_dumps(update)] * encodes
+
+
+def test_state_update_dataclass_serialization(benchmark: BenchmarkFixture):
+    """Benchmark conversion of a state update into its transport dictionary.
+
+    Every update sent goes through this conversion. It takes well under a
+    microsecond, so each measured call converts ``UPDATE_CONVERSIONS`` times.
+
+    Args:
+        benchmark: The CodSpeed benchmark fixture.
+    """
+    payload = list(range(10_000))
+    update = StateUpdate(delta={"performance_state": {"payload": payload}})
+    result = benchmark(
+        lambda: [serialize_state_update(update) for _ in range(UPDATE_CONVERSIONS)]
+    )
+    assert result == [{"delta": {"performance_state": {"payload": payload}}}] * (
+        UPDATE_CONVERSIONS
+    )
 
 
 def test_wire_edge_case_serialization(benchmark: BenchmarkFixture):
