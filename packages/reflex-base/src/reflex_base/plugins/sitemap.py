@@ -6,10 +6,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict
 from xml.etree.ElementTree import Element, SubElement, indent, tostring
-
-from typing_extensions import NotRequired
 
 from reflex_base import constants
 
@@ -151,7 +149,7 @@ def generate_links_for_sitemap(
     from reflex_base.config import get_config
 
     app_config = get_config()
-    deploy_url = app_config.deploy_url
+    deploy_url = app_config.frontend_url
 
     links: list[SitemapLink] = []
 

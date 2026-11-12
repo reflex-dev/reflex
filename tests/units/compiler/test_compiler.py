@@ -2,6 +2,7 @@ import dataclasses
 import importlib.util
 import json
 import os
+import re
 import shutil
 import sys
 from pathlib import Path, PureWindowsPath
@@ -9,9 +10,13 @@ from pathlib import Path, PureWindowsPath
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.components.component import Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
+from reflex_base.environment import environment
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -28,6 +33,7 @@ from reflex_components_core.el.elements.other import Html
 
 import reflex as rx
 from reflex.compiler import compiler, utils
+from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
 from reflex.utils import prerequisites
 
@@ -98,11 +104,19 @@ def test_read_stateful_pages_marker_recovers_legacy_corruption(
     assert compiler._read_stateful_pages_marker() is None
 
 
+def test_read_stateful_pages_marker_recovers_undecodable_marker(tmp_path, mocker):
+    """A marker that is not valid UTF-8 requests full page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    # No BOM: json.loads() would decode a UTF-16 one and raise JSONDecodeError.
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_bytes(b"\xff garbage")
+    assert compiler._read_stateful_pages_marker() is None
+
+
 @pytest.mark.parametrize("windows", [False, True])
 def test_read_stateful_pages_marker_sharing_violation(mocker, windows):
     """An unavailable Windows marker requests evaluation without hiding POSIX errors."""
     mocker.patch.object(constants, "IS_WINDOWS", windows)
-    mocker.patch.object(Path, "read_text", side_effect=PermissionError)
+    mocker.patch.object(Path, "read_bytes", side_effect=PermissionError)
     if windows:
         assert compiler._read_stateful_pages_marker() is None
     else:
@@ -702,10 +716,12 @@ def test_compile_app_root_can_defer_optional_window_libraries(mocker):
     )
     with RegistrationContext():
         bundle_library("@radix-ui/themes@3.3.0")
+        bundle_library("constructor")
         _, code = compiler.compile_app_root(rx.el.div("hello"))
 
     assert 'import * as radix_ui_themes from "@radix-ui/themes"' not in code
     assert '() => import("@radix-ui/themes")' in code
+    assert '"constructor": () => import("constructor")' in code
     assert 'import * as React from "react"' in code
     assert 'import * as utils_context from "$/utils/context"' in code
     assert "window.__reflex_load" in code
@@ -748,6 +764,41 @@ def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixtur
     _, code = compiler.compile_contexts(None, rx.theme(appearance="dark"))
 
     assert 'export const defaultColorMode = "dark"' in code
+
+
+def test_compile_contexts_embeds_frontend_state_schema():
+    """The context module carries the hash of the state tree it was compiled for.
+
+    The frontend sends it on every socket connect, and the backend computes
+    the same function over its own tree, so the two values drift only when
+    the trees do.
+    """
+
+    # A root of its own: compiling rx.State would instantiate every state other
+    # test modules registered in this process.
+    class SchemaContextRoot(BaseState):
+        value: int = 0
+
+    class SchemaContextChild(SchemaContextRoot):
+        name: str = ""
+
+    _, code = compiler.compile_contexts(SchemaContextRoot, None)
+
+    schema = SchemaContextRoot._to_frontend_schema()
+    assert f'export const stateSchema = "{schema}"' in code
+    on_load_internal_event = (
+        f"{SchemaContextRoot.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL}"
+    )
+    assert f"export const on_load_internal_event = '{on_load_internal_event}'" in code
+    start = code.index("registerApp({")
+    assert "stateSchema," in code[start : code.index("});", start)]
+    assert "on_load_internal_event," in code[start : code.index("});", start)]
+    assert SchemaContextChild.get_full_name() in code
+
+    # Without state there is nothing to compare, and nothing to connect with.
+    _, code = compiler.compile_contexts(None, None)
+    assert "export const stateSchema = null" in code
+    assert "export const on_load_internal_event = undefined" in code
 
 
 @pytest.mark.parametrize(
@@ -818,6 +869,17 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
         compiler.compile_root_stylesheet(stylesheets)
 
 
+@pytest.fixture
+def dev_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin dev mode, whose document head omits the stylesheet preload.
+
+    Args:
+        monkeypatch: Selects dev mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+
+
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root():
     """Test that the document root is created correctly."""
     # Test with no components.
@@ -830,7 +892,7 @@ def test_create_document_root():
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 6
     assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
@@ -841,8 +903,7 @@ def test_create_document_root():
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], Link)
-    assert isinstance(root.children[0].children[6], Links)
+    assert isinstance(root.children[0].children[5], Links)
 
 
 def test_add_meta_accepts_dynamic_description():
@@ -879,6 +940,7 @@ def test_add_meta_drops_empty_description():
     assert not any(isinstance(child, Description) for child in page.children)
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_scripts():
     # Test with components.
     comps = [
@@ -891,7 +953,7 @@ def test_create_document_root_with_scripts():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 9
+    assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
     assert names == [
         "script",
@@ -900,7 +962,6 @@ def test_create_document_root_with_scripts():
         "meta",
         "meta",
         "Meta",
-        "link",
         "link",
         "Links",
     ]
@@ -911,6 +972,7 @@ def test_create_document_root_with_scripts():
     assert root.custom_attrs == {"project": "reflex"}
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_char_set():
     # Test with components.
     comps = [
@@ -920,12 +982,13 @@ def test_create_document_root_with_meta_char_set():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "Meta", "link", "link", "Links"]
+    assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_viewport():
     # Test with components.
     comps = [
@@ -936,9 +999,9 @@ def test_create_document_root_with_meta_viewport():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 8
+    assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "link", "Links"]
+    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
@@ -1778,39 +1841,6 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
-def test_context_template_one_provider_per_substate():
-    """Each substate gets its own provider so one delta re-renders one context.
-
-    A single provider owning every reducer means any delta recreates every
-    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
-    keeps the untouched providers memoized.
-    """
-    from reflex_base.compiler.templates import context_template
-
-    rendered = context_template(
-        is_dev_mode=True,
-        default_color_mode='"light"',
-        initial_state={
-            "reflex___state____state": {},
-            "reflex___state____state__sub": {},
-        },
-        state_name="reflex___state____state",
-    )
-
-    assert (
-        "createElement(SubstateProvider, {substateName: 'reflex___state____state', "
-        "contextName: 'reflex___state____state'}," in rendered
-    )
-    assert (
-        "createElement(SubstateProvider, {substateName: 'reflex___state____state__sub', "
-        "contextName: 'reflex___state____state__sub'}," in rendered
-    )
-    # The reducers moved into SubstateProvider; StateProvider only composes.
-    provider_body = rendered[rendered.index("export function StateProvider") :]
-    assert "useReducer" not in provider_body
-    assert "createElement(DispatchProvider, {}," in provider_body
-
-
 def test_context_template_client_side_component_is_named():
     """``ClientSide`` returns a named component, not an anonymous arrow."""
     from reflex_base.compiler.templates import context_template
@@ -1933,3 +1963,132 @@ def test_compile_app_drops_event_caches_from_earlier_compiles(
 
         assert (0, 0, None) not in context._bound_event_chains
         assert ("on_click", 0) not in context._memoized_event_triggers
+
+
+@pytest.mark.parametrize(
+    ("compile_context", "tier", "configured", "expected"),
+    [
+        # A deploy keeps an explicit setting whatever the stored login's tier:
+        # the hosting CLI enforces the badge from the tier of the deploy token.
+        (constants.CompileContext.DEPLOY, "free", False, False),
+        (constants.CompileContext.DEPLOY, "team", True, True),
+        # An unset setting follows the stored login's tier.
+        (constants.CompileContext.DEPLOY, "free", None, True),
+        (constants.CompileContext.DEPLOY, "pro", None, False),
+        (constants.CompileContext.DEPLOY, "anonymous", None, True),
+        # Outside of deploys the badge shows unless the app opts out.
+        (constants.CompileContext.EXPORT, "free", None, True),
+        (constants.CompileContext.EXPORT, "free", False, False),
+        (constants.CompileContext.RUN, "pro", True, True),
+    ],
+)
+def test_compile_app_resolves_show_built_with_reflex(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    compile_context: constants.CompileContext,
+    tier: str,
+    configured: bool | None,
+    expected: bool,
+):
+    """A production compile installs the badge according to the app's setting.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory and compile context.
+        mocker: Fixture for configuring the test app, the user's tier and prod mode.
+        compile_context: The context the app is compiled in.
+        tier: The tier of the deploying user.
+        configured: The app's own show_built_with_reflex setting.
+        expected: The setting the compile should resolve to.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv(environment.REFLEX_COMPILE_CONTEXT.name, compile_context.value)
+    get_user_tier = mocker.patch(
+        "reflex.utils.prerequisites.get_user_tier", return_value=tier
+    )
+    mocker.patch("reflex.compiler.compiler.is_prod_mode", return_value=True)
+    with RegistrationContext():
+        config = rx.Config(
+            app_name="badge_test", plugins=[], show_built_with_reflex=configured
+        )
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert config.show_built_with_reflex is expected
+        assert ((0, "StickyBadge") in app.app_wraps) is expected
+    # Only an unset setting on a deploy needs the tier.
+    assert get_user_tier.called is (
+        compile_context == constants.CompileContext.DEPLOY and configured is None
+    )
+
+
+class _RefsDecl(rx.Fragment):
+    """A wrapped component whose custom code declares its own ``refs``."""
+
+    def add_custom_code(self) -> list[str]:
+        """Declare a module-level ``refs`` binding.
+
+        Returns:
+            The declaration.
+        """
+        return ["const refs = {};"]
+
+
+_IMPORTS_REFS = re.compile(
+    r'^import\s*\{[^}]*\brefs\b[^}]*\}\s*from\s*"\$/utils/state"', re.MULTILINE
+)
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_custom_code_may_declare_refs(auto_memoize: bool):
+    """Custom code may declare its own module-level ``refs``.
+
+    No page or memo module imports ``refs`` unless a var asks for it, so a
+    module never binds the name twice. Code that reads ``refs[...]`` without
+    the import resolves the ``globalThis.refs`` that state.js publishes.
+
+    Args:
+        auto_memoize: Whether stateful components are auto-memoized.
+    """
+
+    @rx.memo
+    def refs_decl_memo() -> rx.Component:
+        return _RefsDecl.create()
+
+    def page() -> Component:
+        return rx.el.div(
+            rx.el.input(id="target"),
+            rx.el.button(on_click=rx.console_log("clicked")),
+            _RefsDecl.create(),
+            refs_decl_memo(),
+        )
+
+    page_ctx = PageContext(name="page", route="/page", root_component=page())
+    hooks = CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize))
+    compile_ctx = CompileContext(pages=[], hooks=hooks)
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        hooks.compile_page(page_ctx, compile_context=compile_ctx)
+        _, page_code = compiler.compile_page_from_context(page_ctx)
+        memo_files, _ = compiler.compile_memo_components((
+            *compile_ctx.auto_memo_components.values(),
+            next(d for d in MEMOS.values() if d.python_name == "refs_decl_memo"),
+        ))
+
+    modules = [
+        page_code,
+        compiler._compile_page(page(), "/page"),
+        *(code for _, code in memo_files),
+    ]
+    assert "const refs = {};" in page_code
+    assert any("const refs = {};" in code for _, code in memo_files)
+    for code in modules:
+        assert not _IMPORTS_REFS.search(code), code

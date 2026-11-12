@@ -4,6 +4,7 @@ import reflex as rx
 
 from playground.layout import layout
 from playground.state import BoardState
+from playground.states.room import RoomState
 
 
 def board() -> rx.Component:
@@ -17,6 +18,16 @@ def board() -> rx.Component:
             rx.heading("Board"),
             rx.button(
                 "Join the lobby", on_click=BoardState.join("lobby"), id="board-join"
+            ),
+            rx.hstack(
+                rx.input(
+                    placeholder="another board",
+                    value=RoomState.token_draft,
+                    on_change=RoomState.set_token_draft,
+                    id="board-token",
+                ),
+                rx.button("Join", on_click=RoomState.join_draft, id="board-join-token"),
+                spacing="2",
             ),
             rx.hstack(
                 rx.text(BoardState.count, id="board-count", size="6"),

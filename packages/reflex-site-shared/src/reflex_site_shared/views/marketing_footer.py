@@ -17,7 +17,6 @@ from reflex_site_shared.constants import (
     LINKEDIN_URL,
     REFLEX_URL,
     STATUS_WEB_URL,
-    TWITTER_URL,
     XY_GITHUB_URL,
 )
 from reflex_site_shared.views.footer import dark_mode_toggle
@@ -80,10 +79,10 @@ def _footer_link(
             "focus-visible:outline-2 focus-visible:outline-offset-4 "
             "focus-visible:outline-foreground"
         )
-    if href.startswith("/"):
+    if href.startswith(("/", f"{REFLEX_URL.rstrip('/')}/")):
         return rx.el.elements.a(
             text,
-            href=f"{REFLEX_URL.rstrip('/')}{href}",
+            href=f"{REFLEX_URL.rstrip('/')}{href}" if href.startswith("/") else href,
             class_name=class_name,
         )
     return rx.el.elements.a(
@@ -132,6 +131,7 @@ def _footer_column(
     label: str,
     *sections: tuple[str, FooterLinks],
     appearance: FooterAppearance = "dark",
+    spread_mobile: bool = False,
 ) -> rx.Component:
     """Render a semantic footer navigation column.
 
@@ -139,6 +139,7 @@ def _footer_column(
         label: Accessible name for this navigation column.
         appearance: Semantic surface treatment for the footer.
         sections: Headings paired with their link groups.
+        spread_mobile: Lay out both groups side by side below the desktop grid.
 
     Returns:
         The footer component.
@@ -149,7 +150,11 @@ def _footer_column(
             for heading, links in sections
         ],
         aria_label=f"{label} footer links",
-        class_name="flex min-w-0 flex-col gap-10",
+        class_name=(
+            "grid min-w-0 grid-cols-2 gap-x-6 gap-y-10 sm:gap-x-10 lg:flex lg:flex-col"
+            if spread_mobile
+            else "flex min-w-0 flex-col gap-10"
+        ),
     )
 
 
@@ -180,7 +185,7 @@ def _socials(*, appearance: FooterAppearance = "dark") -> rx.Component:
                 ),
             )
             for icon, url, name in [
-                ("twitter_footer", TWITTER_URL, "Twitter"),
+                ("twitter_footer", "https://x.com/getreflex", "X"),
                 ("github_navbar", GITHUB_ORG_URL, "GitHub"),
                 ("linkedin_footer", LINKEDIN_URL, "LinkedIn"),
                 ("discord_navbar", DISCORD_URL, "Discord"),
@@ -228,10 +233,10 @@ def _server_status(*, appearance: FooterAppearance = "dark") -> rx.Component:
         target="_blank",
         rel="noopener noreferrer",
         class_name=(
-            "block rounded-full px-3 py-2 transition-colors hover:bg-subtle "
+            "block rounded-control px-3 py-2 transition-colors hover:bg-subtle "
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
             if appearance == "light"
-            else "block rounded-full px-3 py-2 transition-colors hover:bg-background/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+            else "block rounded-control px-3 py-2 transition-colors hover:bg-background/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
         ),
     )
 
@@ -247,7 +252,7 @@ def _newsletter(*, appearance: FooterAppearance = "dark") -> rx.Component:
     """
     return rx.el.div(
         rx.el.h2(
-            "Get Updates",
+            "Get updates",
             class_name="text-xs font-book leading-5 "
             + (
                 "text-muted-foreground"
@@ -309,10 +314,10 @@ def _newsletter(*, appearance: FooterAppearance = "dark") -> rx.Component:
                         size="icon-xs",
                         class_name="shrink-0",
                     ),
-                    class_name="flex h-9 w-full items-center gap-2 rounded-full border border-border bg-background pl-3 pr-1 shadow-small focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring",
+                    class_name="marketing-footer-newsletter-field flex h-11 w-full items-center gap-2 rounded-control border border-border bg-background pl-3 pr-1 shadow-small focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring lg:h-9",
                 ),
                 on_submit=IndexState.signup,
-                class_name="mt-3 w-full min-w-0 max-w-56",
+                class_name="mt-3 w-full min-w-0 max-w-sm lg:max-w-56",
             ),
         ),
         class_name="min-w-0",
@@ -388,16 +393,16 @@ def marketing_footer(
                             ("Overview", "/platform/"),
                             ("AI Builder", "/ai-builder/"),
                             ("Integrations", "/integrations/"),
-                            ("Enterprise", "/enterprise/"),
                             ("App Management", "/hosting/"),
-                            ("Pricing", "/pricing/"),
+                            ("Workflows", "/workflows/"),
+                            ("Enterprise", "/enterprise/"),
                         ],
                     ),
                     (
                         "Open source",
                         [
                             ("Framework", "/open-source/"),
-                            ("XY", XY_GITHUB_URL),
+                            ("XY charts", XY_GITHUB_URL),
                             ("GitHub", GITHUB_ORG_URL),
                         ],
                     ),
@@ -412,18 +417,25 @@ def marketing_footer(
                             ("Internal tools", "/use-cases/internal-tools/"),
                             ("Analytics", "/use-cases/analytics/"),
                             ("Knowledge applications", "/use-cases/knowledge-apps/"),
-                            ("Financial services", "/use-cases/finance/"),
-                            ("Healthcare", "/use-cases/healthcare/"),
-                            ("Consulting", "/use-cases/consulting/"),
-                            ("Government", "/use-cases/government/"),
-                            ("Manufacturing", "/use-cases/manufacturing/"),
-                            ("Technology", "/use-cases/technology/"),
                         ],
                     ),
                     (
-                        "Community",
+                        "Industries",
                         [
-                            ("Discord", DISCORD_URL),
+                            ("Financial services", "/use-cases/finance/"),
+                            ("Government", "/use-cases/government/"),
+                            ("Healthcare", "/use-cases/healthcare/"),
+                            ("Technology", "/use-cases/technology/"),
+                            ("Manufacturing", "/use-cases/manufacturing/"),
+                            ("Food & beverage", "/use-cases/food-and-beverage/"),
+                            ("Consulting", "/use-cases/consulting/"),
+                            ("Retail & Ecommerce", "/use-cases/retail/"),
+                            ("Energy & Utilities", "/use-cases/energy-and-utilities/"),
+                            ("Construction", "/use-cases/construction/"),
+                            (
+                                "Transportation & Logistics",
+                                "/use-cases/transportation-and-logistics/",
+                            ),
                         ],
                     ),
                     appearance=appearance,
@@ -443,10 +455,10 @@ def marketing_footer(
                         ],
                     ),
                     (
-                        "Comparison",
+                        "Compare",
                         [
-                            ("From no/low-code", "/compare/no-code/"),
-                            ("Frameworks", "/compare/frameworks/"),
+                            ("From no-code tools", "/compare/no-code/"),
+                            ("From other frameworks", "/compare/frameworks/"),
                             ("From other AI tools", "/compare/other-ai-tools/"),
                         ],
                     ),
@@ -458,8 +470,10 @@ def marketing_footer(
                         "Company",
                         [
                             ("About", "/about/"),
-                            ("Press", "/press/"),
                             ("Customer stories", "/customers/"),
+                            ("Partners", "/partners/"),
+                            ("Press", "/press/"),
+                            ("Brand kit", "/brand/"),
                             (
                                 "Careers",
                                 "https://www.ycombinator.com/companies/reflex/jobs",
@@ -470,7 +484,6 @@ def marketing_footer(
                         "Trust",
                         [
                             ("Security", "/security/"),
-                            ("Security review", "/security/#security-review"),
                             ("System status", "https://status.reflex.dev"),
                         ],
                     ),
@@ -488,7 +501,6 @@ def marketing_footer(
                                     "/resources/first-workflow/",
                                 ),
                                 ("FAQ", "/faq/"),
-                                ("Brand kit", "/brand/"),
                             ],
                         ),
                         (
@@ -505,9 +517,10 @@ def marketing_footer(
                             ],
                         ),
                         appearance=appearance,
+                        spread_mobile=True,
                     ),
                     _newsletter(appearance=appearance),
-                    class_name="flex min-w-0 flex-col gap-10",
+                    class_name="col-span-2 flex min-w-0 flex-col gap-10 lg:col-span-1",
                 ),
                 class_name=(
                     "grid w-full grid-cols-2 gap-x-6 gap-y-10 pt-16 "
@@ -521,7 +534,7 @@ def marketing_footer(
             class_name=("mx-auto w-full max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12"),
         ),
         class_name=(
-            "relative w-full overflow-x-clip "
+            "marketing-footer relative w-full overflow-x-clip "
             + (
                 "bg-background text-foreground"
                 if appearance == "light"

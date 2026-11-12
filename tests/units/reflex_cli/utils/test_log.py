@@ -17,6 +17,7 @@ from types import ModuleType
 import pytest
 import reflex_cli
 from reflex_cli.utils import console, log
+from rich.console import Console
 
 
 class _ReflexBaseBlocker:
@@ -291,6 +292,104 @@ def test_fallback_console_helpers(capsys):
     assert "a@b.com" in out
     assert "email" in out
     assert "a rule" in out
+
+
+def test_fallback_print_table_no_wrap(monkeypatch, capsys):
+    """The forked table keeps a no_wrap column's value on one line."""
+    long_id = "7fb2de10-2e8d-48bd-9c79-a98b3f52e10f"
+    monkeypatch.setenv("COLUMNS", "60")
+    with _without_reflex_base() as (_, _log, fallback_console):
+        fallback_console.print_table(
+            [[long_id, "a description long enough that it has to fold"]],
+            headers=["id", "description"],
+            overflow="fold",
+            no_wrap=["id"],
+        )
+
+    out = capsys.readouterr().out
+    assert any(long_id in line for line in out.splitlines()), out
+    assert "│" not in out
+
+
+def test_print_table_too_narrow_prints_rows_as_blocks(monkeypatch, capsys):
+    """A table that would cut a no_wrap value prints each row as a block."""
+    long_id = "7fb2de10-2e8d-48bd-9c79-a98b3f52e10f"
+    _set_width(monkeypatch, 30)
+    console.print_table(
+        [[long_id, "docs"]], headers=["id", "name"], overflow="fold", no_wrap=["id"]
+    )
+
+    lines = capsys.readouterr().out.splitlines()
+    assert f"id    {long_id}" in lines
+    assert "name  docs" in lines
+
+
+def _set_width(monkeypatch, width: int):
+    """Give the CLI console a fixed width, whatever COLUMNS the session has.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        width: The console width in cells.
+    """
+    monkeypatch.setattr(console, "_console", Console(width=width, highlight=False))
+
+
+@pytest.mark.parametrize(("width", "table"), [(80, True), (20, False)])
+def test_print_table_short_row(monkeypatch, capsys, width, table):
+    """A row with fewer cells than headers prints as a table or as a block."""
+    _set_width(monkeypatch, width)
+    console.print_table(
+        [["small", "Small VM"]], headers=["id", "name", "cpu (cores)", "ram (gb)"]
+    )
+
+    lines = capsys.readouterr().out.splitlines()
+    if table:
+        assert any("small" in line and "Small VM" in line for line in lines)
+    else:
+        assert ["id", "small"] in [line.split() for line in lines]
+        assert ["name", "Small", "VM"] in [line.split() for line in lines]
+
+
+@pytest.mark.parametrize("width", [80, 12])
+def test_print_table_no_rows(monkeypatch, capsys, width):
+    """A table with no rows prints its headers, even in a narrow terminal."""
+    _set_width(monkeypatch, width)
+    console.print_table([], headers=["id", "name"])
+
+    lines = capsys.readouterr().out.splitlines()
+    assert ["id", "name"] in [line.split() for line in lines]
+
+
+def test_print_table_no_wrap_with_older_reflex_base(monkeypatch, capsys):
+    """A reflex-base that predates no_wrap renders the CLI's tables anyway.
+
+    The CLI owns its table rendering and only hands reflex-base the rows in JSON
+    mode, through the signature every reflex-base release accepts.
+    """
+    from reflex_base.utils import console as base_console
+
+    long_id = "7fb2de10-2e8d-48bd-9c79-a98b3f52e10f"
+    rows = [[long_id, "a description long enough that it has to fold"]]
+    headers = ["id", "description"]
+    calls = []
+
+    def old_print_table(tabular_data, headers=()):
+        calls.append((tabular_data, list(headers)))
+
+    monkeypatch.setattr(base_console, "print_table", old_print_table)
+    monkeypatch.setenv("COLUMNS", "60")
+    try:
+        importlib.reload(console)
+        console.print_table(rows, headers=headers, overflow="fold", no_wrap=["id"])
+        out = capsys.readouterr().out
+        assert any(long_id in line for line in out.splitlines()), out
+
+        monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+        console.print_table(rows, headers=headers, overflow="fold", no_wrap=["id"])
+        assert calls == [(rows, headers)]
+    finally:
+        monkeypatch.undo()
+        importlib.reload(console)
 
 
 def test_fallback_progress_bars(capsys):

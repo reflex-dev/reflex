@@ -12,12 +12,17 @@ import os
 import tempfile
 import traceback
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import MISSING
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
+from reflex_base.components.client_state_context import (
+    local_client_state_names,
+    scoped_memo_wrapper,
+)
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.components.dynamic import _bundle_imports
 from reflex_base.components.memo import (
@@ -29,7 +34,8 @@ from reflex_base.components.memo import (
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import format, imports, memo_paths, serializers
+from reflex_base.utils import format, imports, memo_paths, serializers, types
+from reflex_base.utils.exceptions import VarTypeError
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -41,10 +47,19 @@ from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
 from reflex.istate.delta import _resolve_delta
-from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState
+from reflex.istate.storage import (
+    ClientStorageBase,
+    Cookie,
+    LocalStorage,
+    SessionStorage,
+)
+from reflex.state import BaseState, cache_initial_snapshot
 from reflex.utils import path_ops
+from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
+
+if TYPE_CHECKING:
+    from reflex_base.components.memo import _MemoBodyAnalysis
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -227,16 +242,16 @@ def compile_state(state: type[BaseState]) -> dict:
     try:
         _ = asyncio.get_running_loop()
     except RuntimeError:
-        pass
+        # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
+        resolved_initial_state = asyncio.run(_resolve_delta(initial_state))
     else:
         with concurrent.futures.ThreadPoolExecutor() as pool:
             resolved_initial_state = pool.submit(
                 asyncio.run, _resolve_delta(initial_state)
             ).result()
-            return _sorted_keys(resolved_initial_state)
-
-    # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
-    return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
+    # A backend in this process diffs first hydrates against these exact values.
+    cache_initial_snapshot(state, resolved_initial_state)
+    return _sorted_keys(resolved_initial_state)
 
 
 def _compile_initial_state(
@@ -304,6 +319,8 @@ def _restore_bundled_libraries() -> None:
 
 def _compile_client_storage_field(
     field: Field,
+    *,
+    check_factory: bool = True,
 ) -> (
     tuple[
         type[Cookie] | type[LocalStorage] | type[SessionStorage],
@@ -315,6 +332,8 @@ def _compile_client_storage_field(
 
     Args:
         field: The possible cookie field to compile.
+        check_factory: Whether to call a default_factory to reject one that
+            produces browser storage. Only the compile needs to check.
 
     Returns:
         A dictionary of the compiled cookie or None if the field is not cookie-like.
@@ -323,15 +342,74 @@ def _compile_client_storage_field(
         if isinstance(field.default, field_type):
             cs_obj = field.default
         elif isinstance(field.type_, type) and issubclass(field.type_, field_type):
+            if field.default is MISSING:
+                _raise_factory_storage(field, field.type_)
             cs_obj = field.type_()
         else:
             continue
         return field_type, cs_obj.options()
+    if (
+        check_factory
+        and not field._backend
+        and field.default is MISSING
+        and field.default_factory is not None
+        and _may_hold_str(field.outer_type_)
+    ):
+        # A factory that only works at runtime declares no storage.
+        try:
+            produced = field.default_factory()
+        except Exception:
+            return None, None
+        if isinstance(produced, ClientStorageBase):
+            _raise_factory_storage(field, type(produced))
     return None, None
+
+
+def _may_hold_str(type_: Any) -> bool:
+    """Whether a value of the type can be a browser storage value, a str subclass.
+
+    Args:
+        type_: The field's annotated type.
+
+    Returns:
+        Whether the type accepts a str or a str subclass.
+    """
+    type_ = types.resolve_type_alias(type_)
+    if type_ is Any:
+        return True
+    if types.is_union(type_):
+        return any(_may_hold_str(arg) for arg in get_args(type_))
+    if get_origin(type_) is Literal:
+        return any(isinstance(arg, str) for arg in get_args(type_))
+    return types.safe_issubclass(str, type_) or types.safe_issubclass(type_, str)
+
+
+def _raise_factory_storage(field: Field, storage_type: type) -> None:
+    """Reject a browser storage default produced by a default_factory.
+
+    The storage name and options must be known when the app compiles, so a
+    storage var declares them with a storage value as its default.
+
+    Args:
+        field: The field with a default_factory.
+        storage_type: The browser storage type the field declares or produces.
+
+    Raises:
+        VarTypeError: Always.
+    """
+    owner = field._owner.__name__ if field._owner is not None else ""
+    msg = (
+        f"Browser storage var '{owner}.{field._name}' cannot use a default_factory."
+        " Declare the storage as the default value instead, such as"
+        f' `{field._name}: str = rx.{storage_type.__name__}("", name={field._name!r})`.'
+    )
+    raise VarTypeError(msg)
 
 
 def _compile_client_storage_recursive(
     state: type[BaseState],
+    *,
+    check_factories: bool = True,
 ) -> tuple[
     dict[str, dict[str, Any]], dict[str, dict[str, Any]], dict[str, dict[str, Any]]
 ]:
@@ -339,6 +417,8 @@ def _compile_client_storage_recursive(
 
     Args:
         state: The app state object.
+        check_factories: Whether to call the default factories to reject those
+            that produce browser storage.
 
     Returns:
         A tuple of the compiled client-side storage info: (cookies, local_storage, session_storage).
@@ -352,7 +432,9 @@ def _compile_client_storage_recursive(
             # only include vars defined in this state
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
-        field_type, options = _compile_client_storage_field(field)
+        field_type, options = _compile_client_storage_field(
+            field, check_factory=check_factories
+        )
         if field_type is None or options is None:
             continue
         if field_type is Cookie:
@@ -368,7 +450,7 @@ def _compile_client_storage_recursive(
             substate_cookies,
             substate_local_storage,
             substate_session_storage,
-        ) = _compile_client_storage_recursive(substate)
+        ) = _compile_client_storage_recursive(substate, check_factories=check_factories)
         cookies.update(substate_cookies)
         local_storage.update(substate_local_storage)
         session_storage.update(substate_session_storage)
@@ -506,11 +588,22 @@ def compile_experimental_component_memo(
         render = copy.copy(definition.component)
         _apply_root_style(render)
 
-        hooks = _root_only_hooks(render)
-        custom_code = _root_only_custom_code(render)
-        dynamic_imports = _root_only_dynamic_imports(render)
+        analysis = None
+        if (key := definition.component.__dict__.get("_memo_analysis_key")) is not None:
+            analysis = RegistrationContext.ensure_context()._memo_body_analyses.get(key)
+            if analysis is not None and not analysis.can_reuse(render):
+                analysis = None
+        hooks = _root_only_hooks(render, analysis=analysis)
+        custom_code = _root_only_custom_code(render, analysis=analysis)
+        if analysis is None:
+            dynamic_imports = _root_only_dynamic_imports(render)
+        else:
+            dynamic_imports = (
+                {analysis.dynamic_import} if analysis.dynamic_import else set()
+            )
+            render._imports_cache = analysis.imports
         # Strings returned by the root's ``add_hooks`` can reference symbols
-        # (``refs``, ``StateContexts``, etc.) that normally reach this module
+        # (``refs``, ``EventLoopContext``, etc.) that normally reach this module
         # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
         # imports are side-effect-free and dedup cleanly, so pulling the
         # whole subtree's imports here is safe even when some go unused.
@@ -521,7 +614,13 @@ def compile_experimental_component_memo(
         # Swap children for JSX render: the memo body template emits a
         # ``{children}`` hole in place of the real descendants.
         render.children = [hole_child]
-        rendered = render.render()
+        if analysis is None:
+            rendered = render.render()
+        else:
+            rendered = analysis.rendered
+            if definition.forward_root_props:
+                # Prop forwarding replaces the root props during emission.
+                rendered = rendered.copy()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
         hooks = render._get_all_hooks()
@@ -544,6 +643,15 @@ def compile_experimental_component_memo(
     # var itself, so a custom wrapper brings its own imports and ``None``
     # pulls in nothing.
     wrapper = definition.wrapper
+    if (
+        definition.is_instance_boundary
+        and f"$/{constants.Dirs.CLIENT_STATE_PATH}" in imports
+    ):
+        # This memo is a real component instance boundary and its body uses
+        # client state, so wrap it in a client state scope: names it declares are
+        # owned per instance, and its descendants resolve to the same slots.
+        # Gated on actual usage so pages don't pay a provider per memo.
+        wrapper = scoped_memo_wrapper(wrapper, local_client_state_names(hooks))
     if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)
@@ -589,7 +697,9 @@ def compile_experimental_component_memo(
     )
 
 
-def _root_only_hooks(component: Component) -> dict[str, VarData | None]:
+def _root_only_hooks(
+    component: Component, *, analysis: _MemoBodyAnalysis | None = None
+) -> dict[str, VarData | None]:
     """Return hooks contributed by ``component`` itself, not its subtree.
 
     Used by the passthrough memo compile path where descendants render in the
@@ -598,34 +708,52 @@ def _root_only_hooks(component: Component) -> dict[str, VarData | None]:
 
     Args:
         component: The root component whose own hooks to collect.
+        analysis: Previously collected artifacts for an unchanged root.
 
     Returns:
         The root-level hook map, keyed by hook source string.
     """
-    code: dict[str, VarData | None] = {}
-    code.update(component._get_hooks_internal())
-    explicit = component._get_hooks()
+    if analysis is None:
+        internal = component._get_hooks_internal()
+        explicit = component._get_hooks()
+        added = component._get_added_hooks()
+    else:
+        internal = analysis.internal_hooks
+        explicit = analysis.hook
+        added = analysis.added_hooks
+    code: dict[str, VarData | None] = dict(internal)
     if explicit is not None:
         code[explicit] = None
-    code.update(component._get_added_hooks())
+    code.update(added)
     return code
 
 
-def _root_only_custom_code(component: Component) -> dict[str, None]:
+def _root_only_custom_code(
+    component: Component, *, analysis: _MemoBodyAnalysis | None = None
+) -> dict[str, None]:
     """Return custom code contributed by ``component`` itself, not its subtree.
 
     Args:
         component: The root component whose own custom code to collect.
+        analysis: Previously collected artifacts for an unchanged root.
 
     Returns:
         The root-level custom code snippets.
     """
     code: dict[str, None] = {}
-    own = component._get_custom_code()
+    if analysis is None:
+        own = component._get_custom_code()
+        additions = (
+            clz.add_custom_code(component)
+            for clz in component._iter_parent_classes_with_method("add_custom_code")
+        )
+    else:
+        own = analysis.custom_code
+        additions = analysis.added_custom_code
     if own is not None:
         code[own] = None
-    for clz in component._iter_parent_classes_with_method("add_custom_code"):
-        for item in clz.add_custom_code(component):
+    for items in additions:
+        for item in items:
             code[item] = None
     return code
 
@@ -757,11 +885,21 @@ def create_document_root(
             }
         ),
     )
-    # Always include the framework meta and link tags.
+    # Always include the framework meta and link tags. The preload hint is a
+    # production-only optimization: in dev, Vite's css-update swaps the first
+    # link matching the stylesheet path, so it must be the stylesheet link.
     always_head_components = [
         ReactMeta.create(),
-        Link.create(
-            rel="preload", custom_attrs={"as": "style"}, href=global_styles_href
+        *(
+            [
+                Link.create(
+                    rel="preload",
+                    custom_attrs={"as": "style"},
+                    href=global_styles_href,
+                )
+            ]
+            if is_prod_mode()
+            else []
         ),
         Link.create(
             rel="stylesheet",

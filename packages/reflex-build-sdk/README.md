@@ -245,3 +245,7 @@ client = ReflexBuild(
 
 To use another HTTP library, implement the `Transport` or `AsyncTransport` protocol.
 
+To wrap the synchronous SDK's default transport without choosing an HTTP library,
+call `reflex_build_sdk.transports.default_transport()`. It selects httpx2 when
+installed, otherwise httpx. Close the returned transport when finished; clients
+leave explicitly supplied transports open.

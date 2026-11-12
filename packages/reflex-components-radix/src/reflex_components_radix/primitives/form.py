@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.utils.form import FormData as _FormData
 from reflex_base.vars.base import Var
 from reflex_components_core.core.debounce import DebounceInput
 from reflex_components_core.el.elements.forms import Form as HTMLForm
@@ -18,7 +19,7 @@ from .base import RadixPrimitiveComponentWithClassName
 class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
-    library = "@radix-ui/react-form@0.1.16"
+    library = "@radix-ui/react-form@0.3.0"
 
 
 class FormRoot(FormComponent, HTMLForm):
@@ -47,6 +48,9 @@ class FormField(FormComponent):
     tag = "Field"
 
     alias = "RadixFormField"
+
+    # Radix passes the field's name to the control its ``FormControl`` renders.
+    _is_form_field = True
 
     name: Var[str] = field(
         doc="The name of the form field, that is passed down to the control and used to match with validation messages."
@@ -87,6 +91,14 @@ class FormControl(FormComponent):
     tag = "Control"
 
     alias = "RadixFormControl"
+
+    # Renders an input, or its child with ``as_child``, named by the enclosing
+    # ``FormField`` unless the control or its child carries a ``name``.
+    _is_form_field_control = True
+
+    name: Var[str] = field(
+        doc="The name of the control, in place of the name of the enclosing form field."
+    )
 
     @classmethod
     def create(cls, *children, **props):
@@ -190,6 +202,9 @@ class Form(FormRoot):
 class FormNamespace(ComponentNamespace):
     """Form components."""
 
+    # Stubbed as a class so ``rx.form.FormData`` works in type annotations.
+    _stub_as_class: ClassVar[bool] = True
+
     root = staticmethod(FormRoot.create)
     control = staticmethod(FormControl.create)
     field = staticmethod(FormField.create)
@@ -197,6 +212,7 @@ class FormNamespace(ComponentNamespace):
     message = staticmethod(FormMessage.create)
     submit = staticmethod(FormSubmit.create)
     validity_state = staticmethod(FormValidityState.create)
+    FormData = _FormData
     __call__ = staticmethod(Form.create)
 
 

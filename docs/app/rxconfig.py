@@ -12,6 +12,8 @@ config = rx.Config(
     frontend_packages=[
         "tailwindcss-animated@2.1.0",
         "tailwindcss-scroll-mask@0.0.5",
+        "@fontsource-variable/geist@5.3.0",
+        "@fontsource-variable/inter@5.3.0",
         "@fontsource-variable/instrument-sans@5.3.0",
         "@fontsource-variable/jetbrains-mono@5.3.0",
     ],

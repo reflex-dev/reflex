@@ -1,9 +1,16 @@
 """Test fixtures."""
 
+import collections
+import dataclasses
+import enum
+import io
 import platform
+import sys
 import traceback
 import uuid
 from collections.abc import AsyncGenerator, Generator, Mapping
+from pathlib import Path
+from types import ModuleType
 from typing import Any
 from unittest import mock
 
@@ -237,6 +244,36 @@ def token() -> str:
 
 
 @pytest.fixture
+def app_classes_module(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
+    """Create a throwaway module of app classes that a stored state can pickle.
+
+    Tests break the module (remove it, delete a class, change a class) to
+    simulate a deploy that changes classes held in a stored state.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The module, registered in sys.modules, with Entry, Color and Point.
+    """
+    module = ModuleType("_reflex_test_app_classes")
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+
+    @dataclasses.dataclass
+    class Entry:
+        name: str
+
+    Entry.__module__ = module.__name__
+    Entry.__qualname__ = "Entry"
+    module.Entry = Entry  # pyright: ignore[reportAttributeAccessIssue]
+    module.Color = enum.Enum(  # pyright: ignore[reportAttributeAccessIssue]
+        "Color", {"RED": "red", "BLUE": "blue"}, module=module.__name__
+    )
+    module.Point = collections.namedtuple("Point", "x y", module=module.__name__)  # pyright: ignore[reportAttributeAccessIssue]
+    return module
+
+
+@pytest.fixture
 def model_registry() -> Generator[type[ModelRegistry], None, None]:
     """Create a model registry.
 
@@ -315,6 +352,9 @@ def mock_base_state_event_processor_obj(
         A fresh BaseState event processor.
     """
     monkeypatch.setattr(BaseStateEventProcessor, "_rehydrate", mock.AsyncMock())
+    monkeypatch.setattr(
+        BaseStateEventProcessor, "_rehydrate_snapshot", mock.AsyncMock()
+    )
 
     def handle_backend_exception(ex: Exception) -> None:
         formatted_exc = "\n".join(traceback.format_exception(ex))
@@ -607,3 +647,36 @@ def metric_points(reader: InMemoryMetricReader, name: str) -> list:
         if metric.name == name
         for point in metric.data.data_points
     ]
+
+
+@pytest.fixture
+def windows_text_io(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Give text-mode file access the defaults of a Windows locale.
+
+    A file opened without an explicit encoding uses ASCII, standing in for a
+    locale such as cp1252 that fails on non-ASCII UTF-8 content, and a write
+    without an explicit newline turns each LF into CRLF.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    path_open = Path.open
+    # UTF-8 mode would resolve a missing encoding to utf-8 before Path.open.
+    monkeypatch.setattr(io, "text_encoding", lambda encoding, *_: encoding or "locale")
+
+    def open_like_windows(
+        self: Path,
+        mode: str = "r",
+        buffering: int = -1,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+    ):
+        if "b" not in mode:
+            if encoding in (None, "locale"):
+                encoding = "ascii"
+            if newline is None and mode != "r":
+                newline = "\r\n"
+        return path_open(self, mode, buffering, encoding, errors, newline)
+
+    monkeypatch.setattr(Path, "open", open_like_windows)

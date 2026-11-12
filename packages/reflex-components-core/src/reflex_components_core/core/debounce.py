@@ -25,6 +25,7 @@ class DebounceInput(Component):
     library = "react-debounce-input@3.3.0"
     tag = "DebounceInput"
     is_default = True
+    _is_form_control = True
 
     # DebounceInput is a class component: a plain ``ref`` resolves to the
     # instance (``_render`` strips it), and the real ``<input>`` is exposed

@@ -121,7 +121,7 @@ def test_accounts(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET", f"/api/v1/orgs/{ORG_ID}/provider-accounts", reply(200, json=[account])
     )
-    utc = datetime.timezone.utc
+    utc = datetime.UTC
     assert client.providers.accounts(ORG_ID) == [
         ProviderAccount(
             id=uuid.UUID(ACCOUNT_ID),

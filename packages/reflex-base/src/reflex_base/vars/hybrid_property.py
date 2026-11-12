@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Generic, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, Self, cast, overload
 
-from typing_extensions import Self, TypeVar
+from typing_extensions import TypeVar
 
 from reflex_base.utils.exceptions import HybridPropertyError
 

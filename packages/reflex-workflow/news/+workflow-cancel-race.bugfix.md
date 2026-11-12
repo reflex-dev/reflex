@@ -1,0 +1,1 @@
+`cancel()` no longer stops a run that began matching its predicate after it had read the rows to stop. Such a run was cancelled without its parent being told, leaving a fan-out waiting for a child that would never report.

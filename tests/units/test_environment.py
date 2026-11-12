@@ -19,6 +19,7 @@ from reflex_base.environment import (
     SequenceOptions,
     _InvalidPlugin,
     _load_dotenv_from_files,
+    _on_env_var_set,
     _paths_from_env_files,
     _paths_from_environment,
     env_var,
@@ -980,3 +981,24 @@ def test_a_duration_setting_left_alone_does_not_warn(
         assert oplock_hold_time() == timedelta(0)
 
     deprecate.assert_not_called()
+
+
+def test_env_var_set_runs_callbacks_for_its_name(monkeypatch: pytest.MonkeyPatch):
+    """``EnvVar.set`` notifies callbacks registered for that variable only.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    name = "TEST_CALLBACK_VAR"
+    monkeypatch.setattr("reflex_base.environment._SET_CALLBACKS", {})
+    monkeypatch.delenv(name, raising=False)
+    calls = []
+    _on_env_var_set(name, lambda: calls.append(os.environ.get(name)))
+
+    EnvVar("OTHER_TEST_VAR", None, str).set(None)
+    assert calls == []
+
+    env_var_instance = EnvVar(name, None, str)
+    env_var_instance.set("value")  # type: ignore[arg-type]
+    env_var_instance.set(None)
+    assert calls == ["value", None]

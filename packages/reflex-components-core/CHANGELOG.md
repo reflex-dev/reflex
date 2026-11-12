@@ -1,3 +1,49 @@
+## v0.11.0 (2026-11-11)
+
+### Deprecations
+
+- Removal of form controls submitting their value under their `id` is postponed from 0.11 to 0.12; give each control a `name` before then. ([#7789](https://github.com/reflex-dev/reflex/issues/7789))
+
+### Bug Fixes
+
+- `rx.foreach` over a string now iterates Unicode code points, so a character such as an emoji is no longer split into lone surrogates. ([#7548](https://github.com/reflex-dev/reflex/issues/7548))
+- `rx.match` is now typed as returning a `Component` when its cases return components and a `Var` when they return values, so a function returning it can be annotated with either. ([#7750](https://github.com/reflex-dev/reflex/issues/7750))
+- An upload handler that raises now gets an HTTP 500 when no update was streamed yet, or ends the stream with an `{"error": ...}` frame that `rx.upload_files` reports, instead of a truncated response that looked successful. The backend exception handler receives the full traceback, and the server no longer logs the exception twice. ([#7808](https://github.com/reflex-dev/reflex/issues/7808))
+
+
+## v0.10.1 (2026-10-26)
+
+### Deprecations
+
+- Submitting a form control's value under its `id` is deprecated and will be removed in 0.11; form data will then hold only what each control submits under its `name`. Compiling a form whose `on_submit` handler takes the form data now warns about each value-bearing control that has a static `id` but no `name`; give it a `name`, e.g. `rx.input(id="email")` becomes `rx.input(id="email", name="email")`. A control whose `id` differs from its `name` also stops adding a field keyed by its `id`, and a checkbox or switch whose `id` equals its `name` submits `"on"` or nothing instead of `True` or `False`; read it as a `bool` field of a `TypedDict` to keep a bool. See the [form docs](https://reflex.dev/docs/library/forms/form/) for details. ([#7386](https://github.com/reflex-dev/reflex/issues/7386))
+
+### Bug Fixes
+
+- Forms now see the `name` of a controlled input (one with `value` and `on_change`), so a `TypedDict` submit handler requiring that field no longer fails to compile. ([#7386](https://github.com/reflex-dev/reflex/issues/7386))
+- The default connection toast shows a hydration size error at once and keeps it open until the user closes it. ([#7551](https://github.com/reflex-dev/reflex/issues/7551))
+- `window_event_listener` and `clipboard` hooks now render in declaration order with the rest of the component's hooks instead of being moved after them. ([#7586](https://github.com/reflex-dev/reflex/issues/7586))
+
+
+## v0.10.0 (2026-10-08)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported. ([#7449](https://github.com/reflex-dev/reflex/issues/7449))
+
+### Features
+
+- The connection banner reads `REFLEX_BACKEND_COLD_START_TIMEOUT` as a duration, so it accepts a unit suffix such as `30s`. A bare number is still read as seconds. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
+
+### Bug Fixes
+
+- Fix `rx.match` raising `ReferenceError: Can't find variable` at render when a state Var is used only in a case condition with component branches. ([#6675](https://github.com/reflex-dev/reflex/issues/6675))
+- Exclude IDs on forms and other non-controls from form submissions while preserving unset ID-backed controls and supporting custom controls marked with `_is_form_control`. ([#7227](https://github.com/reflex-dev/reflex/issues/7227))
+
+### Miscellaneous
+
+- Update react-dropzone to 17.0.0 and react-error-boundary to 6.1.6. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
+
+
 ## v0.9.10.post1 (2026-09-21)
 
 ### Bug Fixes

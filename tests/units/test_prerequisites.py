@@ -1,3 +1,4 @@
+import asyncio
 import importlib.metadata
 import json
 import shutil
@@ -10,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Protocol
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -18,6 +20,7 @@ from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -541,6 +544,29 @@ def test_initialise_vite_config(config, expected_output):
     assert expected_output in output
 
 
+def test_react_compiler_vite_config():
+    """Only opt-in apps load React Compiler before the router's transforms."""
+    default_output = _compile_vite_config(Config(app_name="test"))
+    disabled_output = _compile_vite_config(
+        Config(app_name="test", react_compiler=False)
+    )
+    enabled_output = _compile_vite_config(Config(app_name="test", react_compiler=True))
+    compiler_import = 'import reactCompiler from "./vite-plugin-react-compiler.js";\n'
+    compiler_call = "    reactCompiler(),\n"
+
+    assert default_output == disabled_output
+    assert "reactCompiler" not in disabled_output
+    assert "vite-plugin-react-compiler" not in disabled_output
+    assert compiler_import in enabled_output
+    assert enabled_output.index(compiler_call) < enabled_output.index(
+        "    reactRouter(),"
+    )
+    assert (
+        enabled_output.replace(compiler_import, "").replace(compiler_call, "")
+        == disabled_output
+    )
+
+
 @pytest.mark.usefixtures("_stub_skeleton_initializers")
 def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):
     template_dir = tmp_path / "template"
@@ -917,6 +943,69 @@ def _record_calls(env: InstallPackagesEnv) -> list[list[str]]:
     return calls
 
 
+def test_react_compiler_dependencies_toggle(install_packages_env: InstallPackagesEnv):
+    """Toggle compiler packages without stale installs or repeated cache misses.
+
+    Args:
+        install_packages_env: The isolated install environment.
+    """
+    env = install_packages_env
+    compiler_deps = constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
+    calls = _record_calls(env)
+    env.install()
+    assert calls == []
+
+    env.config.react_compiler = True
+    env.install()
+    assert len(calls) == 1
+    assert "add" in calls[0]
+    assert "-D" in calls[0]
+    assert {f"{name}@{version}" for name, version in compiler_deps.items()} <= set(
+        calls[0]
+    )
+
+    env.install()
+    assert len(calls) == 1
+
+    # Model the package.json written by the package manager after enabling.
+    env.web_package_json.write_text(json.dumps({"devDependencies": compiler_deps}))
+    frontend_skeleton.sync_web_lockfiles_to_root()
+    env.config.react_compiler = False
+    env.install()
+    assert len(calls) == 2
+    assert "remove" in calls[1]
+    assert set(compiler_deps) <= set(calls[1])
+
+    env.install()
+    assert len(calls) == 2
+
+
+def test_react_compiler_dependency_versions_invalidate_cache(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """Changing an optional compiler pin invalidates the existing install cache.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    calls = _record_calls(env)
+    env.config.react_compiler = True
+    env.install()
+    monkeypatch.setattr(
+        constants.PackageJson,
+        "REACT_COMPILER_DEV_DEPENDENCIES",
+        {
+            **constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES,
+            "babel-plugin-react-compiler": "0.0.0-test",
+        },
+    )
+    env.install()
+    assert len(calls) == 2
+    assert "babel-plugin-react-compiler@0.0.0-test" in calls[1]
+
+
 def test_install_frontend_packages_pinned_packages_single_call(
     install_packages_env: InstallPackagesEnv,
 ):
@@ -1013,7 +1102,7 @@ def test_install_frontend_packages_skips_unpinned_dev_dep_already_in_package_jso
 
     env.install()
 
-    dev_add_calls = [c for c in calls if "add" in c and "-d" in c]
+    dev_add_calls = [c for c in calls if "add" in c and "-D" in c]
     assert len(dev_add_calls) == 1
     dev_call = dev_add_calls[0]
     assert "fresh-dev" in dev_call
@@ -1056,7 +1145,7 @@ def test_install_frontend_packages_moves_misplaced_unpinned_dep_to_deps(
     assert len(add_calls) == 1
     add_call = add_calls[0]
     assert "some-pkg" in add_call
-    assert "-d" not in add_call
+    assert "-D" not in add_call
 
 
 def test_install_frontend_packages_moves_misplaced_unpinned_dev_dep_to_dev(
@@ -1085,11 +1174,11 @@ def test_install_frontend_packages_moves_misplaced_unpinned_dev_dep_to_dev(
     assert len(remove_calls) == 1
     assert "some-dev" in remove_calls[0]
 
-    dev_add_calls = [c for c in calls if "add" in c and "-d" in c]
+    dev_add_calls = [c for c in calls if "add" in c and "-D" in c]
     assert len(dev_add_calls) == 1
     assert "some-dev" in dev_add_calls[0]
 
-    deps_add_calls = [c for c in calls if "add" in c and "-d" not in c]
+    deps_add_calls = [c for c in calls if "add" in c and "-D" not in c]
     assert deps_add_calls == []
 
 
@@ -1115,7 +1204,7 @@ def test_install_frontend_packages_moves_misplaced_pinned_framework_dep(
     assert len(add_calls) == 1
     add_call = add_calls[0]
     assert "react@19.2.5" in add_call
-    assert "-d" not in add_call
+    assert "-D" not in add_call
 
 
 def test_install_frontend_packages_conflict_prefers_regular_section(
@@ -1141,7 +1230,7 @@ def test_install_frontend_packages_conflict_prefers_regular_section(
     assert len(add_calls) == 1
     add_call = add_calls[0]
     assert "shared-pkg" in add_call
-    assert "-d" not in add_call
+    assert "-D" not in add_call
 
 
 def test_install_frontend_packages_dev_deps_added_before_regular_deps(
@@ -1165,9 +1254,9 @@ def test_install_frontend_packages_dev_deps_added_before_regular_deps(
 
     add_calls = [c for c in calls if "add" in c]
     assert len(add_calls) == 2
-    assert "-d" in add_calls[0]
+    assert "-D" in add_calls[0]
     assert "some-dev" in add_calls[0]
-    assert "-d" not in add_calls[1]
+    assert "-D" not in add_calls[1]
     assert "some-pkg" in add_calls[1]
 
 
@@ -1200,7 +1289,7 @@ def test_install_frontend_packages_conflict_with_misplaced_existing_entry(
     add_calls = [c for c in calls if "add" in c]
     assert len(add_calls) == 1
     assert "shared-pkg" in add_calls[0]
-    assert "-d" not in add_calls[0]
+    assert "-D" not in add_calls[0]
 
 
 def test_install_frontend_packages_does_not_move_correctly_placed_packages(
@@ -1249,11 +1338,11 @@ def test_install_frontend_packages_pins_framework_dependencies(
     add_calls = [c for c in calls if "add" in c]
     pin_deps_call = next(c for c in add_calls if "react@19.2.5" in c)
     assert "isbot@5.1.39" in pin_deps_call
-    assert "-d" not in pin_deps_call
+    assert "-D" not in pin_deps_call
     assert "--only-missing" not in pin_deps_call
 
     pin_dev_deps_call = next(c for c in add_calls if "vite@8.0.9" in c)
-    assert "-d" in pin_dev_deps_call
+    assert "-D" in pin_dev_deps_call
     assert "--only-missing" not in pin_dev_deps_call
 
 
@@ -1276,6 +1365,30 @@ def _record_calls_with_pm(
 
     env.patch_pm([package_manager], run_package_manager)
     return calls
+
+
+@pytest.mark.parametrize("package_manager", ["bun", "npm"])
+def test_install_frontend_packages_saves_dev_deps_to_dev_section(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+    package_manager: str,
+):
+    """Dev deps are added with ``-D``, the save-dev flag of both bun and npm.
+
+    npm reads ``-d`` as ``--loglevel info``, not as save-dev.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: The pytest monkeypatch fixture.
+        package_manager: The primary package manager path.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "1.0.0"})
+    calls = _record_calls_with_pm(env, package_manager)
+
+    env.install()
+
+    assert calls == [[package_manager, "add", "--legacy-peer-deps", "-D", "vite@1.0.0"]]
 
 
 def test_install_frontend_packages_npm_skips_frozen_lockfile(
@@ -1906,6 +2019,44 @@ def test_prefer_npm_over_bun_implicit_from_npm_lock(tmp_path, monkeypatch):
         assert js_runtimes.prefer_npm_over_bun() is True
 
 
+def test_prefer_npm_over_bun_implicit_logs_notice_once(
+    tmp_path, monkeypatch, caplog: pytest.LogCaptureFixture
+):
+    """Implicit npm from a persisted lockfile says why and how to switch back."""
+    monkeypatch.delenv("REFLEX_USE_NPM", raising=False)
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    js_runtimes._log_implicit_npm_notice.cache_clear()
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path), caplog.at_level("INFO"):
+        assert js_runtimes.prefer_npm_over_bun() is True
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+    notices = [m for m in caplog.messages if "REFLEX_USE_NPM=0" in m]
+    assert len(notices) == 1
+    assert constants.Node.LOCKFILE_PATH in notices[0]
+    assert "Preferring npm" in notices[0]
+
+
+def test_prefer_npm_over_bun_explicit_npm_logs_no_notice(
+    tmp_path, monkeypatch, caplog: pytest.LogCaptureFixture
+):
+    """An explicit REFLEX_USE_NPM=1 needs no lockfile notice."""
+    monkeypatch.setenv("REFLEX_USE_NPM", "1")
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    js_runtimes._log_implicit_npm_notice.cache_clear()
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path), caplog.at_level("INFO"):
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+    assert not [m for m in caplog.messages if "REFLEX_USE_NPM=0" in m]
+
+
 def test_prefer_npm_over_bun_implicit_disabled_when_bun_lock_present(
     tmp_path, monkeypatch
 ):
@@ -2493,3 +2644,143 @@ def test_ensure_installation_id_keeps_legacy_install_unmarked(
 
     assert install_id == 12345
     assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+
+@pytest.fixture
+def redis_url(monkeypatch: pytest.MonkeyPatch) -> str:
+    """Point get_redis at a redis url without a running server.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        The redis url.
+    """
+    url = "redis://localhost:6379"
+    monkeypatch.setattr(prerequisites, "parse_redis_url", lambda: url)
+    monkeypatch.delenv("REFLEX_REDIS_MAX_CONNECTIONS", raising=False)
+    monkeypatch.delenv("REFLEX_REDIS_POOL_TIMEOUT", raising=False)
+    return url
+
+
+def test_redis_clients_have_no_socket_timeout(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """Every client is built without a socket timeout, which loses cancels on 3.11 (#7026)."""
+    unbounded = prerequisites.get_redis()
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    capped = prerequisites.get_redis()
+    for client in (unbounded, capped, prerequisites.get_redis_sync()):
+        assert client is not None
+        assert client.connection_pool.connection_kwargs["socket_timeout"] is None
+
+
+async def test_redis_client_cancel_mid_send_always_ends_task():
+    """A task cancelled while sending a command ends, whatever the loop phase (#7026).
+
+    redis-py 8's socket timeout routes sends through asyncio.wait_for, which on
+    Python 3.11 loses a cancel that lands as the send completes, so the task
+    would run on and anything awaiting it (such as `StateManagerRedis.close`)
+    hangs. Needs a real server, so it runs in the redis CI legs.
+    """
+    redis = prerequisites.get_redis()
+    if redis is None:
+        pytest.skip("REFLEX_REDIS_URL is not set.")
+
+    async def ping_forever(connection):
+        while True:
+            await connection.send_packed_command(connection.pack_command("PING"))
+            await connection.read_response()
+
+    try:
+        for offset in range(40):
+            connection = await redis.connection_pool.get_connection()
+            task = asyncio.create_task(ping_forever(connection))
+            for _ in range(offset):
+                await asyncio.sleep(0)
+            task.cancel()
+            done, _ = await asyncio.wait({task}, timeout=2)
+            # Keep cancelling so a lost cancel fails the test instead of hanging it.
+            while not task.done():
+                task.cancel()
+                await asyncio.sleep(0.01)
+            await redis.connection_pool.release(connection)
+            assert done, f"cancellation lost at loop offset {offset}"
+            assert task.cancelled(), (
+                f"task failed instead of being cancelled at loop offset {offset}: "
+                f"{task.exception()!r}"
+            )
+    finally:
+        await redis.aclose(close_connection_pool=True)
+
+
+def test_get_redis_pool_unbounded_by_default(redis_url: str):
+    """Without a cap, get_redis keeps redis-py's default pool."""
+    from redis.asyncio import BlockingConnectionPool
+
+    redis = prerequisites.get_redis()
+
+    assert redis is not None
+    assert not isinstance(redis.connection_pool, BlockingConnectionPool)
+
+
+def test_get_redis_max_connections(redis_url: str, monkeypatch: pytest.MonkeyPatch):
+    """REFLEX_REDIS_MAX_CONNECTIONS caps the pool and makes it wait instead of raise."""
+    from redis.asyncio import BlockingConnectionPool
+    from redis.exceptions import RedisError
+
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", "5")
+
+    redis = prerequisites.get_redis()
+
+    assert redis is not None
+    pool = redis.connection_pool
+    assert isinstance(pool, BlockingConnectionPool)
+    assert pool.max_connections == 3
+    assert pool.timeout == 5
+    assert pool.connection_kwargs["retry_on_error"] == [RedisError]
+    assert redis.auto_close_connection_pool
+
+
+@pytest.mark.parametrize("cap", ["0", "-1", "1", "2"])
+def test_get_redis_rejects_cap_without_command_headroom(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch, cap: str
+):
+    """The two token pub/sub listeners cannot occupy every connection."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", cap)
+    with pytest.raises(EnvironmentVarValueError, match="at least 3"):
+        prerequisites.get_redis()
+
+
+@pytest.mark.parametrize("timeout", ["0", "10", "20"])
+def test_get_redis_rejects_pool_wait_outside_state_lock(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch, timeout: str
+):
+    """A saturated pool must wait, but not past the state-lock lifetime."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", timeout)
+    with pytest.raises(EnvironmentVarValueError, match="greater than 0"):
+        prerequisites.get_redis()
+
+
+async def test_get_redis_max_connections_waits_for_release(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """At the cap, a caller waits for a free connection rather than failing."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    redis = prerequisites.get_redis()
+    assert redis is not None
+    pool = redis.connection_pool
+    monkeypatch.setattr(pool, "ensure_connection", mock.AsyncMock())
+
+    connections = [await pool.get_connection() for _ in range(3)]
+    waiter = asyncio.create_task(pool.get_connection())
+    await asyncio.sleep(0.05)
+    assert not waiter.done()
+
+    await pool.release(connections[0])
+    assert await asyncio.wait_for(waiter, timeout=1) is connections[0]
+    for connection in connections[1:]:
+        await pool.release(connection)
+    await pool.disconnect()

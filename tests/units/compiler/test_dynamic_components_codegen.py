@@ -9,6 +9,7 @@ from reflex_base.components.dynamic import (
     _reset_bundled_libraries_for_compile,
     bundle_library,
 )
+from reflex_base.constants import Templates
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -18,10 +19,7 @@ import reflex as rx
 from reflex.compiler import compiler
 from reflex.state import State
 
-STATE_JS_TEMPLATE = (
-    Path(__file__).parents[3]
-    / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
-)
+STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 
 
 def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
@@ -47,6 +45,32 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
         "import * as lucide_react_dist_esm_icons_apple_mjs "
         'from "lucide-react/dist/esm/icons/apple.mjs";'
     ) in app_root_code
+
+
+def test_lazy_dynamic_component_lists_only_its_optional_libraries(mocker) -> None:
+    """List the optional libraries a dynamic component reads on its first line."""
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(
+            app_name="lazy_dynamic_component",
+            frontend_lazy_bundled_libraries=True,
+        ),
+    )
+    with RegistrationContext():
+        bundle_library("unused-library")
+        bundle_library("lucide-react")
+        icon_code = serializers.serialize(rx.icon("apple"))
+        default_only_code = serializers.serialize(rx.el.div("default libraries"))
+        _, app_root_code = compiler.compile_app_root(rx.el.div())
+    assert isinstance(icon_code, str)
+    assert isinstance(default_only_code, str)
+    # Default libraries are always in window.__reflex, so they are not listed.
+    assert icon_code.split("\n", 1)[0] == (
+        '//__reflex_evaluate:["lucide-react/dist/esm/icons/apple.mjs"]'
+    )
+    assert default_only_code.split("\n", 1)[0] == "//__reflex_evaluate:[]"
+    # The app can load the unused library, but the icon does not request it.
+    assert '"unused-library": () => import("unused-library")' in app_root_code
 
 
 @pytest.mark.parametrize("reactive", [False, True])
@@ -385,6 +409,46 @@ def test_dynamic_component_bundled_subpath_import_forms(
         assert context.bundled_libraries.count("test-library/deep.mjs") == 1
         if not bundle_root:
             assert 'from "https://cdn.jsdelivr.net/npm/test-library@1.0.0/+esm"' in code
+
+
+@pytest.mark.parametrize("is_default", [False, True])
+def test_dynamic_component_unbundled_subpath_falls_back_to_cdn_subpath(
+    is_default: bool,
+):
+    """Send an unbundled subpath import to the CDN url of that subpath.
+
+    Args:
+        is_default: Whether the subpath binding is a default import.
+    """
+    test_library = "test-library@1.0.0"
+
+    class UnbundledSubpathComponent(rx.Component):
+        """A component importing from a module below an unbundled package root."""
+
+        library = test_library
+        tag = "RootComponent"
+
+        def add_imports(self) -> ParsedImportDict:
+            """Import a binding from a module below the package root.
+
+            Returns:
+                The requested versioned subpath import.
+            """
+            return {
+                test_library: [
+                    ImportVar("Widget", is_default=is_default, package_path="/deep.mjs")
+                ]
+            }
+
+    with RegistrationContext():
+        code = serializers.serialize(UnbundledSubpathComponent.create())
+
+    assert isinstance(code, str)
+    # `/+esm` has to end the path; jsdelivr answers 404 for anything after it.
+    assert "/+esm/deep.mjs" not in code
+    assert (
+        'from "https://cdn.jsdelivr.net/npm/test-library@1.0.0/deep.mjs/+esm"' in code
+    )
 
 
 def test_dynamic_component_codegen_wires_event_handlers() -> None:

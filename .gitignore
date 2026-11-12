@@ -7,7 +7,9 @@
 .mypy_cache/
 assets/external/*
 dist/*
-# Only the tracked examples; private apps under examples/ stay ignored.
+# Only the tracked examples; private apps under examples/ stay ignored. The
+# pattern has a separator in the middle, so it is anchored to this directory
+# and leaves the examples that live inside packages and tests alone.
 examples/*
 !examples/README.md
 !examples/ruff.toml
@@ -30,6 +32,8 @@ reflex.db
 .env.*
 node_modules
 package-lock.json
+# ...except the frontend package, which CI installs with `npm ci`.
+!packages/reflex-frontend/package-lock.json
 *.pyi
 .pre-commit-config.yaml
 .claude/.worktrees
@@ -38,3 +42,5 @@ CLAUDE.local.md
 
 # Backups written by scripts/delete_automated_releases.sh
 automated-releases-backup-*.json
+# The tarball `npm run build` packs the frontend package into.
+packages/reflex-frontend/*.tgz

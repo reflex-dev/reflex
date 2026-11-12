@@ -120,6 +120,130 @@ def test_package_without_src_layout_counts_whole_directory(
     assert not reloaded.is_package_source("flat", "packages/flat/news/1.misc.md")
 
 
+def test_extra_source_dirs_count_as_package_source(repo: Path) -> None:
+    """A package can ship source that lives outside its own directory."""
+    (repo / "packages" / "widget-js" / "src").mkdir(parents=True)
+    (repo / "assets").mkdir()
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[tool.reflex-release.extra-source-dirs]\n"
+        'widget-core = ["packages/widget-js/src"]\n'
+        'mypkg = ["assets/"]\n',
+    )
+    config = load_config(repo)
+    # A directory without a pyproject.toml is not a package of its own.
+    assert config.all_packages() == ["mypkg", "widget-core"]
+    assert config.package_source_prefixes("widget-core") == [
+        "packages/widget-core/src/",
+        "packages/widget-js/src/",
+    ]
+    assert config.is_package_source("widget-core", "packages/widget-js/src/a.js")
+    assert not config.is_package_source("widget-core", "packages/widget-js/tests/a.js")
+    assert not config.is_package_source("mypkg", "packages/widget-js/src/a.js")
+    assert config.package_source_prefixes("mypkg") == ["src/", "assets/"]
+    assert config.is_package_source("mypkg", "assets/logo.svg")
+
+
+@pytest.mark.parametrize(
+    "spelling", ["assets", "assets/", "./assets", "packages/../assets", "assets//"]
+)
+def test_extra_source_dirs_match_the_paths_git_reports(
+    repo: Path, spelling: str
+) -> None:
+    """However a directory is spelled, a changed file under it has to match."""
+    (repo / "assets").mkdir()
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n'
+        f'extra-source-dirs = {{ widget-core = ["{spelling}"] }}\n',
+    )
+    config = load_config(repo)
+    assert config.package_source_prefixes("widget-core")[-1] == "assets/"
+    assert config.is_package_source("widget-core", "assets/logo.svg")
+
+
+def test_config_with_extra_source_dirs_is_hashable(repo: Path) -> None:
+    (repo / "assets").mkdir()
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n'
+        'extra-source-dirs = { widget-core = ["assets"] }\n',
+    )
+    assert isinstance(hash(load_config(repo)), int)
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        (
+            'extra-source-dirs = ["assets"]',
+            (
+                "[tool.reflex-release] extra-source-dirs must be a table mapping a "
+                "package name to a list of directories"
+            ),
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = "assets"',
+            (
+                "[tool.reflex-release.extra-source-dirs] widget-core must be a list "
+                "of strings"
+            ),
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-cor = ["assets"]',
+            (
+                "[tool.reflex-release] extra-source-dirs lists unknown package "
+                "'widget-cor'"
+            ),
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["asets"]',
+            (
+                "[tool.reflex-release] extra-source-dirs of widget-core names "
+                "'asets', which is not a directory of this repository"
+            ),
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["../outside"]',
+            (
+                "[tool.reflex-release.extra-source-dirs] '../outside' is not a "
+                "directory inside the repository"
+            ),
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["/etc"]',
+            (
+                "[tool.reflex-release.extra-source-dirs] '/etc' is not a directory "
+                "inside the repository"
+            ),
+        ),
+        (
+            '[tool.reflex-release.extra-source-dirs]\nwidget-core = ["."]',
+            (
+                "[tool.reflex-release.extra-source-dirs] '.' is not a directory "
+                "inside the repository"
+            ),
+        ),
+    ],
+    ids=[
+        "not-a-table",
+        "not-a-list",
+        "unknown-package",
+        "missing-directory",
+        "outside-the-repository",
+        "absolute",
+        "the-repository-root",
+    ],
+)
+def test_extra_source_dirs_are_validated(repo: Path, body: str, message: str) -> None:
+    (repo / "assets").mkdir()
+    write_config(repo, f'root-package = "mypkg"\npackages-dir = "packages"\n{body}\n')
+    with pytest.raises(ReleaseError) as raised:
+        load_config(repo)
+    assert str(raised.value) == message
+
+
 @pytest.mark.parametrize(
     ("version", "branch", "allowed"),
     [
@@ -159,11 +283,37 @@ def test_lockstep_helpers(config: Config, repo: Path) -> None:
     )
     reloaded = load_config(repo)
     assert reloaded.lockstep_partners("mypkg") == ("widget-core",)
-    assert reloaded.lockstep_partners("widget-core") == ("mypkg",)
+    assert reloaded.lockstep_partners("widget-core") == ()
     assert reloaded.publishes_last("mypkg")
     assert not reloaded.publishes_last("widget-core")
     assert reloaded.exact_pin_targets("mypkg") == ("widget-core",)
     assert reloaded.exact_pin_targets("widget-core") == ()
+
+
+def test_lockstep_without_publish_last_remains_symmetric(repo: Path) -> None:
+    """Groups without publication ordering still require all their partners."""
+    write_lockstep(repo, publish_last=False)
+    config = load_config(repo)
+    assert config.lockstep_partners("mypkg") == ("widget-core",)
+    assert config.lockstep_partners("widget-core") == ("mypkg",)
+
+
+def test_publish_last_members_need_only_the_early_members(repo: Path) -> None:
+    (repo / "packages" / "widget-peer").mkdir()
+    (repo / "packages" / "widget-peer" / "pyproject.toml").write_text(
+        '[project]\nname = "widget-peer"\n'
+    )
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.lockstep]]\n"
+        'members = ["mypkg", "widget-core", "widget-peer"]\n'
+        'publish-last = ["mypkg", "widget-peer"]\npin-exact = true\n',
+    )
+    config = load_config(repo)
+    assert config.lockstep_partners("mypkg") == ("widget-core",)
+    assert config.lockstep_partners("widget-peer") == ("widget-core",)
+    assert config.exact_pin_targets("widget-peer") == ("widget-core",)
 
 
 def test_empty_latest_release_package_disables_the_badge(

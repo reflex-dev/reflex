@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import datetime
+import json
 import logging
-from typing import Any
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 import click
 
@@ -20,10 +22,63 @@ from reflex_cli.utils.exceptions import (
 )
 from reflex_cli.utils.output import interactive_option, json_option, print_json
 
+if TYPE_CHECKING:
+    from reflex_build_sdk.types import LogRecord
+
 logger = logging.getLogger(__name__)
 
 # How many log lines `apps logs --follow` prints before prompting for more.
 _LOGS_PAGE_SIZE = 100
+
+# The fields `apps list` and `apps history` show; --json carries all of them.
+_LIST_COLUMNS = ("id", "name", "description", "provider")
+_HISTORY_COLUMNS = ("id", "status", "timestamp", "can rollback", "description")
+
+# Terminal control characters print as escapes, so a log line cannot move the
+# cursor or rewrite the lines above it. Tabs stay.
+_CONTROL_ESCAPES = {
+    code: f"\\x{code:02x}"
+    for code in (*range(0x20), *range(0x7F, 0xA0))
+    if code != 0x09
+}
+
+
+def _print_records(records: list[dict[str, Any]], columns: Sequence[str]) -> None:
+    """Print records as a table whose ids and names stay whole on one line.
+
+    Args:
+        records: The records to print, one row each.
+        columns: The fields to show, in order.
+    """
+    console.print_table(
+        [[str(record[column]) for column in columns] for record in records],
+        headers=columns,
+        overflow="fold",
+        no_wrap=("id", "name"),
+    )
+
+
+def _format_log_record(record: LogRecord) -> str:
+    """Render a log record as a ``timestamp [LEVEL] message`` line.
+
+    The message's further lines and the details follow indented, so no line
+    of a record can pass for the start of another.
+
+    Args:
+        record: The record to render.
+
+    Returns:
+        The record as terminal text.
+    """
+    message = record.message
+    if not isinstance(message, str):
+        message = json.dumps(message, ensure_ascii=False)
+    lines = message.splitlines() or [""]
+    if record.details:
+        lines.extend(record.details.splitlines())
+    level = (record.log_level or "info").upper()
+    lines[0] = f"{record.timestamp} [{level}] {lines[0]}"
+    return "\n  ".join(line.translate(_CONTROL_ESCAPES) for line in lines)
 
 
 @click.group()
@@ -153,11 +208,7 @@ def app_history(
             print_json(history)
             return
         if history:
-            headers = list(history[0].keys())
-            table = [
-                [str(value) for value in deployment.values()] for deployment in history
-            ]
-            console.print_table(table, headers=headers)
+            _print_records(history, _HISTORY_COLUMNS)
         else:
             console.print(str(history))
 
@@ -694,14 +745,14 @@ def app_logs(
         since: datetime.datetime | None = None
         until: datetime.datetime | None = None
         if offset:
-            until = datetime.datetime.now(datetime.timezone.utc)
+            until = datetime.datetime.now(datetime.UTC)
             since = until - datetime.timedelta(seconds=offset)
         elif start or end:
             if not (start and end):
                 logger.error("must provide both start and end")
                 raise click.exceptions.Exit(1)
-            since = datetime.datetime.fromtimestamp(start, datetime.timezone.utc)
-            until = datetime.datetime.fromtimestamp(end, datetime.timezone.utc)
+            since = datetime.datetime.fromtimestamp(start, datetime.UTC)
+            until = datetime.datetime.fromtimestamp(end, datetime.UTC)
         # Asked for no window at all: send none, so the span is the API's own
         # rather than one this command invented. A window of its own would
         # report nothing for an app whose last line predates it, where the
@@ -730,8 +781,12 @@ def app_logs(
 
         printed = 0
         for record in records:
-            entry = hosting.as_json_document(record)
-            logger.info(pprint.pformat(entry, indent=2) if pretty else entry)
+            message = (
+                pprint.pformat(hosting.as_json_document(record), indent=2)
+                if pretty
+                else _format_log_record(record)
+            )
+            console.print(message, markup=False, emoji=False, soft_wrap=True)
             printed += 1
             if printed % _LOGS_PAGE_SIZE:
                 continue
@@ -809,11 +864,7 @@ def list_apps(
         print_json(deployments)
         return
     if deployments:
-        headers = list(deployments[0].keys())
-        table = [
-            [str(value) for value in deployment.values()] for deployment in deployments
-        ]
-        console.print_table(table, headers=headers)
+        _print_records(deployments, _LIST_COLUMNS)
     else:
         console.print(str(deployments))
 
@@ -975,6 +1026,7 @@ def inspect_app(
             return
 
         console.print_table(
-            [[str(value) for value in app_info.values()]],
-            headers=list(app_info.keys()),
+            [[key, str(value)] for key, value in app_info.items()],
+            headers=["field", "value"],
+            overflow="fold",
         )

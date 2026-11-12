@@ -199,7 +199,7 @@ pip install reflex
 reflex init
 ```
 
-The workflow checks for an existing `.venv`, verifies Python 3.10 or newer, and installs Reflex only when needed.
+The workflow checks for an existing `.venv`, verifies Python 3.11 or newer, and installs Reflex only when needed.
 
 
 ## Process
@@ -304,7 +304,7 @@ Ask the assistant to use the Reflex docs skill, or pair the skill pack with the 
 Ask the assistant to follow the `setup-python-env` skill again and verify:
 
 - The virtual environment is active.
-- Python is version 3.10 or newer.
+- Python is version 3.11 or newer.
 - Reflex is installed in the active environment.
 - The command is being run from the project root.
 

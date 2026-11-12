@@ -1,0 +1,408 @@
+/* Docs brand layer synchronized with the current Reflex marketing finish.
+   Shared base styles remain owned by reflex-site-shared. */
+/* Documentation chrome only. Live component examples keep their own styles. */
+
+/* Search ships its own inline stylesheet, so these selectors deliberately
+   include the overlay/root to take precedence in both color modes. */
+html .ReflexSearch-root .ReflexSearch-button {
+  background: var(--background);
+  border-color: var(--border);
+  border-radius: var(--docs-control-radius);
+  box-shadow: none;
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+html .ReflexSearch-root .ReflexSearch-button:hover {
+  background: var(--muted);
+  border-color: var(--border-strong);
+}
+
+html .ReflexSearch-root .ReflexSearch-shortcut {
+  background: var(--muted);
+  border-color: var(--border-subtle);
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+
+html .ReflexSearch-overlay {
+  background: rgb(21 21 21 / 36%);
+  backdrop-filter: blur(6px);
+}
+
+html .ReflexSearch-overlay .ReflexSearch-dialog {
+  background: var(--background);
+  border-color: var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow-large);
+  font-family: var(--font-sans);
+}
+
+html .ReflexSearch-overlay .ReflexSearch-inputRow {
+  height: 64px;
+  min-height: 64px;
+  padding-inline: 24px;
+}
+
+html .ReflexSearch-overlay .ReflexSearch-dialog[data-results-visible="true"] .ReflexSearch-inputRow {
+  border-bottom-color: var(--border-subtle);
+}
+
+html .ReflexSearch-overlay .ReflexSearch-input,
+html .ReflexSearch-overlay .ReflexSearch-input::placeholder,
+html .ReflexSearch-overlay .ReflexSearch-escape,
+html .ReflexSearch-overlay .ReflexSearch-hit,
+html .ReflexSearch-overlay .ReflexSearch-footer {
+  font-weight: 400;
+}
+
+html .ReflexSearch-overlay .ReflexSearch-escape {
+  background: var(--muted);
+  border-color: var(--border);
+  border-radius: 6px;
+  color: var(--muted-foreground);
+}
+
+html .ReflexSearch-overlay .ReflexSearch-escape:hover {
+  background: var(--accent-hover);
+  color: var(--foreground);
+}
+
+html .ReflexSearch-overlay .ReflexSearch-hit {
+  background: transparent;
+  border-color: transparent;
+}
+
+html .ReflexSearch-overlay .ReflexSearch-hit[data-selected="true"],
+html .ReflexSearch-overlay .ReflexSearch-hit:hover {
+  background: var(--muted);
+  border-color: var(--border);
+}
+
+html .ReflexSearch-overlay .ReflexSearch-hit:active {
+  background: var(--accent-hover);
+}
+
+html .ReflexSearch-overlay .ReflexSearch-hitTitleRow strong {
+  font-weight: 500;
+}
+
+html .ReflexSearch-overlay .ReflexSearch-hitDescription,
+html .ReflexSearch-overlay .ReflexSearch-hitBreadcrumbs,
+html .ReflexSearch-overlay .ReflexSearch-emptyState {
+  color: var(--muted-foreground);
+}
+
+html .ReflexSearch-overlay .ReflexSearch-emptyState strong {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+html .ReflexSearch-overlay .ReflexSearch-emptyIcon {
+  box-shadow: none;
+}
+
+html .ReflexSearch-overlay .ReflexSearch-footer {
+  background: var(--subtle);
+  border-top-color: var(--border-subtle);
+  color: var(--muted-foreground);
+  padding-inline: 24px;
+}
+
+html .ReflexSearch-overlay .ReflexSearch-footer a {
+  color: var(--muted-foreground);
+}
+
+html .ReflexSearch-overlay .ReflexSearch-footer a:hover {
+  color: var(--foreground);
+}
+
+html .ReflexSearch-overlay :is(.ReflexSearch-escape, .ReflexSearch-hit, .ReflexSearch-footer a):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Split page actions remain a single compact control. */
+.docs-page-actions > button,
+.docs-page-actions > [data-slot="popover-trigger"] {
+  min-height: 36px;
+  background: var(--background);
+  border-color: var(--border);
+  box-shadow: none;
+  font-family: var(--font-heading);
+  font-weight: 525;
+}
+
+.docs-page-actions > button:first-child {
+  border-radius: 8px 0 0 8px;
+  padding-left: 14px;
+}
+
+.docs-page-actions > [data-slot="popover-trigger"] {
+  border-radius: 0 8px 8px 0;
+  padding-right: 12px;
+}
+
+.docs-page-actions > button:hover {
+  background: var(--muted);
+}
+
+.docs-page-actions > button:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.docs-page-actions-menu {
+  background: var(--card);
+  border-color: var(--border);
+  border-radius: 20px;
+  padding: 8px;
+  box-shadow: var(--shadow-medium);
+  font-family: var(--font-sans);
+}
+
+.docs-page-actions-menu > div > :is(a, button) {
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.docs-page-actions-menu .font-medium {
+  font-weight: 400;
+}
+
+/* Both feedback entry points render this same content inside a portal. */
+[data-slot="popover-popup"]:has(> .docs-feedback-content) {
+  width: 336px;
+  max-width: calc(100vw - 32px);
+  padding: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--foreground);
+  box-shadow: var(--shadow-medium);
+  font-family: var(--font-sans);
+}
+
+.docs-feedback-content {
+  padding: 20px;
+}
+
+.docs-feedback-content div:has(> input[data-slot="input"]),
+.docs-feedback-content textarea {
+  background: var(--background);
+  border-color: var(--border);
+  border-radius: 12px;
+  color: var(--foreground);
+  box-shadow: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.docs-feedback-content textarea {
+  min-height: 128px;
+  padding: 12px;
+  line-height: 1.5;
+}
+
+.docs-feedback-content div:has(> input[data-slot="input"]) {
+  min-height: 40px;
+}
+
+.docs-feedback-content input {
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.docs-feedback-content :is(input, textarea)::placeholder {
+  color: var(--muted-foreground);
+}
+
+.docs-feedback-content button {
+  border-radius: var(--docs-control-radius);
+  font-family: var(--font-heading);
+  font-weight: 525;
+  box-shadow: none;
+}
+
+.docs-feedback-content button[type="submit"] {
+  min-height: 40px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: transparent;
+}
+
+/* The shared form applies an important radius utility to its submit button. */
+@layer utilities {
+  .docs-feedback-content button[type="submit"] {
+    border-radius: var(--docs-control-radius) !important;
+  }
+}
+
+.docs-feedback-content button[type="submit"]:enabled:hover {
+  background: var(--primary-hover);
+}
+
+.docs-feedback-content button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.docs-feedback-content textarea:is([data-invalid], [aria-invalid="true"], :user-invalid),
+.docs-feedback-content div:has(> input:is([data-invalid], [aria-invalid="true"], :user-invalid)) {
+  /* SharedSiteStylesPlugin supplies this semantic alias of the Radix red scale. */
+  border-color: var(--destructive-10);
+}
+
+.docs-feedback-content :is(input, textarea):disabled {
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+.docs-hint {
+  background: var(--foreground);
+  border: 1px solid var(--foreground);
+  border-radius: 8px;
+  color: var(--background);
+  box-shadow: none;
+  padding: 6px 10px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* Footers use body typography, including utility text inherited from the
+   older monospace shell. Keep service-status colors and theme states intact. */
+.docs-page-footer,
+.docs-page-footer .font-small,
+.marketing-footer {
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+.docs-page-footer .font-small {
+  font-size: 12px;
+  line-height: 20px;
+  letter-spacing: normal;
+}
+
+.docs-page-footer button {
+  border-radius: var(--docs-control-radius);
+  font-family: var(--font-heading);
+  font-weight: 525;
+  box-shadow: none;
+}
+
+.docs-page-footer :is(a, button):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+}
+
+.marketing-footer h2 {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.marketing-footer input[type="email"] {
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+:is(.docs-page-footer, .marketing-footer) [role="group"][aria-label="Color theme"],
+:is(.docs-page-footer, .marketing-footer) [role="group"][aria-label="Color theme"] > button {
+  border-radius: var(--docs-control-radius);
+}
+
+@media (max-width: 40rem) {
+  html .ReflexSearch-overlay .ReflexSearch-dialog {
+    border-radius: 20px;
+  }
+
+  html .ReflexSearch-overlay .ReflexSearch-inputRow {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+
+  html .ReflexSearch-overlay .ReflexSearch-footer {
+    padding-inline: 16px;
+  }
+
+  html .ReflexSearch-overlay .ReflexSearch-inputIcon > svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  html .ReflexSearch-overlay .ReflexSearch-input::placeholder {
+    font-size: 14px;
+  }
+
+  /* Let the search field use the space reserved for the loading indicator when idle. */
+  html .ReflexSearch-overlay .ReflexSearch-actions {
+    display: flex;
+  }
+
+  html .ReflexSearch-overlay .ReflexSearch-actionSlot:empty {
+    display: none;
+  }
+
+  html .ReflexSearch-overlay .ReflexSearch-escape {
+    border-radius: 10px;
+  }
+
+  .docs-feedback-content {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-page-actions > button,
+  .docs-page-actions-menu,
+  .docs-page-actions-menu > div > :is(a, button),
+  [data-slot="popover-popup"]:has(> .docs-feedback-content),
+  .docs-feedback-content :is(input, textarea, button),
+  .docs-hint {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Fields share the internal input's flush halo rather than button outlines. */
+.docs-feedback-content div:has(> input[data-slot="input"]),
+.docs-feedback-content textarea {
+  box-shadow: 0 1px 2px rgb(0 0 0 / .02), 0 1px 4px rgb(0 0 0 / .02);
+}
+.docs-feedback-content textarea:focus-visible,
+.docs-feedback-content div:has(> input[data-slot="input"]:focus-visible) {
+  border-color: var(--secondary-a6);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--secondary-4);
+}
+.docs-feedback-content textarea:is([data-invalid], [aria-invalid="true"], :user-invalid):focus-visible,
+.docs-feedback-content div:has(> input:is([data-invalid], [aria-invalid="true"], :user-invalid):focus-visible) {
+  border-color: var(--destructive-a11);
+  box-shadow: 0 0 0 2px var(--destructive-4);
+}
+@media (forced-colors: active) {
+  .docs-feedback-content textarea:focus-visible,
+  .docs-feedback-content div:has(> input[data-slot="input"]:focus-visible) {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
+/* The shared footer exposes source links in its first row's action group. */
+.docs-page-footer > div:first-child > div:last-child a {
+  min-height: 32px;
+  border-radius: var(--docs-control-radius);
+  font: 525 12px/20px var(--font-heading);
+}

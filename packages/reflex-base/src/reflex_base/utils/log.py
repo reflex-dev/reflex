@@ -38,6 +38,7 @@ from rich.console import Console
 from rich.errors import MarkupError
 from rich.text import Text
 
+from reflex_base import otel
 from reflex_base.constants import LogLevel
 from reflex_base.constants.base import Reflex
 from reflex_base.utils.decorator import once
@@ -64,6 +65,7 @@ PACKAGE_LOGGER_NAMES = (
     "reflex_components_react_player",
     "reflex_otel",
     "reflex_build_sdk",
+    "reflex_workflow",
 )
 
 # The single logger the reflex sinks attach to; parent of every package logger.
@@ -250,10 +252,15 @@ class RichConsoleHandler(logging.Handler):
 def _write_json(payload: dict, *, stderr: bool):
     """Write one JSON record to the output stream.
 
+    A record written inside an OpenTelemetry span also carries the span's
+    ``trace_id`` and ``span_id``.
+
     Args:
         payload: The record fields.
         stderr: Whether the record targets stderr.
     """
+    if (ids := otel.trace_fields()) is not None:
+        payload.update(ids)
     stream = sys.stderr if stderr or _stdout_reserved else sys.stdout
     stream.write(json.dumps(payload, default=str) + "\n")
     stream.flush()
@@ -281,7 +288,7 @@ class JsonHandler(logging.Handler):
                 message = strip_markup(message)
             payload = {
                 "timestamp": datetime.datetime.fromtimestamp(
-                    record.created, tz=datetime.timezone.utc
+                    record.created, tz=datetime.UTC
                 ).isoformat(),
                 "level": logging.getLevelName(record.levelno).lower(),
                 "logger": record.name,
@@ -571,7 +578,7 @@ def emit_json_print(
         {
             # Extras first: the canonical fields below always win.
             **fields,
-            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.datetime.now(tz=datetime.UTC).isoformat(),
             "level": level,
             "logger": "reflex.console",
             "message": strip_markup(msg),
@@ -779,6 +786,7 @@ def timing(logger: logging.Logger, msg: str) -> Iterator[None]:
 @once
 def _exclude_paths_from_frame_info() -> list[Path]:
     import importlib.util
+    import pkgutil
 
     import click
     import granian
@@ -804,7 +812,16 @@ def _exclude_paths_from_frame_info() -> list[Path]:
 
     modules_paths = [file for m in exclude_modules if m and (file := m.__file__)] + [
         spec.origin
-        for m in [*sys.builtin_module_names, *sys.stdlib_module_names]
+        for m in [
+            *sys.builtin_module_names,
+            *sys.stdlib_module_names,
+            # The component packages split out of reflex, e.g. reflex_components_core.
+            *(
+                info.name
+                for info in pkgutil.iter_modules()
+                if info.name.startswith("reflex_components_")
+            ),
+        ]
         if (spec := importlib.util.find_spec(m)) and spec.origin
     ]
     exclude_roots = [

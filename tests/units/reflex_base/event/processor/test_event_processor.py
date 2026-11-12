@@ -4,15 +4,20 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import re
 import sys
+import threading
+import time
+import traceback
 from collections.abc import AsyncIterator, Mapping
+from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
 import pytest
 from opentelemetry.trace import SpanKind
 from pytest_mock import MockerFixture
-from reflex_base import otel
+from reflex_base import constants, otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
@@ -22,7 +27,7 @@ from reflex_base.event.processor.event_processor import (
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
-from reflex.event import Event, EventHandler
+from reflex.event import Event, EventHandler, EventSpec
 from tests.units.conftest import active_tracer
 
 # Module-level log so event handlers can record what happened.
@@ -40,6 +45,16 @@ async def _slow_handler(delay: float = 0.5):
         delay: How long to sleep in seconds.
     """
     await asyncio.sleep(delay)
+
+
+def _blocking_sync_handler():
+    """Block the event loop briefly for the detector integration test."""
+    time.sleep(0.12)
+
+
+def _blocking_stdlib_handler():
+    """Block the event loop inside a stdlib call for the detector test."""
+    threading.Event().wait(0.12)
 
 
 async def _error_handler():  # noqa: RUF029
@@ -364,6 +379,8 @@ _counting_superseding_handler._reflex_supersedes = True  # type: ignore[attr-def
 
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
+blocking_sync_event = EventHandler(fn=_blocking_sync_handler)
+blocking_stdlib_event = EventHandler(fn=_blocking_stdlib_handler)
 error_event = EventHandler(fn=_error_handler)
 recovery_event = EventHandler(fn=_recovery_handler)
 logging_event = EventHandler(fn=_logging_handler)
@@ -404,6 +421,8 @@ def _register_handlers(forked_registration_context: RegistrationContext):
     for handler in (
         noop_event,
         slow_event,
+        blocking_sync_event,
+        blocking_stdlib_event,
         error_event,
         recovery_event,
         logging_event,
@@ -517,6 +536,33 @@ async def test_start_twice(processor: EventProcessor):
         await processor.stop()
 
 
+async def test_blocking_monitor_starts_only_in_development(
+    processor: EventProcessor, monkeypatch: pytest.MonkeyPatch
+):
+    """Enable the loop monitor in dev and leave it off in production."""
+    processor.event_loop_blocking_threshold = 0.05
+    processor.configure()
+
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    await processor.start()
+    assert processor._blocking_monitor is None
+    await processor.stop()
+
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    dev_processor = EventProcessor(event_loop_blocking_threshold=0.05)
+    dev_processor.configure()
+    await dev_processor.start()
+    assert dev_processor._blocking_monitor is not None
+    await dev_processor.stop()
+    assert dev_processor._blocking_monitor is None
+
+    disabled_processor = EventProcessor(event_loop_blocking_threshold=0)
+    disabled_processor.configure()
+    await disabled_processor.start()
+    assert disabled_processor._blocking_monitor is None
+    await disabled_processor.stop()
+
+
 async def test_stop_idempotent(processor: EventProcessor):
     """Stopping an already-stopped processor does not error.
 
@@ -611,6 +657,78 @@ async def test_events_are_processed(
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(logging_event("hello"))[0])
     assert _CALL_LOG == [{"value": "hello"}]
+
+
+async def test_processor_reports_blocking_sync_handler(
+    mock_event_processor: EventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Report blocking handlers executed through the event queue."""
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    mock_event_processor.event_loop_blocking_threshold = 0.04
+    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
+
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
+
+    assert "_blocking_sync_handler" in caplog.text
+    # The probe that times the block lands up to a polling gap into it, so only
+    # the report of a total is checked here; test_blocking checks its length
+    # with a handler that blocks once a probe is queued.
+    assert re.search(r"blocked the event loop for \d+\.\d+s in total", caplog.text)
+    # The stack of the event task ends at the blocking line, without loop frames.
+    assert "Blocking stack (most recent call last):" in caplog.text
+    assert "time.sleep(0.12)" in caplog.text
+    assert "base_events.py" not in caplog.text
+
+
+async def test_processor_reports_innermost_app_frame(
+    mock_event_processor: EventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Name the app line that called the blocking library code."""
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    mock_event_processor.event_loop_blocking_threshold = 0.04
+    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
+
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(blocking_stdlib_event())[0])
+
+    path = Path(
+        "tests", "units", "reflex_base", "event", "processor", "test_event_processor.py"
+    )
+    assert f"is blocking the event loop at {path}:" in caplog.text
+    assert "in _blocking_stdlib_handler (threshold" in caplog.text
+
+
+async def test_processor_reports_blocking_after_handler_returns(
+    mock_event_processor: EventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Attribute blocking in post-handler processing (e.g. computed vars) to the event."""
+    execute_event = EventProcessor._execute_event
+
+    async def _execute_event(self: EventProcessor, **kwargs):
+        await execute_event(self, **kwargs)
+        time.sleep(0.12)  # noqa: ASYNC251
+
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    monkeypatch.setattr(EventProcessor, "_execute_event", _execute_event)
+    mock_event_processor.event_loop_blocking_threshold = 0.04
+    caplog.set_level(logging.WARNING, logger="reflex_base.event.processor.blocking")
+
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+
+    assert "_noop_handler" in caplog.text
+    assert "blocked the event loop" in caplog.text
+    assert "time.sleep(0.12)  # noqa: ASYNC251" in caplog.text
 
 
 async def test_enqueue_returns_future(
@@ -785,6 +903,35 @@ async def test_backend_exception_handler_called(token: str):
         await ep.enqueue(token, Event.from_event_type(error_event())[0])
     assert len(caught) == 1
     assert isinstance(caught[0], RuntimeError)
+
+
+async def test_backend_exception_handler_sees_handler_frames_when_future_awaited(
+    token: str,
+):
+    """Awaiting the failed event's future does not strip the handler from the traceback.
+
+    A caller awaiting the future (e.g. an upload stream) re-raises the exception
+    before the exception handler task runs. CPython's C ``asyncio.Future`` gives
+    that re-raise a traceback of the awaiting frames only, so without the
+    restore the handler sees just this test's frame.
+
+    Args:
+        token: The client token.
+    """
+    seen: list[list[str]] = []
+
+    def _catch(ex: Exception) -> None:
+        seen.append([frame.name for frame in traceback.extract_tb(ex.__traceback__)])
+
+    ep = EventProcessor(backend_exception_handler=_catch, graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        future = await ep.enqueue(token, Event.from_event_type(error_event())[0])
+        with contextlib.suppress(RuntimeError):
+            await future
+        await asyncio.wait_for(ep.join(), timeout=1)
+    (frames,) = seen
+    assert "_error_handler" in frames
 
 
 async def test_exception_handler_can_chain_recovery_events(token: str):
@@ -965,6 +1112,27 @@ async def test_stream_delta_noop_handler_yields_nothing(token: str):
     assert collected == []
 
 
+async def test_stream_delta_waits_for_chained_events(token: str):
+    """The stream ends once the events its handler chains are done.
+
+    The root context has no txid, so only a stream context with a txid of its
+    own lets the chained events find the stream's future as their parent.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(multi_chaining_event())[0]
+        assert [d async for d in ep.enqueue_stream_delta(token, event)] == []
+        assert _CALL_LOG == [
+            {"value": "first"},
+            {"value": "second"},
+            {"value": "third"},
+        ]
+
+
 async def test_stream_delta_not_configured_raises():
     """enqueue_stream_delta raises RuntimeError if processor is not configured."""
     ep = EventProcessor()
@@ -978,7 +1146,7 @@ async def test_stream_delta_does_not_adopt_top_level_events(
 ):
     """Top-level events enqueued while a stream runs stay out of its chain.
 
-    Every top-level event names the root context's txid as its parent, so a
+    Every top-level event named the root context's txid as its parent, so a
     stream registered under that txid adopted them all: they were chained to
     it and cancelled with it when its consumer left early, e.g. an upload
     whose client disconnected.
@@ -1723,3 +1891,99 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
         == parent.attributes[otel.ATTR_EVENT_TXID]
     )
     assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)
+
+
+async def test_top_level_event_under_local_span_names_no_parent_event(
+    token: str, otel_exporter
+):
+    """A top-level event enqueued under a local span has no parent event.
+
+    An event a request enqueues (a custom API route, a chunked upload) is an
+    INTERNAL child of the request's span, but it is forked from the
+    processor's root context, which belongs to no event. The events it chains
+    still name it as their parent event.
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        with active_tracer().start_as_current_span("POST /api") as http_span:
+            future = await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
+        await asyncio.wait_for(future.wait_all(), timeout=1)
+    assert _CALL_LOG == [{"value": "chained"}]
+    assert future.parent is None
+    (chained_future,) = future.children
+    assert chained_future.parent is future
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    top = spans["_chaining_handler"]
+    chained = spans["_logging_handler"]
+    assert top.parent is not None
+    assert top.parent.span_id == http_span.get_span_context().span_id
+    assert top.kind == SpanKind.INTERNAL
+    assert top.attributes is not None
+    assert otel.ATTR_EVENT_PARENT_TXID not in top.attributes
+    assert chained.attributes is not None
+    assert (
+        chained.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == top.attributes[otel.ATTR_EVENT_TXID]
+        == future.txid
+    )
+
+
+async def test_bare_handler_return_value_resolves_future(
+    mock_event_processor: EventProcessor,
+    token: str,
+):
+    """A bare handler's return value resolves its future.
+
+    A returned EventSpec is a description of an event, not work for the base
+    processor to run, so the handler it names must not be executed.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+    """
+
+    def _returns_value() -> int:
+        return 7
+
+    async def _returns_spec() -> EventSpec:  # noqa: RUF029
+        return logging_event("not run")
+
+    value_event = EventHandler(fn=_returns_value)
+    spec_event = EventHandler(fn=_returns_spec)
+    RegistrationContext.register_event_handler(value_event)
+    RegistrationContext.register_event_handler(spec_event)
+    async with mock_event_processor as ep:
+        value_future = await ep.enqueue(token, Event.from_event_type(value_event())[0])
+        assert await value_future == 7
+        spec_future = await ep.enqueue(token, Event.from_event_type(spec_event())[0])
+        spec = await spec_future
+        assert isinstance(spec, EventSpec)
+    assert _CALL_LOG == []
+
+
+async def test_bare_handler_returned_future_is_awaited(
+    mock_event_processor: EventProcessor,
+    token: str,
+):
+    """A bare handler returning a Future still has it awaited; only event specs are not.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+    """
+
+    def _returns_future() -> asyncio.Future[int]:
+        future: asyncio.Future[int] = asyncio.get_running_loop().create_future()
+        asyncio.get_running_loop().call_soon(future.set_result, 11)
+        return future
+
+    future_event = EventHandler(fn=_returns_future)
+    RegistrationContext.register_event_handler(future_event)
+    async with mock_event_processor as ep:
+        event_future = await ep.enqueue(token, Event.from_event_type(future_event())[0])
+        assert await event_future == 11
