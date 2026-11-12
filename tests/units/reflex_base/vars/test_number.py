@@ -1,8 +1,10 @@
 """Tests for reflex_base.vars.number."""
 
+from decimal import Decimal
+
 from reflex_base.constants.base import Dirs
 from reflex_base.vars.base import Var
-from reflex_base.vars.number import LiteralNumberVar
+from reflex_base.vars.number import LiteralNumberVar, NumberVar
 
 
 def test_exponent_parenthesizes_a_unary_base():
@@ -29,3 +31,11 @@ def test_modulo_takes_the_sign_of_the_divisor():
     assert [
         import_var.tag for import_var in dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"]
     ] == ["pyMod"]
+
+
+def test_decimal_modulo_keeps_the_sign_of_the_dividend():
+    """Python's Decimal `%` keeps the dividend's sign (`Decimal(-7) % 3` is -1), which plain `%` computes."""
+    d = Var(_js_expr="d").to(NumberVar, Decimal)
+    assert str(LiteralNumberVar.create(Decimal(-7)) % 3) == "(-7 % 3)"
+    assert str(d % Var(_js_expr="x").to(int)) == "(d % x)"
+    assert str(7 % d) == "(7 % d)"
