@@ -2222,7 +2222,7 @@ def figure_out_type(value: Any) -> types.GenericType:
             return value_type
         if isinstance(value, list):
             if not value:
-                return Sequence[NoReturn]
+                return Sequence[Any]
             return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
         if isinstance(value, (set, frozenset)):
             element_type = unionize(*{figure_out_type(v) for v in value})
