@@ -409,7 +409,8 @@ test("_call_script preserves script completion for function declaration returnin
     name: "_call_script",
     payload: {
       javascript_code: "function f() {}",
-      callback: "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
+      callback:
+        "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
     },
   });
   assert.deepEqual(env.calls.pop(), ["is_undefined"]);
@@ -445,7 +446,8 @@ test("_call_script preserves script completion for statements without completion
     name: "_call_script",
     payload: {
       javascript_code: "console.log('executed');",
-      callback: "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
+      callback:
+        "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
     },
   });
   assert.deepEqual(env.calls.pop(), ["is_undefined"]);
@@ -665,7 +667,8 @@ test("strict mode prevents undeclared assignments and top-level this in expressi
     name: "_call_script",
     payload: {
       javascript_code: "this",
-      callback: "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
+      callback:
+        "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
     },
   });
   assert.deepEqual(env.calls.pop(), ["is_undefined"]);
@@ -687,7 +690,8 @@ test("strict mode prevents undeclared assignments and top-level this in statemen
     name: "_call_script",
     payload: {
       javascript_code: "let y = 1; this;",
-      callback: "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
+      callback:
+        "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
     },
   });
   assert.deepEqual(env.calls.pop(), ["is_undefined"]);
