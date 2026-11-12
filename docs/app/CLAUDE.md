@@ -56,11 +56,14 @@ def test_counter(demo):
     expect(demo.get_by_role("heading")).to_have_text("1")
 ```
 
-- `demo` is a Playwright locator scoped to the rendered demo; `page` is already
-  at the doc's route. `expect`, `re` and `pytest` need no import.
+- `demo` is a Playwright locator for what the demo block renders, without the
+  code tabs around it; `page` is already at the doc's route, hydrated.
+  Overlays render outside the demo, so find them through `page`.
+  `expect`, `re` and `pytest` need no import.
 - Each test gets a fresh browser context, so state starts at its defaults.
 - `uv run pytest tests/demos -k <route>` runs them, compiling only the pages
   under test (set `REFLEX_DOCS_WHITELIST` to override; empty compiles all).
+  CI runs them with `--reflex-run-mode=prod`, in shards by docs section.
   `--docs-demos-untested` lists demos without tests.
 - A block that renders nothing worth testing (a screenshot, a spacer, a fixed
   reference table) is flagged `notest`, e.g. ```` ```python eval notest ````, so

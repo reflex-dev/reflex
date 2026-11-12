@@ -14,8 +14,8 @@ route the page is served at, as one module per demo. Test blocks may use
 ``expect``, ``re`` and ``pytest`` without importing them, and these fixtures:
 
 - ``page``: pytest-playwright's page, already at the demo's docs route in the
-  app started by reflex-enterprise's ``reflex_app`` fixture.
-- ``demo``: a locator for the rendered demo, scrolled into view.
+  app started by reflex-enterprise's ``reflex_app`` fixture, and hydrated.
+- ``demo``: a locator for what the demo block renders, scrolled into view.
 
 Only the pages under test are compiled, unless ``REFLEX_DOCS_WHITELIST`` is
 set (set it empty to compile every page).
@@ -319,7 +319,9 @@ def page(page: Page, reflex_app: ReflexApp, request: pytest.FixtureRequest) -> P
         The page, hydrated at the demo's route.
     """
     page.add_init_script(_HYDRATION_SCRIPT)
-    page.goto(reflex_app.url + _demo_of(request).route)
+    # Hydration, not the load event, marks the page ready: "load" also waits
+    # for every external image and script a doc embeds.
+    page.goto(reflex_app.url + _demo_of(request).route, wait_until="domcontentloaded")
     # Events sent before the backend hydrated the page would be lost.
     page.wait_for_function("() => window.__docsDemoHydrated === true")
     return page
