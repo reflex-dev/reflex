@@ -724,6 +724,8 @@ async def _upload_buffered_file(
                     raise HTTPException(
                         status_code=500, detail=_UPLOAD_HANDLER_ERROR
                     ) from err
+                if stream_events := getattr(err, "_stream_events", None):
+                    yield json_dumps(StateUpdate(events=stream_events)) + "\n"
                 yield json_dumps({"error": _UPLOAD_HANDLER_ERROR}) + "\n"
                 return
             sent = True
