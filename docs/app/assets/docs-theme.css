@@ -116,8 +116,12 @@
 .font-heading { font-family: var(--font-heading); }
 
 /* Article shell: quieter navigation, a comfortable line length, useful TOC. */
-.docs-reading-layout { max-width: 1536px; }
-.docs-reading-layout .docs-sidebar { width: 272px; }
+.docs-reading-layout,
+.docs-persistent-sidebar-frame { max-width: 1536px; }
+.docs-sidebar,
+.docs-sidebar-slot { width: 272px; }
+/* The persistent sidebar app wrap only shows on pages that reserve its column. */
+html:not(:has(.docs-sidebar-slot)) .docs-persistent-sidebar { display: none; }
 .docs-sidebar::before { background: var(--background); }
 .docs-sidebar #sidebar-container > div { padding-left: 16px; padding-right: 20px; }
 .docs-sidebar p,

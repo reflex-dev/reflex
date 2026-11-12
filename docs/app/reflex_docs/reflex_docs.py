@@ -23,6 +23,7 @@ from reflex_site_shared.meta.meta import (
 from reflex_docs.pages import page404, routes
 from reflex_docs.redirects import DocsRedirectMiddleware
 from reflex_docs.templates.docpage.docpage import breadcrumb_data
+from reflex_docs.templates.docpage.sidebar import persistent_sidebar
 from reflex_docs.whitelist import _check_whitelisted_path
 
 # This number discovered by trial and error on Windows 11 w/ Node 18, any
@@ -80,6 +81,7 @@ app = rxe.App(
         "/docs-overlays-theme.css",
     ],
     app_wraps={},
+    extra_app_wraps={(0, "DocsPersistentSidebar"): lambda _: persistent_sidebar()},
     theme=rx.theme(
         _llms_txt_directive(),
         has_background=True,

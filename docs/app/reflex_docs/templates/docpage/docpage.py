@@ -18,7 +18,6 @@ from reflex_site_shared.components.blocks.typography import *
 from reflex_site_shared.components.docs_page_actions import docs_page_actions
 from reflex_site_shared.components.docs_shell import (
     docs_feedback_button_toc,
-    docs_left_sidebar,
     docs_page_footer,
     docs_right_sidebar,
 )
@@ -435,9 +434,7 @@ def docpage(
             from reflex_docs.templates.docpage.sidebar import sidebar as sb
             from reflex_docs.views.docs_navbar import docs_navbar
 
-            sidebar = sb(url=path, width="300px")
-
-            nav_sidebar = sb(url=path, width="100%")
+            nav_sidebar = sb()
 
             prev, next = get_prev_next(path)
             links = []
@@ -480,7 +477,9 @@ def docpage(
             return docs_layout_shell(
                 docs_navbar(),
                 rx.el.main(
-                    docs_left_sidebar(sidebar),
+                    # The desktop sidebar itself is the persistent app wrap
+                    # from ``persistent_sidebar``; this only reserves its column.
+                    rx.box(class_name="docs-sidebar-slot hidden shrink-0 lg:block"),
                     rx.box(
                         rx.box(
                             breadcrumb(

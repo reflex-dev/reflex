@@ -77,9 +77,7 @@ def test_single_page_group_is_a_direct_link(active):
     )
     rendered = str(
         sidebar_item_comp(
-            0,
             group,
-            rx.Var.create([0, 0]),
             rx.Var.create("/ai/webhooks/" if active else "/ai/files/"),
         )
     )
@@ -110,9 +108,7 @@ def test_group_with_nested_pages_remains_expandable():
             )
         ],
     )
-    rendered = str(
-        sidebar_item_comp(0, group, rx.Var.create([0, 0]), rx.Var.create("/postgres/"))
-    )
+    rendered = str(sidebar_item_comp(group, rx.Var.create("/postgres/")))
     assert rendered.count('jsx("details"') == 2
     assert 'href:"/postgres/"' in rendered
     assert 'href:"/sqlite/"' in rendered
@@ -128,12 +124,10 @@ def test_single_page_group_label_uses_foreground(title, active):
     from reflex_docs.templates.docpage.sidebar.state import SideBarItem
 
     component = sidebar_item_comp(
-        0,
         SideBarItem(
             names=title,
             children=[SideBarItem(names="Overview", link="/enterprise/ag-chart/")],
         ),
-        rx.Var.create([]),
         rx.Var.create("/enterprise/ag-chart/" if active else "/enterprise/testing/"),
     )
     label = component.children[0].children[0].children[0]
@@ -203,3 +197,32 @@ def test_api_reference_section_order_places_every_page_once():
 
     links = [item.link for item in api_reference]
     assert len(links) == len(set(links)) == len(paths)
+
+
+def test_groups_open_for_any_descendant_of_the_client_route():
+    """Groups expand from the client-side route, so one sidebar serves every page."""
+    from reflex_docs.templates.docpage.sidebar.sidebar import (
+        SIDEBAR_URL,
+        sidebar_item_comp,
+    )
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem
+
+    group = SideBarItem(
+        names="Data",
+        children=[
+            SideBarItem(
+                names="Databases",
+                children=[
+                    SideBarItem(names="Postgres", link="/postgres/"),
+                    SideBarItem(names="SQLite", link="/sqlite/"),
+                ],
+            ),
+            SideBarItem(names="Files", link="/files/"),
+        ],
+    )
+    details = sidebar_item_comp(group, SIDEBAR_URL).children[0]
+    nested = details.children[1].children[1].children[0]
+    assert str(details.open) == (
+        '["/postgres/", "/sqlite/", "/files/"].includes(docsSidebarUrl)'
+    )
+    assert str(nested.open) == '["/postgres/", "/sqlite/"].includes(docsSidebarUrl)'
