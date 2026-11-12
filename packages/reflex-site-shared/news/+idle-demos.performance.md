@@ -1,0 +1,1 @@
+Load deferred documentation previews as they near the viewport and the browser has idle time, canceling pending loads when readers scroll away and remounting loaded previews immediately after a tab switch.

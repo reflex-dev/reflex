@@ -17,17 +17,20 @@ With Notion, your app can:
 
 ## Step 1: Obtain a Notion API Token
 
-1. Go to the [Notion Developers](https://www.notion.so/my-integrations) page.  
-2. Click **+ New Integration**, give it a name, and copy the generated **Internal Integration Token**.  
-3. Share the integration with the relevant pages or databases in your workspace to grant access.
+1. Go to the [Notion developer portal](https://app.notion.com/developers/connections) (you must be a Workspace Owner).  
+2. Under **Internal connections**, click **Create a new connection**, give it a name, and choose your workspace.  
+3. Open the **Configuration** tab and copy the **API token**.  
+4. Give the connection access to the pages or databases it needs: in the **Content access** tab click **Edit access**, or in Notion open the page's **•••** menu → **Connections** → **+ Add connection**.
 
    * **Example:** `ntn_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Notion** in your app settings.  
-2. Paste your **Notion API Token** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Notion** card.
+2. Click **Add connection** and paste your token into **NOTION_API_KEY**.
+3. Click **Connect** to save the connection.
+
+If the card offers a **Connect account** tab, you can sign in with Notion there instead of pasting a key.
 
 Once connected, your app can read and write to Notion directly from workflows and UI actions.
 
@@ -35,6 +38,6 @@ Once connected, your app can read and write to Notion directly from workflows an
 
 * **Keep your token secure:** Never expose your Notion token in client-side code.  
 * **Use environment-specific tokens:** Separate dev, staging, and production access.  
-* **Granular permissions:** Only share the integration with the pages or databases it needs to access.  
+* **Granular permissions:** Only give the connection access to the pages or databases it needs to access.  
 * **Powerful building block:** Use Notion as a single source of truth for content, tasks, or structured data.
 

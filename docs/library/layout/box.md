@@ -20,6 +20,7 @@ rx.box(
     rx.box(
         "CSS color",
         background_color="yellow",
+        color="black",
         border_radius="2px",
         width="20%",
         margin="4px",
@@ -28,6 +29,7 @@ rx.box(
     rx.box(
         "CSS color",
         background_color="orange",
+        color="black",
         border_radius="5px",
         width="40%",
         margin="8px",

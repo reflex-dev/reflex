@@ -86,8 +86,8 @@ cli-command = "uvx reflex-release@0.1.0"
 # this tool pins, so upgrading reflex-release moves them too — and `sync
 # --check` reports that as drift until you regenerate. Set either one to keep
 # your own cadence, or to "" to install whatever setup-uv defaults to.
-uv-version = "0.12.5"
-python-version = "3.14.7"
+uv-version = "0.13.6"
+python-version = "3.14.10"
 
 # Whether the release may be approved by the person who triggered it. True (the
 # default) keeps GitHub's own behavior: the environment's reviewer list decides
@@ -112,6 +112,11 @@ packages-dir = "packages"
 # Sub-package subdirectories that hold publishable source. A sub-package with
 # none of them counts its whole directory (minus news/ and CHANGELOG.md).
 package-source-subdirs = ["src"]
+
+# Directories outside a package that it also ships, such as assets its build
+# embeds. A change under one counts as a change to that package, so it needs a
+# news fragment there. Default: none.
+extra-source-dirs = { widget-core = ["packages/widget-js/src"] }
 
 # Changelog dates and prerelease branch names are stamped in this timezone, so
 # an evening release is not dated tomorrow by a UTC runner. Default: "UTC".

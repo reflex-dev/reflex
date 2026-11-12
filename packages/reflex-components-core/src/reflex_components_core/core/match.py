@@ -2,7 +2,7 @@
 
 import textwrap
 from collections.abc import Iterator
-from typing import Any, cast
+from typing import Any, cast, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
@@ -34,6 +34,20 @@ class Match(Component):
     default: BaseComponent = field(
         default_factory=Fragment.create, is_javascript_property=False
     )
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        cond: Any,
+        case: tuple[Any, *tuple[Any, ...], BaseComponent],
+        /,
+        *cases: Any,
+    ) -> Component: ...
+
+    @overload
+    @classmethod
+    def create(cls, cond: Any, case: tuple[Any, ...], /, *cases: Any) -> Var: ...
 
     @classmethod
     def create(cls, cond: Any, *cases) -> Component | Var:

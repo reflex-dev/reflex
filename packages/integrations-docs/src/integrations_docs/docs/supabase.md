@@ -17,26 +17,28 @@ With Supabase, your app can:
 
 ## Step 1: Obtain Your Supabase URL and Key
 
-1. Go to your [Supabase Project](https://supabase.com/).
+1. Go to your [Supabase Dashboard](https://supabase.com/dashboard).
 2. Choose the project you want to connect.
-3. Navigate to **Project Settings**.
-4. Go to **Data API** and copy your `Supabase_URL`.
-5. Then go to **API Keys** and copy your `Supabase_Key` (the secret key).
+3. Click **Connect** and copy the project URL. The same dialog shows the publishable key.
+4. For a different key, go to **Settings** → **API Keys**:
+   * **Publishable key** (`sb_publishable_...`): access limited by your Row Level Security policies.
+   * **Secret key** (`sb_secret_...`): full server-side access that bypasses Row Level Security.
+   * Legacy `anon` and `service_role` keys still work, but Supabase is deprecating them by the end of 2026.
 
    * **Example URL:** `https://your-project.supabase.co`  
-   * **Example Key:** `sb_xxxxxxxxxxxxxxxxxxxxxxxxxxxx.`
+   * **Example Key:** `sb_publishable_xxxxxxxxxxxxxxxxxxxxxxxx`
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Supabase** in your app settings.  
-2. Paste your **Supabase URL** and **Supabase Key** into the fields.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Supabase** card.
+2. Click **Add connection** and paste your project URL into **SUPABASE_URL** and your key into **SUPABASE_KEY**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can query and update your Supabase database directly from workflows and UI actions.
 
 ## Step 3: Notes
 
-* **Keep your keys secure:** Never expose the `Supabase_Key` key in client-side code.  
+* **Keep your keys secure:** Never expose a secret key in client-side code.  
 * **Use environment-specific keys:** Separate dev, staging, and production projects for clean access control.  
 * **Realtime support:** Supabase enables live syncing of data changes.  
-* **Row-level security:** Make sure to configure policies appropriately for your use case.
+* **Row-level security:** Policies limit the publishable (and legacy `anon`) key; a secret (or legacy `service_role`) key bypasses them. Configure policies appropriately for your use case.
