@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import copy
-import hashlib
 import json
 import operator
 import os
@@ -1196,20 +1195,16 @@ def _write_file_manifest(
 
 
 def _asset_file_fingerprint(path: Path) -> str:
-    """Identify an asset copy by its modification time and content digest.
+    """Identify an asset copy by its modification time and size.
 
     Args:
         path: The file to fingerprint.
 
     Returns:
-        The modification time and SHA-256 digest of the file.
+        The modification time and size of the file.
     """
-    digest = hashlib.sha256()
-    with path.open("rb") as file:
-        mtime = os.fstat(file.fileno()).st_mtime_ns
-        while chunk := file.read(1024 * 1024):
-            digest.update(chunk)
-    return f"{mtime}:{digest.hexdigest()}"
+    stat_result = path.stat()
+    return f"{stat_result.st_mtime_ns}:{stat_result.st_size}"
 
 
 def _prune_stale_files(

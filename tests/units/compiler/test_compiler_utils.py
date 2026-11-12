@@ -239,7 +239,7 @@ def test_sync_app_assets_preserves_directory_replacing_a_copy(asset_project):
 
 
 @pytest.mark.parametrize("intermediate_compiles", [0, 2])
-@pytest.mark.parametrize("replacement", ["content", "same_metadata", "same_content"])
+@pytest.mark.parametrize("replacement", ["content", "same_mtime", "same_content"])
 def test_sync_app_assets_preserves_replaced_copy(
     asset_project, intermediate_compiles: int, replacement: str
 ):
@@ -248,7 +248,7 @@ def test_sync_app_assets_preserves_replaced_copy(
     Args:
         asset_project: The source and destination directories.
         intermediate_compiles: Compiles while both source and replacement exist.
-        replacement: Whether the replacement retains the original metadata or bytes.
+        replacement: Whether the replacement retains the original mtime or bytes.
     """
     assets, public = asset_project
     source = assets / "shared.txt"
@@ -256,10 +256,10 @@ def test_sync_app_assets_preserves_replaced_copy(
     utils._sync_app_assets()
     destination = public / source.name
     original_stat = destination.stat()
-    content = b"app original" if replacement == "same_content" else b"plugin asset"
+    content = b"app original" if replacement == "same_content" else b"plugin"
     destination.write_bytes(content)
     mtime = original_stat.st_mtime_ns
-    if replacement != "same_metadata":
+    if replacement != "same_mtime":
         mtime += 10_000_000_000
     os.utime(destination, ns=(mtime, mtime))
     for _ in range(intermediate_compiles):
