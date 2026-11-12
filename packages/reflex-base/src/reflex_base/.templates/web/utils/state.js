@@ -1711,14 +1711,16 @@ export const pyAnd = (a, b) => (isTrue(a) ? b() : a);
 /***
  * Python-semantics modulo: the result takes the sign of the divisor
  * (`pyMod(-7, 3)` is 2), where JavaScript's `%` takes the dividend's (-1).
- * A zero result takes the divisor's sign, like Python's float `%`.
+ * A zero result is 0, like Python's int `%`. With `float` set, it takes the
+ * divisor's sign, like Python's float `%` (`6.0 % -3.0` is -0.0).
  * @param {number} a The dividend.
  * @param {number} b The divisor.
+ * @param {boolean} float Whether an operand is a Python float.
  * @returns {number} The remainder of `a / b` with the sign of `b`.
  */
-export const pyMod = (a, b) => {
+export const pyMod = (a, b, float = false) => {
   const r = a % b;
-  if (r === 0) return b < 0 ? -0 : 0;
+  if (r === 0) return float && b < 0 ? -0 : 0;
   return r < 0 !== b < 0 ? r + b : r;
 };
 

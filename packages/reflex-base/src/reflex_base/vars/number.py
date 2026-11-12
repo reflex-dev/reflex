@@ -643,6 +643,9 @@ _PY_MOD_IMPORT: ImportDict = {
 def _number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
     """Modulo two numbers with Python semantics.
 
+    A float operand selects Python's float rule for a zero result (`-0.0` for a
+    negative divisor); an int result is never `-0`.
+
     Args:
         lhs: The first number.
         rhs: The second number.
@@ -650,8 +653,9 @@ def _number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number modulo operation.
     """
+    float_flag = ", true" if lhs._is_strict_float() or rhs._is_strict_float() else ""
     return var_operation_return(
-        js_expression=f"pyMod({lhs!s}, {rhs!s})",
+        js_expression=f"pyMod({lhs!s}, {rhs!s}{float_flag})",
         var_type=unionize(lhs._var_type, rhs._var_type),
         var_data=VarData(imports=_PY_MOD_IMPORT),
     )
