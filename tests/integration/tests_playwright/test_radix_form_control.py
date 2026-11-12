@@ -43,7 +43,7 @@ def RadixFormControlApp():
     def form_field(name: str, control: rx.Component) -> rx.Component:
         return rx.form.field(
             rx.form.label(name),
-            rx.form.control(control, as_child=True),
+            rx.form.control(control),
             rx.form.message("Required", match="valueMissing", id=f"{name}-message"),
             name=name,
         )

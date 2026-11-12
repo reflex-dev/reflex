@@ -432,9 +432,10 @@ def test_on_submit_warns_for_controls_not_named_by_a_form_field(
         lambda: rx.el.select(rx.el.option("Apple", value="apple")),
     ],
 )
-def test_form_control_renders_native_controls_as_child(control):
+@pytest.mark.parametrize("props", [{}, {"as_child": True}, {"as_child": False}])
+def test_form_control_renders_native_controls_as_child(control, props):
     """A form control renders a component backed by a native form control."""
-    form_control = rx.form.control(control())
+    form_control = rx.form.control(control(), **props)
     assert form_control.render()["props"] == ["asChild:true", 'className:"Control "']
 
 

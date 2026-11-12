@@ -139,7 +139,7 @@ class FormControl(FormComponent):
                 )
                 raise TypeError(msg)
             # Radix renders the child as the control only with asChild.
-            props.setdefault("as_child", True)
+            props["as_child"] = True
         return super().create(*children, **props)
 
 
