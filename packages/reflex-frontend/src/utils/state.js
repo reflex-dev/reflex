@@ -509,17 +509,58 @@ function urlFrom(string) {
 }
 
 /**
- * Cached fallback evaluator for arbitrary statements, constructed lazily on first use
- * without access to module or caller lexical scope.
+ * Cached fallback evaluator for arbitrary scripts and statement fallbacks, constructed
+ * lazily on first use without access to module or caller lexical scope.
  */
 let fallbackEval = null;
+
+/**
+ * Get or initialize the cached script evaluator.
+ *
+ * @returns The cached script evaluator function.
+ */
+const getScriptEvaluator = () => {
+  if (!fallbackEval) {
+    fallbackEval = new Function(
+      "addEvents",
+      "ReflexEvent",
+      "applyEventActions",
+      "refs",
+      "socket",
+      "token",
+      `"use strict"; return eval(arguments[6]);`,
+    );
+  }
+  return fallbackEval;
+};
+
+/**
+ * Execute a complete JavaScript script within an explicit function environment,
+ * preserving ECMAScript script completion value semantics and strict-mode isolation.
+ *
+ * @param code The JavaScript script to evaluate.
+ * @param env Explicit environment containing runtime dependencies.
+ * @returns The evaluated script completion value.
+ */
+const executeScriptInExplicitEnvironment = (code, env) => {
+  const evaluator = getScriptEvaluator();
+  return evaluator(
+    env.addEvents,
+    env.ReflexEvent,
+    env.applyEventActions,
+    env.refs,
+    env.socket,
+    env.token,
+    code,
+  );
+};
 
 /**
  * Evaluate dynamic JavaScript within an explicit function environment.
  *
  * Tries expression evaluation first to avoid eval entirely; if the code contains
  * statement syntax that cannot be evaluated as an expression, falls back to the
- * isolated evaluator while preserving completion value semantics and providing
+ * isolated script evaluator while preserving completion value semantics and providing
  * only explicit dependencies.
  *
  * @param code The JavaScript code to evaluate.
@@ -535,30 +576,24 @@ const evaluateInExplicitEnvironment = (code, env) => {
       "ReflexEvent",
       "applyEventActions",
       "refs",
+      "socket",
+      "token",
       `"use strict"; return (${trimmed});`,
     );
   } catch (e) {
     if (e instanceof SyntaxError) {
-      if (!fallbackEval) {
-        fallbackEval = new Function(
-          "addEvents",
-          "ReflexEvent",
-          "applyEventActions",
-          "refs",
-          `"use strict"; return eval(arguments[4]);`,
-        );
-      }
-      return fallbackEval(
-        env.addEvents,
-        env.ReflexEvent,
-        env.applyEventActions,
-        env.refs,
-        code,
-      );
+      return executeScriptInExplicitEnvironment(code, env);
     }
     throw e;
   }
-  return fn(env.addEvents, env.ReflexEvent, env.applyEventActions, env.refs);
+  return fn(
+    env.addEvents,
+    env.ReflexEvent,
+    env.applyEventActions,
+    env.refs,
+    env.socket,
+    env.token,
+  );
 };
 
 /**
@@ -567,8 +602,10 @@ const evaluateInExplicitEnvironment = (code, env) => {
  * @param addEvents Late-bound event loop dispatcher.
  * @returns An object containing explicit runtime dependencies.
  */
-const createExecutionContext = (addEvents) => ({
+const createExecutionContext = (addEvents, socket) => ({
   addEvents,
+  socket,
+  token,
   ReflexEvent: typeof ReflexEvent !== "undefined" ? ReflexEvent : undefined,
   applyEventActions:
     typeof applyEventActions !== "undefined" ? applyEventActions : undefined,
@@ -609,7 +646,7 @@ const applyResultCallback = async (
   if (typeof callback === "string") {
     callback = evaluateInExplicitEnvironment(
       callback,
-      createExecutionContext(addEvents),
+      createExecutionContext(addEvents, socket),
     );
   }
   await callback(final_result);
@@ -832,7 +869,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       if (typeof func === "string") {
         func = evaluateInExplicitEnvironment(
           func,
-          createExecutionContext(addEvents),
+          createExecutionContext(addEvents, socket),
         );
       }
       const eval_result = func();
@@ -848,9 +885,9 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name === "_call_script") {
     try {
-      const eval_result = evaluateInExplicitEnvironment(
+      const eval_result = executeScriptInExplicitEnvironment(
         event.payload.javascript_code,
-        createExecutionContext(addEvents),
+        createExecutionContext(addEvents, socket),
       );
       await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {

@@ -3,7 +3,17 @@ import fs from "node:fs";
 import { test } from "node:test";
 import { createQueueRuntime } from "./client_event_queue_runtime.mjs";
 
-const source = fs.readFileSync(process.argv[2], "utf8");
+let targetPath = process.argv[2];
+if (
+  !fs.existsSync(targetPath) &&
+  targetPath.includes(".templates/web/utils/state.js")
+) {
+  targetPath = targetPath.replace(
+    "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js",
+    "packages/reflex-frontend/src/utils/state.js",
+  );
+}
+const source = fs.readFileSync(targetPath, "utf8");
 const stateful = (id) => ({
   name: "reflex___state.test.event",
   payload: { id },
@@ -355,7 +365,16 @@ async function createDynamicExecutionRuntime() {
       },
     },
   });
-  const socket = { connected: true, emit: () => {} };
+  let disconnects = 0;
+
+  const socket = {
+    connected: true,
+    emit: () => {},
+    disconnect() {
+      disconnects++;
+      this.connected = false;
+    },
+  };
   const navigate = () => {};
   const params = {};
   return {
@@ -367,11 +386,36 @@ async function createDynamicExecutionRuntime() {
     socket,
     navigate,
     params,
+    disconnects: () => disconnects,
     apply: (event) => runtime.applyEvent(event, socket, navigate, params),
   };
 }
 
-test("_call_script evaluates expression completion value and forwards to callback", async () => {
+test("_call_script preserves script completion for labelled block expression", async () => {
+  const env = await createDynamicExecutionRuntime();
+  await env.apply({
+    name: "_call_script",
+    payload: {
+      javascript_code: "{ value: 42 }",
+      callback: "(res) => addEvents([res])",
+    },
+  });
+  assert.deepEqual(env.calls.pop(), [42]);
+});
+
+test("_call_script preserves script completion for function declaration returning undefined", async () => {
+  const env = await createDynamicExecutionRuntime();
+  await env.apply({
+    name: "_call_script",
+    payload: {
+      javascript_code: "function f() {}",
+      callback: "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
+    },
+  });
+  assert.deepEqual(env.calls.pop(), ["is_undefined"]);
+});
+
+test("_call_script preserves script completion for normal expression", async () => {
   const env = await createDynamicExecutionRuntime();
   await env.apply({
     name: "_call_script",
@@ -383,28 +427,52 @@ test("_call_script evaluates expression completion value and forwards to callbac
   assert.deepEqual(env.calls.pop(), [42]);
 });
 
-test("_call_script evaluates statements preserving completion value", async () => {
+test("_call_script preserves script completion for multiple statements", async () => {
   const env = await createDynamicExecutionRuntime();
   await env.apply({
     name: "_call_script",
     payload: {
-      javascript_code: "let a = 15; let b = 27; a + b;",
+      javascript_code: "let a = 10;\nlet b = 2;\na + b;",
       callback: "(res) => addEvents([res])",
     },
   });
-  assert.deepEqual(env.calls.pop(), [42]);
+  assert.deepEqual(env.calls.pop(), [12]);
 });
 
-test("_call_script executes statements returning undefined completion value", async () => {
+test("_call_script preserves script completion for statements without completion value", async () => {
   const env = await createDynamicExecutionRuntime();
   await env.apply({
     name: "_call_script",
     payload: {
-      javascript_code: "console.log('statement executed');",
+      javascript_code: "console.log('executed');",
       callback: "(res) => addEvents([res === undefined ? 'is_undefined' : res])",
     },
   });
   assert.deepEqual(env.calls.pop(), ["is_undefined"]);
+});
+
+test("_call_script with SyntaxError propagates original error and is not executed twice", async () => {
+  const env = await createDynamicExecutionRuntime();
+  await env.apply({
+    name: "_call_script",
+    payload: {
+      javascript_code: "let let = 1;",
+    },
+  });
+  assert.equal(env.errors.length, 1);
+  assert.equal(env.errors[0], "Unexpected strict mode reserved word");
+});
+
+test("_call_script handles promise results and forwards to callback", async () => {
+  const env = await createDynamicExecutionRuntime();
+  await env.apply({
+    name: "_call_script",
+    payload: {
+      javascript_code: "Promise.resolve(42)",
+      callback: "(res) => addEvents([res])",
+    },
+  });
+  assert.deepEqual(env.calls.pop(), [42]);
 });
 
 test("callback string can construct and dispatch ReflexEvent", async () => {
@@ -517,7 +585,26 @@ test("callbacks use late-bound addEvents after eventLoop remounts", async () => 
 
 test("dynamic execution can access refs and CLIENT_STATE_REF store", async () => {
   const env = await createDynamicExecutionRuntime();
-  env.runtime.refs.custom_ref = { current: { value: "hello_ref" } };
+
+  const clientStateRef = {
+    current: { value: "hello_client_state" },
+  };
+  env.runtime.refs.__client_state = clientStateRef;
+
+  await env.apply({
+    name: "_call_script",
+    payload: {
+      javascript_code: "refs.__client_state.current.value",
+      callback: "(res) => addEvents([res])",
+    },
+  });
+
+  assert.deepEqual(env.calls.pop(), ["hello_client_state"]);
+
+  env.runtime.refs.custom_ref = {
+    current: { value: "hello_ref" },
+  };
+
   await env.apply({
     name: "_call_script",
     payload: {
@@ -528,16 +615,18 @@ test("dynamic execution can access refs and CLIENT_STATE_REF store", async () =>
   assert.deepEqual(env.calls.pop(), ["hello_ref"]);
 });
 
-test("dynamic execution does not have access to lexical scope (socket, navigate, params)", async () => {
+test("dynamic execution only has access to explicitly injected dependencies", async () => {
   const env = await createDynamicExecutionRuntime();
   await env.apply({
     name: "_call_script",
     payload: {
       javascript_code: "socket.connected",
+      callback: "(res) => addEvents([res])",
     },
   });
-  assert.equal(env.errors.length, 1);
-  assert.equal(env.errors[0], "socket is not defined");
+
+  assert.deepEqual(env.calls.pop(), [true]);
+  assert.deepEqual(env.errors, []);
 
   await env.apply({
     name: "_call_function",
@@ -545,8 +634,19 @@ test("dynamic execution does not have access to lexical scope (socket, navigate,
       function: "() => navigate",
     },
   });
+
+  assert.equal(env.errors.length, 1);
+  assert.equal(env.errors[0], "navigate is not defined");
+
+  await env.apply({
+    name: "_call_script",
+    payload: {
+      javascript_code: "params",
+    },
+  });
+
   assert.equal(env.errors.length, 2);
-  assert.equal(env.errors[1], "navigate is not defined");
+  assert.equal(env.errors[1], "params is not defined");
 });
 
 test("strict mode prevents undeclared assignments and top-level this in expressions", async () => {
@@ -626,4 +726,35 @@ export default function DynamicWidget() { return "test_widget"; }
   assert.deepEqual(loadedLibs, ["lib1", "lib2"]);
   assert.equal(component(), "test_widget");
   assert.equal(env.window.React.name, "test_react");
+});
+
+test("_call_script can disconnect the supplied socket", async () => {
+  const env = await createDynamicExecutionRuntime();
+
+  await env.apply({
+    name: "_call_script",
+    payload: {
+      javascript_code: "socket.disconnect()",
+    },
+  });
+
+  assert.equal(env.socket.connected, false);
+  assert.equal(env.disconnects(), 1);
+  assert.deepEqual(env.errors, []);
+});
+
+test("result callback can access the supplied socket", async () => {
+  const env = await createDynamicExecutionRuntime();
+
+  await env.apply({
+    name: "_call_script",
+    payload: {
+      javascript_code: "42",
+      callback: "(res) => { socket.disconnect(); addEvents([res]); }",
+    },
+  });
+
+  assert.equal(env.socket.connected, false);
+  assert.deepEqual(env.calls.pop(), [42]);
+  assert.deepEqual(env.errors, []);
 });

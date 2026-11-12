@@ -13,9 +13,9 @@ STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 ADD_EVENTS_ALIAS = "const addEvents = (...args) => eventLoop.addEvents(...args);"
 
 USER_CODE_EXECUTIONS = (
-    "evaluateInExplicitEnvironment(\n      callback,\n      createExecutionContext(addEvents),",
-    "evaluateInExplicitEnvironment(\n          func,\n          createExecutionContext(addEvents),",
-    "evaluateInExplicitEnvironment(\n        event.payload.javascript_code,\n        createExecutionContext(addEvents),",
+    "evaluateInExplicitEnvironment(\n      callback,\n      createExecutionContext(addEvents, socket),",
+    "evaluateInExplicitEnvironment(\n          func,\n          createExecutionContext(addEvents, socket),",
+    "executeScriptInExplicitEnvironment(\n        event.payload.javascript_code,\n        createExecutionContext(addEvents, socket),",
 )
 
 TOP_LEVEL_FUNCTION = re.compile(
@@ -59,6 +59,7 @@ def test_result_callback_dispatches_through_current_event_loop() -> None:
 import assert from 'node:assert/strict';
 const calls = [];
 const eventLoop = {addEvents: (events) => calls.push(events)};
+const token = 'test-token';
 """
             + helper
             + """
@@ -132,54 +133,58 @@ def test_dynamic_javascript_explicit_environment() -> None:
 import assert from 'node:assert/strict';
 const calls = [];
 const eventLoop = {addEvents: (events) => calls.push(events)};
+const token = "test-token";
 const ReflexEvent = (name, payload) => ({name, payload});
 const refs = {target: {current: {value: 'ref_val'}}};
+const socket = {connected: true};
 """
             + helper
             + """
-const env = createExecutionContext((...args) => eventLoop.addEvents(...args));
+const env = createExecutionContext(
+  (...args) => eventLoop.addEvents(...args),
+  socket,
+);
 
 assert.equal(fallbackEval, null);
-assert.equal(evaluateInExplicitEnvironment('15 + 27', env), 42);
-assert.equal(fallbackEval, null);
-assert.equal(evaluateInExplicitEnvironment('let a = 10; let b = 20; a + b;', env), 30);
+assert.equal(executeScriptInExplicitEnvironment('{ value: 42 }', env), 42);
 assert.notEqual(fallbackEval, null);
 const cachedEvaluator = fallbackEval;
-assert.equal(evaluateInExplicitEnvironment('let c = 5; c * 2;', env), 10);
+assert.equal(executeScriptInExplicitEnvironment('function f() {}', env), undefined);
 assert.equal(fallbackEval, cachedEvaluator);
-
-assert.equal(evaluateInExplicitEnvironment('console.log("no-op");', env), undefined);
-
-assert.throws(
-  () => evaluateInExplicitEnvironment('strictUndeclaredExpr = 42', env),
-  { name: 'ReferenceError', message: 'strictUndeclaredExpr is not defined' },
-);
-assert.equal('strictUndeclaredExpr' in globalThis, false);
+assert.equal(executeScriptInExplicitEnvironment('21 * 2', env), 42);
+assert.equal(executeScriptInExplicitEnvironment('let a = 10; let b = 2; a + b;', env), 12);
+assert.equal(executeScriptInExplicitEnvironment('console.log("no-op");', env), undefined);
 
 assert.throws(
-  () => evaluateInExplicitEnvironment('let x = 1; strictUndeclaredStmt = 42; x;', env),
-  { name: 'ReferenceError', message: 'strictUndeclaredStmt is not defined' },
+  () => executeScriptInExplicitEnvironment('let let = 1;', env),
+  { name: 'SyntaxError', message: 'Unexpected strict mode reserved word' },
 );
-assert.equal('strictUndeclaredStmt' in globalThis, false);
 
-assert.equal(evaluateInExplicitEnvironment('this', env), undefined);
-assert.equal(evaluateInExplicitEnvironment('let y = 1; this;', env), undefined);
+assert.throws(
+  () => executeScriptInExplicitEnvironment('strictUndeclared = 42', env),
+  { name: 'ReferenceError', message: 'strictUndeclared is not defined' },
+);
+assert.equal('strictUndeclared' in globalThis, false);
+assert.equal(executeScriptInExplicitEnvironment('this', env), undefined);
+assert.equal(executeScriptInExplicitEnvironment('let y = 1; this;', env), undefined);
 
-evaluateInExplicitEnvironment('addEvents([ReflexEvent("event_a", {val: refs.target.current.value})])', env);
+executeScriptInExplicitEnvironment('addEvents([ReflexEvent("event_a", {val: refs.target.current.value})])', env);
 assert.deepEqual(calls.pop(), [{name: 'event_a', payload: {val: 'ref_val'}}]);
 
+assert.equal(executeScriptInExplicitEnvironment('socket', env), socket);
+assert.equal(executeScriptInExplicitEnvironment('token', env), token);
 assert.throws(
-  () => evaluateInExplicitEnvironment('socket', env),
-  { name: 'ReferenceError', message: 'socket is not defined' },
-);
-assert.throws(
-  () => evaluateInExplicitEnvironment('navigate', env),
+  () => executeScriptInExplicitEnvironment('navigate', env),
   { name: 'ReferenceError', message: 'navigate is not defined' },
 );
 assert.throws(
-  () => evaluateInExplicitEnvironment('params', env),
+  () => executeScriptInExplicitEnvironment('params', env),
   { name: 'ReferenceError', message: 'params is not defined' },
 );
+
+const fn = evaluateInExplicitEnvironment('() => 123', env);
+assert.equal(typeof fn, 'function');
+assert.equal(fn(), 123);
 
 globalThis.asyncDone = false;
 const event = {
@@ -187,7 +192,7 @@ const event = {
     callback: 'async (res) => { await Promise.resolve(); globalThis.asyncDone = true; addEvents([res * 2]); }',
   },
 };
-await applyResultCallback(event, Promise.resolve(21), null, null, null);
+await applyResultCallback(event, Promise.resolve(21), socket, null, null);
 assert.equal(globalThis.asyncDone, true);
 assert.deepEqual(calls.pop(), [42]);
 """,
@@ -254,14 +259,12 @@ def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
 
 
 def test_every_user_code_eval_can_reach_add_events() -> None:
-    """Every scope executing user code must inject the late-bound `addEvents` alias.
+    """Every dynamic execution path injects the required runtime dependencies.
 
-    Dynamic execution paths -- serialized callbacks, `_call_script`, and
-    `_call_function` -- run within an explicit execution environment rather than
-    relying on lexical scope eval. The `addEvents` alias must be declared in each
-    enclosing function and passed via `createExecutionContext(addEvents)` so the
-    evaluated code can resolve it through explicit dependency injection. Direct
-    eval of user code payload strings must not be present.
+    Serialized callbacks, _call_script, and _call_function execute within
+    an explicit environment. The addEvents alias and socket dependency are
+    passed through createExecutionContext rather than relying on lexical
+    scope access. Direct eval of user-code payload strings must not be present.
     """
     content = STATE_JS_TEMPLATE.read_text()
 
