@@ -6,6 +6,7 @@
 - Operations on an optional list var (`list[T] | None`) holding `None` no longer crash the page or the production prerender: the list acts as an empty list, so `contains` is false, `length` is 0 and `join` gives an empty string. As with any empty list, `reduce` without an `initial` value still raises; pass `initial=` when the list can be `None`. ([#7800](https://github.com/reflex-dev/reflex/issues/7800))
 - A computed var that returns an optional list, tuple, set or frozenset (for example `-> set[str] | None`) now reads as `ArrayVar` or `SetVar` for type checkers instead of `ComputedVar`, so its operations type-check. ([#7800](https://github.com/reflex-dev/reflex/issues/7800))
 - Deprecation warnings now point at the app line that triggered them when the deprecated call runs inside a `reflex_components_*` package (for example `on_change=client_state.set_value`), instead of a file in `site-packages`. ([#7811](https://github.com/reflex-dev/reflex/issues/7811))
+- `reflex run --json` no longer waits on exit for a descendant process that outlives the app and keeps its output open, which could happen on Python 3.13 to 3.15, most often on Windows. ([#7855](https://github.com/reflex-dev/reflex/issues/7855))
 
 ### Performance
 
