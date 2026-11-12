@@ -466,7 +466,7 @@ export const evalReactComponent = async (component) => {
   }
   const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
-  const module = await eval(`import(dataUri)`);
+  const module = await import(/* @vite-ignore */ dataUri);
   return module.default;
 };
 
@@ -507,13 +507,79 @@ function urlFrom(string) {
 }
 
 /**
+ * Cached fallback evaluator for arbitrary statements, constructed lazily on first use
+ * without access to module or caller lexical scope.
+ */
+let fallbackEval = null;
+
+/**
+ * Evaluate dynamic JavaScript within an explicit function environment.
+ *
+ * Tries expression evaluation first to avoid eval entirely; if the code contains
+ * statement syntax that cannot be evaluated as an expression, falls back to the
+ * isolated evaluator while preserving completion value semantics and providing
+ * only explicit dependencies.
+ *
+ * @param code The JavaScript code to evaluate.
+ * @param env Explicit environment containing runtime dependencies.
+ * @returns The evaluated completion value.
+ */
+const evaluateInExplicitEnvironment = (code, env) => {
+  const trimmed = code.trim().replace(/;+$/, "");
+  let fn;
+  try {
+    fn = new Function(
+      "addEvents",
+      "ReflexEvent",
+      "applyEventActions",
+      "refs",
+      `"use strict"; return (${trimmed});`,
+    );
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      if (!fallbackEval) {
+        fallbackEval = new Function(
+          "addEvents",
+          "ReflexEvent",
+          "applyEventActions",
+          "refs",
+          `"use strict"; return eval(arguments[4]);`,
+        );
+      }
+      return fallbackEval(
+        env.addEvents,
+        env.ReflexEvent,
+        env.applyEventActions,
+        env.refs,
+        code,
+      );
+    }
+    throw e;
+  }
+  return fn(env.addEvents, env.ReflexEvent, env.applyEventActions, env.refs);
+};
+
+/**
+ * Construct the explicit execution environment for dynamic JavaScript.
+ *
+ * @param addEvents Late-bound event loop dispatcher.
+ * @returns An object containing explicit runtime dependencies.
+ */
+const createExecutionContext = (addEvents) => ({
+  addEvents,
+  ReflexEvent: typeof ReflexEvent !== "undefined" ? ReflexEvent : undefined,
+  applyEventActions:
+    typeof applyEventActions !== "undefined" ? applyEventActions : undefined,
+  refs: typeof refs !== "undefined" ? refs : (globalThis.refs ?? {}),
+});
+
+/**
  * Invoke an event's result callback, if it declared one.
  *
- * The callback arrives as a string built by ``format_queue_events``, which
- * references ``queueEvents``/``processEvent`` (module-level here) plus ``socket``,
- * ``navigate`` and ``params``. Those three MUST stay the parameter names below:
- * the ``eval`` resolves them from this function's scope, so renaming them breaks
- * every callback.
+ * The callback arrives as a function or a string built by ``format_queue_events``,
+ * which references ``addEvents`` and ``ReflexEvent``. It is evaluated within an
+ * explicit function environment rather than relying on module or caller lexical scope.
+ *
  * @param event The event whose callback to run.
  * @param eval_result The value to pass to the callback, awaited if thenable.
  * @param socket The socket object to send events on.
@@ -530,20 +596,21 @@ const applyResultCallback = async (
   if (!event.payload.callback) {
     return;
   }
-  // Eval'd user code dispatches through addEvents like compiled event triggers
-  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
-  // every scope holding an eval, since that is the only scope chain the eval'd
-  // code can resolve it from.
+  // User code dispatches through addEvents like compiled event triggers
+  // do; late-bound so a remounted EventLoopProvider is picked up.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   const final_result =
     !!eval_result && typeof eval_result.then === "function"
       ? await eval_result
       : eval_result;
-  const callback =
-    typeof event.payload.callback === "string"
-      ? eval(event.payload.callback)
-      : event.payload.callback;
-  callback(final_result);
+  let callback = event.payload.callback;
+  if (typeof callback === "string") {
+    callback = evaluateInExplicitEnvironment(
+      callback,
+      createExecutionContext(addEvents),
+    );
+  }
+  await callback(final_result);
 };
 
 /**
@@ -586,10 +653,8 @@ const storageDefault = (state_key) => {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
-  // Eval'd user code dispatches through addEvents like compiled event triggers
-  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
-  // every scope holding an eval, since that is the only scope chain the eval'd
-  // code can resolve it from.
+  // User code dispatches through addEvents like compiled event triggers
+  // do; late-bound so a remounted EventLoopProvider is picked up.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
@@ -734,18 +799,17 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  if (
-    event.name == "_call_function" &&
-    typeof event.payload.function !== "string"
-  ) {
+  if (event.name == "_call_function") {
     try {
-      await applyResultCallback(
-        event,
-        event.payload.function(),
-        socket,
-        navigate,
-        params,
-      );
+      let func = event.payload.function;
+      if (typeof func === "string") {
+        func = evaluateInExplicitEnvironment(
+          func,
+          createExecutionContext(addEvents),
+        );
+      }
+      const eval_result = func();
+      await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
       console.log("_call_function", e);
       if (window && window?.onerror) {
@@ -755,13 +819,12 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  if (event.name == "_call_script" || event.name == "_call_function") {
+  if (event.name == "_call_script") {
     try {
-      const eval_result =
-        event.name == "_call_script"
-          ? eval(event.payload.javascript_code)
-          : eval(event.payload.function)();
-
+      const eval_result = evaluateInExplicitEnvironment(
+        event.payload.javascript_code,
+        createExecutionContext(addEvents),
+      );
       await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
       console.log("_call_script", e);

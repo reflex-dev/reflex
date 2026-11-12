@@ -70,6 +70,9 @@ export async function createQueueRuntime(
 ${source}
 export { event_queue };
 `,
+    {
+      importModuleDynamically: (specifier) => import(specifier),
+    },
   );
   const linked = new Map();
   await module.link((specifier) => {

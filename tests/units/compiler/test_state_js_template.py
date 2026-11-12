@@ -14,10 +14,10 @@ STATE_JS_TEMPLATE = (
 
 ADD_EVENTS_ALIAS = "const addEvents = (...args) => eventLoop.addEvents(...args);"
 
-USER_CODE_EVALS = (
-    "eval(event.payload.callback)",
-    "eval(event.payload.javascript_code)",
-    "eval(event.payload.function)",
+USER_CODE_EXECUTIONS = (
+    "evaluateInExplicitEnvironment(\n      callback,\n      createExecutionContext(addEvents),",
+    "evaluateInExplicitEnvironment(\n          func,\n          createExecutionContext(addEvents),",
+    "evaluateInExplicitEnvironment(\n        event.payload.javascript_code,\n        createExecutionContext(addEvents),",
 )
 
 TOP_LEVEL_FUNCTION = re.compile(
@@ -50,9 +50,7 @@ def test_result_callback_dispatches_through_current_event_loop() -> None:
         pytest.skip("Node.js is needed to execute the callback")
     content = STATE_JS_TEMPLATE.read_text()
     helper = content[
-        content.index("const applyResultCallback =") : content.index(
-            "export const applyEvent ="
-        )
+        content.index("let fallbackEval =") : content.index("export const applyEvent =")
     ]
     subprocess.run(
         [
@@ -71,6 +69,129 @@ await applyResultCallback(event, Promise.resolve('first'), null, null, null);
 eventLoop.addEvents = (events) => calls.push(['remounted', ...events]);
 await applyResultCallback(event, 'second', null, null, null);
 assert.deepEqual(calls, [['first'], ['remounted', 'second']]);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_eval_react_component_dynamic_import() -> None:
+    """Evaluate dynamic component imports via native dynamic import."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is needed to execute evalReactComponent")
+    content = STATE_JS_TEMPLATE.read_text()
+    helper = content[
+        content.index("export const evalReactComponent =") : content.index(
+            "export const queueEventIfSocketExists ="
+        )
+    ]
+    subprocess.run(
+        [
+            node,
+            "--input-type=module",
+            "--eval",
+            helper
+            + """
+import assert from 'node:assert/strict';
+const loadedLibs = [];
+globalThis.window = {
+  __reflex: { react: { name: 'injected_react' } },
+  __reflex_load: async (libs) => { loadedLibs.push(...libs); },
+};
+const componentSource = `//__reflex_evaluate:["lib1", "lib2"]
+export default function Widget() { return window.React.name; }
+`;
+const comp = await evalReactComponent(componentSource);
+assert.deepEqual(loadedLibs, ['lib1', 'lib2']);
+assert.equal(comp(), 'injected_react');
+assert.equal(window.React.name, 'injected_react');
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_dynamic_javascript_explicit_environment() -> None:
+    """Dynamic code executes within explicit environments preserving completion values."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is needed to execute dynamic evaluation")
+    content = STATE_JS_TEMPLATE.read_text()
+    helper = content[
+        content.index("let fallbackEval =") : content.index("export const applyEvent =")
+    ]
+    subprocess.run(
+        [
+            node,
+            "--input-type=module",
+            "--eval",
+            """
+import assert from 'node:assert/strict';
+const calls = [];
+const eventLoop = {addEvents: (events) => calls.push(events)};
+const ReflexEvent = (name, payload) => ({name, payload});
+const refs = {target: {current: {value: 'ref_val'}}};
+"""
+            + helper
+            + """
+const env = createExecutionContext((...args) => eventLoop.addEvents(...args));
+
+assert.equal(fallbackEval, null);
+assert.equal(evaluateInExplicitEnvironment('15 + 27', env), 42);
+assert.equal(fallbackEval, null);
+assert.equal(evaluateInExplicitEnvironment('let a = 10; let b = 20; a + b;', env), 30);
+assert.notEqual(fallbackEval, null);
+const cachedEvaluator = fallbackEval;
+assert.equal(evaluateInExplicitEnvironment('let c = 5; c * 2;', env), 10);
+assert.equal(fallbackEval, cachedEvaluator);
+
+assert.equal(evaluateInExplicitEnvironment('console.log("no-op");', env), undefined);
+
+assert.throws(
+  () => evaluateInExplicitEnvironment('strictUndeclaredExpr = 42', env),
+  { name: 'ReferenceError', message: 'strictUndeclaredExpr is not defined' },
+);
+assert.equal('strictUndeclaredExpr' in globalThis, false);
+
+assert.throws(
+  () => evaluateInExplicitEnvironment('let x = 1; strictUndeclaredStmt = 42; x;', env),
+  { name: 'ReferenceError', message: 'strictUndeclaredStmt is not defined' },
+);
+assert.equal('strictUndeclaredStmt' in globalThis, false);
+
+assert.equal(evaluateInExplicitEnvironment('this', env), undefined);
+assert.equal(evaluateInExplicitEnvironment('let y = 1; this;', env), undefined);
+
+evaluateInExplicitEnvironment('addEvents([ReflexEvent("event_a", {val: refs.target.current.value})])', env);
+assert.deepEqual(calls.pop(), [{name: 'event_a', payload: {val: 'ref_val'}}]);
+
+assert.throws(
+  () => evaluateInExplicitEnvironment('socket', env),
+  { name: 'ReferenceError', message: 'socket is not defined' },
+);
+assert.throws(
+  () => evaluateInExplicitEnvironment('navigate', env),
+  { name: 'ReferenceError', message: 'navigate is not defined' },
+);
+assert.throws(
+  () => evaluateInExplicitEnvironment('params', env),
+  { name: 'ReferenceError', message: 'params is not defined' },
+);
+
+globalThis.asyncDone = false;
+const event = {
+  payload: {
+    callback: 'async (res) => { await Promise.resolve(); globalThis.asyncDone = true; addEvents([res * 2]); }',
+  },
+};
+await applyResultCallback(event, Promise.resolve(21), null, null, null);
+assert.equal(globalThis.asyncDone, true);
+assert.deepEqual(calls.pop(), [42]);
 """,
         ],
         check=True,
@@ -135,22 +256,28 @@ def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
 
 
 def test_every_user_code_eval_can_reach_add_events() -> None:
-    """Every scope that evals user code must declare the `addEvents` alias.
+    """Every scope executing user code must inject the late-bound `addEvents` alias.
 
-    A direct `eval` resolves names from its own scope chain, so the alias has to
-    be declared in each function holding one. Moving it, or extracting an `eval`
-    into a new helper without it, leaves the eval'd code -- serialized callbacks,
-    `_call_script`, and the handlers `_call_function` returns -- referencing an
-    undefined `addEvents`.
+    Dynamic execution paths -- serialized callbacks, `_call_script`, and
+    `_call_function` -- run within an explicit execution environment rather than
+    relying on lexical scope eval. The `addEvents` alias must be declared in each
+    enclosing function and passed via `createExecutionContext(addEvents)` so the
+    evaluated code can resolve it through explicit dependency injection. Direct
+    eval of user code payload strings must not be present.
     """
     content = STATE_JS_TEMPLATE.read_text()
 
-    for snippet in USER_CODE_EVALS:
-        eval_at = content.index(snippet)
-        name, body = _enclosing_function(content, eval_at)
+    assert "eval(event.payload.callback)" not in content
+    assert "eval(event.payload.javascript_code)" not in content
+    assert "eval(event.payload.function)" not in content
+    assert "eval(`import(dataUri)`)" not in content
+
+    for snippet in USER_CODE_EXECUTIONS:
+        exec_at = content.index(snippet)
+        name, body = _enclosing_function(content, exec_at)
         assert ADD_EVENTS_ALIAS in body, (
-            f"`{name}` evals user code via `{snippet}` but does not declare the "
-            "addEvents alias, so the eval'd code cannot resolve it."
+            f"`{name}` executes user code via `{snippet}` but does not declare the "
+            "addEvents alias to pass into the explicit environment."
         )
         assert body.index(ADD_EVENTS_ALIAS) < body.index(snippet), (
             f"`{name}` declares the addEvents alias after `{snippet}`."
