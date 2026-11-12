@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 const handle_paste_data = (clipboardData) =>
-  new Promise((resolve, reject) => {
+  new Promise((resolve) => {
     const pasted_data = [];
     const n_items = clipboardData.items.length;
     const extract_data = (item) => {
@@ -49,20 +49,20 @@ export default function usePasteHandler(target_ids, event_actions, on_paste) {
     const handle_paste = (_ev) => {
       eventActionsRef.current?.preventDefault && _ev.preventDefault();
       eventActionsRef.current?.stopPropagation && _ev.stopPropagation();
-      handle_paste_data(_ev.clipboardData).then(onPasteRef.current);
+      void handle_paste_data(_ev.clipboardData).then(onPasteRef.current);
     };
 
     let cleanupListeners = null;
     let observer = null;
 
     const attachListeners = (targets) => {
-      targets.forEach((target) =>
-        target.addEventListener("paste", handle_paste, false),
-      );
+      for (const target of targets) {
+        target.addEventListener("paste", handle_paste, false);
+      }
       return () => {
-        targets.forEach((target) =>
-          target.removeEventListener("paste", handle_paste, false),
-        );
+        for (const target of targets) {
+          target.removeEventListener("paste", handle_paste, false);
+        }
       };
     };
 

@@ -54,7 +54,9 @@ const createSlot = (value) => {
         return;
       }
       slot.value = resolved;
-      listeners.forEach((listener) => listener());
+      for (const listener of listeners) {
+        listener();
+      }
     },
   };
   return slot;
@@ -195,8 +197,8 @@ export const setClientState = (name, value) => {
 
 /**
  * Provide the root scope to the tree.
- * @param props The component props.
- * @param props.children The children to render.
+ * @param {object} props The component props.
+ * @param {import("react").ReactNode} [props.children] The children to render.
  * @returns The provider element.
  */
 export function ClientStateProvider({ children }) {
@@ -220,9 +222,9 @@ export function ClientStateProvider({ children }) {
  * Emitted by the compiler around each page and `@rx.memo` body. The names it
  * lists are owned here unless an ancestor owns them, so each mounted instance
  * gets its own state and its descendants share it.
- * @param props The component props.
- * @param props.children The children to render.
- * @param props.owns The local names the boundary's own body uses.
+ * @param {object} props The component props.
+ * @param {import("react").ReactNode} [props.children] The children to render.
+ * @param {string[]} props.owns The local names the boundary's own body uses.
  * @returns The provider element.
  */
 export function ClientStateScope({ children, owns }) {
