@@ -43,7 +43,7 @@ export function Code({
           console.warn("Unable to highlight code block", error);
         }
       };
-      if ("requestIdleCallback" in window) {
+      if (typeof window.requestIdleCallback === "function") {
         idle = window.requestIdleCallback(run, { timeout: 1000 });
       } else {
         idle = window.setTimeout(run, 0);
@@ -66,8 +66,11 @@ export function Code({
     return () => {
       active = false;
       observer?.disconnect();
-      if ("cancelIdleCallback" in window) window.cancelIdleCallback(idle);
-      else window.clearTimeout(idle);
+      if (typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idle);
+      } else {
+        window.clearTimeout(idle);
+      }
     };
   }, [code, language, theme, themes, transformers, decorations]);
 

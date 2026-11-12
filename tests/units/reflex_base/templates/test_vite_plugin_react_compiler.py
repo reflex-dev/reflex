@@ -6,10 +6,10 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import reflex_base
 from reflex_base.components.component import Component
 from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.config import Config
+from reflex_base.constants import Templates
 from reflex_base.environment import environment
 from reflex_base.event import EventChain
 from reflex_base.registry import RegistrationContext
@@ -17,12 +17,7 @@ from reflex_base.vars.base import Var
 
 from reflex.utils.frontend_skeleton import _compile_vite_config
 
-PLUGIN_PATH = (
-    Path(reflex_base.__file__).parent
-    / ".templates"
-    / "web"
-    / "vite-plugin-react-compiler.js"
-)
+PLUGIN_PATH = Templates.Dirs.WEB_TEMPLATE / "vite-plugin-react-compiler.js"
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 
