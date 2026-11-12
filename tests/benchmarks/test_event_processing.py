@@ -208,7 +208,8 @@ def test_process_event_burst_same_token(
         loop.close()
 
 
-@pytest.mark.parametrize("num_events", [1, 10, 100])
+# A single token would repeat test_process_event_warm.
+@pytest.mark.parametrize("num_events", [10, 100])
 def test_process_event_burst_independent_tokens(
     num_events: int,
     event_processing_harness,

@@ -1,43 +1,15 @@
-"""Benchmarks for route construction and hot-path matching."""
+"""Benchmarks for route construction and matching."""
 
 import re
-import sys
-import types
-from collections.abc import Iterator
 
 import pytest
 from pytest_codspeed import BenchmarkFixture
 from reflex_base import constants
-from reflex_base.config import get_config
 
 from reflex.route import get_route_args, get_router
 
-
-@pytest.fixture
-def cached_rxconfig() -> Iterator[None]:
-    """Seed a cached ``rxconfig`` module so matching hits the config cache.
-
-    In production ``rxconfig`` is imported into ``sys.modules`` and every
-    ``get_config()`` call (invoked once per ``router(path)`` match) is a dict
-    lookup. Without a cached module the benchmark environment rebuilds a fresh
-    ``Config`` on every call — a sys.path scan and full env parse that dominates
-    the measured region and hides real route-matching regressions.
-
-    Yields:
-        None, with the cached module installed for the test's duration.
-    """
-    module_name = constants.Config.MODULE
-    saved = sys.modules.get(module_name)
-    stub = types.ModuleType(module_name)
-    stub.config = get_config()  # pyright: ignore [reportAttributeAccessIssue]
-    sys.modules[module_name] = stub
-    try:
-        yield
-    finally:
-        if saved is not None:
-            sys.modules[module_name] = saved
-        else:
-            sys.modules.pop(module_name, None)
+# Each kind of lookup in _lookups is repeated this many times per measured call.
+LOOKUP_ROUNDS = 20
 
 
 def _routes(count: int) -> list[str]:
@@ -54,28 +26,58 @@ def _routes(count: int) -> list[str]:
     return routes
 
 
+def _lookups(count: int) -> list[tuple[str, str | None]]:
+    """Build paths to match against ``_routes(count)`` with the route each matches.
+
+    Every round looks up the index, a dynamic route, the catch-all, a static
+    route and a path no route matches. The static routes are spread evenly over
+    the table, and every path but the index differs from round to round.
+
+    Args:
+        count: Route count passed to ``_routes``.
+
+    Returns:
+        Pairs of path and expected route template.
+    """
+    lookups = []
+    for index in range(LOOKUP_ROUNDS):
+        static = index * (count - 3) // LOOKUP_ROUNDS
+        lookups.extend((
+            ("/", "index"),
+            (f"/posts/post-{index}", "posts/[slug]"),
+            (f"/files/{index}/readme.md", "files/[[...splat]]"),
+            (f"/section-{static}/item-{static}", f"section-{static}/item-{static}"),
+            (f"/missing-{index}", None),
+        ))
+    return lookups
+
+
 @pytest.mark.parametrize("count", [10, 100, 1000])
-@pytest.mark.usefixtures("cached_rxconfig")
 def test_route_matching(count: int, benchmark: BenchmarkFixture):
-    """Benchmark repeated matching through representative route tables.
+    """Benchmark matching paths through representative route tables.
+
+    The router memoizes each path, and CodSpeed calls the benchmark once before
+    measuring it, so calling the router would measure only cache hits. Calling
+    the function it wraps measures the scan over the route table, which is what
+    grows with the table.
 
     Args:
         count: Number of routes.
         benchmark: The CodSpeed benchmark fixture.
     """
-    router = get_router(_routes(count))
-    paths = ["/", "/posts/reflex", f"/section-{count - 4}/item-{count - 4}"]
+    match = get_router(_routes(count)).__wrapped__  # pyright: ignore [reportFunctionMemberAccess]
+    lookups = _lookups(count)
+    paths = [path for path, _ in lookups]
 
-    def match_paths() -> tuple[str | None, ...]:
-        """Match the fixed path set.
+    def match_paths() -> list[str | None]:
+        """Match every path.
 
         Returns:
             Matched route templates.
         """
-        return tuple(router(path) for path in paths)
+        return [match(path) for path in paths]
 
-    result = benchmark(match_paths)
-    assert result == ("index", "posts/[slug]", paths[-1].removeprefix("/"))
+    assert benchmark(match_paths) == [route for _, route in lookups]
 
 
 @pytest.mark.parametrize("count", [10, 100, 1000])
