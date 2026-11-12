@@ -36,6 +36,7 @@ import {
   pyStrip,
   pyStrLength,
   pyStrSlice,
+  pyStrSplit,
   ReflexEvent,
   spreadArraysOrObjects,
 } from "$/utils/state";
@@ -130,6 +131,8 @@ describe("python string operations", () => {
     expect(pyStrSlice("abc", null, 2)).toBe("ab");
     expect(pyStrChars("a😀")).toEqual(["a", "😀"]);
     expect(pyStrChars("")).toEqual([]);
+    expect(pyStrSplit("a😀b", "")).toEqual(["a", "😀", "b"]);
+    expect(pyStrSplit("a b", " ")).toEqual(["a", "b"]);
   });
 
   test("pyFlatMap iterates each result the way python does", () => {

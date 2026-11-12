@@ -2003,6 +2003,16 @@ export const pyStrChars = (s) => {
 };
 
 /***
+ * JS s.split(sep), except that an empty separator splits by code point like
+ * Python list(s).
+ * @param {string?} s The string.
+ * @param {string} sep The separator.
+ * @returns {string[]} The parts.
+ */
+export const pyStrSplit = (s, sep) =>
+  sep === "" ? pyStrChars(s) : s.split(sep);
+
+/***
  * Python-semantics flat map: map each element through fn and concatenate the
  * results, iterating each one the way Python does (arrays yield their
  * elements, strings yield characters, objects yield their keys).
