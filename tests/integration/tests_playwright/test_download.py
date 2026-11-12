@@ -21,6 +21,8 @@ def DownloadApp():
 
     class State(rx.State):
         text: str = "var;text#%41 ä"
+        base64_url: str = "data:text/plain;base64,aGk%3D#part"
+        text_url: str = "data:text/plain,a%20b%FF#part"
 
         @rx.event
         def download_bytes(self):
@@ -43,6 +45,16 @@ def DownloadApp():
                 "var",
                 on_click=rx.download(data=State.text, filename="var.txt"),
                 id="download-var",
+            ),
+            rx.button(
+                "base64 url",
+                on_click=rx.download(data=State.base64_url, filename="base64.txt"),
+                id="download-base64-url",
+            ),
+            rx.button(
+                "text url",
+                on_click=rx.download(data=State.text_url, filename="text.txt"),
+                id="download-text-url",
             ),
             rx.button("bytes", on_click=State.download_bytes, id="download-bytes"),
         )
@@ -80,6 +92,8 @@ def download_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     [
         ("download-text", "frontend.txt", b"frontend;text#%41"),
         ("download-var", "var.txt", '"var;text#%41 \u00e4"'.encode()),
+        ("download-base64-url", "base64.txt", b"hi"),
+        ("download-text-url", "text.txt", b"a b\xff"),
         ("download-bytes", "backend.csv", b"backend,bytes\n"),
     ],
 )
