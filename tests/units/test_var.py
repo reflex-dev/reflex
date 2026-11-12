@@ -1162,6 +1162,28 @@ def test_string_operations():
     )
 
 
+def test_string_split_uses_code_points_for_empty_separator():
+    """Test that splitting by an empty separator yields code points, not UTF-16 units."""
+    basic_string = LiteralStringVar.create("a😀b")
+    literal = str(basic_string)
+    code_point_split = f"pyStrChars({literal})"
+    assert str(basic_string.split()) == code_point_split
+    assert str(basic_string.split("")) == code_point_split
+    assert str(basic_string.split(" ")) == f'{literal}.split(" ")'
+    sep_var = Var(_js_expr="state.sep").to(str)
+    assert (
+        str(basic_string.split(sep_var))
+        == f'(state.sep === "" ? {code_point_split} : {literal}.split(state.sep))'
+    )
+    for split_var in (basic_string.split(), basic_string.split(sep_var)):
+        var_data = split_var._get_all_var_data()
+        assert var_data is not None
+        assert (
+            ImportVar(tag="pyStrChars")
+            in dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"]
+        )
+
+
 def test_all_number_operations():
     starting_number = LiteralNumberVar.create(-5.4)
 
