@@ -1,1 +1,0 @@
-A `default_factory` on a state var that can hold a string is no longer called again in each backend worker's first event. The check that rejects a factory producing browser storage now runs only when the app compiles.
