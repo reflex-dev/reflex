@@ -20,6 +20,7 @@ from pathlib import Path
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
+from reflex_base.utils import console
 
 if sys.platform == "win32":
     import msvcrt
@@ -197,6 +198,12 @@ def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
     Returns:
         Whether the link was successful.
     """
+    console.deprecate(
+        feature_name="reflex.utils.path_ops.ln",
+        reason="Create symbolic links with Path.symlink_to() instead.",
+        deprecation_version="0.10.2",
+        removal_version="1.0",
+    )
     src, dest = Path(src), Path(dest)
     if src == dest:
         return False
