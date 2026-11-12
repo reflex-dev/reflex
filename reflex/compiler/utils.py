@@ -18,6 +18,10 @@ from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
+from reflex_base.components.client_state_context import (
+    local_client_state_names,
+    scoped_memo_wrapper,
+)
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.components.dynamic import _bundle_imports
 from reflex_base.components.memo import (
@@ -314,6 +318,8 @@ def _restore_bundled_libraries() -> None:
 
 def _compile_client_storage_field(
     field: Field,
+    *,
+    check_factory: bool = True,
 ) -> (
     tuple[
         type[Cookie] | type[LocalStorage] | type[SessionStorage],
@@ -325,6 +331,8 @@ def _compile_client_storage_field(
 
     Args:
         field: The possible cookie field to compile.
+        check_factory: Whether to call a default_factory to reject one that
+            produces browser storage. Only the compile needs to check.
 
     Returns:
         A dictionary of the compiled cookie or None if the field is not cookie-like.
@@ -340,7 +348,8 @@ def _compile_client_storage_field(
             continue
         return field_type, cs_obj.options()
     if (
-        not field._backend
+        check_factory
+        and not field._backend
         and field.default is MISSING
         and field.default_factory is not None
         and _may_hold_str(field.outer_type_)
@@ -398,6 +407,8 @@ def _raise_factory_storage(field: Field, storage_type: type) -> None:
 
 def _compile_client_storage_recursive(
     state: type[BaseState],
+    *,
+    check_factories: bool = True,
 ) -> tuple[
     dict[str, dict[str, Any]], dict[str, dict[str, Any]], dict[str, dict[str, Any]]
 ]:
@@ -405,6 +416,8 @@ def _compile_client_storage_recursive(
 
     Args:
         state: The app state object.
+        check_factories: Whether to call the default factories to reject those
+            that produce browser storage.
 
     Returns:
         A tuple of the compiled client-side storage info: (cookies, local_storage, session_storage).
@@ -418,7 +431,9 @@ def _compile_client_storage_recursive(
             # only include vars defined in this state
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
-        field_type, options = _compile_client_storage_field(field)
+        field_type, options = _compile_client_storage_field(
+            field, check_factory=check_factories
+        )
         if field_type is None or options is None:
             continue
         if field_type is Cookie:
@@ -434,7 +449,7 @@ def _compile_client_storage_recursive(
             substate_cookies,
             substate_local_storage,
             substate_session_storage,
-        ) = _compile_client_storage_recursive(substate)
+        ) = _compile_client_storage_recursive(substate, check_factories=check_factories)
         cookies.update(substate_cookies)
         local_storage.update(substate_local_storage)
         session_storage.update(substate_session_storage)
@@ -627,6 +642,15 @@ def compile_experimental_component_memo(
     # var itself, so a custom wrapper brings its own imports and ``None``
     # pulls in nothing.
     wrapper = definition.wrapper
+    if (
+        definition.is_instance_boundary
+        and f"$/{constants.Dirs.CLIENT_STATE_PATH}" in imports
+    ):
+        # This memo is a real component instance boundary and its body uses
+        # client state, so wrap it in a client state scope: names it declares are
+        # owned per instance, and its descendants resolve to the same slots.
+        # Gated on actual usage so pages don't pay a provider per memo.
+        wrapper = scoped_memo_wrapper(wrapper, local_client_state_names(hooks))
     if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)

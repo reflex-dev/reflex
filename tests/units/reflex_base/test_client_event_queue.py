@@ -13,11 +13,12 @@ import pytest
     [
         "client_event_queue.mjs",
         "client_state_updates.mjs",
+        "client_upload.mjs",
         "state_string_helpers.mjs",
     ],
 )
 def test_client_runtime(script: str) -> None:
-    """Verify queue processing, incoming state updates, and string helpers.
+    """Verify queue processing, incoming state and upload updates, and string helpers.
 
     Args:
         script: Runtime regression script to execute.

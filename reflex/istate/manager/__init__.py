@@ -233,6 +233,12 @@ class StateManager(ABC):
     async def close(self):  # noqa: B027
         """Close the state manager."""
 
+    def _reset_instance_id(self) -> None:  # noqa: B027
+        """Assign a fresh instance identity when a server worker starts.
+
+        Managers that share state between workers tell them apart by it.
+        """
+
 
 class _ModifyStateWithLinks(Generic[TOKEN_TYPE]):
     """Async context manager behind `StateManager.modify_state_with_links`.
