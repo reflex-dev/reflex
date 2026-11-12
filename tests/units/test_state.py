@@ -84,6 +84,7 @@ from reflex.state import (
     _get_client_storage_delta,
     _load_events_for_page,
     _override_base_method,
+    _shared_storage_groups,
     all_base_state_classes,
     is_serializable,
     state_snapshot_hashes,
@@ -7696,6 +7697,47 @@ def test_rx_event_on_static_and_class_methods_is_deprecated_and_ignored() -> Non
     assert StaticState.helper(2) == 4  # pyright: ignore [reportCallIssue]
 
 
+def test_static_and_class_methods_above_rx_event_are_deprecated_and_ignored() -> None:
+    """A staticmethod or classmethod above @rx.event warns and stays a plain method."""
+    from reflex.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class StaticAboveState(BaseState):
+            @staticmethod  # pyright: ignore [reportArgumentType]
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def helper(value: int) -> int:
+                return value * 2
+
+            @classmethod  # pyright: ignore [reportArgumentType]
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def cls_helper(cls, value: int) -> str:
+                return f"{cls.__name__}:{value}"
+
+        class StaticAboveMixin(BaseState, mixin=True):
+            @staticmethod  # pyright: ignore [reportArgumentType]
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def mixin_helper(value: int) -> int:
+                return value * 2
+
+        class UsesStaticAboveMixin(StaticAboveMixin, State):
+            pass
+
+    # One warning each: the staticmethod, the classmethod, the mixin's copy.
+    assert [call.kwargs["feature_name"] for call in mock_deprecate.call_args_list] == [
+        "@rx.event on a staticmethod or classmethod"
+    ] * 3
+    assert isinstance(StaticAboveState.__dict__["helper"], staticmethod)
+    assert isinstance(StaticAboveState.__dict__["cls_helper"], classmethod)
+    assert StaticAboveState.helper(3) == 6  # pyright: ignore [reportCallIssue]
+    assert StaticAboveState().helper(3) == 6  # pyright: ignore [reportCallIssue]
+    assert StaticAboveState.cls_helper(3) == "StaticAboveState:3"  # pyright: ignore [reportCallIssue]
+    assert "helper" not in StaticAboveState.event_handlers
+    assert "cls_helper" not in StaticAboveState.event_handlers
+    assert UsesStaticAboveMixin.mixin_helper(4) == 8  # pyright: ignore [reportCallIssue]
+    assert "mixin_helper" not in UsesStaticAboveMixin.event_handlers
+
+
 def test_decorated_handler_on_state_derived_from_a_mixin_only() -> None:
     """A state whose base flips the mixin flag on (like ``rx.SharedState``) owns its handlers.
 
@@ -7775,6 +7817,44 @@ async def test_shared_storage_name_syncs_siblings(
     assert await root._get_resolved_delta() == {
         OtherName.get_full_name(): {key: "alone"}
     }
+
+
+def test_shared_storage_groups_do_not_call_default_factories(
+    clean_registration_context: RegistrationContext,
+):
+    """Grouping the storage vars at runtime calls no default_factory.
+
+    The compile already rejected a factory that produces browser storage, so the
+    first event of each backend worker does not call the factories again.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+    calls = []
+
+    def make_token() -> str:
+        """Record the call and return a plain default.
+
+        Returns:
+            The default token.
+        """
+        calls.append(1)
+        return "token"
+
+    class FactoryState(State):
+        token: rx.Field[str] = rx.field(default_factory=make_token)
+        maybe_token: rx.Field[str | None] = rx.field(default_factory=make_token)
+
+    class SharedFirst(State):
+        value: str = rx.LocalStorage("", name="shared", sync=True)
+
+    class SharedSecond(State):
+        value: str = rx.LocalStorage("", name="shared")
+
+    groups = _shared_storage_groups(State, clean_registration_context)
+
+    assert calls == []
+    assert groups == (((SharedFirst, "value", True), (SharedSecond, "value", False)),)
 
 
 @pytest.mark.parametrize("second_sync", [True, False])

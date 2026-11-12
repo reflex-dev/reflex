@@ -21,6 +21,7 @@ from abc import ABCMeta
 from collections.abc import Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from dataclasses import MISSING
 from decimal import Decimal
+from itertools import islice
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -2239,8 +2240,8 @@ def figure_out_type(value: Any) -> types.GenericType:
             if not value:
                 return Mapping[NoReturn, NoReturn]
             return Mapping[
-                unionize(*{figure_out_type(k) for k in list(value.keys())[:100]}),
-                unionize(*{figure_out_type(v) for v in list(value.values())[:100]}),
+                unionize(*{figure_out_type(k) for k in islice(value.keys(), 100)}),
+                unionize(*{figure_out_type(v) for v in islice(value.values(), 100)}),
             ]
     return type(value)
 
@@ -2921,28 +2922,30 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[list[LIST_INSIDE]],
+        self: ComputedVar[list[LIST_INSIDE]] | ComputedVar[list[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[tuple[LIST_INSIDE, ...]],
+        self: ComputedVar[tuple[LIST_INSIDE, ...]]
+        | ComputedVar[tuple[LIST_INSIDE, ...] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[set[LIST_INSIDE]],
+        self: ComputedVar[set[LIST_INSIDE]] | ComputedVar[set[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[frozenset[LIST_INSIDE]],
+        self: ComputedVar[frozenset[LIST_INSIDE]]
+        | ComputedVar[frozenset[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[frozenset[LIST_INSIDE]]: ...
@@ -3252,28 +3255,32 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: AsyncComputedVar[list[LIST_INSIDE]],
+        self: AsyncComputedVar[list[LIST_INSIDE]]
+        | AsyncComputedVar[list[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: AsyncComputedVar[tuple[LIST_INSIDE, ...]],
+        self: AsyncComputedVar[tuple[LIST_INSIDE, ...]]
+        | AsyncComputedVar[tuple[LIST_INSIDE, ...] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(
-        self: AsyncComputedVar[set[LIST_INSIDE]],
+        self: AsyncComputedVar[set[LIST_INSIDE]]
+        | AsyncComputedVar[set[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: AsyncComputedVar[frozenset[LIST_INSIDE]],
+        self: AsyncComputedVar[frozenset[LIST_INSIDE]]
+        | AsyncComputedVar[frozenset[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[frozenset[LIST_INSIDE]]: ...
@@ -3949,7 +3956,7 @@ def get_uuid_string_var() -> Var:
             f"$/{constants.Dirs.STATE_PATH}": ImportVar(tag="generateUUID"),
             "react": "useMemo",
         },
-        hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
+        hooks={f"const {unique_uuid_var} = useMemo(() => generateUUID(), [])": None},
     )
 
     return Var(
@@ -4451,7 +4458,10 @@ class Field(Generic[FIELD_TYPE]):
             )
         else:
             msg = f"{name} has no frontend var, so it cannot be used in the UI."
-        return BackendVarFormatError(msg)
+        # str() raises too, so print and logging in server code reach this error.
+        return BackendVarFormatError(
+            f"{msg} To print or log the field itself in server code, use repr()."
+        )
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.

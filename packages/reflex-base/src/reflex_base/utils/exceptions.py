@@ -312,3 +312,7 @@ class UnretrievableVarValueError(ReflexError):
 
 class HybridPropertyError(ReflexError):
     """Raised when a hybrid property is misused while building its frontend var."""
+
+
+class ClientStateConflictError(ReflexError, ValueError):
+    """Raised when one client state name is declared with two different defaults."""

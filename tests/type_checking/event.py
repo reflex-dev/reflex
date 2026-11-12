@@ -3,7 +3,15 @@
 from collections.abc import Callable
 from typing import Any, ClassVar, assert_type
 
-from reflex_base.event import EventCallback, EventHandler, EventSpec, EventType, event
+from reflex_base.event import (
+    EventCallback,
+    EventHandler,
+    EventSpec,
+    EventType,
+    IdentityEventReturn,
+    LambdaEventCallback,
+    event,
+)
 from reflex_base.vars.base import Var
 
 from reflex.state import State
@@ -135,3 +143,20 @@ def _reads(state: _State, holder: _Holder, handler_state: _HandlerHolderState) -
     # whatever function it wraps.
     assert_type(_HandlerHolderState.on_submit, EventHandler)
     assert_type(handler_state.on_submit, Callable[..., Any])
+
+
+def _namespace_annotations(
+    callback: event.EventCallback[str],
+    lambda_callback: event.LambdaEventCallback[str],
+    identity: event.IdentityEventReturn[int],
+    event_type: event.EventType[str],
+    spec: event.EventSpec,
+) -> None:
+    # The event namespace (`rx.event`) re-exports the event types, generic or
+    # not, for annotations.
+    assert_type(callback, EventCallback[str])
+    assert_type(lambda_callback, LambdaEventCallback[str])
+    assert_type(identity, IdentityEventReturn[int])
+    assert_type(event_type, EventType[str])
+    assert_type(spec, EventSpec)
+    _event_prop(_HandlerState.one(1))

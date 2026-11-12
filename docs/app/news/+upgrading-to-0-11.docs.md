@@ -1,0 +1,1 @@
+Add an "Upgrading to Reflex 0.11" guide to the Changelog section, covering event decorators and return values, production origin checks, set vars, browser storage defaults, client state, the ASGI app, alembic migrations and reflex-enterprise 0.9.12.

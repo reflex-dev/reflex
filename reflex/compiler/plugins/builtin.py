@@ -492,19 +492,29 @@ def default_page_plugins(
     *,
     style: ComponentStyle | None = None,
     plugins: Sequence[Plugin] = (),
+    auto_memoize: bool = True,
 ) -> tuple[Plugin, ...]:
-    """Return the default compiler plugin ordering for page compilation."""
-    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+    """Return the default compiler plugin ordering for page compilation.
 
+    Args:
+        style: The app style to apply, if any.
+        plugins: Plugins that run before the defaults.
+        auto_memoize: Whether to wrap stateful components in memo components.
+            When False, only components with a lifecycle event or hooks of
+            their own are wrapped, plus snapshot boundaries such as rx.foreach
+            and components with ``MemoizationDisposition.ALWAYS``.
+
+    Returns:
+        The ordered page compiler plugins.
+    """
     chain: list[Plugin] = [*plugins, DefaultPagePlugin()]
     if style is not None:
         chain.append(ApplyStylePlugin(style=style))
     # The scope plugin's compile_page runs before the collector collapses imports.
-    chain.extend((
-        ClientStateScopePlugin(),
-        DefaultCollectorPlugin(),
-        MemoizeStatefulPlugin(),
-    ))
+    chain.extend((ClientStateScopePlugin(), DefaultCollectorPlugin()))
+    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+
+    chain.append(MemoizeStatefulPlugin(scope_only=not auto_memoize))
     return tuple(chain)
 
 

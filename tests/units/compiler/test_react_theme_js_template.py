@@ -1,11 +1,8 @@
 """Regression tests for the react-theme.js frontend template."""
 
-from pathlib import Path
+from reflex_base.constants import Templates
 
-REACT_THEME_JS_TEMPLATE = (
-    Path(__file__).parents[3]
-    / "packages/reflex-base/src/reflex_base/.templates/web/utils/react-theme.js"
-)
+REACT_THEME_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "react-theme.js"
 
 
 def _theme_provider_body() -> str:

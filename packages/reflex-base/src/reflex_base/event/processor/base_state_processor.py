@@ -7,11 +7,13 @@ import dataclasses
 import functools
 import inspect
 import logging
+import sys
 import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
+from types import FunctionType, MethodType
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.manager.token import BaseStateToken
@@ -19,7 +21,7 @@ from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
 from reflex_base.constants import CompileVars
-from reflex_base.event import Event, EventHandler, EventSpec
+from reflex_base.event import Event, EventHandler, EventSpec, _is_bound_event_handler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
@@ -101,21 +103,104 @@ def _is_empty_sequence(value: Any) -> bool:
     return is_non_string_sequence(value) and len(value) == 0
 
 
-def _holds_events_or_coroutines(value: Any) -> bool:
-    """Whether a sequence holds an event or an unawaited coroutine.
+def _creator_function(value: Any) -> Any:
+    """The function that runs when a callable is called.
+
+    Args:
+        value: A callable.
+
+    Returns:
+        The callable itself for a function or method, else its class's
+        ``__call__`` (for a callable object such as ``rx.toast``).
+    """
+    return (
+        value if isinstance(value, (FunctionType, MethodType)) else type(value).__call__
+    )
+
+
+def _is_event_creator(value: Any) -> bool:
+    """Whether a callable is declared to return an EventSpec, like ``rx.redirect``.
+
+    Reflex does not mark its event creators, but each one (``rx.redirect``,
+    ``rx.call_script``, ``rx.toast`` ...) is annotated to return the EventSpec it
+    creates, as are helpers wrapping them. Returned uncalled, such a callable is a
+    mistake for the event it would create, never a result.
+
+    Args:
+        value: The callable a handler returned.
+
+    Returns:
+        True if the function, or the ``__call__`` of a callable object such as
+        ``rx.toast``, is annotated to return an EventSpec.
+    """
+    try:
+        returns = _creator_function(value).__annotations__.get("return")
+    except (AttributeError, NameError):
+        # Not annotated (a builtin, a class), or a deferred annotation naming
+        # something undefined.
+        return False
+    if isinstance(returns, str):
+        return returns.rpartition(".")[2] == "EventSpec"
+    return isinstance(returns, type) and issubclass(returns, EventSpec)
+
+
+def _creator_reference(creator: Any) -> str | None:
+    """How to name an event creator in the hint to call it.
+
+    Args:
+        creator: The uncalled event creator.
+
+    Returns:
+        ``rx.<name>`` when reflex exports the creator's function under its own
+        name, as for ``rx.redirect``; None for another one defined by reflex,
+        whose name is internal (``Toaster.send_toast`` for ``rx.toast``); else
+        the function's qualified name, for an app's own creator.
+    """
+    fn = _creator_function(creator)
+    if getattr(sys.modules.get("reflex"), fn.__name__, None) is creator:
+        return f"rx.{fn.__name__}"
+    package = fn.__module__.partition(".")[0]
+    if package == "reflex" or package.startswith(("reflex_base", "reflex_components_")):
+        return None
+    return fn.__qualname__
+
+
+def _is_mistaken_event(value: Any) -> bool:
+    """Whether a value can only be an event its handler failed to reference or call.
 
     Args:
         value: The value a handler returned.
 
     Returns:
-        True for a sequence ``_is_event_like`` rejects that still holds an
-        event (mixed with other values) or a coroutine.
+        True for ``self.handler`` (meant ``type(self).handler``) and for an
+        uncalled event creator such as ``rx.redirect``.
     """
+    return callable(value) and (
+        _is_bound_event_handler(value) or _is_event_creator(value)
+    )
+
+
+def _is_invalid_result(value: Any) -> bool:
+    """Whether a return value ``_is_event_like`` rejects is a bug rather than a result.
+
+    Args:
+        value: The value a handler returned.
+
+    Returns:
+        True for a coroutine that was never awaited, a mistaken event, and a
+        sequence that holds an event (mixed with other values), a coroutine or
+        a mistaken event.
+    """
+    if inspect.iscoroutine(value) or _is_mistaken_event(value):
+        return True
     if not is_non_string_sequence(value):
         return False
     try:
         return any(
-            isinstance(e, _EVENT_LIKE_TYPES) or inspect.iscoroutine(e) for e in value
+            isinstance(e, _EVENT_LIKE_TYPES)
+            or inspect.iscoroutine(e)
+            or _is_mistaken_event(e)
+            for e in value
         )
     except TypeError:
         return False
@@ -152,6 +237,15 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
         f"Your handler {handler_name} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
         f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
     )
+    if creators := [
+        e
+        for e in events
+        if callable(e) and not isinstance(e, _EVENT_LIKE_TYPES) and _is_event_creator(e)
+    ]:
+        refs = [_creator_reference(c) for c in creators]
+        msg += f" Did you mean to call {'it' if len(creators) == 1 else 'them'}" + (
+            "?" if None in refs else f": {', '.join(f'{r}(...)' for r in refs)}?"
+        )
     raise TypeError(msg)
 
 
@@ -176,9 +270,10 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
             return value
         hinted_args = types.value_inside_optional(hinted_args)
     if isinstance(value, dict) and isinstance(hinted_args, type):
-        from reflex.model import Model
-
-        if issubclass(hinted_args, Model):
+        # No class subclasses rx.Model before reflex.model is loaded, so never
+        # import it (and SQLAlchemy with it) here, inside the event.
+        model = getattr(sys.modules.get("reflex.model"), "Model", None)
+        if model is not None and issubclass(hinted_args, model):
             # Remove non-fields from the payload
             model_fields = hinted_args.model_fields
             return hinted_args(**{
@@ -332,6 +427,34 @@ async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
         await ctx.enqueue(*backend_events)
 
 
+async def _process_middleware(
+    ctx: EventContext, state: BaseState, event: Event
+) -> bool:
+    """Pass an event through the middleware before its handler runs.
+
+    A middleware blocks the event by returning an update, which is sent on in
+    the handler's place.
+
+    Args:
+        ctx: The event context, carrying the middleware.
+        state: The locked state the event runs against.
+        event: The event about to run.
+
+    Returns:
+        Whether a middleware blocked the event.
+    """
+    if (
+        ctx.middleware is None
+        or (update := await ctx.middleware._preprocess(state, event)) is None
+    ):
+        return False
+    if update.delta:
+        await ctx.emit_delta(update.delta)
+    if update.events:
+        await _route_events(ctx, update.events)
+    return True
+
+
 async def chain_updates(
     events: Any,
     handler_name: str,
@@ -455,22 +578,28 @@ async def execute_event_inline(spec: EventSpec) -> Any:
         The handler's return value.
 
     Raises:
-        EventHandlerTypeError: If there is no active EventContext, the spec is
-            a frontend-only or upload event, or a background handler is
-            awaited while the state lock is held (which would deadlock).
+        EventHandlerTypeError: If there is no active EventContext for a
+            client (outside an event handler and ``app.modify_state``), the
+            spec is a frontend-only or upload event, or a background handler
+            is awaited while the state lock is held (which would deadlock).
     """
     from reflex_base.registry import RegistrationContext
     from reflex_base.utils.exceptions import EventHandlerTypeError
 
     try:
         ctx = EventContext.get()
-    except LookupError as le:
+    except LookupError:
+        ctx = None
+    # The event processor's root context, which every request to the app
+    # carries, belongs to no client: running there would share one state
+    # between every caller.
+    if ctx is None or not ctx.token:
         msg = (
             f"Event handler `{format_event_handler(spec.handler)}` can only be "
             "awaited from an event handler or inside `app.modify_state`; use it "
             "as an event trigger or yield it instead."
         )
-        raise EventHandlerTypeError(msg) from le
+        raise EventHandlerTypeError(msg)
     event = spec._to_event(ctx.router_data)
     name = event.name
     if spec.client_handler_name:
@@ -506,6 +635,10 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     else:
         ctx.inline_tasks.add(task)
     try:
+        # Inside the registered run, so the lock stays held while a
+        # middleware awaits.
+        if await _process_middleware(ctx, root_state, event):
+            return None
         substate = await root_state.get_state(registered.states[0])
         return await process_event(
             handler=handler,
@@ -589,10 +722,11 @@ async def process_event(
             handler_name=handler_name,
         )
         return None
-    # A coroutine that was never awaited, or events mixed with other values,
-    # is a bug, not a result: chain_updates flushes the delta and then raises
-    # for it, as it does for any invalid yield.
-    invalid = inspect.iscoroutine(events) or _holds_events_or_coroutines(events)
+    # A coroutine that was never awaited, a mistaken event like `self.handler`
+    # or `rx.redirect`, or events mixed with other values, is a bug, not a
+    # result: chain_updates flushes the delta and then raises for it, as it
+    # does for any invalid yield.
+    invalid = _is_invalid_result(events)
     await chain_updates(
         events if invalid else None,
         root_state=ensure_locked(state, root_state),
@@ -795,17 +929,7 @@ class BaseStateEventProcessor(EventProcessor):
                 if merged_router_data != previous_router_data:
                     state.router_data = merged_router_data
 
-            # Preprocess the event.
-            if (
-                self.middleware is not None
-                and (update := await self.middleware._preprocess(state, event))
-                is not None
-            ):
-                # If there was an update, yield it.
-                if update.delta:
-                    await ctx.emit_delta(update.delta)
-                if update.events:
-                    await _route_events(ctx, update.events)
+            if await _process_middleware(ctx, state, event):
                 return None
 
             # Get the event's substate.

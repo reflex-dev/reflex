@@ -1,5 +1,6 @@
 """Tests for reflex_base.vars.set."""
 
+import dataclasses
 import operator
 import re
 import typing
@@ -208,13 +209,13 @@ def test_set_to_array():
     assert frozen.to_array()._var_type == Sequence[int]
 
 
-def test_optional_set_to_array_stays_optional():
-    """An optional set's array view is optional too, so foreach keeps its null guard."""
+def test_foreach_over_an_optional_set_is_null_safe():
+    """rx.foreach iterates an optional set's array view, which reads None as empty."""
     maybe = Var(_js_expr="state.maybe", _var_type=set[str] | None).guess_type()
     assert isinstance(maybe, SetVar)
-    assert maybe.to_array()._var_type == Sequence[str] | None
     component = rx.foreach(maybe, lambda tag: rx.text(tag))
-    assert str(component.iterable) == ("(isTrue(state.maybe) ? state.maybe : [])")
+    assert component.iterable._var_type == Sequence[str]
+    assert str(component.iterable) == "(state.maybe ?? [])"
 
 
 def test_set_concatenation_fallbacks():
@@ -352,3 +353,108 @@ def test_set_inside_array_literal():
     assert isinstance(var, LiteralArrayVar)
     assert str(var) == '[[1, 2], "x"]'
     assert var.json() == '[[1, 2], "x"]'
+
+
+def _maybe(var_type: Any = set[str] | None) -> SetVar:
+    var = Var(_js_expr="state.maybe", _var_type=var_type).guess_type()
+    assert isinstance(var, SetVar)
+    return var
+
+
+def test_optional_set_array_view_treats_none_as_empty():
+    """An optional set's length and array view read a null value as an empty set."""
+    maybe = _maybe()
+    assert str(maybe.length()) == "(state.maybe ?? []).length"
+    assert str(maybe.size()) == "(state.maybe ?? []).length"
+    array = maybe.to_array()
+    assert str(array) == "(state.maybe ?? [])"
+    assert array._var_type == Sequence[str]
+    assert str(array.join(",")) == '(state.maybe ?? []).join(",")'
+    frozen = _maybe(frozenset[int] | None).to_array()
+    assert frozen._var_type == Sequence[int]
+
+
+@pytest.mark.parametrize(
+    ("operation", "expected"),
+    [
+        ("contains", 'pySetHas(state.maybe, "z")'),
+        ("union", 'pySetUnion(state.maybe, ["z"])'),
+        ("intersection", 'pySetIntersection(state.maybe, ["z"])'),
+        ("difference", 'pySetDifference(state.maybe, ["z"])'),
+        ("symmetric_difference", 'pySetSymmetricDifference(state.maybe, ["z"])'),
+        ("issubset", 'pySetIsSubset(state.maybe, ["z"])'),
+        ("issuperset", 'pySetIsSubset(["z"], state.maybe)'),
+        ("isdisjoint", 'pySetIsDisjoint(state.maybe, ["z"])'),
+    ],
+)
+def test_optional_set_operations_use_the_null_safe_helpers(
+    operation: str, expected: str
+):
+    """Optional sets compile to the same helpers, which read null as an empty set."""
+    argument = "z" if operation == "contains" else {"z"}
+    assert str(getattr(_maybe(), operation)(argument)) == expected
+
+
+@pytest.mark.parametrize(
+    "operation", ["union", "intersection", "difference", "symmetric_difference"]
+)
+@pytest.mark.parametrize(
+    ("lhs_type", "rhs_type", "expected"),
+    [
+        (set[str] | None, set[str], set[str]),
+        (set[str], set[str] | None, set[str]),
+        (set[str] | None, set[str] | None, set[str]),
+        (frozenset[str] | None, set[str], frozenset[str]),
+    ],
+)
+def test_optional_set_combinations_are_not_optional(
+    operation: str, lhs_type: Any, rhs_type: Any, expected: Any
+):
+    """A set built from optional sets is never null, and keeps frozenset-ness."""
+    lhs = _maybe(lhs_type)
+    rhs = Var(_js_expr="state.other", _var_type=rhs_type).guess_type()
+    result = getattr(lhs, operation)(rhs)
+    assert result._var_type == expected
+    assert str(result.length()) == f"{result!s}.length"
+
+
+def test_optional_set_deprecated_array_operations_treat_none_as_empty(mocker):
+    """The deprecated array operations go through the null-safe array view."""
+    mocker.patch("reflex_base.vars.set.console.deprecate")
+    maybe = _maybe()
+    assert str(maybe.join(",")) == '(state.maybe ?? []).join(",")'  # pyright: ignore[reportDeprecated]
+    assert str(maybe.contains("a", "name")) == (  # pyright: ignore[reportDeprecated]
+        '(state.maybe ?? []).some(obj => obj["name"] === "a")'
+    )
+    items = Var(_js_expr="state.items").to(list[str])
+    assert str(maybe + items) == "[...(state.maybe ?? []), ...state.items]"  # pyright: ignore[reportDeprecated]
+    assert str(items + maybe) == "[...state.items, ...(state.maybe ?? [])]"  # pyright: ignore[reportDeprecated]
+
+
+def test_optional_set_fields_of_state_and_objects_treat_none_as_empty():
+    """Optional set state fields, computed vars and object fields read None as empty."""
+
+    @dataclasses.dataclass
+    class Tagged:
+        tags: set[str] | None = None
+
+    class OptionalSetState(rx.State):
+        maybe: rx.Field[set[str] | None] = rx.field(None)
+        item: rx.Field[Tagged] = rx.field(default_factory=Tagged)
+        missing: rx.Field[Tagged | None] = rx.field(None)
+
+        @rx.var
+        def computed(self) -> frozenset[int] | None:
+            return None
+
+    for var in (
+        OptionalSetState.maybe,
+        OptionalSetState.item.tags,
+        OptionalSetState.missing.tags,
+        OptionalSetState.computed,
+    ):
+        assert isinstance(var, SetVar)
+        assert str(var.length()) == f"({var!s} ?? []).length"
+    computed = OptionalSetState.computed
+    assert isinstance(computed, SetVar)
+    assert computed.union({1})._var_type == frozenset[int]
