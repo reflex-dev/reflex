@@ -126,7 +126,7 @@ def write_custom_build(repo: Path, extra: str = "", workflow: bool = True) -> No
 
 @pytest.fixture(scope="session")
 def repo_template(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Create, once per session, the git repository that ``repo`` copies.
+    """Create a git repository with a root package and one sub-package, once per session.
 
     Args:
         tmp_path_factory: The pytest temporary directory factory.
@@ -157,7 +157,7 @@ def repo_template(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 @pytest.fixture
 def repo(tmp_path: Path, repo_template: Path) -> Path:
-    """Create a git repository with a root package and one sub-package.
+    """Copy the session's template repository into the test's temporary directory.
 
     Args:
         tmp_path: The pytest temporary directory.
