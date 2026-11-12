@@ -11,6 +11,11 @@ on:
       - 'packages/reflex-site-shared/**'
       - 'packages/integrations-docs/**'
       - '.github/workflows/docs_tests.yml'
+      # The demo tests also exercise the framework the docs are built with.
+      - 'reflex/**'
+      - 'packages/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
 
 permissions:
   contents: read
@@ -31,6 +36,7 @@ jobs:
       pull-requests: read
     outputs:
       run: ${{ steps.filter.outputs.changed }}
+      demos: ${{ steps.demos.outputs.changed }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -43,6 +49,17 @@ jobs:
             packages/reflex-components-core/src/reflex_components_core/core/upload.py
             packages/reflex-site-shared/**
             packages/integrations-docs/**
+            .github/workflows/docs_tests.yml
+      # The demo tests also exercise the framework the docs are built with.
+      - uses: ./.github/actions/changed_paths
+        id: demos
+        with:
+          paths: |
+            docs/**
+            reflex/**
+            packages/**
+            pyproject.toml
+            uv.lock
             .github/workflows/docs_tests.yml
 
   docs-tests:
@@ -67,10 +84,11 @@ jobs:
 
   # The browser tests written below the docs demos. Each shard compiles only its
   # own pages. library-other and other select what the shards before them leave,
-  # so a new docs section is never skipped.
+  # so a new docs section is never skipped. They run in dev mode, because
+  # reflex-enterprise runs `--env prod` only for a logged-in Reflex account.
   docs-demos:
     needs: changes
-    if: needs.changes.outputs.run == 'true'
+    if: needs.changes.outputs.demos == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -106,7 +124,7 @@ jobs:
         working-directory: ./docs/app
         env:
           SELECT: ${{ matrix.select }}
-        run: uv run --no-sync pytest tests/demos -v -k "$SELECT" --reflex-run-mode=prod
+        run: uv run --no-sync pytest tests/demos -v -k "$SELECT" --reflex-run-mode=dev
 
   # The one status check the branch rules require from this workflow. Naming the
   # jobs above directly does not survive: check names follow the matrix and the

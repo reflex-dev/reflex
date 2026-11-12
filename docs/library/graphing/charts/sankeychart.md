@@ -119,7 +119,16 @@ def test_randomize_button_changes_flows(demo):
     trial_to_sales = links.nth(1)
     expect(trial_to_sales).to_have_attribute("stroke-width", re.compile(r"\d"))
     original = trial_to_sales.get_attribute("stroke-width")
-    demo.get_by_role("button", name="Randomize flows").click()
+    # The new flows are random, so click until this link's width changes.
+    for _ in range(10):
+        demo.get_by_role("button", name="Randomize flows").click()
+        try:
+            expect(trial_to_sales).not_to_have_attribute(
+                "stroke-width", original, timeout=2000
+            )
+            break
+        except AssertionError:
+            continue
     expect(trial_to_sales).not_to_have_attribute("stroke-width", original)
 ```
 

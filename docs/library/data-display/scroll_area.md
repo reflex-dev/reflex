@@ -295,8 +295,9 @@ def test_scroll_area_types(demo):
         "type = 'hover'",
     ])
     scrollbar = ".rt-ScrollAreaScrollbar"
-    expect(roots.nth(0).locator(scrollbar)).to_be_visible()
-    expect(roots.nth(1).locator(scrollbar)).to_be_visible()
+    # The scrollbars fade in, so check their opacity, not only their presence.
+    expect(roots.nth(0).locator(scrollbar)).to_have_css("opacity", "1")
+    expect(roots.nth(1).locator(scrollbar)).to_have_css("opacity", "1")
     expect(roots.nth(2).locator(scrollbar)).to_have_count(0)
     expect(roots.nth(3).locator(scrollbar)).to_have_count(0)
     roots.nth(3).hover()

@@ -63,7 +63,7 @@ def test_counter(demo):
 - Each test gets a fresh browser context, so state starts at its defaults.
 - `uv run pytest tests/demos -k <route>` runs them, compiling only the pages
   under test (set `REFLEX_DOCS_WHITELIST` to override; empty compiles all).
-  CI runs them with `--reflex-run-mode=prod`, in shards by docs section.
+  CI runs them in dev mode, in shards by docs section.
   `--docs-demos-untested` lists demos without tests.
 - A block that renders nothing worth testing (a screenshot, a spacer, a fixed
   reference table) is flagged `notest`, e.g. ```` ```python eval notest ````, so

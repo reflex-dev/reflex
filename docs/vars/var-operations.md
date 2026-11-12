@@ -317,7 +317,16 @@ def test_comparison_and_math_operators(demo):
         "00Int 1 * Int 20",
         "00pow(Int 1, Int2)1",
     ])
-    demo.get_by_role("button", name="Update").click()
+    first_row = demo.get_by_role("row").nth(1)
+    # The numbers are random (and may both be 0 again), so click until they change.
+    for _ in range(10):
+        demo.get_by_role("button", name="Update").click()
+        try:
+            expect(first_row).not_to_have_text(re.compile(r"^00"), timeout=2000)
+            break
+        except AssertionError:
+            continue
+    expect(first_row).not_to_have_text(re.compile(r"^00"))
     # Read the whole table at once, so the cells come from one render.
     table = demo.get_by_role("table").evaluate(
         "t => [...t.tBodies[0].rows].map(r => [...r.cells].map(c => c.innerText))"
@@ -910,7 +919,16 @@ def test_combined_var_operations(demo):
     expect(heading).to_have_text("The number is 0")
     expect(demo.get_by_text("Even", exact=True)).to_be_visible()
     for _ in range(3):
-        demo.get_by_role("button", name="Update").click()
+        previous = heading.inner_text()
+        # The number is random, so click until it changes.
+        for _ in range(10):
+            demo.get_by_role("button", name="Update").click()
+            try:
+                expect(heading).not_to_have_text(previous, timeout=2000)
+                break
+            except AssertionError:
+                continue
+        expect(heading).not_to_have_text(previous)
         number = int(heading.inner_text().removeprefix("The number is "))
         parity = "Even" if number % 2 == 0 else "Odd"
         expect(demo.get_by_text(parity, exact=True)).to_be_visible()

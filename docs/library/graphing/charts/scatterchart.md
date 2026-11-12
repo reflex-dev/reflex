@@ -312,11 +312,11 @@ def scatter_shapes():
 def test_three_series_use_distinct_shapes(demo):
     expect(demo.locator(".recharts-scatter-symbol")).to_have_count(18)
     expect(demo.locator(".recharts-legend-item-text")).to_have_text(["A", "B", "C"])
-    expect(demo.locator(".recharts-legend-item")).to_have_class([
-        re.compile(r"legend-item-0"),
-        re.compile(r"legend-item-1"),
-        re.compile(r"legend-item-2"),
-    ])
+    # Each series draws its points with the path of its own shape.
+    shapes = demo.locator(".recharts-scatter").evaluate_all(
+        "ss => ss.map(s => s.querySelector('.recharts-symbols').getAttribute('d'))"
+    )
+    assert len(set(shapes)) == 3
 ```
 
 ## Bubble Chart

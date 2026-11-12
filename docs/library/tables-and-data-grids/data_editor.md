@@ -271,6 +271,7 @@ rx.data_editor(
 ```python test
 def test_clicking_a_cell_reports_its_position(demo, page):
     grid = demo.get_by_test_id("data-grid-canvas").bounding_box()
+    # The header canvas, two rows tall with the "Data" group above the columns.
     header = demo.locator("canvas").nth(1).bounding_box()["height"]
     # Click the "Name" column of the second row (34px rows below the header).
     page.mouse.click(grid["x"] + 200, grid["y"] + header + 34 + 17)

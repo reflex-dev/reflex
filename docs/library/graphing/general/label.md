@@ -195,5 +195,6 @@ def test_axis_labels_are_bold(demo):
     labels = demo.locator(".recharts-label")
     expect(labels).to_have_text(["Pages", "Views"])
     expect(labels.first).to_have_attribute("font-weight", "700")
+    expect(labels.last).to_have_attribute("font-weight", "700")
     expect(labels.last).to_have_attribute("font-size", "12px")
 ```

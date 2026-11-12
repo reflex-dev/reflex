@@ -104,10 +104,12 @@ def test_clipboard_scoped_image_paste(page, demo):
         } else {
             data.setData("text/plain", "not an image");
         }
-        el.dispatchEvent(new ClipboardEvent("paste", {clipboardData: data, bubbles: true}));
+        const event = new ClipboardEvent("paste", {clipboardData: data, bubbles: true, cancelable: true});
+        el.dispatchEvent(event);
+        return event.defaultPrevented;
     }"""
     text_input = demo.get_by_placeholder("Paste Image (prevent default)")
-    text_input.evaluate(paste, False)
+    assert text_input.evaluate(paste, False) is True
     expect(page.get_by_text("Did not find an image in the pasted data")).to_be_visible()
     demo.get_by_placeholder("Paste Image (stop propagation)").evaluate(paste, True)
     expect(

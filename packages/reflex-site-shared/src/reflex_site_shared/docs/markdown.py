@@ -247,9 +247,10 @@ NO_TEST_FLAG = "notest"
 DEMO_TEST_ATTR = "data-docs-demo"
 # Flags of the python code blocks that render a component a test can target.
 _DEMO_FLAGS = frozenset({"demo", "demo-only", "eval"})
+# A fenced block, also one indented, quoted (``> ``) or opening a list item.
 _FENCED_BLOCK_RE = re.compile(
-    r"^(?P<open>(?P<fence>`{3,})(?P<info>[^\n]*)\n)(?P<body>.*?)"
-    r"(?P<close>^(?P=fence)[ \t]*(?:\n|\Z))",
+    r"^(?P<open>(?:[ \t>]|[-*+][ \t]|\d+[.)][ \t])*(?P<fence>`{3,})(?P<info>[^\n]*)\n)"
+    r"(?P<body>.*?)(?P<close>^[ \t>]*(?P=fence)[ \t]*(?:\n|\Z))",
     re.MULTILINE | re.DOTALL,
 )
 
@@ -424,7 +425,6 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         self.filename = filename
         self.env: dict = {}
         self.deferred_demos = 0
-        # id() of each tested demo block in the document being transformed.
         # The index of each demo block among the document's demos, by block id.
         self._demo_indexes: dict[int, int] = {}
 

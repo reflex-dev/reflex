@@ -576,15 +576,54 @@ def test_demos_are_tagged_by_index_and_tests_not_rendered() -> None:
         type(wrapper.children[0]).__name__ for _, wrapper in sorted(tagged.items())
     ] == ["Button", "Text", "Text", "Box", "Text"]
     assert all(len(wrapper.children) == 1 for wrapper in tagged.values())
-    assert "test_boxed" not in str(component)
+    # Test blocks render as empty fragments.
+    assert [type(child).__name__ for child in component.children] == [
+        "Fragment",
+        "Box",
+        "Fragment",
+        "Fragment",
+        "Div",
+        "Fragment",
+        "Box",
+        "Div",
+        "Box",
+    ]
+    assert [component.children[i].children for i in (2, 3, 5)] == [[], [], []]
+
+
+_QUOTED_AND_LISTED_TESTS = """
+> ```python demo
+> rx.text("Quoted")
+> ```
+>
+> ```python test
+> def test_quoted(demo):
+>     pass
+> ```
+
+- ```python demo
+  rx.text("Listed")
+  ```
+
+  ```python test
+  def test_listed(demo):
+      pass
+  ```
+- Next item
+"""
 
 
 def test_strip_doc_tests_removes_only_test_blocks() -> None:
     """Served markdown keeps demos but drops their tests, also when nested."""
-    stripped = strip_doc_tests(_TESTED_DEMOS)
+    stripped = strip_doc_tests(_TESTED_DEMOS + _QUOTED_AND_LISTED_TESTS)
 
-    assert "def test_" not in stripped
-    assert "```python test" not in stripped
-    assert 'rx.button("Boxed")' in stripped
-    assert 'rx.text("Nested")' in stripped
-    assert stripped.rstrip().endswith("````")
+    assert stripped == (
+        "```python exec\nimport reflex as rx\n```\n\n"
+        '```python demo box\nrx.button("Boxed")\n```\n\n\n\n'
+        '```python eval\nrx.text("Evaluated")\n```\n\n\n'
+        '```python demo\nrx.text("Untested")\n```\n\n'
+        '```python eval notest\nrx.box(height="1em")\n```\n\n'
+        '````md alert\n# Nested\n\n```python demo\nrx.text("Nested")\n```\n\n````\n'
+        '\n> ```python demo\n> rx.text("Quoted")\n> ```\n>\n\n'
+        '- ```python demo\n  rx.text("Listed")\n  ```\n\n- Next item\n'
+    )

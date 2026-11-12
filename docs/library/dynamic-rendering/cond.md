@@ -147,6 +147,7 @@ def test_cond_multiple_conditions(demo):
             break
         except AssertionError:
             continue
+    expect(age).not_to_have_text("Age: 19")
     value = int(age.inner_text().removeprefix("Age: "))
     expected = "You can work!" if 18 <= value <= 65 else "You cannot work!"
     expect(demo.get_by_text(re.compile(r"^You can(not)? work!$"))).to_have_text(

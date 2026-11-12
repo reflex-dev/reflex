@@ -201,6 +201,11 @@ def test_box_select_filters_chart_and_table(page, demo):
     page.mouse.move(box["x"] + 300, box["y"] + 60, steps=10)
     page.mouse.up()
     expect(count).to_have_text("Visible records: 2")
+    bars = demo.get_by_role("region", name="Interactive chart").last
+    expect(bars.get_by_text(re.compile(r"^order-"))).to_have_text([
+        "order-a",
+        "order-b",
+    ])
     expect(rows.get_by_role("cell")).to_have_text([
         "order-a",
         "2",

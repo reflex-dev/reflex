@@ -86,6 +86,7 @@ def test_inset_bottom_bleeds_to_card_edges(demo):
     assert inner["y"] + inner["height"] == pytest.approx(
         outer["y"] + outer["height"], abs=2
     )
+    assert inner["x"] == pytest.approx(outer["x"], abs=2)
     assert inner["width"] == pytest.approx(outer["width"], abs=2)
 ```
 

@@ -66,6 +66,8 @@ def test_four_columns_two_narrow(demo):
     expect(columns).to_have_count(4)
     expect(columns.nth(0)).to_have_css("height", "568px")
     expect(columns.nth(1)).to_have_css("height", "568px")
+    widths = [columns.nth(i).bounding_box()["width"] for i in range(4)]
+    assert max(widths[1], widths[3]) < min(widths[0], widths[2])
 ```
 
 ## Row

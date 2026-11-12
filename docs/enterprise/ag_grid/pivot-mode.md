@@ -59,9 +59,9 @@ def pivot_page():
 
 ```python test
 def test_pivot_by_sport_and_year(demo):
+    # The pivot panel and the side bar both list the column labels.
     labels = demo.get_by_role("listbox", name="Column Labels").get_by_role("option")
-    expect(labels.first).to_have_accessible_name(re.compile("^Sport"))
-    expect(labels.last).to_have_accessible_name(re.compile("^Year"))
+    expect(labels).to_have_text(["Sport", "Year", "Sport", "Year"])
     expect(demo.get_by_role("columnheader", name="Group")).to_be_visible()
     expect(demo.get_by_role("columnheader", name="Archery")).to_be_visible()
     expect(demo.get_by_role("gridcell", name="United States (1109)")).to_be_visible()

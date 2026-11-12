@@ -101,7 +101,12 @@ def test_legend_stacks_square_icons_on_the_right(demo):
     items = demo.locator(".recharts-legend-item")
     expect(demo.locator(".recharts-legend-item-text")).to_have_text(["amt", "pv", "uv"])
     expect(items.first.locator("svg")).to_have_attribute("width", "15")
-    expect(demo.locator(".recharts-legend-wrapper")).to_have_css("width", "60px")
+    expect(items.first.locator("path")).to_have_attribute("d", "M-16,-16h32v32h-32Z")
+    legend = demo.locator(".recharts-legend-wrapper")
+    expect(legend).to_have_css("width", "60px")
+    chart = demo.locator(".recharts-wrapper").bounding_box()
+    box = legend.bounding_box()
+    assert box["x"] + box["width"] == pytest.approx(chart["x"] + chart["width"], abs=10)
     first, second = items.first.bounding_box(), items.nth(1).bounding_box()
     assert second["y"] > first["y"]
 ```

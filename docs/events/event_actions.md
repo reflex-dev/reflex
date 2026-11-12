@@ -182,11 +182,11 @@ def throttle_example():
 
 ```python test
 def test_throttled_scroll_records_time(demo, page):
+    last = demo.get_by_text("Last Scroll Event:")
+    expect(last).to_have_text("Last Scroll Event:")
     demo.get_by_role("heading", name="Scroll Me").hover()
     page.mouse.wheel(0, 200)
-    expect(demo.get_by_text("Last Scroll Event:")).to_have_text(
-        re.compile(r"^Last Scroll Event: \d\d:\d\d:\d\d\.\d{3}$")
-    )
+    expect(last).to_have_text(re.compile(r"^Last Scroll Event: \d\d:\d\d:\d\d\.\d{3}$"))
 ```
 
 ```md alert info

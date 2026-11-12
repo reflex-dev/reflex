@@ -114,5 +114,5 @@ def test_aspect_ratio_images_side_by_side(demo):
     for box, ratio in zip(boxes, [16 / 9, 3 / 2, 2 / 3, 1]):
         assert box["width"] / box["height"] == pytest.approx(ratio, rel=0.02)
     xs = [box["x"] for box in boxes]
-    assert xs == sorted(xs)
+    assert xs == sorted(set(xs))
 ```

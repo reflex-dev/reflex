@@ -31,4 +31,5 @@ def test_spoiler_expands_and_collapses(demo):
     expect(region).not_to_have_css("max-height", "50px")
     demo.get_by_role("button", name="Show less").click()
     expect(demo.get_by_role("button", name="Show more")).to_be_visible()
+    expect(region).to_have_css("max-height", "50px")
 ```

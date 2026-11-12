@@ -33,8 +33,15 @@ def semi_circle_progress_example():
 def test_semi_circle_progress_starts_half_full(demo):
     filled = demo.locator(".mantine-SemiCircleProgress-filledSegment")
     expect(filled).to_have_css("stroke-dashoffset", "59.6903px")
-    demo.get_by_role("button", name="Randomize").click()
-    # The new value is random (and may be 50 again), so only check the
-    # filled segment is still drawn after the update.
-    expect(filled).to_have_count(1)
+    # The new value is random (and may be 50 again), so click until it changes.
+    for _ in range(10):
+        demo.get_by_role("button", name="Randomize").click()
+        try:
+            expect(filled).not_to_have_css(
+                "stroke-dashoffset", "59.6903px", timeout=2000
+            )
+            break
+        except AssertionError:
+            continue
+    expect(filled).not_to_have_css("stroke-dashoffset", "59.6903px")
 ```

@@ -167,11 +167,15 @@ def test_call_script_callback_values(demo, page):
 
     location = demo.get_by_role("textbox")
     expect(location).not_to_have_value("{}")
+    position = demo.get_by_text("Scroll Position:")
+    on_mount = position.inner_text()
+    # Scroll elsewhere, so the button's values differ from those of on_mount.
+    page.evaluate("window.scrollBy(0, 40)")
     demo.get_by_role("button", name="Update Values").click()
     scroll_x, scroll_y = page.evaluate("[window.scrollX, window.scrollY]")
-    expect(demo.get_by_text("Scroll Position:")).to_have_text(
-        f'Scroll Position: {{"x":{scroll_x},"y":{scroll_y}}}'
-    )
+    expected = f'Scroll Position: {{"x":{scroll_x},"y":{scroll_y}}}'
+    assert expected != on_mount
+    expect(position).to_have_text(expected)
     value = json.loads(location.input_value())
     assert value["href"] == page.url
     assert value["pathname"] == "/docs/api-reference/browser-javascript/"
