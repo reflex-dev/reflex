@@ -178,7 +178,9 @@ def test_state_tree_delta(shape: str, benchmark: BenchmarkFixture):
     )
 
 
-@pytest.mark.parametrize("size", [10, 1000, 100_000])
+# Items of exactly the declared type skip the per-item check, so a smaller list
+# would measure little beyond the fixed cost of one assignment.
+@pytest.mark.parametrize("size", [100_000])
 def test_state_collection_assignment(size: int, benchmark: BenchmarkFixture):
     """Benchmark state assignment and its type-validation hot path.
 
