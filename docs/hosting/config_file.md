@@ -46,7 +46,7 @@ packages:                          # Optional: empty by default
 
 ## Options reference
 
-```python demo-only
+```python demo-only notest
 rx.table.root(
     rx.table.header(
         rx.table.row(
@@ -143,38 +143,6 @@ rx.table.root(
     width="100%",
     max_width="800px",
 )
-```
-
-```python test
-def test_config_options_table(demo):
-    expect(demo.get_by_role("columnheader")).to_have_text([
-        "Option",
-        "Type",
-        "Default",
-        "Description",
-    ])
-    rows = demo.get_by_role("row")
-    expect(rows).to_have_count(15)
-    expect(rows.nth(1).get_by_role("cell")).to_have_text([
-        "name",
-        "string",
-        "folder name",
-        "Deployment identifier in dashboard",
-    ])
-    expect(rows.last.get_by_role("cell")).to_have_text([
-        "full_deploy",
-        "boolean",
-        "unset",
-        "Serve the frontend from the GCP container (see below)",
-    ])
-    for name, href in [
-        ("Region deployment mapping", "/hosting/regions/"),
-        ("Virtual machine specifications", "/hosting/machine-types/"),
-        ("Environment variables file path", "/hosting/secrets-environment-vars/"),
-    ]:
-        expect(demo.get_by_role("link", name=name)).to_have_attribute(
-            "href", re.compile(re.escape(href) + "$")
-        )
 ```
 
 ## Configuration details

@@ -280,13 +280,15 @@ def _configure_docs_app(
         for item in request.session.items
         if (module := item.getparent(DemoModule)) is not None
     }
+    # Ports the OS hands out lie outside the range dev servers default to, so
+    # the app neither collides with them nor follows one to a taken port.
     defaults = {
         WHITELIST_ENV: ",".join(sorted(routes)),
-        # Ports the OS hands out lie outside the range dev servers default to,
-        # so the app neither collides with them nor follows one to a taken port.
-        "REFLEX_FRONTEND_PORT": str(_free_port()),
-        "REFLEX_BACKEND_PORT": str(_free_port()),
+        environment.REFLEX_BACKEND_PORT.name: str(_free_port()),
     }
+    # Only dev serves the frontend separately; prod serves both on one port.
+    if set(settings.run_modes) == {"dev"}:
+        defaults[environment.REFLEX_FRONTEND_PORT.name] = str(_free_port())
     for name, value in defaults.items():
         if name not in os.environ and name not in extra_env:
             extra_env[name] = value

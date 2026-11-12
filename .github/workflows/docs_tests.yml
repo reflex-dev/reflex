@@ -65,11 +65,54 @@ jobs:
         working-directory: ./docs/app
         run: uv run --no-sync pytest tests/ -v --ignore=tests/demos
 
+  # The browser tests written below the docs demos. Each shard compiles only its
+  # own pages. library-other and other select what the shards before them leave,
+  # so a new docs section is never skipped.
+  docs-demos:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: graphing
+            select: library/graphing
+          - shard: library-inputs
+            select: library/forms or library/disclosure or library/overlay or library/tables-and-data-grids or library/dynamic-rendering
+          - shard: library-other
+            select: library/ and not (library/graphing or library/forms or library/disclosure or library/overlay or library/tables-and-data-grids or library/dynamic-rendering)
+          - shard: enterprise-and-guides
+            select: enterprise/ or recipes/ or getting-started/
+          - shard: other
+            select: not (library/ or enterprise/ or recipes/ or getting-started/)
+    name: docs-demos (${{ matrix.shard }})
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.12"
+          run-uv-sync: true
+          working-directory: ./docs/app
+      - name: Install chromium
+        working-directory: ./docs/app
+        run: uv run --no-sync playwright install --with-deps --only-shell chromium
+      - name: Run docs demo tests
+        working-directory: ./docs/app
+        env:
+          SELECT: ${{ matrix.select }}
+        run: uv run --no-sync pytest tests/demos -v -k "$SELECT" --reflex-run-mode=prod
+
   # The one status check the branch rules require from this workflow. Naming the
   # jobs above directly does not survive: check names follow the matrix and the
   # display names, and a job that a filter skips must not block the merge.
   docs-tests-gate:
-    needs: [changes, docs-tests]
+    needs: [changes, docs-tests, docs-demos]
     if: always()
     runs-on: ubuntu-latest
     steps:

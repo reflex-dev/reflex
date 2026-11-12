@@ -609,7 +609,7 @@ def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
 
     exec.notify_app_running()
     exec.notify_frontend(
-        f"http://{host}:{port}",
+        f"http://{host}:{port}{config.prepend_frontend_path('/')}",
         backend_present=running_mode.has_backend(),
     )
 
@@ -651,7 +651,7 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
 
     exec.notify_app_running()
     exec.notify_frontend(
-        f"http://{host}:{port}",
+        f"http://{host}:{port}{config.prepend_frontend_path('/')}",
         backend_present=running_mode.has_backend(),
     )
     if running_mode.has_backend():
