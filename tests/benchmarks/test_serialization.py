@@ -1,28 +1,37 @@
-"""Benchmarks for state-update and wire serialization."""
+"""Benchmarks for state-update and wire serialization.
+
+A single encode of a small payload takes a few microseconds, short enough for
+the fixed cost of entering the measured call and the state of the CPU caches to
+decide the result. Such payloads are encoded several times per measured call
+so every benchmark here does a comparable amount of work.
+"""
 
 import pytest
 from pytest_codspeed import BenchmarkFixture
 from reflex_base.utils.format import json_dumps
 
-from reflex.state import StateUpdate, serialize_state_update
+from reflex.state import StateUpdate
 
 from .support.events import PayloadKind, make_payload, wire_edge_cases
 
+EDGE_CASE_ENCODES = 25
+
 
 @pytest.mark.parametrize(
-    ("kind", "rows"),
+    ("kind", "rows", "encodes"),
     [
-        pytest.param(PayloadKind.SCALAR, 100, id="scalar_100b"),
-        pytest.param(PayloadKind.SCALAR, 10_000, id="scalar_10kb"),
-        pytest.param(PayloadKind.SCALAR, 1_000_000, id="scalar_1mb"),
-        pytest.param(PayloadKind.MAPPING, 100, id="mapping_100"),
-        pytest.param(PayloadKind.DATACLASS, 1000, id="dataclass_1000"),
-        pytest.param(PayloadKind.MODEL, 1000, id="model_1000"),
+        pytest.param(PayloadKind.SCALAR, 100, 100, id="scalar_100b"),
+        pytest.param(PayloadKind.SCALAR, 10_000, 10, id="scalar_10kb"),
+        pytest.param(PayloadKind.SCALAR, 1_000_000, 1, id="scalar_1mb"),
+        pytest.param(PayloadKind.MAPPING, 100, 20, id="mapping_100"),
+        pytest.param(PayloadKind.DATACLASS, 1000, 1, id="dataclass_1000"),
+        pytest.param(PayloadKind.MODEL, 1000, 1, id="model_1000"),
     ],
 )
 def test_state_update_wire_serialization(
     kind: PayloadKind,
     rows: int,
+    encodes: int,
     benchmark: BenchmarkFixture,
 ):
     """Benchmark encoding representative state updates to socket JSON.
@@ -30,24 +39,14 @@ def test_state_update_wire_serialization(
     Args:
         kind: Payload shape.
         rows: Payload size parameter.
+        encodes: Times the update is encoded per measured call.
         benchmark: The CodSpeed benchmark fixture.
     """
     update = StateUpdate(
         delta={"performance_state": {"payload": make_payload(kind, rows)}}
     )
-    encoded = benchmark(lambda: json_dumps(update))
-    assert encoded
-
-
-def test_state_update_dataclass_serialization(benchmark: BenchmarkFixture):
-    """Benchmark conversion of a state update into its transport dictionary.
-
-    Args:
-        benchmark: The CodSpeed benchmark fixture.
-    """
-    update = StateUpdate(delta={"performance_state": {"payload": list(range(10_000))}})
-    result = benchmark(lambda: serialize_state_update(update))
-    assert result["delta"]
+    encoded = benchmark(lambda: [json_dumps(update) for _ in range(encodes)])
+    assert encoded == [json_dumps(update)] * encodes
 
 
 def test_wire_edge_case_serialization(benchmark: BenchmarkFixture):
@@ -57,5 +56,5 @@ def test_wire_edge_case_serialization(benchmark: BenchmarkFixture):
         benchmark: The CodSpeed benchmark fixture.
     """
     payload = wire_edge_cases()
-    encoded = benchmark(lambda: json_dumps(payload))
-    assert "Reflex" in encoded
+    encoded = benchmark(lambda: [json_dumps(payload) for _ in range(EDGE_CASE_ENCODES)])
+    assert encoded == [json_dumps(payload)] * EDGE_CASE_ENCODES

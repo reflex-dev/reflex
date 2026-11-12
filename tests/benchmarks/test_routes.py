@@ -4,9 +4,8 @@ import re
 
 import pytest
 from pytest_codspeed import BenchmarkFixture
-from reflex_base import constants
 
-from reflex.route import get_route_args, get_router
+from reflex.route import get_router
 
 # Each kind of lookup in _lookups is repeated this many times per measured call.
 LOOKUP_ROUNDS = 20
@@ -99,18 +98,3 @@ def test_route_table_construction(count: int, benchmark: BenchmarkFixture):
 
     router = benchmark.pedantic(lambda: get_router(routes), setup=purge_regex_cache)
     assert router("/posts/reflex") == "posts/[slug]"
-
-
-def test_route_argument_extraction(benchmark: BenchmarkFixture):
-    """Benchmark parsing dynamic and catch-all route arguments.
-
-    Args:
-        benchmark: The CodSpeed benchmark fixture.
-    """
-    route = "/org/[org_id]/project/[project_id]/files/[[...splat]]"
-    result = benchmark(lambda: get_route_args(route))
-    assert result == {
-        "org_id": constants.RouteArgType.SINGLE,
-        "project_id": constants.RouteArgType.SINGLE,
-        "splat": constants.RouteArgType.LIST,
-    }

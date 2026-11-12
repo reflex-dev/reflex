@@ -18,6 +18,7 @@ from reflex.state import StateUpdate
 # Drain budget far above any instrumented runtime so measured shutdowns never
 # flip from graceful drain to cancellation under benchmark slowdown.
 _DRAIN_BUDGET_SECONDS = 60.0
+EMIT_UPDATES = 50
 
 
 async def _noop_handler() -> None:
@@ -397,11 +398,12 @@ def test_yield_intermediate_update(benchmark: BenchmarkFixture):
 
 
 def test_emit_update(benchmark: BenchmarkFixture):
-    """Benchmark emit_update's socket lookup and task-based flush scheduling.
+    """Benchmark emit_update's socket lookup, emit and flush tick.
 
     The Socket.IO ``emit`` call itself is mocked to a recording no-op, so
-    only token-to-socket routing and the emit task scheduling are measured,
-    not any real socket write.
+    only token-to-socket routing and the loop tick yielded for the flush are
+    measured, not any real socket write. One update takes a few microseconds,
+    so each measured call emits ``EMIT_UPDATES`` of them.
 
     Args:
         benchmark: The CodSpeed benchmark fixture.
@@ -432,12 +434,13 @@ def test_emit_update(benchmark: BenchmarkFixture):
     )
     update = StateUpdate(delta={"state": {"value": 1}})
 
+    async def emit_updates() -> None:
+        """Emit the update ``EMIT_UPDATES`` times."""
+        for _ in range(EMIT_UPDATES):
+            await EventNamespace.emit_update(namespace, update, "token")
+
     try:
-        benchmark(
-            lambda: loop.run_until_complete(
-                EventNamespace.emit_update(namespace, update, "token")
-            )
-        )
+        benchmark(lambda: loop.run_until_complete(emit_updates()))
         assert emitted
     finally:
         loop.close()
