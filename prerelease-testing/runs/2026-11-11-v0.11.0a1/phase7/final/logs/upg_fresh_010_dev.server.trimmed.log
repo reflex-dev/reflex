@@ -1,0 +1,27 @@
+# trimmed: warning/error lines, then last 25 lines of upg_fresh_010_dev.server.log
+# ---- tail
+/final/apps/upg_fresh/assets', 
+'/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/apps/upg_fresh/CLAUDE.md', 
+'/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/apps/upg_fresh/AGENTS.md', 
+'/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/apps/upg_fresh/rxconfig.py']
+[INFO] Starting granian (main PID: 3576)
+[INFO] Listening at: http://0.0.0.0:8500
+[INFO] Spawning worker-1 with PID: 3612
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3500/
+App running at: http://localhost:3500/
+Backend running at: http://0.0.0.0:8500
+Debug:   ➜  Network: http://192.0.2.2:3500/  eth0
+Debug: 1:14:38 AM [vite] (ssr) connected.
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

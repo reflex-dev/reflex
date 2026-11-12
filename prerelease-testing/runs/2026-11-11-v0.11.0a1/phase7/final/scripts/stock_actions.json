@@ -1,0 +1,1 @@
+[{"expect_text":"Welcome to Reflex!"},{"eval":"document.documentElement.className"},{"click":"button >> nth=0"},{"wait":800},{"eval":"document.documentElement.className"},{"expect_missing":"text=Connection Error"},{"screenshot":"SHOT"}]

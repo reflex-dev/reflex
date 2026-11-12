@@ -1,0 +1,1 @@
+[{"expect_text":"Welcome to Reflex!"},{"expect_text":"Count: 0"},{"click":"#inc"},{"click":"#inc"},{"expect_text":"Count: 2"},{"fill":["#name","ada"]},{"expect_text":"Hello ADA"},{"expect_text":"Callout text"},{"expect_text":"print('hi')"},{"eval":"document.querySelectorAll('svg.lucide').length"},{"expect_missing":"text=Connection Error"},{"screenshot":"SHOT"}]

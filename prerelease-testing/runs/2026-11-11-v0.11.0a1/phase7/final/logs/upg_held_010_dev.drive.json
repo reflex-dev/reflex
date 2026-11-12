@@ -1,0 +1,29 @@
+{
+  "url": "http://localhost:3500/",
+  "title": "UpgHeld | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "expect_text: 'Welcome to Reflex!'",
+    "expect_text: 'Count: 0'",
+    "click: '#inc'",
+    "click: '#inc'",
+    "expect_text: 'Count: 2'",
+    "fill: ['#name', 'ada']",
+    "expect_text: 'Hello ADA'",
+    "expect_text: 'Callout text'",
+    "expect_text: \"print('hi')\"",
+    "eval -> 3",
+    "expect_missing: 'text=Connection Error'",
+    "screenshot: '/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/shots/upg_held_010_dev.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "empty_page": false,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "Welcome to Reflex!\n\nCount: 2\n\nIncrement\n\nHello ADA\n\nCallout text\n\nprint('hi')"
+}

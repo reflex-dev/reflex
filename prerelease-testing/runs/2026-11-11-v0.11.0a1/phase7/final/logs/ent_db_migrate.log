@@ -1,0 +1,51 @@
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/venvs/ent/lib/python3.12/site-packages/reflex_enterprise/config.py:22)
+Info: Updated env.py to load the app; the previous one is kept as 
+alembic/env.old.
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/venvs/ent/lib/python3.12/site-packages/pydantic/_internal/_model_construc
+tion.py:133)
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/venvs/ent/lib/python3.12/site-packages/reflex_enterprise/app.py:159)
+Info: Single port proxy mode enabled
+DeprecationWarning: Submitting the form control with id 'owes_me' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='owes_me'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.12.0. 
+(/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/venvs/ent/lib/python3.12/site-packages/reflex_enterprise/components/ag_gr
+id/wrapper.py:481)
+DeprecationWarning: Submitting the form control with id 'has_a_dog' by its `id` 
+has been deprecated in version 0.10.1. Form data will only include controls with
+a `name`. Set `name='has_a_dog'` to keep submitting its value; a checkbox or 
+switch then submits 'on' or nothing rather than True or False, so read it as a 
+`bool` field of a TypedDict to keep a bool. It will be completely removed in 
+0.12.0. 
+(/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/venvs/ent/lib/python3.12/site-packages/reflex_enterprise/components/ag_gr
+id/wrapper.py:481)
+DeprecationWarning: Submitting the form control with id 'spouse_is_annoying' by 
+its `id` has been deprecated in version 0.10.1. Form data will only include 
+controls with a `name`. Set `name='spouse_is_annoying'` to keep submitting its 
+value; a checkbox or switch then submits 'on' or nothing rather than True or 
+False, so read it as a `bool` field of a TypedDict to keep a bool. It will be 
+completely removed in 0.12.0. 
+(/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/venvs/ent/lib/python3.12/site-packages/reflex_enterprise/components/ag_gr
+id/wrapper.py:481)
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad
+/final/venvs/ent/lib/python3.12/site-packages/reflex_enterprise/components/ag_gr
+id/aggrid.py:1760)

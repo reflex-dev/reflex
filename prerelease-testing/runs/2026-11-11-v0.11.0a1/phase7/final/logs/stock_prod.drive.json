@@ -1,0 +1,24 @@
+{
+  "url": "http://localhost:3500/",
+  "title": "Stock | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "expect_text: 'Welcome to Reflex!'",
+    "eval -> 'light'",
+    "click: 'button >> nth=0'",
+    "wait: 800",
+    "eval -> 'dark'",
+    "expect_missing: 'text=Connection Error'",
+    "screenshot: '/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/shots/stock_prod.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "empty_page": false,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "Welcome to Reflex!\n\nGet started by editing stock/stock.py\n\nCheck out our docs!\nBuilt with Reflex"
+}

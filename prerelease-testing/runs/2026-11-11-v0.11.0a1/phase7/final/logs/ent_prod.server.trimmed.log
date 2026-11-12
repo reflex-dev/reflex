@@ -1,0 +1,62 @@
+# trimmed: warning/error lines, then last 25 lines of ent_prod.server.log
+7:DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+127:DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+135:DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+142:DeprecationWarning: Submitting the form control with id 'owes_me' by its `id` 
+143:has been deprecated in version 0.10.1. Form data will only include controls with
+151:DeprecationWarning: Submitting the form control with id 'has_a_dog' by its `id` 
+152:has been deprecated in version 0.10.1. Form data will only include controls with
+160:DeprecationWarning: Submitting the form control with id 'spouse_is_annoying' by 
+161:its `id` has been deprecated in version 0.10.1. Form data will only include 
+169:DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+174:DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+950:Debug: - Adjust chunk size limit for this warning via 
+951:build.chunkSizeWarningLimit.
+2648:Warning: Page aligned-grids is being redefined with the same component.
+2649:Warning: Page cell-selection is being redefined with the same component.
+2650:Warning: Page editable is being redefined with the same component.
+2651:Warning: Page fill-handle is being redefined with the same component.
+2652:Warning: Page formatters is being redefined with the same component.
+2653:Warning: Page simple-serialization is being redefined with the same component.
+2654:Warning: Page advanced-serialization is being redefined with the same component.
+2655:Warning: Page integrated-charts is being redefined with the same component.
+2656:Warning: Page master-detail is being redefined with the same component.
+2657:Warning: Page model is being redefined with the same component.
+2658:Warning: Page model-auth is being redefined with the same component.
+2659:Warning: Page model-ssrm is being redefined with the same component.
+2660:Warning: Page pivot is being redefined with the same component.
+2661:Warning: Page selected-items is being redefined with the same component.
+2662:Warning: Page state-grid is being redefined with the same component.
+2663:Warning: Page tree is being redefined with the same component.
+2664:Warning: Page index is being redefined with the same component.
+2669:DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+2670:logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+2677:DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+2708:/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/venvs/ent/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+2711:/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/venvs/ent/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+# ---- tail
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/venvs/ent/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `datetime` - serialized value may not be as expected [field_name='met', input_value='1994-01-03 13:03:26.169905', input_type=str])
+  return self.__pydantic_serializer__.to_python(
+/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/venvs/ent/lib/python3.12/site-packages/pydantic/main.py:520: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `datetime` - serialized value may not be as expected [field_name='met', input_value='2009-02-09 04:28:09.200364', input_type=str])
+  return self.__pydantic_serializer__.to_python(
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+_get_data: CustomDatasourceParams.sid = JKTmdkbG4eeNJGvbAABB
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

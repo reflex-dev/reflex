@@ -1,0 +1,27 @@
+# trimmed: warning/error lines, then last 25 lines of upg_held_010_prod.server.log
+# ---- tail
+Debug: 
+Debug: ✓ built in 616ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/
+scratchpad/final/apps/upg_held/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/
+scratchpad/final/apps/upg_held/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3500/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 3275)
+[INFO] Listening at: http://0.0.0.0:3500
+[INFO] Spawning worker-1 with PID: 3332
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

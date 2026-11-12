@@ -1,0 +1,21 @@
+Requirement already satisfied: reflex in ./venvs/upg-pip/lib/python3.12/site-packages (0.10.1)
+Collecting reflex
+Collecting reflex-base==0.11.0 (from reflex)
+Requirement already satisfied: reflex-components-code>=0.11.0 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.11.0)
+Collecting reflex-components-core>=0.11.0 (from reflex)
+Requirement already satisfied: reflex-components-dataeditor>=0.10.1 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.10.1)
+Requirement already satisfied: reflex-components-gridjs>=0.10.0 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.10.0)
+Requirement already satisfied: reflex-components-lucide>=1.1.2 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (1.1.2)
+Requirement already satisfied: reflex-components-markdown>=0.10.0 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.10.0)
+Requirement already satisfied: reflex-components-moment>=0.10.1 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.10.1)
+Requirement already satisfied: reflex-components-plotly>=0.10.0 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.10.0)
+Requirement already satisfied: reflex-components-radix>=0.11.0 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.11.0)
+Requirement already satisfied: reflex-components-react-player>=0.10.0 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.10.0)
+Requirement already satisfied: reflex-components-recharts>=0.10.0 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.10.0)
+Requirement already satisfied: reflex-components-sonner>=0.10.0 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.10.0)
+Requirement already satisfied: reflex-hosting-cli>=0.2.2 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex) (0.2.2)
+Requirement already satisfied: reflex-build-sdk!=0.1.2,<0.1.2.post,>=0.1.1 in ./venvs/upg-pip/lib/python3.12/site-packages (from reflex-build-sdk[httpx]!=0.1.2,<0.1.2.post,>=0.1.1->reflex-hosting-cli>=0.2.2->reflex) (0.1.1)
+  Attempting uninstall: reflex-base
+  Attempting uninstall: reflex-components-core
+  Attempting uninstall: reflex
+Successfully installed reflex-0.11.0 reflex-base-0.11.0 reflex-components-core-0.11.0

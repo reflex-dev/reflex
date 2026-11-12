@@ -1,0 +1,18 @@
+Resolved 41 packages in 766ms
+Installed 41 packages in 118ms
+ + reflex==0.11.0
+ + reflex-base==0.11.0
+ + reflex-build-sdk==0.1.1
+ + reflex-components-code==0.11.0
+ + reflex-components-core==0.11.0
+ + reflex-components-dataeditor==0.10.1
+ + reflex-components-gridjs==0.10.0
+ + reflex-components-lucide==1.1.2
+ + reflex-components-markdown==0.10.0
+ + reflex-components-moment==0.10.1
+ + reflex-components-plotly==0.10.0
+ + reflex-components-radix==0.11.0
+ + reflex-components-react-player==0.10.0
+ + reflex-components-recharts==0.10.0
+ + reflex-components-sonner==0.10.0
+ + reflex-hosting-cli==0.2.2

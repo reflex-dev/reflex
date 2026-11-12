@@ -1,0 +1,26 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Release train at v0.11.0: 20 packages
+
+  OK reflex                          0.11.0       wheel+sdist
+  OK hatch-reflex-pyi                0.10.0       wheel+sdist
+  OK reflex-base                     0.11.0       wheel+sdist
+  OK reflex-build-sdk                0.1.1        wheel+sdist
+  OK reflex-components-code          0.11.0       wheel+sdist
+  OK reflex-components-core          0.11.0       wheel+sdist
+  OK reflex-components-dataeditor    0.10.1       wheel+sdist
+  OK reflex-components-gridjs        0.10.0       wheel+sdist
+  OK reflex-components-lucide        1.1.2        wheel+sdist
+  OK reflex-components-markdown      0.10.0       wheel+sdist
+  OK reflex-components-moment        0.10.1       wheel+sdist
+  OK reflex-components-plotly        0.10.0       wheel+sdist
+  OK reflex-components-radix         0.11.0       wheel+sdist
+  OK reflex-components-react-player  0.10.0       wheel+sdist
+  OK reflex-components-recharts      0.10.0       wheel+sdist
+  OK reflex-components-sonner        0.10.0       wheel+sdist
+  OK reflex-docgen                   0.10.0       wheel+sdist
+  OK reflex-hosting-cli              0.2.2        wheel+sdist
+  OK reflex-otel                     0.2.1        wheel+sdist
+  OK reflex-release                  0.2.2        wheel+sdist
+
+All packages are published and installable.
+exit=0

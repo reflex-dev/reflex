@@ -1,0 +1,77 @@
+[GUARD] driver=/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fxsb/envs/driver/bin/python server venv=ent versions=0.11.0 0.9.12
+[NOTE] guard: 0.11.0 0.9.12
+[NOTE] db rows at start: 0
+[PASS] ssrm: logged-out initial data request made: ['http://localhost:3500/abstract-wrapper-data?startRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n1&sid=1DcidBrHB1dGPy7FAA
+[PASS] ssrm: datasource URL carries endpoint_kwargs (state, sid) + SSRM params: {'startRow': '0', 'endRow': '50', 'sortModel': '[]', 'filterModel': '{}', 'rowGroupCols': '[]', 'groupKeys': '[]', 'valueCols': '[]', 'pivotMode': 'false', 'pivotCols': '[]', 'state': 'reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_ssrm_n', 'sid': '1DcidBrHB1dGPy7FAAA9'}
+[PASS] ssrm: logged out shows no rows: 0
+[PASS] ssrm: Generate Friends inserted 50 rows into sqlite: {'before': 0, 'after': 50}
+[NOTE] ssrm rows right after generate (demo only calls setRowCount, no SSRM refresh): 0
+[PASS] ssrm: login (backend var) survives reload: Logout button shown after reload
+[FAIL] ssrm: rows render on reload right after generate (row_count_cached interval=10s): TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')
+[NOTE] ssrm datasource responses so far: [(1.14, 200, '[] ... []'), (3.47, 200, '{"rowData": [], "rowCount": 0} ... {"rowData": [], "rowCount": 0}'), (3.76, 200, '{"rowData": [{"name": "Jennifer Huber", "owes_me": false, "age": 60, "spouse_is_annoying": true, "ye ...  true, "met": "2019-06-09 21:54:17.368274"}], "rowCount": 0}'), (7.04, 200, '{"rowData": [{"name": "Jennifer Huber", "owes_me": false, "age": 60, "spouse_is_annoying": true, "ye ...  true, "met": "2019-06-09 21:54:17.368274"}], "rowCount": 0}')]
+[PASS] ssrm: rows render on reload >10s after generate: 
+[PASS] ssrm: rows rendered after generate: 22
+[PASS] ssrm: sort asc request carries sortModel(age): ['[{"sort":"asc","type":"default","colId":"age"}]']
+[PASS] ssrm: sort asc first row has min age from db: {'first_rows': [19, 20, 22, 22, 24, 25, 27, 27], 'db_min': 19}
+[PASS] ssrm: sort desc first row has max age: {'first_rows': [75, 75, 73, 70, 70, 69, 68, 64], 'db_max': 75}
+[PASS] ssrm: filter request carries filterModel(name): ['{"name":{"filterType":"text","type":"contains","filter":"Jenn"}}']
+[FAIL] ssrm: filtered rows all match and count matches db: {'sub': 'Jenn', 'shown': 22, 'blank_rows': 19, 'db_matches': 3, 'sample': ['Jennifer Huber', 'Jennifer Andrade', 'Jenna Wagner', '', '']}
+[PASS] ssrm: editing a cell updates sqlite: {'id': '1', 'db_name': 'QA Edited SSRM'}
+[PASS] ssrm: edited value visible after refresh: ['QA Edited SSRM', 'Jennifer Andrade', 'Jonathan Carlson', 'Dustin Vasquez', 'Tina Graham']
+[PASS] ssrm: selection -> selected_items computed var renders 2 badges: ['QA Edited SSRM', 'Jennifer Andrade']
+[PASS] ssrm: enable_advanced_filter switch shows advanced filter bar: 1
+[PASS] ssrm: logout refreshes grid to empty: 0
+[FAIL] infinite workaround flow: exception: TimeoutError('Page.wait_for_function: Timeout 15000ms exceeded.')
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fx/scripts/drive_ag_model.py", line 71, in run_step
+    fn()
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fx/scripts/drive_ag_model.py", line 220, in workaround
+    wait_rows(p)
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fx/scripts/drive_ag_model.py", line 55, in wait_rows
+    page.wait_for_function(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fxsb/envs/driver/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 21268, in wait_for_function
+    self._sync(
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fxsb/envs/driver/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 124, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fxsb/envs/driver/lib/python3.12/site-packages/playwright/_impl/page.py", line 1609, in wait_for_function
+    return await self._main_frame.wait_for_function(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fxsb/envs/driver/lib/python3.12/site-packages/playwright/_impl/frame.py", line 1209, in wait_for_function
+    result = await self._channel.waitForFunction(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fxsb/envs/driver/lib/python3.12/site-packages/playwright/_impl/channel_owner.py", line 398, in _mapped
+    return mapper(await awaitable)
+                  ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fxsb/envs/driver/lib/python3.12/site-packages/playwright/_impl/channel_owner.py", line 387, in finish
+    raise e from None
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fxsb/envs/driver/lib/python3.12/site-packages/playwright/_impl/channel_owner.py", line 352, in finish
+    result = await zone.run_async(lambda: awaitable)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/e929f790-b425-5c73-99bc-b00ccb05de29/scratchpad/final/fxsb/envs/driver/lib/python3.12/site-packages/playwright/_impl/utils/zones.py", line 58, in run_async
+    return await func()
+           ^^^^^^^^^^^^
+playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 15000ms exceeded.
+[PASS] /model: data endpoint has no HTTP errors: []
+[PASS] /model: grid shows db rows (db has 50): 23
+[PASS] /model-auth: data endpoint has no HTTP errors: []
+[PASS] /model-auth: grid shows db rows (db has 50): 22
+[NOTE] db rows at end: 50
+{
+ "checks_failed": [
+  "ssrm: rows render on reload right after generate (row_count_cached interval=10s)",
+  "ssrm: filtered rows all match and count matches db",
+  "infinite workaround flow"
+ ],
+ "n_checks": 23,
+ "console_total": 50,
+ "console_benign": 35,
+ "console_errors": 1,
+ "console_warnings": 1,
+ "page_errors": 0,
+ "failed_requests": 0,
+ "http_errors": 1
+}
+  console_errors: {"t": 59.37, "ctx": "workaround", "type": "error", "text": "Failed to load resource: the server responded with a status of 404 (Not Found)", "url": "http://localhost:3500/qa-model-workaround", "location": {"url": "http://localhost:3500/qa-model-workaround", "line": 0, "column": 0, "lineNumber": 0, "columnNumber": 0}, "benign": false}
+  console_warnings: {"t": 81.26, "ctx": "auth", "type": "warning", "text": "AG Grid: warning #129 Visit https://www.ag-grid.com/react-data-grid/errors/129?_version_=36.2.0&feature=headerCheckbox&rowModel=infinite \n  Alternatively register the ValidationModule to see the full message in the console.", "url": "http://localhost:3500/model-auth/", "location": {"url": "http://localhost:3500/assets/ag-theme-quartz-BnUVc87
+  http_errors: {"t": 59.36, "ctx": "workaround", "url": "http://localhost:3500/qa-model-workaround", "status": 404}
