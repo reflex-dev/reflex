@@ -1,7 +1,9 @@
 """Integration test for ``rx.download`` with inline data.
 
 iOS WebKit ignores the ``download`` attribute of ``data:`` urls and only shows
-the file, so data has to be saved through a ``blob:`` url.
+the file, so data has to be saved through a ``blob:`` url. The page runs under a
+``connect-src`` policy that does not allow ``data:``, so the frontend has to
+decode the data itself rather than fetch it.
 """
 
 from collections.abc import Generator
@@ -18,6 +20,8 @@ def DownloadApp():
     import reflex as rx
 
     class State(rx.State):
+        text: str = "var;text#%41 ä"
+
         @rx.event
         def download_bytes(self):
             return rx.download(data=b"backend,bytes\n", filename="backend.csv")
@@ -35,10 +39,22 @@ def DownloadApp():
                 on_click=rx.download(data="frontend;text#%41", filename="frontend.txt"),
                 id="download-text",
             ),
+            rx.button(
+                "var",
+                on_click=rx.download(data=State.text, filename="var.txt"),
+                id="download-var",
+            ),
             rx.button("bytes", on_click=State.download_bytes, id="download-bytes"),
         )
 
-    app = rx.App()  # noqa: F841
+    app = rx.App(  # noqa: F841
+        head_components=[
+            rx.el.meta(
+                http_equiv="Content-Security-Policy",
+                content="connect-src 'self' http: ws:",
+            )
+        ]
+    )
 
 
 @pytest.fixture(scope="module")
@@ -63,6 +79,7 @@ def download_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     ("button_id", "filename", "content"),
     [
         ("download-text", "frontend.txt", b"frontend;text#%41"),
+        ("download-var", "var.txt", '"var;text#%41 \u00e4"'.encode()),
         ("download-bytes", "backend.csv", b"backend,bytes\n"),
     ],
 )
@@ -75,6 +92,9 @@ def test_download_data_through_blob_url(
 ):
     """Inline data downloads from a blob: url with its file name and content.
 
+    The page runs under a ``connect-src`` policy that blocks fetching ``data:``
+    urls.
+
     Args:
         download_app: AppHarness running the test app.
         page: Playwright page.
@@ -83,6 +103,7 @@ def test_download_data_through_blob_url(
         content: The expected file content.
     """
     assert download_app.frontend_url is not None
+
     page.goto(download_app.frontend_url)
     expect(page.locator("#token")).not_to_have_value("")
 

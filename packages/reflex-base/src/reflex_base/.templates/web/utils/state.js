@@ -328,9 +328,24 @@ export const applyEvent = async (event, socket, navigate, params) => {
     }
     a.download = event.payload.filename;
     // iOS WebKit ignores the download attribute of data: urls and only shows
-    // the file, so save inline data through a blob: url instead.
+    // the file, so save inline data through a blob: url instead. The data is
+    // decoded here because a connect-src policy can block fetching a data: url.
     if (a.href.startsWith("data:")) {
-      a.href = URL.createObjectURL(await (await fetch(a.href)).blob());
+      const comma = a.href.indexOf(",");
+      const meta = a.href.slice(5, comma);
+      const type = meta.replace(/;\s*base64\s*$/i, "");
+      const payload = a.href.slice(comma + 1);
+      // a.href is serialized ascii, so each decoded char is one byte.
+      const raw =
+        type !== meta
+          ? atob(payload)
+          : payload.replace(/%([0-9a-f]{2})/gi, (_, hex) =>
+              String.fromCharCode(parseInt(hex, 16)),
+            );
+      const bytes = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+      a.href = URL.createObjectURL(new Blob([bytes], { type }));
+      // Release the blob url after one minute.
       setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     }
     document.body.appendChild(a);
