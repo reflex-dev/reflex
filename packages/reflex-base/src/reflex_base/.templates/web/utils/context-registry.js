@@ -4,7 +4,12 @@
 // a module the compiler rewrites: Vite re-executes a rewritten module on hot
 // update, and every module it imports along with it, but this module imports
 // nothing that can change and is never re-executed.
-import { createContext } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 
 export const ColorModeContext = createContext({
   rawColorMode: "system",
@@ -15,31 +20,30 @@ export const ColorModeContext = createContext({
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const EventLoopContext = createContext(null);
+export const StateStoreContext = createContext(null);
 
 ColorModeContext.displayName = "ColorModeContext";
 UploadFilesContext.displayName = "UploadFilesContext";
 DispatchContext.displayName = "DispatchContext";
 EventLoopContext.displayName = "EventLoopContext";
-
-const stateContexts = new Map();
+StateStoreContext.displayName = "StateStoreContext";
 
 /**
- * Return the context object carrying the named Python state.
- *
- * The first call for a name creates the context; later calls, including ones
- * made from a re-executed generated module, return the same object.
+ * Subscribe a component to one Python substate in the shared store.
  *
  * @param {string} name - The dotted Python state name.
- * @returns {React.Context} The state's context object.
+ * @returns {object} The current state value for the named substate.
  */
-export function getStateContext(name) {
-  let context = stateContexts.get(name);
-  if (context === undefined) {
-    context = createContext(null);
-    context.displayName = `StateContext(${name})`;
-    stateContexts.set(name, context);
-  }
-  return context;
+export function useStateContext(name) {
+  const store = useContext(StateStoreContext);
+  const [subscribe, getSnapshot] = useMemo(
+    () => [
+      (listener) => store.subscribe(name, listener),
+      () => store.getSnapshot(name) ?? app.initialState?.[name],
+    ],
+    [store, name],
+  );
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 // Values the generated context module registers each time it executes. The

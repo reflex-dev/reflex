@@ -2,15 +2,48 @@
 
 from __future__ import annotations
 
+import contextlib
+import errno
+import hashlib
 import json
+import logging
 import os
 import re
+import secrets
 import shutil
 import stat
+import sys
+import threading
+import unicodedata
+from collections.abc import Iterator
 from pathlib import Path
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
+
+logger = logging.getLogger(__name__)
+_LOCKS_DIR = "locks"
+# Resolved paths locked by the current thread, so nested locks reenter.
+_held_locks = threading.local()
+# Open lock descriptors, closed in forked children that inherit them.
+_lock_descriptors: set[int] = set()
+
+
+def _forget_inherited_locks() -> None:
+    """Drop lock ownership inherited through fork; the parent still holds it."""
+    for descriptor in _lock_descriptors:
+        os.close(descriptor)
+    _lock_descriptors.clear()
+    _held_locks.paths = set()
+
+
+if sys.platform != "win32":
+    os.register_at_fork(after_in_child=_forget_inherited_locks)
 
 # Shorthand for join.
 join = os.linesep.join
@@ -238,36 +271,147 @@ def get_bun_path() -> Path | None:
     return bun_path.absolute() if bun_path else None
 
 
-def update_json_file(file_path: str | Path, update_dict: dict[str, object]):
+def _file_lock_path(file_path: Path) -> Path:
+    """Get the stable lock path for a file or directory.
+
+    Args:
+        file_path: The normalized path to lock.
+
+    Returns:
+        A path in Reflex's per-user data directory keyed by the target path.
+    """
+    normalized_path = os.path.normcase(os.fspath(file_path))
+    if sys.platform == "darwin":
+        # posixpath.normcase is a no-op on macOS, even when the underlying APFS
+        # volume is case-insensitive and Unicode-normalizing.
+        normalized_path = unicodedata.normalize("NFC", normalized_path).casefold()
+    target_digest = hashlib.sha256(os.fsencode(normalized_path)).hexdigest()
+    lock_directory = environment.REFLEX_DIR.get().expanduser() / _LOCKS_DIR
+    return lock_directory / f"{target_digest}.lock"
+
+
+def _lock_descriptor(descriptor: int) -> None:
+    """Take the OS's exclusive lock on a lock file, waiting for other holders.
+
+    Args:
+        descriptor: The open lock file descriptor.
+    """
+    if sys.platform == "win32":
+        while True:
+            try:
+                msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
+            except OSError as error:
+                # LK_LOCK already waits between attempts, but gives up after
+                # ten attempts while another writer may own it.
+                if error.errno != errno.EDEADLK:
+                    raise
+            else:
+                return
+    else:
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+
+
+@contextlib.contextmanager
+def file_lock(path: str | Path) -> Iterator[Path]:
+    """Lock a file or directory across processes, or proceed unlocked if unavailable.
+
+    The lock is a sidecar in Reflex's per-user data directory, so it never
+    creates the target and survives the target being replaced. A thread that
+    already holds a path's lock reenters it; other threads and processes wait.
+    A forked child does not inherit ownership and waits for its parent.
+
+    Args:
+        path: The file or directory to lock.
+
+    Yields:
+        The resolved target path. Callers must still write atomically because
+        read-only lock directories and unsupported locks use an unlocked fallback.
+    """
+    target = Path(path).resolve()
+    held: set[Path] | None = getattr(_held_locks, "paths", None)
+    if held is None:
+        held = _held_locks.paths = set()
+    if target in held:
+        yield target
+        return
+    owner_pid = os.getpid()
+    lock_fd = None
+    locked = False
+    try:
+        try:
+            lock_path = _file_lock_path(target)
+            lock_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+            _lock_descriptors.add(lock_fd)
+            _lock_descriptor(lock_fd)
+            locked = True
+        except OSError as error:
+            logger.debug(f"Cannot lock {target}; proceeding unlocked: {error}")
+        held.add(target)
+        yield target
+    finally:
+        # A forked child leaving an inherited block owns neither the lock nor
+        # the descriptor; its parent releases both.
+        if os.getpid() == owner_pid:
+            held.discard(target)
+            if lock_fd is not None:
+                _lock_descriptors.discard(lock_fd)
+                if locked and sys.platform == "win32":
+                    with contextlib.suppress(OSError):
+                        msvcrt.locking(lock_fd, msvcrt.LK_UNLCK, 1)
+                # Closing releases the OS lock, including when the body raises.
+                # Keep the lock file so waiting writers always use the same inode.
+                os.close(lock_fd)
+
+
+def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
+    """Atomically replace a JSON file with a complete document.
+
+    Args:
+        file_path: The destination JSON file.
+        value: The complete JSON object to write.
+    """
+    open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
+    temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")
+    # Preserve the old Path.touch behavior by letting umask set new-file mode.
+    temp_fd = os.open(temp_path, open_flags, 0o666)
+
+    try:
+        if file_path.exists():
+            shutil.copymode(file_path, temp_path)
+        temp_file = os.fdopen(temp_fd, "w", encoding="utf-8")
+        temp_fd = -1
+        with temp_file:
+            json.dump(value, temp_file, ensure_ascii=False)
+            temp_file.flush()
+            os.fsync(temp_file.fileno())
+        temp_path.replace(file_path)
+    except BaseException:
+        if temp_fd != -1:
+            with contextlib.suppress(OSError):
+                os.close(temp_fd)
+        with contextlib.suppress(OSError):
+            temp_path.unlink(missing_ok=True)
+        raise
+
+
+def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> None:
     """Update the contents of a json file.
 
     Args:
         file_path: the path to the JSON file.
         update_dict: object to update json.
     """
-    fp = Path(file_path)
+    with file_lock(file_path) as fp:
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        # An absent or empty file represents an empty JSON object.
+        json_object: dict[str, object] = {}
+        if fp.exists() and fp.stat().st_size:
+            with fp.open(encoding="utf-8") as json_file:
+                json_object = json.load(json_file)
 
-    # Create the parent directory if it doesn't exist.
-    fp.parent.mkdir(parents=True, exist_ok=True)
-
-    # Create the file if it doesn't exist.
-    fp.touch(exist_ok=True)
-
-    # Create an empty json object if file is empty
-    fp.write_text("{}") if fp.stat().st_size == 0 else None
-
-    # Read the existing json object from the file.
-    json_object = {}
-    if fp.stat().st_size:
-        with fp.open() as f:
-            json_object = json.load(f)
-
-    # Update the json object with the new data.
-    json_object.update(update_dict)
-
-    # Write the updated json object to the file
-    with fp.open("w") as f:
-        json.dump(json_object, f, ensure_ascii=False)
+        json_object.update(update_dict)
+        _write_json_file(fp, json_object)
 
 
 def find_replace(directory: str | Path, find: str, replace: str):

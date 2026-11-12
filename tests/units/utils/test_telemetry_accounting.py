@@ -109,7 +109,8 @@ class EmptyBase(DeclarativeBase):
 assert telemetry_accounting._get_db_model_count() == len(ModelRegistry.get_models()) == 2
 
 ModelRegistry.models.clear()
-assert telemetry_accounting._get_db_model_count() == 0
+# With no base registered, the module's CustomBase is detected.
+assert telemetry_accounting._get_db_model_count() == 1
 """
     _run_in_subprocess(script)
 

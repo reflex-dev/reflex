@@ -25,7 +25,7 @@ DATABASE = {
 MANAGED_DATABASE = ManagedDatabase(
     provider_project_id="wispy-cloud-12345678",
     region="aws-us-east-2",
-    created_at=datetime.datetime(2026, 9, 16, 10, tzinfo=datetime.timezone.utc),
+    created_at=datetime.datetime(2026, 9, 16, 10, tzinfo=datetime.UTC),
     database="neondb",
     role="neondb_owner",
     masked_connection_string="postgresql://****@ep-x-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",

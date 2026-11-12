@@ -5,6 +5,7 @@ from reflex_components_internal import button
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
+from reflex_site_shared.backend.demo_requests import DemoRequestState
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button as marketing_button
 from reflex_site_shared.constants import (
@@ -353,6 +354,7 @@ def solutions_panel() -> rx.Component:
                 "/customers/",
             ),
             demo_form_dialog(
+                on_submit=DemoRequestState.post_demo_request,
                 trigger=rx.el.div(
                     *drawer_row_content(custom_nav_icon("reflex_small"), "Book a demo"),
                     class_name=ui.cn(DRAWER_ROW_CLASS, "cursor-pointer"),
@@ -494,7 +496,11 @@ def navbar_sidebar_drawer(
 
 
 def docs_sidebar_drawer(sidebar: rx.Component, trigger: rx.Component) -> rx.Component:
-    """Docs sidebar drawer.
+    """Render the documentation sidebar in a named, dismissible mobile drawer.
+
+    Args:
+        sidebar: Navigation content displayed inside the drawer.
+        trigger: Control that opens the drawer.
 
     Returns:
         The component.
@@ -507,16 +513,34 @@ def docs_sidebar_drawer(sidebar: rx.Component, trigger: rx.Component) -> rx.Comp
             ),
             rx.drawer.content(
                 rx.el.div(
-                    rx.drawer.close(
-                        rx.el.div(
-                            class_name="absolute left-1/2 transform -translate-x-1/2 top-[-12px] flex-shrink-0 bg-subtle-foreground rounded-full w-[96px] h-[5px]",
+                    rx.el.div(
+                        aria_hidden=True,
+                        class_name="absolute left-1/2 transform -translate-x-1/2 top-[-12px] flex-shrink-0 bg-subtle-foreground rounded-full w-[96px] h-[5px]",
+                    ),
+                    rx.el.div(
+                        rx.drawer.title(
+                            "Documentation navigation",
+                            class_name="docs-sidebar-drawer-title m-0 text-sm font-normal leading-6 tracking-normal text-foreground",
                         ),
-                        as_child=True,
+                        rx.drawer.close(
+                            rx.el.button(
+                                ui.icon(
+                                    "Cancel01Icon",
+                                    aria_hidden=True,
+                                    class_name="size-4",
+                                ),
+                                type="button",
+                                aria_label="Close documentation navigation",
+                                class_name="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                            ),
+                            as_child=True,
+                        ),
+                        class_name="docs-sidebar-drawer-header flex shrink-0 items-center justify-between gap-4 border-b border-border-subtle px-5 py-3",
                     ),
                     sidebar,
                     class_name="relative flex flex-col w-full flex-1 min-h-0",
                 ),
-                class_name="!top-[4rem] flex-col !bg-background rounded-[24px_24px_0px_0px] w-full h-[calc(100dvh-4rem)] min-h-0 !outline-none",
+                class_name="docs-sidebar-drawer !top-[4rem] flex-col !bg-background rounded-[24px_24px_0px_0px] w-full h-[calc(100dvh-4rem)] min-h-0 !outline-none",
             ),
         ),
     )

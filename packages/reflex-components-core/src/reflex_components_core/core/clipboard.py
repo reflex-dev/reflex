@@ -6,12 +6,11 @@ from collections.abc import Sequence
 
 from reflex_base.components.component import field
 from reflex_base.components.tags.tag import CommonTag
-from reflex_base.constants.compiler import Hooks
 from reflex_base.event import EventChain, EventHandler, passthrough_event_spec
 from reflex_base.utils.format import format_prop, wrap
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import get_unique_variable_name
-from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.base import Var
 
 from reflex_components_core.base.fragment import Fragment
 
@@ -90,11 +89,7 @@ class Clipboard(Fragment):
         hook_expr = f"usePasteHandler({self.targets!s}, {self.on_paste_event_actions!s}, {on_paste!s})"
 
         return [
-            Var(
-                hook_expr,
-                _var_type="str",
-                _var_data=VarData(position=Hooks.HookPosition.POST_TRIGGER),
-            ),
+            Var(hook_expr, _var_type="str"),
         ]
 
 

@@ -4,6 +4,7 @@ import reflex_components_internal as ui
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
+from reflex_site_shared.backend.demo_requests import DemoRequestState
 from reflex_site_shared.components.marketing_button import button as marketing_button
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN, REFLEX_BUILD_URL
 
@@ -36,6 +37,7 @@ def cta_card() -> rx.Component:
                     target="_blank",
                 ),
                 demo_form_dialog(
+                    on_submit=DemoRequestState.post_demo_request,
                     trigger=marketing_button(
                         "Book a Demo",
                         variant="ghost",

@@ -22,11 +22,10 @@ With the Resend Integration, your app can:
 3. Navigate to **API Keys** from the dashboard sidebar.
 4. Click **Create API Key**, give it a name (e.g. “AI Builder”), and copy it.
    - Example: `re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+5. To email anyone other than yourself, [add and verify a domain](https://resend.com/docs/dashboard/domains/introduction) and send from an address on it. Without one, Resend only delivers test emails to your own account's address.
 
 ## Step 2: Configure the Integration in Your App
 
-1. Open your app in the **AI Builder**.
-2. Click the **Settings** gear icon and navigate to the **Integrations** tab.
-3. Find and enable the **Resend** integration.
-4. Paste your **API Key** in the input field.
-5. Click **Connect** to confirm the connection.
+1. In Reflex Build, open the **Integrations** tab and select the **Resend** card.
+2. Click **Add connection** and paste your API key into **RESEND_API_KEY**.
+3. Click **Connect** to save the connection.

@@ -11,7 +11,7 @@ from reflex_build_sdk.types import UsageBalance, UsageEntry
 
 from tests.units.reflex_build_sdk.conftest import AsyncMockTransport, MockAPI, reply
 
-UTC = datetime.timezone.utc
+UTC = datetime.UTC
 
 
 @pytest.fixture

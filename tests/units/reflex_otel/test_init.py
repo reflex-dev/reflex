@@ -348,3 +348,15 @@ async def test_asgi_middleware_handles_requests(instrumentor: ReflexInstrumentor
         }
         await wrapped(scope, receive, send)
     assert served == ["/ping", "/_event"]
+
+
+def test_instrument_toggles_the_workflow_trace_points(instrumentor: ReflexInstrumentor):
+    """reflex-workflow's trace points follow the instrumentor when it is installed."""
+    # One CI leg runs without the database libraries reflex-workflow imports.
+    workflow_otel = pytest.importorskip("reflex_workflow.otel")
+
+    assert workflow_otel.enabled is False
+    instrumentor.instrument(tracer_provider=TracerProvider())
+    assert workflow_otel.enabled is True
+    instrumentor.uninstrument()
+    assert workflow_otel.enabled is False

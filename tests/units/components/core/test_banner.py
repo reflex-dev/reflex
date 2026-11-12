@@ -2,6 +2,7 @@ from reflex_components_core.core.banner import (
     ConnectionBanner,
     ConnectionModal,
     ConnectionPulser,
+    ConnectionToaster,
     WebsocketTargetURL,
 )
 from reflex_components_radix.themes.typography.text import Text
@@ -51,3 +52,14 @@ def test_connection_pulser():
     pulser = ConnectionPulser.create()
     _custom_code = pulser._get_all_custom_code()
     _imports = pulser._get_all_imports(collapse=True)
+
+
+def test_connection_toaster_shows_hydration_errors_at_once():
+    hooks = "\n".join(map(str, ConnectionToaster.create()._get_all_hooks()))
+    hydration_check = hooks.index("error.code === 'hydration_payload_too_large'")
+
+    # Checked before the two-error threshold, with an id no connection toast
+    # dismisses, and kept open until the user closes it.
+    assert hydration_check < hooks.index("(connectErrors.length >= 2)")
+    assert 'id: "hydration-payload-error"' in hooks
+    assert "duration: Infinity" in hooks
