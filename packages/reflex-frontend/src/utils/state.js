@@ -2003,7 +2003,8 @@ export const pyStrChars = (s) => {
 };
 
 /***
- * Python-semantics s.split(sep): an empty separator splits by code point.
+ * JS s.split(sep), except that an empty separator splits by code point like
+ * Python list(s).
  * @param {string?} s The string.
  * @param {string} sep The separator.
  * @returns {string[]} The parts.
