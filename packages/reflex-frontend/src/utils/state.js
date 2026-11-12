@@ -1907,7 +1907,7 @@ export const pyAnd = (a, b) => (isTrue(a) ? b() : a);
  * divisor's sign, like Python's float `%` (`6.0 % -3.0` is -0.0).
  * @param {number} a The dividend.
  * @param {number} b The divisor.
- * @param {boolean} float Whether an operand is a Python float.
+ * @param {boolean} [float] Whether an operand is a Python float.
  * @returns {number} The remainder of `a / b` with the sign of `b`.
  */
 export const pyMod = (a, b, float = false) => {
