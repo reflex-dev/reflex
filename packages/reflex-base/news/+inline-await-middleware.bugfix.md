@@ -1,1 +1,0 @@
-An awaited event handler now passes through app middleware like a queued event, so a handler that a middleware (such as an auth gate) blocks no longer runs when another handler awaits it; the await returns `None`.
