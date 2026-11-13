@@ -56,13 +56,13 @@ describe("ResultStream", () => {
     const stream = new ResultStream();
     stream.push("partial");
     stream.fail(new Error("ValueError: bad page"));
-    await expect(stream).rejects.toThrow("ValueError: bad page");
+    await expect(stream).rejects.toThrow(/^ValueError: bad page$/);
     const seen = [];
     await expect(async () => {
       for await (const value of stream) {
         seen.push(value);
       }
-    }).rejects.toThrow("bad page");
+    }).rejects.toThrow(/^ValueError: bad page$/);
     expect(seen).toEqual(["partial"]);
   });
 
@@ -119,7 +119,7 @@ describe("ResultStream", () => {
     const merged = ResultStream.merge([a, b]);
     b.fail(new Error("b broke"));
     a.fail(new Error("a broke"));
-    await expect(merged).rejects.toThrow("b broke");
+    await expect(merged).rejects.toThrow(/^b broke$/);
   });
 
   test("merge of one stream is that stream, of none a completed one", async () => {
@@ -163,7 +163,7 @@ describe("result routing", () => {
       { id: badId, error: "ValueError: bad page" },
     ]);
     expect(await collect(ok)).toEqual([1, 2]);
-    await expect(bad).rejects.toThrow("ValueError: bad page");
+    await expect(bad).rejects.toThrow(/^ValueError: bad page$/);
     expect(bad.values).toEqual(["x"]);
 
     // Completed requests are forgotten.
@@ -188,8 +188,8 @@ describe("result routing", () => {
     const aId = register(a);
     register(b);
     failPendingRequests(new Error("disconnected"));
-    await expect(a).rejects.toThrow("disconnected");
-    await expect(b).rejects.toThrow("disconnected");
+    await expect(a).rejects.toThrow(/^disconnected$/);
+    await expect(b).rejects.toThrow(/^disconnected$/);
     // A record arriving after the disconnect finds nothing to update.
     applyResults([{ id: aId, done: true }]);
     expect(a.error.message).toBe("disconnected");

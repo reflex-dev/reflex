@@ -5929,8 +5929,12 @@ async def test_on_event_rejects_a_malformed_request_id(request_id: Any):
         request_id: The malformed id.
     """
     ns, seen = _request_id_namespace()
-    with pytest.raises(exceptions.EventDeserializationError, match="request id"):
+    with pytest.raises(exceptions.EventDeserializationError) as raised:
         await ns.on_event("sid", {"name": "state.h", "id": request_id})
+    assert str(raised.value) == (
+        "Event request id must be a non-empty string of at most 64 characters, "
+        f"got {request_id!r}."
+    )
     assert not seen
 
 

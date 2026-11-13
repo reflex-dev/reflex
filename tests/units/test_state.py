@@ -2447,8 +2447,13 @@ async def test_state_with_invalid_yield(
 
     assert len(captured_exceptions) == 1
     assert isinstance(captured_exceptions[0], TypeError)
-    assert "must only return/yield: None, Events or other EventHandlers" in str(
-        captured_exceptions[0]
+    assert str(captured_exceptions[0]) == (
+        "Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield"
+        ".invalid_handler must only return/yield: None, Events or other "
+        "EventHandlers referenced by their class (i.e. using `type(self)` or other "
+        "class references), or a result value; not events mixed with other values, "
+        "nor coroutines it did not await. Returned events of types "
+        "<class 'reflex_base.event.EventHandler'>, <class 'int'>."
     )
 
 

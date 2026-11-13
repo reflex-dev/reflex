@@ -376,7 +376,10 @@ test("a disconnect fails the requests still waiting for results", async (t) => {
   const { id } = sentEvent(connection, "known.load");
   connection.receive({ results: [{ id, value: "partial" }] });
   connection.disconnect("io server disconnect");
-  await assert.rejects(stream, /Disconnected from the backend/);
+  await assert.rejects(stream, {
+    message:
+      "Disconnected from the backend (io server disconnect) before the event finished.",
+  });
   assert.deepEqual(stream.values, ["partial"]);
 });
 
@@ -409,7 +412,7 @@ test("a send that throws fails the event's stream instead of leaving it open", a
   };
   const stream = connection.addEvents([{ name: "known.load" }]);
   connection.socket.emit = emit;
-  await assert.rejects(stream, /encode failed/);
+  await assert.rejects(stream, { message: "encode failed" });
   // The failure is logged as well, for a stream nobody awaits.
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.deepEqual(

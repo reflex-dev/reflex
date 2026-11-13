@@ -5826,8 +5826,9 @@ async def test_request_fails_with_the_handler_exception(
         future = await processor.enqueue(
             token, Event.from_event_type(FailState.fail())[0], request_id="r"
         )
-        with pytest.raises(ValueError, match="bad page"):
+        with pytest.raises(ValueError) as raised:
             await future
+    assert str(raised.value) == "bad page"
     assert _records(wire_log, "r") == [
         {"id": "r", "value": "partial"},
         {"id": "r", "error": error},
@@ -6001,8 +6002,16 @@ async def test_yielding_a_bound_handler_still_raises_type_error(
         future = await processor.enqueue(
             token, Event.from_event_type(BoundYieldState.handler())[0], request_id="r"
         )
-        with pytest.raises(TypeError, match="referenced by their class"):
+        with pytest.raises(TypeError) as raised:
             await future
+    assert str(raised.value) == (
+        "Your handler test_yielding_a_bound_handler_still_raises_type_error"
+        ".<locals>.BoundYieldState.handler must only return/yield: None, Events or "
+        "other EventHandlers referenced by their class (i.e. using `type(self)` or "
+        "other class references), or a result value; not events mixed with other "
+        "values, nor coroutines it did not await. Returned events of types "
+        "<class 'method'>."
+    )
     assert len(captured) == 1
     assert [record.keys() for record in _records(wire_log, "r")] == [{"id", "error"}]
 
@@ -6088,3 +6097,82 @@ async def test_request_cancelled_while_sending_its_completion_still_completes(
         future.cancel()
         await processor.join(5)
     assert records == [{"id": "r", "done": True, "cancelled": True}]
+
+
+async def test_request_for_an_unknown_handler_fails_instead_of_waiting(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """An event no handler is registered for fails its future and its request.
+
+    A stale frontend can still call a handler the backend no longer has.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event(name="state.no_such_handler"), request_id="r"
+        )
+        with pytest.raises(KeyError) as raised:
+            await asyncio.wait_for(future, 5)
+    message = "No registered handler found for event: state.no_such_handler"
+    assert raised.value.args == (message,)
+    assert _records(wire_log, "r") == [{"id": "r", "error": f"KeyError: {message!r}"}]
+
+
+async def test_cancelled_request_completes_after_the_handlers_final_changes(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """A running request's cancellation is reported after its last writes went out.
+
+    The final flush resolves an async computed var, so it suspends; the
+    cancelled record must still not overtake its delta.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+    started = asyncio.Event()
+
+    class FlushOnCancelState(State):
+        n: int = 0
+
+        @rx.var
+        async def doubled(self) -> int:
+            await asyncio.sleep(0)
+            return self.n * 2
+
+        @event
+        async def work(self):
+            self.n = 5
+            started.set()
+            await asyncio.Event().wait()
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(FlushOnCancelState.work())[0], request_id="r"
+        )
+        await started.wait()
+        future.cancel()
+        await processor.join(5)
+
+    name, key = FlushOnCancelState.get_full_name(), f"n{FIELD_MARKER}"
+    cancelled = {"id": "r", "done": True, "cancelled": True}
+    assert _records(wire_log, "r") == [cancelled]
+    flushed_at = next(
+        index
+        for index, (kind, entry) in enumerate(wire_log)
+        if kind == "delta" and entry.get(name, {}).get(key) == 5
+    )
+    assert flushed_at < wire_log.index(("result", cancelled))

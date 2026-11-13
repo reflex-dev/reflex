@@ -55,6 +55,14 @@ else:
 _StreamItemT = TypeVar("_StreamItemT")
 
 
+# Keys of the result records answering a frontend request (see utils/event_results.js).
+_RESULT_ID = "id"
+_RESULT_VALUE = "value"
+_RESULT_DONE = "done"
+_RESULT_ERROR = "error"
+_RESULT_CANCELLED = "cancelled"
+
+
 def _value_record(request_id: str, value: Any) -> dict[str, Any]:
     """A result record carrying one value a handler yielded.
 
@@ -65,7 +73,7 @@ def _value_record(request_id: str, value: Any) -> dict[str, Any]:
     Returns:
         The record.
     """
-    return {"id": request_id, "value": value}
+    return {_RESULT_ID: request_id, _RESULT_VALUE: value}
 
 
 def _done_record(request_id: str, value: Any = None) -> dict[str, Any]:
@@ -79,8 +87,8 @@ def _done_record(request_id: str, value: Any = None) -> dict[str, Any]:
         The record.
     """
     if value is None:
-        return {"id": request_id, "done": True}
-    return {"id": request_id, "value": value, "done": True}
+        return {_RESULT_ID: request_id, _RESULT_DONE: True}
+    return {_RESULT_ID: request_id, _RESULT_VALUE: value, _RESULT_DONE: True}
 
 
 def _error_record(request_id: str, ex: BaseException) -> dict[str, Any]:
@@ -97,8 +105,10 @@ def _error_record(request_id: str, ex: BaseException) -> dict[str, Any]:
         The record.
     """
     if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD:
-        return {"id": request_id, "error": "Contact the website administrator."}
-    return {"id": request_id, "error": f"{type(ex).__name__}: {ex}"}
+        error = "Contact the website administrator."
+    else:
+        error = f"{type(ex).__name__}: {ex}"
+    return {_RESULT_ID: request_id, _RESULT_ERROR: error}
 
 
 def _cancelled_record(request_id: str) -> dict[str, Any]:
@@ -110,7 +120,7 @@ def _cancelled_record(request_id: str) -> dict[str, Any]:
     Returns:
         The record.
     """
-    return {"id": request_id, "done": True, "cancelled": True}
+    return {_RESULT_ID: request_id, _RESULT_DONE: True, _RESULT_CANCELLED: True}
 
 
 async def _stream_queue_until_done(
@@ -207,7 +217,7 @@ class EventProcessor:
     _blocking_monitor: EventLoopBlockingMonitor | None = dataclasses.field(
         default=None, init=False, repr=False
     )
-    # Tasks reporting a cancelled frontend request, kept alive until sent.
+    # Tasks reporting an unfinished frontend request, kept alive until sent.
     _result_tasks: set[asyncio.Task] = dataclasses.field(
         default_factory=set, init=False, repr=False
     )
@@ -445,7 +455,7 @@ class EventProcessor:
                 future.cancel()
         self._futures.clear()
         # A future's done callbacks run on the next loop iteration, so yield
-        # once for the cancelled requests' reports to be created, then let
+        # once for the unfinished requests' reports to be created, then let
         # them go out before the loop that runs them goes away.
         await asyncio.sleep(0)
         while self._result_tasks:
@@ -570,7 +580,7 @@ class EventProcessor:
         tracked.add_done_callback(self._on_future_done)
         if ev_ctx.request_id is not None:
             tracked.add_done_callback(
-                functools.partial(self._report_cancelled_request, ev_ctx)
+                functools.partial(self._report_unfinished_request, ev_ctx)
             )
         # If this context has a parent, register as a child of the parent's future.
         if parent_future is not None:
@@ -899,10 +909,11 @@ class EventProcessor:
     ) -> Any:
         """Execute an event the frontend is awaiting, then complete its request.
 
-        Completion is sent from the handler's task, so it reaches the frontend
-        before the next event for the token starts and emits its delta.
-        Cancellation is reported by ``_report_cancelled_request`` instead,
-        which also covers an event cancelled before its task started.
+        Completion, failure and cancellation of a running handler are all sent
+        from its task, after its last state changes went out, so the frontend
+        gets them before the stream ends and before the next event for the
+        token starts. ``_report_unfinished_request`` covers what no task
+        reports, such as an event cancelled before its task started.
 
         Args:
             entry: The event queue entry to process.
@@ -913,9 +924,6 @@ class EventProcessor:
         """
         ctx = entry.ctx
         request_id = cast("str", ctx.request_id)
-        # A request counts as completed only once its record was sent: a
-        # cancellation landing during the send is then still reported by
-        # _report_cancelled_request (the frontend ignores a second record).
         # The final delta may have carried the completion already.
         try:
             result = await self._execute_event(
@@ -924,39 +932,72 @@ class EventProcessor:
             if not ctx.result_sent:
                 await ctx.emit_result(_done_record(request_id, result))
                 ctx.mark_result_sent()
+        except asyncio.CancelledError:
+            await self._report_request_end(ctx, _cancelled_record(request_id))
+            raise
         except Exception as ex:
             # A completion that failed to send fails the request the same way
             # the handler would.
-            if not ctx.result_sent:
-                try:
-                    await ctx.emit_result(_error_record(request_id, ex))
-                    ctx.mark_result_sent()
-                except Exception:
-                    logger.exception(
-                        f"Error reporting the failure of request {request_id}:"
-                    )
+            await self._report_request_end(ctx, _error_record(request_id, ex))
             raise
         return result
 
-    def _report_cancelled_request(self, ctx: EventContext, future: EventFuture) -> None:
-        """Complete a frontend request whose event was cancelled, unless already done.
+    @staticmethod
+    async def _report_request_end(ctx: EventContext, record: Mapping[str, Any]) -> None:
+        """Send a request's failure or cancellation record, unless it already completed.
+
+        A request counts as completed only once its record was sent, so a
+        record that fails to go out is retried by ``_report_unfinished_request``
+        (the frontend ignores a second record for a settled request).
 
         Args:
-            ctx: The context of the cancelled event.
-            future: The event's future.
+            ctx: The context of the request's event.
+            record: The record to send.
         """
-        if not future.cancelled() or ctx.result_sent:
+        if ctx.result_sent:
+            return
+        try:
+            await ctx.emit_result(record)
+        except Exception:
+            logger.exception(f"Error reporting the end of request {ctx.request_id}:")
+        else:
+            ctx.mark_result_sent()
+
+    def _report_unfinished_request(
+        self, ctx: EventContext, future: EventFuture
+    ) -> None:
+        """Complete a frontend request whose event ended without its task reporting it.
+
+        That is an event cancelled before its task started, one whose handler
+        could not be found, and one whose task failed to send its own record.
+        A cancelled event whose task is still running is left to that task,
+        which reports once the handler's final state changes went out.
+
+        Args:
+            ctx: The context of the event.
+            future: The event's future, done.
+        """
+        if ctx.result_sent:
+            return
+        request_id = cast("str", ctx.request_id)
+        if future.cancelled():
+            if ctx.txid in self._tasks:
+                return
+            record = _cancelled_record(request_id)
+        elif (ex := future.exception()) is not None:
+            record = _error_record(request_id, ex)
+        else:
             return
         ctx.mark_result_sent()
         task = asyncio.create_task(
-            ctx.emit_result(_cancelled_record(cast("str", ctx.request_id))),
-            name=f"reflex_cancelled_request|{ctx.token}|{ctx.txid}",
+            ctx.emit_result(record),
+            name=f"reflex_unfinished_request|{ctx.token}|{ctx.txid}",
         )
         self._result_tasks.add(task)
         task.add_done_callback(self._finish_result_task)
 
     def _finish_result_task(self, task: asyncio.Task) -> None:
-        """Forget a task that reported a cancelled request, logging its failure.
+        """Forget a task that reported an unfinished request, logging its failure.
 
         Args:
             task: The finished task.
@@ -1089,11 +1130,17 @@ class EventProcessor:
                         self._enqueue_for_token(
                             entry=entry, registered_handler=registered_handler
                         )
-                except Exception:
+                except Exception as ex:
                     # Log the error and continue processing the next events.
                     logger.exception(
                         f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                     )
+                    # Nothing will run this event: fail its future, so whatever
+                    # awaits it (a frontend request too) learns why instead of
+                    # waiting forever. The log above already reported it.
+                    if not future.done():
+                        future.set_exception(ex)
+                        future.exception()
                 queue.task_done()
         if self._queue_task is asyncio.current_task():
             self._queue_task = None
