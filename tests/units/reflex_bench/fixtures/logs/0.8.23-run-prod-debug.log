@@ -1,0 +1,31 @@
+[...]
+───────────────────────────── Starting Reflex App ──────────────────────────────
+[...]
+Debug: [timing] Evaluate Pages (Frontend): 0.01s
+Debug: [timing] Collect all imports and app wraps: 0.00s
+Debug: [timing] Auto-memoize StatefulComponents: 0.00s
+Debug: [timing] Copy assets: 0.00s
+Debug: [timing] Compile to Javascript: 0.00s
+[17:15:31] Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 21/21 0:00:00
+[...]
+Debug: [timing] Install Frontend Packages: 0.04s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+[...]
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:05
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'prod']
+Debug: Starting frontend
+Debug: $ sirv ./build/client --single 404.html --host
+Debug: Running command: ['granian', '--log-level', 'critical', '--host',
+'0.0.0.0', '--port', '18000', '--interface', 'asgi', '--factory',
+'/tmp/rb-0823/app/app/app.py:app']
+Debug:
+Debug:   Your application is ready~! 🚀
+Debug:
+Debug:   - Local:      http://0.0.0.0:13000
+App running at: http://0.0.0.0:13000/
+Backend running at: http://0.0.0.0:18000
+Debug:   - Network:    http://192.0.2.2:13000

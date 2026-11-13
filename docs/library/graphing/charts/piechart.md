@@ -345,6 +345,6 @@ def pie_hover():
 
 Explore more chart types you can build with Reflex and Recharts in pure Python:
 
-- [Radial Bar Chart](/docs/library/graphing/charts/radialbarchart)
-- [Funnel Chart](/docs/library/graphing/charts/funnelchart)
-- [Bar Chart](/docs/library/graphing/charts/barchart)
+- [Radial Bar Chart](/docs/library/graphing/charts/radialbarchart/)
+- [Funnel Chart](/docs/library/graphing/charts/funnelchart/)
+- [Bar Chart](/docs/library/graphing/charts/barchart/)

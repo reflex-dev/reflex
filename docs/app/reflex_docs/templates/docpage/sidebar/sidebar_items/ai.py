@@ -7,7 +7,7 @@ def get_sidebar_items_ai_builder_overview():
 
     return [
         create_item(
-            "Overview",
+            "Getting Started",
             children=[
                 ai_builder.overview.best_practices,
                 ai_builder.overview.what_is_reflex_build,
@@ -96,22 +96,28 @@ def get_ai_builder_integrations():
             children=[
                 ai_builder.integrations.overview,
                 ai_builder.integrations.anthropic,
+                ai_builder.integrations.auth0,
                 ai_builder.integrations.aws,
                 ai_builder.integrations.azure_auth,
                 ai_builder.integrations.cartesia,
+                ai_builder.integrations.clerk,
                 ai_builder.integrations.cohere,
+                ai_builder.integrations.custom_oidc,
                 ai_builder.integrations.database,
                 ai_builder.integrations.databricks,
                 ai_builder.integrations.descope,
                 ai_builder.integrations.gemini,
                 ai_builder.integrations.github,
+                ai_builder.integrations.google,
                 ai_builder.integrations.google_auth,
                 ai_builder.integrations.groq,
                 ai_builder.integrations.hubspot,
                 ai_builder.integrations.hugging_face,
-                ai_builder.integrations.langchain,
+                ai_builder.integrations.keycloak,
                 ai_builder.integrations.linear,
+                ai_builder.integrations.microsoft_entra_id,
                 ai_builder.integrations.notion,
+                ai_builder.integrations.okta,
                 ai_builder.integrations.okta_auth,
                 ai_builder.integrations.openai,
                 ai_builder.integrations.perplexity,

@@ -1,29 +1,39 @@
-import math
+import subprocess
+import sys
+import tomllib
+import types
 from pathlib import Path
-from unittest import mock
 
 import pytest
+from packaging.requirements import Requirement
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 
-import reflex.constants
-import reflex.model
-from reflex.model import (
-    Model,
-    ModelRegistry,
-    alembic_autogenerate,
-    alembic_init,
-    get_engine,
-    migrate,
-)
+from reflex.model import Model, ModelRegistry, _ClassThatErrorsOnInit
 from reflex.state import BaseState, State
 from tests.units.test_state import (
     mock_app_simple,  # noqa: F401 # for pytest.mark.usefixtures
 )
 
 pytest.importorskip("alembic")
-pytest.importorskip("sqlalchemy")
-pytest.importorskip("sqlmodel")
+sa = pytest.importorskip("sqlalchemy")
+sqlmodel = pytest.importorskip("sqlmodel")
+
+
+@pytest.mark.parametrize("version", ["0.0.45", "0.0.47"])
+def test_db_extra_accepts_utc_sqlmodel(version: str):
+    """The database extra must accept versions used to generate UTC migrations.
+
+    Args:
+        version: A SQLModel version supporting UTCDateTime.
+    """
+    project = tomllib.loads((Path(__file__).parents[2] / "pyproject.toml").read_text())
+    requirement = next(
+        parsed
+        for dep in project["project"]["optional-dependencies"]["db"]
+        if (parsed := Requirement(dep)).name == "sqlmodel"
+    )
+    assert requirement.specifier.contains(version)
 
 
 @pytest.fixture
@@ -72,142 +82,6 @@ def test_custom_primary_key(model_custom_primary: Model):
         model_custom_primary: Fixture.
     """
     assert "id" in type(model_custom_primary).model_fields
-
-
-@pytest.mark.filterwarnings(
-    "ignore:This declarative base already contains a class with the same class name",
-)
-def test_automigration(
-    tmp_working_dir: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    model_registry: type[ModelRegistry],
-):
-    """Test alembic automigration with add and drop table and column.
-
-    Args:
-        tmp_working_dir: directory where database and migrations are stored
-        monkeypatch: pytest fixture to overwrite attributes
-        model_registry: clean reflex ModelRegistry
-    """
-    import sqlalchemy.exc
-    import sqlmodel
-
-    alembic_ini = tmp_working_dir / "alembic.ini"
-    versions = tmp_working_dir / "alembic" / "versions"
-    monkeypatch.setattr(reflex.constants, "ALEMBIC_CONFIG", str(alembic_ini))
-
-    config_mock = mock.Mock()
-    config_mock.db_url = f"sqlite:///{tmp_working_dir}/reflex.db"
-    monkeypatch.setattr(reflex.model, "get_config", mock.Mock(return_value=config_mock))
-
-    alembic_init()
-    assert alembic_ini.exists()
-    assert versions.exists()
-
-    # initial table
-    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
-        t1: str
-
-    with get_engine().connect() as connection:
-        assert alembic_autogenerate(connection=connection, message="Initial Revision")
-    assert migrate()
-    version_scripts = list(versions.glob("*.py"))
-    assert len(version_scripts) == 1
-    assert version_scripts[0].name.endswith("initial_revision.py")
-
-    with reflex.model.session() as session:
-        session.add(AlembicThing(id=None, t1="foo"))
-        session.commit()
-
-    model_registry.get_metadata().clear()
-
-    # Create column t2, mark t1 as optional with default
-    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
-        t1: str | None = "default"
-        t2: str = "bar"
-
-    assert migrate(autogenerate=True)
-    assert len(list(versions.glob("*.py"))) == 2
-
-    with reflex.model.session() as session:
-        session.add(AlembicThing(t2="baz"))
-        session.commit()
-        result = session.exec(sqlmodel.select(AlembicThing)).all()
-        assert len(result) == 2
-        assert result[0].t1 == "foo"
-        assert result[0].t2 == "bar"
-        assert result[1].t1 == "default"
-        assert result[1].t2 == "baz"
-
-    model_registry.get_metadata().clear()
-
-    # Drop column t1
-    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
-        t2: str = "bar"
-
-    assert migrate(autogenerate=True)
-    assert len(list(versions.glob("*.py"))) == 3
-
-    with reflex.model.session() as session:
-        result = session.exec(sqlmodel.select(AlembicThing)).all()
-        assert len(result) == 2
-        assert result[0].t2 == "bar"
-        assert result[1].t2 == "baz"
-
-    # Add table
-    class AlembicSecond(Model, table=True):
-        a: int = 42
-        b: float = 4.2
-
-    assert migrate(autogenerate=True)
-    assert len(list(versions.glob("*.py"))) == 4
-
-    with reflex.model.session() as session:
-        session.add(AlembicSecond(id=None))
-        session.commit()
-        result = session.exec(sqlmodel.select(AlembicSecond)).all()
-        assert len(result) == 1
-        assert result[0].a == 42
-        assert math.isclose(result[0].b, 4.2)
-
-    # No-op
-    assert migrate(autogenerate=True)
-    assert len(list(versions.glob("*.py"))) == 4
-
-    # drop table (AlembicSecond)
-    model_registry.get_metadata().clear()
-
-    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
-        t2: str = "bar"
-
-    assert migrate(autogenerate=True)
-    assert len(list(versions.glob("*.py"))) == 5
-
-    with reflex.model.session() as session:
-        with pytest.raises(sqlalchemy.exc.OperationalError) as errctx:
-            session.exec(sqlmodel.select(AlembicSecond)).all()
-        assert errctx.match(r"no such table: alembicsecond")
-        # first table should still exist
-        result = session.exec(sqlmodel.select(AlembicThing)).all()
-        assert len(result) == 2
-        assert result[0].t2 == "bar"
-        assert result[1].t2 == "baz"
-
-    model_registry.get_metadata().clear()
-
-    class AlembicThing(Model, table=True):
-        # changing column type not supported by default
-        t2: int = 42
-
-    assert migrate(autogenerate=True)
-    assert len(list(versions.glob("*.py"))) == 5
-
-    # clear all metadata to avoid influencing subsequent tests
-    model_registry.get_metadata().clear()
-
-    # drop remaining tables
-    assert migrate(autogenerate=True)
-    assert len(list(versions.glob("*.py"))) == 6
 
 
 class ReflexModel(Model):
@@ -298,3 +172,246 @@ def test_no_rebind_mutable_proxy_for_instrumented_functions():
     assert "sa_obj" not in sa_state.dirty_vars
     sa_state.sa_obj.keywords.append(SAKeyword(value="test"))
     assert "sa_obj" in sa_state.dirty_vars
+
+
+@pytest.mark.parametrize("class_kwargs", [{}, {"table": True}])
+def test_subclass_without_db_extra_points_to_install(class_kwargs: dict):
+    """Subclassing the placeholder Model raises the guided db extra ImportError.
+
+    Args:
+        class_kwargs: Class keywords passed to the subclass declaration.
+    """
+    with pytest.raises(ImportError, match=r"reflex\[db\]"):
+
+        class Item(_ClassThatErrorsOnInit, **class_kwargs):  # pyright: ignore[reportUnusedClass]
+            name: str
+
+
+_NO_GREENLET_SCRIPT = """
+import sys
+
+GREENLET_MSG = "The SQLAlchemy asyncio module requires that the Python 'greenlet' library is installed."
+
+
+class _NoGreenlet:
+    def find_spec(self, name, path=None, target=None):
+        if name == "greenlet" or name.startswith("sqlalchemy.ext.asyncio"):
+            raise ImportError(GREENLET_MSG)
+        return None
+
+
+sys.meta_path.insert(0, _NoGreenlet())
+for mod in [
+    m for m in sys.modules if m == "greenlet" or m.startswith("sqlalchemy.ext.asyncio")
+]:
+    del sys.modules[mod]
+
+import sqlalchemy.orm
+import sqlmodel
+
+import reflex as rx
+import reflex.model
+
+
+class Base(sqlalchemy.orm.DeclarativeBase):
+    pass
+
+
+rx.ModelRegistry.register(Base)
+
+
+class Item(rx.Model, table=True):
+    name: str
+
+
+with rx.session("sqlite:///reflex.db") as session:
+    rx.Model.metadata.create_all(session.get_bind())
+    session.add(Item(name="widget"))
+    session.commit()
+    assert session.exec(sqlmodel.select(Item.name)).all() == ["widget"]
+
+try:
+    rx.asession("sqlite+aiosqlite:///reflex.db")
+except ImportError as err:
+    assert "greenlet" in str(err), err
+else:
+    raise AssertionError("asession should require greenlet")
+
+print("OK")
+"""
+
+
+def test_sync_db_api_without_greenlet(tmp_path: Path):
+    """The sync database API works when sqlalchemy.ext.asyncio cannot be imported.
+
+    SQLAlchemy 2.1 only installs greenlet with the ``asyncio`` extra, and without it
+    ``import sqlalchemy.ext.asyncio`` raises ImportError. Only the async helpers
+    should need it.
+
+    Args:
+        tmp_path: Working directory for the subprocess.
+    """
+    result = subprocess.run(
+        [sys.executable, "-c", _NO_GREENLET_SCRIPT],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip().endswith("OK")
+
+
+BASES_MODULE = "_model_bases_app"
+BASES_SOURCE = """
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+
+class Base(MappedAsDataclass, DeclarativeBase):
+    pass
+
+
+class Abstract(Base):
+    __abstract__ = True
+
+
+class User(Abstract):
+    __tablename__ = "user"
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+
+
+class EmptyBase(DeclarativeBase):
+    pass
+
+
+class Namespace:
+    class Base(DeclarativeBase):
+        pass
+
+    class Nested(Base):
+        __tablename__ = "nested"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+
+def make_base():
+    class Local(DeclarativeBase):
+        pass
+
+    class Hidden(Local):
+        __tablename__ = "hidden"
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+    return Local
+
+
+Unnamed = make_base()
+"""
+
+
+def _import_bases_module(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
+    """Import a fresh module of model bases, as an app module would be.
+
+    Args:
+        monkeypatch: Removes the module from ``sys.modules`` afterwards.
+
+    Returns:
+        The module.
+    """
+    module = types.ModuleType(BASES_MODULE)
+    monkeypatch.setitem(sys.modules, BASES_MODULE, module)
+    exec(BASES_SOURCE, module.__dict__)
+    return module
+
+
+@pytest.fixture
+def registry(
+    monkeypatch: pytest.MonkeyPatch, model_registry: type[ModelRegistry]
+) -> type[ModelRegistry]:
+    """The model registry with only rx.Model registered and this module's bases.
+
+    Args:
+        monkeypatch: Restores the registry afterwards.
+        model_registry: Resets the cached metadata afterwards.
+
+    Returns:
+        The registry.
+    """
+    find_bases = ModelRegistry._find_bases
+    monkeypatch.setattr(ModelRegistry, "models", {Model})
+    monkeypatch.setattr(ModelRegistry, "_metadata", None)
+    monkeypatch.setattr(
+        ModelRegistry,
+        "_find_bases",
+        staticmethod(
+            lambda: {base for base in find_bases() if base.__module__ == BASES_MODULE}
+        ),
+    )
+    return model_registry
+
+
+def test_unregistered_declarative_bases_are_detected(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """Module- and class-level DeclarativeBase subclasses with tables count as registered.
+
+    Mapped and abstract classes are not bases, an empty base has no tables, and
+    a base its module does not hold, such as one made in a function, is skipped.
+    """
+    module = _import_bases_module(monkeypatch)
+
+    assert registry._find_bases() == {
+        module.Base,
+        module.EmptyBase,
+        module.Namespace.Base,
+    }
+    assert module.Base in registry.get_models()
+    assert module.EmptyBase not in registry.get_models()
+    assert module.EmptyBase in registry.get_models(include_empty=True)
+    assert set(registry.get_metadata().tables) >= {"user", "nested"}
+    assert "hidden" not in registry.get_metadata().tables
+
+
+def test_reimported_module_replaces_its_bases(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """A base that a re-import of its module replaced is no longer detected."""
+    old = _import_bases_module(monkeypatch)
+    new = _import_bases_module(monkeypatch)
+
+    assert old.Base not in registry.get_models()
+    assert new.Base in registry.get_models()
+
+
+def test_registering_a_base_disables_detection(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """Once a base is registered, only registered bases are migrated.
+
+    rx.Model, always registered, does not count.
+    """
+    module = _import_bases_module(monkeypatch)
+    assert module.Base in registry.get_models()
+
+    registry.register(module.EmptyBase)
+
+    assert module.Base not in registry.get_models()
+    assert registry.get_models(include_empty=True) == {Model, module.EmptyBase}
+
+
+def test_metadata_detects_bases_once(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """The bases are looked for when the metadata is built, not on each call."""
+    module = _import_bases_module(monkeypatch)
+    calls = []
+    find_bases = registry._find_bases
+    monkeypatch.setattr(
+        registry, "_find_bases", staticmethod(lambda: calls.append(1) or find_bases())
+    )
+
+    metadata = registry.get_metadata()
+
+    assert registry.get_metadata() is metadata
+    assert len(calls) == 1
+    assert "user" in metadata.tables
+    assert module.Base in registry.get_models()

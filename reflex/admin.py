@@ -1,18 +1,23 @@
-"""The Reflex Admin Dashboard."""
+"""Removed admin dashboard integration, kept so upgraded apps fail with a pointer to the migration guide."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import Any
 
-if TYPE_CHECKING:
-    from starlette_admin.base import BaseAdmin as Admin
+from reflex_base.utils.exceptions import AdminDashRemovedError
 
 
-@dataclass
 class AdminDash:
-    """Data used to build the admin dashboard."""
+    """Former starlette-admin configuration. Instantiating it raises."""
 
-    models: list = field(default_factory=list)
-    view_overrides: dict = field(default_factory=dict)
-    admin: Admin | None = None
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Raise with a link to the migration guide.
+
+        Args:
+            *args: Ignored.
+            **kwargs: Ignored.
+
+        Raises:
+            AdminDashRemovedError: Always.
+        """
+        raise AdminDashRemovedError

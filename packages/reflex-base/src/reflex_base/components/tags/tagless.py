@@ -2,12 +2,12 @@
 
 import dataclasses
 
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag
 from reflex_base.utils import format
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class Tagless(Tag):
+class Tagless(CommonTag):
     """A tag with no tag."""
 
     # The inner contents of the tag.

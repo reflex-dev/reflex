@@ -4,12 +4,24 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Callable, Sequence
-from typing import Any, Concatenate, Generic, ParamSpec, Protocol, TypeVar, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Concatenate,
+    Generic,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+    overload,
+)
 
 from reflex_base.utils import format
 from reflex_base.utils.types import GenericType
 
 from .base import CachedVarOperation, LiteralVar, Var, VarData, cached_property_no_lock
+
+if TYPE_CHECKING:
+    from reflex_base.event import EventChain
 
 P = ParamSpec("P")
 V1 = TypeVar("V1")
@@ -275,13 +287,33 @@ class BuilderFunctionVar(
 class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
     """Base class for immutable function vars from a string."""
 
+    @overload
     @classmethod
     def create(
         cls,
         func: str,
         _var_type: type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],
         _var_data: VarData | None = None,
-    ) -> FunctionStringVar[OTHER_CALLABLE_TYPE]:
+    ) -> FunctionStringVar[OTHER_CALLABLE_TYPE]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        func: str,
+        _var_type: type[EventChain],
+        _var_data: VarData | None = None,
+    ) -> FunctionStringVar[ReflexCallable[..., Any]]: ...
+
+    @classmethod
+    def create(
+        cls,
+        func: str,
+        _var_type: type[OTHER_CALLABLE_TYPE] | type[EventChain] = ReflexCallable[
+            Any, Any
+        ],
+        _var_data: VarData | None = None,
+    ) -> FunctionStringVar:
         """Create a new function var from a string.
 
         Args:
@@ -547,6 +579,9 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
 
 JSON_STRINGIFY = FunctionStringVar.create(
     "JSON.stringify", _var_type=ReflexCallable[[Any], str]
+)
+ENCODE_URI_COMPONENT = FunctionStringVar.create(
+    "encodeURIComponent", _var_type=ReflexCallable[[str], str]
 )
 ARRAY_ISARRAY = FunctionStringVar.create(
     "Array.isArray", _var_type=ReflexCallable[[Any], bool]

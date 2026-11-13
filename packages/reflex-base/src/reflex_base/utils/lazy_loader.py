@@ -24,6 +24,84 @@ from collections.abc import Mapping, Sequence
 
 SubmodAttrsType = Mapping[str, Sequence[str | tuple[str, str]]]
 
+# PEP 810 explicit lazy imports, available from Python 3.15
+_NATIVE_LAZY_IMPORTS = sys.version_info >= (3, 15)
+
+
+def _attach_native(
+    package_name: str,
+    submodules: set[str],
+    alias_to_module_and_attr: Mapping[str, tuple[str, str]],
+    extra_mappings: Mapping[str, str],
+) -> bool:
+    """Bind native lazy import proxies (PEP 810) in the package namespace.
+
+    Names already bound in the package namespace are left untouched.
+
+    Args:
+        package_name: name of the package.
+        submodules: Set of submodules to attach.
+        alias_to_module_and_attr: Mapping of alias -> (submodule, attribute).
+        extra_mappings: Mapping of alias -> absolute dotted import path.
+
+    Returns:
+        False if the caller should fall back to the classic
+        __getattr__-based mechanism.
+    """
+    package = sys.modules.get(package_name)
+    if package is None:
+        return False
+
+    # Names are embedded in generated import statements below, so ensure
+    # they are identifiers and not arbitrary code.
+    names = [package_name, *submodules]
+    for alias, (mod, attr) in alias_to_module_and_attr.items():
+        names += [alias, mod, attr]
+    for alias, path in extra_mappings.items():
+        names += [alias, path]
+    if not all(part.isidentifier() for name in names for part in name.split(".")):
+        return False
+
+    pkg_dict = vars(package)
+
+    # Filters preserve the classic lookup priority:
+    # extra_mappings > submodules > submod_attrs.
+    lines: list[str] = []
+    for alias, path in extra_mappings.items():
+        if alias in pkg_dict:
+            continue
+        if "." not in path:
+            lines.append(f"lazy import {path} as {alias}")
+        else:
+            mod, _, attr = path.rpartition(".")
+            lines.append(f"lazy from {mod} import {attr} as {alias}")
+    lines += [
+        f"lazy from {package_name} import {name}"
+        for name in sorted(submodules)
+        if name not in pkg_dict and name not in extra_mappings
+    ]
+    lines += [
+        f"lazy from {package_name}.{mod} import {attr} as {alias}"
+        for alias, (mod, attr) in alias_to_module_and_attr.items()
+        if alias not in pkg_dict
+        and alias not in extra_mappings
+        and alias not in submodules
+    ]
+
+    if not lines:
+        return True
+
+    try:
+        code = compile(
+            "\n".join(lines), f"<lazy_loader.attach {package_name!r}>", "exec"
+        )
+    except SyntaxError:
+        # A name that is not expressible as import syntax (e.g. a keyword)
+        return False
+
+    exec(code, pkg_dict)
+    return True
+
 
 def attach(
     package_name: str,
@@ -36,6 +114,9 @@ def attach(
     this functionality (tuples) in Reflex to support 'import as _' statements. This function
     reformats the submod_attrs dictionary to flatten the module list before passing it to
     lazy_loader.
+
+    On Python 3.15 and newer, this delegates to the interpreter's native
+    lazy import mechanism (PEP 810) whenever possible.
 
     Args:
         package_name: name of the package.
@@ -67,27 +148,29 @@ def attach(
         if name in extra_mappings:
             path = extra_mappings[name]
             if "." not in path:
-                return importlib.import_module(path)
-            submod_path, attr = path.rsplit(".", 1)
-            submod = importlib.import_module(submod_path)
-            return getattr(submod, attr)
-        if name in submodules:
-            return importlib.import_module(f"{package_name}.{name}")
-        if name in alias_to_module_and_attr:
+                attr = importlib.import_module(path)
+            else:
+                submod_path, attr_name = path.rsplit(".", 1)
+                submod = importlib.import_module(submod_path)
+                attr = getattr(submod, attr_name)
+        elif name in submodules:
+            attr = importlib.import_module(f"{package_name}.{name}")
+        elif name in alias_to_module_and_attr:
             module, attr_name = alias_to_module_and_attr[name]
             submod = importlib.import_module(f"{package_name}.{module}")
             attr = getattr(submod, attr_name)
+        else:
+            msg = f"No {package_name} attribute {name}"
+            raise AttributeError(msg)
 
-            # If the attribute lives in a file (module) with the same
-            # name as the attribute, ensure that the attribute and *not*
-            # the module is accessible on the package.
-            if name == module:
-                pkg = sys.modules[package_name]
-                pkg.__dict__[name] = attr
+        # Cache the resolved value on the package so that subsequent
+        # accesses bypass __getattr__; this also ensures an attribute
+        # shadows a same-named submodule.
+        pkg = sys.modules.get(package_name)
+        if pkg is not None:
+            pkg.__dict__[name] = attr
 
-            return attr
-        msg = f"No {package_name} attribute {name}"
-        raise AttributeError(msg)
+        return attr
 
     def __dir__():  # noqa: N807
         return __all__
@@ -95,6 +178,14 @@ def attach(
     if os.environ.get("EAGER_IMPORT", ""):
         for attr in set(alias_to_module_and_attr.keys()) | submodules:
             __getattr__(attr)
+    elif _NATIVE_LAZY_IMPORTS:
+        # On Python 3.15+, bind native lazy imports (PEP 810) directly in
+        # the package namespace; the returned __getattr__ is then only
+        # consulted for unknown names.  Falls back to the classic
+        # __getattr__ mechanism when native binding is not possible.
+        _attach_native(
+            package_name, submodules, alias_to_module_and_attr, extra_mappings
+        )
 
     return __getattr__, __dir__, list(__all__)
 

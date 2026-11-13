@@ -22,7 +22,6 @@ class _Element(TypedDict):
 
 
 _INTS = list(range(N))
-_DICTS = [{"a": 1, "b": 2} for _ in range(N)]
 _OPTIONALS = [1, None] * (N // 2)
 _ELEMENTS: list[_Element] = [{"x": 1, "y": "s"} for _ in range(N)]
 
@@ -31,7 +30,6 @@ _ELEMENTS: list[_Element] = [{"x": 1, "y": "s"} for _ in range(N)]
     ("obj", "hint"),
     [
         pytest.param(_INTS, list[int], id="list_int"),
-        pytest.param(_DICTS, list[dict[str, int]], id="list_dict"),
         pytest.param(_OPTIONALS, list[int | None], id="list_optional"),
         pytest.param(_ELEMENTS, list[_Element], id="list_typeddict"),
     ],

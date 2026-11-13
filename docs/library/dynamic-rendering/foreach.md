@@ -80,7 +80,7 @@ def display_row(row: rx.Var[list[str]]):
             row,
             lambda item: rx.box(
                 item,
-                border="1px solid black",
+                border=f"1px solid {rx.color('gray', 7)}",
                 padding="0.5em",
             ),
         ),
@@ -144,7 +144,9 @@ def todo_example():
     return rx.vstack(
         rx.heading("Todos", as_="h2"),
         rx.input(
-            on_blur=ListState.set_new_item, placeholder="Add a todo...", bg="white"
+            on_blur=ListState.set_new_item,
+            placeholder="Add a todo...",
+            bg=rx.color("gray", 2),
         ),
         rx.button("Add", on_click=ListState.add_item),
         rx.divider(),
@@ -154,12 +156,23 @@ def todo_example():
                 get_item,
             ),
         ),
-        bg="#ededed",
+        bg=rx.color("gray", 3),
+        color=rx.color("gray", 12),
         padding="1em",
         border_radius="0.5em",
         shadow="lg",
     )
 ```
+
+## Keys
+
+By default, `rx.foreach` keys each rendered item by its index, so React matches the rendered components to items by position.
+When the list changes, a component keeps its position, not its item: after the first of three items is removed, React unmounts the component at the last position.
+This matters when an item has lifecycle events (`on_mount`, `on_unmount`), hooks of its own, or per-row state such as an uncontrolled input or `rx.client_state`.
+An `on_unmount=State.removed(item)` in an unkeyed loop reports the last item, not the removed one.
+
+Set `key` on the component that the render function returns to a value that is unique and stable for each item, such as `key=item` for a list of distinct strings or `key=item.id` as in the todo example above.
+Reflex warns at compile time when an item keyed by its index has lifecycle events or hooks.
 
 ## Dictionaries
 

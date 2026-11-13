@@ -1,0 +1,10 @@
+[project]
+name = "reflex-playground"
+version = "0.1.0"
+description = "Reflex example app, also the fixture of the Reflex macro benchmarks."
+readme = "README.md"
+requires-python = ">=3.11"
+# PyPI rejects uploads carrying this classifier: the playground is never published.
+classifiers = ["Private :: Do Not Upload"]
+# db: the rx.Model tables; plotly: rx.plotly imports it when it renders.
+dependencies = ["reflex[db]>=0.8.23", "plotly>=6.0,<7.0"]

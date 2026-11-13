@@ -1,0 +1,12 @@
+# The entries `reflex init` adds, so running the app leaves this file unchanged.
+*.db
+*.py[cod]
+.states
+.web
+__pycache__/
+assets/external/
+# The playground runs against several reflex versions, so it commits no lock files.
+reflex.lock/
+uv.lock
+.venv/
+uploaded_files/

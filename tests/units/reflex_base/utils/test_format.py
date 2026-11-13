@@ -1,0 +1,63 @@
+"""Unit tests for reflex_base.utils.format."""
+
+from pytest_mock import MockerFixture
+from reflex_base import constants
+from reflex_base.utils import format
+
+import reflex as rx
+
+
+def test_format_queue_events_dispatches_through_add_events():
+    """The formatted callback calls addEvents and carries its imports."""
+    var = format.format_queue_events(rx.console_log("hello"))
+    js = str(var)
+    assert js.startswith("() => {addEvents([")
+    assert "queueEvents" not in js
+
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    imports = dict(var_data.imports)
+    context_imports = imports[f"$/{constants.Dirs.CONTEXTS_PATH}"]
+    assert any(imp.tag == "addEvents" for imp in context_imports)
+    state_imports = imports[f"$/{constants.Dirs.STATE_PATH}"]
+    assert any(imp.tag == "ReflexEvent" for imp in state_imports)
+
+
+def test_format_queue_events_empty():
+    """No events formats to a null callback."""
+    assert str(format.format_queue_events(None)) == "(() => null)"
+
+
+def test_format_queue_events_accepts_a_tuple():
+    """A tuple of events formats like a list of them."""
+    events = (rx.console_log("a"), rx.console_log("b"))
+    assert str(format.format_queue_events(events)) == str(
+        format.format_queue_events(list(events))
+    )
+
+
+def test_format_queue_events_args_spec():
+    """The args spec names the callback parameters."""
+    var = format.format_queue_events(
+        rx.console_log("hello"),
+        args_spec=lambda result: [result],
+    )
+    assert str(var).startswith("(_result) => {addEvents([")
+
+
+def test_format_data_editor_column_deprecated(mocker: MockerFixture):
+    """The column formatter still works, but warns that rx.data_editor owns it.
+
+    Args:
+        mocker: The pytest mocker fixture.
+    """
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    assert format.format_data_editor_column("Name") == {
+        "title": "Name",
+        "id": "name",
+        "type": "str",
+    }
+
+    deprecate.assert_called_once()
+    assert deprecate.call_args.kwargs["feature_name"] == "format_data_editor_column"

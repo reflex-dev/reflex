@@ -1,0 +1,15 @@
+<svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="Instrument Sans, sans-serif">
+<path d="M113 110H148M212 110H234Q244 110 244 100V65Q244 55 254 55H270M244 100V155Q244 165 254 165H270" stroke="var(--ai-accent)" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="22" y="77" width="91" height="66" rx="10" fill="var(--background)" stroke="var(--border)"/>
+<path d="M61 91L63 97L69 99L63 101L61 107L59 101L53 99L59 97Z" stroke="var(--ai-accent)" stroke-width="1.2" stroke-linejoin="round"/>
+<text x="38" y="127" fill="var(--foreground)" font-size="11">AI assistant</text>
+<rect x="148" y="78" width="64" height="64" rx="14" fill="var(--background)" stroke="var(--border)"/>
+<rect x="155" y="85" width="50" height="50" rx="9" fill="var(--ai-tint)"/>
+<text x="164" y="114" fill="var(--ai-accent)" font-size="13">MCP</text>
+<rect x="269" y="27" width="68" height="62" rx="10" fill="var(--background)" stroke="var(--border)"/>
+<path d="M295 40H307L311 44V58H295V40ZM307 40V45H311M299 49H307M299 53H307" stroke="var(--ai-accent)" stroke-width="1.2" stroke-linejoin="round"/>
+<text x="291" y="75" fill="var(--foreground)" font-size="10">Docs</text>
+<rect x="259" y="136" width="88" height="62" rx="10" fill="var(--background)" stroke="var(--border)"/>
+<path d="M293 151H301V159H293ZM305 151H313V159H305ZM293 163H301V171H293ZM305 163H313V171H305Z" stroke="var(--ai-accent)" stroke-width="1.2" stroke-linejoin="round"/>
+<text x="273" y="186" fill="var(--foreground)" font-size="10">Components</text>
+</svg>

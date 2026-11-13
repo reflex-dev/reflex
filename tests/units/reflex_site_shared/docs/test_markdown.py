@@ -3,6 +3,8 @@
 from pathlib import Path
 
 import pytest
+from reflex_base.components.component import BaseComponent
+from reflex_site_shared.components.blocks.demo import DeferredDemo
 from reflex_site_shared.docs.markdown import (
     get_docgen_toc,
     get_markdown_toc,
@@ -29,6 +31,64 @@ def example():
 
     assert isinstance(component, rx.Component)
     assert "Shared live example" in str(component)
+
+
+_DEFERRED_DEMO = """```python demo exec defer
+import reflex as rx
+
+def example():
+    return rx.text("Activated preview")
+```"""
+
+
+def _deferred_previews(
+    component: BaseComponent,
+) -> list[DeferredDemo]:
+    """Collect the deferred previews in a rendered component tree.
+
+    Args:
+        component: The rendered component tree.
+
+    Returns:
+        The deferred previews, in no particular order.
+    """
+    pending = [component]
+    previews = []
+    while pending:
+        child = pending.pop()
+        if isinstance(child, DeferredDemo):
+            previews.append(child)
+        pending.extend(child.children)
+    return previews
+
+
+def test_deferred_demo_preserves_code_and_gates_preview() -> None:
+    """Automatic loading must gate the live preview without hiding its code."""
+    component = render_markdown(
+        _DEFERRED_DEMO, virtual_filepath="tests/deferred-demo.md"
+    )
+    previews = _deferred_previews(component)
+
+    assert len(previews) == 1
+    assert "Activated preview" in str(previews[0])
+    assert "rx.text" in str(component)
+
+
+def test_deferred_demo_id_is_stable_and_unique_per_fence() -> None:
+    """Each fence keeps its id across renders, even beside an identical fence."""
+
+    def demo_props(path: str) -> list[str]:
+        previews = _deferred_previews(
+            render_markdown(
+                f"{_DEFERRED_DEMO}\n\n{_DEFERRED_DEMO}", virtual_filepath=path
+            )
+        )
+        return sorted(str(preview.render()["props"]) for preview in previews)
+
+    first, second = demo_props("tests/a.md")
+    assert first != second
+    assert demo_props("tests/a.md") == [first, second]
+    assert set(demo_props("tests/b.md")).isdisjoint({first, second})
 
 
 def test_render_markdown_covers_core_blocks_and_spans() -> None:
@@ -104,6 +164,17 @@ def test_render_markdown_renders_alert_directives() -> None:
     assert "Details inside." in collapsible
     assert "Just a note." in text_only
     assert "All good" in title_only
+
+
+def test_title_only_alert_wraps_unbroken_inline_code() -> None:
+    """Title-only warnings must wrap long identifiers without an accordion trigger."""
+    identifier = "rx.context_menu.an_extremely_long_unbroken_component_identifier"
+    document = render_markdown(f"```md alert warning\n# `{identifier}`\n```\n")
+    title = document.children[0].children[0].children[1]
+
+    assert isinstance(title, rx.Component)
+    assert identifier in str(title)
+    assert str(title.style.get("overflowWrap")) == '"anywhere"'
 
 
 def test_render_markdown_renders_video_quote_and_tabs_directives() -> None:
@@ -241,6 +312,73 @@ def test_render_inline_markdown_handles_inline_and_block_content() -> None:
     block = str(render_inline_markdown("# Heading\n\nParagraph."))
     assert "Heading" in block
     assert "Paragraph." in block
+
+
+def _anchors(component: rx.Component):
+    """Yield every anchor in a rendered tree.
+
+    Args:
+        component: The rendered component.
+
+    Yields:
+        Each ``a`` component, which renders only its own children.
+    """
+    if getattr(component, "tag", None) == "a":
+        yield component
+    for child in getattr(component, "children", ()):
+        yield from _anchors(child)
+
+
+@pytest.mark.parametrize(
+    ("source", "markup"),
+    [
+        (
+            "Pass [`run_workflows`](/docs/workers/) here.",
+            ["jsx(CodeComp", 'text:"run_workflows"'],
+        ),
+        (
+            "See [the **worker** guide](/docs/workers/) first.",
+            ['"the "', 'jsx("strong",{},"worker")', '" guide"'],
+        ),
+        (
+            "Use [`start` and `run`](/docs/workers/) instead.",
+            ['text:"start"', '" and "', 'text:"run"'],
+        ),
+    ],
+)
+@pytest.mark.parametrize("render", [render_markdown, render_inline_markdown])
+def test_link_text_keeps_its_inline_markup(
+    render, source: str, markup: list[str]
+) -> None:
+    """A link whose text is code or emphasis renders that markup inside the link."""
+    [link] = _anchors(render(source))
+    rendered = str(link)
+    for fragment in markup:
+        assert fragment in rendered
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4])
+def test_heading_keeps_inline_code_and_its_plain_anchor(level: int) -> None:
+    """A heading shows its code as code, and its anchor is the plain text's."""
+    marks = "#" * level
+    rendered = str(render_markdown(f"{marks} Using `rx.cond` here"))
+    assert f'as:"h{level}"' in rendered
+    assert 'text:"rx.cond"' in rendered
+    assert 'slugifyMixedTextHastNode("Using rx.cond here")' in rendered
+    # A plain heading compiles exactly as it did.
+    plain = str(render_markdown(f"{marks} Using rx.cond here"))
+    assert 'text:"Using rx.cond here"' in plain
+
+
+def test_heading_shows_a_link_as_text_inside_its_own_anchor() -> None:
+    """A link in a heading keeps its text and markup but nests no second anchor."""
+    heading = render_markdown("## Use [the `match` component](/docs/match/) here")
+    rendered = str(heading)
+    assert list(_anchors(heading)) == []
+    assert 'href:"/docs/match/"' not in rendered
+    assert '"the "' in rendered
+    assert 'text:"match"' in rendered
+    assert 'slugifyMixedTextHastNode("Use the match component here")' in rendered
 
 
 def test_render_docgen_document_extracts_faq_jsonld(tmp_path: Path) -> None:

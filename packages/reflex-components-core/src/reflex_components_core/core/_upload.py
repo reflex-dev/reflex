@@ -15,7 +15,7 @@ from collections.abc import (
     MutableMapping,
 )
 from pathlib import Path, PureWindowsPath
-from typing import TYPE_CHECKING, Any, BinaryIO, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, Self, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.registry import RegistrationContext
@@ -28,10 +28,9 @@ from starlette.exceptions import HTTPException
 from starlette.formparsers import MultiPartException, _user_safe_decode
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
-from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
+    from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 
     from reflex.app import App
 
@@ -537,6 +536,10 @@ UPLOAD_EVENT_ARGS_FIELD = "__reflex_event_args"
 # (file parts are backpressured via the chunk iterator; this field is not).
 MAX_UPLOAD_EVENT_ARGS_BYTES = 1024 * 1024
 
+# What the client is told when the upload handler raises; the details go to the
+# backend exception handler, which may run in prod.
+_UPLOAD_HANDLER_ERROR = "The upload handler raised an exception."
+
 
 def _decode_event_args(encoded: str | None) -> dict[str, Any]:
     """Decode the extra bound handler args sent alongside an upload.
@@ -586,6 +589,33 @@ def _buffered_upload_args(form_data: FormData) -> dict[str, Any]:
     return _decode_event_args(raw_args)
 
 
+class _UploadStreamingResponse(DisconnectAwareStreamingResponse):
+    """Upload response whose start goes out with its first body message."""
+
+    async def stream_response(self, send: Send) -> None:
+        """Stream the body, holding the response start until the first body message.
+
+        A body iterator that raises before yielding then leaves the response
+        unstarted, so the app can still answer with an error status.
+
+        Args:
+            send: The ASGI send callable.
+        """
+        start: Message | None = None
+
+        async def send_start_with_body(message: Message) -> None:
+            nonlocal start
+            if message["type"] == "http.response.start":
+                start = message
+                return
+            if start is not None:
+                await send(start)
+                start = None
+            await send(message)
+
+        await super().stream_response(send_start_with_body)
+
+
 async def _upload_buffered_file(
     request: Request,
     app: App,
@@ -600,6 +630,7 @@ async def _upload_buffered_file(
         A streaming response for the buffered upload.
     """
     from reflex_base.event import Event
+    from reflex_base.event.processor.event_processor import QueueShutDown
     from reflex_base.utils.exceptions import UploadValueError
 
     from reflex.state import StateUpdate
@@ -660,18 +691,45 @@ async def _upload_buffered_file(
     async def _ndjson_updates():
         """Process the upload event, generating ndjson updates.
 
+        If the handler raises after an update was sent, the stream ends with an
+        ``{"error": ...}`` frame, which the web upload template reports.
+
         Yields:
             Each state update as newline-delimited JSON.
+
+        Raises:
+            HTTPException: A 500 if the handler raises before any update was sent.
         """
         # Let the disconnect watcher run before we enqueue the upload handler.
         await asyncio.sleep(0)
         if disconnect_seen:
             return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
-        async for delta in app.event_processor.enqueue_stream_delta(token, event):
+        updates = app.event_processor.enqueue_stream_delta(token, event)
+        sent = False
+        while True:
+            try:
+                delta = await anext(updates)
+            except StopAsyncIteration:
+                return
+            except QueueShutDown:
+                # The processor is not running: nothing ran or reported the
+                # handler, so let the server log it.
+                raise
+            except Exception as err:
+                # The event processor already reported the handler's exception,
+                # so answer the client instead of letting the server log it again.
+                if not sent:
+                    # The response starts with its first chunk, so it can still fail.
+                    raise HTTPException(
+                        status_code=500, detail=_UPLOAD_HANDLER_ERROR
+                    ) from err
+                yield json_dumps({"error": _UPLOAD_HANDLER_ERROR}) + "\n"
+                return
+            sent = True
             yield json_dumps(StateUpdate(delta=delta)) + "\n"
 
-    return DisconnectAwareStreamingResponse(
+    return _UploadStreamingResponse(
         _ndjson_updates(),
         media_type="application/x-ndjson",
         on_finish=_close_form_data,
@@ -835,7 +893,8 @@ def upload(app: App):
         Raises:
             UploadValueError: If the handler does not have a supported annotation.
             UploadTypeError: If a non-streaming upload is wired to a background task.
-            HTTPException: when the request does not include token / handler headers.
+            HTTPException: when the request does not include token / handler headers,
+                or when the handler header does not name a registered event handler.
         """
         from reflex_base.event import (
             resolve_upload_chunk_handler_param,
@@ -843,9 +902,14 @@ def upload(app: App):
         )
 
         token, handler_name = _require_upload_headers(request)
-        registered_event_handler = RegistrationContext.get().event_handlers[
+        registered_event_handler = RegistrationContext.get().event_handlers.get(
             handler_name
-        ]
+        )
+        if registered_event_handler is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown upload event handler: {handler_name!r}.",
+            )
         event_handler = registered_event_handler.handler
 
         if event_handler.is_background:

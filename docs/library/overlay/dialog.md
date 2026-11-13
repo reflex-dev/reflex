@@ -6,6 +6,7 @@ components:
   - rx.dialog.content
   - rx.dialog.description
   - rx.dialog.close
+meta_description: "Create modal dialogs in Python with Reflex. rx.dialog displays accessible modal windows with a title, description, and custom content."
 
 only_low_level:
   - True
@@ -192,7 +193,7 @@ def dialog_example():
     )
 ```
 
-Check out the [menu docs](/docs/library/overlay/dropdown-menu) for an example of opening a dialog from within a dropdown menu.
+Check out the [menu docs](/docs/library/overlay/dropdown-menu/) for an example of opening a dialog from within a dropdown menu.
 
 ## Form Submission to a Database from a Dialog
 

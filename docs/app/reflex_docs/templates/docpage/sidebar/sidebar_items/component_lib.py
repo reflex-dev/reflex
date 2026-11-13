@@ -1,16 +1,9 @@
 import reflex as rx
-from reflex.utils.format import to_snake_case, to_title_case
+from reflex.utils.format import to_snake_case
+
+from reflex_docs.utils.library import get_display_name
 
 from ..state import SideBarItem
-
-
-def get_display_name(name: str) -> str:
-    normalized = to_snake_case(name)
-    if normalized == "html":
-        return "HTML"
-    if normalized == "svg":
-        return "SVG"
-    return to_title_case(normalized, sep=" ")
 
 
 def is_html_category(category: str) -> bool:
@@ -40,7 +33,7 @@ def sort_html_components(components: list) -> list:
 def get_component_link(category, clist, prefix="") -> str:
     component_name = rx.utils.format.to_kebab_case(clist[0])
     # construct the component link. The component name points to the name of the md file.
-    return f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower().replace(' ', '-')}/{component_name.lower()}"
+    return f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower().replace(' ', '-')}/{component_name.lower()}/"
 
 
 def get_category_children(category, category_list, prefix=""):

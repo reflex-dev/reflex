@@ -7,7 +7,6 @@ import re
 from collections.abc import Callable
 
 from reflex_base import constants
-from reflex_base.config import get_config
 
 
 def verify_route_validity(route: str) -> None:
@@ -181,7 +180,9 @@ def get_route_regex(keyworded_route: str) -> re.Pattern:
     # Join the regex parts and compile the regex
     regex_pattern = "".join(regex_parts)
     regex_pattern = f"^{regex_pattern}/?$"
-    return re.compile(regex_pattern)
+    # React Router matches route paths case-insensitively by default, folding
+    # ASCII letters only (its regex has no "u" flag).
+    return re.compile(regex_pattern, re.IGNORECASE | re.ASCII)
 
 
 def get_router(routes: list[str]) -> Callable[[str], str | None]:
@@ -207,18 +208,21 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
     ]
 
     @functools.lru_cache(maxsize=4096)
-    def match_route(path: str, frontend_path: str) -> str | None:
-        """Match a path against the routes.
+    def get_route(path: str) -> str | None:
+        """Get the first route matching a path.
+
+        Memoized per path: matching is a linear regex scan over every route,
+        paid on every event otherwise.
+
+        The path must be relative to ``frontend_path``, which is how the
+        frontend reports it.
 
         Args:
             path: The path to match against the routes.
-            frontend_path: The configured frontend path prefix to strip.
 
         Returns:
             The first matching route, or None if no match is found.
         """
-        if frontend_path:
-            path = path.removeprefix(frontend_path)
         path = "/" + path.removeprefix("/").removesuffix("/")
         if path == "/index":
             path = "/"
@@ -226,20 +230,5 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
             if regex.fullmatch(path):
                 return original_route
         return None
-
-    def get_route(path: str) -> str | None:
-        """Get the first route matching a path.
-
-        Memoized per (path, frontend_path): matching is a linear regex scan
-        over every route, paid on every event otherwise, and the config's
-        frontend path can change on reload.
-
-        Args:
-            path: The path to match against the routes.
-
-        Returns:
-            The first matching route, or None if no match is found.
-        """
-        return match_route(path, get_config().frontend_path)
 
     return get_route

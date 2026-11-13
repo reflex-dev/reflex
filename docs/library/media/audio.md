@@ -24,5 +24,7 @@ If we had a local file in the `assets` folder named `test.mp3` we could set `src
 ```md alert info
 # How to let your user upload an audio file
 
-To let a user upload an audio file to your app check out the [upload docs](/docs/library/forms/upload).
+To let a user upload an audio file to your app check out the [upload docs](/docs/library/forms/upload/).
 ```
+
+For a complete upload, Python processing, playback, and download app, follow the [audio workflow example](/docs/guides/model-and-media-interfaces/#run-an-audio-input-and-output-workflow).

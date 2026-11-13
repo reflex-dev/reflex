@@ -19,11 +19,12 @@ uv run pytest tests/integration                                  # integration t
 uv run ruff check .                                              # lint
 uv run ruff format .                                             # format
 uv run pyright reflex tests                                      # type check
-uv run python scripts/check_min_deps.py                          # validate each package's declared minimum dep versions (pyright in isolated min-version envs; *.dev pins resolve from the local workspace, all other deps from PyPI)
+uv run python scripts/check_min_deps.py                          # validate each package's declared minimum dep versions (pyright in isolated min-version envs; workspace siblings resolve from locally built wheels, all other deps from PyPI). CI passes --wheelhouse instead, reusing the build jobs' artifacts
 uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # fail if pkg (default: all) declares an unpublishable *.dev dependency pin (the publish workflow runs the same gate via `reflex-release check-dev-pins`)
 uv run reflex-release sync                                       # regenerate the release workflows after editing [tool.reflex-release] or the reflex-release templates
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs
 uv run pre-commit run --all-files                                # all pre-commit hooks
+npm --prefix packages/reflex-frontend ci && npm --prefix packages/reflex-frontend run check   # frontend package: lint, type-check (JSDoc) and unit tests
 ```
 
 ## Layout
@@ -31,9 +32,10 @@ uv run pre-commit run --all-files                                # all pre-commi
 ```
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
 packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
+  reflex-frontend/      # the javascript package reflex-base embeds: src/ ships, tests/ run under vitest
 tests/units/            # unit tests, mirrors source tree
-tests/integration/      # Selenium integration tests (run in dev+prod modes)
-  tests_playwright/     # Playwright integration tests (preferred for new tests)
+tests/integration/      # Integration tests (run in dev+prod modes where applicable)
+  tests_playwright/     # Browser integration tests using Playwright
 tests/benchmarks/       # performance benchmarks
 docs/                   # documentation site (separate workspace member)
 ```
@@ -55,9 +57,52 @@ docs/                   # documentation site (separate workspace member)
 
 - Write comprehensive tests for new/changed features; extend existing test files where possible.
 - Test functions at module level, not wrapped in classes.
+- Assert exact values, never substrings. Every error message, warning, or produced output (rendered code, compiled JS, CLI output) a test checks must be compared in full against the complete expected value. Never check that a fragment appears somewhere inside it, including through a partial regex match: a substring check still passes when the output around it is wrong, so regressions slip through.
+  - If the output has run-dependent parts (temp paths, hashes, addresses, timestamps), derive the expected value from the same inputs or normalize those parts to fixed placeholders, then compare the whole value.
+  - Existing tests still contain substring checks; don't copy that pattern into new assertions.
+- Prefer a few thorough tests that pin down exact behavior over many shallow ones.
 - **Unit tests:** `tests/units/`, run with `uv run pytest tests/units`.
   - unit tests should primarily cover a single module, and should be named accordingly, including subdirectories (e.g. `tests/units/istate/test_manager.py` for `reflex/istate/manager.py`). For subpackages, also include the corresponding path below `src/` (e.g. `tests/units/reflex_base/event/test_context.py` for `packages/reflex-base/src/reflex_base/event/context.py`).
 - **Integration tests:** prefer Playwright (`tests/integration/tests_playwright/`). Integration tests are slow — extend existing test apps rather than creating new ones for trivial functionality. Multiple test cases sharing one app is fine.
+
+### Frontend javascript tests
+
+The javascript Reflex ships is a package of its own, `reflex-frontend`, in
+`packages/reflex-frontend/`. Its `src/` is copied verbatim into a user's
+`.web` directory, so tests must **not** live inside that tree. They go in the
+package's `tests/` and run under vitest + jsdom:
+`npm --prefix packages/reflex-frontend test`. `npm run check` there also lints
+and type-checks the source from its JSDoc; CI runs all three.
+
+`utils/state.js` evaluates event code with `eval`, which resolves names from
+the module's own scope: a binding that looks unused may be all that code can
+reach, and moving a function to another module can break it. The package
+README lists this and the rest of the module-level state. A global the runtime
+reads from `window` is declared in `types/globals.d.ts`, and a name an app
+imports is listed in `tests/public_api.test.js`.
+
+The package is not published to npm. The reflex-base wheel embeds `src/` as
+`reflex_base/.templates/web` when it is built (`packages/reflex-base/hatch_build.py`);
+in a checkout `constants.Templates.Dirs.WEB_TEMPLATE` resolves to `src/` directly,
+so the next `reflex init` copies an edit without a rebuild. A python test that
+reads one of these files goes through that constant rather than a path.
+
+It is the one directory under `packages/` without a `pyproject.toml`: the uv
+workspace excludes it, and nothing builds or releases it on its own. A change
+under its `src/` is a change to reflex-base (`extra-source-dirs` in
+`[tool.reflex-release]`), so its news fragment goes in `packages/reflex-base/news/`.
+
+Reach for these when behavior can only be observed at runtime and an integration
+test would be indirect or impossible to set up — provider teardown, SSR vs. client
+branches, subscription bookkeeping. Prefer a Playwright test when the thing you
+want to assert is visible in a real app.
+
+`$/...` specifiers resolve to `src/` via a vitest alias, as they resolve to `.web`
+in an app. `$/env.json` is compiled per app, so the alias points it at
+`tests/fixtures/env.json`. The modules import their real npm dependencies:
+`package.json` pins them to the versions `constants.PackageJson.DEPENDENCIES`
+installs into an app, and `tests/units/reflex_base/constants/test_installer.py`
+fails when the two drift.
 
 ### Integration test patterns
 
@@ -91,13 +136,56 @@ Playwright tests use the `page` fixture and navigate to `harness.frontend_url`. 
 
 When adding/modifying components: `uv run python scripts/make_pyi.py`. Commit `pyi_hashes.json` (not `.pyi` files). If the diff removes many modules, run `uv sync`, delete `.pyi_generator_last_run`, and regenerate.
 
+## CI workflows
+
+Branch rules require one check per workflow, listed in
+`.github/rulesets/main-required-checks.json`. Check names are matched literally —
+no wildcards — so two rules follow:
+
+- **A required workflow must not filter its `pull_request` trigger.** A workflow
+  a path filter skips never reports its checks, so a required check on it blocks
+  the merge forever. Filter in a `changes` job instead and gate the real jobs on
+  `if: needs.changes.outputs.run == 'true'` — a job skipped by `if:` reports as a
+  pass. `push` triggers may keep their filters; nothing gates a merge there. So
+  may a workflow that blocks no merge — absent from the ruleset and listed in
+  that test's `ADVISORY` — where the filter costs a run rather than a merge.
+- **Every merge-blocking workflow ends in a gate job** named `<workflow>-gate`,
+  which collapses it into one check name that matrix expansion cannot move. The
+  exception is a workflow with one job whose name cannot drift — `pre-commit`,
+  `changelog` — which the ruleset requires by that name (`DIRECTLY_REQUIRED` in
+  the test). A gate looks like:
+
+```yaml
+  unit-tests-gate:
+    needs: [changes, unit-tests, unit-tests-macos]  # every other job
+    if: always()  # not !cancelled(): a cancelled run would report a pass
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@... # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}
+```
+
+Adding a job means adding it to the gate's `needs`; adding a workflow means
+adding its gate to the ruleset. `tests/units/test_workflow_gates.py` fails when
+either drifts. Every matrix leg blocks through its gate, pre-release Python
+versions included, so leave `continue-on-error` off a gated job. A workflow
+disabled in the repository's Actions settings never reports, which no test can
+see: disabling one means moving it to `ADVISORY` and out of the ruleset, or every
+merge waits on it.
+
 ## Changelog fragments
 
 User-facing changes need a news fragment in the `news/` directory of each
 package they touch (the repo root's `news/` for `reflex`), named
-`<PR number>.<type>.md`, or `+<slug>.<type>.md` before the PR number is known.
-Types: `breaking`, `deprecation`, `feature`, `bugfix`, `performance`, `docs`,
-`misc`.
+`+<slug>.<type>.md`. Putting the PR number in the name (`<PR number>.<type>.md`)
+is optional: the release process renames an orphan fragment when it can identify
+the PR that added it, so its entry links to that PR. Don't push a commit just to
+rename one. Types: `breaking`, `deprecation`, `feature`, `bugfix`,
+`performance`, `docs`, `misc`.
 
 Write for external downstream users, not for reviewers. Every entry links to
 its PR, so motivation, narrative, and implementation details belong in the PR
@@ -114,6 +202,24 @@ documentation — write it under `docs/` and let the fragment link there.
 
 CI requires a fragment for every package whose source the PR touches; the
 `skip-changelog` label waives it for changes that are genuinely not user-facing.
+
+## Sibling dependency floors
+
+When a package needs an unreleased change in a workspace sibling, raise its
+floor on that sibling to the `.dev0` of the sibling's next version. Every
+package derives its version with `bump = true`, so each commit after its newest
+tag builds as a dev release of that next version:
+
+- after `reflex-base-v0.9.12`: `reflex-base >= 0.9.13.dev0`
+- after `reflex-components-core-v0.9.10.post1`: `reflex-components-core >= 0.9.10.post2.dev0`
+
+Such a floor excludes every release up to that tag and is met by every later
+commit, so check-min-deps passes. A post release of the sibling cut after the
+floor was written leaves main building below it; re-floor at that post release.
+Releasing the dependent lifts it to the first
+published version that satisfies it (see `packages/reflex-release/README.md`,
+"Dependency pins across a release"). A floor the workspace can't meet fails
+check-min-deps with "builds as ... here".
 
 ## Breaking changes and deprecation
 

@@ -19,16 +19,20 @@ With Linear, your app can:
 ## Step 1: Obtain a Linear API Key
 
 1. Go to your [Linear account](https://linear.app/).  
-2. Navigate to **Workspace Settings → API**.  
-3. Click **Create API Key**, give it a name, and copy the key.
+2. Navigate to **Settings → Account → Security & access**.  
+3. Create a new **personal API key**, give it a name, and copy the key.
+
+> 💡 If you're a Member and can't create a key, ask a workspace Admin to allow member API keys.
 
    * **Example:** `lin_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Linear** in your app settings.
-2. Paste your **Linear API Key** in the input field.  
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Linear** card.
+2. Click **Add connection** and paste your API key into **LINEAR_API_KEY**.
+3. Click **Connect** to save the connection.
+
+If the card offers a **Connect account** tab, you can sign in with Linear there instead of pasting a key.
 
 Once connected, your app can interact with Linear to automate issue tracking and project management.
 

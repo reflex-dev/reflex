@@ -224,7 +224,7 @@ def date_compare_operation(
         The result of the operation.
     """
     return var_operation_return(
-        f"(compareDatetime({lhs}, {rhs}) {operator} 0)",
+        f"(compareDatetime({lhs!s}, {rhs!s}) {operator} 0)",
         bool,
         VarData(imports=_COMPARE_DATETIME_IMPORT),
     )

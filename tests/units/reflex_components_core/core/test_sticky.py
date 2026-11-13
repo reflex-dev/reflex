@@ -37,3 +37,8 @@ def test_badge_href_empty_referrer(monkeypatch: pytest.MonkeyPatch):
     """An empty referrer param falls back to the default URL."""
     monkeypatch.setenv("REFLEX_REFERRER_PARAM", "")
     assert _badge_href() == "https://reflex.dev"
+
+
+def test_badge_has_accessible_name_when_visual_label_is_hidden():
+    """Mobile readers can identify the logo-only link."""
+    assert '"aria-label":"Built with Reflex"' in StickyBadge.create().render()["props"]

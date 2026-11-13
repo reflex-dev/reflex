@@ -172,7 +172,7 @@ The style dictionaries are applied in the order they are passed in. This means t
 
 ## Theming
 
-As of Reflex 'v0.4.0', you can now theme your Reflex web apps. To learn more checkout the [Theme docs](/docs/styling/theming).
+As of Reflex 'v0.4.0', you can now theme your Reflex web apps. To learn more checkout the [Theme docs](/docs/styling/theming/).
 
 The `Theme` component is used to change the theme of the application. The `Theme` can be set directly in your rx.App.
 
@@ -184,7 +184,7 @@ app = rx.App(
 )
 ```
 
-Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs](/docs/library/other/theme).
+Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs](/docs/library/other/theme/).
 
 ## Special Styles
 

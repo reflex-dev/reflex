@@ -1,0 +1,1 @@
+`Limit` now also says how often a group may start: `Limit(by="provider", at_most=5, rate=60, per=timedelta(minutes=1))`. Rates count in a token bucket that refills continuously, in a table the application maps with `RateBucket`.

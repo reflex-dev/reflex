@@ -36,7 +36,7 @@ from reflex_docgen.markdown._types import (
 if TYPE_CHECKING:
     from mistletoe.block_token import BlockToken
 
-_FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n", re.DOTALL)
+_FRONTMATTER_RE = re.compile(r"\A\ufeff?\s*---\r?\n(.*?\r?\n)---\r?\n", re.DOTALL)
 
 
 #: Known frontmatter keys that are not component preview lambdas.

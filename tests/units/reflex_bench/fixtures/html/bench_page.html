@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>bench page</title>
+    <!-- No favicon request, whose 404 would be a console error. -->
+    <link rel="icon" href="data:," />
+    <style>
+      .bench-hooks {
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>A static stand-in for a Reflex page</h1>
+    <p class="bench-hooks">
+      <img
+        alt="logo"
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'/%3E"
+      />
+      <span id="bench-marker-leaf">m-initial-leaf</span>
+      <button id="bench-handler" onclick="this.textContent = 'clicked'">
+        bench
+      </button>
+    </p>
+    <script>
+      // At 100 ms the page is hydrated, at 200 ms the marker text changes (a
+      // hot update) and at 300 ms a computed style, through an attribute
+      // change that no watch observes. With ?reload the first document
+      // reloads itself at 400 ms and the reloaded one shows another marker;
+      // ?throw raises an uncaught error.
+      const query = new URLSearchParams(location.search);
+      const reloaded = sessionStorage.getItem("reloaded") === "1";
+      const after = (ms, action) => setTimeout(action, ms);
+      after(100, () => {
+        const hydrated = document.createElement("span");
+        hydrated.id = "bench-hydrated";
+        document.body.append(hydrated);
+      });
+      after(200, () => {
+        document.getElementById("bench-marker-leaf").textContent = reloaded
+          ? "m-reloaded-leaf"
+          : "m-updated-leaf";
+      });
+      after(300, () => {
+        document.querySelector(".bench-hooks").style.fontSize = "13px";
+      });
+      if (query.has("reload") && !reloaded) {
+        after(400, () => {
+          sessionStorage.setItem("reloaded", "1");
+          location.reload();
+        });
+      }
+      if (query.has("throw")) {
+        after(0, () => {
+          throw new Error("bench page failed on purpose");
+        });
+      }
+    </script>
+  </body>
+</html>

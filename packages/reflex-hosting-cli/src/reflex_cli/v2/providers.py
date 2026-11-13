@@ -10,14 +10,18 @@ done from the Reflex Cloud dashboard (Organization → Cloud Providers).
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 
 from reflex_cli import constants
 from reflex_cli.utils import console, log
-from reflex_cli.utils.exceptions import NotAuthenticatedError
 from reflex_cli.utils.output import interactive_option, json_option, print_json
+
+if TYPE_CHECKING:
+    from reflex_build_sdk.types import GcpConnection, ProviderAccount
+
+    from reflex_cli.utils.hosting import AuthenticatedClient
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +31,7 @@ def providers_cli():
     """Commands for inspecting connected cloud providers."""
 
 
-def _resolve_org_id(org_id: str | None, client: Any) -> str:
+def _resolve_org_id(org_id: str | None, client: AuthenticatedClient) -> str:
     """Resolve the organization id from --org-id or the caller's token.
 
     Args:
@@ -59,11 +63,13 @@ _RUNTIME_SA_UNKNOWN = "(needs org admin)"
 _RUNTIME_SA_UNAVAILABLE = "(unavailable)"
 
 
-def _runtime_service_accounts_of(accounts: list[dict]) -> dict[str, str]:
+def _runtime_service_accounts_of(
+    accounts: list[ProviderAccount],
+) -> dict[str, str]:
     """Index the runtime service accounts carried by a provider account listing.
 
     Args:
-        accounts: The rows returned by ``hosting.list_provider_accounts``.
+        accounts: The organization's provider accounts.
 
     Returns:
         ``{connection id: runtime service account}``, holding only the
@@ -71,15 +77,14 @@ def _runtime_service_accounts_of(accounts: list[dict]) -> dict[str, str]:
 
     """
     return {
-        str(account["id"]): str(runtime_sa)
+        str(account.id): str(runtime_sa)
         for account in accounts
-        if account.get("id")
-        and (runtime_sa := (account.get("config") or {}).get("runtime_service_account"))
+        if (runtime_sa := account.config.get("runtime_service_account"))
     }
 
 
 def _runtime_service_accounts(
-    org_id: str, client: Any
+    org_id: str, client: AuthenticatedClient
 ) -> tuple[dict[str, str] | None, str]:
     """Look up what each of an org's connections runs its services as.
 
@@ -100,28 +105,22 @@ def _runtime_service_accounts(
         for a connection the map does not answer for.
 
     """
-    import httpx
-
-    from reflex_cli.utils import hosting
+    from reflex_build_sdk import AuthenticationError, PermissionDeniedError
 
     try:
-        accounts = hosting.list_provider_accounts(org_id, client=client)
-    except httpx.HTTPStatusError as ex:
-        if ex.response.status_code in (
-            httpx.codes.UNAUTHORIZED,
-            httpx.codes.FORBIDDEN,
-        ):
-            logger.debug(f"Not permitted to read provider account details: {ex}")
-            return None, _RUNTIME_SA_UNKNOWN
-        logger.warning(f"Could not read the runtime service accounts: {ex}")
-        return None, _RUNTIME_SA_UNAVAILABLE
+        accounts = client.api.providers.accounts(org_id)
+    except PermissionDeniedError as ex:
+        logger.debug(f"Not permitted to read provider account details: {ex}")
+        return None, _RUNTIME_SA_UNKNOWN
+    except AuthenticationError:
+        raise
     except Exception as ex:
         logger.warning(f"Could not read the runtime service accounts: {ex}")
         return None, _RUNTIME_SA_UNAVAILABLE
     return _runtime_service_accounts_of(accounts), _RUNTIME_SA_UNKNOWN
 
 
-def _as_account_row(connection: dict) -> dict:
+def _as_account_row(connection: GcpConnection) -> dict[str, Any]:
     """Reshape a GCP-status connection to look like a provider account row.
 
     `providers list --json` has emitted account rows since v0.1.69, so the
@@ -137,15 +136,20 @@ def _as_account_row(connection: dict) -> dict:
         The same connection in the provider account listing's shape.
 
     """
+    from reflex_cli.utils import hosting
+
     return {
-        "id": connection.get("id"),
-        "provider": connection.get("provider") or "gcp",
-        "name": connection.get("name"),
-        "is_default": connection.get("is_default"),
+        "id": str(connection.id),
+        "provider": hosting.PROVIDER_GCP,
+        "name": connection.name,
+        "is_default": connection.is_default,
         "config": {
-            key: connection[key]
-            for key in ("project_id", "region")
-            if connection.get(key)
+            key: value
+            for key, value in (
+                ("project_id", connection.project_id),
+                ("region", connection.region),
+            )
+            if value
         },
     }
 
@@ -173,6 +177,8 @@ def _connection_row(
         The row's cells, in header order.
 
     """
+    from reflex_cli.utils import hosting
+
     config = connection.get("config") or {}
     if runtime_service_accounts is None:
         runs_as = unknown_label
@@ -183,7 +189,7 @@ def _connection_row(
         )
     return [
         str(connection.get("name") or ""),
-        str(connection.get("provider") or "gcp"),
+        str(connection.get("provider") or hosting.PROVIDER_GCP),
         str(connection.get("project_id") or config.get("project_id") or ""),
         str(connection.get("region") or config.get("region") or ""),
         runs_as,
@@ -210,34 +216,31 @@ def providers_status(
     interactive: bool,
 ):
     """Show whether your organization can deploy to Google Cloud (GCP)."""
-    import httpx
+    from reflex_build_sdk import AuthenticationError, ReflexBuildError
 
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
         org_id = _resolve_org_id(org_id, authenticated_client)
         try:
-            status = hosting.get_gcp_provider_status(
-                org_id, client=authenticated_client
-            )
-        except httpx.HTTPStatusError as ex:
-            try:
-                detail = ex.response.json().get("detail")
-            except (ValueError, AttributeError):
-                detail = ex.response.text
-            logger.error(f"Failed to fetch GCP status: {detail}")
+            status = authenticated_client.api.providers.gcp_status(org_id)
+        except AuthenticationError:
+            # Answered by `reporting_api_errors`, which says how to fix it.
+            raise
+        except ReflexBuildError as ex:
+            logger.error(f"Failed to fetch GCP status: {hosting.error_message(ex)}")
             raise click.exceptions.Exit(1) from ex
 
         if as_json:
-            print_json(status)
+            print_json(hosting.as_json_document(status))
             return
 
-        configured = status.get("configured")
-        allowed = status.get("allowed")
+        configured = status.configured
+        allowed = status.allowed
         if configured and allowed:
             logger.log(log.SUCCESS, "Google Cloud is connected and ready for deploys.")
         elif configured and not allowed:
@@ -255,16 +258,12 @@ def providers_status(
                 "Google Cloud is not connected, and GCP deploys require the "
                 "Enterprise tier. Contact sales@reflex.dev to upgrade."
             )
-        if status.get("project_id"):
-            console.print(f"  Project: {status['project_id']}")
-        if status.get("region"):
-            console.print(f"  Region:  {status['region']}")
+        if status.project_id:
+            console.print(f"  Project: {status.project_id}")
+        if status.region:
+            console.print(f"  Region:  {status.region}")
 
-        connections = [
-            connection
-            for connection in (status.get("connections") or [])
-            if isinstance(connection, dict)
-        ]
+        connections = [_as_account_row(connection) for connection in status.connections]
         if connections:
             runtime_service_accounts, unknown_label = _runtime_service_accounts(
                 org_id, authenticated_client
@@ -280,9 +279,6 @@ def providers_status(
                 headers=_CONNECTION_HEADERS,
                 overflow="fold",
             )
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
 
 
 @providers_cli.command(name="list")
@@ -309,36 +305,24 @@ def providers_list(
     into. Pass a connection's name to `reflex deploy --gcp-connection` to
     deploy an app through it instead of the default one.
     """
-    import httpx
+    from reflex_build_sdk import PermissionDeniedError
 
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
         org_id = _resolve_org_id(org_id, authenticated_client)
         runtime_service_accounts: dict[str, str] | None
         try:
-            connections = hosting.list_provider_accounts(
-                org_id, client=authenticated_client
-            )
-            runtime_service_accounts = _runtime_service_accounts_of(connections)
-        except httpx.HTTPStatusError as ex:
-            try:
-                detail = ex.response.json().get("detail")
-            except (ValueError, AttributeError):
-                detail = ex.response.text
-            if ex.response.status_code not in (
-                httpx.codes.UNAUTHORIZED,
-                httpx.codes.FORBIDDEN,
-            ):
-                logger.error(f"Failed to list provider accounts: {detail}")
-                raise click.exceptions.Exit(1) from ex
+            accounts = authenticated_client.api.providers.accounts(org_id)
+        except PermissionDeniedError as ex:
             # The stored provider accounts are org-admin only, but anyone who
             # can deploy needs the connection names --gcp-connection selects
             # between, so fall back to the GCP status every member can read.
+            detail = hosting.error_message(ex)
             logger.debug(f"Falling back to the GCP status listing: {detail}")
             try:
                 connections = [
@@ -355,6 +339,9 @@ def providers_list(
                 )
                 raise click.exceptions.Exit(1) from fallback_ex
             runtime_service_accounts = None
+        else:
+            connections = [hosting.as_json_document(account) for account in accounts]
+            runtime_service_accounts = _runtime_service_accounts_of(accounts)
 
         if as_json:
             print_json(connections)
@@ -375,9 +362,6 @@ def providers_list(
             # long for it: wrap the cell rather than cut the value short.
             overflow="fold",
         )
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
 
 
 # The same listing under the name the deploy flag points at: --gcp-connection

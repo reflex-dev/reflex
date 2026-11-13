@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Iterator
 from functools import partial
 from hashlib import md5
 from typing import Any, ClassVar, Literal, get_origin, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.constants import Dirs, EventTriggers
 from reflex_base.event import (
     FORM_DATA,
@@ -27,18 +26,25 @@ from reflex_base.event import (
     prevent_default,
     unwrap_var_annotation,
 )
+from reflex_base.utils import console
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.utils.imports import ImportDict
+from reflex_base.utils.types import (
+    get_required_typed_dict_keys,
+    get_typed_dict_field_types,
+    value_inside_optional,
+)
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import ternary_operation
-from typing_extensions import NotRequired, is_typeddict
+from typing_extensions import is_typeddict
 
 from reflex_components_core.el.element import Element
 
 from .base import BaseHTML, RawTextBaseHTML, VoidBaseHTML
 
 _DYNAMIC_FORM_FIELD = object()
+_NATIVE_FORM_CONTROL_TAGS = frozenset({"input", "select", "textarea"})
 
 
 def _handle_submit_js_template(
@@ -64,7 +70,7 @@ def _handle_submit_js_template(
     const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
         ev.preventDefault()
-        const {form_data} = {{...Object.fromEntries(new FormData($form).entries()), ...{field_ref_mapping}}};
+        const {form_data} = getFormData($form, {field_ref_mapping});
 
         ({on_submit_event_chain}(ev));
 
@@ -89,22 +95,67 @@ def on_submit_mapping_event(
     return (form_data,)
 
 
-def _iter_form_components(component: BaseComponent) -> Iterator[BaseComponent]:
-    """Yield a component and all nested components that may contribute form data.
+# Input types that submit no value of their own.
+_VALUELESS_INPUT_TYPES = frozenset({"button", "image", "reset", "submit"})
+
+
+def _form_data_param_name(event: EventSpec) -> str | None:
+    """Find the handler parameter an event passes the submitted form data to.
 
     Args:
-        component: The component to walk.
+        event: An event of a form's on_submit chain.
 
-    Yields:
-        The component and its nested component descendants.
+    Returns:
+        The parameter's name, or None when the event takes no form data.
     """
-    yield component
-    for child in component.children:
-        if isinstance(child, BaseComponent):
-            yield from _iter_form_components(child)
-    if isinstance(component, Component):
-        for component_in_props in component._get_components_in_props():
-            yield from _iter_form_components(component_in_props)
+    return next(
+        (
+            param._js_expr
+            for param, value in event.args
+            if isinstance(value, Var) and value._js_expr == FORM_DATA._js_expr
+        ),
+        None,
+    )
+
+
+def _get_control_prop(component: BaseComponent, prop_name: str) -> Any:
+    """Get a form control's prop, also when it is carried as a custom attribute.
+
+    A DebounceInput carries the props of its input, such as ``name``, that it
+    does not declare itself in its custom attributes.
+
+    Args:
+        component: The component being inspected.
+        prop_name: The prop to get.
+
+    Returns:
+        The prop's value, or None when it is not set.
+    """
+    value = getattr(component, prop_name, None)
+    if value is None:
+        return getattr(component, "custom_attrs", {}).get(prop_name)
+    return value
+
+
+def _resolve_static_string(value: Any) -> str | object | None:
+    """Resolve a prop value when it is statically known to be a string.
+
+    Args:
+        value: The prop value.
+
+    Returns:
+        The resolved string, ``_DYNAMIC_FORM_FIELD`` for dynamic vars, or ``None``.
+    """
+    if value is None or isinstance(value, str):
+        return value
+    if isinstance(value, LiteralVar):
+        decoded = value._decode()
+        if isinstance(decoded, str):
+            return decoded
+        return None
+    if isinstance(value, Var):
+        return _DYNAMIC_FORM_FIELD
+    return None
 
 
 def _get_static_string_prop(
@@ -120,50 +171,130 @@ def _get_static_string_prop(
     Returns:
         The resolved string, ``_DYNAMIC_FORM_FIELD`` for dynamic vars, or ``None``.
     """
-    value = getattr(component, prop_name, None)
-    if value is None:
-        return None
-    if isinstance(value, str):
-        return value
-    if isinstance(value, LiteralVar):
-        decoded = value._decode()
-        if isinstance(decoded, str):
-            return decoded
-        return None
-    if isinstance(value, Var):
-        return _DYNAMIC_FORM_FIELD
-    return None
+    return _resolve_static_string(_get_control_prop(component, prop_name))
 
 
-def _get_required_typed_dict_fields(typed_dict_type: type[Any]) -> frozenset[str]:
-    """Resolve required TypedDict keys across Python versions.
-
-    On Python 3.11+ ``__required_keys__`` is reliable.  On 3.10,
-    ``typing.TypedDict`` combined with ``typing_extensions.NotRequired``
-    fails to populate ``__required_keys__``, so we patch the result by
-    subtracting fields whose annotation is wrapped with ``NotRequired``.
+def _has_form_role(component: BaseComponent, role: str) -> bool:
+    """Return whether a component or its memoized type opts in to a form role.
 
     Args:
-        typed_dict_type: The TypedDict class to inspect.
+        component: The component to inspect.
+        role: The class attribute naming the role, such as ``_is_form_control``.
 
     Returns:
-        The required field names for the TypedDict.
+        Whether the component, or the component type it memoizes, sets the role.
     """
-    required = frozenset(getattr(typed_dict_type, "__required_keys__", frozenset()))
-    if sys.version_info >= (3, 11):
-        return required
+    if getattr(component, role, False):
+        return True
+    wrapped_component_type = getattr(component, "_wrapped_component_type", None)
+    return bool(getattr(wrapped_component_type, role, False))
 
-    # On 3.10, __required_keys__ ignores NotRequired from typing_extensions.
-    # Subtract any field explicitly marked NotRequired.
-    try:
-        hints = get_type_hints(typed_dict_type, include_extras=True)
-    except Exception:
-        return required
 
-    not_required = frozenset(
-        name for name, hint in hints.items() if get_origin(hint) is NotRequired
+def _is_form_control_component(component: BaseComponent) -> bool:
+    """Return whether a component or its memoized type is a form control.
+
+    Custom component classes can opt in with ``_is_form_control = True``.
+
+    Args:
+        component: The component to inspect.
+
+    Returns:
+        Whether the component contributes a form field.
+    """
+    return (
+        _has_form_role(component, "_is_form_control")
+        or getattr(component, "tag", None) in _NATIVE_FORM_CONTROL_TAGS
     )
-    return required - not_required
+
+
+def _iter_form_controls(
+    component: BaseComponent,
+    field_name: Any = None,
+    control_name: Any = None,
+) -> Iterator[tuple[Component, Any]]:
+    """Yield the form controls in a subtree with the ``name`` each submits under.
+
+    A control submits under its own ``name``. The control a form field control
+    (``rx.form.control``) renders takes the form field control's ``name``
+    instead, or else that of the enclosing form field (``rx.form.field``),
+    which Radix passes to the control at runtime. Components set
+    ``_is_form_field`` and ``_is_form_field_control`` to take these roles.
+
+    Args:
+        component: The component tree to walk.
+        field_name: The ``name`` of the enclosing form field, if any.
+        control_name: The ``name`` passed to this component by the form field
+            control rendering it, if any.
+
+    Yields:
+        Each form control and its ``name``, which is None when it has none.
+    """
+    form_control_source = getattr(component, "_form_control_source", None)
+    if isinstance(form_control_source, BaseComponent):
+        yield from _iter_form_controls(form_control_source, field_name, control_name)
+        return
+    # A form field control names the child it renders, not what that child nests.
+    child_control_name = None
+    if isinstance(component, Component):
+        if _has_form_role(component, "_is_form_field"):
+            field_name = _get_control_prop(component, "name")
+        if _has_form_role(component, "_is_form_field_control"):
+            child_control_name = _get_control_prop(component, "name")
+            if child_control_name is None:
+                child_control_name = field_name
+            # Without a child to render as the control, it renders an input.
+            if not component.children:
+                yield component, child_control_name
+        elif _is_form_control_component(component):
+            name = _get_control_prop(component, "name")
+            yield component, control_name if name is None else name
+    for child in component.children:
+        if isinstance(child, BaseComponent):
+            yield from _iter_form_controls(child, field_name, child_control_name)
+    if isinstance(component, Component):
+        for component_in_props in component._get_components_in_props():
+            yield from _iter_form_controls(
+                component_in_props, field_name, child_control_name
+            )
+
+
+def _get_form_control_refs(component: BaseComponent) -> set[str]:
+    """Collect refs belonging to form controls in a component subtree.
+
+    Args:
+        component: The component tree to inspect.
+
+    Returns:
+        The refs owned by form controls.
+    """
+    return {
+        ref
+        for control, _ in _iter_form_controls(component)
+        if (ref := control.get_ref()) is not None
+    }
+
+
+def _form_fills_field(
+    name: str, field_types: dict[str, Any], form_keys: set[str]
+) -> bool:
+    """Check whether a form's static field names fill a TypedDict field.
+
+    Args:
+        name: The TypedDict field.
+        field_types: The TypedDict's field types.
+        form_keys: The form's static field names.
+
+    Returns:
+        Whether a field of that name is submitted or, for a list field, one
+        named ``name[]``, unless the TypedDict declares ``name[]`` itself.
+    """
+    if name in form_keys:
+        return True
+    bracketed = f"{name}[]"
+    if bracketed not in form_keys or bracketed in field_types:
+        return False
+    field_type = value_inside_optional(field_types[name])
+    return (get_origin(field_type) or field_type) is list
 
 
 def _format_field_list(fields: tuple[str, ...]) -> str:
@@ -311,6 +442,7 @@ class Form(BaseHTML):
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
         form._validate_on_submit_typed_dict_fields()  # pyright: ignore[reportAttributeAccessIssue]
+        form._deprecate_id_only_form_controls()  # pyright: ignore[reportAttributeAccessIssue]
         form.handle_submit_unique_name = md5(  # pyright: ignore[reportAttributeAccessIssue]
             str(form._get_all_hooks()).encode("utf-8")
         ).hexdigest()
@@ -324,7 +456,7 @@ class Form(BaseHTML):
         """
         return {
             "react": "useCallback",
-            f"$/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+            f"$/{Dirs.STATE_PATH}": ["getFormData", "getRefValue", "getRefValues"],
         }
 
     def add_hooks(self) -> list[str]:
@@ -347,7 +479,7 @@ class Form(BaseHTML):
             )
         ]
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         render_tag = super()._render()
         if EventTriggers.ON_SUBMIT in self.event_triggers:
             render_tag = render_tag.add_props(**{
@@ -359,9 +491,11 @@ class Form(BaseHTML):
         return render_tag
 
     def _get_form_refs(self) -> dict[str, Any]:
-        # Send all the input refs to the handler.
+        form_control_refs = _get_form_control_refs(self)
         form_refs = {}
         for ref in self._get_all_refs():
+            if ref not in form_control_refs:
+                continue
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
@@ -387,43 +521,79 @@ class Form(BaseHTML):
         form_keys = set(self._get_form_refs())
         has_dynamic_identifiers = False
 
-        for component in _iter_form_components(self):
-            if component is self or not getattr(component, "_is_form_control", False):
-                continue
-
-            name = _get_static_string_prop(component, "name")
+        for control, name in _iter_form_controls(self):
+            name = _resolve_static_string(name)
             if name is _DYNAMIC_FORM_FIELD:
                 has_dynamic_identifiers = True
             elif isinstance(name, str):
                 form_keys.add(name)
 
-            if _get_static_string_prop(component, "id") is _DYNAMIC_FORM_FIELD:
+            if _get_static_string_prop(control, "id") is _DYNAMIC_FORM_FIELD:
                 has_dynamic_identifiers = True
 
         return form_keys, has_dynamic_identifiers
+
+    def _deprecate_id_only_form_controls(self) -> None:
+        """Warn that controls with a static ``id`` but no ``name`` will stop submitting.
+
+        Form data includes such controls by their ``id``, which is deprecated.
+        """
+        on_submit = self.event_triggers.get(EventTriggers.ON_SUBMIT)
+        if not isinstance(on_submit, EventChain) or not any(
+            isinstance(event, EventSpec) and _form_data_param_name(event)
+            for event in on_submit.events
+        ):
+            return
+        for control, name in _iter_form_controls(self):
+            if (
+                _resolve_static_string(name) is not None
+                or _get_static_string_prop(control, "type") in _VALUELESS_INPUT_TYPES
+                # A disabled control is never submitted, named or not.
+                or (
+                    isinstance(
+                        disabled := _get_control_prop(control, "disabled"),
+                        LiteralVar,
+                    )
+                    and disabled._decode() is True
+                )
+            ):
+                continue
+            control_id = _get_static_string_prop(control, "id")
+            if isinstance(control_id, str):
+                console.deprecate(
+                    feature_name=(
+                        f"Submitting the form control with id {control_id!r} "
+                        "by its `id`"
+                    ),
+                    reason=(
+                        "Form data will only include controls with a `name`. "
+                        f"Set `name={control_id!r}` to keep submitting its value; "
+                        "a checkbox or switch then submits 'on' or nothing rather "
+                        "than True or False, so read it as a `bool` field of a "
+                        "TypedDict to keep a bool"
+                    ),
+                    deprecation_version="0.10.1",
+                    removal_version="0.12.0",
+                )
 
     def _validate_on_submit_typed_dict_fields(self) -> None:
         """Validate statically knowable form fields against TypedDict submit handlers.
 
         Raises:
-            EventHandlerValueError: If a required TypedDict field is missing.
+            EventHandlerValueError: If a required TypedDict field is missing, or
+                a TypedDict's field types cannot be resolved.
         """
         on_submit = self.event_triggers.get(EventTriggers.ON_SUBMIT)
         if not isinstance(on_submit, EventChain):
             return
 
-        typed_dict_contracts: list[tuple[str, type[Any], frozenset[str]]] = []
+        typed_dict_contracts: list[
+            tuple[str, type[Any], frozenset[str], dict[str, Any]]
+        ] = []
         for event in on_submit.events:
             if not isinstance(event, EventSpec):
                 return
-            form_data_param_name = next(
-                (
-                    param._js_expr
-                    for param, value in event.args
-                    if isinstance(value, Var) and value._js_expr == FORM_DATA._js_expr
-                ),
-                None,
-            )
+            form_data_param_name = _form_data_param_name(event)
             if form_data_param_name is None:
                 continue
 
@@ -445,11 +615,19 @@ class Form(BaseHTML):
             if not is_typeddict(annotation):
                 continue
 
-            required_fields = _get_required_typed_dict_fields(annotation)
+            # Fail at compile time rather than coerce submissions wrongly.
+            try:
+                field_types = get_typed_dict_field_types(annotation)
+            except TypeError as err:
+                msg = f"Cannot submit form data to on_submit handler `{func.__qualname__}`: {err}"
+                raise EventHandlerValueError(msg) from err
+
+            required_fields = get_required_typed_dict_keys(annotation)
             typed_dict_contracts.append((
                 func.__qualname__,
                 annotation,
                 required_fields,
+                field_types,
             ))
 
         if not typed_dict_contracts:
@@ -462,19 +640,26 @@ class Form(BaseHTML):
 
         form_keys, has_dynamic_identifiers = self._get_static_form_field_keys()
 
-        for handler_name, typed_dict_type, required_fields in typed_dict_contracts:
+        for (
+            handler_name,
+            typed_dict_type,
+            required_fields,
+            field_types,
+        ) in typed_dict_contracts:
             required_field_names = tuple(sorted(required_fields))
             if not required_field_names:
                 continue
 
             missing_fields = tuple(
-                field for field in required_field_names if field not in form_keys
+                field
+                for field in required_field_names
+                if not _form_fills_field(field, field_types, form_keys)
             )
             if not missing_fields or has_dynamic_identifiers:
                 continue
 
             present_fields = tuple(
-                field for field in required_field_names if field in form_keys
+                field for field in required_field_names if field not in missing_fields
             )
             msg = (
                 f"Form field mismatch for on_submit handler `{handler_name}`.\n\n"

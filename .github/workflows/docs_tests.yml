@@ -3,12 +3,6 @@ name: docs tests
 on:
   pull_request:
     branches: ["main"]
-    paths:
-      - 'docs/**'
-      - 'packages/reflex-components-core/src/reflex_components_core/core/upload.py'
-      - 'packages/reflex-site-shared/**'
-      - 'packages/integrations-docs/**'
-      - '.github/workflows/docs_tests.yml'
   push:
     branches: ["main"]
     paths:
@@ -26,7 +20,34 @@ defaults:
     shell: bash
 
 jobs:
+  # This filter cannot live on the pull_request trigger: a workflow that a path
+  # filter skips never reports its checks at all, so a branch rule requiring
+  # them blocks the merge forever. Filtered out here, the jobs below skip
+  # instead, and a skipped job reports as a pass.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/changed_paths
+        id: filter
+        with:
+          paths: |
+            docs/**
+            packages/reflex-components-core/src/reflex_components_core/core/upload.py
+            packages/reflex-site-shared/**
+            packages/integrations-docs/**
+            .github/workflows/docs_tests.yml
+
   docs-tests:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -43,3 +64,18 @@ jobs:
       - name: Run docs app tests
         working-directory: ./docs/app
         run: uv run --no-sync pytest tests/ -v
+
+  # The one status check the branch rules require from this workflow. Naming the
+  # jobs above directly does not survive: check names follow the matrix and the
+  # display names, and a job that a filter skips must not block the merge.
+  docs-tests-gate:
+    needs: [changes, docs-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}

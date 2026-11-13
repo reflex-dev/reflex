@@ -138,7 +138,7 @@ rx.form.root(
 )
 ```
 
-In this example, the `rx.input` has an attribute `type="email"` and the `form.message` has the attribute `match="typeMismatch"`. Those are required for the form to validate the input by its type. The prop `as_child="True"` is required when using other components to construct a Form component. This example has used `rx.input` to construct the Form Control and `button` the Form Submit.
+In this example, `type="email"` on `rx.input` enables the browser's email format validation, and `match="typeMismatch"` on `form.message` displays the message when that validation fails. The prop `as_child=True` is required when using other components to construct a Form component. This example has used `rx.input` to construct the Form Control and `button` the Form Submit.
 
 ## Form Anatomy
 
@@ -156,13 +156,13 @@ rx.code_block(
 )
 ```
 
-A Form Root (`form.root`) contains all the parts of a form. The Form Field (`form.field`), Form Submit (`form.submit`), etc should all be inside a Form Root. A Form Field can contain a Form Label (`form.label`), a Form Control (`form.control`), and a Form Message (`form.message`). A Form Label is a label element. A Form Control is where the user enters the input or makes selections. By default, the Form Control is a input. Using other form components to construct the Form Control is supported. To do that, set the prop `as_child=True` on the Form Control.
+A Form Root (`form.root`) contains all the parts of a form. The Form Field (`form.field`), Form Submit (`form.submit`), etc should all be inside a Form Root. A Form Field can contain a Form Label (`form.label`), a Form Control (`form.control`), and a Form Message (`form.message`). A Form Label is a label element. A Form Control is where the user enters the input or makes selections. By default, the Form Control is an input. It can instead render the control passed as its child: `rx.input`, `rx.text_area`, `rx.debounce_input`, `rx.el.input`, `rx.el.textarea` or `rx.el.select`. That control takes the `name` of its Form Field, and its validation messages, when neither the control nor the Form Control sets a `name`.
 
 ```md alert info
-The current version of Radix Forms does not support composing **Form Control** with other Radix form primitives such as **Checkbox**, **Select**, etc.
+The current version of Radix Forms does not support composing **Form Control** with other Radix form primitives such as **Checkbox**, **Select**, etc. Give those controls a `name` and include them directly under the Form Root or Form Field; they are submitted with the form but not validated.
 ```
 
-The Form Message is a validation message which is automatically wired (functionality and accessibility). When the Form Control determines the input is invalid, the Form Message is shown. The `match` prop is to enable [client side validation](#client-side-validation). To perform [server side validation](#server-side-validation), **both** the `force_match` prop of the Form Control and the `server_invalid` prop of the Form Field are set together.
+The Form Message is a validation message which is automatically wired (functionality and accessibility). The `match` prop selects which [client side validation](#client-side-validation) failure displays the message. To perform [server side validation](#server-side-validation), **both** the `force_match` prop of the Form Message and the `server_invalid` prop of the Form Field are set together.
 
 The Form Submit is by default a button that submits the form. To use another button component as a Form Submit, include that button as a child inside `form.submit` and set the prop `as_child=True`.
 
@@ -170,7 +170,7 @@ The `on_submit` prop of the Form Root accepts an event handler. It is called wit
 
 ## Data Submission
 
-As previously mentioned, the various pieces of data in the form are submitted together as a dictionary. The form control or the input components must have the `name` attribute. This `name` is the key to get the value from the form data dictionary. If no validation is needed, the form type components such as Checkbox, Radio Groups, TextArea can be included directly under the Form Root instead of inside a Form Control.
+As previously mentioned, the various pieces of data in the form are submitted together as a dictionary. The form control or the input components must have the `name` attribute. This `name` is the key to get the value from the form data dictionary. A control rendered by a Form Control takes the `name` of its Form Field when neither the control nor the Form Control sets one. If no validation is needed, form components such as Checkbox, Radio Group or Select can be included directly under the Form Root with a `name` instead of inside a Form Control.
 
 ```python demo exec
 import reflex as rx
@@ -300,6 +300,12 @@ def radix_form_submission_example():
 ```
 
 ## Validation
+
+### Client Side Validation
+
+Client side validation uses the browser's built-in input constraints, such as `required`, `type`, and `pattern`; see the [Input documentation](/docs/library/forms/input/) for available props.
+
+### Server Side Validation
 
 Server side validation is done through **Computed Vars** on the State. The **Var** should return a boolean flag indicating when input is invalid. Set that **Var** on both the `server_invalid` prop of `form.field` and the `force_match` prop of `form.message`. There is an example how to do that in the [Final Example](#final-example).
 
@@ -446,6 +452,7 @@ def radix_form_example():
             "Username submitted: ",
             rx.text(
                 RadixFormState.username,
+                as_="span",
                 weight="bold",
                 color="var(--accent-11)",
             ),
@@ -454,6 +461,7 @@ def radix_form_example():
             "Email submitted: ",
             rx.text(
                 RadixFormState.email,
+                as_="span",
                 weight="bold",
                 color="var(--accent-11)",
             ),

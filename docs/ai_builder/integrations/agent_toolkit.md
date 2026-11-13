@@ -9,10 +9,10 @@ def _resource_card(
 ) -> rx.Component:
     return rx.el.a(
         rx.el.div(
-            rx.el.h3(title, class_name="text-base font-semibold text-secondary-12"),
-            rx.el.p(body, class_name="text-sm leading-6 text-secondary-11"),
-            rx.el.div(action, class_name="text-sm font-semibold text-primary-10"),
-            class_name="flex h-full flex-col gap-2 rounded-lg border border-secondary-a4 bg-white-1 p-4 transition-colors hover:bg-secondary-2 shadow-xs",
+            rx.el.h3(title, class_name="text-base font-semibold text-foreground"),
+            rx.el.p(body, class_name="text-sm leading-6 text-muted-foreground"),
+            rx.el.div(action, class_name="text-sm font-semibold text-primary-hover"),
+            class_name="flex h-full flex-col gap-2 rounded-lg border border-border-subtle bg-white-1 p-4 transition-colors hover:bg-muted shadow-xs",
         ),
         href=href,
         target=target,
@@ -61,7 +61,7 @@ agent_toolkit_resources()
 
 You do not need an API key to read Reflex documentation. Start by deciding how your assistant will work with Reflex:
 
-- For local app development, use Python 3.10 or newer and a project virtual environment.
+- For local app development, use Python 3.11 or newer and a project virtual environment.
 - For current documentation context, give the assistant Markdown docs or `llms.txt`.
 - For structured tool access, use the Reflex MCP integration.
 - For repeatable agent behavior, install Reflex Agent Skills.
@@ -138,7 +138,7 @@ Use these prompts to give your agent a strong starting point.
 ## New App
 
 ```text
-Create a new Reflex app. Use current Reflex documentation, set up a Python 3.10+ virtual environment, initialize the project, and validate it with reflex compile --dry before handing it back.
+Create a new Reflex app. Use current Reflex documentation, set up a Python 3.11+ virtual environment, initialize the project, and validate it with reflex compile --dry before handing it back.
 ```
 
 

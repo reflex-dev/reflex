@@ -39,7 +39,7 @@ class NameState(rx.State):
 
 def hybrid_full_name_example():
     return rx.vstack(
-        rx.heading(NameState.full_name),
+        rx.heading(NameState.full_name, as_="h3"),
         rx.input(value=NameState.first_name, on_change=NameState.set_first_name),
         rx.input(value=NameState.last_name, on_change=NameState.set_last_name),
     )
@@ -51,7 +51,7 @@ event handler, `self.full_name` returns the actual combined string.
 
 ## Hybrid Properties vs. Computed Vars
 
-[Computed vars](/docs/vars/computed-vars) and hybrid properties both derive a value from
+[Computed vars](/docs/vars/computed-vars/) and hybrid properties both derive a value from
 other state vars, but they work very differently:
 
 | | Computed var (`@rx.var`) | Hybrid property (`hybrid_property`) |
@@ -74,7 +74,7 @@ value can only be produced on the server.
 
 By default a hybrid property reuses the **same code** on the frontend and backend. When
 the two should differ, register a frontend-only implementation with `@<name>.var`. The
-function receives the state class and returns a [Var](/docs/vars/base-vars); declaring it
+function receives the state class and returns a [Var](/docs/vars/base-vars/); declaring it
 a `classmethod` types that first parameter as the class:
 
 ```python demo exec id=hybrid_greeting
@@ -99,7 +99,7 @@ class GreetState(rx.State):
 
 def hybrid_greeting_example():
     return rx.vstack(
-        rx.heading(GreetState.greeting),
+        rx.heading(GreetState.greeting, as_="h3"),
         rx.input(value=GreetState.name, on_change=GreetState.set_name),
     )
 ```

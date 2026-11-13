@@ -71,7 +71,7 @@ else:
             f = await self._done.get()
             if f is None:
                 # Dummy value from _handle_timeout().
-                raise asyncio.TimeoutError
+                raise TimeoutError
             return f.result() if resolve else f
 
     def as_completed(aws, *, timeout=None):  # noqa: ANN001

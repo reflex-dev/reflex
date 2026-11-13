@@ -1,10 +1,15 @@
 import copy
+import random
+import re
+from collections.abc import Callable
 from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import Any, ClassVar, TypedDict
 
 import pytest
+from reflex_base.compiler.templates import _render_hooks
 from reflex_base.components.component import Component, field
+from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -18,6 +23,7 @@ from reflex_base.event import (
 )
 from reflex_base.style import Style
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     ChildrenTypeError,
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
@@ -43,6 +49,33 @@ from reflex import (
 )
 from reflex.state import BaseState
 from reflex.utils import imports
+
+
+@pytest.mark.parametrize("name", ["div", "", None])
+def test_plain_tag_render_matches_tag_protocol(name, monkeypatch):
+    """Direct rendering preserves names, props, children, and render caching."""
+    tag = Tag(name=name).add_props(title="hello")
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(component, "_render", lambda: tag)
+    expected = dict(tag.set(children=[child.render() for child in component.children]))
+    assert component.render() == expected
+    assert component.render() is component.render()
+    assert not tag.children
+
+
+def test_custom_tag_render_uses_subclass_protocol(monkeypatch):
+    """A custom tag renders through the generic field protocol."""
+
+    class ChildrenTag(CommonTag):
+        """A tag whose iteration depends on its child list."""
+
+        def __iter__(self):
+            """Yield a value derived from the child list."""
+            yield "child_count", len(self.children)
+
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(component, "_render", lambda: ChildrenTag())
+    assert component.render() == {"child_count": 1}
 
 
 class TestState(BaseState):
@@ -753,6 +786,68 @@ def test_create_filters_none_props(test_component):
 def test_component_create_unallowed_types(children, test_component):
     with pytest.raises(ChildrenTypeError):
         test_component.create(*children)
+
+
+def test_component_create_backend_var_child(test_component):
+    """A backend var child reports its repr rather than formatting the field."""
+
+    class BackendChildState(BaseState):
+        _secret: int = 42
+
+    with pytest.raises(ChildrenTypeError, match=r"received child Field\(default=42"):
+        test_component.create(BackendChildState._secret)
+
+
+def test_component_create_backend_var_prop():
+    """A backend var passed to a typed prop reports its repr, not a format error."""
+
+    class BackendPropState(BaseState):
+        _size: str = "3"
+
+    with pytest.raises(TypeError, match=r"got value Field\(default='3'"):
+        rx.heading("x", size=BackendPropState._size)  # pyright: ignore[reportArgumentType]
+
+
+class BackendSrcState(BaseState):
+    """A state with a backend var, for untyped prop misuse tests."""
+
+    _src: str = "a.png"
+
+
+@pytest.mark.parametrize(
+    "create",
+    [
+        lambda f: rx.image(src=f),
+        lambda f: rx.data_table(data=f),
+        lambda f: rx.box(id=f),
+    ],
+    ids=["image_src", "data_table_data", "box_id"],
+)
+def test_component_render_backend_var_prop_raises_format_error(
+    create: Callable[[Any], Component],
+):
+    """A backend var passed to an untyped prop raises the backend var format error.
+
+    Args:
+        create: Creates a component with the backend var as a prop.
+    """
+    with pytest.raises(
+        BackendVarFormatError, match=r"Backend var 'BackendSrcState\._src' exists only"
+    ):
+        create(BackendSrcState._src).render()
+
+
+def test_component_create_backend_var_class_name():
+    """A backend var in a class_name list raises the backend var format error."""
+
+    class BackendClassNameState(BaseState):
+        _cls: str = "a"
+
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendClassNameState\._cls' exists only",
+    ):
+        rx.box(class_name=["b", BackendClassNameState._cls])
 
 
 @pytest.mark.parametrize(
@@ -2079,6 +2174,87 @@ def test_component_add_hooks_var():
     assert ImportVar(tag="useEffect") in imports["react"]
 
 
+class _HookReader(Component):
+    """Reads ``value`` through a prop and ``added`` through an ``add_hooks`` Var."""
+
+    tag = "HookReader"
+
+    value: Var[int]
+
+    added: Var[int] = field(default=Var(_js_expr="0"), is_javascript_property=False)
+
+    def add_hooks(self):
+        return [Var(f"const read_{self.added!s} = {self.added}")]
+
+
+def _assert_declared_before_use(rendered: str, names: str):
+    """Assert that every name a hook line reads is declared on an earlier line.
+
+    Args:
+        rendered: The rendered hooks.
+        names: A regex matching the declared names to check.
+    """
+    declared = set()
+    for line in filter(None, (line.strip() for line in rendered.splitlines())):
+        target = re.match(r"const (\w+) =", line)
+        # A string literal names the state; only an identifier reads it.
+        rhs = re.sub(r'"[^"]*"', "", line[target.end() :] if target else line)
+        assert set(re.findall(names, rhs)) <= declared, line
+        if target:
+            declared.add(target.group(1))
+
+
+def test_hooks_render_after_the_state_hook_they_read(test_state: type[TestState]):
+    """A prop hook and an added hook that read one state share its declaration."""
+    num = Var.create(test_state.num)
+    derived = Var(
+        _js_expr="derived",
+        _var_data=VarData(
+            hooks={f"const derived = {num!s} + 1": num._get_all_var_data()}
+        ),
+    )
+
+    reader = _HookReader.create(value=derived, added=num)
+    _assert_declared_before_use(
+        _render_hooks(reader._get_all_hooks()),
+        rf"\b{test_state.get_name()}\b|\bderived\b",
+    )
+
+
+@pytest.mark.parametrize("seed", range(25))
+def test_hooks_render_after_their_dependencies(seed: int):
+    """Random hook graphs, read across a random tree, render dependencies first.
+
+    Args:
+        seed: The seed for the random graph and tree.
+    """
+    rng = random.Random(seed)
+    hook_vars: list[Var] = []
+    for i in range(8):
+        deps = rng.sample(hook_vars, min(len(hook_vars), rng.randint(0, 3)))
+        expr = " + ".join(str(dep) for dep in deps) or "0"
+        hook_vars.append(
+            Var(
+                _js_expr=f"h{i}",
+                _var_data=VarData(
+                    hooks={
+                        f"const h{i} = {expr}": VarData.merge(
+                            *(dep._get_all_var_data() for dep in deps)
+                        )
+                    }
+                ),
+            )
+        )
+
+    def tree(depth: int) -> Component:
+        children = [tree(depth - 1) for _ in range(rng.randint(0, 2) if depth else 0)]
+        return _HookReader.create(
+            *children, value=rng.choice(hook_vars), added=rng.choice(hook_vars)
+        )
+
+    _assert_declared_before_use(_render_hooks(tree(3)._get_all_hooks()), r"\bh\d+\b")
+
+
 def test_add_style_embedded_vars(test_state: type[TestState]):
     """Test that add_style works with embedded vars when returning a plain dict.
 
@@ -2113,8 +2289,12 @@ def test_add_style_embedded_vars(test_state: type[TestState]):
     page._add_style_recursive(Style())
 
     assert (
-        f"const {test_state.get_name()} = useContext(StateContexts.{test_state.get_name()})"
+        f'const {test_state.get_name()} = useStateContext("{test_state.get_full_name()}")'
         in page._get_all_hooks_internal()
+    )
+    assert any(
+        import_var.tag == "useStateContext"
+        for import_var in page._get_all_imports()["$/utils/context-registry"]
     )
     assert "useText" in page._get_all_hooks_internal()
     assert "useParent" in page._get_all_hooks_internal()
@@ -2398,3 +2578,37 @@ def test_get_all_hooks_internal_does_not_mutate_hooks_cache():
     assert dict(parent._get_hooks_internal()) == parent_own_hooks
     # And repeated collection yields the same result.
     assert parent._get_all_hooks_internal() == combined
+
+
+def test_set_props_iteration_skips_unset_props_and_keeps_defaults():
+    """Only set props and class defaults are visited, in declaration order."""
+
+    class DefaultedProps(Component):
+        first: Var[str]
+        second: Var[str] = LiteralVar.create("second-default")
+        third: Var[str]
+
+    component = DefaultedProps._create(children=(), third="set")
+    assert [(prop, str(value)) for prop, value in component._iter_set_props()] == [
+        ("second", '"second-default"'),
+        ("third", '"set"'),
+    ]
+    assert [str(var) for var in component._get_vars()] == ['"second-default"', '"set"']
+    assert {prop: str(value) for prop, value in component._render().props.items()} == {
+        "second": '"second-default"',
+        "third": '"set"',
+    }
+    assert "first" not in vars(component)
+
+
+def test_ref_hook_registers_through_state_helper():
+    """Id refs register through a hook instead of writing ``refs`` during render."""
+    component = Box.create(id="my-box")
+
+    hook = component._get_ref_hook()
+
+    assert hook is not None
+    assert str(hook) == 'const ref_my_box = useRegisteredRef("ref_my_box");'
+    hook_imports = component._get_hooks_imports()
+    assert list(hook_imports["$/utils/state"]) == [ImportVar(tag="useRegisteredRef")]
+    assert "react" not in hook_imports

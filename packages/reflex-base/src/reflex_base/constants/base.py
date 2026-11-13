@@ -38,6 +38,8 @@ class Dirs(SimpleNamespace):
     COMPONENTS_PATH = UTILS + "/components"
     # The name of the contexts file.
     CONTEXTS_PATH = UTILS + "/context"
+    # The name of the client state file.
+    CLIENT_STATE_PATH = UTILS + "/client_state"
     # The name of the output directory.
     BUILD_DIR = "build"
     # The name of the static files directory.
@@ -54,16 +56,21 @@ class Dirs(SimpleNamespace):
     # module, kept separate from other ``.web`` output so a mirrored module
     # path can't collide with framework files (e.g. ``app/``, ``utils/``).
     APP_COMPONENTS = "app_components"
+    # Where compilation artifacts for the backend are stored.
+    BACKEND = "backend"
     # The name of the env json file.
     ENV_JSON = "env.json"
+    # The compiled bundled-library registry consumed by backend-only workers.
+    BUNDLED_LIBRARIES = BACKEND + "/bundled_libraries.json"
     # The name of the reflex json file.
     REFLEX_JSON = "reflex.json"
+    # JSON-encoded list of the app's page routes, written at compile time so the
+    # prod static file server can tell routable SPA paths from unknown ones.
+    ROUTES_MANIFEST = "routes.json"
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
     # The name of the states directory.
     STATES = ".states"
-    # Where compilation artifacts for the backend are stored.
-    BACKEND = "backend"
     # JSON-encoded list of page routes that need to be evaluated on the backend.
     STATEFUL_PAGES = "stateful_pages.json"
     # Marker file indicating that upload component was used in the frontend.
@@ -118,6 +125,25 @@ class ReflexHostingCLI(SimpleNamespace):
     MODULE_NAME = "reflex-hosting-cli"
 
 
+def _web_template_dir(root_dir: Path) -> Path:
+    """Locate the frontend package that is copied into a project's web directory.
+
+    A built distribution embeds it under ``.templates/web``. A source checkout
+    has nothing there and reads ``packages/reflex-frontend/src`` in place, so
+    an edit to the frontend is never shadowed by a stale copy.
+
+    Args:
+        root_dir: The root directory of the reflex_base package.
+
+    Returns:
+        The directory holding the frontend files.
+    """
+    embedded = root_dir / ".templates" / "web"
+    if embedded.is_dir():
+        return embedded
+    return root_dir.parents[2] / "reflex-frontend" / "src"
+
+
 class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
@@ -140,8 +166,8 @@ class Templates(SimpleNamespace):
 
         # The template directory used during reflex init.
         BASE = Reflex.ROOT_DIR / ".templates"
-        # The web subdirectory of the template directory.
-        WEB_TEMPLATE = BASE / "web"
+        # The frontend package, copied into the web directory of a project.
+        WEB_TEMPLATE = _web_template_dir(Reflex.ROOT_DIR)
         # Where the code for the templates is stored.
         CODE = "code"
 

@@ -9,12 +9,15 @@ import functools
 import inspect
 import logging
 import time
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Sequence
 from typing import TYPE_CHECKING, TypeVar, overload
 
 from reflex_base.utils import console
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
+from reflex_base.utils.types import ASGIApp, Message, Scope
 from starlette.applications import Starlette
+
+from reflex.utils import prerequisites
 
 from .mixin import AppMixin
 
@@ -24,6 +27,9 @@ if TYPE_CHECKING:
     from typing_extensions import deprecated
 
 _LifespanTaskT = TypeVar("_LifespanTaskT", bound="Callable | asyncio.Task")
+
+# Seconds shutdown waits for cancelled lifespan tasks to finish their cleanup.
+_LIFESPAN_TASK_CANCEL_TIMEOUT = 5
 
 
 def _get_task_name(task: asyncio.Task | Callable) -> str:
@@ -38,6 +44,104 @@ def _get_task_name(task: asyncio.Task | Callable) -> str:
     if isinstance(task, asyncio.Task):
         return task.get_name()
     return task.__name__  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def _report_task_result(task: asyncio.Task) -> None:
+    """Re-raise the outcome of a finished lifespan task so the event loop reports it.
+
+    Args:
+        task: The finished lifespan task.
+    """
+    task.result()
+
+
+def _log_cleanup_error(task: asyncio.Task) -> None:
+    """Log an error a lifespan task raised while handling its cleanup cancellation.
+
+    Args:
+        task: The finished lifespan task.
+    """
+    if not task.cancelled() and (exc := task.exception()) is not None:
+        logger.error(
+            f"Lifespan task {task.get_name()} failed during cleanup.", exc_info=exc
+        )
+
+
+async def _receive_message(
+    app_task: asyncio.Task, sent: asyncio.Queue
+) -> Message | None:
+    """Wait for the next message an app sends on its lifespan scope.
+
+    Args:
+        app_task: The task running the app on the lifespan scope.
+        sent: The queue of messages the app sent.
+
+    Returns:
+        The message, or None if the app returned without sending one.
+    """
+    getter = asyncio.ensure_future(sent.get())
+    try:
+        await asyncio.wait((getter, app_task), return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        if not getter.done():
+            getter.cancel()
+    if getter.done() and not getter.cancelled():
+        return getter.result()
+    # Re-raise the error that ended the app.
+    app_task.result()
+    return None
+
+
+@contextlib.asynccontextmanager
+async def _run_asgi_lifespan(app: ASGIApp, server_scope: Scope):
+    """Send ASGI lifespan events to an app around the body of the context.
+
+    Like an ASGI server's "auto" lifespan mode, an app that raises, returns or
+    sends another message instead of answering the startup event is taken not
+    to support the protocol.
+
+    Args:
+        app: The ASGI app.
+        server_scope: The server's lifespan scope, whose ``state`` the app shares.
+
+    Yields:
+        None once the app has started.
+
+    Raises:
+        RuntimeError: If the app reports that its startup or shutdown failed.
+    """
+    received: asyncio.Queue[Message] = asyncio.Queue()
+    sent: asyncio.Queue[Message] = asyncio.Queue()
+    app_task = asyncio.ensure_future(app({**server_scope}, received.get, sent.put))
+    # A failure is reported through the messages or re-raised from _receive_message.
+    app_task.add_done_callback(lambda task: task.cancelled() or task.exception())
+    try:
+        await received.put({"type": "lifespan.startup"})
+        try:
+            message = await _receive_message(app_task, sent) or {"type": "no answer"}
+        except Exception as err:
+            message = {"type": repr(err)}
+        if message["type"] == "lifespan.startup.failed":
+            msg = f"Lifespan startup of {app!r} failed: {message.get('message', '')}"
+            raise RuntimeError(msg)
+        if message["type"] != "lifespan.startup.complete":
+            logger.info(
+                f"ASGI lifespan appears unsupported by {app!r}: {message['type']}"
+            )
+            yield
+            return
+        try:
+            yield
+        finally:
+            await received.put({"type": "lifespan.shutdown"})
+            message = await _receive_message(app_task, sent)
+            if message is not None and message["type"] == "lifespan.shutdown.failed":
+                msg = (
+                    f"Lifespan shutdown of {app!r} failed: {message.get('message', '')}"
+                )
+                raise RuntimeError(msg)
+    finally:
+        app_task.cancel()
 
 
 @dataclasses.dataclass
@@ -115,7 +219,7 @@ class LifespanMixin(AppMixin):
                                 t_,
                                 name=f"reflex_lifespan_task|{task_name}|{time.time()}",
                             )
-                            task_.add_done_callback(lambda t: t.result())
+                            task_.add_done_callback(_report_task_result)
                             running_tasks.append(task_)
                             logger.debug(run_msg.format(type="coroutine"))
                         else:
@@ -123,8 +227,23 @@ class LifespanMixin(AppMixin):
                 yield
         finally:
             for task in running_tasks:
+                # A task that ended before cleanup was reported by its callback.
+                if task.done():
+                    continue
                 logger.debug(f"Canceling lifespan task: {task}")
+                # Cancellation by cleanup is expected, so it is not reported.
+                task.remove_done_callback(_report_task_result)
+                task.add_done_callback(_log_cleanup_error)
                 task.cancel(msg="lifespan_cleanup")
+            if cancelled := [task for task in running_tasks if not task.done()]:
+                _, pending = await asyncio.wait(
+                    cancelled, timeout=_LIFESPAN_TASK_CANCEL_TIMEOUT
+                )
+                for task in pending:
+                    logger.warning(
+                        f"Lifespan task {task.get_name()} did not stop within "
+                        f"{_LIFESPAN_TASK_CANCEL_TIMEOUT} seconds of cancellation."
+                    )
         # Disassociate sid / token pairings so they can be reconnected properly.
         try:
             event_namespace = self.event_namespace  # pyright: ignore[reportAttributeAccessIssue]
@@ -146,6 +265,29 @@ class LifespanMixin(AppMixin):
             pass
         else:
             await state_manager.close()
+        await prerequisites.close_health_redis()
+
+    @contextlib.asynccontextmanager
+    async def _run_lifespan(
+        self, starlette_app: Starlette, asgi_apps: Sequence[ASGIApp], scope: Scope
+    ):
+        """Run the lifespan tasks, then the ASGI lifespan protocol of each app.
+
+        Shutdown runs in reverse order, so the apps stop before the tasks.
+
+        Args:
+            starlette_app: The Starlette app passed to tasks accepting ``starlette_app``.
+            asgi_apps: The apps to send lifespan events to, in startup order.
+            scope: The server's lifespan scope, whose ``state`` the apps share.
+
+        Yields:
+            None once every lifespan has started.
+        """
+        async with contextlib.AsyncExitStack() as stack:
+            await stack.enter_async_context(self._run_lifespan_tasks(starlette_app))
+            for asgi_app in asgi_apps:
+                await stack.enter_async_context(_run_asgi_lifespan(asgi_app, scope))
+            yield
 
     @overload
     def register_lifespan_task(

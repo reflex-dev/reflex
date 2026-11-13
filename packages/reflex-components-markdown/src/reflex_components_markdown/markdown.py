@@ -16,7 +16,7 @@ from reflex_base.components.component import (
     MemoizationLeaf,
     field,
 )
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.utils.imports import ImportDict, ImportTypes, ImportVar
 from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.number import ternary_operation
@@ -454,7 +454,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         }}
         """
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         return (
             super()
             ._render()
