@@ -28,3 +28,42 @@ def test_auto_complete_renders_a_string(auto_complete: Any, expected: str):
     text_field = TextFieldRoot.create(auto_complete=auto_complete)
 
     assert f"autoComplete:{expected}" in str(text_field)
+
+
+@pytest.mark.parametrize(
+    "props",
+    [
+        {"type": "hidden", "value": "foo"},
+        {"type": "hidden", "value": "foo", "size": "2"},
+        {"hidden": True, "value": "foo"},
+    ],
+)
+def test_static_hidden_input_hides_the_wrapper(props: dict[str, Any]):
+    """The TextField.Root wrapper of a hidden input must not show as a bar.
+
+    https://github.com/reflex-dev/reflex/issues/6874
+
+    Args:
+        props: The props of a statically hidden input.
+    """
+    text_field = TextFieldRoot.create(**props)
+
+    assert isinstance(text_field, TextFieldRoot)
+    assert text_field.style["display"].equals(Var.create("none"))
+
+
+@pytest.mark.parametrize(
+    "props",
+    [
+        {"placeholder": "Name"},
+        {"type": Var(_js_expr="input_type", _var_type=str)},
+        {"hidden": Var(_js_expr="is_hidden", _var_type=bool)},
+    ],
+)
+def test_visible_input_keeps_the_wrapper(props: dict[str, Any]):
+    """An input that is not hidden at compile time keeps its wrapper visible.
+
+    Args:
+        props: The props of an input that may be visible.
+    """
+    assert "display" not in TextFieldRoot.create(**props).style

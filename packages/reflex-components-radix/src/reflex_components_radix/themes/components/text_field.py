@@ -22,9 +22,6 @@ from reflex_components_radix.themes.base import (
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
-# Props that only exist on TextField.Root, not on the plain input element.
-RADIX_ONLY_TEXT_FIELD_PROPS = ("size", "variant", "color_scheme", "radius")
-
 
 class TextFieldRoot(elements.Input, RadixThemesComponent):
     """Captures user input with an optional slot for buttons and icons."""
@@ -95,24 +92,6 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
 
     on_key_up: EventHandler[key_event] = field(doc="Fired when a key is released.")
 
-    @staticmethod
-    def _is_statically_hidden(props: dict) -> bool:
-        """Whether the props mark the input as hidden at compile time.
-
-        Only plain Python values count. A `Var` is resolved at runtime, so the
-        wrapper still has to be rendered in that case.
-
-        Args:
-            props: The properties of the component.
-
-        Returns:
-            Whether the input is known to be hidden.
-        """
-        input_type = props.get("type")
-        if isinstance(input_type, str) and input_type == "hidden":
-            return True
-        return props.get("hidden") is True
-
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create an Input component.
@@ -135,14 +114,12 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
                 auto_complete, Var.create("on"), Var.create("off")
             )
 
-        # TextField.Root renders a styled wrapper around the input. The wrapper
-        # keeps its border and height even when the input inside it is hidden,
-        # which leaves a stray bar on the page. There is nothing to style on a
-        # hidden input, so render the plain element and skip the wrapper.
-        if cls._is_statically_hidden(props) and not any(
-            prop in props for prop in RADIX_ONLY_TEXT_FIELD_PROPS
+        # The TextField.Root wrapper keeps its border and height around a hidden
+        # input, which shows as an empty bar, so hide the wrapper too.
+        if props.get("hidden") is True or (
+            isinstance(input_type := props.get("type"), str) and input_type == "hidden"
         ):
-            return elements.Input.create(*children, **props)
+            props.setdefault("display", "none")
 
         value = props.get("value")
 
