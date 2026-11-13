@@ -306,7 +306,7 @@ def test_sidebar_offsets_follow_navbar_and_announcement(page: Page):
     """The sidebar begins below the navbar with and without the announcement."""
     page.set_viewport_size({"width": 1440, "height": 1000})
     page.goto(f"{PREVIEW_URL}/docs/ai/")
-    sidebar = page.locator("main > .sticky.left-0")
+    sidebar = page.locator(".docs-sidebar")
     expect(sidebar).to_be_visible()
     for dismiss in (False, True):
         if dismiss:
@@ -334,7 +334,7 @@ def test_sidebar_announces_current_page(page: Page, width: int):
         page.get_by_role("button", name="Open documentation navigation").click()
         sidebar = page.get_by_role("dialog")
     else:
-        sidebar = page.locator("main > .sticky.left-0")
+        sidebar = page.locator(".docs-sidebar")
     expect(
         sidebar.get_by_role("link", name="Installation", exact=True)
     ).to_have_attribute("aria-current", "page")
@@ -414,6 +414,68 @@ def test_sidebar_click_preserves_scroll_position(page: Page):
         "el => el.closest('[class*=\"overflow-y-scroll\"]').scrollTop"
     )
     assert abs(after - before) <= 1
+
+
+def test_sidebar_persists_across_navigation(page: Page):
+    """Navigating keeps the same sidebar element, its scroll offset and open groups."""
+    page.set_viewport_size({"width": 1440, "height": 700})
+    page.goto(f"{PREVIEW_URL}/docs/changelog/reflex-components-dataeditor/")
+    sidebar = page.locator(".docs-sidebar-scroll")
+    target = sidebar.locator(
+        'a[href="/docs/changelog/reflex-components-react-player/"]'
+    )
+    expect(target).to_be_visible()
+    # Scroll the target into view ourselves so the click needs no scrolling.
+    target.scroll_into_view_if_needed()
+    scroll_top = sidebar.evaluate("""el => {
+        el.dataset.persisted = "yes";
+        return el.scrollTop;
+    }""")
+    assert scroll_top > 0
+    target.click()
+    expect(page).to_have_url(
+        f"{PREVIEW_URL}/docs/changelog/reflex-components-react-player/"
+    )
+    expect(target).to_have_attribute("aria-current", "page")
+    assert sidebar.evaluate("el => [el.dataset.persisted, el.scrollTop]") == [
+        "yes",
+        scroll_top,
+    ]
+
+
+def test_hand_opened_sidebar_group_survives_navigation(page: Page):
+    """A group the reader expanded stays open after visiting and leaving it."""
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    sidebar = page.locator(".docs-sidebar-scroll")
+    tutorials = sidebar.locator("details").filter(
+        has=page.locator("summary", has_text="Tutorials")
+    )
+    expect(tutorials).not_to_have_attribute("open", "")
+    tutorials.locator("summary").click()
+    expect(tutorials).to_have_attribute("open", "")
+    tutorial = tutorials.locator('a[href="/docs/getting-started/dashboard-tutorial/"]')
+    tutorial.click()
+    expect(tutorial).to_have_attribute("aria-current", "page")
+    introduction = sidebar.get_by_role("link", name="Introduction", exact=True)
+    introduction.click()
+    expect(introduction).to_have_attribute("aria-current", "page")
+    expect(tutorials).to_have_attribute("open", "")
+
+
+def test_long_active_sidebar_label_stays_on_one_line(page: Page):
+    """A long selected label truncates instead of wrapping past its highlight."""
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/changelog/reflex-components-react-player/")
+    label = page.locator(
+        '.docs-sidebar a[aria-current="page"] p',
+        has_text="reflex-components-react-player",
+    )
+    expect(label).to_be_visible()
+    expect(label).to_have_css("white-space", "nowrap")
+    expect(label).to_have_css("text-overflow", "ellipsis")
+    expect(label).to_have_attribute("title", "reflex-components-react-player")
+    assert label.evaluate("el => el.getBoundingClientRect().height") == 24
 
 
 def test_unknown_route_serves_docs_recovery_page(page: Page):

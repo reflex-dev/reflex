@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import reflex as rx
+from reflex.vars import VarData
+from reflex_base.utils.imports import ImportVar
 from reflex_site_shared.components.docs_shell import (
-    docs_sidebar_category as sidebar_category,
-)
-from reflex_site_shared.components.docs_shell import (
+    docs_left_sidebar,
     docs_sidebar_group,
     docs_sidebar_section,
+)
+from reflex_site_shared.components.docs_shell import (
+    docs_sidebar_category as sidebar_category,
 )
 from reflex_site_shared.components.docs_shell import docs_sidebar_leaf as sidebar_leaf
 
@@ -30,46 +33,59 @@ from .sidebar_items.recipes import recipes
 from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
 
-Scrollable_SideBar = """
-function scrollToActiveSidebarLink() {
-  const sidebarContainer = document.getElementById('sidebar-container');
-  if (!sidebarContainer) return;
+# Normalize the client-side route the same way docpage routes are registered:
+# drop the /docs frontend path, fold component "/low" pages onto their parent,
+# and end with a single trailing slash.
+_SIDEBAR_URL_HOOK = r"""const docsSidebarUrl = useLocation()
+  .pathname.replace(/\/+$/, "")
+  .replace(/^\/docs(?=\/|$)/, "")
+  .replace(/^(\/library(?=\/).*)\/low$/, "$1") + "/";"""
 
-  const currentPath = window.location.pathname.replace(/\\/+$|\\/$/g, "") + "/";
-  const baseComponentPath = currentPath.replace(/\\/low\\/$/, "/");
-  const baseComponentPathWithoutDocs = baseComponentPath.replace(/^\\/docs\\//, "/");
+# Groups render open for the route the sidebar first mounted on and the prop
+# never changes after that, so React never collapses a group the reader opened
+# or closed by hand. Navigation only ever opens groups, from this effect.
+_SIDEBAR_INITIAL_URL_HOOK = (
+    "const docsSidebarInitialUrl = useRef(docsSidebarUrl).current;"
+)
 
-  const activeLink = sidebarContainer.querySelector(`a[href="${currentPath}"]`) ||
-                    sidebarContainer.querySelector(`a[href="${currentPath.slice(0, -1)}"]`) ||
-                    sidebarContainer.querySelector(`a[href="${baseComponentPath}"]`) ||
-                    sidebarContainer.querySelector(`a[href="${baseComponentPath.slice(0, -1)}"]`) ||
-                    sidebarContainer.querySelector(`a[href="${baseComponentPathWithoutDocs}"]`) ||
-                    sidebarContainer.querySelector(`a[href="${baseComponentPathWithoutDocs.slice(0, -1)}"]`);
-
-  if (activeLink) {
-    // Get the scrollable parent within the sidebar
-    const scrollableParent = activeLink.closest('[class*="overflow-y-scroll"]') || sidebarContainer;
-    const linkRect = activeLink.getBoundingClientRect();
-    const containerRect = scrollableParent.getBoundingClientRect();
-
-    let offset = 0;
-    if (linkRect.top < containerRect.top) {
-      offset = linkRect.top - containerRect.top;
-    } else if (linkRect.bottom > containerRect.bottom) {
-      offset = linkRect.bottom - containerRect.bottom;
+# Open the groups around the active link, then scroll it into view only when it
+# falls outside the sidebar's viewport, so clicking a visible link never moves
+# the sidebar.
+_SIDEBAR_SCROLL_HOOK = """useEffect(() => {
+  for (const scroller of document.querySelectorAll(".docs-sidebar-scroll")) {
+    const active = scroller.querySelector('a[aria-current="page"]');
+    if (!active) continue;
+    for (let group = active.closest("details"); group; group = group.parentElement.closest("details")) {
+      group.open = true;
     }
-    if (offset !== 0) {
-      scrollableParent.scrollBy({ top: offset, behavior: 'instant' });
-    }
+    const link = active.getBoundingClientRect();
+    const box = scroller.getBoundingClientRect();
+    const offset = link.top < box.top ? link.top - box.top : Math.max(0, link.bottom - box.bottom);
+    if (offset) scroller.scrollBy({ top: offset, behavior: "instant" });
   }
-}
+}, [docsSidebarUrl]);"""
 
-setTimeout(scrollToActiveSidebarLink, 100);
+_SIDEBAR_VAR_DATA = VarData(
+    imports={
+        "react": [ImportVar(tag="useEffect"), ImportVar(tag="useRef")],
+        "react-router": [ImportVar(tag="useLocation")],
+    },
+    hooks={
+        _SIDEBAR_URL_HOOK: None,
+        _SIDEBAR_INITIAL_URL_HOOK: None,
+        _SIDEBAR_SCROLL_HOOK: None,
+    },
+)
 
-window.addEventListener("popstate", () => {
-  setTimeout(scrollToActiveSidebarLink, 100);
-});
-"""
+# The current route, for marking the active link.
+SIDEBAR_URL: rx.vars.StringVar[str] = rx.Var(
+    _js_expr="docsSidebarUrl", _var_type=str, _var_data=_SIDEBAR_VAR_DATA
+).to(str)
+
+# The route the sidebar mounted on, for the initial state of each group.
+SIDEBAR_INITIAL_URL: rx.vars.StringVar[str] = rx.Var(
+    _js_expr="docsSidebarInitialUrl", _var_type=str, _var_data=_SIDEBAR_VAR_DATA
+).to(str)
 
 
 def sidebar_link(*children, **props):
@@ -104,16 +120,26 @@ def sidebar_leaf_outer(
                 ),
             ),
             href=item_link,
+            aria_current=rx.cond(is_active, "page", "false"),
             class_name="block w-full",
         ),
         class_name="m-0 p-0 !overflow-visible w-full list-none",
     )
 
 
+def _descendant_links(item: SideBarBase) -> list[str]:
+    """Collect the links of every leaf below an item."""
+    links = []
+    for child in item.children:
+        if child.children:
+            links.extend(_descendant_links(child))
+        elif child.link:
+            links.append(child.link)
+    return links
+
+
 def sidebar_item_comp(
-    item_index: int,
     item: SideBarItem,
-    index: rx.vars.ArrayVar[list[int]],
     url: rx.vars.StringVar[str],
     guide_margin_class: str = "ml-[2.5rem]",
 ) -> rx.Component:
@@ -148,45 +174,14 @@ def sidebar_item_comp(
             class_name="m-0 p-0 w-full list-none",
         )
 
-    is_open = (index.length() > 0) & (index[0] == item_index)
-    nested_index = rx.cond(is_open, index[1:], []).to(list[int])
     return docs_sidebar_group(
         item.names,
         *(
-            sidebar_item_comp(
-                item_index=child_index,
-                item=child,
-                index=nested_index,
-                url=url,
-                guide_margin_class="ml-[2.5rem]",
-            )
-            for child_index, child in enumerate(item.children)
+            sidebar_item_comp(item=child, url=url, guide_margin_class="ml-[2.5rem]")
+            for child in item.children
         ),
-        open_=is_open,
+        open_=rx.Var.create(_descendant_links(item)).contains(SIDEBAR_INITIAL_URL),
     )
-
-
-def calculate_index(sidebar_items, url: str) -> list[int]:
-    sidebar_items = (
-        sidebar_items if isinstance(sidebar_items, list) else [sidebar_items]
-    )
-    index_list = []
-
-    if not url:
-        return index_list
-
-    url = url.rstrip("/") + "/"
-    sub = 0
-    for i, item in enumerate(sidebar_items):
-        if not item.children:
-            sub += 1
-        if item.link == url:
-            return [i - sub]
-        index = calculate_index(item.children, url)
-        if index:
-            return [i - sub, *index]
-
-    return index_list
 
 
 def append_to_items(items, flat_items):
@@ -245,7 +240,6 @@ def create_sidebar_section(
     section_title: str,
     section_url: str,
     items: list[SideBarItem],
-    index: rx.vars.ArrayVar[list[int]],
     url: rx.vars.StringVar[str],
     connected_line: bool = False,
     guide_margin_class: str = "ml-[2.5rem]",
@@ -255,63 +249,19 @@ def create_sidebar_section(
         section_title,
         section_url,
         *(
-            sidebar_item_comp(
-                item_index=item_index,
-                item=item,
-                index=index,
-                url=url,
-                guide_margin_class=guide_margin_class,
-            )
-            for item_index, item in enumerate(items)
+            sidebar_item_comp(item=item, url=url, guide_margin_class=guide_margin_class)
+            for item in items
         ),
         connected_line=connected_line,
     )
 
 
-def normalize_url(url: str | None) -> str:
-    """Normalize a docs route for static sidebar selection."""
-    if not url:
-        return "/"
-    path = str(url).split("#", 1)[0].split("?", 1)[0]
-    if not path.startswith("/"):
-        path = f"/{path}"
-    path = path.rstrip("/")
-    if path == "/docs":
-        path = "/"
-    elif path.startswith("/docs/"):
-        path = path.removeprefix("/docs")
-    if path.startswith("/library/") and path.endswith("/low"):
-        path = path.removesuffix("/low")
-    return path.rstrip("/") + "/"
-
-
 @rx.memo
-def sidebar_comp(
-    url: rx.vars.StringVar[str],
-    learn_index: rx.vars.ArrayVar[list[int]],
-    component_lib_index: rx.vars.ArrayVar[list[int]],
-    frontend_index: rx.vars.ArrayVar[list[int]],
-    backend_index: rx.vars.ArrayVar[list[int]],
-    hosting_index: rx.vars.ArrayVar[list[int]],
-    html_lib_index: rx.vars.ArrayVar[list[int]],
-    graphing_libs_index: rx.vars.ArrayVar[list[int]],
-    api_reference_index: rx.vars.ArrayVar[list[int]],
-    changelog_index: rx.vars.ArrayVar[list[int]],
-    recipes_index: rx.vars.ArrayVar[list[int]],
-    enterprise_usage_index: rx.vars.ArrayVar[list[int]],
-    enterprise_component_index: rx.vars.ArrayVar[list[int]],
-    agent_toolkit_index: rx.vars.ArrayVar[list[int]],
-    mcp_index: rx.vars.ArrayVar[list[int]],
-    skills_index: rx.vars.ArrayVar[list[int]],
-    ai_builder_overview_index: rx.vars.ArrayVar[list[int]],
-    ai_builder_integrations_index: rx.vars.ArrayVar[list[int]],
-) -> rx.Component:
-    """Render the docs sidebar.
+def sidebar_comp() -> rx.Component:
+    """Render the docs sidebar for the current client-side route.
 
-    The function is decorated with ``rx.memo`` so the rendered tree compiles
-    to a single React component that receives the runtime ``url`` and per-section
-    indices as props. ``url`` is expected to be pre-normalized by the caller
-    (see ``sidebar`` below).
+    The sidebar reads the route from react-router rather than from props, so a
+    single mounted instance follows navigation without being rebuilt per page.
     """
     from reflex_docs.pages.docs import ai_builder as ai_builder_pages
     from reflex_docs.pages.docs import enterprise, getting_started, state, ui
@@ -319,6 +269,7 @@ def sidebar_comp(
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
+    url = SIDEBAR_URL
     is_docs_hosting = url.startswith("/hosting/")
     is_docs_ai_builder = url.startswith("/ai/")
     is_ai_mcp_or_skills = (
@@ -347,7 +298,6 @@ def sidebar_comp(
             "Cloud",
             hosting_page.deploy_quick_start.path,
             hosting,
-            hosting_index,
             url,
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
@@ -374,14 +324,12 @@ def sidebar_comp(
             "Overview",
             ai_builder_pages.integrations.agent_toolkit.path,
             agent_toolkit_items,
-            agent_toolkit_index,
             url,
         ),
         create_sidebar_section(
             "MCP",
             ai_builder_pages.integrations.mcp_overview.path,
             mcp_items,
-            mcp_index,
             url,
             connected_line=True,
         ),
@@ -389,7 +337,6 @@ def sidebar_comp(
             "Skills",
             ai_builder_pages.integrations.skills.path,
             skills_items,
-            skills_index,
             url,
             connected_line=True,
         ),
@@ -400,14 +347,12 @@ def sidebar_comp(
             "Overview",
             ai_builder_pages.overview.best_practices.path,
             ai_builder_overview_items,
-            ai_builder_overview_index,
             url,
         ),
         create_sidebar_section(
             "Integrations",
             ai_builder_pages.integrations.overview.path,
             ai_builder_integrations,
-            ai_builder_integrations_index,
             url,
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
@@ -450,21 +395,18 @@ def sidebar_comp(
             "Core",
             library.path,
             component_lib,
-            component_lib_index,
             url,
         ),
         create_sidebar_section(
             "Graphing",
             library.path,
             graphing_libs,
-            graphing_libs_index,
             url,
         ),
         create_sidebar_section(
             "Other",
             "/library/html/",
             html_lib,
-            html_lib_index,
             url,
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
@@ -474,7 +416,6 @@ def sidebar_comp(
             "Reference",
             api_reference[0].link,
             api_reference,
-            api_reference_index,
             url,
             guide_margin_class="ml-[1.5rem] [&_.pointer-events-none]:hidden",
         ),
@@ -482,7 +423,6 @@ def sidebar_comp(
             "Changelog",
             "/changelog/",
             changelog_items,
-            changelog_index,
             url,
             guide_margin_class="ml-[1.5rem] [&_.pointer-events-none]:hidden",
         ),
@@ -493,14 +433,12 @@ def sidebar_comp(
             "Enterprise Usage",
             enterprise.overview.path,
             enterprise_usage_items,
-            enterprise_usage_index,
             url,
         ),
         create_sidebar_section(
             "Components",
             enterprise.components.path,
             enterprise_component_items,
-            enterprise_component_index,
             url,
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
@@ -510,28 +448,24 @@ def sidebar_comp(
             "Onboarding",
             getting_started.introduction.path,
             learn,
-            learn_index,
             url,
         ),
         create_sidebar_section(
             "User Interface",
             ui.overview.path,
             filter_out_non_sidebar_items(frontend),
-            frontend_index,
             url,
         ),
         create_sidebar_section(
             "State",
             state.overview.path,
             filter_out_non_sidebar_items(backend),
-            backend_index,
             url,
         ),
         create_sidebar_section(
             "Recipes",
             overview.path,
             recipes,
-            recipes_index,
             url,
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
@@ -572,48 +506,33 @@ def sidebar_comp(
                 "background_color": "transparent",
             },
         },
-        class_name="flex flex-col pb-24 gap-8 items-start h-full pt-8 pr-4 scroll-p-4 overflow-y-scroll overflow-x-hidden hidden-scrollbar w-full 3xl:pl-0 pl-6",
+        class_name="docs-sidebar-scroll flex flex-col pb-24 gap-8 items-start h-full pt-8 pr-4 scroll-p-4 overflow-y-scroll overflow-x-hidden hidden-scrollbar w-full 3xl:pl-0 pl-6",
     )
 
 
-def sidebar(url=None, width: str = "100%") -> rx.Component:
-    """Render the sidebar.
-
-    ``sidebar`` stays as a regular function (rather than a memo) because its
-    body invokes Python-only helpers like ``normalize_url`` and
-    ``calculate_index`` that aren't expressible as Var operations.
-    """
-    normalized_url = normalize_url(url)
-    return rx.box(
-        sidebar_comp(
-            url=normalized_url,
-            learn_index=calculate_index(learn, normalized_url),
-            component_lib_index=calculate_index(component_lib, normalized_url),
-            frontend_index=calculate_index(frontend, normalized_url),
-            backend_index=calculate_index(backend, normalized_url),
-            hosting_index=calculate_index(hosting, normalized_url),
-            html_lib_index=calculate_index(html_lib, normalized_url),
-            graphing_libs_index=calculate_index(graphing_libs, normalized_url),
-            api_reference_index=calculate_index(api_reference, normalized_url),
-            changelog_index=calculate_index(changelog_items, normalized_url),
-            recipes_index=calculate_index(recipes, normalized_url),
-            enterprise_usage_index=calculate_index(
-                enterprise_usage_items, normalized_url
-            ),
-            enterprise_component_index=calculate_index(
-                enterprise_component_items, normalized_url
-            ),
-            agent_toolkit_index=calculate_index(agent_toolkit_items, normalized_url),
-            ai_builder_overview_index=calculate_index(
-                ai_builder_overview_items, normalized_url
-            ),
-            ai_builder_integrations_index=calculate_index(
-                ai_builder_integrations, normalized_url
-            ),
-            mcp_index=calculate_index(mcp_items, normalized_url),
-            skills_index=calculate_index(skills_items, normalized_url),
-        ),
-        on_mount=rx.call_script(Scrollable_SideBar),
-        id=rx.Var.create("sidebar-container"),
+def sidebar() -> rx.Component:
+    """Render the sidebar navigation for the current route."""
+    return rx.el.div(
+        sidebar_comp(),
+        id="sidebar-container",
         class_name="flex justify-end w-full h-full",
+    )
+
+
+def persistent_sidebar() -> rx.Component:
+    """Render the desktop sidebar once, outside of every page's route component.
+
+    Mounted as an app wrap, it survives client-side navigation, so it keeps its
+    scroll position and expanded groups instead of being rebuilt per page. It
+    overlays the ``docs-sidebar-slot`` spacer each docpage reserves, and CSS
+    hides it on pages without that slot.
+    """
+    return rx.fragment(
+        rx.el.div(
+            rx.el.div(
+                docs_left_sidebar(sidebar()),
+                class_name="docs-persistent-sidebar-frame mx-auto flex w-full [&_.docs-sidebar]:pointer-events-auto",
+            ),
+            class_name="docs-persistent-sidebar pointer-events-none fixed inset-x-0 top-[var(--docs-header-height)] z-10",
+        )
     )
