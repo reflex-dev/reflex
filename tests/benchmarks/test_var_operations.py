@@ -67,6 +67,7 @@ RANGE_SETS = 65
 OBJECT_SETS = 28
 ITERATION_SETS = 4
 DATETIME_SETS = 17
+ARRAY_COMPARE_SETS = 28
 CAST_SETS = 48
 MATCH_SETS = 71
 COND_SETS = 44
@@ -119,6 +120,9 @@ class VarOpState(BaseState):
 # measures the operation and not the literal.
 _OTHER_DATETIME = datetime.datetime(2025, 6, 1)
 _OTHER_DATE = datetime.date(2025, 6, 1)
+
+# The right-hand side of the array comparisons, built once for the same reason.
+_OTHER_NUMBERS = Var.create([1, 9, 0])
 
 _NUMBER_OPERANDS: dict[str, Callable[[], NumberVar[int]]] = {
     # A bare Var with no VarData: the cheapest operand to interpolate.
@@ -392,6 +396,25 @@ def test_datetime_operations(benchmark: BenchmarkFixture):
             _ = when > _OTHER_DATETIME
             _ = when == _OTHER_DATETIME
             _ = day <= _OTHER_DATE
+
+
+def test_array_comparison_operations(benchmark: BenchmarkFixture):
+    """Benchmark building array ordering comparisons.
+
+    Both operands go into a ``compareArrays`` call that carries the helper
+    import, like the datetime comparisons.
+
+    Args:
+        benchmark: The codspeed benchmark fixture.
+    """
+    numbers = VarOpState.numbers
+
+    @benchmark
+    def _():
+        for _i in range(ARRAY_COMPARE_SETS):
+            _ = numbers < _OTHER_NUMBERS
+            _ = numbers >= _OTHER_NUMBERS
+            _ = numbers > numbers
 
 
 def test_cast_operations(benchmark: BenchmarkFixture):
