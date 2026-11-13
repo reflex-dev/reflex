@@ -320,13 +320,15 @@ def _copy_if_exists(src: Path, dest: Path, prune: bool = True) -> bool:
             return True
         return False
 
-    if dest.exists() and dest.read_bytes() == src.read_bytes():
+    contents = src.read_bytes()
+    if dest.exists() and dest.read_bytes() == contents:
         return False
 
     changed = dest.exists()
     path_ops.mkdir(dest.parent)
     logger.debug(f"Copying {src} to {dest}")
-    path_ops.cp(src, dest)
+    with path_ops.atomic_write(dest, "wb") as dest_file:
+        dest_file.write(contents)
     return changed
 
 
@@ -399,10 +401,7 @@ def sync_web_lockfile_to_root(filename: str):
     web = get_web_lockfile_path(filename)
     if not web.exists():
         return
-    root = get_root_lockfile_path(filename)
-    path_ops.mkdir(root.parent)
-    logger.debug(f"Copying {web} to {root}")
-    path_ops.cp(web, root)
+    _copy_if_exists(web, get_root_lockfile_path(filename), prune=False)
 
 
 def sync_web_lockfiles_to_root():
@@ -418,7 +417,8 @@ def _write_package_json(package_json_path: Path, content: str):
         package_json_path: The package.json file to write.
         content: The rendered package.json content.
     """
-    package_json_path.write_text(content, encoding="utf-8", newline="\n")
+    with path_ops.atomic_write(package_json_path, "wb") as package_json_file:
+        package_json_file.write(content.encode("utf-8"))
 
 
 def _read_package_json_object(package_json_path: Path) -> dict:
@@ -461,6 +461,12 @@ def _read_persisted_package_json() -> dict:
 
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
+    with path_ops.file_lock(get_web_dir()):
+        _initialize_web_directory()
+
+
+def _initialize_web_directory():
+    """Initialize the web directory while its lock is held."""
     logger.info("Initializing the web directory.")
 
     web_dir = get_web_dir()

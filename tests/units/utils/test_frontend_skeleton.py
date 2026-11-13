@@ -164,3 +164,52 @@ def test_update_package_json_overrides_matches_bun_format(
 
     assert frontend_skeleton.update_package_json_overrides() is True
     _assert_bun_format(package_json_path)
+
+
+def test_write_package_json_atomic_utf8_lf(
+    package_json_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Keep the old manifest until UTF-8/LF content is atomically committed.
+
+    Args:
+        package_json_path: The rendered package.json path.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    original = package_json_path.read_bytes()
+    content = '{\n  "description": "café"\n}\n'
+    original_replace = Path.replace
+    replacements = []
+
+    def inspect_replace(source: Path, target: Path):
+        assert target == package_json_path
+        assert target.read_bytes() == original
+        assert source.read_bytes() == content.encode("utf-8")
+        replacements.append(target)
+        return original_replace(source, target)
+
+    monkeypatch.setattr(Path, "replace", inspect_replace)
+    frontend_skeleton._write_package_json(package_json_path, content)
+    assert replacements == [package_json_path]
+    assert package_json_path.read_bytes() == content.encode("utf-8")
+
+
+def test_write_package_json_failed_replace_keeps_original(
+    package_json_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Preserve the previous manifest and clean staging files on failure.
+
+    Args:
+        package_json_path: The rendered package.json path.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    original = package_json_path.read_bytes()
+
+    def fail_replace(source: Path, target: Path):
+        msg = "simulated replace failure"
+        raise OSError(msg)
+
+    monkeypatch.setattr(Path, "replace", fail_replace)
+    with pytest.raises(OSError, match="simulated replace failure"):
+        frontend_skeleton._write_package_json(package_json_path, "{}\n")
+    assert package_json_path.read_bytes() == original
+    assert list(package_json_path.parent.glob(f".{package_json_path.name}.*.tmp")) == []

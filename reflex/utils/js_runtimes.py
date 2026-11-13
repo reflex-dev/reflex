@@ -822,32 +822,35 @@ def _install_frontend_packages(
 
 def install_frontend_packages(packages: set[str], config: Config):
     """Install frontend packages while respecting the canonical root bun.lock."""
-    install_package_managers = tuple(
-        get_nodejs_compatible_package_managers(raise_on_none=True)
-    )
-    # Check before any lockfile sync: a rejected npm install must not persist npm lockfiles.
-    _require_supported_node_for_npm(_is_npm(install_package_managers[0]))
-    packages = set(packages)
-    development_dependencies: set[str] = set()
-    if config.react_compiler:
-        development_dependencies.update(
-            _pinned_args_from_constants(
-                constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
-            )
+    with path_ops.file_lock(get_web_dir()):
+        install_package_managers = tuple(
+            get_nodejs_compatible_package_managers(raise_on_none=True)
         )
-    for plugin in config.plugins:
-        development_dependencies.update(plugin.get_frontend_development_dependencies())
-        packages.update(plugin.get_frontend_dependencies())
+        # Check before any lockfile sync: a rejected npm install must not persist npm lockfiles.
+        _require_supported_node_for_npm(_is_npm(install_package_managers[0]))
+        packages = set(packages)
+        development_dependencies: set[str] = set()
+        if config.react_compiler:
+            development_dependencies.update(
+                _pinned_args_from_constants(
+                    constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
+                )
+            )
+        for plugin in config.plugins:
+            development_dependencies.update(
+                plugin.get_frontend_development_dependencies()
+            )
+            packages.update(plugin.get_frontend_dependencies())
 
-    _sync_root_lockfiles_for_frontend_install()
-    _install_frontend_packages(
-        packages,
-        development_dependencies,
-        config.frozen_lockfile,
-        install_package_managers,
-    )
-    _drop_lockfile_of_other_package_manager(install_package_managers[0])
-    frontend_skeleton.sync_web_lockfiles_to_root()
+        _sync_root_lockfiles_for_frontend_install()
+        _install_frontend_packages(
+            packages,
+            development_dependencies,
+            config.frozen_lockfile,
+            install_package_managers,
+        )
+        _drop_lockfile_of_other_package_manager(install_package_managers[0])
+        frontend_skeleton.sync_web_lockfiles_to_root()
 
 
 def _drop_lockfile_of_other_package_manager(primary_package_manager: str) -> None:
