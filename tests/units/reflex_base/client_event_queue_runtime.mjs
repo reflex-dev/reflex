@@ -73,6 +73,8 @@ export { event_queue };
   );
   const linked = new Map();
   await module.link((specifier) => {
+    // state.js imports itself to hand its exports to server-provided scripts.
+    if (specifier === "$/utils/state") return module;
     if (!linked.has(specifier)) {
       const exports = dependencies[specifier];
       if (!exports)
