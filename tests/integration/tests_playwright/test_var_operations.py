@@ -802,6 +802,23 @@ def VarOperations():
                 rx.foreach(VarOperationState.optional_dict, rx.text.span),
                 id="optional_dict",
             ),
+            # Operations on an optional list holding None read it as empty.
+            rx.text(
+                VarOperationState.optional_list.length(), id="optional_list_length"
+            ),
+            rx.text(
+                VarOperationState.optional_list.contains("red"),
+                id="optional_list_contains",
+            ),
+            rx.text(VarOperationState.optional_list.join(","), id="optional_list_join"),
+            rx.text(
+                VarOperationState.optional_list_value.length(),
+                id="optional_list_value_length",
+            ),
+            rx.text(
+                VarOperationState.optional_list_value.contains("red"),
+                id="optional_list_value_contains",
+            ),
             rx.box(
                 rx.foreach(VarOperationState.optional_list_value, rx.text.span),
                 id="optional_list_value",
@@ -1138,6 +1155,11 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("obj_optional_none_get_foo", "foo"),
         ("float_round", "13212312312"),
         ("float_round_2", "13212312312.12"),
+        ("optional_list_length", "0"),
+        ("optional_list_contains", "false"),
+        ("optional_list_join", ""),
+        ("optional_list_value_length", "2"),
+        ("optional_list_value_contains", "true"),
     ]
 
     for tag, expected in tests:

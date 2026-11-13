@@ -158,7 +158,7 @@ async def test_overview_examples(monkeypatch):
     module = load(
         monkeypatch,
         block("overview", SESSION),
-        block("overview", "rx.ModelRegistry.register(Base)"),
+        block("overview", "class Base(MappedAsDataclass, DeclarativeBase)"),
         block("overview", "class UserState(rx.State)").replace(
             "from .db import Session\nfrom .models import User\n", ""
         ),
@@ -189,7 +189,9 @@ def test_examples_parse_and_never_block():
 
 def test_tables_register_with_the_migration_registry(monkeypatch):
     """The tables page's base class is what `reflex db` manages."""
-    module = load(monkeypatch, block("tables", "rx.ModelRegistry.register(Base)"))
+    module = load(
+        monkeypatch, block("tables", "class Base(MappedAsDataclass, DeclarativeBase)")
+    )
     assert set(rx.ModelRegistry.get_metadata().tables) == {"user"}
     user = module.User(username="ada", email="ada@example.com")
     assert user.id is None
@@ -202,24 +204,45 @@ def test_tables_register_with_the_migration_registry(monkeypatch):
 
 @run_async
 async def test_tables_custom_serializer(monkeypatch):
-    """The explicit column type example serializes with its registered function."""
+    """The explicit column type example serializes with its registered function.
+
+    The post gets a relationship, which the serializer must leave alone whether
+    or not the query loaded it.
+    """
     module = load(
         monkeypatch,
         block("queries", SESSION),
-        block("tables", "rx.ModelRegistry.register(Base)"),
+        block("tables", "class Base(MappedAsDataclass, DeclarativeBase)"),
         block("tables", "server_default=sqlalchemy.func.now()").replace(
-            "    ...\n", ""
+            "    ...\n",
+            "    user_id: Mapped[int | None] = mapped_column("
+            'sqlalchemy.ForeignKey("user.id"), default=None)\n'
+            "    user: Mapped[User | None] = sqlalchemy.orm.relationship("
+            "init=False, repr=False)\n",
         ),
         block("tables", "def serialize_post"),
     )
-    await create_tables(module, module.Post())
+    await create_tables(
+        module,
+        module.User(username="ada", email="ada@example.com"),
+        module.Post(user_id=1),
+    )
     async with module.Session() as session:
         post = await session.get(module.Post, 1)
-    assert serialize(post) == {
+    async with module.Session() as session:
+        with_user = await session.get(
+            module.Post,
+            1,
+            options=[module.sqlalchemy.orm.selectinload(module.Post.user)],
+        )
+    expected = {
         "id": 1,
+        "user_id": 1,
         "update_ts": post.update_ts.replace(microsecond=0).isoformat(),
     }
-    assert serialize(module.Post()) == {"id": None, "update_ts": None}
+    assert serialize(post) == expected
+    assert serialize(with_user) == expected
+    assert serialize(module.Post()) == {"id": None, "user_id": None, "update_ts": None}
     await module.engine.dispose()
 
 

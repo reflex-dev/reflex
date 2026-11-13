@@ -2,16 +2,21 @@ import dataclasses
 import importlib.util
 import json
 import os
+import re
+import shutil
 import sys
 from pathlib import Path, PureWindowsPath
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.components.component import Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
 from reflex_base.environment import environment
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -28,8 +33,65 @@ from reflex_components_core.el.elements.other import Html
 
 import reflex as rx
 from reflex.compiler import compiler, utils
+from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
 from reflex.utils import prerequisites
+
+
+@pytest.mark.parametrize("remove_assets_directory", [False, True])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_compile_removes_deleted_app_assets(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    remove_assets_directory: bool,
+):
+    """Repeated compiles remove deleted app assets while preserving public files.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+        remove_assets_directory: Whether to remove the entire source directory.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="asset_test", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.el.div("hello"), route="index")
+    mocker.patch.object(app, "_get_frontend_packages")
+    assets = tmp_path / "assets"
+    (assets / "nested").mkdir(parents=True)
+    (assets / "obsolete.txt").write_text("obsolete")
+    (assets / "nested" / "obsolete.txt").write_text("nested obsolete")
+    compiler.compile_app(app, use_rich=False)
+
+    public = prerequisites.get_web_dir() / "public"
+    assert (public / "obsolete.txt").read_text() == "obsolete"
+    assert (public / "nested" / "obsolete.txt").read_text() == "nested obsolete"
+    (public / "plugin.txt").write_text("generated")
+    (public / "nested" / "plugin.txt").write_text("nested generated")
+    if remove_assets_directory:
+        shutil.rmtree(assets)
+    else:
+        (assets / "obsolete.txt").unlink()
+        shutil.rmtree(assets / "nested")
+        (assets / "current.txt").write_text("current")
+
+    manifest = public.parent / utils._ASSET_MANIFEST_FILENAME
+    previous_manifest = manifest.read_bytes()
+    compiler.compile_app(app, dry_run=True, use_rich=False)
+    assert (public / "obsolete.txt").read_text() == "obsolete"
+    assert manifest.read_bytes() == previous_manifest
+
+    compiler.compile_app(app, use_rich=False)
+
+    assert not (public / "obsolete.txt").exists()
+    assert not (public / "nested" / "obsolete.txt").exists()
+    assert (public / "plugin.txt").read_text() == "generated"
+    assert (public / "nested" / "plugin.txt").read_text() == "nested generated"
+    if not remove_assets_directory:
+        assert (public / "current.txt").read_text() == "current"
 
 
 @pytest.mark.parametrize("content", ["", '["index",'])
@@ -1962,3 +2024,71 @@ def test_compile_app_resolves_show_built_with_reflex(
     assert get_user_tier.called is (
         compile_context == constants.CompileContext.DEPLOY and configured is None
     )
+
+
+class _RefsDecl(rx.Fragment):
+    """A wrapped component whose custom code declares its own ``refs``."""
+
+    def add_custom_code(self) -> list[str]:
+        """Declare a module-level ``refs`` binding.
+
+        Returns:
+            The declaration.
+        """
+        return ["const refs = {};"]
+
+
+_IMPORTS_REFS = re.compile(
+    r'^import\s*\{[^}]*\brefs\b[^}]*\}\s*from\s*"\$/utils/state"', re.MULTILINE
+)
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_custom_code_may_declare_refs(auto_memoize: bool):
+    """Custom code may declare its own module-level ``refs``.
+
+    No page or memo module imports ``refs`` unless a var asks for it, so a
+    module never binds the name twice. Code that reads ``refs[...]`` without
+    the import resolves the ``globalThis.refs`` that state.js publishes.
+
+    Args:
+        auto_memoize: Whether stateful components are auto-memoized.
+    """
+
+    @rx.memo
+    def refs_decl_memo() -> rx.Component:
+        return _RefsDecl.create()
+
+    def page() -> Component:
+        return rx.el.div(
+            rx.el.input(id="target"),
+            rx.el.button(on_click=rx.console_log("clicked")),
+            _RefsDecl.create(),
+            refs_decl_memo(),
+        )
+
+    page_ctx = PageContext(name="page", route="/page", root_component=page())
+    hooks = CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize))
+    compile_ctx = CompileContext(pages=[], hooks=hooks)
+    with compile_ctx, page_ctx:
+        page_ctx.root_component = hooks.compile_component(
+            page_ctx.root_component,
+            page_context=page_ctx,
+            compile_context=compile_ctx,
+        )
+        hooks.compile_page(page_ctx, compile_context=compile_ctx)
+        _, page_code = compiler.compile_page_from_context(page_ctx)
+        memo_files, _ = compiler.compile_memo_components((
+            *compile_ctx.auto_memo_components.values(),
+            next(d for d in MEMOS.values() if d.python_name == "refs_decl_memo"),
+        ))
+
+    modules = [
+        page_code,
+        compiler._compile_page(page(), "/page"),
+        *(code for _, code in memo_files),
+    ]
+    assert "const refs = {};" in page_code
+    assert any("const refs = {};" in code for _, code in memo_files)
+    for code in modules:
+        assert not _IMPORTS_REFS.search(code), code

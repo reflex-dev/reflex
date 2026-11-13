@@ -2246,6 +2246,24 @@ def figure_out_type(value: Any) -> types.GenericType:
     return type(value)
 
 
+def _infer_field_type(default: Any) -> types.GenericType:
+    """Infer the type of an unannotated field from its default.
+
+    An empty container says nothing about its elements, so the field takes the
+    bare container type and accepts any contents.
+
+    Args:
+        default: The default value of the field.
+
+    Returns:
+        The type of the field.
+    """
+    type_ = figure_out_type(default)
+    if isinstance(default, (list, tuple, Mapping)) and not default:
+        return get_origin(type_) or type_
+    return type_
+
+
 GLOBAL_CACHE = {}
 
 
@@ -2922,28 +2940,30 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: ComputedVar[list[LIST_INSIDE]],
+        self: ComputedVar[list[LIST_INSIDE]] | ComputedVar[list[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[tuple[LIST_INSIDE, ...]],
+        self: ComputedVar[tuple[LIST_INSIDE, ...]]
+        | ComputedVar[tuple[LIST_INSIDE, ...] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[set[LIST_INSIDE]],
+        self: ComputedVar[set[LIST_INSIDE]] | ComputedVar[set[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: ComputedVar[frozenset[LIST_INSIDE]],
+        self: ComputedVar[frozenset[LIST_INSIDE]]
+        | ComputedVar[frozenset[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[frozenset[LIST_INSIDE]]: ...
@@ -3253,28 +3273,32 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @overload
     def __get__(
-        self: AsyncComputedVar[list[LIST_INSIDE]],
+        self: AsyncComputedVar[list[LIST_INSIDE]]
+        | AsyncComputedVar[list[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: AsyncComputedVar[tuple[LIST_INSIDE, ...]],
+        self: AsyncComputedVar[tuple[LIST_INSIDE, ...]]
+        | AsyncComputedVar[tuple[LIST_INSIDE, ...] | None],
         instance: None,
         owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(
-        self: AsyncComputedVar[set[LIST_INSIDE]],
+        self: AsyncComputedVar[set[LIST_INSIDE]]
+        | AsyncComputedVar[set[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[set[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
-        self: AsyncComputedVar[frozenset[LIST_INSIDE]],
+        self: AsyncComputedVar[frozenset[LIST_INSIDE]]
+        | AsyncComputedVar[frozenset[LIST_INSIDE] | None],
         instance: None,
         owner: type,
     ) -> SetVar[frozenset[LIST_INSIDE]]: ...
@@ -4452,7 +4476,10 @@ class Field(Generic[FIELD_TYPE]):
             )
         else:
             msg = f"{name} has no frontend var, so it cannot be used in the UI."
-        return BackendVarFormatError(msg)
+        # str() raises too, so print and logging in server code reach this error.
+        return BackendVarFormatError(
+            f"{msg} To print or log the field itself in server code, use repr()."
+        )
 
     def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
         """Get the value on a state instance, never wrapped in a proxy.
@@ -4913,7 +4940,7 @@ def _unannotated_fields(
                 fields[key] = value._replace(
                     annotated_type=Any
                     if value.default is MISSING
-                    else figure_out_type(value.default)
+                    else _infer_field_type(value.default)
                 )
         elif (
             not key.startswith(private)
@@ -4921,7 +4948,7 @@ def _unannotated_fields(
             and not isinstance(value, (staticmethod, classmethod, Var))
             and not _is_descriptor(value)
         ):
-            fields[key] = Field._with_default(value, figure_out_type(value))
+            fields[key] = Field._with_default(value, _infer_field_type(value))
     return fields
 
 
