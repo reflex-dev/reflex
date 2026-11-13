@@ -469,7 +469,7 @@ export const evalReactComponent = async (component) => {
   }
   const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
-  const module = await eval(`import(dataUri)`);
+  const module = await import(/* @vite-ignore */ dataUri);
   return module.default;
 };
 
@@ -509,13 +509,35 @@ function urlFrom(string) {
 }
 
 /**
+ * Run server-provided JavaScript with the names the generated code uses.
+ *
+ * Built with the Function constructor so the bundler sees no direct eval:
+ * a direct eval in this module would stop the minifier from mangling every
+ * name in the chunk that holds it. The eval inside the body still runs the
+ * code as a strict script, so statements keep their completion value.
+ */
+const evalInScope = new Function(
+  "addEvents",
+  "ReflexEvent",
+  "applyEventActions",
+  "code",
+  '"use strict"; return eval(code);',
+);
+
+/**
+ * Run server-provided JavaScript as a strict script.
+ * @param code The JavaScript source to run.
+ * @param addEvents The late-bound event dispatcher for this call.
+ * @returns The completion value of the script.
+ */
+const runScript = (code, addEvents) =>
+  evalInScope(addEvents, ReflexEvent, applyEventActions, code);
+
+/**
  * Invoke an event's result callback, if it declared one.
  *
  * The callback arrives as a string built by ``format_queue_events``, which
- * references ``queueEvents``/``processEvent`` (module-level here) plus ``socket``,
- * ``navigate`` and ``params``. Those three MUST stay the parameter names below:
- * the ``eval`` resolves them from this function's scope, so renaming them breaks
- * every callback.
+ * references ``addEvents`` and ``ReflexEvent``; ``runScript`` provides them.
  * @param event The event whose callback to run.
  * @param eval_result The value to pass to the callback, awaited if thenable.
  * @param socket The socket object to send events on.
@@ -532,10 +554,8 @@ const applyResultCallback = async (
   if (!event.payload.callback) {
     return;
   }
-  // Eval'd user code dispatches through addEvents like compiled event triggers
-  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
-  // every scope holding an eval, since that is the only scope chain the eval'd
-  // code can resolve it from.
+  // User code dispatches through addEvents like compiled event triggers do;
+  // late-bound so a remounted EventLoopProvider is picked up.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   const final_result =
     !!eval_result && typeof eval_result.then === "function"
@@ -543,7 +563,7 @@ const applyResultCallback = async (
       : eval_result;
   const callback =
     typeof event.payload.callback === "string"
-      ? eval(event.payload.callback)
+      ? runScript(event.payload.callback, addEvents)
       : event.payload.callback;
   callback(final_result);
 };
@@ -588,10 +608,8 @@ const storageDefault = (state_key) => {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
-  // Eval'd user code dispatches through addEvents like compiled event triggers
-  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
-  // every scope holding an eval, since that is the only scope chain the eval'd
-  // code can resolve it from.
+  // User code dispatches through addEvents like compiled event triggers do;
+  // late-bound so a remounted EventLoopProvider is picked up.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name === "_redirect") {
@@ -786,8 +804,8 @@ export const applyEvent = async (event, socket, navigate, params) => {
     try {
       const eval_result =
         event.name === "_call_script"
-          ? eval(event.payload.javascript_code)
-          : eval(event.payload.function)();
+          ? runScript(event.payload.javascript_code, addEvents)
+          : runScript(event.payload.function, addEvents)();
 
       await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
