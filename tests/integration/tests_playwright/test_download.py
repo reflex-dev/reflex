@@ -118,13 +118,24 @@ def test_download_data_through_blob_url(
     """
     assert download_app.frontend_url is not None
 
+    # Record the blob urls the page creates, to check the download is one of them.
+    page.add_init_script("""
+        const createObjectURL = URL.createObjectURL;
+        window.blobUrls = [];
+        URL.createObjectURL = (obj) => {
+            const url = createObjectURL(obj);
+            window.blobUrls.push(url);
+            return url;
+        };
+    """)
     page.goto(download_app.frontend_url)
     expect(page.locator("#token")).not_to_have_value("")
+    page.evaluate("window.blobUrls = []")
 
     with page.expect_download() as download_info:
         page.click(f"#{button_id}")
     download = download_info.value
 
-    assert download.url.startswith("blob:")
+    assert page.evaluate("window.blobUrls") == [download.url]
     assert download.suggested_filename == filename
     assert Path(download.path()).read_bytes() == content
