@@ -71,11 +71,10 @@ class StateManagerDisk(StateManager):
         default=environment.REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS.get()
     )
 
+    # Earliest time a state file on disk can expire.
     _next_disk_purge: float = dataclasses.field(default=0.0, init=False)
-    _disk_purge_token_expiration: int | None = dataclasses.field(
-        default=None, init=False
-    )
-    _disk_write_generation: int = dataclasses.field(default=0, init=False)
+    # Token expiration used to compute _next_disk_purge.
+    _disk_purge_token_expiration: int = dataclasses.field(default=0, init=False)
 
     def __post_init__(self):
         """Create a new state manager."""
@@ -123,19 +122,20 @@ class StateManagerDisk(StateManager):
         return token_expiration, next_expiration
 
     async def _maybe_purge_expired_states(self):
-        """Scan disk only when a file may expire or a write invalidates the scan."""
+        """Scan disk only when a file may expire or the token expiration changed.
+
+        Writes do not invalidate the deadline: a file written after a scan
+        started expires after the scan's cap of one token lifetime.
+        """
         if (
             time.time() < self._next_disk_purge
             and self.token_expiration == self._disk_purge_token_expiration
         ):
             return
-        generation = self._disk_write_generation
-        token_expiration, next_expiration = await run_in_thread(
-            self._purge_expired_states
-        )
-        if generation == self._disk_write_generation:
-            self._next_disk_purge = next_expiration
-            self._disk_purge_token_expiration = token_expiration
+        (
+            self._disk_purge_token_expiration,
+            self._next_disk_purge,
+        ) = await run_in_thread(self._purge_expired_states)
 
     def token_path(self, token: StateToken) -> Path:
         """Get the path for a token.
@@ -258,8 +258,6 @@ class StateManagerDisk(StateManager):
                 await run_in_thread(
                     lambda: self.token_path(substate_token).write_bytes(pickle_state),
                 )
-                self._disk_write_generation += 1
-                self._disk_purge_token_expiration = None
 
         if isinstance(token, BaseStateToken) and isinstance(substate, BaseState):
             for substate_substate in substate.substates.values():

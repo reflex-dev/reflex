@@ -110,44 +110,27 @@ async def test_disk_expiration_lifetime_changes(tmp_path, disk_clock, lifetime):
     assert not state_file.exists()
 
 
-async def test_disk_write_invalidates_expiration_scan(tmp_path, disk_clock):
-    """A persisted file is discovered even if the clock moved back during writing."""
+async def test_disk_write_keeps_expiration_deadline(monkeypatch, disk_clock):
+    """A write skips rescanning, and the written file still expires on schedule."""
     manager = StateManagerDisk(token_expiration=100)
+    listing = Mock(wraps=disk.path_ops.ls)
+    monkeypatch.setattr(disk.path_ops, "ls", listing)
     token = StateToken(ident="written", cls=dict)
-    disk_clock[0] = 900
+    disk_clock[0] = 1050
     await manager.set_state_for_substate(token, {"count": 1})
     state_file = manager.token_path(token)
-    os.utime(state_file, (900, 900))
+    os.utime(state_file, (1050, 1050))
 
-    disk_clock[0] = 1001
+    disk_clock[0] = 1060
     await manager._maybe_purge_expired_states()
-    assert not state_file.exists()
-
-
-async def test_disk_write_during_scan_keeps_invalidation(monkeypatch, disk_clock):
-    """A worker scan cannot replace invalidation from a concurrent file write."""
-    manager = StateManagerDisk(token_expiration=100)
-    token = StateToken(ident="concurrent", cls=dict)
-    state_file = manager.token_path(token)
-    disk_clock[0] = 1101
-    wrote = False
-
-    async def run_with_concurrent_write(fn):
-        nonlocal wrote
-        result = fn()
-        if fn == manager._purge_expired_states and not wrote:
-            wrote = True
-            disk_clock[0] = 1000
-            await manager.set_state_for_substate(token, {"count": 1})
-            os.utime(state_file, (1000, 1000))
-            disk_clock[0] = 1101
-        return result
-
-    monkeypatch.setattr(disk, "run_in_thread", run_with_concurrent_write)
+    listing.assert_not_called()
+    disk_clock[0] = 1100
     await manager._maybe_purge_expired_states()
     assert state_file.exists()
+    disk_clock[0] = 1151
     await manager._maybe_purge_expired_states()
     assert not state_file.exists()
+    assert listing.call_count == 2
 
 
 async def test_disk_expiration_lifetime_changes_while_scan_dispatched(
