@@ -201,8 +201,8 @@ class Toaster(Component):
 
     dir: Var[str] = field(doc="directionality of the toast (default: ltr)")
 
-    hotkey: Var[str] = field(
-        doc="Keyboard shortcut that will move focus to the toaster area."
+    hotkey: Var[list[str]] = field(
+        doc='Keyboard shortcut that will move focus to the toaster area, as a list of KeyboardEvent modifier properties and key codes (default: ["altKey", "KeyT"]).'
     )
 
     invert: Var[bool] = field(doc="Dark toasts in light mode and vice versa.")
