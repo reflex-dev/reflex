@@ -45,6 +45,16 @@ def hybrid_full_name_example():
     )
 ```
 
+```python test
+def test_hybrid_full_name_updates_as_you_type(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("Jane Doe")
+    demo.get_by_role("textbox").first.fill("Ada")
+    expect(heading).to_have_text("Ada Doe")
+    demo.get_by_role("textbox").last.fill("Lovelace")
+    expect(heading).to_have_text("Ada Lovelace")
+```
+
 Here `full_name` is rendered directly in the browser as `first_name + " " + last_name`.
 Because it is a property, the **same** method is also available on the backend — inside an
 event handler, `self.full_name` returns the actual combined string.
@@ -102,6 +112,16 @@ def hybrid_greeting_example():
         rx.heading(GreetState.greeting, as_="h3"),
         rx.input(value=GreetState.name, on_change=GreetState.set_name),
     )
+```
+
+```python test
+def test_hybrid_greeting_frontend_implementation(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("Hello!")
+    demo.get_by_role("textbox").fill("Reflex")
+    expect(heading).to_have_text("Hello, Reflex!")
+    demo.get_by_role("textbox").fill("")
+    expect(heading).to_have_text("Hello!")
 ```
 
 Repeating the property's name keeps its type visible when you access it on the class. If

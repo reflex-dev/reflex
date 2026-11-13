@@ -28,4 +28,10 @@ def basic_chart():
     )
 ```
 
+```python test
+def test_line_chart_renders(demo):
+    expect(demo.get_by_role("figure", name="chart, 1 series")).to_be_visible()
+    expect(demo.locator("canvas").first).to_be_visible()
+```
+
 For more detailed documentation, see the [AG Chart Documentation](https://charts.ag-grid.com/).

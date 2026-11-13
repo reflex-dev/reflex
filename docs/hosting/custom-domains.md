@@ -15,7 +15,7 @@ import reflex as rx
 
 An app serves one custom domain. To reach it from both `example.com` and `www.example.com`, add one of them here and set up a redirect for the other at your DNS provider.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/custom_domain.webp",
     alt="Custom domain configuration and DNS records for a hosted app",

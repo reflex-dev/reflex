@@ -78,6 +78,20 @@ def shared_state_example():
     )
 ```
 
+```python test
+def test_link_joins_shared_counter(demo):
+    count = demo.get_by_text(re.compile(r"^Collaborative Count: "))
+    expect(count).to_have_text("Collaborative Count: 0")
+    demo.get_by_role("button", name="Link").click()
+    expect(demo.get_by_role("button", name="Unlink")).to_be_visible()
+    expect(count).not_to_have_text("Collaborative Count: 0")
+    linked = int(count.inner_text().rpartition(" ")[2])
+    demo.get_by_role("button", name="Increment").click()
+    expect(count).to_have_text(f"Collaborative Count: {linked + 1}")
+    demo.get_by_role("button", name="Unlink").click()
+    expect(demo.get_by_role("button", name="Link")).to_be_visible()
+```
+
 ```md alert info
 # Computed vars may reference SharedState
 
@@ -142,6 +156,16 @@ def shared_room_example():
             ),
         ),
     )
+```
+
+```python test
+def test_join_and_leave_shared_room(demo):
+    expect(demo.get_by_text("Shared Room", exact=True)).to_be_visible()
+    demo.get_by_placeholder("Enter your name").fill("Ada")
+    demo.get_by_role("button", name="Join Room").click()
+    expect(demo.get_by_text("Users: Ada", exact=True)).to_be_visible()
+    demo.get_by_role("button", name="Leave Room").click()
+    expect(demo.get_by_role("button", name="Join Room")).to_be_visible()
 ```
 
 ```md alert warning

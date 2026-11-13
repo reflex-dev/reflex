@@ -59,6 +59,15 @@ rx.drawer.root(
 )
 ```
 
+```python test
+def test_drawer_opens_and_closes(demo, page):
+    demo.get_by_role("button", name="Open Drawer").click()
+    drawer = page.get_by_role("dialog")
+    expect(drawer).to_be_visible()
+    drawer.get_by_role("button", name="Close").click()
+    expect(drawer).to_be_hidden()
+```
+
 ## Sidebar Menu with a Drawer and State
 
 This example shows how to create a sidebar menu with a drawer. The drawer is opened by clicking a button. The drawer contains links to different sections of the page. When a link is clicked the drawer closes and the page scrolls to the section.
@@ -115,4 +124,15 @@ def drawer_sidebar():
             height="400px",
         ),
     )
+```
+
+```python test
+def test_drawer_sidebar_links(demo, page):
+    expect(demo.get_by_role("heading")).to_have_text(["Test1", "Test2"])
+    demo.get_by_role("button", name="Open Drawer").click()
+    drawer = page.get_by_role("dialog")
+    expect(drawer.get_by_role("link")).to_have_text(["Link 1", "Link 2"])
+    drawer.get_by_role("link", name="Link 2").click()
+    expect(drawer).to_be_hidden()
+    expect(page).to_have_url(re.compile(r"#test2$"))
 ```

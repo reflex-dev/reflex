@@ -17,7 +17,7 @@ You can transfer a whole project, including its apps and settings, from one orga
 
 Open **Settings** in the project sidebar and find the **Move Project** card. Choose the destination organization and confirm.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/moving/move_project.webp",
     alt="The Move project dialog with a dropdown to select a destination organization and a warning about members losing access",
@@ -47,7 +47,7 @@ You can move an app from one project to another **within the same organization**
 
 In Reflex Build, open the app's options menu (the **⋯** menu on the app), choose **Move app**, and pick the destination project.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/moving/move_app.webp",
     alt="The Move app dialog listing other projects in the same organization to move the app into",

@@ -89,6 +89,19 @@ def match_demo():
     )
 ```
 
+```python test
+def test_match_selected_breed(page, demo):
+    expect(demo.get_by_text("Unknown cat breed selected.")).to_be_visible()
+    for breed, text in [
+        ("persian", "Persian cat selected."),
+        ("maine coon", "Maine Coon cat selected."),
+        ("pug", "Unknown cat breed selected."),
+    ]:
+        demo.get_by_role("combobox").click()
+        page.get_by_role("option", name=breed).click()
+        expect(demo.locator("p.rt-Text")).to_have_text(text)
+```
+
 ## Default Case
 
 The default case in `rx.match` serves as a universal handler for scenarios where none of
@@ -207,6 +220,20 @@ def multi_match_demo():
     )
 ```
 
+```python test
+def test_match_multiple_conditions(page, demo):
+    expect(demo.get_by_text("Unknown animal breed")).to_be_visible()
+    for breed, text in [
+        ("siamese", "Breeds of cats."),
+        ("corgi", "Breeds of dogs."),
+        ("mustang", "Breeds of horses."),
+        ("golf", "Unknown animal breed"),
+    ]:
+        demo.get_by_role("combobox").click()
+        page.get_by_role("option", name=breed).click()
+        expect(demo.locator("p.rt-Text")).to_have_text(text)
+```
+
 In a match case tuple, you can specify multiple conditions. The last value of the match case
 tuple is automatically considered as the return value. It's important to note that a match case
 tuple should contain a minimum of two elements: a match case and a return value.
@@ -262,6 +289,20 @@ def match_prop_demo_():
     )
 ```
 
+```python test
+def test_match_as_prop(demo):
+    badge = demo.locator(".rt-Badge")
+    expect(badge).to_have_text("0")
+    expect(badge).to_have_attribute("data-accent-color", "green")
+    for value, color in [("1", "red"), ("2", "blue"), ("3", "green")]:
+        demo.get_by_role("button", name="increment").click()
+        expect(badge).to_have_text(value)
+        expect(badge).to_have_attribute("data-accent-color", color)
+    demo.get_by_role("button", name="decrement").click()
+    expect(badge).to_have_text("2")
+    expect(badge).to_have_attribute("data-accent-color", "blue")
+```
+
 In the example above, the background color property of the box component containing `State.value` changes to red when
 `state.value` is 1, blue when its 5, green when its 5, orange when its 15 and black for any other value.
 
@@ -305,6 +346,16 @@ def match_multi_prop_demo_():
         direction="row",
         gap="3",
     )
+```
+
+```python test
+def test_match_multiple_conditions_as_prop(demo):
+    badge = demo.locator(".rt-Badge")
+    expect(badge).to_have_attribute("data-accent-color", "green")
+    for value, color in [("1", "red"), ("2", "blue"), ("3", "red"), ("4", "blue")]:
+        demo.get_by_role("button", name="increment").click()
+        expect(badge).to_have_text(value)
+        expect(badge).to_have_attribute("data-accent-color", color)
 ```
 
 ```md alert warning

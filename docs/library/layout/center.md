@@ -31,3 +31,15 @@ rx.center(
     width="50%",
 )
 ```
+
+```python test
+def test_center_centers_child(demo):
+    text = demo.get_by_text("Hello World!")
+    container = text.locator("..")
+    expect(container).to_have_css("justify-content", "center")
+    expect(container).to_have_css("align-items", "center")
+    inner, outer = text.bounding_box(), container.bounding_box()
+    assert inner["x"] + inner["width"] / 2 == pytest.approx(
+        outer["x"] + outer["width"] / 2, abs=1
+    )
+```

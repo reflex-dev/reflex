@@ -21,6 +21,15 @@ rx.image(
 )
 ```
 
+```python test
+def test_image_src_and_size(demo):
+    image = demo.get_by_role("img", name="Reflex logo")
+    expect(image).to_have_attribute(
+        "src", "https://web.reflex-assets.dev/other/logo.jpg"
+    )
+    expect(image).to_have_css("width", "100px")
+```
+
 Image composes a box and can be styled similarly.
 
 ```python demo
@@ -34,10 +43,27 @@ rx.image(
 )
 ```
 
+```python test
+def test_image_styled_like_box(demo):
+    image = demo.get_by_role("img", name="Reflex logo")
+    expect(image).to_have_attribute(
+        "src", "https://web.reflex-assets.dev/other/logo.jpg"
+    )
+    expect(image).to_have_css("border-radius", "15px 50px")
+    expect(image).to_have_css("border", "5px solid rgb(85, 85, 85)")
+```
+
 You can also pass a `PIL` image object as the `src`.
 
 ```python demo box
 rx.image(src="https://picsum.photos/id/1/200/300", alt="An Unsplash Image")
+```
+
+```python test
+def test_image_external_url(demo):
+    expect(demo.get_by_role("img", name="An Unsplash Image")).to_have_attribute(
+        "src", "https://picsum.photos/id/1/200/300"
+    )
 ```
 
 ```python

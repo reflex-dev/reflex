@@ -122,6 +122,19 @@ def add_node_on_edge_drop():
     )
 ```
 
+```python test
+def test_dropping_a_connection_adds_a_node(demo):
+    flow = demo.get_by_role("application")
+    expect(flow.locator(".react-flow__node")).to_have_text(["Node"])
+    handle = flow.locator(".react-flow__node .react-flow__handle.source")
+    box = flow.bounding_box()
+    handle.drag_to(
+        flow, target_position={"x": box["width"] / 2, "y": box["height"] - 60}, steps=5
+    )
+    expect(flow.locator(".react-flow__node")).to_have_text(["Node", "Node 1"])
+    expect(flow.locator(".react-flow__edge")).to_have_count(1)
+```
+
 ## Connection Limit on Custom Node
 
 This example demonstrates how to create a custom node with a connection limit on its handle. The handle can be configured to allow a specific number of connections, or no connections at all, using the isConnectable property. This is useful when you want to restrict the number of connections a node can have.
@@ -229,4 +242,15 @@ def connection_limit():
         height="100vh",
         width="100vw",
     )
+```
+
+```python test
+def test_custom_handle_accepts_only_one_edge(demo):
+    flow = demo.get_by_role("application")
+    target = flow.locator(".react-flow__handle.target")
+    sources = flow.locator(".react-flow__handle.source")
+    sources.nth(0).drag_to(target, steps=5)
+    expect(flow.locator(".react-flow__edge")).to_have_count(1)
+    sources.nth(1).drag_to(target, steps=5, force=True)
+    expect(flow.locator(".react-flow__edge")).to_have_count(1)
 ```

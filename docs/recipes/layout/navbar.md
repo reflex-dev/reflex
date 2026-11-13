@@ -84,6 +84,26 @@ def navbar() -> rx.Component:
     )
 ```
 
+```python test
+def test_basic_navbar(page, demo):
+    expect(demo.get_by_role("heading")).to_have_text("Reflex")
+    expect(demo.get_by_role("link")).to_have_text([
+        "Home",
+        "About",
+        "Pricing",
+        "Contact",
+    ])
+    page.set_viewport_size({"width": 600, "height": 800})
+    expect(demo.get_by_role("link")).to_have_count(0)
+    demo.locator("svg.lucide-menu").click()
+    expect(page.get_by_role("menuitem")).to_have_text([
+        "Home",
+        "About",
+        "Pricing",
+        "Contact",
+    ])
+```
+
 ## Dropdown
 
 ```python demo exec
@@ -177,6 +197,17 @@ def navbar_dropdown() -> rx.Component:
     )
 ```
 
+```python test
+def test_dropdown_navbar(page, demo):
+    expect(demo.get_by_role("link")).to_have_text(["Home", "Pricing", "Contact"])
+    demo.get_by_role("button", name="Services").click()
+    expect(page.get_by_role("menuitem")).to_have_text([
+        "Service 1",
+        "Service 2",
+        "Service 3",
+    ])
+```
+
 ## Search bar
 
 ```python demo exec
@@ -237,6 +268,15 @@ def navbar_searchbar() -> rx.Component:
         # z_index="5",
         width="100%",
     )
+```
+
+```python test
+def test_search_navbar(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Reflex")
+    search = demo.get_by_role("searchbox", name="Search...")
+    search.fill("state")
+    expect(search).to_have_value("state")
+    expect(demo.locator("svg.lucide-search:visible")).to_have_count(1)
 ```
 
 ## Icons
@@ -317,6 +357,14 @@ def navbar_icons() -> rx.Component:
     )
 ```
 
+```python test
+def test_icons_navbar(demo):
+    links = demo.get_by_role("link")
+    expect(links).to_have_text(["Home", "Pricing", "Contact", "Services"])
+    for i in range(4):
+        expect(links.nth(i).locator("svg")).to_have_count(1)
+```
+
 ## Buttons
 
 ```python demo exec
@@ -393,6 +441,17 @@ def navbar_buttons() -> rx.Component:
         # z_index="5",
         width="100%",
     )
+```
+
+```python test
+def test_buttons_navbar(demo):
+    expect(demo.get_by_role("link")).to_have_text([
+        "Home",
+        "About",
+        "Pricing",
+        "Contact",
+    ])
+    expect(demo.get_by_role("button")).to_have_text(["Sign Up", "Log In"])
 ```
 
 ## User profile
@@ -476,4 +535,20 @@ def navbar_user() -> rx.Component:
         # z_index="5",
         width="100%",
     )
+```
+
+```python test
+def test_user_profile_navbar(page, demo):
+    expect(demo.get_by_role("link")).to_have_text([
+        "Home",
+        "About",
+        "Pricing",
+        "Contact",
+    ])
+    demo.get_by_role("button").click()
+    expect(page.get_by_role("menuitem")).to_have_text([
+        "Settings",
+        "Earnings",
+        "Log out",
+    ])
 ```

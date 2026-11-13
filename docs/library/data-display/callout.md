@@ -28,6 +28,14 @@ rx.callout(
 )
 ```
 
+```python test
+def test_callout_shows_icon_and_text(demo):
+    expect(demo.locator(".rt-CalloutText")).to_have_text(
+        "You will need admin privileges to install and access this application."
+    )
+    expect(demo.locator(".rt-CalloutIcon svg.lucide-info")).to_be_visible()
+```
+
 The `icon` prop allows an icon to be passed to the `callout` component. See the [**icon** component for all icons that are available.](/docs/library/data-display/icon/)
 
 ## As alert
@@ -39,6 +47,16 @@ rx.callout(
     color_scheme="red",
     role="alert",
 )
+```
+
+```python test
+def test_callout_as_alert(demo):
+    alert = demo.get_by_role("alert")
+    expect(alert).to_have_text(
+        "Access denied. Please contact the network administrator to view this page."
+    )
+    expect(alert).to_have_attribute("data-accent-color", "red")
+    expect(alert.locator(".rt-CalloutIcon svg.lucide-triangle-alert")).to_be_visible()
 ```
 
 ## Style
@@ -70,6 +88,17 @@ rx.flex(
 )
 ```
 
+```python test
+def test_callout_sizes(demo):
+    callouts = demo.locator(".rt-CalloutRoot")
+    expect(callouts).to_have_count(3)
+    for i, size in enumerate(["3", "2", "1"]):
+        expect(callouts.nth(i)).to_have_class(re.compile(rf"\brt-r-size-{size}\b"))
+        expect(callouts.nth(i)).to_have_text(
+            "You will need admin privileges to install and access this application."
+        )
+```
+
 ### Variant
 
 Use the `variant` prop to control the visual style. It is set to `soft` by default.
@@ -94,6 +123,17 @@ rx.flex(
     direction="column",
     spacing="3",
 )
+```
+
+```python test
+def test_callout_variants(demo):
+    callouts = demo.locator(".rt-CalloutRoot")
+    expect(callouts).to_have_count(3)
+    for i, variant in enumerate(["soft", "surface", "outline"]):
+        expect(callouts.nth(i)).to_have_class(re.compile(rf"\brt-variant-{variant}\b"))
+        expect(callouts.nth(i)).to_have_text(
+            "You will need admin privileges to install and access this application."
+        )
 ```
 
 ### Color
@@ -122,6 +162,17 @@ rx.flex(
 )
 ```
 
+```python test
+def test_callout_colors(demo):
+    callouts = demo.locator(".rt-CalloutRoot")
+    expect(callouts).to_have_count(3)
+    for i, color in enumerate(["blue", "green", "red"]):
+        expect(callouts.nth(i)).to_have_attribute("data-accent-color", color)
+        expect(callouts.nth(i)).to_have_text(
+            "You will need admin privileges to install and access this application."
+        )
+```
+
 ### High Contrast
 
 Use the `high_contrast` prop to add additional contrast.
@@ -140,4 +191,12 @@ rx.flex(
     direction="column",
     spacing="3",
 )
+```
+
+```python test
+def test_callout_high_contrast(demo):
+    expect(demo.locator(".rt-CalloutRoot")).to_have_text(
+        ["You will need admin privileges to install and access this application."] * 2
+    )
+    expect(demo.locator(".rt-CalloutRoot.rt-high-contrast")).to_have_count(1)
 ```

@@ -29,6 +29,13 @@ def pill_page():
     )
 ```
 
+```python test
+def test_remove_button_fires_on_remove(demo, page):
+    expect(demo.locator(".mantine-Pill-label")).to_have_text(["Pill"])
+    demo.locator(".mantine-Pill-remove").click()
+    expect(page.get_by_text("Pill on_remove triggered")).to_be_visible()
+```
+
 ## Pill Group
 `rxe.mantine.pill.group` allows grouping multiple `rxe.mantine.pill` components together, with a predefined layout.
 
@@ -43,6 +50,14 @@ def pill_group_page():
         rxe.mantine.pill("Pill 1"),
         rxe.mantine.pill("Pill 2"),
     )
+```
+
+```python test
+def test_pill_group(demo):
+    expect(demo.locator(".mantine-PillGroup-group .mantine-Pill-label")).to_have_text([
+        "Pill 1",
+        "Pill 2",
+    ])
 ```
 
 
@@ -99,4 +114,18 @@ def pills_input_page():
         id="pills-input",
         value=["tag1", "tag2"],
     )
+```
+
+```python test
+def test_remove_tag_from_pills_input(demo):
+    pills = demo.locator(".mantine-Pill-label")
+    # The tags are a set, so their order varies between runs.
+    expect(pills).to_have_count(2)
+    expect(pills.filter(has_text="Bar")).to_have_text("Bar")
+    expect(pills.filter(has_text="Foo")).to_have_text("Foo")
+    demo.locator(".mantine-Pill-root", has_text="Foo").locator(
+        ".mantine-Pill-remove"
+    ).click()
+    expect(pills).to_have_text(["Bar"])
+    expect(demo.get_by_role("textbox", name="Enter tags")).to_be_visible()
 ```

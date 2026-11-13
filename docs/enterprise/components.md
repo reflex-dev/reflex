@@ -110,20 +110,20 @@ def enterprise_component_grid():
 component_grid = enterprise_component_grid()
 ```
 
-```python eval
+```python eval notest
 rx.el.h1(
     "Enterprise Components",
     class_name="lg:text-5xl text-3xl font-[525] scroll-mt-[113px] my-4 text-foreground",
 )
 ```
 
-```python eval
+```python eval notest
 rx.el.span(
     "Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
     class_name="font-[475] text-muted-foreground max-w-[80%] text-sm",
 )
 ```
 
-```python eval
+```python eval notest
 component_grid
 ```

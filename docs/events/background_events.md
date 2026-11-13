@@ -108,6 +108,19 @@ def background_task_example():
     )
 ```
 
+```python test
+def test_background_task_counts_to_max(demo):
+    count = demo.get_by_role("heading")
+    expect(count).to_have_text("0 /")
+    demo.get_by_role("textbox").fill("3")
+    demo.get_by_role("button", name="Start").click()
+    expect(demo.get_by_role("button", name="Stop")).to_be_visible()
+    expect(count).to_have_text("3 /")
+    expect(demo.get_by_role("button", name="Start")).to_be_visible()
+    demo.get_by_role("button", name="Reset").click()
+    expect(count).to_have_text("0 /")
+```
+
 ## Passing Mutable Values to Helpers
 
 A helper that only receives a mutable state value can enter that value as an

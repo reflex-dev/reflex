@@ -80,6 +80,16 @@ def basic_drag_drop():
     )
 ```
 
+```python test
+def test_drop_increments_counter(demo):
+    expect(demo.get_by_text("Items dropped: 0")).to_be_visible()
+    card = demo.get_by_text("Drag me!")
+    card.drag_to(demo.get_by_text("Drop Zone"))
+    expect(demo.get_by_text("Items dropped: 1")).to_be_visible()
+    card.drag_to(demo.get_by_text("Drop Zone"))
+    expect(demo.get_by_text("Items dropped: 2")).to_be_visible()
+```
+
 ### Multi-Position Drag and Drop
 
 Create a draggable item that can be moved between multiple drop targets:
@@ -149,6 +159,15 @@ def multi_position_example():
     )
 ```
 
+```python test
+def test_move_card_between_zones(demo):
+    expect(demo.get_by_text("Position: 0")).to_be_visible()
+    demo.get_by_text("Movable Card").drag_to(demo.get_by_text("Drop Zone 2"))
+    expect(demo.get_by_text("Position: 2")).to_be_visible()
+    expect(demo.get_by_text("Drop Zone 2")).to_have_count(0)
+    expect(demo.get_by_text("Drop Zone 0")).to_be_visible()
+```
+
 ## Advanced Features
 
 ### State Tracking with Collected Parameters
@@ -211,6 +230,14 @@ def state_tracking_example():
         rx.hstack(tracked_draggable(), tracked_drop_target(), spacing="4"),
         spacing="4",
     )
+```
+
+```python test
+def test_drag_status_is_tracked(demo):
+    expect(demo.get_by_text("Status: No drag activity")).to_be_visible()
+    expect(demo.get_by_text("Ready to drag")).to_be_visible()
+    demo.get_by_text("Tracked Draggable").drag_to(demo.get_by_text("Smart Drop Zone"))
+    expect(demo.get_by_text("Status: Drag ended")).to_be_visible()
 ```
 
 ### Dynamic Lists with Drag and Drop
@@ -324,6 +351,22 @@ def dynamic_list_example():
         spacing="6",
         align="start",
     )
+```
+
+```python test
+def test_move_item_to_other_list(demo):
+    item = demo.get_by_text("Item 1", exact=True)
+    expect(demo.get_by_text("From List A")).to_have_count(3)
+    item.drag_to(demo.get_by_text("List B", exact=True))
+    expect(demo.get_by_text("From List A")).to_have_count(2)
+    expect(demo.get_by_text("From List B")).to_have_count(3)
+    expect(demo.get_by_text(re.compile("^Item \\d$"))).to_have_text([
+        "Item 2",
+        "Item 3",
+        "Item 4",
+        "Item 5",
+        "Item 1",
+    ])
 ```
 
 ## Core Components
@@ -509,6 +552,13 @@ def item_data_example():
     return rx.vstack(simple_draggable(), simple_drop_target(), spacing="4")
 ```
 
+```python test
+def test_drop_passes_item_data(demo):
+    expect(demo.get_by_text("No items dropped yet")).to_be_visible()
+    demo.get_by_text("Drag me!").drag_to(demo.get_by_text("No items dropped yet"))
+    expect(demo.get_by_text("Dropped: test_item")).to_be_visible()
+```
+
 ### Custom Collect Functions
 
 The `collect` parameter allows you to access drag and drop state information in real-time:
@@ -592,6 +642,15 @@ def custom_collect_example():
         rx.text(CollectState.drop_info, size="2", color="gray.600"),
         spacing="4",
     )
+```
+
+```python test
+def test_collected_params_and_drop(demo, page):
+    expect(demo.get_by_text("Can drag: true")).to_be_visible()
+    expect(demo.get_by_text("Can drop: false")).to_be_visible()
+    demo.get_by_text("Drag me!").drag_to(demo.get_by_text("Drop Zone"))
+    expect(demo.get_by_text("Dropped: Test Item")).to_be_visible()
+    expect(page.get_by_text("Successfully dropped Test Item")).to_be_visible()
 ```
 
 ## Provider

@@ -52,6 +52,13 @@ def basic_map():
     )
 ```
 
+```python test
+def test_marker_opens_popup(demo):
+    expect(demo.get_by_text("Hello from London!")).to_have_count(0)
+    demo.get_by_role("button", name="Marker").click()
+    expect(demo.get_by_text("Hello from London!")).to_be_visible()
+```
+
 ## Core Components
 
 ### Map Container
@@ -124,6 +131,17 @@ def markers_example():
     )
 ```
 
+```python test
+def test_two_markers_with_popups(demo):
+    markers = demo.get_by_role("button", name="Marker")
+    expect(markers).to_have_count(2)
+    markers.last.click()
+    expect(demo.get_by_text("London Eye")).to_be_visible()
+    markers.first.click()
+    expect(demo.get_by_text("Big Ben")).to_be_visible()
+    expect(demo.get_by_text("Famous clock tower in London")).to_be_visible()
+```
+
 #### Custom Marker Icons
 
 To customize a marker's icon, pass a plain dictionary of [Leaflet icon options](https://leafletjs.com/reference.html#icon) to the marker's `icon` prop. There is no `rxe.map.icon` component or `icon` helper in the types module — the prop takes a dict directly:
@@ -194,6 +212,15 @@ def vectors_example():
     )
 ```
 
+```python test
+def test_circle_polygon_and_polyline(demo):
+    shapes = demo.locator("path.leaflet-interactive")
+    expect(shapes).to_have_count(3)
+    expect(shapes.nth(0)).to_have_attribute("stroke", "#ff0000")
+    expect(shapes.nth(1)).to_have_attribute("stroke", "#0000ff")
+    expect(shapes.nth(2)).to_have_attribute("stroke", "#00ff00")
+```
+
 ## Interactive Features
 
 ### Event Handling
@@ -239,6 +266,26 @@ def interactive_example():
     )
 ```
 
+```python test
+def test_click_reports_coordinates(demo):
+    expect(demo.get_by_text("Last click: No clicks yet")).to_be_visible()
+    demo.locator(".leaflet-container").click()
+    expect(
+        demo.get_by_text(re.compile(r"^Last click: Clicked at: 51\.\d{4}, -0\.\d{4}$"))
+    ).to_be_visible()
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="handle_zoom_change reads event['target']['_zoom'], but on_zoom sends"
+    " target.zoom, so the zoom always falls back to 13",
+)
+def test_zoom_in_updates_current_zoom(demo):
+    expect(demo.get_by_text("Current zoom: 13")).to_be_visible()
+    demo.get_by_role("button", name="Zoom in").click()
+    expect(demo.get_by_text("Current zoom: 14")).to_be_visible()
+```
+
 Zoom and move events fire rapidly while the user interacts with the map. Debounce them to avoid flooding the backend with state updates:
 
 ```python
@@ -274,6 +321,17 @@ def controls_example():
         height="400px",
         width="100%",
     )
+```
+
+```python test
+def test_custom_controls(demo):
+    top_right = demo.locator(".leaflet-top.leaflet-right")
+    expect(top_right.get_by_role("button", name="Zoom in")).to_be_visible()
+    expect(top_right.get_by_role("button", name="Zoom out")).to_be_visible()
+    scale = demo.locator(".leaflet-bottom.leaflet-left .leaflet-control-scale")
+    expect(scale).to_have_text("1 km3000 ft")
+    bottom_right = demo.locator(".leaflet-bottom.leaflet-right")
+    expect(bottom_right.get_by_role("link", name="Leaflet").first).to_be_visible()
 ```
 
 ## Helper Functions
@@ -364,6 +422,15 @@ def map_api_example():
         ),
         spacing="3",
     )
+```
+
+```python test
+def test_api_fly_to(demo):
+    expect(demo.get_by_text("Current location: London")).to_be_visible()
+    demo.get_by_role("button", name="Fly to Paris").click()
+    expect(demo.get_by_text("Current location: Paris")).to_be_visible()
+    demo.get_by_role("button", name="Fly to London").click()
+    expect(demo.get_by_text("Current location: London")).to_be_visible()
 ```
 
 ### Common API Methods
@@ -533,6 +600,24 @@ def advanced_example():
         ),
         spacing="3",
     )
+```
+
+```python test
+def test_constraints_and_location(demo):
+    expect(demo.get_by_text("Constraints: None")).to_be_visible()
+    demo.get_by_role("button", name="Apply Constraints").click()
+    expect(
+        demo.get_by_text(
+            "Constraints: Applied (restricted to London area, zoom 10-16, no scroll wheel)"
+        )
+    ).to_be_visible()
+    demo.get_by_role("button", name="Remove Constraints").click()
+    expect(demo.get_by_text("Constraints: None")).to_be_visible()
+    demo.get_by_role("button", name="Enable Location").click()
+    expect(
+        demo.get_by_text("Status: Location error - permission denied or unavailable")
+    ).to_be_visible()
+    expect(demo.get_by_role("button", name="Disable Location")).to_be_visible()
 ```
 
 ### Callback Handling

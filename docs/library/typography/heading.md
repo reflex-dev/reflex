@@ -13,6 +13,13 @@ import reflex as rx
 rx.heading("The quick brown fox jumps over the lazy dog.", as_="h2")
 ```
 
+```python test
+def test_heading_renders_h2(demo):
+    expect(demo.get_by_role("heading", level=2)).to_have_text(
+        "The quick brown fox jumps over the lazy dog."
+    )
+```
+
 ## As another element
 
 Use the `as_` prop to change the heading level. This prop is purely semantic and does not change the visual appearance.
@@ -25,6 +32,12 @@ rx.flex(
     direction="column",
     spacing="3",
 )
+```
+
+```python test
+def test_heading_levels(demo):
+    for level in (2, 3, 4):
+        expect(demo.get_by_role("heading", level=level)).to_have_text(f"Level {level}")
 ```
 
 ## Size
@@ -45,6 +58,24 @@ rx.flex(
     direction="column",
     spacing="3",
 )
+```
+
+```python test
+def test_heading_sizes_increase(demo):
+    headings = demo.get_by_role("heading", level=2)
+    expect(headings).to_have_count(9)
+    for i, px in enumerate([
+        "12px",
+        "14px",
+        "16px",
+        "18px",
+        "20px",
+        "24px",
+        "28px",
+        "35px",
+        "60px",
+    ]):
+        expect(headings.nth(i)).to_have_css("font-size", px)
 ```
 
 ## Weight
@@ -68,6 +99,14 @@ rx.flex(
 )
 ```
 
+```python test
+def test_heading_weights(demo):
+    headings = demo.get_by_role("heading", level=2)
+    expect(headings).to_have_count(4)
+    for i, weight in enumerate(["300", "400", "500", "700"]):
+        expect(headings.nth(i)).to_have_css("font-weight", weight)
+```
+
 ## Align
 
 Use the `align` prop to set text alignment.
@@ -81,6 +120,14 @@ rx.flex(
     spacing="3",
     width="100%",
 )
+```
+
+```python test
+def test_heading_alignment(demo):
+    for name, align in [("Left", "left"), ("Center", "center"), ("Right", "right")]:
+        expect(demo.get_by_role("heading", name=f"{name}-aligned")).to_have_css(
+            "text-align", align
+        )
 ```
 
 ## Trim
@@ -112,6 +159,15 @@ rx.flex(
     direction="column",
     spacing="3",
 )
+```
+
+```python test
+def test_heading_trim_shrinks_box(demo):
+    plain = demo.get_by_role("heading", name="Without Trim")
+    trimmed = demo.get_by_role("heading", name="With Trim")
+    expect(plain).to_be_visible()
+    expect(trimmed).to_be_visible()
+    assert trimmed.bounding_box()["height"] < plain.bounding_box()["height"]
 ```
 
 Trimming the leading is useful when dialing in vertical spacing in cards or other “boxy” components. Otherwise, padding looks larger on top and bottom than on the sides.
@@ -150,6 +206,19 @@ rx.flex(
 )
 ```
 
+```python test
+def test_heading_trim_start_in_card(demo):
+    plain = demo.get_by_role("heading", name="Without trim")
+    trimmed = demo.get_by_role("heading", name="With trim")
+    expect(plain).to_have_class(re.compile(r"\brt-r-size-3\b"))
+    expect(trimmed).to_have_class(re.compile(r"\brt-r-lt-start\b"))
+    # Trimming the leading at the start shortens the heading's box.
+    assert trimmed.bounding_box()["height"] < plain.bounding_box()["height"]
+    expect(
+        demo.get_by_text("The goal of typography is to relate font size")
+    ).to_have_count(2)
+```
+
 ## Color
 
 Use the `color_scheme` prop to assign a specific color, ignoring the global theme.
@@ -170,6 +239,14 @@ rx.flex(
     ),
     direction="column",
 )
+```
+
+```python test
+def test_heading_color_schemes(demo):
+    headings = demo.get_by_role("heading", level=2)
+    expect(headings).to_have_count(4)
+    for i, color in enumerate(["indigo", "cyan", "crimson", "orange"]):
+        expect(headings.nth(i)).to_have_attribute("data-accent-color", color)
 ```
 
 ## High Contrast
@@ -204,4 +281,13 @@ rx.flex(
     ),
     direction="column",
 )
+```
+
+```python test
+def test_heading_high_contrast_colors(demo):
+    headings = demo.get_by_role("heading", level=2)
+    expect(headings).to_have_count(4)
+    for i, color in enumerate(["indigo", "cyan", "crimson", "orange"]):
+        expect(headings.nth(i)).to_have_attribute("data-accent-color", color)
+        expect(headings.nth(i)).to_have_class(re.compile(r"\brt-high-contrast\b"))
 ```

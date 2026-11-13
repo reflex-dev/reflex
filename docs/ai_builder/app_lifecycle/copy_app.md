@@ -12,7 +12,7 @@ Copying creates an independent app from an existing Reflex Build app. Use it to 
 2. Wait for the copied app to open in the current project.
 3. Rename it so it is easy to distinguish from the original.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/app_copy_action.webp",
     alt="The Copy action in the menu next to Deploy",

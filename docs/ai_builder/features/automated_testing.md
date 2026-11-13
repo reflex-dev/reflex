@@ -26,7 +26,7 @@ dashboard opens.
 
 ## Run and Review Tests
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/testing_browser.webp",
     alt="Passing tests in the Reflex Build Testing panel",

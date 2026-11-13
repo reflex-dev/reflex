@@ -30,3 +30,15 @@ def tree_example():
         ],
     )
 ```
+
+```python test
+def test_expand_root_node(demo):
+    root = demo.get_by_role("treeitem", name="Root")
+    expect(demo.get_by_role("treeitem", name="Child 1")).to_be_hidden()
+    root.click()
+    expect(demo.get_by_role("treeitem")).to_have_text([
+        re.compile("^Root"),
+        "Child 1",
+        "Child 2",
+    ])
+```

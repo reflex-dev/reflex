@@ -27,6 +27,14 @@ def dynamic_buttons():
     )
 ```
 
+```python test
+def test_foreach_renders_state_colors(demo):
+    expect(demo.get_by_role("button")).to_have_text(["red", "green", "blue"])
+    expect(demo.get_by_role("button", name="red")).to_have_css(
+        "background-color", "rgb(255, 0, 0)"
+    )
+```
+
 Here's the same example using a lambda function.
 
 ```python
@@ -75,6 +83,11 @@ def dynamic_buttons_for():
     )
 ```
 
+```python test
+def test_list_comprehension_renders_buttons(demo):
+    expect(demo.get_by_role("button")).to_have_text(["red", "green", "blue"])
+```
+
 However, as soon as you need the data to be dynamic, you must use `rx.foreach`.
 
 ```python demo exec
@@ -100,6 +113,19 @@ def dynamic_buttons_foreach():
     )
 ```
 
+```python test
+def test_foreach_updates_when_color_added(demo):
+    demo.get_by_placeholder("Add a color").fill("purple")
+    demo.get_by_role("button", name="Add").click()
+    expect(demo.get_by_role("button")).to_have_text([
+        "red",
+        "green",
+        "blue",
+        "purple",
+        "Add",
+    ])
+```
+
 ## Render Function
 
 The function to render each item can be defined either as a separate function or as a lambda function. In the example below, we define the function `colored_box` separately and pass it to the `rx.foreach` function.
@@ -121,6 +147,12 @@ def dynamic_buttons2():
     return rx.vstack(
         rx.foreach(IterState2.color, colored_box),
     )
+```
+
+```python test
+def test_foreach_with_typed_var_renders_buttons(demo):
+    buttons = demo.get_by_role("button")
+    expect(buttons).to_have_text(["red", "green", "blue"])
 ```
 
 Notice that the type annotation for the `color` parameter in the `colored_box` function is `rx.Var[str]` (rather than just `str`). This is because the `rx.foreach` function passes the item as a `Var` object, which is a wrapper around the actual value. This is what allows us to compile the frontend without knowing the actual value of the state var (which is only known at runtime).
@@ -149,6 +181,11 @@ def enumerate_foreach():
     return rx.vstack(
         rx.foreach(IterIndexState.color, create_button),
     )
+```
+
+```python test
+def test_foreach_index_numbers_buttons(demo):
+    expect(demo.get_by_role("button")).to_have_text(["1. red", "2. green", "3. blue"])
 ```
 
 Here's the same example using a lambda function.
@@ -188,6 +225,11 @@ def dict_foreach():
         ),
         columns="3",
     )
+```
+
+```python test
+def test_foreach_over_dict_items(demo):
+    expect(demo.locator("p")).to_have_text(["sky", "balloon", "grass"])
 ```
 
 ```md alert warning
@@ -231,6 +273,22 @@ def projects_example() -> rx.Component:
     return rx.box(rx.foreach(NestedStateFE.projects, project_item))
 ```
 
+```python test
+def test_nested_foreach_renders_badges(demo):
+    expect(demo.locator(".rt-Badge")).to_have_text([
+        "Next.js",
+        "Prisma",
+        "Tailwind",
+        "Google Cloud",
+        "Docker",
+        "MySQL",
+        "Python",
+        "Flask",
+        "Google Cloud",
+        "Docker",
+    ])
+```
+
 If you want an example where not all of the values in the dict are the same type then check out the example on [var operations using foreach](/docs/vars/var-operations/).
 
 Here is a further example of how to use `foreach` with a nested data structure.
@@ -264,6 +322,21 @@ def nested_dict_foreach():
         ),
         columns="3",
     )
+```
+
+```python test
+def test_nested_dict_foreach(demo):
+    expect(demo.locator("p")).to_have_text([
+        "purple",
+        "red",
+        "blue",
+        "orange",
+        "yellow",
+        "red",
+        "green",
+        "blue",
+        "yellow",
+    ])
 ```
 
 ## Foreach with Cond
@@ -303,4 +376,14 @@ def packing_list():
         rx.text("Sammy's Packing List"),
         rx.list(rx.foreach(ForeachCondState.to_do_list, render_item)),
     )
+```
+
+```python test
+def test_cond_inside_foreach_marks_packed_items(demo):
+    expect(demo.get_by_text("Sammy's Packing List")).to_be_visible()
+    expect(demo.get_by_role("listitem")).to_have_text([
+        "Space suit ✔",
+        "Helmet ✔",
+        "Back Pack",
+    ])
 ```

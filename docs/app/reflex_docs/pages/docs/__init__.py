@@ -23,7 +23,7 @@ from reflex_docs.docgen_pipeline import (
     render_docgen_document,
     render_markdown_with_toc,
 )
-from reflex_docs.pages.docs.component import multi_docs
+from reflex_docs.pages.docs.component import low_level_route, multi_docs
 from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.pages.library_previews import components_previews_pages
 from reflex_docs.templates.docpage import docpage
@@ -175,6 +175,10 @@ docs_ns = SimpleNamespace()
 library_display_titles: dict[str, str] = {}
 
 doc_markdown_sources: dict[str, str] = {}
+
+# Route -> markdown file rendered there, for every compiled docgen page. The
+# docs demo tests collect the `python test` blocks of these files.
+doc_page_sources: dict[str, str] = {}
 
 
 manual_titles = {
@@ -410,8 +414,10 @@ def handle_library_doc(
     image = get_image_from_frontmatter(actual_path)
     ll_actual_path = actual_path.replace(".md", "-ll.md")
     ll_clist: list | None = None
+    doc_page_sources[resolved.route] = actual_path
     if os.path.exists(ll_actual_path):
         ll_clist = [title, *get_components_from_frontmatter(ll_actual_path)]
+        doc_page_sources[low_level_route(resolved.route)] = ll_actual_path
     if doc.startswith("docs/library/graphing"):
         graphing_components[resolved.category].append(clist)
     else:
@@ -488,6 +494,7 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
     description = extract_doc_description(doc_text)
     image = get_image_from_frontmatter(actual_path)
     frontmatter = _frontmatter_for(actual_path)
+    doc_page_sources[resolved.route] = actual_path
     return make_docpage(
         resolved.route,
         frontmatter.title

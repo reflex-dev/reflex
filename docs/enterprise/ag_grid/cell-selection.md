@@ -66,6 +66,16 @@ def basic_cell_selection():
     )
 ```
 
+```python test
+@pytest.mark.skip(reason="Loads its rows from www.ag-grid.com over the network")
+def test_drag_selection_shows_toast(demo, page):
+    first = demo.get_by_role("row", name=re.compile("^Michael Phelps 23 "))
+    first.get_by_role("gridcell").nth(1).drag_to(
+        first.get_by_role("gridcell").nth(2), steps=5
+    )
+    expect(page.get_by_text(re.compile("^Selected ranges: "))).to_be_visible()
+```
+
 ### Advanced Selection Event Handling
 
 For more sophisticated selection handling, you can process the selection ranges to calculate detailed information:
@@ -126,6 +136,18 @@ def advanced_selection_example():
         on_mount=AdvancedSelectionState.load_data,
         width="100%",
     )
+```
+
+```python test
+def test_range_selection_counts_cells(demo, page):
+    alice_score = (
+        demo.get_by_role("row", name="Alice 85 B 3").get_by_role("gridcell").nth(1)
+    )
+    bob_grade = (
+        demo.get_by_role("row", name="Bob 92 A 2").get_by_role("gridcell").nth(2)
+    )
+    alice_score.drag_to(bob_grade, steps=5)
+    expect(page.get_by_text("Selected 4 cells across 1 ranges")).to_be_visible()
 ```
 
 ## Fill Handle
@@ -244,6 +266,23 @@ def fill_handle_example():
     )
 ```
 
+```python test
+@pytest.mark.xfail(
+    strict=True,
+    reason="handle_cell_change reads colId/oldValue, which on_cell_value_changed"
+    " does not send: the log reads \"Row 2, : '' → '20'\"",
+)
+def test_cell_change_is_logged(demo, page):
+    banana = demo.get_by_role("row", name=re.compile("^Banana ")).get_by_role(
+        "gridcell"
+    )
+    banana.nth(1).dblclick()
+    page.keyboard.press("ControlOrMeta+a")
+    page.keyboard.type("20")
+    page.keyboard.press("Enter")
+    expect(demo.get_by_text("Row 2, quantity: '15' → '20'")).to_be_visible()
+```
+
 ## Advanced Configuration Options
 
 You can further customize cell selection behavior using additional configuration options:
@@ -314,6 +353,18 @@ def configuration_example():
         on_mount=ConfigurationState.load_data,
         width="100%",
     )
+```
+
+```python test
+def test_edit_product_name(demo, page):
+    cell = (
+        demo.get_by_role("row", name=re.compile("^1 ")).get_by_role("gridcell").nth(1)
+    )
+    cell.dblclick()
+    page.keyboard.press("ControlOrMeta+a")
+    page.keyboard.type("Gadget")
+    page.keyboard.press("Enter")
+    expect(cell).to_have_text("Gadget")
 ```
 
 ## Key Features

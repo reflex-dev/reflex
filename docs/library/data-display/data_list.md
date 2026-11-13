@@ -102,3 +102,27 @@ A `DataList` needs to be initialized using `rx.data_list.root()` and currently t
     ),
 )
 ```
+
+```python test
+def test_data_list_pairs(demo):
+    expect(demo.locator(".rt-DataListLabel")).to_have_text([
+        "Status",
+        "ID",
+        "Name",
+        "Email",
+        "Company",
+    ])
+    expect(demo.locator(".rt-DataListValue")).to_have_text([
+        "Authorized",
+        "U-474747",
+        "Developer Success",
+        "success@reflex.dev",
+        "Reflex",
+    ])
+    expect(demo.get_by_role("link", name="success@reflex.dev")).to_have_attribute(
+        "href", "mailto:success@reflex.dev"
+    )
+    expect(demo.get_by_role("link", name="Reflex", exact=True)).to_have_attribute(
+        "href", "https://reflex.dev"
+    )
+```

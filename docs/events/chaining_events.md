@@ -47,6 +47,15 @@ def call_handler_example():
     )
 ```
 
+```python test
+def test_run_yields_progress_updates(demo):
+    count = demo.get_by_text(re.compile(r"^\d+$"))
+    expect(count).to_have_text("0")
+    demo.get_by_role("button", name="Run").click()
+    expect(count).to_have_text("1")
+    expect(count).to_have_text("10", timeout=10000)
+```
+
 ## Awaiting Event Handlers
 
 An event handler accessed through its state class is awaitable. `await` runs it
@@ -80,6 +89,13 @@ def await_handler_example():
         rx.text(f"Total: {AwaitHandlerState.total}"),
         rx.button("Add 5 twice", on_click=AwaitHandlerState.add_twice(5)),
     )
+```
+
+```python test
+def test_add_twice_awaits_handler_results(demo, page):
+    demo.get_by_role("button", name="Add 5 twice").click()
+    expect(demo.get_by_text("Total: 10")).to_be_visible()
+    expect(page.get_by_text("5 then 10", exact=True)).to_be_visible()
 ```
 
 Compared to calling the handler as a method of `self`, awaiting it converts
@@ -146,6 +162,17 @@ def collatz_example():
         rx.badge(CollatzState.count, font_size="1.5em", color_scheme="green"),
         rx.input(on_blur=CollatzState.start_collatz),
     )
+```
+
+```python test
+def test_collatz_steps_down_to_one(demo):
+    count = demo.get_by_text(re.compile(r"^\d+$"))
+    expect(count).to_have_text("1")
+    demo.get_by_role("textbox").fill("8")
+    demo.get_by_role("textbox").blur()
+    expect(count).to_have_text("8")
+    expect(count).to_have_text("4")
+    expect(count).to_have_text("1")
 ```
 
 In this example, we run the [Collatz Conjecture](https://en.wikipedia.org/wiki/Collatz_conjecture) on a number entered by the user.

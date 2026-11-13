@@ -38,6 +38,19 @@ def treemap_simple():
     )
 ```
 
+```python test
+def test_treemap_draws_a_tile_per_category(demo):
+    expect(demo.locator(".recharts-treemap-depth-1")).to_have_count(6)
+    expect(demo.locator(".recharts-treemap-depth-1 text")).to_have_text([
+        "Category A",
+        "Category B",
+        "Category C",
+        "Category D",
+        "Category E",
+        "Category F",
+    ])
+```
+
 ## Aspect Ratio
 
 The `aspect_ratio` prop controls the target width-to-height ratio the treemap uses when laying out each rectangle. Lower values produce taller tiles; higher values produce wider ones.
@@ -61,6 +74,18 @@ def treemap_aspect():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_treemap_with_square_aspect_ratio(demo):
+    expect(demo.locator(".recharts-treemap-depth-1")).to_have_count(5)
+    expect(demo.locator(".recharts-treemap-depth-1 text")).to_have_text([
+        "Group A",
+        "Group B",
+        "Group C",
+        "Group D",
+        "Group E",
+    ])
 ```
 
 ## Related Charts

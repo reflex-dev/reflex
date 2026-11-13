@@ -156,6 +156,20 @@ rx.text(
 )
 ```
 
+```python test
+@pytest.mark.xfail(
+    strict=True,
+    reason="The docs app does not load the JetBrains Mono stylesheet the docs tell users to add, so the demo renders in a fallback font.",
+)
+def test_custom_font(demo, page):
+    text = demo.get_by_text("Check out my font")
+    expect(text).to_have_css("font-family", '"JetBrains Mono"')
+    faces = page.evaluate(
+        "async () => (await document.fonts.load('16px \"JetBrains Mono\"')).length"
+    )
+    assert faces > 0
+```
+
 ## Local Fonts
 
 By making use of the two previous points, we can also make a stylesheet that allow you to use a font hosted on your server.

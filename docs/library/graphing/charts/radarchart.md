@@ -46,6 +46,26 @@ def radar_simple():
     )
 ```
 
+```python test
+def test_radar_chart_labels_subjects(demo):
+    expect(demo.locator(".recharts-radar")).to_have_count(1)
+    expect(demo.locator(".recharts-polar-angle-axis-tick-value")).to_have_text([
+        "Math",
+        "Chinese",
+        "English",
+        "Geography",
+        "Physics",
+        "History",
+    ])
+    expect(demo.locator(".recharts-polar-radius-axis-tick-value")).to_have_text([
+        "0",
+        "40",
+        "80",
+        "120",
+        "150",
+    ])
+```
+
 ## Multiple Radars
 
 We can also add two radars on one chart by using two `rx.recharts.radar` components.
@@ -88,6 +108,12 @@ def radar_multiple():
     )
 ```
 
+```python test
+def test_radar_chart_overlays_two_students(demo):
+    expect(demo.locator(".recharts-radar")).to_have_count(2)
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["A", "B"])
+```
+
 ## Using More Props
 
 The `dot` prop shows points at each data vertex when true. `legend_type="line"` displays a line in the chart legend. `animation_begin=0` starts the animation immediately, `animation_duration=8000` sets an 8-second animation, and `animation_easing="ease-in"` makes the animation start slowly and speed up. These props control the chart's appearance and animation behavior.
@@ -124,6 +150,12 @@ def radar_start_end():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_radar_draws_dots_and_line_legend(demo):
+    expect(demo.locator(".recharts-radar-dot")).to_have_count(6)
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text("A")
 ```
 
 ## Dynamic Data
@@ -195,6 +227,26 @@ def radar_dynamic():
         width="100%",
         height="15em",
     )
+```
+
+```python test
+def test_trait_sliders_spend_points(demo):
+    expect(demo.locator(".recharts-polar-angle-axis-tick-value")).to_have_text([
+        "Strength",
+        "Dexterity",
+        "Constitution",
+        "Intelligence",
+        "Wisdom",
+        "Charisma",
+    ])
+    remaining = demo.get_by_text("Remaining points:")
+    expect(remaining).to_have_text("Remaining points: 10")
+    strength = demo.get_by_role("slider").first
+    strength.focus()
+    strength.press("ArrowRight")
+    strength.press("ArrowRight")
+    expect(remaining).to_have_text("Remaining points: 8")
+    expect(demo.get_by_text("17", exact=True)).to_be_visible()
 ```
 
 ## Related Charts

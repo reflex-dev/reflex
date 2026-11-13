@@ -8,7 +8,7 @@ Use **Review mode** to point out visual changes in the running app. Use **Code**
 
 ## Annotate the app in Review mode
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/review_mode.webp",
     alt="An annotation and comment ready to send from Review mode",

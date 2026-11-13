@@ -25,7 +25,7 @@ Select **Add domain** and enter the domain to claim, such as `acme.com`. It appe
 
 To verify ownership, add the **TXT record** shown (its Type, Name, and Value) with your DNS provider, where you manage your domain. Then return and select **Verify**.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/domains/dns_verification.webp",
     alt="A pending domain card showing the TXT record type, name, and value to add, with a Verify button",

@@ -8,7 +8,7 @@ import reflex as rx
 
 ## Open Design Systems
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/design_systems.webp",
     alt="Saved and example design systems in Reflex Build",

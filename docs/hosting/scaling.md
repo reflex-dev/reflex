@@ -17,7 +17,7 @@ This is an illustrative deployment, not a list of required components. Start wit
 import reflex as rx
 ```
 
-```python eval
+```python eval notest
 rx.el.figure(
     rx.el.div(
         rx.image(
@@ -78,7 +78,7 @@ More replicas do not shorten one oversized event or remove contention within one
 
 A report export may take minutes. The UI needs a job ID and progress, while the worker needs to finish even if the accepting backend is scaled down. Use an independent queue/worker system such as [Taskiq](https://taskiq-python.github.io/guide/architecture-overview.html) or [Celery](https://docs.celeryq.dev/en/stable/userguide/tasks.html) for that requirement. Reflex background events run inside a backend and end with that process.
 
-```python eval
+```python eval notest
 rx.el.figure(
     rx.el.div(
         rx.image(

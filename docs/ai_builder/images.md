@@ -23,7 +23,7 @@ For an image the running app should use, such as a logo, attach it in chat and t
 import reflex as rx
 ```
 
-```python eval
+```python eval notest
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/image_prompt_attachment.webp",

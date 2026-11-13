@@ -32,3 +32,16 @@ def timeline_example():
         )
     )
 ```
+
+```python test
+def test_timeline_marks_first_two_steps_active(demo):
+    items = demo.locator(".mantine-Timeline-item")
+    expect(items.locator(".mantine-Timeline-itemTitle")).to_have_text([
+        "Step 1",
+        "Step 2",
+        "Step 3",
+    ])
+    expect(items.nth(0)).to_have_attribute("data-active", "true")
+    expect(items.nth(1)).to_have_attribute("data-active", "true")
+    expect(items.nth(2)).not_to_have_attribute("data-active", "true")
+```

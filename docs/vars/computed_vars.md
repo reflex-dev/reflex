@@ -33,6 +33,17 @@ def uppercase_example():
     )
 ```
 
+```python test
+def test_computed_var_uppercases_on_blur(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("HELLO")
+    field = demo.get_by_placeholder("Type here...")
+    field.fill("reflex rocks")
+    expect(heading).to_have_text("HELLO")
+    field.blur()
+    expect(heading).to_have_text("REFLEX ROCKS")
+```
+
 Here, `upper_text` is a computed var that always holds the upper case version of `text`.
 
 We recommend always using type annotations for computed vars.
@@ -94,6 +105,24 @@ def cached_var_example():
     )
 ```
 
+```python test
+def test_cached_vars_update_only_on_dependency(demo):
+    time_re = r"\d\d:\d\d:\d\d"
+    counter_a = demo.get_by_text("Counter A:")
+    counter_b = demo.get_by_text("Counter B:")
+    expect(demo.get_by_text("State touched at:")).to_have_text(
+        re.compile(rf"^State touched at: {time_re}$")
+    )
+    expect(counter_a).to_have_text(re.compile(rf"^Counter A: 0 at {time_re}$"))
+    expect(counter_b).to_have_text(re.compile(rf"^Counter B: 0 at {time_re}$"))
+    demo.get_by_role("button", name="Increment B").click()
+    expect(counter_b).to_have_text(re.compile(rf"^Counter B: 1 at {time_re}$"))
+    counter_b_before = counter_b.inner_text()
+    demo.get_by_role("button", name="Increment A").click()
+    expect(counter_a).to_have_text(re.compile(rf"^Counter A: 1 at {time_re}$"))
+    expect(counter_b).to_have_text(counter_b_before)
+```
+
 In this example `last_touch_time` uses `cache=False` to ensure it updates any
 time the state is modified. `last_counter_a_update` is a cached computed var (using
 the default `cache=True`) that only depends on `counter_a`, so it only gets recomputed
@@ -134,6 +163,18 @@ def async_var_example():
         rx.button("Increment", on_click=AsyncVarState.increment),
         spacing="4",
     )
+```
+
+```python test
+def test_async_computed_var(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Async Computed Var Example")
+    expect(demo.get_by_text("Count:", exact=False).first).to_have_text("Count: 0")
+    delayed = demo.get_by_text("Delayed count (x2):")
+    expect(delayed).to_have_text("Delayed count (x2): 0")
+    demo.get_by_role("button", name="Increment").click()
+    demo.get_by_role("button", name="Increment").click()
+    expect(demo.get_by_text("Count:", exact=False).first).to_have_text("Count: 2")
+    expect(delayed).to_have_text("Delayed count (x2): 4")
 ```
 
 In this example, `delayed_count` is an async computed var that returns the count multiplied by 2 after a simulated delay.
@@ -191,6 +232,31 @@ def async_cached_var_example():
         ),
         spacing="4",
     )
+```
+
+```python test
+def test_cached_async_computed_var(demo):
+    user = demo.get_by_text(re.compile(r"^User (ID|Name|Email):"))
+    expect(demo.get_by_role("heading")).to_have_text(
+        "Cached Async Computed Var Example"
+    )
+    expect(user).to_have_text([
+        "User ID: 1",
+        "User Name: Alice",
+        "User Email: alice@example.com",
+    ])
+    demo.get_by_role("button", name="Change User").click()
+    expect(user).to_have_text([
+        "User ID: 2",
+        "User Name: Bob",
+        "User Email: bob@example.com",
+    ])
+    demo.get_by_role("button", name="Force Refresh (No Effect)").click()
+    expect(user).to_have_text([
+        "User ID: 2",
+        "User Name: Bob",
+        "User Email: bob@example.com",
+    ])
 ```
 
 In this example, `user_data` is a cached async computed var that simulates fetching user data.

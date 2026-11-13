@@ -51,6 +51,12 @@ def index():
     return spline(scene="https://prod.spline.design/joLpOOYbGL-10EJ4/scene.splinecode")
 ```
 
+```python test
+@pytest.mark.skip(reason="Loads its 3D scene from prod.spline.design over the network")
+def test_spline_scene_renders(demo):
+    expect(demo.locator("canvas")).to_be_visible()
+```
+
 ## ColorPicker Example
 
 Similar to the Spline example we start with defining the library and tag. In this case the library is `react-colorful` and the tag is `HexColorPicker`.
@@ -87,6 +93,15 @@ rx.box(
     border_radius="12px",
     margin_bottom="1em",
 )
+```
+
+```python test
+def test_color_picker_updates_heading(demo):
+    heading = demo.get_by_role("heading", level=2)
+    expect(heading).to_have_text("#db114b")
+    demo.get_by_role("slider", name="Color").click(position={"x": 10, "y": 10})
+    expect(heading).not_to_have_text("#db114b")
+    expect(heading).to_have_text(re.compile("^#[0-9a-f]{6}$"))
 ```
 
 ```python

@@ -15,7 +15,7 @@ Manage the project's integrations from **Integrations** in the project settings.
 
 ## Adding an integration
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/integrations_gallery.webp",
     alt="The searchable integrations gallery in Reflex Build",
@@ -67,7 +67,7 @@ After creation, the integration appears in the project's integration list with t
 
 Open the integration's action menu to see the actions available for that integration.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/integration_actions.webp",
     alt="Action menu for a configured project integration",
@@ -95,7 +95,7 @@ Confirm that the destination project should receive the same credentials. Reposi
 
 ### Manage access
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/integration_access.webp",
     alt="Member access controls for a configured integration",

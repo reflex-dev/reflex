@@ -54,6 +54,16 @@ def radio_group_state_example():
     )
 ```
 
+```python test
+def test_radio_group_sets_badge(demo):
+    badge = demo.locator(".rt-Badge")
+    expect(badge).to_have_text("No Selection")
+    expect(demo.get_by_role("radio")).to_have_count(3)
+    demo.get_by_role("radio", name="2").click()
+    expect(badge).to_have_text("2")
+    expect(demo.get_by_role("radio", name="2")).to_be_checked()
+```
+
 ## Submitting a form using Radio Group
 
 The `name` prop is used to name the group. It is submitted with its owning form as part of a name/value pair.
@@ -99,4 +109,12 @@ def radio_form_example():
         ),
         width="50%",
     )
+```
+
+```python test
+def test_radio_group_form_submit(demo):
+    results = demo.locator(".rt-Badge")
+    demo.get_by_role("radio", name="Option 3").click()
+    demo.get_by_role("button", name="Submit").click()
+    expect(results).to_have_text('{"radio_choice":"Option 3"}')
 ```

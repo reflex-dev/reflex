@@ -147,6 +147,19 @@ rx.box(
 )
 ```
 
+```python test
+def test_finished_chat_preview(demo):
+    expect(demo.get_by_role("paragraph")).to_have_text([
+        "What is Reflex?",
+        "Reflex is a way to build full-stack web apps in pure Python — "
+        "frontend, backend, and state all in one place.",
+        "Can I deploy it?",
+        "Yes. You can deploy it with Reflex Cloud when you are ready.",
+    ])
+    expect(demo.get_by_role("textbox", name="Ask a question")).to_be_disabled()
+    expect(demo.get_by_role("button", name="Ask")).to_be_disabled()
+```
+
 ## Key takeaways
 
 - Build a custom AI assistant interface with Python components, state variables, and event handlers.
@@ -218,6 +231,14 @@ rx.container(
 )
 ```
 
+```python test
+def test_question_right_answer_left(demo):
+    question = demo.get_by_text("What is Reflex?", exact=True)
+    answer = demo.get_by_text("A way to build web apps in pure Python!", exact=True)
+    expect(question).to_have_css("text-align", "right")
+    expect(answer).to_have_css("text-align", "left")
+```
+
 ```python
 # chatapp.py
 
@@ -285,6 +306,19 @@ def chat() -> rx.Component:
 rx.container(chat())
 ```
 
+```python test
+def test_chat_shows_question_answer_pairs(demo):
+    expect(demo.get_by_text("What can I make with it?", exact=True)).to_have_css(
+        "text-align", "right"
+    )
+    expect(
+        demo.get_by_text(
+            "Anything from a simple website to a complex web app!", exact=True
+        )
+    ).to_have_css("text-align", "left")
+    expect(demo.get_by_role("textbox")).to_have_count(0)
+```
+
 ```python
 def qa(question: str, answer: str) -> rx.Component:
     return rx.box(
@@ -326,6 +360,13 @@ rx.container(
     chat(),
     action_bar(),
 )
+```
+
+```python test
+def test_chat_with_action_bar(demo):
+    expect(demo.get_by_text("What is Reflex?", exact=True)).to_be_visible()
+    expect(demo.get_by_role("textbox", name="Ask a question")).to_be_editable()
+    expect(demo.get_by_role("button")).to_have_text(["Ask"])
 ```
 
 ```python
@@ -453,6 +494,17 @@ rx.center(
         align="center",
     )
 )
+```
+
+```python test
+def test_styled_chat(demo):
+    expect(demo.get_by_role("paragraph")).to_have_text([
+        "What is Reflex?",
+        "A way to build web apps in pure Python!",
+        "What can I make with it?",
+        "Anything from a simple website to a complex web app!",
+    ])
+    expect(demo.get_by_role("button", name="Ask")).to_be_visible()
 ```
 
 ```python
@@ -596,6 +648,19 @@ rx.container(
 )
 ```
 
+```python test
+def test_basic_chat_answers(demo):
+    question = demo.get_by_role("textbox", name="Ask a question")
+    expect(demo.get_by_role("paragraph")).to_have_count(0)
+    question.fill("What is Reflex?")
+    demo.get_by_role("button", name="Ask").click()
+    expect(demo.get_by_role("paragraph")).to_have_text([
+        "What is Reflex?",
+        "I don't know!",
+    ])
+    expect(question).to_have_value("What is Reflex?")
+```
+
 ```python
 # chatapp.py
 from chatapp.state import State
@@ -672,6 +737,19 @@ rx.container(
     clearing_chat(),
     clearing_action_bar(),
 )
+```
+
+```python test
+def test_clearing_chat_clears_input(demo):
+    question = demo.get_by_role("textbox", name="Ask a question")
+    question.fill("Can I deploy it?")
+    expect(question).to_have_value("Can I deploy it?")
+    demo.get_by_role("button", name="Ask").click()
+    expect(demo.get_by_role("paragraph")).to_have_text([
+        "Can I deploy it?",
+        "I don't know!",
+    ])
+    expect(question).to_have_value("")
 ```
 
 ```python
@@ -762,6 +840,17 @@ rx.container(
     streaming_chat(),
     streaming_action_bar(),
 )
+```
+
+```python test
+def test_streaming_chat_streams_answer(demo):
+    question = demo.get_by_role("textbox", name="Ask a question")
+    question.fill("Is it streaming?")
+    expect(question).to_have_value("Is it streaming?")
+    demo.get_by_role("button", name="Ask").click()
+    expect(question).to_have_value("")
+    expect(demo.get_by_role("paragraph").first).to_have_text("Is it streaming?")
+    expect(demo.get_by_role("paragraph").nth(1)).to_have_text("I don't know!")
 ```
 
 ```python

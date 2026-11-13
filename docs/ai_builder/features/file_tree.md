@@ -13,7 +13,7 @@ Open **Code** in an app to work directly with its generated source. Use it when 
 
 ## Find and inspect files
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/code_workspace.webp",
     alt="The searchable file tree in the Code workspace",
@@ -39,7 +39,7 @@ Depending on your access, the file tree also lets you create, rename, delete, an
 
 ## Lock files
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/file_locking.webp",
     alt="The Lock file action in the Code workspace file tree",

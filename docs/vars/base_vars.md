@@ -37,6 +37,13 @@ def ticker_example():
     )
 ```
 
+```python test
+def test_ticker_base_vars(demo):
+    expect(demo.get_by_role("heading")).to_have_text("AAPL")
+    expect(demo.get_by_text("Current Price:")).to_have_text("Current Price: $150")
+    expect(demo.get_by_text("Change:")).to_have_text("Change: 4%")
+```
+
 In this example `ticker` and `price` are base vars in the app, which can be modified at runtime.
 
 ```md alert warning
@@ -278,6 +285,24 @@ def backend_var_example():
             ),
         ),
     )
+```
+
+```python test
+def test_backend_var_pagination(demo):
+    rows = demo.get_by_text(re.compile(r"^_backend\[\d+\] = \d+$"))
+    status = demo.get_by_text(re.compile(r"^Page \d+ / \d+$"))
+    expect(status).to_have_text("Page 1 / 10")
+    expect(rows).to_have_count(10)
+    expect(rows.first).to_have_text(re.compile(r"^_backend\[0\] = \d+$"))
+    demo.get_by_role("button", name="Next").click()
+    expect(status).to_have_text("Page 2 / 10")
+    expect(rows.first).to_have_text(re.compile(r"^_backend\[10\] = \d+$"))
+    demo.get_by_role("button", name="Prev").click()
+    expect(status).to_have_text("Page 1 / 10")
+    demo.get_by_role("textbox").fill("20")
+    expect(status).to_have_text("Page 1 / 5")
+    expect(rows).to_have_count(20)
+    expect(rows.last).to_have_text(re.compile(r"^_backend\[19\] = \d+$"))
 ```
 
 ## Using rx.field / rx.Field to improve type hinting for vars

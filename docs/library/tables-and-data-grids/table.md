@@ -194,6 +194,22 @@ rx.table.root(
 )
 ```
 
+```python test
+def test_static_table(demo):
+    expect(demo.get_by_role("columnheader")).to_have_text([
+        "Full name",
+        "Email",
+        "Group",
+    ])
+    expect(demo.get_by_role("rowheader")).to_have_text([
+        "Danilo Sousa",
+        "Zahra Ambessa",
+        "Jasper Eriks",
+    ])
+    row = demo.get_by_role("row", name=re.compile("^Zahra"))
+    expect(row.get_by_role("cell")).to_have_text(["zahra@example.com", "Admin"])
+```
+
 ```md alert info
 # Set the table `width` to fit within its container and prevent it from overflowing.
 If the table has too many columns to fit, wrap the `rx.table.root` in a container with `overflow_x="auto"` (e.g. `rx.box(rx.table.root(...), overflow_x="auto", width="100%")`) so the table scrolls horizontally inside the container instead of stretching the page.
@@ -235,6 +251,17 @@ def foreach_table_example():
         rx.table.body(rx.foreach(TableForEachState.people, show_person_from_list)),
         width="100%",
     )
+```
+
+```python test
+def test_rows_from_foreach(demo):
+    rows = demo.get_by_role("rowgroup").last.get_by_role("row")
+    expect(rows).to_have_count(3)
+    expect(rows.nth(2).get_by_role("cell")).to_have_text([
+        "Jasper Eriks",
+        "jasper@example.com",
+        "Developer",
+    ])
 ```
 
 It is also possible to define a `class` such as `Person` below and then iterate through this data structure, as a `list[Person]`.
@@ -370,6 +397,19 @@ def database_table_example():
     )
 ```
 
+```python test
+def test_sort_and_search_users(demo, page):
+    names = (
+        demo.get_by_role("rowgroup").last.get_by_role("row").locator("td:first-child")
+    )
+    expect(names).to_have_text(["John Doe", "Jane Smith", "Bob Johnson", "Alice Brown"])
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="email").click()
+    expect(names).to_have_text(["Alice Brown", "Bob Johnson", "Jane Smith", "John Doe"])
+    demo.get_by_role("textbox", name="Search here...").fill("oak")
+    expect(names).to_have_text(["Jane Smith"])
+```
+
 ### Approach 2: In-Memory Filtering and Sorting
 
 For in-memory data, we use Python operations like `sorted()` and list comprehensions.
@@ -465,6 +505,19 @@ def in_memory_table_example():
         ),
         width="100%",
     )
+```
+
+```python test
+def test_in_memory_sort_and_search(demo, page):
+    names = (
+        demo.get_by_role("rowgroup").last.get_by_role("row").locator("td:first-child")
+    )
+    expect(names).to_have_text(["Danilo Sousa", "Zahra Ambessa", "Jasper Eriks"])
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="group").click()
+    expect(names).to_have_text(["Zahra Ambessa", "Jasper Eriks", "Danilo Sousa"])
+    demo.get_by_role("textbox", name="Search here...").fill("dev")
+    expect(names).to_have_text(["Jasper Eriks", "Danilo Sousa"])
 ```
 
 ### When to Use Each Approach
@@ -572,6 +625,18 @@ def loading_data_table_example():
 
 ```python eval
 loading_data_table_example()
+```
+
+```python test
+def test_rows_load_on_mount(demo):
+    rows = demo.get_by_role("rowgroup").last.get_by_role("row")
+    expect(rows).to_have_count(4)
+    expect(rows.nth(3).get_by_role("cell")).to_have_text([
+        "Alice Williams",
+        "alice@example.com",
+        "555-3456",
+        "321 Maple Dr",
+    ])
 ```
 
 ```python
@@ -768,6 +833,26 @@ def loading_data_table_example_2():
 
 ```python eval
 loading_data_table_example_2()
+```
+
+```python test
+def test_search_and_sort_six_users(demo, page):
+    names = (
+        demo.get_by_role("rowgroup").last.get_by_role("row").locator("td:first-child")
+    )
+    expect(names).to_have_count(6)
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="phone").click()
+    expect(names).to_have_text([
+        "John Doe",
+        "Emily Davis",
+        "Alice Brown",
+        "Jane Smith",
+        "Charlie Wilson",
+        "Bob Johnson",
+    ])
+    demo.get_by_role("textbox", name="Search here...").fill("St")
+    expect(names).to_have_text(["John Doe", "Charlie Wilson"])
 ```
 
 ```python
@@ -980,6 +1065,20 @@ def loading_data_table_example3():
 
 ```python eval
 loading_data_table_example3()
+```
+
+```python test
+def test_paginate_three_rows_per_page(demo):
+    names = (
+        demo.get_by_role("rowgroup").last.get_by_role("row").locator("td:first-child")
+    )
+    expect(demo.get_by_text("Page 1 / 2")).to_be_visible()
+    expect(names).to_have_text(["John Doe", "Jane Smith", "Bob Johnson"])
+    demo.get_by_role("button", name="Next").click()
+    expect(demo.get_by_text("Page 2 / 2")).to_be_visible()
+    expect(names).to_have_text(["Alice Brown", "Charlie Wilson", "Emily Davis"])
+    demo.get_by_role("button", name="Prev").click()
+    expect(demo.get_by_text("Page 1 / 2")).to_be_visible()
 ```
 
 ```python
@@ -1208,6 +1307,32 @@ def download_data_table_example():
 download_data_table_example()
 ```
 
+```python test
+def test_download_json_and_csv(demo, page):
+    import json
+
+    expect(demo.get_by_role("rowgroup").last.get_by_role("row")).to_have_count(3)
+    with page.expect_download() as json_download:
+        demo.get_by_role("button", name="Download as JSON").click()
+    assert json_download.value.suggested_filename == "data.json"
+    with page.expect_download() as csv_download:
+        demo.get_by_role("button", name="Download as CSV").click()
+    assert csv_download.value.suggested_filename == "data.csv"
+    with open(csv_download.value.path()) as f:
+        assert f.read() == (
+            "id,name,email,phone,address\n"
+            ",John Doe,john@example.com,555-1234,123 Main St\n"
+            ",Jane Smith,jane@example.com,555-5678,456 Oak Ave\n"
+            ",Bob Johnson,bob@example.com,555-9012,789 Pine Rd\n"
+        )
+    with open(json_download.value.path()) as f:
+        assert [row["name"] for row in json.load(f)] == [
+            "John Doe",
+            "Jane Smith",
+            "Bob Johnson",
+        ]
+```
+
 ```python
 import csv
 import dataclasses
@@ -1342,6 +1467,20 @@ rx.flex(
     direction="column",
     spacing="2",
 )
+```
+
+```python test
+def test_team_table(demo):
+    expect(demo.get_by_role("heading", name="Your Team")).to_be_visible()
+    expect(demo.get_by_role("textbox", name="Email Address")).to_be_visible()
+    expect(demo.get_by_role("button", name="Invite")).to_be_visible()
+    expect(demo.get_by_role("rowheader")).to_have_text([
+        "Danilo Sousa",
+        "Zahra Ambessa",
+        "Jasper Eriksson",
+    ])
+    row = demo.get_by_role("row", name=re.compile("Zahra"))
+    expect(row.get_by_role("cell")).to_have_text(["ZA", "zahra@example.com", "Admin"])
 ```
 
 ## Related

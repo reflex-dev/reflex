@@ -32,6 +32,13 @@ rx.link(
 )
 ```
 
+```python test
+def test_prevent_default_link_stays_on_page(demo, page):
+    url = page.url
+    demo.get_by_role("link", name="This Link Does Nothing").click()
+    expect(page).to_have_url(url)
+```
+
 ```python demo exec
 class LinkPreventDefaultState(rx.State):
     status: bool = False
@@ -50,6 +57,16 @@ def prevent_default_example():
             on_click=LinkPreventDefaultState.toggle_status.prevent_default,
         ),
     )
+```
+
+```python test
+def test_prevent_default_runs_handler_without_navigating(demo, page):
+    url = page.url
+    value = demo.get_by_role("heading")
+    expect(value).to_have_text("The value is false")
+    demo.get_by_role("link", name="Toggle Value").click()
+    expect(value).to_have_text("The value is true")
+    expect(page).to_have_url(url)
 ```
 
 ### stop_propagation
@@ -96,6 +113,17 @@ def stop_propagation_example():
         border=f"1px dashed {rx.color('accent', 5)}",
         on_click=StopPropagationState.handle_click("outer"),
     )
+```
+
+```python test
+def test_stop_propagation_blocks_outer_click(demo):
+    clicked = demo.locator("p")
+    demo.get_by_role("button", name="btn1 - Stop Propagation").click()
+    expect(clicked).to_have_text(["btn1"])
+    demo.get_by_role("button", name="btn2 - Normal Propagation").click()
+    expect(clicked).to_have_text(["btn1", "btn2", "outer"])
+    demo.get_by_role("button", name="Reset").click()
+    expect(clicked).to_have_count(0)
 ```
 
 ## Throttling and Debounce
@@ -152,6 +180,15 @@ def throttle_example():
     )
 ```
 
+```python test
+def test_throttled_scroll_records_time(demo, page):
+    last = demo.get_by_text("Last Scroll Event:")
+    expect(last).to_have_text("Last Scroll Event:")
+    demo.get_by_role("heading", name="Scroll Me").hover()
+    page.mouse.wheel(0, 200)
+    expect(last).to_have_text(re.compile(r"^Last Scroll Event: \d\d:\d\d:\d\d\.\d{3}$"))
+```
+
 ```md alert info
 # Event Actions are Chainable
 
@@ -206,6 +243,14 @@ def debounce_example():
     )
 ```
 
+```python test
+def test_debounced_slider_settles(demo):
+    expect(demo.get_by_text("Settled Value: 50")).to_be_visible()
+    demo.get_by_role("slider").press("ArrowRight")
+    demo.get_by_role("slider").press("ArrowRight")
+    expect(demo.get_by_text("Settled Value: 52")).to_be_visible()
+```
+
 ```md alert info
 # Why set key on the slider?
 
@@ -257,4 +302,14 @@ def temporal_example():
         ),
         rx.text("Time updates will not be queued if the backend is down."),
     )
+```
+
+```python test
+def test_temporal_event_updates_time(demo):
+    expect(demo.get_by_role("heading").nth(1)).to_have_text(
+        re.compile(r"^\d\d:\d\d:\d\d$")
+    )
+    expect(
+        demo.get_by_text("Time updates will not be queued if the backend is down.")
+    ).to_be_visible()
 ```

@@ -67,6 +67,17 @@ The Icon component is used to display an icon from a library of icons. This impl
 lucide_icons()
 ```
 
+```python test
+def test_icon_list_search_filters_and_copies(page, demo):
+    demo.get_by_placeholder("Search icons...").fill("zoom")
+    icons = demo.locator("[title]")
+    expect(icons).to_have_count(2)
+    expect(demo.get_by_title("zoom_in")).to_be_visible()
+    expect(demo.get_by_title("zoom_out")).to_be_visible()
+    demo.get_by_title("zoom_in").click()
+    expect(page.get_by_text("Copied zoom_in to clipboard")).to_be_visible()
+```
+
 ## Basic Example
 
 To display an icon, specify the `tag` prop from the list of available icons.
@@ -80,6 +91,11 @@ rx.flex(
     rx.icon(tag="calendar"),
     gap="2",
 )
+```
+
+```python test
+def test_icon_tag_as_child_or_prop(demo):
+    expect(demo.locator("svg.lucide-calendar")).to_have_count(2)
 ```
 
 ## Dynamic Icons
@@ -135,6 +151,26 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_icon_dynamic_tag_changes(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Dynamic Icon Example")
+    icon = demo.locator('svg[width="30"]')
+    expect(icon).to_have_css("color", "rgb(255, 0, 0)")
+    path = icon.locator("path").first
+    expect(path).to_be_attached()
+    initial = path.get_attribute("d")
+    # The next icon is random, so click until it differs from the heart.
+    for _ in range(20):
+        demo.get_by_role("button", name="Change Icon").click()
+        try:
+            expect(path).not_to_have_attribute("d", initial, timeout=1000)
+            break
+        except AssertionError:
+            continue
+    else:
+        pytest.fail("The icon never changed")
+```
+
 Under the hood, when a dynamic value is passed as the `tag` prop to `rx.icon()`, Reflex automatically uses a special `DynamicIcon` component that can load icons at runtime.
 
 ```md alert
@@ -157,6 +193,14 @@ rx.flex(
 )
 ```
 
+```python test
+def test_icon_stroke_widths(demo):
+    icons = demo.locator("svg.lucide-moon")
+    expect(icons).to_have_count(4)
+    for i, width in enumerate(["1px", "1.5px", "2px", "2.5px"]):
+        expect(icons.nth(i)).to_have_css("stroke-width", width)
+```
+
 ### Size
 
 ```python demo
@@ -168,6 +212,15 @@ rx.flex(
     align="center",
     gap="2",
 )
+```
+
+```python test
+def test_icon_sizes(demo):
+    icons = demo.locator("svg.lucide-zoom-in")
+    expect(icons).to_have_count(4)
+    for i, size in enumerate(["15", "20", "25", "30"]):
+        expect(icons.nth(i)).to_have_attribute("width", size)
+        expect(icons.nth(i)).to_have_attribute("height", size)
 ```
 
 ### Color
@@ -182,6 +235,20 @@ rx.flex(
     rx.icon("zoom_in", size=18, color="crimson"),
     gap="2",
 )
+```
+
+```python test
+def test_icon_colors(demo):
+    icons = demo.locator("svg.lucide-zoom-in")
+    colors = [
+        "rgb(75, 0, 130)",
+        "rgb(0, 255, 255)",
+        "rgb(255, 165, 0)",
+        "rgb(220, 20, 60)",
+    ]
+    expect(icons).to_have_count(4)
+    for i, color in enumerate(colors):
+        expect(icons.nth(i)).to_have_css("color", color)
 ```
 
 A radix color with a scale may also be specified using `rx.color()` as seen below.
@@ -204,6 +271,15 @@ rx.flex(
 )
 ```
 
+```python test
+def test_icon_purple_scale(demo):
+    icons = demo.locator("svg.lucide-zoom-in")
+    expect(icons).to_have_count(12)
+    # Each step of the purple scale is a different color.
+    colors = icons.evaluate_all("els => els.map(el => getComputedStyle(el).color)")
+    assert len(set(colors)) == 12
+```
+
 Here is another example using the `accent` color with scales. The `accent` is the most dominant color in your theme.
 
 ```python demo
@@ -224,6 +300,15 @@ rx.flex(
 )
 ```
 
+```python test
+def test_icon_accent_scale(demo):
+    icons = demo.locator("svg.lucide-zoom-in")
+    expect(icons).to_have_count(12)
+    # Each step of the accent scale is a different color.
+    accents = icons.evaluate_all("els => els.map(el => getComputedStyle(el).color)")
+    assert len(set(accents)) == 12
+```
+
 ## Final Example
 
 Icons can be used as child components of many other components. For example, adding a magnifying glass icon to a search bar.
@@ -241,4 +326,11 @@ rx.badge(
     radius="full",
     color_scheme="gray",
 )
+```
+
+```python test
+def test_icon_in_search_badge(demo):
+    badge = demo.locator(".rt-Badge")
+    expect(badge).to_have_text("Search documentation...")
+    expect(badge.locator("svg.lucide-search")).to_have_attribute("width", "18")
 ```

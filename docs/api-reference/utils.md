@@ -134,6 +134,17 @@ def run_in_thread_example():
     )
 ```
 
+```python test
+def test_run_in_thread_tasks(demo):
+    expect(demo.get_by_role("heading")).to_have_text("run_in_thread Example")
+    demo.get_by_role("button", name="Run Quick Task").click()
+    expect(demo.get_by_text("Complete", exact=True)).to_be_visible()
+    expect(demo.get_by_text("Quick task completed successfully!")).to_be_visible()
+    demo.get_by_role("button", name="Run Slow Task (exceeds timeout)").click()
+    expect(demo.get_by_text("Timeout", exact=True)).to_be_visible()
+    expect(demo.get_by_text("Task timed out after 1 second!")).to_be_visible()
+```
+
 ### When to Use run_in_thread
 
 Use `run_in_thread` when you need to:

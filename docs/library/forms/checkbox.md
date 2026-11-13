@@ -33,6 +33,16 @@ def checkbox_example():
     )
 ```
 
+```python test
+def test_checkbox_toggles_heading(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("false")
+    demo.get_by_role("checkbox").click()
+    expect(heading).to_have_text("true")
+    demo.get_by_role("checkbox").click()
+    expect(heading).to_have_text("false")
+```
+
 The `input` prop is used to set the `checkbox` as a controlled component.
 
 ```python demo exec
@@ -72,4 +82,21 @@ def form_checkbox_example():
         ),
         width="50%",
     )
+```
+
+```python test
+def test_checkbox_form_submit(demo):
+    results = demo.locator(".rt-Badge")
+    expect(results).to_have_text("{}")
+    demo.get_by_role("checkbox").click()
+    demo.get_by_role("button", name="Submit").click()
+    expect(results).to_have_text('{"checkbox":"on"}')
+    expect(demo.get_by_role("checkbox")).not_to_be_checked()
+
+
+@pytest.mark.xfail(strict=True, reason="rx.checkbox drops the label prop")
+def test_checkbox_form_label(demo):
+    expect(
+        demo.get_by_role("checkbox", name="Accept terms and conditions")
+    ).to_be_visible(timeout=3000)
 ```

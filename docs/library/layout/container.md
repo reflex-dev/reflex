@@ -38,3 +38,14 @@ rx.box(
     width="100%",
 )
 ```
+
+```python test
+def test_container_max_widths(demo):
+    inners = demo.locator(".rt-ContainerInner")
+    expect(inners).to_have_count(4)
+    for i, px in enumerate(["448px", "688px", "880px", "1136px"]):
+        expect(inners.nth(i)).to_have_css("max-width", px)
+        expect(inners.nth(i)).to_have_text(
+            f"This content is constrained to a max width of {px}."
+        )
+```

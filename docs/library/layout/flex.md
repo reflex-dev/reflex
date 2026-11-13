@@ -44,6 +44,15 @@ rx.flex(
 )
 ```
 
+```python test
+def test_flex_row_by_default(demo):
+    cards = demo.locator(".rt-Card")
+    expect(cards).to_have_text([f"Card {i}" for i in range(1, 6)])
+    rects = [cards.nth(i).bounding_box() for i in range(5)]
+    assert len({rect["y"] for rect in rects}) == 1
+    assert [rect["x"] for rect in rects] == sorted({rect["x"] for rect in rects})
+```
+
 ## Wrapping
 
 With `flex_wrap="wrap"`, the children will wrap to the next line instead of being resized.
@@ -60,6 +69,18 @@ rx.flex(
 )
 ```
 
+```python test
+def test_flex_wraps_to_next_line(demo):
+    cards = demo.locator(".rt-Card")
+    expect(cards).to_have_text([f"Card {i}" for i in range(1, 11)])
+    rects = [cards.nth(i).bounding_box() for i in range(10)]
+    rows = sorted({rect["y"] for rect in rects})
+    assert len(rows) > 1
+    # Each row starts at the left edge rather than shrinking cards onto one line.
+    starts = {min(rect["x"] for rect in rects if rect["y"] == y) for y in rows}
+    assert len(starts) == 1
+```
+
 ## Direction
 
 With `direction="column"`, the children will be arranged vertically.
@@ -73,6 +94,15 @@ rx.flex(
     spacing="2",
     direction="column",
 )
+```
+
+```python test
+def test_flex_column_direction(demo):
+    cards = demo.locator(".rt-Card")
+    expect(cards).to_have_text([f"Card {i}" for i in range(1, 5)])
+    rects = [cards.nth(i).bounding_box() for i in range(4)]
+    assert len({rect["x"] for rect in rects}) == 1
+    assert [rect["y"] for rect in rects] == sorted({rect["y"] for rect in rects})
 ```
 
 ## Alignment
@@ -176,6 +206,21 @@ def example1():
     )
 ```
 
+```python test
+def test_flex_playground_changes_direction(demo, page):
+    cards = demo.locator(".rt-Card")
+    expect(cards).to_have_count(10)
+    assert cards.nth(1).bounding_box()["y"] == cards.nth(0).bounding_box()["y"]
+    direction = demo.get_by_role("combobox").nth(1)
+    expect(direction).to_have_text("row")
+    direction.click()
+    page.get_by_role("option", name="column", exact=True).click()
+    expect(direction).to_have_text("column")
+    expect(cards.first.locator("..")).to_have_css("flex-direction", "column")
+    assert cards.nth(1).bounding_box()["y"] > cards.nth(0).bounding_box()["y"]
+    assert cards.nth(1).bounding_box()["x"] == cards.nth(0).bounding_box()["x"]
+```
+
 ## Size Hinting
 
 When a child component is included in a flex container,
@@ -234,4 +279,19 @@ def example2():
         ),
         width="100%",
     )
+```
+
+```python test
+def test_flex_grow_shrink_slider(demo):
+    def width(label):
+        return demo.get_by_text(label, exact=True).bounding_box()["width"]
+
+    expect(demo.get_by_text("flex_grow=1", exact=True)).to_be_visible()
+    assert width("flex_grow=1") > width("flex_grow=0")
+    assert width("flex_shrink=1") == pytest.approx(200, abs=1)
+    demo.get_by_role("slider").focus()
+    demo.get_by_role("slider").press("Home")
+    expect(demo.get_by_role("slider")).to_have_attribute("aria-valuenow", "0")
+    expect(demo.get_by_text("flex_shrink=0", exact=True)).to_have_css("width", "100px")
+    assert width("flex_shrink=1") < 200
 ```

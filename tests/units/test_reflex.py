@@ -18,6 +18,7 @@ import psutil
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.config import Config
 from reflex_base.environment import environment
 
 from reflex import reflex
@@ -689,6 +690,7 @@ rx.get_config = lambda: types.SimpleNamespace(
     loglevel=types.SimpleNamespace(subprocess_level=lambda: None),
 )
 from reflex_base import constants
+from reflex_base.config import Config
 rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
 """.replace("PIDS", repr(str(ready)))
     )
@@ -765,6 +767,7 @@ rx.get_config = lambda: types.SimpleNamespace(
     loglevel=types.SimpleNamespace(subprocess_level=lambda: None),
 )
 from reflex_base import constants
+from reflex_base.config import Config
 rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
 """.replace("PIDS", repr(str(pids)))
     )
@@ -836,6 +839,7 @@ rx.get_config = lambda: types.SimpleNamespace(
     loglevel=types.SimpleNamespace(subprocess_level=lambda: None),
 )
 from reflex_base import constants
+from reflex_base.config import Config
 rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
 """.replace("PIDS", repr(str(pids)))
     )
@@ -904,6 +908,7 @@ rx._compile_app=lambda:None
 rx.get_config=lambda:types.SimpleNamespace(_set_persistent=lambda **k:None,
     loglevel=types.SimpleNamespace(subprocess_level=lambda:None))
 from reflex_base import constants
+from reflex_base.config import Config
 rx._run_dev(MODE,3000,PORT,"127.0.0.1")
 """
         .replace("PIDS", repr(str(pids)))
@@ -1012,6 +1017,7 @@ rx._compile_app=lambda:None
 rx.get_config=lambda:types.SimpleNamespace(_set_persistent=lambda **k:None,
     loglevel=types.SimpleNamespace(subprocess_level=lambda:None))
 from reflex_base import constants
+from reflex_base.config import Config
 rx._run_dev(MODE,3000,PORT,"127.0.0.1")
 """
         .replace("PIDS", repr(str(pids)))
@@ -1509,13 +1515,14 @@ def patched_production_startup(mocker: MockerFixture) -> dict:
     mocker.patch("atexit.register")
     mocker.patch("reflex.utils.telemetry.send")
     mocker.patch("reflex.utils.exec.notify_app_running")
-    mocker.patch("reflex.utils.exec.notify_frontend")
+    notify_frontend = mocker.patch("reflex.utils.exec.notify_frontend")
     mount_frontend = mocker.patch(
         "reflex.reflex.environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP"
     ).set
     return {
         "config": config.return_value,
         "mount_frontend": mount_frontend,
+        "notify_frontend": notify_frontend,
         "lock": mocker.patch("reflex.utils.path_ops.file_lock"),
         "compile": mocker.patch("reflex.reflex._compile_app"),
         "setup": mocker.patch("reflex.utils.build.setup_frontend_prod"),
@@ -1567,6 +1574,26 @@ def test_production_startup_locks_compile_and_build_before_serving(
         else "backend_preview"
     )
     patched_production_startup[server].assert_called_once()
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+@pytest.mark.parametrize(
+    ("frontend_path", "url"),
+    [("", "http://127.0.0.1:8000/"), ("/docs", "http://127.0.0.1:8000/docs/")],
+)
+def test_production_startup_announces_the_frontend_path(
+    patched_production_startup, runner_name: str, frontend_path: str, url: str
+):
+    """The announced app URL is where the app is served, under its frontend path."""
+    patched_production_startup["config"].prepend_frontend_path = Config(
+        app_name="app", frontend_path=frontend_path
+    ).prepend_frontend_path
+
+    getattr(reflex, runner_name)(constants.RunningMode.FULLSTACK, 8000, "127.0.0.1")
+
+    patched_production_startup["notify_frontend"].assert_called_once_with(
+        url, backend_present=True
+    )
 
 
 @pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
