@@ -1,0 +1,1 @@
+An event trigger made of one event handler now returns a result stream that settles when the handler finishes, instead of a promise that resolved once the event was sent. A component that awaits the value its callback returns now waits for the handler, and sees a rejection if the handler raises.

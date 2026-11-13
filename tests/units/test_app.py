@@ -5832,7 +5832,7 @@ async def test_on_event_uses_frontend_traceparent(otel_exporter):
     }
     seen: list = []
 
-    async def enqueue(token, event):
+    async def enqueue(token, event, request_id=None):
         await asyncio.sleep(0)
         seen.append(trace.get_current_span().get_span_context())
         return Mock()
@@ -5848,6 +5848,94 @@ async def test_on_event_uses_frontend_traceparent(otel_exporter):
     remote, fresh = seen
     assert f"{remote.trace_id:032x}" == "0af7651916cd43dd8448eb211c80319c"
     assert not fresh.is_valid
+
+
+def _request_id_namespace() -> tuple[EventNamespace, list[tuple[Event, Any]]]:
+    """An event namespace whose processor records each enqueued event and request id.
+
+    Returns:
+        The namespace and the list it records into.
+    """
+    mock_app = unittest.mock.Mock()
+    mock_app.router.return_value = "/"
+    mock_app.sio.get_environ.return_value = {
+        "asgi.scope": {"headers": [], "client": ("127.0.0.1", 1)}
+    }
+    seen: list[tuple[Event, Any]] = []
+
+    async def enqueue(token, event, request_id=None):  # noqa: RUF029
+        seen.append((event, request_id))
+        return unittest.mock.Mock()
+
+    mock_app.event_processor.enqueue = enqueue
+    ns = EventNamespace(namespace="/", app=mock_app)
+    ns._token_manager.sid_to_token["sid"] = "tok"
+    return ns, seen
+
+
+@pytest.mark.asyncio
+async def test_on_event_forwards_the_request_id():
+    """The frontend's request id reaches the processor and stays off the Event."""
+    ns, seen = _request_id_namespace()
+    await ns.on_event("sid", {"name": "state.h", "id": "ab12:7"})
+    await ns.on_event("sid", {"name": "state.h"})
+    (with_id, request_id), (without_id, no_request_id) = seen
+    assert request_id == "ab12:7"
+    assert no_request_id is None
+    assert not hasattr(with_id, "id")
+    assert with_id.name == without_id.name == "state.h"
+
+
+@pytest.mark.asyncio
+async def test_on_event_with_request_id_does_not_watch_for_a_dropped_result():
+    """A frontend event with a request id gets its value back, so nothing is dropped."""
+    ns, _ = _request_id_namespace()
+    ns._warn_dropped_results = True
+    futures: list[unittest.mock.Mock] = []
+
+    async def enqueue(token, event, request_id=None):  # noqa: RUF029
+        futures.append(unittest.mock.Mock())
+        return futures[-1]
+
+    ns.app.event_processor.enqueue = enqueue  # pyright: ignore[reportAttributeAccessIssue]
+    await ns.on_event("sid", {"name": "state.h", "id": "ab12:7"})
+    await ns.on_event("sid", {"name": "state.h"})
+    with_id, without_id = futures
+    with_id.add_done_callback.assert_not_called()
+    without_id.add_done_callback.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_on_event_without_request_id_keeps_the_legacy_enqueue_call():
+    """An enqueue override predating request ids still receives id-less events."""
+    ns, _ = _request_id_namespace()
+    seen: list[Event] = []
+
+    async def legacy_enqueue(token, event):  # noqa: RUF029
+        seen.append(event)
+        return unittest.mock.Mock()
+
+    ns.app.event_processor.enqueue = legacy_enqueue  # pyright: ignore[reportAttributeAccessIssue]
+    await ns.on_event("sid", {"name": "state.h"})
+    assert [event.name for event in seen] == ["state.h"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("request_id", [7, "", "x" * 65, ["a"]])
+async def test_on_event_rejects_a_malformed_request_id(request_id: Any):
+    """A request id that is not a short non-empty string is a malformed event.
+
+    Args:
+        request_id: The malformed id.
+    """
+    ns, seen = _request_id_namespace()
+    with pytest.raises(exceptions.EventDeserializationError) as raised:
+        await ns.on_event("sid", {"name": "state.h", "id": request_id})
+    assert str(raised.value) == (
+        "Event request id must be a non-empty string of at most 64 characters, "
+        f"got {request_id!r}."
+    )
+    assert not seen
 
 
 @pytest.mark.asyncio

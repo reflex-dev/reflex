@@ -14,7 +14,7 @@ import operator
 import pickle
 import re
 import sys
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from datetime import timedelta
 from hashlib import md5
 from types import FunctionType
@@ -3205,6 +3205,12 @@ class StateUpdate:
     # Deprecated: previously indicated whether the event processing is complete.
     final: bool | None = dataclasses.field(default=None, repr=False)
 
+    # Records answering frontend requests: a value a handler yielded or
+    # returned, its completion or its failure, each keyed by the request id.
+    # Applied after the delta and before the events. After `final`, so the
+    # positional signature is unchanged.
+    results: Sequence[Mapping[str, Any]] = dataclasses.field(default_factory=list)
+
     def __post_init__(self):
         """Warn if the deprecated `final` attribute is supplied."""
         if self.final is not None:
@@ -3214,9 +3220,6 @@ class StateUpdate:
                 deprecation_version="0.9.0",
                 removal_version="1.0",
             )
-
-
-_STATE_UPDATE_FIELDS = tuple(field.name for field in dataclasses.fields(StateUpdate))
 
 
 @serializer(to=dict)
@@ -3229,9 +3232,18 @@ def serialize_state_update(update: StateUpdate) -> dict:
     Returns:
         The serialized StateUpdate.
     """
-    return {
-        name: value for name in _STATE_UPDATE_FIELDS if (value := getattr(update, name))
-    }
+    # Every message goes through here: reading the fields directly is about
+    # twice as fast as looping over them with getattr.
+    serialized = {}
+    if update.delta:
+        serialized["delta"] = update.delta
+    if update.events:
+        serialized["events"] = update.events
+    if update.final:
+        serialized["final"] = update.final
+    if update.results:
+        serialized["results"] = update.results
+    return serialized
 
 
 def code_uses_state_contexts(javascript_code: str) -> bool:

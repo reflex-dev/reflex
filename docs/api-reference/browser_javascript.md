@@ -141,6 +141,32 @@ The `callback` parameter may be an `EventHandler` with one argument, or a lambda
 If the callback is None, then no event is triggered.
 ```
 
+## Getting Values from Event Handlers
+
+The other direction works too: Javascript can dispatch an event to the backend
+and receive the values its handler yields or returns. `addEvents` returns a
+result stream: `await` it for the handler's last value, or iterate it with
+`for await` for each value as it arrives. It rejects if the handler raises.
+Events the handler yields or returns are chained as usual rather than sent to
+the stream, and the stream does not wait for them.
+
+Event names include the state's module, so build the Javascript from Python:
+`rx.Var.create(TableState.load_rows(2))` renders the `ReflexEvent(...)` to pass.
+
+```python
+rx.button(
+    "Load rows",
+    on_click=rx.call_script(
+        f"addEvents([{rx.Var.create(TableState.load_rows(2))}])"
+        ".then((rows) => console.log(rows))"
+    ),
+)
+```
+
+Inside a component's hooks, render an event trigger with `rx.Var.create` to get
+a function that dispatches it and returns the same stream. See
+[Yielding Values to the Frontend](/docs/events/yield-events/#yielding-values-to-the-frontend).
+
 ## Using React Hooks
 
 To use React Hooks directly in a Reflex app, you must subclass `rx.Component`,

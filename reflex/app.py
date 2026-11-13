@@ -2551,6 +2551,9 @@ class EventNamespace(AsyncNamespace):
     _CLIENT_ERROR_WINDOW_SECONDS = 60.0
     _MAX_CLIENT_ERRORS_PER_WINDOW = 20
 
+    # Longest request id accepted on an event; the frontend's are far shorter.
+    _MAX_REQUEST_ID_LENGTH = 64
+
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -2828,6 +2831,17 @@ class EventNamespace(AsyncNamespace):
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
 
+        # The id the frontend gave this dispatch, to route the handler's
+        # results back to it. A wire field, not part of the Event: events the
+        # backend creates never carry one.
+        request_id = fields.get("id")
+        if request_id is not None and (
+            not isinstance(request_id, str)
+            or not 0 < len(request_id) <= self._MAX_REQUEST_ID_LENGTH
+        ):
+            msg = f"Event request id must be a non-empty string of at most {self._MAX_REQUEST_ID_LENGTH} characters, got {request_id!r}."
+            raise exceptions.EventDeserializationError(msg)
+
         static_router_data = self._static_router_data.get(sid)
         if static_router_data is None:
             # The connection was not seen by on_connect (e.g. namespace created
@@ -2861,12 +2875,23 @@ class EventNamespace(AsyncNamespace):
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
+        # Without an id, call enqueue as before, so an override that predates
+        # request ids keeps working for frontends that send none. The
+        # coroutine runs (and captures its trace context) where it is awaited.
+        processor = self.app.event_processor
+        enqueue = (
+            processor.enqueue(token, event)
+            if request_id is None
+            else processor.enqueue(token, event, request_id=request_id)
+        )
         if not otel.enabled:
-            future = await self.app.event_processor.enqueue(token, event)
+            future = await enqueue
         else:
             with otel.remote_context(fields):
-                future = await self.app.event_processor.enqueue(token, event)
-        if self._warn_dropped_results:
+                future = await enqueue
+        # With a request id the value goes back to the frontend caller; only an
+        # id-less event (a frontend predating request ids) drops it.
+        if request_id is None and self._warn_dropped_results:
             future.add_done_callback(
                 functools.partial(self._warn_dropped_result, event.name)
             )

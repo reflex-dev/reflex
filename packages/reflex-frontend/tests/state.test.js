@@ -565,14 +565,18 @@ describe("events", () => {
   test("debounce runs the last call with its own args once the delay passes", () => {
     const target = vi.fn();
     const actions = { debounce: 100 };
-    expect(applyEventActions(target, actions, ["first"], "debounced")).toBe(
-      undefined,
-    );
+    // Every call in the window shares the result of the call that fires.
+    const first = applyEventActions(target, actions, ["first"], "debounced");
+    expect(first.settled).toBe(false);
     vi.advanceTimersByTime(50);
-    applyEventActions(target, actions, ["second"], "debounced");
+    expect(applyEventActions(target, actions, ["second"], "debounced")).toBe(
+      first,
+    );
     vi.advanceTimersByTime(99);
     expect(target).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
     expect(target.mock.calls).toEqual([["second"]]);
+    // The target dispatched nothing to wait for, so the shared result is done.
+    expect(first.settled).toBe(true);
   });
 });
