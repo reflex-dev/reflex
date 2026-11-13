@@ -1034,10 +1034,13 @@ class BaseStateEventProcessor(EventProcessor):
                     # Chain the handler's events under the failed event's span.
                     otel.attach_context(ev_ctx.otel_context)
             if events := self.backend_exception_handler(ex):
-                await chain_updates(
-                    events=events,
-                    handler_name=self.backend_exception_handler.__qualname__,
-                )
+                if inspect.iscoroutine(events):
+                    events = await events
+                if events:
+                    await chain_updates(
+                        events=events,
+                        handler_name=self.backend_exception_handler.__qualname__,
+                    )
 
 
 __all__ = [

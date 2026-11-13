@@ -542,6 +542,8 @@ class EventProcessor:
         streaming = True
         stream_token = token
 
+        stream_events: list[Event] = []
+
         async def _emit_delta_impl(
             token: str, delta: Mapping[str, Mapping[str, Any]]
         ) -> None:
@@ -551,6 +553,12 @@ class EventProcessor:
                 # Other tokens' deltas, and any emitted after the stream ended,
                 # go to the client the usual way.
                 await root.emit_delta_impl(token, delta)
+
+        async def _emit_event_impl(token: str, *events: Event) -> None:
+            if token == stream_token:
+                stream_events.extend(events)
+            elif root.emit_event_impl is not None:
+                await root.emit_event_impl(token, *events)
 
         task_future = await self.enqueue(
             token,
@@ -564,7 +572,7 @@ class EventProcessor:
                 state_manager=root.state_manager,
                 enqueue_impl=root.enqueue_impl,
                 emit_delta_impl=_emit_delta_impl,
-                emit_event_impl=root.emit_event_impl,
+                emit_event_impl=_emit_event_impl,
                 middleware=root.middleware,
                 # Like fork(): the handler span nests under the caller's span
                 # (the upload request, a custom route).
@@ -590,7 +598,15 @@ class EventProcessor:
             if not task_future.done():
                 task_future.cancel()
         # Raise any exceptions for the caller, waiting for all chained events.
-        await task_future.wait_all()
+        try:
+            await task_future.wait_all()
+        except Exception as ex:
+            if (handler_task := self._tasks.get(task_future.txid)) is not None:
+                with contextlib.suppress(Exception):
+                    await handler_task
+            if stream_events:
+                ex._stream_events = stream_events  # type: ignore[attr-defined]
+            raise
 
     def _try_clean_future(self, future: EventFuture) -> None:  # type: ignore[override]
         """Pop a future from _futures when it and all immediate children are done.

@@ -64,7 +64,9 @@ export const uploadFiles = async (
       resp_idx += 1;
       if (chunk.error !== undefined) {
         stream_error = chunk.error;
-        continue;
+        if (!chunk.events && !chunk.delta) {
+          continue;
+        }
       }
       for (const f of event_callbacks) {
         // f runs right away; a failure, thrown or rejected, is reported.

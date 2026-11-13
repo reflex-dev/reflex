@@ -1823,6 +1823,73 @@ async def test_upload_handler_error_after_update_ends_stream_with_error_frame(
     assert "yield_then_fail_upload" in frames
 
 
+@pytest.mark.asyncio
+async def test_upload_handler_error_after_update_streams_exception_events_before_error_frame(
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A handler that raises after streaming an update emits backend exception events before the error frame.
+
+    Args:
+        token: a Token.
+        attached_mock_base_state_event_processor: The event processor serving the upload.
+    """
+    from reflex_components_sonner.toast import toast
+
+    handled: list[tuple[Exception, list[str]]] = []
+
+    def _handle_with_toast(ex: Exception):
+        handled.append((ex, [f.name for f in traceback.extract_tb(ex.__traceback__)]))
+        return toast("Upload crashed")
+
+    attached_mock_base_state_event_processor.backend_exception_handler = (
+        _handle_with_toast
+    )
+    api = Starlette(
+        routes=[
+            Route(
+                "/_upload",
+                upload(Mock(event_processor=attached_mock_base_state_event_processor)),
+                methods=["POST"],
+            )
+        ]
+    )
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=api), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/_upload",
+            files=[("files", ("a.txt", b"data", "text/plain"))],
+            headers={
+                "reflex-client-token": token,
+                "reflex-event-handler": f"{FileUploadState.get_full_name()}.yield_then_fail_upload",
+            },
+        )
+    await attached_mock_base_state_event_processor.join()
+    assert response.status_code == 200
+    ((error, frames),) = handled
+    assert isinstance(error, OSError)
+    assert "yield_then_fail_upload" in frames
+    lines = [json.loads(line) for line in response.text.splitlines()]
+    assert len(lines) == 3
+    assert lines[0]["delta"] == {
+        FileUploadState.get_full_name(): {"img_list" + FIELD_MARKER: ["partial"]}
+    }
+    assert lines[1] == {
+        "events": [
+            {
+                "name": "_call_function",
+                "router_data": {},
+                "payload": {
+                    "function": "(() => (refs['__toast'](\"Upload crashed\")))",
+                    "callback": None,
+                },
+            }
+        ]
+    }
+    assert lines[2] == {"error": upload_module._UPLOAD_HANDLER_ERROR}
+
+
 async def _raise_queue_shut_down(  # noqa: RUF029
     token: str, event: Event
 ) -> AsyncGenerator[Any]:

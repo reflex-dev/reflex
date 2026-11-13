@@ -170,6 +170,50 @@ test("an error frame ending the stream fails the upload, not the listener", asyn
   );
 });
 
+test("an error frame preceded by exception events delivers events and fails the upload", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request } = startUpload((update) => {
+    if (update.delta) handled.push(update.delta.state.n);
+    if (update.events) handled.push(update.events[0].name);
+  });
+  request.receive(
+    '{"delta": {"state": {"n": 1}}}\n{"events": [{"name": "_call_function"}]}\n{"error": "handler failed"}\n',
+    {
+      done: true,
+    },
+  );
+  request.finish();
+  assert.equal(await uploaded, false);
+  assert.deepEqual(handled, [1, "_call_function"]);
+  assert.deepEqual(
+    log.mock.calls.map((call) => call.arguments),
+    [["Upload error:", "handler failed"]],
+  );
+});
+
+test("an error frame containing exception events delivers events and fails the upload", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request } = startUpload((update) => {
+    if (update.delta) handled.push(update.delta.state.n);
+    if (update.events) handled.push(update.events[0].name);
+  });
+  request.receive(
+    '{"delta": {"state": {"n": 1}}}\n{"error": "handler failed", "events": [{"name": "_call_function"}]}\n',
+    {
+      done: true,
+    },
+  );
+  request.finish();
+  assert.equal(await uploaded, false);
+  assert.deepEqual(handled, [1, "_call_function"]);
+  assert.deepEqual(
+    log.mock.calls.map((call) => call.arguments),
+    [["Upload error:", "handler failed"]],
+  );
+});
+
 test("an error response fails the upload by its status, not as a chunk", async (t) => {
   const log = t.mock.method(console, "log", () => {});
   const handled = [];
