@@ -376,9 +376,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
                     )
                     raise VarAttributeError(msg)
                 return hybrid_var
-            if isinstance(descriptor, property) and types.is_unserialized_property(
-                fixed_type, name, descriptor
-            ):
+            if types.is_unserialized_property(fixed_type, name, descriptor):
                 raise _unserialized_property_error(fixed_type, name)
             attribute_type = get_attribute_access_type(var_type, name, descriptor)
         elif is_typeddict(fixed_type) or fixed_type in types.UnionTypes:

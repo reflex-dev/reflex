@@ -113,6 +113,42 @@ def test_declarative_base_serializer_handles_loaded_and_unloaded_attributes():
     engine.dispose()
 
 
+@pytest.mark.parametrize(("mode", "warns"), [("dev", True), ("prod", False)])
+def test_serialize_expired_sqlalchemy_model_warns_only_in_dev(
+    caplog, monkeypatch, mode: str, warns: bool
+) -> None:
+    """Warn once in dev when a committed model has no loaded mapped columns."""
+
+    class ExpiredBase(DeclarativeBase):
+        pass
+
+    class ExpiredUser(ExpiredBase):
+        __tablename__ = "expired_user_warning"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str]
+
+    engine = create_engine("sqlite://")
+    ExpiredBase.metadata.create_all(engine)
+    with Session(engine) as session:
+        user = ExpiredUser(name="Ada")
+        session.add(user)
+        session.commit()
+
+        monkeypatch.setenv("REFLEX_ENV_MODE", mode)
+        with caplog.at_level("WARNING", logger=serializers.__name__):
+            assert serializers.serialize_sqlalchemy_base(user) == {}
+            assert serializers.serialize_sqlalchemy_base(user) == {}
+        assert set(user.__dict__) == {"_sa_instance_state"}
+    engine.dispose()
+
+    warnings = [record for record in caplog.records if "ExpiredUser" in record.message]
+    assert len(warnings) == int(warns)
+    if warns:
+        assert "expire_on_commit=False" in warnings[0].message
+        assert "session.refresh(model)" in warnings[0].message
+
+
 def test_declarative_base_serializer_handles_bidirectional_relationships():
     """Serialize bidirectional relationships without circular references."""
 

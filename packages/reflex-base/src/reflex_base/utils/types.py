@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import builtins
 import dataclasses
+import inspect
 import logging
 import sys
 import types
@@ -969,6 +970,12 @@ def get_attribute_descriptor(cls: GenericType, name: str) -> Any:
     Returns:
         The resolved attribute/descriptor, or ``None`` if it is absent.
     """
+    if isinstance(cls, type) and "__mapper__" in cls.__dict__:
+        sqlalchemy_hybrid = sys.modules.get("sqlalchemy.ext.hybrid")
+        if sqlalchemy_hybrid is not None:
+            descriptor = inspect.getattr_static(cls, name, None)
+            if isinstance(descriptor, sqlalchemy_hybrid.hybrid_property):
+                return descriptor
     try:
         return getattr(cls, name, None)
     except NotImplementedError:
@@ -978,7 +985,7 @@ def get_attribute_descriptor(cls: GenericType, name: str) -> Any:
 def is_unserialized_property(
     cls: GenericType, name: str, descriptor: Any = _NO_DESCRIPTOR
 ) -> bool:
-    """Check whether ``name`` is a property that the default serializer of ``cls`` omits.
+    """Check whether a property that the default serializer of ``cls`` omits is accessed.
 
     Dataclasses serialize their fields only. Pydantic models serialize with the stock
     ``model_dump()``, which adds ``computed_field`` properties only. A registered
@@ -1002,7 +1009,11 @@ def is_unserialized_property(
             return False
         descriptor = get_attribute_descriptor(cls, name)
     if not isinstance(descriptor, property):
-        return False
+        sqlalchemy_hybrid = sys.modules.get("sqlalchemy.ext.hybrid")
+        if sqlalchemy_hybrid is None or not isinstance(
+            descriptor, sqlalchemy_hybrid.hybrid_property
+        ):
+            return False
 
     from reflex_base.utils import serializers
 
