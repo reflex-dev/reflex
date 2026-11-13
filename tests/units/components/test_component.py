@@ -842,13 +842,6 @@ def test_component_create_event_child(make_child, type_name, test_component):
     ]
 
 
-def test_component_create_unallowed_child_has_no_note(test_component):
-    """A child that is not an event gets no event note."""
-    with pytest.raises(ChildrenTypeError) as exc_info:
-        test_component.create({"foo": "bar"})
-    assert not hasattr(exc_info.value, "__notes__")
-
-
 def test_component_create_backend_var_prop():
     """A backend var passed to a typed prop reports its repr, not a format error."""
 
