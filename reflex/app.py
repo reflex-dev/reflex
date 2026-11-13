@@ -362,6 +362,33 @@ def _route_arg_label(arg_type: str) -> str:
     return "list" if arg_type == constants.RouteArgType.LIST else "single"
 
 
+def _has_custom_lifespan(app: Starlette) -> bool:
+    """Check whether a Starlette or FastAPI app declares a custom lifespan.
+
+    Returns:
+        Whether the app uses a non-default lifespan context.
+    """
+    context_type = type(app.router.lifespan_context)
+    return not (
+        context_type.__name__ == "_DefaultLifespan"
+        and context_type.__module__ in {"starlette.routing", "fastapi.routing"}
+    )
+
+
+def _transformer_lifespan_name(app: Starlette) -> str:
+    """Format an app name that distinguishes custom transformer lifespans.
+
+    Returns:
+        The app type/title and custom lifespan callback name, when available.
+    """
+    name = type(app).__name__
+    if title := getattr(app, "title", None):
+        name += f"({title!r})"
+    if lifespan_name := getattr(app.router.lifespan_context, "__qualname__", None):
+        name += f" lifespan={lifespan_name}"
+    return name
+
+
 class _RootMiddleware:
     """The outermost ASGI layer: attach Reflex contexts and serve the lifespan.
 
@@ -1232,9 +1259,8 @@ class App(MiddlewareMixin, LifespanMixin):
         # Lifespan events go to the outermost app, which may forward them, and to
         # each app a Starlette transformer mounts, as Starlette does not forward them.
         lifespan_apps: list[ASGIApp] = []
-        lifespan_app_nested_names: list[tuple[str, ...]] = []
-        nested_lifespan_names: list[str] = []
-        default_lifespan_context_type: type | None = None
+        lifespan_app_affected_names: list[tuple[str, ...]] = []
+        affected_lifespan_names: tuple[str, ...] = ()
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
                 [self.api_transformer]
@@ -1244,10 +1270,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
-                    if default_lifespan_context_type is None:
-                        default_lifespan_context_type = type(
-                            Starlette().router.lifespan_context
-                        )
                     if api_transformer.router.lifespan_context in self._lifespan_tasks:
                         logger.warning(
                             f"The lifespan of api_transformer {api_transformer!r} is "
@@ -1257,26 +1279,23 @@ class App(MiddlewareMixin, LifespanMixin):
                         )
                     if asgi_app is not api:
                         lifespan_apps.append(asgi_app)
-                        lifespan_app_nested_names.append(tuple(nested_lifespan_names))
+                        lifespan_app_affected_names.append(affected_lifespan_names)
                     # Mount the api to the starlette app.
                     App._add_cors(api_transformer)
                     api_transformer.mount("", asgi_app)
                     asgi_app = api_transformer
-                    if not isinstance(
-                        api_transformer.router.lifespan_context,
-                        default_lifespan_context_type,
-                    ):
-                        transformer_name = type(api_transformer).__name__
-                        if title := getattr(api_transformer, "title", None):
-                            transformer_name += f"({title!r})"
-                        nested_lifespan_names.append(transformer_name)
+                    affected_lifespan_names = ()
+                    if _has_custom_lifespan(api_transformer):
+                        affected_lifespan_names = (
+                            _transformer_lifespan_name(api_transformer),
+                        )
                 else:
                     # Transform the asgi app.
                     asgi_app = api_transformer(asgi_app)
 
             if asgi_app is not api:
                 lifespan_apps.append(asgi_app)
-                lifespan_app_nested_names.append(tuple(nested_lifespan_names))
+                lifespan_app_affected_names.append(affected_lifespan_names)
 
         cors_options = App._cors_options()
         top_asgi_app = _RootMiddleware(
@@ -1292,7 +1311,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 self._run_lifespan,
                 api,
                 lifespan_apps,
-                nested_lifespan_names=lifespan_app_nested_names,
+                affected_lifespan_names=lifespan_app_affected_names,
             ),
         )
         if otel.asgi_middleware is not None:
