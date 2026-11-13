@@ -332,7 +332,7 @@ Apps passed to `api_transformer` now receive ASGI lifespan events, so the `lifes
 
 - If you worked around the missing lifespan by also registering the transformer's lifespan with `app.register_lifespan_task`, remove that registration: it now runs the lifespan twice.
 - The `starlette_app` argument of a lifespan task is now the `Starlette` app that serves Reflex's own routes. Code that searched its routes for the transformer no longer finds it.
-- Raw ASGI middleware returned by a callable transformer now sees the `lifespan` scope, which has no `path`. Read `scope.get("path")` or check `scope["type"]` first. Middleware that raises on it keeps the lifespans inside it from running, and Reflex logs that the app appears not to support lifespan events.
+- Raw ASGI middleware returned by a callable transformer now sees the `lifespan` scope, which has no `path`. Check `scope["type"]` before reading HTTP-specific keys and forward lifespan scopes to the wrapped app. If middleware raises before startup is acknowledged, Reflex logs a warning with the traceback, identifies any known wrapped transformer with a custom lifespan, and continues startup.
 
 See [Lifespan](/docs/api-routes/overview/#lifespan).
 

@@ -16,6 +16,7 @@ from reflex_base.utils import console
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
 from reflex_base.utils.types import ASGIApp, Message, Scope
 from starlette.applications import Starlette
+from starlette.routing import _DefaultLifespan
 
 from reflex.utils import prerequisites
 
@@ -93,16 +94,18 @@ async def _receive_message(
 
 
 @contextlib.asynccontextmanager
-async def _run_asgi_lifespan(app: ASGIApp, server_scope: Scope):
+async def _run_asgi_lifespan(
+    app: ASGIApp, server_scope: Scope, wrapped_transformer: Starlette | None = None
+):
     """Send ASGI lifespan events to an app around the body of the context.
 
-    Like an ASGI server's "auto" lifespan mode, an app that raises, returns or
-    sends another message instead of answering the startup event is taken not
-    to support the protocol.
+    Continue without lifespan when an app does not acknowledge startup. Log a
+    warning with the traceback if the app raises before acknowledging startup.
 
     Args:
         app: The ASGI app.
         server_scope: The server's lifespan scope, whose ``state`` the app shares.
+        wrapped_transformer: The known transformer whose lifespan depends on this wrapper.
 
     Yields:
         None once the app has started.
@@ -119,8 +122,26 @@ async def _run_asgi_lifespan(app: ASGIApp, server_scope: Scope):
         await received.put({"type": "lifespan.startup"})
         try:
             message = await _receive_message(app_task, sent) or {"type": "no answer"}
-        except Exception as err:
-            message = {"type": repr(err)}
+        except Exception:
+            affected = ""
+            if wrapped_transformer is not None:
+                context = wrapped_transformer.router.lifespan_context
+                if not isinstance(context, _DefaultLifespan):
+                    affected = (
+                        f" The lifespan of api_transformer {wrapped_transformer!r} "
+                        f"({context!r}) may have been skipped."
+                    )
+            logger.warning(
+                "ASGI app %r raised during lifespan startup. "
+                "Continuing without its lifespan. If this is HTTP middleware, "
+                "pass non-HTTP scopes through "
+                "(check scope['type'] before reading scope['path']).%s",
+                app,
+                affected,
+                exc_info=True,
+            )
+            yield
+            return
         if message["type"] == "lifespan.startup.failed":
             msg = f"Lifespan startup of {app!r} failed: {message.get('message', '')}"
             raise RuntimeError(msg)
@@ -269,7 +290,12 @@ class LifespanMixin(AppMixin):
 
     @contextlib.asynccontextmanager
     async def _run_lifespan(
-        self, starlette_app: Starlette, asgi_apps: Sequence[ASGIApp], scope: Scope
+        self,
+        starlette_app: Starlette,
+        asgi_apps: Sequence[ASGIApp],
+        scope: Scope,
+        *,
+        wrapped_transformers: dict[int, Starlette] | None = None,
     ):
         """Run the lifespan tasks, then the ASGI lifespan protocol of each app.
 
@@ -279,6 +305,7 @@ class LifespanMixin(AppMixin):
             starlette_app: The Starlette app passed to tasks accepting ``starlette_app``.
             asgi_apps: The apps to send lifespan events to, in startup order.
             scope: The server's lifespan scope, whose ``state`` the apps share.
+            wrapped_transformers: Known transformers keyed by the identity of their wrapper.
 
         Yields:
             None once every lifespan has started.
@@ -286,7 +313,15 @@ class LifespanMixin(AppMixin):
         async with contextlib.AsyncExitStack() as stack:
             await stack.enter_async_context(self._run_lifespan_tasks(starlette_app))
             for asgi_app in asgi_apps:
-                await stack.enter_async_context(_run_asgi_lifespan(asgi_app, scope))
+                await stack.enter_async_context(
+                    _run_asgi_lifespan(
+                        asgi_app,
+                        scope,
+                        wrapped_transformers.get(id(asgi_app))
+                        if wrapped_transformers is not None
+                        else None,
+                    )
+                )
             yield
 
     @overload

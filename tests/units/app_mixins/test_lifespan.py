@@ -459,7 +459,33 @@ async def test_run_lifespan_skips_apps_without_lifespan_support(caplog):
         async with mixin._run_lifespan(Starlette(), apps, _lifespan_scope()):
             assert events == ["raw startup"]
     assert events == ["raw startup", "raw shutdown"]
-    assert "appears unsupported" in caplog.text
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.app_mixins.lifespan"
+    ]
+    assert [(record.levelno, record.getMessage()) for record in records] == [
+        (
+            logging.WARNING,
+            (
+                f"ASGI app {http_only_app!r} raised during lifespan startup. "
+                "Continuing without its lifespan. If this is HTTP middleware, "
+                "pass non-HTTP scopes through "
+                "(check scope['type'] before reading scope['path'])."
+            ),
+        ),
+        (
+            logging.INFO,
+            f"ASGI lifespan appears unsupported by {silent_app!r}: no answer",
+        ),
+        (
+            logging.INFO,
+            f"ASGI lifespan appears unsupported by {http_response_app!r}: http.response.start",
+        ),
+    ]
+    exc_info = records[0].exc_info
+    assert exc_info is not None
+    assert type(exc_info[1]) is AssertionError
 
 
 @pytest.mark.asyncio
