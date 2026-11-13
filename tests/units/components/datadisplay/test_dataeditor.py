@@ -9,8 +9,9 @@ import pytest
 from reflex_base.constants import Templates
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import ArrayVar
-from reflex_components_dataeditor.dataeditor import DataEditor
+from reflex_components_dataeditor.dataeditor import DataEditor, GridSelection
 
+import reflex as rx
 from reflex.state import BaseState
 
 _TEMPLATE_PATH = Templates.Dirs.WEB_TEMPLATE / "utils/helpers/dataeditor.js"
@@ -441,3 +442,52 @@ console.log(JSON.stringify([
         _text_cell("bob@example.com"),
         {"kind": "loading"},
     ]
+
+
+def test_dataeditor_on_delete_lets_the_grid_delete():
+    """The onDelete callback queues the event and returns true for Glide.
+
+    Glide reads the return value of onDelete synchronously and treats anything
+    other than a boolean as the selection to delete.
+    """
+
+    class DeleteState(BaseState):
+        @rx.event
+        def delete(self, selection: GridSelection):
+            pass
+
+    editor = _create(columns=["Name"], data=[["Alice"]], on_delete=DeleteState.delete)
+    selection = {
+        "current": {
+            "cell": [0, 1],
+            "range": {"x": 0, "y": 1, "width": 1, "height": 1},
+            "rangeStack": [],
+        },
+        "columns": {"items": []},
+        "rows": {"items": []},
+    }
+    test_script = f"""
+const queued = [];
+const ReflexEvent = (name, payload) => ({{ name, payload }});
+const addEvents = (events, args) => {{
+  queued.push({{ events, args }});
+}};
+const onDelete = {_prop(editor, "onDelete")};
+const selection = {json.dumps(selection)};
+console.log(JSON.stringify({{ result: onDelete(selection), queued }}));
+"""
+
+    assert _run_node(test_script) == {
+        "result": True,
+        "queued": [
+            {
+                "events": [
+                    {
+                        "name": f"{DeleteState.get_full_name()}.delete",
+                        "payload": {"selection": selection},
+                    }
+                ],
+                "args": [selection],
+            }
+        ],
+    }
