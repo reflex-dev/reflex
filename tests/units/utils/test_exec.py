@@ -1343,6 +1343,32 @@ def test_backend_worker_target_loads_config_before_app(
     assert result.stdout.splitlines()[-1] == "True"
 
 
+def test_get_reload_paths_ignores_missing_exclude_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """An exclude path that does not exist excludes nothing.
+
+    Args:
+        tmp_path: Temporary app root.
+        monkeypatch: Pytest monkeypatch fixture.
+        mocker: Pytest mocker fixture.
+    """
+    (tmp_path / "data").mkdir()
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "rxconfig.py").touch()
+    monkeypatch.chdir(tmp_path)
+    mocker.patch.object(exec_utils, "get_module_path", return_value=None)
+    monkeypatch.delenv(environment.REFLEX_HOT_RELOAD_OVERRIDE_PATHS.name, raising=False)
+    monkeypatch.delenv(environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.name, raising=False)
+    monkeypatch.setenv(
+        environment.REFLEX_HOT_RELOAD_EXCLUDE_PATHS.name,
+        os.pathsep.join(["data", "missing"]),
+    )
+    cwd = Path.cwd()
+
+    assert sorted(exec_utils.get_reload_paths()) == [cwd / "pkg", cwd / "rxconfig.py"]
+
+
 @pytest.mark.usefixtures("windows_text_io")
 def test_get_package_json_and_hash_reads_utf8(tmp_path: Path):
     """package.json is read as UTF-8 whatever the locale encoding.
