@@ -1772,7 +1772,7 @@ def test_rx_event_on_a_function_without_a_state_parameter_stays_a_function():
 
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
         decorated_ping = event(ping)  # pyright: ignore [reportCallIssue, reportArgumentType]
-        decorated_summarize = event(stop_propagation=True)(summarize)  # pyright: ignore [reportArgumentType]
+        decorated_summarize = event(stop_propagation=True)(summarize)  # pyright: ignore [reportCallIssue, reportArgumentType]
 
     assert [call.kwargs["feature_name"] for call in mock_deprecate.call_args_list] == [
         "@rx.event on a function without a state parameter"
@@ -1881,7 +1881,7 @@ def test_repeated_rx_event_merges_event_actions():
     """The outer @rx.event's options win where both decorators set one."""
 
     class MergedState(BaseState):
-        @event(throttle=300, stop_propagation=True)  # pyright: ignore [reportArgumentType]
+        @event(throttle=300, stop_propagation=True)
         @event(throttle=100, debounce=50)
         def handle(self):
             pass
@@ -1897,12 +1897,12 @@ def test_repeated_rx_event_outer_false_and_zero_override():
     """An outer False or 0 turns off the inner decorator's action."""
 
     class OverrideState(BaseState):
-        @event(prevent_default=False, temporal=False)  # pyright: ignore [reportArgumentType]
+        @event(prevent_default=False, temporal=False)
         @event(prevent_default=True, temporal=True, debounce=50)
         def handle(self):
             pass
 
-        @event(throttle=0)  # pyright: ignore [reportArgumentType]
+        @event(throttle=0)
         @event(throttle=300)
         def throttled(self):
             pass
@@ -1919,7 +1919,7 @@ def test_repeated_rx_event_outer_false_overrides_background_and_supersedes():
     """An outer background=False or supersedes=False turns off the inner True."""
 
     class OverrideFlagsState(BaseState):
-        @event(background=False, supersedes=False)  # pyright: ignore [reportArgumentType]
+        @event(background=False, supersedes=False)
         @event(background=True, supersedes=True)
         async def handle(self):
             pass
@@ -1947,7 +1947,8 @@ def test_rx_event_on_a_handler_of_another_state_raises(options: dict):
     with pytest.raises(TypeError, match="already an event handler"):
 
         class OtherState(BaseState):
-            alias = event(OwnerState.handle, **options)  # pyright: ignore [reportArgumentType, reportCallIssue]
+            # Type-checks, but raises at runtime.
+            alias = event(OwnerState.handle, **options)
 
     handler = OwnerState.__dict__["handle"]
     assert handler.is_background is False
@@ -1969,7 +1970,7 @@ def test_repeated_rx_event_on_a_mixin_is_copied_with_merged_actions():
     """A state copying a mixin's repeated @rx.event gets the merged actions."""
 
     class RepeatedMixin(BaseState, mixin=True):
-        @event(stop_propagation=True)  # pyright: ignore [reportArgumentType]
+        @event(stop_propagation=True)
         @event(background=True, throttle=100)
         async def work(self):
             pass
@@ -1994,7 +1995,7 @@ def test_repeated_rx_event_on_a_decentralized_handler():
 
     before = set(RegistrationContext.get().event_handlers)
 
-    @event(stop_propagation=True)  # pyright: ignore [reportArgumentType]
+    @event(stop_propagation=True)
     @event(throttle=300)
     def e(s: S):
         s.field = "foo"
@@ -2024,7 +2025,7 @@ def test_repeated_rx_event_on_a_decentralized_handler_in_main():
     handle.__module__ = "__main__"
     once = event(handle)  # pyright: ignore [reportArgumentType]
     assert once.fn.__name__.startswith("_main___")
-    twice = event(stop_propagation=True)(once)  # pyright: ignore [reportArgumentType]
+    twice = event(stop_propagation=True)(once)
 
     assert isinstance(twice, EventHandler)
     assert twice.fn is once.fn
