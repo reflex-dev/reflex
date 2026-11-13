@@ -7,13 +7,17 @@
  * Booleans compare as numbers (0 or 1), matching Python where bool is a
  * subclass of int, so [true] and [1] compare equal.
  *
- * Returns NaN when an element pair contains NaN (Python makes every
+ * Returns NaN when an operand is not an array (Python raises TypeError for
+ * None < [1]), when an element pair contains NaN (Python makes every
  * ordering comparison against float("nan") false) or when elements are
  * incomparable (mismatched or unsupported types, where Python raises
  * TypeError). Either way every ordering result is false instead of a
  * silent string comparison.
  */
 export default function compareArrays(lhs, rhs) {
+  if (!Array.isArray(lhs) || !Array.isArray(rhs)) {
+    return Number.NaN;
+  }
   const sharedLength = Math.min(lhs.length, rhs.length);
   for (let i = 0; i < sharedLength; i++) {
     const left = lhs[i];

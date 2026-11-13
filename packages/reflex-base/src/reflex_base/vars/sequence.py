@@ -1810,11 +1810,35 @@ def array_reverse_operation(
     )
 
 
-_ARRAY_COMPARE_IMPORT: ImportDict = {
-    "$/utils/helpers/array.js": [
-        ImportVar(tag="compareArrays", is_default=True, install=False)
-    ],
-}
+_ARRAY_COMPARE_VAR_DATA = VarData(
+    imports={
+        "$/utils/helpers/array.js": [
+            ImportVar(tag="compareArrays", is_default=True, install=False)
+        ],
+    }
+)
+
+
+def _array_compare_operation(
+    lhs: ArrayVar | list | tuple,
+    rhs: ArrayVar | list | tuple,
+    operator: Literal["<", "<=", ">", ">="],
+) -> CustomVarOperationReturn[bool]:
+    """Order two arrays element-wise with Python list semantics.
+
+    Args:
+        lhs: The left-hand side array.
+        rhs: The right-hand side array.
+        operator: The comparison operator.
+
+    Returns:
+        The result of the comparison.
+    """
+    return var_operation_return(
+        f"(compareArrays({lhs!s}, {rhs!s}) {operator} 0)",
+        bool,
+        _ARRAY_COMPARE_VAR_DATA,
+    )
 
 
 @var_operation
@@ -1828,11 +1852,7 @@ def array_lt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array less than operation.
     """
-    return var_operation_return(
-        js_expression=f"(compareArrays({lhs!s}, {rhs!s}) < 0)",
-        var_type=bool,
-        var_data=VarData(imports=_ARRAY_COMPARE_IMPORT),
-    )
+    return _array_compare_operation(lhs, rhs, "<")
 
 
 @var_operation
@@ -1846,11 +1866,7 @@ def array_gt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array greater than operation.
     """
-    return var_operation_return(
-        js_expression=f"(compareArrays({lhs!s}, {rhs!s}) > 0)",
-        var_type=bool,
-        var_data=VarData(imports=_ARRAY_COMPARE_IMPORT),
-    )
+    return _array_compare_operation(lhs, rhs, ">")
 
 
 @var_operation
@@ -1864,11 +1880,7 @@ def array_le_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array less than or equal operation.
     """
-    return var_operation_return(
-        js_expression=f"(compareArrays({lhs!s}, {rhs!s}) <= 0)",
-        var_type=bool,
-        var_data=VarData(imports=_ARRAY_COMPARE_IMPORT),
-    )
+    return _array_compare_operation(lhs, rhs, "<=")
 
 
 @var_operation
@@ -1882,11 +1894,7 @@ def array_ge_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array greater than or equal operation.
     """
-    return var_operation_return(
-        js_expression=f"(compareArrays({lhs!s}, {rhs!s}) >= 0)",
-        var_type=bool,
-        var_data=VarData(imports=_ARRAY_COMPARE_IMPORT),
-    )
+    return _array_compare_operation(lhs, rhs, ">=")
 
 
 @var_operation

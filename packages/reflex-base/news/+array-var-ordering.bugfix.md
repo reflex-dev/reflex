@@ -1,0 +1,1 @@
+List Var ordering comparisons (`<`, `<=`, `>`, `>=`) now compare element by element like Python lists, instead of as comma-joined strings in the browser. For example, `State.version >= [1, 9, 0]` is now true for `[1, 10, 0]`.

@@ -1,30 +1,11 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
-import vm from "node:vm";
+import { pathToFileURL } from "node:url";
 
-const source = await readFile(
-  new URL(
-    "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/helpers/array.js",
-    import.meta.url,
-  ),
-  "utf8",
+// The helper path comes from the pytest wrapper, which resolves the template.
+const { default: compareArrays } = await import(
+  pathToFileURL(process.argv[2]).href
 );
-
-/** Evaluate the actual frontend helper module and return its default export. */
-async function loadCompareArrays() {
-  const module = new vm.SourceTextModule(source, {
-    identifier: "array.js",
-    context: vm.createContext({}),
-  });
-  await module.link(() => {
-    throw new Error("array.js must not have imports");
-  });
-  await module.evaluate();
-  return module.namespace.default;
-}
-
-const compareArrays = await loadCompareArrays();
 
 test("numeric arrays compare element-wise like Python lists", () => {
   assert.equal(compareArrays([10, 20], [5, 6]), 1);
@@ -71,4 +52,10 @@ test("booleans compare numerically like Python bool subclassing int", () => {
   assert.equal(compareArrays([false], [1]), -1);
   assert.equal(compareArrays([0.5], [true]), -1);
   assert.equal(compareArrays([1], [true]), 0);
+});
+
+test("non-array operands give NaN so ordering is false", () => {
+  assert.ok(Number.isNaN(compareArrays(null, [1])));
+  assert.ok(Number.isNaN(compareArrays([1], undefined)));
+  assert.ok(Number.isNaN(compareArrays(null, null)));
 });

@@ -423,6 +423,12 @@ def test_datetime_comparison_preserves_microseconds():
     ],
 )
 def test_array_comparison_uses_compare_arrays(operation, operator):
+    """Array ordering compiles to a compareArrays call, not a raw JS comparison.
+
+    Args:
+        operation: The Python comparison operator function.
+        operator: The JS operator applied to the compareArrays result.
+    """
     lhs = cast(ArrayVar[list[int]], v([1, 10, 0]))
 
     assert str(operation(lhs, [1, 9, 0])) == (
@@ -431,6 +437,7 @@ def test_array_comparison_uses_compare_arrays(operation, operator):
 
 
 def test_array_comparison_imports_compare_arrays():
+    """Array ordering carries the import of the compareArrays helper."""
     lhs = cast(ArrayVar[list[int]], v([1, 10, 0]))
     comparison = cast(Var, lhs < [1, 9, 0])
     var_data = comparison._get_all_var_data()
