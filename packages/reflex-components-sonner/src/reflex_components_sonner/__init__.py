@@ -1,3 +1,3 @@
 """Init file for the sonner component."""
 
-from .toast import toast
+from .toast import toast as toast
