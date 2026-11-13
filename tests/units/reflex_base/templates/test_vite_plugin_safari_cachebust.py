@@ -7,14 +7,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import reflex_base
+from reflex_base.constants import Templates
 
-PLUGIN_PATH = (
-    Path(reflex_base.__file__).parent
-    / ".templates"
-    / "web"
-    / "vite-plugin-safari-cachebust.js"
-)
+PLUGIN_PATH = Templates.Dirs.WEB_TEMPLATE / "vite-plugin-safari-cachebust.js"
 
 SAFARI_UA = "Mozilla/5.0 (Macintosh) AppleWebKit/605.1.15 Safari/605.1.15"
 
