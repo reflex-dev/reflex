@@ -67,3 +67,23 @@ def test_visible_input_keeps_the_wrapper(props: dict[str, Any]):
         props: The props of an input that may be visible.
     """
     assert "display" not in TextFieldRoot.create(**props).style
+
+
+@pytest.mark.parametrize(
+    ("props", "expected"),
+    [
+        ({"style": {"display": "block"}}, '"block"'),
+        ({"style": {"display": Var(_js_expr="shown", _var_type=str)}}, "shown"),
+        ({"display": Var(_js_expr="shown", _var_type=str)}, "shown"),
+    ],
+)
+def test_hidden_input_keeps_a_user_display(props: dict[str, Any], expected: str):
+    """A display set by the user, also from state, wins over the default.
+
+    Args:
+        props: The display set on a hidden input.
+        expected: The rendered display value.
+    """
+    text_field = TextFieldRoot.create(type="hidden", **props)
+
+    assert str(text_field.style["display"]) == expected

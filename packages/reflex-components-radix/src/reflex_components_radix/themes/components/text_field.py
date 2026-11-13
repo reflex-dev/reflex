@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
@@ -115,11 +116,14 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
             )
 
         # The TextField.Root wrapper keeps its border and height around a hidden
-        # input, which shows as an empty bar, so hide the wrapper too.
+        # input, which shows as an empty bar, so hide the wrapper too, unless
+        # the user sets a display.
         if props.get("hidden") is True or (
             isinstance(input_type := props.get("type"), str) and input_type == "hidden"
         ):
-            props.setdefault("display", "none")
+            style = props.get("style")
+            if not (isinstance(style, Mapping) and "display" in style):
+                props.setdefault("display", "none")
 
         value = props.get("value")
 
