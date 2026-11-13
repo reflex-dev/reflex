@@ -211,13 +211,13 @@ def test_mobile_menu_preserves_primary_docs_destinations(navbar):
         assert ("anchor", path) in links
 
 
-def test_docs_announcement_preserves_link_and_dismissal(navbar):
+def test_docs_announcement_preserves_link_and_dismissal():
     """The branded announcement remains an accessible, dismissible external link."""
     from reflex_docs.views.docs_announcement_banner import docs_announcement_banner
 
     banner = docs_announcement_banner()
     assert _collect_links(banner) == [
-        ("anchor", "https://reflex.dev/blog/xy-in-reflex-build/")
+        ("anchor", "https://reflex.dev/blog/series-a-announcement/")
     ]
     region = next(
         component
@@ -227,12 +227,14 @@ def test_docs_announcement_preserves_link_and_dismissal(navbar):
     link, dismiss = region.children
     copy = link.children[0].children[0]
     assert len(copy.children) == 2
+    assert all("Announcing our $14M Series A" in str(line) for line in copy.children)
     assert copy.children[1].custom_attrs["aria-hidden"] is True
     assert "docs-announcement-glass" not in str(region)
     assert "Latest announcement" in str(region.custom_attrs["aria-label"])
     assert str(link.target) == '"_blank"'
     assert "noopener noreferrer" in str(link.rel)
     assert "opens in a new tab" in str(link.custom_attrs["aria-label"])
+    assert "Announcing our $14M Series A" in str(link.custom_attrs["aria-label"])
     assert "Dismiss announcement" in str(dismiss.custom_attrs["aria-label"])
     assert "hide_banner" in str(dismiss.event_triggers["on_click"])
 

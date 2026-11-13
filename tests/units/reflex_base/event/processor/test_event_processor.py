@@ -8,6 +8,7 @@ import re
 import sys
 import threading
 import time
+import traceback
 from collections.abc import AsyncIterator, Mapping
 from pathlib import Path
 from typing import Any
@@ -673,10 +674,10 @@ async def test_processor_reports_blocking_sync_handler(
         await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
 
     assert "_blocking_sync_handler" in caplog.text
-    assert "blocked the event loop" in caplog.text
-    duration = re.search(r"blocked the event loop for (\d+\.\d+)s", caplog.text)
-    assert duration is not None
-    assert float(duration.group(1)) >= 0.1
+    # The probe that times the block lands up to a polling gap into it, so only
+    # the report of a total is checked here; test_blocking checks its length
+    # with a handler that blocks once a probe is queued.
+    assert re.search(r"blocked the event loop for \d+\.\d+s in total", caplog.text)
     # The stack of the event task ends at the blocking line, without loop frames.
     assert "Blocking stack (most recent call last):" in caplog.text
     assert "time.sleep(0.12)" in caplog.text
@@ -902,6 +903,35 @@ async def test_backend_exception_handler_called(token: str):
         await ep.enqueue(token, Event.from_event_type(error_event())[0])
     assert len(caught) == 1
     assert isinstance(caught[0], RuntimeError)
+
+
+async def test_backend_exception_handler_sees_handler_frames_when_future_awaited(
+    token: str,
+):
+    """Awaiting the failed event's future does not strip the handler from the traceback.
+
+    A caller awaiting the future (e.g. an upload stream) re-raises the exception
+    before the exception handler task runs. CPython's C ``asyncio.Future`` gives
+    that re-raise a traceback of the awaiting frames only, so without the
+    restore the handler sees just this test's frame.
+
+    Args:
+        token: The client token.
+    """
+    seen: list[list[str]] = []
+
+    def _catch(ex: Exception) -> None:
+        seen.append([frame.name for frame in traceback.extract_tb(ex.__traceback__)])
+
+    ep = EventProcessor(backend_exception_handler=_catch, graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        future = await ep.enqueue(token, Event.from_event_type(error_event())[0])
+        with contextlib.suppress(RuntimeError):
+            await future
+        await asyncio.wait_for(ep.join(), timeout=1)
+    (frames,) = seen
+    assert "_error_handler" in frames
 
 
 async def test_exception_handler_can_chain_recovery_events(token: str):

@@ -39,6 +39,7 @@ NUMBER_T = TypeVarExt(
 
 if TYPE_CHECKING:
     from .sequence import ArrayVar
+    from .set import SetVar
 
 
 def raise_unsupported_operand_types(
@@ -132,7 +133,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     def __mul__(self, other: number_types | boolean_types) -> NumberVar: ...
 
     @overload
-    def __mul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
+    def __mul__(self, other: list | tuple | set | ArrayVar | SetVar) -> ArrayVar: ...
 
     def __mul__(self, other: Any):
         """Multiply two numbers.
@@ -144,9 +145,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
             The number multiplication operation.
         """
         from .sequence import ArrayVar, LiteralArrayVar
+        from .set import SetVar
 
-        if isinstance(other, (list, tuple, ArrayVar)):
-            if isinstance(other, ArrayVar):
+        if isinstance(other, (list, tuple, ArrayVar, SetVar)):
+            if isinstance(other, (ArrayVar, SetVar)):
                 return other * self
             return LiteralArrayVar.create(other) * self
 
@@ -159,7 +161,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     def __rmul__(self, other: number_types | boolean_types) -> NumberVar: ...
 
     @overload
-    def __rmul__(self, other: list | tuple | set | ArrayVar) -> ArrayVar: ...
+    def __rmul__(self, other: list | tuple | set | ArrayVar | SetVar) -> ArrayVar: ...
 
     def __rmul__(self, other: Any):
         """Multiply two numbers.
@@ -171,9 +173,10 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
             The number multiplication operation.
         """
         from .sequence import ArrayVar, LiteralArrayVar
+        from .set import SetVar
 
-        if isinstance(other, (list, tuple, ArrayVar)):
-            if isinstance(other, ArrayVar):
+        if isinstance(other, (list, tuple, ArrayVar, SetVar)):
+            if isinstance(other, (ArrayVar, SetVar)):
                 return other * self
             return LiteralArrayVar.create(other) * self
 
@@ -634,8 +637,42 @@ def number_floor_division_operation(lhs: NumberVar, rhs: NumberVar):
     return f"Math.floor({lhs!s} / {rhs!s})"
 
 
-@binary_number_operation
-def number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
+_PY_MOD_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="pyMod")],
+}
+
+
+@var_operation
+def _number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
+    """Modulo two numbers with Python semantics.
+
+    A float operand selects Python's float rule for a zero result (`-0.0` for a
+    negative divisor); an int result is never `-0`. Python's Decimal `%` keeps
+    the dividend's sign (`Decimal(-7) % 3` is -1), which plain `%` computes.
+
+    Args:
+        lhs: The first number.
+        rhs: The second number.
+
+    Returns:
+        The number modulo operation.
+    """
+    var_type = unionize(lhs._var_type, rhs._var_type)
+    if safe_issubclass(lhs._var_type, decimal.Decimal) or safe_issubclass(
+        rhs._var_type, decimal.Decimal
+    ):
+        return var_operation_return(
+            js_expression=f"({lhs!s} % {rhs!s})", var_type=var_type
+        )
+    float_flag = ", true" if lhs._is_strict_float() or rhs._is_strict_float() else ""
+    return var_operation_return(
+        js_expression=f"pyMod({lhs!s}, {rhs!s}{float_flag})",
+        var_type=var_type,
+        var_data=VarData(imports=_PY_MOD_IMPORT),
+    )
+
+
+def number_modulo_operation(lhs: number_types, rhs: number_types) -> NumberVar:
     """Modulo two numbers.
 
     Args:
@@ -645,7 +682,7 @@ def number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number modulo operation.
     """
-    return f"({lhs!s} % {rhs!s})"
+    return _number_modulo_operation(lhs, rhs)  # pyright: ignore [reportReturnType, reportArgumentType]
 
 
 _STARTS_WITH_UNARY_OPERATOR = re.compile(r"[-+!~]|(?:typeof|void|delete|await)\b")

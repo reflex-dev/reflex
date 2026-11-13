@@ -2,8 +2,10 @@
 
 import reflex as rx
 import reflex_components_internal as ui
-from reflex_site_shared.views.announcement_banner import XY_IN_REFLEX_BUILD_URL
 from reflex_site_shared.views.hosting_banner import HostingBannerState
+
+ANNOUNCEMENT_TITLE = "Announcing our $14M Series A"
+ANNOUNCEMENT_URL = "https://reflex.dev/blog/series-a-announcement/"
 
 
 def _announcement_line(*, highlight: bool = False) -> rx.Component:
@@ -17,7 +19,7 @@ def _announcement_line(*, highlight: bool = False) -> rx.Component:
     """
     return rx.el.span(
         rx.el.span("New", aria_hidden=True, class_name="docs-announcement-new"),
-        rx.el.span("XY is now in Reflex Build", class_name="docs-announcement-message"),
+        rx.el.span(ANNOUNCEMENT_TITLE, class_name="docs-announcement-message"),
         rx.el.span(
             "Read more",
             ui.icon("ArrowRight01Icon", class_name="size-3.5", aria_hidden=True),
@@ -49,10 +51,10 @@ def docs_announcement_banner() -> rx.Component:
                         ),
                         class_name="docs-announcement-content",
                     ),
-                    href=XY_IN_REFLEX_BUILD_URL,
+                    href=ANNOUNCEMENT_URL,
                     target="_blank",
                     rel="noopener noreferrer",
-                    aria_label="New: XY is now in Reflex Build — Read more (opens in a new tab)",
+                    aria_label=f"New: {ANNOUNCEMENT_TITLE} — Read more (opens in a new tab)",
                     class_name="docs-announcement-link",
                 ),
                 rx.el.button(

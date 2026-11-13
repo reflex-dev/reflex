@@ -688,19 +688,27 @@ def package_json_template(
         additional_keys: Additional keys to include in the package.json file.
 
     Returns:
-        Rendered package.json content as string.
+        Rendered package.json content as string, laid out the way bun rewrites
+        it so a later ``bun add`` does not reformat the file.
     """
     # Ensure "type" is not duplicated since it's always set to "module"
     additional_keys.pop("type", None)
-    return json.dumps({
-        "name": additional_keys.pop("name", "reflex"),
-        "type": "module",
-        "scripts": scripts,
-        "dependencies": dependencies,
-        "devDependencies": dev_dependencies,
-        "overrides": overrides,
-        **additional_keys,
-    })
+    return (
+        json.dumps(
+            {
+                "name": additional_keys.pop("name", "reflex"),
+                "type": "module",
+                "scripts": scripts,
+                "dependencies": dependencies,
+                "devDependencies": dev_dependencies,
+                "overrides": overrides,
+                **additional_keys,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n"
+    )
 
 
 def vite_config_template(
@@ -1201,4 +1209,8 @@ def _render_hooks(hooks: dict[str, VarData | None]) -> str:
     Returns:
         Rendered hooks code as string.
     """
+    # Imported here: reflex_base.client_state imports this module.
+    from reflex_base.client_state import _check_declarations
+
+    _check_declarations(hooks)
     return "\n".join(hooks)

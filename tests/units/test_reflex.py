@@ -1256,6 +1256,7 @@ with reflex._shutdown_signals() as begin_cleanup:
             time.sleep(1)
     finally:
         begin_cleanup()
+        print(wrapper.pid, flush=True)
         # The wrapper exits at once; the server holds the stop until the deadline.
         stop_process_tree(wrapper, timeout=60)
 """
@@ -1278,7 +1279,12 @@ def test_shutdown_signals_force_exit_kills_an_orphaned_descendant(tmp_path):
         server = int(_read_line(proc))
         assert _read_line(proc) == "ready\n"
         proc.send_signal(signal.SIGTERM)
-        # By now the wrapper is gone and the server is no longer found below the run.
+        # The cleanup has begun once the wrapper is reported, so the repeat
+        # window is measured from here rather than from the signal, which a
+        # busy runner may deliver late.
+        wrapper = int(_read_line(proc))
+        _assert_gone(wrapper, "the cleanup did not stop the wrapper")
+        # Now the server is no longer found below the run.
         time.sleep(reflex._REPEAT_IGNORE_SECONDS + 0.2)
         assert proc.poll() is None
         proc.send_signal(signal.SIGTERM)
@@ -1482,12 +1488,12 @@ def test_db_commands_run_without_sqlmodel(
     monkeypatch.setattr(
         reflex, "find_spec", lambda name: None if name == "sqlmodel" else object()
     )
-    monkeypatch.setattr(prerequisites, "get_app", lambda: None)
+    monkeypatch.setattr(prerequisites, "get_compiled_app", lambda dry_run: None)
     monkeypatch.setattr(prerequisites, "check_db_initialized", lambda: False)
 
     result = click.testing.CliRunner().invoke(reflex.db_cli, ["migrate"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1, result.output
     assert "pip install reflex[db]" not in caplog.text
 
 

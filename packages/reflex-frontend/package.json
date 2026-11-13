@@ -1,0 +1,40 @@
+{
+  "name": "reflex-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The javascript a Reflex app runs on: state sync, the event loop, client state and the build plugins.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reflex-dev/reflex.git",
+    "directory": "packages/reflex-frontend"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "biome lint --config-path=lint.biome.jsonc",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm test",
+    "build": "npm pack"
+  },
+  "dependencies": {
+    "mergician": "2.0.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.4.0",
+    "socket.io-client": "4.8.4",
+    "universal-cookie": "8.1.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.8",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "jsdom": "^26.1.0",
+    "typescript": "5.9.3",
+    "vitest": "^5.1.0"
+  }
+}
