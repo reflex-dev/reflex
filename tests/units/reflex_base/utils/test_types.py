@@ -742,11 +742,10 @@ def test_unserialized_property_on_sqlalchemy_model():
 def test_unserialized_hybrid_property_on_sqlalchemy_model():
     """Flag SQLAlchemy hybrid properties that are absent from serialized state."""
     pytest.importorskip("sqlalchemy")
+    from reflex_base.utils.exceptions import VarAttributeError
+    from reflex_base.vars.object import ObjectVar
     from sqlalchemy.ext.hybrid import hybrid_property
     from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-    from reflex_base.utils.exceptions import VarAttributeError
-    from reflex_base.vars.base import Var
 
     class Base(DeclarativeBase):
         pass
@@ -763,4 +762,4 @@ def test_unserialized_hybrid_property_on_sqlalchemy_model():
 
     assert is_unserialized_property(User, "upper_name")
     with pytest.raises(VarAttributeError, match="upper_name"):
-        Var("user", _var_type=User).guess_type().upper_name
+        ObjectVar[User]("user", _var_type=User).upper_name
