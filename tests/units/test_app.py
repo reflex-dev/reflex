@@ -6710,6 +6710,14 @@ def test_socketio_origins_with_deploy_url_or_explicit_list(
             ("X-Forwarded-Host: app.example.com",),
             "X-Forwarded-Host 'app.example.com' trusted",
         ),
+        # A trusted proxy reports https for a page loaded over http.
+        (
+            {"trusted_proxy_hops": 1},
+            "http://app.example.com",
+            "app.example.com",
+            (_XFP_HTTPS,),
+            "serve the page over https",
+        ),
         (
             {"cors_allowed_origins": ["https://a.com"]},
             "https://cdn.example.com",
@@ -6758,6 +6766,37 @@ def test_socketio_rejection_warns_once_with_fix(
     assert f"={origin}" not in warnings[0]
     if not config_kwargs:
         assert repr(host) in warnings[0]
+
+
+def test_socketio_rejection_names_forwarded_proto_mismatch(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    """An http origin rejected only for a trusted https X-Forwarded-Proto is named as such.
+
+    Args:
+        mocker: The pytest mocker fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest log capture fixture.
+    """
+    app = _socket_app(mocker, monkeypatch, trusted_proxy_hops=1)
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert not _socket_accepts(
+            app, "http://app.test:3341", "app.test:3341", _XFP_HTTPS
+        )
+    warnings = [r.getMessage() for r in caplog.records if r.name == "reflex.app"]
+    assert warnings == [
+        (
+            "Rejected an event websocket from origin 'http://app.test:3341': in prod "
+            "mode the backend accepts only its own origin (request Host "
+            "'app.test:3341', X-Forwarded-Host None trusted, X-Forwarded-Proto "
+            "'https' trusted); the page was loaded over http but the trusted "
+            "X-Forwarded-Proto says https, so fix the reverse proxy's "
+            "X-Forwarded-Proto or serve the page over https. This warning is logged "
+            "once per worker."
+        )
+    ]
 
 
 @pytest.mark.parametrize(
