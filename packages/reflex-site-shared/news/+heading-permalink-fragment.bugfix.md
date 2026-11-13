@@ -1,0 +1,1 @@
+Docs heading permalinks now always link to the heading's own section. After a demo on the page ran an event, a copied heading link appended its fragment to the one already in the URL (`#computed-vars#cached-vars`), and the resulting link opened at the top of the page.
