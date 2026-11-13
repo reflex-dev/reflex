@@ -346,6 +346,49 @@ def _get_sequence_delimiter(
     return options.delimiter
 
 
+def _get_sequence_options(annotated_metadata: Sequence[Any]) -> SequenceOptions:
+    """Get the sequence options from the metadata of an Annotated type.
+
+    Args:
+        annotated_metadata: The metadata of the Annotated type.
+
+    Returns:
+        The first SequenceOptions in the metadata, otherwise the default options.
+    """
+    for arg in annotated_metadata:
+        if isinstance(arg, SequenceOptions):
+            return arg
+    return DEFAULT_SEQUENCE_OPTIONS
+
+
+# A colon, unless it follows the drive letter that starts a path and precedes a slash.
+_COLON_OUTSIDE_DRIVE = re.compile(r"(?<!^[A-Za-z])(?<!:[A-Za-z]):|:(?![\\/])")
+
+
+def _split_sequence(
+    value: str, field_type: GenericType, options: SequenceOptions
+) -> list[str]:
+    """Split the value of a sequence environment variable into its items.
+
+    Path lists were separated by a colon on every platform before they followed
+    ``os.pathsep``. Where the two differ, a value without ``os.pathsep`` is
+    still split on the colons that are not part of a drive, so ``data:lib``
+    keeps working on Windows.
+
+    Args:
+        value: The environment variable value.
+        field_type: The sequence type.
+        options: The options of the sequence.
+
+    Returns:
+        The items of the sequence.
+    """
+    delimiter = _get_sequence_delimiter(field_type, options)
+    if delimiter != options.delimiter and delimiter not in value:
+        return _COLON_OUTSIDE_DRIVE.split(value)
+    return value.split(delimiter)
+
+
 def interpret_env_var_value(
     value: str, field_type: GenericType, field_name: str
 ) -> Any:
@@ -441,14 +484,9 @@ def interpret_env_var_value(
                     continue
         msg = f"Invalid literal value: {value!r} for {field_name}, expected one of {literal_values}"
         raise EnvironmentVarValueError(msg)
-    # If the field was Annotated with SequenceOptions, extract the options
-    sequence_options = DEFAULT_SEQUENCE_OPTIONS
-    for arg in annotated_metadata:
-        if isinstance(arg, SequenceOptions):
-            sequence_options = arg
-            break
     if get_origin(field_type) in (list, Sequence):
-        items = value.split(_get_sequence_delimiter(field_type, sequence_options))
+        sequence_options = _get_sequence_options(annotated_metadata)
+        items = _split_sequence(value, field_type, sequence_options)
         if sequence_options.strip:
             items = [item.strip() for item in items]
         return [
@@ -579,8 +617,14 @@ class EnvVar(Generic[T]):
             if isinstance(value, enum.Enum):
                 value = value.value
             if isinstance(value, list):
+                field_type = value_inside_optional(self.type_)
+                annotated_metadata: tuple[Any, ...] = ()
+                if get_origin(field_type) is Annotated:
+                    annotated_args = get_args(field_type)
+                    annotated_metadata = annotated_args[1:]
+                    field_type = annotated_args[0]
                 str_value = _get_sequence_delimiter(
-                    value_inside_optional(self.type_)
+                    field_type, _get_sequence_options(annotated_metadata)
                 ).join(_serialize_env_value(v) for v in value)
             else:
                 str_value = _serialize_env_value(value)
@@ -796,13 +840,13 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
-    # Additional paths to include in the hot reload. Separated by os.pathsep.
+    # Additional paths to include in the hot reload. Separated by os.pathsep; a colon also separates paths where os.pathsep is absent from the value.
     REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
-    # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by os.pathsep.
+    # Paths to exclude from the hot reload. Takes precedence over include paths. Separated like the include paths.
     REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
-    # Paths to override in the hot reload. Takes precedence over include and exclude paths. Separated by os.pathsep.
+    # Paths to override in the hot reload. Takes precedence over include and exclude paths. Separated like the include paths.
     REFLEX_HOT_RELOAD_OVERRIDE_PATHS: EnvVar[list[Path]] = env_var([])
 
     # Enables different behavior for when the backend would do a cold start if it was inactive.

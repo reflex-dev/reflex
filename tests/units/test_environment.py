@@ -1047,15 +1047,58 @@ def test_non_path_list_env_value_still_splits_on_colon(
     assert interpret_env_var_value("a:b", list[str], "TEST_FIELD") == ["a", "b"]
 
 
-@pytest.mark.parametrize("field_type", [list[Path], list[Path] | None])
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("data:evaluation", ["data", "evaluation"]),
+        ("mule_hacks:backend:rxconfig.py", ["mule_hacks", "backend", "rxconfig.py"]),
+        ("a:b", ["a", "b"]),
+        (r"D:\work\shared", [r"D:\work\shared"]),
+        ("D:/work/shared", ["D:/work/shared"]),
+        (r"C:\app:D:\lib", [r"C:\app", r"D:\lib"]),
+        (r"data:C:\lib:d:/x", ["data", r"C:\lib", "d:/x"]),
+        (r"data:evaluation;C:\lib", ["data:evaluation", r"C:\lib"]),
+    ],
+)
+def test_path_list_env_value_accepts_colon_list_without_pathsep(
+    monkeypatch: pytest.MonkeyPatch, value: str, expected: list[str]
+):
+    """A colon list written before ``os.pathsep`` was used still splits.
+
+    Only a colon that follows a drive letter and precedes a slash stays inside
+    its path, and a value containing ``os.pathsep`` is split on that alone.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+        value: The environment variable value.
+        expected: The paths it is split into.
+    """
+    monkeypatch.setattr(os, "pathsep", ";")
+
+    result = interpret_env_var_value(value, list[Path], "TEST_FIELD")
+
+    assert result == [Path(path) for path in expected]
+
+
+@pytest.mark.parametrize(
+    ("field_type", "expected_raw"),
+    [
+        (list[Path], r"C:\app;D:\lib"),
+        (list[Path] | None, r"C:\app;D:\lib"),
+        (Annotated[list[Path], "meta"], r"C:\app;D:\lib"),
+        (Annotated[list[Path], "meta"] | None, r"C:\app;D:\lib"),
+        (Annotated[list[Path], SequenceOptions(delimiter=",")], r"C:\app,D:\lib"),
+    ],
+)
 def test_path_list_env_var_round_trips_through_set(
-    monkeypatch: pytest.MonkeyPatch, field_type: Any
+    monkeypatch: pytest.MonkeyPatch, field_type: Any, expected_raw: str
 ):
     """``set`` joins a path list with the delimiter the interpreter splits on.
 
     Args:
         monkeypatch: pytest monkeypatch fixture.
         field_type: The type of the environment variable.
+        expected_raw: The value written to the environment.
     """
     monkeypatch.setattr(os, "pathsep", ";")
     monkeypatch.delenv("TEST_PATHS_ROUNDTRIP", raising=False)
@@ -1064,4 +1107,5 @@ def test_path_list_env_var_round_trips_through_set(
 
     env_var_instance.set(value)  # type: ignore[arg-type]
 
+    assert os.environ["TEST_PATHS_ROUNDTRIP"] == expected_raw
     assert env_var_instance.get() == value

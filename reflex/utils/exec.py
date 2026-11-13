@@ -671,8 +671,13 @@ def get_reload_paths() -> Sequence[Path]:
     include_dirs = tuple(
         map(Path.absolute, environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.get())
     )
+    # A path that does not exist excludes nothing, and samefile raises on it.
     exclude_dirs = tuple(
-        map(Path.absolute, environment.REFLEX_HOT_RELOAD_EXCLUDE_PATHS.get())
+        path
+        for path in map(
+            Path.absolute, environment.REFLEX_HOT_RELOAD_EXCLUDE_PATHS.get()
+        )
+        if path.exists()
     )
 
     def is_excluded_by_default(path: Path) -> bool:
