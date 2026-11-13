@@ -601,6 +601,18 @@ def _trusted_forwarded_value(
     return None if appended or not entries else entries[0]
 
 
+def _is_port(text: str) -> bool:
+    """Return whether text is a port number.
+
+    Args:
+        text: The text after the ``:`` of an address.
+
+    Returns:
+        Whether the text is made of ASCII digits only.
+    """
+    return text.isascii() and text.isdigit()
+
+
 def _forwarded_client_ip(entry: str) -> str | None:
     """Normalize an ``X-Forwarded-For`` entry to an IP address.
 
@@ -611,9 +623,14 @@ def _forwarded_client_ip(entry: str) -> str | None:
         The normalized address, or None when the entry is not an IP address.
     """
     if entry.startswith("["):
-        entry = entry[1:].partition("]")[0]
+        entry, closed, rest = entry[1:].partition("]")
+        port_ok = not rest or (rest.startswith(":") and _is_port(rest[1:]))
+        if not closed or not port_ok:
+            return None
     elif entry.count(":") == 1:
-        entry = entry.partition(":")[0]
+        entry, _, port = entry.partition(":")
+        if not _is_port(port):
+            return None
     try:
         return str(ipaddress.ip_address(entry))
     except ValueError:
