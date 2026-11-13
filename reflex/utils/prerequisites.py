@@ -333,6 +333,9 @@ def get_compiled_app(
         The compiled app based on the default config.
     """
     app, app_module = get_and_validate_app(reload=reload)
+    # The marker only lets the backend worker of a dev run skip its own compile.
+    # A run stopped before that worker loaded the app leaves it behind.
+    (get_web_dir() / constants.NOCOMPILE_FILE).unlink(missing_ok=True)
     app._compile(
         prerender_routes=prerender_routes,
         dry_run=dry_run,
