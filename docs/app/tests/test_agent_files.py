@@ -156,7 +156,7 @@ def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_pa
         "> For AI agents: the complete documentation index is at "
         "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
         "remove the trailing slash from the page URL and append `.md`. "
-        "The docs home is available at [index.md](http://localhost:3000/docs/index.md).\n\n"
+        "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
         "# Overview"
     )
 
