@@ -1351,6 +1351,34 @@ def _load_var_classes() -> None:
     _Var, _LiteralVar, _Field = Var, LiteralVar, Field
 
 
+def _all_isinstance(
+    items: Iterable[Any], cls: GenericType, nested: int, treat_var_as_type: bool
+) -> bool:
+    """Check that every item of a container is an instance of a class.
+
+    An item whose type is exactly ``cls`` passes without the full check, which
+    spares the common container of plain values a call per item. Var classes
+    are left out of that: ``_isinstance`` checks a Var by the value it holds.
+    Must be called from ``_isinstance``, after the Var classes are loaded.
+
+    Args:
+        items: The items to check.
+        cls: The class every item must be an instance of.
+        nested: How many levels deep to check each item.
+        treat_var_as_type: Whether to treat Var as the type it represents.
+
+    Returns:
+        Whether every item is an instance of the class.
+    """
+    exact = None if isinstance(cls, type) and issubclass(cls, _Var) else cls
+    for item in items:
+        if type(item) is not exact and not _isinstance(
+            item, cls, nested=nested, treat_var_as_type=treat_var_as_type
+        ):
+            return False
+    return True
+
+
 def _isinstance(
     obj: Any,
     cls: GenericType,
@@ -1399,13 +1427,17 @@ def _isinstance(
     # attribute; container checks call back in once per element, so read it once.
     origin_attr = getattr(cls, "__origin__", None)
 
+    # Loops rather than generator expressions throughout: a generator capturing
+    # the arguments makes them closure cells, allocated on every call.
     if origin_attr is Union or (
         origin_attr is None and isinstance(cls, types.UnionType)
     ):
-        return any(
-            _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
-            for arg in _get_args_cached(cls)
-        )
+        for arg in _get_args_cached(cls):
+            if _isinstance(
+                obj, arg, nested=nested, treat_var_as_type=treat_var_as_type
+            ):
+                return True
+        return False
 
     if origin_attr is Literal:
         return obj in _get_args_cached(cls)
@@ -1453,20 +1485,20 @@ def _isinstance(
                     if cls.__bound__ is not None
                     else cls.__constraints__
                 )
-                return (
-                    not bounds
-                    or any(isinstance(bound, (str, ForwardRef)) for bound in bounds)
-                    or any(
-                        _isinstance(
-                            obj,
-                            bound,
-                            nested=nested,
-                            treat_var_as_type=treat_var_as_type,
-                            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-                        )
-                        for bound in bounds
-                    )
-                )
+                if not bounds or any(
+                    isinstance(bound, (str, ForwardRef)) for bound in bounds
+                ):
+                    return True
+                for bound in bounds:
+                    if _isinstance(
+                        obj,
+                        bound,
+                        nested=nested,
+                        treat_var_as_type=treat_var_as_type,
+                        treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                    ):
+                        return True
+                return False
             if typing_extensions.is_protocol(cls):
                 # A protocol without @runtime_checkable cannot be checked.
                 return True
@@ -1496,67 +1528,39 @@ def _isinstance(
     if nested > 0 and args:
         if origin is list:
             expected_class = Sequence if treat_mutable_obj_as_immutable else list
-            return isinstance(obj, expected_class) and all(
-                _isinstance(
-                    item,
-                    args[0],
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                )
-                for item in obj
+            return isinstance(obj, expected_class) and _all_isinstance(
+                obj, args[0], nested - 1, treat_var_as_type
             )
         if origin is tuple:
             if args[-1] is Ellipsis:
-                return isinstance(obj, tuple) and all(
-                    _isinstance(
-                        item,
-                        args[0],
-                        nested=nested - 1,
-                        treat_var_as_type=treat_var_as_type,
-                    )
-                    for item in obj
+                return isinstance(obj, tuple) and _all_isinstance(
+                    obj, args[0], nested - 1, treat_var_as_type
                 )
-            return (
-                isinstance(obj, tuple)
-                and len(obj) == len(args)
-                and all(
-                    _isinstance(
-                        item,
-                        arg,
-                        nested=nested - 1,
-                        treat_var_as_type=treat_var_as_type,
-                    )
-                    for item, arg in zip(obj, args, strict=True)
-                )
-            )
+            if not isinstance(obj, tuple) or len(obj) != len(args):
+                return False
+            for item, arg in zip(obj, args, strict=True):
+                if not _isinstance(
+                    item, arg, nested=nested - 1, treat_var_as_type=treat_var_as_type
+                ):
+                    return False
+            return True
         if safe_issubclass(origin, Mapping):
             expected_class = (
                 dict
                 if origin is dict and not treat_mutable_obj_as_immutable
                 else Mapping
             )
-            return isinstance(obj, expected_class) and all(
-                _isinstance(
-                    key, args[0], nested=nested - 1, treat_var_as_type=treat_var_as_type
+            return (
+                isinstance(obj, expected_class)
+                and _all_isinstance(obj.keys(), args[0], nested - 1, treat_var_as_type)
+                and _all_isinstance(
+                    obj.values(), args[1], nested - 1, treat_var_as_type
                 )
-                and _isinstance(
-                    value,
-                    args[1],
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                )
-                for key, value in obj.items()
             )
         if origin is set:
             expected_class = Sequence if treat_mutable_obj_as_immutable else set
-            return isinstance(obj, expected_class) and all(
-                _isinstance(
-                    item,
-                    args[0],
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                )
-                for item in obj
+            return isinstance(obj, expected_class) and _all_isinstance(
+                obj, args[0], nested - 1, treat_var_as_type
             )
 
     if args and origin is _Field:
