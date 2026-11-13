@@ -55,8 +55,8 @@ def nodeless_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         # Drop the `development` condition Reflex puts in the dev server's
         # environment. Bun applies neither NODE_OPTIONS nor BUN_OPTIONS to the
         # process it spawns for a package script, so node-less installs never
-        # had that assist -- react-router has to carry the condition into its
-        # own relaunch, which is what failed on Windows.
+        # had that assist -- the condition has to reach bun as a flag on the
+        # dev server command.
         monkeypatch.setattr(reflex_testing, "_with_development_condition", dict)
         harness = AppHarness.create(
             root=tmp_path_factory.mktemp("nodeless_app"), app_source=NodelessApp
@@ -77,9 +77,10 @@ def test_nodeless_frontend_serves(nodeless_app: AppHarness):
 
     `react-router dev` needs the `development` export condition and relaunches
     itself to enable it. Bun runs the CLI here and ignores the condition in the
-    environment, so the CLI has to carry it into the relaunched process itself
-    -- otherwise it relaunches a second time, trips its own restart guard, and
-    the frontend never comes up.
+    environment, and on Windows the relaunched process does not apply it
+    either, so the CLI relaunches a second time, trips its own restart guard,
+    and the frontend never comes up. Reflex has to hand bun the condition as a
+    flag up front.
 
     Args:
         nodeless_app: The harness running without node on PATH.

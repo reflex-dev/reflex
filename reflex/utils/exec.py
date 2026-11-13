@@ -218,9 +218,9 @@ def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     react-router's dev CLI requires the condition and relaunches itself to
     enable it. Setting it up front skips that relaunch under node, which reads
     NODE_OPTIONS. Bun applies neither NODE_OPTIONS nor BUN_OPTIONS to the
-    process it spawns for a package script, so a node-less install relaunches
-    regardless and relies on the CLI passing the condition along as a flag.
-    The setting does not leak into the parent process.
+    process it spawns for a package script, so `_frontend_dev_command` passes
+    the condition to bun as a flag instead. The setting does not leak into the
+    parent process.
 
     Args:
         environ: The base environment.
@@ -233,6 +233,33 @@ def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     if _DEV_CONDITION_FLAG not in existing.split():
         env["NODE_OPTIONS"] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
     return env
+
+
+def _frontend_dev_command() -> list[str]:
+    """Build the command that starts the frontend dev server.
+
+    Node runs the package.json `dev` script and takes the `development`
+    condition from NODE_OPTIONS. Without a supported node, bun is the runtime
+    and ignores that variable, leaving react-router's dev CLI to relaunch
+    itself with the condition, which fails on Windows. When bun is the
+    runtime, bun runs the CLI directly with the condition as a flag, so the
+    CLI never relaunches.
+
+    Returns:
+        The command to run from the web directory.
+    """
+    from reflex.utils import js_runtimes
+
+    executor = js_runtimes.get_js_package_executor(raise_on_none=True)[0]
+    if js_runtimes.check_node_version() or executor[0] != str(path_ops.get_bun_path()):
+        return [*executor, "run", "dev"]
+    return [
+        executor[0],
+        _DEV_CONDITION_FLAG,
+        "run",
+        "--bun",
+        *constants.PackageJson.Commands.DEV.split(),
+    ]
 
 
 def frontend_env(environ: Mapping[str, str]) -> dict[str, str]:
@@ -256,7 +283,7 @@ def frontend_env(environ: Mapping[str, str]) -> dict[str, str]:
 # only to launch the frontend
 # If this is not the case, might have to change the logic
 def run_process_and_launch_url(
-    run_command: list[str | None], backend_present: bool = True
+    run_command: Sequence[str | None], backend_present: bool = True
 ):
     """Run the process and launch the URL.
 
@@ -340,14 +367,7 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    run_process_and_launch_url(
-        [
-            *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
-            "run",
-            "dev",
-        ],
-        backend_present,
-    )
+    run_process_and_launch_url(_frontend_dev_command(), backend_present)
 
 
 def notify_app_running():
