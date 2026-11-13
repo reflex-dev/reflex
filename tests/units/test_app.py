@@ -639,9 +639,13 @@ def test_api_transformer_lifespan_warning_names_wrapped_transformer(
         assert events == ["outer startup"]
 
     (wrapper,) = wrappers
-    assert caplog.record_tuples == [
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.app_mixins.lifespan"
+    ]
+    assert [(record.levelno, record.getMessage()) for record in records] == [
         (
-            "reflex.app_mixins.lifespan",
             logging.WARNING,
             (
                 f"ASGI app {wrapper!r} raised during lifespan startup. "
@@ -653,8 +657,11 @@ def test_api_transformer_lifespan_warning_names_wrapped_transformer(
             ),
         )
     ]
-    assert caplog.records[0].exc_info is not None
-    assert caplog.records[0].exc_info[1].args == ("path",)
+    exc_info = records[0].exc_info
+    assert exc_info is not None
+    error = exc_info[1]
+    assert isinstance(error, KeyError)
+    assert error.args == ("path",)
 
 
 def test_api_transformer_lifespan_startup_failure_stops_the_app(

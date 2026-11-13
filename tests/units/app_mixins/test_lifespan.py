@@ -459,9 +459,13 @@ async def test_run_lifespan_skips_apps_without_lifespan_support(caplog):
         async with mixin._run_lifespan(Starlette(), apps, _lifespan_scope()):
             assert events == ["raw startup"]
     assert events == ["raw startup", "raw shutdown"]
-    assert caplog.record_tuples == [
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.app_mixins.lifespan"
+    ]
+    assert [(record.levelno, record.getMessage()) for record in records] == [
         (
-            "reflex.app_mixins.lifespan",
             logging.WARNING,
             (
                 f"ASGI app {http_only_app!r} raised during lifespan startup. "
@@ -471,18 +475,17 @@ async def test_run_lifespan_skips_apps_without_lifespan_support(caplog):
             ),
         ),
         (
-            "reflex.app_mixins.lifespan",
             logging.INFO,
             f"ASGI lifespan appears unsupported by {silent_app!r}: no answer",
         ),
         (
-            "reflex.app_mixins.lifespan",
             logging.INFO,
             f"ASGI lifespan appears unsupported by {http_response_app!r}: http.response.start",
         ),
     ]
-    assert caplog.records[0].exc_info is not None
-    assert type(caplog.records[0].exc_info[1]) is AssertionError
+    exc_info = records[0].exc_info
+    assert exc_info is not None
+    assert type(exc_info[1]) is AssertionError
 
 
 @pytest.mark.asyncio
