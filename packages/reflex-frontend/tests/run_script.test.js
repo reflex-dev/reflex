@@ -47,6 +47,49 @@ describe("_call_script", () => {
     expect(onerror.mock.calls[1][4]).toBeInstanceOf(ReferenceError);
   });
 
+  test("callback strings can use every helper this module exports", async () => {
+    // Var operations inside a callback compile to helpers such as pyMod,
+    // isTrue or pyStrLength, which compiled pages import but a string cannot.
+    eventLoop.addEvents = vi.fn();
+    await callScript(
+      "7",
+      '((_result) => addEvents([ReflexEvent("s.set", {x: pyMod(_result, 2), y: isTrue(_result), z: pyStrLength("ab")})]))',
+    );
+    expect(eventLoop.addEvents).toHaveBeenCalledTimes(1);
+    expect(eventLoop.addEvents.mock.calls[0][0][0].payload).toEqual({
+      x: 1,
+      y: true,
+      z: 2,
+    });
+  });
+
+  test("callbacks dispatch through the event loop mounted at call time", async () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const event = { payload: { callback: "(value) => addEvents([value])" } };
+    eventLoop.addEvents = first;
+    await callScript("1", event.payload.callback);
+    eventLoop.addEvents = second;
+    await callScript("2", event.payload.callback);
+    expect(first).toHaveBeenCalledWith([1]);
+    expect(second).toHaveBeenCalledWith([2]);
+  });
+
+  test("the evaluator is compiled on first use, not on import", async () => {
+    // A Content Security Policy without unsafe-eval rejects the Function
+    // constructor; apps that never send scripts must still load.
+    vi.resetModules();
+    const RealFunction = globalThis.Function;
+    globalThis.Function = function () {
+      throw new EvalError("blocked by CSP");
+    };
+    try {
+      await expect(import("$/utils/state")).resolves.toBeTruthy();
+    } finally {
+      globalThis.Function = RealFunction;
+    }
+  });
+
   test("_call_function evaluates a string and calls it", async () => {
     const seen = [];
     await applyEvent(

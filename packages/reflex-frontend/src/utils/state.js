@@ -11,6 +11,8 @@ import {
   useParams,
 } from "react-router";
 import { app, eventLoop } from "$/utils/context-registry";
+// This module's own exports, passed to server-provided scripts by runScript.
+import * as stateExports from "$/utils/state";
 import {
   CLIENT_STATE_REF,
   getClientState,
@@ -509,29 +511,34 @@ function urlFrom(string) {
 }
 
 /**
- * Run server-provided JavaScript with the names the generated code uses.
+ * Run server-provided JavaScript with this module's exports in scope.
  *
- * Built with the Function constructor so the bundler sees no direct eval:
- * a direct eval in this module would stop the minifier from mangling every
- * name in the chunk that holds it. The eval inside the body still runs the
- * code as a strict script, so statements keep their completion value.
- */
-const evalInScope = new Function(
-  "addEvents",
-  "ReflexEvent",
-  "applyEventActions",
-  "code",
-  '"use strict"; return eval(code);',
-);
-
-/**
- * Run server-provided JavaScript as a strict script.
+ * Callback strings and `rx.call_script` code reference helpers compiled
+ * pages import from here (`ReflexEvent`, `pyMod`, `isTrue`, ...). A direct
+ * eval would see them, but it also stops the minifier from mangling every
+ * name in the chunk that holds it, so the code is compiled with the Function
+ * constructor and the exports are passed in as parameters. The eval inside
+ * the body still runs the code as a strict script, so statements keep their
+ * completion value.
+ *
+ * Compiled on first use: a Content Security Policy without `unsafe-eval`
+ * rejects the Function constructor, and apps that never send scripts must
+ * still load.
+ *
  * @param code The JavaScript source to run.
  * @param addEvents The late-bound event dispatcher for this call.
  * @returns The completion value of the script.
  */
-const runScript = (code, addEvents) =>
-  evalInScope(addEvents, ReflexEvent, applyEventActions, code);
+let evalInScope;
+const runScript = (code, addEvents) => {
+  evalInScope ??= new Function(
+    ...Object.keys(stateExports),
+    "addEvents",
+    "code",
+    '"use strict"; return eval(code);',
+  );
+  return evalInScope(...Object.values(stateExports), addEvents, code);
+};
 
 /**
  * Invoke an event's result callback, if it declared one.
