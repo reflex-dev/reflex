@@ -10,6 +10,8 @@ import reflex as rx
 
 from .fixtures import BenchmarkState
 
+FROM_EVENT_TYPE_CALLS = 500
+
 
 def test_console_log(benchmark: BenchmarkFixture):
     """Benchmark creation of an ``rx.console_log`` event spec.
@@ -96,10 +98,16 @@ def test_from_event_type(event_input: Any, benchmark: BenchmarkFixture):
 
     Covers existing Event, EventSpec (from calling EventHandler), and lambdas
     returning an Event, EventSpec, or EventHandler — the common shapes encountered
-    when normalizing user-returned event values.
+    when normalizing user-returned event values. One conversion takes a few
+    microseconds, so each measured call converts ``FROM_EVENT_TYPE_CALLS`` times.
 
     Args:
         event_input: The parametrized event-like input.
         benchmark: The codspeed benchmark fixture.
     """
-    benchmark(lambda: Event.from_event_type(event_input))
+    converted = benchmark(
+        lambda: [
+            Event.from_event_type(event_input) for _ in range(FROM_EVENT_TYPE_CALLS)
+        ]
+    )
+    assert converted == [Event.from_event_type(event_input)] * FROM_EVENT_TYPE_CALLS

@@ -247,6 +247,8 @@ async function setup({
     },
   });
   await module.link((name) => {
+    // state.js imports itself to hand its exports to server-provided scripts.
+    if (name === "$/utils/state") return module;
     if (name === "$/utils/event_results") {
       return new vm.SourceTextModule(eventResultsSource, { context });
     }

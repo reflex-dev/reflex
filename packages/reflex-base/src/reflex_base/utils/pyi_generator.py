@@ -1474,7 +1474,7 @@ def _write_pyi_file(module_path: Path, source: str) -> None:
     )
 
     pyi_path = module_path.with_suffix(".pyi")
-    pyi_path.write_text(pyi_content)
+    pyi_path.write_text(pyi_content, encoding="utf-8")
     logger.info(f"Wrote {relpath}")
 
 
@@ -1772,7 +1772,7 @@ class PyiGenerator:
             # Hash only after ruff post-processing, so the registry reflects the
             # final on-disk content rather than the intermediate generator output.
             hashes = [
-                md5(file_path.read_text().encode()).hexdigest()
+                md5(file_path.read_text(encoding="utf-8").encode()).hexdigest()
                 for file_path in file_paths
             ]
             if prune_stale:

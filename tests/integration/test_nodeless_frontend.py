@@ -9,7 +9,8 @@ import pytest
 
 import reflex.testing as reflex_testing
 from reflex.testing import AppHarness
-from reflex.utils import path_ops
+from reflex.utils import js_runtimes, path_ops
+from reflex.utils.exec import _DEV_CONDITION_FLAG
 
 
 def NodelessApp():
@@ -52,11 +53,14 @@ def nodeless_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
             pytest.skip("node is still resolvable after filtering it off PATH")
         if path_ops.get_bun_path() is None:
             pytest.skip("bun is unavailable once node is off PATH")
+        # The node probe is cached per process, so an earlier test may have
+        # found node; it is off PATH now.
+        monkeypatch.setattr(js_runtimes, "get_node_version", lambda: None)
         # Drop the `development` condition Reflex puts in the dev server's
         # environment. Bun applies neither NODE_OPTIONS nor BUN_OPTIONS to the
         # process it spawns for a package script, so node-less installs never
-        # had that assist -- react-router has to carry the condition into its
-        # own relaunch, which is what failed on Windows.
+        # had that assist -- the condition has to reach bun as a flag on the
+        # dev server command.
         monkeypatch.setattr(reflex_testing, "_with_development_condition", dict)
         harness = AppHarness.create(
             root=tmp_path_factory.mktemp("nodeless_app"), app_source=NodelessApp
@@ -77,13 +81,18 @@ def test_nodeless_frontend_serves(nodeless_app: AppHarness):
 
     `react-router dev` needs the `development` export condition and relaunches
     itself to enable it. Bun runs the CLI here and ignores the condition in the
-    environment, so the CLI has to carry it into the relaunched process itself
-    -- otherwise it relaunches a second time, trips its own restart guard, and
-    the frontend never comes up.
+    environment, and on Windows the relaunched process does not apply it
+    either, so the CLI relaunches a second time, trips its own restart guard,
+    and the frontend never comes up. Reflex has to hand bun the condition as a
+    flag up front.
 
     Args:
         nodeless_app: The harness running without node on PATH.
     """
+    assert nodeless_app.frontend_process is not None
+    args = nodeless_app.frontend_process.args
+    assert isinstance(args, list)
+    assert _DEV_CONDITION_FLAG in args
     assert nodeless_app.frontend_url is not None
     response = httpx.get(nodeless_app.frontend_url, timeout=60)
     assert response.status_code == 200

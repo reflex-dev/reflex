@@ -11,6 +11,8 @@ import {
   useParams,
 } from "react-router";
 import { app, eventLoop } from "$/utils/context-registry";
+// This module's own exports, passed to server-provided scripts by runScript.
+import * as stateExports from "$/utils/state";
 import {
   CLIENT_STATE_REF,
   getClientState,
@@ -483,7 +485,7 @@ export const evalReactComponent = async (component) => {
   }
   const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
-  const module = await eval(`import(dataUri)`);
+  const module = await import(/* @vite-ignore */ dataUri);
   return module.default;
 };
 
@@ -523,13 +525,56 @@ function urlFrom(string) {
 }
 
 /**
+ * Run server-provided JavaScript with this module's exports in scope.
+ *
+ * Callback strings and `rx.call_script` code reference helpers compiled
+ * pages import from here (`ReflexEvent`, `pyMod`, `isTrue`, ...), and apps
+ * written against the former direct eval also use `socket`, `navigate`,
+ * `params` and `token`. A direct eval would see them, but it also stops the
+ * minifier from mangling every name in the chunk that holds it, so the code
+ * is compiled with the Function constructor and those names are passed in as
+ * parameters. The eval inside the body still runs the code as a strict
+ * script, so statements keep their completion value.
+ *
+ * Compiled on first use: a Content Security Policy without `unsafe-eval`
+ * rejects the Function constructor, and apps that never send scripts must
+ * still load.
+ *
+ * @param code The JavaScript source to run.
+ * @param addEvents The late-bound event dispatcher for this call.
+ * @param socket The socket object to send events on.
+ * @param navigate The navigate function from useNavigate.
+ * @param params The params object from useParams.
+ * @returns The completion value of the script.
+ */
+let evalInScope;
+const runScript = (code, addEvents, socket, navigate, params) => {
+  evalInScope ??= new Function(
+    ...Object.keys(stateExports),
+    "addEvents",
+    "socket",
+    "navigate",
+    "params",
+    "token",
+    "code",
+    '"use strict"; return eval(code);',
+  );
+  return evalInScope(
+    ...Object.values(stateExports),
+    addEvents,
+    socket,
+    navigate,
+    params,
+    token,
+    code,
+  );
+};
+
+/**
  * Invoke an event's result callback, if it declared one.
  *
  * The callback arrives as a string built by ``format_queue_events``, which
- * references ``queueEvents``/``processEvent`` (module-level here) plus ``socket``,
- * ``navigate`` and ``params``. Those three MUST stay the parameter names below:
- * the ``eval`` resolves them from this function's scope, so renaming them breaks
- * every callback.
+ * references ``addEvents`` and ``ReflexEvent``; ``runScript`` provides them.
  * @param event The event whose callback to run.
  * @param eval_result The value to pass to the callback, awaited if thenable.
  * @param socket The socket object to send events on.
@@ -546,10 +591,8 @@ const applyResultCallback = async (
   if (!event.payload.callback) {
     return;
   }
-  // Eval'd user code dispatches through addEvents like compiled event triggers
-  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
-  // every scope holding an eval, since that is the only scope chain the eval'd
-  // code can resolve it from.
+  // User code dispatches through addEvents like compiled event triggers do;
+  // late-bound so a remounted EventLoopProvider is picked up.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   const final_result =
     !!eval_result && typeof eval_result.then === "function"
@@ -557,7 +600,7 @@ const applyResultCallback = async (
       : eval_result;
   const callback =
     typeof event.payload.callback === "string"
-      ? eval(event.payload.callback)
+      ? runScript(event.payload.callback, addEvents, socket, navigate, params)
       : event.payload.callback;
   callback(final_result);
 };
@@ -602,10 +645,8 @@ const storageDefault = (state_key) => {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
-  // Eval'd user code dispatches through addEvents like compiled event triggers
-  // do; late-bound so a remounted EventLoopProvider is picked up. Declared in
-  // every scope holding an eval, since that is the only scope chain the eval'd
-  // code can resolve it from.
+  // User code dispatches through addEvents like compiled event triggers do;
+  // late-bound so a remounted EventLoopProvider is picked up.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name === "_redirect") {
@@ -800,8 +841,20 @@ export const applyEvent = async (event, socket, navigate, params) => {
     try {
       const eval_result =
         event.name === "_call_script"
-          ? eval(event.payload.javascript_code)
-          : eval(event.payload.function)();
+          ? runScript(
+              event.payload.javascript_code,
+              addEvents,
+              socket,
+              navigate,
+              params,
+            )
+          : runScript(
+              event.payload.function,
+              addEvents,
+              socket,
+              navigate,
+              params,
+            )();
 
       await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
