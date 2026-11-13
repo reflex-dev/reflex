@@ -646,17 +646,17 @@ def test_initialize_requirements_txt_preserves_existing_requirements(tmp_path):
     assert not pyproject_file.exists()
 
 
-def test_validate_app_name(tmp_path, mocker: MockerFixture):
+def test_validate_app_name(tmp_path, monkeypatch: pytest.MonkeyPatch):
     """Test that an error is raised if the app name is reflex or if the name is not according to python package naming conventions.
 
     Args:
         tmp_path: Test working dir.
-        mocker: Pytest mocker object.
+        monkeypatch: Pytest monkeypatch fixture.
     """
     reflex = tmp_path / "reflex"
     reflex.mkdir()
 
-    mocker.patch("os.getcwd", return_value=str(reflex))
+    monkeypatch.chdir(reflex)
 
     with pytest.raises(SystemExit):
         prerequisites.validate_app_name()
