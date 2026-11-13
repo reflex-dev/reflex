@@ -423,28 +423,35 @@ class SharedStateBaseInternal(State):
         current_dirty_vars: dict[str, set[str]] = {}
         affected_tokens: set[str] = set()
         try:
-            # Go through all linked states and patch them in if they are present in the tree
-            for linked_state_name, linked_token in self._reflex_internal_links.items():
-                linked_state_cls: type[SharedState] = (
-                    self.get_root_state().get_class_substate(  # pyright: ignore[reportAssignmentType]
-                        linked_state_name
-                    )
-                )
-                try:
-                    original_state = self._get_state_from_cache(linked_state_cls)
-                except ValueError:
-                    # This state wasn't required for processing the event.
-                    continue
-                linked_state = await original_state._internal_patch_linked_state(
-                    linked_token
-                )
-                if (
-                    previous_dirty_vars
-                    and (dv := previous_dirty_vars.get(linked_state_name)) is not None
-                ):
-                    linked_state.dirty_vars.update(dv)
-                    linked_state._mark_dirty()
+            # Entered before any lock is taken, so a failure (or a cancellation
+            # while waiting on a later linked token's lock) releases the locks
+            # and reverts the patches taken so far.
             async with exit_stack:
+                # Go through all linked states and patch them in if they are present in the tree
+                for (
+                    linked_state_name,
+                    linked_token,
+                ) in self._reflex_internal_links.items():
+                    linked_state_cls: type[SharedState] = (
+                        self.get_root_state().get_class_substate(  # pyright: ignore[reportAssignmentType]
+                            linked_state_name
+                        )
+                    )
+                    try:
+                        original_state = self._get_state_from_cache(linked_state_cls)
+                    except ValueError:
+                        # This state wasn't required for processing the event.
+                        continue
+                    linked_state = await original_state._internal_patch_linked_state(
+                        linked_token
+                    )
+                    if (
+                        previous_dirty_vars
+                        and (dv := previous_dirty_vars.get(linked_state_name))
+                        is not None
+                    ):
+                        linked_state.dirty_vars.update(dv)
+                        linked_state._mark_dirty()
                 yield None
                 # Collect dirty vars and other affected clients that need to be updated.
                 for linked_state in self._held_locks_linked_states():
@@ -478,7 +485,10 @@ class SharedStateBaseInternal(State):
                         affected_tokens, current_dirty_vars
                     )
         finally:
+            # Both reset together: one is never set without the other, and the
+            # held states belong to other clients' trees.
             holder._exit_stack = None
+            holder._held_locks = None
 
         # Only propagate dirty vars when we are not already propagating from
         # another state, and only when some other client is linked: every event

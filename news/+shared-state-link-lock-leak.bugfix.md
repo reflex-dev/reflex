@@ -1,0 +1,1 @@
+Fixed a hang with `rx.SharedState`: an event cancelled or failing while taking the locks of its linked states (for example a superseded event, or a client disconnecting) no longer leaves the locks it already took held, which blocked every client linked to that token.
