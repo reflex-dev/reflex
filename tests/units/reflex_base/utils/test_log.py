@@ -289,8 +289,6 @@ def test_set_log_level_env_propagation(monkeypatch):
 
 def test_set_log_level_exports_env_when_level_unchanged(monkeypatch):
     """Re-asserting the current level still exports REFLEX_LOGLEVEL."""
-    import os
-
     monkeypatch.delenv("REFLEX_LOGLEVEL", raising=False)
     log.set_log_level(LogLevel.INFO)
     assert os.environ.get("REFLEX_LOGLEVEL") == "info"

@@ -1,6 +1,7 @@
 """Export utilities."""
 
 import logging
+import os
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -50,6 +51,7 @@ def export(
     # the subprocess level quiets the export only, and output after it (such
     # as deploy progress) must use the level the user asked for.
     previous_loglevel = log.get_log_level()
+    previous_loglevel_env = os.environ.get("REFLEX_LOGLEVEL")
     console.set_log_level(loglevel)
 
     start = time.monotonic()
@@ -109,6 +111,13 @@ def export(
         raise
     finally:
         console.set_log_level(previous_loglevel)
+        # The restore above re-exports REFLEX_LOGLEVEL; leave the
+        # environment exactly as it was before the export, so a level
+        # that was never set does not persist for later config loads.
+        if previous_loglevel_env is None:
+            os.environ.pop("REFLEX_LOGLEVEL", None)
+        else:
+            os.environ["REFLEX_LOGLEVEL"] = previous_loglevel_env
         telemetry.send(
             "export",
             status=status,

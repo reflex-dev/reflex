@@ -296,9 +296,41 @@ def test_export_restores_console_log_level_on_failure(patched_export, monkeypatc
     previous_level = base_log.get_log_level()
     base_log.set_log_level(constants.LogLevel.INFO)
     try:
-        with pytest.raises(RuntimeError, match="boom"):
+        with pytest.raises(RuntimeError, match=r"^boom$"):
             export.export(loglevel=constants.LogLevel.WARNING)
 
+        assert base_log.get_log_level() is constants.LogLevel.INFO
+    finally:
+        base_log.set_log_level(previous_level)
+
+
+def test_export_leaves_reflex_loglevel_env_unset_when_previously_absent(
+    patched_export, monkeypatch
+):
+    """export() does not leave REFLEX_LOGLEVEL set when it was absent before."""
+    previous_level = base_log.get_log_level()
+    base_log.set_log_level(constants.LogLevel.INFO)
+    monkeypatch.delenv("REFLEX_LOGLEVEL", raising=False)
+    try:
+        export.export(loglevel=constants.LogLevel.WARNING)
+
+        assert "REFLEX_LOGLEVEL" not in os.environ
+        assert base_log.get_log_level() is constants.LogLevel.INFO
+    finally:
+        base_log.set_log_level(previous_level)
+
+
+def test_export_restores_previous_reflex_loglevel_env_value(
+    patched_export, monkeypatch
+):
+    """export() restores a pre-existing REFLEX_LOGLEVEL value unchanged."""
+    previous_level = base_log.get_log_level()
+    base_log.set_log_level(constants.LogLevel.INFO)
+    monkeypatch.setenv("REFLEX_LOGLEVEL", "debug")
+    try:
+        export.export(loglevel=constants.LogLevel.WARNING)
+
+        assert os.environ.get("REFLEX_LOGLEVEL") == "debug"
         assert base_log.get_log_level() is constants.LogLevel.INFO
     finally:
         base_log.set_log_level(previous_level)
