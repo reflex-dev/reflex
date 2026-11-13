@@ -631,6 +631,10 @@ def _forwarded_client_ip(entry: str) -> str | None:
         entry, _, port = entry.partition(":")
         if not _is_port(port):
             return None
+    if "%" in entry:
+        # A zone index only means something on the proxy's own host, and
+        # ``ipaddress`` keeps it without validating it.
+        return None
     try:
         return str(ipaddress.ip_address(entry))
     except ValueError:

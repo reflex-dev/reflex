@@ -4792,6 +4792,8 @@ def test_static_router_data_keeps_every_repeated_header_field(
         (1, "[2001:db8::1]:", "10.0.0.2", "10.0.0.2"),
         (1, "203.0.113.7:garbage", "10.0.0.2", "10.0.0.2"),
         (1, "203.0.113.7:", "10.0.0.2", "10.0.0.2"),
+        (1, "fe80::1%not an ip <script>", "10.0.0.2", "10.0.0.2"),
+        (1, "[fe80::1%eth0]:443", "10.0.0.2", "10.0.0.2"),
     ],
 )
 def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
