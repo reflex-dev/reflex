@@ -1317,6 +1317,9 @@ def test_register_plugin_routes_rejects_case_conflict_with_app_route(
         owner: The owner of the existing route in the error message.
     """
 
+    class CaseRouteState(BaseState):
+        """State root isolated from the global state tree in this test."""
+
     class CasePlugin(rx.plugins.Plugin):
         """Plugin claiming a case variant of an app route."""
 
@@ -1329,7 +1332,7 @@ def test_register_plugin_routes_rejects_case_conflict_with_app_route(
             """
             add_page(lambda: rx.el.div("plugin"), route=plugin_route)
 
-    app = rx.App()
+    app = rx.App(_state=CaseRouteState)
     app.add_page(lambda: rx.el.div("app"), route=app_route)
     new = format_route(plugin_route)
     expected = (

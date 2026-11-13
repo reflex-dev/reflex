@@ -350,19 +350,33 @@ class _PreparedPage:
     route_args: dict[str, str]
 
 
+_ROUTE_KEYWORDS = frozenset({
+    constants.RouteRegex.SINGLE_SEGMENT,
+    constants.RouteRegex.DOUBLE_SEGMENT,
+    constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
+})
+
+
 def _route_match_key(route: str) -> str:
     """Get the key under which the router tells routes apart.
 
-    Dynamic segments collapse to keywords and letter case is folded, so routes
-    sharing a key match the same URLs.
+    Dynamic segments collapse to keywords and the letter case of literal
+    segments is folded, so routes sharing a key match the same URLs. Only the
+    exact index route matches ``/``, so it keeps a key of its own.
 
     Args:
         route: A normalized route.
 
     Returns:
-        The case-folded route with dynamic segments replaced by keywords.
+        The route with dynamic segments replaced by keywords and literal
+        segments case-folded.
     """
-    return replace_brackets_with_keywords(route).lower()
+    if route == constants.PageNames.INDEX_ROUTE:
+        return "/"
+    return "/".join(
+        part if part in _ROUTE_KEYWORDS else part.lower()
+        for part in replace_brackets_with_keywords(route).split("/")
+    )
 
 
 def _route_arg_label(arg_type: str) -> str:

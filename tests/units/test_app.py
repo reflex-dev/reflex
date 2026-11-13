@@ -388,7 +388,6 @@ def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
         ("/Item/[case_arg]", "/item/[case_arg]", "Item/[case_arg]", "item/[case_arg]"),
         ("/Item/[case_id]", "/item/[case_slug]", "Item/[case_id]", "item/[case_slug]"),
         ("/item/[case_arg]", "/item/[case_ARG]", "item/[case_arg]", "item/[case_ARG]"),
-        ("/Index", "/", "Index", "index"),
     ],
 )
 def test_add_page_rejects_routes_differing_only_in_case(
@@ -463,6 +462,8 @@ def test_add_page_same_route_different_component_keeps_duplicate_error(
     [
         ("/Foo", "/Foo/bar"),
         ("/foo/[case_nested]", "/foo"),
+        ("/Index", "/"),
+        ("/posts/__single_segment__", "/posts/[case_post]"),
     ],
 )
 def test_add_page_accepts_routes_matching_different_urls(
