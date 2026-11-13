@@ -14,6 +14,7 @@ from reflex_base.utils.exceptions import MatchTypeError
 from reflex_base.utils.imports import ImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.set import SetVar, set_canonical_operation
 
 from reflex_components_core.base import Fragment
 from reflex_components_core.base.bare import Bare
@@ -95,7 +96,22 @@ class Match(Component):
         if match_cond_var is None:
             msg = "The condition must be set"
             raise ValueError(msg)
-        return match_cond_var
+        return cls._comparable(match_cond_var)
+
+    @staticmethod
+    def _comparable(var: Var) -> Var:
+        """Make a subject or case var compare the way Python's ``==`` does.
+
+        Cases match by ``JSON.stringify`` equality, and a set serializes in its
+        iteration order, so a set var is compared by its canonical form.
+
+        Args:
+            var: The subject or case var.
+
+        Returns:
+            The var to serialize for the comparison.
+        """
+        return set_canonical_operation(var) if isinstance(var, SetVar) else var
 
     @classmethod
     def _process_cases(
@@ -180,7 +196,9 @@ class Match(Component):
                 if isinstance(condition, BaseComponent):
                     msg = f"Match condition {condition_index} of case {case_index} cannot be a component."
                     raise ValueError(msg)
-                conditions_vars.append(cls._create_case_var_with_var_data(condition))
+                conditions_vars.append(
+                    cls._comparable(cls._create_case_var_with_var_data(condition))
+                )
 
             return_value = (
                 cls._create_case_var_with_var_data(return_value)

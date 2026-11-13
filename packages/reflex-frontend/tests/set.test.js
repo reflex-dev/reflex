@@ -9,6 +9,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  pySetCanonical,
   pySetDifference,
   pySetHas,
   pySetIntersection,
@@ -88,4 +89,27 @@ describe.each([null, undefined])("a %s set is empty", (none) => {
     expect(union).not.toBe(x);
     expect(pySetDifference(x, none)).not.toBe(x);
   });
+});
+
+test("canonical sets compare by their elements", () => {
+  const same = (a, b) =>
+    JSON.stringify(pySetCanonical(a)) === JSON.stringify(pySetCanonical(b));
+  expect(pySetCanonical(["d", "c", "d"])).toEqual(["sc", "sd"]);
+  expect(same(["c", "d"], ["d", "c"])).toBe(true);
+  expect(same(["c", "d"], ["c"])).toBe(false);
+  expect(same([[1, 2], "a"], ["a", [1, 2]])).toBe(true);
+  expect(same([true, 2], [2, 1])).toBe(true);
+  expect(same(["1"], [1])).toBe(false);
+  expect(same([null], [NaN])).toBe(false);
+  expect(
+    pySetCanonical([10, 9, "b", null, NaN, Infinity, -Infinity, 9]),
+  ).toEqual([9, 10, "-Infinity", "Infinity", "NaN", "null", "sb"]);
+  expect(pySetCanonical([])).toEqual([]);
+});
+
+test.each([
+  null,
+  undefined,
+])("a %s set stays missing when made canonical", (none) => {
+  expect(pySetCanonical(none)).toBe(none);
 });

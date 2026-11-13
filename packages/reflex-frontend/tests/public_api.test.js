@@ -88,6 +88,7 @@ const PUBLIC_API = {
   "$/utils/helpers/paste": ["default"],
   "$/utils/helpers/range": ["default"],
   "$/utils/helpers/set": [
+    "pySetCanonical",
     "pySetDifference",
     "pySetHas",
     "pySetIntersection",
