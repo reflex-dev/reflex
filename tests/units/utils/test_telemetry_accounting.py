@@ -10,6 +10,7 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base.config import Config
 from reflex_base.plugins.sitemap import SitemapPlugin
+from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import TelemetryContext
 
 import reflex as rx
@@ -411,8 +412,22 @@ def test_collect_features_used_upload_reads_class_flag(mocker: MockerFixture):
     assert unused["upload_count"] == 0
 
 
-def test_collect_features_used_counts_shared_state_subclasses():
-    """The walk counts user states that subclass ``rx.SharedState``."""
+def test_collect_features_used_counts_shared_state_subclasses(
+    monkeypatch: pytest.MonkeyPatch,
+    forked_registration_context: RegistrationContext,
+):
+    """The walk counts user states that subclass ``rx.SharedState``.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
 
     class SharedOne(rx.SharedState):
         x: int = 0
