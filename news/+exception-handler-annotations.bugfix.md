@@ -1,0 +1,1 @@
+Custom frontend and backend exception handlers now resolve their annotations in the handler's own module, so annotating `exception` with an application-defined exception class no longer crashes app startup with `NameError`.
