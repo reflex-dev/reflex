@@ -58,6 +58,19 @@ def git_push(refspec: str, cwd: Path) -> None:
     git_run([*_CREDENTIAL_HELPER, "push", "origin", refspec], cwd)
 
 
+def authenticated_git(args: list[str], cwd: Path) -> str:
+    """Run git with the GitHub CLI credential helper, returning stdout.
+
+    Args:
+        args: Git arguments, such as fetch or ls-remote.
+        cwd: The repository directory.
+
+    Returns:
+        The command's stdout.
+    """
+    return git([*_CREDENTIAL_HELPER, *args], cwd)
+
+
 def configure_bot_identity(cwd: Path) -> None:
     """Set the committer identity to github-actions[bot] for this repository.
 

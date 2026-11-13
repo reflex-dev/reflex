@@ -1,0 +1,107 @@
+@@HEADER@@
+name: Publish application
+
+# This workflow is only called through the queued release_from_changelog
+# workflow. Repository hooks must succeed only once deployment is complete.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      any: ${{ steps.detect.outputs.any }}
+      version: ${{ steps.detect.outputs.version }}
+      ref: ${{ steps.detect.outputs.ref }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
+      - id: detect
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: @@CLI@@ app-detect
+
+  build:
+    needs: detect
+    if: needs.detect.outputs.any == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/@@BUILD_WORKFLOW@@
+    with:
+      ref: ${{ needs.detect.outputs.ref }}
+      version: ${{ needs.detect.outputs.version }}
+      source-revision: ""
+    secrets: inherit
+
+  staging:
+    needs: [detect, build]
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/@@DEPLOY_WORKFLOW@@
+    with:
+      ref: ${{ needs.detect.outputs.ref }}
+      version: ${{ needs.detect.outputs.version }}
+      environment: "@@STAGING_ENVIRONMENT@@"
+    secrets: inherit
+
+  approval:
+    needs: staging
+    runs-on: ubuntu-latest
+    environment: "@@PRODUCTION_ENVIRONMENT@@"
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Require configured production reviewers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENVIRONMENT: "@@PRODUCTION_ENVIRONMENT@@"
+          ALLOW_SELF_REVIEW: "@@ALLOW_SELF_REVIEW@@"
+        run: |
+          set -euo pipefail
+          rules=$(gh api "repos/${GITHUB_REPOSITORY}/environments/${ENVIRONMENT}")
+          jq -e '.protection_rules | any(.type == "required_reviewers" and (.reviewers | length > 0))' <<< "$rules"
+          if [[ "$ALLOW_SELF_REVIEW" != "true" ]]; then
+            jq -e '.protection_rules | any(.type == "required_reviewers" and .prevent_self_review == true)' <<< "$rules"
+          fi
+
+  production:
+    needs: [detect, approval]
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/@@DEPLOY_WORKFLOW@@
+    with:
+      ref: ${{ needs.detect.outputs.ref }}
+      version: ${{ needs.detect.outputs.version }}
+      environment: "@@PRODUCTION_ENVIRONMENT@@"
+    secrets: inherit
+
+  release:
+    needs: [detect, production]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.detect.outputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
+      - name: Tag deployed commit and create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.detect.outputs.version }}
+        run: @@CLI@@ app-finalize
