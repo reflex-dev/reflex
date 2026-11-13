@@ -1,0 +1,1 @@
+`AppHarness.stop()` can now be called more than once, a harness whose `start()` fails (for example, the frontend never comes up) stops the backend it already started instead of leaking it, and a restarted harness waits for its new frontend instead of reusing the previous URL.

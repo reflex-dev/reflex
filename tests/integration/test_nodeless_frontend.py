@@ -58,18 +58,12 @@ def nodeless_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         # had that assist -- react-router has to carry the condition into its
         # own relaunch, which is what failed on Windows.
         monkeypatch.setattr(reflex_testing, "_with_development_condition", dict)
-        harness = AppHarness.create(
+        # A frontend that fails to come up is the failure this test watches for;
+        # `start()` then stops the backend itself, so the `with` form is safe.
+        with AppHarness.create(
             root=tmp_path_factory.mktemp("nodeless_app"), app_source=NodelessApp
-        )
-        # Started outside the `with` form on purpose: `__enter__` *is* `start()`,
-        # so a failure to bring the frontend up skips `__exit__` and leaks the
-        # backend thread, which then keeps the interpreter alive. This test
-        # fails precisely that way, so it has to stop the harness itself.
-        try:
-            harness.start()
+        ) as harness:
             yield harness
-        finally:
-            harness.stop()
 
 
 def test_nodeless_frontend_serves(nodeless_app: AppHarness):
