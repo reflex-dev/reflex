@@ -380,6 +380,114 @@ def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
     assert app._unevaluated_pages.keys() == {route}
 
 
+@pytest.mark.parametrize(
+    ("first", "second", "message_first", "message_second"),
+    [
+        ("/Foo", "/foo", "Foo", "foo"),
+        ("/foo", "/FOO", "foo", "FOO"),
+        ("/Item/[case_arg]", "/item/[case_arg]", "Item/[case_arg]", "item/[case_arg]"),
+        ("/Item/[case_id]", "/item/[case_slug]", "Item/[case_id]", "item/[case_slug]"),
+        ("/item/[case_arg]", "/item/[case_ARG]", "item/[case_arg]", "item/[case_ARG]"),
+        ("/Index", "/", "Index", "index"),
+    ],
+)
+def test_add_page_rejects_routes_differing_only_in_case(
+    index_page: ComponentCallable,
+    about_page: ComponentCallable,
+    first: str,
+    second: str,
+    message_first: str,
+    message_second: str,
+):
+    """Routes that the router matches case-insensitively cannot both be registered.
+
+    Args:
+        index_page: The first page.
+        about_page: The second page.
+        first: The route registered first.
+        second: The route that collides with it.
+        message_first: The normalized first route in the error message.
+        message_second: The normalized second route in the error message.
+    """
+    app = App(_state=EmptyState)
+    app.add_page(index_page, route=first)
+    expected = (
+        f"Route `{message_second}` matches the same URLs as the already "
+        f"registered `{message_first}`; routes are matched case-insensitively "
+        "and dynamic segment names do not distinguish them."
+    )
+    with pytest.raises(exceptions.RouteValueError, match=f"^{re.escape(expected)}$"):
+        app.add_page(about_page, route=second)
+    assert list(app._unevaluated_pages) == [message_first]
+
+
+def test_add_page_same_route_is_still_redefinable(
+    app: App, index_page: ComponentCallable, caplog: pytest.LogCaptureFixture
+):
+    """Re-registering the identical route with the same component is not a conflict.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        caplog: The log capture fixture.
+    """
+    app.add_page(index_page, route="/Foo")
+    with caplog.at_level(logging.WARNING):
+        app.add_page(index_page, route="/Foo")
+    assert list(app._unevaluated_pages) == ["Foo"]
+    assert "Page Foo is being redefined with the same component." in caplog.messages
+
+
+def test_add_page_same_route_different_component_keeps_duplicate_error(
+    app: App, index_page: ComponentCallable, about_page: ComponentCallable
+):
+    """The identical route with another component keeps the existing duplicate error.
+
+    Args:
+        app: The app to test.
+        index_page: The first page.
+        about_page: The second page.
+    """
+    app.add_page(index_page, route="/Foo")
+    expected = (
+        "Tried to add page tests.units.test_app.about with route `Foo` but page "
+        "tests.units.test_app.index with the same "
+        "route already exists. Make sure you do not have two pages with the same route."
+    )
+    with pytest.raises(exceptions.RouteValueError, match=f"^{re.escape(expected)}$"):
+        app.add_page(about_page, route="/Foo")
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        ("/Foo", "/Foo/bar"),
+        ("/foo/[case_nested]", "/foo"),
+    ],
+)
+def test_add_page_accepts_routes_matching_different_urls(
+    index_page: ComponentCallable,
+    about_page: ComponentCallable,
+    first: str,
+    second: str,
+):
+    """Routes that match different URLs are not conflicts, whatever their case.
+
+    Args:
+        index_page: The first page.
+        about_page: The second page.
+        first: The route registered first.
+        second: The second route.
+    """
+    app = App(_state=EmptyState)
+    app.add_page(index_page, route=first)
+    app.add_page(about_page, route=second)
+    assert list(app._unevaluated_pages) == [
+        format.format_route(first),
+        format.format_route(second),
+    ]
+
+
 def test_add_page_on_load_tuple(app: App, index_page: ComponentCallable):
     """A tuple of on_load events registers each event, like a list of them.
 
@@ -7137,5 +7245,6 @@ def test_client_state_conflicts_do_not_outlive_a_compile(
 
     after = rx.client_state(True, name="edited_app")
     app._unevaluated_pages.clear()
+    app._route_spellings.clear()
     app.add_page(lambda: rx.text(after.value), route="/a")
     app._compile(dry_run=True)
