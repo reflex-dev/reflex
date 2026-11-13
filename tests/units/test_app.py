@@ -4782,6 +4782,11 @@ def test_static_router_data_keeps_every_repeated_header_field(
         (1, "203.0.113.7", "10.0.0.2", "203.0.113.7"),
         (2, "6.6.6.6, 203.0.113.7, 10.0.0.2", "127.0.0.1", "203.0.113.7"),
         (2, "203.0.113.7", "10.0.0.2", "10.0.0.2"),
+        (1, "203.0.113.7:51234", "10.0.0.2", "203.0.113.7"),
+        (1, "[2001:db8::1]:443", "10.0.0.2", "2001:db8::1"),
+        (1, "[2001:db8::1]", "10.0.0.2", "2001:db8::1"),
+        (1, "2001:db8:0:0:0:0:0:1", "10.0.0.2", "2001:db8::1"),
+        (1, "6.6.6.6, not an ip <script>", "10.0.0.2", "10.0.0.2"),
     ],
 )
 def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
@@ -4807,6 +4812,28 @@ def test_static_router_data_resolves_client_ip_from_trusted_proxy_hops(
     )
 
     assert router_data[constants.RouteVar.CLIENT_IP] == expected_ip
+
+
+def test_static_router_data_logs_ignored_forwarded_client_ip(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """A forwarded entry that is not an IP address is logged and ignored."""
+    monkeypatch.setattr("reflex.app.get_config", lambda: Mock(trusted_proxy_hops=1))
+    with caplog.at_level(logging.DEBUG, logger="reflex.app"):
+        router_data = EventNamespace("/event", Mock())._build_static_router_data(
+            "sid1",
+            {
+                "asgi.scope": {
+                    "headers": [(b"x-forwarded-for", b"not an ip <script>")],
+                    "client": ("10.0.0.2", 1234),
+                }
+            },
+        )
+
+    assert router_data[constants.RouteVar.CLIENT_IP] == "10.0.0.2"
+    assert [record.getMessage() for record in caplog.records] == [
+        "Ignoring X-Forwarded-For entry 'not an ip <script>': not an IP address."
+    ]
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(

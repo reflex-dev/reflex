@@ -9,6 +9,7 @@ import dataclasses
 import functools
 import importlib
 import inspect
+import ipaddress
 import json
 import logging
 import operator
@@ -598,6 +599,25 @@ def _trusted_forwarded_value(
     if len(entries) >= trusted_proxy_hops:
         return entries[-trusted_proxy_hops]
     return None if appended or not entries else entries[0]
+
+
+def _forwarded_client_ip(entry: str) -> str | None:
+    """Normalize an ``X-Forwarded-For`` entry to an IP address.
+
+    Args:
+        entry: The entry, an IP address with an optional port and IPv6 brackets.
+
+    Returns:
+        The normalized address, or None when the entry is not an IP address.
+    """
+    if entry.startswith("["):
+        entry = entry[1:].partition("]")[0]
+    elif entry.count(":") == 1:
+        entry = entry.partition(":")[0]
+    try:
+        return str(ipaddress.ip_address(entry))
+    except ValueError:
+        return None
 
 
 def _origin_matches_request(
@@ -2708,7 +2728,13 @@ class EventNamespace(AsyncNamespace):
             headers.get("x-forwarded-for", ""), get_config().trusted_proxy_hops
         )
         if forwarded_ip is not None:
-            client_ip = forwarded_ip
+            if (normalized_ip := _forwarded_client_ip(forwarded_ip)) is not None:
+                client_ip = normalized_ip
+            else:
+                logger.debug(
+                    f"Ignoring X-Forwarded-For entry {_clip(forwarded_ip)}: "
+                    "not an IP address."
+                )
         return {
             constants.RouteVar.SESSION_ID: sid,
             constants.RouteVar.HEADERS: headers,
