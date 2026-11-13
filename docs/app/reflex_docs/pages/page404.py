@@ -19,14 +19,14 @@ def not_found() -> rx.Component:
         docs_navbar(),
         rx.el.main(
             rx.el.div(
-                rx.el.p("404", class_name="text-sm font-book text-muted-foreground"),
+                rx.el.p("404", class_name="text-sm font-normal text-muted-foreground"),
                 rx.el.h1(
                     "Page not found",
-                    class_name="text-4xl sm:text-5xl font-book tracking-tight text-foreground",
+                    class_name="font-heading text-4xl font-light leading-[1.1] tracking-[-0.04em] text-foreground sm:text-5xl",
                 ),
                 rx.el.p(
                     "We couldn't find that documentation page. Browse the docs or use search to find what you need.",
-                    class_name="max-w-md text-base leading-7 text-muted-foreground",
+                    class_name="max-w-md text-base font-normal leading-7 text-muted-foreground",
                 ),
                 rx.el.elements.a(
                     button(
@@ -34,15 +34,16 @@ def not_found() -> rx.Component:
                         variant="primary",
                         size="md",
                         native_button=False,
+                        class_name="!font-normal !shadow-none",
                     ),
                     href="/docs/",
                     class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
-                class_name="flex min-h-[65vh] flex-col items-start justify-center gap-6 mx-auto max-w-(--landing-layout-max-width) px-6 pb-16 pt-[calc(var(--docs-header-height)+4rem)]",
+                class_name="mx-auto flex min-h-[65vh] w-full max-w-[1176px] flex-col items-start justify-center gap-6 px-4 pb-16 pt-[calc(var(--docs-header-height)+4rem)] sm:px-8",
             ),
             editorial_footer(),
         ),
-        class_name="min-h-screen bg-background",
+        class_name="docs-not-found min-h-screen bg-background font-sans text-foreground",
     )
 
 

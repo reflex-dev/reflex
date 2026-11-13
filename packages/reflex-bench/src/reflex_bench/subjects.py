@@ -65,9 +65,15 @@ else:
 Source = Literal["workspace", "pypi", "git", "path"]
 Echo = Callable[[str], None]
 
-# What a subject venv needs besides reflex and its dependencies to run
-# `reflex run`; part of every cache key.
-SUBJECT_REQUIREMENTS: tuple[str, ...] = ()
+# What a subject venv needs besides reflex and its dependencies to run the
+# playground: its rx.Model tables need reflex's `db` extra, whose ranges these
+# are (core dependencies at 0.8.23, the extra from 0.9), and rx.plotly imports
+# plotly when it renders; part of every cache key.
+SUBJECT_REQUIREMENTS: tuple[str, ...] = (
+    "sqlmodel>=0.0.24,<0.1",
+    "alembic>=1.15.2,<2.0",
+    "plotly>=6.0,<7.0",
+)
 MANIFEST = "reflex-bench-subject.json"
 REQUIREMENTS = "reflex-bench-requirements.txt"
 KEY_LENGTH = 16

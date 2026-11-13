@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any
-
-from typing_extensions import Self
+from typing import Any, Self
 
 from reflex_base.event import EventChain
 from reflex_base.utils import format

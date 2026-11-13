@@ -1,0 +1,1 @@
+Add `[tool.reflex-release.extra-source-dirs]`, which maps a package to directories outside it that it also ships. A change under one counts as a change to that package and requires a news fragment there.

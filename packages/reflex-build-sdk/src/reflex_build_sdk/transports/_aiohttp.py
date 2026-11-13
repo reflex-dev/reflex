@@ -52,12 +52,11 @@ class _StallWatchdog:
         """Withdraw the cancellation this watchdog requested.
 
         Returns:
-            Whether no other cancellation of the task is pending. From Python 3.11
-            tasks count cancellation requests, so a caller's cancellation arriving
-            alongside the watchdog's is told apart and still propagates. Python
-            3.10 cannot tell them apart.
+            Whether no other cancellation of the task is pending. Tasks count
+            cancellation requests, so a caller's cancellation arriving alongside
+            the watchdog's is told apart and still propagates.
         """
-        if self._task is None or not hasattr(self._task, "uncancel"):
+        if self._task is None:
             return True
         return self._task.uncancel() == 0
 
@@ -173,7 +172,7 @@ class AiohttpTransport:
             ) from ex
         except aiohttp.ClientConnectorError as ex:
             raise TransportError(str(ex), request=request, sent=False) from ex
-        except (aiohttp.ServerTimeoutError, asyncio.TimeoutError) as ex:
+        except (TimeoutError, aiohttp.ServerTimeoutError) as ex:
             msg = str(ex) or "timed out"
             raise TransportError(
                 msg, request=request, sent=True, timed_out=True

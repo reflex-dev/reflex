@@ -246,7 +246,7 @@ def _build_union(members: tuple[Any, ...]) -> Decoder:
         for decoder in decoders:
             try:
                 return decoder(value)
-            except DecodeError as ex:  # noqa: PERF203
+            except DecodeError as ex:
                 errors.append(
                     f"{ex.message} at {_format_path('', ex.path)}"
                     if ex.path
@@ -295,7 +295,7 @@ def _failing_segment(
     for segment, item in entries:
         try:
             decoder(item)
-        except DecodeError:  # noqa: PERF203
+        except DecodeError:
             return segment
     return "?"
 

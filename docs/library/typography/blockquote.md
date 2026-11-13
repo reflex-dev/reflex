@@ -1,6 +1,7 @@
 ---
 components:
   - rx.blockquote
+meta_description: "Add semantic blockquotes to your Python web app with Reflex. The rx.blockquote component displays quoted text with multiple size and weight options."
 ---
 
 ```python exec

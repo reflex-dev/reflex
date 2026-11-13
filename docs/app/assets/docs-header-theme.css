@@ -1,0 +1,153 @@
+/* Compact docs chrome uses the current marketing palette and controls. */
+html:has(.docs-nav-frame) { --docs-header-height: 64px; }
+html:has(.docs-nav-frame [data-announcement]) { --docs-header-height: 104px; }
+.docs-nav-frame {
+  left: 0;
+  background: #0a0a0a;
+}
+.docs-nav-frame > .docs-navbar-header {
+  height: 64px;
+  padding-inline: 32px;
+  background: var(--background);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  box-shadow: none;
+  transition: border-radius 200ms ease, background-color 200ms ease;
+}
+.docs-nav-frame:has([data-announcement]) > .docs-navbar-header {
+  border-radius: 12px 12px 0 0;
+}
+.docs-nav-frame > .docs-navbar-header > .docs-navbar-inner {
+  max-width: 1536px;
+}
+.docs-navbar-wordmark { width: 102px; height: auto; }
+.docs-navbar-docs-wordmark { height: 16px; width: auto; }
+.docs-navbar-brand { gap: 12px; }
+.docs-navbar-mobile-panel {
+  padding: 12px 24px 20px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 0 24px 24px;
+  box-shadow: var(--shadow-medium);
+}
+.docs-navbar-mobile-link { padding-inline: 8px; }
+.docs-navbar-mobile-link svg { color: var(--muted-foreground); }
+
+/* The in-page mobile drawer shares the desktop sidebar's typography. */
+.docs-sidebar-drawer { font-family: var(--font-sans); color: var(--foreground); }
+.docs-sidebar-drawer p,
+.docs-sidebar-drawer h3,
+.docs-sidebar-drawer summary { font-weight: 400; }
+.docs-sidebar-drawer h2 {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .025em;
+  text-transform: none;
+}
+.docs-sidebar-drawer .docs-sidebar-drawer-title {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+.docs-sidebar-drawer #sidebar-container { min-height: 0; }
+.docs-sidebar-drawer #sidebar-container > div { padding-left: 16px; padding-right: 20px; }
+.docs-sidebar-drawer a:where(:not([aria-current='page'], [aria-current='true'])) p {
+  color: var(--foreground);
+}
+.docs-sidebar-drawer a:hover p { color: var(--foreground); }
+.docs-sidebar-drawer a[aria-current='page'] p { font-weight: 500; }
+.docs-sidebar-drawer a:focus-visible,
+.docs-sidebar-drawer summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+@layer utilities {
+  html .docs-sidebar-drawer {
+    top: var(--docs-header-height) !important;
+    height: calc(100dvh - var(--docs-header-height)) !important;
+  }
+}
+
+/* The announcement uses one black strip and a coordinated text/arrow shine. */
+.docs-nav-frame .docs-announcement {
+  position: relative;
+  height: 40px;
+  width: 100%;
+  overflow: hidden;
+  background: #0a0a0a;
+  color: #fff;
+  border: 0;
+  font-family: var(--font-sans);
+}
+.docs-announcement-link { display: block; height: 100%; width: 100%; color: #fff; }
+.docs-announcement-content { display: grid; height: 100%; padding-inline: 48px; place-items: center; }
+.docs-announcement-copy { display: inline-grid; grid-template-columns: minmax(0, 1fr); max-width: 100%; color: #dedede; }
+.docs-announcement-line { grid-area: 1 / 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.docs-announcement-new, .docs-announcement-message, .docs-announcement-cta { font: 400 14px/20px var(--font-sans); }
+.docs-announcement-new, .docs-announcement-cta { flex-shrink: 0; white-space: nowrap; }
+.docs-announcement-message { min-width: 0; }
+.docs-announcement-cta { display: inline-flex; align-items: center; gap: 6px; }
+.docs-announcement-link:is(:hover, :focus-visible) .docs-announcement-cta { text-decoration: underline; text-underline-offset: 3px; }
+.docs-announcement-shine { display: none; color: #fff; pointer-events: none; user-select: none; }
+@supports (mask-image: linear-gradient(black, transparent)) {
+  .docs-announcement-shine {
+    display: flex;
+    mask-image: linear-gradient(90deg, transparent 40%, black 48%, black 52%, transparent 60%);
+    mask-size: 400% 100%;
+    mask-repeat: no-repeat;
+    animation: docs-announcement-row-shimmer 4500ms linear infinite;
+  }
+}
+@keyframes docs-announcement-row-shimmer { from { mask-position: 100% 0; } to { mask-position: 0% 0; } }
+.docs-announcement-dismiss {
+  position: absolute;
+  top: 6px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+.docs-announcement-dismiss:hover { background: #333; }
+.docs-announcement-link:focus-visible, .docs-announcement-dismiss:focus-visible { outline: 2px solid #fff; }
+.docs-announcement-link:focus-visible { outline-offset: -4px; }
+.docs-announcement-dismiss:focus-visible { outline-offset: 2px; }
+@media (max-width: 1279px) {
+  .docs-nav-frame:has(.docs-navbar-menu[open]) > .docs-navbar-header {
+    border-radius: 0;
+  }
+}
+@media (max-width: 640px) {
+  .docs-announcement-cta { display: none; }
+}
+@media (max-width: 639px) {
+  .docs-nav-frame > .docs-navbar-header { padding-inline: 16px; }
+  .docs-navbar-inner { gap: 16px; }
+  .docs-navbar-brand { gap: 10px; }
+  .docs-navbar-wordmark { width: 92px; }
+  .docs-navbar-mobile-panel { padding-inline: 16px; }
+  .docs-announcement-content { padding-inline: 40px; }
+  .docs-announcement-line { gap: 8px; }
+  .docs-announcement-dismiss { right: 8px; }
+}
+@media (max-width: 379px) {
+  .docs-announcement-message { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .docs-nav-frame > .docs-navbar-header,
+  .docs-navbar-mobile-link { transition: none; }
+}
+
+.docs-navbar-cta, .docs-navbar-cta > div, .docs-navbar-github, .docs-navbar-github > div, .docs-navbar-link, .docs-navbar-menu-trigger { border-radius: var(--docs-control-radius); }
+.docs-navbar-cta > div { font-family: var(--font-heading); font-weight: 525; }
+@media (prefers-reduced-motion: reduce), (forced-colors: active) {
+  .docs-announcement-copy { color: #fff; }
+  .docs-announcement-shine { display: none; animation: none; }
+}

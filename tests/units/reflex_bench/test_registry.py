@@ -330,6 +330,7 @@ def catalog() -> list[Benchmark]:
         define("lifecycle.compile.warm", ("pr", "daily")),
         define("lifecycle.compile.cold", ("daily",)),
         define("events.throughput", ("smoke", "pr")),
+        define("events.latency", ("macro", "daily")),
         define("selftest.sleep", ("selftest",)),
         define("selftest.fail", ("selftest",)),
     ]
@@ -337,6 +338,7 @@ def catalog() -> list[Benchmark]:
 
 def test_select_hides_self_tests_by_default(catalog):
     assert _ids(registry.select(catalog)) == [
+        "events.latency",
         "events.throughput",
         "lifecycle.compile.cold",
         "lifecycle.compile.warm",
@@ -361,11 +363,35 @@ def test_select_by_suite_and_glob(catalog):
         "selftest.fail",
         "selftest.sleep",
     ]
+    assert _ids(registry.select(catalog, suite="macro")) == ["events.latency"]
+
+
+def test_all_excludes_only_the_self_tests(catalog):
+    assert "macro" in registry.SUITES
+    assert _ids(registry.select(catalog, suite="all")) == sorted(
+        bench.id for bench in catalog if "selftest" not in bench.suites
+    )
+
+
+def test_macro_suite_params_pick_one_point_of_the_grid():
+    bench = Benchmark.define(
+        _Sampler,
+        id="t.grid",
+        metrics={"wall": WALL},
+        suites=("macro", "daily"),
+        params={"sessions": [10, 50], "manager": ["disk", "memory"]},
+        suite_params={"macro": {"sessions": [10], "manager": ["disk"]}},
+    )
+    assert [p.params for p in bench.expand(suite="macro")] == [
+        {"sessions": 10, "manager": "disk"}
+    ]
+    assert len(bench.expand(suite="daily")) == 4
 
 
 def test_select_self_tests_by_name(catalog):
     assert _ids(registry.select(catalog, ["selftest.sleep"])) == ["selftest.sleep"]
     assert _ids(registry.select(catalog, ["selftest.*", "events.*"])) == [
+        "events.latency",
         "events.throughput",
         "selftest.fail",
         "selftest.sleep",

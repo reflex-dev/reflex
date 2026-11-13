@@ -23,14 +23,13 @@ import types
 from collections.abc import Callable, Coroutine, Sequence
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypeVar
 
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.types import ASGIApp
-from typing_extensions import Self
 
 import reflex
 import reflex.reflex
@@ -41,8 +40,7 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.istate.shared import SharedState as SharedState  # To register it.
 from reflex.state import reload_state_module
-from reflex.utils import js_runtimes
-from reflex.utils.exec import _with_development_condition
+from reflex.utils.exec import _frontend_dev_command, _with_development_condition
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
 
@@ -321,8 +319,15 @@ class AppHarness:
             self.app_asgi = self.app_instance()
 
     def _reload_state_module(self):
-        """Reload the rx.State module to avoid conflict when reloading."""
-        reload_state_module(module=f"{self.app_name}.{self.app_name}")
+        """Forget the states of every module of the app's package, so they never reach the next app."""
+        package = (
+            self.app_module.__name__ if self.app_module else self.app_name
+        ).partition(".")[0]
+        prefix = f"{package}."
+        for module in [
+            name for name in sys.modules if name == package or name.startswith(prefix)
+        ]:
+            reload_state_module(module=module)
 
     def _get_backend_shutdown_handler(self):
         if self.backend is None:
@@ -401,11 +406,7 @@ class AppHarness:
 
         # Start the frontend.
         self.frontend_process = reflex.utils.processes.new_process(
-            [
-                *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
-                "run",
-                "dev",
-            ],
+            _frontend_dev_command(),
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
             # The development condition lets react-router's dev CLI skip the
             # relaunch it otherwise needs to enable that condition.

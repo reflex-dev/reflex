@@ -424,6 +424,39 @@ def test_get_projects(mocker: MockFixture):
     ]
 
 
+def test_get_projects_table_shows_tier_name(mocker: MockFixture):
+    """Human-readable project tables show a tier name, not its JSON object."""
+    client = _authed(mocker)
+    client.api.projects.list.return_value = [
+        ProjectSummary(
+            id=_PROJECT_ID,
+            name="test_project",
+            tier=ProjectTier(name="Pro", cpu_quota=4, ram_quota=8, deployment_quota=10),
+            app_count=2,
+            deployment_count=3,
+            cpu_usage=1.5,
+            memory_usage=2.0,
+        )
+    ]
+    mock_print_table = mocker.patch("reflex_cli.utils.console.print_table")
+
+    result = runner.invoke(hosting_cli, ["project", "list"])
+
+    assert result.exit_code == 0, result.output
+    mock_print_table.assert_called_once_with(
+        [[str(_PROJECT_ID), "test_project", "Pro", "2", "3", "1.5", "2.0"]],
+        headers=[
+            "id",
+            "name",
+            "tier",
+            "app_count",
+            "deployment_count",
+            "cpu_usage",
+            "memory_usage",
+        ],
+    )
+
+
 def test_get_project_roles_with_project_id(mocker: MockFixture):
     """Roles are listed for the project named on the command line."""
     client = _authed(mocker)

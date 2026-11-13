@@ -34,12 +34,12 @@ def detect_encoding(filename: Path) -> str | None:
         raise FileNotFoundError
 
     for encoding in [
-        None if sys.version_info < (3, 10) else io.text_encoding(None),
+        io.text_encoding(None),
         "utf-8",
     ]:
         try:
             filename.read_text(encoding)
-        except UnicodeDecodeError:  # noqa: PERF203
+        except UnicodeDecodeError:
             continue
         except Exception:
             return None

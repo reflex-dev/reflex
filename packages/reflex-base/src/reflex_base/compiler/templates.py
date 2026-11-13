@@ -4,51 +4,17 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_base import constants
-from reflex_base.constants import Hooks
 from reflex_base.utils import memo_paths
-from reflex_base.utils.format import format_state_name, json_dumps
+from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
     from reflex_base.components.component import Component
-
-
-def _sort_hooks(
-    hooks: dict[str, VarData | None],
-) -> tuple[list[str], list[str], list[str]]:
-    """Sort the hooks by their position.
-
-    Args:
-        hooks: The hooks to sort.
-
-    Returns:
-        The sorted hooks.
-    """
-    internal_hooks = []
-    pre_trigger_hooks = []
-    post_trigger_hooks = []
-
-    for hook, data in hooks.items():
-        if data and data.position and data.position == Hooks.HookPosition.INTERNAL:
-            internal_hooks.append(hook)
-        elif not data or (
-            not data.position
-            or data.position == constants.Hooks.HookPosition.PRE_TRIGGER
-        ):
-            pre_trigger_hooks.append(hook)
-        elif (
-            data
-            and data.position
-            and data.position == constants.Hooks.HookPosition.POST_TRIGGER
-        ):
-            post_trigger_hooks.append(hook)
-
-    return internal_hooks, pre_trigger_hooks, post_trigger_hooks
 
 
 class _RenderUtils:
@@ -234,17 +200,19 @@ if (typeof window !== "undefined") {{
   const loaders = {{
 {loaders}
   }};
-  let pending;
-  window.__reflex_load = () => {{
-    if (!pending) {{
-      pending = Promise.all(Object.entries(loaders).map(async ([name, load]) => {{
-        window.__reflex[name] = await load();
-      }})).catch((error) => {{
-        pending = undefined;
-        throw error;
-      }});
-    }}
-    return pending;
+  const pending = Object.create(null);
+  window.__reflex_load = (libraries = Object.keys(loaders)) => {{
+    return Promise.all(libraries.filter((name) => Object.hasOwn(loaders, name) && !Object.hasOwn(window.__reflex, name)).map((name) => {{
+      if (!pending[name]) {{
+        pending[name] = loaders[name]().then((module) => {{
+          window.__reflex[name] = module;
+        }}).catch((error) => {{
+          delete pending[name];
+          throw error;
+        }});
+      }}
+      return pending[name];
+    }}));
   }};
 }}
 """
@@ -311,7 +279,9 @@ def context_template(
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
     initial_state_json: str | None = None,
+    initial_state_hashes: list[str] | None = None,
     state_name: str | None = None,
+    state_schema: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
 ):
@@ -320,7 +290,14 @@ def context_template(
     Args:
         initial_state: The initial state for the context.
         initial_state_json: Initial state JSON already serialized by the compiler.
+        initial_state_hashes: Per-state hashes of ``initial_state`` in sorted
+            state name order, sent with the first hydrate so the backend can
+            skip vars still at their default.
         state_name: The name of the state.
+        state_schema: Hash of the state tree (names, frontend vars, event
+            handlers) this frontend is compiled for, sent on every socket
+            connect so the backend can detect a frontend built for another
+            version of the app.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
@@ -334,31 +311,33 @@ def context_template(
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
-    # Context objects come from the static registry so they survive hot
-    # updates of this module; only the lookup table is generated here.
-    state_contexts_str = "".join([
-        f'{format_state_name(state_name)}: getStateContext("{state_name}"),'
-        for state_name in initial_state
-    ])
-
     state_str = (
         rf"""
 export const state_name = "{state_name}"
+export const on_load_internal_event = '{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'
 
 export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
 
-// These events are triggered on initial load and each page navigation.
+// Tracked cookie and local storage vars set in the browser, or undefined if none.
+const clientStorageVars = () => {{
+    const client_storage_vars = hydrateClientStorage(clientStorage);
+    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
+        return client_storage_vars;
+    }}
+    return undefined;
+}}
+
+// These events are triggered on each client-side page navigation.
 export const onLoadInternalEvent = () => {{
     const internal_events = [];
 
-    // Get tracked cookie and local storage vars to send to the backend.
-    const client_storage_vars = hydrateClientStorage(clientStorage);
-    // But only send the vars if any are actually set in the browser.
-    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
+    // Only send the client storage vars if any are actually set in the browser.
+    const client_storage_vars = clientStorageVars();
+    if (client_storage_vars !== undefined) {{
         internal_events.push(
             ReflexEvent(
                 '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
-                {{vars: client_storage_vars}},
+                {{{constants.CompileVars.PAYLOAD_VARS}: client_storage_vars}},
             ),
         );
     }}
@@ -370,15 +349,27 @@ export const onLoadInternalEvent = () => {{
     return internal_events;
 }}
 
-// The following events are sent when the websocket connects or reconnects.
-export const initialEvents = () => [
-    ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE}'),
-    ...onLoadInternalEvent()
-]
+// The single event sent when the websocket connects or reconnects: it resets and
+// applies client storage, sends the state, and queues the page's on_load events.
+// On the first connect the frontend still holds the compiled defaults, so it
+// sends their hashes and the backend only returns the vars that differ; any
+// later (re)hydrate gets the full state.
+export const initialEvents = (first = false) => {{
+    const client_storage_vars = clientStorageVars();
+    const payload = {{}};
+    if (client_storage_vars !== undefined) {{
+        payload["{constants.CompileVars.PAYLOAD_VARS}"] = client_storage_vars;
+    }}
+    if (first) {{
+        payload["{constants.CompileVars.PAYLOAD_HASHES}"] = initialStateHashes;
+    }}
+    return [ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE_AND_LOAD}', payload)];
+}}
     """
         if state_name
         else """
 export const state_name = undefined
+export const on_load_internal_event = undefined
 
 export const exception_state_name = undefined
 
@@ -386,11 +377,6 @@ export const onLoadInternalEvent = () => []
 
 export const initialEvents = () => []
 """
-    )
-
-    create_state_contexts_str = "\n".join(
-        rf"createElement(SubstateProvider, {{substateName: '{state_name}', contextName: '{format_state_name(state_name)}'}},"
-        for state_name in initial_state
     )
 
     disable_owner_stacks_str = (
@@ -421,16 +407,17 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useRef, useState, createElement, useEffect, useLayoutEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
-import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
+import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
-export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
+export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext }};
 export const initialState = {initial_state_json}
+export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
+export const stateSchema = {json.dumps(state_schema)}
 
 export const defaultColorMode = {default_color_mode}
-export const StateContexts = {{{state_contexts_str}}};
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
 {state_str}
@@ -443,6 +430,8 @@ registerApp({{
   initialState,
   clientStorage,
   state_name,
+  on_load_internal_event,
+  stateSchema,
   exception_state_name,
   onLoadInternalEvent,
   initialEvents,
@@ -460,6 +449,8 @@ export function getConnectErrors() {{
 
 export function UploadFilesProvider({{ children }}) {{
   const [filesById, setFilesById] = useState({{}})
+  // Serialized callbacks run outside components and read the current selection.
+  refs["__upload_files"] = filesById;
   refs["__clear_selected_files"] = (id) => setFilesById(filesById => {{
     const newFilesById = {{...filesById}}
     delete newFilesById[id]
@@ -512,58 +503,84 @@ export function EventLoopProvider({{ children }}) {{
   );
 }}
 
-// ``useLayoutEffect`` warns when rendered on the server, where no effect runs
-// at all, so fall back to ``useEffect`` there.
-const useIsomorphicLayoutEffect =
-  typeof document !== "undefined" ? useLayoutEffect : useEffect;
+// Dispatch updates happen outside render; useSyncExternalStore keeps reads
+// consistent while notifying only consumers of the changed substate.
+function createStateStore(initialState) {{
+  const state = {{}};
+  const listeners = new Map();
+  const dispatchers = {{}};
+  const notify = (substateName) =>
+    listeners.get(substateName)?.forEach((listener) => listener());
+  // Hot reload passes the recompiled initial state: new substates are added,
+  // and existing substates gain new fields at their defaults while keeping
+  // their live values.
+  const mergeInitialState = (nextInitialState) => {{
+    for (const [substateName, value] of Object.entries(nextInitialState)) {{
+      const liveState = state[substateName];
+      if (liveState !== undefined) {{
+        if (Object.keys(value).some((key) => !Object.hasOwn(liveState, key))) {{
+          state[substateName] = {{ ...value, ...liveState }};
+          notify(substateName);
+        }}
+        continue;
+      }}
+      state[substateName] = value;
+      dispatchers[substateName] = (delta) => {{
+        const currentState = state[substateName];
+        const nextState = applyDelta(currentState, delta);
+        if (nextState === currentState) return;
+        state[substateName] = nextState;
+        notify(substateName);
+      }};
+      notify(substateName);
+    }}
+  }};
+  mergeInitialState(initialState);
 
-// Holds the mutable substate -> dispatch registry that ``SubstateProvider``
-// writes into and ``EventLoopProvider`` reads. The registry object identity is
-// stable for the lifetime of the tree, so neither adding a dispatcher nor
-// updating a substate re-renders the consumers of ``DispatchContext``.
-const DispatchProvider = ({{ children }}) => {{
-  const dispatchers = useRef({{}});
-  return useMemo(
-    () =>
-      createElement(DispatchContext, {{ value: dispatchers.current }}, children),
-    [children],
+  return {{
+    dispatchers,
+    mergeInitialState,
+    getSnapshot: (substateName) => state[substateName],
+    subscribe: (substateName, listener) => {{
+      let substateListeners = listeners.get(substateName);
+      if (!substateListeners) {{
+        substateListeners = new Set();
+        listeners.set(substateName, substateListeners);
+      }}
+      substateListeners.add(listener);
+      return () => substateListeners.delete(listener);
+    }},
+  }};
+}}
+
+function StateStoreProviders({{ children, store }}) {{
+  return createElement(
+    StateStoreContext,
+    {{ value: store }},
+    createElement(DispatchContext, {{ value: store.dispatchers }}, children),
   );
+}}
+
+function ClientStateProvider({{ children }}) {{
+  const [store] = useState(() => createStateStore(initialState));
+  useEffect(() => store.mergeInitialState(initialState), [store, initialState]);
+  return createElement(StateStoreProviders, {{ children, store }});
+}}
+
+// The server renders once and never applies a delta, so it only reads the
+// initial state.
+const serverStateStore = {{
+  dispatchers: {{}},
+  getSnapshot: (substateName) => initialState[substateName],
+  subscribe: () => () => {{}},
 }};
 
-// One provider per substate: each owns its own reducer, so a delta for one
-// substate only re-renders its provider instead of recreating every provider.
-const SubstateProvider = ({{ children, substateName, contextName }}) => {{
-  const dispatchers = useContext(DispatchContext);
-  const [state, dispatchSubstate] = useReducer(
-    applyDelta,
-    initialState[substateName],
-  );
-  // A layout effect, not a passive one: layout effects for the whole commit
-  // run before any passive effect, so every dispatcher is registered before
-  // ``EventLoopProvider`` (mounted below this provider) connects the socket.
-  // A delta naming an unregistered substate is a fatal state mismatch.
-  useIsomorphicLayoutEffect(() => {{
-    dispatchers[substateName] = dispatchSubstate;
-    return () => {{
-      delete dispatchers[substateName];
-    }};
-  }}, [dispatchers, dispatchSubstate, substateName]);
-  return useMemo(
-    () => createElement(StateContexts[contextName], {{ value: state }}, children),
-    [children, state, contextName],
-  );
-}};
+function ServerStateProvider({{ children }}) {{
+  return createElement(StateStoreProviders, {{ children, store: serverStateStore }});
+}}
 
-export function StateProvider({{ children }}) {{
-  return useMemo(
-    () => (
-    createElement(DispatchProvider, {{}},
-    {create_state_contexts_str}children
-    {")" * len(initial_state)}
-  )),
-    [children],
-  );
-}}"""
+export const StateProvider =
+  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;"""
 
 
 def component_template(component: Component):
@@ -585,6 +602,7 @@ def page_template(
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
     route: str = "",
+    client_state_owns: Sequence[str] = (),
 ):
     """Template for a single react page.
 
@@ -612,6 +630,10 @@ def page_template(
             entirely — ``page_template`` ships in ``reflex-base``, so an
             out-of-tree caller predating the parameter keeps working and gets
             the pre-existing unnamed ``Component``.
+        client_state_owns: The local client state names the page owns. When
+            given, the exported component is ``Component`` wrapped in a client
+            state scope claiming them, so hooks in the page body resolve inside
+            it.
 
     Returns:
         Rendered React page component as string.
@@ -625,6 +647,11 @@ def page_template(
         f"Component.displayName = {json.dumps(f'Component({route})')};\n"
         if route
         else ""
+    )
+    export_str = (
+        f"withClientStateScope(Component, {json.dumps(list(client_state_owns))})"
+        if client_state_owns
+        else "Component"
     )
     return f"""{imports_str}
 
@@ -640,7 +667,7 @@ function Component() {{
   )
 }}
 {display_name_str}
-export default Component;
+export default {export_str};
 """
 
 
@@ -661,19 +688,27 @@ def package_json_template(
         additional_keys: Additional keys to include in the package.json file.
 
     Returns:
-        Rendered package.json content as string.
+        Rendered package.json content as string, laid out the way bun rewrites
+        it so a later ``bun add`` does not reformat the file.
     """
     # Ensure "type" is not duplicated since it's always set to "module"
     additional_keys.pop("type", None)
-    return json.dumps({
-        "name": additional_keys.pop("name", "reflex"),
-        "type": "module",
-        "scripts": scripts,
-        "dependencies": dependencies,
-        "devDependencies": dev_dependencies,
-        "overrides": overrides,
-        **additional_keys,
-    })
+    return (
+        json.dumps(
+            {
+                "name": additional_keys.pop("name", "reflex"),
+                "type": "module",
+                "scripts": scripts,
+                "dependencies": dependencies,
+                "devDependencies": dev_dependencies,
+                "overrides": overrides,
+                **additional_keys,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n"
+    )
 
 
 def vite_config_template(
@@ -686,6 +721,7 @@ def vite_config_template(
     allowed_hosts: bool | list[str] = False,
     prod_react: bool = False,
     warmup_routes: bool = False,
+    react_compiler: bool = False,
 ):
     """Template for vite.config.js.
 
@@ -701,6 +737,7 @@ def vite_config_template(
             (dev server only; see REFLEX_DEV_PROD_REACT).
         warmup_routes: Pre-transform every route module when the dev server
             starts, so the first visit to a page does not wait on Vite.
+        react_compiler: Enable React Compiler for generated components.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -797,11 +834,17 @@ function prodReactPrebundle() {
         if warmup_routes
         else ""
     )
+    react_compiler_import = (
+        'import reactCompiler from "./vite-plugin-react-compiler.js";\n'
+        if react_compiler
+        else ""
+    )
+    react_compiler_plugin = "    reactCompiler(),\n" if react_compiler else ""
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
-
+{react_compiler_import}
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
   return {{
@@ -868,7 +911,7 @@ export default defineConfig((config) => ({{
   base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
-    reactRouter(),
+{react_compiler_plugin}    reactRouter(),
     patchReactRouterHmrRuntime(),
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
@@ -980,6 +1023,21 @@ def dynamic_components_module_template(
 _MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 
 
+def memo_wrapper_callee(wrapper: str) -> str:
+    """Make a memo wrapper expression safe to call by appending ``(...)``.
+
+    Args:
+        wrapper: The wrapper's JS expression.
+
+    Returns:
+        The expression, parenthesized unless it is a plain identifier or
+        member chain.
+    """
+    if _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
+        return wrapper
+    return f"({wrapper})"
+
+
 def _render_memo_component(component: dict[str, Any]) -> str:
     """Render the ``export const`` statement for one memoized component.
 
@@ -1004,8 +1062,8 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     )
 }})"""
     wrapper = component.get("wrapper")
-    if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
-        wrapper = f"({wrapper})"
+    if wrapper:
+        wrapper = memo_wrapper_callee(wrapper)
     export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
     name = component["name"]
     # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),
@@ -1139,19 +1197,20 @@ def styles_template(stylesheets: list[str]) -> str:
     ])
 
 
-def _render_hooks(hooks: dict[str, VarData | None], memo: list | None = None) -> str:
-    """Render hooks for macros.
+def _render_hooks(hooks: dict[str, VarData | None]) -> str:
+    """Render hooks in the order they were declared and merged.
+
+    Every hook's dependencies are declared before it, so declaration order is
+    the dependency order.
 
     Args:
         hooks: Dictionary of hooks to render.
-        memo: Optional list of memo hooks.
 
     Returns:
         Rendered hooks code as string.
     """
-    internal, pre_trigger, post_trigger = _sort_hooks(hooks)
-    internal_str = "\n".join(internal)
-    pre_trigger_str = "\n".join(pre_trigger)
-    post_trigger_str = "\n".join(post_trigger)
-    memo_str = "\n".join(memo) if memo is not None else ""
-    return f"{internal_str}\n{pre_trigger_str}\n{memo_str}\n{post_trigger_str}"
+    # Imported here: reflex_base.client_state imports this module.
+    from reflex_base.client_state import _check_declarations
+
+    _check_declarations(hooks)
+    return "\n".join(hooks)

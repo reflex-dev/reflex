@@ -1,0 +1,516 @@
+"""Tests for reflex_workflow.model: typed steps and their runtime guards.
+
+The ``pyright: ignore`` comments below mark calls that must fail type checking; with
+unnecessary ignores reported, pyright fails if one of them stops being an error.
+"""
+
+# pyright: reportUnnecessaryTypeIgnoreComment=true
+
+from __future__ import annotations
+
+import datetime
+import hashlib
+from typing import Any, Literal, assert_type, cast
+
+import pytest
+from reflex_workflow import (
+    Call,
+    Limit,
+    RateBucket,
+    RunHandle,
+    Wait,
+    WakeIn,
+    Workflow,
+    every,
+    model,
+    step,
+    wait_for,
+    wake_in,
+)
+from reflex_workflow.engine import claim
+from reflex_workflow.engine.claim import bucket_key
+from reflex_workflow.model import BUCKET_KEY_LENGTH, WORKFLOW_COLUMNS, check_call
+from sqlalchemy import (
+    Column,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Table,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    declarative_base,
+    mapped_column,
+    relationship,
+)
+
+
+class Base(DeclarativeBase):
+    """Declarative base for the test tables."""
+
+
+class Expense(Base, Workflow):
+    """An expense waiting for a decision."""
+
+    __tablename__ = "wf_model_expense"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    status: Mapped[str] = mapped_column(String, default="new")
+
+    @step(retries=3, backoff=datetime.timedelta(seconds=10))
+    async def notify(self):
+        """Wait two days for a decision.
+
+        Returns:
+            The escalation, two days from now.
+        """
+        return wake_in(Expense.escalate(), datetime.timedelta(days=2))
+
+    @step
+    async def decide(
+        self, decision: Literal["approve", "reject"], *, by: str = "manager"
+    ):
+        """Record a decision.
+
+        Args:
+            decision: The decision.
+            by: Who decided.
+        """
+        self.status = f"{decision}:{by}"
+
+    @step
+    async def escalate(self):
+        """Escalate a stale expense."""
+        self.status = "escalated"
+
+
+class Other(Base, Workflow):
+    """An unrelated workflow."""
+
+    __tablename__ = "wf_model_other"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    @step
+    async def go(self):
+        """Do nothing."""
+
+
+class Mistaken(Base, Workflow):
+    """Steps that return things a step may not return."""
+
+    __tablename__ = "wf_model_mistaken"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    @step  # pyright: ignore[reportArgumentType]
+    async def returns_a_number(self):
+        """Return a value that is not a transition.
+
+        Returns:
+            A number.
+        """
+        return 42
+
+    @step  # pyright: ignore[reportArgumentType]
+    async def returns_another_workflows_step(self):
+        """Return a step of a different workflow.
+
+        Returns:
+            Another workflow's step call.
+        """
+        return Other.go()
+
+    @step  # pyright: ignore[reportArgumentType]
+    async def waits_on_another_workflows_step(self):
+        """Wait for a step of a different workflow.
+
+        Returns:
+            A wait belonging to another workflow.
+        """
+        return wait_for(Other.go)
+
+
+class Shared(Workflow):
+    """Steps several tables share; unmapped, so each table maps its own."""
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    @step
+    async def begin(self):
+        """Do nothing."""
+
+
+class First(Base, Shared):
+    """One table using the shared steps."""
+
+    __tablename__ = "wf_model_first"
+
+
+class Second(Base, Shared):
+    """Another table using the shared steps."""
+
+    __tablename__ = "wf_model_second"
+
+
+def test_step_calls_are_typed_by_their_workflow():
+    assert_type(Expense.decide("approve"), Call[Expense])
+    assert_type(
+        wake_in(Expense.escalate(), datetime.timedelta(hours=1)), WakeIn[Expense]
+    )
+    assert_type(Expense.by(Expense.id == 1), RunHandle[Expense])
+    assert_type(wake_in(Expense.escalate, datetime.timedelta(hours=1)), WakeIn[Expense])
+
+
+def test_a_wait_is_typed_by_the_step_it_waits_on():
+    assert_type(
+        wait_for(
+            Expense.decide,
+            timeout=datetime.timedelta(days=1),
+            on_timeout=Expense.escalate,
+        ),
+        Wait[Expense],
+    )
+    wait_for(
+        Expense.decide,
+        timeout=datetime.timedelta(days=1),
+        on_timeout=Other.go,  # pyright: ignore[reportArgumentType]
+    )
+
+
+def test_steps_defined_on_a_shared_base_belong_to_each_table():
+    assert (
+        First.__workflow_steps__ == Second.__workflow_steps__ == {"begin": Shared.begin}
+    )
+    check_call(First, Shared.begin())
+    check_call(Second, Shared.begin())
+
+
+def test_step_arguments_are_checked():
+    Expense.decide("maybe")  # pyright: ignore[reportArgumentType]
+    Expense.decide("approve", by=1)  # pyright: ignore[reportArgumentType]
+    Expense.decide()  # pyright: ignore[reportCallIssue]
+    Expense.escalate("now")  # pyright: ignore[reportCallIssue]
+
+
+async def _never_called() -> None:
+    """Hold calls that must not type-check; never run."""
+    await Expense().start(Other.go())  # pyright: ignore[reportArgumentType]
+    await Expense().start(Expense.decide)  # pyright: ignore[reportArgumentType]
+    await Expense.by(Expense.id == 1).run(Other.go())  # pyright: ignore[reportArgumentType]
+    await Expense.by(Expense.id == 1).deliver(Other.go())  # pyright: ignore[reportArgumentType]
+    # A step of a shared base is a step of every table that inherits it.
+    await First().start(Shared.begin)
+    await Second.by(Second.id == 1).run(Shared.begin())
+
+
+def test_steps_are_collected_with_their_retry_policy():
+    assert set(Expense.__workflow_steps__) == {"notify", "decide", "escalate"}
+    notify = Expense.__workflow_steps__["notify"]
+    assert (notify.retries, notify.backoff) == (3, datetime.timedelta(seconds=10))
+
+
+def test_a_call_keeps_its_arguments_as_json():
+    call = Expense.decide("approve", by="ops")
+    assert call.encode() == {"args": ["approve"], "kwargs": {"by": "ops"}}
+
+
+def test_arguments_that_are_not_json_are_rejected():
+    call = Expense.decide(datetime.date(2026, 1, 1))  # pyright: ignore[reportArgumentType]
+    with pytest.raises(TypeError, match="JSON-serializable"):
+        call.encode()
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), "circular"])
+def test_arguments_json_cannot_hold_are_rejected(value: object):
+    if value == "circular":
+        value = []
+        value.append(value)
+    call = Expense.decide(value)  # pyright: ignore[reportArgumentType]
+    with pytest.raises(TypeError, match="JSON-serializable"):
+        call.encode()
+
+
+def test_an_interval_has_to_be_positive():
+    for interval in (datetime.timedelta(0), datetime.timedelta(seconds=-1)):
+        with pytest.raises(ValueError, match="positive interval"):
+            every(Expense.escalate, interval)
+
+
+def test_a_bare_step_is_a_call_without_arguments():
+    assert wake_in(Expense.escalate, datetime.timedelta(0)).call == Expense.escalate()
+
+
+def test_a_bare_step_that_needs_arguments_is_rejected():
+    with pytest.raises(TypeError, match="takes arguments"):
+        wake_in(Expense.decide, datetime.timedelta(days=1))  # pyright: ignore[reportArgumentType]
+
+
+def test_another_workflows_step_is_rejected_at_runtime():
+    with pytest.raises(TypeError, match="not a step of Expense"):
+        check_call(Expense, Other.go())
+
+
+def test_a_class_of_the_same_name_from_another_module_cannot_take_a_table():
+    with pytest.raises(ValueError, match="already used by Expense"):
+        type(
+            "Expense",
+            (Workflow,),
+            {"__module__": "somewhere.else", "__tablename__": "wf_model_expense"},
+        )
+
+
+def test_two_workflows_cannot_share_a_table():
+    with pytest.raises(ValueError, match="already used by Expense"):
+
+        class Duplicate(Workflow):
+            __tablename__ = "wf_model_expense"
+
+
+class Metered(Base, Workflow):
+    """A workflow that limits how often it calls a provider."""
+
+    __tablename__ = "wf_model_metered"
+    __workflow_limit__ = Limit(
+        by="provider", rate=60, per=datetime.timedelta(minutes=1)
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    provider: Mapped[str] = mapped_column(String)
+
+    @step
+    async def call(self):
+        """Call the provider."""
+
+
+def test_a_limit_has_to_cap_something():
+    with pytest.raises(ValueError, match="at_most, rate, or both"):
+        Limit(by="customer")
+
+
+@pytest.mark.parametrize(
+    "caps",
+    [
+        {"at_most": 0},
+        {"rate": 0, "per": datetime.timedelta(minutes=1)},
+        {"rate": 5, "per": datetime.timedelta(0)},
+    ],
+)
+def test_a_limit_has_to_be_positive(caps: dict[str, object]):
+    with pytest.raises(ValueError, match="must be positive"):
+        Limit(by="customer", **caps)  # pyright: ignore[reportArgumentType]
+
+
+def test_a_rate_needs_the_period_it_is_counted_over():
+    with pytest.raises(ValueError, match="rate and per together"):
+        Limit(by="customer", rate=60)
+    # A period without a rate says nothing, even alongside a concurrency cap.
+    with pytest.raises(ValueError, match="rate and per together"):
+        Limit(by="customer", at_most=2, per=datetime.timedelta(minutes=1))
+
+
+async def test_a_rate_without_a_bucket_table_says_so(monkeypatch):
+    monkeypatch.setattr(model, "BUCKET", None)
+    spec = Metered.__workflow_limit__
+    assert spec is not None
+    with pytest.raises(TypeError, match="rate bucket table must be mapped"):
+        await claim.take_tokens(None, Metered, spec, "stripe", 1)  # pyright: ignore[reportArgumentType]
+
+
+def test_only_one_bucket_table_may_be_mapped(monkeypatch):
+    # Whichever test module ran first has mapped one; this is about the second.
+    monkeypatch.setattr(model, "BUCKET", None)
+
+    class Buckets(Base, RateBucket):
+        __tablename__ = "wf_model_rate"
+
+    assert model.BUCKET is Buckets
+    with pytest.raises(ValueError, match="already mapped"):
+
+        class Second(Base, RateBucket):
+            __tablename__ = "wf_model_rate_again"
+
+
+def test_arguments_a_step_cannot_take_are_rejected_where_the_call_is_made():
+    # A webhook body that does not fit the step it addresses is refused while
+    # there is still a caller to tell.
+    with pytest.raises(TypeError, match="cannot take those arguments"):
+        check_call(Expense, Expense.decide(verdikt="approve"))  # pyright: ignore[reportCallIssue]
+    with pytest.raises(TypeError, match="cannot take those arguments"):
+        check_call(Expense, Expense.decide("approve", "again"))  # pyright: ignore[reportCallIssue]
+    check_call(Expense, Expense.decide("approve"))
+
+
+def engine_index(cls: type[Workflow], suffix: str) -> Index | None:
+    """Find one of the indexes the engine adds to a workflow, if it is there.
+
+    Args:
+        cls: The workflow class.
+        suffix: Which one, as it appears at the end of the index's name.
+
+    Returns:
+        The index, or None.
+    """
+    name = f"ix_{cls.__tablename__}_{suffix}"
+    table = cls.__table__  # pyright: ignore[reportAttributeAccessIssue]
+    return next((index for index in table.indexes if index.name == name), None)
+
+
+def rendered_predicate(index: Index) -> str:
+    """Return the index's WHERE clause as Postgres will be given it.
+
+    Args:
+        index: The index.
+
+    Returns:
+        The compiled predicate.
+    """
+    where = index.dialect_options["postgresql"]["where"]
+    return str(where.compile(dialect=postgresql.dialect()))
+
+
+def test_a_workflow_is_indexed_by_the_events_it_holds_and_the_leases_on_it():
+    class Parked(Base, Workflow):
+        """A workflow that takes the table arguments the mixin gives it."""
+
+        __tablename__ = "wf_model_parked"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+    held = engine_index(Parked, "held_event")
+    assert held is not None
+    # Only the parked runs that hold an answer, which is a handful of them:
+    # over all of them it would be the scan it is there to replace.
+    assert [column.name for column in held.columns] == ["waiting_for"]
+    assert rendered_predicate(held) == "wf_model_parked.pending_event IS NOT NULL"
+
+    # The idle path asks when the soonest lease runs out, and a lease is held
+    # by a handful of rows in a table that is mostly runs already over.
+    lease = engine_index(Parked, "lease")
+    assert lease is not None
+    assert [column.name for column in lease.columns] == ["claimed_until"]
+    assert rendered_predicate(lease) == "wf_model_parked.claimed_until IS NOT NULL"
+
+
+def test_a_workflow_that_declares_its_own_table_arguments_keeps_that_index():
+    class Constrained(Base, Workflow):
+        """A workflow with table arguments of its own, as applications have."""
+
+        __tablename__ = "wf_model_constrained"
+        __table_args__ = (UniqueConstraint("reference", name="uq_wf_model_reference"),)
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        reference: Mapped[str] = mapped_column(String(32))
+
+    # Through __table_args__ the mixin's index would have been replaced by this
+    # class's own, and nothing would have said so.
+    assert engine_index(Constrained, "held_event") is not None
+    assert engine_index(Constrained, "lease") is not None
+    table = cast(Table, Constrained.__table__)
+    assert "uq_wf_model_reference" in {c.name for c in table.constraints}
+
+
+def test_a_workflow_on_the_older_declarative_base_is_indexed_too():
+    older = declarative_base()
+
+    class Ageing(older, Workflow):
+        """A workflow mapped the way SQLAlchemy asked for before DeclarativeBase."""
+
+        __tablename__ = "wf_model_ageing"
+
+        id = Column(Integer, primary_key=True)
+
+    # That style has no table yet while the class body is being run, so an index
+    # attached from __init_subclass__ would quietly not be there at all.
+    assert engine_index(Ageing, "held_event") is not None
+    assert engine_index(Ageing, "lease") is not None
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("a.com", "wf_model_metered:a.com"),
+        # Too long to name in the key column, so named by a digest of itself.
+        ("x" * 300, f"wf_model_metered:{hashlib.sha256(b'x' * 300).hexdigest()}"),
+        # Reads as a digest, so hashed too rather than naming a bucket a long
+        # value could also land on.
+        (
+            "a" * 64,
+            f"wf_model_metered:{hashlib.sha256(b'a' * 64).hexdigest()}",
+        ),
+    ],
+)
+def test_a_group_of_any_length_names_a_bucket_the_column_holds(value, expected):
+    key = bucket_key(Metered, value)
+    assert key == expected
+    assert len(key) <= BUCKET_KEY_LENGTH
+
+
+def test_a_workflow_that_takes_one_of_the_engines_columns_is_refused():
+    # Tree-shaped models usually have one of these, and it replaces the mixin's
+    # column with no column of that name left on the table: SQLAlchemy says
+    # nothing, and the first start() fails on syntax instead.
+    with pytest.raises(TypeError, match="declares parent, which reflex_workflow"):
+
+        class Comment(Base, Workflow):
+            """A workflow whose own relationship takes the engine's column."""
+
+            __tablename__ = "wf_model_comment"
+
+            id: Mapped[int] = mapped_column(primary_key=True)
+            parent_id: Mapped[int | None] = mapped_column(
+                ForeignKey("wf_model_comment.id")
+            )
+            # Deliberately the collision: pyright sees it too, which is the
+            # other half of the guard, for anyone who runs one.
+            parent: Mapped[Comment | None] = relationship(  # pyright: ignore[reportIncompatibleVariableOverride]
+                remote_side=[id]
+            )
+
+
+def test_a_workflow_that_retypes_one_of_the_engines_columns_is_refused():
+    # A replacement that keeps the name leaves a column of that name on the
+    # table, so it gets as far as the claim's update and fails there instead.
+    with pytest.raises(TypeError, match="declares wf_version, which reflex_workflow"):
+
+        class Versioned(Base, Workflow):
+            """A workflow whose own column takes the engine's name and type."""
+
+            __tablename__ = "wf_model_versioned"
+
+            id: Mapped[int] = mapped_column(primary_key=True)
+            wf_version: Mapped[str] = mapped_column(String(8))  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+def test_a_workflow_that_redeclares_an_event_column_alike_is_refused():
+    # Same class of type, different behaviour: the engine declares this
+    # JSONB(none_as_null=True), and a plain JSONB stores None as a json null
+    # where every read of the column tests for SQL NULL -- so a cancelled run
+    # would look like one still holding an event, and refuse every delivery
+    # after it. A check on the type's class alone lets this through.
+    with pytest.raises(TypeError, match="declares pending_event, which"):
+
+        class Loose(Base, Workflow):
+            """A workflow whose event column is alike but not the same."""
+
+            __tablename__ = "wf_model_loose"
+
+            id: Mapped[int] = mapped_column(primary_key=True)
+            pending_event: Mapped[dict[str, Any]] = mapped_column(JSONB)  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+def test_a_workflow_that_leaves_the_engines_columns_alone_is_not():
+    class Kept(Base, Workflow):
+        """A workflow that names its own columns something else."""
+
+        __tablename__ = "wf_model_kept"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_comment_id: Mapped[int | None] = mapped_column(Integer)
+
+    assert set(cast(Table, Kept.__table__).c.keys()) >= WORKFLOW_COLUMNS

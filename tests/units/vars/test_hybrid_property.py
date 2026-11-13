@@ -1,6 +1,7 @@
 """Unit tests for reflex_base.vars.hybrid_property."""
 
 from collections.abc import Generator
+from typing import assert_type
 
 import pytest
 from reflex_base.registry import RegistrationContext
@@ -8,7 +9,6 @@ from reflex_base.utils.exceptions import HybridPropertyError
 from reflex_base.vars.number import BooleanVar, NumberVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
-from typing_extensions import assert_type
 
 import reflex as rx
 from reflex.experimental import hybrid_property

@@ -109,6 +109,72 @@ def test_cpu_names(model: str | None, short: str, slug: str):
     assert machine.cpu_slug(model) == slug
 
 
+def _arm_cpuinfo(implementer: str, part: str, processor: int = 0) -> str:
+    return (
+        f"processor\t: {processor}\n"
+        "BogoMIPS\t: 243.75\n"
+        "Features\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 cpuid\n"
+        f"CPU implementer\t: {implementer}\n"
+        "CPU architecture: 8\n"
+        "CPU variant\t: 0x0\n"
+        f"CPU part\t: {part}\n"
+        "CPU revision\t: 3\n"
+    )
+
+
+@pytest.mark.parametrize(
+    ("implementer", "part", "model", "slug"),
+    [
+        ("0x41", "0xd08", "Cortex-A72", "cortex-a72"),
+        ("0x41", "0xd0c", "Neoverse-N1", "neoverse-n1"),
+        ("0x41", "0xd49", "Neoverse-N2", "neoverse-n2"),
+        ("0x41", "0xfff", "implementer 0x41 part 0xfff", "implementer-0x41-part-0xfff"),
+        ("0x61", "0x022", "implementer 0x61 part 0x022", "implementer-0x61-part-0x022"),
+    ],
+)
+def test_arm_cores_without_a_model_name_get_distinct_profiles(
+    sysroot: Path, implementer: str, part: str, model: str, slug: str
+):
+    _write(sysroot, "proc/cpuinfo", _arm_cpuinfo(implementer, part))
+    found = machine.collect(sysroot, system="Linux", python_version="3.12.3")
+    assert found["cpu_model"] == model
+    assert found["profile_id"].endswith(f"-{slug}-py3.12")
+
+
+@pytest.mark.parametrize(
+    ("clusters", "model", "slug"),
+    [
+        ([(16, "0xd08")], "Cortex-A72", "cortex-a72"),
+        (
+            [(4, "0xd05"), (4, "0xd0b")],
+            "4x implementer 0x41 part 0xd05 + 4x Cortex-A76",
+            "4x-implementer-0x41-part-0xd05-4x-cortex-a76",
+        ),
+        (
+            [(4, "0xd0b"), (4, "0xd05")],
+            "4x implementer 0x41 part 0xd05 + 4x Cortex-A76",
+            "4x-implementer-0x41-part-0xd05-4x-cortex-a76",
+        ),
+        (
+            [(6, "0xd05"), (2, "0xd0b")],
+            "6x implementer 0x41 part 0xd05 + 2x Cortex-A76",
+            "6x-implementer-0x41-part-0xd05-2x-cortex-a76",
+        ),
+    ],
+)
+def test_arm_hosts_with_several_core_types_name_each_with_its_count(
+    sysroot: Path, clusters: list[tuple[int, str]], model: str, slug: str
+):
+    parts = [part for count, part in clusters for _ in range(count)]
+    cpuinfo = "\n".join(
+        _arm_cpuinfo("0x41", part, processor) for processor, part in enumerate(parts)
+    )
+    _write(sysroot, "proc/cpuinfo", cpuinfo)
+    found = machine.collect(sysroot, system="Linux", python_version="3.12.3")
+    assert found["cpu_model"] == model
+    assert found["profile_id"].endswith(f"-{slug}-py3.12")
+
+
 def test_profile_id(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv(machine.PROFILE_ENV, raising=False)
     assert (

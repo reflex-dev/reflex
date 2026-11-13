@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.11
 
 ARG USERNAME=kerrigan
 RUN useradd -m $USERNAME

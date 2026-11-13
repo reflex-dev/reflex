@@ -6,7 +6,7 @@ from typing import Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.event import EventHandler, input_event, key_event
-from reflex_base.utils.types import is_optional
+from reflex_base.utils.types import is_optional, safe_issubclass, value_inside_optional
 from reflex_base.vars.base import Var
 from reflex_base.vars.number import ternary_operation
 from reflex_components_core.core.breakpoints import Responsive
@@ -45,8 +45,8 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
         doc='Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"'
     )
 
-    auto_complete: Var[bool] = field(
-        doc="Whether the input should have autocomplete enabled"
+    auto_complete: Var[str] = field(
+        doc='The autocomplete hint, e.g. "off", "on" or "email". True and False become "on" and "off".'
     )
 
     default_value: Var[str] = field(
@@ -124,6 +124,17 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
         Returns:
             The component.
         """
+        # React drops a bool autoComplete, the DOM takes a string
+        auto_complete = props.get("auto_complete")
+        if isinstance(auto_complete, bool):
+            props["auto_complete"] = "on" if auto_complete else "off"
+        elif isinstance(auto_complete, Var) and safe_issubclass(
+            value_inside_optional(auto_complete._var_type), bool
+        ):
+            props["auto_complete"] = ternary_operation(
+                auto_complete, Var.create("on"), Var.create("off")
+            )
+
         # TextField.Root renders a styled wrapper around the input. The wrapper
         # keeps its border and height even when the input inside it is hidden,
         # which leaves a stray bar on the page. There is nothing to style on a
