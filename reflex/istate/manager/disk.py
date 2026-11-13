@@ -103,11 +103,18 @@ class StateManagerDisk(StateManager):
         default_factory=_dev_hot_reload_active, init=False
     )
 
+    # Earliest time a state file on disk can expire.
+    _next_disk_purge: float = dataclasses.field(default=0.0, init=False)
+    # Token expiration used to compute _next_disk_purge.
+    _disk_purge_token_expiration: int = dataclasses.field(default=0, init=False)
+
     def __post_init__(self):
         """Create a new state manager."""
         path_ops.mkdir(self.states_directory)
 
-        self._purge_expired_states()
+        self._disk_purge_token_expiration, self._next_disk_purge = (
+            self._purge_expired_states()
+        )
 
     @functools.cached_property
     def states_directory(self) -> Path:
@@ -121,8 +128,15 @@ class StateManagerDisk(StateManager):
         """
         return prerequisites.get_states_dir().absolute()
 
-    def _purge_expired_states(self):
-        """Purge expired states from the disk."""
+    def _purge_expired_states(self) -> tuple[int, float]:
+        """Purge expired files and find the next possible disk expiration.
+
+        Returns:
+            The lifetime used and next expiration deadline, capped at one token
+            lifetime from the scan's start so newly created files are covered too.
+        """
+        token_expiration = self.token_expiration
+        next_expiration = time.time() + token_expiration
         for path in path_ops.ls(self.states_directory):
             # check path is a pickle file
             if path.suffix != ".pkl":
@@ -132,9 +146,28 @@ class StateManagerDisk(StateManager):
             last_edited = path.stat().st_mtime
 
             # check if the file is older than the token expiration time
-            if time.time() - last_edited > self.token_expiration:
+            if time.time() - last_edited > token_expiration:
                 # remove the file
                 path.unlink()
+            else:
+                next_expiration = min(next_expiration, last_edited + token_expiration)
+        return token_expiration, next_expiration
+
+    async def _maybe_purge_expired_states(self):
+        """Scan disk only when a file may expire or the token expiration changed.
+
+        Writes do not invalidate the deadline: a file written after a scan
+        started expires after the scan's cap of one token lifetime.
+        """
+        if (
+            time.time() < self._next_disk_purge
+            and self.token_expiration == self._disk_purge_token_expiration
+        ):
+            return
+        (
+            self._disk_purge_token_expiration,
+            self._next_disk_purge,
+        ) = await run_in_thread(self._purge_expired_states)
 
     def token_path(self, token: StateToken) -> Path:
         """Get the path for a token.
@@ -352,7 +385,7 @@ class StateManagerDisk(StateManager):
                         and not self._is_locked(token)
                     ):
                         self._purge_token(token)
-                await run_in_thread(self._purge_expired_states)
+                await self._maybe_purge_expired_states()
                 await self._process_write_queue_delay()
             except asyncio.CancelledError:
                 await self._flush_write_queue()
