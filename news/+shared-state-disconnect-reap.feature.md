@@ -1,0 +1,1 @@
+Disconnected clients are unsubscribed from their linked shared states after a reconnect grace period (`REFLEX_SHARED_STATE_DISCONNECT_GRACE`, default 30s, 0 disables). The new `SharedState._on_subscriber_disconnected` hook lets shared states clean up per-client data (e.g. presence bookkeeping); a client reconnecting later re-subscribes automatically with its next event.
