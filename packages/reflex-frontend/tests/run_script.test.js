@@ -7,7 +7,7 @@
 import { describe, expect, test, vi } from "vitest";
 
 import { eventLoop } from "$/utils/context-registry";
-import { applyEvent } from "$/utils/state";
+import { applyEvent, getToken } from "$/utils/state";
 
 const callScript = (code, callback, socket = null) =>
   applyEvent(
@@ -51,14 +51,16 @@ describe("_call_script", () => {
     // Apps written against direct eval call socket.disconnect() and read the
     // session token from a script.
     const socket = { disconnect: vi.fn() };
+    const token = getToken();
+    expect(typeof token).toBe("string");
     const seen = [];
     await callScript(
-      "socket.disconnect(); [typeof navigate, typeof params, typeof token]",
+      "socket.disconnect(); [typeof navigate, typeof params, token]",
       (result) => seen.push(result),
       socket,
     );
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
-    expect(seen).toEqual([["object", "object", "undefined"]]);
+    expect(seen).toEqual([["object", "object", token]]);
   });
 
   test("callback strings can use every helper this module exports", async () => {

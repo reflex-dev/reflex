@@ -12,7 +12,7 @@ STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 
 ADD_EVENTS_ALIAS = "const addEvents = (...args) => eventLoop.addEvents(...args);"
 
-USER_CODE_RUNS = re.compile(r"runScript\(\s*event\.payload\.(\w+),")
+USER_CODE_RUNS = re.compile(r"runScript\(\s*event\.payload\.(\w+),\s*addEvents\b")
 
 TOP_LEVEL_FUNCTION = re.compile(
     r"^(?:export )?const (\w+) = (?:async )?\(", re.MULTILINE
