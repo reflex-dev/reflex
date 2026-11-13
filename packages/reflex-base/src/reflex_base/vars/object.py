@@ -91,11 +91,24 @@ def _unserialized_property_error(var_type: GenericType, name: str) -> VarAttribu
             "`rx.serializer` for the dataclass to include it."
         )
     else:
-        detail = (
-            f"Pydantic model '{var_type.__name__}' is not included in serialized "
-            "state. Use `@pydantic.computed_field` to include the computed value in "
-            "model_dump()."
-        )
+        from reflex_base.utils import serializers
+
+        if (
+            isinstance(var_type, type)
+            and serializers.get_serializer(var_type)
+            is serializers.serialize_sqlalchemy_base
+        ):
+            detail = (
+                f"SQLAlchemy model '{var_type.__name__}' is not included in serialized "
+                "state. Register an `rx.serializer` for the model to include the "
+                "value, or access a mapped attribute instead."
+            )
+        else:
+            detail = (
+                f"Pydantic model '{var_type.__name__}' is not included in serialized "
+                "state. Use `@pydantic.computed_field` to include the computed value in "
+                "model_dump()."
+            )
     return VarAttributeError(f"The property '{name}' on {detail}")
 
 
@@ -376,9 +389,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
                     )
                     raise VarAttributeError(msg)
                 return hybrid_var
-            if isinstance(descriptor, property) and types.is_unserialized_property(
-                fixed_type, name, descriptor
-            ):
+            if types.is_unserialized_property(fixed_type, name, descriptor):
                 raise _unserialized_property_error(fixed_type, name)
             attribute_type = get_attribute_access_type(var_type, name, descriptor)
         elif is_typeddict(fixed_type) or fixed_type in types.UnionTypes:

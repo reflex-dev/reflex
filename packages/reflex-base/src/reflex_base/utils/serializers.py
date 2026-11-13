@@ -23,7 +23,9 @@ from pathlib import Path
 from typing import Any, Literal, NamedTuple, TypeVar, get_type_hints, overload
 from uuid import UUID
 
+from reflex_base import constants
 from reflex_base.constants.colors import Color
+from reflex_base.environment import environment
 from reflex_base.utils import _serializer_types, types
 
 logger = logging.getLogger(__name__)
@@ -655,6 +657,7 @@ class _SQLAlchemyLayout(NamedTuple):
 _SQLALCHEMY_LAYOUTS: weakref.WeakKeyDictionary[type, _SQLAlchemyLayout] = (
     weakref.WeakKeyDictionary()
 )
+_WARNED_EXPIRED_SQLALCHEMY_MODELS: weakref.WeakSet[type] = weakref.WeakSet()
 
 
 def _get_sqlalchemy_layout(cls: type) -> _SQLAlchemyLayout:
@@ -733,6 +736,22 @@ def _serialize_sqlalchemy_model(
     values = state.dict
     committed = state.committed_state
     has_identity_key = state.key is not None
+
+    if (
+        environment.REFLEX_ENV_MODE.get() == constants.Env.DEV
+        and has_identity_key
+        and layout.columns
+        and type(m) not in _WARNED_EXPIRED_SQLALCHEMY_MODELS
+        and all(key in state.expired_attributes for key in layout.columns)
+    ):
+        logger.warning(
+            "SQLAlchemy model %s has all mapped columns expired and will serialize "
+            "without them. Set expire_on_commit=False or reload the model in an open "
+            "session before serializing it.",
+            type(m).__name__,
+        )
+        _WARNED_EXPIRED_SQLALCHEMY_MODELS.add(type(m))
+
     seen.add(id(m))
 
     try:
