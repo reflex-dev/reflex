@@ -538,6 +538,55 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
     assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
 
 
+def test_api_transformer_lifespan_warns_when_middleware_raises(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """Warn when a middleware exception prevents a nested transformer lifespan."""
+    fastapi = pytest.importorskip("fastapi")
+    events: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def lifespan(api: Any):
+        events.append("startup")
+        yield
+        events.append("shutdown")
+
+    fastapi_app = fastapi.FastAPI(lifespan=lifespan)
+
+    @fastapi_app.get("/api/greeting")
+    def greeting() -> dict[str, str | None]:
+        return {"greeting": getattr(fastapi_app.state, "greeting", None)}
+
+    def middleware_with_path_assumption(asgi_app: ASGIApp) -> ASGIApp:
+        async def middleware(scope: Scope, receive: Receive, send: Send) -> None:
+            if scope["path"].startswith("/old-docs"):
+                return
+            await asgi_app(scope, receive, send)
+
+        return middleware
+
+    app = App(api_transformer=[fastapi_app, middleware_with_path_assumption])
+    mocker.patch.object(app, "_compile")
+
+    with (
+        caplog.at_level(logging.WARNING, logger="reflex.app_mixins.lifespan"),
+        TestClient(app()) as client,
+    ):
+        assert client.get("/api/greeting").json() == {"greeting": None}
+
+    assert events == []
+    assert [record.message for record in caplog.records] == [
+        (
+            "ASGI lifespan startup raised KeyError('path') in "
+            "test_api_transformer_lifespan_warns_when_middleware_raises.<locals>."
+            "middleware_with_path_assumption.<locals>.middleware. "
+            "The following nested transformer lifespans will not run: FastAPI("
+            "'FastAPI'). If this is middleware, pass non-HTTP scopes through (e.g. "
+            "check scope['type'] or use scope.get('path', ''))."
+        )
+    ]
+
+
 def test_api_transformer_named_routes_resolve(mocker: MockerFixture):
     """Resolve the named routes of a Starlette api_transformer through the served app.
 
