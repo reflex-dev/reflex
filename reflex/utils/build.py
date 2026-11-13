@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import logging
 import os
 import zipfile
@@ -164,9 +165,12 @@ def _zip(
             file = directory_path / subfile_name
             try:
                 file_stat = file.stat()
-            except FileNotFoundError:
+            except OSError as error:
+                if error.errno not in (errno.ENOENT, errno.ELOOP):
+                    raise
+                kind = "looping" if error.errno == errno.ELOOP else "dangling"
                 console.warn(
-                    f"Skipping dangling symlink {file.relative_to(root_directory)}"
+                    f"Skipping {kind} symlink {file.relative_to(root_directory)}"
                 )
                 continue
             if (file_stat.st_dev, file_stat.st_ino) not in excluded_file_ids:

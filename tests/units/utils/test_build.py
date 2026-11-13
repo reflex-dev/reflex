@@ -192,23 +192,51 @@ def test_zip_keeps_real_path_for_internal_symlink_to_nested_directory(
 
 
 @pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires directory symlinks")
-def test_zip_terminates_on_directory_symlink_loop(tmp_path: Path):
-    """A directory symlink pointing at an ancestor must not recurse forever."""
+def test_zip_walks_external_directory_symlink_loop_once(tmp_path: Path):
+    """An outside directory linking back to itself is walked once, not repeatedly."""
     root = tmp_path / "app"
     root.mkdir()
     (root / "a.py").write_text("A = 1")
-    (root / "loop").symlink_to(root, target_is_directory=True)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "b.py").write_text("B = 1")
+    (outside / "back").symlink_to(outside, target_is_directory=True)
+    (root / "ext").symlink_to(outside, target_is_directory=True)
     target = tmp_path / "backend.zip"
 
     build._zip(
         component_name=constants.ComponentName.BACKEND,
         target=target,
-        root_directory=root,
+        root_directory=root.resolve(),
+        exclude_venv_directories=True,
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        assert sorted(archive.namelist()) == ["a.py", "ext/b.py"]
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires symlinks")
+def test_zip_skips_looping_file_symlink_with_warning(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """A symlink that resolves to itself is skipped with a warning."""
+    root = tmp_path / "app"
+    root.mkdir()
+    (root / "a.py").write_text("A = 1")
+    (root / "self").symlink_to(root / "self")
+    target = tmp_path / "backend.zip"
+    warn = mocker.patch("reflex.utils.build.console.warn")
+
+    build._zip(
+        component_name=constants.ComponentName.BACKEND,
+        target=target,
+        root_directory=root.resolve(),
         exclude_venv_directories=True,
     )
 
     with zipfile.ZipFile(target) as archive:
         assert archive.namelist() == ["a.py"]
+    warn.assert_called_once_with("Skipping looping symlink self")
 
 
 def test_compress_static_output_overwrites_stale_sidecars(
