@@ -114,6 +114,13 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
                 auto_complete, Var.create("on"), Var.create("off")
             )
 
+        # The TextField.Root wrapper keeps its border and height around a hidden
+        # input, which shows as an empty bar, so hide the wrapper too.
+        if props.get("hidden") is True or (
+            isinstance(input_type := props.get("type"), str) and input_type == "hidden"
+        ):
+            props.setdefault("display", "none")
+
         value = props.get("value")
 
         # React expects an empty string(instead of null) for controlled inputs.
