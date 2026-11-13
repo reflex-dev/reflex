@@ -1291,7 +1291,8 @@ class Component(BaseComponent, ABC):
                 if isinstance(child, (EventSpec, EventHandler, EventChain)):
                     error.add_note(
                         "Bind an event to an event trigger such as on_click, or pass "
-                        "it to on_load in app.add_page to run it when the page loads."
+                        "it to on_load in app.add_page to run it when the page loads. "
+                        "See https://reflex.dev/docs/events/events-overview/"
                     )
                 raise error
 

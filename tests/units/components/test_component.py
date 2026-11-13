@@ -836,7 +836,8 @@ def test_component_create_event_child(make_child, type_name, test_component):
     assert exc_info.value.__notes__ == [
         (
             "Bind an event to an event trigger such as on_click, or pass it to "
-            "on_load in app.add_page to run it when the page loads."
+            "on_load in app.add_page to run it when the page loads. "
+            "See https://reflex.dev/docs/events/events-overview/"
         )
     ]
 
