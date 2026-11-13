@@ -1232,6 +1232,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # Lifespan events go to the outermost app, which may forward them, and to
         # each app a Starlette transformer mounts, as Starlette does not forward them.
         lifespan_apps: list[ASGIApp] = []
+        lifespan_transformers: dict[int, Starlette] = {}
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
                 [self.api_transformer]
@@ -1239,6 +1240,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 else self.api_transformer
             )
 
+            wrapped_transformer: Starlette | None = None
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
                     if api_transformer.router.lifespan_context in self._lifespan_tasks:
@@ -1250,16 +1252,27 @@ class App(MiddlewareMixin, LifespanMixin):
                         )
                     if asgi_app is not api:
                         lifespan_apps.append(asgi_app)
+                        if (
+                            wrapped_transformer is not None
+                            and asgi_app is not wrapped_transformer
+                        ):
+                            lifespan_transformers[id(asgi_app)] = wrapped_transformer
                     # Mount the api to the starlette app.
                     App._add_cors(api_transformer)
                     api_transformer.mount("", asgi_app)
                     asgi_app = api_transformer
+                    wrapped_transformer = api_transformer
                 else:
                     # Transform the asgi app.
                     asgi_app = api_transformer(asgi_app)
 
             if asgi_app is not api:
                 lifespan_apps.append(asgi_app)
+                if (
+                    wrapped_transformer is not None
+                    and asgi_app is not wrapped_transformer
+                ):
+                    lifespan_transformers[id(asgi_app)] = wrapped_transformer
 
         cors_options = App._cors_options()
         top_asgi_app = _RootMiddleware(
@@ -1271,7 +1284,12 @@ class App(MiddlewareMixin, LifespanMixin):
                 else asgi_app
             ),
             reflex_app=self,
-            lifespan=functools.partial(self._run_lifespan, api, lifespan_apps),
+            lifespan=functools.partial(
+                self._run_lifespan,
+                api,
+                lifespan_apps,
+                wrapped_transformers=lifespan_transformers,
+            ),
         )
         if otel.asgi_middleware is not None:
             return otel.asgi_middleware(top_asgi_app)
