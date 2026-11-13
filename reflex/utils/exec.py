@@ -282,9 +282,7 @@ def frontend_env(environ: Mapping[str, str]) -> dict[str, str]:
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
-def run_process_and_launch_url(
-    run_command: Sequence[str | None], backend_present: bool = True
-):
+def run_process_and_launch_url(run_command: list[str], backend_present: bool = True):
     """Run the process and launch the URL.
 
     Args:

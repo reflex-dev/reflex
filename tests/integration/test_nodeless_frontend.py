@@ -9,7 +9,8 @@ import pytest
 
 import reflex.testing as reflex_testing
 from reflex.testing import AppHarness
-from reflex.utils import path_ops
+from reflex.utils import js_runtimes, path_ops
+from reflex.utils.exec import _DEV_CONDITION_FLAG
 
 
 def NodelessApp():
@@ -52,6 +53,9 @@ def nodeless_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
             pytest.skip("node is still resolvable after filtering it off PATH")
         if path_ops.get_bun_path() is None:
             pytest.skip("bun is unavailable once node is off PATH")
+        # The node probe is cached per process, so an earlier test may have
+        # found node; it is off PATH now.
+        monkeypatch.setattr(js_runtimes, "get_node_version", lambda: None)
         # Drop the `development` condition Reflex puts in the dev server's
         # environment. Bun applies neither NODE_OPTIONS nor BUN_OPTIONS to the
         # process it spawns for a package script, so node-less installs never
@@ -85,6 +89,10 @@ def test_nodeless_frontend_serves(nodeless_app: AppHarness):
     Args:
         nodeless_app: The harness running without node on PATH.
     """
+    assert nodeless_app.frontend_process is not None
+    args = nodeless_app.frontend_process.args
+    assert isinstance(args, list)
+    assert _DEV_CONDITION_FLAG in args
     assert nodeless_app.frontend_url is not None
     response = httpx.get(nodeless_app.frontend_url, timeout=60)
     assert response.status_code == 200
