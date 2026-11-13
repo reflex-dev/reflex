@@ -1219,6 +1219,9 @@ def get_attribute_access_type(
         return unionize(
             *(get_attribute_access_type(arg, name) for arg in get_args(cls))
         )
+    if is_generic_alias(cls) and typing_extensions.is_typeddict(get_origin_og(cls)):
+        # A specialized generic TypedDict: its fields name the type parameters.
+        return get_typed_dict_field_types(cls).get(name)
     if isinstance(cls, type):
         # Bare class. Skip hint resolution entirely when the name is not
         # annotated anywhere in the MRO: attribute probes (e.g. inspect's

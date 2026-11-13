@@ -915,3 +915,29 @@ def test_get_attribute_access_type_rx_model_skips_declarative_column_typing(
     monkeypatch.setattr(types_module, "_get_column_access_type", unreachable)
     assert not issubclass(JsonModelClass, DeclarativeBase)
     assert get_attribute_access_type(JsonModelClass, "profile") is dict
+
+
+class _GenericPayload(TypedDict, Generic[_T]):
+    value: _T
+    label: str
+
+
+def test_get_attribute_access_type_generic_typed_dict() -> None:
+    """A specialized generic TypedDict resolves its fields with the type arguments."""
+    assert get_attribute_access_type(_GenericPayload[int], "value") is int
+    assert get_attribute_access_type(_GenericPayload[list[str]], "value") == list[str]
+    assert get_attribute_access_type(_GenericPayload[int], "label") is str
+    assert get_attribute_access_type(_GenericPayload[int], "missing") is None
+
+
+def test_generic_typed_dict_var_item_access() -> None:
+    """A var typed as a specialized generic TypedDict can be indexed by its keys."""
+
+    class GenericTypedDictState(rx.State):
+        payload: _GenericPayload[int] = {"value": 1, "label": "a"}
+
+    value = GenericTypedDictState.payload["value"]
+    assert value._var_type is int
+    assert GenericTypedDictState.payload.label._var_type is str
+    with pytest.raises(VarAttributeError):
+        GenericTypedDictState.payload["missing"]
