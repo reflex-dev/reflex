@@ -4,7 +4,7 @@ import { SourceTextModule, SyntheticModule } from "node:vm";
 // Dependency-free frontend modules state.js imports, evaluated for real.
 const REAL_MODULES = {
   "$/utils/event_results": new URL(
-    "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/event_results.js",
+    "../../../packages/reflex-frontend/src/utils/event_results.js",
     import.meta.url,
   ),
 };

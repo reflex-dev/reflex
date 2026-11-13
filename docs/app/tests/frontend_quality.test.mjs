@@ -17,7 +17,7 @@ const moduleUrl = (source) => "data:text/javascript;base64," + Buffer.from(sourc
 test("Shiki server rendering includes escaped, readable code", async () => {
   const { createElement } = await import(resolve("react"));
   const { renderToStaticMarkup } = await import(resolve("react-dom/server"));
-  const filename = path.join(root, "packages/reflex-base/src/reflex_base/.templates/web/components/shiki/code.js");
+  const filename = path.join(root, "packages/reflex-frontend/src/components/shiki/code.js");
   // Effects do not run during SSR; this checks React's escaped fallback only.
   const source = (await readFile(filename, "utf8"))
     .replaceAll('from "react"', `from "${resolve("react")}"`);
@@ -45,7 +45,7 @@ test("Shiki invalidates every highlight input and ignores replaced work", async 
   `);
   const hooks = await import(hooksUrl);
   const highlighter = await import(highlighterUrl);
-  const filename = path.join(root, "packages/reflex-base/src/reflex_base/.templates/web/components/shiki/code.js");
+  const filename = path.join(root, "packages/reflex-frontend/src/components/shiki/code.js");
   const source = (await readFile(filename, "utf8"))
     .replaceAll('from "react"', `from "${hooksUrl}"`)
     .replaceAll('import("shiki")', `import("${highlighterUrl}")`);
@@ -162,7 +162,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
       .replace('import("constructor")', 'loadConstructor()'));
   // Render the component's jsx call directly, so a component returns the fixture's value.
   const emotion = {jsx: (type, props) => type(props)};
-  const stateSource = await readFile(path.join(root, "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"), "utf8");
+  const stateSource = await readFile(path.join(root, "packages/reflex-frontend/src/utils/state.js"), "utf8");
   // Parse the complete module so nested statements cannot truncate the export.
   const { parseAst } = await import(resolve("rolldown/parseAst"));
   const stateModule = parseAst(stateSource);

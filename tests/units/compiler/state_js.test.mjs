@@ -5,7 +5,7 @@ import vm from "node:vm";
 
 const source = await readFile(
   new URL(
-    "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/state.js",
+    "../../../packages/reflex-frontend/src/utils/state.js",
     import.meta.url,
   ),
   "utf8",
@@ -13,7 +13,7 @@ const source = await readFile(
 // Dependency-free, so evaluated for real rather than stubbed.
 const eventResultsSource = await readFile(
   new URL(
-    "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/event_results.js",
+    "../../../packages/reflex-frontend/src/utils/event_results.js",
     import.meta.url,
   ),
   "utf8",

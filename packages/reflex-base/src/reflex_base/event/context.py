@@ -17,6 +17,7 @@ from reflex_base.utils.format import to_snake_case
 if TYPE_CHECKING:
     from opentelemetry.context import Context
 
+    from reflex.app_mixins.middleware import MiddlewareMixin
     from reflex.istate.manager import StateManager
     from reflex.state import BaseState
     from reflex_base.event import Event
@@ -149,6 +150,9 @@ class EventContext(BaseContext):
     # Whether the request's completion record was already sent with the
     # handler's final delta, so the event processor does not send another.
     result_sent: bool = dataclasses.field(default=False, init=False, repr=False)
+    # The app middleware an event passes through before its handler runs,
+    # whether it is queued or awaited inline.
+    middleware: MiddlewareMixin | None = dataclasses.field(default=None, repr=False)
     # The root of the state tree this task holds the token's state lock on,
     # while it does: set by the event processor around a foreground handler,
     # by ``async with self`` in a background handler, and by
@@ -196,6 +200,7 @@ class EventContext(BaseContext):
             emit_event_impl=self.emit_event_impl,
             emit_result_impl=self.emit_result_impl,
             request_id=request_id,
+            middleware=self.middleware,
             router_data=router_data or self.router_data,
             otel_context=otel.capture_context(),
         )

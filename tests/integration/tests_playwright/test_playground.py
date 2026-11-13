@@ -47,8 +47,14 @@ def _open(playground: AppHarness, page: Page, path: str = "/") -> None:
         path: The route to open.
     """
     assert playground.frontend_url is not None
-    page.goto(playground.frontend_url.rstrip("/") + path)
-    expect(page.locator("#bench-hydrated")).to_be_attached()
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
+    page.goto(playground.frontend_url.rstrip("/") + path, wait_until="domcontentloaded")
+    try:
+        expect(page.locator("#bench-hydrated")).to_be_attached(timeout=30_000)
+    except AssertionError as exc:
+        message = f"{exc}\nBrowser page errors: {page_errors}"
+        raise AssertionError(message) from exc
 
 
 def test_hmr_targets_show_their_pragma_values(playground: AppHarness, page: Page):
