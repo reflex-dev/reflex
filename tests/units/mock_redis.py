@@ -11,6 +11,12 @@ from unittest.mock import AsyncMock, Mock
 from redis.asyncio import Redis
 from redis.typing import EncodableT, KeyT
 
+from reflex.istate.manager.redis import (
+    _COUNT_OTHER_CONTENDERS_SCRIPT,
+    _EXTEND_LOCK_SCRIPT,
+    _FENCED_SAVE_SCRIPT,
+    _RELEASE_LOCK_SCRIPT,
+)
 from reflex.utils import prerequisites
 
 WRONGTYPE_MESSAGE = "WRONGTYPE Operation against a key holding the wrong kind of value"
@@ -61,6 +67,20 @@ def mock_redis() -> Redis:
         _expire_keys()
         return keys.get(_key_bytes(key))
 
+    async def mock_mget(requested_keys: list[KeyT]):
+        """Read keys in request order, including missing values.
+
+        Args:
+            requested_keys: The keys to read.
+
+        Returns:
+            The stored values, or None for missing keys.
+        """
+        # Let concurrent tasks run, as they would during the real Redis IO.
+        await asyncio.sleep(0)
+        _expire_keys()
+        return [keys.get(_key_bytes(key)) for key in requested_keys]
+
     async def mock_set(  # noqa: RUF029
         key: KeyT,
         value: EncodableT,
@@ -88,10 +108,12 @@ def mock_redis() -> Redis:
         keyset = keys.setdefault(key, set())
         if not isinstance(keyset, set):
             raise TypeError(WRONGTYPE_MESSAGE)
-        before = len(keyset)
+        if value in keyset:
+            return 0
         keyset.add(value)
+        # Like redis, only announce a member that was added.
         _keyspace_event(key, "sadd")
-        return len(keyset) - before
+        return 1
 
     async def mock_srem(key: KeyT, value: EncodableT) -> int:
         _expire_keys()
@@ -142,39 +164,87 @@ def mock_redis() -> Redis:
             return True
         return False
 
-    def pipeline():
-        pipeline_mock = Mock()
-        results = []
+    class _Pipeline:
+        def __init__(self):
+            self.results = []
 
-        def get_pipeline(key: KeyT):
-            results.append(redis_mock.get(key=key))
-
-        def set_pipeline(
+        def set(
+            self,
             key: KeyT,
             value: EncodableT,
             ex: int | None = None,
             px: int | None = None,
             nx: bool = False,
         ):
-            results.append(redis_mock.set(key=key, value=value, ex=ex, px=px, nx=nx))
+            self.results.append(
+                redis_mock.set(key=key, value=value, ex=ex, px=px, nx=nx)
+            )
 
-        def sadd_pipeline(key: KeyT, value: EncodableT):
-            results.append(redis_mock.sadd(key=key, value=value))
+        def get(self, key: KeyT):
+            self.results.append(redis_mock.get(key=key))
 
-        def pexpire_pipeline(key: KeyT, px: int, xx: bool = False):
-            results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
+        def sadd(self, key: KeyT, value: EncodableT):
+            self.results.append(redis_mock.sadd(key=key, value=value))
 
-        async def execute():
-            _expire_keys()
-            return await asyncio.gather(*results)
+        def pexpire(self, key: KeyT, px: int, xx: bool = False):
+            self.results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
 
-        pipeline_mock.get = get_pipeline
-        pipeline_mock.set = set_pipeline
-        pipeline_mock.sadd = sadd_pipeline
-        pipeline_mock.pexpire = pexpire_pipeline
-        pipeline_mock.execute = execute
+        async def execute(self):
+            results = await asyncio.gather(*self.results)
+            self.results = []
+            return results
 
-        return pipeline_mock
+    def pipeline(transaction: bool = True):
+        return _Pipeline()
+
+    async def mock_eval(script: str, numkeys: int, *keys_and_args: Any) -> Any:
+        """Emulate the scripts the redis state manager runs.
+
+        The fenced save checks the lock held in KEYS[1] against ARGV[1], writes
+        the remaining keys with the expiration in ARGV[2], and returns the
+        lock's PTTL, or None without writing when the lock is not held. The
+        lock release deletes the lock in KEYS[1] only while it holds ARGV[1],
+        and returns the ID that held it. The lock extension sets the lock's
+        expiration to ARGV[2] milliseconds only while it holds ARGV[1], and
+        returns 1 when it did. The contender count returns the size of the set
+        in KEYS[1], less one when ARGV[1] is a member.
+
+        Args:
+            script: The Lua source, which must be one of the state manager's.
+            numkeys: How many leading entries of keys_and_args are keys.
+            keys_and_args: The keys followed by the arguments.
+
+        Returns:
+            The script's reply.
+
+        Raises:
+            NotImplementedError: If the script is not one of the state manager's.
+        """
+        if script == _RELEASE_LOCK_SCRIPT:
+            lock_key, lock_id = keys_and_args
+            owner = await redis_mock.get(lock_key)
+            if owner == lock_id:
+                await redis_mock.delete(lock_key)
+            return owner
+        if script == _EXTEND_LOCK_SCRIPT:
+            lock_key, lock_id, px = keys_and_args
+            if await redis_mock.get(lock_key) != lock_id:
+                return 0
+            return int(await redis_mock.pexpire(lock_key, int(px)))
+        if script == _COUNT_OTHER_CONTENDERS_SCRIPT:
+            waiters_key, instance_id = keys_and_args
+            contenders = await redis_mock.scard(waiters_key)
+            return contenders - (instance_id in keys.get(_key_bytes(waiters_key), ()))
+        if script != _FENCED_SAVE_SCRIPT:
+            msg = "mock_redis only emulates the state manager's scripts."
+            raise NotImplementedError(msg)
+        lock_key, *state_keys = keys_and_args[:numkeys]
+        lock_id, expiration, *payloads = keys_and_args[numkeys:]
+        if await redis_mock.get(lock_key) != lock_id:
+            return None
+        for key, payload in zip(state_keys, payloads, strict=True):
+            await redis_mock.set(key, payload, ex=int(expiration))
+        return await redis_mock.pttl(lock_key)
 
     async def pttl(key: KeyT) -> int:  # noqa: RUF029
         _expire_keys()
@@ -247,6 +317,7 @@ def mock_redis() -> Redis:
 
     redis_mock = AsyncMock(spec=Redis)
     redis_mock.get = mock_get
+    redis_mock.mget = mock_mget
     redis_mock.set = mock_set
     redis_mock.delete = mock_delete
     redis_mock.getdel = mock_getdel
@@ -255,6 +326,7 @@ def mock_redis() -> Redis:
     redis_mock.scard = mock_scard
     redis_mock.pexpire = mock_pexpire
     redis_mock.pipeline = pipeline
+    redis_mock.eval = mock_eval
     redis_mock.pttl = pttl
     redis_mock.pubsub = pubsub
     redis_mock.config_set = AsyncMock()

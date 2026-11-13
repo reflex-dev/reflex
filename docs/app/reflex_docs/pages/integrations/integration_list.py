@@ -2,6 +2,16 @@ import os
 
 import frontmatter
 
+# Titles that title-casing the filename gets wrong.
+DISPLAY_TITLES = {
+    "aws": "AWS",
+    "custom_oidc": "Custom OIDC",
+    "github": "GitHub",
+    "hubspot": "HubSpot",
+    "microsoft_entra_id": "Microsoft Entra ID",
+    "openai": "OpenAI",
+}
+
 
 # Get the paths for our integrations from the source docs/
 def get_integration_path() -> list:
@@ -42,10 +52,7 @@ def get_integration_path() -> list:
                     tag = ""
 
                 description = post.get("description", "").strip()
-                title = key.replace("_", " ").title()
-
-                if title == "Open Ai":
-                    title = "Open AI"
+                title = DISPLAY_TITLES.get(key) or key.replace("_", " ").title()
 
             result.append({
                 key: {

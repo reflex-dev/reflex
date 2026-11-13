@@ -1,16 +1,20 @@
 """Inferred types for `reflex.vars` that are part of the public contract."""
 
-from typing import Any, Literal
+import dataclasses
+from typing import Any, Literal, assert_type
 
-from typing_extensions import assert_type
+from reflex_base.event import EventChain
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.vars.base import Var
+from reflex.vars.function import FunctionStringVar, ReflexCallable
 from reflex.vars.number import (
     BooleanVar,
     LiteralBooleanVar,
     LiteralNumberVar,
     NumberVar,
 )
+from reflex.vars.object import LiteralObjectVar
 from reflex.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
 
 # `Var.create` dispatches on the value type through a long overload set. Each of
@@ -38,3 +42,23 @@ _bool_var: Var[bool] = Var("expr")
 _str_var: Var[str] = Var("expr")
 assert_type(_bool_var.guess_type(), BooleanVar)
 assert_type(_str_var.guess_type(), StringVar[str])
+
+
+# `LiteralObjectVar.create` takes any value that serializes to a mapping, such
+# as a dataclass, not only a mapping.
+@dataclasses.dataclass
+class _Point:
+    x: int
+
+
+LiteralObjectVar.create(_Point(1))
+
+# A JS function typed as an event chain is bound to a trigger as its whole handler.
+_on_mount = FunctionStringVar.create("() => {}", _var_type=EventChain)
+assert_type(_on_mount, FunctionStringVar[ReflexCallable[..., Any]])
+Div.create(on_mount=_on_mount)
+# Any other `_var_type` still names the function's own signature.
+assert_type(
+    FunctionStringVar.create("(x) => x", _var_type=ReflexCallable[[int], int]),
+    FunctionStringVar[ReflexCallable[[int], int]],
+)

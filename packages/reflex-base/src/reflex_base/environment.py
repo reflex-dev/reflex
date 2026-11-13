@@ -358,7 +358,7 @@ def interpret_env_var_value(
         for arg in (union_types := get_args(field_type)):
             try:
                 return interpret_env_var_value(value, arg, field_name)
-            except (ValueError, EnvironmentVarValueError) as e:  # noqa: PERF203
+            except (ValueError, EnvironmentVarValueError) as e:
                 errors.append(e)
         msg = f"Could not interpret {value!r} for {field_name} as any of {union_types}: {errors}"
         raise EnvironmentVarValueError(msg)
@@ -728,7 +728,8 @@ class EnvironmentVariables:
     # Whether to skip purging the web directory in dev mode.
     REFLEX_PERSIST_WEB_DIR: EnvVar[bool] = env_var(False)
 
-    # This env var stores the execution mode of the app
+    # The execution mode of the app. `reflex run` and `reflex export` set it from
+    # their `--env` option, so do not set it yourself.
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
     # Whether to keep React's development-build owner-stack capture in dev mode.
@@ -814,6 +815,13 @@ class EnvironmentVariables:
 
     # Whether to run Granian in a spawn process. This enables Reflex to pick up on environment variable changes between hot reloads.
     REFLEX_STRICT_HOT_RELOAD: EnvVar[bool] = env_var(False)
+
+    # The multiprocessing start method for production backend workers. Unset means "fork" wherever
+    # the interpreter itself defaults to a fork-based method (Linux), so workers share the app
+    # preloaded by the supervisor. Set to "spawn" for apps that are not fork-safe.
+    REFLEX_BACKEND_START_METHOD: EnvVar[
+        Literal["fork", "spawn", "forkserver"] | None
+    ] = env_var(None)
 
     # The path to the reflex log file. If not set, the log file will be stored in the reflex user directory.
     REFLEX_LOG_FILE: EnvVar[Path | None] = env_var(None)

@@ -3,18 +3,29 @@
 from __future__ import annotations
 
 import logging
+import os
+import select
+import signal
 import sys
-from collections.abc import Callable
+import time
+from collections.abc import Callable, Generator
+from contextlib import contextmanager, nullcontext, suppress
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
+from types import FrameType
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import click
 from reflex_base import constants
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
-from reflex_base.utils import console, log
+from reflex_base.utils import console, log, supervisor
+from reflex_base.utils.process_tree import (
+    descendant_pids,
+    kill_descendants,
+    stop_process_tree,
+)
 
 from reflex.utils.cli_options import log_options
 
@@ -274,6 +285,11 @@ def _init(
         reflex_build_redirect()
         return
 
+    # For an existing app, validate the configured app name rather than the
+    # name of the directory that happens to contain it.
+    if not name and constants.Config.FILE.exists():
+        name = get_config().app_name
+
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
@@ -362,6 +378,7 @@ def _compile_app(*, avoid_dirty_check: bool = True):
     if exec.should_use_granian() and avoid_dirty_check:
         import concurrent.futures
 
+        exec.set_dev_start_method()
         with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
             compile_future = executor.submit(
                 _compile_app_worker, app_task, args, kwargs
@@ -395,6 +412,83 @@ def _compile_app_worker(
         return app_task(*args, **kwargs)
     finally:
         otel.flush()
+
+
+# Seconds after a stop request in which a repeat is the same request delivered
+# twice; a later repeat forces the exit.
+_REPEAT_IGNORE_SECONDS = 1
+
+# Windows never delivers SIGTERM, but Ctrl-C arrives as SIGINT there too.
+_SHUTDOWN_SIGNALS = (signal.SIGINT, signal.SIGTERM)
+
+
+def _write_stderr_now(message: bytes) -> None:
+    """Write to stderr unless that would block.
+
+    A forced exit must not wait on a pipe nobody reads. On Windows ``select``
+    takes only sockets, so the write is attempted directly there.
+
+    Args:
+        message: The bytes to write.
+    """
+    with suppress(OSError):
+        if sys.platform == "win32" or select.select([], [2], [], 0)[1]:
+            os.write(2, message)
+
+
+@contextmanager
+def _shutdown_signals() -> Generator[Callable[[], None], None, None]:
+    """Turn the first SIGINT or SIGTERM into a clean unwind; force on a later one.
+
+    The first signal raises in the main thread so the run body unwinds into
+    its cleanup. A repeat within ``_REPEAT_IGNORE_SECONDS``, such as the
+    second delivery a terminal Ctrl-C produces next to the one the output
+    supervisor forwards, is ignored so it cannot interrupt that cleanup. A
+    later repeat means the cleanup is stuck: every descendant is killed and
+    the process exits at once (on Windows only the exit: a console Ctrl-C
+    already reached every process on the console). The backend server
+    installs its own handlers while it serves and does not restore these, so
+    the cleanup puts them back.
+
+    Yields:
+        A function the run body calls when its cleanup begins, so a signal
+        arriving only then counts as a repeat.
+    """
+    stopping_at: float | None = None
+    # Everything below this process when the cleanup began. A forced exit
+    # kills these as well: a server whose wrapper exited during the cleanup
+    # is no longer found below this process.
+    tree: list[int] = []
+
+    def begin_cleanup() -> None:
+        nonlocal stopping_at
+        if stopping_at is None:
+            stopping_at = time.monotonic()
+            tree.extend(descendant_pids(os.getpid()))
+        # The backend server installs its own handlers and does not restore them.
+        for sig in _SHUTDOWN_SIGNALS:
+            signal.signal(sig, stop)
+
+    def stop(signum: int, frame: FrameType | None) -> None:
+        if stopping_at is None:
+            begin_cleanup()
+            if signum == signal.SIGINT:
+                raise KeyboardInterrupt
+            raise SystemExit(0)
+        if time.monotonic() - stopping_at < _REPEAT_IGNORE_SECONDS:
+            return
+        # A normal exit would wait for the thread a stuck cleanup blocks, for
+        # example one reading a pipe that a process outside the tree holds open.
+        kill_descendants(os.getpid(), tree)
+        _write_stderr_now(b"Forced exit: the cleanup did not finish.\n")
+        os._exit(128 + signum)
+
+    previous = {sig: signal.signal(sig, stop) for sig in _SHUTDOWN_SIGNALS}
+    try:
+        yield begin_cleanup
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
 
 
 def _run_dev(
@@ -437,21 +531,43 @@ def _run_dev(
             running_mode.has_backend(),
         ))
 
-    # Start the frontend and backend.
-    with processes.run_concurrently_context(*commands):
-        # In dev mode, run the backend on the main thread.
-        if running_mode.has_backend() and backend_port:
-            exec.run_backend(
-                backend_host,
-                int(backend_port),
-                config.loglevel.subprocess_level(),
-                running_mode.has_frontend(),
-            )
-            # The windows uvicorn bug workaround
-            # https://github.com/reflex-dev/reflex/issues/2335
-            if constants.IS_WINDOWS and exec.frontend_process:
-                # Sends SIGTERM in windows
-                exec.kill(exec.frontend_process.pid)
+    with exec._frontend_process_lock:
+        exec._frontend_shutting_down = False
+        exec.frontend_process = None
+
+    frontend_only = running_mode.has_frontend() and not running_mode.has_backend()
+
+    def stop_frontend() -> None:
+        with exec._frontend_process_lock:
+            exec._frontend_shutting_down = True
+            process, exec.frontend_process = exec.frontend_process, None
+        if process is not None:
+            # The package manager in front of the dev server does not always
+            # pass a signal on, so the whole tree below it is stopped.
+            stop_process_tree(process, timeout=exec._FRONTEND_STOP_TIMEOUT)
+
+    try:
+        with (
+            _shutdown_signals() as begin_cleanup,
+            processes.run_concurrently_context(
+                *commands, interrupt_on_failure=not frontend_only
+            ) as tasks,
+        ):
+            try:
+                if frontend_only and tasks:
+                    tasks[0].result()
+                elif running_mode.has_backend() and backend_port:
+                    exec.run_backend(
+                        backend_host,
+                        int(backend_port),
+                        config.loglevel.subprocess_level(),
+                        running_mode.has_frontend(),
+                    )
+            finally:
+                begin_cleanup()
+                stop_frontend()
+    finally:
+        stop_frontend()
 
 
 def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
@@ -464,21 +580,26 @@ def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
     """
     import atexit
 
-    from reflex.utils import build, exec, processes, telemetry
+    from reflex.utils import build, exec, path_ops, prerequisites, processes, telemetry
 
     config = get_config()
 
-    config._set_persistent(frontend_port=port, backend_port=port)
+    with (
+        path_ops.file_lock(prerequisites.get_web_dir())
+        if running_mode.has_frontend()
+        else nullcontext()
+    ):
+        config._set_persistent(frontend_port=port, backend_port=port)
 
-    # Mount the compiled frontend into the dev backend so no Vite server is needed.
-    environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(
-        running_mode.has_frontend() and running_mode.has_backend()
-    )
+        # Mount the compiled frontend into the dev backend so no Vite server is needed.
+        environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(
+            running_mode.has_frontend() and running_mode.has_backend()
+        )
 
-    if running_mode.has_frontend():
-        # Compile the app and produce the initial frontend build.
-        _compile_app()
-        build.setup_frontend_prod(Path.cwd())
+        if running_mode.has_frontend():
+            # Compile the app and produce the initial frontend build.
+            _compile_app()
+            build.setup_frontend_prod(Path.cwd())
 
     # Post a telemetry event.
     telemetry.send("run-preview")
@@ -503,21 +624,27 @@ def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
 def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
     import atexit
 
-    from reflex.utils import build, exec, processes, telemetry
+    from reflex.utils import build, exec, path_ops, prerequisites, processes, telemetry
 
     config = get_config()
 
-    config._set_persistent(frontend_port=port, backend_port=port)
+    with (
+        path_ops.file_lock(prerequisites.get_web_dir())
+        if running_mode.has_frontend()
+        else nullcontext()
+    ):
+        config._set_persistent(frontend_port=port, backend_port=port)
 
-    if running_mode.has_frontend():
-        # Get the app module.
-        _compile_app(avoid_dirty_check=False)
-        build.setup_frontend_prod(Path.cwd())
+        if running_mode.has_frontend():
+            # Get the app module.
+            _compile_app(avoid_dirty_check=False)
+            build.setup_frontend_prod(Path.cwd())
 
     _skip_compile()
 
-    # Post a telemetry event.
-    telemetry.send("run-prod")
+    # Post a telemetry event. Sent synchronously: on Linux the backend forks its
+    # workers from this process, which must hold no telemetry thread by then.
+    telemetry._process_event("run-prod", config.telemetry_enabled)
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)
@@ -727,11 +854,11 @@ def run(
     """Run the app in the current directory."""
     from reflex.utils import prerequisites
 
-    if log.is_json_mode() and not log.is_output_supervised():
+    if log.is_json_mode() and not supervisor.is_output_supervised():
         # Run the command again below a process that turns every line it and
         # its workers print into a JSON record.
         raise SystemExit(
-            log.supervise_output([sys.executable, "-m", "reflex", *sys.argv[1:]])
+            supervisor.supervise_output([sys.executable, "-m", "reflex", *sys.argv[1:]])
         )
 
     if frontend_only and backend_only:
@@ -755,8 +882,6 @@ def run(
 
     config = get_config()
 
-    frontend_port = frontend_port or config.frontend_port
-    backend_port = backend_port or config.backend_port
     backend_host = backend_host or config.backend_host
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.RUN)
@@ -764,6 +889,13 @@ def run(
     environment.REFLEX_FRONTEND_ONLY.set(frontend_only)
 
     running_mode = prerequisites.check_running_mode(frontend_only, backend_only)
+
+    # Only the side that runs takes its port from the config, so `_run` can
+    # still reject a port flag given for the side that does not run.
+    if running_mode.has_frontend():
+        frontend_port = frontend_port or config.frontend_port
+    if running_mode.has_backend():
+        backend_port = backend_port or config.backend_port
 
     _run(
         env=constants.Env(env),
@@ -949,7 +1081,7 @@ def logout():
     logout(get_config().loglevel)
 
 
-_DB_PACKAGES = ("sqlalchemy", "alembic", "sqlmodel", "pydantic")
+_DB_PACKAGES = ("sqlalchemy", "alembic")
 
 
 @click.group
@@ -977,11 +1109,34 @@ def _skip_compile():
     environment.REFLEX_SKIP_COMPILE.set(True)
 
 
+@contextmanager
+def _alembic_errors() -> Generator[None, None, None]:
+    """Report a failed alembic command as a CLI error.
+
+    Yields:
+        None, while the alembic commands run.
+
+    Raises:
+        Exit: With status 1 when alembic, or env.py as it runs, raises.
+    """
+    from alembic.util.exc import CommandError
+
+    from reflex.utils import migrations
+
+    try:
+        yield
+    except CommandError as error:
+        logger.error(migrations.describe_error(error), extra={"rich": True})
+        raise click.exceptions.Exit(1) from None
+    except Exception as error:
+        migrations.report_failure(error)
+        raise click.exceptions.Exit(1) from None
+
+
 @db_cli.command(name="init")
 def db_init():
-    """Create database schema and migration configuration."""
-    from reflex import model
-    from reflex.utils import prerequisites
+    """Create the migration environment and apply the initial revision."""
+    from reflex.utils import migrations
 
     config = get_config()
 
@@ -992,6 +1147,23 @@ def db_init():
 
     # Check the alembic config.
     if environment.ALEMBIC_CONFIG.get().exists():
+        with _alembic_errors():
+            backup = migrations.update_legacy_env()
+            env_py = migrations.script_directory() / "env.py"
+        if backup is not None:
+            logger.info(
+                f"{migrations.UPDATED_ENV_MESSAGE.format(backup=backup)} "
+                "Existing revisions are kept."
+            )
+            return
+        if not env_py.exists():
+            # Written afresh, so that an env.py edited by hand can be replaced
+            # with the current template by moving it aside.
+            migrations.install_env()
+            logger.info(
+                f"Created {env_py} from the template. Existing revisions are kept."
+            )
+            return
         logger.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "
@@ -1001,58 +1173,46 @@ def db_init():
         )
         return
 
-    # Initialize the database.
-    _skip_compile()
-    prerequisites.get_compiled_app()
-    model.alembic_init()
-    model.migrate(autogenerate=True)
+    # Evaluate every page without rendering or writing anything, so that models
+    # they or plugin route hooks import lazily are in the first revision too.
+    migrations.evaluate_pages()
+
+    # alembic init, then a first autogenerated revision applied to the database.
+    with _alembic_errors():
+        migrations.init()
+        logger.info(
+            f"Created {environment.ALEMBIC_CONFIG.get()} and the migration "
+            "environment in alembic/ (env.py, script.py.mako, versions/)."
+        )
+        migrations.run("revision", "--autogenerate", "--message", "Initial revision")
+        migrations.run("upgrade", "head")
 
 
 @db_cli.command()
 def migrate():
-    """Create or update database schema from migration scripts."""
-    from reflex import model
-    from reflex.utils import prerequisites
+    """Apply migration scripts to the database (alembic upgrade head)."""
+    from reflex.utils import migrations, prerequisites
 
-    prerequisites.get_app()
     if not prerequisites.check_db_initialized():
-        return
-    model.migrate()
+        raise click.exceptions.Exit(1)
+    with _alembic_errors():
+        migrations.run("upgrade", "head")
+    # After the upgrade, since a page may query the database when evaluated, and
+    # before the schema check, so that it compares models that pages or plugin
+    # route hooks import lazily.
+    migrations.evaluate_pages()
     prerequisites.check_schema_up_to_date()
 
 
 @db_cli.command()
 def status():
-    """Check the status of the database schema."""
-    from reflex.model import format_revision, get_migration_history
-    from reflex.utils import prerequisites
+    """Show the migration history and the revision the database is at."""
+    from reflex.utils import migrations, prerequisites
 
-    prerequisites.get_app()
     if not prerequisites.check_db_initialized():
-        logger.info(
-            "Database is not initialized. Run [bold]reflex db init[/bold] to initialize.",
-            extra={"rich": True},
-        )
-        return
-
-    # Run alembic check command and display output
-    import reflex_base.config
-
-    config = reflex_base.config.get_config()
-    console.print(f"[bold]\\[{config.db_url}][/bold]")
-
-    # Get migration history using Model method
-    current_rev, revisions = get_migration_history()
-    if current_rev is None and not revisions:
-        return
-
-    current_reached_ref = [current_rev is None]
-
-    # Show migration history in chronological order
-    console.print("<base>")
-    for rev in revisions:
-        # Format and print the revision
-        console.print(format_revision(rev, current_rev, current_reached_ref))
+        raise click.exceptions.Exit(1)
+    with _alembic_errors():
+        migrations.run("history", "--indicate-current")
 
 
 @db_cli.command()
@@ -1061,26 +1221,16 @@ def status():
     help="Human readable identifier for the generated revision.",
 )
 def makemigrations(message: str | None):
-    """Create autogenerated alembic migration scripts."""
-    from alembic.util.exc import CommandError
+    """Generate a migration script from model changes (alembic revision --autogenerate)."""
+    from reflex.utils import migrations, prerequisites
 
-    from reflex import model
-    from reflex.utils import prerequisites
-
-    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
-    _skip_compile()
-    prerequisites.get_compiled_app()
+    # So that models pages or plugin route hooks import lazily are compared too.
+    migrations.evaluate_pages()
     if not prerequisites.check_db_initialized():
-        return
-    with model.get_engine().connect() as connection:
-        try:
-            model.alembic_autogenerate(connection=connection, message=message)
-        except CommandError as command_error:
-            if "Target database is not up to date." not in str(command_error):
-                raise
-            logger.error(
-                f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
-            )
+        raise click.exceptions.Exit(1)
+    with _alembic_errors():
+        if not migrations.autogenerate(message):
+            logger.info("No model changes detected; no revision was written.")
 
 
 @cli.command()
@@ -1095,6 +1245,37 @@ def rename(new_name: str):
     # Reload so we read rxconfig.py from the current directory, not a cached one.
     reload_config()
     rename_app(new_name, get_config().loglevel)
+
+
+_COMPONENT_REMOVED = (
+    "`reflex component` was removed in Reflex 0.10. Wrap React components "
+    "directly in your app (https://reflex.dev/docs/wrapping-react/overview/) "
+    "and start reusable component packages from the component template: "
+    "https://github.com/reflex-dev/component-template"
+)
+
+
+@cli.command(
+    name="component",
+    hidden=True,
+    help=_COMPONENT_REMOVED,
+    context_settings={"ignore_unknown_options": True},
+)
+@click.argument("args", nargs=-1, type=click.UNPROCESSED)
+def component(args: tuple[str, ...]):
+    """Point users of the removed component CLI at its replacement.
+
+    Accepts any subcommand and flags so `reflex component init`, `build`,
+    `share`, and `install` all land here instead of a "No such command" error.
+
+    Args:
+        args: The removed subcommand and its flags, ignored.
+
+    Raises:
+        Exit: Always, after reporting where the component workflow moved.
+    """
+    logger.error(_COMPONENT_REMOVED)
+    raise click.exceptions.Exit(1)
 
 
 cli.add_command(

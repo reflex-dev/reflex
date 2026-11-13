@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-import sys
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from copy import copy
 from enum import Enum
 from functools import cache, partial, update_wrapper
@@ -347,6 +346,11 @@ class MemoComponentDefinition(MemoDefinition):
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
     # its own and ``None`` pulls in nothing.
     wrapper: Var | None = DEFAULT_MEMO_WRAPPER
+    # Whether each render of this memo is a distinct component instance from
+    # the user's point of view. True only for ``@rx.memo``; the auto-memoize
+    # optimizer's wrappers leave it False so they stay semantically invisible
+    # -- notably to client state, which opens a scope per instance boundary.
+    is_instance_boundary: bool = False
     # Set for definitions the compiler's auto-memoize pass creates (see
     # ``create_passthrough_component_memo``). Instances of such a definition
     # are the auto-memo boundary itself, so the pass must not wrap them again.
@@ -688,34 +692,6 @@ def _strip_annotated(annotation: Any) -> Any:
 
 
 _UNION_ORIGINS = (Union, UnionType)
-
-# Python <=3.10's ``get_type_hints`` rewrites a parameter with a ``= None``
-# default into ``Optional[...]``, hiding the real annotation from the param
-# classifiers; 3.11 dropped that behavior. Only those versions need the
-# ``_strip_optional`` normalization, so newer interpreters skip it entirely
-# rather than pay ``get_origin`` per parameter for a problem they don't have.
-_GET_TYPE_HINTS_WRAPS_NONE_DEFAULT = sys.version_info < (3, 11)
-
-
-def _strip_optional(annotation: Any) -> Any:
-    """Unwrap ``Optional[X]`` / ``X | None`` down to ``X``.
-
-    Restores the annotation the classifiers expect after Python <=3.10's
-    ``get_type_hints`` wraps a ``= None``-defaulted parameter in ``Optional``
-    (see ``_GET_TYPE_HINTS_WRAPS_NONE_DEFAULT``).
-
-    Args:
-        annotation: The annotation to normalize.
-
-    Returns:
-        The sole non-``None`` member of an ``Optional`` union, else the
-        annotation unchanged.
-    """
-    if get_origin(annotation) in _UNION_ORIGINS:
-        non_none = [arg for arg in get_args(annotation) if arg is not type(None)]
-        if len(non_none) == 1:
-            return non_none[0]
-    return annotation
 
 
 def _is_rest_annotation(annotation: Any) -> bool:
@@ -1364,8 +1340,6 @@ def _analyze_params(
         _check_parameter_kind(parameter, fn.__name__)
 
         annotation = hints.get(parameter.name, parameter.annotation)
-        if _GET_TYPE_HINTS_WRAPS_NONE_DEFAULT and parameter.default is None:
-            annotation = _strip_optional(annotation)
         is_missing = annotation is inspect.Parameter.empty
         # Legacy `@rx.memo` (the old `custom_component`) accepted missing and
         # bare Python-type annotations and auto-wrapped them in a `Var`. Coerce
@@ -2055,9 +2029,13 @@ def component_hash(component: Component, *, recursive: bool) -> str:
         The hex digest content hash.
     """
     if recursive or not component.children:
-        return deterministic_hash(
-            component.render(), *_component_artifacts(component, recursive=recursive)
-        )
+        artifacts = tuple(_component_artifacts(component, recursive=recursive))
+        if recursive:
+            # The body's hooks, for callers that need them without rendering the
+            # subtree again; ``_component_artifacts`` yields the full set, which
+            # includes the internal hooks, fourth.
+            vars(component)["_memo_body_hooks"] = artifacts[3]
+        return deterministic_hash(component.render(), *artifacts)
     rendered = component.render()
     artifacts = tuple(_component_artifacts(component, recursive=False))
     digest = deterministic_hash(rendered, *artifacts)
@@ -2066,6 +2044,31 @@ def component_hash(component: Component, *, recursive: bool) -> str:
         analyses[digest] = _analyze_memo_body(component, rendered, artifacts)
     vars(component)["_memo_analysis_key"] = digest
     return digest
+
+
+def memo_body_hooks(definition: MemoComponentDefinition) -> Iterable[str]:
+    """Get the hook strings of a generated memo's body.
+
+    Taken from what hashing the body already computed, so no part of the
+    subtree is rendered again.
+
+    Args:
+        definition: A definition made by ``create_passthrough_component_memo``.
+
+    Returns:
+        The hook strings, in no particular order.
+    """
+    component = definition.component
+    if (key := component.__dict__.get("_memo_analysis_key")) is not None:
+        analysis = RegistrationContext.ensure_context()._memo_body_analyses.get(key)
+        if analysis is not None:
+            return (
+                *analysis.internal_hooks,
+                *((analysis.hook,) if analysis.hook else ()),
+                *analysis.added_hooks,
+            )
+    hooks = component.__dict__.get("_memo_body_hooks")
+    return hooks if hooks is not None else component._get_all_hooks()
 
 
 def memo_tag(component: Component) -> str:
@@ -2110,6 +2113,7 @@ _PASSTHROUGH_PARAMS = (
 def create_passthrough_component_memo(
     component: Component,
     source_module: str | None = None,
+    scope_vars: Sequence[str] = (),
 ) -> tuple[
     Callable[..., MemoComponent],
     MemoComponentDefinition,
@@ -2130,6 +2134,8 @@ def create_passthrough_component_memo(
         component: The component to wrap.
         source_module: The user-app Python module that triggered creation of
             this memo (typically the page that contained the wrapped subtree).
+        scope_vars: The loop variables that the body reads; the memo
+            receives each one as a prop.
 
     Returns:
         The callable memo wrapper and its component definition.
@@ -2169,6 +2175,7 @@ def create_passthrough_component_memo(
         # reachable on the page-level wrapper via the plugin's
         # ``_get_all_refs`` delegation back to the source component.
         new_component.children = [hole_bare]
+        object.__setattr__(new_component, "_form_control_source", component)
         # Compile-time walkers that need the real subtree (notably
         # ``Form._get_form_refs`` collecting id-based input refs into the
         # generated ``handleSubmit`` JS) call ``self._get_all_refs()`` while
@@ -2183,6 +2190,21 @@ def create_passthrough_component_memo(
     params = _PASSTHROUGH_PARAMS
     rest_target_fields: set[str] = set()
     preview = _evaluate_component_body(passthrough, params, rest_target_fields)
+    # The body already holds the scoped vars; only the signature receives them.
+    scoped_params = (
+        *params,
+        *(
+            MemoParam(
+                name=name,
+                kind=MemoParamKind.VALUE,
+                annotation=Var[Any],
+                parameter_kind=inspect.Parameter.KEYWORD_ONLY,
+                js_prop_name=format.to_camel_case(name),
+                placeholder_name=name,
+            )
+            for name in scope_vars
+        ),
+    )
     tag = memo_tag(preview)
 
     passthrough.__name__ = format.to_snake_case(tag)
@@ -2210,7 +2232,7 @@ def create_passthrough_component_memo(
     definition = MemoComponentDefinition(
         fn=passthrough,
         python_name=passthrough.__name__,
-        params=params,
+        params=scoped_params,
         source_module=source_module,
         export_name=tag,
         _component=_LazyBody.ready(preview),
@@ -2388,6 +2410,7 @@ def _memo_impl(
             _rest_target_fields=rest_target_fields,
             _runtime_inferred_params=frozenset(missing_params),
             wrapper=wrapper,
+            is_instance_boundary=True,
         )
         memo_callable = _create_component_wrapper(definition)
     else:

@@ -323,6 +323,40 @@ async def test_a_message_that_arrives_during_a_turn_gets_the_next_one(database):
         )
 
 
+async def test_a_message_arriving_while_a_held_turn_runs_is_answered(
+    database, monkeypatch
+):
+    conversation = new_conversation()
+    plan_balance(conversation, "m2", 80)
+    # No worker yet: the first turn is only scheduled, so m1's wake is held for
+    # the wait the conversation arms after answering, and runs as a turn then.
+    async with connect_workflows(database):
+        await receive(conversation, conversation, "m1", "send 5 to bo")
+
+    read_nothing, go_on = asyncio.Event(), asyncio.Event()
+    unread = ex13_conversation.unread
+
+    async def pausing(session: AsyncSession, conversation_: str, seen: int):
+        found = await unread(session, conversation_, seen)
+        if (
+            conversation_ == conversation
+            and found is None
+            and not read_nothing.is_set()
+        ):
+            read_nothing.set()
+            await go_on.wait()
+        return found
+
+    monkeypatch.setattr(ex13_conversation, "unread", pausing)
+    async with worker(database):
+        await eventually(said(conversation, "Please confirm sending 5 to bo."))
+        # The held turn has found nothing new and has not committed yet.
+        await asyncio.wait_for(read_nothing.wait(), 10)
+        await receive(conversation, conversation, "m2", "and my balance?")
+        go_on.set()
+        await eventually(said(conversation, "Your balance is 80."), timeout=5)
+
+
 async def test_a_burst_after_a_restart_is_answered_in_order(database):
     conversation = new_conversation()
     async with worker(database):

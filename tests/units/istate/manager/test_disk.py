@@ -5,6 +5,9 @@ import os
 from pathlib import Path
 
 import pytest
+from reflex_base.constants import Env
+from reflex_base.environment import environment
+from reflex_base.vars.base import computed_var
 
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.token import BaseStateToken, StateToken
@@ -124,3 +127,130 @@ async def test_set_state_persists_untouched_base_state(
     assert isinstance(persisted_state, DiskPersistState)
     assert math.isclose(persisted_state.num, 9.5)
     await fresh_state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_set_state_for_substate_builds_tokens_for_written_states_only(
+    tmp_path, monkeypatch
+):
+    """Writing a tree derives a token only for the states that are written.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+
+    class DiskTreeParent(BaseState):
+        value: int = 0
+
+    class DiskTreeFirst(DiskTreeParent):
+        value_first: int = 0
+
+    class DiskTreeSecond(DiskTreeParent):
+        value_second: int = 0
+
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="client", cls=DiskTreeParent)
+    state = await state_manager.get_state(token)
+    assert isinstance(state, DiskTreeParent)
+    assert len(state.substates) == 2
+    state.substates[DiskTreeFirst.get_name()].value_first = 1  # pyright: ignore [reportAttributeAccessIssue]
+
+    written: list[type[BaseState]] = []
+    with_cls = BaseStateToken.with_cls
+
+    def recording_with_cls(self, cls):
+        written.append(cls)
+        return with_cls(self, cls)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(BaseStateToken, "with_cls", recording_with_cls)
+        await state_manager.set_state_for_substate(token, state)
+
+    assert written == [DiskTreeFirst]
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("env_mode", "hot_reload", "after_reload"),
+    [
+        (Env.DEV, True, ["a"]),
+        (Env.DEV, False, ["a", "b"]),
+        (Env.PREVIEW, True, ["a", "b"]),
+        (Env.PROD, False, ["a", "b"]),
+    ],
+)
+async def test_states_from_disk_recompute_cached_vars(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    env_mode: Env,
+    hot_reload: bool,
+    after_reload: list[str],
+):
+    """Under the dev hot reloader, states read back from disk recompute cached vars.
+
+    A state is only read from disk when it is not in memory, as after a hot
+    reload, which may have changed what the computed vars return. The fields
+    keep their values. Outside a dev hot reloader the cache is kept.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        env_mode: The mode the app runs in.
+        hot_reload: Whether the backend runs under the dev hot reloader.
+        after_reload: The cached var value expected after the reload.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    monkeypatch.setenv("REFLEX_ENV_MODE", env_mode.value)
+    monkeypatch.setenv(
+        environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, str(hot_reload)
+    )
+    rows = ["a", "b"]
+
+    class DiskCachedState(BaseState):
+        count: int = 0
+
+        @computed_var(cache=True)
+        def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    class DiskCachedChild(DiskCachedState):
+        @computed_var(cache=True)
+        def child_data(self) -> list[str]:
+            """The rows, cached on the substate.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    token = BaseStateToken(ident="client", cls=DiskCachedState)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    async with state_manager.modify_state(token) as state:
+        assert isinstance(state, DiskCachedState)
+        state.count = 99
+        child = await state.get_state(DiskCachedChild)
+        assert (state.data, child.child_data) == (["a", "b"], ["a", "b"])
+    rows[:] = ["a"]
+    # A state still in memory keeps its cached values.
+    assert await state_manager.get_state(token) is state
+    assert state.data == ["a", "b"]
+    await state_manager.close()
+
+    reloaded_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    state = await reloaded_state_manager.get_state(token)
+    assert isinstance(state, DiskCachedState)
+    child = await state.get_state(DiskCachedChild)
+    assert (state.count, state.data, child.child_data) == (
+        99,
+        after_reload,
+        after_reload,
+    )
+    await reloaded_state_manager.close()

@@ -18,10 +18,13 @@ _DATA_TAB_VALUE = "data"
 
 
 class DeferredDemo(rx.Component):
-    """Mount a costly interactive preview when it approaches the viewport."""
+    """Mount a costly interactive preview when visible and the browser is idle."""
 
     library = "$/public/components/DeferredDemo"
     tag = "DeferredDemo"
+
+    # Identifies the demo so it remounts immediately once shown, e.g. after a tab switch.
+    demo_id: rx.Var[str]
 
 
 def _reflex_build_icon() -> rx.Component:
@@ -89,7 +92,7 @@ def _doc_demo_header(*triggers: rx.Component) -> rx.Component:
         _reflex_build_action(),
         doc_tab_list(*triggers),
         class_name=(
-            "flex w-full flex-wrap items-end justify-between gap-x-2 gap-y-1 "
+            "docs-demo-header flex w-full flex-wrap items-end justify-between gap-x-2 gap-y-1 "
             "sm:flex-nowrap"
         ),
     )
@@ -108,7 +111,7 @@ def docdemobox(*children, **props) -> rx.Component:
     return rx.box(
         *children,
         **props,
-        class_name="flex flex-col p-6 rounded-xl overflow-x-auto border border-border-subtle bg-muted items-center justify-center w-full",
+        class_name="docs-demo-preview flex flex-col p-6 rounded-xl overflow-x-auto border border-border-subtle bg-muted items-center justify-center w-full",
     )
 
 

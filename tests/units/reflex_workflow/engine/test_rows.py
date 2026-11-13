@@ -71,7 +71,7 @@ class Pair(Base, Workflow):
         self.status = "done"
 
 
-MOMENT = datetime.datetime(2026, 9, 25, 14, 30, tzinfo=datetime.timezone.utc)
+MOMENT = datetime.datetime(2026, 9, 25, 14, 30, tzinfo=datetime.UTC)
 IDENT = uuid.UUID("4b1f2c3d-5e6a-4b8c-9d0e-1f2a3b4c5d6e")
 
 # Every key type json has no form of, the column that holds it, and what the

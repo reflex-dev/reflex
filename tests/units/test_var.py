@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import typing
 from collections.abc import Mapping, Sequence
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 from typing import cast
 
 import pytest
@@ -55,7 +55,7 @@ from reflex_base.vars.sequence import (
 
 import reflex as rx
 from reflex.environment import PerformanceMode
-from reflex.state import BaseState
+from reflex.state import BaseState, code_uses_state_contexts
 
 pytest.importorskip("pydantic")
 
@@ -325,7 +325,7 @@ def test_basic_operations(TestObj):
     assert str(LiteralNumberVar.create(1) * 2) == "(1 * 2)"
     assert str(LiteralNumberVar.create(1) / 2) == "(1 / 2)"
     assert str(LiteralNumberVar.create(1) // 2) == "Math.floor(1 / 2)"
-    assert str(LiteralNumberVar.create(1) % 2) == "(1 % 2)"
+    assert str(LiteralNumberVar.create(1) % 2) == "pyMod(1, 2)"
     assert str(LiteralNumberVar.create(1) ** 2) == "(1 ** 2)"
     assert str(LiteralNumberVar.create(1) & v(2)) == "pyAnd(1, () => (2))"
     assert str(LiteralNumberVar.create(1) | v(2)) == "pyOr(1, () => (2))"
@@ -392,7 +392,7 @@ def test_basic_operations(TestObj):
 )
 def test_datetime_comparison_uses_timestamps(operation, operator):
     lhs = v(datetime(2024, 1, 1, 1, tzinfo=timezone(timedelta(hours=1))))
-    rhs = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    rhs = datetime(2024, 1, 1, tzinfo=UTC)
 
     assert str(operation(lhs, rhs)) == (
         f'(compareDatetime("2024-01-01 01:00:00+01:00", '
@@ -403,9 +403,9 @@ def test_datetime_comparison_uses_timestamps(operation, operator):
 def test_datetime_comparison_preserves_microseconds():
     lhs = cast(
         DateTimeVar,
-        v(datetime(2024, 1, 1, microsecond=1, tzinfo=timezone.utc)),
+        v(datetime(2024, 1, 1, microsecond=1, tzinfo=UTC)),
     )
-    rhs = datetime(2024, 1, 1, microsecond=999, tzinfo=timezone.utc)
+    rhs = datetime(2024, 1, 1, microsecond=999, tzinfo=UTC)
 
     assert str(lhs < rhs) == (
         '(compareDatetime("2024-01-01 00:00:00.000001+00:00", '
@@ -435,7 +435,6 @@ def test_datetime_equality_with_other_type_uses_default_comparison():
     ("var", "expected"),
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
-        (v({1, 2, 3}), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
         (
             Var(_js_expr="foo")._var_set_state("state").to(list),
@@ -550,14 +549,13 @@ def test_var_replace_var_data():
     [
         Var(_js_expr="list", _var_type=list[int]).guess_type(),
         Var(_js_expr="tuple", _var_type=tuple[int, int]).guess_type(),
-        Var(_js_expr="str", _var_type=str).guess_type(),
     ],
 )
 def test_var_indexing_lists(var):
-    """Test that we can index into str, list or tuple vars.
+    """Test that we can index into list or tuple vars.
 
     Args:
-        var : The str, list or tuple base var.
+        var : The list or tuple base var.
     """
     # Test basic indexing.
     assert str(var[0]) == f"{var._js_expr}?.at?.(0)"
@@ -599,11 +597,11 @@ def test_var_indexing_str():
     assert str_var[0]._var_type is str
 
     # Test basic indexing.
-    assert str(str_var[0]) == "str?.at?.(0)"
-    assert str(str_var[1]) == "str?.at?.(1)"
+    assert str(str_var[0]) == "pyStrAt(str, 0)"
+    assert str(str_var[1]) == "pyStrAt(str, 1)"
 
     # Test negative indexing.
-    assert str(str_var[-1]) == "str?.at?.(-1)"
+    assert str(str_var[-1]) == "pyStrAt(str, -1)"
 
 
 @pytest.mark.parametrize(
@@ -732,16 +730,44 @@ def test_str_var_slicing():
     assert str_var[:1]._var_type is str
 
     # Test basic slicing.
-    assert str(str_var[:1]) == 'str.split("").slice(undefined, 1).join("")'
-    assert str(str_var[1:]) == 'str.split("").slice(1, undefined).join("")'
-    assert str(str_var[:]) == 'str.split("").slice(undefined, undefined).join("")'
-    assert str(str_var[1:2]) == 'str.split("").slice(1, 2).join("")'
+    assert str(str_var[:1]) == "pyStrSlice(str, null, 1)"
+    assert str(str_var[1:]) == "pyStrSlice(str, 1, null)"
+    assert str(str_var[:]) == "pyStrSlice(str, null, null)"
+    assert str(str_var[1:2]) == "pyStrSlice(str, 1, 2)"
 
     # Test negative slicing.
-    assert str(str_var[:-1]) == 'str.split("").slice(undefined, -1).join("")'
-    assert str(str_var[-1:]) == 'str.split("").slice(-1, undefined).join("")'
-    assert str(str_var[:-2]) == 'str.split("").slice(undefined, -2).join("")'
-    assert str(str_var[-2:]) == 'str.split("").slice(-2, undefined).join("")'
+    assert str(str_var[:-1]) == "pyStrSlice(str, null, -1)"
+    assert str(str_var[-1:]) == "pyStrSlice(str, -1, null)"
+    assert str(str_var[:-2]) == "pyStrSlice(str, null, -2)"
+    assert str(str_var[-2:]) == "pyStrSlice(str, -2, null)"
+    assert (
+        str(str_var[::-1])
+        == 'pyStrChars(str).slice(undefined, undefined).reverse().join("")'
+    )
+    assert str(str_var[1:3:1]) == 'pyStrChars(str).slice(1, 3).join("")'
+    assert str(str_var[1]) == "pyStrAt(str, 1)"
+
+
+@pytest.mark.parametrize(
+    ("var", "tag"),
+    [
+        (Var(_js_expr="str").to(str).length(), "pyStrLength"),
+        (Var(_js_expr="str").to(str)[0], "pyStrAt"),
+        (Var(_js_expr="str").to(str)[1:], "pyStrSlice"),
+        (Var(_js_expr="str").to(str)[::-1], "pyStrChars"),
+        (Var(_js_expr="str").to(str).reversed(), "pyStrChars"),
+    ],
+)
+def test_str_var_codepoint_imports(var: Var, tag: str):
+    """Test that code-point string operations import their state.js helper.
+
+    Args:
+        var: The string operation var.
+        tag: The helper the operation calls.
+    """
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert ImportVar(tag=tag) in dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"]
 
 
 def test_dict_indexing():
@@ -1107,7 +1133,7 @@ def test_deep_equals_accepts_python_values_and_preserves_var_data():
 def test_string_operations():
     basic_string = LiteralStringVar.create("Hello, World!")
 
-    assert str(basic_string.length()) == '"Hello, World!".split("").length'
+    assert str(basic_string.length()) == 'pyStrLength("Hello, World!")'
     assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
     assert str(basic_string.lstrip()) == 'pyLstrip("Hello, World!", null)'
     assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
@@ -1120,8 +1146,40 @@ def test_string_operations():
     assert str(basic_string.strip(chars_var)) == 'pyStrip("Hello, World!", state.chars)'
     assert str(basic_string.contains("World")) == '"Hello, World!".includes("World")'
     assert (
+        str(basic_string.reversed())
+        == 'pyStrChars("Hello, World!").slice().reverse().join("")'
+    )
+    assert str(basic_string * 2) == '"Hello, World!".repeat(Math.max(0, 2))'
+    assert str(2 * basic_string) == '"Hello, World!".repeat(Math.max(0, 2))'
+    assert str(basic_string * -1) == '"Hello, World!".repeat(Math.max(0, -1))'
+    float_count = LiteralNumberVar.create(2.5)
+    with pytest.raises(TypeError):
+        basic_string * float_count
+    with pytest.raises(TypeError):
+        float_count * basic_string
+    assert (
         str(basic_string.split(" ").join(",")) == '"Hello, World!".split(" ").join(",")'
     )
+
+
+def test_string_split_uses_code_points_for_empty_separator():
+    """Test that splitting by an empty separator yields code points, not UTF-16 units."""
+    basic_string = LiteralStringVar.create("a😀b")
+    literal = str(basic_string)
+    code_point_split = f"pyStrChars({literal})"
+    assert str(basic_string.split()) == code_point_split
+    assert str(basic_string.split("")) == code_point_split
+    assert str(basic_string.split(" ")) == f'{literal}.split(" ")'
+    sep_var = Var(_js_expr="state.sep").to(str)
+    assert str(basic_string.split(sep_var)) == f"pyStrSplit({literal}, state.sep)"
+    for split_var, tag in (
+        (basic_string.split(), "pyStrChars"),
+        (basic_string.split(sep_var), "pyStrSplit"),
+    ):
+        var_data = split_var._get_all_var_data()
+        assert var_data is not None
+        assert dict(var_data.imports)[f"$/{Dirs.STATE_PATH}"] == (ImportVar(tag=tag),)
+    assert basic_string.split(" ")._get_all_var_data() is None
 
 
 def test_all_number_operations():
@@ -1131,7 +1189,7 @@ def test_all_number_operations():
 
     assert (
         str(complicated_number)
-        == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
+        == "(pyMod(Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2), 3) ** 2)"
     )
 
     even_more_complicated_number = ~(
@@ -1140,7 +1198,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(isTrue(pyOr(Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))), () => (pyAnd(2, () => (Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))))"
+        == "!(isTrue(pyOr(Math.abs(Math.floor((pyMod(Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2), 3) ** 2))), () => (pyAnd(2, () => (Math.round((pyMod(Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2), 3) ** 2))))))))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
@@ -1369,7 +1427,7 @@ def test_array_filter():
     # non-boolean results are evaluated with python truthiness
     truthy_predicate = array_var.filter(lambda x: x % 2)
     assert re.fullmatch(
-        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => isTrue\(\(\1 % 2\)\)\)\)",
+        r"\[1, 2, 3\]\.filter\(\(\((\w+)\) => isTrue\(pyMod\(\1, 2\)\)\)\)",
         str(truthy_predicate),
     )
     _assert_var_imports(truthy_predicate, "isTrue")
@@ -1559,6 +1617,17 @@ def test_retrieval():
         == tuple(result_immutable_var_data.hooks)
         == tuple(original_var_data.hooks)
     )
+
+
+@pytest.mark.parametrize(
+    ("javascript_code", "expected"),
+    [
+        ("const state = useStateContext('state')", True),
+        ("const state = useContext(ThemeContext)", False),
+    ],
+)
+def test_code_uses_state_contexts(javascript_code: str, expected: bool):
+    assert code_uses_state_contexts(javascript_code) is expected
 
 
 def test_fstring_concat():
