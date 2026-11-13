@@ -728,7 +728,8 @@ class EnvironmentVariables:
     # Whether to skip purging the web directory in dev mode.
     REFLEX_PERSIST_WEB_DIR: EnvVar[bool] = env_var(False)
 
-    # This env var stores the execution mode of the app
+    # The execution mode of the app. `reflex run` and `reflex export` set it from
+    # their `--env` option, so do not set it yourself.
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
     # Whether to keep React's development-build owner-stack capture in dev mode.

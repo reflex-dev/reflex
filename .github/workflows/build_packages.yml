@@ -38,6 +38,8 @@ jobs:
           set -euo pipefail
           ENTRIES=('{"name":"reflex","dir":"."}')
           for pkg in packages/*/; do
+            # packages/reflex-frontend is javascript: reflex-base embeds it.
+            [ -f "$pkg/pyproject.toml" ] || continue
             name=$(basename "$pkg")
             ENTRIES+=("{\"name\":\"$name\",\"dir\":\"$pkg\"}")
           done
