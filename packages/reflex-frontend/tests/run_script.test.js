@@ -9,10 +9,10 @@ import { describe, expect, test, vi } from "vitest";
 import { eventLoop } from "$/utils/context-registry";
 import { applyEvent } from "$/utils/state";
 
-const callScript = (code, callback) =>
+const callScript = (code, callback, socket = null) =>
   applyEvent(
     { name: "_call_script", payload: { javascript_code: code, callback } },
-    null,
+    socket,
     null,
     null,
   );
@@ -37,14 +37,28 @@ describe("_call_script", () => {
     expect(args).toEqual([42]);
   });
 
-  test("runs strict and sees no module-local names", async () => {
+  test("runs strict and sees no other module-local names", async () => {
     const onerror = vi.fn();
     window.onerror = onerror;
     await callScript("undeclared = 1");
-    await callScript("socket");
+    await callScript("eventLoop");
     expect(onerror).toHaveBeenCalledTimes(2);
     expect(onerror.mock.calls[0][4]).toBeInstanceOf(ReferenceError);
     expect(onerror.mock.calls[1][4]).toBeInstanceOf(ReferenceError);
+  });
+
+  test("scripts keep the socket, navigate, params and token names", async () => {
+    // Apps written against direct eval call socket.disconnect() and read the
+    // session token from a script.
+    const socket = { disconnect: vi.fn() };
+    const seen = [];
+    await callScript(
+      "socket.disconnect(); [typeof navigate, typeof params, typeof token]",
+      (result) => seen.push(result),
+      socket,
+    );
+    expect(socket.disconnect).toHaveBeenCalledTimes(1);
+    expect(seen).toEqual([["object", "object", "undefined"]]);
   });
 
   test("callback strings can use every helper this module exports", async () => {

@@ -12,11 +12,7 @@ STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 
 ADD_EVENTS_ALIAS = "const addEvents = (...args) => eventLoop.addEvents(...args);"
 
-USER_CODE_EVALS = (
-    "runScript(event.payload.callback, addEvents)",
-    "runScript(event.payload.javascript_code, addEvents)",
-    "runScript(event.payload.function, addEvents)",
-)
+USER_CODE_RUNS = re.compile(r"runScript\(\s*event\.payload\.(\w+),")
 
 TOP_LEVEL_FUNCTION = re.compile(
     r"^(?:export )?const (\w+) = (?:async )?\(", re.MULTILINE
@@ -106,15 +102,16 @@ def test_every_user_code_eval_can_reach_add_events() -> None:
     """
     content = STATE_JS_TEMPLATE.read_text()
 
-    for snippet in USER_CODE_EVALS:
-        eval_at = content.index(snippet)
-        name, body = _enclosing_function(content, eval_at)
+    sites = list(USER_CODE_RUNS.finditer(content))
+    assert [m.group(1) for m in sites] == ["callback", "javascript_code", "function"]
+    for site in sites:
+        name, body = _enclosing_function(content, site.start())
         assert ADD_EVENTS_ALIAS in body, (
-            f"`{name}` runs user code via `{snippet}` but does not declare the "
+            f"`{name}` runs `{site.group()}` but does not declare the "
             "addEvents alias it passes."
         )
-        assert body.index(ADD_EVENTS_ALIAS) < body.index(snippet), (
-            f"`{name}` declares the addEvents alias after `{snippet}`."
+        assert body.index(ADD_EVENTS_ALIAS) < body.index(site.group()), (
+            f"`{name}` declares the addEvents alias after `{site.group()}`."
         )
 
 
