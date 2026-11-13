@@ -11,6 +11,8 @@ import {
   useParams,
 } from "react-router";
 import { app, eventLoop } from "$/utils/context-registry";
+// This module's own exports, handed to server-provided scripts as parameters.
+import * as stateExports from "$/utils/state";
 import {
   CLIENT_STATE_REF,
   getClientState,
@@ -515,6 +517,23 @@ function urlFrom(string) {
 let fallbackEval = null;
 
 /**
+ * Names a server-provided script can use, in parameter order.
+ *
+ * Generated callbacks call any helper compiled pages import from this module
+ * (`ReflexEvent`, `pyMod`, `isTrue`, `refs`, ...), so every export is in scope,
+ * plus the per-call dependencies of the environment.
+ *
+ * @param env Explicit environment containing runtime dependencies.
+ * @returns An object whose keys are the parameter names and values the arguments.
+ */
+const scriptScope = (env) => ({
+  ...stateExports,
+  addEvents: env.addEvents,
+  socket: env.socket,
+  token: env.token,
+});
+
+/**
  * Get or initialize the cached script evaluator.
  *
  * @returns The cached script evaluator function.
@@ -522,13 +541,9 @@ let fallbackEval = null;
 const getScriptEvaluator = () => {
   if (!fallbackEval) {
     fallbackEval = new Function(
-      "addEvents",
-      "ReflexEvent",
-      "applyEventActions",
-      "refs",
-      "socket",
-      "token",
-      `"use strict"; return eval(arguments[6]);`,
+      ...Object.keys(scriptScope({})),
+      "code",
+      `"use strict"; return eval(code);`,
     );
   }
   return fallbackEval;
@@ -543,16 +558,7 @@ const getScriptEvaluator = () => {
  * @returns The evaluated script completion value.
  */
 const executeScriptInExplicitEnvironment = (code, env) => {
-  const evaluator = getScriptEvaluator();
-  return evaluator(
-    env.addEvents,
-    env.ReflexEvent,
-    env.applyEventActions,
-    env.refs,
-    env.socket,
-    env.token,
-    code,
-  );
+  return getScriptEvaluator()(...Object.values(scriptScope(env)), code);
 };
 
 /**
@@ -569,15 +575,11 @@ const executeScriptInExplicitEnvironment = (code, env) => {
  */
 const evaluateInExplicitEnvironment = (code, env) => {
   const trimmed = code.trim().replace(/;+$/, "");
+  const scope = scriptScope(env);
   let fn;
   try {
     fn = new Function(
-      "addEvents",
-      "ReflexEvent",
-      "applyEventActions",
-      "refs",
-      "socket",
-      "token",
+      ...Object.keys(scope),
       `"use strict"; return (${trimmed});`,
     );
   } catch (e) {
@@ -586,14 +588,7 @@ const evaluateInExplicitEnvironment = (code, env) => {
     }
     throw e;
   }
-  return fn(
-    env.addEvents,
-    env.ReflexEvent,
-    env.applyEventActions,
-    env.refs,
-    env.socket,
-    env.token,
-  );
+  return fn(...Object.values(scope));
 };
 
 /**
@@ -606,10 +601,6 @@ const createExecutionContext = (addEvents, socket) => ({
   addEvents,
   socket,
   token,
-  ReflexEvent: typeof ReflexEvent !== "undefined" ? ReflexEvent : undefined,
-  applyEventActions:
-    typeof applyEventActions !== "undefined" ? applyEventActions : undefined,
-  refs: typeof refs !== "undefined" ? refs : (globalThis.refs ?? {}),
 });
 
 /**

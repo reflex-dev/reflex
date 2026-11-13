@@ -60,6 +60,7 @@ import assert from 'node:assert/strict';
 const calls = [];
 const eventLoop = {addEvents: (events) => calls.push(events)};
 const token = 'test-token';
+const stateExports = {};
 """
             + helper
             + """
@@ -137,6 +138,7 @@ const token = "test-token";
 const ReflexEvent = (name, payload) => ({name, payload});
 const refs = {target: {current: {value: 'ref_val'}}};
 const socket = {connected: true};
+const stateExports = {ReflexEvent, refs};
 """
             + helper
             + """

@@ -57,12 +57,13 @@ without it appearing in its arguments. What there is, and where it is pinned:
   evaluates every module in node to prerender pages, so anything added here has
   to load without either. `tests/public_api.test.js` imports each module in
   node to keep it that way.
-- **`eval` scope**: event code sent by the backend (`rx.call_script`, event
-  callbacks) is evaluated inside `utils/state.js` and resolves names from the
-  scopes around the `eval`: `queueEvents`, `processEvent`, `refs`, `addEvents`,
-  and the `socket`, `navigate` and `params` parameters. This is why the file is
-  one module, why the linter's unused-variable rules are off for it
-  (`lint.biome.jsonc`), and why nothing there is renamed or moved casually.
+- **Script scope**: event code sent by the backend (`rx.call_script`, event
+  callbacks) is compiled with the Function constructor in `utils/state.js`,
+  never a direct `eval`, which would stop the minifier from mangling the chunk
+  that holds it. The script receives every export of the module (`ReflexEvent`,
+  `pyMod`, `refs`, ...), the late-bound `addEvents`, the event's `socket` and
+  the session `token` as parameters, and nothing else. Renaming an export
+  changes what compiled callbacks can call.
 - **Globals the runtime reads**: hooks other code installs on `window`
   (`__reflex_otel`, `__reflex`, `__reflex_load`) and the per-app `$/env.json`.
   Each is declared in `types/globals.d.ts`; reading one that is not fails the

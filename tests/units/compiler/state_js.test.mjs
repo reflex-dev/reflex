@@ -239,6 +239,8 @@ async function setup({
     },
   });
   await module.link((name) => {
+    // state.js imports itself to hand its exports to server-provided scripts.
+    if (name === "$/utils/state") return module;
     assert.ok(imports[name], `unexpected import: ${name}`);
     return new vm.SyntheticModule(
       Object.keys(imports[name]),

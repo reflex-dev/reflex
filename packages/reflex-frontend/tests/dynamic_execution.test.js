@@ -322,6 +322,31 @@ describe("_call_script explicit dependency injection", () => {
     expect(dispatched.payload).toEqual({ data: "payload_value" });
   });
 
+  test("callback strings can use every helper this module exports", async () => {
+    // Var operations inside a callback compile to pyMod, isTrue, pyStrLength
+    // and other helpers that compiled pages import from state.js.
+    const socket = makeSocket();
+    await applyEvent(
+      {
+        name: "_call_script",
+        payload: {
+          javascript_code: "7",
+          callback:
+            "(res) => addEvents([ReflexEvent('s.set', { x: pyMod(res, 2), y: isTrue(res), z: pyStrLength('ab') })])",
+        },
+      },
+      socket,
+      navigate,
+      params,
+    );
+    expect(mockEventLoop.addEvents).toHaveBeenCalledOnce();
+    expect(mockEventLoop.addEvents.mock.calls[0][0][0].payload).toEqual({
+      x: 1,
+      y: true,
+      z: 2,
+    });
+  });
+
   test("script code can access refs injected into the execution context", async () => {
     refs.__client_state = { current: { value: "hello_client_state" } };
     const socket = makeSocket();
