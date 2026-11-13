@@ -224,6 +224,9 @@ if TYPE_CHECKING or find_spec("sqlalchemy"):
             Returns:
                 The model passed in as an argument (Allows decorator usage)
             """
+            for registered_model in tuple(cls._registered_models):
+                if registered_model not in cls.models:
+                    del cls._registered_models[registered_model]
             cls.models.add(model)
             cls._registered_models.setdefault(model, None)
             return model
