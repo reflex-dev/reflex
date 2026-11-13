@@ -29,6 +29,7 @@ from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
     EventCallback,
     EventChain,
+    EventHandler,
     EventSpec,
     args_specs_from_fields,
     no_args_event_spec,
@@ -1287,7 +1288,14 @@ class Component(BaseComponent, ABC):
 
             # Make sure the child is a valid type.
             if isinstance(child, dict) or not isinstance(child, ComponentChildTypes):
-                raise ChildrenTypeError(component=cls.__name__, child=child)
+                error = ChildrenTypeError(component=cls.__name__, child=child)
+                if isinstance(child, (EventSpec, EventHandler, EventChain)):
+                    error.add_note(
+                        "Bind an event to an event trigger such as on_click, or pass "
+                        "it to on_load in app.add_page to run it when the page loads. "
+                        "See https://reflex.dev/docs/events/events-overview/"
+                    )
+                raise error
 
     @classmethod
     def create(cls: type[T], *children, **props) -> T:
