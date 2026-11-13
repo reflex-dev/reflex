@@ -538,6 +538,146 @@ def test_api_transformer_lifespans_run(mocker: MockerFixture):
     assert events[4:] == ["callable http", "outer stop", "inner stop", "reflex stop"]
 
 
+def test_api_transformer_lifespan_warns_when_middleware_raises(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """Warn when a middleware exception prevents a nested transformer lifespan."""
+    fastapi = pytest.importorskip("fastapi")
+    events: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def lifespan(api: Any):
+        events.append("startup")
+        yield
+        events.append("shutdown")
+
+    fastapi_app = fastapi.FastAPI(lifespan=lifespan)
+
+    @fastapi_app.get("/api/greeting")
+    def greeting() -> dict[str, str | None]:
+        return {"greeting": getattr(fastapi_app.state, "greeting", None)}
+
+    def middleware_with_path_assumption(asgi_app: ASGIApp) -> ASGIApp:
+        async def middleware(scope: Scope, receive: Receive, send: Send) -> None:
+            if scope["path"].startswith("/old-docs"):
+                return
+            await asgi_app(scope, receive, send)
+
+        return middleware
+
+    app = App(api_transformer=[fastapi_app, middleware_with_path_assumption])
+    mocker.patch.object(app, "_compile")
+
+    with (
+        caplog.at_level(logging.WARNING, logger="reflex.app_mixins.lifespan"),
+        TestClient(app()) as client,
+    ):
+        assert client.get("/api/greeting").json() == {"greeting": None}
+
+    assert events == []
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.app_mixins.lifespan"
+    ]
+    assert len(records) == 1
+    assert records[0].message == (
+        "ASGI lifespan startup raised KeyError('path') in "
+        "test_api_transformer_lifespan_warns_when_middleware_raises.<locals>."
+        "middleware_with_path_assumption.<locals>.middleware. "
+        "The following wrapped transformer lifespans may be skipped: FastAPI("
+        "'FastAPI') lifespan=test_api_transformer_lifespan_warns_when_middleware_raises."
+        "<locals>.lifespan. If this is middleware, pass non-HTTP scopes through (e.g. "
+        "check scope['type'] or use scope.get('path', ''))."
+    )
+    exc_info = records[0].exc_info
+    assert exc_info is not None
+    assert isinstance(exc_info[1], KeyError)
+    assert exc_info[1].args == ("path",)
+
+
+def test_api_transformer_default_fastapi_lifespan_is_not_reported_as_custom(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """Do not report FastAPI's default router context as a custom lifespan."""
+    fastapi = pytest.importorskip("fastapi")
+
+    def middleware_with_path_assumption(asgi_app: ASGIApp) -> ASGIApp:
+        async def middleware(scope: Scope, receive: Receive, send: Send) -> None:
+            _ = scope["path"]
+            await asgi_app(scope, receive, send)
+
+        return middleware
+
+    app = App(api_transformer=[fastapi.FastAPI(), middleware_with_path_assumption])
+    mocker.patch.object(app, "_compile")
+
+    with (
+        caplog.at_level(logging.WARNING, logger="reflex.app_mixins.lifespan"),
+        TestClient(app()) as client,
+    ):
+        assert client.get("/missing").status_code == 404
+
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.app_mixins.lifespan"
+    ]
+    assert len(records) == 1
+    assert "The following wrapped transformer lifespans" not in records[0].message
+    assert "FastAPI(" not in records[0].message
+
+
+def test_api_transformer_lifespan_warning_only_names_not_started_transformer(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """An outer middleware warning excludes custom lifespans already started."""
+    events: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def inner_lifespan(api: Any):
+        events.append("inner start")
+        yield
+        events.append("inner stop")
+
+    @contextlib.asynccontextmanager
+    async def outer_lifespan(api: Any):
+        events.append("outer start")
+        yield
+        events.append("outer stop")
+
+    inner = Starlette(lifespan=inner_lifespan)
+    inner.add_route("/", lambda _: PlainTextResponse("ok"))
+    outer = Starlette(lifespan=outer_lifespan)
+
+    def middleware_with_path_assumption(asgi_app: ASGIApp) -> ASGIApp:
+        async def middleware(scope: Scope, receive: Receive, send: Send) -> None:
+            _ = scope["path"]
+            await asgi_app(scope, receive, send)
+
+        return middleware
+
+    app = App(api_transformer=[inner, outer, middleware_with_path_assumption])
+    mocker.patch.object(app, "_compile")
+
+    with (
+        caplog.at_level(logging.WARNING, logger="reflex.app_mixins.lifespan"),
+        TestClient(app()) as client,
+    ):
+        assert events == ["inner start"]
+        assert client.get("/").text == "ok"
+
+    assert events == ["inner start", "inner stop"]
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.app_mixins.lifespan"
+    ]
+    assert len(records) == 1
+    assert "inner_lifespan" not in records[0].message
+    assert "outer_lifespan" in records[0].message
+
+
 def test_api_transformer_named_routes_resolve(mocker: MockerFixture):
     """Resolve the named routes of a Starlette api_transformer through the served app.
 
