@@ -1088,7 +1088,7 @@ def test_path_list_env_value_accepts_colon_list_without_pathsep(
         (Annotated[list[Path], "meta"], r"C:\app;D:\lib"),
         (
             Annotated[list[Path], "meta"] | None,  # pyright: ignore[reportOperatorIssue]
-            r"C:pp;D:ib",
+            r"C:\app;D:\lib",
         ),
         (Annotated[list[Path], SequenceOptions(delimiter=",")], r"C:\app,D:\lib"),
     ],
