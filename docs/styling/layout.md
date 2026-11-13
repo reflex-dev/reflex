@@ -51,12 +51,14 @@ rx.flex(
         rx.box(
             "Example",
             bg="orange",
+            color="black",
             border_radius="3px",
             width="20%",
         ),
         rx.box(
             "Example",
             bg="lightblue",
+            color="black",
             border_radius="3px",
             width="30%",
         ),
@@ -67,12 +69,14 @@ rx.flex(
         rx.box(
             "Example",
             bg="orange",
+            color="black",
             border_radius="3px",
             width="20%",
         ),
         rx.box(
             "Example",
             bg="lightblue",
+            color="black",
             border_radius="3px",
             width="30%",
         ),
