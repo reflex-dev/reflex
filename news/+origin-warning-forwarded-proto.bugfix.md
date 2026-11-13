@@ -1,0 +1,1 @@
+The rejected event websocket origin warning now names the trusted `X-Forwarded-Proto` and, when only the scheme differs, says the page was loaded over http while the trusted proxy reports https instead of blaming Host forwarding.

@@ -691,16 +691,14 @@ class _SocketOriginCheck:
         hops = self._trusted_proxy_hops
         host = environ.get("HTTP_HOST")
         forwarded_host = environ.get("HTTP_X_FORWARDED_HOST")
-        if _origin_matches_request(
-            origin,
-            (
-                host,
-                _trusted_forwarded_value(forwarded_host or "", hops, appended=False),
-            ),
-            _trusted_forwarded_value(
-                environ.get("HTTP_X_FORWARDED_PROTO", ""), hops, appended=False
-            ),
-        ):
+        hosts = (
+            host,
+            _trusted_forwarded_value(forwarded_host or "", hops, appended=False),
+        )
+        forwarded_proto = _trusted_forwarded_value(
+            environ.get("HTTP_X_FORWARDED_PROTO", ""), hops, appended=False
+        )
+        if _origin_matches_request(origin, hosts, forwarded_proto):
             return True
         if self._warned:
             return False
@@ -720,6 +718,12 @@ class _SocketOriginCheck:
                 "reverse proxies can reach the backend, set trusted_proxy_hops "
                 f"(REFLEX_TRUSTED_PROXY_HOPS) to their number; otherwise, {deploy_url}"
             )
+        elif _origin_matches_request(origin, hosts, None):
+            fix = (
+                "the page was loaded over http but the trusted X-Forwarded-Proto "
+                f"says {forwarded_proto}, so fix the reverse proxy's X-Forwarded-Proto "
+                "or serve the page over https"
+            )
         else:
             fix = (
                 f"{deploy_url} or add it to cors_allowed_origins; a reverse proxy "
@@ -729,7 +733,11 @@ class _SocketOriginCheck:
             origin,
             "in prod mode the backend accepts only its own origin (request Host "
             f"{_clip(host)}, X-Forwarded-Host {_clip(forwarded_host)} "
-            + ("trusted" if hops else "ignored as trusted_proxy_hops is 0")
+            + (
+                f"trusted, X-Forwarded-Proto {_clip(forwarded_proto)} trusted"
+                if hops
+                else "ignored as trusted_proxy_hops is 0"
+            )
             + ")"
             + (f" and {sorted(self._origins)}" if self._origins else "")
             + f"; {fix}",
