@@ -746,8 +746,8 @@ def _serialize_sqlalchemy_model(
     ):
         logger.warning(
             "SQLAlchemy model %s has all mapped columns expired and will serialize "
-            "without them. Set expire_on_commit=False or call session.refresh(model) "
-            "before serializing it.",
+            "without them. Set expire_on_commit=False or reload the model in an open "
+            "session before serializing it.",
             type(m).__name__,
         )
         _WARNED_EXPIRED_SQLALCHEMY_MODELS.add(type(m))

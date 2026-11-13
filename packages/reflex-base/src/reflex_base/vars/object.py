@@ -91,11 +91,24 @@ def _unserialized_property_error(var_type: GenericType, name: str) -> VarAttribu
             "`rx.serializer` for the dataclass to include it."
         )
     else:
-        detail = (
-            f"Pydantic model '{var_type.__name__}' is not included in serialized "
-            "state. Use `@pydantic.computed_field` to include the computed value in "
-            "model_dump()."
-        )
+        from reflex_base.utils import serializers
+
+        if (
+            isinstance(var_type, type)
+            and serializers.get_serializer(var_type)
+            is serializers.serialize_sqlalchemy_base
+        ):
+            detail = (
+                f"SQLAlchemy model '{var_type.__name__}' is not included in serialized "
+                "state. Register an `rx.serializer` for the model to include the "
+                "value, or access a mapped attribute instead."
+            )
+        else:
+            detail = (
+                f"Pydantic model '{var_type.__name__}' is not included in serialized "
+                "state. Use `@pydantic.computed_field` to include the computed value in "
+                "model_dump()."
+            )
     return VarAttributeError(f"The property '{name}' on {detail}")
 
 

@@ -145,8 +145,11 @@ def test_serialize_expired_sqlalchemy_model_warns_only_in_dev(
     warnings = [record for record in caplog.records if "ExpiredUser" in record.message]
     assert len(warnings) == int(warns)
     if warns:
-        assert "expire_on_commit=False" in warnings[0].message
-        assert "session.refresh(model)" in warnings[0].message
+        assert warnings[0].message == (
+            "SQLAlchemy model ExpiredUser has all mapped columns expired and will "
+            "serialize without them. Set expire_on_commit=False or reload the model "
+            "in an open session before serializing it."
+        )
 
 
 def test_declarative_base_serializer_handles_bidirectional_relationships():
