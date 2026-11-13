@@ -590,8 +590,10 @@ def test_api_transformer_lifespan_warns_when_middleware_raises(
         "<locals>.lifespan. If this is middleware, pass non-HTTP scopes through (e.g. "
         "check scope['type'] or use scope.get('path', ''))."
     )
-    assert records[0].exc_info is not None
-    assert records[0].exc_info[1].args == ("path",)
+    exc_info = records[0].exc_info
+    assert exc_info is not None
+    assert isinstance(exc_info[1], KeyError)
+    assert exc_info[1].args == ("path",)
 
 
 def test_api_transformer_default_fastapi_lifespan_is_not_reported_as_custom(
