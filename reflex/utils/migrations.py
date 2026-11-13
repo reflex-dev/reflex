@@ -332,11 +332,13 @@ def _raised_in_env_py(error: Exception) -> bool:
         True if the innermost frame in the script directory is env.py's, or
         env.py failed to compile, which leaves only its file name.
     """
-    scripts = script_directory()
+    # alembic.ini may name the directory relative to the cwd, while traceback
+    # file names are absolute.
+    scripts = script_directory().resolve()
     paths = [frame.filename for frame in traceback.extract_tb(error.__traceback__)]
     if isinstance(error, SyntaxError) and error.filename:
         paths.append(error.filename)
-    for path in map(Path, reversed(paths)):
+    for path in (Path(path).resolve() for path in reversed(paths)):
         if path.is_relative_to(scripts):
             return path == scripts / "env.py"
     return False
