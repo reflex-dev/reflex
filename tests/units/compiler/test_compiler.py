@@ -23,6 +23,7 @@ from reflex_base.utils.exceptions import (
     PageValueError,
     RouteValueError,
 )
+from reflex_base.utils.format import format_route
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
@@ -1295,6 +1296,99 @@ def test_register_plugin_routes_rejects_plugin_conflict_atomically():
 
     assert not app._plugin_routes_registered
     assert "shared" not in app._unevaluated_pages
+
+
+@pytest.mark.parametrize(
+    ("app_route", "plugin_route", "existing", "owner"),
+    [
+        ("/foo", "/Foo", "foo", "the app"),
+        ("/item/[case_id]", "/Item/[case_slug]", "item/[case_id]", "the app"),
+    ],
+)
+def test_register_plugin_routes_rejects_case_conflict_with_app_route(
+    app_route: str, plugin_route: str, existing: str, owner: str
+):
+    """A plugin route matching the same URLs as an app route is rejected.
+
+    Args:
+        app_route: The route the app defines.
+        plugin_route: The route the plugin contributes.
+        existing: The normalized app route in the error message.
+        owner: The owner of the existing route in the error message.
+    """
+
+    class CaseRouteState(BaseState):
+        """State root isolated from the global state tree in this test."""
+
+    class CasePlugin(rx.plugins.Plugin):
+        """Plugin claiming a case variant of an app route."""
+
+        def register_route(self, *, add_page, **_):
+            """Contribute the conflicting page.
+
+            Args:
+                add_page: The staged page-adding capability.
+                _: Additional hook context.
+            """
+            add_page(lambda: rx.el.div("plugin"), route=plugin_route)
+
+    app = rx.App(_state=CaseRouteState)
+    app.add_page(lambda: rx.el.div("app"), route=app_route)
+    new = format_route(plugin_route)
+    expected = (
+        f"Plugin CasePlugin tried to register route `{new}`, but it matches the "
+        f"same URLs as route `{existing}` defined by {owner}; routes are "
+        "matched case-insensitively and dynamic segment names do not "
+        "distinguish them."
+    )
+
+    with pytest.raises(RouteValueError, match=f"^{re.escape(expected)}$"):
+        compiler._register_plugin_routes(app, [CasePlugin()])
+
+    assert not app._plugin_routes_registered
+    assert list(app._unevaluated_pages) == [format_route(app_route)]
+
+
+def test_register_plugin_routes_rejects_case_conflict_between_plugins():
+    """A plugin route differing only in case from another plugin's is rejected."""
+
+    class FirstPlugin(rx.plugins.Plugin):
+        """First owner of the lowercase route."""
+
+        def register_route(self, *, add_page, **_):
+            """Contribute the lowercase page.
+
+            Args:
+                add_page: The staged page-adding capability.
+                _: Additional hook context.
+            """
+            add_page(lambda: rx.el.div("first"), route="/shared")
+
+    class SecondPlugin(rx.plugins.Plugin):
+        """Second claimant of the same route in another case."""
+
+        def register_route(self, *, add_page, **_):
+            """Contribute the conflicting page.
+
+            Args:
+                add_page: The staged page-adding capability.
+                _: Additional hook context.
+            """
+            add_page(lambda: rx.el.div("second"), route="/Shared")
+
+    app = rx.App()
+    expected = (
+        "Plugin SecondPlugin tried to register route `Shared`, but it matches "
+        "the same URLs as route `shared` defined by plugin FirstPlugin; routes "
+        "are matched case-insensitively and dynamic segment names do not "
+        "distinguish them."
+    )
+
+    with pytest.raises(RouteValueError, match=f"^{re.escape(expected)}$"):
+        compiler._register_plugin_routes(app, [FirstPlugin(), SecondPlugin()])
+
+    assert not app._plugin_routes_registered
+    assert app._unevaluated_pages == {}
 
 
 def test_register_plugin_routes_rejects_structural_app_conflict_atomically():

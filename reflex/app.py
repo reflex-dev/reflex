@@ -350,6 +350,35 @@ class _PreparedPage:
     route_args: dict[str, str]
 
 
+_ROUTE_KEYWORDS = frozenset({
+    constants.RouteRegex.SINGLE_SEGMENT,
+    constants.RouteRegex.DOUBLE_SEGMENT,
+    constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
+})
+
+
+def _route_match_key(route: str) -> str:
+    """Get the key under which the router tells routes apart.
+
+    Dynamic segments collapse to keywords and the letter case of literal
+    segments is folded, so routes sharing a key match the same URLs. Only the
+    exact index route matches ``/``, so it keeps a key of its own.
+
+    Args:
+        route: A normalized route.
+
+    Returns:
+        The route with dynamic segments replaced by keywords and literal
+        segments case-folded.
+    """
+    if route == constants.PageNames.INDEX_ROUTE:
+        return "/"
+    return "/".join(
+        part if part in _ROUTE_KEYWORDS else part.lower()
+        for part in replace_brackets_with_keywords(route).split("/")
+    )
+
+
 def _route_arg_label(arg_type: str) -> str:
     """Return the human-readable label for a dynamic route argument type.
 
@@ -855,6 +884,9 @@ class App(MiddlewareMixin, LifespanMixin):
     _unevaluated_pages: dict[str, UnevaluatedPage] = dataclasses.field(
         default_factory=dict
     )
+
+    # A map from the key the router matches a route by to the registered route.
+    _route_spellings: dict[str, str] = dataclasses.field(default_factory=dict)
 
     # Whether the plugins' ``register_route`` hooks have run for this app.
     _plugin_routes_registered: bool = False
@@ -1544,7 +1576,8 @@ class App(MiddlewareMixin, LifespanMixin):
             prepared: The validated page descriptor to register.
 
         Raises:
-            RouteValueError: When another component already owns the route.
+            RouteValueError: When another component already owns the route, or a
+                registered route matches the same URLs.
         """
         page = prepared.page
         if page.route in self._unevaluated_pages:
@@ -1569,6 +1602,15 @@ class App(MiddlewareMixin, LifespanMixin):
                     "Make sure you do not have two pages with the same route."
                 )
                 raise exceptions.RouteValueError(msg)
+        elif (
+            spelling := self._route_spellings.get(_route_match_key(page.route))
+        ) is not None:
+            msg = (
+                f"Route `{page.route}` matches the same URLs as the already "
+                f"registered `{spelling}`; routes are matched case-insensitively "
+                "and dynamic segment names do not distinguish them."
+            )
+            raise exceptions.RouteValueError(msg)
         self._commit_page(prepared)
 
     def _commit_page(
@@ -1605,6 +1647,7 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         self._unevaluated_pages[page.route] = page
+        self._route_spellings[_route_match_key(page.route)] = page.route
         self.__dict__.pop("router", None)
 
     def _register_plugin_pages(self, plugins: Sequence[Plugin]) -> None:
@@ -1624,6 +1667,7 @@ class App(MiddlewareMixin, LifespanMixin):
         app_routes = dict.fromkeys(self._unevaluated_pages)
         contributions: list[_PreparedPage] = []
         route_owners: dict[str, str] = {}
+        route_keys = dict(self._route_spellings)
 
         def has_app_page(route: str) -> bool:
             """Return whether the app defines a normalized route.
@@ -1700,6 +1744,22 @@ class App(MiddlewareMixin, LifespanMixin):
                     )
                     raise exceptions.RouteValueError(msg)
 
+                if (twin := route_keys.get(_route_match_key(route_key))) is not None:
+                    twin_owner = (
+                        "the app"
+                        if twin in app_routes
+                        else f"plugin {route_owners[twin]}"
+                    )
+                    msg = (
+                        f"Plugin {plugin_name} tried to register route "
+                        f"`{route_key}`, but it matches the same URLs as route "
+                        f"`{twin}` defined by {twin_owner}; routes are matched "
+                        "case-insensitively and dynamic segment names do not "
+                        "distinguish them."
+                    )
+                    raise exceptions.RouteValueError(msg)
+
+                route_keys[_route_match_key(route_key)] = route_key
                 route_owners[route_key] = plugin_name
                 contributions.append(prepared)
 
