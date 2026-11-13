@@ -22,7 +22,8 @@ env:
 jobs:
   benchmarks:
     name: Run benchmarks
-    runs-on: ubuntu-latest
+    # CodSpeed runner 5.2.1 does not support the Ubuntu 26.04 ubuntu-latest image.
+    runs-on: ubuntu-24.04
     env:
       REFLEX_CLI_BENCHMARK_TIMEOUT_SECONDS: "120"
     timeout-minutes: 60
