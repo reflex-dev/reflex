@@ -9,6 +9,7 @@ import dataclasses
 import functools
 import importlib
 import inspect
+import ipaddress
 import json
 import logging
 import operator
@@ -598,6 +599,46 @@ def _trusted_forwarded_value(
     if len(entries) >= trusted_proxy_hops:
         return entries[-trusted_proxy_hops]
     return None if appended or not entries else entries[0]
+
+
+def _is_port(text: str) -> bool:
+    """Return whether text is a port number.
+
+    Args:
+        text: The text after the ``:`` of an address.
+
+    Returns:
+        Whether the text is made of ASCII digits only.
+    """
+    return text.isascii() and text.isdigit()
+
+
+def _forwarded_client_ip(entry: str) -> str | None:
+    """Normalize an ``X-Forwarded-For`` entry to an IP address.
+
+    Args:
+        entry: The entry, an IP address with an optional port and IPv6 brackets.
+
+    Returns:
+        The normalized address, or None when the entry is not an IP address.
+    """
+    if entry.startswith("["):
+        entry, closed, rest = entry[1:].partition("]")
+        port_ok = not rest or (rest.startswith(":") and _is_port(rest[1:]))
+        if not closed or not port_ok:
+            return None
+    elif entry.count(":") == 1:
+        entry, _, port = entry.partition(":")
+        if not _is_port(port):
+            return None
+    if "%" in entry:
+        # A zone index only means something on the proxy's own host, and
+        # ``ipaddress`` keeps it without validating it.
+        return None
+    try:
+        return str(ipaddress.ip_address(entry))
+    except ValueError:
+        return None
 
 
 def _origin_matches_request(
@@ -2708,7 +2749,13 @@ class EventNamespace(AsyncNamespace):
             headers.get("x-forwarded-for", ""), get_config().trusted_proxy_hops
         )
         if forwarded_ip is not None:
-            client_ip = forwarded_ip
+            if (normalized_ip := _forwarded_client_ip(forwarded_ip)) is not None:
+                client_ip = normalized_ip
+            else:
+                logger.debug(
+                    f"Ignoring X-Forwarded-For entry {_clip(forwarded_ip)}: "
+                    "not an IP address."
+                )
         return {
             constants.RouteVar.SESSION_ID: sid,
             constants.RouteVar.HEADERS: headers,

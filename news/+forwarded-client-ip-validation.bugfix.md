@@ -1,0 +1,1 @@
+`router.session.client_ip` now normalizes the `X-Forwarded-For` entry selected by `trusted_proxy_hops` to an IP address, dropping any port and IPv6 brackets, and falls back to the connection's peer address when the entry is not a valid address.
