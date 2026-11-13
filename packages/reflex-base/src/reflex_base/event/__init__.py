@@ -3507,8 +3507,17 @@ if TYPE_CHECKING:
 class EventDecorator(Protocol):
     """The decorator ``rx.event(...)`` returns."""
 
+    # A repeated @rx.event decorates the handler the inner one returned.
+    @overload
+    def __call__(self, func: EventCallback[*P]) -> EventCallback[*P]: ...
+
+    @overload
     def __call__(
         self, func: "Callable[[BASE_STATE, Unpack[P]], Any]"
+    ) -> EventCallback[*P]: ...
+
+    def __call__(
+        self, func: "EventCallback[*P] | Callable[[BASE_STATE, Unpack[P]], Any]"
     ) -> EventCallback[*P]:
         """Wrap a function to be used as an event.
 
@@ -3601,6 +3610,20 @@ class EventNamespace:
         debounce: int | None = None,
         temporal: bool | None = None,
     ) -> EventDecorator: ...
+
+    @overload
+    def __new__(
+        cls,
+        func: EventCallback[*P],
+        *,
+        background: bool | None = None,
+        supersedes: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
+    ) -> EventCallback[*P]: ...
 
     @overload
     def __new__(
