@@ -287,6 +287,16 @@ def test_set_log_level_env_propagation(monkeypatch):
     assert log.is_debug()
 
 
+def test_set_log_level_exports_env_when_level_unchanged(monkeypatch):
+    """Re-asserting the current level still exports REFLEX_LOGLEVEL."""
+    import os
+
+    monkeypatch.delenv("REFLEX_LOGLEVEL", raising=False)
+    log.set_log_level(LogLevel.INFO)
+    assert os.environ.get("REFLEX_LOGLEVEL") == "info"
+    assert log.get_log_level() is LogLevel.INFO
+
+
 def test_set_log_level_rejects_strings():
     """Passing a raw string raises a TypeError."""
     with pytest.raises(TypeError):

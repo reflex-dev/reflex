@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.utils import log as base_log
 
 from reflex.utils import export, path_ops
 
@@ -272,3 +273,32 @@ def test_export_releases_frontend_lock_before_failure_telemetry(
         export.export()
 
     assert context.__exit__.call_args.args[:2] == (RuntimeError, error)
+
+
+def test_export_restores_console_log_level(patched_export, monkeypatch):
+    """export() leaves the console log level as it found it."""
+    monkeypatch.delenv("REFLEX_LOGLEVEL", raising=False)
+    previous_level = base_log.get_log_level()
+    base_log.set_log_level(constants.LogLevel.INFO)
+    try:
+        export.export(loglevel=constants.LogLevel.WARNING)
+
+        assert base_log.get_log_level() is constants.LogLevel.INFO
+        assert os.environ.get("REFLEX_LOGLEVEL") == "info"
+    finally:
+        base_log.set_log_level(previous_level)
+
+
+def test_export_restores_console_log_level_on_failure(patched_export, monkeypatch):
+    """export() restores the console log level even when a phase fails."""
+    patched_export["get_compiled_app"].side_effect = RuntimeError("boom")
+    monkeypatch.delenv("REFLEX_LOGLEVEL", raising=False)
+    previous_level = base_log.get_log_level()
+    base_log.set_log_level(constants.LogLevel.INFO)
+    try:
+        with pytest.raises(RuntimeError, match="boom"):
+            export.export(loglevel=constants.LogLevel.WARNING)
+
+        assert base_log.get_log_level() is constants.LogLevel.INFO
+    finally:
+        base_log.set_log_level(previous_level)

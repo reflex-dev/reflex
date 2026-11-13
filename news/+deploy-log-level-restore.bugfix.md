@@ -1,0 +1,1 @@
+`reflex deploy` now shows its progress and success messages again: exporting the app no longer leaves the console log level at WARNING, and an explicit `--loglevel` flag is honored even when it equals the current level.
