@@ -56,6 +56,7 @@ from reflex_base.utils.exceptions import (
     UnretrievableVarValueError,
 )
 from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
+from reflex_base.utils.log import dedupe_once
 from reflex_base.utils.serializers import serializer
 from reflex_base.utils.types import _isinstance
 from reflex_base.vars import Field, VarData, field
@@ -545,6 +546,8 @@ all_base_state_classes: dict[str, None] = {}
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
 
+_WRAPPED_HANDLER_DEPRECATION = "Decorators above @rx.event"
+
 # What a wrapper stacked above @rx.event takes over from the function it
 # wraps: what functools.wraps copied from a plain function (its name, module,
 # docstring and the annotations the payload coercion reads, which it took
@@ -971,8 +974,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         newfn.__dict__.update(fn.__dict__)
         return newfn
 
-    @staticmethod
-    def _item_is_event_handler(name: str, value: Any) -> bool:
+    @classmethod
+    def _item_is_event_handler(cls, name: str, value: Any) -> bool:
         """Check if the item is an event handler.
 
         Args:
@@ -991,15 +994,25 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             inner := inspect.unwrap(value, stop=lambda f: isinstance(f, EventHandler)),
             EventHandler,
         ):
-            console.deprecate(
-                feature_name="Decorators above @rx.event",
-                reason=(
-                    f"`{name}` is decorated above @rx.event; apply other "
-                    "decorators below it."
-                ),
-                deprecation_version="0.11.0",
-                removal_version="1.0",
-            )
+            # The default dedupe key is the feature name plus the class source
+            # location, which would name only the first method of a class.
+            # Dedupe per method instead, so repeated class setup in one process stays quiet.
+            if dedupe_once((
+                _WRAPPED_HANDLER_DEPRECATION,
+                cls.__module__,
+                cls.__qualname__,
+                name,
+            )):
+                console.deprecate(
+                    feature_name=_WRAPPED_HANDLER_DEPRECATION,
+                    reason=(
+                        f"`{name}` is decorated above @rx.event; apply other "
+                        "decorators below it."
+                    ),
+                    deprecation_version="0.11.0",
+                    removal_version="1.0",
+                    dedupe=False,
+                )
             for attr in _STACKED_HANDLER_ATTRIBUTES:
                 if hasattr(inner.fn, attr):
                     setattr(value, attr, getattr(inner.fn, attr))
