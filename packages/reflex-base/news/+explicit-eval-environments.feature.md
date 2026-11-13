@@ -1,1 +1,0 @@
-Execute dynamically evaluated JavaScript (callbacks, `_call_script`, and `_call_function`) within an explicit function environment providing required runtime dependencies (`addEvents`, `ReflexEvent`, `applyEventActions`, and `refs`), avoiding reliance on module lexical scope, and replace dynamic component evaluation with native dynamic imports.

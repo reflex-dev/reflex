@@ -12,11 +12,7 @@ STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
 
 ADD_EVENTS_ALIAS = "const addEvents = (...args) => eventLoop.addEvents(...args);"
 
-USER_CODE_EXECUTIONS = (
-    "evaluateInExplicitEnvironment(\n      callback,\n      createExecutionContext(addEvents, socket),",
-    "evaluateInExplicitEnvironment(\n          func,\n          createExecutionContext(addEvents, socket),",
-    "executeScriptInExplicitEnvironment(\n        event.payload.javascript_code,\n        createExecutionContext(addEvents, socket),",
-)
+USER_CODE_RUNS = re.compile(r"runScript\(\s*event\.payload\.(\w+),\s*addEvents\b")
 
 TOP_LEVEL_FUNCTION = re.compile(
     r"^(?:export )?const (\w+) = (?:async )?\(", re.MULTILINE
@@ -39,170 +35,6 @@ def _enclosing_function(content: str, index: int) -> tuple[str, str]:
     return declaration.group(1), content[
         declaration.start() : content.index("\n};\n", index)
     ]
-
-
-def test_result_callback_dispatches_through_current_event_loop() -> None:
-    """Serialized callbacks can dispatch after extraction into their own helper."""
-    node = shutil.which("node")
-    if node is None:
-        pytest.skip("Node.js is needed to execute the callback")
-    content = STATE_JS_TEMPLATE.read_text()
-    helper = content[
-        content.index("let fallbackEval =") : content.index("export const applyEvent =")
-    ]
-    subprocess.run(
-        [
-            node,
-            "--input-type=module",
-            "--eval",
-            """
-import assert from 'node:assert/strict';
-const calls = [];
-const eventLoop = {addEvents: (events) => calls.push(events)};
-const token = 'test-token';
-const stateExports = {};
-"""
-            + helper
-            + """
-const event = {payload: {callback: '(value) => addEvents([value])'}};
-await applyResultCallback(event, Promise.resolve('first'), null, null, null);
-eventLoop.addEvents = (events) => calls.push(['remounted', ...events]);
-await applyResultCallback(event, 'second', null, null, null);
-assert.deepEqual(calls, [['first'], ['remounted', 'second']]);
-""",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-
-
-def test_eval_react_component_dynamic_import() -> None:
-    """Evaluate dynamic component imports via native dynamic import."""
-    node = shutil.which("node")
-    if node is None:
-        pytest.skip("Node.js is needed to execute evalReactComponent")
-    content = STATE_JS_TEMPLATE.read_text()
-    helper = content[
-        content.index("export const evalReactComponent =") : content.index(
-            "export const queueEventIfSocketExists ="
-        )
-    ]
-    subprocess.run(
-        [
-            node,
-            "--input-type=module",
-            "--eval",
-            helper
-            + """
-import assert from 'node:assert/strict';
-const loadedLibs = [];
-globalThis.window = {
-  __reflex: { react: { name: 'injected_react' } },
-  __reflex_load: async (libs) => { loadedLibs.push(...libs); },
-};
-const componentSource = `//__reflex_evaluate:["lib1", "lib2"]
-export default function Widget() { return window.React.name; }
-`;
-const comp = await evalReactComponent(componentSource);
-assert.deepEqual(loadedLibs, ['lib1', 'lib2']);
-assert.equal(comp(), 'injected_react');
-assert.equal(window.React.name, 'injected_react');
-""",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-
-
-def test_dynamic_javascript_explicit_environment() -> None:
-    """Dynamic code executes within explicit environments preserving completion values."""
-    node = shutil.which("node")
-    if node is None:
-        pytest.skip("Node.js is needed to execute dynamic evaluation")
-    content = STATE_JS_TEMPLATE.read_text()
-    helper = content[
-        content.index("let fallbackEval =") : content.index("export const applyEvent =")
-    ]
-    subprocess.run(
-        [
-            node,
-            "--input-type=module",
-            "--eval",
-            """
-import assert from 'node:assert/strict';
-const calls = [];
-const eventLoop = {addEvents: (events) => calls.push(events)};
-const token = "test-token";
-const ReflexEvent = (name, payload) => ({name, payload});
-const refs = {target: {current: {value: 'ref_val'}}};
-const socket = {connected: true};
-const stateExports = {ReflexEvent, refs};
-"""
-            + helper
-            + """
-const env = createExecutionContext(
-  (...args) => eventLoop.addEvents(...args),
-  socket,
-);
-
-assert.equal(fallbackEval, null);
-assert.equal(executeScriptInExplicitEnvironment('{ value: 42 }', env), 42);
-assert.notEqual(fallbackEval, null);
-const cachedEvaluator = fallbackEval;
-assert.equal(executeScriptInExplicitEnvironment('function f() {}', env), undefined);
-assert.equal(fallbackEval, cachedEvaluator);
-assert.equal(executeScriptInExplicitEnvironment('21 * 2', env), 42);
-assert.equal(executeScriptInExplicitEnvironment('let a = 10; let b = 2; a + b;', env), 12);
-assert.equal(executeScriptInExplicitEnvironment('console.log("no-op");', env), undefined);
-
-assert.throws(
-  () => executeScriptInExplicitEnvironment('let let = 1;', env),
-  { name: 'SyntaxError', message: 'Unexpected strict mode reserved word' },
-);
-
-assert.throws(
-  () => executeScriptInExplicitEnvironment('strictUndeclared = 42', env),
-  { name: 'ReferenceError', message: 'strictUndeclared is not defined' },
-);
-assert.equal('strictUndeclared' in globalThis, false);
-assert.equal(executeScriptInExplicitEnvironment('this', env), undefined);
-assert.equal(executeScriptInExplicitEnvironment('let y = 1; this;', env), undefined);
-
-executeScriptInExplicitEnvironment('addEvents([ReflexEvent("event_a", {val: refs.target.current.value})])', env);
-assert.deepEqual(calls.pop(), [{name: 'event_a', payload: {val: 'ref_val'}}]);
-
-assert.equal(executeScriptInExplicitEnvironment('socket', env), socket);
-assert.equal(executeScriptInExplicitEnvironment('token', env), token);
-assert.throws(
-  () => executeScriptInExplicitEnvironment('navigate', env),
-  { name: 'ReferenceError', message: 'navigate is not defined' },
-);
-assert.throws(
-  () => executeScriptInExplicitEnvironment('params', env),
-  { name: 'ReferenceError', message: 'params is not defined' },
-);
-
-const fn = evaluateInExplicitEnvironment('() => 123', env);
-assert.equal(typeof fn, 'function');
-assert.equal(fn(), 123);
-
-globalThis.asyncDone = false;
-const event = {
-  payload: {
-    callback: 'async (res) => { await Promise.resolve(); globalThis.asyncDone = true; addEvents([res * 2]); }',
-  },
-};
-await applyResultCallback(event, Promise.resolve(21), socket, null, null);
-assert.equal(globalThis.asyncDone, true);
-assert.deepEqual(calls.pop(), [42]);
-""",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
 
 
 def test_socket_startup_lifecycle() -> None:
@@ -261,29 +93,25 @@ def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
 
 
 def test_every_user_code_eval_can_reach_add_events() -> None:
-    """Every dynamic execution path injects the required runtime dependencies.
+    """Every scope that runs user code must declare the `addEvents` alias.
 
-    Serialized callbacks, _call_script, and _call_function execute within
-    an explicit environment. The addEvents alias and socket dependency are
-    passed through createExecutionContext rather than relying on lexical
-    scope access. Direct eval of user-code payload strings must not be present.
+    `runScript` takes the late-bound alias as a parameter, so each function
+    passing user code -- serialized callbacks, `_call_script`, and the handlers
+    `_call_function` returns -- has to declare it first. The dispatch itself is
+    covered by `packages/reflex-frontend/tests/run_script.test.js`.
     """
     content = STATE_JS_TEMPLATE.read_text()
 
-    assert "eval(event.payload.callback)" not in content
-    assert "eval(event.payload.javascript_code)" not in content
-    assert "eval(event.payload.function)" not in content
-    assert "eval(`import(dataUri)`)" not in content
-
-    for snippet in USER_CODE_EXECUTIONS:
-        exec_at = content.index(snippet)
-        name, body = _enclosing_function(content, exec_at)
+    sites = list(USER_CODE_RUNS.finditer(content))
+    assert [m.group(1) for m in sites] == ["callback", "javascript_code", "function"]
+    for site in sites:
+        name, body = _enclosing_function(content, site.start())
         assert ADD_EVENTS_ALIAS in body, (
-            f"`{name}` executes user code via `{snippet}` but does not declare the "
-            "addEvents alias to pass into the explicit environment."
+            f"`{name}` runs `{site.group()}` but does not declare the "
+            "addEvents alias it passes."
         )
-        assert body.index(ADD_EVENTS_ALIAS) < body.index(snippet), (
-            f"`{name}` declares the addEvents alias after `{snippet}`."
+        assert body.index(ADD_EVENTS_ALIAS) < body.index(site.group()), (
+            f"`{name}` declares the addEvents alias after `{site.group()}`."
         )
 
 

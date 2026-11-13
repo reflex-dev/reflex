@@ -3,17 +3,7 @@ import fs from "node:fs";
 import { test } from "node:test";
 import { createQueueRuntime } from "./client_event_queue_runtime.mjs";
 
-let targetPath = process.argv[2];
-if (
-  !fs.existsSync(targetPath) &&
-  targetPath.includes(".templates/web/utils/state.js")
-) {
-  targetPath = targetPath.replace(
-    "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js",
-    "packages/reflex-frontend/src/utils/state.js",
-  );
-}
-const source = fs.readFileSync(targetPath, "utf8");
+const source = fs.readFileSync(process.argv[2], "utf8");
 const stateful = (id) => ({
   name: "reflex___state.test.event",
   payload: { id },

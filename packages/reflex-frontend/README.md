@@ -58,12 +58,13 @@ without it appearing in its arguments. What there is, and where it is pinned:
   to load without either. `tests/public_api.test.js` imports each module in
   node to keep it that way.
 - **Script scope**: event code sent by the backend (`rx.call_script`, event
-  callbacks) is compiled with the Function constructor in `utils/state.js`,
-  never a direct `eval`, which would stop the minifier from mangling the chunk
-  that holds it. The script receives every export of the module (`ReflexEvent`,
-  `pyMod`, `refs`, ...), the late-bound `addEvents`, the event's `socket` and
-  the session `token` as parameters, and nothing else. Renaming an export
-  changes what compiled callbacks can call.
+  callbacks) runs through `runScript` in `utils/state.js`, which compiles it
+  with the Function constructor and passes in every export of that module, the
+  late-bound `addEvents`, the `socket`, `navigate` and `params` of the event
+  being applied, and the session `token`. A direct `eval` would see every
+  module local, but it stops the minifier from mangling the chunk that holds
+  it. So a script sees those names and the globals, and nothing else. Renaming
+  an export changes what compiled callbacks can call.
 - **Globals the runtime reads**: hooks other code installs on `window`
   (`__reflex_otel`, `__reflex`, `__reflex_load`) and the per-app `$/env.json`.
   Each is declared in `types/globals.d.ts`; reading one that is not fails the
