@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import logging
 import os
 import zipfile
@@ -72,6 +73,19 @@ def _is_excluded_archive_path(
     return (stat.st_dev, stat.st_ino) in excluded_file_ids
 
 
+def _is_internal_directory_symlink(path: Path, root_directory: Path) -> bool:
+    """Check whether a path is a symlink to a location inside the root directory.
+
+    Args:
+        path: The directory path being considered for the archive.
+        root_directory: The resolved root directory being archived.
+
+    Returns:
+        Whether the path is a symlink whose target is inside the root directory.
+    """
+    return path.is_symlink() and path.resolve().is_relative_to(root_directory)
+
+
 def _zip(
     *,
     component_name: constants.ComponentName,
@@ -107,12 +121,19 @@ def _zip(
             excluded_file_ids.add((stat.st_dev, stat.st_ino))
 
     files_to_zip: list[Path] = []
+    visited_directory_ids: set[tuple[int, int]] = set()
     # Traverse the root directory in a top-down manner. In this traversal order,
     # we can modify the dirs list in-place to remove directories we don't want to include.
     for directory_path, subdirectories_names, subfiles_names in os.walk(
         root_directory, topdown=True, followlinks=True
     ):
-        directory_path = Path(directory_path).resolve()
+        directory_path = Path(directory_path)
+        directory_stat = directory_path.stat()
+        directory_id = (directory_stat.st_dev, directory_stat.st_ino)
+        if directory_id in visited_directory_ids:
+            subdirectories_names.clear()
+            continue
+        visited_directory_ids.add(directory_id)
         # Modify the dirs in-place so excluded and hidden directories are skipped in next traversal.
         subdirectories_names[:] = [
             subdirectory_name
@@ -125,6 +146,9 @@ def _zip(
                 )
             )
             and not subdirectory_name.startswith(".")
+            and not _is_internal_directory_symlink(
+                directory_path / subdirectory_name, root_directory
+            )
             and (
                 not exclude_venv_directories
                 or not _looks_like_venv_directory(directory_path / subdirectory_name)
@@ -137,14 +161,20 @@ def _zip(
             if not subfile_name.startswith(".")
             and (include_db_file or not subfile_name.endswith(".db"))
         ]
-        files_to_zip += [
-            directory_path / subfile_name
-            for subfile_name in subfiles_names
-            if not excluded_file_ids
-            or not _is_excluded_archive_path(
-                directory_path / subfile_name, excluded_file_ids
-            )
-        ]
+        for subfile_name in subfiles_names:
+            file = directory_path / subfile_name
+            try:
+                file_stat = file.stat()
+            except OSError as error:
+                if error.errno not in (errno.ENOENT, errno.ELOOP):
+                    raise
+                kind = "looping" if error.errno == errno.ELOOP else "dangling"
+                console.warn(
+                    f"Skipping {kind} symlink {file.relative_to(root_directory)}"
+                )
+                continue
+            if (file_stat.st_dev, file_stat.st_ino) not in excluded_file_ids:
+                files_to_zip.append(file)
     if globs_to_include:
         for glob in globs_to_include:
             files_to_zip += [

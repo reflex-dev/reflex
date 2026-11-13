@@ -96,6 +96,149 @@ def test_zip_excludes_directory_symlink_aliases(tmp_path: Path):
         assert archive.namelist() == []
 
 
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires directory symlinks")
+def test_zip_archives_external_directory_symlink_under_link_path(tmp_path: Path):
+    """Files below a directory symlink pointing outside the app are archived under the link."""
+    root = tmp_path / "app"
+    root.mkdir()
+    (root / "app.py").write_text("print('app')")
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    (shared / "mod.py").write_text("X = 1")
+    (root / "shared").symlink_to(shared, target_is_directory=True)
+    target = tmp_path / "backend.zip"
+
+    build._zip(
+        component_name=constants.ComponentName.BACKEND,
+        target=target,
+        root_directory=root,
+        exclude_venv_directories=True,
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        assert sorted(archive.namelist()) == ["app.py", "shared/mod.py"]
+        assert archive.read("shared/mod.py") == b"X = 1"
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires symlinks")
+def test_zip_skips_dangling_symlink_with_warning(tmp_path: Path, mocker: MockerFixture):
+    """A dangling symlink is skipped with a warning instead of aborting the archive."""
+    root = tmp_path / "app"
+    root.mkdir()
+    (root / "app.py").write_text("print('app')")
+    (root / "gone").symlink_to(tmp_path / "does-not-exist")
+    target = tmp_path / "backend.zip"
+    warn = mocker.patch("reflex.utils.build.console.warn")
+
+    build._zip(
+        component_name=constants.ComponentName.BACKEND,
+        target=target,
+        root_directory=root.resolve(),
+        exclude_venv_directories=True,
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        assert archive.namelist() == ["app.py"]
+    warn.assert_called_once_with("Skipping dangling symlink gone")
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires directory symlinks")
+def test_zip_archives_each_file_once_through_internal_directory_symlink(
+    tmp_path: Path,
+):
+    """A directory symlink to another directory of the app must not duplicate entries."""
+    root = tmp_path / "app"
+    root.mkdir()
+    (root / "a.py").write_text("A = 1")
+    real = root / "real"
+    real.mkdir()
+    (real / "b.py").write_text("B = 2")
+    (root / "link").symlink_to(real, target_is_directory=True)
+    target = tmp_path / "backend.zip"
+
+    build._zip(
+        component_name=constants.ComponentName.BACKEND,
+        target=target,
+        root_directory=root,
+        exclude_venv_directories=True,
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        names = archive.namelist()
+    assert sorted(names) == ["a.py", "real/b.py"]
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires directory symlinks")
+def test_zip_keeps_real_path_for_internal_symlink_to_nested_directory(
+    tmp_path: Path,
+):
+    """A symlink sorting before its nested target must not replace the real path."""
+    root = tmp_path / "app"
+    nested = root / "pkg" / "sub"
+    nested.mkdir(parents=True)
+    (nested / "c.py").write_text("C = 3")
+    (root / "sub").symlink_to(nested, target_is_directory=True)
+    target = tmp_path / "backend.zip"
+
+    build._zip(
+        component_name=constants.ComponentName.BACKEND,
+        target=target,
+        root_directory=root,
+        exclude_venv_directories=True,
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        assert archive.namelist() == ["pkg/sub/c.py"]
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires directory symlinks")
+def test_zip_walks_external_directory_symlink_loop_once(tmp_path: Path):
+    """An outside directory linking back to itself is walked once, not repeatedly."""
+    root = tmp_path / "app"
+    root.mkdir()
+    (root / "a.py").write_text("A = 1")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "b.py").write_text("B = 1")
+    (outside / "back").symlink_to(outside, target_is_directory=True)
+    (root / "ext").symlink_to(outside, target_is_directory=True)
+    target = tmp_path / "backend.zip"
+
+    build._zip(
+        component_name=constants.ComponentName.BACKEND,
+        target=target,
+        root_directory=root.resolve(),
+        exclude_venv_directories=True,
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        assert sorted(archive.namelist()) == ["a.py", "ext/b.py"]
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Requires symlinks")
+def test_zip_skips_looping_file_symlink_with_warning(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """A symlink that resolves to itself is skipped with a warning."""
+    root = tmp_path / "app"
+    root.mkdir()
+    (root / "a.py").write_text("A = 1")
+    (root / "self").symlink_to(root / "self")
+    target = tmp_path / "backend.zip"
+    warn = mocker.patch("reflex.utils.build.console.warn")
+
+    build._zip(
+        component_name=constants.ComponentName.BACKEND,
+        target=target,
+        root_directory=root.resolve(),
+        exclude_venv_directories=True,
+    )
+
+    with zipfile.ZipFile(target) as archive:
+        assert archive.namelist() == ["a.py"]
+    warn.assert_called_once_with("Skipping looping symlink self")
+
+
 def test_compress_static_output_overwrites_stale_sidecars(
     tmp_path: Path, mocker: MockerFixture
 ):
