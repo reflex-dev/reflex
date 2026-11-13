@@ -585,6 +585,22 @@ def set_contains_operation(
 
 
 @var_operation
+def set_canonical_operation(value: SetVar) -> CustomVarOperationReturn[list]:
+    """Get a form of a set that serializes the same for every set with its elements.
+
+    Two sets with the same elements give equal ``JSON.stringify`` output in any
+    order, which is how ``rx.match`` compares a set subject with a set case.
+
+    Args:
+        value: The set.
+
+    Returns:
+        The set canonical operation.
+    """
+    return _set_helper_operation("pySetCanonical", value, var_type=list)
+
+
+@var_operation
 def set_length_operation(value: SetVar) -> CustomVarOperationReturn[int]:
     """Get the number of elements in a set.
 

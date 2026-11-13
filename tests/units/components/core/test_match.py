@@ -4,6 +4,7 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils.exceptions import MatchTypeError
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var
 from reflex_components_core.core.match import Match
 
@@ -17,6 +18,7 @@ class MatchState(BaseState):
     value: int = 0
     num: int = 5
     string: str = "random string"
+    tags: set[str] = {"c", "d"}
 
 
 def test_match_components():
@@ -135,6 +137,44 @@ def test_match_vars(cases, expected):
     match_comp = Match.create(MatchState.value, *cases)
     assert isinstance(match_comp, Var)
     assert str(match_comp) == expected
+
+
+def test_match_set_cases_compare_by_elements():
+    """A set subject and set cases are compared by their elements, not their order.
+
+    A set reaches the frontend in its iteration order, which depends on the hash
+    seed, so both sides are made canonical before the JSON comparison. A list
+    case stays as it is: it never equals a set, as in Python.
+    """
+    tags = f"{MatchState.get_name()}.tags{FIELD_MARKER}"
+    match_var = Match.create(
+        MatchState.tags, ({"d", "c"}, "cd"), (["c", "d"], "list"), "other"
+    )
+    assert isinstance(match_var, Var)
+    assert str(match_var) == (
+        f"(() => {{ switch (JSON.stringify(pySetCanonical({tags}))) {{"
+        'case JSON.stringify(pySetCanonical(["c", "d"])):  return ("cd");  break;'
+        'case JSON.stringify(["c", "d"]):  return ("list");  break;'
+        'default:  return ("other");  break;};})()'
+    )
+    var_data = match_var._get_all_var_data()
+    assert var_data is not None
+    assert dict(var_data.imports)["$/utils/helpers/set.js"] == (
+        ImportVar(tag="pySetCanonical", install=False),
+    )
+
+    match_comp = rx.match(
+        MatchState.tags, ({"d", "c"}, rx.text("cd")), rx.text("other")
+    )
+    assert isinstance(match_comp, Component)
+    match_child = match_comp.render()["children"][0]
+    assert match_child["cond"] == f"pySetCanonical({tags})"
+    assert [conditions for conditions, _ in match_child["match_cases"]] == [
+        ['pySetCanonical(["c", "d"])']
+    ]
+    assert match_comp._get_all_imports()["$/utils/helpers/set.js"] == [
+        ImportVar(tag="pySetCanonical", install=False)
+    ]
 
 
 def test_match_on_component_without_default():
