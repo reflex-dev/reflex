@@ -207,6 +207,7 @@ async function setup({
           ];
         },
         initialState: stateful ? initialState : {},
+        stateUpdateDecoders: [],
         onLoadInternalEvent() {},
         on_load_internal_event: onLoadInternalEvent,
         state_name: stateName,

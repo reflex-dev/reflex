@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
+from reflex_base.compiler.templates import EncodedInitialState
 from reflex_base.components.client_state_context import (
     local_client_state_names,
     scoped_memo_wrapper,
@@ -52,7 +53,12 @@ from reflex.istate.storage import (
     LocalStorage,
     SessionStorage,
 )
-from reflex.state import BaseState, cache_initial_snapshot
+from reflex.state import (
+    BaseState,
+    _encode_state_update,
+    _state_update_encoders,
+    cache_initial_snapshot,
+)
 from reflex.utils import path_ops
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -254,16 +260,26 @@ def compile_state(state: type[BaseState]) -> dict:
 
 
 def _compile_initial_state(
-    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
-) -> tuple[dict, str]:
+    state: type[BaseState],
+    *,
+    component_imports: ParsedImportDict | None = None,
+    state_update_decoders: Sequence[str] = (),
+) -> tuple[dict, str | EncodedInitialState]:
     """Serialize initial state while discovering its dynamic component imports.
+
+    The initial state is encoded as the delta of a state update, like every
+    update the backend sends.
 
     Args:
         state: The app state class.
         component_imports: Optional accumulator for frontend package installation.
+        state_update_decoders: The modules the frontend decodes updates with;
+            given any, the whole encoded update is serialized for them to
+            decode, not only its delta.
 
     Returns:
-        The initial state dictionary and its serialized JSON.
+        The initial state dictionary, and its serialized JSON or, with
+        decoders, its encoded update.
     """
 
     def serialize_initial_value(value: Any) -> Any:
@@ -284,8 +300,14 @@ def _compile_initial_state(
         return serializers.serialize(value)
 
     initial_state = compile_state(state)
-    return initial_state, format.json_dumps(
-        initial_state, default=serialize_initial_value
+    update = _encode_state_update({"delta": initial_state}, _state_update_encoders())
+    if not state_update_decoders:
+        return initial_state, format.json_dumps(
+            update["delta"], default=serialize_initial_value
+        )
+    return initial_state, EncodedInitialState(
+        update_json=format.json_dumps(update, default=serialize_initial_value),
+        decoders=state_update_decoders,
     )
 
 

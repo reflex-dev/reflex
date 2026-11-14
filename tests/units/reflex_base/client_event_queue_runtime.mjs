@@ -11,6 +11,7 @@ export async function createQueueRuntime(
   const app = {
     initialEvents: () => [],
     initialState: {},
+    stateUpdateDecoders: [],
     onLoadInternalEvent: unused,
     state_name: "test_state",
     exception_state_name: "test_exception_state",

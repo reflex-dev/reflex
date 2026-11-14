@@ -633,7 +633,7 @@ async def _upload_buffered_file(
     from reflex_base.event.processor.event_processor import QueueShutDown
     from reflex_base.utils.exceptions import UploadValueError
 
-    from reflex.state import StateUpdate
+    from reflex.state import StateUpdate, _sendable_state_update, _state_update_encoders
 
     try:
         form_data = await request.form()
@@ -704,6 +704,8 @@ async def _upload_buffered_file(
         await asyncio.sleep(0)
         if disconnect_seen:
             return
+        # Encoded like every update the event namespace emits.
+        encoders = _state_update_encoders()
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
         updates = app.event_processor.enqueue_stream_delta(token, event)
         sent = False
@@ -727,7 +729,8 @@ async def _upload_buffered_file(
                 yield json_dumps({"error": _UPLOAD_HANDLER_ERROR}) + "\n"
                 return
             sent = True
-            yield json_dumps(StateUpdate(delta=delta)) + "\n"
+            update = _sendable_state_update(StateUpdate(delta=delta), encoders)
+            yield json_dumps(update) + "\n"
 
     return _UploadStreamingResponse(
         _ndjson_updates(),

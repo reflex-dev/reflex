@@ -6,6 +6,7 @@ import re
 import shutil
 import sys
 from pathlib import Path, PureWindowsPath
+from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
@@ -23,6 +24,7 @@ from reflex_base.utils.exceptions import (
     PageValueError,
     RouteValueError,
 )
+from reflex_base.utils.format import json_dumps
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
@@ -34,7 +36,7 @@ from reflex_components_core.el.elements.other import Html
 import reflex as rx
 from reflex.compiler import compiler, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.state import BaseState
+from reflex.state import BaseState, state_snapshot_hashes
 from reflex.utils import prerequisites
 
 
@@ -764,6 +766,156 @@ def test_compile_contexts_theme_appearance_overrides_config(mocker: MockerFixtur
     _, code = compiler.compile_contexts(None, rx.theme(appearance="dark"))
 
     assert 'export const defaultColorMode = "dark"' in code
+
+
+class _TaggingCodec(rx.plugins.Plugin):
+    """Tags state updates with a field of its own, decoded by a module of its own."""
+
+    def __init__(self, name: str):
+        """Name the codec.
+
+        Args:
+            name: The field the codec sets and its decoder module's name.
+        """
+        self.name = name
+
+    def encode_state_update(self, update: dict[str, Any], /) -> dict[str, Any]:
+        """Tag the update.
+
+        Args:
+            update: The update's fields.
+
+        Returns:
+            The tagged update.
+        """
+        return {**update, self.name: True}
+
+    def get_state_update_decoder(self, **context) -> str:
+        """Get the codec's decoder module.
+
+        Args:
+            context: The context for the plugin.
+
+        Returns:
+            The decoder's module specifier.
+        """
+        return f"$/utils/{self.name}"
+
+
+# The import block of a compiled context module, before any decoder's import.
+_CONTEXT_IMPORTS = """\
+import React, { useContext, useMemo, useState, createElement, useEffect } from "react"
+import { applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs } from "$/utils/state"
+import { ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop } from "$/utils/context-registry"
+import { jsx } from "@emotion/react";"""
+
+# The block of a compiled context module that hands the app data to the runtime.
+_CONTEXT_REGISTRATION = """\
+// The static runtime reads these through the registry, so this module is the
+// only one Vite re-executes when they change.
+registerApp({
+  initialState,
+  stateUpdateDecoders,
+  clientStorage,
+  state_name,
+  on_load_internal_event,
+  stateSchema,
+  exception_state_name,
+  onLoadInternalEvent,
+  initialEvents,
+  isDevMode,
+  defaultColorMode,
+});"""
+
+
+def _context_exports(
+    *, decoders: str, initial_state: str, hashes: str, schema: str
+) -> str:
+    """Build the block of a compiled context module that exports the initial state.
+
+    Args:
+        decoders: The ``stateUpdateDecoders`` entries.
+        initial_state: The ``initialState`` expression.
+        hashes: The ``initialStateHashes`` JSON.
+        schema: The ``stateSchema`` JSON.
+
+    Returns:
+        The block, without the blank lines around it.
+    """
+    return "\n".join([
+        "export { ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext };",
+        f"export const stateUpdateDecoders = [{decoders}]",
+        f"export const initialState = {initial_state}",
+        f"export const initialStateHashes = {hashes}",
+        f"export const stateSchema = {schema}",
+    ])
+
+
+def test_compile_contexts_encodes_the_initial_state_for_the_decoders(
+    mocker: MockerFixture,
+):
+    """The initial state reaches the frontend as an encoded update its decoders undo."""
+
+    class CodecContextRoot(BaseState):
+        value: int = 0
+
+    _, plain = compiler.compile_contexts(CodecContextRoot, None)
+    _, plain_stateless = compiler.compile_contexts(None, None)
+    config = rx.Config(
+        app_name="test_codecs",
+        plugins=[_TaggingCodec("first"), _TaggingCodec("second")],
+        _skip_plugins_checks=True,
+    )
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=config)
+    mocker.patch("reflex.state.get_config", return_value=config)
+
+    _, code = compiler.compile_contexts(CodecContextRoot, None)
+    _, stateless = compiler.compile_contexts(None, None)
+
+    initial_state = utils.compile_state(CodecContextRoot)
+    hashes = json_dumps(state_snapshot_hashes(initial_state))
+    schema = json.dumps(CodecContextRoot._to_frontend_schema())
+    plain_exports = _context_exports(
+        decoders="",
+        initial_state=json_dumps(initial_state),
+        hashes=hashes,
+        schema=schema,
+    )
+    # The modules are compared by their blank-line separated blocks, each whole.
+    plain_blocks = plain.split("\n\n")
+    assert plain_blocks[0] == _CONTEXT_IMPORTS
+    assert plain_exports in plain_blocks
+    assert _CONTEXT_REGISTRATION in plain_blocks
+
+    # The last plugin's decoder runs first, undoing the last encoding. The
+    # hashes stay those of the values: the backend diffs first hydrates
+    # against them, not their encoding. The rest of the module is unchanged.
+    encoded_update = json_dumps({"delta": initial_state, "first": True, "second": True})
+    encoded_blocks = {
+        _CONTEXT_IMPORTS: _CONTEXT_IMPORTS
+        + '\nimport decodeStateUpdate0 from "$/utils/second"'
+        + '\nimport decodeStateUpdate1 from "$/utils/first"',
+        plain_exports: _context_exports(
+            decoders="decodeStateUpdate0, decodeStateUpdate1",
+            initial_state="stateUpdateDecoders.reduce((decoded, decode) => "
+            + f"decode(decoded), {encoded_update}).delta",
+            hashes=hashes,
+            schema=schema,
+        ),
+    }
+    assert code.split("\n\n") == [
+        encoded_blocks.get(block, block) for block in plain_blocks
+    ]
+
+    # Without state no update arrives, and the empty initial state is not encoded.
+    assert stateless == plain_stateless
+    stateless_blocks = stateless.split("\n\n")
+    assert stateless_blocks[0] == _CONTEXT_IMPORTS
+    assert (
+        _context_exports(decoders="", initial_state="{}", hashes="[]", schema="null")
+        in stateless_blocks
+    )
+    assert _CONTEXT_REGISTRATION in stateless_blocks
 
 
 def test_compile_contexts_embeds_frontend_state_schema():

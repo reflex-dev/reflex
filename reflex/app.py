@@ -96,7 +96,14 @@ from reflex.route import (
     replace_brackets_with_keywords,
     verify_route_validity,
 )
-from reflex.state import BaseState, State, StateUpdate, all_base_state_classes
+from reflex.state import (
+    BaseState,
+    State,
+    StateUpdate,
+    _sendable_state_update,
+    _state_update_encoders,
+    all_base_state_classes,
+)
 from reflex.utils import (
     codespaces,
     exceptions,
@@ -2575,6 +2582,9 @@ class EventNamespace(AsyncNamespace):
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
 
+        # The plugins encoding every update sent, resolved once.
+        self._state_update_encoders = _state_update_encoders()
+
         # In dev, warn about values that handlers triggered from the frontend
         # return, which nothing receives. Read once: on_event is the hot path.
         self._warn_dropped_results = not is_prod_mode()
@@ -2776,10 +2786,13 @@ class EventNamespace(AsyncNamespace):
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
+        # Encoded where it is sent, so an update forwarded above is encoded by the
+        # instance holding the socket.
+        payload = _sendable_state_update(update, self._state_update_encoders)
         # Await the emit directly: wrapping it in a task does not unblock the
         # caller (awaiting the task blocks just the same) and only adds task
         # creation/scheduling overhead on every update.
-        await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
+        await self.emit(str(constants.SocketEvent.EVENT), payload, to=socket_record.sid)
         # The emit may complete without suspending (the packet is queued, not
         # sent). Yield one loop tick so the websocket writer can flush the
         # packet before the caller potentially blocks the event loop (e.g. a
