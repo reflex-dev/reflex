@@ -196,7 +196,16 @@ test("decoders decode each update before it is applied", async (t) => {
   assert.deepEqual(decoded, ["second", "first"]);
   assert.deepEqual(applied, [{ value: "k" }]);
   assert.deepEqual([...c.saved], [["known.value", "k"]]);
-  assert.ok(c.sent.some((event) => event.value === callback));
+  assert.deepEqual(c.sent, [
+    {
+      name: "event",
+      value: {
+        name: "test.callback",
+        payload: {},
+        router_data: { pathname: "/", asPath: "/" },
+      },
+    },
+  ]);
 });
 
 test("an update a decoder fails on is reported and not applied", async (t) => {

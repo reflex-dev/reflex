@@ -442,8 +442,8 @@ def test_state_update_without_a_delta_is_encoded_without_one():
 
     encoded = _encode_state_update(serialize_state_update(update), (_RecordingCodec(),))
 
-    assert [list(fields) for fields in received] == [["events"]]
-    assert list(encoded) == ["events"]
+    assert received == [{"events": [Event(name="state.handler")]}]
+    assert encoded == {"events": [Event(name="state.handler")]}
 
 
 def test_load_events_do_not_copy_router_data(app_module_mock):
