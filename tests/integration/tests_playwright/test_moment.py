@@ -18,6 +18,8 @@ def MomentApp():
     class State(rx.State):
         """State used to wait for the browser connection before asserting output."""
 
+        locale: str = "fr"
+
     @rx.memo
     def memoized_provider_moment():
         return rx.moment(
@@ -57,6 +59,12 @@ def MomentApp():
                 format="dddd D MMMM YYYY",
                 locale="fr",
                 id="moment-french",
+            ),
+            rx.moment(
+                "2024-03-14T15:09:26",
+                format="dddd D MMMM YYYY",
+                locale=State.locale,
+                id="moment-reactive-locale",
             ),
             rx.moment_provider(
                 rx.box(
@@ -100,8 +108,22 @@ def MomentApp():
             rx.link("Plain page", href="/plain", id="provider-plain-link"),
         )
 
+    def literal_locale():
+        """Render a literal-locale Moment from an independently loaded route.
+
+        Returns:
+            The literal-locale Moment component.
+        """
+        return rx.moment(
+            "2024-03-14T15:09:26",
+            format="dddd D MMMM YYYY",
+            locale="fr",
+            id="literal-route-date",
+        )
+
     app.add_page(plain, route="/plain")
     app.add_page(provider, route="/provider")
+    app.add_page(literal_locale, route="/literal")
 
 
 @pytest.fixture(scope="module")
@@ -146,6 +168,8 @@ def test_moment_locales_are_isolated(moment_app: AppHarness, page: Page) -> None
         page: Playwright page.
     """
     assert moment_app.frontend_url is not None
+    browser_messages: list[str] = []
+    page.on("console", lambda message: browser_messages.append(message.text))
     page.goto(moment_app.frontend_url)
     expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
 
@@ -153,10 +177,12 @@ def test_moment_locales_are_isolated(moment_app: AppHarness, page: Page) -> None
         "Thursday 14 March 2024"
     )
     expect(page.locator("#moment-french")).to_have_text("jeudi 14 mars 2024")
+    expect(page.locator("#moment-reactive-locale")).to_have_text("jeudi 14 mars 2024")
     expect(page.locator("#moment-provider-locale")).to_have_text("jeudi 14 mars 2024")
     expect(page.locator("#moment-provider-memo-locale")).to_have_text(
         "jeudi 14 mars 2024"
     )
+    assert not [message for message in browser_messages if "defineLocale" in message]
 
     page.locator("#plain-link").click()
     expect(page.locator("#plain-date")).to_have_text("Thursday 14 March 2024")
@@ -190,3 +216,17 @@ def test_moment_provider_locale_does_not_leak(
     page.locator("#provider-plain-link").click()
     expect(page.locator("#plain-date")).to_have_text("Thursday 14 March 2024")
     expect(page.locator("#plain-relative")).to_have_text(re.compile(r"ago$"))
+
+
+def test_literal_locale_route_works_after_direct_load(
+    moment_app: AppHarness, page: Page
+) -> None:
+    """Reactive locales in other routes must not remove direct-route locales."""
+    assert moment_app.frontend_url is not None
+    browser_messages: list[str] = []
+    page.on("console", lambda message: browser_messages.append(message.text))
+    page.goto(f"{moment_app.frontend_url.rstrip('/')}/literal")
+    expect(page.locator("#literal-route-date")).to_have_text("jeudi 14 mars 2024")
+    page.goto(moment_app.frontend_url)
+    expect(page.locator("#moment-reactive-locale")).to_have_text("jeudi 14 mars 2024")
+    assert not [message for message in browser_messages if "defineLocale" in message]
