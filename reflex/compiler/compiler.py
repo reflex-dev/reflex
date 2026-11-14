@@ -1194,6 +1194,31 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
+def _bundle_plugin_frontend_dependencies(plugins: Sequence[Plugin]) -> None:
+    """Register the frontend libraries required by compiler plugins.
+
+    Args:
+        plugins: The compiler plugins active for this app.
+    """
+    from reflex_base.components.dynamic import _bundle_library
+
+    for plugin in plugins:
+        for dependency in plugin.get_frontend_dependencies():
+            _bundle_library(dependency)
+
+
+def _restore_backend_bundled_libraries(app: App, plugins: Sequence[Plugin]) -> None:
+    """Restore compiled libraries and add active plugin dependencies.
+
+    Args:
+        app: The app being initialized by a backend-only worker.
+        plugins: The configured plugins for the app.
+    """
+    utils._restore_bundled_libraries()
+    compiler_plugins, _ = _resolve_radix_themes_plugin(app, plugins)
+    _bundle_plugin_frontend_dependencies(compiler_plugins)
+
+
 def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
     """Run plugin ``register_route`` hooks at their point in the compile lifecycle.
 
@@ -1252,10 +1277,7 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import (
-        _bundle_library,
-        _reset_bundled_libraries_for_compile,
-    )
+    from reflex_base.components.dynamic import _reset_bundled_libraries_for_compile
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1273,7 +1295,7 @@ def compile_app(
             logger.debug(f"BE Evaluating stateful page: {route}")
             app._compile_page(route, save_page=False)
         if compile_initial_state and app._state is not None:
-            utils._restore_bundled_libraries()
+            _restore_backend_bundled_libraries(app, config.plugins)
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
@@ -1297,7 +1319,7 @@ def compile_app(
         if not dry_run:
             app._write_stateful_pages_marker()
         if compile_initial_state and app._state is not None:
-            utils._restore_bundled_libraries()
+            _restore_backend_bundled_libraries(app, config.plugins)
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
@@ -1316,9 +1338,7 @@ def compile_app(
     # Page evaluation rebuilds every chain that is not interned by handler, so
     # entries from an earlier compile can only retain dead chains.
     RegistrationContext.ensure_context()._reset_compile_caches()
-    for plugin in compiler_plugins:
-        for dependency in plugin.get_frontend_dependencies():
-            _bundle_library(dependency)
+    _bundle_plugin_frontend_dependencies(compiler_plugins)
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
