@@ -38,7 +38,7 @@ Custom hooks are any hooks that need to be included in your component. This can 
 
 Hooks render in the order they are declared. The hooks the framework manages (refs, `on_mount`, and the state hooks that props read) come first, then the hooks returned by `add_hooks` in the order of the list, with a base class's hooks before a subclass's.
 
-A component with an `id` registers its React ref in the runtime's `refs` object under `ref_<id>`. `refs` is an internal implementation detail, not covered by compatibility guarantees, so don't write `refs[...]` into a hook string. To act on a component by `id`, use event actions such as `rx.set_value`, `rx.set_focus` and `rx.scroll_to`. In 0.11, `refs` is still reachable as a global, only so code written against 0.10 keeps working.
+A component with an `id` registers its React ref under a key derived from that id. To pass the ref to a wrapped component, use `rx.vars.ref("my-grid")`; it returns a `Var` with the required import. Do not access the internal `refs` global directly in hook strings. For common interactions with a component by `id`, prefer event actions such as `rx.set_value`, `rx.set_focus` and `rx.scroll_to`. In 0.11, `refs` remains reachable as a global only for compatibility with code written against 0.10.
 
 ```python
 from reflex.vars.base import Var, VarData
