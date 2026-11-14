@@ -309,7 +309,14 @@ def test_export_leaves_reflex_loglevel_env_unset_when_previously_absent(
 ):
     """export() does not leave REFLEX_LOGLEVEL set when it was absent before."""
     previous_level = base_log.get_log_level()
+    # Record the original value before set_log_level() exports "info".
+    # setenv() is used (rather than delenv()) because delenv() records
+    # nothing when the variable is absent, so teardown would restore
+    # the intermediate "info" instead of the true original.
+    monkeypatch.setenv("REFLEX_LOGLEVEL", os.environ.get("REFLEX_LOGLEVEL", ""))
     base_log.set_log_level(constants.LogLevel.INFO)
+    # set_log_level() re-exported the variable; delete it again so export()
+    # starts with it absent.
     monkeypatch.delenv("REFLEX_LOGLEVEL", raising=False)
     try:
         export.export(loglevel=constants.LogLevel.WARNING)
@@ -325,7 +332,12 @@ def test_export_restores_previous_reflex_loglevel_env_value(
 ):
     """export() restores a pre-existing REFLEX_LOGLEVEL value unchanged."""
     previous_level = base_log.get_log_level()
+    # Record the original value before set_log_level() exports "info", so
+    # monkeypatch teardown restores the true original instead of "info".
+    monkeypatch.setenv("REFLEX_LOGLEVEL", "debug")
     base_log.set_log_level(constants.LogLevel.INFO)
+    # set_log_level() overwrote the variable with "info"; reapply the
+    # pre-existing value before export() runs.
     monkeypatch.setenv("REFLEX_LOGLEVEL", "debug")
     try:
         export.export(loglevel=constants.LogLevel.WARNING)
