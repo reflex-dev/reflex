@@ -1,6 +1,7 @@
 """Export utilities."""
 
 import logging
+import os
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -9,7 +10,7 @@ from pathlib import Path
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 
 from reflex.utils import build, exec, path_ops, prerequisites, telemetry
 
@@ -46,7 +47,11 @@ def export(
     """
     config = get_config()
 
-    # Set the log level.
+    # Set the log level, restoring the previous one when the export finishes:
+    # the subprocess level quiets the export only, and output after it (such
+    # as deploy progress) must use the level the user asked for.
+    previous_loglevel = log.get_log_level()
+    previous_loglevel_env = os.environ.get("REFLEX_LOGLEVEL")
     console.set_log_level(loglevel)
 
     start = time.monotonic()
@@ -105,6 +110,14 @@ def export(
         detail = type(exc).__name__
         raise
     finally:
+        console.set_log_level(previous_loglevel)
+        # The restore above re-exports REFLEX_LOGLEVEL; leave the
+        # environment exactly as it was before the export, so a level
+        # that was never set does not persist for later config loads.
+        if previous_loglevel_env is None:
+            os.environ.pop("REFLEX_LOGLEVEL", None)
+        else:
+            os.environ["REFLEX_LOGLEVEL"] = previous_loglevel_env
         telemetry.send(
             "export",
             status=status,
