@@ -1184,6 +1184,11 @@ def test_backend_compile_bundles_plugin_dependencies_before_initial_state_serial
     serialized_states: list[type[BaseState]] = []
 
     def assert_libraries_registered(state: type[BaseState]) -> None:
+        """Assert active plugin libraries are registered before serialization.
+
+        Args:
+            state: The state class being serialized.
+        """
         assert state is BackendPluginState
         libraries = RegistrationContext.get().bundled_libraries
         assert "@radix-ui/themes" in libraries
