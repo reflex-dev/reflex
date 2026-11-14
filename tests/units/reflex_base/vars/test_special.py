@@ -77,6 +77,7 @@ def test_use_id():
 
 
 def test_ref_uses_component_registry_key_and_imports_refs():
+    """Check that ref uses the registry key and adds the required import."""
     v = ref("my-grid")
 
     assert isinstance(v, StringVar)
