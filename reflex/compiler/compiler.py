@@ -543,8 +543,10 @@ def _remove_moment_locale_side_effects(
     """Remove route-local locale imports after hoisting them to the app root."""
     _remove_side_effect_imports(
         imports,
-        lambda import_var: import_var.tag == _MOMENT_ALL_LOCALES_IMPORT
-        or (import_var.tag or "").startswith(_MOMENT_LOCALE_IMPORT_PREFIX),
+        lambda import_var: (
+            import_var.tag == _MOMENT_ALL_LOCALES_IMPORT
+            or (import_var.tag or "").startswith(_MOMENT_LOCALE_IMPORT_PREFIX)
+        ),
     )
 
 
