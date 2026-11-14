@@ -156,3 +156,16 @@ def use_chart_width() -> rx.Var[int | None]:
 For React's built-in [`useId`](https://react.dev/reference/react/useId), `rx.vars.use_id()` returns a `Var[str]` with a stable unique id for the component being rendered, e.g. for linking SVG elements to gradient or filter definitions.
 
 A hook var is evaluated once per compiled component, so every element that reads it must render inside the same one. An `rx.el.svg` root, an `@rx.memo` body, and a custom renderer body each compile into a single component and satisfy this.
+
+## Referencing a component ref
+
+When a wrapped component needs the React ref of another component with a static `id`, use `rx.vars.ref()`:
+
+```python
+import reflex as rx
+
+
+grid_ref = rx.vars.ref("my-grid")
+```
+
+The returned `Var` resolves to the registered ref and carries the required `refs` import into the compiled module. Its key is derived from the same sanitized id used when Reflex registers component refs.

@@ -6,7 +6,7 @@ from reflex_base.components.component import Component
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.sequence import StringVar
-from reflex_base.vars.special import use_hook_var, use_id
+from reflex_base.vars.special import ref, use_hook_var, use_id
 
 
 class HookComponent(Component):
@@ -74,6 +74,16 @@ def test_use_id():
     hook_alias = f"useId_{v!s}"
     assert vd.hooks == (f"const {v!s} = {hook_alias}();",)
     assert vd.imports == (("react", (ImportVar(tag="useId", alias=hook_alias),)),)
+
+
+def test_ref_uses_component_registry_key_and_imports_refs():
+    v = ref("my-grid")
+
+    assert isinstance(v, StringVar)
+    assert str(v) == 'refs["ref_my_grid"]'
+    vd = v._get_all_var_data()
+    assert vd is not None
+    assert vd.imports == (("$/utils/state", (ImportVar(tag="refs"),)),)
 
 
 def test_hook_var_hoisted_into_component():

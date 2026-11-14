@@ -30,7 +30,7 @@ from .sequence import (
     StringVar,
 )
 from .set import LiteralSetVar, SetVar
-from .special import use_hook_var, use_id
+from .special import ref, use_hook_var, use_id
 
 __all__ = [
     "EMPTY_VAR_INT",
@@ -71,6 +71,7 @@ __all__ = [
     "get_uuid_string_var",
     "number",
     "object",
+    "ref",
     "sequence",
     "set",
     "use_hook_var",
