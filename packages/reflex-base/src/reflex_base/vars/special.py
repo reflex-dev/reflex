@@ -5,9 +5,11 @@ from typing import Any, TypeVar, cast, overload
 
 from typing_extensions import TypeForm
 
+from reflex_base import constants
+from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import GenericType
-from reflex_base.vars.base import Var, VarData, get_unique_variable_name
+from reflex_base.vars.base import LiteralVar, Var, VarData, get_unique_variable_name
 
 HOOK_VAR_TYPE = TypeVar("HOOK_VAR_TYPE")
 _REACT_LIBRARY = "react"
@@ -62,3 +64,21 @@ def use_id() -> Var[str]:
         A Var representing the useId hook value.
     """
     return use_hook_var(library=_REACT_LIBRARY, hook=_USE_ID_HOOK, _var_type=str)
+
+
+def ref(id_: str) -> Var[str]:
+    """Get a Var for a component ref registered under the given id.
+
+    Args:
+        id_: The static component id whose ref should be accessed.
+
+    Returns:
+        A string Var representing the component ref.
+    """
+    ref_name = format.format_ref(id_)
+    return Var(
+        _js_expr=f"refs[{LiteralVar.create(ref_name)!s}]",
+        _var_data=VarData(
+            imports={f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="refs")]}
+        ),
+    ).to(str)
