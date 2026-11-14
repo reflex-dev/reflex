@@ -308,18 +308,24 @@ Unnamed = make_base()
 """
 
 
-def _import_bases_module(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
+def _import_bases_module(
+    monkeypatch: pytest.MonkeyPatch,
+    module_name: str = BASES_MODULE,
+    source: str = BASES_SOURCE,
+) -> types.ModuleType:
     """Import a fresh module of model bases, as an app module would be.
 
     Args:
         monkeypatch: Removes the module from ``sys.modules`` afterwards.
+        module_name: The name to register the temporary module under.
+        source: The module source to execute.
 
     Returns:
         The module.
     """
-    module = types.ModuleType(BASES_MODULE)
-    monkeypatch.setitem(sys.modules, BASES_MODULE, module)
-    exec(BASES_SOURCE, module.__dict__)
+    module = types.ModuleType(module_name)
+    monkeypatch.setitem(sys.modules, module_name, module)
+    exec(source, module.__dict__)
     return module
 
 
@@ -343,7 +349,9 @@ def registry(
         ModelRegistry,
         "_find_bases",
         staticmethod(
-            lambda: {base for base in find_bases() if base.__module__ == BASES_MODULE}
+            lambda: tuple(
+                base for base in find_bases() if base.__module__ == BASES_MODULE
+            )
         ),
     )
     return model_registry
@@ -359,11 +367,16 @@ def test_unregistered_declarative_bases_are_detected(
     """
     module = _import_bases_module(monkeypatch)
 
-    assert registry._find_bases() == {
+    assert set(registry._find_bases()) == {
         module.Base,
         module.EmptyBase,
         module.Namespace.Base,
     }
+    assert registry._find_bases() == (
+        module.Base,
+        module.EmptyBase,
+        module.Namespace.Base,
+    )
     assert module.Base in registry.get_models()
     assert module.EmptyBase not in registry.get_models()
     assert module.EmptyBase in registry.get_models(include_empty=True)
@@ -415,3 +428,167 @@ def test_metadata_detects_bases_once(
     assert len(calls) == 1
     assert "user" in metadata.tables
     assert module.Base in registry.get_models()
+
+
+def test_metadata_rejects_duplicate_tables_from_different_bases(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """Reject two bases that define the same table instead of choosing one."""
+    module = _import_bases_module(
+        monkeypatch,
+        "_model_duplicate_bases_app",
+        """
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from reflex.model import Model
+
+class First(Model, table=True):
+    __tablename__ = "duplicate_issue_7830"
+    name: str
+
+class SecondBase(DeclarativeBase):
+    pass
+
+class Second(SecondBase):
+    __tablename__ = "duplicate_issue_7830"
+    id: Mapped[int] = mapped_column(primary_key=True)
+""",
+    )
+    monkeypatch.setattr(
+        registry,
+        "_find_bases",
+        staticmethod(lambda: (module.SecondBase,)),
+    )
+
+    try:
+        with pytest.raises(sa.exc.InvalidRequestError) as exc_info:
+            registry.get_metadata()
+
+        assert str(exc_info.value) == (
+            "Table 'duplicate_issue_7830' is defined by both "
+            "reflex.model.Model and "
+            "_model_duplicate_bases_app.SecondBase."
+        )
+    finally:
+        Model.metadata.remove(module.First.__table__)
+
+
+def test_metadata_merges_registered_bases_in_registration_order(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """Merge registered model metadata in the order bases were registered."""
+    module = _import_bases_module(
+        monkeypatch,
+        "_model_ordered_bases_app",
+        """
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+class FirstBase(DeclarativeBase):
+    pass
+
+class First(FirstBase):
+    __tablename__ = "first_issue_7830"
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+class SecondBase(DeclarativeBase):
+    pass
+
+class Second(SecondBase):
+    __tablename__ = "second_issue_7830"
+    id: Mapped[int] = mapped_column(primary_key=True)
+""",
+    )
+    monkeypatch.setattr(registry, "models", set())
+    monkeypatch.setattr(registry, "_registered_models", {})
+    monkeypatch.setattr(registry, "_find_bases", staticmethod(lambda: ()))
+    registry.register(module.SecondBase)
+    registry.register(module.FirstBase)
+
+    metadata = registry.get_metadata()
+
+    assert tuple(metadata.tables) == ("second_issue_7830", "first_issue_7830")
+
+
+def test_reregistered_base_uses_its_new_registration_order(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """Move a removed model to the end when it is registered again."""
+    module = _import_bases_module(
+        monkeypatch,
+        "_model_reregistered_bases_app",
+        """
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+class FirstBase(DeclarativeBase):
+    pass
+
+class First(FirstBase):
+    __tablename__ = "first_reregistered_issue_7830"
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+class SecondBase(DeclarativeBase):
+    pass
+
+class Second(SecondBase):
+    __tablename__ = "second_reregistered_issue_7830"
+    id: Mapped[int] = mapped_column(primary_key=True)
+""",
+    )
+    monkeypatch.setattr(registry, "models", set())
+    monkeypatch.setattr(registry, "_registered_models", {})
+    monkeypatch.setattr(registry, "_find_bases", staticmethod(lambda: ()))
+    registry.register(module.FirstBase)
+    registry.register(module.SecondBase)
+    registry.models.remove(module.FirstBase)
+    registry.register(module.FirstBase)
+
+    metadata = registry.get_metadata()
+
+    assert tuple(metadata.tables) == (
+        "second_reregistered_issue_7830",
+        "first_reregistered_issue_7830",
+    )
+
+
+def test_metadata_merge_preserves_convention_generated_constraint_names(
+    monkeypatch: pytest.MonkeyPatch, registry: type[ModelRegistry]
+):
+    """Keep names generated by a source metadata naming convention when merging."""
+    module = _import_bases_module(
+        monkeypatch,
+        "_model_naming_convention_app",
+        """
+from sqlalchemy import MetaData, UniqueConstraint
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from reflex.model import Model
+
+class NamedBase(DeclarativeBase):
+    metadata = MetaData(
+        naming_convention={"uq": "uq_%(table_name)s_%(column_0_name)s"}
+    )
+
+class Comment(NamedBase):
+    __tablename__ = "comment_issue_7830"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    text: Mapped[str]
+    __table_args__ = (UniqueConstraint("text"),)
+
+class Legacy(Model, table=True):
+    __tablename__ = "legacy_issue_7830"
+    name: str
+""",
+    )
+    monkeypatch.setattr(
+        registry, "_find_bases", staticmethod(lambda: (module.NamedBase,))
+    )
+
+    try:
+        metadata = registry.get_metadata()
+
+        unique_constraint = next(
+            constraint
+            for constraint in metadata.tables["comment_issue_7830"].constraints
+            if isinstance(constraint, sa.UniqueConstraint)
+        )
+        assert unique_constraint.name == "uq_comment_issue_7830_text"
+    finally:
+        Model.metadata.remove(module.Legacy.__table__)
