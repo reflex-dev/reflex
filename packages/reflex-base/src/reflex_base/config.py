@@ -37,6 +37,10 @@ from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
 
 logger = logging.getLogger(__name__)
 
+# The config is built several times in one run; warn about each setting once.
+_warned_react_compiler = False
+_warned_auto_memoize = False
+
 
 @dataclasses.dataclass(kw_only=True)
 class DBConfig:
@@ -166,7 +170,7 @@ class BaseConfig:
         api_url: The backend url the frontend will connect to. Only needs to be set when the backend is listening on a different address than the frontend.
         deploy_url: The public url the frontend is hosted on, when it differs from the backend origin. Unset by default: in prod mode the backend then serves the frontend from its own origin, and frontend_url falls back to http://localhost:<frontend_port>.
         backend_host: The url the backend will be hosted on.
-        trusted_proxy_hops: Number of trusted reverse proxies used to resolve client IPs from X-Forwarded-For. Defaults to 0, which ignores X-Forwarded-For.
+        trusted_proxy_hops: Number of trusted reverse proxies used to resolve client IPs from X-Forwarded-For, and the host and scheme of event websocket requests from X-Forwarded-Host and X-Forwarded-Proto. Defaults to 0, which ignores these headers.
         db_url: The database url used by rx.Model.
         async_db_url: The async database url used by rx.Model.
         redis_url: The redis url.
@@ -174,10 +178,11 @@ class BaseConfig:
         bun_path: The bun path.
         frozen_lockfile: Run frontend package manager in lockfile-enforcing mode (only honored by bun).
         static_page_generation_timeout: Timeout to do a production build of a frontend page.
-        cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API. The default allows any origin in dev mode; in prod mode it allows only the origin of deploy_url, or only same-origin requests when deploy_url is unset.
+        cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API. The default allows any origin in dev mode; in prod mode it allows the backend's own origin and, when deploy_url is set, the origin of deploy_url.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
         react_strict_mode: Whether to use React strict mode.
         react_compiler: Enable experimental React Compiler memoization for generated components in development and production. Defaults to False.
+        auto_memoize: Wrap stateful page components in generated memo components. Disable only together with react_compiler, which then memoizes whole pages; without it, every state change re-renders the whole page. Defaults to True.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
         frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Defaults to False for compatibility with scripts that read window.__reflex directly.
@@ -244,6 +249,8 @@ class BaseConfig:
     react_strict_mode: bool = True
 
     react_compiler: bool = False
+
+    auto_memoize: bool = True
 
     frontend_compression_formats: Annotated[
         list[str],
@@ -392,6 +399,27 @@ class Config(BaseConfig):
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
+
+        global _warned_auto_memoize, _warned_react_compiler
+        if self.react_compiler and not _warned_react_compiler:
+            _warned_react_compiler = True
+            logger.warning(
+                "react_compiler=True is experimental. React Compiler skips a "
+                "component that it cannot compile and reports nothing, so some "
+                "pages can stay unoptimized."
+            )
+
+        if (
+            not self.auto_memoize
+            and not self.react_compiler
+            and not _warned_auto_memoize
+        ):
+            _warned_auto_memoize = True
+            logger.warning(
+                "auto_memoize=False without react_compiler=True disables page "
+                "memoization. Every state change can re-render the whole page. "
+                "Enable react_compiler=True or restore auto_memoize=True."
+            )
 
         self._normalize_frontend_compression_formats()
 

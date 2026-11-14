@@ -5,7 +5,7 @@ import vm from "node:vm";
 
 const source = await readFile(
   new URL(
-    "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/state.js",
+    "../../../packages/reflex-frontend/src/utils/state.js",
     import.meta.url,
   ),
   "utf8",
@@ -240,6 +240,8 @@ async function setup({
     },
   });
   await module.link((name) => {
+    // state.js imports itself to hand its exports to server-provided scripts.
+    if (name === "$/utils/state") return module;
     assert.ok(imports[name], `unexpected import: ${name}`);
     return new vm.SyntheticModule(
       Object.keys(imports[name]),

@@ -340,6 +340,8 @@ def _restore_bundled_libraries() -> None:
 
 def _compile_client_storage_field(
     field: Field,
+    *,
+    check_factory: bool = True,
 ) -> (
     tuple[
         type[Cookie] | type[LocalStorage] | type[SessionStorage],
@@ -351,6 +353,8 @@ def _compile_client_storage_field(
 
     Args:
         field: The possible cookie field to compile.
+        check_factory: Whether to call a default_factory to reject one that
+            produces browser storage. Only the compile needs to check.
 
     Returns:
         A dictionary of the compiled cookie or None if the field is not cookie-like.
@@ -366,7 +370,8 @@ def _compile_client_storage_field(
             continue
         return field_type, cs_obj.options()
     if (
-        not field._backend
+        check_factory
+        and not field._backend
         and field.default is MISSING
         and field.default_factory is not None
         and _may_hold_str(field.outer_type_)
@@ -424,6 +429,8 @@ def _raise_factory_storage(field: Field, storage_type: type) -> None:
 
 def _compile_client_storage_recursive(
     state: type[BaseState],
+    *,
+    check_factories: bool = True,
 ) -> tuple[
     dict[str, dict[str, Any]], dict[str, dict[str, Any]], dict[str, dict[str, Any]]
 ]:
@@ -431,6 +438,8 @@ def _compile_client_storage_recursive(
 
     Args:
         state: The app state object.
+        check_factories: Whether to call the default factories to reject those
+            that produce browser storage.
 
     Returns:
         A tuple of the compiled client-side storage info: (cookies, local_storage, session_storage).
@@ -444,7 +453,9 @@ def _compile_client_storage_recursive(
             # only include vars defined in this state
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
-        field_type, options = _compile_client_storage_field(field)
+        field_type, options = _compile_client_storage_field(
+            field, check_factory=check_factories
+        )
         if field_type is None or options is None:
             continue
         if field_type is Cookie:
@@ -460,7 +471,7 @@ def _compile_client_storage_recursive(
             substate_cookies,
             substate_local_storage,
             substate_session_storage,
-        ) = _compile_client_storage_recursive(substate)
+        ) = _compile_client_storage_recursive(substate, check_factories=check_factories)
         cookies.update(substate_cookies)
         local_storage.update(substate_local_storage)
         session_storage.update(substate_session_storage)
@@ -1144,41 +1155,52 @@ def resolve_path_of_web_dir(path: str | Path) -> Path:
 
 
 _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"
+_ASSET_MANIFEST_FILENAME = ".asset-manifest.json"
 
 
-def _read_memo_manifest(web_dir: Path) -> set[str]:
-    """Read the previous compile's memo file manifest.
+def _read_file_manifest(manifest_path: Path) -> dict[str, str | None]:
+    """Read relative file paths owned by the previous compile.
 
     Args:
-        web_dir: The project's ``.web`` directory.
+        manifest_path: The manifest to read.
 
     Returns:
-        The set of paths (relative to ``.web``) recorded by the previous
-        compile, or an empty set if the manifest is absent or invalid.
+        Relative paths and optional fingerprints, or an empty mapping if invalid.
     """
-    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
-    if not manifest_path.exists():
-        return set()
     try:
         data = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return set()
-    if not isinstance(data, list):
-        return set()
-    return {entry for entry in data if isinstance(entry, str)}
+        return {}
+    entries: Iterable[tuple[object, object]]
+    if isinstance(data, list):
+        entries = ((entry, None) for entry in data)
+    elif isinstance(data, dict):
+        entries = data.items()
+    else:
+        return {}
+    return {
+        entry: fingerprint
+        for entry, fingerprint in entries
+        if isinstance(entry, str)
+        and (fingerprint is None or isinstance(fingerprint, str))
+        and (path := Path(entry)).parts
+        and not path.is_absolute()
+        and ".." not in path.parts
+    }
 
 
-def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
-    """Atomically write the new memo file manifest.
+def _write_file_manifest(
+    manifest_path: Path, relative_paths: list[str] | dict[str, str]
+) -> None:
+    """Atomically write the new file manifest.
 
     Args:
-        web_dir: The project's ``.web`` directory.
-        relative_paths: Paths emitted this run, relative to ``.web``.
+        manifest_path: The manifest to write.
+        relative_paths: Sorted relative paths or a mapping to their fingerprints.
     """
-    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
-    web_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(
-        prefix=".memo-manifest.", suffix=".json.tmp", dir=str(web_dir)
+        prefix=manifest_path.stem + ".", suffix=".json.tmp", dir=manifest_path.parent
     )
     # Close the raw fd immediately and reopen the file by path. Wrapping the
     # fd via os.fdopen() would leak it if the wrap itself raised.
@@ -1186,12 +1208,117 @@ def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
     tmp_path = Path(tmp_name)
     try:
         with tmp_path.open("w", encoding="utf-8") as fh:
-            json.dump(sorted(relative_paths), fh)
+            json.dump(relative_paths, fh, sort_keys=True)
         tmp_path.replace(manifest_path)
     except Exception:
         # Best-effort cleanup; manifest write is recoverable on the next run.
         tmp_path.unlink(missing_ok=True)
         raise
+
+
+def _asset_file_fingerprint(path: Path) -> str:
+    """Identify an asset copy by its modification time and size.
+
+    Args:
+        path: The file to fingerprint.
+
+    Returns:
+        The modification time and size of the file.
+    """
+    stat_result = path.stat()
+    return f"{stat_result.st_mtime_ns}:{stat_result.st_size}"
+
+
+def _prune_stale_files(
+    directory: Path,
+    relative_paths: set[str],
+    *,
+    fingerprints: Mapping[str, str | None] | None = None,
+) -> None:
+    """Remove owned files and their empty parents within an output directory.
+
+    Args:
+        directory: The root containing the owned files.
+        relative_paths: Validated relative paths to remove.
+        fingerprints: If provided, only remove copies matching their saved fingerprint.
+    """
+    resolved_directory = directory.resolve()
+    for relative in relative_paths:
+        target = resolved_directory / relative
+        # A replaced parent symlink no longer identifies the owned file.
+        if target.parent.resolve() != target.parent:
+            continue
+        if target.is_file() or target.is_symlink():
+            if fingerprints is not None and (
+                target.is_symlink()
+                or fingerprints[relative] is None
+                or _asset_file_fingerprint(target) != fingerprints[relative]
+            ):
+                continue
+            target.unlink()
+            parent = target.parent
+            while parent != resolved_directory:
+                try:
+                    parent.rmdir()
+                except OSError:
+                    break
+                parent = parent.parent
+
+
+def _sync_app_assets() -> None:
+    """Copy app assets and remove previously copied files absent from the source.
+
+    Track ownership outside ``public`` so plugin and generated files are kept
+    and the manifest itself is never served. Follow source directory symlinks
+    just like ``update_directory_tree`` does.
+
+    Raises:
+        OSError: If the source cannot be scanned or the output cannot be updated.
+    """
+    assets = Path(constants.Dirs.APP_ASSETS)
+    web_dir = get_web_dir()
+    public = web_dir / constants.Dirs.PUBLIC
+    manifest_path = web_dir / _ASSET_MANIFEST_FILENAME
+    previous = _read_file_manifest(manifest_path)
+    has_assets = assets.is_dir()
+    current: set[str] = set()
+    if has_assets:
+        scan_errors: list[OSError] = []
+        current = {
+            path.relative_to(assets).as_posix()
+            for directory, _, filenames in os.walk(
+                assets, followlinks=True, onerror=scan_errors.append
+            )
+            for filename in filenames
+            if (path := Path(directory) / filename).is_file()
+        }
+        if scan_errors:
+            raise scan_errors[0]
+    # Prune before copying to allow a removed file to become a directory.
+    _prune_stale_files(public, previous.keys() - current, fingerprints=previous)
+    fingerprints = {
+        relative: fingerprint
+        for relative in current
+        if (fingerprint := previous.get(relative)) is not None
+    }
+    if has_assets:
+
+        def record_copy(path: Path) -> None:
+            """Record the fingerprint only after an asset is actually copied.
+
+            Args:
+                path: The destination file that was just copied.
+            """
+            fingerprints[path.relative_to(public).as_posix()] = _asset_file_fingerprint(
+                path
+            )
+
+        path_ops.update_directory_tree(assets, public, on_copy=record_copy)
+        # Adopt old copies from their source, never from skipped plugin output.
+        for relative in current - fingerprints.keys():
+            fingerprints[relative] = _asset_file_fingerprint(assets / relative)
+    if fingerprints != previous:
+        _write_file_manifest(manifest_path, fingerprints)
 
 
 def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
@@ -1216,21 +1343,11 @@ def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
         for path in emitted_paths
     }
 
-    previous = _read_memo_manifest(web_dir)
-    for relative in previous - emitted_relative:
-        target = web_dir / relative
-        if target.is_file():
-            target.unlink()
-            parent = target.parent
-            while parent != web_dir and parent.is_relative_to(web_dir):
-                try:
-                    parent.rmdir()
-                except OSError:
-                    break
-                parent = parent.parent
-
+    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
+    previous = set(_read_file_manifest(manifest_path))
+    _prune_stale_files(web_dir, previous - emitted_relative)
     if emitted_relative != previous:
-        _write_memo_manifest(web_dir, emitted_relative)
+        _write_file_manifest(manifest_path, sorted(emitted_relative))
 
 
 def empty_dir(path: str | Path, keep_files: list[str] | None = None):

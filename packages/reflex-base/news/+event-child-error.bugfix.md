@@ -1,0 +1,1 @@
+`ChildrenTypeError` now names the invalid child's type instead of printing its full repr, and an event passed as a child adds a note that says to bind it to a trigger such as `on_click`, or to `on_load`.

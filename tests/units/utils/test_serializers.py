@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from reflex_base.constants.colors import Color
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import LiteralVar
-from reflex_components_core.core.colors import Color
 
 from reflex.utils import serializers
 

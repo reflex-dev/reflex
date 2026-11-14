@@ -45,7 +45,7 @@ from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
-from reflex_base.utils.compat import declares_annotation
+from reflex_base.utils.compat import annotations_from_namespace, declares_annotation
 
 logger = logging.getLogger(__name__)
 
@@ -1007,6 +1007,11 @@ def is_unserialized_property(
     from reflex_base.utils import serializers
 
     serializer = serializers.get_serializer(cls)
+    if serializer is serializers.serialize_sqlalchemy_base:
+        import sqlalchemy
+
+        return name not in sqlalchemy.inspect(cls).attrs
+
     if dataclasses.is_dataclass(cls):
         return serializer is None and name not in {
             field.name for field in dataclasses.fields(cls)
@@ -1020,6 +1025,106 @@ def is_unserialized_property(
         and model.model_dump.__module__ in ("pydantic.main", "sqlmodel.main")
         and name not in model.model_computed_fields
     )
+
+
+def _get_mapped_annotation(cls: type, name: str) -> GenericType | None:
+    """Get the type that a SQLAlchemy model declares for an attribute with ``Mapped[...]``.
+
+    Only the annotation of ``name`` is resolved, in the module of the class that
+    declares it, so a symbol imported only for type checking may annotate any
+    other attribute.
+
+    Args:
+        cls: The mapped class.
+        name: The attribute name.
+
+    Returns:
+        The type ``T`` of a resolvable ``Mapped[T]`` annotation without ``None``, as
+        the column decides nullability, else None, also when ``T`` is ``Any`` or
+        ``object``.
+    """
+    from sqlalchemy.orm import Mapped
+
+    for klass in cls.__mro__:
+        annotations = annotations_from_namespace(klass.__dict__)
+        if name in annotations:
+            break
+    else:
+        return None
+    hint = _resolve_annotation(
+        annotations[name],
+        getattr(sys.modules.get(klass.__module__), "__dict__", None),
+    )
+    origin = get_origin(hint)
+    if not (isinstance(origin, type) and issubclass(origin, Mapped)):
+        return None
+    type_ = value_inside_optional(resolve_type_alias(get_args(hint)[0]))
+    # `Mapped[Any]` defers to the column type.
+    return None if type_ is Any or type_ is object else type_
+
+
+def _get_column_python_type(column_type: Any) -> GenericType | None:
+    """Get the python type of a SQLAlchemy column type.
+
+    Args:
+        column_type: The SQLAlchemy column type.
+
+    Returns:
+        The python type, parametrized by the item type of an array type unless
+        that is uninformative, or None if the column type does not implement it.
+    """
+    try:
+        type_ = column_type.python_type
+    except NotImplementedError:
+        return None
+    if hasattr(column_type, "item_type"):
+        try:
+            item_type = column_type.item_type.python_type
+        except NotImplementedError:
+            return type_
+        # The bare array type of e.g. ARRAY(JSON) lets `Mapped[...]` refine it.
+        if item_type is not object:
+            type_ = PrimitiveToAnnotation.get(type_, type_)[item_type]
+    return type_
+
+
+@lru_cache(maxsize=1024)
+def _get_column_access_type(cls: type, name: str) -> GenericType | None:
+    """Get the type of a mapped column of a SQLAlchemy model.
+
+    The python type of the column type wins, unless it is uninformative (``object``
+    for JSON, or not implemented) or the ``Mapped[...]`` annotation refines it, e.g.
+    ``Mapped[dict[str, int]]`` over ``dict``. The column decides nullability.
+
+    Args:
+        cls: The mapped class.
+        name: The column attribute name.
+
+    Returns:
+        The type of the column, or None if unknown.
+    """
+    import sqlalchemy
+
+    column = sqlalchemy.inspect(cls).columns[name]
+    type_ = _get_column_python_type(column.type)
+    if type_ is None or type_ is object:
+        type_ = _get_mapped_annotation(cls, name) or type_
+    # A parametrized python type, e.g. `List[int]` of an ARRAY column, is kept.
+    # Type parameters and TypedDict keys refine a bare one; a subclass such as
+    # `bool` over `int` does not, as the database returns `type_` itself. A
+    # parametrized generic TypedDict does not either: its keys are not resolved.
+    elif (
+        isinstance(type_, type)
+        and (declared := _get_mapped_annotation(cls, name)) is not None
+        and (
+            (get_origin(declared) or declared) is type_
+            or (type_ is dict and typing_extensions.is_typeddict(declared))
+        )
+    ):
+        type_ = declared
+    if type_ is not None and getattr(column, "nullable", False):
+        return type_ | None
+    return type_
 
 
 def get_attribute_access_type(
@@ -1064,27 +1169,18 @@ def get_attribute_access_type(
 
         if issubclass(cls, DeclarativeBase):
             insp = sqlalchemy.inspect(cls)
-            if name in insp.columns:
-                # check for list types
-                column = insp.columns[name]
-                column_type = column.type
-                try:
-                    type_ = insp.columns[name].type.python_type
-                except NotImplementedError:
-                    type_ = None
-                if type_ is not None:
-                    if hasattr(column_type, "item_type"):
-                        try:
-                            item_type = column_type.item_type.python_type  # pyright: ignore [reportAttributeAccessIssue]
-                        except NotImplementedError:
-                            item_type = None
-                        if item_type is not None:
-                            if type_ in PrimitiveToAnnotation:
-                                type_ = PrimitiveToAnnotation[type_]
-                            type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
-                    if hasattr(column, "nullable") and column.nullable:
-                        type_ = type_ | None
-                    return type_
+            if name in insp.synonyms:
+                # A synonym without a custom getter has a generated one typed Any.
+                synonym = insp.synonyms[name]
+                hint = get_property_hint(synonym.descriptor)
+                if hint is not None and hint is not Any:
+                    return hint
+                return get_attribute_access_type(cls, synonym.name)
+            if (
+                name in insp.columns
+                and (type_ := _get_column_access_type(cls, name)) is not None
+            ):
+                return type_
             if name in insp.all_orm_descriptors:
                 descriptor = insp.all_orm_descriptors[name]
                 if hint := get_property_hint(descriptor):
@@ -1255,6 +1351,34 @@ def _load_var_classes() -> None:
     _Var, _LiteralVar, _Field = Var, LiteralVar, Field
 
 
+def _all_isinstance(
+    items: Iterable[Any], cls: GenericType, nested: int, treat_var_as_type: bool
+) -> bool:
+    """Check that every item of a container is an instance of a class.
+
+    An item whose type is exactly ``cls`` passes without the full check, which
+    spares the common container of plain values a call per item. Var classes
+    are left out of that: ``_isinstance`` checks a Var by the value it holds.
+    Must be called from ``_isinstance``, after the Var classes are loaded.
+
+    Args:
+        items: The items to check.
+        cls: The class every item must be an instance of.
+        nested: How many levels deep to check each item.
+        treat_var_as_type: Whether to treat Var as the type it represents.
+
+    Returns:
+        Whether every item is an instance of the class.
+    """
+    exact = None if isinstance(cls, type) and issubclass(cls, _Var) else cls
+    for item in items:
+        if type(item) is not exact and not _isinstance(
+            item, cls, nested=nested, treat_var_as_type=treat_var_as_type
+        ):
+            return False
+    return True
+
+
 def _isinstance(
     obj: Any,
     cls: GenericType,
@@ -1303,13 +1427,17 @@ def _isinstance(
     # attribute; container checks call back in once per element, so read it once.
     origin_attr = getattr(cls, "__origin__", None)
 
+    # Loops rather than generator expressions throughout: a generator capturing
+    # the arguments makes them closure cells, allocated on every call.
     if origin_attr is Union or (
         origin_attr is None and isinstance(cls, types.UnionType)
     ):
-        return any(
-            _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
-            for arg in _get_args_cached(cls)
-        )
+        for arg in _get_args_cached(cls):
+            if _isinstance(
+                obj, arg, nested=nested, treat_var_as_type=treat_var_as_type
+            ):
+                return True
+        return False
 
     if origin_attr is Literal:
         return obj in _get_args_cached(cls)
@@ -1357,20 +1485,20 @@ def _isinstance(
                     if cls.__bound__ is not None
                     else cls.__constraints__
                 )
-                return (
-                    not bounds
-                    or any(isinstance(bound, (str, ForwardRef)) for bound in bounds)
-                    or any(
-                        _isinstance(
-                            obj,
-                            bound,
-                            nested=nested,
-                            treat_var_as_type=treat_var_as_type,
-                            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
-                        )
-                        for bound in bounds
-                    )
-                )
+                if not bounds or any(
+                    isinstance(bound, (str, ForwardRef)) for bound in bounds
+                ):
+                    return True
+                for bound in bounds:
+                    if _isinstance(
+                        obj,
+                        bound,
+                        nested=nested,
+                        treat_var_as_type=treat_var_as_type,
+                        treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                    ):
+                        return True
+                return False
             if typing_extensions.is_protocol(cls):
                 # A protocol without @runtime_checkable cannot be checked.
                 return True
@@ -1400,67 +1528,39 @@ def _isinstance(
     if nested > 0 and args:
         if origin is list:
             expected_class = Sequence if treat_mutable_obj_as_immutable else list
-            return isinstance(obj, expected_class) and all(
-                _isinstance(
-                    item,
-                    args[0],
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                )
-                for item in obj
+            return isinstance(obj, expected_class) and _all_isinstance(
+                obj, args[0], nested - 1, treat_var_as_type
             )
         if origin is tuple:
             if args[-1] is Ellipsis:
-                return isinstance(obj, tuple) and all(
-                    _isinstance(
-                        item,
-                        args[0],
-                        nested=nested - 1,
-                        treat_var_as_type=treat_var_as_type,
-                    )
-                    for item in obj
+                return isinstance(obj, tuple) and _all_isinstance(
+                    obj, args[0], nested - 1, treat_var_as_type
                 )
-            return (
-                isinstance(obj, tuple)
-                and len(obj) == len(args)
-                and all(
-                    _isinstance(
-                        item,
-                        arg,
-                        nested=nested - 1,
-                        treat_var_as_type=treat_var_as_type,
-                    )
-                    for item, arg in zip(obj, args, strict=True)
-                )
-            )
+            if not isinstance(obj, tuple) or len(obj) != len(args):
+                return False
+            for item, arg in zip(obj, args, strict=True):
+                if not _isinstance(
+                    item, arg, nested=nested - 1, treat_var_as_type=treat_var_as_type
+                ):
+                    return False
+            return True
         if safe_issubclass(origin, Mapping):
             expected_class = (
                 dict
                 if origin is dict and not treat_mutable_obj_as_immutable
                 else Mapping
             )
-            return isinstance(obj, expected_class) and all(
-                _isinstance(
-                    key, args[0], nested=nested - 1, treat_var_as_type=treat_var_as_type
+            return (
+                isinstance(obj, expected_class)
+                and _all_isinstance(obj.keys(), args[0], nested - 1, treat_var_as_type)
+                and _all_isinstance(
+                    obj.values(), args[1], nested - 1, treat_var_as_type
                 )
-                and _isinstance(
-                    value,
-                    args[1],
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                )
-                for key, value in obj.items()
             )
         if origin is set:
             expected_class = Sequence if treat_mutable_obj_as_immutable else set
-            return isinstance(obj, expected_class) and all(
-                _isinstance(
-                    item,
-                    args[0],
-                    nested=nested - 1,
-                    treat_var_as_type=treat_var_as_type,
-                )
-                for item in obj
+            return isinstance(obj, expected_class) and _all_isinstance(
+                obj, args[0], nested - 1, treat_var_as_type
             )
 
     if args and origin is _Field:

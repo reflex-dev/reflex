@@ -1,3 +1,44 @@
+## v0.11.0 (2026-11-11)
+
+### Breaking Changes
+
+- Reading a plain `@property` of a Pydantic model or dataclass through a state Var now raises `VarAttributeError` at compile time. The default serializer does not send such a property, so the Var always rendered empty. Use `@pydantic.computed_field`, or register an `rx.serializer` that includes the value. ([#7648](https://github.com/reflex-dev/reflex/issues/7648))
+
+### Features
+
+- Serialize SQLAlchemy `DeclarativeBase` models without a custom `@rx.serializer`: loaded columns and relationships are sent, and unloaded or expired attributes are left out instead of raising `DetachedInstanceError` or `MissingGreenlet`. ([#7756](https://github.com/reflex-dev/reflex/issues/7756))
+- On a state schema mismatch, a production page now dispatches a cancelable `reflex:state-mismatch` event on `window` before it reloads or shows the "new version available" banner. A listener that calls `event.preventDefault()` skips both, so the app decides when to reload; `event.detail` carries the `frontend` and `backend` state schema hashes. ([#7653](https://github.com/reflex-dev/reflex/issues/7653))
+- With OpenTelemetry tracing enabled, JSON log records (`REFLEX_LOG_JSON=true`) emitted inside a span now include its `trace_id` and `span_id`, so logs can be correlated with traces. ([#7668](https://github.com/reflex-dev/reflex/issues/7668))
+
+### Bug Fixes
+
+- Use the browser's current route when building the websocket connection's initial hydration event, so navigation during connection setup cannot run the previous page's `on_load` handler or redirect. ([#7522](https://github.com/reflex-dev/reflex/issues/7522))
+- Fix uploads triggered by toast actions or `rx.call_script` callbacks failing with `ReferenceError: filesById is not defined`. Such uploads now send the files selected when they run, not when the toast opened. ([#7409](https://github.com/reflex-dev/reflex/issues/7409))
+- Fix state updates streamed back during an upload being applied more than once, which could restore a value that a newer update had replaced. ([#7721](https://github.com/reflex-dev/reflex/issues/7721))
+- Synced `rx.LocalStorage` vars in other tabs now reset to their defaults, like a page load, when localStorage is cleared or their key is removed. ([#7652](https://github.com/reflex-dev/reflex/issues/7652))
+- Fix a `TypeError` when an event handler is called with a proxied state value (such as `self.other(self.items)`) after one was called with a proxied value of a different kind, such as a dict. ([#7673](https://github.com/reflex-dev/reflex/issues/7673))
+- `StringVar.reversed()` now reverses Unicode code points, so a character such as an emoji is no longer split into lone surrogates. ([#7548](https://github.com/reflex-dev/reflex/issues/7548))
+- Type SQLAlchemy `synonym()` attributes like the attribute they point to, so `State.model.alias` compiles and string operations such as `.upper()` work on it. ([#7756](https://github.com/reflex-dev/reflex/issues/7756))
+- Under mypy, `@rx.event` handlers are typed as `EventCallback` instead of `EventNamespace`, so calling one directly no longer fails with `"EventNamespace" not callable`, and annotations through the event namespace, such as `rx.event.EventSpec` or `rx.event.EventCallback[int]`, are accepted as types by mypy and pyright. ([#7709](https://github.com/reflex-dev/reflex/issues/7709), [#7810](https://github.com/reflex-dev/reflex/issues/7810))
+- Calling an event handler with five to eight positional values now type-checks, binding every argument or the leading ones of a longer handler. ([#7752](https://github.com/reflex-dev/reflex/issues/7752))
+- An `EventHandler` stored outside a state, e.g. in a dataclass field, now reads back as the handler for type checkers instead of `Any`; read through a state instance it is the bound function. ([#7755](https://github.com/reflex-dev/reflex/issues/7755))
+- `FunctionStringVar.create` accepts `_var_type=EventChain`, for a JS function bound to an event trigger as its whole handler. ([#7754](https://github.com/reflex-dev/reflex/issues/7754))
+- A column of a SQLAlchemy `DeclarativeBase` model whose column type gives no useful Python type, such as `JSON`, `JSONB` or `PickleType`, now has the type of its `Mapped[...]` annotation when read through a state var, so `data: Mapped[dict] = mapped_column(JSON)` supports `State.model.data["key"]`, and a `Mapped[list[str]]` JSON column supports `rx.foreach` and array operations, without `.to(dict)`. An annotation that refines the column's Python type, such as `Mapped[dict[str, int]]` over `dict`, is used too; otherwise the column type still decides. ([#7798](https://github.com/reflex-dev/reflex/issues/7798))
+- Operations on an optional list var (`list[T] | None`) holding `None` no longer crash the page or the production prerender: the list acts as an empty list, so `contains` is false, `length` is 0 and `join` gives an empty string. As with any empty list, `reduce` without an `initial` value still raises; pass `initial=` when the list can be `None`. ([#7800](https://github.com/reflex-dev/reflex/issues/7800))
+- A computed var that returns an optional list, tuple, set or frozenset (for example `-> set[str] | None`) now reads as `ArrayVar` or `SetVar` for type checkers instead of `ComputedVar`, so its operations type-check. ([#7800](https://github.com/reflex-dev/reflex/issues/7800))
+- Deprecation warnings now point at the app line that triggered them when the deprecated call runs inside a `reflex_components_*` package (for example `on_change=client_state.set_value`), instead of a file in `site-packages`. ([#7811](https://github.com/reflex-dev/reflex/issues/7811))
+- `reflex run --json` no longer waits on exit for a descendant process that outlives the app and keeps its output open, which could happen on Python 3.13 to 3.15, most often on Windows. ([#7855](https://github.com/reflex-dev/reflex/issues/7855))
+
+### Performance
+
+- Inferring the type of a large dict var no longer copies all of its keys and values. ([#7057](https://github.com/reflex-dev/reflex/issues/7057))
+- The first event of a handler that takes a `dict`, dataclass, `TypedDict` or Pydantic model argument no longer imports SQLAlchemy on the event loop. ([#7802](https://github.com/reflex-dev/reflex/issues/7802))
+
+### Documentation
+
+- The `REFLEX_ENV_MODE` entry in the environment variable reference now says that `reflex run` and `reflex export` set it from `--env`, and that users should not set it. ([#7712](https://github.com/reflex-dev/reflex/issues/7712))
+
+
 ## v0.10.1 (2026-10-26)
 
 ### Deprecations
