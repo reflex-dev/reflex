@@ -1,3 +1,5 @@
+"""Test that the frontend dev server starts on an install without Node."""
+
 import os
 import shutil
 from collections.abc import Generator
