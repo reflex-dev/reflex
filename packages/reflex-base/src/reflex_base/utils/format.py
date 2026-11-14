@@ -735,6 +735,7 @@ def _get_json_encoder(
 
     Args:
         separators: The item and key separators, or None for the default ones.
+        sort_keys: Whether to sort dictionary keys in the encoded JSON.
 
     Returns:
         The shared encoder.
