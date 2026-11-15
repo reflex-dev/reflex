@@ -318,7 +318,7 @@ def test_lifespan(lifespan_app: AppHarness, page: Page):
     token = page.evaluate("() => sessionStorage.getItem('token')")
     token_manager = lifespan_app.token_manager()
     page.close()
-    assert lifespan_app._poll_for(lambda: token not in token_manager.token_to_sid)
+    assert lifespan_app._poll_for(lambda: token not in token_manager.token_to_sids)
     if isinstance(token_manager, RedisTokenManager):
         redis = get_redis_sync()
         assert redis is not None

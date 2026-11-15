@@ -44,7 +44,6 @@ import reflex as rx
 from reflex.app import App, EventNamespace
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
-from reflex.utils.token_manager import SocketRecord
 
 # The shared token every linked client in a scenario points at. Link tokens
 # cannot contain underscores.
@@ -354,9 +353,7 @@ async def _shared_state_app(
         ]
         for client_token in client_tokens:
             sid = f"sid-{client_token}"
-            token_manager.token_to_socket[client_token] = SocketRecord(
-                instance_id=token_manager.instance_id, sid=sid
-            )
+            token_manager.token_to_sids[client_token] = (sid,)
             sid_to_token[sid] = client_token
 
         processor = BaseStateEventProcessor(

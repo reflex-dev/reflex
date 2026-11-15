@@ -166,7 +166,7 @@ When `_linked_to` equals `self.router.session.client_token`, it is assumed that 
 
 A set of client tokens that are currently linked to this shared state instance.
 
-This attribute is only updated during `_link_to` and `_unlink` calls. In situations where unlinking occurs otherwise, such as client disconnects, `self.reset()` is called, or state expires on the backend, `_linked_from` may contain stale client tokens that are no longer linked. These can be cleaned periodically by checking if the tokens still exist in `app.event_namespace.token_to_sid`.
+This attribute is only updated during `_link_to` and `_unlink` calls. In situations where unlinking occurs otherwise, such as client disconnects, `self.reset()` is called, or state expires on the backend, `_linked_from` may contain stale client tokens that are no longer linked. These can be cleaned periodically by checking if the tokens still exist in `app.event_namespace.token_to_sids`.
 
 ## Guidelines and Best Practices
 

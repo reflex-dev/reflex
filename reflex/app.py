@@ -30,7 +30,7 @@ from collections.abc import (
 from contextvars import Token
 from datetime import timedelta
 from pathlib import Path
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
 from reflex_base import constants, otel
@@ -51,7 +51,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import memo_paths
+from reflex_base.utils import console, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import (
     ASGIApp,
@@ -2561,7 +2561,7 @@ class EventNamespace(AsyncNamespace):
         super().__init__(namespace)
         self.app = app
 
-        # Use TokenManager for distributed duplicate tab prevention
+        # Tracks the sockets of each client token, across instances with redis.
         self._token_manager = TokenManager.create()
 
         # Number of client_error reports logged per SID, for rate limiting.
@@ -2582,25 +2582,43 @@ class EventNamespace(AsyncNamespace):
         self._warned_dropped_results: set[str] = set()
 
     @property
+    def token_to_sids(self) -> Mapping[str, tuple[str, ...]]:
+        """The sockets connected to this instance for each client token.
+
+        A token has several sockets while a reconnect is in flight and when
+        tabs share it. Note: this mapping is read-only.
+
+        Returns:
+            The token to SIDs mapping, each token's sockets oldest first.
+        """
+        return MappingProxyType(self._token_manager.token_to_sids)
+
+    @property
     def token_to_sid(self) -> Mapping[str, str]:
-        """Token to SID mapping for backward compatibility.
+        """Deprecated token to SID mapping, holding each token's newest socket.
 
         Note: this mapping is read-only.
 
         Returns:
             The token to SID mapping.
         """
-        # For backward compatibility, expose the underlying dict
-        return self._token_manager.token_to_sid
+        console.deprecate(
+            feature_name="EventNamespace.token_to_sid",
+            reason="A client token can have several sockets. Use token_to_sids instead.",
+            deprecation_version="0.11.1",
+            removal_version="1.0",
+        )
+        return MappingProxyType({
+            token: sids[-1] for token, sids in self._token_manager.token_to_sids.items()
+        })
 
     @property
     def sid_to_token(self) -> dict[str, str]:
-        """SID to token mapping for backward compatibility.
+        """SID to token mapping for the sockets connected to this instance.
 
         Returns:
             The SID to token mapping dict.
         """
-        # For backward compatibility, expose the underlying dict
         return self._token_manager.sid_to_token
 
     async def on_connect(self, sid: str, environ: dict, auth: Any = None):
@@ -2615,7 +2633,9 @@ class EventNamespace(AsyncNamespace):
         """
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
-            self._token_manager.ensure_lost_and_found_task(self.emit_update)
+            # A relayed update goes to the sockets of this instance only: the
+            # sender publishes it to every instance owning one.
+            self._token_manager.ensure_lost_and_found_task(self._emit_update_local)
         boot_event = frontend_schema = None
         if isinstance(auth, dict):
             boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
@@ -2731,11 +2751,11 @@ class EventNamespace(AsyncNamespace):
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
-            socket_record = self._token_manager.token_to_socket.get(disconnect_token)
+            # The token's page lifecycle only ends with its last socket here: a
+            # stale disconnect must not cancel the load of the socket that
+            # replaced it, nor one tab closing the load of another.
             if (
-                socket_record is not None
-                and socket_record.sid == sid
-                and socket_record.instance_id == self._token_manager.instance_id
+                self._token_manager.token_to_sids.get(disconnect_token) == (sid,)
                 and (processor := self.app._event_processor) is not None
             ):
                 processor._on_disconnect(disconnect_token)
@@ -2754,37 +2774,49 @@ class EventNamespace(AsyncNamespace):
             return task
         return None
 
-    async def emit_update(self, update: StateUpdate, token: str) -> None:
-        """Emit an update to the client.
+    async def _emit_update_local(self, update: StateUpdate, token: str) -> bool:
+        """Emit an update to the sockets of a token connected to this instance.
 
         Args:
             update: The state update to send.
-            token: The client token (tab) associated with the event.
+            token: The client token associated with the event.
+
+        Returns:
+            Whether the token has a socket connected to this instance.
         """
-        socket_record = self._token_manager.token_to_socket.get(token)
-        if (
-            socket_record is None
-            or socket_record.instance_id != self._token_manager.instance_id
-        ):
-            if isinstance(self._token_manager, RedisTokenManager):
-                # The socket belongs to another instance of the app, send it to the lost and found.
-                await self._token_manager.emit_lost_and_found(token, update)
-            else:
-                # If the socket record is None, we are not connected to a client. Prevent sending
-                # updates to all clients.
-                logger.warning(
-                    f"Attempting to send delta to disconnected client {token!r}"
-                )
-            return
-        # Await the emit directly: wrapping it in a task does not unblock the
-        # caller (awaiting the task blocks just the same) and only adds task
-        # creation/scheduling overhead on every update.
-        await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
+        # The tuple is replaced, never mutated, when a socket joins or leaves.
+        if not (sids := self._token_manager.token_to_sids.get(token)):
+            return False
+        for sid in sids:
+            # Await the emit directly: wrapping it in a task does not unblock
+            # the caller (awaiting the task blocks just the same) and only adds
+            # task creation/scheduling overhead on every update.
+            await self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
         # The emit may complete without suspending (the packet is queued, not
         # sent). Yield one loop tick so the websocket writer can flush the
         # packet before the caller potentially blocks the event loop (e.g. a
         # sync event handler resuming after a yield).
         await asyncio.sleep(0)
+        return True
+
+    async def emit_update(self, update: StateUpdate, token: str) -> None:
+        """Emit an update to every socket of a client token.
+
+        A token has several sockets while a reconnect is in flight and when
+        tabs share it. Each one connected to this instance is sent the update;
+        the other instances of the app owning sockets of the token are relayed
+        it and do the same, so every socket receives the update once.
+
+        Args:
+            update: The state update to send.
+            token: The client token associated with the event.
+        """
+        emitted = await self._emit_update_local(update, token)
+        if isinstance(self._token_manager, RedisTokenManager):
+            await self._token_manager.emit_lost_and_found(token, update)
+        elif not emitted:
+            # Not connected to a client. Prevent sending updates to all clients.
+            logger.warning(f"Attempting to send delta to disconnected client {token!r}")
 
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
@@ -3002,11 +3034,12 @@ class EventNamespace(AsyncNamespace):
                 boot event, which records them as the connection's first event
                 without an extra load and save of the whole state tree.
         """
-        # Use TokenManager for duplicate detection and Redis support
+        # The token keeps any socket it already has: a reconnect racing the
+        # old socket's disconnect and a duplicated tab join the same session.
         new_token = await self._token_manager.link_token_to_sid(token, sid)
 
         if new_token:
-            # Duplicate detected, emit new token to client
+            # Only a token manager that replaces tokens hands one back.
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
@@ -3015,8 +3048,8 @@ class EventNamespace(AsyncNamespace):
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
-                # Record the identity the state was loaded under; duplicate-token
-                # handling can hand back a fresh one here.
+                # Record the identity the state was loaded under; the token
+                # manager can hand back a replacement one here.
                 state.router_data[constants.RouteVar.CLIENT_TOKEN] = new_token or token
                 # Rebuild from router_data to keep the session var in step with it.
                 if (

@@ -74,7 +74,10 @@ class ScreenshotPlugin(BasePlugin):
             if not app.event_namespace:
                 return JSONResponse({})
 
-            return JSONResponse(app.event_namespace.token_to_sid)
+            # One entry per client token: its most recently connected socket.
+            return JSONResponse({
+                token: sid for sid, token in app.event_namespace.sid_to_token.items()
+            })
 
         app._api.add_route(
             ACTIVE_CONNECTIONS,

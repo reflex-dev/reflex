@@ -103,7 +103,7 @@ from reflex.state import (
 )
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
-from reflex.utils.token_manager import RedisTokenManager, SocketRecord
+from reflex.utils.token_manager import RedisTokenManager
 
 from .conftest import active_tracer, chdir, metric_points
 from .mock_redis import mock_redis
@@ -3796,7 +3796,7 @@ def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection)
 
     Args:
         app: The application created before the fork.
-        redis: The mock Redis connection carrying another worker's socket record.
+        redis: The mock Redis connection carrying another worker's socket.
         sender: The pipe used to report the worker's result.
     """
 
@@ -3842,9 +3842,7 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
     assert app.event_namespace is not None
     app.event_namespace._token_manager = manager
     owner_id = manager.instance_id
-    redis.get.return_value = pickle.dumps(
-        SocketRecord(instance_id=owner_id, sid="remote")
-    )
+    redis.smembers.return_value = {f"{owner_id}:remote".encode()}
     workers = multiprocessing.get_context("fork")
     worker_ids = set()
     worker_state_manager_ids = {supervisor_state_manager_id}
@@ -5184,31 +5182,38 @@ async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace
     await event_namespace._token_manager.disconnect_all()
 
 
-@pytest.mark.parametrize("owner", ["current", "replacement", "remote", "missing"])
-async def test_disconnect_only_cancels_current_local_socket(
+@pytest.mark.parametrize(
+    ("sids", "cancelled"),
+    [
+        (("old-sid",), True),
+        (("old-sid", "new-sid"), False),
+        (("new-sid", "old-sid"), False),
+    ],
+)
+async def test_disconnect_only_cancels_with_last_local_socket(
     event_namespace_with_processor_mock: EventNamespace,
-    owner: str,
+    sids: tuple[str, ...],
+    cancelled: bool,
 ):
-    """A stale disconnect must not cancel a replacement connection's page load.
+    """A disconnect must not cancel the page load of another socket of the token.
 
     Args:
         event_namespace_with_processor_mock: Namespace with a mocked processor.
-        owner: The socket currently owning the client token.
+        sids: The sockets linked to the client token.
+        cancelled: Whether the disconnect ends the token's page lifecycle.
     """
     namespace = event_namespace_with_processor_mock
     manager = namespace._token_manager
-    manager.sid_to_token["old-sid"] = "token"
-    if owner != "missing":
-        manager.token_to_socket["token"] = SocketRecord(
-            instance_id="remote" if owner == "remote" else manager.instance_id,
-            sid="new-sid" if owner == "replacement" else "old-sid",
-        )
+    for sid in sids:
+        manager.sid_to_token[sid] = "token"
+    manager.token_to_sids["token"] = sids
     manager.disconnect_token = AsyncMock()
     cleanup = namespace.on_disconnect("old-sid")
     assert cleanup is not None
     await cleanup
+    manager.disconnect_token.assert_awaited_once_with("token", "old-sid")
     cancel = cast(Mock, namespace.app.event_processor._on_disconnect)
-    if owner == "current":
+    if cancelled:
         cancel.assert_called_once_with("token")
     else:
         cancel.assert_not_called()
@@ -5281,6 +5286,44 @@ async def test_on_event_uses_connect_time_router_data(
 
 
 @pytest.mark.asyncio
+async def test_token_to_sids_and_deprecated_token_to_sid(
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """The namespace exposes every socket of a token, the old mapping the newest.
+
+    Args:
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    manager = event_namespace._token_manager
+    await manager.link_token_to_sid("token1", "sid1")
+    await manager.link_token_to_sid("token1", "sid2")
+    await manager.link_token_to_sid("token2", "sid3")
+
+    assert dict(event_namespace.token_to_sids) == {
+        "token1": ("sid1", "sid2"),
+        "token2": ("sid3",),
+    }
+    assert event_namespace.sid_to_token == {
+        "sid1": "token1",
+        "sid2": "token1",
+        "sid3": "token2",
+    }
+    with pytest.raises(TypeError):
+        event_namespace.token_to_sids["token3"] = ("sid4",)  # pyright: ignore[reportIndexIssue]
+
+    deprecate = mocker.patch("reflex.app.console.deprecate")
+    assert dict(event_namespace.token_to_sid) == {"token1": "sid2", "token2": "sid3"}
+    deprecate.assert_called_once_with(
+        feature_name="EventNamespace.token_to_sid",
+        reason="A client token can have several sockets. Use token_to_sids instead.",
+        deprecation_version="0.11.1",
+        removal_version="1.0",
+    )
+
+
 async def test_link_token_to_sid_records_the_connecting_identity(
     token: str,
     event_namespace_with_processor_mock: EventNamespace,
@@ -5288,7 +5331,7 @@ async def test_link_token_to_sid_records_the_connecting_identity(
 ):
     """The session var carries the token the state was loaded under.
 
-    Duplicate-token handling hands back a fresh token, and the state is loaded
+    A token manager may hand back a replacement token, and the state is loaded
     under it. Leaving `rx_router_session.client_token` empty until the first event
     would let anything reading it in between -- a background task, a
     shared-state link -- address the wrong state tree.
@@ -5307,15 +5350,15 @@ async def test_link_token_to_sid_records_the_connecting_identity(
         Mock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))),
     )
 
-    # No duplicate: the connecting token is recorded.
+    # The connecting token is recorded.
     await event_namespace.link_token_to_sid("sid1", token)
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == token
     assert state.rx_router_session.client_token == token
     assert state.rx_router_session.session_id == "sid1"
 
-    # Duplicate: the *new* token is recorded, not the one the client sent.
-    # The duplicate branch emits the replacement token to the client, which
-    # needs a server the bare namespace does not have.
+    # A replacement: the *new* token is recorded, not the one the client sent.
+    # The replacement token is emitted to the client, which needs a server the
+    # bare namespace does not have.
     event_namespace.emit = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
     new_token = "a-fresh-token"
     mocker.patch.object(
@@ -5324,6 +5367,7 @@ async def test_link_token_to_sid_records_the_connecting_identity(
         AsyncMock(return_value=new_token),
     )
     await event_namespace.link_token_to_sid("sid2", token)
+    event_namespace.emit.assert_awaited_once_with("new_token", new_token, to="sid2")  # pyright: ignore[reportAttributeAccessIssue]
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == new_token
     assert state.rx_router_session.client_token == new_token
     assert state.rx_router_session.session_id == "sid2"

@@ -146,7 +146,7 @@ retrieve the current list item again while holding the state lock instead.
 
 Sometimes, background tasks may continue running even after the user navigates away from the page or closes the browser tab. To handle such cases, you can check if the websocket associated with the state is disconnected and terminate the background task when necessary.
 
-The solution involves checking if the client_token is still valid in the app.event_namespace.token_to_sid mapping. If the session is lost (e.g., the user navigates away or closes the page), the background task will stop.
+The solution involves checking if the client_token is still valid in the app.event_namespace.token_to_sids mapping. If the session is lost (e.g., the user navigates away or closes the page), the background task will stop.
 
 ```python
 import asyncio
@@ -157,7 +157,10 @@ class State(rx.State):
     @rx.event(background=True)
     async def loop_function(self):
         while True:
-            if self.router.session.client_token not in app.event_namespace.token_to_sid:
+            if (
+                self.router.session.client_token
+                not in app.event_namespace.token_to_sids
+            ):
                 print(
                     "WebSocket connection closed or user navigated away. Stopping background task."
                 )

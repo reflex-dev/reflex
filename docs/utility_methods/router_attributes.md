@@ -106,8 +106,8 @@ The `self.router` attribute has several sub-attributes that provide various info
 - `router.route_id`: the route pattern that matched the current request (e.g. `/posts/[id]`). For [dynamic pages](/docs/pages/dynamic-routing/) this contains the slug rather than the actual value used to load the page.
 
 - `router.session`: data about the current session
-  - `client_token`: UUID associated with the current tab's token. Each tab has a unique token.
-  - `session_id`: The ID associated with the client's websocket connection. Each tab has a unique session ID.
+  - `client_token`: UUID identifying the session, which the state belongs to. Each new tab gets a token of its own; a duplicated tab starts with a copy of the original tab's token and shares its session and state.
+  - `session_id`: The ID of the websocket connection that sent the most recent event. Each connection has a unique session ID, so it changes when a tab reconnects, and tabs sharing a `client_token` have different ones.
   - `client_ip`: The client IP, taken from the connection peer by default. To use `X-Forwarded-For` behind trusted reverse proxies, configure `trusted_proxy_hops` in `rx.Config`; see [client IP configuration](/docs/advanced-onboarding/configuration/#client-ip-behind-proxies).
 
 - `router.headers`: headers associated with the websocket connection. These values can only change when the websocket is re-established (for example, during page refresh).

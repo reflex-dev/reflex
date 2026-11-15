@@ -63,7 +63,7 @@ def _wait_for_token_cleanup(
     while time.monotonic() < deadline:
         if not any(
             token.startswith(token_prefixes)
-            for token in app.event_namespace.token_to_sid
+            for token in app.event_namespace.token_to_sids
         ):
             return
         time.sleep(0.05)

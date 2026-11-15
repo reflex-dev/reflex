@@ -1,0 +1,1 @@
+Keep the session's state when a websocket reconnects before the backend has processed the disconnect of the old one, as happens behind a reverse proxy. The reconnecting client was treated as a duplicate tab and handed a new `client_token`, which dropped its state.

@@ -1,7 +1,6 @@
 """Unit tests for shared state fan-out to other linked clients."""
 
 import asyncio
-import pickle
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -14,11 +13,7 @@ from reflex.istate.shared import (
     _patch_state,
 )
 from reflex.state import BaseState, State
-from reflex.utils.token_manager import (
-    LocalTokenManager,
-    RedisTokenManager,
-    SocketRecord,
-)
+from reflex.utils.token_manager import LocalTokenManager, RedisTokenManager
 
 
 @pytest.fixture
@@ -29,7 +24,7 @@ def mock_redis():
         The mock Redis client.
     """
     redis = AsyncMock()
-    redis.get = AsyncMock(return_value=None)
+    redis.smembers = AsyncMock(return_value=set())
     redis.get_connection_kwargs = Mock(return_value={"db": 0})
     return redis
 
@@ -84,9 +79,7 @@ async def _run_update_other_tokens(app, affected_tokens: set[str]) -> None:
 async def test_update_other_tokens_local_manager():
     """With a LocalTokenManager, only locally connected tokens are updated."""
     manager = LocalTokenManager()
-    manager.token_to_socket["connected"] = SocketRecord(
-        instance_id=manager.instance_id, sid="sid1"
-    )
+    await manager.link_token_to_sid("connected", "sid1")
     app, modified_tokens = _mock_app(manager)
 
     await _run_update_other_tokens(app, {"connected", "disconnected"})
@@ -96,24 +89,24 @@ async def test_update_other_tokens_local_manager():
 
 async def test_update_other_tokens_redis_cross_instance(redis_manager, mock_redis):
     """Tokens connected to another instance are resolved via redis and updated."""
-    redis_manager.token_to_socket["local"] = SocketRecord(
-        instance_id=redis_manager.instance_id, sid="sid1"
-    )
-    foreign_record = SocketRecord(instance_id="other-instance", sid="sid2")
+    redis_manager.token_to_sids["local"] = ("sid1",)
+    redis_manager.sid_to_token["sid1"] = "local"
     foreign_key = redis_manager._get_redis_key("foreign")
-    mock_redis.get.side_effect = lambda key: (
-        pickle.dumps(foreign_record) if key == foreign_key else None
+    mock_redis.smembers.side_effect = lambda key: (
+        {b"other-instance:sid2"} if key == foreign_key else set()
     )
     app, modified_tokens = _mock_app(redis_manager)
 
     await _run_update_other_tokens(app, {"local", "foreign", "disconnected"})
 
     assert sorted(modified_tokens) == ["foreign", "local"]
-    # The foreign socket record is cached locally for later emit_update routing.
-    assert redis_manager.token_to_socket["foreign"] == foreign_record
+    # The foreign owner is cached locally for later emit_update routing.
+    assert redis_manager._remote_owners["foreign"][0] == frozenset({"other-instance"})
     # Locally owned sockets are authoritative and never require a redis lookup.
-    local_key = redis_manager._get_redis_key("local")
-    assert local_key not in [call.args[0] for call in mock_redis.get.call_args_list]
+    assert sorted(call.args[0] for call in mock_redis.smembers.call_args_list) == [
+        redis_manager._get_redis_key("disconnected"),
+        foreign_key,
+    ]
 
 
 async def test_no_fan_out_without_linked_clients():

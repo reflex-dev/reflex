@@ -5,7 +5,7 @@ import contextlib
 import fnmatch
 import time
 from collections.abc import AsyncGenerator, Callable
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 
 from redis.asyncio import Redis
@@ -139,6 +139,19 @@ def mock_redis() -> Redis:
             raise TypeError(WRONGTYPE_MESSAGE)
         return len(keyset)
 
+    async def mock_smembers(key: KeyT) -> set[bytes]:  # noqa: RUF029
+        _expire_keys()
+        keyset = keys.get(_key_bytes(key))
+        if keyset is None:
+            return set()
+        if not isinstance(keyset, set):
+            raise TypeError(WRONGTYPE_MESSAGE)
+        # Like redis, reply with bytes whatever type the member was added as.
+        return {
+            member.encode() if isinstance(member, str) else cast("bytes", member)
+            for member in keyset
+        }
+
     async def mock_delete(key: KeyT) -> int:  # noqa: RUF029
         _expire_keys()
         key = _key_bytes(key)
@@ -164,6 +177,17 @@ def mock_redis() -> Redis:
             return True
         return False
 
+    async def mock_expire(key: KeyT, seconds: int) -> bool:
+        return await mock_pexpire(key, seconds * 1000)
+
+    async def mock_scan(cursor: int = 0, match: str = "*"):  # noqa: RUF029
+        _expire_keys()
+        return 0, [key for key in keys if fnmatch.fnmatch(key.decode(), match)]
+
+    async def mock_publish(channel: str, message: bytes) -> int:  # noqa: RUF029
+        _event_log_append_notify({"channel": channel.encode(), "data": message})
+        return 1
+
     class _Pipeline:
         def __init__(self):
             self.results = []
@@ -188,6 +212,9 @@ def mock_redis() -> Redis:
 
         def pexpire(self, key: KeyT, px: int, xx: bool = False):
             self.results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
+
+        def expire(self, key: KeyT, seconds: int):
+            self.results.append(redis_mock.expire(key, seconds))
 
         async def execute(self):
             results = await asyncio.gather(*self.results)
@@ -324,6 +351,10 @@ def mock_redis() -> Redis:
     redis_mock.sadd = mock_sadd
     redis_mock.srem = mock_srem
     redis_mock.scard = mock_scard
+    redis_mock.smembers = mock_smembers
+    redis_mock.expire = mock_expire
+    redis_mock.scan = mock_scan
+    redis_mock.publish = mock_publish
     redis_mock.pexpire = mock_pexpire
     redis_mock.pipeline = pipeline
     redis_mock.eval = mock_eval
