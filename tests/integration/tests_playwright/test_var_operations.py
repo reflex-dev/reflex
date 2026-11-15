@@ -44,6 +44,8 @@ def VarOperations():
         optional_dict: rx.Field[dict[str, str] | None] = rx.field(None)
         optional_list_value: rx.Field[list[str] | None] = rx.field(["red", "yellow"])
         optional_dict_value: rx.Field[dict[str, str] | None] = rx.field({"name": "red"})
+        optional_str: rx.Field[str | None] = rx.field(None)
+        optional_str_value: rx.Field[str | None] = rx.field("Some Text")
         str_var1: rx.Field[str] = rx.field("first")
         str_var2: rx.Field[str] = rx.field("second")
         str_var3: rx.Field[str] = rx.field("ThIrD")
@@ -823,6 +825,40 @@ def VarOperations():
                 rx.foreach(VarOperationState.optional_list_value, rx.text.span),
                 id="optional_list_value",
             ),
+            # Operations on an optional string holding None read it as empty.
+            rx.text(VarOperationState.optional_str.lower(), id="optional_str_lower"),
+            rx.text(VarOperationState.optional_str.strip(), id="optional_str_strip"),
+            rx.text(
+                VarOperationState.optional_str.split(" ").to_string(),
+                id="optional_str_split",
+            ),
+            rx.text(
+                VarOperationState.optional_str.split(
+                    VarOperationState.strip_chars
+                ).to_string(),
+                id="optional_str_split_var",
+            ),
+            rx.text(
+                VarOperationState.optional_str.contains("a"),
+                id="optional_str_contains",
+            ),
+            rx.text(
+                VarOperationState.optional_str.startswith("a"),
+                id="optional_str_startswith",
+            ),
+            rx.text(
+                VarOperationState.optional_str.replace("a", "b"),
+                id="optional_str_replace",
+            ),
+            rx.text(VarOperationState.optional_str * 2, id="optional_str_repeat"),
+            rx.text(
+                VarOperationState.optional_str_value.upper(),
+                id="optional_str_value_upper",
+            ),
+            rx.text(
+                VarOperationState.optional_str_value.split(" ").to_string(),
+                id="optional_str_value_split",
+            ),
             rx.box(
                 rx.foreach(VarOperationState.optional_dict_value, rx.text.span),
                 id="optional_dict_value",
@@ -1160,6 +1196,16 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("optional_list_join", ""),
         ("optional_list_value_length", "2"),
         ("optional_list_value_contains", "true"),
+        ("optional_str_lower", ""),
+        ("optional_str_strip", ""),
+        ("optional_str_split", '[""]'),
+        ("optional_str_split_var", '[""]'),
+        ("optional_str_contains", "false"),
+        ("optional_str_startswith", "false"),
+        ("optional_str_replace", ""),
+        ("optional_str_repeat", ""),
+        ("optional_str_value_upper", "SOME TEXT"),
+        ("optional_str_value_split", '["Some","Text"]'),
     ]
 
     for tag, expected in tests:
