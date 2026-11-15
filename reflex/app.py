@@ -2751,17 +2751,9 @@ class EventNamespace(AsyncNamespace):
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
-            # The token's page lifecycle only ends with its last socket here: a
-            # stale disconnect must not cancel the load of the socket that
-            # replaced it, nor one tab closing the load of another.
-            if (
-                self._token_manager.token_to_sids.get(disconnect_token) == (sid,)
-                and (processor := self.app._event_processor) is not None
-            ):
-                processor._on_disconnect(disconnect_token)
             # Use async cleanup through token manager
             task = asyncio.create_task(
-                self._token_manager.disconnect_token(disconnect_token, sid),
+                self._disconnect_token(disconnect_token, sid),
                 name=f"reflex_disconnect_token|{disconnect_token}|{time.time()}",
             )
             # Don't await to avoid blocking disconnect, but handle potential errors
@@ -2774,30 +2766,34 @@ class EventNamespace(AsyncNamespace):
             return task
         return None
 
-    async def _emit_update_local(self, update: StateUpdate, token: str) -> bool:
-        """Emit an update to the sockets of a token connected to this instance.
+    async def _disconnect_token(self, token: str, sid: str) -> None:
+        """Unlink a disconnected socket and end its token's page lifecycle.
+
+        The lifecycle only ends with the token's last socket on this instance:
+        a stale disconnect must not cancel the load of the socket that
+        replaced it, nor one tab closing the load of another. That is checked
+        after unlinking, so sockets disconnecting together still end it.
+
+        Args:
+            token: The client token.
+            sid: The Socket.IO session id.
+        """
+        await self._token_manager.disconnect_token(token, sid)
+        if (
+            token not in self._token_manager.token_to_sids
+            and (processor := self.app._event_processor) is not None
+        ):
+            processor._on_disconnect(token)
+
+    async def _emit_update_local(self, update: StateUpdate, token: str) -> None:
+        """Emit an update relayed by another instance to the sockets of this one.
 
         Args:
             update: The state update to send.
             token: The client token associated with the event.
-
-        Returns:
-            Whether the token has a socket connected to this instance.
         """
-        # The tuple is replaced, never mutated, when a socket joins or leaves.
-        if not (sids := self._token_manager.token_to_sids.get(token)):
-            return False
-        for sid in sids:
-            # Await the emit directly: wrapping it in a task does not unblock
-            # the caller (awaiting the task blocks just the same) and only adds
-            # task creation/scheduling overhead on every update.
+        for sid in self._token_manager.token_to_sids.get(token, ()):
             await self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
-        # The emit may complete without suspending (the packet is queued, not
-        # sent). Yield one loop tick so the websocket writer can flush the
-        # packet before the caller potentially blocks the event loop (e.g. a
-        # sync event handler resuming after a yield).
-        await asyncio.sleep(0)
-        return True
 
     async def emit_update(self, update: StateUpdate, token: str) -> None:
         """Emit an update to every socket of a client token.
@@ -2811,10 +2807,22 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             token: The client token associated with the event.
         """
-        emitted = await self._emit_update_local(update, token)
-        if isinstance(self._token_manager, RedisTokenManager):
-            await self._token_manager.emit_lost_and_found(token, update)
-        elif not emitted:
+        token_manager = self._token_manager
+        # The tuple is replaced, never mutated, when a socket joins or leaves.
+        if sids := token_manager.token_to_sids.get(token):
+            for sid in sids:
+                # Await the emit directly: wrapping it in a task does not
+                # unblock the caller (awaiting the task blocks just the same)
+                # and only adds task creation/scheduling overhead.
+                await self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
+            # The emit may complete without suspending (the packet is queued,
+            # not sent). Yield one loop tick so the websocket writer can flush
+            # the packet before the caller potentially blocks the event loop
+            # (e.g. a sync event handler resuming after a yield).
+            await asyncio.sleep(0)
+        if isinstance(token_manager, RedisTokenManager):
+            await token_manager.emit_lost_and_found(token, update)
+        elif not sids:
             # Not connected to a client. Prevent sending updates to all clients.
             logger.warning(f"Attempting to send delta to disconnected client {token!r}")
 

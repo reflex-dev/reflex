@@ -2,7 +2,6 @@
 
 import asyncio
 import contextvars
-import functools
 from collections.abc import Coroutine, Mapping
 from types import SimpleNamespace
 from typing import Any, cast
@@ -432,9 +431,6 @@ def test_emit_update(benchmark: BenchmarkFixture):
     namespace = cast(
         EventNamespace,
         SimpleNamespace(_token_manager=token_manager, emit=emit),
-    )
-    namespace._emit_update_local = functools.partial(  # pyright: ignore[reportAttributeAccessIssue]
-        EventNamespace._emit_update_local, namespace
     )
     update = StateUpdate(delta={"state": {"value": 1}})
 

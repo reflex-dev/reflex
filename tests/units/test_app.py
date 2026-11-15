@@ -5205,19 +5205,47 @@ async def test_disconnect_only_cancels_with_last_local_socket(
     namespace = event_namespace_with_processor_mock
     manager = namespace._token_manager
     for sid in sids:
-        manager.sid_to_token[sid] = "token"
-    manager.token_to_sids["token"] = sids
-    manager.disconnect_token = AsyncMock()
+        await manager.link_token_to_sid("token", sid)
     cleanup = namespace.on_disconnect("old-sid")
     assert cleanup is not None
     await cleanup
-    manager.disconnect_token.assert_awaited_once_with("token", "old-sid")
+    assert manager.token_to_sids.get("token", ()) == tuple(
+        sid for sid in sids if sid != "old-sid"
+    )
     cancel = cast(Mock, namespace.app.event_processor._on_disconnect)
     if cancelled:
         cancel.assert_called_once_with("token")
     else:
         cancel.assert_not_called()
     assert namespace.on_disconnect("unknown-sid") is None
+
+
+async def test_sockets_disconnecting_together_end_the_page_lifecycle(
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """Sockets of a token that disconnect before either is unlinked still end it.
+
+    Args:
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace._token_manager
+    await manager.link_token_to_sid("token", "sid1")
+    await manager.link_token_to_sid("token", "sid2")
+
+    cleanups = [namespace.on_disconnect("sid1"), namespace.on_disconnect("sid2")]
+    for cleanup in cleanups:
+        assert cleanup is not None
+        await cleanup
+
+    assert manager.token_to_sids == {}
+    cancel = cast(Mock, namespace.app.event_processor._on_disconnect)
+    # Ending the lifecycle is idempotent. With redis both cleanups have
+    # unlinked their socket by the time either checks, so both end it.
+    assert cancel.call_args_list in (
+        [unittest.mock.call("token")],
+        [unittest.mock.call("token"), unittest.mock.call("token")],
+    )
 
 
 def _connect_environ(token: str) -> dict[str, Any]:

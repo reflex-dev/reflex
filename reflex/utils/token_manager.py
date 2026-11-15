@@ -10,7 +10,7 @@ import pickle
 import time
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Callable, Coroutine
+from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from types import MappingProxyType
 from typing import TYPE_CHECKING, ClassVar, cast
 
@@ -453,8 +453,11 @@ class RedisTokenManager(LocalTokenManager):
             sid: The Socket.IO session ID.
         """
         try:
-            await self.redis.srem(
-                self._get_redis_key(token), self._get_socket_member(sid)
+            await cast(
+                "Awaitable[int]",
+                self.redis.srem(
+                    self._get_redis_key(token), self._get_socket_member(sid)
+                ),
             )
         except Exception as e:
             logger.error(f"Redis error deleting token: {e}")
@@ -539,8 +542,8 @@ class RedisTokenManager(LocalTokenManager):
             The IDs of the other instances with a socket linked to the token.
         """
         generation = self._remote_owners_generation
-        members = cast(
-            "set[bytes]", await self.redis.smembers(self._get_redis_key(token))
+        members = await cast(
+            "Awaitable[set[bytes]]", self.redis.smembers(self._get_redis_key(token))
         )
         owners = frozenset(
             instance_id
