@@ -1378,6 +1378,7 @@ class InitialValueDependencyState(BaseState):
         Returns:
             The cached source plus 100.
         """
+        self.getter_calls.append("no_initial_source")
         return self.cached_source + 100
 
     @rx.var
@@ -1407,8 +1408,9 @@ def test_initial_dict_uses_initial_value_of_computed_var_dependencies() -> None:
     """A computed var read by another one yields its initial value in the initial dict.
 
     The getter of a computed var with an initial value does not run while the
-    initial dict is built, and nothing computed from initial values is cached:
-    a regular read afterwards runs the getters.
+    initial dict is built, and a cached one without an initial value runs once.
+    Nothing computed from initial values is cached on the state: a regular read
+    afterwards runs the getters.
     """
     InitialValueDependencyState.getter_calls.clear()
     s = InitialValueDependencyState()
@@ -1429,13 +1431,15 @@ def test_initial_dict_uses_initial_value_of_computed_var_dependencies() -> None:
             "child_total" + FIELD_MARKER: 30,
         },
     }
-    assert InitialValueDependencyState.getter_calls == []
+    assert InitialValueDependencyState.getter_calls == ["no_initial_source"]
+    InitialValueDependencyState.getter_calls.clear()
 
     assert s.total == 104
     assert child.child_total == 3
     assert InitialValueDependencyState.getter_calls == [
         "cached_source",
         "uncached_source",
+        "no_initial_source",
         "uncached_source",
     ]
     d = s.dict()

@@ -2620,10 +2620,12 @@ def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
     return isinstance(obj, FakeComputedVarBaseClass)
 
 
-# Whether the initial state dict is being built, where a computed var read by
-# another one yields its initial value instead of running its getter.
-_building_initial_dict: contextvars.ContextVar[bool] = contextvars.ContextVar(
-    "_building_initial_dict", default=False
+# Set while the initial state dict is built, where a computed var read by another
+# one yields its initial value instead of running its getter. Holds the values
+# computed from initial values, keyed by state instance id and cache attribute,
+# which are kept out of the instance caches.
+_initial_dict_cache: contextvars.ContextVar[dict[tuple[int, str], Any] | None] = (
+    contextvars.ContextVar("_initial_dict_cache", default=None)
 )
 
 
@@ -3028,8 +3030,10 @@ class ComputedVar(Var[RETURN_TYPE]):
         if owner_cls is not None and type(instance) is not owner_cls:
             instance = _owner_state(instance, owner_cls)
         if not self._cache:
-            if _building_initial_dict.get():
-                return self._initial_or_computed(instance)
+            if _initial_dict_cache.get() is not None and not isinstance(
+                initial_value := self._initial_value, types.Unset
+            ):
+                return initial_value
             value = self.fget(instance)
             self._check_deprecated_return_type(instance, value)
             return value
@@ -3041,9 +3045,9 @@ class ComputedVar(Var[RETURN_TYPE]):
         if value is _NOT_CACHED or (
             self._update_interval is not None and self.needs_update(instance)
         ):
-            if _building_initial_dict.get():
+            if (initial_cache := _initial_dict_cache.get()) is not None:
                 # A value derived from initial values must not reach the cache.
-                return self._initial_or_computed(instance)
+                return self._initial_dict_value(instance, initial_cache)
             # Set cache attr on state instance.
             value = cache[cache_attr] = self.fget(instance)
             # Ensure the computed var gets serialized to redis.
@@ -3054,18 +3058,27 @@ class ComputedVar(Var[RETURN_TYPE]):
             self._check_deprecated_return_type(instance, value)
         return value
 
-    def _initial_or_computed(self, instance: BaseState) -> RETURN_TYPE:
-        """Get the value to use while the initial state dict is built.
+    def _initial_dict_value(
+        self, instance: BaseState, initial_cache: dict[tuple[int, str], Any]
+    ) -> RETURN_TYPE:
+        """Get the value of a cached computed var while the initial state dict is built.
 
         Args:
             instance: The instance of the owning state.
+            initial_cache: The values already computed for the initial dict.
 
         Returns:
-            The initial value if one was given, otherwise the computed value.
+            The initial value if one was given, otherwise the value computed
+            once for the initial dict.
         """
-        if isinstance(initial_value := self._initial_value, types.Unset):
-            return self.fget(instance)
-        return initial_value
+        if not isinstance(initial_value := self._initial_value, types.Unset):
+            return initial_value
+        key = (id(instance), self._cache_attr)
+        value = initial_cache.get(key, _NOT_CACHED)
+        if value is _NOT_CACHED:
+            value = initial_cache[key] = self.fget(instance)
+            self._check_deprecated_return_type(instance, value)
+        return value
 
     def __set_name__(self, owner: type[BaseState], name: str) -> None:
         """Bind the computed var to the state class it is assigned to.
