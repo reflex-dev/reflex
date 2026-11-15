@@ -800,8 +800,12 @@ class EventHandler(EventActionsMixin):
 
         Raises:
             EventHandlerTypeError: If the arguments are invalid.
+            BackendVarFormatError: If an argument is a field with no frontend var.
         """
-        from reflex_base.utils.exceptions import EventHandlerTypeError
+        from reflex_base.utils.exceptions import (
+            BackendVarFormatError,
+            EventHandlerTypeError,
+        )
 
         if args and isinstance(args[0], self.state or _base_state_type()):
             # A decorator stacked above @rx.event calls the handler like the
@@ -868,6 +872,8 @@ class EventHandler(EventActionsMixin):
             # Otherwise, convert to JSON.
             try:
                 payload.append((Var(_js_expr=fn_arg), LiteralVar.create(arg)))
+            except BackendVarFormatError:
+                raise
             except TypeError as e:
                 msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
                 raise EventHandlerTypeError(msg) from e
@@ -1033,8 +1039,12 @@ class EventSpec(EventActionsMixin):
 
         Raises:
             EventHandlerTypeError: If the arguments are invalid.
+            BackendVarFormatError: If an argument is a field with no frontend var.
         """
-        from reflex_base.utils.exceptions import EventHandlerTypeError
+        from reflex_base.utils.exceptions import (
+            BackendVarFormatError,
+            EventHandlerTypeError,
+        )
 
         n_self_args = 1 if self.handler.state is not None else 0
 
@@ -1048,6 +1058,8 @@ class EventSpec(EventActionsMixin):
         try:
             for arg in args:
                 values.append(LiteralVar.create(value=arg))  # noqa: PERF401, RUF100
+        except BackendVarFormatError:
+            raise
         except TypeError as e:
             msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
             raise EventHandlerTypeError(msg) from e
