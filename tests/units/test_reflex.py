@@ -1148,6 +1148,84 @@ def test_shutdown_signals_force_exit_on_a_later_repeat(tmp_path, sig, server_han
                 os.kill(helper, signal.SIGKILL)
 
 
+# ``_run_prod`` around a backend that behaves like granian: its own handlers
+# while it serves, never restored, then a shutdown that waits on a worker.
+_STUCK_PROD_SHUTDOWN_SCRIPT = """
+import signal, subprocess, sys, threading, time
+from unittest import mock
+
+from reflex_base import constants
+
+from reflex import reflex
+from reflex.utils import exec, telemetry
+
+
+def run_backend_prod(host, port, loglevel, mount_frontend, on_shutdown=None):
+    served = threading.Event()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, lambda *_: served.set())
+    print("ready", flush=True)
+    while not served.is_set():
+        time.sleep(0.05)
+    if on_shutdown is not None:
+        on_shutdown()
+    # A worker whose lifespan cleanup never ends.
+    worker = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+    print(worker.pid, flush=True)
+    worker.wait()
+
+
+with (
+    mock.patch.object(reflex, "get_config"),
+    mock.patch.object(reflex, "_skip_compile"),
+    mock.patch.object(telemetry, "_process_event"),
+    mock.patch.object(exec, "notify_app_running"),
+    mock.patch.object(exec, "notify_frontend"),
+    mock.patch.object(exec, "run_backend_prod", run_backend_prod),
+):
+    reflex._run_prod(constants.RunningMode.BACKEND_ONLY, 8000, "127.0.0.1")
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+@pytest.mark.parametrize("sig", [signal.SIGINT, signal.SIGTERM])
+def test_run_prod_force_exits_on_a_later_repeat(tmp_path, sig):
+    """A later repeat forces the exit while the prod backend's shutdown is stuck.
+
+    The backend serves under its own handlers, so the first signal is its
+    graceful stop; from the start of that shutdown a repeat right after is
+    ignored and a later one kills the workers and exits.
+    """
+    script = tmp_path / "stuck_prod.py"
+    script.write_text(_STUCK_PROD_SHUTDOWN_SCRIPT)
+    proc = subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        bufsize=0,
+    )
+    worker = None
+    try:
+        assert _read_line(proc) == "ready\n"
+        proc.send_signal(sig)
+        worker = int(_read_line(proc))
+        proc.send_signal(sig)
+        time.sleep(0.3)
+        assert proc.poll() is None
+        time.sleep(reflex._REPEAT_IGNORE_SECONDS)
+        proc.send_signal(sig)
+        assert proc.wait(timeout=DEFAULT_TIMEOUT) == 128 + sig
+        assert proc.stderr is not None
+        assert proc.stderr.read() == b"Forced exit: the cleanup did not finish.\n"
+        _assert_gone(worker, "the forced exit left the stuck worker running")
+    finally:
+        proc.kill()
+        proc.wait()
+        if worker is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(worker, signal.SIGKILL)
+
+
 def _read_line(proc: subprocess.Popen) -> str:
     """Read one line from a child's unbuffered stdout, failing instead of hanging.
 

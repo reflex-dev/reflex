@@ -981,6 +981,7 @@ def run_backend_prod(
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
     mount_frontend_compiled_app: bool = False,
+    on_shutdown: Callable[[], None] | None = None,
 ):
     """Run the backend.
 
@@ -989,11 +990,13 @@ def run_backend_prod(
         port: The app port
         loglevel: The log level.
         mount_frontend_compiled_app: Whether to mount the compiled frontend app with the backend.
+        on_shutdown: Called when a server running in this process begins to
+            shut down, before it waits for its workers.
     """
     environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(mount_frontend_compiled_app)
 
     if should_use_granian():
-        run_granian_backend_prod(host, port, loglevel)
+        run_granian_backend_prod(host, port, loglevel, on_shutdown=on_shutdown)
     else:
         run_uvicorn_backend_prod(host, port, loglevel)
 
@@ -1149,7 +1152,11 @@ def _preload_for_fork(app_target: str | None) -> bool:
 
 
 def run_granian_backend_prod(
-    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
+    host: str,
+    port: int,
+    loglevel: LogLevel,
+    app_target: str | None = None,
+    on_shutdown: Callable[[], None] | None = None,
 ):
     """Run the backend in production mode using Granian.
 
@@ -1158,6 +1165,8 @@ def run_granian_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
+        on_shutdown: Called when the server begins to shut down, before it
+            waits for its workers.
 
     Raises:
         EnvironmentVarValueError: If GRANIAN_RESPAWN_FAILED_WORKERS is not a boolean.
@@ -1166,7 +1175,7 @@ def run_granian_backend_prod(
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
-    from granian.server import Server as Granian
+    from granian.server import Server
 
     logger.debug("Using Granian for backend")
 
@@ -1186,6 +1195,22 @@ def run_granian_backend_prod(
     except click.BadParameter as err:
         msg = f"{_GRANIAN_RESPAWN_ENV}: {err.message}"
         raise EnvironmentVarValueError(msg) from None
+
+    class Granian(Server):  # pyright: ignore[reportGeneralTypeIssues]
+        """Granian server that reports the start of its shutdown."""
+
+        def shutdown(self, exit_code: int = 0):
+            """Report the shutdown, then stop the workers.
+
+            Granian waits here for every worker to finish its lifespan
+            cleanup, with its own signal handlers still installed.
+
+            Args:
+                exit_code: The exit code to terminate with.
+            """
+            if on_shutdown is not None:
+                on_shutdown()
+            super().shutdown(exit_code)
 
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),

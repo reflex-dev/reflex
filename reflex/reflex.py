@@ -655,9 +655,16 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
         backend_present=running_mode.has_backend(),
     )
     if running_mode.has_backend():
-        exec.run_backend_prod(
-            host, port, config.loglevel.subprocess_level(), running_mode.has_frontend()
-        )
+        # The server takes the first signal as its graceful stop, then waits
+        # for the workers' lifespan cleanup: a later repeat forces the exit.
+        with _shutdown_signals() as begin_cleanup:
+            exec.run_backend_prod(
+                host,
+                port,
+                config.loglevel.subprocess_level(),
+                running_mode.has_frontend(),
+                on_shutdown=begin_cleanup,
+            )
     else:
         exec.run_frontend_prod(host, port)
 
