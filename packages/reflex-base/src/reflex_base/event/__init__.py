@@ -1828,23 +1828,25 @@ def window_alert(message: str | Var[str]) -> EventSpec:
     return run_script(Var("window").to(dict).alert.to(FunctionVar).call(message))
 
 
-def _ref_arg(ref: str | Var[str]) -> Var:
+def _ref_args(ref: str | Var[str]) -> dict[str, Var]:
     """Get the event argument that names the component with an id.
 
-    A component registers its ref under a name derived from a literal id. An
-    id built from Vars is only known when the event runs, and inside
-    ``rx.foreach`` it differs for each item, so such an id is sent as it
-    evaluates and the frontend looks the element up in the document.
+    A component registers its ref under a name derived from a literal id,
+    which is sent as ``ref``. An id built from Vars is only known when the
+    event runs, and inside ``rx.foreach`` it differs for each item, so it is
+    sent as it evaluates, as ``id``, and the frontend looks the element up in
+    the document: it never names a registered ref, even one spelled the same.
 
     Args:
         ref: The id of the component.
 
     Returns:
-        The name of the registered ref, or the id itself if built from Vars.
+        The name of the registered ref as ``ref``, or the id itself as ``id``
+        if built from Vars.
     """
     if isinstance(ref, Var) or constants.REFLEX_VAR_OPENING_TAG in ref:
-        return LiteralVar.create(ref)
-    return LiteralVar.create(format.format_ref(ref))
+        return {"id": LiteralVar.create(ref)}
+    return {"ref": LiteralVar.create(format.format_ref(ref))}
 
 
 def set_focus(ref: str | Var[str]) -> EventSpec:
@@ -1859,7 +1861,7 @@ def set_focus(ref: str | Var[str]) -> EventSpec:
     return server_side(
         "_set_focus",
         inspect.signature(set_focus),
-        ref=_ref_arg(ref),
+        **_ref_args(ref),
     )
 
 
@@ -1875,7 +1877,7 @@ def blur_focus(ref: str | Var[str]) -> EventSpec:
     return server_side(
         "_blur_focus",
         inspect.signature(blur_focus),
-        ref=_ref_arg(ref),
+        **_ref_args(ref),
     )
 
 
@@ -1913,7 +1915,7 @@ def set_value(ref: str | Var[str], value: Any) -> EventSpec:
     return server_side(
         "_set_value",
         inspect.signature(set_value),
-        ref=_ref_arg(ref),
+        **_ref_args(ref),
         value=value,
     )
 

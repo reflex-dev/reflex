@@ -40,6 +40,7 @@ import {
   pyStrSlice,
   pyStrSplit,
   ReflexEvent,
+  refs,
   spreadArraysOrObjects,
 } from "$/utils/state";
 
@@ -322,12 +323,16 @@ describe("refs", () => {
     expect(getRefValues(undefined)).toBeUndefined();
   });
 
-  test("ref events find a registered ref by name and any other element by its id", async () => {
+  test("ref events find a registered ref by its name and an element by its id", async () => {
     // An id built from a loop variable differs per row, so no ref is
     // registered under it: the event carries the id each row evaluates to.
-    document.body.innerHTML = '<input id="row-a"><input id="row-b">';
+    // Such an id never names a registered ref, even one spelled like it or
+    // like a name every object inherits.
+    document.body.innerHTML =
+      '<input id="row-a"><input id="ref_named"><input id="toString">';
     const rowA = document.getElementById("row-a");
-    const rowB = document.getElementById("row-b");
+    const sameName = document.getElementById("ref_named");
+    const inherited = document.getElementById("toString");
     const registered = document.createElement("input");
     refs.ref_named = { current: registered };
     try {
@@ -335,25 +340,33 @@ describe("refs", () => {
         name: "_set_value",
         payload: { ref: "ref_named", value: "by name" },
       });
+      expect([registered.value, sameName.value]).toEqual(["by name", ""]);
       await applyEvent({
         name: "_set_value",
-        payload: { ref: "row-b", value: "by id" },
+        payload: { id: "ref_named", value: "by id" },
       });
-      expect([registered.value, rowA.value, rowB.value]).toEqual([
-        "by name",
-        "",
-        "by id",
-      ]);
+      await applyEvent({
+        name: "_set_value",
+        payload: { id: "toString", value: "inherited name" },
+      });
+      expect([
+        registered.value,
+        rowA.value,
+        sameName.value,
+        inherited.value,
+      ]).toEqual(["by name", "", "by id", "inherited name"]);
 
-      await applyEvent({ name: "_set_focus", payload: { ref: "row-a" } });
+      await applyEvent({ name: "_set_focus", payload: { id: "row-a" } });
       expect(document.activeElement).toBe(rowA);
-      await applyEvent({ name: "_blur_focus", payload: { ref: "row-a" } });
+      await applyEvent({ name: "_blur_focus", payload: { id: "row-a" } });
       expect(document.activeElement).toBe(document.body);
 
       const error = vi.spyOn(console, "error").mockImplementation(() => {});
-      await applyEvent({ name: "_set_focus", payload: { ref: "row-c" } });
+      await applyEvent({ name: "_set_focus", payload: { id: "row-c" } });
+      await applyEvent({ name: "_blur_focus", payload: { ref: "ref_gone" } });
       expect(error.mock.calls).toEqual([
         ["No element found for ref row-c in _set_focus"],
+        ["No element found for ref ref_gone in _blur_focus"],
       ]);
       error.mockRestore();
     } finally {
