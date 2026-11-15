@@ -704,7 +704,15 @@ class EventProcessor:
             f"{key[1]}, superseded by a newer invocation."
         )
         for previous in slot.values():
-            previous.cancel()
+            task = self._tasks.get(previous.txid)
+            if task is not None and task.done() and not previous.done():
+                # The run finished, and its done callback has yet to resolve
+                # the future with its outcome: only the events it chained
+                # are left to supersede.
+                for child in previous.children:
+                    child.cancel()
+            else:
+                previous.cancel()
         slot.clear()
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
@@ -1014,6 +1022,10 @@ class EventProcessor:
                 with contextlib.suppress(BaseException):
                     # Trigger the future to avoid warnings if the caller didn't wait.
                     future.result()
+                if future.awaited:
+                    # The caller awaiting the event received the exception:
+                    # reporting is its failure path's, if it does not catch it.
+                    return False
             telemetry.send_error(ex, context="backend")
             if (
                 not task.get_name().startswith("reflex_backend_exception_handler|")
