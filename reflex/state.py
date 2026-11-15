@@ -65,6 +65,7 @@ from reflex_base.vars.base import (
     EvenMoreBasicBaseState,
     ToOperation,
     Var,
+    _building_initial_dict,
     _inherited_value,
     _is_descriptor,
     _private_prefixes,
@@ -2124,17 +2125,22 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             prop_name: self.get_value(prop_name) for prop_name in self.base_vars
         }
         if initial and include_computed:
-            computed_vars = {
-                # Include initial computed vars.
-                prop_name: (
-                    cv._initial_value
-                    if is_computed_var(cv)
-                    and not isinstance(cv._initial_value, types.Unset)
-                    else self.get_value(prop_name)
-                )
-                for prop_name, cv in self.computed_vars.items()
-                if not cv._backend
-            }
+            # Computed vars read by the getters below yield their initial value too.
+            token = _building_initial_dict.set(True)
+            try:
+                computed_vars = {
+                    # Include initial computed vars.
+                    prop_name: (
+                        cv._initial_value
+                        if is_computed_var(cv)
+                        and not isinstance(cv._initial_value, types.Unset)
+                        else self.get_value(prop_name)
+                    )
+                    for prop_name, cv in self.computed_vars.items()
+                    if not cv._backend
+                }
+            finally:
+                _building_initial_dict.reset(token)
         elif include_computed:
             computed_vars = {
                 # Include the computed vars.

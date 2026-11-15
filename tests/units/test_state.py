@@ -1346,6 +1346,115 @@ def test_interdependent_state_initial_dict() -> None:
     }
 
 
+class InitialValueDependencyState(BaseState):
+    """A state whose computed vars read computed vars that have an initial value."""
+
+    getter_calls: ClassVar[list[str]] = []
+
+    @rx.var(initial_value=10)
+    def cached_source(self) -> int:
+        """A cached computed var with an initial value.
+
+        Returns:
+            The runtime value.
+        """
+        self.getter_calls.append("cached_source")
+        return 1
+
+    @rx.var(initial_value=20, cache=False)
+    def uncached_source(self) -> int:
+        """An uncached computed var with an initial value.
+
+        Returns:
+            The runtime value.
+        """
+        self.getter_calls.append("uncached_source")
+        return 2
+
+    @rx.var
+    def no_initial_source(self) -> int:
+        """A computed var without an initial value, reading one that has it.
+
+        Returns:
+            The cached source plus 100.
+        """
+        return self.cached_source + 100
+
+    @rx.var
+    def total(self) -> int:
+        """Depends on every source.
+
+        Returns:
+            The sum of the sources.
+        """
+        return self.cached_source + self.uncached_source + self.no_initial_source
+
+
+class InitialValueDependencyChildState(InitialValueDependencyState):
+    """A substate reading its parent's computed vars that have an initial value."""
+
+    @rx.var
+    def child_total(self) -> int:
+        """Depends on the inherited sources.
+
+        Returns:
+            The sum of the inherited sources.
+        """
+        return self.cached_source + self.uncached_source
+
+
+def test_initial_dict_uses_initial_value_of_computed_var_dependencies() -> None:
+    """A computed var read by another one yields its initial value in the initial dict.
+
+    The getter of a computed var with an initial value does not run while the
+    initial dict is built, and nothing computed from initial values is cached:
+    a regular read afterwards runs the getters.
+    """
+    InitialValueDependencyState.getter_calls.clear()
+    s = InitialValueDependencyState()
+    child = s.substates[InitialValueDependencyChildState.get_name()]
+    assert isinstance(child, InitialValueDependencyChildState)
+    d = s.dict(initial=True)
+    parent_vars = d[InitialValueDependencyState.get_full_name()]
+    for router_var in constants.ROUTER_VARS:
+        parent_vars.pop(router_var + FIELD_MARKER)
+    assert d == {
+        InitialValueDependencyState.get_full_name(): {
+            "cached_source" + FIELD_MARKER: 10,
+            "uncached_source" + FIELD_MARKER: 20,
+            "no_initial_source" + FIELD_MARKER: 110,
+            "total" + FIELD_MARKER: 140,
+        },
+        InitialValueDependencyChildState.get_full_name(): {
+            "child_total" + FIELD_MARKER: 30,
+        },
+    }
+    assert InitialValueDependencyState.getter_calls == []
+
+    assert s.total == 104
+    assert child.child_total == 3
+    assert InitialValueDependencyState.getter_calls == [
+        "cached_source",
+        "uncached_source",
+        "uncached_source",
+    ]
+    d = s.dict()
+    parent_vars = d[InitialValueDependencyState.get_full_name()]
+    for router_var in constants.ROUTER_VARS:
+        parent_vars.pop(router_var + FIELD_MARKER)
+    assert d == {
+        InitialValueDependencyState.get_full_name(): {
+            "cached_source" + FIELD_MARKER: 1,
+            "uncached_source" + FIELD_MARKER: 2,
+            "no_initial_source" + FIELD_MARKER: 101,
+            "total" + FIELD_MARKER: 104,
+        },
+        InitialValueDependencyChildState.get_full_name(): {
+            "child_total" + FIELD_MARKER: 3,
+        },
+    }
+
+
 def test_not_dirty_computed_var_from_var(
     interdependent_state: InterdependentState,
 ) -> None:
