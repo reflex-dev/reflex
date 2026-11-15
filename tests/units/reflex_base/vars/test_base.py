@@ -88,6 +88,7 @@ import reflex as rx
 from reflex.istate.data import ReflexURLCastedVar, RouterDataVar
 from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
+from tests.units.field_errors import backend_var_error, mixin_var_error
 
 _MARKER_ATTR = "_marker"
 
@@ -1645,10 +1646,9 @@ def test_backend_field_comparison_raises_format_error(
     class Model(EvenMoreBasicBaseState):
         _secret: str = "s"
 
-    with pytest.raises(
-        BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
-    ):
+    with pytest.raises(BackendVarFormatError) as exc_info:
         use(Model._secret)
+    assert str(exc_info.value) == backend_var_error("Model._secret")
 
 
 def test_backend_field_identity_and_hash_unchanged():
@@ -1672,11 +1672,12 @@ def test_mixin_field_comparison_raises_format_error():
     class Mixin(EvenMoreBasicBaseState, mixin=True):
         count: int = 0
 
-    match = r"Var 'Mixin\.count' is declared on a mixin state"
-    with pytest.raises(BackendVarFormatError, match=match):
+    with pytest.raises(BackendVarFormatError) as eq_info:
         Mixin.count == 1  # noqa: B015
-    with pytest.raises(BackendVarFormatError, match=match):
+    with pytest.raises(BackendVarFormatError) as bool_info:
         bool(Mixin.count)
+    assert str(eq_info.value) == mixin_var_error("Mixin.count")
+    assert str(bool_info.value) == mixin_var_error("Mixin.count")
 
 
 def test_mixin_field_literal_var_raises_format_error():

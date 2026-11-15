@@ -49,6 +49,7 @@ from reflex import (
 )
 from reflex.state import BaseState
 from reflex.utils import imports
+from tests.units.field_errors import backend_var_error
 
 
 @pytest.mark.parametrize("name", ["div", "", None])
@@ -794,11 +795,9 @@ def test_component_create_backend_var_child(test_component):
     class BackendChildState(BaseState):
         _secret: int = 42
 
-    with pytest.raises(
-        BackendVarFormatError,
-        match=r"Backend var 'BackendChildState\._secret' exists only",
-    ):
+    with pytest.raises(BackendVarFormatError) as exc_info:
         test_component.create(BackendChildState._secret)
+    assert str(exc_info.value) == backend_var_error("BackendChildState._secret")
 
 
 class EventChildState(BaseState):
@@ -865,17 +864,12 @@ class BackendPropState(BaseState):
 def test_component_create_backend_var_prop(create: Callable[[Any], Component]):
     """A backend var passed to a typed prop raises the backend var format error.
 
-    The error must not include the field's default value.
-
     Args:
         create: Creates a component with the backend var as a prop.
     """
-    with pytest.raises(
-        BackendVarFormatError,
-        match=r"Backend var 'BackendPropState\._size' exists only",
-    ) as exc_info:
+    with pytest.raises(BackendVarFormatError) as exc_info:
         create(BackendPropState._size)
-    assert "default=" not in str(exc_info.value)
+    assert str(exc_info.value) == backend_var_error("BackendPropState._size")
 
 
 class BackendSrcState(BaseState):

@@ -41,6 +41,7 @@ from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.state import BaseState
+from tests.units.field_errors import backend_var_error
 
 
 def make_var(value) -> Var:
@@ -275,13 +276,15 @@ def test_backend_var_event_arg_raises_format_error():
         def on_event(self, value: int):
             pass
 
-    match = r"Backend var 'BackendEventArgState\._secret' exists only"
-    with pytest.raises(BackendVarFormatError, match=match):
+    expected = backend_var_error("BackendEventArgState._secret")
+    with pytest.raises(BackendVarFormatError) as call_info:
         BackendEventArgState.on_event(BackendEventArgState._secret)
-    with pytest.raises(BackendVarFormatError, match=match):
+    with pytest.raises(BackendVarFormatError) as add_args_info:
         cast(EventSpec, BackendEventArgState.on_event()).add_args(
             BackendEventArgState._secret  # pyright: ignore[reportArgumentType]
         )
+    assert str(call_info.value) == expected
+    assert str(add_args_info.value) == expected
 
 
 class BackendTriggerState(BaseState):
