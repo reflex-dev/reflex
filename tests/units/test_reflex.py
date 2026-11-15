@@ -1203,6 +1203,7 @@ def test_run_prod_force_exits_on_a_later_repeat(tmp_path, sig):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         bufsize=0,
+        env={**os.environ, environment.REFLEX_USE_GRANIAN.name: "true"},
     )
     worker = None
     try:
@@ -1224,6 +1225,33 @@ def test_run_prod_force_exits_on_a_later_repeat(tmp_path, sig):
         if worker is not None:
             with contextlib.suppress(ProcessLookupError):
                 os.kill(worker, signal.SIGKILL)
+
+
+@pytest.mark.parametrize("use_granian", [True, False])
+def test_run_prod_takes_signals_for_granian_only(
+    mocker: MockerFixture, patched_production_startup, use_granian: bool
+):
+    """Only a granian backend, which runs in this process, gets the force path.
+
+    A gunicorn or uvicorn server is a subprocess: the run keeps the signal
+    handlers it had and passes no shutdown callback.
+    """
+    mocker.patch("reflex.utils.exec.should_use_granian", return_value=use_granian)
+    before = signal.getsignal(signal.SIGINT)
+    seen = []
+
+    def serve(*_args, on_shutdown):
+        seen.append((
+            signal.getsignal(signal.SIGINT) is before,
+            on_shutdown is None,
+        ))
+
+    patched_production_startup["backend_prod"].side_effect = serve
+
+    reflex._run_prod(constants.RunningMode.BACKEND_ONLY, 8000, "127.0.0.1")
+
+    assert seen == [(not use_granian, not use_granian)]
+    assert signal.getsignal(signal.SIGINT) is before
 
 
 def _read_line(proc: subprocess.Popen) -> str:

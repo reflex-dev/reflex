@@ -655,9 +655,12 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
         backend_present=running_mode.has_backend(),
     )
     if running_mode.has_backend():
-        # The server takes the first signal as its graceful stop, then waits
-        # for the workers' lifespan cleanup: a later repeat forces the exit.
-        with _shutdown_signals() as begin_cleanup:
+        # Granian runs in this process: it takes the first signal as its
+        # graceful stop, then waits for the workers' lifespan cleanup, where a
+        # later repeat forces the exit. A gunicorn or uvicorn server is a
+        # subprocess and keeps the signal handling it had.
+        signals = _shutdown_signals() if exec.should_use_granian() else nullcontext()
+        with signals as begin_cleanup:
             exec.run_backend_prod(
                 host,
                 port,

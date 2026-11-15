@@ -65,8 +65,11 @@ app.add_page(index)
 @app.register_lifespan_task
 @contextlib.asynccontextmanager
 async def stuck_cleanup():
+    stuck = os.environ.get("SHUTDOWN_APP_STUCK_CLEANUP")
+    if stuck:
+        print("lifespan started", flush=True)
     yield
-    if os.environ.get("SHUTDOWN_APP_STUCK_CLEANUP"):
+    if stuck:
         print("cleanup started", flush=True)
         await asyncio.sleep(600)
 """
@@ -166,6 +169,9 @@ class _RunningApp:
             env["REFLEX_LOG_JSON"] = "true"
         if stuck_prod:
             env[STUCK_CLEANUP_ENV] = "1"
+            # The server that shuts down in the CLI process, whatever is
+            # installed or set around the test.
+            env["REFLEX_USE_GRANIAN"] = "true"
             mode = ["--env", "prod", "--backend-only"]
         else:
             mode = ["--frontend-port", str(_free_port())]
@@ -186,6 +192,9 @@ class _RunningApp:
             start_new_session=True,
         )
         self.lines: list[bytes] = []
+        # The production banner is printed before the backend starts, so
+        # that run is up only once its worker entered the lifespan.
+        self.running_marker = b"lifespan started" if stuck_prod else b"App running at"
         self.running = threading.Event()
         self.cleaning_up = threading.Event()
         self.json_mode = json_mode
@@ -200,7 +209,7 @@ class _RunningApp:
         assert self.process.stdout is not None
         for line in self.process.stdout:
             self.lines.append(line)
-            if b"App running at" in line:
+            if self.running_marker in line:
                 self.running.set()
             elif line == b"cleanup started\n":
                 self.cleaning_up.set()
