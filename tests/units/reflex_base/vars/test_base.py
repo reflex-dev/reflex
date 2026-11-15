@@ -1623,6 +1623,62 @@ def test_backend_field_literal_var_raises_format_error(
         use(Model._secret)
 
 
+@pytest.mark.parametrize(
+    "use",
+    [
+        lambda f: f == "x",
+        lambda f: f != "x",
+        lambda f: f in ["x", "y"],
+        lambda f: bool(f),
+    ],
+    ids=["eq", "ne", "in_list", "bool"],
+)
+def test_backend_field_comparison_raises_format_error(
+    use: typing.Callable[[Any], Any],
+):
+    """Comparing or truth-testing a backend var raises instead of a plain bool.
+
+    Args:
+        use: Compares or truth-tests the backend field.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: str = "s"
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
+    ):
+        use(Model._secret)
+
+
+def test_backend_field_identity_and_hash_unchanged():
+    """Fields still compare and hash by identity with other fields."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: str = "s"
+        _other: str = "o"
+
+    secret, other = Model._secret, Model._other
+    assert secret == secret
+    assert secret != other
+    assert {secret: 1, other: 2}[secret] == 1
+    assert secret in [other, secret]
+    assert len({secret, other, secret}) == 2
+
+
+def test_mixin_field_comparison_raises_format_error():
+    """Comparing or truth-testing a mixin's field says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    match = r"Var 'Mixin\.count' is declared on a mixin state"
+    with pytest.raises(BackendVarFormatError, match=match):
+        Mixin.count == 1  # noqa: B015
+    with pytest.raises(BackendVarFormatError, match=match):
+        bool(Mixin.count)
+
+
 def test_mixin_field_literal_var_raises_format_error():
     """A mixin's field inside a LiteralVar says to use the including state."""
 

@@ -333,6 +333,46 @@ def test_add_page_backend_var_meta_raises_format_error(
         app.add_page(index_page, route="/meta", **{key: BackendMetaState._meta})  # pyright: ignore[reportArgumentType]
 
 
+def test_add_page_backend_var_meta_content_raises_format_error(
+    app: App, index_page: ComponentCallable
+):
+    """A backend var in a meta tag's content raises when the page is compiled.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    app.add_page(
+        index_page,
+        route="/meta",
+        meta=[{"name": "x", "content": BackendMetaState._meta}],
+    )
+    with pytest.raises(
+        exceptions.BackendVarFormatError,
+        match=r"Backend var 'BackendMetaState\._meta' exists only",
+    ):
+        app._compile_page("meta")
+
+
+@pytest.mark.parametrize("as_list", [False, True])
+def test_add_page_backend_var_on_load_raises_format_error(
+    app: App, index_page: ComponentCallable, as_list: bool
+):
+    """A backend var passed as on_load raises when the page is added.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        as_list: Whether on_load is given as a list.
+    """
+    on_load = [BackendMetaState._meta] if as_list else BackendMetaState._meta
+    with pytest.raises(
+        exceptions.BackendVarFormatError,
+        match=r"Backend var 'BackendMetaState\._meta' exists only",
+    ):
+        app.add_page(index_page, route="/meta", on_load=on_load)  # pyright: ignore[reportArgumentType]
+
+
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
