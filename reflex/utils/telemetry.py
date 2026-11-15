@@ -1,5 +1,8 @@
 """Anonymous telemetry for Reflex."""
 
+# Imported on first use on Python 3.15+ (PEP 810); keep them out of import-time code.
+__lazy_modules__ = ["multiprocessing"]
+
 import dataclasses
 import importlib.metadata
 import json

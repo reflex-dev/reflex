@@ -22,6 +22,11 @@ _LIST_LAZY_NAMES = (
 @pytest.mark.parametrize(
     ("module", "lazy_names"),
     [
+        ("reflex.app", ["compiler", "readable_name_from_component"]),
+        ("reflex.utils.exec", ["click"]),
+        ("reflex.utils.js_runtimes", ["version"]),
+        ("reflex.utils.prerequisites", ["version"]),
+        ("reflex.utils.telemetry", ["multiprocessing"]),
         (
             "reflex_base.plugins.sitemap",
             ["Element", "SubElement", "indent", "tostring"],

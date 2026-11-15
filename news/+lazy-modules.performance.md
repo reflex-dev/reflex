@@ -1,0 +1,1 @@
+On Python 3.15 and newer, importing `reflex.app` no longer loads the compiler, and `click`, `packaging` and `multiprocessing` are only imported once they are used (PEP 810 lazy imports), so apps import faster. Older Python versions are unaffected.
