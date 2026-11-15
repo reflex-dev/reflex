@@ -487,6 +487,8 @@ def var_string_example():
     )
 ```
 
+An optional string var (`str | None`) holding `None` acts as an empty string in every string operation: `lower`, `strip` and `replace` give an empty string, `contains` and `startswith` are false, `length` is 0 and `split(" ")` gives `[""]`, as it does for `""`.
+
 ## Get Item (Indexing)
 
 Indexing is only supported for strings, lists, tuples, dicts, and dataframes. To index into a state var strict type annotations are required.

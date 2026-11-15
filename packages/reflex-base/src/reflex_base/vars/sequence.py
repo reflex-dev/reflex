@@ -783,6 +783,16 @@ STRING_TYPE = TypingExtensionsTypeVar("STRING_TYPE", default=str, covariant=True
 class StringVar(Var[STRING_TYPE], python_types=str):
     """Base class for immutable string vars."""
 
+    def _or_empty(self) -> StringVar[Any]:
+        """View an optional string as an empty string while it holds None.
+
+        Returns:
+            The string, guarded against None if its type allows None.
+        """
+        if types.is_optional(self._var_type):
+            return string_or_empty_operation(self)
+        return self
+
     def __add__(self, other: StringVar | str) -> ConcatVarOperation:
         """Concatenate two strings.
 
@@ -825,7 +835,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         ):
             raise_unsupported_operand_types("*", (type(self), type(other)))
 
-        return string_repeat_operation(self, other)
+        return string_repeat_operation(self._or_empty(), other)
 
     def __rmul__(self, other: NumberVar | int) -> StringVar:
         """Multiply the sequence by a number or an integer.
@@ -841,7 +851,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         ):
             raise_unsupported_operand_types("*", (type(other), type(self)))
 
-        return string_repeat_operation(self, other)
+        return string_repeat_operation(self._or_empty(), other)
 
     @overload
     def __getitem__(self, i: slice) -> StringVar: ...
@@ -882,7 +892,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string lower operation.
         """
-        return string_lower_operation(self)
+        return string_lower_operation(self._or_empty())
 
     def lstrip(self, chars: StringVar | str | None = None) -> StringVar:
         """Left strip the string.
@@ -896,7 +906,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if chars is not None and not isinstance(chars, (StringVar, str)):
             raise_unsupported_operand_types("lstrip", (type(self), type(chars)))
 
-        return string_lstrip_operation(self, chars)
+        return string_lstrip_operation(self._or_empty(), chars)
 
     def upper(self) -> StringVar:
         """Convert the string to uppercase.
@@ -904,7 +914,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string upper operation.
         """
-        return string_upper_operation(self)
+        return string_upper_operation(self._or_empty())
 
     def title(self) -> StringVar:
         """Convert the string to title case.
@@ -912,7 +922,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string title operation.
         """
-        return string_title_operation(self)
+        return string_title_operation(self._or_empty())
 
     def capitalize(self) -> StringVar:
         """Capitalize the string.
@@ -920,7 +930,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string capitalize operation.
         """
-        return string_capitalize_operation(self)
+        return string_capitalize_operation(self._or_empty())
 
     def strip(self, chars: StringVar | str | None = None) -> StringVar:
         """Strip the string.
@@ -934,7 +944,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if chars is not None and not isinstance(chars, (StringVar, str)):
             raise_unsupported_operand_types("strip", (type(self), type(chars)))
 
-        return string_strip_operation(self, chars)
+        return string_strip_operation(self._or_empty(), chars)
 
     def reversed(self) -> StringVar:
         """Reverse the string.
@@ -956,7 +966,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if chars is not None and not isinstance(chars, (StringVar, str)):
             raise_unsupported_operand_types("rstrip", (type(self), type(chars)))
 
-        return string_rstrip_operation(self, chars)
+        return string_rstrip_operation(self._or_empty(), chars)
 
     def contains(
         self, other: StringVar | str, field: StringVar | str | None = None
@@ -976,7 +986,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             if not isinstance(field, (StringVar, str)):
                 raise_unsupported_operand_types("contains", (type(self), type(field)))
             return string_contains_field_operation(self, other, field)
-        return string_contains_operation(self, other)
+        return string_contains_operation(self._or_empty(), other)
 
     def split(self, separator: StringVar | str = "") -> ArrayVar[list[str]]:
         """Split the string.
@@ -1002,7 +1012,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         """
         if not isinstance(prefix, (StringVar, str)):
             raise_unsupported_operand_types("startswith", (type(self), type(prefix)))
-        return string_starts_with_operation(self, prefix)
+        return string_starts_with_operation(self._or_empty(), prefix)
 
     def endswith(self, suffix: StringVar | str) -> BooleanVar:
         """Check if the string ends with a suffix.
@@ -1015,7 +1025,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         """
         if not isinstance(suffix, (StringVar, str)):
             raise_unsupported_operand_types("endswith", (type(self), type(suffix)))
-        return string_ends_with_operation(self, suffix)
+        return string_ends_with_operation(self._or_empty(), suffix)
 
     def __lt__(self, other: StringVar | str) -> BooleanVar:
         """Check if the string is less than another string.
@@ -1098,7 +1108,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         if not isinstance(new_value, (StringVar, str)):
             raise_unsupported_operand_types("replace", (type(self), type(new_value)))
 
-        return string_replace_operation(self, search_value, new_value)
+        return string_replace_operation(self._or_empty(), search_value, new_value)
 
 
 @var_operation
@@ -1155,6 +1165,22 @@ def string_ge_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
         The string greater than or equal operation.
     """
     return var_operation_return(js_expression=f"{lhs!s} >= {rhs!s}", var_type=bool)
+
+
+@var_operation
+def string_or_empty_operation(string: Var) -> CustomVarOperationReturn[str]:
+    """View an optional string as an empty string while it holds None.
+
+    Args:
+        string: The optional string.
+
+    Returns:
+        The guarded string operation, typed without None.
+    """
+    return var_operation_return(
+        js_expression=f'({string!s} ?? "")',
+        var_type=types.value_inside_optional(string._var_type),
+    )
 
 
 @var_operation
@@ -1771,13 +1797,14 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
         The split string. An empty separator splits by code points.
     """
     if not isinstance(sep, LiteralStringVar):
-        js_expression = f"pyStrSplit({string!s}, {sep!s})"
+        js_expression = f"pyStrSplit({string._or_empty()!s}, {sep!s})"
         var_data = VarData(imports=_PY_STR_SPLIT_IMPORT)
     elif sep._var_value == "":
+        # pyStrChars reads null as an empty string itself.
         js_expression = f"pyStrChars({string!s})"
         var_data = VarData(imports=_PY_STR_CHARS_IMPORT)
     else:
-        js_expression = f"{string!s}.split({sep!s})"
+        js_expression = f"{string._or_empty()!s}.split({sep!s})"
         var_data = None
     return var_operation_return(
         js_expression=js_expression, var_type=list[str], var_data=var_data
