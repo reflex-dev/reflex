@@ -980,6 +980,23 @@ def test_foreach_item_hooks_run_per_item_with_loop_vars(
     assert not page_errors
 
 
+def _event_log(*names: str, optional: tuple[str, ...] = ()) -> re.Pattern[str]:
+    """Match a comma separated event log by the names it holds.
+
+    Strict mode may run an effect twice, so a name may repeat.
+
+    Args:
+        names: The names the log must hold, each at least once.
+        optional: Other names the log may hold.
+
+    Returns:
+        A pattern that matches the whole log.
+    """
+    name = "|".join(map(re.escape, (*names, *optional)))
+    required = "".join(rf"(?=(.*,)?{re.escape(name)}(,|$))" for name in names)
+    return re.compile(rf"^{required}({name})(,({name}))*$")
+
+
 def test_memo_body_hooks_follow_their_branch_and_loop_item(
     memo_app: AppHarness, page: Page
 ) -> None:
@@ -1004,11 +1021,8 @@ def test_memo_body_hooks_follow_their_branch_and_loop_item(
     expect(page.locator(".memo-loop-item")).to_have_text(["alpha", "beta"])
     expect(page.locator(".memo-branch")).to_have_text(["shown"])
 
-    # Only the shown branch and each loop item mount. Strict mode may run an
-    # effect twice.
-    for name in ("shown", "alpha", "beta"):
-        expect(mounted).to_contain_text(re.compile(rf"(^|,){name}(,|$)"))
-    assert set(mounted.inner_text().split(",")) == {"shown", "alpha", "beta"}
+    # Only the shown branch and each loop item mount.
+    expect(mounted).to_have_text(_event_log("shown", "alpha", "beta"))
 
     # Toggling unmounts the branch that was shown and mounts the other one.
     page.click("#memo-hooks-clear")
@@ -1016,9 +1030,8 @@ def test_memo_body_hooks_follow_their_branch_and_loop_item(
     expect(unmounted).to_have_text("")
     page.click("#memo-hooks-toggle")
     expect(page.locator(".memo-branch")).to_have_text(["hidden"])
-    expect(mounted).to_have_text(re.compile(r"^hidden(,hidden)*$"))
-    expect(unmounted).to_contain_text(re.compile(r"(^|,)shown(,|$)"))
-    # Strict mode also runs the cleanup of the branch it mounted twice.
-    assert set(unmounted.inner_text().split(",")) in ({"shown"}, {"shown", "hidden"})
+    expect(mounted).to_have_text(_event_log("hidden"))
+    # Strict mode also runs the cleanup of the branch it mounts twice.
+    expect(unmounted).to_have_text(_event_log("shown", optional=("hidden",)))
 
     assert not page_errors

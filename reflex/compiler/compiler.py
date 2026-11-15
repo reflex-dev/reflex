@@ -1418,11 +1418,12 @@ def compile_app(
         ] = hydrate_fallback_definition
         hydrate_fallback_export = hydrate_fallback_definition.export_name
 
+    # A snapshot: evaluating a memo body may register another memo.
     memos = [
         scope_memo_body_hooks(memo, compile_ctx)
         if isinstance(memo, MemoComponentDefinition)
         else memo
-        for memo in MEMOS.values()
+        for memo in tuple(MEMOS.values())
     ]
     memo_component_files, memo_components_imports = compile_memo_components(
         (
