@@ -19,13 +19,14 @@ if TYPE_CHECKING:
 
 @functools.cache
 def _loop_var_data(name: str) -> VarData:
-    """Get the var data that makes a loop variable name itself as a dependency.
+    """Get the var data that makes a scoped variable name itself as a dependency.
 
-    Every var built from the loop variable carries the name, so a generated
-    function that reads it can receive it as a prop.
+    Every var built from a loop variable, or from an ``@rx.memo`` parameter,
+    carries the name, so a generated function that reads it can receive it as
+    a prop.
 
     Args:
-        name: The JavaScript name of the loop variable.
+        name: The JavaScript name of the scoped variable.
 
     Returns:
         The var data, shared by every var with this name.

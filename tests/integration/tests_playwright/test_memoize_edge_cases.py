@@ -195,6 +195,70 @@ def MemoEdgeCasesApp():
         def handle_submit(self, index: int, form_data: dict):
             self.submitted = f"{index}:{form_data['note']}"
 
+    class MemoHookState(rx.State):
+        """State for hooks under a branch or a loop in an ``@rx.memo`` body."""
+
+        show: bool = True
+        items: list[str] = ["alpha", "beta"]
+        mounted: rx.Field[list[str]] = rx.field(default_factory=list)
+        unmounted: rx.Field[list[str]] = rx.field(default_factory=list)
+
+        @rx.event
+        def record_mount(self, name: str):
+            self.mounted.append(name)
+
+        @rx.event
+        def record_unmount(self, name: str):
+            self.unmounted.append(name)
+
+        @rx.event
+        def toggle(self):
+            self.show = not self.show
+
+        @rx.event
+        def clear_log(self):
+            self.mounted = []
+            self.unmounted = []
+
+    @rx.memo
+    def memo_branch(show: rx.Var[bool], label: rx.Var[str]) -> rx.Component:
+        return rx.box(
+            rx.cond(
+                show,
+                rx.text(
+                    label,
+                    on_mount=MemoHookState.record_mount(label),
+                    on_unmount=MemoHookState.record_unmount(label),
+                    class_name="memo-branch",
+                ),
+            ),
+        )
+
+    @rx.memo
+    def memo_loop(items: rx.Var[list[str]]) -> rx.Component:
+        return rx.box(
+            rx.foreach(
+                items,
+                lambda item: rx.text(
+                    item,
+                    key=item,
+                    on_mount=MemoHookState.record_mount(item),
+                    class_name="memo-loop-item",
+                ),
+            ),
+        )
+
+    def memo_hooks():
+        return rx.box(
+            memo_branch(show=MemoHookState.show, label="shown"),
+            memo_branch(show=~MemoHookState.show, label="hidden"),
+            memo_loop(items=MemoHookState.items),
+            rx.button("toggle", on_click=MemoHookState.toggle, id="memo-hooks-toggle"),
+            rx.button("clear", on_click=MemoHookState.clear_log, id="memo-hooks-clear"),
+            rx.text(MemoHookState.mounted.join(","), id="memo-hooks-mounted"),
+            rx.text(MemoHookState.unmounted.join(","), id="memo-hooks-unmounted"),
+        )
+
     def loop_item(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
         return rx.box(
             rx.text(
@@ -340,6 +404,7 @@ def MemoEdgeCasesApp():
 
     app = rx.App()
     app.add_page(index, title=MemoState.title_marker)
+    app.add_page(memo_hooks, route="/memo-hooks")
 
 
 @pytest.fixture(scope="module")
@@ -911,5 +976,49 @@ def test_foreach_item_hooks_run_per_item_with_loop_vars(
     page.locator("input[name='note']").nth(0).fill("first")
     page.locator(".loop-submit").nth(0).click()
     expect(submitted).to_have_text("0:first")
+
+    assert not page_errors
+
+
+def test_memo_body_hooks_follow_their_branch_and_loop_item(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Hooks under ``rx.cond`` / ``rx.foreach`` in an ``@rx.memo`` body are scoped.
+
+    Regression for reflex-dev/reflex#7836: such a hook was compiled at the top
+    of the memo function, so the hidden branch's ``on_mount`` fired with the
+    memo, toggling the condition fired nothing, and a hook reading a loop
+    variable crashed the page with a ``ReferenceError``.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
+    page.goto(memo_app.frontend_url.removesuffix("/") + "/memo-hooks")
+
+    mounted = page.locator("#memo-hooks-mounted")
+    unmounted = page.locator("#memo-hooks-unmounted")
+    expect(page.locator(".memo-loop-item")).to_have_text(["alpha", "beta"])
+    expect(page.locator(".memo-branch")).to_have_text(["shown"])
+
+    # Only the shown branch and each loop item mount. Strict mode may run an
+    # effect twice.
+    for name in ("shown", "alpha", "beta"):
+        expect(mounted).to_contain_text(re.compile(rf"(^|,){name}(,|$)"))
+    assert set(mounted.inner_text().split(",")) == {"shown", "alpha", "beta"}
+
+    # Toggling unmounts the branch that was shown and mounts the other one.
+    page.click("#memo-hooks-clear")
+    expect(mounted).to_have_text("")
+    expect(unmounted).to_have_text("")
+    page.click("#memo-hooks-toggle")
+    expect(page.locator(".memo-branch")).to_have_text(["hidden"])
+    expect(mounted).to_have_text(re.compile(r"^hidden(,hidden)*$"))
+    expect(unmounted).to_contain_text(re.compile(r"(^|,)shown(,|$)"))
+    # Strict mode also runs the cleanup of the branch it mounted twice.
+    assert set(unmounted.inner_text().split(",")) in ({"shown"}, {"shown", "hidden"})
 
     assert not page_errors
