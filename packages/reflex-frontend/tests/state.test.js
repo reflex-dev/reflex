@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
   applyDelta,
+  applyEvent,
   applyEventActions,
   encodeFormDataArgs,
   generateUUID,
@@ -319,6 +320,46 @@ describe("refs", () => {
       getRefValues([{ current: { value: "a" } }, { current: slider }, {}]),
     ).toEqual(["a", "3", null]);
     expect(getRefValues(undefined)).toBeUndefined();
+  });
+
+  test("ref events find a registered ref by name and any other element by its id", async () => {
+    // An id built from a loop variable differs per row, so no ref is
+    // registered under it: the event carries the id each row evaluates to.
+    document.body.innerHTML = '<input id="row-a"><input id="row-b">';
+    const rowA = document.getElementById("row-a");
+    const rowB = document.getElementById("row-b");
+    const registered = document.createElement("input");
+    refs.ref_named = { current: registered };
+    try {
+      await applyEvent({
+        name: "_set_value",
+        payload: { ref: "ref_named", value: "by name" },
+      });
+      await applyEvent({
+        name: "_set_value",
+        payload: { ref: "row-b", value: "by id" },
+      });
+      expect([registered.value, rowA.value, rowB.value]).toEqual([
+        "by name",
+        "",
+        "by id",
+      ]);
+
+      await applyEvent({ name: "_set_focus", payload: { ref: "row-a" } });
+      expect(document.activeElement).toBe(rowA);
+      await applyEvent({ name: "_blur_focus", payload: { ref: "row-a" } });
+      expect(document.activeElement).toBe(document.body);
+
+      const error = vi.spyOn(console, "error").mockImplementation(() => {});
+      await applyEvent({ name: "_set_focus", payload: { ref: "row-c" } });
+      expect(error.mock.calls).toEqual([
+        ["No element found for ref row-c in _set_focus"],
+      ]);
+      error.mockRestore();
+    } finally {
+      delete refs.ref_named;
+      document.body.innerHTML = "";
+    }
   });
 });
 

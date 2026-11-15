@@ -85,6 +85,23 @@ export const useRegisteredRef = (name) => {
   return ref;
 };
 
+/**
+ * Find the ref an event names. A component with a literal id registers its ref
+ * in `refs`; an id built from state or a loop variable is only known when the
+ * event runs, so the event carries the id and the element is looked up by it.
+ * @param {any} ref The name a ref is registered under, or an element id.
+ * @returns The registered ref, a ref to the element with that id, or `ref`
+ *     itself when it is not a string.
+ */
+const resolveRef = (ref) => {
+  if (ref in refs) {
+    return refs[ref];
+  }
+  return typeof ref === "string"
+    ? { current: document.getElementById(ref) }
+    : ref;
+};
+
 // The client state store, for code evaluated outside this module's scope: a
 // `run_script` body pushing a value, or the devtools console. Client only, so
 // a server render never shares a store between requests.
@@ -741,8 +758,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name === "_set_focus") {
-    const ref =
-      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const ref = resolveRef(event.payload.ref);
     const current = ref?.current;
     if (current === undefined || current?.focus === undefined) {
       console.error(
@@ -755,8 +771,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name === "_blur_focus") {
-    const ref =
-      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const ref = resolveRef(event.payload.ref);
     const current = ref?.current;
     if (current === undefined || current?.blur === undefined) {
       console.error(
@@ -769,8 +784,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name === "_set_value") {
-    const ref =
-      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const ref = resolveRef(event.payload.ref);
     if (ref.current) {
       ref.current.value = event.payload.value;
     }
