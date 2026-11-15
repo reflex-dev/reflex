@@ -978,6 +978,12 @@ class EventProcessor:
         else:
             task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
+        future = self._futures.get(task_ctx.txid)
+        # Before the next event starts: a handler started eagerly below can
+        # supersede this one, which must not cancel a future still unresolved.
+        handling_exception = task.done() and self._resolve_future(
+            task, task_ctx, future
+        )
         # Chain the next sequential event for this token if applicable.
         token_queue = self._token_queues.get(task_ctx.token)
         if token_queue and token_queue[0][0].ctx.txid == task_ctx.txid:
@@ -986,8 +992,7 @@ class EventProcessor:
                 self._dispatch_next_for_token(task_ctx.token)
             else:
                 del self._token_queues[task_ctx.token]
-        future = self._futures.get(task_ctx.txid)
-        if task.done() and self._resolve_future(task, task_ctx, future):
+        if handling_exception:
             return
         if future is not None:
             # The task is gone; clean up now in case the future resolved

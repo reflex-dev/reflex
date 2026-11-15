@@ -1568,6 +1568,49 @@ async def test_superseding_event_keeps_the_result_of_a_finished_run(
     assert _CALL_LOG == []
 
 
+async def test_queued_handler_superseding_a_finished_run_keeps_its_result(
+    processor: EventProcessor,
+    token: str,
+):
+    """The next queued handler cannot cancel the finished run it follows.
+
+    The handler queued behind a superseding run starts as soon as that run's
+    task finishes (eagerly on Python 3.12+), and supersedes it before
+    suspending. The finished run still resolves with its result.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    release = asyncio.Event()
+
+    async def _search(value: str = "default") -> str:
+        if value == "first":
+            await release.wait()
+        return value.upper()
+
+    async def _search_again():
+        await EventContext.get().enqueue(
+            Event.from_event_type(search_event("second"))[0]
+        )
+
+    _search._reflex_supersedes = True  # type: ignore[attr-defined]
+    search_event = EventHandler(fn=_search)
+    search_again_event = EventHandler(fn=_search_again)
+    RegistrationContext.register_event_handler(search_event)
+    RegistrationContext.register_event_handler(search_again_event)
+
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(token, Event.from_event_type(search_event("first"))[0])
+        again = await ep.enqueue(token, Event.from_event_type(search_again_event())[0])
+        release.set()
+        assert await asyncio.wait_for(first, timeout=1) == "FIRST"
+        await asyncio.wait_for(again.wait_all(), timeout=1)
+        (second,) = again.children
+        assert second.result() == "SECOND"
+
+
 async def test_superseding_event_logs_debug_on_cancel(
     processor: EventProcessor,
     token: str,
