@@ -487,7 +487,7 @@ def var_string_example():
     )
 ```
 
-An optional string var (`str | None`) holding `None` acts as an empty string in every string operation: `lower`, `strip` and `replace` give an empty string, `contains` and `startswith` are false, `length` is 0 and `split(" ")` gives `[""]`, as it does for `""`.
+An optional string var (`str | None`) holding `None` acts as an empty string in the string methods (`lower`, `upper`, `title`, `capitalize`, `strip`, `split`, `contains`, `startswith`, `endswith`, `replace`, `length`, indexing, slicing and `*`): each gives what it gives for `""`. For example, `lower` gives an empty string, `contains("a")` is false, `length` is 0 and `split(" ")` gives `[""]`. Concatenation with `+` and the comparison operators are not covered.
 
 ## Get Item (Indexing)
 

@@ -789,9 +789,11 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string, guarded against None if its type allows None.
         """
-        if types.is_optional(self._var_type):
-            return string_or_empty_operation(self)
-        return self
+        var_type = self._var_type
+        # Most strings are plain ``str``: skip the union check for them.
+        if var_type is str or not types.is_optional(var_type):
+            return self
+        return string_or_empty_operation(self)
 
     def __add__(self, other: StringVar | str) -> ConcatVarOperation:
         """Concatenate two strings.
