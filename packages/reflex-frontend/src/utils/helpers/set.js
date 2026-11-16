@@ -14,16 +14,19 @@
  * @returns {*} The key of the element.
  */
 export const pySetKey = (x) => {
-  if (typeof x === "string") return "s" + x;
-  if (typeof x === "boolean") return +x;
-  if (typeof x === "number" && !Number.isFinite(x)) return "n" + String(x);
-  if (Array.isArray(x)) return "a" + JSON.stringify(x.map(pySetKey));
-  if (x !== null && typeof x === "object") {
-    return "o" + JSON.stringify(
-      Object.entries(x).map(([key, value]) => [key, pySetKey(value)]),
-    );
-  }
-  return x;
+	if (typeof x === "string") return "s" + x;
+	if (typeof x === "boolean") return +x;
+	if (typeof x === "number" && !Number.isFinite(x)) return "n" + String(x);
+	if (Array.isArray(x)) return "a" + JSON.stringify(x.map(pySetKey));
+	if (x !== null && typeof x === "object") {
+		return (
+			"o" +
+			JSON.stringify(
+				Object.entries(x).map(([key, value]) => [key, pySetKey(value)]),
+			)
+		);
+	}
+	return x;
 };
 
 /**
@@ -33,14 +36,14 @@ export const pySetKey = (x) => {
  * @returns {boolean} Whether the set contains the element.
  */
 export const pySetHas = (arr, x) => {
-  if (arr == null) return false;
-  const key = pySetKey(x);
-  // SameValueZero, as Set.has uses: NaN matches NaN, without copying arr.
-  const isNaNKey = Number.isNaN(key);
-  return arr.some((y) => {
-    const other = pySetKey(y);
-    return other === key || (isNaNKey && Number.isNaN(other));
-  });
+	if (arr == null) return false;
+	const key = pySetKey(x);
+	// SameValueZero, as Set.has uses: NaN matches NaN, without copying arr.
+	const isNaNKey = Number.isNaN(key);
+	return arr.some((y) => {
+		const other = pySetKey(y);
+		return other === key || (isNaNKey && Number.isNaN(other));
+	});
 };
 
 /**
@@ -50,16 +53,16 @@ export const pySetHas = (arr, x) => {
  * @returns {Array} The union.
  */
 export const pySetUnion = (a, b) => {
-  const result = a == null ? [] : [...a];
-  const seen = new Set(result.map(pySetKey));
-  for (const x of b ?? []) {
-    const key = pySetKey(x);
-    if (!seen.has(key)) {
-      seen.add(key);
-      result.push(x);
-    }
-  }
-  return result;
+	const result = a == null ? [] : [...a];
+	const seen = new Set(result.map(pySetKey));
+	for (const x of b ?? []) {
+		const key = pySetKey(x);
+		if (!seen.has(key)) {
+			seen.add(key);
+			result.push(x);
+		}
+	}
+	return result;
 };
 
 /**
@@ -69,9 +72,9 @@ export const pySetUnion = (a, b) => {
  * @returns {Array} The intersection.
  */
 export const pySetIntersection = (a, b) => {
-  if (a == null || b == null) return [];
-  const keys = new Set(b.map(pySetKey));
-  return a.filter((x) => keys.has(pySetKey(x)));
+	if (a == null || b == null) return [];
+	const keys = new Set(b.map(pySetKey));
+	return a.filter((x) => keys.has(pySetKey(x)));
 };
 
 /**
@@ -81,10 +84,10 @@ export const pySetIntersection = (a, b) => {
  * @returns {Array} The difference.
  */
 export const pySetDifference = (a, b) => {
-  if (a == null) return [];
-  if (b == null) return [...a];
-  const keys = new Set(b.map(pySetKey));
-  return a.filter((x) => !keys.has(pySetKey(x)));
+	if (a == null) return [];
+	if (b == null) return [...a];
+	const keys = new Set(b.map(pySetKey));
+	return a.filter((x) => !keys.has(pySetKey(x)));
 };
 
 /**
@@ -95,7 +98,7 @@ export const pySetDifference = (a, b) => {
  * @returns {Array} The symmetric difference.
  */
 export const pySetSymmetricDifference = (a, b) =>
-  pySetUnion(pySetDifference(a, b), pySetDifference(b, a));
+	pySetUnion(pySetDifference(a, b), pySetDifference(b, a));
 
 /**
  * Whether every element of a is in b.
@@ -104,10 +107,10 @@ export const pySetSymmetricDifference = (a, b) =>
  * @returns {boolean} Whether a is a subset of b.
  */
 export const pySetIsSubset = (a, b) => {
-  if (a == null) return true;
-  if (b == null) return a.length === 0;
-  const keys = new Set(b.map(pySetKey));
-  return a.every((x) => keys.has(pySetKey(x)));
+	if (a == null) return true;
+	if (b == null) return a.length === 0;
+	const keys = new Set(b.map(pySetKey));
+	return a.every((x) => keys.has(pySetKey(x)));
 };
 
 /**
@@ -117,9 +120,9 @@ export const pySetIsSubset = (a, b) => {
  * @returns {boolean} Whether the sets are disjoint.
  */
 export const pySetIsDisjoint = (a, b) => {
-  if (a == null || b == null) return true;
-  const keys = new Set(b.map(pySetKey));
-  return !a.some((x) => keys.has(pySetKey(x)));
+	if (a == null || b == null) return true;
+	const keys = new Set(b.map(pySetKey));
+	return !a.some((x) => keys.has(pySetKey(x)));
 };
 
 /**
@@ -130,10 +133,10 @@ export const pySetIsDisjoint = (a, b) => {
  * @returns {number} The sort order of the keys.
  */
 const compareSetKeys = (a, b) => {
-  if (typeof a === "number" && typeof b === "number") return a - b;
-  if (typeof a === "number") return -1;
-  if (typeof b === "number") return 1;
-  return a < b ? -1 : a > b ? 1 : 0;
+	if (typeof a === "number" && typeof b === "number") return a - b;
+	if (typeof a === "number") return -1;
+	if (typeof b === "number") return 1;
+	return a < b ? -1 : a > b ? 1 : 0;
 };
 
 /**
@@ -145,13 +148,13 @@ const compareSetKeys = (a, b) => {
  * @returns {Array|null|undefined} The sorted, distinct keys of its elements.
  */
 export const pySetCanonical = (arr) => {
-  if (arr == null) return arr;
-  // Recursive keys preserve non-finite numbers inside structured elements too.
-  return [...new Set(arr.map(pySetKey))]
-    .map((key) =>
-      key === null || (typeof key === "number" && !Number.isFinite(key))
-        ? String(key)
-        : key,
-    )
-    .sort(compareSetKeys);
+	if (arr == null) return arr;
+	// Recursive keys preserve non-finite numbers inside structured elements too.
+	return [...new Set(arr.map(pySetKey))]
+		.map((key) =>
+			key === null || (typeof key === "number" && !Number.isFinite(key))
+				? String(key)
+				: key,
+		)
+		.sort(compareSetKeys);
 };
