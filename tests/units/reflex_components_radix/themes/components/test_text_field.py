@@ -4,6 +4,9 @@ import pytest
 from reflex_base.vars.base import Var
 from reflex_components_radix.themes.components.text_field import TextFieldRoot
 
+# Hides the wrapper while the rendered input is hidden.
+HIDDEN_INPUT_WRAPPER = "&:where(:has(> input:is([hidden], [type=hidden i])))"
+
 
 @pytest.mark.parametrize(
     ("auto_complete", "expected"),
@@ -37,36 +40,43 @@ def test_auto_complete_renders_a_string(auto_complete: Any, expected: str):
         {"type": "hidden", "value": "foo", "size": "2"},
         {"type": "HIDDEN", "value": "foo"},
         {"hidden": True, "value": "foo"},
+        {"hidden": Var(_js_expr="is_hidden", _var_type=bool)},
+        {"type": Var(_js_expr="input_type", _var_type=str)},
     ],
 )
-def test_static_hidden_input_hides_the_wrapper(props: dict[str, Any]):
+def test_hidden_input_hides_the_wrapper(props: dict[str, Any]):
     """The TextField.Root wrapper of a hidden input must not show as a bar.
+
+    The rule matches the rendered input, so the wrapper also follows state and
+    scripts that change ``hidden`` or ``type`` in the browser.
 
     https://github.com/reflex-dev/reflex/issues/6874
 
     Args:
-        props: The props of a statically hidden input.
+        props: The props of an input that can be hidden.
     """
     text_field = TextFieldRoot.create(**props)
 
     assert isinstance(text_field, TextFieldRoot)
-    assert text_field.style["display"].equals(Var.create("none"))
+    assert "display" not in text_field.style
+    assert text_field.style[HIDDEN_INPUT_WRAPPER]["display"].equals(Var.create("none"))
 
 
 @pytest.mark.parametrize(
     "props",
     [
         {"placeholder": "Name"},
-        {"type": Var(_js_expr="input_type", _var_type=str)},
+        {"hidden": False},
+        {"type": "text"},
     ],
 )
 def test_visible_input_keeps_the_wrapper(props: dict[str, Any]):
-    """An input that is not hidden at compile time keeps its wrapper visible.
+    """An input that can not be hidden gets no extra style.
 
     Args:
-        props: The props of an input that may be visible.
+        props: The props of a visible input.
     """
-    assert "display" not in TextFieldRoot.create(**props).style
+    assert not TextFieldRoot.create(**props).style
 
 
 @pytest.mark.parametrize(
@@ -79,7 +89,7 @@ def test_visible_input_keeps_the_wrapper(props: dict[str, Any]):
     ],
 )
 def test_hidden_input_keeps_a_user_display(props: dict[str, Any], expected: str):
-    """A display set by the user, also from state, wins over the default.
+    """A display set by the user, also from state, wins over the rule.
 
     Args:
         props: The display set on a hidden input.
@@ -88,10 +98,12 @@ def test_hidden_input_keeps_a_user_display(props: dict[str, Any], expected: str)
     text_field = TextFieldRoot.create(type="hidden", **props)
 
     assert str(text_field.style["display"]) == expected
+    assert HIDDEN_INPUT_WRAPPER not in text_field.style
 
 
-def test_hidden_var_hides_the_wrapper_at_runtime():
-    """A hidden prop from state hides the wrapper only while it is true."""
-    text_field = TextFieldRoot.create(hidden=Var(_js_expr="is_hidden", _var_type=bool))
+def test_hidden_input_keeps_a_display_from_a_style_var():
+    """A style Var comes after the rule, so a display in it wins."""
+    style = Var(_js_expr="input_style", _var_type=dict[str, str])
+    text_field = TextFieldRoot.create(type="hidden", style=style)
 
-    assert str(text_field.style["display"]) == '(is_hidden ? "none" : undefined)'
+    assert list(text_field.style) == [HIDDEN_INPUT_WRAPPER, "&"]
