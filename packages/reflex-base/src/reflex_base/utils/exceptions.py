@@ -63,7 +63,7 @@ class ChildrenTypeError(ComponentTypeError):
             child: The child that caused the error.
         """
         super().__init__(
-            f"Component {component} received child {child!r} of type {type(child)}. "
+            f"Component {component} received child of type {type(child).__name__}. "
             "Accepted types are other components, state vars, or primitive Python types (dict excluded)."
         )
 
