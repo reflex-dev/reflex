@@ -66,13 +66,9 @@ class Match(Component):
         """
         match_cond_var = cls._create_condition_var(cond)
         cases, default = cls._process_cases(list(cases))
-        match_cases = cls._process_match_cases(cases)
+        match_cases, has_set_case = cls._process_match_cases(cases)
 
-        if isinstance(match_cond_var, SetVar) or any(
-            isinstance(condition, SetVar)
-            for conditions, _ in match_cases
-            for condition in conditions
-        ):
+        if isinstance(match_cond_var, SetVar) or has_set_case:
             match_cond_var = cls._comparable(match_cond_var)
             match_cases = [
                 ([cls._comparable(condition) for condition in conditions], result)
@@ -187,25 +183,25 @@ class Match(Component):
             The case element Var.
         """
         var_data = case_element._var_data if isinstance(case_element, Style) else None
-        var = LiteralVar.create(case_element, _var_data=var_data)
-        return var.guess_type() if type(var) is Var else var
+        return LiteralVar.create(case_element, _var_data=var_data)
 
     @classmethod
     def _process_match_cases(
         cls, cases: list[tuple]
-    ) -> list[tuple[list[Var], BaseComponent | Var]]:
+    ) -> tuple[list[tuple[list[Var], BaseComponent | Var]], bool]:
         """Process the individual match cases.
 
         Args:
             cases: The match cases.
 
         Returns:
-            The processed match cases.
+            The processed match cases and whether any condition is a set.
 
         Raises:
             ValueError: If the default case is not the last case or the tuple elements are less than 2.
         """
         match_cases: list[tuple[list[Var], BaseComponent | Var]] = []
+        has_set_case = False
         for case_index, case in enumerate(cases):
             # There should be at least two elements in a case tuple(a condition and return value)
             if len(case) < 2:
@@ -219,7 +215,11 @@ class Match(Component):
                 if isinstance(condition, BaseComponent):
                     msg = f"Match condition {condition_index} of case {case_index} cannot be a component."
                     raise ValueError(msg)
-                conditions_vars.append(cls._create_case_var_with_var_data(condition))
+                condition_var = cls._create_case_var_with_var_data(condition)
+                if type(condition_var) is Var:
+                    condition_var = condition_var.guess_type()
+                has_set_case = has_set_case or isinstance(condition_var, SetVar)
+                conditions_vars.append(condition_var)
 
             return_value = (
                 cls._create_case_var_with_var_data(return_value)
@@ -233,7 +233,7 @@ class Match(Component):
 
             match_cases.append((conditions_vars, return_value))
 
-        return match_cases
+        return match_cases, has_set_case
 
     @classmethod
     def _validate_return_types(
