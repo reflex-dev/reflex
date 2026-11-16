@@ -46,11 +46,11 @@ def test_states_directory_survives_chdir(tmp_path: Path, monkeypatch):
     manager._purge_expired_states()
 
 
-async def test_idle_write_queue_scans_only_when_files_can_expire(tmp_path, monkeypatch):
+async def test_idle_write_queue_scans_only_when_files_can_expire(
+    tmp_path, monkeypatch, disk_clock
+):
     """Idle queue ticks skip unexpired files but still purge at their deadline."""
-    now = [1000.0]
-    monkeypatch.setattr(disk, "time", SimpleNamespace(time=lambda: now[0]))
-    monkeypatch.setattr(disk.prerequisites, "get_states_dir", lambda: tmp_path)
+    now = disk_clock
     state_file = tmp_path / "session.pkl"
     state_file.touch()
     os.utime(state_file, (950, 950))
@@ -77,10 +77,11 @@ def disk_clock(tmp_path, monkeypatch):
     """Control disk deadlines without changing the process-wide clock.
 
     Returns:
-        A list containing the current disk-manager timestamp.
+        A list containing the current wall-clock and monotonic timestamp.
     """
     now = [1000.0]
-    monkeypatch.setattr(disk, "time", SimpleNamespace(time=lambda: now[0]))
+    clock = SimpleNamespace(time=lambda: now[0], monotonic=lambda: now[0])
+    monkeypatch.setattr(disk, "time", clock)
     monkeypatch.setattr(disk.prerequisites, "get_states_dir", lambda: tmp_path)
     return now
 
@@ -143,6 +144,24 @@ async def test_disk_write_keeps_expiration_deadline(monkeypatch, disk_clock):
     await manager._maybe_purge_expired_states()
     assert not state_file.exists()
     assert listing.call_count == 2
+
+
+async def test_wall_clock_rollback_keeps_expiration_deadline(monkeypatch, disk_clock):
+    """Moving the wall clock back does not defer the next disk scan."""
+    disk_clock[0] = 20_000
+    manager = StateManagerDisk(token_expiration=100)
+    monkeypatch.setattr(disk.time, "time", lambda: disk_clock[0] - 18_000)
+    token = StateToken(ident="after-rollback", cls=dict)
+    await manager.set_state_for_substate(token, {"count": 1})
+    state_file = manager.token_path(token)
+    os.utime(state_file, (2000, 2000))
+
+    disk_clock[0] = 20_100
+    await manager._maybe_purge_expired_states()
+    assert state_file.exists()
+    disk_clock[0] = 20_101
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
 
 
 async def test_disk_expiration_lifetime_changes_while_scan_dispatched(

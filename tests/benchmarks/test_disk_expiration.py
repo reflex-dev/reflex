@@ -26,7 +26,7 @@ def test_idle_disk_expiration_check(
     for index in range(files):
         (tmp_path / f"{index}.pkl").touch()
     manager = StateManagerDisk(token_expiration=3600)
-    assert manager._next_disk_purge > time.time()
+    assert manager._next_disk_purge > time.monotonic()
     loop = asyncio.new_event_loop()
     try:
         benchmark(

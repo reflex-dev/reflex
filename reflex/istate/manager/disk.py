@@ -103,7 +103,7 @@ class StateManagerDisk(StateManager):
         default_factory=_dev_hot_reload_active, init=False
     )
 
-    # Earliest time a state file on disk can expire.
+    # Earliest time.monotonic() at which a state file on disk can expire.
     _next_disk_purge: float = dataclasses.field(default=0.0, init=False)
     # Token expiration used to compute _next_disk_purge.
     _disk_purge_token_expiration: int = dataclasses.field(default=0, init=False)
@@ -132,11 +132,14 @@ class StateManagerDisk(StateManager):
         """Purge expired files and find the next possible disk expiration.
 
         Returns:
-            The lifetime used and next expiration deadline, capped at one token
-            lifetime from the scan's start so newly created files are covered too.
+            The lifetime used and the monotonic time of the next possible
+            expiration, capped at one token lifetime from the scan's start so
+            newly created files are covered too.
         """
         token_expiration = self.token_expiration
-        next_expiration = time.time() + token_expiration
+        scan_started = time.monotonic()
+        now = time.time()
+        next_expiration = now + token_expiration
         for path in path_ops.ls(self.states_directory):
             # check path is a pickle file
             if path.suffix != ".pkl":
@@ -151,16 +154,17 @@ class StateManagerDisk(StateManager):
                 path.unlink()
             else:
                 next_expiration = min(next_expiration, last_edited + token_expiration)
-        return token_expiration, next_expiration
+        return token_expiration, scan_started + next_expiration - now
 
     async def _maybe_purge_expired_states(self):
         """Scan disk only when a file may expire or the token expiration changed.
 
         Writes do not invalidate the deadline: a file written after a scan
-        started expires after the scan's cap of one token lifetime.
+        started expires after the scan's cap of one token lifetime. The
+        deadline is monotonic, so moving the wall clock back cannot defer it.
         """
         if (
-            time.time() < self._next_disk_purge
+            time.monotonic() < self._next_disk_purge
             and self.token_expiration == self._disk_purge_token_expiration
         ):
             return
