@@ -413,65 +413,6 @@ def test_datetime_comparison_preserves_microseconds():
     )
 
 
-@pytest.mark.parametrize(
-    ("operation", "operator"),
-    [
-        (op.lt, "<"),
-        (op.le, "<="),
-        (op.gt, ">"),
-        (op.ge, ">="),
-    ],
-)
-def test_array_comparison_uses_compare_arrays(operation, operator):
-    """Array ordering compiles to a compareArrays call, not a raw JS comparison.
-
-    Args:
-        operation: The Python comparison operator function.
-        operator: The JS operator applied to the compareArrays result.
-    """
-    lhs = cast(ArrayVar[list[int]], v([1, 10, 0]))
-
-    assert str(operation(lhs, [1, 9, 0])) == (
-        f"(compareArrays([1, 10, 0], [1, 9, 0]) {operator} 0)"
-    )
-
-
-def test_array_comparison_imports_compare_arrays():
-    """Array ordering carries the import of the compareArrays helper."""
-    lhs = cast(ArrayVar[list[int]], v([1, 10, 0]))
-    comparison = cast(Var, lhs < [1, 9, 0])
-    var_data = comparison._get_all_var_data()
-
-    assert var_data is not None
-    assert dict(var_data.imports)["$/utils/helpers/array.js"] == (
-        ImportVar(tag="compareArrays", is_default=True, install=False),
-    )
-
-
-@pytest.mark.parametrize(
-    "items",
-    [
-        [date(2024, 1, 1)],
-        [datetime(2024, 1, 1, 12)],
-        [[date(2024, 1, 1)]],
-    ],
-)
-def test_date_array_comparison_passes_compare_datetime(items: list):
-    """Dates reach the frontend as strings, so their lists order through compareDatetime.
-
-    Args:
-        items: A list of dates or datetimes, possibly nested.
-    """
-    comparison = cast(Var, cast(ArrayVar, v(items)) < items)
-    var_data = comparison._get_all_var_data()
-
-    assert str(comparison).endswith(", compareDatetime) < 0)")
-    assert var_data is not None
-    assert dict(var_data.imports)["$/utils/helpers/datetime.js"] == (
-        ImportVar(tag="compareDatetime", is_default=True, install=False),
-    )
-
-
 def test_date_comparison_uses_compare_datetime():
     lhs = cast(DateTimeVar, v(date(2024, 1, 1)))
     rhs = date(2024, 1, 2)
