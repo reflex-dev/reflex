@@ -16,6 +16,7 @@ import time
 from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import cached_property
+from pathlib import Path
 from typing import ClassVar
 
 from reflex_base import constants
@@ -28,6 +29,9 @@ _SID = re.compile(r"[0-9a-f]{32}\Z")
 _CLIENT_TOKEN = re.compile(r"([0-9a-f]{32})\.([0-9a-f]{32})\Z")
 _BASE64URL = re.compile(r"[A-Za-z0-9_-]+\Z")
 _AUTH_CACHE_SIZE = 128
+# Seconds an issuing replica's clock may run ahead of the verifying one.
+_CLOCK_SKEW = 60
+_COOKIE_KEY_LABEL = b"reflex-session-cookie"
 
 
 def _base64url(value: bytes) -> str:
@@ -75,6 +79,38 @@ def _client_signature(sid: str, nonce: str) -> str:
     )[:16].hex()
 
 
+def _publish_secret(path: Path) -> None:
+    """Create the persisted signing key unless another worker already has.
+
+    A complete owner-only file is hard-linked into place, so racing workers never
+    read a partial key or replace the winner's. Filesystems without hard links
+    fall back to exclusive creation, where a racing reader may briefly see an
+    empty file and fail until the key is written.
+
+    Args:
+        path: Where to persist the key.
+    """
+    key = secrets.token_hex(32).encode("ascii")
+    with tempfile.NamedTemporaryFile(dir=path.parent) as candidate:
+        candidate.write(key)
+        candidate.flush()
+        try:
+            os.link(candidate.name, path)
+        except FileExistsError:
+            return
+        except OSError:
+            pass
+        else:
+            return
+    with (
+        suppress(FileExistsError),
+        os.fdopen(
+            os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb"
+        ) as file,
+    ):
+        file.write(key)
+
+
 def _load_secrets() -> tuple[bytes, ...]:
     """Load the configured key ring or atomically create a local signing key.
 
@@ -99,20 +135,15 @@ def _load_secrets() -> tuple[bytes, ...]:
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
-        # Link a complete 0600 file into place, so racing workers cannot read a
-        # partially written key or replace the winner's key.
-        with tempfile.NamedTemporaryFile(dir=path.parent) as candidate:
-            candidate.write(secrets.token_hex(32).encode("ascii"))
-            candidate.flush()
-            with suppress(FileExistsError):
-                os.link(candidate.name, path)
+        _publish_secret(path)
+    # Read the key exactly as REFLEX_SESSION_SECRET would supply it, so the
+    # file's contents can join that key ring without ending existing sessions.
+    msg = "Invalid persisted session signing secret"
     try:
-        key = bytes.fromhex(path.read_text(encoding="ascii"))
-    except (ValueError, UnicodeError) as error:
-        msg = "Invalid persisted session signing secret"
+        key = path.read_text(encoding="ascii").strip().encode("ascii")
+    except UnicodeError as error:
         raise ValueError(msg) from error
-    if len(key) != 32:
-        msg = "Invalid persisted session signing secret"
+    if len(key) < 32:
         raise ValueError(msg)
     if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD:
         logger.warning(
@@ -179,7 +210,7 @@ class SessionTokenManager:
     def __init__(
         self,
         app_name: str,
-        ttl: int = 7 * 24 * 60 * 60,  # Seven days, in seconds.
+        ttl: int = constants.Expiration.SESSION_TOKEN,
         refresh_interval: int | None = None,
         secrets: tuple[bytes, ...] | None = None,
     ) -> None:
@@ -214,15 +245,19 @@ class SessionTokenManager:
 
     @cached_property
     def _keys(self) -> dict[str, bytes]:
-        """Read the key ring once and index it by its non-secret fingerprint.
+        """Derive cookie keys from the key ring once and index them by fingerprint.
+
+        Deriving a dedicated key keeps signatures made with the same secret for
+        another purpose from verifying as session cookies.
 
         Returns:
             Signing keys indexed by key ID, with the active signing key first.
         """
-        return {
-            hashlib.sha256(key).hexdigest()[:16]: key
-            for key in self._configured_secrets or _load_secrets()
-        }
+        derived = (
+            hmac.digest(secret, _COOKIE_KEY_LABEL, "sha256")
+            for secret in self._configured_secrets or _load_secrets()
+        )
+        return {hashlib.sha256(key).hexdigest()[:16]: key for key in derived}
 
     def create(self) -> SessionToken:
         """Create a new random session.
@@ -276,45 +311,72 @@ class SessionTokenManager:
             return None
         try:
             header, payload, signature = token.split(".")
-            metadata = json.loads(_decode_base64url(header))
-            if not isinstance(metadata, dict) or metadata.get("alg") != "HS256":
-                return None
-            kid = metadata.get("kid")
-            if not isinstance(kid, str):
-                return None
-            if (key := self._keys.get(kid)) is None:
-                if not self._unknown_key_warned:
-                    logger.warning(
-                        "Unrecognized session signing key. Backend instances may be "
-                        "using different REFLEX_SESSION_SECRET values."
-                    )
-                    self._unknown_key_warned = True
-                return None
-            expected = hmac.digest(key, f"{header}.{payload}".encode("ascii"), "sha256")
-            if not hmac.compare_digest(expected, _decode_base64url(signature)):
-                return None
-            claims = json.loads(_decode_base64url(payload))
-            if not isinstance(claims, dict):
-                return None
-            sid, issued_at, expires_at = (
-                claims.get("sid"),
-                claims.get("iat"),
-                claims.get("exp"),
-            )
-            if (
-                type(claims.get("v")) is not int
-                or claims["v"] != 1
-                or claims.get("aud") != self._audience
-                or not isinstance(sid, str)
-                or not _SID.fullmatch(sid)
-                or type(issued_at) is not int
-                or type(expires_at) is not int
-                or not issued_at <= int(time.time()) < expires_at
+            key = self._verification_key(json.loads(_decode_base64url(header)))
+            if key is None or not hmac.compare_digest(
+                hmac.digest(key, f"{header}.{payload}".encode("ascii"), "sha256"),
+                _decode_base64url(signature),
             ):
                 return None
-            return SessionToken(issued_at, expires_at, sid)
+            return self._session_from_claims(json.loads(_decode_base64url(payload)))
         except (ValueError, UnicodeError, binascii.Error, RecursionError):
             return None
+
+    def _verification_key(self, metadata: object) -> bytes | None:
+        """Select the HS256 key a JWT header names, warning once about unknown keys.
+
+        Args:
+            metadata: The decoded, unverified JWT header.
+
+        Returns:
+            The verification key, or None for an unsupported or unknown key.
+        """
+        if not isinstance(metadata, dict) or metadata.get("alg") != "HS256":
+            return None
+        kid = metadata.get("kid")
+        if not isinstance(kid, str):
+            return None
+        key = self._keys.get(kid)
+        if key is None and not self._unknown_key_warned:
+            logger.warning(
+                "Unrecognized session signing key. Backend instances may be "
+                "using different REFLEX_SESSION_SECRET values."
+            )
+            self._unknown_key_warned = True
+        return key
+
+    def _session_from_claims(self, claims: object) -> SessionToken | None:
+        """Validate the schema, audience, and lifetime of signature-verified claims.
+
+        An issue time up to _CLOCK_SKEW seconds ahead is accepted, because the
+        issuing replica's clock may run ahead of this one.
+
+        Args:
+            claims: The decoded JWT payload.
+
+        Returns:
+            The session, or None for invalid or expired claims.
+        """
+        if not isinstance(claims, dict):
+            return None
+        sid, issued_at, expires_at = (
+            claims.get("sid"),
+            claims.get("iat"),
+            claims.get("exp"),
+        )
+        now = int(time.time())
+        if (
+            type(claims.get("v")) is not int
+            or claims["v"] != 1
+            or claims.get("aud") != self._audience
+            or not isinstance(sid, str)
+            or not _SID.fullmatch(sid)
+            or type(issued_at) is not int
+            or type(expires_at) is not int
+            or issued_at > now + _CLOCK_SKEW
+            or now >= expires_at
+        ):
+            return None
+        return SessionToken(issued_at, expires_at, sid)
 
     def should_refresh(self, session: SessionToken) -> bool:
         """Check whether a session has reached its configured refresh age.

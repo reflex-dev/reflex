@@ -22,6 +22,7 @@ from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 SECRET = b"a" * 32
 OTHER_SECRET = b"b" * 32
+COOKIE_KEY = hmac.digest(SECRET, b"reflex-session-cookie", "sha256")
 
 
 @pytest.fixture
@@ -35,7 +36,7 @@ def manager(monkeypatch):
     return SessionTokenManager("test", ttl=100, secrets=(SECRET,))
 
 
-def _signed_token(header, claims, secret=SECRET):
+def _signed_token(header, claims, secret=COOKIE_KEY):
     """Construct independently signed inputs to exercise strict decoding.
 
     Returns:
@@ -75,7 +76,7 @@ def test_round_trip_and_public_session(manager):
     assert header == {
         "alg": "HS256",
         "typ": "JWT",
-        "kid": hashlib.sha256(SECRET).hexdigest()[:16],
+        "kid": hashlib.sha256(COOKIE_KEY).hexdigest()[:16],
     }
 
 
@@ -102,7 +103,7 @@ def test_decode_malformed(manager, token):
         ("sid", "g" * 32),
         ("sid", 123),
         ("sid", "a" * 31),
-        ("iat", 1001),
+        ("iat", 1061),
         ("iat", "1000"),
         ("iat", True),
         ("iat", None),
@@ -277,7 +278,11 @@ def test_secrets_load_lazily_and_cookies_are_app_specific(monkeypatch):
 
 
 def test_sessions_cannot_cross_apps_sharing_signing_keys(manager):
-    """A valid signature must not authorize credentials issued for another app."""
+    """A valid signature must not authorize credentials issued for another app.
+
+    Args:
+        manager: The session codec fixture.
+    """
     other = SessionTokenManager("other", secrets=(SECRET,))
     credential = manager.encode(manager.create())
     assert manager.decode(credential) is not None
@@ -286,7 +291,12 @@ def test_sessions_cannot_cross_apps_sharing_signing_keys(manager):
 
 @pytest.mark.parametrize("audience", [None, "other", ["test"], 1])
 def test_decode_rejects_missing_or_invalid_audience(manager, audience):
-    """Require the issuing app's exact signed audience, including its type."""
+    """Require the issuing app's exact signed audience, including its type.
+
+    Args:
+        manager: The session codec fixture.
+        audience: The audience claim to sign, or None to omit it.
+    """
     claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
     if audience is None:
         del claims["aud"]
@@ -307,9 +317,12 @@ def test_unknown_signing_key_warns_once(manager, caplog):
     credential = other.encode(other.create())
     for _ in range(2):
         assert manager.decode(credential) is None
-    assert caplog.text.count("Backend instances may be") == 1
-    assert credential not in caplog.text
-    assert OTHER_SECRET.decode() not in caplog.text
+    assert caplog.messages == [
+        (
+            "Unrecognized session signing key. Backend instances may be using "
+            "different REFLEX_SESSION_SECRET values."
+        )
+    ]
 
 
 def test_environment_key_ring_does_not_write_files(tmp_path, monkeypatch):
@@ -334,9 +347,11 @@ def test_invalid_secret_never_discloses_its_value(monkeypatch, value):
         value: The invalid signing key configuration.
     """
     monkeypatch.setenv("REFLEX_SESSION_SECRET", value)
-    with pytest.raises(ValueError, match="at least 32 bytes") as error:
+    with pytest.raises(ValueError) as error:
         _load_secrets()
-    assert value not in str(error.value)
+    assert (
+        str(error.value) == "REFLEX_SESSION_SECRET keys must each be at least 32 bytes"
+    )
 
 
 def test_persisted_secret_is_atomic_private_and_reused(tmp_path, monkeypatch):
@@ -351,7 +366,7 @@ def test_persisted_secret_is_atomic_private_and_reused(tmp_path, monkeypatch):
     with ThreadPoolExecutor(max_workers=16) as executor:
         results = list(executor.map(lambda _: _load_secrets(), range(64)))
     assert len(set(results)) == 1
-    assert len(results[0][0]) == 32
+    assert len(results[0][0]) == 64
     assert _load_secrets() == results[0]
     path = tmp_path / ".web" / "backend" / "session_secret"
     if not constants.IS_WINDOWS:
@@ -373,8 +388,13 @@ def test_production_fallback_warning_does_not_contain_secret(
     monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path / ".web"))
     monkeypatch.setenv("REFLEX_ENV_MODE", "prod")
     key = _load_secrets()[0]
-    assert "Set REFLEX_SESSION_SECRET" in caplog.text
-    assert key.hex() not in caplog.text
+    assert len(key) == 64
+    assert caplog.messages == [
+        (
+            "Using a local session signing secret. Set REFLEX_SESSION_SECRET to "
+            "share sessions across production replicas and deployments."
+        )
+    ]
 
 
 @pytest.mark.parametrize("value", ["not-hex", "aa", "é"])
@@ -391,8 +411,9 @@ def test_invalid_persisted_secret_is_not_replaced(tmp_path, monkeypatch, value):
     path = tmp_path / "backend" / "session_secret"
     path.parent.mkdir()
     path.write_text(value)
-    with pytest.raises(ValueError, match="Invalid persisted"):
+    with pytest.raises(ValueError) as error:
         _load_secrets()
+    assert str(error.value) == "Invalid persisted session signing secret"
     assert path.read_text() == value
 
 
@@ -407,8 +428,11 @@ def test_invalid_lifetimes(ttl, refresh_interval):
         ttl: The requested session lifetime.
         refresh_interval: The requested refresh interval.
     """
-    with pytest.raises(ValueError, match="Session TTL"):
+    with pytest.raises(ValueError) as error:
         SessionTokenManager("app", ttl=ttl, refresh_interval=refresh_interval)
+    assert str(error.value) == (
+        "Session TTL must be positive and refresh interval between zero and TTL"
+    )
 
 
 def test_config_defaults_and_secret_is_not_config(monkeypatch):
@@ -444,3 +468,72 @@ def test_session_rollout_mode(monkeypatch, mode):
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "invalid")
     with pytest.raises(EnvironmentVarValueError):
         environment.REFLEX_SESSION_TOKEN_MODE.get()
+
+
+def test_persisted_secret_can_join_configured_key_ring(tmp_path, monkeypatch):
+    """Moving the local key into the env key ring keeps existing sessions valid.
+
+    Args:
+        tmp_path: The isolated working directory.
+        monkeypatch: The environment override fixture.
+    """
+    monkeypatch.delenv("REFLEX_SESSION_SECRET", raising=False)
+    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path / ".web"))
+    local = SessionTokenManager("test")
+    session = local.create()
+    cookie = local.encode(session)
+    persisted = (tmp_path / ".web" / "backend" / "session_secret").read_text()
+    monkeypatch.setenv("REFLEX_SESSION_SECRET", "n" * 32 + "," + persisted)
+    assert SessionTokenManager("test").decode(cookie) == session
+
+
+@pytest.mark.parametrize(("skew", "valid"), [(60, True), (61, False)])
+def test_decode_allows_bounded_issuer_clock_skew(manager, monkeypatch, skew, valid):
+    """Accept credentials from a replica whose clock runs slightly ahead.
+
+    Args:
+        manager: The session codec fixture.
+        monkeypatch: The clock override fixture.
+        skew: Seconds the issuing replica's clock is ahead.
+        valid: Whether the credential is accepted.
+    """
+    monkeypatch.setattr("reflex_base.session.time.time", lambda: 1000 + skew)
+    session = manager.create()
+    cookie = manager.encode(session)
+    monkeypatch.setattr("reflex_base.session.time.time", lambda: 1000)
+    assert manager.decode(cookie) == (session if valid else None)
+
+
+def test_persisted_secret_without_hard_links(tmp_path, monkeypatch):
+    """Create the local key on filesystems that do not support hard links.
+
+    Args:
+        tmp_path: The isolated working directory.
+        monkeypatch: The environment override fixture.
+    """
+    monkeypatch.delenv("REFLEX_SESSION_SECRET", raising=False)
+    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path / ".web"))
+
+    def no_link(*_args):
+        raise PermissionError(1, "Operation not permitted")
+
+    monkeypatch.setattr("reflex_base.session.os.link", no_link)
+    keys = _load_secrets()
+    path = tmp_path / ".web" / "backend" / "session_secret"
+    assert keys == (path.read_bytes(),)
+    assert len(keys[0]) == 64
+    if not constants.IS_WINDOWS:
+        assert path.stat().st_mode & 0o777 == 0o600
+    assert list(path.parent.iterdir()) == [path]
+    assert _load_secrets() == keys
+
+
+def test_decode_rejects_signatures_made_with_the_raw_secret(manager):
+    """Sign cookies with a derived key, so other uses of the secret cannot forge them.
+
+    Args:
+        manager: The session codec fixture.
+    """
+    claims = {"v": 1, "aud": "test", "sid": "a" * 32, "iat": 1000, "exp": 1100}
+    header = {"alg": "HS256", "kid": next(iter(manager._keys))}
+    assert manager.decode(_signed_token(header, claims, SECRET)) is None

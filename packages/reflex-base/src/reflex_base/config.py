@@ -259,7 +259,7 @@ class BaseConfig:
 
     redis_token_expiration: int = constants.Expiration.TOKEN
 
-    session_token_ttl: int = 7 * 24 * 60 * 60  # Seven days, in seconds.
+    session_token_ttl: int = constants.Expiration.SESSION_TOKEN
 
     session_token_refresh_interval: int | None = None
 

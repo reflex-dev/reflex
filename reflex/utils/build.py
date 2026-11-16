@@ -148,11 +148,8 @@ def _zip(
             files_to_zip += [
                 file
                 for file in root_directory.glob(glob)
-                if not any(
-                    file.samefile(excluded_file)
-                    for excluded_file in files_to_exclude
-                    if excluded_file.exists()
-                )
+                if not excluded_file_ids
+                or not _is_excluded_archive_path(file, excluded_file_ids)
             ]
     # Create a progress bar for zipping the component.
     progress = console.progress()

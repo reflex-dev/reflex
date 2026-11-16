@@ -2,7 +2,6 @@
 
 import json
 import logging
-import shutil
 import uuid
 from pathlib import Path
 from typing import Literal
@@ -466,16 +465,10 @@ def initialize_web_directory():
         project_hash = get_project_hash()
 
         logger.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {web_dir}")
-        if web_dir.exists():
-            for item in web_dir.iterdir():
-                if item.name == constants.Dirs.BACKEND and item.is_dir():
-                    for backend_file in item.iterdir():
-                        if backend_file.name != SESSION_SECRET_FILENAME:
-                            path_ops.rm(backend_file)
-                else:
-                    path_ops.rm(item)
-        shutil.copytree(
-            constants.Templates.Dirs.WEB_TEMPLATE, web_dir, dirs_exist_ok=True
+        path_ops.copy_tree(
+            constants.Templates.Dirs.WEB_TEMPLATE,
+            web_dir,
+            keep=(web_dir / constants.Dirs.BACKEND / SESSION_SECRET_FILENAME,),
         )
 
     logger.debug("Restoring lockfiles.")

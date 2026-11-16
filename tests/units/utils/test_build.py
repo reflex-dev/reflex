@@ -108,8 +108,7 @@ def test_zip_app_excludes_session_secret(tmp_path, monkeypatch):
     build.zip_app(frontend=False)
 
     with zipfile.ZipFile(tmp_path / "backend.zip") as archive:
-        assert ".web/backend/stateful_pages.json" in archive.namelist()
-        assert ".web/backend/session_secret" not in archive.namelist()
+        assert archive.namelist() == [".web/backend/stateful_pages.json"]
 
 
 def test_compress_static_output_overwrites_stale_sidecars(

@@ -73,23 +73,40 @@ def rm(path: str | Path):
         path.unlink()
 
 
+def _clear_directory(directory: Path, keep: frozenset[Path]):
+    """Remove a directory's contents except the kept paths and their parents.
+
+    Args:
+        directory: The directory to clear.
+        keep: Paths under the directory to leave in place.
+    """
+    for item in directory.iterdir():
+        if item in keep:
+            continue
+        if item.is_dir() and any(path.is_relative_to(item) for path in keep):
+            _clear_directory(item, keep)
+        else:
+            rm(item)
+
+
 def copy_tree(
     src: str | Path,
     dest: str | Path,
     ignore: tuple[str, ...] | None = None,
+    keep: tuple[Path, ...] = (),
 ):
-    """Copy a directory tree.
+    """Copy a directory tree, replacing the destination's existing contents.
 
     Args:
         src: The path to the source directory.
         dest: The path to the destination directory.
         ignore: Ignoring files and directories that match one of the glob-style patterns provided
+        keep: Paths under dest to preserve in place instead of removing.
     """
     src = Path(src)
     dest = Path(dest)
     if dest.exists():
-        for item in dest.iterdir():
-            rm(item)
+        _clear_directory(dest, frozenset(keep))
     shutil.copytree(
         src,
         dest,

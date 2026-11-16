@@ -829,3 +829,27 @@ def test_write_file_updates_changed_file(tmp_path: Path) -> None:
     write_file(path, "before")
     write_file(path, "after")
     assert path.read_text(encoding="utf-8") == "after"
+
+
+def test_copy_tree_keeps_listed_paths(tmp_path: Path):
+    """Replace a directory tree while preserving listed nested files in place."""
+    src = tmp_path / "src"
+    (src / "backend").mkdir(parents=True)
+    (src / "backend" / "template").write_text("template")
+    dest = tmp_path / "dest"
+    (dest / "backend").mkdir(parents=True)
+    kept = dest / "backend" / "kept"
+    kept.write_text("kept")
+    inode = kept.stat().st_ino
+    (dest / "backend" / "stale").write_text("stale")
+    (dest / "stale").mkdir()
+
+    path_ops.copy_tree(src, dest, keep=(kept,))
+
+    assert sorted(p.relative_to(dest).as_posix() for p in dest.rglob("*")) == [
+        "backend",
+        "backend/kept",
+        "backend/template",
+    ]
+    assert kept.read_text() == "kept"
+    assert kept.stat().st_ino == inode
