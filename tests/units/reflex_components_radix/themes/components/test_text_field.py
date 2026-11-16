@@ -35,6 +35,7 @@ def test_auto_complete_renders_a_string(auto_complete: Any, expected: str):
     [
         {"type": "hidden", "value": "foo"},
         {"type": "hidden", "value": "foo", "size": "2"},
+        {"type": "HIDDEN", "value": "foo"},
         {"hidden": True, "value": "foo"},
     ],
 )
@@ -74,6 +75,7 @@ def test_visible_input_keeps_the_wrapper(props: dict[str, Any]):
         ({"style": {"display": "block"}}, '"block"'),
         ({"style": {"display": Var(_js_expr="shown", _var_type=str)}}, "shown"),
         ({"display": Var(_js_expr="shown", _var_type=str)}, "shown"),
+        ({"style": [{"color": "red"}, {"display": "grid"}]}, '"grid"'),
     ],
 )
 def test_hidden_input_keeps_a_user_display(props: dict[str, Any], expected: str):
