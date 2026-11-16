@@ -36,11 +36,10 @@ from reflex_base.config import get_state_auto_setters, get_state_explicit_event_
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, auto_reload_cooldown, environment
 from reflex_base.event import (
+    _UNDECORATED_STATE_METHOD_MARKER,
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
-    EVENT_MARKER,
     SUPERSEDES_MARKER,
-    UNDECORATED_STATE_METHOD_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -589,6 +588,38 @@ def _method_above_handler(value: Any) -> staticmethod | classmethod | None:
     return type(value)(value.__func__.fn)
 
 
+def _wraps_event_handler(value: Any) -> bool:
+    """Whether a method wraps an ``@rx.event`` handler under another decorator.
+
+    Args:
+        value: A class attribute.
+
+    Returns:
+        True if its ``__wrapped__`` chain reaches an EventHandler.
+    """
+    return isinstance(
+        inspect.unwrap(value, stop=lambda f: isinstance(f, EventHandler)),
+        EventHandler,
+    )
+
+
+def _mark_undecorated_method(owner: type, name: str, fn: Callable) -> None:
+    """Mark a method that explicit event handler mode leaves undecorated.
+
+    Wiring a marked method to an event trigger raises a targeted error. Only a
+    method defined in the owner's class body is marked: a callback defined
+    elsewhere may be shared.
+
+    Args:
+        owner: The state or mixin whose class body may define the method.
+        name: The attribute name of the method.
+        fn: The method.
+    """
+    prefix = owner.__dict__.get("__original_qualname__", owner.__qualname__)
+    if fn.__qualname__ == f"{prefix}.{name}":
+        setattr(fn, _UNDECORATED_STATE_METHOD_MARKER, True)
+
+
 class BaseState(EvenMoreBasicBaseState, state_root=True):
     """The state of the app."""
 
@@ -821,9 +852,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         explicit = cls.is_user_defined() and get_state_explicit_event_handlers()
         cls._bind_fields()
-        cls._bind_mixin_members(explicit)
-        if explicit:
-            cls._mark_undecorated_methods()
+        mixin_handlers = cls._bind_mixin_members(explicit)
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -864,7 +893,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     cls.event_handlers[name] = fn
             elif (method := _method_above_handler(fn)) is not None:
                 setattr(cls, name, method)
-            elif cls._item_is_event_handler(name, fn, explicit):
+            elif cls._item_is_event_handler(name, fn):
+                if (
+                    explicit
+                    and name not in mixin_handlers
+                    and not _wraps_event_handler(fn)
+                ):
+                    _mark_undecorated_method(cls, name, fn)
+                    continue
                 handler = cls._create_event_handler(fn)
                 cls.event_handlers[name] = handler
                 setattr(cls, name, handler)
@@ -906,7 +942,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             fields[name] = f
 
     @classmethod
-    def _bind_mixin_members(cls, explicit: bool) -> None:
+    def _bind_mixin_members(cls, explicit: bool) -> set[str]:
         """Copy the computed vars and event handler functions of mixins onto this class.
 
         A member is copied only where this class resolves the name to the mixin's
@@ -914,7 +950,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         Args:
             explicit: Only copy event handler functions decorated with `@rx.event`.
+
+        Returns:
+            The names of the event handler functions copied onto this class.
         """
+        handlers: set[str] = set()
         for mixin_cls in cls._mixins():
             for name, value in mixin_cls.__dict__.items():
                 if _inherited_value(cls.__mro__, name) is not value:
@@ -934,12 +974,18 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     fn = cls._copy_fn(value.fn)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
                     setattr(cls, name, fn)
+                    handlers.add(name)
                 elif (method := _method_above_handler(value)) is not None:
                     setattr(cls, name, method)
-                elif cls._item_is_event_handler(name, value, explicit):
+                elif cls._item_is_event_handler(name, value):
+                    if explicit and not _wraps_event_handler(value):
+                        _mark_undecorated_method(mixin_cls, name, value)
+                        continue
                     fn = cls._copy_fn(value)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
                     setattr(cls, name, fn)
+                    handlers.add(name)
+        return handlers
 
     @classmethod
     def _add_event_handler(
@@ -981,13 +1027,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return newfn
 
     @staticmethod
-    def _item_is_event_handler(name: str, value: Any, explicit: bool = False) -> bool:
+    def _item_is_event_handler(name: str, value: Any) -> bool:
         """Check if the item is an event handler.
 
         Args:
             name: The name of the item.
             value: The value of the item.
-            explicit: Only count functions decorated with `@rx.event`.
 
         Returns:
             Whether the item is an event handler.
@@ -1019,26 +1064,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             and not isinstance(value, EventHandler)
             and not getattr(value, "__override_base_method__", False)
             and hasattr(value, "__code__")
-            and (not explicit or getattr(value, EVENT_MARKER, False))
         )
-
-    @classmethod
-    def _mark_undecorated_methods(cls) -> None:
-        """Mark the undecorated methods of this class and its mixins.
-
-        Wiring a marked method to an event trigger raises a targeted error. Only
-        methods defined in the class body are marked: a callback defined
-        elsewhere may be shared.
-        """
-        for owner in (cls, *cls._mixins()):
-            prefix = owner.__dict__.get("__original_qualname__", owner.__qualname__)
-            for name, value in owner.__dict__.items():
-                if (
-                    cls._item_is_event_handler(name, value)
-                    and not getattr(value, EVENT_MARKER, False)
-                    and value.__qualname__ == f"{prefix}.{name}"
-                ):
-                    setattr(value, UNDECORATED_STATE_METHOD_MARKER, True)
 
     @classmethod
     def _evaluate(cls, f: Callable[[Self], Any], of_type: type | None = None) -> Var:

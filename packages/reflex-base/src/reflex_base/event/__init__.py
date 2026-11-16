@@ -290,8 +290,12 @@ def _scan_detach(value: Any, memo: dict[int, Any], active: set[int]) -> Any:
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 SUPERSEDES_MARKER = "_reflex_supersedes"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
-EVENT_MARKER = "_rx_event"
-UNDECORATED_STATE_METHOD_MARKER = "_rx_undecorated_state_method"
+_UNDECORATED_STATE_METHOD_MARKER = "_rx_undecorated_state_method"
+# How to fix a reference to an undecorated state method; ends its error.
+_UNDECORATED_STATE_METHOD_HINT = (
+    "Decorate it with `@rx.event`: with `state_explicit_event_handlers` enabled, "
+    "undecorated methods stay plain methods."
+)
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 # Payload key listing the names of the extra bound handler args in an upload
@@ -2676,14 +2680,12 @@ def _check_not_undecorated_state_method(value: Any, key: str | None) -> None:
     Raises:
         EventHandlerValueError: If value is an undecorated state method.
     """
-    if getattr(value, UNDECORATED_STATE_METHOD_MARKER, False):
+    if getattr(value, _UNDECORATED_STATE_METHOD_MARKER, False) is True:
         from reflex_base.utils.exceptions import EventHandlerValueError
 
         msg = (
             f"{value.__qualname__} is wired to {key or 'an event trigger'} but is not an "
-            "event handler. Decorate it with `@rx.event`: with "
-            "`state_explicit_event_handlers` enabled, undecorated methods stay plain "
-            "methods."
+            f"event handler. {_UNDECORATED_STATE_METHOD_HINT}"
         )
         raise EventHandlerValueError(msg)
 
@@ -3596,9 +3598,9 @@ class EventNamespace:
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
     SUPERSEDES_MARKER = SUPERSEDES_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
-    EVENT_MARKER = EVENT_MARKER
-    UNDECORATED_STATE_METHOD_MARKER = UNDECORATED_STATE_METHOD_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
+    _UNDECORATED_STATE_METHOD_MARKER = _UNDECORATED_STATE_METHOD_MARKER
+    _UNDECORATED_STATE_METHOD_HINT = _UNDECORATED_STATE_METHOD_HINT
     FORM_DATA = FORM_DATA
     FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
     upload_files = upload_files
@@ -3614,6 +3616,9 @@ class EventNamespace:
     )
     _values_returned_from_event = staticmethod(_values_returned_from_event)
     _is_bound_event_handler = staticmethod(_is_bound_event_handler)
+    _check_not_undecorated_state_method = staticmethod(
+        _check_not_undecorated_state_method
+    )
     _check_event_args_subclass_of_callback = staticmethod(
         _check_event_args_subclass_of_callback
     )
@@ -3737,9 +3742,6 @@ class EventNamespace:
             if not registered and getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)
-            # Lets State tell decorated methods apart when
-            # state_explicit_event_handlers is enabled.
-            setattr(func, EVENT_MARKER, True)
 
             # The markers stay on the function: a mixin's handler is copied
             # per concrete state from its function, and the handler reads

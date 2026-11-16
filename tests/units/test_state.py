@@ -5133,11 +5133,7 @@ config = rx.Config(
 
 
 def test_state_flags_from_env_without_config(monkeypatch):
-    """A State defined before any config load honors the env var `reflex run` exports.
-
-    Backend workers import the app module in a fresh process, so user States are
-    created before anything calls get_config().
-    """
+    """A State defined before any config load honors the REFLEX_* env var override."""
     monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
 
     with RegistrationContext():
@@ -5147,6 +5143,56 @@ def test_state_flags_from_env_without_config(monkeypatch):
                 pass
 
         assert "helper" not in WorkerState.event_handlers
+
+
+def test_state_flags_load_rxconfig_without_cached_config(tmp_path, monkeypatch):
+    """A State defined before any config load reads the project's rxconfig.py.
+
+    Backend workers and ASGI servers pointed at the app module import it in a
+    fresh process, before anything calls get_config().
+    """
+    monkeypatch.delenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", raising=False)
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    (proj_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+            config = rx.Config(app_name="project1", state_explicit_event_handlers=True)
+            """
+        )
+    )
+
+    with chdir(proj_root), RegistrationContext():
+
+        class FreshWorkerState(State):
+            def helper(self):
+                pass
+
+        assert "helper" not in FreshWorkerState.event_handlers
+    sys.modules.pop(constants.Config.MODULE, None)
+
+
+def test_explicit_event_handlers_keep_decorator_above_event(monkeypatch):
+    """A handler under a functools.wraps decorator stays a handler in explicit mode."""
+    monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
+
+    def passthrough(fn):
+        @functools.wraps(fn)
+        def wrapper(self, *args, **kwargs):
+            return fn(self, *args, **kwargs)
+
+        return wrapper
+
+    with RegistrationContext():
+
+        class StackedState(State):
+            @passthrough
+            @rx.event
+            def save(self):
+                pass
+
+        assert "save" in StackedState.event_handlers
 
 
 def test_reload_config_resets_state_flags(tmp_path, forked_registration_context):
@@ -5221,31 +5267,6 @@ def test_state_in_rxconfig_after_config_honors_flags(
         state_cls = sys.modules[constants.Config.MODULE].RxconfigPostConfigState
         assert "helper" not in state_cls.event_handlers
         del sys.modules[constants.Config.MODULE]
-
-
-def test_reload_config_failure_keeps_previous_config(
-    tmp_path, forked_registration_context
-):
-    """A failing rxconfig.py reload leaves the context's previous config in place."""
-    proj_root = tmp_path / "project1"
-    proj_root.mkdir()
-    rxconfig_path = proj_root / "rxconfig.py"
-    rxconfig_path.write_text(
-        dedent(
-            """
-            import reflex as rx
-            config = rx.Config(app_name="project1", state_explicit_event_handlers=True)
-            """
-        )
-    )
-
-    with chdir(proj_root):
-        good_config = reflex_base.config.reload_config()
-        rxconfig_path.write_text("raise RuntimeError('broken rxconfig')\n")
-        with pytest.raises(RuntimeError, match="broken rxconfig"):
-            reflex_base.config.reload_config()
-        assert reflex_base.config.get_config() is good_config
-        assert reflex_base.config.get_state_explicit_event_handlers() is True
 
 
 def test_state_flags_are_per_registration_context(

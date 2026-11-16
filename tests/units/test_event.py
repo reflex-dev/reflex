@@ -13,7 +13,6 @@ from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
-    EVENT_MARKER,
     Event,
     EventChain,
     EventChainVar,
@@ -1107,21 +1106,14 @@ def test_event_decorator_backward_compatibility():
     assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)
 
 
-def test_event_decorator_marks_function():
-    """The decorator marks every function it wraps, with or without options."""
+def test_event_decorator_accepts_bound_method():
+    """rx.event sets no attribute on what it decorates, so a bound method works."""
 
-    def plain(self):
-        pass
+    class Obj:
+        def method(self):
+            pass
 
-    def with_actions(self):
-        pass
-
-    async def background(self):
-        pass
-
-    assert getattr(event(plain), EVENT_MARKER, False) is True
-    assert getattr(event(stop_propagation=True)(with_actions), EVENT_MARKER, False)
-    assert getattr(event(background=True)(background), EVENT_MARKER, False) is True
+    event(Obj().method)  # pyright: ignore[reportCallIssue, reportArgumentType]
 
 
 def test_event_var_in_rx_cond():

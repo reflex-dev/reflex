@@ -21,7 +21,14 @@ from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
 from reflex_base.constants import CompileVars
-from reflex_base.event import Event, EventHandler, EventSpec, _is_bound_event_handler
+from reflex_base.event import (
+    _UNDECORATED_STATE_METHOD_HINT,
+    _UNDECORATED_STATE_METHOD_MARKER,
+    Event,
+    EventHandler,
+    EventSpec,
+    _is_bound_event_handler,
+)
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
@@ -172,11 +179,14 @@ def _is_mistaken_event(value: Any) -> bool:
         value: The value a handler returned.
 
     Returns:
-        True for ``self.handler`` (meant ``type(self).handler``) and for an
+        True for ``self.handler`` (meant ``type(self).handler``), for a state
+        method left undecorated by explicit event handler mode, and for an
         uncalled event creator such as ``rx.redirect``.
     """
     return callable(value) and (
-        _is_bound_event_handler(value) or _is_event_creator(value)
+        getattr(value, _UNDECORATED_STATE_METHOD_MARKER, False) is True
+        or _is_bound_event_handler(value)
+        or _is_event_creator(value)
     )
 
 
@@ -246,6 +256,12 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
         msg += f" Did you mean to call {'it' if len(creators) == 1 else 'them'}" + (
             "?" if None in refs else f": {', '.join(f'{r}(...)' for r in refs)}?"
         )
+    for e in events:
+        if getattr(e, _UNDECORATED_STATE_METHOD_MARKER, False) is True:
+            msg += (
+                f" {e.__qualname__} is not an event handler. "
+                f"{_UNDECORATED_STATE_METHOD_HINT}"
+            )
     raise TypeError(msg)
 
 

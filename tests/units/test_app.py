@@ -7139,3 +7139,25 @@ def test_client_state_conflicts_do_not_outlive_a_compile(
     app._unevaluated_pages.clear()
     app.add_page(lambda: rx.text(after.value), route="/a")
     app._compile(dry_run=True)
+
+
+def test_add_page_rejects_undecorated_on_load(monkeypatch: pytest.MonkeyPatch):
+    """With explicit event handlers, an undecorated on_load fails when the page is added."""
+    monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
+
+    with RegistrationContext():
+
+        class OnLoadState(State):
+            def load(self):
+                pass
+
+        app = App()
+        with pytest.raises(
+            exceptions.EventHandlerValueError,
+            match=r"OnLoadState\.load is wired to on_load but is not an event handler",
+        ):
+            app.add_page(
+                lambda: rx.text("x"),
+                route="/load",
+                on_load=OnLoadState.load,  # pyright: ignore[reportArgumentType]
+            )

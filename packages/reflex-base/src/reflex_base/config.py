@@ -905,14 +905,6 @@ class Config(BaseConfig):
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
 
-    def _persist_state_flags(self):
-        """Export the State-class creation flags to the environment for subprocesses.
-
-        Backend workers import the app module before any config is loaded, so
-        their user States resolve these flags from the environment.
-        """
-        self._set_persistent(**{name: getattr(self, name) for name in _STATE_FLAGS})
-
 
 # Project-local modules first imported while loading rxconfig.py, and the
 # project root they were recorded under. Evicted before a load from a different
@@ -1008,9 +1000,6 @@ def _record_imports() -> Iterator[_ImportRecorder]:
 # Protect sys.path from concurrent modification during config loading.
 _load_config_lock = threading.RLock()
 
-# Config fields resolved at State-class creation time via _get_state_flag.
-_STATE_FLAGS = ("state_auto_setters", "state_explicit_event_handlers")
-
 
 @dataclasses.dataclass
 class _ConfigLoad:
@@ -1025,12 +1014,12 @@ _config_load: ContextVar[_ConfigLoad | None] = ContextVar("_config_load", defaul
 
 
 def _get_state_flag(name: str) -> bool:
-    """Resolve a boolean State-class creation flag without loading rxconfig.
+    """Resolve a boolean State-class creation flag.
 
-    Uses the Config of the in-progress rxconfig.py import, else the Config cached
-    on the active RegistrationContext, else the REFLEX_<NAME> env var (which
-    `reflex run` sets for its backend workers), then False. Never loads rxconfig,
-    since an rxconfig.py may import the very module defining the State.
+    Outside an rxconfig.py import, reads the config of the active
+    RegistrationContext, loading rxconfig.py on first use. A State defined while
+    rxconfig.py is imported uses that file's Config once it is constructed;
+    before that, the REFLEX_<NAME> env var, then False.
 
     Args:
         name: The config field name.
@@ -1039,13 +1028,10 @@ def _get_state_flag(name: str) -> bool:
         The resolved flag value.
     """
     load = _config_load.get()
-    config = (
-        load.config
-        if load is not None
-        else RegistrationContext.ensure_context()._config
-    )
-    if config is not None:
-        return getattr(config, name)
+    if load is None:
+        return getattr(get_config(), name)
+    if load.config is not None:
+        return getattr(load.config, name)
     env_val = os.environ.get(Config._prefixes[0] + name.upper())
     if env_val and env_val.strip():
         return interpret_env_var_value(env_val, bool, name)
@@ -1053,7 +1039,7 @@ def _get_state_flag(name: str) -> bool:
 
 
 def get_state_auto_setters() -> bool:
-    """Return whether state auto-setters are enabled, without importing rxconfig.
+    """Return whether state auto-setters are enabled.
 
     Returns:
         Whether state auto-setters are enabled.
@@ -1062,7 +1048,7 @@ def get_state_auto_setters() -> bool:
 
 
 def get_state_explicit_event_handlers() -> bool:
-    """Return whether only `@rx.event` methods become event handlers, without importing rxconfig.
+    """Return whether only `@rx.event` methods become event handlers.
 
     Returns:
         Whether explicit event handlers are required.
@@ -1201,9 +1187,6 @@ def reload_config() -> Config:
         The freshly loaded app config.
     """
     ctx = RegistrationContext.ensure_context()
-    # Load and publish under one lock so concurrent reloads of a shared context
-    # cannot publish an older load over a newer one.
-    with _load_config_lock:
-        config = _get_config()
-        ctx._set_config(config)
+    config = _get_config()
+    ctx._set_config(config)
     return config

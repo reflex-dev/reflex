@@ -45,6 +45,8 @@ from reflex_base.event import (
     EventSpec,
     EventType,
     IndividualEventType,
+    _check_not_undecorated_state_method,
+    event_sequence,
     noop,
 )
 from reflex_base.event.context import EventContext
@@ -1512,6 +1514,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Check if the route given is valid
         verify_route_validity(route)
+
+        for load_event in event_sequence(on_load):
+            _check_not_undecorated_state_method(load_event, "on_load")
 
         if isinstance(component, Callable):
             source_module = memo_paths.capture_source_module(component)
