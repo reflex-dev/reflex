@@ -9,7 +9,7 @@ from reflex_base.components.memoize_helpers import passthrough_children_var
 from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.match_tag import MatchTag
 from reflex_base.style import Style
-from reflex_base.utils import format
+from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import MatchTypeError
 from reflex_base.utils.imports import ImportDict
 from reflex_base.vars import VarData
@@ -129,7 +129,9 @@ class Match(Component):
         """
         is_set = isinstance(var, SetVar)
         return LiteralVar.create([
-            is_set,
+            var.is_not_none()
+            if is_set and types.is_optional(var._var_type)
+            else is_set,
             set_canonical_operation(var) if is_set else var,
         ])
 

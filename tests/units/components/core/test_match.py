@@ -189,6 +189,22 @@ def test_match_generic_set_var_uses_its_annotation():
     )
 
 
+def test_match_optional_set_matches_none():
+    """A missing optional set uses the same tag as a literal None case."""
+    result = Match.create(
+        Var(_js_expr="tags", _var_type=set[str] | None),
+        (None, "missing"),
+        ({"a"}, "present"),
+        "other",
+    )
+    assert str(result) == (
+        "(() => { switch (JSON.stringify([isNotNullOrUndefined(tags), pySetCanonical(tags)])) {"
+        'case JSON.stringify([false, null]):  return ("missing");  break;'
+        'case JSON.stringify([true, pySetCanonical(["a"])]):  return ("present");  break;'
+        'default:  return ("other");  break;};})()'
+    )
+
+
 def test_match_on_component_without_default():
     """Test that matching cases with return values as components returns a Fragment
     as the default case if not provided.
