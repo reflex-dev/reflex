@@ -448,6 +448,30 @@ def test_array_comparison_imports_compare_arrays():
     )
 
 
+@pytest.mark.parametrize(
+    "items",
+    [
+        [date(2024, 1, 1)],
+        [datetime(2024, 1, 1, 12)],
+        [[date(2024, 1, 1)]],
+    ],
+)
+def test_date_array_comparison_passes_compare_datetime(items: list):
+    """Dates reach the frontend as strings, so their lists order through compareDatetime.
+
+    Args:
+        items: A list of dates or datetimes, possibly nested.
+    """
+    comparison = cast(Var, cast(ArrayVar, v(items)) < items)
+    var_data = comparison._get_all_var_data()
+
+    assert str(comparison).endswith(", compareDatetime) < 0)")
+    assert var_data is not None
+    assert dict(var_data.imports)["$/utils/helpers/datetime.js"] == (
+        ImportVar(tag="compareDatetime", is_default=True, install=False),
+    )
+
+
 def test_date_comparison_uses_compare_datetime():
     lhs = cast(DateTimeVar, v(date(2024, 1, 1)))
     rhs = date(2024, 1, 2)

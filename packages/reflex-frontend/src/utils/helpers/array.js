@@ -1,22 +1,84 @@
+const isNumeric = (value) =>
+  typeof value === "number" || typeof value === "boolean";
+
+const isPlainObject = (value) =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+
+/** Order two strings by code point like Python.
+ *
+ * JS `<` orders UTF-16 code units, so a character above U+FFFF (stored as a
+ * surrogate pair from 0xD800) sorts before U+E000..U+FFFF. Comparing the code
+ * points at the first differing unit fixes that without decoding the rest.
+ */
+function compareStrings(lhs, rhs) {
+  const sharedLength = Math.min(lhs.length, rhs.length);
+  for (let i = 0; i < sharedLength; i++) {
+    if (lhs.charCodeAt(i) !== rhs.charCodeAt(i)) {
+      return lhs.codePointAt(i) < rhs.codePointAt(i) ? -1 : 1;
+    }
+  }
+  return Math.sign(lhs.length - rhs.length);
+}
+
+/** Order two numbers, booleans (as 0 or 1) or strings like Python.
+ *
+ * NaN for a pair Python cannot order: a NaN operand or mismatched types.
+ */
+function compareScalars(lhs, rhs) {
+  if (isNumeric(lhs) && isNumeric(rhs)) {
+    const left = Number(lhs);
+    const right = Number(rhs);
+    return left < right ? -1 : left > right ? 1 : left === right ? 0 : NaN;
+  }
+  if (typeof lhs === "string" && typeof rhs === "string") {
+    return compareStrings(lhs, rhs);
+  }
+  return NaN;
+}
+
+/** Check two serialized dicts for equality like Python `==`. */
+function dictsEqual(lhs, rhs) {
+  const keys = Object.keys(lhs);
+  return (
+    keys.length === Object.keys(rhs).length &&
+    keys.every(
+      (key) => Object.hasOwn(rhs, key) && valuesEqual(lhs[key], rhs[key]),
+    )
+  );
+}
+
+/** Check two serialized values for equality like Python `==`. */
+function valuesEqual(lhs, rhs) {
+  if (lhs === rhs) {
+    return true;
+  }
+  if (Array.isArray(lhs) && Array.isArray(rhs)) {
+    return compareArrays(lhs, rhs) === 0;
+  }
+  if (isPlainObject(lhs) && isPlainObject(rhs)) {
+    return dictsEqual(lhs, rhs);
+  }
+  return isNumeric(lhs) && isNumeric(rhs) && Number(lhs) === Number(rhs);
+}
+
 /** Compare two arrays element-wise with Python list semantics.
  *
- * Elements are compared pairwise in order; the first unequal pair decides
- * the result. If every shared element is equal, the shorter array sorts
- * before the longer one. Nested arrays are compared recursively.
+ * The first unequal pair of items decides the result; when every shared item
+ * is equal, the shorter array sorts first. Nested arrays compare recursively.
+ * Dicts only take part through equality, as in Python: equal dicts move on to
+ * the next pair, unequal ones cannot be ordered.
  *
- * Booleans compare as numbers (0 or 1), matching Python where bool is a
- * subclass of int, so [true] and [1] compare equal.
+ * Returns -1, 0 or 1, or NaN when Python would raise TypeError or a NaN
+ * decides the result, so every ordering operator gives false. That covers a
+ * non-array operand (an optional list holding None) and mismatched items.
  *
- * Returns NaN when an operand is not an array (Python raises TypeError for
- * None < [1]), when an element pair contains NaN (Python makes every
- * ordering comparison against float("nan") false) or when elements are
- * incomparable (mismatched or unsupported types, where Python raises
- * TypeError). Either way every ordering result is false instead of a
- * silent string comparison.
+ * @param compareItem orders two items that are not arrays or dicts; the
+ *   compiler passes compareDatetime for lists of dates, which arrive as
+ *   strings.
  */
-export default function compareArrays(lhs, rhs) {
+export default function compareArrays(lhs, rhs, compareItem = compareScalars) {
   if (!Array.isArray(lhs) || !Array.isArray(rhs)) {
-    return Number.NaN;
+    return NaN;
   }
   const sharedLength = Math.min(lhs.length, rhs.length);
   for (let i = 0; i < sharedLength; i++) {
@@ -25,31 +87,17 @@ export default function compareArrays(lhs, rhs) {
     if (left === right) {
       continue;
     }
-    if (Array.isArray(left) && Array.isArray(right)) {
-      const nested = compareArrays(left, right);
-      if (nested !== 0) {
-        return nested;
-      }
-      continue;
+    const order =
+      Array.isArray(left) && Array.isArray(right)
+        ? compareArrays(left, right, compareItem)
+        : isPlainObject(left) && isPlainObject(right)
+          ? dictsEqual(left, right)
+            ? 0
+            : NaN
+          : compareItem(left, right);
+    if (order !== 0) {
+      return order;
     }
-    const leftIsNumeric = typeof left === "number" || typeof left === "boolean";
-    const rightIsNumeric =
-      typeof right === "number" || typeof right === "boolean";
-    if (leftIsNumeric && rightIsNumeric) {
-      const leftNumber = Number(left);
-      const rightNumber = Number(right);
-      if (Number.isNaN(leftNumber) || Number.isNaN(rightNumber)) {
-        return Number.NaN;
-      }
-      if (leftNumber === rightNumber) {
-        continue;
-      }
-      return leftNumber < rightNumber ? -1 : 1;
-    }
-    if (typeof left === "string" && typeof right === "string") {
-      return left < right ? -1 : 1;
-    }
-    return Number.NaN;
   }
   return Math.sign(lhs.length - rhs.length);
 }
