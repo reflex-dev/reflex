@@ -28,6 +28,11 @@ _LIBRARY_PATHS = tuple({
     for name in ("stdlib", "platstdlib", "purelib", "platlib")
 })
 
+_APP_ADVICE = "Move blocking I/O to a thread pool or use a non-blocking async API."
+_PACKAGE_ADVICE = (
+    "The handler is not part of this app, so it is reported once per process."
+)
+
 
 class EventLoopBlockingMonitor:
     """Report tasks, such as event handlers, that keep the event loop from responding."""
@@ -51,6 +56,8 @@ class EventLoopBlockingMonitor:
         # The monitor is created on the loop thread, in the app root.
         self._loop_thread_id = threading.get_ident()
         self._app_root = f"{Path.cwd()}{os.sep}"
+        # Events whose handler, from an installed package, was reported.
+        self._reported_package_handlers: set[str] = set()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -70,37 +77,72 @@ class EventLoopBlockingMonitor:
             self._thread.join(timeout=1)
             self._thread = None
 
-    def _describe_blocking(self) -> tuple[str, str, str, str] | None:
+    def _describe_blocking(self) -> tuple[str, str, str, str, str] | None:
         """Describe the task that runs on the blocked loop.
+
+        An event handler from an installed package, with no app code in its
+        blocking stack, is described once per process: the app cannot fix it.
 
         Returns:
             The subject (event handler or task name), the scope note for event
             handlers (or an empty string), the location of the innermost app
-            frame (or an empty string), and the formatted stack of the task, or
-            None if no task runs or the task has left the loop.
+            frame (or an empty string), the advice, and the formatted stack of
+            the task, or None if no task runs, the task has left the loop, or
+            the handler was already reported.
         """
         task = asyncio.current_task(self.loop)
-        if task is None or (stack := self._task_stack(task)) is None:
+        if task is None:
             return None
         name = task.get_name()
+        event_name, fn = "", None
         if name.startswith(EVENT_TASK_PREFIX):
             event_name = name[len(EVENT_TASK_PREFIX) :].partition("|")[0]
+            if event_name in self._reported_package_handlers:
+                return None
             registered = self.event_handlers.get(event_name)
-            handler_name = (
-                event_name if registered is None else registered.handler.fn.__qualname__
-            )
-            subject = f"Event handler {handler_name}"
+            if registered is not None:
+                fn = registered.handler.fn
+            subject = f"Event handler {event_name if fn is None else fn.__qualname__}"
             scope = ", including state updates such as computed vars"
         else:
             subject, scope = f"Task {name!r}", ""
+        if (stack := self._task_stack(task)) is None:
+            return None
+        frames: list[traceback.FrameSummary] = stack
+        advice = _APP_ADVICE
         app_frame = self._app_frame(stack)
-        location = (
-            ""
-            if app_frame is None
-            else f" at {app_frame.filename[len(self._app_root) :]}:"
-            f"{app_frame.lineno} in {app_frame.name}"
+        if app_frame is not None:
+            location = (
+                f" at {app_frame.filename[len(self._app_root) :]}:"
+                f"{app_frame.lineno} in {app_frame.name}"
+            )
+        else:
+            location = ""
+            if fn is not None and not self._is_app_file(
+                handler_file := fn.__code__.co_filename
+            ):
+                self._reported_package_handlers.add(event_name)
+                subject += f" (from package {fn.__module__.partition('.')[0]})"
+                advice = _PACKAGE_ADVICE
+                # Start at the handler, skipping the frames that dispatch it.
+                for index, frame in enumerate(stack):
+                    if frame.filename == handler_file:
+                        frames = stack[index:]
+                        break
+        return subject, scope, location, advice, "".join(traceback.format_list(frames))
+
+    def _is_app_file(self, filename: str) -> bool:
+        """Check whether a file is app code, outside the stdlib and packages.
+
+        Args:
+            filename: The path of the file.
+
+        Returns:
+            Whether the file is app code.
+        """
+        return filename.startswith(self._app_root) and not filename.startswith(
+            _LIBRARY_PATHS
         )
-        return subject, scope, location, "".join(traceback.format_list(stack))
 
     def _app_frame(
         self, stack: traceback.StackSummary
@@ -114,9 +156,7 @@ class EventLoopBlockingMonitor:
             The innermost app frame, or None if no frame is app code.
         """
         for frame in reversed(stack):
-            if frame.filename.startswith(
-                self._app_root
-            ) and not frame.filename.startswith(_LIBRARY_PATHS):
+            if self._is_app_file(frame.filename):
                 return frame
         return None
 
@@ -166,16 +206,15 @@ class EventLoopBlockingMonitor:
                     and elapsed + interval >= self.threshold
                     and (blocking := self._describe_blocking()) is not None
                 ):
-                    subject, scope, location, stack = blocking
+                    subject, scope, location, advice, stack = blocking
                     logger.warning(
-                        "%s is blocking the event loop%s (threshold: %.3fs)%s. "
-                        "Move blocking I/O to a thread pool or use a non-blocking "
-                        "async API.\n"
+                        "%s is blocking the event loop%s (threshold: %.3fs)%s. %s\n"
                         "Blocking stack (most recent call last):\n%s",
                         subject,
                         location,
                         self.threshold,
                         scope,
+                        advice,
                         stack.rstrip(),
                     )
             # A stop that lands as the loop responds still gets the total; one

@@ -2,11 +2,13 @@
 
 import asyncio
 import logging
+import os
 import re
 import sys
 import threading
 import time
 from collections.abc import Callable, Coroutine, Generator
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -165,6 +167,64 @@ async def test_blocking_event_is_reported_with_handler_name(
     assert "time.sleep(duration)  # noqa: ASYNC251" in caplog_blocking.text
     assert "_run_monitored" not in caplog_blocking.text
     assert "thread pool or use a non-blocking async API" in caplog_blocking.text
+
+
+async def test_package_handler_is_reported_once_with_its_package(
+    caplog_blocking: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    """Report a handler from outside the app once, by package, from its own frame."""
+    probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
+    handler = _blocking(probe_queued, _BLOCK_SECONDS)
+    registered = RegisteredEventHandler(handler=EventHandler(fn=handler), states=())
+    monitor = EventLoopBlockingMonitor(
+        asyncio.get_running_loop(),
+        threshold=0.04,
+        event_handlers={"state.blocking": registered},
+    )
+    # The app lives elsewhere, so this module is not app code.
+    monitor._app_root = f"{tmp_path}{os.sep}"
+    # A frame from another file runs the handler, as the event processor does.
+    namespace: dict[str, Any] = {}
+    exec(
+        compile(
+            "async def dispatch(handler):\n    await handler()\n",
+            "dispatcher.py",
+            "exec",
+        ),
+        namespace,
+    )
+    monitor.start()
+    try:
+        for _ in range(2):
+            await asyncio.create_task(
+                namespace["dispatch"](handler),
+                name=f"{EVENT_TASK_PREFIX}state.blocking|token|txid",
+            )
+            await asyncio.sleep(0)
+    finally:
+        monitor.stop()
+
+    subject = (
+        "Event handler _blocking.<locals>.blocking_handler "
+        f"(from package {__name__.partition('.')[0]})"
+    )
+    messages = [
+        re.sub(r"line \d+|for \d+\.\d+s", "N", record.getMessage())
+        for record in caplog_blocking.records
+    ]
+    assert messages == [
+        (
+            f"{subject} is blocking the event loop (threshold: 0.040s), including "
+            "state updates such as computed vars. The handler is not part of this "
+            "app, so it is reported once per process.\n"
+            "Blocking stack (most recent call last):\n"
+            f'  File "{__file__}", N, in blocking_handler\n'
+            "    time.sleep(duration)  # noqa: ASYNC251"
+        ),
+        f"{subject} blocked the event loop N in total.",
+    ]
 
 
 async def test_unregistered_event_is_reported_with_event_name(
