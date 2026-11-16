@@ -38,6 +38,7 @@ _PACKAGE_ADVICE = (
 
 # Share reports across monitors without keeping unloaded handlers alive.
 _reported_package_handlers: WeakSet[Callable] = WeakSet()
+_package_reports_lock = threading.Lock()
 
 
 class EventLoopBlockingMonitor:
@@ -123,9 +124,10 @@ class EventLoopBlockingMonitor:
             if fn is not None and not self._is_app_file(
                 handler_file := fn.__code__.co_filename
             ):
-                if fn in _reported_package_handlers:
-                    return None
-                _reported_package_handlers.add(fn)
+                with _package_reports_lock:
+                    if fn in _reported_package_handlers:
+                        return None
+                    _reported_package_handlers.add(fn)
                 subject += f" (from package {fn.__module__.partition('.')[0]})"
                 advice = _PACKAGE_ADVICE
                 # Start at the handler, skipping the frames that dispatch it.

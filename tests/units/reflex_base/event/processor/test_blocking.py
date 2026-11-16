@@ -9,9 +9,11 @@ import threading
 import time
 import traceback
 from collections.abc import Callable, Coroutine, Generator
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
+from weakref import WeakSet
 
 import pytest
 from reflex_base.event.processor import blocking
@@ -281,6 +283,83 @@ async def test_reported_package_handler_still_reports_app_frames(
         ),
         app_description,
         app_description,
+    ]
+
+
+async def test_concurrent_monitors_report_package_handler_once(  # noqa: RUF029
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Claim a package report only once when two monitors observe it together."""
+
+    class SlowMembership(WeakSet):
+        def __contains__(self, item: object) -> bool:
+            """Let another monitor run between checking and recording a handler.
+
+            Args:
+                item: The handler to check.
+
+            Returns:
+                Whether the handler was already reported.
+            """
+            present = super().__contains__(item)
+            if not present:
+                time.sleep(0.05)
+            return present
+
+    def handler():
+        """Represent the shared installed handler."""
+
+    registered = RegisteredEventHandler(handler=EventHandler(fn=handler), states=())
+    monitors = [
+        EventLoopBlockingMonitor(
+            asyncio.get_running_loop(),
+            threshold=0.04,
+            event_handlers={"state.blocking": registered},
+        )
+        for _ in range(2)
+    ]
+    stack = traceback.StackSummary.from_list([
+        ("package/handler.py", 1, "handler", "block()"),
+    ])
+    monkeypatch.setattr(blocking, "_reported_package_handlers", SlowMembership())
+    monkeypatch.setattr(
+        asyncio,
+        "current_task",
+        lambda loop: SimpleNamespace(
+            get_name=lambda: f"{EVENT_TASK_PREFIX}state.blocking"
+        ),
+    )
+    for monitor in monitors:
+        monitor._app_root = f"{tmp_path}{os.sep}"
+        monkeypatch.setattr(monitor, "_task_stack", lambda task: stack)
+    ready = threading.Barrier(2)
+
+    def describe(monitor: EventLoopBlockingMonitor):
+        """Describe both monitors' observations at the same time.
+
+        Args:
+            monitor: The monitor observing the handler.
+
+        Returns:
+            The description, if this monitor claimed the report.
+        """
+        ready.wait(timeout=1)
+        return monitor._describe_blocking()
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        descriptions = list(pool.map(describe, monitors))
+    assert descriptions.count(None) == 1
+    assert [description for description in descriptions if description is not None] == [
+        (
+            (
+                f"Event handler {handler.__qualname__} "
+                f"(from package {__name__.partition('.')[0]})"
+            ),
+            ", including state updates such as computed vars",
+            "",
+            blocking._PACKAGE_ADVICE,
+            "".join(traceback.format_list(stack)),
+        )
     ]
 
 
