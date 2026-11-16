@@ -6,6 +6,7 @@ import asyncio
 import collections
 import contextlib
 import dataclasses
+import functools
 import inspect
 import itertools
 import logging
@@ -14,7 +15,7 @@ import time
 from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequence
 from contextvars import Token, copy_context
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
@@ -52,6 +53,74 @@ else:
 
 
 _StreamItemT = TypeVar("_StreamItemT")
+
+
+# Keys of the result records answering a frontend request (see utils/event_results.js).
+_RESULT_ID = "id"
+_RESULT_VALUE = "value"
+_RESULT_DONE = "done"
+_RESULT_ERROR = "error"
+_RESULT_CANCELLED = "cancelled"
+
+
+def _value_record(request_id: str, value: Any) -> dict[str, Any]:
+    """A result record carrying one value a handler yielded.
+
+    Args:
+        request_id: The frontend's id for the request.
+        value: The value.
+
+    Returns:
+        The record.
+    """
+    return {_RESULT_ID: request_id, _RESULT_VALUE: value}
+
+
+def _done_record(request_id: str, value: Any = None) -> dict[str, Any]:
+    """A result record completing a request, with the handler's return value if any.
+
+    Args:
+        request_id: The frontend's id for the request.
+        value: The handler's return value, omitted when None.
+
+    Returns:
+        The record.
+    """
+    if value is None:
+        return {_RESULT_ID: request_id, _RESULT_DONE: True}
+    return {_RESULT_ID: request_id, _RESULT_VALUE: value, _RESULT_DONE: True}
+
+
+def _error_record(request_id: str, ex: BaseException) -> dict[str, Any]:
+    """A result record failing a request with an exception.
+
+    Outside prod mode the text names the exception, as the default backend
+    exception handler does; in prod mode it reveals nothing about it.
+
+    Args:
+        request_id: The frontend's id for the request.
+        ex: The exception the handler raised.
+
+    Returns:
+        The record.
+    """
+    if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD:
+        error = "Contact the website administrator."
+    else:
+        error = f"{type(ex).__name__}: {ex}"
+    return {_RESULT_ID: request_id, _RESULT_ERROR: error}
+
+
+def _cancelled_record(request_id: str) -> dict[str, Any]:
+    """A result record completing a request whose handler was cancelled.
+
+    Args:
+        request_id: The frontend's id for the request.
+
+    Returns:
+        The record.
+    """
+    return {_RESULT_ID: request_id, _RESULT_DONE: True, _RESULT_CANCELLED: True}
 
 
 async def _stream_queue_until_done(
@@ -148,6 +217,10 @@ class EventProcessor:
     _blocking_monitor: EventLoopBlockingMonitor | None = dataclasses.field(
         default=None, init=False, repr=False
     )
+    # Tasks reporting an unfinished frontend request, kept alive until sent.
+    _result_tasks: set[asyncio.Task] = dataclasses.field(
+        default_factory=set, init=False, repr=False
+    )
 
     def configure(
         self,
@@ -177,7 +250,7 @@ class EventProcessor:
             )
             raise RuntimeError(msg)
 
-        emit_delta_impl = emit_event_impl = None
+        emit_delta_impl = emit_event_impl = emit_result_impl = None
         if event_namespace is not None:
 
             async def emit_delta(
@@ -212,6 +285,25 @@ class EventProcessor:
 
             emit_event_impl = emit_event
 
+            async def emit_result(
+                token: str,
+                results: Sequence[Mapping[str, Any]],
+                delta: Mapping[str, Mapping[str, Any]] | None = None,
+            ) -> None:
+                """Emit result records to the frontend, after a delta.
+
+                Args:
+                    token: The client token to emit the records to.
+                    results: The result records.
+                    delta: A delta to apply before the records.
+                """
+                await event_namespace.emit_update(
+                    update=StateUpdate(delta=delta or {}, results=results),
+                    token=token,
+                )
+
+            emit_result_impl = emit_result
+
         if state_manager is None:
             # For testing use cases, default to a new in-memory state manager if one is not provided.
             state_manager = StateManagerMemory()
@@ -225,6 +317,7 @@ class EventProcessor:
             enqueue_impl=self.enqueue_many,
             emit_delta_impl=emit_delta_impl,
             emit_event_impl=emit_event_impl,
+            emit_result_impl=emit_result_impl,
             middleware=self.middleware,
         )
         return self
@@ -361,6 +454,12 @@ class EventProcessor:
             if not future.done():
                 future.cancel()
         self._futures.clear()
+        # A future's done callbacks run on the next loop iteration, so yield
+        # once for the unfinished requests' reports to be created, then let
+        # them go out before the loop that runs them goes away.
+        await asyncio.sleep(0)
+        while self._result_tasks:
+            await asyncio.gather(*tuple(self._result_tasks), return_exceptions=True)
         if self._blocking_monitor is not None:
             self._blocking_monitor.stop()
             self._blocking_monitor = None
@@ -409,7 +508,11 @@ class EventProcessor:
         return self._queue
 
     async def enqueue(
-        self, token: str, event: Event, ev_ctx: EventContext | None = None
+        self,
+        token: str,
+        event: Event,
+        ev_ctx: EventContext | None = None,
+        request_id: str | None = None,
     ) -> EventFuture:
         """Enqueue an event to be processed.
 
@@ -417,6 +520,10 @@ class EventProcessor:
             token: The client token associated with the event.
             event: The event to be enqueued.
             ev_ctx: The event context to use for this event.
+            request_id: The frontend's id for the event, so the values its
+                handler yields or returns are sent back to the caller and the
+                request is completed exactly once. Applies to a context created
+                here, not to an ``ev_ctx`` passed in.
 
         Returns:
             An EventFuture that resolves to the result of the associated task.
@@ -430,12 +537,14 @@ class EventProcessor:
         if ev_ctx is None:
             try:
                 ev_ctx = EventContext.get().fork(
-                    token=token, router_data=event.router_data
+                    token=token, router_data=event.router_data, request_id=request_id
                 )
             except LookupError as le:
                 if self._root_context is not None:
                     ev_ctx = self._root_context.fork(
-                        token=token, router_data=event.router_data
+                        token=token,
+                        router_data=event.router_data,
+                        request_id=request_id,
                     )
                 else:
                     msg = "Event processor is not running, call .start(...) first."
@@ -469,6 +578,10 @@ class EventProcessor:
         self._futures[txid] = tracked
         tracked.add_done_callback(self._try_clean_future)
         tracked.add_done_callback(self._on_future_done)
+        if ev_ctx.request_id is not None:
+            tracked.add_done_callback(
+                functools.partial(self._report_unfinished_request, ev_ctx)
+            )
         # If this context has a parent, register as a child of the parent's future.
         if parent_future is not None:
             if parent_future.cancelled():
@@ -781,14 +894,117 @@ class EventProcessor:
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
+        run = (
+            self._execute_event
+            if entry.ctx.request_id is None
+            else self._execute_reporting_result
+        )
         if not otel.enabled:
-            return await self._execute_event(
-                entry=entry, registered_handler=registered_handler
-            )
+            return await run(entry=entry, registered_handler=registered_handler)
         with otel.event_span(entry.event, entry.ctx, registered_handler):
-            return await self._execute_event(
+            return await run(entry=entry, registered_handler=registered_handler)
+
+    async def _execute_reporting_result(
+        self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
+    ) -> Any:
+        """Execute an event the frontend is awaiting, then complete its request.
+
+        Completion, failure and cancellation of a running handler are all sent
+        from its task, after its last state changes went out, so the frontend
+        gets them before the stream ends and before the next event for the
+        token starts. ``_report_unfinished_request`` covers what no task
+        reports, such as an event cancelled before its task started.
+
+        Args:
+            entry: The event queue entry to process.
+            registered_handler: The registered handler for the event.
+
+        Returns:
+            The handler's return value, which resolves the event's future.
+        """
+        ctx = entry.ctx
+        request_id = cast("str", ctx.request_id)
+        # The final delta may have carried the completion already.
+        try:
+            result = await self._execute_event(
                 entry=entry, registered_handler=registered_handler
             )
+            if not ctx.result_sent:
+                await ctx.emit_result(_done_record(request_id, result))
+                ctx.mark_result_sent()
+        except asyncio.CancelledError:
+            await self._report_request_end(ctx, _cancelled_record(request_id))
+            raise
+        except Exception as ex:
+            # A completion that failed to send fails the request the same way
+            # the handler would.
+            await self._report_request_end(ctx, _error_record(request_id, ex))
+            raise
+        return result
+
+    @staticmethod
+    async def _report_request_end(ctx: EventContext, record: Mapping[str, Any]) -> None:
+        """Send a request's failure or cancellation record, unless it already completed.
+
+        A request counts as completed only once its record was sent, so a
+        record that fails to go out is retried by ``_report_unfinished_request``
+        (the frontend ignores a second record for a settled request).
+
+        Args:
+            ctx: The context of the request's event.
+            record: The record to send.
+        """
+        if ctx.result_sent:
+            return
+        try:
+            await ctx.emit_result(record)
+        except Exception:
+            logger.exception(f"Error reporting the end of request {ctx.request_id}:")
+        else:
+            ctx.mark_result_sent()
+
+    def _report_unfinished_request(
+        self, ctx: EventContext, future: EventFuture
+    ) -> None:
+        """Complete a frontend request whose event ended without its task reporting it.
+
+        That is an event cancelled before its task started, one whose handler
+        could not be found, and one whose task failed to send its own record.
+        A cancelled event whose task is still running is left to that task,
+        which reports once the handler's final state changes went out.
+
+        Args:
+            ctx: The context of the event.
+            future: The event's future, done.
+        """
+        if ctx.result_sent:
+            return
+        request_id = cast("str", ctx.request_id)
+        if future.cancelled():
+            if ctx.txid in self._tasks:
+                return
+            record = _cancelled_record(request_id)
+        elif (ex := future.exception()) is not None:
+            record = _error_record(request_id, ex)
+        else:
+            return
+        ctx.mark_result_sent()
+        task = asyncio.create_task(
+            ctx.emit_result(record),
+            name=f"reflex_unfinished_request|{ctx.token}|{ctx.txid}",
+        )
+        self._result_tasks.add(task)
+        task.add_done_callback(self._finish_result_task)
+
+    def _finish_result_task(self, task: asyncio.Task) -> None:
+        """Forget a task that reported an unfinished request, logging its failure.
+
+        Args:
+            task: The finished task.
+        """
+        self._result_tasks.discard(task)
+        if not task.cancelled() and (ex := task.exception()) is not None:
+            logger.error(f"Error in {task.get_name()}:", exc_info=ex)
 
     def _create_event_task(
         self,
@@ -914,11 +1130,17 @@ class EventProcessor:
                         self._enqueue_for_token(
                             entry=entry, registered_handler=registered_handler
                         )
-                except Exception:
+                except Exception as ex:
                     # Log the error and continue processing the next events.
                     logger.exception(
                         f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                     )
+                    # Nothing will run this event: fail its future, so whatever
+                    # awaits it (a frontend request too) learns why instead of
+                    # waiting forever. The log above already reported it.
+                    if not future.done():
+                        future.set_exception(ex)
+                        future.exception()
                 queue.task_done()
         if self._queue_task is asyncio.current_task():
             self._queue_task = None

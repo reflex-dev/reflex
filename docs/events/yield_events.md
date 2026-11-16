@@ -103,3 +103,58 @@ def multiple_yield_example():
         loading=YieldEventsState.show_progress,
     )
 ```
+
+## Yielding Values to the Frontend
+
+A handler can also `yield` or `return` a value that is not an event: a string,
+a number, a list, a dict, a dataclass, or anything else Reflex can serialize
+for a state var. Each such value is sent to the frontend code that dispatched
+the event, after the state changes made before it.
+
+```python
+class SearchState(rx.State):
+    searching: bool = False
+
+    @rx.event
+    async def search(self, query: str):
+        self.searching = True
+        yield
+        async for hit in search_service.stream(query):
+            yield hit
+        self.searching = False
+
+    @rx.event
+    def load_rows(self, page: int) -> list[dict]:
+        return db.rows(page)
+```
+
+In the browser, dispatching an event returns a result stream. Iterate it with
+`for await` to receive each value as it arrives, or `await` it to get the last
+value. It rejects if the handler raises.
+
+```javascript
+for await (const hit of addEvents([searchEvent])) {
+  render(hit);
+}
+const rows = await addEvents([loadRowsEvent]);
+```
+
+Here `searchEvent` and `loadRowsEvent` stand for the rendered events, such as
+`rx.Var.create(SearchState.load_rows(2))`, which renders the
+`ReflexEvent(...)` for that call.
+
+An event trigger made of a single event handler returns this stream too, so it
+can be passed to a React prop that expects an async callback. See
+[Async Callback Props](/docs/wrapping-react/props/#async-callback-props).
+
+```md alert info
+# Rules for values sent to the frontend
+
+- Events are still events, not values: a backend event, event handler, or a list of them is queued, and a frontend-only event like `rx.redirect` is sent to the browser to run. A list that mixes events with other values raises a `TypeError`, and so does a coroutine the handler did not await.
+- An empty list is a value, not an empty list of events.
+- An `async` generator cannot `return` a value; `yield` the last one instead.
+- The stream ends when the handler finishes. It does not include values from the events the handler chains, and does not wait for them.
+- A handler run with `await` from another handler gives its value to that handler, not to the frontend.
+- When the handler is cancelled, the stream ends normally with the values sent so far. When the connection drops before the handler finishes, the stream rejects.
+- In production, a rejected stream says only "Contact the website administrator."; the details are in the backend logs.
+```
