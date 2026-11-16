@@ -13,6 +13,10 @@ from collections.abc import Callable
 from typing import Any
 
 
+class TypeCheckingOnlyError(Exception):
+    """An exception that test_app imports only under TYPE_CHECKING."""
+
+
 def logged(fn: Callable) -> Callable:
     """Wrap a handler the way a logging decorator would.
 

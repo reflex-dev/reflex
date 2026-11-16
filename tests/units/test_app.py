@@ -119,6 +119,8 @@ from .states.upload import (
 if TYPE_CHECKING:
     from multiprocessing.connection import Connection
 
+    from tests.units.exception_handler_helpers import TypeCheckingOnlyError
+
 
 class EmptyState(BaseState):
     """An empty state."""
@@ -4143,8 +4145,8 @@ def test_exception_handler_unwraps_class_based_decorator():
 
 
 def test_exception_handler_rejects_class():
-    """A class is rejected instead of being unwrapped to its ``__call__``."""
-    with pytest.raises(ValueError, match="is a class"):
+    """A class is rejected because its signature is the one of its constructor."""
+    with pytest.raises(ValueError, match="does not take the required argument"):
         rx.App(frontend_exception_handler=ClassCustomExceptionHandler)  # pyright: ignore[reportArgumentType] - the class itself is the case under test
 
 
@@ -4260,6 +4262,41 @@ def test_backend_exception_handler_rejects_invalid_resolved_return_annotation():
     handler = backend_exception_handler_with_invalid_string_return_annotation
     with pytest.raises(ValueError, match="has the wrong return type"):
         rx.App(backend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+
+
+def frontend_handler_with_type_checking_only_return(
+    exception: Exception,
+) -> TypeCheckingOnlyError | None:
+    """Frontend handler whose return annotation is defined only for type checkers.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print(exception)
+
+
+def frontend_handler_with_type_checking_only_exception(
+    exception: TypeCheckingOnlyError,
+):
+    """Frontend handler whose exception annotation is defined only for type checkers.
+
+    Args:
+        exception: The exception to handle.
+    """
+    print(exception)
+
+
+def test_exception_handler_allows_type_checking_only_return_annotation():
+    """A name imported only under TYPE_CHECKING does not stop the validation."""
+    handler = frontend_handler_with_type_checking_only_return
+    rx.App(frontend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+
+
+def test_exception_handler_rejects_type_checking_only_exception_annotation():
+    """An exception annotation that cannot be resolved is rejected, not crashed on."""
+    with pytest.raises(ValueError, match="has the wrong type for exception argument"):
+        handler = frontend_handler_with_type_checking_only_exception
+        rx.App(frontend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
 
 
 @pytest.mark.parametrize(
