@@ -5,12 +5,14 @@ import subprocess
 from collections import UserList
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any, TypeVar, cast
+from unittest.mock import patch
 
 import pytest
 from reflex_base.constants import LogLevel
 from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
+    EVENT_ACTIONS_MARKER,
     Event,
     EventChain,
     EventChainVar,
@@ -26,8 +28,9 @@ from reflex_base.event import (
     on_submit_string_event,
 )
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import format, log
+from reflex_base.utils import console, format, log
 from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
     EventHandlerArgTypeMismatchError,
     EventHandlerTypeError,
     EventHandlerValueError,
@@ -294,31 +297,53 @@ class BackendTriggerState(BaseState):
 
 
 @pytest.mark.parametrize(
-    ("value", "match"),
+    "value",
     [
-        (BackendTriggerState._secret, r"Invalid event chain: Field\(default=42"),
-        ([BackendTriggerState._secret], r"Invalid event: Field\(default=42"),
-        (lambda: BackendTriggerState._secret, r"-> Field\(default=42"),
+        BackendTriggerState._secret,
+        [BackendTriggerState._secret],
+        lambda: BackendTriggerState._secret,
     ],
+    ids=["chain", "list", "lambda"],
 )
-def test_backend_var_event_trigger_reports_repr(value: Any, match: str):
-    """Binding a backend var as an event trigger reports its repr, not a format error.
+def test_backend_var_event_trigger_raises_format_error(value: Any):
+    """Binding a backend var as an event trigger raises the backend var format error.
 
     Args:
         value: The misused event trigger value.
-        match: The expected error message pattern.
     """
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
         EventChain.create(value=value, args_spec=lambda: ())
 
 
-def test_backend_var_upload_progress_reports_repr():
-    """A backend var passed as on_upload_progress reports its repr."""
+@pytest.mark.parametrize(
+    "action", [rx.toast, rx.console_log], ids=["toast", "console_log"]
+)
+def test_backend_var_event_action_raises_format_error(action: Callable[[Any], Any]):
+    """A backend var passed to an event action raises the backend var format error.
+
+    Args:
+        action: The event action given the backend var.
+    """
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
+        str(Var.create(action(BackendTriggerState._secret)))
+
+
+def test_backend_var_upload_progress_raises_format_error():
+    """A backend var passed as on_upload_progress raises the backend var format error."""
     upload = rx.upload_files(
         upload_id="u",
         on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
     )
-    with pytest.raises(ValueError, match=r"^Field\(default=42.* is not a valid"):
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"Backend var 'BackendTriggerState\._secret' exists only",
+    ):
         upload.as_event_spec(handler=cast(EventHandler, BackendTriggerState.on_upload))
 
 
@@ -1713,3 +1738,295 @@ def test_event_sequence():
     assert event_sequence(events_user_list) is events_user_list
     assert event_sequence("abc") == ["abc"]
     assert event_sequence(b"ab") == [b"ab"]
+
+
+def test_decentralized_event_actions_are_registered():
+    """The registered handler of a decentralized event carries its event actions."""
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    @event(stop_propagation=True)
+    def e(s: S):
+        s.field = "foo"
+
+    assert isinstance(e, EventHandler)
+    registered = RegistrationContext.get().event_handlers[
+        format.format_event_handler(e)
+    ]
+    assert registered.handler is e
+    assert registered.handler.event_actions == {"stopPropagation": True}
+    assert registered.states == (S,)
+
+
+def test_rx_event_on_a_function_without_a_state_parameter_stays_a_function():
+    """A plain function decorated with @rx.event warns and is not an event handler."""
+
+    def ping(x: str) -> str:
+        return x
+
+    def summarize(items: list[int], label: str | None = None) -> int:
+        return sum(items)
+
+    before = set(RegistrationContext.get().event_handlers)
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        decorated_ping = event(ping)  # pyright: ignore [reportCallIssue, reportArgumentType]
+        decorated_summarize = event(stop_propagation=True)(summarize)  # pyright: ignore [reportArgumentType]
+
+    assert [call.kwargs["feature_name"] for call in mock_deprecate.call_args_list] == [
+        "@rx.event on a function without a state parameter"
+    ] * 2
+    assert decorated_ping is ping
+    assert decorated_summarize is summarize
+    assert ping.__name__ == "ping"
+    assert ping("1") == "1"
+    assert summarize([1, 2]) == 3
+    assert set(RegistrationContext.get().event_handlers) == before
+
+
+def test_event_handler_and_spec_expose_wrapped_function() -> None:
+    """EventHandler and EventSpec expose the decorated function as __wrapped__."""
+
+    class WrappedState(BaseState):
+        @rx.event
+        def handle(self, value: int):
+            pass
+
+    handler = WrappedState.handle
+    assert isinstance(handler, EventHandler)
+    assert handler.__wrapped__ is handler.fn
+    assert handler.__wrapped__.__name__ == "handle"
+    assert handler(1).__wrapped__ is handler.fn
+
+
+def test_rx_event_on_a_non_state_class_method_still_calls_it() -> None:
+    """@rx.event on a method of a class that is not a state warns and stays a method."""
+    from unittest.mock import patch
+
+    from reflex_base.utils import console
+
+    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+
+        class Helper:
+            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            def compute(self, x: int) -> int:
+                return x * 2
+
+    assert (
+        mock_deprecate.call_args.kwargs["feature_name"]
+        == "@rx.event on a method of a class that is not a state"
+    )
+    assert isinstance(Helper.compute, EventHandler)
+    assert Helper().compute(3) == 6  # pyright: ignore [reportCallIssue]
+
+
+@pytest.mark.parametrize(
+    ("outer", "inner", "is_background", "event_actions"),
+    [
+        (event, event, False, {}),
+        (event, event(background=True), True, {}),
+        (event, event(throttle=300), False, {"throttle": 300}),
+        (event(background=True), event, True, {}),
+        (event(throttle=300), event, False, {"throttle": 300}),
+        (event(), event, False, {}),
+    ],
+    ids=[
+        "event/event",
+        "event/event(background)",
+        "event/event(throttle)",
+        "event(background)/event",
+        "event(throttle)/event",
+        "event()/event",
+    ],
+)
+async def test_repeated_rx_event_is_one_handler(
+    outer: Callable, inner: Callable, is_background: bool, event_actions: dict
+):
+    """A second @rx.event on a method silently merges into one registered handler.
+
+    Args:
+        outer: The decorator applied last.
+        inner: The decorator applied first.
+        is_background: Whether the handler should be a background task.
+        event_actions: The event actions the handler should carry.
+    """
+    from reflex.utils import console as state_console
+
+    with (
+        patch.object(console, "deprecate") as event_deprecate,
+        patch.object(state_console, "deprecate") as state_deprecate,
+    ):
+
+        class RepeatedState(BaseState):
+            @outer
+            @inner
+            async def handle(self, value: int) -> int:
+                return value * 2
+
+    event_deprecate.assert_not_called()
+    state_deprecate.assert_not_called()
+    handler = RepeatedState.__dict__["handle"]
+    assert isinstance(handler, EventHandler)
+    assert handler.state is RepeatedState
+    assert RepeatedState.event_handlers["handle"] is handler
+    assert format.format_event_handler(handler).endswith(".handle")
+    assert handler.fn.__qualname__.endswith("RepeatedState.handle")
+    assert handler.is_background is is_background
+    assert handler.event_actions == event_actions
+    assert await handler.fn(RepeatedState(), 3) == 6
+
+
+def test_repeated_rx_event_merges_event_actions():
+    """The outer @rx.event's options win where both decorators set one."""
+
+    class MergedState(BaseState):
+        @event(throttle=300, stop_propagation=True)  # pyright: ignore [reportArgumentType]
+        @event(throttle=100, debounce=50)
+        def handle(self):
+            pass
+
+    assert MergedState.handle.event_actions == {
+        "throttle": 300,
+        "stopPropagation": True,
+        "debounce": 50,
+    }
+
+
+def test_repeated_rx_event_outer_false_and_zero_override():
+    """An outer False or 0 turns off the inner decorator's action."""
+
+    class OverrideState(BaseState):
+        @event(prevent_default=False, temporal=False)  # pyright: ignore [reportArgumentType]
+        @event(prevent_default=True, temporal=True, debounce=50)
+        def handle(self):
+            pass
+
+        @event(throttle=0)  # pyright: ignore [reportArgumentType]
+        @event(throttle=300)
+        def throttled(self):
+            pass
+
+    assert OverrideState.handle.event_actions == {
+        "preventDefault": False,
+        "temporal": False,
+        "debounce": 50,
+    }
+    assert OverrideState.throttled.event_actions == {"throttle": 0}
+
+
+def test_repeated_rx_event_outer_false_overrides_background_and_supersedes():
+    """An outer background=False or supersedes=False turns off the inner True."""
+
+    class OverrideFlagsState(BaseState):
+        @event(background=False, supersedes=False)  # pyright: ignore [reportArgumentType]
+        @event(background=True, supersedes=True)
+        async def handle(self):
+            pass
+
+    handler = OverrideFlagsState.__dict__["handle"]
+    assert handler.is_background is False
+    assert handler.supersedes is False
+
+
+@pytest.mark.parametrize(
+    "options", [{}, {"background": True}, {"throttle": 300}], ids=str
+)
+def test_rx_event_on_a_handler_of_another_state_raises(options: dict):
+    """Decorating a handler bound to a state raises and leaves that handler as it is.
+
+    Args:
+        options: The options of the second decorator.
+    """
+
+    class OwnerState(BaseState):
+        @event
+        async def handle(self):
+            pass
+
+    with pytest.raises(TypeError, match="already an event handler"):
+
+        class OtherState(BaseState):
+            alias = event(OwnerState.handle, **options)  # pyright: ignore [reportArgumentType, reportCallIssue]
+
+    handler = OwnerState.__dict__["handle"]
+    assert handler.is_background is False
+    assert not hasattr(handler.fn, EVENT_ACTIONS_MARKER)
+
+
+def test_rx_event_with_only_false_actions_has_no_actions():
+    """A single @rx.event whose actions are all False or 0 carries none, as before."""
+
+    class FalseState(BaseState):
+        @event(prevent_default=False, temporal=False, throttle=0)
+        def handle(self):
+            pass
+
+    assert FalseState.handle.event_actions == {}
+
+
+def test_repeated_rx_event_on_a_mixin_is_copied_with_merged_actions():
+    """A state copying a mixin's repeated @rx.event gets the merged actions."""
+
+    class RepeatedMixin(BaseState, mixin=True):
+        @event(stop_propagation=True)  # pyright: ignore [reportArgumentType]
+        @event(background=True, throttle=100)
+        async def work(self):
+            pass
+
+    class UsesRepeatedMixin(RepeatedMixin, BaseState):
+        pass
+
+    handler = UsesRepeatedMixin.event_handlers["work"]
+    assert handler.state is UsesRepeatedMixin
+    assert handler.fn is not RepeatedMixin.__dict__["work"].fn
+    assert handler.is_background
+    expected = {"throttle": 100, "stopPropagation": True}
+    assert handler.event_actions == expected
+    assert getattr(handler.fn, EVENT_ACTIONS_MARKER) == expected
+
+
+def test_repeated_rx_event_on_a_decentralized_handler():
+    """A second @rx.event on a decentralized handler re-registers it under its name."""
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    before = set(RegistrationContext.get().event_handlers)
+
+    @event(stop_propagation=True)  # pyright: ignore [reportArgumentType]
+    @event(throttle=300)
+    def e(s: S):
+        s.field = "foo"
+
+    assert isinstance(e, EventHandler)
+    name = format.format_event_handler(e)
+    assert set(RegistrationContext.get().event_handlers) - before == {name}
+    assert RegistrationContext.get().event_handlers[name].handler is e
+    assert e.event_actions == {"throttle": 300, "stopPropagation": True}
+    assert e.state is S
+    assert S.event_handlers[e.fn.__name__] is e
+
+
+def test_repeated_rx_event_on_a_decentralized_handler_in_main():
+    """A repeated @rx.event on a handler of ``__main__`` is not taken for a private one.
+
+    Registering it renames it to ``_main___<name>``, which the second
+    decorator must not reject.
+    """
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    def handle(s: S):
+        s.field = "foo"
+
+    handle.__module__ = "__main__"
+    once = event(handle)  # pyright: ignore [reportArgumentType]
+    assert once.fn.__name__.startswith("_main___")
+    twice = event(stop_propagation=True)(once)  # pyright: ignore [reportArgumentType]
+
+    assert isinstance(twice, EventHandler)
+    assert twice.fn is once.fn
+    assert twice.event_actions == {"stopPropagation": True}
+    assert S.event_handlers[twice.fn.__name__] is twice

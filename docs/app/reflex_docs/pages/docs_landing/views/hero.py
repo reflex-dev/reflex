@@ -42,37 +42,35 @@ def hero() -> rx.Component:
         rx.el.div(
             rx.el.h1(
                 "Reflex Documentation",
-                class_name="max-w-2xl font-heading text-4xl font-light leading-[1.04] tracking-[-0.045em] text-foreground text-balance sm:text-5xl lg:text-[64px]",
+                class_name="max-w-2xl font-heading text-4xl font-normal leading-[1.04] tracking-[-0.045em] text-foreground text-balance sm:text-5xl lg:text-[64px]",
             ),
             rx.el.p(
                 "Get up and running with Reflex in minutes. A complete set of resources "
                 "to build, deploy, and scale your application.",
-                class_name="max-w-xl text-base font-normal leading-7 text-muted-foreground sm:text-lg sm:leading-8",
+                class_name="docs-landing-copy max-w-xl text-base font-normal leading-7 text-muted-foreground sm:text-lg sm:leading-8",
             ),
             rx.el.div(
                 rx.el.a(
                     button(
                         "Explore Framework",
                         variant="primary",
-                        size="lg",
-                        class_name="!px-6 !font-normal",
+                        size="md",
                         native_button=False,
                     ),
                     href=getting_started.introduction.path,
-                    class_name=f"rounded-full {FOCUS}",
+                    class_name=f"docs-action rounded-[8px] {FOCUS}",
                 ),
                 rx.el.a(
                     button(
                         "Build with AI",
-                        variant="ghost",
-                        size="lg",
-                        class_name="!border-0 !bg-muted !px-6 !font-normal !text-foreground !shadow-none hover:!bg-accent-hover",
+                        variant="outline",
+                        size="md",
                         native_button=False,
                     ),
                     href="/ai/",
-                    class_name=f"rounded-full {FOCUS}",
+                    class_name=f"docs-action-secondary docs-action rounded-[8px] {FOCUS}",
                 ),
-                class_name="mt-2 flex flex-wrap items-center gap-x-7 gap-y-3",
+                class_name="mt-2 flex flex-wrap items-center gap-2",
             ),
             class_name="flex min-w-0 flex-col items-start gap-6",
         ),
