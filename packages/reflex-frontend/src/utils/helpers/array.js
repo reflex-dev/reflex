@@ -49,7 +49,7 @@ function dictsEqual(lhs, rhs) {
 
 /** Check two serialized values for equality like Python `==`. */
 function valuesEqual(lhs, rhs) {
-  if (lhs === rhs) {
+  if (Object.is(lhs, rhs)) {
     return true;
   }
   if (Array.isArray(lhs) && Array.isArray(rhs)) {
@@ -64,12 +64,14 @@ function valuesEqual(lhs, rhs) {
 /** Compare two arrays element-wise with Python list semantics.
  *
  * The first unequal pair of items decides the result; when every shared item
- * is equal, the shorter array sorts first. Nested arrays compare recursively.
+ * is equal, the shorter array sorts first. Like Python, which checks identity
+ * before `==`, a NaN item equals NaN: serialized state cannot tell the same NaN
+ * object from another one, so it takes the identical case. Nested arrays compare recursively.
  * Dicts only take part through equality, as in Python: equal dicts move on to
  * the next pair, unequal ones cannot be ordered.
  *
- * Returns -1, 0 or 1, or NaN when Python would raise TypeError or a NaN
- * decides the result, so every ordering operator gives false. That covers a
+ * Returns -1, 0 or 1, or NaN when Python would raise TypeError or a NaN item
+ * meets a number, so every ordering operator gives false. That covers a
  * non-array operand (an optional list holding None) and mismatched items.
  *
  * @param compareItem orders two items that are not arrays or dicts; the
@@ -84,7 +86,7 @@ export default function compareArrays(lhs, rhs, compareItem = compareScalars) {
   for (let i = 0; i < sharedLength; i++) {
     const left = lhs[i];
     const right = rhs[i];
-    if (left === right) {
+    if (Object.is(left, right)) {
       continue;
     }
     const order =

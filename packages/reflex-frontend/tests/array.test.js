@@ -46,7 +46,6 @@ describe("compareArrays", () => {
       [[1], [2]],
     ],
     [[NaN], [1]],
-    [[NaN], [NaN]],
     [
       [1, NaN],
       [1, 2],
@@ -56,6 +55,16 @@ describe("compareArrays", () => {
     [null, null],
   ])("compareArrays(%j, %j) cannot be ordered", (lhs, rhs) => {
     expect(compareArrays(lhs, rhs)).toBeNaN();
+  });
+
+  test("a NaN item equals NaN, like Python's identity check on list items", () => {
+    // Python compares list items with `x is y or x == y`, so the same NaN
+    // object (math.nan, or one list compared with itself) counts as equal.
+    expect(compareArrays([NaN], [NaN])).toBe(0);
+    expect(compareArrays([NaN, 1], [NaN, 2])).toBe(-1);
+    expect(compareArrays([[NaN]], [[NaN], 1])).toBe(-1);
+    expect(compareArrays([{ a: NaN }, 1], [{ a: NaN }, 2])).toBe(-1);
+    expect(compareArrays([0], [-0])).toBe(0);
   });
 
   test("strings order by code point, not UTF-16 code unit", () => {
