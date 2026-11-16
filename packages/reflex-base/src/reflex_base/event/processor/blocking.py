@@ -13,8 +13,11 @@ import traceback
 from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
+from weakref import WeakSet
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from reflex_base.registry import RegisteredEventHandler
 
 logger = logging.getLogger(__name__)
@@ -32,6 +35,9 @@ _APP_ADVICE = "Move blocking I/O to a thread pool or use a non-blocking async AP
 _PACKAGE_ADVICE = (
     "The handler is not part of this app, so it is reported once per process."
 )
+
+# Share reports across monitors without keeping unloaded handlers alive.
+_reported_package_handlers: WeakSet[Callable] = WeakSet()
 
 
 class EventLoopBlockingMonitor:
@@ -56,8 +62,6 @@ class EventLoopBlockingMonitor:
         # The monitor is created on the loop thread, in the app root.
         self._loop_thread_id = threading.get_ident()
         self._app_root = f"{Path.cwd()}{os.sep}"
-        # Events whose handler, from an installed package, was reported.
-        self._reported_package_handlers: set[str] = set()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -97,8 +101,6 @@ class EventLoopBlockingMonitor:
         event_name, fn = "", None
         if name.startswith(EVENT_TASK_PREFIX):
             event_name = name[len(EVENT_TASK_PREFIX) :].partition("|")[0]
-            if event_name in self._reported_package_handlers:
-                return None
             registered = self.event_handlers.get(event_name)
             if registered is not None:
                 fn = registered.handler.fn
@@ -121,7 +123,9 @@ class EventLoopBlockingMonitor:
             if fn is not None and not self._is_app_file(
                 handler_file := fn.__code__.co_filename
             ):
-                self._reported_package_handlers.add(event_name)
+                if fn in _reported_package_handlers:
+                    return None
+                _reported_package_handlers.add(fn)
                 subject += f" (from package {fn.__module__.partition('.')[0]})"
                 advice = _PACKAGE_ADVICE
                 # Start at the handler, skipping the frames that dispatch it.

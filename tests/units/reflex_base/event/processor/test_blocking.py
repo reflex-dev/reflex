@@ -7,6 +7,7 @@ import re
 import sys
 import threading
 import time
+import traceback
 from collections.abc import Callable, Coroutine, Generator
 from pathlib import Path
 from types import SimpleNamespace
@@ -178,13 +179,6 @@ async def test_package_handler_is_reported_once_with_its_package(
     probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
     handler = _blocking(probe_queued, _BLOCK_SECONDS)
     registered = RegisteredEventHandler(handler=EventHandler(fn=handler), states=())
-    monitor = EventLoopBlockingMonitor(
-        asyncio.get_running_loop(),
-        threshold=0.04,
-        event_handlers={"state.blocking": registered},
-    )
-    # The app lives elsewhere, so this module is not app code.
-    monitor._app_root = f"{tmp_path}{os.sep}"
     # A frame from another file runs the handler, as the event processor does.
     namespace: dict[str, Any] = {}
     exec(
@@ -195,16 +189,24 @@ async def test_package_handler_is_reported_once_with_its_package(
         ),
         namespace,
     )
-    monitor.start()
-    try:
-        for _ in range(2):
+    for event_name in ("state.blocking", "state.alias"):
+        monitor = EventLoopBlockingMonitor(
+            asyncio.get_running_loop(),
+            threshold=0.04,
+            event_handlers={event_name: registered},
+        )
+        # The app lives elsewhere, so this module is not app code.
+        monitor._app_root = f"{tmp_path}{os.sep}"
+        probe_queued.clear()
+        monitor.start()
+        try:
             await asyncio.create_task(
                 namespace["dispatch"](handler),
-                name=f"{EVENT_TASK_PREFIX}state.blocking|token|txid",
+                name=f"{EVENT_TASK_PREFIX}{event_name}|token|txid",
             )
             await asyncio.sleep(0)
-    finally:
-        monitor.stop()
+        finally:
+            monitor.stop()
 
     subject = (
         "Event handler _blocking.<locals>.blocking_handler "
@@ -224,6 +226,61 @@ async def test_package_handler_is_reported_once_with_its_package(
             "    time.sleep(duration)  # noqa: ASYNC251"
         ),
         f"{subject} blocked the event loop N in total.",
+    ]
+
+
+async def test_reported_package_handler_still_reports_app_frames(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Keep app warnings after reporting the same package handler once."""
+    monitor = EventLoopBlockingMonitor(
+        asyncio.get_running_loop(), threshold=0.04, event_handlers={}
+    )
+    monitor._app_root = f"{tmp_path}{os.sep}"
+    package_stack = traceback.StackSummary.from_list([
+        ("package/handler.py", 1, "handler", "block()"),
+    ])
+    app_stack = traceback.StackSummary.from_list([
+        (str(tmp_path / "app.py"), 2, "computed", "block()"),
+    ])
+    stacks = iter((package_stack, app_stack, app_stack))
+    monkeypatch.setattr(monitor, "_task_stack", lambda task: next(stacks))
+
+    async def handler():  # noqa: RUF029
+        """Describe a package block followed by two app blocks.
+
+        Returns:
+            The descriptions of each blocking stack.
+        """
+        return [monitor._describe_blocking() for _ in range(3)]
+
+    monitor.event_handlers = {
+        "state.blocking": RegisteredEventHandler(
+            handler=EventHandler(fn=handler), states=()
+        )
+    }
+    descriptions = await asyncio.create_task(
+        handler(), name=f"{EVENT_TASK_PREFIX}state.blocking|token|txid"
+    )
+    subject = f"Event handler {handler.__qualname__}"
+    scope = ", including state updates such as computed vars"
+    app_description = (
+        subject,
+        scope,
+        " at app.py:2 in computed",
+        blocking._APP_ADVICE,
+        "".join(traceback.format_list(app_stack)),
+    )
+    assert descriptions == [
+        (
+            f"{subject} (from package {__name__.partition('.')[0]})",
+            scope,
+            "",
+            blocking._PACKAGE_ADVICE,
+            "".join(traceback.format_list(package_stack)),
+        ),
+        app_description,
+        app_description,
     ]
 
 
