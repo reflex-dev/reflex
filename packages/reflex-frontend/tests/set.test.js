@@ -103,8 +103,20 @@ test("canonical sets compare by their elements", () => {
   expect(same([null], [NaN])).toBe(false);
   expect(
     pySetCanonical([10, 9, "b", null, NaN, Infinity, -Infinity, 9]),
-  ).toEqual([9, 10, "-Infinity", "Infinity", "NaN", "null", "sb"]);
+  ).toEqual([9, 10, "n-Infinity", "nInfinity", "nNaN", "null", "sb"]);
   expect(pySetCanonical([])).toEqual([]);
+});
+
+test("canonical structured set elements preserve non-finite numbers", () => {
+  expect(pySetCanonical([[NaN], [null], [Infinity], [-Infinity]])).toEqual([
+    'a["n-Infinity"]',
+    'a["nInfinity"]',
+    'a["nNaN"]',
+    'a[null]',
+  ]);
+  expect(pySetHas([[NaN]], [null])).toBe(false);
+  expect(pySetHas([[true]], [1])).toBe(true);
+  expect(pySetHas([{value: [NaN]}], {value: [null]})).toBe(false);
 });
 
 test.each([

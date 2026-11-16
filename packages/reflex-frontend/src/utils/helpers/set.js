@@ -16,7 +16,13 @@
 export const pySetKey = (x) => {
   if (typeof x === "string") return "s" + x;
   if (typeof x === "boolean") return +x;
-  if (x !== null && typeof x === "object") return "o" + JSON.stringify(x);
+  if (typeof x === "number" && !Number.isFinite(x)) return "n" + String(x);
+  if (Array.isArray(x)) return "a" + JSON.stringify(x.map(pySetKey));
+  if (x !== null && typeof x === "object") {
+    return "o" + JSON.stringify(
+      Object.entries(x).map(([key, value]) => [key, pySetKey(value)]),
+    );
+  }
   return x;
 };
 
@@ -140,8 +146,7 @@ const compareSetKeys = (a, b) => {
  */
 export const pySetCanonical = (arr) => {
   if (arr == null) return arr;
-  // Set dedupes by SameValueZero, so NaN keeps one entry. Non-finite numbers
-  // are spelled out: JSON.stringify would turn all of them into null.
+  // Recursive keys preserve non-finite numbers inside structured elements too.
   return [...new Set(arr.map(pySetKey))]
     .map((key) =>
       key === null || (typeof key === "number" && !Number.isFinite(key))
