@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal
+from typing import Any, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.event import EventHandler, input_event, key_event
@@ -22,6 +22,27 @@ from reflex_components_radix.themes.base import (
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
+
+
+def _hidden_wrapper_display(hidden: Any, input_type: Any) -> Var | str | None:
+    """Get the display of the TextField.Root wrapper for a hidden input.
+
+    Radix puts ``hidden`` and ``type`` on the inner input, so a hidden input
+    leaves its wrapper on the page as an empty bar.
+
+    Args:
+        hidden: The hidden prop of the input.
+        input_type: The type prop of the input.
+
+    Returns:
+        "none" for an input hidden at compile time, a display that follows a
+        hidden Var at runtime, or None for an input that is not hidden.
+    """
+    if hidden is True or (isinstance(input_type, str) and input_type == "hidden"):
+        return "none"
+    if isinstance(hidden, Var):
+        return ternary_operation(hidden, Var.create("none"), Var(_js_expr="undefined"))
+    return None
 
 
 class TextFieldRoot(elements.Input, RadixThemesComponent):
@@ -115,15 +136,13 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
                 auto_complete, Var.create("on"), Var.create("off")
             )
 
-        # The TextField.Root wrapper keeps its border and height around a hidden
-        # input, which shows as an empty bar, so hide the wrapper too, unless
-        # the user sets a display.
-        if props.get("hidden") is True or (
-            isinstance(input_type := props.get("type"), str) and input_type == "hidden"
+        # Hide the wrapper of a hidden input, unless the user sets a display.
+        display = _hidden_wrapper_display(props.get("hidden"), props.get("type"))
+        style = props.get("style")
+        if display is not None and not (
+            isinstance(style, Mapping) and "display" in style
         ):
-            style = props.get("style")
-            if not (isinstance(style, Mapping) and "display" in style):
-                props.setdefault("display", "none")
+            props.setdefault("display", display)
 
         value = props.get("value")
 

@@ -57,7 +57,6 @@ def test_static_hidden_input_hides_the_wrapper(props: dict[str, Any]):
     [
         {"placeholder": "Name"},
         {"type": Var(_js_expr="input_type", _var_type=str)},
-        {"hidden": Var(_js_expr="is_hidden", _var_type=bool)},
     ],
 )
 def test_visible_input_keeps_the_wrapper(props: dict[str, Any]):
@@ -87,3 +86,10 @@ def test_hidden_input_keeps_a_user_display(props: dict[str, Any], expected: str)
     text_field = TextFieldRoot.create(type="hidden", **props)
 
     assert str(text_field.style["display"]) == expected
+
+
+def test_hidden_var_hides_the_wrapper_at_runtime():
+    """A hidden prop from state hides the wrapper only while it is true."""
+    text_field = TextFieldRoot.create(hidden=Var(_js_expr="is_hidden", _var_type=bool))
+
+    assert str(text_field.style["display"]) == '(is_hidden ? "none" : undefined)'
