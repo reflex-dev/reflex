@@ -305,7 +305,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             start = first_endpoint
             end = second_endpoint
 
-        return array_range_operation(start, end, step or 1)
+        return array_range_operation(start, end, 1 if step is None else step)
 
     @overload
     def contains(self, other: Any) -> BooleanVar: ...

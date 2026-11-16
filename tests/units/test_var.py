@@ -1367,6 +1367,53 @@ def test_array_operations():
     )
 
 
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+@pytest.mark.parametrize("range_factory", [rx.Var.range, ArrayVar.range])
+@pytest.mark.parametrize("state_step", [False, True])
+@pytest.mark.parametrize(
+    ("start", "stop", "step"), [(0, 10, 2), (10, 0, -2), (4, 4, 2)]
+)
+def test_range_with_var_step(range_factory, state_step, start, stop, step):
+    """Supported Var steps construct a grid and evaluate like Python ranges.
+
+    Args:
+        range_factory: The public or array range constructor.
+        state_step: Whether to use state fields instead of literal Vars.
+        start: The inclusive range endpoint.
+        stop: The exclusive range endpoint.
+        step: The nonzero integer stride.
+    """
+
+    class RangeState(BaseState):
+        start: int = 0
+        stop: int = 10
+        step: int = 2
+
+    args = (
+        (RangeState.start, RangeState.stop, RangeState.step)
+        if state_step
+        else (start, stop, Var.create(step))
+    )
+    iterable = range_factory(*args)
+    grid = rx.grid(rx.foreach(iterable, lambda item: rx.text(item)))
+
+    assert iterable._var_type == list[int]
+    assert grid.render()["name"] == "RadixThemesGrid"
+    assert iterable._get_all_var_data() == VarData.merge(
+        *(arg._get_all_var_data() for arg in args if isinstance(arg, Var))
+    )
+    state_name = str(RangeState.start).rsplit(".", 1)[0]
+    values = json.dumps({
+        str(getattr(RangeState, name)).rsplit(".", 1)[1]: value
+        for name, value in zip(
+            ("start", "stop", "step"), (start, stop, step), strict=True
+        )
+    })
+    assert _eval_js_lines([
+        f"const {state_name} = {values}; console.log(JSON.stringify({iterable!s}));"
+    ]) == [list(range(start, stop, step))]
+
+
 def _assert_var_imports(var: Var, tag: str):
     """Assert that the var's VarData includes an import of tag from the state module.
 
