@@ -5133,7 +5133,11 @@ config = rx.Config(
 
 
 def test_state_flags_from_env_without_config(monkeypatch):
-    """A State defined before any config load honors the REFLEX_* env var override."""
+    """A State defined before any config load honors the env var `reflex run` exports.
+
+    Backend workers import the app module in a fresh process, so user States are
+    created before anything calls get_config().
+    """
     monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
 
     with RegistrationContext():
@@ -5143,34 +5147,6 @@ def test_state_flags_from_env_without_config(monkeypatch):
                 pass
 
         assert "helper" not in WorkerState.event_handlers
-
-
-def test_state_flags_load_rxconfig_without_cached_config(tmp_path, monkeypatch):
-    """A State defined before any config load reads the project's rxconfig.py.
-
-    Backend workers and ASGI servers pointed at the app module import it in a
-    fresh process, before anything calls get_config().
-    """
-    monkeypatch.delenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", raising=False)
-    proj_root = tmp_path / "project1"
-    proj_root.mkdir()
-    (proj_root / "rxconfig.py").write_text(
-        dedent(
-            """
-            import reflex as rx
-            config = rx.Config(app_name="project1", state_explicit_event_handlers=True)
-            """
-        )
-    )
-
-    with chdir(proj_root), RegistrationContext():
-
-        class FreshWorkerState(State):
-            def helper(self):
-                pass
-
-        assert "helper" not in FreshWorkerState.event_handlers
-    sys.modules.pop(constants.Config.MODULE, None)
 
 
 def test_explicit_event_handlers_keep_decorator_above_event(monkeypatch):

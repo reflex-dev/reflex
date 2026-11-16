@@ -1830,6 +1830,20 @@ def test_get_config_reload_deprecated(mocker: MockerFixture):
         deprecate.assert_called_once()
 
 
+def test_persist_state_flags(monkeypatch):
+    """_persist_state_flags exports both State-class flags to the environment."""
+    mock_os_env = os.environ.copy()
+    mock_os_env.pop("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", None)
+    mock_os_env.pop("REFLEX_STATE_AUTO_SETTERS", None)
+    monkeypatch.setattr(os, "environ", mock_os_env)
+    config = rx.Config(
+        app_name="app", state_explicit_event_handlers=True, _skip_plugins_checks=True
+    )
+    config._persist_state_flags()
+    assert os.environ["REFLEX_STATE_EXPLICIT_EVENT_HANDLERS"] == "True"
+    assert os.environ["REFLEX_STATE_AUTO_SETTERS"] == "False"
+
+
 def test_frontend_url_falls_back_to_localhost_frontend_port(
     monkeypatch: pytest.MonkeyPatch,
 ):

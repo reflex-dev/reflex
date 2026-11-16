@@ -57,6 +57,8 @@ config = rx.Config(
 
 This also applies to states from third-party packages, so they must decorate their event handlers for the option to be usable in your app.
 
+The option is applied when a state class is created. `reflex run` forwards it to its backend workers; other entry points that import your state modules before the config is loaded, such as a test suite or an ASGI server pointed at the app module, must set the `REFLEX_STATE_EXPLICIT_EVENT_HANDLERS` environment variable instead.
+
 A call such as `State.delete(item.id)` in page code also needs the decorator. Without it, `State.delete` is a plain function, so Python calls it while the page compiles.
 
 ## What's in this section?
