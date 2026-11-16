@@ -143,8 +143,8 @@ def test_match_set_cases_compare_by_elements():
     """A set subject and set cases are compared by their elements, not their order.
 
     A set reaches the frontend in its iteration order, which depends on the hash
-    seed, so both sides are made canonical before the JSON comparison. A list
-    case stays as it is: it never equals a set, as in Python.
+    seed, so both sets are made canonical before the JSON comparison. Type tags
+    keep lists distinct from a set's comparison keys, as in Python.
     """
     tags = f"{MatchState.get_name()}.tags{FIELD_MARKER}"
     match_var = Match.create(
@@ -152,9 +152,9 @@ def test_match_set_cases_compare_by_elements():
     )
     assert isinstance(match_var, Var)
     assert str(match_var) == (
-        f"(() => {{ switch (JSON.stringify(pySetCanonical({tags}))) {{"
-        'case JSON.stringify(pySetCanonical(["c", "d"])):  return ("cd");  break;'
-        'case JSON.stringify(["c", "d"]):  return ("list");  break;'
+        f"(() => {{ switch (JSON.stringify([true, pySetCanonical({tags})])) {{"
+        'case JSON.stringify([true, pySetCanonical(["c", "d"])]):  return ("cd");  break;'
+        'case JSON.stringify([false, ["c", "d"]]):  return ("list");  break;'
         'default:  return ("other");  break;};})()'
     )
     var_data = match_var._get_all_var_data()
@@ -168,13 +168,25 @@ def test_match_set_cases_compare_by_elements():
     )
     assert isinstance(match_comp, Component)
     match_child = match_comp.render()["children"][0]
-    assert match_child["cond"] == f"pySetCanonical({tags})"
+    assert match_child["cond"] == f"[true, pySetCanonical({tags})]"
     assert [conditions for conditions, _ in match_child["match_cases"]] == [
-        ['pySetCanonical(["c", "d"])']
+        ['[true, pySetCanonical(["c", "d"])]']
     ]
     assert match_comp._get_all_imports()["$/utils/helpers/set.js"] == [
         ImportVar(tag="pySetCanonical", install=False)
     ]
+
+
+def test_match_generic_set_var_uses_its_annotation():
+    """A generic Var annotated as a set uses the same comparison as a SetVar."""
+    result = Match.create(
+        Var(_js_expr="tags", _var_type=set[int]), ({1, 2}, "matched"), "other"
+    )
+    assert str(result) == (
+        "(() => { switch (JSON.stringify([true, pySetCanonical(tags)])) {"
+        'case JSON.stringify([true, pySetCanonical([1, 2])]):  return ("matched");  break;'
+        'default:  return ("other");  break;};})()'
+    )
 
 
 def test_match_on_component_without_default():

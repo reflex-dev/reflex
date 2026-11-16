@@ -288,6 +288,17 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
         # bare (set) or parametrized (set[str]).
         collection = types.get_origin(hinted_args) or hinted_args
         if collection is set or collection is frozenset or collection is tuple:
+            element_hints = types.get_args(hinted_args)
+            if element_hints:
+                if collection is tuple and element_hints[-1] is not Ellipsis:
+                    return tuple(
+                        _transform_event_arg(item, hint)
+                        for item, hint in zip(value, element_hints, strict=True)
+                    )
+                element_hint = element_hints[0]
+                return collection(
+                    _transform_event_arg(item, element_hint) for item in value
+                )
             return collection(value)
     if isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
         try:

@@ -68,6 +68,17 @@ class Match(Component):
         cases, default = cls._process_cases(list(cases))
         match_cases = cls._process_match_cases(cases)
 
+        if isinstance(match_cond_var, SetVar) or any(
+            isinstance(condition, SetVar)
+            for conditions, _ in match_cases
+            for condition in conditions
+        ):
+            match_cond_var = cls._comparable(match_cond_var)
+            match_cases = [
+                ([cls._comparable(condition) for condition in conditions], result)
+                for conditions, result in match_cases
+            ]
+
         match_cases = cls._validate_return_types(match_cases)
 
         if default is None and isinstance(match_cases[0][1], Var):
@@ -96,14 +107,19 @@ class Match(Component):
         if match_cond_var is None:
             msg = "The condition must be set"
             raise ValueError(msg)
-        return cls._comparable(match_cond_var)
+        return (
+            match_cond_var.guess_type()
+            if type(match_cond_var) is Var
+            else match_cond_var
+        )
 
     @staticmethod
     def _comparable(var: Var) -> Var:
         """Make a subject or case var compare the way Python's ``==`` does.
 
         Cases match by ``JSON.stringify`` equality, and a set serializes in its
-        iteration order, so a set var is compared by its canonical form.
+        iteration order, so a set var is compared by its canonical form. Tag both
+        sets and other values so a list cannot equal a set's comparison keys.
 
         Args:
             var: The subject or case var.
@@ -111,7 +127,11 @@ class Match(Component):
         Returns:
             The var to serialize for the comparison.
         """
-        return set_canonical_operation(var) if isinstance(var, SetVar) else var
+        is_set = isinstance(var, SetVar)
+        return LiteralVar.create([
+            is_set,
+            set_canonical_operation(var) if is_set else var,
+        ])
 
     @classmethod
     def _process_cases(
@@ -165,7 +185,8 @@ class Match(Component):
             The case element Var.
         """
         var_data = case_element._var_data if isinstance(case_element, Style) else None
-        return LiteralVar.create(case_element, _var_data=var_data)
+        var = LiteralVar.create(case_element, _var_data=var_data)
+        return var.guess_type() if type(var) is Var else var
 
     @classmethod
     def _process_match_cases(
@@ -196,9 +217,7 @@ class Match(Component):
                 if isinstance(condition, BaseComponent):
                     msg = f"Match condition {condition_index} of case {case_index} cannot be a component."
                     raise ValueError(msg)
-                conditions_vars.append(
-                    cls._comparable(cls._create_case_var_with_var_data(condition))
-                )
+                conditions_vars.append(cls._create_case_var_with_var_data(condition))
 
             return_value = (
                 cls._create_case_var_with_var_data(return_value)

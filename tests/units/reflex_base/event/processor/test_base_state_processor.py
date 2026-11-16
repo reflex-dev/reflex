@@ -2313,6 +2313,28 @@ def test_transform_event_arg_builds_collection_from_list(hint: Any, expected: An
     assert type(value) is type(expected)
 
 
+@pytest.mark.parametrize(
+    ("hint", "value", "expected"),
+    [
+        (set[tuple[int, int]], [[1, 2], [3, 4]], {(1, 2), (3, 4)}),
+        (frozenset[tuple[int, ...]], [[1, 2]], frozenset({(1, 2)})),
+        (tuple[set[int], str], [[1, 2], "x"], ({1, 2}, "x")),
+        (set[tuple[tuple[int, ...], ...]], [[[1, 2]]], {((1, 2),)}),
+    ],
+)
+def test_transform_event_arg_nested_collections(hint: Any, value: Any, expected: Any):
+    """Rebuild nested annotated collections before constructing hashable sets.
+
+    Args:
+        hint: The nested collection annotation.
+        value: The JSON array received from the frontend.
+        expected: The reconstructed collection.
+    """
+    assert _transform_event_payload(
+        {"items": value, "count": "7"}, {"items": hint, "count": int}
+    ) == {"items": expected, "count": 7}
+
+
 class _TagsDict(TypedDict):
     tag: str
     name: str
