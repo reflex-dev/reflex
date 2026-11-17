@@ -9,7 +9,7 @@ def test_call_on_optional_function_is_an_optional_call() -> None:
     fn = Var(_js_expr="fn", _var_type=ReflexCallable[[int], str] | None).to(FunctionVar)
     call = fn.call(1)
     assert str(call) == "(fn?.(1))"
-    assert call._var_type is str
+    assert call._var_type == str | None
 
 
 def test_call_on_optional_arrow_function_is_wrapped() -> None:

@@ -399,6 +399,9 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         function_return_type = (
             func_type.__args__[1] if getattr(func_type, "__args__", None) else Any
         )
+        if function_return_type is not Any and is_optional(func._var_type):
+            # A skipped `?.()` call evaluates to undefined.
+            function_return_type = function_return_type | None
         var_type = _var_type if _var_type is not Any else function_return_type
         return cls(
             _js_expr="",
