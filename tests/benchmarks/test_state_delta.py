@@ -1,5 +1,7 @@
 """Benchmarks for dirty propagation and state delta generation."""
 
+from typing import Any
+
 import pytest
 from pytest_codspeed import BenchmarkFixture
 
@@ -10,6 +12,29 @@ from .support.states import (
     state_tree,
 )
 
+# One mutation and delta of a small state takes a few microseconds, so the
+# benchmarks built on _mutate_counter repeat it this many times per measured call.
+MUTATIONS = 50
+# Items validated per measured call by test_state_collection_assignment.
+ASSIGNED_ITEMS = 100_000
+
+
+def _mutate_counter(state: Any) -> dict:
+    """Increment the counter, calculate the delta and clean the state, repeatedly.
+
+    Args:
+        state: The state to mutate, declaring an int ``counter`` field.
+
+    Returns:
+        The last delta.
+    """
+    delta = {}
+    for _ in range(MUTATIONS):
+        state.counter += 1
+        delta = state.get_delta()
+        state._clean()
+    return delta
+
 
 @pytest.mark.parametrize("size", [10, 100, 1000, 10_000])
 def test_state_delta_scalar_mutation(size: int, benchmark: BenchmarkFixture):
@@ -19,21 +44,7 @@ def test_state_delta_scalar_mutation(size: int, benchmark: BenchmarkFixture):
         size: Mutable collection size carried by the state.
         benchmark: The CodSpeed benchmark fixture.
     """
-    state = initialized_state(size)
-
-    def mutate_and_get_delta():
-        """Mutate one field, calculate its delta, and reset dirtiness.
-
-        Returns:
-            State delta.
-        """
-        state.counter += 1
-        delta = state.get_delta()
-        state._clean()
-        return delta
-
-    delta = benchmark(mutate_and_get_delta)
-    assert delta
+    assert benchmark(_mutate_counter, initialized_state(size))
 
 
 @pytest.mark.parametrize("appends", [1, 10, 100])
@@ -85,23 +96,11 @@ def test_computed_dependency_fanout(fanout: int, benchmark: BenchmarkFixture):
         fanout: Number of cached vars directly depending on one source field.
         benchmark: The CodSpeed benchmark fixture.
     """
-
-    def mutate_and_delta(state):
-        """Mutate the shared dependency and return its resulting delta.
-
-        Returns:
-            The updated source value.
-        """
-        state.counter += 1
-        state.get_delta()
-        state._clean()
-        return state.counter
-
     with computed_fanout_state(fanout) as (state, names):
         for name in names:
             getattr(state, name)
         state._clean()
-        assert benchmark(mutate_and_delta, state) >= 1
+        assert benchmark(_mutate_counter, state)
 
 
 def test_resolved_delta(benchmark: BenchmarkFixture):
@@ -185,14 +184,19 @@ def test_state_tree_delta(shape: str, benchmark: BenchmarkFixture):
 def test_state_collection_assignment(size: int, benchmark: BenchmarkFixture):
     """Benchmark state assignment and its type-validation hot path.
 
+    Every size validates ``ASSIGNED_ITEMS`` items per measured call, in
+    ``ASSIGNED_ITEMS // size`` assignments, so the sizes differ only in how the
+    work splits between the cost of an assignment and the cost of an item.
+
     Args:
         size: Assigned list size.
         benchmark: The CodSpeed benchmark fixture.
     """
     values = list(range(size))
+    assignments = ASSIGNED_ITEMS // size
 
     def setup():
-        """Create a fresh state for one assignment.
+        """Create a fresh state for one measured call.
 
         Returns:
             CodSpeed pedantic positional and keyword arguments.
@@ -200,7 +204,7 @@ def test_state_collection_assignment(size: int, benchmark: BenchmarkFixture):
         return ((initialized_state(0),), {})
 
     def assign(state: PerformanceState) -> int:
-        """Assign the representative collection.
+        """Assign the representative collection repeatedly.
 
         Args:
             state: Fresh state.
@@ -208,7 +212,8 @@ def test_state_collection_assignment(size: int, benchmark: BenchmarkFixture):
         Returns:
             Assigned collection size.
         """
-        state.numbers = values
+        for _ in range(assignments):
+            state.numbers = values
         return len(state.numbers)
 
     assert benchmark.pedantic(assign, setup=setup) == size

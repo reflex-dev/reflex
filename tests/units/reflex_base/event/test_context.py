@@ -98,3 +98,21 @@ async def test_emit_event_noop_when_no_impl():
         emit_event_impl=None,
     )
     await ctx.emit_event()
+
+
+async def test_enqueue_returns_futures(mock_root_event_context: EventContext):
+    """Enqueue returns whatever enqueue_impl returns, so callers can await the futures.
+
+    Args:
+        mock_root_event_context: The root event context fixture.
+    """
+    futures = [mock.sentinel.future]
+
+    async def enqueue_impl(token: str, *events: object) -> list:  # noqa: RUF029
+        assert token == "tok"
+        return futures
+
+    ctx = dataclasses.replace(
+        mock_root_event_context.fork(token="tok"), enqueue_impl=enqueue_impl
+    )
+    assert await ctx.enqueue(mock.sentinel.event) is futures

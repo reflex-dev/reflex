@@ -14,8 +14,8 @@ from reflex_base.event import EventHandler, no_args_event_spec, passthrough_even
 from reflex_base.utils import format, types
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.serializers import serializer
-from reflex_base.vars import get_unique_variable_name
-from reflex_base.vars.base import Var, VarData
+from reflex_base.vars import get_leaf_vars, get_unique_variable_name
+from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.function import FunctionStringVar
 from reflex_base.vars.sequence import ArrayVar
 
@@ -176,6 +176,88 @@ class GridColumn(TypedDict):
 
     title: str
     group: str | None
+
+
+# Fills in the documented column defaults for a state-backed column list at
+# render time, taking the same shapes as _format_column: a column is a title
+# string or an object, and a value the object sets explicitly wins through the
+# spread.
+_COLUMN_DEFAULTS_JS = (
+    '(col) => typeof col === "string" ? { title: col, id: col.toLowerCase(), type: "str" } '
+    ': { type: "str", id: (col.title ?? "").toLowerCase(), ...col }'
+)
+
+
+def _format_column(col: str | dict[str, Any] | Var) -> dict[str, Any] | Var:
+    """Fill in the default id, type and overlay icon of a literal column.
+
+    Args:
+        col: The column title, or the column definition.
+
+    Returns:
+        A new column definition with the defaults filled in; a Var is returned as is.
+
+    Raises:
+        ValueError: If the column is neither a string, a dict nor a Var.
+    """
+    if isinstance(col, str):
+        return {"title": col, "id": col.lower(), "type": "str"}
+    if isinstance(col, dict):
+        column = {"type": "str", "overlayIcon": None, **col}
+        if "id" not in column:
+            column["id"] = column["title"].lower()
+        return column
+    if isinstance(col, Var):
+        return col
+    msg = f"unexpected type ({type(col).__name__}: {col}) for column header in data_editor"
+    raise ValueError(msg)
+
+
+def _hook_deps(*hook_vars: Var) -> str:
+    """Render the dependency array of a React hook closing over the given vars.
+
+    A derived var such as ``state.columns.filter(...)`` renders to a fresh value
+    on every evaluation, so the array lists the vars each one reads instead: the
+    state fields, loop vars and memo props behind it, down to those inside a
+    literal or a predicate, and none of the constants.
+
+    Args:
+        *hook_vars: The vars the hook reads.
+
+    Returns:
+        The dependency array as JavaScript.
+    """
+    deps = {str(dep): None for var in hook_vars for dep in get_leaf_vars(var)}
+    return f"[{', '.join(deps)}]"
+
+
+def _with_column_defaults(columns: Var, editor_id: str) -> Var:
+    """Fill in the default type and id of a column list at render time.
+
+    The mapping runs in a ``useMemo`` keyed on the vars the columns read, so it
+    is redone when they change rather than on every render, let alone for every
+    cell Glide draws.
+
+    Args:
+        columns: The column list var.
+        editor_id: The unique id of the editor the columns belong to.
+
+    Returns:
+        A var naming the memoized column list, carrying the hook that defines it.
+    """
+    name = f"columns_{editor_id}"
+    return Var(
+        _js_expr=name,
+        # The mapping yields column dicts whatever the input holds, titles included.
+        _var_type=Sequence[dict[str, Any]],
+        _var_data=VarData(
+            hooks={
+                f"const {name} = useMemo(() => ({columns!s}).map({_COLUMN_DEFAULTS_JS}), "
+                f"{_hook_deps(columns)})": columns._get_all_var_data()
+            },
+            imports={"react": "useMemo"},
+        ),
+    )
 
 
 class DataEditor(NoSSRComponent):
@@ -415,9 +497,6 @@ class DataEditor(NoSSRComponent):
                 "react-responsive-carousel/lib/styles/carousel.min.css",
             ],
             self.library: ["GridCellKind", "CompactSelection"],
-            "$/utils/helpers/dataeditor.js": ImportVar(
-                tag="formatDataEditorCells", is_default=False, install=False
-            ),
         }
 
     def add_custom_code(self) -> list[str]:
@@ -469,37 +548,15 @@ class DataEditor(NoSSRComponent):
                     """
         ]
 
-    def add_hooks(self) -> list[str]:
-        """Get the hooks to render.
-
-        Returns:
-            The hooks to render.
-        """
-        # Define the id of the component in case multiple are used in the same page.
-        editor_id = get_unique_variable_name()
-
-        # Define the name of the getData callback associated with this component and assign to get_cell_content.
-        if self.get_cell_content is not None:
-            data_callback = self.get_cell_content._js_expr
-        else:
-            data_callback = f"getData_{editor_id}"
-            self.get_cell_content = Var(_js_expr=data_callback)
-
-        code = [f"function {data_callback}([col, row]){{"]
-
-        columns_path = str(self.columns)
-        data_path = str(self.data)
-
-        code.extend([
-            f"    return formatDataEditorCells(col, row, {columns_path}, {data_path});",
-            "  }",
-        ])
-
-        return ["\n".join(code)]
-
     @classmethod
     def create(cls, *children, extended_cell_types: bool = False, **props) -> Component:
         """Create the DataEditor component.
+
+        The column defaults and the ``getCellContent`` callback are settled here:
+        a state-backed column list is mapped through the defaults in a ``useMemo``
+        keyed on it, and the callback is a ``useCallback`` over the columns and
+        data, so neither is rebuilt by a render that changes something else. Both
+        hooks ride on the vars assigned to the props.
 
         Args:
             *children: The children of the data editor.
@@ -507,7 +564,7 @@ class DataEditor(NoSSRComponent):
             **props: The props of the data editor.
 
         Returns:
-            The DataEditor component.&
+            The DataEditor component.
 
         Raises:
             ValueError: invalid input.
@@ -526,15 +583,52 @@ class DataEditor(NoSSRComponent):
 
             props["rows"] = data.length() if isinstance(data, ArrayVar) else len(data)
 
-        if not isinstance(columns, Var) and len(columns):
-            if types.is_dataframe(type(data)) or (
-                isinstance(data, Var) and types.is_dataframe(data._var_type)
+        # Define the id of the component in case multiple are used in the same page.
+        editor_id = get_unique_variable_name()
+
+        if isinstance(columns, Var):
+            columns = _with_column_defaults(columns, editor_id)
+        else:
+            if columns and (
+                types.is_dataframe(type(data))
+                or (isinstance(data, Var) and types.is_dataframe(data._var_type))
             ):
                 msg = "Cannot pass in both a pandas dataframe and columns to the data_editor component."
                 raise ValueError(msg)
-            props["columns"] = [
-                format.format_data_editor_column(col) for col in columns
-            ]
+            formatted = [_format_column(col) for col in columns]
+            columns = LiteralVar.create(formatted)
+            if any(isinstance(col, Var) for col in formatted):
+                # A var among the columns gets its defaults at render time, like
+                # a state-backed list; the mapping leaves the literal ones as is.
+                columns = _with_column_defaults(columns, editor_id)
+        if not isinstance(data, Var):
+            data = LiteralVar.create(data)
+        props["columns"] = columns
+        props["data"] = data
+
+        if props.pop("get_cell_content", None) is not None:
+            logger.warning(
+                "get_cell_content is not user configurable, the provided value will be discarded"
+            )
+        data_callback = f"getData_{editor_id}"
+        props["get_cell_content"] = Var(
+            _js_expr=data_callback,
+            _var_data=VarData(
+                hooks={
+                    f"const {data_callback} = useCallback(([col, row]) => "
+                    f"formatDataEditorCells(col, row, {columns!s}, {data!s}), "
+                    f"{_hook_deps(columns, data)})": VarData.merge(
+                        columns._get_all_var_data(), data._get_all_var_data()
+                    )
+                },
+                imports={
+                    "react": "useCallback",
+                    "$/utils/helpers/dataeditor.js": ImportVar(
+                        tag="formatDataEditorCells", is_default=False, install=False
+                    ),
+                },
+            ),
+        )
 
         if "theme" in props:
             theme = props.get("theme")
@@ -546,11 +640,6 @@ class DataEditor(NoSSRComponent):
 
         # Disable on_paste by default if not provided.
         props.setdefault("on_paste", False)
-
-        if props.pop("get_cell_content", None) is not None:
-            logger.warning(
-                "get_cell_content is not user configurable, the provided value will be discarded"
-            )
 
         # Apply the reconstruction function to grid_selection if it's a Var
         if (grid_selection := props.get("grid_selection")) is not None and isinstance(

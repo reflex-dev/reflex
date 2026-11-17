@@ -282,7 +282,7 @@ def callable_api_reference(
             name,
             as_="h3",
             id=_heading_id(name),
-            class_name="font-large text-foreground mt-8 mb-2",
+            class_name="docs-heading font-large text-foreground mt-8 mb-2",
         ),
         rx.text(
             _summary(docstring),
