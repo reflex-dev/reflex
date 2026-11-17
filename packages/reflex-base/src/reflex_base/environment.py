@@ -798,7 +798,8 @@ class EnvironmentVariables:
     # their `--env` option, so do not set it yourself.
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
-    # App secret keys, newest first, separated by commas. Generated per run when unset.
+    # App secret keys, newest first, separated by commas. `reflex run` generates
+    # one when unset; set it for any other launch, so all workers share keys.
     REFLEX_SECRET_KEY: EnvVar[str | None] = env_var(None)
 
     # Rollout mode for session-bound client tokens.
