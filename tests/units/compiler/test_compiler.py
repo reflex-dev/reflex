@@ -17,7 +17,9 @@ from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
+from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.console import PoorProgress
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
     PageValueError,
@@ -36,6 +38,49 @@ from reflex.compiler import compiler, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.state import BaseState
 from reflex.utils import prerequisites
+
+
+@pytest.mark.parametrize("with_plugin", [False, True])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_compile_progress_ends_at_its_total(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    with_plugin: bool,
+):
+    """The compile progress bar ends exactly at its total.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the application directory.
+        mocker: Fixture for avoiding frontend dependency installation.
+        with_plugin: Whether a plugin adds its own files to save.
+    """
+    progress_bars: list[PoorProgress] = []
+
+    class RecordingProgress(PoorProgress):
+        """A plain progress bar that keeps every instance for inspection."""
+
+        def __init__(self):
+            """Initialize the progress bar and record it."""
+            super().__init__()
+            progress_bars.append(self)
+
+    monkeypatch.setattr(compiler.console, "PoorProgress", RecordingProgress)
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(
+        app_name="progress_test", plugins=[SitemapPlugin()] if with_plugin else []
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.el.div("hello"), route="index")
+    mocker.patch.object(app, "_get_frontend_packages")
+
+    compiler.compile_app(app, use_rich=False)
+
+    assert len(progress_bars) == 1
+    (task,) = progress_bars[0].tasks.values()
+    assert task["current"] == task["total"]
 
 
 @pytest.mark.parametrize("remove_assets_directory", [False, True])
