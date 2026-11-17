@@ -9,7 +9,6 @@ from pathlib import Path, PurePosixPath
 
 from reflex_base import constants
 from reflex_base.config import get_config
-from reflex_base.session import SESSION_SECRET_FILENAME
 
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
 from reflex.utils.exec import frontend_env, is_in_app_harness
@@ -148,11 +147,7 @@ def _zip(
             files_to_zip += [
                 file
                 for file in root_directory.glob(glob)
-                if not any(
-                    file.samefile(excluded_file)
-                    for excluded_file in files_to_exclude
-                    if excluded_file.exists()
-                )
+                if file.name not in files_to_exclude
             ]
     # Create a progress bar for zipping the component.
     progress = console.progress()
@@ -192,7 +187,6 @@ def zip_app(
     files_to_exclude = {
         Path(constants.ComponentName.FRONTEND.zip()).resolve(),
         Path(constants.ComponentName.BACKEND.zip()).resolve(),
-        prerequisites.get_backend_dir() / SESSION_SECRET_FILENAME,
     }
 
     if frontend:
