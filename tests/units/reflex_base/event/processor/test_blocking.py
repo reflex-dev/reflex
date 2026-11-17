@@ -1,6 +1,7 @@
 """Tests for development-time event-loop blocking detection."""
 
 import asyncio
+import importlib
 import logging
 import os
 import re
@@ -223,12 +224,40 @@ async def test_package_handler_is_reported_once_with_its_package(
             f"{subject} is blocking the event loop (threshold: 0.040s), including "
             "state updates such as computed vars. The handler is not part of this "
             "app, so it is reported once per process.\n"
-            "Blocking stack (most recent call last):\n"
+            "Stack when the threshold was reached (most recent call last):\n"
             f'  File "{__file__}", N, in blocking_handler\n'
             "    time.sleep(duration)  # noqa: ASYNC251"
         ),
         f"{subject} blocked the event loop N in total.",
     ]
+
+
+def _fake_frame(filename: str, lineno: int, name: str, module: str = "fake") -> Any:
+    """Build a stand-in for a live frame running a line of a function.
+
+    Args:
+        filename: The file of the function.
+        lineno: The line the frame runs.
+        name: The name of the function.
+        module: The name of the module the function belongs to.
+
+    Returns:
+        An object with the frame attributes the monitor reads.
+    """
+    code = compile("", filename, "exec").replace(co_name=name)
+    return SimpleNamespace(f_code=code, f_lineno=lineno, f_globals={"__name__": module})
+
+
+def _extract(frames: list[Any]) -> traceback.StackSummary:
+    """Extract the stack summary the monitor builds from frames.
+
+    Args:
+        frames: The frames, outermost first.
+
+    Returns:
+        The stack summary.
+    """
+    return traceback.StackSummary.extract((frame, frame.f_lineno) for frame in frames)
 
 
 async def test_reported_package_handler_still_reports_app_frames(
@@ -239,14 +268,10 @@ async def test_reported_package_handler_still_reports_app_frames(
         asyncio.get_running_loop(), threshold=0.04, event_handlers={}
     )
     monitor._app_root = f"{tmp_path}{os.sep}"
-    package_stack = traceback.StackSummary.from_list([
-        ("package/handler.py", 1, "handler", "block()"),
-    ])
-    app_stack = traceback.StackSummary.from_list([
-        (str(tmp_path / "app.py"), 2, "computed", "block()"),
-    ])
-    stacks = iter((package_stack, app_stack, app_stack))
-    monkeypatch.setattr(monitor, "_task_stack", lambda task: next(stacks))
+    package_frames = [_fake_frame("package/handler.py", 1, "handler")]
+    app_frames = [_fake_frame(str(tmp_path / "app.py"), 2, "computed")]
+    frames = iter((package_frames, app_frames, app_frames))
+    monkeypatch.setattr(monitor, "_task_frames", lambda task: next(frames))
 
     async def handler():  # noqa: RUF029
         """Describe a package block followed by two app blocks.
@@ -265,25 +290,72 @@ async def test_reported_package_handler_still_reports_app_frames(
         handler(), name=f"{EVENT_TASK_PREFIX}state.blocking|token|txid"
     )
     subject = f"Event handler {handler.__qualname__}"
-    scope = ", including state updates such as computed vars"
-    app_description = (
+    package_subject = f"{subject} (from package {__name__.partition('.')[0]})"
+    app_report = blocking._BlockingReport(
         subject,
-        scope,
-        " at app.py:2 in computed",
-        blocking._APP_ADVICE,
-        "".join(traceback.format_list(app_stack)),
+        f"{subject} is blocking the event loop at app.py:2 in computed (threshold: "
+        "0.040s), including state updates such as computed vars. Move blocking I/O "
+        "to a thread pool or use a non-blocking async API.",
+        _extract(app_frames),
     )
     assert descriptions == [
-        (
-            f"{subject} (from package {__name__.partition('.')[0]})",
-            scope,
-            "",
-            blocking._PACKAGE_ADVICE,
-            "".join(traceback.format_list(package_stack)),
+        blocking._BlockingReport(
+            package_subject,
+            f"{package_subject} is blocking the event loop (threshold: 0.040s), "
+            "including state updates such as computed vars. The handler is not part "
+            "of this app, so it is reported once per process.",
+            _extract(package_frames),
         ),
-        app_description,
-        app_description,
+        app_report,
+        app_report,
     ]
+
+
+async def test_package_handler_import_keeps_package_advice(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Name the import of a package handler, with the advice for package handlers."""
+    monitor = EventLoopBlockingMonitor(
+        asyncio.get_running_loop(), threshold=0.04, event_handlers={}
+    )
+    monitor._app_root = f"{tmp_path}{os.sep}"
+    handler_frame = _fake_frame("package/handler.py", 3, "handler")
+    module_frame = _fake_frame("package/sdk.py", 1, "<module>", module="package.sdk")
+    frames = [
+        handler_frame,
+        _fake_frame("<frozen importlib._bootstrap>", 1371, "_find_and_load"),
+        module_frame,
+    ]
+    monkeypatch.setattr(monitor, "_task_frames", lambda task: frames)
+
+    async def handler():  # noqa: RUF029
+        """Describe the blocking from inside the event task.
+
+        Returns:
+            The description of the blocking.
+        """
+        return monitor._describe_blocking()
+
+    monitor.event_handlers = {
+        "state.importing": RegisteredEventHandler(
+            handler=EventHandler(fn=handler), states=()
+        )
+    }
+    report = await asyncio.create_task(
+        handler(), name=f"{EVENT_TASK_PREFIX}state.importing|token|txid"
+    )
+
+    subject = (
+        f"Event handler {handler.__qualname__} "
+        f"(from package {__name__.partition('.')[0]})"
+    )
+    assert report == blocking._BlockingReport(
+        subject,
+        f"{subject} is blocking the event loop while importing package.sdk "
+        "(threshold: 0.040s), including state updates such as computed vars. The "
+        "handler is not part of this app, so it is reported once per process.",
+        _extract([handler_frame, module_frame]),
+    )
 
 
 async def test_concurrent_monitors_report_package_handler_once(  # noqa: RUF029
@@ -318,9 +390,7 @@ async def test_concurrent_monitors_report_package_handler_once(  # noqa: RUF029
         )
         for _ in range(2)
     ]
-    stack = traceback.StackSummary.from_list([
-        ("package/handler.py", 1, "handler", "block()"),
-    ])
+    frames = [_fake_frame("package/handler.py", 1, "handler")]
     monkeypatch.setattr(blocking, "_reported_package_handlers", SlowMembership())
     monkeypatch.setattr(
         asyncio,
@@ -331,7 +401,7 @@ async def test_concurrent_monitors_report_package_handler_once(  # noqa: RUF029
     )
     for monitor in monitors:
         monitor._app_root = f"{tmp_path}{os.sep}"
-        monkeypatch.setattr(monitor, "_task_stack", lambda task: stack)
+        monkeypatch.setattr(monitor, "_task_frames", lambda task: frames)
     ready = threading.Barrier(2)
 
     def describe(monitor: EventLoopBlockingMonitor):
@@ -349,16 +419,17 @@ async def test_concurrent_monitors_report_package_handler_once(  # noqa: RUF029
     with ThreadPoolExecutor(max_workers=2) as pool:
         descriptions = list(pool.map(describe, monitors))
     assert descriptions.count(None) == 1
+    subject = (
+        f"Event handler {handler.__qualname__} "
+        f"(from package {__name__.partition('.')[0]})"
+    )
     assert [description for description in descriptions if description is not None] == [
-        (
-            (
-                f"Event handler {handler.__qualname__} "
-                f"(from package {__name__.partition('.')[0]})"
-            ),
-            ", including state updates such as computed vars",
-            "",
-            blocking._PACKAGE_ADVICE,
-            "".join(traceback.format_list(stack)),
+        blocking._BlockingReport(
+            subject,
+            f"{subject} is blocking the event loop (threshold: 0.040s), including "
+            "state updates such as computed vars. The handler is not part of this "
+            "app, so it is reported once per process.",
+            _extract(frames),
         )
     ]
 
@@ -521,3 +592,145 @@ async def test_stack_without_task_entry_is_not_reported(
     )
 
     assert description is None
+
+
+def _write_import_app(root: Path, importer: str, imported: str, body: str) -> None:
+    """Write an app module whose load() first imports another app module.
+
+    Args:
+        root: The app root to write the modules in.
+        importer: The name of the module that imports in load().
+        imported: The name of the module load() imports.
+        body: The top-level code of the imported module.
+    """
+    (root / f"{importer}.py").write_text(f"def load():\n    import {imported}\n")
+    (root / f"{imported}.py").write_text(body)
+
+
+@pytest.fixture
+def app_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[Path, None, None]:
+    """Make a fresh directory the app root and importable.
+
+    Yields:
+        The app root.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    modules = set(sys.modules)
+    yield tmp_path
+    for name in set(sys.modules) - modules:
+        del sys.modules[name]
+
+
+async def test_import_is_reported_at_the_import_site(
+    app_root: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Name the imported module and the app line that imports it, without import machinery frames."""
+    monitor = EventLoopBlockingMonitor(
+        asyncio.get_running_loop(), threshold=0.2, event_handlers={}
+    )
+    reports = []
+    monkeypatch.setitem(
+        sys.modules,
+        "blocking_probe",
+        SimpleNamespace(describe=lambda: reports.append(monitor._describe_blocking())),
+    )
+    _write_import_app(
+        app_root,
+        "importer",
+        "heavy_sdk",
+        "import blocking_probe\nblocking_probe.describe()\n",
+    )
+    importer = importlib.import_module("importer")
+
+    async def handler():  # noqa: RUF029
+        """Import a module for the first time on the loop."""
+        importer.load()
+
+    await asyncio.create_task(
+        handler(), name=f"{EVENT_TASK_PREFIX}state.importing|token|txid"
+    )
+
+    [report] = reports
+    assert report is not None
+    assert report.subject == "Event handler state.importing"
+    assert report.summary == (
+        "Event handler state.importing is blocking the event loop at importer.py:2 "
+        "in load while importing heavy_sdk (threshold: 0.200s), including state "
+        "updates such as computed vars. Import heavy_sdk at the top of a module so "
+        "it loads with the app, or load it in a thread first with "
+        "`await asyncio.to_thread(importlib.import_module, 'heavy_sdk')`."
+    )
+    assert [(frame.filename, frame.name) for frame in report.stack] == [
+        (__file__, "handler"),
+        (str(app_root / "importer.py"), "load"),
+        (str(app_root / "heavy_sdk.py"), "<module>"),
+        (__file__, "<lambda>"),
+        (blocking.__file__, "_describe_blocking"),
+        (blocking.__file__, "_task_frames"),
+    ]
+
+
+async def test_blocking_import_is_logged_with_import_advice(
+    app_root: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Log the import summary over the stack sampled at the threshold."""
+    probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
+    monkeypatch.setitem(
+        sys.modules, "blocking_probe", SimpleNamespace(queued=probe_queued)
+    )
+    _write_import_app(
+        app_root,
+        "importer",
+        "slow_sdk",
+        "import time\n"
+        "import blocking_probe\n"
+        "assert blocking_probe.queued.wait(timeout=1)\n"
+        f"time.sleep({_BLOCK_SECONDS})\n",
+    )
+    importer = importlib.import_module("importer")
+    records = []
+
+    class _Record(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            """Keep the record.
+
+            Args:
+                record: The log record.
+            """
+            records.append(record)
+
+    handler = _Record(level=logging.WARNING)
+    blocking_logger = logging.getLogger("reflex_base.event.processor.blocking")
+    blocking_logger.addHandler(handler)
+
+    async def load():  # noqa: RUF029
+        """Import a slow module for the first time on the loop."""
+        importer.load()
+
+    try:
+        await _run_monitored(load, "loader")
+    finally:
+        blocking_logger.removeHandler(handler)
+
+    report, total = (record.getMessage() for record in records)
+    summary, stack_title, *stack = report.split("\n")
+    assert summary == (
+        "Task 'loader' is blocking the event loop at importer.py:2 in load while "
+        "importing slow_sdk (threshold: 0.040s). Import slow_sdk at the top of a "
+        "module so it loads with the app, or load it in a thread first with "
+        "`await asyncio.to_thread(importlib.import_module, 'slow_sdk')`."
+    )
+    assert stack_title == (
+        "Stack when the threshold was reached (most recent call last):"
+    )
+    assert stack[-2:] == [
+        f'  File "{app_root / "slow_sdk.py"}", line 4, in <module>',
+        f"    time.sleep({_BLOCK_SECONDS})",
+    ]
+    assert [line for line in stack if "<frozen" in line] == []
+    assert re.fullmatch(
+        r"Task 'loader' blocked the event loop for \d+\.\d{3}s in total\.", total
+    )

@@ -12,7 +12,8 @@ import time
 import traceback
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING
+from types import FrameType
+from typing import TYPE_CHECKING, NamedTuple
 from weakref import WeakSet
 
 if TYPE_CHECKING:
@@ -39,6 +40,20 @@ _PACKAGE_ADVICE = (
 # Share reports across monitors without keeping unloaded handlers alive.
 _reported_package_handlers: WeakSet[Callable] = WeakSet()
 _package_reports_lock = threading.Lock()
+
+# Filename prefix of the import machinery's frames, which tracebacks leave out too.
+_IMPORT_MACHINERY = "<frozen importlib._bootstrap"
+
+
+class _BlockingReport(NamedTuple):
+    """What blocks the loop, sampled when the threshold was reached."""
+
+    # The event handler or task that blocks the loop.
+    subject: str
+    # The one-line warning, with the location and advice.
+    summary: str
+    # The task's frames, outermost first, without the import machinery.
+    stack: traceback.StackSummary
 
 
 class EventLoopBlockingMonitor:
@@ -82,24 +97,21 @@ class EventLoopBlockingMonitor:
             self._thread.join(timeout=1)
             self._thread = None
 
-    def _describe_blocking(self) -> tuple[str, str, str, str, str] | None:
+    def _describe_blocking(self) -> _BlockingReport | None:
         """Describe the task that runs on the blocked loop.
 
         An event handler from an installed package, with no app code in its
         blocking stack, is described once per process: the app cannot fix it.
 
         Returns:
-            The subject (event handler or task name), the scope note for event
-            handlers (or an empty string), the location of the innermost app
-            frame (or an empty string), the advice, and the formatted stack of
-            the task, or None if no task runs, the task has left the loop, or
-            the handler was already reported.
+            The report of the blocking task, or None if no task runs, the task
+            has left the loop, or the handler was already reported.
         """
         task = asyncio.current_task(self.loop)
-        if task is None:
+        if task is None or (frames := self._task_frames(task)) is None:
             return None
         name = task.get_name()
-        event_name, fn = "", None
+        fn = None
         if name.startswith(EVENT_TASK_PREFIX):
             event_name = name[len(EVENT_TASK_PREFIX) :].partition("|")[0]
             registered = self.event_handlers.get(event_name)
@@ -109,33 +121,69 @@ class EventLoopBlockingMonitor:
             scope = ", including state updates such as computed vars"
         else:
             subject, scope = f"Task {name!r}", ""
-        if (stack := self._task_stack(task)) is None:
-            return None
-        frames: list[traceback.FrameSummary] = stack
-        advice = _APP_ADVICE
-        app_frame = self._app_frame(stack)
-        if app_frame is not None:
-            location = (
-                f" at {app_frame.filename[len(self._app_root) :]}:"
-                f"{app_frame.lineno} in {app_frame.name}"
-            )
+        importing = next(
+            (
+                index
+                for index, frame in enumerate(frames)
+                if frame.f_code.co_filename.startswith(_IMPORT_MACHINERY)
+            ),
+            None,
+        )
+        if importing is None:
+            app_frame = self._app_frame(frames)
+            activity = ""
+            advice = _APP_ADVICE
         else:
-            location = ""
-            if fn is not None and not self._is_app_file(
-                handler_file := fn.__code__.co_filename
-            ):
-                with _package_reports_lock:
-                    if fn in _reported_package_handlers:
-                        return None
-                    _reported_package_handlers.add(fn)
-                subject += f" (from package {fn.__module__.partition('.')[0]})"
-                advice = _PACKAGE_ADVICE
-                # Start at the handler, skipping the frames that dispatch it.
-                for index, frame in enumerate(stack):
-                    if frame.filename == handler_file:
-                        frames = stack[index:]
-                        break
-        return subject, scope, location, advice, "".join(traceback.format_list(frames))
+            # Point at the app line that starts the import, not inside the module.
+            app_frame = self._app_frame(frames[:importing])
+            # The outermost module body is the module the import statement names.
+            module = next(
+                (
+                    frame.f_globals.get("__name__")
+                    for frame in frames[importing:]
+                    if frame.f_code.co_name == "<module>"
+                ),
+                None,
+            )
+            activity = f" while importing {module or 'a module'}"
+            advice = (
+                f"Import {module or 'it'} at the top of a module so it loads with "
+                "the app, or load it in a thread first with `await asyncio.to_thread("
+                f"importlib.import_module, {repr(module) if module else 'name'})`."
+            )
+        location = (
+            ""
+            if app_frame is None
+            else f" at {app_frame.f_code.co_filename[len(self._app_root) :]}:"
+            f"{app_frame.f_lineno} in {app_frame.f_code.co_name}"
+        )
+        if (
+            fn is not None
+            and app_frame is None
+            and self._app_frame(frames) is None
+            and not self._is_app_file(handler_file := fn.__code__.co_filename)
+        ):
+            with _package_reports_lock:
+                if fn in _reported_package_handlers:
+                    return None
+                _reported_package_handlers.add(fn)
+            subject += f" (from package {fn.__module__.partition('.')[0]})"
+            advice = _PACKAGE_ADVICE
+            # Start at the handler, skipping the frames that dispatch it.
+            for index, frame in enumerate(frames):
+                if frame.f_code.co_filename == handler_file:
+                    frames = frames[index:]
+                    break
+        return _BlockingReport(
+            subject,
+            f"{subject} is blocking the event loop{location}{activity} "
+            f"(threshold: {self.threshold:.3f}s){scope}. {advice}",
+            traceback.StackSummary.extract(
+                (frame, frame.f_lineno)
+                for frame in frames
+                if not frame.f_code.co_filename.startswith(_IMPORT_MACHINERY)
+            ),
+        )
 
     def _is_app_file(self, filename: str) -> bool:
         """Check whether a file is app code, outside the stdlib and packages.
@@ -150,24 +198,22 @@ class EventLoopBlockingMonitor:
             _LIBRARY_PATHS
         )
 
-    def _app_frame(
-        self, stack: traceback.StackSummary
-    ) -> traceback.FrameSummary | None:
+    def _app_frame(self, frames: list[FrameType]) -> FrameType | None:
         """Find the innermost frame of app code, outside the stdlib and packages.
 
         Args:
-            stack: The frames, outermost first.
+            frames: The frames, outermost first.
 
         Returns:
             The innermost app frame, or None if no frame is app code.
         """
-        for frame in reversed(stack):
-            if self._is_app_file(frame.filename):
+        for frame in reversed(frames):
+            if self._is_app_file(frame.f_code.co_filename):
                 return frame
         return None
 
-    def _task_stack(self, task: asyncio.Task) -> traceback.StackSummary | None:
-        """Extract the loop thread's frames from the task entry to the blocking line.
+    def _task_frames(self, task: asyncio.Task) -> list[FrameType] | None:
+        """Collect the loop thread's frames from the task entry to the blocking line.
 
         Args:
             task: The task that runs on the blocked loop.
@@ -182,9 +228,8 @@ class EventLoopBlockingMonitor:
         while frame is not None:
             frames.append(frame)
             if frame is entry:
-                return traceback.StackSummary.extract(
-                    (frame, frame.f_lineno) for frame in reversed(frames)
-                )
+                frames.reverse()
+                return frames
             frame = frame.f_back
         return None
 
@@ -210,18 +255,14 @@ class EventLoopBlockingMonitor:
                 if (
                     subject is None
                     and elapsed + interval >= self.threshold
-                    and (blocking := self._describe_blocking()) is not None
+                    and (report := self._describe_blocking()) is not None
                 ):
-                    subject, scope, location, advice, stack = blocking
+                    subject = report.subject
                     logger.warning(
-                        "%s is blocking the event loop%s (threshold: %.3fs)%s. %s\n"
-                        "Blocking stack (most recent call last):\n%s",
-                        subject,
-                        location,
-                        self.threshold,
-                        scope,
-                        advice,
-                        stack.rstrip(),
+                        "%s\n"
+                        "Stack when the threshold was reached (most recent call last):\n%s",
+                        report.summary,
+                        "".join(report.stack.format()).rstrip(),
                     )
             # A stop that lands as the loop responds still gets the total; one
             # that lands while the loop is blocked has no total to report.

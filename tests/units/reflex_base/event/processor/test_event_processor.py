@@ -679,7 +679,9 @@ async def test_processor_reports_blocking_sync_handler(
     # with a handler that blocks once a probe is queued.
     assert re.search(r"blocked the event loop for \d+\.\d+s in total", caplog.text)
     # The stack of the event task ends at the blocking line, without loop frames.
-    assert "Blocking stack (most recent call last):" in caplog.text
+    assert (
+        "Stack when the threshold was reached (most recent call last):" in caplog.text
+    )
     assert "time.sleep(0.12)" in caplog.text
     assert "base_events.py" not in caplog.text
 
