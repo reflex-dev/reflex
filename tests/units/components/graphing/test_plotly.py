@@ -7,7 +7,14 @@ import plotly.graph_objects as go
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base.utils.serializers import serialize, serialize_figure
-from reflex_components_plotly.plotly import _MAPBOX_TO_MAP_JS, PlotlyMapbox
+from reflex_components_plotly.plotly import (
+    _MAPBOX_TO_MAP_JS,
+    Plotly,
+    PlotlyBasic,
+    PlotlyMap,
+    PlotlyMapbox,
+    PlotlyStrict,
+)
 
 import reflex as rx
 
@@ -18,11 +25,14 @@ const MapPlotlyPlot = ClientSide(() =>
 """
 
 MAPBOX_WARNING = (
-    "rx.plotly uses Plotly.js 4, which no longer supports Mapbox traces or "
-    "layout.mapbox. Migrate to MapLibre traces and layout.map with rx.plotly.map "
-    "(or rx.plotly for mixed figures). For a temporary Mapbox-only fallback, use "
-    "the deprecated rx.plotly.mapbox."
+    "Plotly.js 4 removed Mapbox traces and layout.mapbox. Reflex renames them to "
+    "scattermap, choroplethmap, densitymap and layout.map until Reflex 1.0. "
+    "Use the MapLibre names in the figure instead."
 )
+
+
+class CustomMapbox(PlotlyMapbox):
+    """A user subclass of the deprecated Mapbox component."""
 
 
 @pytest.fixture
@@ -197,25 +207,20 @@ def test_plotly_mapbox_deprecation_uses_map_bundle(
     assert not any("mapbox-dist-min" in lib for lib in imports)
     assert "plotly.js-locales@4.3.0" in imports
     assert component._get_dynamic_imports() == MAP_DYNAMIC_IMPORT
-    map_figure = rx.plotly.map(data=plotly_fig, locale="fr")._render().special_props[-1]
+
+
+@pytest.mark.parametrize(
+    "component_cls",
+    [Plotly, PlotlyBasic, PlotlyMap, PlotlyStrict, PlotlyMapbox, CustomMapbox],
+)
+def test_plotly_renames_mapbox_in_every_variant(
+    component_cls: type[Plotly], plotly_fig: go.Figure
+):
+    """Every Plotly component and subclass passes its figure through the rename."""
+    component = component_cls.create(data=plotly_fig, template=None)
     assert (
         str(component._render().special_props[-1])
-        == f"_rxPlotlyMapboxToMap({map_figure!s})"
-    )
-    assert _MAPBOX_TO_MAP_JS in component._get_all_custom_code()
-
-
-def test_plotly_mapbox_subclass_renames(plotly_fig: go.Figure):
-    """Subclasses of the legacy component keep the Mapbox rename."""
-
-    class CustomMapbox(PlotlyMapbox):
-        pass
-
-    component = CustomMapbox.create(data=plotly_fig)
-    map_figure = rx.plotly.map(data=plotly_fig)._render().special_props[-1]
-    assert (
-        str(component._render().special_props[-1])
-        == f"_rxPlotlyMapboxToMap({map_figure!s})"
+        == f"_rxPlotlyMapboxToMap({rx.Var.create(plotly_fig).to(dict)!s})"
     )
     assert _MAPBOX_TO_MAP_JS in component._get_all_custom_code()
 
@@ -289,10 +294,8 @@ def test_plotly_mapbox_renames_to_map():
     }
     script = rf"""
 const assert = require('node:assert/strict');
+console.warn = () => {{}};
 {_MAPBOX_TO_MAP_JS}
-assert.equal(_rxPlotlyMapboxToMap(undefined), undefined);
-assert.equal(_rxPlotlyMapboxToMap(null), null);
-assert.deepEqual(_rxPlotlyMapboxToMap({{}}), {{}});
 const figure = {json.dumps(figure)};
 const converted = _rxPlotlyMapboxToMap(figure);
 assert.deepEqual(converted, {json.dumps(expected)});
@@ -303,39 +306,43 @@ assert.deepEqual(figure, {json.dumps(figure)});
 
 
 @pytest.mark.parametrize(
-    ("figure", "warns"),
+    ("figure", "expected"),
     [
-        ({"data": [{"type": "scattermapbox"}]}, True),
-        ({"data": [{"type": "choroplethmapbox"}]}, True),
-        ({"data": [{"type": "densitymapbox"}]}, True),
-        ({"layout": {"mapbox": {}}}, True),
-        ({"layout": {"mapbox2": {}}}, True),
-        ({"data": [{"type": "scattermap"}], "layout": {"map": {}}}, False),
-        ({"data": [{"x": [1], "y": [2]}]}, False),
-        ({}, False),
-        (None, False),
+        ({"data": [{"type": "scattermapbox"}]}, {"data": [{"type": "scattermap"}]}),
+        (
+            {"data": [{"type": "choroplethmapbox"}]},
+            {"data": [{"type": "choroplethmap"}]},
+        ),
+        ({"data": [{"type": "densitymapbox"}]}, {"data": [{"type": "densitymap"}]}),
+        ({"layout": {"mapbox": {}}}, {"layout": {"map": {}}}),
+        ({"layout": {"mapbox2": {}}}, {"layout": {"map2": {}}}),
+        ({"data": [{"type": "scattermap"}], "layout": {"map": {}}}, None),
+        ({"data": [{"x": [1], "y": [2]}]}, None),
+        (
+            {"data": [{"x": [1]}], "layout": {"template": {"layout": {"mapbox": {}}}}},
+            None,
+        ),
+        ({}, None),
+        (None, None),
     ],
 )
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
-def test_plotly_mapbox_warning(figure: dict | None, warns: bool):
-    """Warn once for removed Mapbox inputs without changing the figure."""
-    component = rx.plotly()
-    code = next(
-        code for code in component.add_custom_code() if "_rxWarnPlotlyMapbox" in code
-    )
+def test_plotly_mapbox_warning(figure: dict | None, expected: dict | None):
+    """Warn once and rename Mapbox figures; return other figures unchanged."""
     script = rf"""
 const assert = require('node:assert/strict');
 const warnings = [];
 console.warn = message => warnings.push(message);
-{code}
-assert.equal(_rxWarnPlotlyMapbox(undefined), undefined);
+{_MAPBOX_TO_MAP_JS}
+assert.equal(_rxPlotlyMapboxToMap(undefined), undefined);
 const figure = {json.dumps(figure)};
-assert.equal(_rxWarnPlotlyMapbox(figure), figure);
-assert.equal(_rxWarnPlotlyMapbox(figure), figure);
-assert.deepEqual(figure, {json.dumps(figure)});
-assert.equal(warnings.length, {int(warns)});
-if (warnings.length) {{
-    assert.equal(warnings[0], {json.dumps(MAPBOX_WARNING)});
+const expected = {json.dumps(expected)};
+for (let i = 0; i < 2; i++) {{
+    const converted = _rxPlotlyMapboxToMap(figure);
+    if (expected === null) assert.equal(converted, figure);
+    else assert.deepEqual(converted, expected);
 }}
+assert.deepEqual(figure, {json.dumps(figure)});
+assert.deepEqual(warnings, expected === null ? [] : [{json.dumps(MAPBOX_WARNING)}]);
 """
     subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)

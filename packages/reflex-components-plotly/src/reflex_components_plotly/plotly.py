@@ -78,6 +78,53 @@ _ID_PROP = "id"
 _DIV_ID_PROP = "divId"
 
 
+# Plotly.js 4 removed Mapbox. A figure with Mapbox traces or layout.mapbox keys
+# gets a one-time warning, then MapLibre names everywhere: keys at any depth
+# (layout, template, frames, relayout paths) and `type`, `subplot` and `args`
+# values. Remove with rx.plotly.mapbox in 1.0.
+_MAPBOX_TO_MAP_JS = """
+const _rxMapboxToMapName = (name) =>
+    name.replace(/^((?:scatter|choropleth|density)?map)box(?=\\d*(?:\\.|$))/, "$1");
+const _rxRenamePlotlyMapbox = (value, key) => {
+    if (typeof value === "string") {
+        return key === "type" || key === "subplot" || key === "args"
+            ? _rxMapboxToMapName(value)
+            : value;
+    }
+    if (Array.isArray(value)) {
+        return typeof value[0] === "number"
+            ? value
+            : value.map((item) => _rxRenamePlotlyMapbox(item, key));
+    }
+    if (!value || typeof value !== "object") return value;
+    return Object.fromEntries(
+        Object.entries(value).map(([name, item]) => [
+            _rxMapboxToMapName(name),
+            _rxRenamePlotlyMapbox(item, name),
+        ])
+    );
+};
+let _rxDidWarnPlotlyMapbox = false;
+const _rxPlotlyMapboxToMap = (figure) => {
+    if (!(
+        figure?.data?.some((trace) => trace?.type?.endsWith("mapbox")) ||
+        Object.keys(figure?.layout ?? {}).some((key) => /^mapbox\\d*$/.test(key))
+    )) {
+        return figure;
+    }
+    if (!_rxDidWarnPlotlyMapbox) {
+        _rxDidWarnPlotlyMapbox = true;
+        console.warn(
+            "Plotly.js 4 removed Mapbox traces and layout.mapbox. Reflex renames them to " +
+            "scattermap, choroplethmap, densitymap and layout.map until Reflex 1.0. " +
+            "Use the MapLibre names in the figure instead."
+        );
+    }
+    return _rxRenamePlotlyMapbox(figure);
+};
+"""
+
+
 class Plotly(NoSSRComponent):
     """Display a plotly graph."""
 
@@ -256,25 +303,8 @@ const extractPoints = (points) => {
     })
 }
 """,
+            _MAPBOX_TO_MAP_JS,
         ]
-        if type(self) is Plotly:
-            codes.append("""
-let _rxDidWarnPlotlyMapbox = false;
-const _rxWarnPlotlyMapbox = (figure) => {
-    if (!_rxDidWarnPlotlyMapbox && (
-        figure?.data?.some(trace => trace.type?.endsWith("mapbox")) ||
-        Object.keys(figure?.layout ?? {}).some(key => /^mapbox\\d*$/.test(key))
-    )) {
-        _rxDidWarnPlotlyMapbox = true;
-        console.warn(
-            "rx.plotly uses Plotly.js 4, which no longer supports Mapbox traces or layout.mapbox. " +
-            "Migrate to MapLibre traces and layout.map with rx.plotly.map (or rx.plotly for mixed figures). " +
-            "For a temporary Mapbox-only fallback, use the deprecated rx.plotly.mapbox."
-        );
-    }
-    return figure;
-}
-""")
         if self.locale is not None:
             codes.append("""
 const _rxResolvePlotlyLocaleData = (plotlyLocales, locale) => {
@@ -365,9 +395,12 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
             figure_expr = f"{{ ...mergician({figure!s} ?? {{}}, ...{Var.create(merge_dicts)!s}) }}"
         else:
             figure_expr = str(figure)
-        if type(self) is Plotly:
-            figure_expr = f"_rxWarnPlotlyMapbox({figure_expr})"
-        tag = tag.set(special_props=[*tag.special_props, Var(_js_expr=figure_expr)])
+        tag = tag.set(
+            special_props=[
+                *tag.special_props,
+                Var(_js_expr=f"_rxPlotlyMapboxToMap({figure_expr})"),
+            ]
+        )
         if self.locale is not None:
             config = self.config if self.config is not None else LiteralVar.create({})
             tag = tag.set(
@@ -565,33 +598,6 @@ class PlotlyMap(Plotly):
         return dynamic_plotly_import(self.tag, "plotly.js-map-dist-min")
 
 
-# Mapbox names become MapLibre names: keys anywhere in the figure (layout,
-# template, frames, relayout paths) and values of `type`, `subplot` and `args`.
-_MAPBOX_TO_MAP_JS = """
-const _rxMapboxToMapName = (name) =>
-    name.replace(/^((?:scatter|choropleth|density)?map)box(?=\\d*(?:\\.|$))/, "$1");
-const _rxPlotlyMapboxToMap = (value, key) => {
-    if (typeof value === "string") {
-        return key === "type" || key === "subplot" || key === "args"
-            ? _rxMapboxToMapName(value)
-            : value;
-    }
-    if (Array.isArray(value)) {
-        return typeof value[0] === "number"
-            ? value
-            : value.map((item) => _rxPlotlyMapboxToMap(item, key));
-    }
-    if (!value || typeof value !== "object") return value;
-    return Object.fromEntries(
-        Object.entries(value).map(([name, item]) => [
-            _rxMapboxToMapName(name),
-            _rxPlotlyMapboxToMap(item, name),
-        ])
-    );
-};
-"""
-
-
 class PlotlyMapbox(PlotlyMap):
     """Display a legacy Mapbox figure on the MapLibre bundle."""
 
@@ -631,21 +637,6 @@ class PlotlyMapbox(PlotlyMap):
                 removal_version="1.0",
             )
             return super().create(*children, **props)
-
-    def add_custom_code(self) -> list[str]:
-        """Add the helper that renames Mapbox figures for the MapLibre bundle.
-
-        Returns:
-            The rename helper.
-        """
-        return [_MAPBOX_TO_MAP_JS]
-
-    def _render(self):
-        tag = super()._render()
-        *props, figure = tag.special_props
-        return tag.set(
-            special_props=[*props, Var(_js_expr=f"_rxPlotlyMapboxToMap({figure!s})")]
-        )
 
 
 class PlotlyFinance(Plotly):

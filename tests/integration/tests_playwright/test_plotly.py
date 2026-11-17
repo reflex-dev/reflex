@@ -7,6 +7,12 @@ from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
+MAPBOX_WARNING = (
+    "Plotly.js 4 removed Mapbox traces and layout.mapbox. Reflex renames them to "
+    "scattermap, choroplethmap, densitymap and layout.map until Reflex 1.0. "
+    "Use the MapLibre names in the figure instead."
+)
+
 
 def PlotlyLocaleApp():
     """App rendering a plotly figure with no locale, two locales, and a state config."""
@@ -333,9 +339,7 @@ def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
     page.on(
         "console",
         lambda message: (
-            warnings.append(message.text)
-            if "rx.plotly uses Plotly.js 4" in message.text
-            else None
+            warnings.append(message.text) if message.type == "warning" else None
         ),
     )
     page.goto(f"{plotly_locale_app.frontend_url.rstrip('/')}/maps")
@@ -381,14 +385,14 @@ def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
     page.mouse.click(point["x"], point["y"])
     expect(page.locator("#map-clicks")).to_have_text("1")
     assert not errors
-    assert not warnings
+    assert warnings == [MAPBOX_WARNING]
 
 
 @pytest.mark.parametrize("route", ["mapbox-literal", "mapbox-layout", "mapbox-state"])
 def test_plotly_mapbox_migration_warning(
     page: Page, plotly_locale_app: AppHarness, route: str
 ):
-    """Warn for literal and reactive Mapbox inputs to the default renderer."""
+    """Rename and warn for literal and reactive Mapbox inputs to the default renderer."""
     assert plotly_locale_app.frontend_url is not None
     errors: list[str] = []
     page.on("pageerror", lambda error: errors.append(str(error)))
@@ -396,9 +400,7 @@ def test_plotly_mapbox_migration_warning(
     page.on(
         "console",
         lambda message: (
-            warnings.append(message.text)
-            if message.type == "warning" and "rx.plotly" in message.text
-            else None
+            warnings.append(message.text) if message.type == "warning" else None
         ),
     )
     page.goto(f"{plotly_locale_app.frontend_url.rstrip('/')}/{route}")
@@ -408,15 +410,16 @@ def test_plotly_mapbox_migration_warning(
     if route == "mapbox-state":
         assert not warnings
         with page.expect_console_message(
-            predicate=lambda message: "rx.plotly.map" in message.text
+            predicate=lambda message: message.text == MAPBOX_WARNING
         ):
             page.locator("#use-mapbox").click()
-    assert warnings == [
-        (
-            "rx.plotly uses Plotly.js 4, which no longer supports Mapbox traces or "
-            "layout.mapbox. Migrate to MapLibre traces and layout.map with "
-            "rx.plotly.map (or rx.plotly for mixed figures). For a temporary "
-            "Mapbox-only fallback, use the deprecated rx.plotly.mapbox."
+    if route != "mapbox-layout":
+        page.wait_for_function(
+            """() => document.getElementById('migration-plot')
+                ?._fullLayout?.map?._subplot?.map?.loaded()""",
+            timeout=60_000,
         )
-    ]
+        plot = page.locator("#migration-plot")
+        assert plot.evaluate("plot => plot._fullData[0].type") == "scattermap"
+    assert warnings == [MAPBOX_WARNING]
     assert not errors
