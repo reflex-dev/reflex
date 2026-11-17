@@ -275,6 +275,27 @@ const _rxWarnPlotlyMapbox = (figure) => {
     return figure;
 }
 """)
+        elif type(self) is PlotlyMapbox:
+            codes.append("""
+const _rxPlotlyMapboxToMap = (figure) => {
+    if (!figure) return figure;
+    const toMap = (name) => name.replace(/^mapbox(\\d*)$/, "map$1");
+    const toMapTrace = (trace) => ({
+        ...trace,
+        ...(trace.type && { type: trace.type.replace(/mapbox$/, "map") }),
+        ...(trace.subplot && { subplot: toMap(trace.subplot) }),
+    });
+    return {
+        ...figure,
+        ...(figure.data && { data: figure.data.map(toMapTrace) }),
+        ...(figure.layout && {
+            layout: Object.fromEntries(
+                Object.entries(figure.layout).map(([key, value]) => [toMap(key), value])
+            ),
+        }),
+    };
+}
+""")
         if self.locale is not None:
             codes.append("""
 const _rxResolvePlotlyLocaleData = (plotlyLocales, locale) => {
@@ -367,6 +388,8 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
             figure_expr = str(figure)
         if type(self) is Plotly:
             figure_expr = f"_rxWarnPlotlyMapbox({figure_expr})"
+        elif type(self) is PlotlyMapbox:
+            figure_expr = f"_rxPlotlyMapboxToMap({figure_expr})"
         tag = tag.set(special_props=[*tag.special_props, Var(_js_expr=figure_expr)])
         if self.locale is not None:
             config = self.config if self.config is not None else LiteralVar.create({})
@@ -565,14 +588,8 @@ class PlotlyMap(Plotly):
         return dynamic_plotly_import(self.tag, "plotly.js-map-dist-min")
 
 
-class PlotlyMapbox(Plotly):
-    """Display a plotly mapbox graph."""
-
-    tag: str = "MapboxPlotlyPlot"
-
-    library = "react-plotly.js@4.1.0"
-
-    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.7.0"]
+class PlotlyMapbox(PlotlyMap):
+    """Display a legacy Mapbox figure on the MapLibre bundle."""
 
     if TYPE_CHECKING:
 
@@ -594,7 +611,7 @@ class PlotlyMapbox(Plotly):
 
         @classmethod
         def create(cls, *children, **props) -> Component:
-            """Create a legacy Plotly map with a migration warning.
+            """Create a legacy Mapbox map with a migration warning.
 
             Args:
                 *children: The children of the component.
@@ -610,22 +627,6 @@ class PlotlyMapbox(Plotly):
                 removal_version="1.0",
             )
             return super().create(*children, **props)
-
-    def add_imports(self) -> ImportDict:
-        """Add imports for the plotly mapbox component.
-
-        Returns:
-            The imports for the plotly mapbox component.
-        """
-        return CREATE_PLOTLY_COMPONENT
-
-    def _get_dynamic_imports(self) -> str:
-        """Get the dynamic imports for the plotly mapbox component.
-
-        Returns:
-            The dynamic imports for the plotly mapbox component.
-        """
-        return dynamic_plotly_import(self.tag, "plotly.js-mapbox-dist-min")
 
 
 class PlotlyFinance(Plotly):

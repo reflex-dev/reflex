@@ -160,10 +160,10 @@ def test_plotly_map_imports_and_locale(plotly_fig: go.Figure):
     assert "_rxGetPlotlyLocaleConfig" in str(rendered.props["config"])
 
 
-def test_plotly_mapbox_deprecation_preserves_bundle(
+def test_plotly_mapbox_deprecation_uses_map_bundle(
     plotly_fig: go.Figure, mocker: MockerFixture
 ):
-    """Legacy maps warn without losing the bundle or inherited locale support."""
+    """Legacy maps warn and render through the Plotly.js 4 MapLibre bundle."""
     deprecate = mocker.patch("reflex_base.utils.console.deprecate")
     component = rx.plotly.mapbox(data=plotly_fig, locale="fr")
 
@@ -173,10 +173,49 @@ def test_plotly_mapbox_deprecation_preserves_bundle(
     assert deprecate.call_args.kwargs["removal_version"] == "1.0"
     assert deprecate.call_args.kwargs["deprecation_version"] == "0.11.1"
     imports = component._get_all_imports()
-    assert "plotly.js-mapbox-dist-min@3.7.0" in imports
-    assert "plotly.js-mapbox-dist-min@4.3.0" not in imports
+    assert "plotly.js-map-dist-min@4.3.0" in imports
+    assert not any("mapbox-dist-min" in lib for lib in imports)
     assert "plotly.js-locales@4.3.0" in imports
-    assert "import('plotly.js-mapbox-dist-min')" in component._get_dynamic_imports()
+    assert "import('plotly.js-map-dist-min')" in component._get_dynamic_imports()
+    assert "_rxPlotlyMapboxToMap(" in str(component._render().special_props[-1])
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_plotly_mapbox_renames_to_map():
+    """Rename Mapbox traces, subplots and layout keys without mutating the input."""
+    code = next(
+        code
+        for code in rx.plotly.mapbox().add_custom_code()
+        if "_rxPlotlyMapboxToMap" in code
+    )
+    figure = {
+        "data": [
+            {"type": "scattermapbox"},
+            {"type": "choroplethmapbox", "subplot": "mapbox2"},
+            {"type": "densitymapbox", "subplot": "mapbox"},
+            {"x": [1]},
+        ],
+        "layout": {"mapbox": {"zoom": 3}, "mapbox2": {}, "title": "t"},
+    }
+    expected = {
+        "data": [
+            {"type": "scattermap"},
+            {"type": "choroplethmap", "subplot": "map2"},
+            {"type": "densitymap", "subplot": "map"},
+            {"x": [1]},
+        ],
+        "layout": {"map": {"zoom": 3}, "map2": {}, "title": "t"},
+    }
+    script = rf"""
+const assert = require('node:assert/strict');
+{code}
+assert.equal(_rxPlotlyMapboxToMap(undefined), undefined);
+assert.deepEqual(_rxPlotlyMapboxToMap({{}}), {{}});
+const figure = {json.dumps(figure)};
+assert.deepEqual(_rxPlotlyMapboxToMap(figure), {json.dumps(expected)});
+assert.deepEqual(figure, {json.dumps(figure)});
+"""
+    subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
 
 
 @pytest.mark.parametrize(

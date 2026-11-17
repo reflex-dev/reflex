@@ -325,7 +325,7 @@ def test_plotly_layout_titles(page: Page, plotly_locale_app: AppHarness):
 
 
 def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
-    """Both map bundles render together with locales, updates and click events."""
+    """Map and legacy Mapbox plots render with locales, updates and click events."""
     assert plotly_locale_app.frontend_url is not None
     errors: list[str] = []
     warnings: list[str] = []
@@ -342,7 +342,7 @@ def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
 
     for plot_id, subplot, trace_type, locale, pan_title in (
         ("modern-map", "map", "scattermap", "de", "Verschieben"),
-        ("legacy-map", "mapbox", "scattermapbox", "fr", "Translation"),
+        ("legacy-map", "map", "scattermap", "fr", "Translation"),
     ):
         page.wait_for_function(
             """([id, subplot]) => {

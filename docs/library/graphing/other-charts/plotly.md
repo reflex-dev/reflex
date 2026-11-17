@@ -260,11 +260,12 @@ Change `layout.mapbox` to `layout.map` and remove `config.mapboxAccessToken`.
 Update numbered subplot references as well, such as `mapbox2` to `map2`. Review
 your map style and layers for Mapbox-specific URLs or credentials.
 
-During deprecation, `rx.plotly.mapbox` keeps its Plotly.js 3.7 bundle. Existing
-Mapbox-only figures can continue using it while they migrate. That bundle only
-supports the three Mapbox trace types and ordinary scatter traces; it is not a
-fallback for arbitrary mixed figures. Migrate those figures to MapLibre traces
-and render them with the full `rx.plotly` component.
+During deprecation, `rx.plotly.mapbox` loads the same MapLibre bundle as
+`rx.plotly.map`. It renames Mapbox traces, `layout.mapbox` keys and subplot
+references to their MapLibre names, so existing Mapbox figures keep rendering
+while they migrate. The access token is ignored, and styles hosted by Mapbox
+(`mapbox://` URLs) do not load. Migrate figures that mix maps with other trace
+types to MapLibre traces and render them with the full `rx.plotly` component.
 
 The default `rx.plotly` component logs a browser warning when a figure contains
 Mapbox traces or subplot settings, including figures received through state
@@ -272,9 +273,8 @@ updates. These inputs cannot render with Plotly.js 4; follow the migration above
 
 ### Plotly.js 4 compatibility
 
-The default component and all variants except the deprecated `rx.plotly.mapbox`
-use Plotly.js 4. Figures previously passed to the default component with
-Mapbox traces need the migration above. Other upstream changes to check include:
+The default component and all variants use Plotly.js 4. Figures previously
+passed to the default component with Mapbox traces need the migration above. Other upstream changes to check include:
 
 - MathJax 2 is no longer supported; use MathJax 3 or 4.
 - Chart Studio options including `showLink`, `linkText`, `sendData`, `showSources`
