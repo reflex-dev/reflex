@@ -210,6 +210,7 @@ def get_sidebar_items_backend():
             children=[
                 utility_methods.router_attributes,
                 utility_methods.lifespan_tasks,
+                utility_methods.exception_handlers,
                 utility_methods.other_methods,
             ],
         ),

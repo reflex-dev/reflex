@@ -113,7 +113,7 @@ class BaseHTML(Element):
     draggable: Var[bool] = field(doc="Defines whether the element can be dragged.")
 
     enter_key_hint: Var[EnterKeyHint] = field(
-        doc="Hints what media types the media element is able to play."
+        doc="Hints the label or icon to display on the virtual keyboard's enter key."
     )
 
     hidden: Var[bool] = field(doc="Defines whether the element is hidden.")

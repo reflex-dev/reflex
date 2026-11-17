@@ -130,7 +130,7 @@ def radar_start_end():
 
 Chart data tied to a State var causes the chart to automatically update when the
 state changes, providing a nice way to visualize data in response to user
-interface elements. View the "Data" tab to see the substate driving this
+interface elements. View the "Code" tab to see the state driving this
 radar chart of character traits.
 
 ```python demo exec
