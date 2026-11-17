@@ -23,7 +23,7 @@ from collections.abc import AsyncGenerator, Callable, Mapping
 from hashlib import md5
 from pathlib import Path
 from textwrap import dedent
-from types import MethodType, ModuleType
+from types import FunctionType, MethodType, ModuleType
 from typing import Any, ClassVar, ForwardRef, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -35,12 +35,13 @@ from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.event import Event, EventHandler
+from reflex_base.event import Event, EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
+    EventHandlerValueError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
@@ -5030,6 +5031,262 @@ config = rx.Config(
         assert "setvar" in TestState.event_handlers
 
 
+def shared_explicit_callback() -> EventSpec:
+    """A module-level callback that a state also exposes as an attribute.
+
+    Returns:
+        The event to run.
+    """
+    return rx.console_log("shared")
+
+
+def test_explicit_event_handlers(tmp_path, forked_registration_context):
+    """With state_explicit_event_handlers, undecorated methods stay plain methods."""
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = """
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+    state_explicit_event_handlers=True,
+)
+    """
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        reflex_base.config.reload_config()
+        from reflex.state import State
+
+        class ExplicitMixin(State, mixin=True):
+            @rx.event
+            def mixin_handler(self):
+                pass
+
+            def mixin_helper(self) -> int:
+                return 1
+
+        # Named like the attribute it is exposed as, like a class-body method.
+        def made_callback() -> EventSpec:
+            return rx.console_log("made")
+
+        made = made_callback
+
+        class ExplicitCallbacks:
+            @staticmethod
+            def refresh() -> EventSpec:
+                return rx.console_log("refresh")
+
+        class ExplicitState(ExplicitMixin, State):
+            num: int = 0
+            shared_explicit_callback = shared_explicit_callback
+            made_callback = made
+            refresh = ExplicitCallbacks.refresh
+
+            @rx.event
+            def handler(self):
+                self.num += 1
+
+            @rx.event(background=True)
+            async def bg_handler(self):
+                pass
+
+            def helper(self) -> int:
+                return self.num + self.mixin_helper()
+
+        assert sorted(ExplicitState.event_handlers) == [
+            "bg_handler",
+            "handler",
+            "mixin_handler",
+            "setvar",
+        ]
+        assert isinstance(ExplicitState.handler, EventHandler)
+        assert isinstance(ExplicitState.bg_handler, EventHandler)
+        assert isinstance(ExplicitState.mixin_handler, EventHandler)
+        assert isinstance(ExplicitState.helper, FunctionType)
+        assert isinstance(ExplicitState.mixin_helper, FunctionType)
+        assert ExplicitState(_reflex_internal_init=True).helper() == 1  # pyright: ignore [reportCallIssue]
+
+        # Wiring an undecorated method to a trigger names the missing decorator
+        # instead of calling it with the component as `self`.
+        for trigger in (
+            ExplicitState.helper,
+            ExplicitState.mixin_helper,
+            lambda: ExplicitState.helper,
+            lambda: ExplicitState.mixin_helper,
+        ):
+            with pytest.raises(
+                EventHandlerValueError,
+                match=r"@rx\.event.*state_explicit_event_handlers",
+            ):
+                rx.button(on_click=trigger)
+
+        # A callback the state merely exposes stays usable as a trigger elsewhere.
+        rx.button(on_click=shared_explicit_callback)
+        rx.button(on_click=made_callback)
+        rx.button(on_click=ExplicitCallbacks.refresh)
+        rx.button(on_click=ExplicitState.refresh)
+
+        # Built-in states are unaffected.
+        assert "on_load_internal" in OnLoadInternalState.event_handlers
+
+
+def test_state_flags_from_env_without_config(monkeypatch):
+    """A State defined before any config load honors the REFLEX_* env var."""
+    monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
+
+    with RegistrationContext():
+
+        class WorkerState(State):
+            def helper(self):
+                pass
+
+        assert "helper" not in WorkerState.event_handlers
+
+
+def test_explicit_event_handlers_keep_decorator_above_event(monkeypatch):
+    """A handler under a functools.wraps decorator stays a handler in explicit mode."""
+    monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
+
+    def passthrough(fn):
+        @functools.wraps(fn)
+        def wrapper(self, *args, **kwargs):
+            return fn(self, *args, **kwargs)
+
+        return wrapper
+
+    with RegistrationContext():
+
+        class StackedState(State):
+            @passthrough
+            @rx.event
+            def save(self):
+                pass
+
+        assert "save" in StackedState.event_handlers
+
+
+def test_reload_config_resets_state_flags(tmp_path, forked_registration_context):
+    """Reloading a project does not leak the previous project's State-class flags.
+
+    A State defined in rxconfig.py ahead of its Config must see the default
+    (implicit) handler mode even if the previously loaded Config enabled
+    state_explicit_event_handlers.
+    """
+    explicit_root = tmp_path / "explicit"
+    explicit_root.mkdir()
+    (explicit_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+            config = rx.Config(app_name="explicit", state_explicit_event_handlers=True)
+            """
+        )
+    )
+    implicit_root = tmp_path / "implicit"
+    implicit_root.mkdir()
+    (implicit_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+
+
+            class RxconfigImplicitState(rx.State):
+                def implicit_handler(self):
+                    pass
+
+
+            config = rx.Config(app_name="implicit")
+            """
+        )
+    )
+
+    with chdir(explicit_root):
+        reflex_base.config.reload_config()
+        assert reflex_base.config.get_state_explicit_event_handlers() is True
+
+    with chdir(implicit_root):
+        reflex_base.config.reload_config()
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigImplicitState
+        assert "implicit_handler" in state_cls.event_handlers
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_in_rxconfig_after_config_honors_flags(
+    tmp_path, forked_registration_context
+):
+    """A State defined in rxconfig.py after its Config uses that Config's flags."""
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    (proj_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+
+            config = rx.Config(app_name="project1", state_explicit_event_handlers=True)
+
+
+            class RxconfigPostConfigState(rx.State):
+                def helper(self):
+                    pass
+            """
+        )
+    )
+
+    with chdir(proj_root):
+        reflex_base.config.reload_config()
+        state_cls = sys.modules[constants.Config.MODULE].RxconfigPostConfigState
+        assert "helper" not in state_cls.event_handlers
+        del sys.modules[constants.Config.MODULE]
+
+
+def test_state_flags_are_per_registration_context(
+    tmp_path, forked_registration_context
+):
+    """Each RegistrationContext resolves State-class flags from its own Config."""
+    explicit_root = tmp_path / "explicit"
+    explicit_root.mkdir()
+    (explicit_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+            config = rx.Config(app_name="explicit", state_explicit_event_handlers=True)
+            """
+        )
+    )
+    implicit_root = tmp_path / "implicit"
+    implicit_root.mkdir()
+    (implicit_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+            config = rx.Config(app_name="implicit")
+            """
+        )
+    )
+
+    with chdir(explicit_root):
+        reflex_base.config.reload_config()
+
+    with chdir(implicit_root), RegistrationContext():
+        reflex_base.config.reload_config()
+
+        class ImplicitContextState(State):
+            def handler(self):
+                pass
+
+        assert "handler" in ImplicitContextState.event_handlers
+
+    # Back on the explicit context: its Config is untouched by the other context.
+    class ExplicitContextState(State):
+        def helper(self):
+            pass
+
+    assert "helper" not in ExplicitContextState.event_handlers
+    del sys.modules[constants.Config.MODULE]
+
+
 def test_state_defined_in_rxconfig_does_not_crash(tmp_path):
     """A State subclass defined in rxconfig.py must not crash config loading.
 
@@ -5065,11 +5322,9 @@ config = rx.Config(
 def test_state_in_rxconfig_honors_env_auto_setters(tmp_path, monkeypatch):
     """A State defined in rxconfig.py (pre-config) honors REFLEX_STATE_AUTO_SETTERS.
 
-    During rxconfig import the Config does not exist yet, so the cached value is
-    unset and get_state_auto_setters falls back to the env var.
+    During rxconfig import no Config is loaded on the context yet, so
+    get_state_auto_setters falls back to the env var.
     """
-    # Simulate a fresh process where no Config has been built yet.
-    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
     monkeypatch.setenv("REFLEX_STATE_AUTO_SETTERS", "true")
 
     proj_root = tmp_path / "project1"
@@ -5095,7 +5350,6 @@ config = rx.Config(app_name="project1")
 
 def test_state_in_rxconfig_defaults_to_no_auto_setters(tmp_path, monkeypatch):
     """A State defined in rxconfig.py gets no auto-setters by default (pre-config)."""
-    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", None)
     monkeypatch.delenv("REFLEX_STATE_AUTO_SETTERS", raising=False)
 
     proj_root = tmp_path / "project1"
@@ -6885,6 +7139,36 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
     assert state.key == 1
     error_mock.assert_called_once()
+
+
+def test_setattr_unannotated_empty_containers(mocker: MockerFixture) -> None:
+    """Empty unannotated containers accept values when assigned later."""
+
+    class EmptyContainerState(rx.State):
+        mapping = {}
+        pair = ()
+        items = []
+
+    error_mock = mocker.patch("reflex_base.vars.base.logger.error")
+    state = EmptyContainerState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+    state.mapping = {"key": "value"}  # pyright: ignore[reportAttributeAccessIssue]
+    state.pair = (1, "value")  # pyright: ignore[reportAttributeAccessIssue]
+    state.items = [1]  # pyright: ignore[reportAttributeAccessIssue]
+
+    assert state.mapping == {"key": "value"}
+    assert state.pair == (1, "value")
+    assert state.items == [1]
+    error_mock.assert_not_called()
+
+
+def test_unannotated_nested_empty_container_keeps_element_type() -> None:
+    """An empty container next to a typed one keeps the typed element type."""
+
+    class NestedEmptyState(rx.State):
+        nested = [[], [1]]
+
+    assert NestedEmptyState.nested[0][0]._var_type is int
 
 
 def test_redeclared_var_is_independent_of_the_inherited_one() -> None:

@@ -28,7 +28,7 @@ from .sidebar_items.enterprise import (
     enterprise_items,
     enterprise_usage_items,
 )
-from .sidebar_items.learn import backend, frontend, hosting, learn
+from .sidebar_items.learn import backend, frontend, hosting, learn, workflows
 from .sidebar_items.recipes import recipes
 from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
@@ -196,6 +196,7 @@ append_to_items(
     learn
     + frontend
     + backend
+    + workflows
     + hosting
     + component_lib
     + graphing_libs
@@ -266,6 +267,7 @@ def sidebar_comp() -> rx.Component:
     from reflex_docs.pages.docs import ai_builder as ai_builder_pages
     from reflex_docs.pages.docs import enterprise, getting_started, state, ui
     from reflex_docs.pages.docs import hosting as hosting_page
+    from reflex_docs.pages.docs import workflows as workflows_pages
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
@@ -460,6 +462,12 @@ def sidebar_comp() -> rx.Component:
             "State",
             state.overview.path,
             filter_out_non_sidebar_items(backend),
+            url,
+        ),
+        create_sidebar_section(
+            "Workflows",
+            workflows_pages.overview.path,
+            filter_out_non_sidebar_items(workflows),
             url,
         ),
         create_sidebar_section(

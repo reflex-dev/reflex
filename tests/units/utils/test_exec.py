@@ -525,6 +525,75 @@ def test_with_development_condition_preserves_existing_options():
     assert environ["NODE_OPTIONS"] == "--max-old-space-size=4096"
 
 
+@pytest.mark.parametrize(
+    ("executor", "node_is_valid", "bun_path", "expected"),
+    [
+        # Bun is the runtime: no node, so the CLI runs under bun directly.
+        (
+            ["/opt/bun"],
+            False,
+            Path("/opt/bun"),
+            [
+                "/opt/bun",
+                "--conditions=development",
+                "run",
+                "--bun",
+                "react-router",
+                "dev",
+                "--host",
+            ],
+        ),
+        # Bun is the runtime: node is outdated, so the executor forces bun.
+        (
+            ["/opt/bun", "--bun"],
+            False,
+            Path("/opt/bun"),
+            [
+                "/opt/bun",
+                "--conditions=development",
+                "run",
+                "--bun",
+                "react-router",
+                "dev",
+                "--host",
+            ],
+        ),
+        # Node runs the script and reads the condition from NODE_OPTIONS.
+        (["/opt/bun"], True, Path("/opt/bun"), ["/opt/bun", "run", "dev"]),
+        (["/usr/bin/npm"], True, Path("/opt/bun"), ["/usr/bin/npm", "run", "dev"]),
+        # npm is the executor, so bun is not the runtime whatever node is.
+        (["/usr/bin/npm"], False, Path("/opt/bun"), ["/usr/bin/npm", "run", "dev"]),
+        (["/usr/bin/npm"], False, None, ["/usr/bin/npm", "run", "dev"]),
+    ],
+)
+def test_frontend_dev_command(
+    monkeypatch: pytest.MonkeyPatch,
+    executor: list[str],
+    node_is_valid: bool,
+    bun_path: Path | None,
+    expected: list[str],
+):
+    """The dev server runs the react-router CLI under bun only when bun is the runtime.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        executor: The preferred package executor command.
+        node_is_valid: Whether a supported Node.js is installed.
+        bun_path: The resolved bun binary, if any.
+        expected: The expected dev server command.
+    """
+    from reflex.utils import js_runtimes
+
+    monkeypatch.setattr(
+        js_runtimes, "get_js_package_executor", lambda raise_on_none: [executor]
+    )
+    monkeypatch.setattr(js_runtimes, "check_node_version", lambda: node_is_valid)
+    monkeypatch.setattr(exec_utils.path_ops, "get_bun_path", lambda: bun_path)
+    executor[0] = str(Path(executor[0]))
+    expected[0] = str(Path(expected[0]))
+    assert exec_utils._frontend_dev_command() == expected
+
+
 def test_arbitrate_ssr_stores_flag_when_env_unset(monkeypatch: pytest.MonkeyPatch):
     """The flag value is stored in the environment when REFLEX_SSR is unset."""
     monkeypatch.setenv(environment.REFLEX_SSR.name, "")
@@ -1341,6 +1410,32 @@ def test_backend_worker_target_loads_config_before_app(
     )
 
     assert result.stdout.splitlines()[-1] == "True"
+
+
+def test_get_reload_paths_ignores_missing_exclude_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """An exclude path that does not exist excludes nothing.
+
+    Args:
+        tmp_path: Temporary app root.
+        monkeypatch: Pytest monkeypatch fixture.
+        mocker: Pytest mocker fixture.
+    """
+    (tmp_path / "data").mkdir()
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "rxconfig.py").touch()
+    monkeypatch.chdir(tmp_path)
+    mocker.patch.object(exec_utils, "get_module_path", return_value=None)
+    monkeypatch.delenv(environment.REFLEX_HOT_RELOAD_OVERRIDE_PATHS.name, raising=False)
+    monkeypatch.delenv(environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.name, raising=False)
+    monkeypatch.setenv(
+        environment.REFLEX_HOT_RELOAD_EXCLUDE_PATHS.name,
+        os.pathsep.join(["data", "missing"]),
+    )
+    cwd = Path.cwd()
+
+    assert sorted(exec_utils.get_reload_paths()) == [cwd / "pkg", cwd / "rxconfig.py"]
 
 
 @pytest.mark.usefixtures("windows_text_io")
