@@ -69,7 +69,14 @@ class Match(Component):
         cases, default = cls._process_cases(list(cases))
         match_cases, has_set_case = cls._process_match_cases(cases)
 
-        if cls._has_set_type(match_cond_var._var_type) or has_set_case:
+        try:
+            has_set_subject = cls._cached_has_set_type(match_cond_var._var_type)
+        except TypeError:
+            has_set_subject = cls._cached_has_set_type.__wrapped__(
+                match_cond_var._var_type
+            )
+
+        if has_set_subject or has_set_case:
             match_cond_var = cls._comparable(match_cond_var)
             match_cases = [
                 ([cls._comparable(condition) for condition in conditions], result)
