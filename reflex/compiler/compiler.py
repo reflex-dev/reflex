@@ -1303,7 +1303,7 @@ def compile_app(
         return False
 
     progress = console.progress() if use_rich else console.PoorProgress()
-    fixed_steps = 7
+    fixed_steps = 8
     compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
         app,
         config.plugins,
