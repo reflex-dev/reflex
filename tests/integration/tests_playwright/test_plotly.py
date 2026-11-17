@@ -411,6 +411,12 @@ def test_plotly_mapbox_migration_warning(
             predicate=lambda message: "rx.plotly.map" in message.text
         ):
             page.locator("#use-mapbox").click()
-    assert len(warnings) == 1
-    assert "layout.map" in warnings[0]
+    assert warnings == [
+        (
+            "rx.plotly uses Plotly.js 4, which no longer supports Mapbox traces or "
+            "layout.mapbox. Migrate to MapLibre traces and layout.map with "
+            "rx.plotly.map (or rx.plotly for mixed figures). For a temporary "
+            "Mapbox-only fallback, use the deprecated rx.plotly.mapbox."
+        )
+    ]
     assert not errors

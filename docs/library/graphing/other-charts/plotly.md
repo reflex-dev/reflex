@@ -262,8 +262,9 @@ your map style and layers for Mapbox-specific URLs or credentials.
 
 During deprecation, `rx.plotly.mapbox` loads the same MapLibre bundle as
 `rx.plotly.map`. It renames Mapbox traces, `layout.mapbox` keys and subplot
-references to their MapLibre names, so existing Mapbox figures keep rendering
-while they migrate. The access token is ignored, and styles hosted by Mapbox
+references to their MapLibre names, including those in templates, animation
+frames and button arguments, so existing Mapbox figures keep rendering while
+they migrate. The access token is ignored, and styles hosted by Mapbox
 (`mapbox://` URLs) do not load. Migrate figures that mix maps with other trace
 types to MapLibre traces and render them with the full `rx.plotly` component.
 

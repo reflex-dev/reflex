@@ -7,8 +7,22 @@ import plotly.graph_objects as go
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base.utils.serializers import serialize, serialize_figure
+from reflex_components_plotly.plotly import _MAPBOX_TO_MAP_JS, PlotlyMapbox
 
 import reflex as rx
+
+MAP_DYNAMIC_IMPORT = """
+const MapPlotlyPlot = ClientSide(() =>
+    import('plotly.js-map-dist-min').then((mod) => createPlotlyComponent(mod))
+, "MapPlotlyPlot")
+"""
+
+MAPBOX_WARNING = (
+    "rx.plotly uses Plotly.js 4, which no longer supports Mapbox traces or "
+    "layout.mapbox. Migrate to MapLibre traces and layout.map with rx.plotly.map "
+    "(or rx.plotly for mixed figures). For a temporary Mapbox-only fallback, use "
+    "the deprecated rx.plotly.mapbox."
+)
 
 
 @pytest.fixture
@@ -47,7 +61,7 @@ def test_plotly_config_option(plotly_fig: go.Figure):
         plotly_fig: The figure to display.
     """
     component = rx.plotly(data=plotly_fig, config={"displaylogo": False})
-    assert '["displaylogo"] : false' in str(component._render().props["config"])
+    assert str(component._render().props["config"]) == '({ ["displaylogo"] : false })'
 
 
 def test_plotly_locale_option_merges_into_config(plotly_fig: go.Figure):
@@ -150,14 +164,17 @@ def test_plotly_map_imports_and_locale(plotly_fig: go.Figure):
     assert "plotly.js-map-dist-min@4.3.0" in imports
     assert "plotly.js-locales@4.3.0" in imports
     assert "mergician" in imports
-    assert "import('plotly.js-map-dist-min')" in component._get_dynamic_imports()
+    assert component._get_dynamic_imports() == MAP_DYNAMIC_IMPORT
     assert any(
         var.tag == "createPlotlyComponent" and var.package_path == "/factory"
         for var in imports["react-plotly.js"]
     )
     rendered = component._render()
-    assert '"map"' in str(rendered.props["divId"])
-    assert "_rxGetPlotlyLocaleConfig" in str(rendered.props["config"])
+    assert str(rendered.props["divId"]) == '"map"'
+    assert (
+        str(rendered.props["config"])
+        == '_rxGetPlotlyLocaleConfig(({  }),"de",plotlyLocales)'
+    )
 
 
 def test_plotly_mapbox_deprecation_uses_map_bundle(
@@ -169,50 +186,117 @@ def test_plotly_mapbox_deprecation_uses_map_bundle(
 
     deprecate.assert_called_once()
     assert deprecate.call_args.kwargs["feature_name"] == "rx.plotly.mapbox"
-    assert "rx.plotly.map" in deprecate.call_args.kwargs["reason"]
+    assert (
+        deprecate.call_args.kwargs["reason"]
+        == "Use rx.plotly.map with MapLibre traces and layout.map instead"
+    )
     assert deprecate.call_args.kwargs["removal_version"] == "1.0"
     assert deprecate.call_args.kwargs["deprecation_version"] == "0.11.1"
     imports = component._get_all_imports()
     assert "plotly.js-map-dist-min@4.3.0" in imports
     assert not any("mapbox-dist-min" in lib for lib in imports)
     assert "plotly.js-locales@4.3.0" in imports
-    assert "import('plotly.js-map-dist-min')" in component._get_dynamic_imports()
-    assert "_rxPlotlyMapboxToMap(" in str(component._render().special_props[-1])
+    assert component._get_dynamic_imports() == MAP_DYNAMIC_IMPORT
+    map_figure = rx.plotly.map(data=plotly_fig, locale="fr")._render().special_props[-1]
+    assert (
+        str(component._render().special_props[-1])
+        == f"_rxPlotlyMapboxToMap({map_figure!s})"
+    )
+    assert _MAPBOX_TO_MAP_JS in component._get_all_custom_code()
+
+
+def test_plotly_mapbox_subclass_renames(plotly_fig: go.Figure):
+    """Subclasses of the legacy component keep the Mapbox rename."""
+
+    class CustomMapbox(PlotlyMapbox):
+        pass
+
+    component = CustomMapbox.create(data=plotly_fig)
+    map_figure = rx.plotly.map(data=plotly_fig)._render().special_props[-1]
+    assert (
+        str(component._render().special_props[-1])
+        == f"_rxPlotlyMapboxToMap({map_figure!s})"
+    )
+    assert _MAPBOX_TO_MAP_JS in component._get_all_custom_code()
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
 def test_plotly_mapbox_renames_to_map():
-    """Rename Mapbox traces, subplots and layout keys without mutating the input."""
-    code = next(
-        code
-        for code in rx.plotly.mapbox().add_custom_code()
-        if "_rxPlotlyMapboxToMap" in code
-    )
+    """Rename Mapbox names anywhere in the figure without mutating the input."""
     figure = {
         "data": [
-            {"type": "scattermapbox"},
+            {"type": "scattermapbox", "lat": [1, 2], "text": ["mapbox"]},
             {"type": "choroplethmapbox", "subplot": "mapbox2"},
             {"type": "densitymapbox", "subplot": "mapbox"},
             {"x": [1]},
         ],
-        "layout": {"mapbox": {"zoom": 3}, "mapbox2": {}, "title": "t"},
+        "layout": {
+            "mapbox": {"zoom": 3},
+            "mapbox2": {},
+            "xaxis": {"type": "log"},
+            "template": {
+                "data": {"scattermapbox": [{"marker": {"size": 4}}]},
+                "layout": {"mapbox": {"style": "light"}},
+            },
+            "updatemenus": [
+                {
+                    "buttons": [
+                        {"method": "relayout", "args": [{"mapbox2.zoom": 5}]},
+                        {"method": "relayout", "args": ["mapbox.style", "dark"]},
+                    ]
+                }
+            ],
+        },
+        "frames": [
+            {
+                "name": "f1",
+                "data": [{"type": "scattermapbox", "subplot": "mapbox2"}],
+                "layout": {"mapbox": {"zoom": 4}},
+            }
+        ],
     }
     expected = {
         "data": [
-            {"type": "scattermap"},
+            {"type": "scattermap", "lat": [1, 2], "text": ["mapbox"]},
             {"type": "choroplethmap", "subplot": "map2"},
             {"type": "densitymap", "subplot": "map"},
             {"x": [1]},
         ],
-        "layout": {"map": {"zoom": 3}, "map2": {}, "title": "t"},
+        "layout": {
+            "map": {"zoom": 3},
+            "map2": {},
+            "xaxis": {"type": "log"},
+            "template": {
+                "data": {"scattermap": [{"marker": {"size": 4}}]},
+                "layout": {"map": {"style": "light"}},
+            },
+            "updatemenus": [
+                {
+                    "buttons": [
+                        {"method": "relayout", "args": [{"map2.zoom": 5}]},
+                        {"method": "relayout", "args": ["map.style", "dark"]},
+                    ]
+                }
+            ],
+        },
+        "frames": [
+            {
+                "name": "f1",
+                "data": [{"type": "scattermap", "subplot": "map2"}],
+                "layout": {"map": {"zoom": 4}},
+            }
+        ],
     }
     script = rf"""
 const assert = require('node:assert/strict');
-{code}
+{_MAPBOX_TO_MAP_JS}
 assert.equal(_rxPlotlyMapboxToMap(undefined), undefined);
+assert.equal(_rxPlotlyMapboxToMap(null), null);
 assert.deepEqual(_rxPlotlyMapboxToMap({{}}), {{}});
 const figure = {json.dumps(figure)};
-assert.deepEqual(_rxPlotlyMapboxToMap(figure), {json.dumps(expected)});
+const converted = _rxPlotlyMapboxToMap(figure);
+assert.deepEqual(converted, {json.dumps(expected)});
+assert.equal(converted.data[0].lat, figure.data[0].lat);
 assert.deepEqual(figure, {json.dumps(figure)});
 """
     subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
@@ -251,8 +335,7 @@ assert.equal(_rxWarnPlotlyMapbox(figure), figure);
 assert.deepEqual(figure, {json.dumps(figure)});
 assert.equal(warnings.length, {int(warns)});
 if (warnings.length) {{
-    assert.match(warnings[0], /rx\.plotly\.map/);
-    assert.match(warnings[0], /layout\.map/);
+    assert.equal(warnings[0], {json.dumps(MAPBOX_WARNING)});
 }}
 """
     subprocess.run(["node", "-e", script], check=True, capture_output=True, text=True)
