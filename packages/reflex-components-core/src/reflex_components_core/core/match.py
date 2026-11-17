@@ -282,9 +282,14 @@ class Match(Component):
                     msg = f"Match condition {condition_index} of case {case_index} cannot be a component."
                     raise ValueError(msg)
                 condition_var = cls._create_case_var_with_var_data(condition)
-                has_set_case = has_set_case or cls._has_set_type(
-                    condition_var._var_type
-                )
+                if not has_set_case:
+                    # This lookup runs for every case; avoid an extra wrapper call.
+                    try:
+                        has_set_case = cls._cached_has_set_type(condition_var._var_type)
+                    except TypeError:
+                        has_set_case = cls._cached_has_set_type.__wrapped__(
+                            condition_var._var_type
+                        )
                 conditions_vars.append(condition_var)
 
             return_value = (
