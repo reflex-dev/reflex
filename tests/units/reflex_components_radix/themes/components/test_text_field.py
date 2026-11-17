@@ -107,3 +107,4 @@ def test_hidden_input_keeps_a_display_from_a_style_var():
     text_field = TextFieldRoot.create(type="hidden", style=style)
 
     assert list(text_field.style) == [HIDDEN_INPUT_WRAPPER, "&"]
+    assert text_field.style["&"].equals(style)
