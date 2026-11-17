@@ -20,7 +20,7 @@ class Base(DeclarativeBase):
 
 If your base uses `MappedAsDataclass`, as the one in the [database docs](/docs/database/overview/) does, take the mixins from `reflex_workflow.dataclass` instead; see [Use dataclass models](#use-dataclass-models).
 
-Reflex's migration commands find a base defined at module level without being told about it. If your app registers bases with `rx.ModelRegistry.register`, register the workflow base too: once any base is registered, Reflex leaves out the ones that aren't, and `reflex db makemigrations` writes a migration that drops their tables.
+Reflex's migration commands find a base without being told about it, as long as the module that defines it holds it under its own name, such as `Base` or `Namespace.Base`, and your app imports that module. Register a base that Reflex can't find this way, such as one made by a factory function and bound to a different name. If your app registers bases with `rx.ModelRegistry.register`, register the workflow base too: once any base is registered, Reflex leaves out the ones that aren't, and `reflex db makemigrations` writes a migration that drops their tables.
 
 You can't use `rx.Model` as a workflow base. `rx.Model` is a SQLModel, which is a pydantic model, and pydantic rejects the step methods the mixin collects.
 

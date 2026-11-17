@@ -384,8 +384,8 @@ mapping it entirely if you do not want it: a deployment without one pays nothing
 `rx.Model` is a SQLModel, and a step on one is an unannotated attribute that pydantic
 refuses, so workflows are declared on a `DeclarativeBase`, such as the one the app's
 other tables use (with the `reflex_workflow.dataclass` mixins if it is a
-`MappedAsDataclass`). `reflex db makemigrations` finds a base defined at module level
-by itself; an app that registers its bases with `rx.ModelRegistry.register` registers
+`MappedAsDataclass`). `reflex db makemigrations` finds a base by itself when the module
+that defines it holds it under its own name; an app that registers its bases with `rx.ModelRegistry.register` registers
 this one too, since once any base is registered the others are left out of migrations.
 Build the session factory on Reflex's own async engine so the app has one pool:
 
