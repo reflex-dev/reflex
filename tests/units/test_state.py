@@ -5133,11 +5133,7 @@ config = rx.Config(
 
 
 def test_state_flags_from_env_without_config(monkeypatch):
-    """A State defined before any config load honors the env var `reflex run` exports.
-
-    Backend workers import the app module in a fresh process, so user States are
-    created before anything calls get_config().
-    """
+    """A State defined before any config load honors the REFLEX_* env var."""
     monkeypatch.setenv("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", "true")
 
     with RegistrationContext():

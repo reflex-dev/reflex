@@ -905,14 +905,6 @@ class Config(BaseConfig):
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
 
-    def _persist_state_flags(self):
-        """Export the State-class creation flags to the environment for subprocesses.
-
-        Backend workers import the app module before any config is loaded, so
-        their user States resolve these flags from the environment.
-        """
-        self._set_persistent(**{name: getattr(self, name) for name in _STATE_FLAGS})
-
 
 # Project-local modules first imported while loading rxconfig.py, and the
 # project root they were recorded under. Evicted before a load from a different
@@ -1008,9 +1000,6 @@ def _record_imports() -> Iterator[_ImportRecorder]:
 # Protect sys.path from concurrent modification during config loading.
 _load_config_lock = threading.RLock()
 
-# Config fields resolved at State-class creation time via _get_state_flag.
-_STATE_FLAGS = ("state_auto_setters", "state_explicit_event_handlers")
-
 
 @dataclasses.dataclass
 class _ConfigLoad:
@@ -1028,9 +1017,10 @@ def _get_state_flag(name: str) -> bool:
     """Resolve a boolean State-class creation flag without loading rxconfig.
 
     Uses the Config of the in-progress rxconfig.py import, else the Config cached
-    on the active RegistrationContext, else the REFLEX_<NAME> env var (which
-    `reflex run` sets for its backend workers), then False. Never loads rxconfig,
-    since an rxconfig.py may import the very module defining the State.
+    on the active RegistrationContext, else the REFLEX_<NAME> env var, then
+    False. Backend workers load the config before they import the app, so their
+    States find it cached. Never loads rxconfig, since an rxconfig.py may import
+    the very module defining the State.
 
     Args:
         name: The config field name.
