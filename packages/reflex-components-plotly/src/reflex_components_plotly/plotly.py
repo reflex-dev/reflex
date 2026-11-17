@@ -362,9 +362,7 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
             template_dict = LiteralVar.create({"layout": {"template": self.template}})
             merge_dicts.append(template_dict._without_data())
         if merge_dicts:
-            figure_expr = (
-                f"{{ ...mergician({figure!s}, ...{Var.create(merge_dicts)!s}) }}"
-            )
+            figure_expr = f"{{ ...mergician({figure!s} ?? {{}}, ...{Var.create(merge_dicts)!s}) }}"
         else:
             figure_expr = str(figure)
         if type(self) is Plotly:

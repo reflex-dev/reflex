@@ -183,7 +183,6 @@ def PlotlyLocaleApp():
         return rx.vstack(
             rx.plotly(
                 data=PlotlyMigrationState.figure.to(go.Figure),
-                template=None,
                 id="migration-plot",
             ),
             rx.button(
