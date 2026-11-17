@@ -4,12 +4,11 @@ import base64
 import hashlib
 import hmac
 import json
-from concurrent.futures import ThreadPoolExecutor
+import os
 from dataclasses import FrozenInstanceError
 from unittest.mock import patch
 
 import pytest
-from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.session import (
@@ -17,6 +16,7 @@ from reflex_base.session import (
     SessionToken,
     SessionTokenManager,
     _load_secrets,
+    ensure_secret_key,
 )
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 
@@ -312,16 +312,28 @@ def test_unknown_signing_key_warns_once(manager, caplog):
     assert OTHER_SECRET.decode() not in caplog.text
 
 
-def test_environment_key_ring_does_not_write_files(tmp_path, monkeypatch):
-    """Use configured signing keys without creating a persisted secret.
+def _session_key(secret: bytes) -> bytes:
+    """Derive the session signing key the codec uses for an app secret key.
+
+    Args:
+        secret: The app secret key.
+
+    Returns:
+        The session signing key.
+    """
+    return hmac.digest(secret, b"reflex-session", "sha256")
+
+
+def test_environment_key_ring_derives_session_keys(tmp_path, monkeypatch):
+    """Derive one session key per configured secret without writing files.
 
     Args:
         tmp_path: The isolated working directory.
         monkeypatch: The environment override fixture.
     """
-    monkeypatch.setenv("REFLEX_SESSION_SECRET", "a" * 32 + ", " + "b" * 32)
-    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path / ".web"))
-    assert _load_secrets() == (SECRET, OTHER_SECRET)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("REFLEX_SECRET_KEY", "a" * 32 + ", " + "b" * 32)
+    assert _load_secrets() == (_session_key(SECRET), _session_key(OTHER_SECRET))
     assert not list(tmp_path.iterdir())
 
 
@@ -333,67 +345,43 @@ def test_invalid_secret_never_discloses_its_value(monkeypatch, value):
         monkeypatch: The environment override fixture.
         value: The invalid signing key configuration.
     """
-    monkeypatch.setenv("REFLEX_SESSION_SECRET", value)
+    monkeypatch.setenv("REFLEX_SECRET_KEY", value)
     with pytest.raises(ValueError, match="at least 32 bytes") as error:
         _load_secrets()
     assert value not in str(error.value)
 
 
-def test_persisted_secret_is_atomic_private_and_reused(tmp_path, monkeypatch):
-    """Concurrent initialization shares one secret with private file permissions.
-
-    Args:
-        tmp_path: The isolated working directory.
-        monkeypatch: The environment override fixture.
-    """
-    monkeypatch.delenv("REFLEX_SESSION_SECRET", raising=False)
-    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path / ".web"))
-    with ThreadPoolExecutor(max_workers=16) as executor:
-        results = list(executor.map(lambda _: _load_secrets(), range(64)))
-    assert len(set(results)) == 1
-    assert len(results[0][0]) == 32
-    assert _load_secrets() == results[0]
-    path = tmp_path / ".web" / "backend" / "session_secret"
-    if not constants.IS_WINDOWS:
-        assert path.stat().st_mode & 0o777 == 0o600
-    assert list(path.parent.iterdir()) == [path]
-
-
-def test_production_fallback_warning_does_not_contain_secret(
-    tmp_path, monkeypatch, caplog
+@pytest.mark.parametrize(
+    ("env_mode", "message"),
+    [("dev", "reset when `reflex run` restarts"), ("prod", "EVERY RESTART")],
+)
+def test_missing_secret_key_is_generated_once_and_exported(
+    tmp_path, monkeypatch, caplog, env_mode, message
 ):
-    """Warn about production fallback keys without disclosing their contents.
+    """Generate one key into the environment so later worker processes share it.
 
     Args:
         tmp_path: The isolated working directory.
         monkeypatch: The environment override fixture.
         caplog: The captured log records.
+        env_mode: The Reflex environment mode.
+        message: Text the warning for that mode must contain.
     """
-    monkeypatch.delenv("REFLEX_SESSION_SECRET", raising=False)
-    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path / ".web"))
-    monkeypatch.setenv("REFLEX_ENV_MODE", "prod")
-    key = _load_secrets()[0]
-    assert "Set REFLEX_SESSION_SECRET" in caplog.text
-    assert key.hex() not in caplog.text
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("REFLEX_SECRET_KEY", "unset")
+    monkeypatch.delenv("REFLEX_SECRET_KEY")
+    monkeypatch.setenv("REFLEX_ENV_MODE", env_mode)
 
+    key = ensure_secret_key()
 
-@pytest.mark.parametrize("value", ["not-hex", "aa", "é"])
-def test_invalid_persisted_secret_is_not_replaced(tmp_path, monkeypatch, value):
-    """Reject an invalid persisted secret without replacing its contents.
-
-    Args:
-        tmp_path: The isolated working directory.
-        monkeypatch: The environment override fixture.
-        value: The invalid persisted key contents.
-    """
-    monkeypatch.delenv("REFLEX_SESSION_SECRET", raising=False)
-    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path))
-    path = tmp_path / "backend" / "session_secret"
-    path.parent.mkdir()
-    path.write_text(value)
-    with pytest.raises(ValueError, match="Invalid persisted"):
-        _load_secrets()
-    assert path.read_text() == value
+    assert os.environ["REFLEX_SECRET_KEY"] == key
+    assert len(key.encode()) >= 32
+    assert ensure_secret_key() == key
+    assert _load_secrets() == (_session_key(key.encode()),)
+    assert caplog.text.count("REFLEX_SECRET_KEY is not set") == 1
+    assert message in caplog.text
+    assert key not in caplog.text
+    assert not list(tmp_path.iterdir())
 
 
 @pytest.mark.parametrize(
@@ -417,11 +405,11 @@ def test_config_defaults_and_secret_is_not_config(monkeypatch):
     Args:
         monkeypatch: The environment override fixture.
     """
-    monkeypatch.setenv("REFLEX_SESSION_SECRET", SECRET.decode())
+    monkeypatch.setenv("REFLEX_SECRET_KEY", SECRET.decode())
     config = Config(app_name="test")
     assert config.session_token_ttl == 604800
     assert config.session_token_refresh_interval is None
-    assert "session_secret" not in config.class_fields()
+    assert "secret_key" not in config.class_fields()
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_TTL", "100")
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_REFRESH_INTERVAL", "25")
     config = Config(app_name="test")

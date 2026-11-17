@@ -8,12 +8,9 @@ import hashlib
 import hmac
 import json
 import logging
-import os
 import re
 import secrets
-import tempfile
 import time
-from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import cached_property
 from typing import ClassVar
@@ -23,7 +20,7 @@ from reflex_base.environment import environment
 
 logger = logging.getLogger(__name__)
 
-SESSION_SECRET_FILENAME = "session_secret"
+_SESSION_KEY_PURPOSE = b"reflex-session"
 _SID = re.compile(r"[0-9a-f]{32}\Z")
 _CLIENT_TOKEN = re.compile(r"([0-9a-f]{32})\.([0-9a-f]{32})\Z")
 _BASE64URL = re.compile(r"[A-Za-z0-9_-]+\Z")
@@ -75,51 +72,50 @@ def _client_signature(sid: str, nonce: str) -> str:
     )[:16].hex()
 
 
+def ensure_secret_key() -> str:
+    """Get REFLEX_SECRET_KEY, generating a temporary key when it is not set.
+
+    The generated key is set in the process environment, so processes started
+    after this call, such as backend workers and reloads, share it.
+
+    Returns:
+        The comma-separated secret key ring.
+    """
+    if (configured := environment.REFLEX_SECRET_KEY.get()) is not None:
+        return configured
+    key = secrets.token_hex(32)
+    environment.REFLEX_SECRET_KEY.set(key)
+    if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD:
+        logger.warning(
+            "REFLEX_SECRET_KEY is not set. Reflex generated a temporary key.\n"
+            "ALL BROWSER SESSIONS RESET ON EVERY RESTART, and servers that do "
+            "not share this key reject each other's sessions.\n"
+            "Set REFLEX_SECRET_KEY to a random value of at least 32 bytes, for "
+            "example the output of: "
+            'python -c "import secrets; print(secrets.token_hex(32))"'
+        )
+    else:
+        logger.warning(
+            "REFLEX_SECRET_KEY is not set; browser sessions reset when "
+            "`reflex run` restarts."
+        )
+    return key
+
+
 def _load_secrets() -> tuple[bytes, ...]:
-    """Load the configured key ring or atomically create a local signing key.
+    """Derive the session signing keys from the secret key ring.
 
     Returns:
         Keys in signing preference order.
 
     Raises:
-        ValueError: If configured or persisted keys are invalid.
+        ValueError: If a configured key is shorter than 32 bytes.
     """
-    configured = environment.REFLEX_SESSION_SECRET.get()
-    if configured is not None:
-        keys = tuple(key.strip().encode() for key in configured.split(","))
-        if any(len(key) < 32 for key in keys):
-            msg = "REFLEX_SESSION_SECRET keys must each be at least 32 bytes"
-            raise ValueError(msg)
-        return keys
-
-    path = (
-        environment.REFLEX_WEB_WORKDIR.get()
-        / constants.Dirs.BACKEND
-        / SESSION_SECRET_FILENAME
-    )
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        # Link a complete 0600 file into place, so racing workers cannot read a
-        # partially written key or replace the winner's key.
-        with tempfile.NamedTemporaryFile(dir=path.parent) as candidate:
-            candidate.write(secrets.token_hex(32).encode("ascii"))
-            candidate.flush()
-            with suppress(FileExistsError):
-                os.link(candidate.name, path)
-    try:
-        key = bytes.fromhex(path.read_text(encoding="ascii"))
-    except (ValueError, UnicodeError) as error:
-        msg = "Invalid persisted session signing secret"
-        raise ValueError(msg) from error
-    if len(key) != 32:
-        msg = "Invalid persisted session signing secret"
+    keys = tuple(key.strip().encode() for key in ensure_secret_key().split(","))
+    if any(len(key) < 32 for key in keys):
+        msg = "REFLEX_SECRET_KEY keys must each be at least 32 bytes"
         raise ValueError(msg)
-    if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD:
-        logger.warning(
-            "Using a local session signing secret. Set REFLEX_SESSION_SECRET to "
-            "share sessions across production replicas and deployments."
-        )
-    return (key,)
+    return tuple(hmac.digest(key, _SESSION_KEY_PURPOSE, "sha256") for key in keys)
 
 
 @dataclass(frozen=True)
@@ -286,7 +282,7 @@ class SessionTokenManager:
                 if not self._unknown_key_warned:
                     logger.warning(
                         "Unrecognized session signing key. Backend instances may be "
-                        "using different REFLEX_SESSION_SECRET values."
+                        "using different REFLEX_SECRET_KEY values."
                     )
                     self._unknown_key_warned = True
                 return None
