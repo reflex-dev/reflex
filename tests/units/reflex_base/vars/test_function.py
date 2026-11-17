@@ -26,3 +26,11 @@ def test_call_on_required_function_is_a_plain_call() -> None:
     call = fn.call(1)
     assert str(call) == "(fn(1))"
     assert call._var_type is str
+
+
+def test_optional_call_result_gets_the_null_fallback() -> None:
+    """An operation on the result of an optional call guards against undefined."""
+    fn = Var(_js_expr="fn", _var_type=ReflexCallable[[], list[int]] | None).to(
+        FunctionVar
+    )
+    assert str(fn.call().length()) == "((fn?.()) ?? []).length"
