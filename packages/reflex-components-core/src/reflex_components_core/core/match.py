@@ -2,6 +2,7 @@
 
 import textwrap
 from collections.abc import Iterator, Sequence
+from functools import lru_cache
 from typing import Any, cast, get_args, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
@@ -68,7 +69,7 @@ class Match(Component):
         cases, default = cls._process_cases(list(cases))
         match_cases, has_set_case = cls._process_match_cases(cases)
 
-        if cls._has_set_type(match_cond_var) or has_set_case:
+        if cls._has_set_type(match_cond_var._var_type) or has_set_case:
             match_cond_var = cls._comparable(match_cond_var)
             match_cases = [
                 ([cls._comparable(condition) for condition in conditions], result)
@@ -110,16 +111,19 @@ class Match(Component):
         )
 
     @staticmethod
-    def _has_set_type(var: Var) -> bool:
+    @lru_cache(maxsize=1024)
+    def _has_set_type(var_type: types.GenericType) -> bool:
         """Check whether any member of a var's type is a set.
 
         Args:
-            var: The subject or case var.
+            var_type: The subject or case annotation.
 
         Returns:
             Whether the annotation can contain a set.
         """
-        var_type = types.resolve_type_alias(var._var_type)
+        if isinstance(var_type, type):
+            return issubclass(var_type, (set, frozenset))
+        var_type = types.resolve_type_alias(var_type)
         members = get_args(var_type) if types.is_union(var_type) else (var_type,)
         return any(
             types.safe_issubclass(types.get_origin(member) or member, (set, frozenset))
@@ -144,31 +148,38 @@ class Match(Component):
             MatchTypeError: If a union combines sets and serialized sequences.
         """
         is_set = isinstance(var, SetVar)
-        if not is_set and cls._has_set_type(var):
-            members = get_args(types.resolve_type_alias(var._var_type))
-            if any(
-                types.safe_issubclass(types.get_origin(member) or member, Sequence)
-                and not types.safe_issubclass(types.get_origin(member) or member, str)
-                for member in members
-            ):
-                msg = (
-                    "rx.match cannot distinguish sets from sequences in a union because both "
-                    "serialize to arrays. Narrow the var's type before matching."
+        if not is_set and cls._has_set_type(var._var_type):
+            var_type = types.resolve_type_alias(var._var_type)
+            if not types.is_union(var_type):
+                var = var.to(SetVar)
+                is_set = True
+            else:
+                members = get_args(var_type)
+                if any(
+                    types.safe_issubclass(types.get_origin(member) or member, Sequence)
+                    and not types.safe_issubclass(
+                        types.get_origin(member) or member, str
+                    )
+                    for member in members
+                ):
+                    msg = (
+                        "rx.match cannot distinguish sets from sequences in a union because both "
+                        "serialize to arrays. Narrow the var's type before matching."
+                    )
+                    raise MatchTypeError(msg)
+                canonical = set_canonical_operation(cast(SetVar, var))
+                return Var(
+                    _js_expr=(
+                        f"(Array.isArray({var!s}) ? [true, {canonical!s}] : [false, {var!s}])"
+                    ),
+                    _var_type=list,
+                    _var_data=canonical._get_all_var_data(),
                 )
-                raise MatchTypeError(msg)
-            canonical = set_canonical_operation(cast(SetVar, var))
-            return Var(
-                _js_expr=(
-                    f"(Array.isArray({var!s}) ? [true, {canonical!s}] : [false, {var!s}])"
-                ),
-                _var_type=list,
-                _var_data=canonical._get_all_var_data(),
-            )
         return LiteralVar.create([
             var.is_not_none()
             if is_set and types.is_optional(var._var_type)
             else is_set,
-            set_canonical_operation(var) if is_set else var,
+            set_canonical_operation(cast(SetVar, var)) if is_set else var,
         ])
 
     @classmethod
@@ -256,9 +267,9 @@ class Match(Component):
                     msg = f"Match condition {condition_index} of case {case_index} cannot be a component."
                     raise ValueError(msg)
                 condition_var = cls._create_case_var_with_var_data(condition)
-                if type(condition_var) is Var:
-                    condition_var = condition_var.guess_type()
-                has_set_case = has_set_case or cls._has_set_type(condition_var)
+                has_set_case = has_set_case or cls._has_set_type(
+                    condition_var._var_type
+                )
                 conditions_vars.append(condition_var)
 
             return_value = (

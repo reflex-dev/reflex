@@ -269,6 +269,28 @@ def test_match_rejects_ambiguous_set_sequence_union(as_case, sequence_type):
     )
 
 
+@pytest.mark.parametrize("as_case", [False, True])
+def test_match_custom_set_var_with_tuple_elements(as_case):
+    """A custom var's set element type is not mistaken for a union member."""
+
+    class CustomSetVar(Var[set[tuple[int, int]]]):
+        """A set annotation retained by a custom var subclass."""
+
+    custom = CustomSetVar(_js_expr="pairs", _var_type=set[tuple[int, int]])
+    result = Match.create(
+        {(1, 2)} if as_case else custom,
+        (custom if as_case else {(1, 2)}, "matched"),
+        "other",
+    )
+    subject = "[[1, 2]]" if as_case else "pairs"
+    case = "pairs" if as_case else "[[1, 2]]"
+    assert str(result) == (
+        f"(() => {{ switch (JSON.stringify([true, pySetCanonical({subject})])) {{"
+        f'case JSON.stringify([true, pySetCanonical({case})]):  return ("matched");  break;'
+        'default:  return ("other");  break;};})()'
+    )
+
+
 def test_match_on_component_without_default():
     """Test that matching cases with return values as components returns a Fragment
     as the default case if not provided.
