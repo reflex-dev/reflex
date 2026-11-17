@@ -23,6 +23,18 @@ Pyplot (`reflex-pyplot`) lets you render any [Matplotlib](https://matplotlib.org
 
 `matplotlib.pyplot` is a collection of functions that make Matplotlib behave like MATLAB: each call (`plt.plot`, `plt.scatter`, `plt.bar`, and so on) builds up a figure by adding lines, bars, labels, or legends. In a normal script you would finish with `plt.show()` to open a window. In a Reflex app you instead pass the `Figure` object to the `pyplot` component, which serves it to the frontend and re-renders it whenever your state changes.
 
+## Why use Matplotlib in a web app?
+
+Matplotlib is the most widely used plotting library in Python, with millions of users in scientific computing, data science, and machine learning. If you already have matplotlib code from Jupyter notebooks, research scripts, or data pipelines, you can reuse it directly in a Reflex web app without rewriting it for a different charting library. Common use cases include:
+
+- **Data science dashboards** — Turn notebook prototypes into shareable web apps with interactive controls
+- **Scientific reports** — Display publication-quality figures with LaTeX labels and custom styling
+- **Machine learning monitoring** — Plot training metrics, confusion matrices, and feature distributions
+- **Financial analysis** — Render time series and portfolio performance charts
+- **Engineering tools** — Visualize simulation results, sensor data, and system performance
+
+For declarative business charts like bar, line, and pie charts, consider using Reflex's built-in [Recharts components](/docs/library/graphing/charts/) instead. For interactive 3D plots and scientific visualizations, see the [Plotly component](/docs/library/graphing/other-charts/plotly/).
+
 ## Installation
 
 Install the `reflex-pyplot` package using pip.

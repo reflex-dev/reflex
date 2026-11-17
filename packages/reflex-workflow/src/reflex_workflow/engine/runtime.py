@@ -45,7 +45,7 @@ class Settled:
                     self.changed.wait_for(lambda: self.passes > seen),
                     timeout.total_seconds(),
                 )
-        except (TimeoutError, asyncio.TimeoutError):
+        except TimeoutError:
             return False
         return True
 

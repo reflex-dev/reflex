@@ -10,7 +10,6 @@ from urllib.parse import quote
 import reflex as rx
 import reflex_components_internal as ui
 from reflex.components.radix.themes.base import LiteralAccentColor
-from reflex.experimental.client_state import ClientStateVar
 from reflex.utils.format import to_snake_case, to_title_case
 from reflex_site_shared.components.blocks.code import *
 from reflex_site_shared.components.blocks.demo import *
@@ -121,7 +120,7 @@ def feedback_button_toc() -> rx.Component:
 
 @rx.memo
 def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
-    copied = ClientStateVar.create("is_copied", default=False, global_ref=False)
+    copied = rx.client_state(False)
     return marketing_button(
         rx.cond(
             copied.value,
@@ -136,10 +135,10 @@ def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
         variant="ghost",
         class_name="justify-start pl-0 text-muted-foreground",
         on_click=[
-            rx.call_function(copied.set_value(True)),
+            rx.call_function(copied.set(True)),
             rx.set_clipboard(text),
         ],
-        on_mouse_down=rx.call_function(copied.set_value(False)).debounce(1500),
+        on_mouse_down=rx.call_function(copied.set(False)).debounce(1500),
     )
 
 
@@ -354,7 +353,11 @@ def page_navigation_link(title: str, href: str, *, forward: bool) -> rx.Componen
         class_name=(
             "group flex min-w-0 flex-col gap-1 rounded-lg p-3 no-underline "
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring "
-            + ("items-end text-right" if forward else "items-start text-left")
+            + (
+                "col-start-2 items-end text-right"
+                if forward
+                else "items-start text-left"
+            )
         ),
     )
 
@@ -369,6 +372,7 @@ def docpage(
     image: str | None = None,
     source_path: str | None = None,
     show_breadcrumb: bool = True,
+    component_name: str | None = None,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -388,6 +392,8 @@ def docpage(
             "Edit this page" link. Defaults to the Python file defining the page.
         show_breadcrumb: Whether to display the page breadcrumb. Mobile sidebar
             access remains available when the breadcrumb is hidden.
+        component_name: The public component name a library page documents,
+            used to lead its search title.
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -444,9 +450,6 @@ def docpage(
                         forward=False,
                     )
                 )
-            else:
-                links.append(rx.fragment())
-            links.append(rx.spacer())
             if next:
                 links.append(
                     page_navigation_link(
@@ -455,8 +458,6 @@ def docpage(
                         forward=True,
                     )
                 )
-            else:
-                links.append(rx.fragment())
 
             toc = []
             doc_content = None
@@ -488,14 +489,14 @@ def docpage(
                                 doc_content=doc_content,
                             ),
                             class_name=(
-                                "px-0 pt-0 mb-[2rem]"
+                                "docs-breadcrumb px-0 pt-0 mb-[2rem]"
                                 + ("" if show_breadcrumb else " lg:hidden")
                             ),
                         ),
                         rx.box(
                             rx.el.article(
                                 comp,
-                                class_name="[&>div]:!p-0"
+                                class_name="docs-article [&>div]:!p-0"
                                 + (
                                     " [&_.rt-TableRoot]:!border-0 [&_.rt-TableRoot]:!rounded-none"
                                     " [&_.rt-TableCell]:!shadow-none [&_.rt-TableCell]:!border-b [&_.rt-TableCell]:!border-border"
@@ -507,7 +508,8 @@ def docpage(
                             ),
                             rx.el.nav(
                                 *links,
-                                class_name="flex flex-row gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",
+                                aria_label="Adjacent documentation pages",
+                                class_name="docs-page-navigation grid grid-cols-2 gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",
                             ),
                             docpage_footer(path=path.rstrip("/"), edit_href=edit_href),
                             class_name="lg:mt-0 h-auto"
@@ -518,7 +520,7 @@ def docpage(
                             ),
                         ),
                         class_name=ui.cn(
-                            "flex-1 min-w-0 h-auto mx-auto lg:max-w-[56rem] px-4 lg:px-8 xl:px-12 overflow-y-auto",
+                            "docs-reading-column flex-1 min-w-0 h-auto mx-auto lg:max-w-[56rem] px-4 lg:px-8 xl:px-12 overflow-y-auto",
                             "lg:max-w-[68rem]" if not show_right_sidebar else "",
                         ),
                     ),
@@ -531,14 +533,16 @@ def docpage(
                     else rx.box(
                         class_name="w-[180px] h-screen sticky top-0 shrink-0 hidden xl:block"
                     ),
-                    class_name="flex justify-center mx-auto mt-0 max-w-[108rem] h-full min-h-screen w-full",
+                    class_name="docs-reading-layout flex justify-center mx-auto mt-0 max-w-[108rem] h-full min-h-screen w-full",
                 ),
                 on_mount=rx.call_script(right_sidebar_item_highlight()),
             )
 
         from reflex_docs.pages.docs.metadata import docs_metadata
 
-        seo_title, seo_description = docs_metadata(path, title, description)
+        seo_title, seo_description = docs_metadata(
+            path, title, description, component_name
+        )
         if page_title:
             seo_title = page_title
 

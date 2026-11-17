@@ -6,6 +6,7 @@ components:
   - rx.drawer.portal
   - rx.drawer.content
   - rx.drawer.close
+meta_description: "Build slide-out panels and sidebars in Python with Reflex. rx.drawer creates accessible drawers from any screen edge, with state control and overlays."
 
 only_low_level:
   - True

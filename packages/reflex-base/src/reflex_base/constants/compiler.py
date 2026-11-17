@@ -61,6 +61,9 @@ class CompileVars(SimpleNamespace):
     HYDRATE_AND_LOAD = "hydrate_and_load"
     # The key of the socket.io CONNECT auth packet that carries the boot event.
     CONNECT_AUTH_EVENT = "event"
+    # The key of the CONNECT auth packet that carries the hash of the state
+    # tree the frontend was compiled for; an old frontend sends none.
+    CONNECT_AUTH_STATE_SCHEMA = "state_schema"
     # Payload keys of hydrate_and_load / update_vars_internal; they are passed
     # through as handler kwargs, so they must match those parameter names.
     PAYLOAD_VARS = "vars"
@@ -186,7 +189,7 @@ class Hooks(SimpleNamespace):
     )
 
     class HookPosition(enum.Enum):
-        """The position of the hook in the component."""
+        """Deprecated: hooks render in the order they are declared and merged."""
 
         INTERNAL = "internal"
         PRE_TRIGGER = "pre_trigger"

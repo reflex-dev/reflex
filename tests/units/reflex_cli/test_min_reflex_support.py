@@ -15,7 +15,7 @@ importing a workspace package that older reflex does not ship.
 
 from __future__ import annotations
 
-import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -23,11 +23,6 @@ from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.version import Version
 from reflex_cli.constants.hosting import ReflexHostingCli
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CLI_PYPROJECT = REPO_ROOT / "packages" / "reflex-hosting-cli" / "pyproject.toml"
