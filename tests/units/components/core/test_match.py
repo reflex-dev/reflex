@@ -1,5 +1,6 @@
 import re
 from collections.abc import Sequence
+from typing import Annotated
 
 import pytest
 from reflex_base.components.component import Component
@@ -287,6 +288,24 @@ def test_match_custom_set_var_with_tuple_elements(as_case):
     assert str(result) == (
         f"(() => {{ switch (JSON.stringify([true, pySetCanonical({subject})])) {{"
         f'case JSON.stringify([true, pySetCanonical({case})]):  return ("matched");  break;'
+        'default:  return ("other");  break;};})()'
+    )
+
+
+@pytest.mark.parametrize("with_set", [False, True])
+def test_match_case_with_unhashable_annotation_metadata(with_set):
+    """Valid Annotated case types do not require their metadata to be hashable."""
+    annotation = (
+        Annotated[set[int], []] if with_set else Annotated[str, {"label": "Tag"}]
+    )
+    case = Var(_js_expr="caseValue", _var_type=annotation)
+    subject = {1, 2} if with_set else Var(_js_expr="subject", _var_type=str)
+    result = Match.create(subject, (case, "matched"), "other")
+    subject_expr = "[true, pySetCanonical([1, 2])]" if with_set else "subject"
+    case_expr = "[true, pySetCanonical(caseValue)]" if with_set else "caseValue"
+    assert str(result) == (
+        f"(() => {{ switch (JSON.stringify({subject_expr})) {{"
+        f'case JSON.stringify({case_expr}):  return ("matched");  break;'
         'default:  return ("other");  break;};})()'
     )
 

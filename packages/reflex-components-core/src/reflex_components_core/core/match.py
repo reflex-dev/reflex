@@ -110,10 +110,9 @@ class Match(Component):
             else match_cond_var
         )
 
-    @staticmethod
-    @lru_cache(maxsize=1024)
-    def _has_set_type(var_type: types.GenericType) -> bool:
-        """Check whether any member of a var's type is a set.
+    @classmethod
+    def _has_set_type(cls, var_type: types.GenericType) -> bool:
+        """Inspect a type without requiring annotation metadata to be hashable.
 
         Args:
             var_type: The subject or case annotation.
@@ -123,6 +122,22 @@ class Match(Component):
         """
         if isinstance(var_type, type):
             return issubclass(var_type, (set, frozenset))
+        try:
+            return cls._cached_has_set_type(var_type)
+        except TypeError:
+            return cls._cached_has_set_type.__wrapped__(var_type)
+
+    @staticmethod
+    @lru_cache(maxsize=1024)
+    def _cached_has_set_type(var_type: types.GenericType) -> bool:
+        """Check whether any member of a var's type is a set.
+
+        Args:
+            var_type: The subject or case annotation.
+
+        Returns:
+            Whether the annotation can contain a set.
+        """
         var_type = types.resolve_type_alias(var_type)
         members = get_args(var_type) if types.is_union(var_type) else (var_type,)
         return any(
