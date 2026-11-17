@@ -6,7 +6,7 @@ meta_description: Build a durable onboarding workflow in a Reflex app with refle
 
 In this tutorial, you build a Reflex app that signs users up and runs an onboarding sequence for each one: a welcome email straight away, then up to two reminders, until the user activates their account. Along the way, you stop the server in the middle of a run and watch it pick up where it left off.
 
-The tutorial takes about 15 minutes. You need Python 3.10 or later and a PostgreSQL database you can create tables in. To keep things quick, the reminders are 30 seconds apart and the "emails" are printed to the terminal.
+The tutorial takes about 15 minutes. You need Python 3.11 or later and a PostgreSQL database you can create tables in. To keep things quick, the reminders are 30 seconds apart and the "emails" are printed to the terminal.
 
 ## Create the app
 
@@ -49,7 +49,6 @@ Create `onboarding/workflows.py` with the following code:
 ```python
 from datetime import timedelta
 
-import reflex as rx
 from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -58,9 +57,6 @@ from reflex_workflow import Workflow, step, wake_in
 
 class Base(DeclarativeBase):
     pass
-
-
-rx.ModelRegistry.register(Base)
 
 
 class Onboarding(Base, Workflow):
@@ -96,7 +92,7 @@ This is an ordinary SQLAlchemy model with the `Workflow` mixin added. Each row i
 
 - `email`, `status`, and `reminders` are your columns. They hold the run's state, and the steps read and change them through `self`.
 - `welcome`, `remind`, and `activate` are steps. Each one returns what happens next: `wake_in(...)` runs a step after a delay, and `None` ends the run.
-- `rx.ModelRegistry.register(Base)` tells Reflex's migration commands about the tables on this base.
+- Reflex's migration commands find `Base` and create the tables on it. If your app registers its model bases with `rx.ModelRegistry.register`, register this one too; see [Choose a base for workflow tables](/docs/workflows/defining-workflows/#choose-a-base-for-workflow-tables).
 
 ## Start the workers
 

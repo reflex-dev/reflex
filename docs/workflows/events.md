@@ -103,7 +103,7 @@ An event can arrive before the run starts waiting for it. For example, a payment
 
 A held event is discarded if the run instead goes on to wait for a different step, finishes, or moves to its next scheduled occurrence. In that case, whoever sent the event has to send it again. The key of a discarded event isn't remembered, so the resend is accepted.
 
-A run holds at most one event. While it holds one, `deliver` refuses a second event and returns `0`, rather than replacing an answer that was already given.
+A run holds at most one event. While it holds one that no worker has taken yet, `deliver` refuses a second event and returns `0`, rather than replacing an answer that was already given. Once a worker takes the held event to run its step, the run can hold the next one, for the wait that step sets up. A run that waits on the same step again, such as a chat that waits for each message in turn, doesn't miss a message that arrives while it handles the previous one.
 
 ## Deadlines
 

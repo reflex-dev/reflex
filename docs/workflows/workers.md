@@ -135,11 +135,12 @@ async with run_workflows(sessions, on_idle=register_wakeup):
     yield
 ```
 
-`wake` is the other half. When the platform calls your app at that time, have the route call `wake`, which wakes the worker in that process and holds the request open until the worker has taken all the work it can:
+`wake` is the other half. When the platform calls your app at that time, have the route call `wake`, which wakes the worker in that process and holds the request open until the worker has run all the work it can:
 
 ```python
 from datetime import timedelta
 
+import reflex as rx
 import reflex_workflow
 from fastapi import FastAPI, Response
 

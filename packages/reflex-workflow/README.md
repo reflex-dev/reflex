@@ -382,9 +382,12 @@ mapping it entirely if you do not want it: a deployment without one pays nothing
 ## In a Reflex app
 
 `rx.Model` is a SQLModel, and a step on one is an unannotated attribute that pydantic
-refuses, so workflows are declared on a `DeclarativeBase` of their own. Register it so
-`reflex db makemigrations` sees the tables, and build the session factory on Reflex's
-own async engine so the app has one pool:
+refuses, so workflows are declared on a `DeclarativeBase`, such as the one the app's
+other tables use (with the `reflex_workflow.dataclass` mixins if it is a
+`MappedAsDataclass`). `reflex db makemigrations` finds a base defined at module level
+by itself; an app that registers its bases with `rx.ModelRegistry.register` registers
+this one too, since once any base is registered the others are left out of migrations.
+Build the session factory on Reflex's own async engine so the app has one pool:
 
 ```python
 import reflex as rx
@@ -396,9 +399,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     pass
-
-
-rx.ModelRegistry.register(Base)
 
 
 class Expense(Base, Workflow):
@@ -573,6 +573,7 @@ the process that runs the worker:
 ```python
 from datetime import timedelta
 
+import reflex as rx
 import reflex_workflow
 from fastapi import FastAPI, Response
 

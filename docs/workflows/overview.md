@@ -85,7 +85,7 @@ The `Workflow` mixin adds the columns that track this — which step is next, wh
 
 ## Requirements
 
-- Python 3.10 or later.
+- Python 3.11 or later.
 - PostgreSQL. The engine relies on Postgres row locking and `LISTEN`/`NOTIFY`.
 - SQLAlchemy 2.0 with an async driver. Use [psycopg 3](https://www.psycopg.org/psycopg3/): with other drivers, workers can't hear about new runs immediately and find them on their next periodic check instead.
 

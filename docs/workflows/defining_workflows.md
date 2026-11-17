@@ -6,21 +6,21 @@ meta_description: Declare reflex-workflow tables in a Reflex app with SQLAlchemy
 
 A workflow is a SQLAlchemy model with the `Workflow` mixin. This page shows how to declare one in a Reflex app, what the mixin adds to your table, and how to change a workflow once runs exist.
 
-## Declare a base for workflow tables
+## Choose a base for workflow tables
 
-Declare workflows on a SQLAlchemy `DeclarativeBase` of their own, and register that base with Reflex so `reflex db makemigrations` includes its tables:
+Declare workflows on a SQLAlchemy `DeclarativeBase`, such as the one your app's other [tables](/docs/database/tables/) use. The examples on these pages use a plain base:
 
 ```python
-import reflex as rx
 from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
     pass
-
-
-rx.ModelRegistry.register(Base)
 ```
+
+If your base uses `MappedAsDataclass`, as the one in the [database docs](/docs/database/overview/) does, take the mixins from `reflex_workflow.dataclass` instead; see [Use dataclass models](#use-dataclass-models).
+
+Reflex's migration commands find a base defined at module level without being told about it. If your app registers bases with `rx.ModelRegistry.register`, register the workflow base too: once any base is registered, Reflex leaves out the ones that aren't, and `reflex db makemigrations` writes a migration that drops their tables.
 
 You can't use `rx.Model` as a workflow base. `rx.Model` is a SQLModel, which is a pydantic model, and pydantic rejects the step methods the mixin collects.
 

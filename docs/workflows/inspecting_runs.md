@@ -1,10 +1,10 @@
 ---
-meta_description: Tell where a reflex-workflow run is from its row, find failed and waiting runs with SQL, and keep a history of each run's step attempts.
+meta_description: Tell where a reflex-workflow run is from its row, find failed and waiting runs with SQL, keep a history of each run's step attempts, and trace them with OpenTelemetry.
 ---
 
 # Inspecting Runs
 
-Every run is a row, so you inspect runs with the same queries you use for the rest of your data. This page shows how to read a run's state from its row, find runs that need attention, and keep a history of each run's attempts.
+Every run is a row, so you inspect runs with the same queries you use for the rest of your data. This page shows how to read a run's state from its row, find runs that need attention, keep a history of each run's attempts, and trace each attempt with OpenTelemetry.
 
 ## Read a run's state
 
@@ -100,3 +100,22 @@ for attempt in await invoice.history():
 The engine writes each history row in the same transaction as the step's result, so the history records exactly the outcomes that changed the run. It isn't a log of every execution: an attempt whose result was discarded, because the run had moved on or its worker stopped before committing, leaves no row, even if its step ran and called other services.
 
 The engine never reads this table, so you can prune it on any schedule, for example with a [scheduled](/docs/workflows/schedules/) workflow that deletes old rows. An app can map one history table, and if you don't map one, the engine writes no history and `history` returns an empty list.
+
+## Trace step attempts
+
+With [`reflex-otel`](/docs/api-reference/observability/) installed and instrumented, every attempt of a step is an OpenTelemetry span. There is nothing to configure in `reflex-workflow`: `ReflexInstrumentor().instrument()` turns the spans on, and without it the engine doesn't import `opentelemetry` at all.
+
+Each span is named `<table>.<step>`, such as `invoice.charge`, and starts a new trace, because a step runs on whichever worker claims it, possibly long after it was scheduled. Instead of nesting under the code that scheduled the step, the span links to it: the event handler or request that called `start`, `run`, or `deliver`, or the step that returned it. Your tracing backend can follow those links from a button click to every step it led to.
+
+A span carries these attributes:
+
+| Attribute | Holds |
+| --- | --- |
+| `reflex.workflow.table` | The workflow's table name. |
+| `reflex.workflow.step` | The step that ran. |
+| `reflex.workflow.attempt` | Which attempt of that step it was, starting at 1. |
+| `reflex.workflow.lane` | The step's [lane](/docs/workflows/concurrency/#route-steps-to-dedicated-workers), if it has one. |
+| `reflex.workflow.outcome` | `ok`, `retry`, or `failed`, as in the attempt history, or `fenced` if the result was discarded because the run had moved on. |
+| `error.type` | The exception's type, for an attempt that raised. |
+
+An attempt that raised also records the exception on its span, and a `retry` or `failed` outcome marks the span as an error. Unlike the attempt history, spans also cover attempts whose result was discarded. Step arguments and row columns are never recorded, beyond what an exception's message quotes.
