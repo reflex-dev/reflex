@@ -1,4 +1,5 @@
 import re
+from collections.abc import Sequence
 
 import pytest
 from reflex_base.components.component import Component
@@ -202,6 +203,69 @@ def test_match_optional_set_matches_none():
         'case JSON.stringify([false, null]):  return ("missing");  break;'
         'case JSON.stringify([true, pySetCanonical(["a"])]):  return ("present");  break;'
         'default:  return ("other");  break;};})()'
+    )
+
+
+@pytest.mark.parametrize(
+    "var_type", [set[int] | str, frozenset[int] | str, set[int] | str | None]
+)
+def test_match_mixed_set_subject(var_type):
+    """Mixed set subjects choose their comparison tag from the runtime value."""
+    result = Match.create(
+        Var(_js_expr="tags", _var_type=var_type),
+        ({1, 2}, "set"),
+        ("ready", "string"),
+        (None, "missing"),
+        "other",
+    )
+    assert str(result) == (
+        "(() => { switch (JSON.stringify((Array.isArray(tags) ? "
+        "[true, pySetCanonical(tags)] : [false, tags]))) {"
+        'case JSON.stringify([true, pySetCanonical([1, 2])]):  return ("set");  break;'
+        'case JSON.stringify([false, "ready"]):  return ("string");  break;'
+        'case JSON.stringify([false, null]):  return ("missing");  break;'
+        'default:  return ("other");  break;};})()'
+    )
+    var_data = result._get_all_var_data()
+    assert var_data is not None
+    assert dict(var_data.imports)["$/utils/helpers/set.js"] == (
+        ImportVar(tag="pySetCanonical", install=False),
+    )
+
+
+@pytest.mark.parametrize("subject_type", [set[int] | str, str])
+def test_match_mixed_set_case(subject_type):
+    """A mixed set case enables normalization without a literal set case."""
+    result = Match.create(
+        Var(_js_expr="subject", _var_type=subject_type),
+        (Var(_js_expr="caseValue", _var_type=set[int] | str), "matched"),
+        "other",
+    )
+    subject = (
+        "(Array.isArray(subject) ? [true, pySetCanonical(subject)] : [false, subject])"
+        if subject_type is not str
+        else "[false, subject]"
+    )
+    assert str(result) == (
+        f"(() => {{ switch (JSON.stringify({subject})) {{"
+        "case JSON.stringify((Array.isArray(caseValue) ? [true, pySetCanonical(caseValue)] "
+        ': [false, caseValue])):  return ("matched");  break;'
+        'default:  return ("other");  break;};})()'
+    )
+
+
+@pytest.mark.parametrize("as_case", [False, True])
+@pytest.mark.parametrize("sequence_type", [list[int], tuple[int, ...], Sequence[int]])
+def test_match_rejects_ambiguous_set_sequence_union(as_case, sequence_type):
+    """Serialized arrays cannot identify a set within a set-or-list union."""
+    mixed = Var(_js_expr="values", _var_type=set[int] | sequence_type)
+    with pytest.raises(MatchTypeError) as error:
+        Match.create(
+            {1} if as_case else mixed, (mixed if as_case else {1}, "set"), "other"
+        )
+    assert str(error.value) == (
+        "rx.match cannot distinguish sets from sequences in a union because both serialize "
+        "to arrays. Narrow the var's type before matching."
     )
 
 

@@ -1,8 +1,8 @@
 """rx.match."""
 
 import textwrap
-from collections.abc import Iterator
-from typing import Any, cast, overload
+from collections.abc import Iterator, Sequence
+from typing import Any, cast, get_args, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
@@ -68,7 +68,7 @@ class Match(Component):
         cases, default = cls._process_cases(list(cases))
         match_cases, has_set_case = cls._process_match_cases(cases)
 
-        if isinstance(match_cond_var, SetVar) or has_set_case:
+        if cls._has_set_type(match_cond_var) or has_set_case:
             match_cond_var = cls._comparable(match_cond_var)
             match_cases = [
                 ([cls._comparable(condition) for condition in conditions], result)
@@ -110,7 +110,24 @@ class Match(Component):
         )
 
     @staticmethod
-    def _comparable(var: Var) -> Var:
+    def _has_set_type(var: Var) -> bool:
+        """Check whether any member of a var's type is a set.
+
+        Args:
+            var: The subject or case var.
+
+        Returns:
+            Whether the annotation can contain a set.
+        """
+        var_type = types.resolve_type_alias(var._var_type)
+        members = get_args(var_type) if types.is_union(var_type) else (var_type,)
+        return any(
+            types.safe_issubclass(types.get_origin(member) or member, (set, frozenset))
+            for member in members
+        )
+
+    @classmethod
+    def _comparable(cls, var: Var) -> Var:
         """Make a subject or case var compare the way Python's ``==`` does.
 
         Cases match by ``JSON.stringify`` equality, and a set serializes in its
@@ -122,8 +139,31 @@ class Match(Component):
 
         Returns:
             The var to serialize for the comparison.
+
+        Raises:
+            MatchTypeError: If a union combines sets and serialized sequences.
         """
         is_set = isinstance(var, SetVar)
+        if not is_set and cls._has_set_type(var):
+            members = get_args(types.resolve_type_alias(var._var_type))
+            if any(
+                types.safe_issubclass(types.get_origin(member) or member, Sequence)
+                and not types.safe_issubclass(types.get_origin(member) or member, str)
+                for member in members
+            ):
+                msg = (
+                    "rx.match cannot distinguish sets from sequences in a union because both "
+                    "serialize to arrays. Narrow the var's type before matching."
+                )
+                raise MatchTypeError(msg)
+            canonical = set_canonical_operation(cast(SetVar, var))
+            return Var(
+                _js_expr=(
+                    f"(Array.isArray({var!s}) ? [true, {canonical!s}] : [false, {var!s}])"
+                ),
+                _var_type=list,
+                _var_data=canonical._get_all_var_data(),
+            )
         return LiteralVar.create([
             var.is_not_none()
             if is_set and types.is_optional(var._var_type)
@@ -218,7 +258,7 @@ class Match(Component):
                 condition_var = cls._create_case_var_with_var_data(condition)
                 if type(condition_var) is Var:
                     condition_var = condition_var.guess_type()
-                has_set_case = has_set_case or isinstance(condition_var, SetVar)
+                has_set_case = has_set_case or cls._has_set_type(condition_var)
                 conditions_vars.append(condition_var)
 
             return_value = (
