@@ -83,7 +83,7 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js@4.0.0"]
+    lib_dependencies: list[str] = ["plotly.js@4.3.0"]
 
     tag = "Plot"
 
@@ -204,7 +204,7 @@ class Plotly(NoSSRComponent):
         }
         if self.locale is not None:
             # For locale dictionaries injected into plot config.locales.
-            imports["plotly.js-locales@4.0.0"] = ImportVar(
+            imports["plotly.js-locales@4.3.0"] = ImportVar(
                 tag="plotlyLocales",
                 is_default=True,
             )
@@ -418,7 +418,7 @@ class PlotlyBasic(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@4.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly basic component.
@@ -444,7 +444,7 @@ class PlotlyCartesian(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@4.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly cartesian component.
@@ -470,7 +470,7 @@ class PlotlyGeo(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@4.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly geo component.
@@ -496,7 +496,7 @@ class PlotlyGl3d(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@4.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly 3d component.
@@ -522,7 +522,7 @@ class PlotlyGl2d(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@4.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly 2d component.
@@ -546,7 +546,7 @@ class PlotlyMap(Plotly):
 
     tag: str = "MapPlotlyPlot"
 
-    lib_dependencies: list[str] = ["plotly.js-map-dist-min@4.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-map-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add the factory import for the Plotly map component.
@@ -606,7 +606,7 @@ class PlotlyMapbox(Plotly):
             console.deprecate(
                 feature_name="rx.plotly.mapbox",
                 reason="Use rx.plotly.map with MapLibre traces and layout.map instead",
-                deprecation_version="0.10.0",
+                deprecation_version="0.11.1",
                 removal_version="1.0",
             )
             return super().create(*children, **props)
@@ -635,7 +635,7 @@ class PlotlyFinance(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@4.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly finance component.
@@ -661,7 +661,7 @@ class PlotlyStrict(Plotly):
 
     library = "react-plotly.js@4.1.0"
 
-    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@4.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@4.3.0"]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the plotly strict component.

@@ -147,8 +147,8 @@ def test_plotly_map_imports_and_locale(plotly_fig: go.Figure):
     component = rx.plotly.map(data=plotly_fig, locale="de", id="map")
     imports = component._get_all_imports()
 
-    assert "plotly.js-map-dist-min@4.0.0" in imports
-    assert "plotly.js-locales@4.0.0" in imports
+    assert "plotly.js-map-dist-min@4.3.0" in imports
+    assert "plotly.js-locales@4.3.0" in imports
     assert "mergician" in imports
     assert "import('plotly.js-map-dist-min')" in component._get_dynamic_imports()
     assert any(
@@ -171,11 +171,11 @@ def test_plotly_mapbox_deprecation_preserves_bundle(
     assert deprecate.call_args.kwargs["feature_name"] == "rx.plotly.mapbox"
     assert "rx.plotly.map" in deprecate.call_args.kwargs["reason"]
     assert deprecate.call_args.kwargs["removal_version"] == "1.0"
-    assert deprecate.call_args.kwargs["deprecation_version"] == "0.10.0"
+    assert deprecate.call_args.kwargs["deprecation_version"] == "0.11.1"
     imports = component._get_all_imports()
     assert "plotly.js-mapbox-dist-min@3.7.0" in imports
-    assert "plotly.js-mapbox-dist-min@4.0.0" not in imports
-    assert "plotly.js-locales@4.0.0" in imports
+    assert "plotly.js-mapbox-dist-min@4.3.0" not in imports
+    assert "plotly.js-locales@4.3.0" in imports
     assert "import('plotly.js-mapbox-dist-min')" in component._get_dynamic_imports()
 
 

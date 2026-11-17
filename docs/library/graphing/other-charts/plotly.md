@@ -250,7 +250,7 @@ handlers work on `rx.plotly.map` as on the full component.
 
 ### Migrating Mapbox figures
 
-`rx.plotly.mapbox` is deprecated as of Reflex 0.10.0 and will be removed in Reflex
+`rx.plotly.mapbox` is deprecated as of Reflex 0.11.1 and will be removed in Reflex
 1.0. Migrate
 `go.Scattermapbox`, `go.Choroplethmapbox` and `go.Densitymapbox` to `go.Scattermap`,
 `go.Choroplethmap` and `go.Densitymap`. Plotly Express provides the corresponding
@@ -273,7 +273,7 @@ updates. These inputs cannot render with Plotly.js 4; follow the migration above
 ### Plotly.js 4 compatibility
 
 The default component and all variants except the deprecated `rx.plotly.mapbox`
-use Plotly.js 4.0. Figures previously passed to the default component with
+use Plotly.js 4. Figures previously passed to the default component with
 Mapbox traces need the migration above. Other upstream changes to check include:
 
 - MathJax 2 is no longer supported; use MathJax 3 or 4.
@@ -287,7 +287,7 @@ Mapbox traces need the migration above. Other upstream changes to check include:
   to `True` and geographic plots fit their bounds to locations by default. Set
   the relevant values explicitly when preserving the previous appearance.
 
-See the [Plotly.js 4.0 changelog](https://github.com/plotly/plotly.js/blob/v4.0.0/CHANGELOG.md)
+See the [Plotly.js changelog](https://github.com/plotly/plotly.js/blob/v4.3.0/CHANGELOG.md)
 for the complete list of upstream changes.
 
 
