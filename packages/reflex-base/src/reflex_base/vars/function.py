@@ -16,7 +16,7 @@ from typing import (
 )
 
 from reflex_base.utils import format
-from reflex_base.utils.types import GenericType
+from reflex_base.utils.types import GenericType, is_optional, value_inside_optional
 
 from .base import CachedVarOperation, LiteralVar, Var, VarData, cached_property_no_lock
 
@@ -354,8 +354,14 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
             func_expr, "("
         ):
             func_expr = format.wrap(func_expr, "(")
+        # A function that may be null (a cond with a None branch) is a no-op, not a TypeError.
+        call = (
+            "?.("
+            if self._func is not None and is_optional(self._func._var_type)
+            else "("
+        )
 
-        return f"({func_expr}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
+        return f"({func_expr}{call}{', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
@@ -389,10 +395,9 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         Returns:
             The function call var.
         """
+        func_type = value_inside_optional(func._var_type)
         function_return_type = (
-            func._var_type.__args__[1]
-            if getattr(func._var_type, "__args__", None)
-            else Any
+            func_type.__args__[1] if getattr(func_type, "__args__", None) else Any
         )
         var_type = _var_type if _var_type is not Any else function_return_type
         return cls(
