@@ -244,7 +244,7 @@ class GhostUpload(Fragment):
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
-    library = "react-dropzone@15.0.0"
+    library = "react-dropzone@17.0.0"
 
     tag = ""
 

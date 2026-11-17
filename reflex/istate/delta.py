@@ -6,11 +6,12 @@ import asyncio
 import contextlib
 import inspect
 import time
-from collections.abc import Coroutine, Iterator, Mapping
+from collections.abc import Iterator, Mapping
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.vars.base import AsyncComputedVar
 
 if TYPE_CHECKING:
     from reflex_base.vars.base import ComputedVar
@@ -38,6 +39,14 @@ _DROP_FROM_DELTA: Final = object()
 # discarded traversal's flag into one of those would suppress a real update.
 _record_delta_values: ContextVar[bool] = ContextVar(
     "_record_delta_values", default=True
+)
+
+
+# Replay browser storage and cached dependents without blanket invalidation.
+# Real assignments invalidate their caches eagerly. Uncached values are left
+# to the normal event delta, avoiding an extra evaluation during hydration.
+_replay_client_storage: ContextVar[bool] = ContextVar(
+    "_replay_client_storage", default=False
 )
 
 
@@ -178,9 +187,8 @@ def _record_or_drop_delta_value(
 
 
 async def _drop_unchanged_delta_value(
-    cvar: ComputedVar,
+    cvar: AsyncComputedVar,
     instance: BaseState,
-    value: Coroutine[None, None, Any],
     token: str,
     state_name: str,
     key: str,
@@ -189,9 +197,8 @@ async def _drop_unchanged_delta_value(
     """Await an async uncached computed var, dropping it if the value did not change.
 
     Args:
-        cvar: The computed var that produced the coroutine.
+        cvar: The async computed var to resolve.
         instance: The state instance the computed var is attached to.
-        value: The coroutine returned by the computed var.
         token: The client token the delta is being produced for.
         state_name: The full name of the state the value belongs to.
         key: The delta key the resolved value is stored under.
@@ -202,7 +209,13 @@ async def _drop_unchanged_delta_value(
         value that was sent to the client.
     """
     return _record_or_drop_delta_value(
-        cvar, instance, await value, token, state_name, key, pending
+        cvar,
+        instance,
+        await cvar.__get__(instance, type(instance)),
+        token,
+        state_name,
+        key,
+        pending,
     )
 
 
@@ -222,8 +235,12 @@ def build_delta(state: BaseState) -> Delta:
     """
     delta = {}
 
-    state._mark_dirty_computed_vars()
-    delta_vars = state.dirty_vars & state._frontend_var_names
+    if _replay_client_storage.get():
+        delta_vars = state.dirty_vars & state._frontend_var_names
+        delta_vars.difference_update(state._always_dirty_computed_vars)
+    else:
+        state._mark_dirty_computed_vars()
+        delta_vars = state.dirty_vars & state._frontend_var_names
 
     always_dirty_computed_vars = state._always_dirty_computed_vars
     # Where to leave the values this traversal sends, for whoever delivers
@@ -234,7 +251,6 @@ def build_delta(state: BaseState) -> Delta:
     full_name = state.get_full_name()
     subdelta: dict[str, Any] = {}
     for prop in delta_vars:
-        value = state.get_value(prop)
         key = prop + FIELD_MARKER
         if pending is not None and prop in always_dirty_computed_vars:
             # Uncached computed vars are recomputed for every delta; only
@@ -242,9 +258,11 @@ def build_delta(state: BaseState) -> Delta:
             # is left out of a delta nobody collects: what the client has is
             # only known for the values a delivered delta recorded.
             cvar = state.computed_vars[prop]
-            if inspect.iscoroutine(value):
+            if isinstance(cvar, AsyncComputedVar):
+                # Create the getter coroutine only when the wrapper is awaited:
+                # a filter may close the wrapper without ever starting it.
                 value = _drop_unchanged_delta_value(
-                    cvar, state, value, token, full_name, key, pending
+                    cvar, state, token, full_name, key, pending
                 )
                 # An async value cannot be compared to what the client has
                 # until it is awaited, and a filter that withholds it closes
@@ -259,10 +277,12 @@ def build_delta(state: BaseState) -> Delta:
                 )
             else:
                 value = _record_or_drop_delta_value(
-                    cvar, state, value, token, full_name, key, pending
+                    cvar, state, state.get_value(prop), token, full_name, key, pending
                 )
                 if value is _DROP_FROM_DELTA:
                     continue
+        else:
+            value = state.get_value(prop)
         subdelta[key] = value
 
     if subdelta:

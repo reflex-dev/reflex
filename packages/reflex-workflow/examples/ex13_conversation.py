@@ -495,9 +495,10 @@ async def wake(conversation: str, key: str) -> None:
     A conversation that is waiting takes a turn now; one in the middle of a turn
     keeps the wake until it waits again; one that closed opens again. A
     conversation that has already read the entry is left alone, so a repeat of
-    a wake that did land, or a redelivered message, costs nothing. And since the
-    turn reads the transcript, a wake refused because another is already held
-    loses nothing either.
+    a wake that did land, or a redelivered message, costs nothing. A wake is
+    refused while another is held and not yet taken, and that loses nothing
+    either: the turn the held wake starts reads the transcript after this entry
+    was written.
 
     Args:
         conversation: The conversation.

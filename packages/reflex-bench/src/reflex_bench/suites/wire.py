@@ -355,10 +355,11 @@ class WireSession:
         """Change the route like the frontend's client-side navigation.
 
         The router effect sends one ``on_load_internal`` from the new route
-        (``update_vars_internal`` too when the browser holds client storage
-        vars, which the playground has none of); the reply is complete at the
-        delta that sets ``is_hydrated`` again. Later events come from the new
-        route.
+        (preceded by ``update_vars_internal`` only once the browser holds a
+        value of a client storage var; the playground's ``/storage`` page has
+        some, but a fresh browser, as every session here is, holds none); the
+        reply is complete at the delta that sets ``is_hydrated`` again. Later
+        events come from the new route.
 
         Args:
             pathname: The new route, e.g. ``/item/42``.
@@ -437,7 +438,7 @@ def measure(endpoint: Endpoint, work: Callable[[WireSession], Awaitable[_T]]) ->
             session = WireSession(ws, token, endpoint.pathname)
             try:
                 return await asyncio.wait_for(work(session), WIRE_TIMEOUT_S)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 msg = f"the session did not finish within {WIRE_TIMEOUT_S:g} s"
                 raise TimeoutError(msg) from None
             finally:

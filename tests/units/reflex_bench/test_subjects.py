@@ -231,6 +231,29 @@ def test_cache_key(monkeypatch: pytest.MonkeyPatch):
     assert subjects.cache_key(pypi, "3.12") != key
 
 
+def test_subject_requirements_carry_the_playground_dependencies():
+    # The playground's rx.Model tables need reflex's db extra on 0.9, and
+    # rx.plotly imports plotly when it renders.
+    assert subjects.SUBJECT_REQUIREMENTS == (
+        "sqlmodel>=0.0.24,<0.1",
+        "alembic>=1.15.2,<2.0",
+        "plotly>=6.0,<7.0",
+    )
+
+
+@pytest.mark.parametrize("spec", ["0.8.23", "git:v0.0.1", "path:repo"])
+def test_subject_requirements_reach_every_install(
+    spec: str, tmp_path: Path, uv: FakeUv, monkeypatch: pytest.MonkeyPatch
+):
+    repo = _checkout(tmp_path / "repo")
+    monkeypatch.chdir(tmp_path if spec.startswith("path:") else repo)
+    uv.reflex_version = "0.0.1" if spec.startswith("git:") else "0.8.23"
+    _resolve(spec, tmp_path / "home")
+    install = uv.first("uv", "pip", "install")[0]
+    for requirement in subjects.SUBJECT_REQUIREMENTS:
+        assert requirement in install
+
+
 def test_workspace_subject_uses_the_harness_environment(
     tmp_path: Path, uv: FakeUv, monkeypatch: pytest.MonkeyPatch
 ):

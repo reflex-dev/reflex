@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
-from typing import Any, Literal, cast
+from typing import Any, Literal, assert_type, cast
 
 import pytest
 from reflex_workflow import (
@@ -48,7 +48,6 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-from typing_extensions import assert_type
 
 
 class Base(DeclarativeBase):

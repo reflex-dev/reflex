@@ -33,7 +33,7 @@ def ctx(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Context:
 def test_registrations():
     found = registry.discover()
     expected = {
-        "browser.dev.ready": (("pr", "daily"), None, "startup"),
+        "browser.dev.ready": (("pr", "daily", "macro"), None, "startup"),
         "browser.preview.ready": (("daily",), "0.9.8", "startup"),
         "browser.prod.ready": (("daily",), None, "startup"),
         "browser.prod.pageload": (("daily",), None, "latency"),

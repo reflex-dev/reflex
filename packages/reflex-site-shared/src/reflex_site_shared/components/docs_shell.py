@@ -10,6 +10,7 @@ import reflex_components_internal as ui
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
+from reflex_site_shared.backend.demo_requests import DemoRequestState
 from reflex_site_shared.backend.slack import escape_slack_text, post_to_slack
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
@@ -158,7 +159,7 @@ def docs_navbar_frame(
             ),
             class_name="relative [&_nav]:!static [&_ul]:!static mx-auto flex h-16 w-full max-w-full flex-row items-center border-b border-border-subtle bg-background px-6 shadow-[0_2px_6px_-2px_rgba(0,0,0,0.08)] 3xl:px-16",
         ),
-        class_name="fixed top-0 z-[9999] flex w-full flex-col self-center",
+        class_name="docs-nav-frame fixed top-0 z-[9999] flex w-full flex-col self-center",
     )
 
 
@@ -179,7 +180,7 @@ def docs_left_sidebar(
     return rx.box(
         content,
         class_name=ui.cn(
-            "sticky left-0 z-10 hidden w-[19.5rem] shrink-0 border-r border-border-subtle before:absolute before:bottom-0 before:right-0 before:top-0 before:-z-10 before:w-[100vw] before:bg-white-1 lg:block",
+            "docs-sidebar sticky left-0 z-10 hidden w-[19.5rem] shrink-0 border-r border-border-subtle before:absolute before:bottom-0 before:right-0 before:top-0 before:-z-10 before:w-[100vw] before:bg-white-1 lg:block",
             "top-[var(--docs-header-height)] h-[calc(100vh-var(--docs-header-height))]",
         ),
         style={} if show_banner else {"--docs-header-height": "4rem"},
@@ -417,6 +418,7 @@ def _feedback_choice_button(
             ),
         ),
         aria_label=label,
+        aria_pressed=active,
         on_click=DocsFeedbackState.set_score(score),
     )
 
@@ -436,6 +438,7 @@ def _feedback_thumb_card(score: int, icon: str, label: str) -> rx.Component:
         ui.icon(icon, size=16),
         label,
         type="button",
+        aria_pressed=DocsFeedbackState.score == score,
         on_click=DocsFeedbackState.set_score(score),
         class_name=rx.cond(
             DocsFeedbackState.score == score,
@@ -457,6 +460,7 @@ def _feedback_content() -> rx.Component:
                 rx.el.div(
                     ui.textarea(
                         name="feedback",
+                        aria_label="Feedback",
                         placeholder="Write a comment…",
                         type="text",
                         max_length=500,
@@ -472,6 +476,7 @@ def _feedback_content() -> rx.Component:
                     ),
                     ui.input(
                         name="email",
+                        custom_attrs={"aria-label": "Contact email (optional)"},
                         type="email",
                         placeholder="Contact email (optional)",
                         max_length=100,
@@ -490,7 +495,7 @@ def _feedback_content() -> rx.Component:
             ),
             class_name="flex flex-col gap-4 w-full",
         ),
-        class_name="p-2",
+        class_name="docs-feedback-content p-2",
     )
 
 
@@ -609,7 +614,7 @@ def docs_right_sidebar(
             ),
             class_name="h-full w-full mt-[calc(var(--docs-header-height)+2rem)]",
         ),
-        class_name="sticky top-0 hidden h-screen w-[240px] shrink-0 2xl:block",
+        class_name="docs-toc sticky top-0 hidden h-screen w-[240px] shrink-0 2xl:block",
         style={} if show_banner else {"--docs-header-height": "4rem"},
     )
 
@@ -645,7 +650,7 @@ def docs_footer_shell(
             copyright_status,
             class_name="flex w-full flex-col justify-between gap-10 py-6 lg:py-8",
         ),
-        class_name="flex w-full max-w-full flex-col lg:max-w-none",
+        class_name="docs-page-footer flex w-full max-w-full flex-col lg:max-w-none",
     )
 
 
@@ -839,7 +844,7 @@ def _docs_page_footer_content(
     controls = rx.box(
         rx.box(dark_mode_toggle(), class_name="[&>div]:!ml-0"),
         _docs_social_menu(),
-        class_name="flex w-full flex-row items-end justify-between gap-6",
+        class_name="flex w-full flex-row flex-wrap items-end justify-between gap-6",
     )
     copyright_status = rx.el.div(
         rx.text(
@@ -925,13 +930,14 @@ def docs_book_demo_action() -> rx.Component:
         Demo form dialog and trigger.
     """
     return demo_form_dialog(
+        on_submit=DemoRequestState.post_demo_request,
         trigger=button(
             "Book a Demo",
             size="sm",
             variant="primary",
             class_name="whitespace-nowrap",
             native_button=False,
-        )
+        ),
     )
 
 

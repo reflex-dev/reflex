@@ -6,7 +6,7 @@ import copy
 import dataclasses
 import inspect
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, cast
 
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.context.base import BaseContext
@@ -582,6 +582,8 @@ class CompilerHooks:
 class PageContext(BaseContext):
     """Mutable compilation state for a single page."""
 
+    _get_usage: ClassVar[str | None] = "during page compilation"
+
     name: str
     route: str
     root_component: BaseComponent
@@ -603,6 +605,10 @@ class PageContext(BaseContext):
     # the matching ``leave_component``. Non-empty iff we are inside such a
     # subtree.
     memoize_suppressor_stack: list[int] = dataclasses.field(default_factory=list)
+    # Local client state names used by this page's body, including the parts
+    # the memoize plugin moved into their own modules; the page scope claims
+    # them so the outermost user owns the slot.
+    client_state_names: set[str] = dataclasses.field(default_factory=set)
     # Maps both the user-owned original's ``id()`` and the clone's ``id()`` to
     # the page-local clone. Lets the walker and plugins rebind children, style,
     # or event_triggers on a page-local copy without mutating a user-owned
@@ -660,6 +666,8 @@ class PageContext(BaseContext):
 @dataclasses.dataclass(slots=True, kw_only=True, eq=False)
 class CompileContext(BaseContext):
     """Mutable compilation state for an entire compile run."""
+
+    _get_usage: ClassVar[str | None] = "during compilation"
 
     app: App | None = None
     pages: Sequence[PageDefinition]

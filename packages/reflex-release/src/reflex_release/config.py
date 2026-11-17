@@ -9,18 +9,14 @@ single-package repository needs no more than ``root-package``.
 from __future__ import annotations
 
 import dataclasses
+import posixpath
 import re
-import sys
+import tomllib
 from pathlib import Path
 
 from packaging.version import Version
 
 from .actions import fail
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # pyright: ignore[reportMissingImports]
 
 TOOL_TABLE = "reflex-release"
 
@@ -32,11 +28,11 @@ POST_RELEASE_WORKFLOW_KEY = "post-release-workflow"
 #: workflow drift the next ``sync --check`` reports — which is the point: the
 #: tool and the release path it generates move together. A repository that wants
 #: its own cadence sets ``uv-version``.
-DEFAULT_UV_VERSION = "0.12.5"
+DEFAULT_UV_VERSION = "0.13.6"
 
 #: The Python the generated workflows run uv with, pinned for the same reason. A
 #: repository whose packages cannot build on it sets ``python-version``.
-DEFAULT_PYTHON_VERSION = "3.14.7"
+DEFAULT_PYTHON_VERSION = "3.14.10"
 
 #: What ``uv-version`` and ``python-version`` may contain. Both are interpolated
 #: into a double-quoted YAML scalar in the generated workflows, so the allowed
@@ -72,6 +68,7 @@ _KNOWN_KEYS = frozenset({
     "latest-release-package",
     "internal-packages",
     "changelog-exempt-packages",
+    "extra-source-dirs",
     POST_RELEASE_WORKFLOW_KEY,
     "lockstep",
 })
@@ -124,15 +121,16 @@ class CustomBuild:
 
 @dataclasses.dataclass(frozen=True)
 class LockstepGroup:
-    """A set of packages that must always release together at the same version.
+    """Packages that release at one version.
 
     Attributes:
         members: The package names in the group (at least two).
-        publish_last: Members that publish only after every other member of the
-            group has been uploaded and tagged — used when they depend on their
-            siblings at an exact version.
-        pin_exact: Whether each ``publish_last`` member's requirement on its
-            siblings is rewritten to ``== <version>`` before building.
+        publish_last: Members that publish only after the other members are
+            uploaded and tagged at the same version — used when they depend on
+            those siblings at an exact version. Without it, every member
+            releases together; with it, the other members release on their own.
+        pin_exact: Whether each ``publish_last`` member's requirement on the
+            other members is rewritten to ``== <version>`` before building.
     """
 
     members: tuple[str, ...]
@@ -194,6 +192,9 @@ class Config:
         never_publish_packages: Packages this repository builds but never
             releases. They are excluded from every release path rather than
             merely exempt from the changelog.
+        extra_source_dirs: Repo-relative directories outside a package's own
+            source that it also ships, by package name. A change under one
+            counts as a change to that package.
     """
 
     root: Path
@@ -224,6 +225,11 @@ class Config:
     uv_version: str = DEFAULT_UV_VERSION
     python_version: str = DEFAULT_PYTHON_VERSION
     never_publish_packages: tuple[str, ...] = ()
+    # A mapping, unlike every other field: left out of the hash so a
+    # configuration stays hashable.
+    extra_source_dirs: dict[str, tuple[str, ...]] = dataclasses.field(
+        default_factory=dict, hash=False
+    )
 
     def package_dir(self, package: str) -> str:
         """Return the repo-relative directory of a package.
@@ -422,16 +428,23 @@ class Config:
             configured ``root-source-dirs``; for a sub-package, its configured
             source subdirectories, falling back to the whole package directory
             (minus its fragment directory and changelog) when it has none.
+            Either is followed by the package's ``extra-source-dirs``.
         """
+        extra = [
+            f"{directory}/" for directory in self.extra_source_dirs.get(package, ())
+        ]
         if package == self.root_package:
-            return [f"{directory.rstrip('/')}/" for directory in self.root_source_dirs]
+            return [
+                *(f"{directory.rstrip('/')}/" for directory in self.root_source_dirs),
+                *extra,
+            ]
         directory = self.package_dir(package)
         present = [
             f"{directory}/{subdir}/"
             for subdir in self.package_source_subdirs
             if (self.package_path(package) / subdir).is_dir()
         ]
-        return present or [f"{directory}/"]
+        return [*(present or [f"{directory}/"]), *extra]
 
     def is_package_source(self, package: str, path: str) -> bool:
         """Return whether a changed repo-relative path is source of a package.
@@ -463,26 +476,30 @@ class Config:
             package: The package name.
 
         Returns:
-            The group, or None when the package releases independently.
+            The group, or None when the package does not belong to one.
         """
         return next(
             (group for group in self.lockstep if package in group.members), None
         )
 
     def lockstep_partners(self, package: str) -> tuple[str, ...]:
-        """Return the packages that must release alongside a package.
+        """Return the siblings a package needs released at its own version.
 
         Args:
             package: The package name.
 
         Returns:
-            The other members of the package's lockstep group, or an empty
-            tuple.
+            Every other member of a group without ``publish-last``; the early
+            members for a ``publish-last`` member; otherwise an empty tuple.
         """
         group = self.lockstep_group(package)
         if group is None:
             return ()
-        return tuple(member for member in group.members if member != package)
+        if not group.publish_last:
+            return tuple(member for member in group.members if member != package)
+        if package not in group.publish_last:
+            return ()
+        return tuple(m for m in group.members if m not in group.publish_last)
 
     def publishes_last(self, package: str) -> bool:
         """Return whether a package must publish after its lockstep siblings.
@@ -507,9 +524,9 @@ class Config:
             package's ``pyproject.toml``, or an empty tuple.
         """
         group = self.lockstep_group(package)
-        if group is None or not group.pin_exact or package not in group.publish_last:
+        if group is None or not group.pin_exact:
             return ()
-        return tuple(member for member in group.members if member != package)
+        return self.lockstep_partners(package)
 
     def custom_build_for(self, package: str) -> CustomBuild | None:
         """Return the repository-supplied workflow that builds a package.
@@ -629,6 +646,51 @@ def _string_list(
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
         fail(f"{label} {key} must be a list of strings")
     return tuple(value)
+
+
+def _extra_source_dirs(table: dict) -> dict[str, tuple[str, ...]]:
+    """Read the ``extra-source-dirs`` table.
+
+    Args:
+        table: The ``[tool.reflex-release]`` table.
+
+    Returns:
+        The extra source directories of each package that names any.
+    """
+    value = table.get("extra-source-dirs", {})
+    if not isinstance(value, dict):
+        fail(
+            f"[tool.{TOOL_TABLE}] extra-source-dirs must be a table mapping a "
+            "package name to a list of directories"
+        )
+    label = f"[tool.{TOOL_TABLE}.extra-source-dirs]"
+    return {
+        package: tuple(
+            _repo_relative(directory, label)
+            for directory in _string_list(value, package, label)
+        )
+        for package in value
+    }
+
+
+def _repo_relative(directory: str, label: str) -> str:
+    """Spell a configured directory the way git reports paths under it.
+
+    Changed paths are matched by prefix, so ``./assets`` or ``a/../assets``
+    would name a real directory and still never match a path.
+
+    Args:
+        directory: The directory as written in the configuration.
+        label: How to name the table in an error.
+
+    Returns:
+        The directory relative to the repository root, without ``.`` or ``..``
+        segments or a trailing slash.
+    """
+    normalized = posixpath.normpath(directory)
+    if normalized in {".", ".."} or normalized.startswith(("/", "../")):
+        fail(f"{label} {directory!r} is not a directory inside the repository")
+    return normalized
 
 
 def _string(
@@ -921,6 +983,7 @@ def load_config(root: Path) -> Config:
         internal_packages=_string_list(table, "internal-packages"),
         changelog_exempt_packages=_string_list(table, "changelog-exempt-packages"),
         never_publish_packages=_string_list(table, "never-publish-packages"),
+        extra_source_dirs=_extra_source_dirs(table),
         # The documented opt-out is leaving the key out; an empty string is the
         # same thing rather than a workflow named "".
         post_release_workflow=_string(table, POST_RELEASE_WORKFLOW_KEY, "").strip()
@@ -980,6 +1043,19 @@ def load_config(root: Path) -> Config:
         for name in _string_list(table, key):
             if name not in packages:
                 fail(f"[tool.{TOOL_TABLE}] {key} lists unknown package {name!r}")
+    # A misspelled package or directory would never match a changed path, and
+    # so would quietly stop requiring a fragment for it.
+    for name, directories in config.extra_source_dirs.items():
+        if name not in packages:
+            fail(
+                f"[tool.{TOOL_TABLE}] extra-source-dirs lists unknown package {name!r}"
+            )
+        for directory in directories:
+            if not (root / directory).is_dir():
+                fail(
+                    f"[tool.{TOOL_TABLE}] extra-source-dirs of {name} names "
+                    f"{directory!r}, which is not a directory of this repository"
+                )
     latest = config.latest_release_package
     if latest is not None and latest not in packages:
         fail(f"[tool.{TOOL_TABLE}] latest-release-package is unknown: {latest!r}")

@@ -36,6 +36,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, Mapper, declared_attr, mapped_column
 
+from reflex_workflow import otel
+
 if TYPE_CHECKING:
     from sqlalchemy import ColumnElement
 
@@ -83,6 +85,10 @@ PARENT_FAN_OUT = "fan_out"
 # How many delivered event keys a row remembers, to refuse repeats of them.
 EVENT_KEY_HISTORY = 16
 
+# Where a claim keeps the key of the held event it took, among the arguments of
+# the step it scheduled, until that step's attempt commits and remembers it.
+TAKEN_KEY = "event_key"
+
 # Workflow classes by table name, filled in as classes are defined.
 REGISTRY: dict[str, type[Workflow]] = {}
 
@@ -129,7 +135,7 @@ class Call(Generic[W]):
                 f"Arguments to step {self.step.name!r} must be JSON-serializable: {err}"
             )
             raise TypeError(msg) from None
-        return payload
+        return otel.stamp(payload)
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

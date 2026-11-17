@@ -1,25 +1,36 @@
-"""Execute behavioral regressions against the actual frontend event queue."""
+"""Execute behavioral regressions against the actual frontend runtime."""
 
 import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
+from reflex_base.constants import Templates
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
-def test_client_event_queue() -> None:
-    """Verify queue behavior and prepend/connected dispatch processing cost."""
+@pytest.mark.parametrize(
+    "script",
+    [
+        "client_event_queue.mjs",
+        "client_state_updates.mjs",
+        "client_upload.mjs",
+        "state_string_helpers.mjs",
+    ],
+)
+def test_client_runtime(script: str) -> None:
+    """Verify queue processing, incoming state and upload updates, and string helpers.
+
+    Args:
+        script: Runtime regression script to execute.
+    """
     tests = Path(__file__).parent
-    source = (
-        tests.parents[2]
-        / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
-    )
+    source = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
     result = subprocess.run(
         [
             "node",
             "--experimental-vm-modules",
-            str(tests / "client_event_queue.mjs"),
+            str(tests / script),
             str(source),
         ],
         capture_output=True,

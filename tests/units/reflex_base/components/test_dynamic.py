@@ -4,6 +4,7 @@ import importlib
 from typing import Any
 
 import pytest
+from reflex_base import constants
 from reflex_base.components import dynamic
 from reflex_base.components.component import Component
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
@@ -33,6 +34,7 @@ def test_bundled_libraries_shim_via_reflex_namespace():
 def test_default_bundled_libraries_shim():
     """The `DEFAULT_BUNDLED_LIBRARIES` shim returns the default library list."""
     assert _default_bundled_libraries() == dynamic.DEFAULT_BUNDLED_LIBRARIES
+    assert f"$/{constants.Dirs.UTILS}/context-registry" in _default_bundled_libraries()
 
 
 def test_bundle_registrations_survive_fork_and_respect_explicit_reset():

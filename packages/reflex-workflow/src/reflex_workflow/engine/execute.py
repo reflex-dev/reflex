@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import undefer
 
-from reflex_workflow import model
+from reflex_workflow import model, otel
 from reflex_workflow.engine import handles, notify, rows
 from reflex_workflow.engine.runtime import Runtime
 from reflex_workflow.model import (
@@ -24,6 +24,7 @@ from reflex_workflow.model import (
     PARENT_KEY,
     PARENT_TABLE,
     REGISTRY,
+    TAKEN_KEY,
     Call,
     Child,
     Every,
@@ -249,9 +250,13 @@ def after_failure(
         The scheduling columns, and the outcome to record.
     """
     if spec is not None and attempts <= spec.retries:
+        next_args = stored
+        if otel.enabled:
+            # The retry links to this attempt.
+            next_args = otel.stamp(dict(stored or {}))
         return {
             "next_step": current,
-            "next_args": stored,
+            "next_args": next_args,
             "wake_at": func.now() + backoff_for(spec, attempts),
             "waiting_for": None,
         }, "retry"
@@ -261,36 +266,37 @@ def after_failure(
 def settle_event(
     cls: type[Workflow],
     values: dict[str, Any],
-    event: dict[str, Any] | None,
+    taken: str | None = None,
     repeating: bool = False,
 ) -> None:
     """Decide what becomes of an event held for a wait, as the commit finds it.
 
-    An unconsumed event stays only while the row can still take it: it is for the
-    wait this step just armed, or the row is still stepping toward one. Judged
-    against the column rather than what was read, since a delivery may have
-    landed while the step ran.
+    The event a step was run for left the column when its claim took it, so
+    whatever the column holds now arrived while the step ran, for the run's next
+    wait. It stays only while the row can still take it: it is for the wait this
+    step just armed, or the row is still stepping toward one. Judged against the
+    column rather than what was read, since a delivery may have landed while the
+    step ran.
 
     A run going round a schedule is not stepping toward a wait, and an event left
     held on one is held for good: it never runs, and it refuses every event after
     it. Such a run keeps no event, so a caller told the delivery was refused can
     send it again.
 
-    An event this attempt took is remembered by key, which is where a key given
-    to ``deliver`` is remembered at all: an event discarded here was never taken,
-    and a resend of it has to be allowed.
+    The key of the event this attempt ran, if its claim took one, is remembered
+    here, as this attempt commits: an event moved past before its step ran was
+    never taken, and a resend of it has to be allowed.
 
     Args:
         cls: The workflow class.
         values: The columns being written, which this adds ``pending_event`` to.
-        event: The held event this attempt ran, if it ran one.
+        taken: The key of the event this attempt ran, if it ran one with a key.
         repeating: Whether the step asked to run again on a schedule.
     """
+    if taken is not None:
+        values["recent_event_keys"] = remember(cls, taken)
     waiting = values["waiting_for"]
-    took = event is not None
-    if took and (key := event.get("key")) is not None:
-        values["recent_event_keys"] = remember(cls, key)
-    if took or (waiting is None and (values["next_step"] is None or repeating)):
+    if waiting is None and (values["next_step"] is None or repeating):
         values["pending_event"] = null()
     elif waiting is not None:
         values["pending_event"] = case(
@@ -535,6 +541,7 @@ async def wake_on_schedule(
     try:
         values["wake_at"] = repeat(now)
     except Exception as err:
+        otel.record_failure(err)
         error = f"{type(err).__name__}: {err}"[:2000]
         values |= stop() | {"last_error": error, "pending_event": null()}
         return error
@@ -599,7 +606,7 @@ async def abandon(
     stored: dict[str, Any] | None,
     attempts: int,
     parent: dict[str, Any] | None,
-    event: dict[str, Any] | None,
+    taken: str | None,
     began: float,
     err: Exception,
 ) -> str:
@@ -624,7 +631,7 @@ async def abandon(
         stored: The arguments it was called with.
         attempts: How many attempts had failed before this one.
         parent: The run this one was fanned out by, when it was.
-        event: The held event this attempt ran, if it ran one.
+        taken: The key of the event this attempt ran, if it ran one with a key.
         began: When the attempt started, on the monotonic clock.
         err: What stopped the commit.
 
@@ -635,7 +642,7 @@ async def abandon(
     error = f"{type(err).__name__}: {err}"[:2000]
     values, outcome = after_failure(spec, current, stored, attempts)
     values |= {"attempts": attempts, "last_error": error}
-    settle_event(cls, values, event)
+    settle_event(cls, values, taken)
     joining = parent is not None and parent.get(PARENT_FAN_OUT) is not None
     done = is_finished(values)
     if joining and done:
@@ -714,22 +721,81 @@ async def execute(
             await release(runtime, cls, pk, held)
         return "stale"
 
-    # A buffered event for the step the row waits on takes precedence over its
-    # timeout, which is what ``next_step`` holds while waiting.
-    waiting_for, pending = row.waiting_for, row.pending_event
-    event = (
-        pending
-        if waiting_for is not None
-        and pending is not None
-        and pending.get("step") == waiting_for
-        else None
-    )
-    current = waiting_for if event is not None else row.next_step
+    # An event held for the row's wait was moved into next_step by the claim.
+    current = row.next_step
     if current is None:
         return "stale"
-    stored = event["args"] if event is not None else row.next_args
-    claimed = attempts = row.attempts
+    # A claim that took a held event left its key among the arguments, and the
+    # scheduling that stored them may have left its trace context; neither is
+    # one of the step's, and a retry of the step does not take the event again.
+    stored = row.next_args
+    taken = traceparent = None
+    if stored is not None and (TAKEN_KEY in stored or otel.TRACE_KEY in stored):
+        stored = dict(stored)
+        taken = stored.pop(TAKEN_KEY, None)
+        traceparent = stored.pop(otel.TRACE_KEY, None)
     spec = cls.__workflow_steps__.get(current)
+    with otel.step_span(
+        cls.__tablename__,
+        current,
+        row.attempts + 1,
+        spec.lane if spec is not None else None,
+        traceparent,
+    ):
+        outcome = await run_attempt(
+            runtime,
+            cls,
+            row,
+            pk=pk,
+            version=version,
+            held=held,
+            current=current,
+            spec=spec,
+            stored=stored,
+            taken=taken,
+            before=before,
+            columns=columns,
+        )
+        otel.record_outcome(outcome)
+        return outcome
+
+
+async def run_attempt(
+    runtime: Runtime,
+    cls: type[Workflow],
+    row: Workflow,
+    *,
+    pk: list[Any],
+    version: int,
+    held: Lease,
+    current: str,
+    spec: Step[Any, Any] | None,
+    stored: dict[str, Any] | None,
+    taken: str | None,
+    before: dict[str, Any],
+    columns: list[str],
+) -> str:
+    """Run the claimed row's step and commit its result if the row hasn't moved.
+
+    Args:
+        runtime: The running engine.
+        cls: The workflow class.
+        row: The detached row, as it was claimed.
+        pk: The row's primary key values.
+        version: The row version that was claimed.
+        held: The lease the claim holds, kept up to date by renewals.
+        current: The step's name.
+        spec: The step, when its class still declares it.
+        stored: The step's arguments.
+        taken: The key of the event this attempt runs, if it runs one with a key.
+        before: The row's user columns before the step ran.
+        columns: The names of the row's user columns.
+
+    Returns:
+        The outcome: ok, retry, failed, or fenced.
+    """
+    factory = runtime.session_factory
+    claimed = attempts = row.attempts
     repeat: Schedule | None = None
     scheduled: Scheduled | None = None
     began = time.monotonic()
@@ -750,6 +816,7 @@ async def execute(
         outcome = "ok"
         attempt = attempts + 1
     except Exception as err:
+        otel.record_failure(err)
         # Nothing the step asked for stands, so nothing it asked for is done.
         repeat, scheduled = None, None
         attempts += 1
@@ -762,7 +829,7 @@ async def execute(
         with contextlib.suppress(asyncio.CancelledError):
             await lease
 
-    settle_event(cls, values, event, repeating=repeat is not None)
+    settle_event(cls, values, taken, repeating=repeat is not None)
     parent = row.parent
     joining = parent is not None and parent.get(PARENT_FAN_OUT) is not None
     try:
@@ -818,6 +885,7 @@ async def execute(
                 await session.rollback()
                 raise
     except Exception as err:
+        otel.record_failure(err)
         logger.exception(
             "reflex_workflow could not commit a step of %s", cls.__qualname__
         )
@@ -831,7 +899,7 @@ async def execute(
             stored,
             claimed,
             parent,
-            event=event,
+            taken,
             began=began,
             err=err,
         )

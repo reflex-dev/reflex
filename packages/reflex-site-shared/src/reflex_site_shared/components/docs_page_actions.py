@@ -310,7 +310,7 @@ def docs_page_actions(
                 )
             ),
         ),
-        class_name="hidden lg:flex flex-row items-center shrink-0",
+        class_name="docs-page-actions hidden lg:flex flex-row items-center shrink-0",
     )
 
 

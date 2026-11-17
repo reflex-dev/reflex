@@ -1,0 +1,1 @@
+`reflex_workflow.wake` no longer returns while a step the worker took is still running, or before the step it continued into has run, so a host that suspends when it returns does not stop that work midway.

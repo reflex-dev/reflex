@@ -190,6 +190,7 @@ def get_sidebar_items_backend():
                 database.tables,
                 database.queries,
                 database.relationships,
+                database.admin_dashboard,
             ],
         ),
         SideBarItem(
@@ -295,6 +296,7 @@ def get_sidebar_items_hosting():
             "Self Hosting",
             children=[
                 hosting.self_hosting,
+                hosting.scaling,
                 hosting.databricks,
                 hosting.cloud_providers,
                 hosting.bring_your_own_cloud,

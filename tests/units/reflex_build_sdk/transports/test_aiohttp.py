@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-import socket
+import errno
 import subprocess
 import sys
 from collections.abc import AsyncIterator
@@ -10,6 +10,7 @@ from typing import Any
 import aiohttp
 import pytest
 from aiohttp import web
+from aiohttp.client_reqrep import ConnectionKey
 from aiohttp.test_utils import TestServer
 from reflex_build_sdk.transports import AiohttpTransport, Request, TransportError
 from reflex_build_sdk.transports._aiohttp import _StallWatchdog
@@ -158,9 +159,6 @@ async def test_stalled_upload_times_out(server: TestServer):
     await asyncio.sleep(0)
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11), reason="tasks count cancellations from Python 3.11"
-)
 @pytest.mark.parametrize("caller_cancels", [False, True])
 async def test_watchdog_leaves_caller_cancellation(caller_cancels: bool):
     async def cancelled() -> bool:
@@ -241,20 +239,6 @@ async def test_request_timeout(server: TestServer):
     assert exc_info.value.timed_out is True
 
 
-async def test_connection_refused():
-    transport = AiohttpTransport()
-    # Bound but not listening: connecting is refused, and holding the port keeps
-    # another process from taking it during the test.
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        port = sock.getsockname()[1]
-        with pytest.raises(TransportError) as exc_info:
-            await transport.send(_request(f"http://127.0.0.1:{port}/echo/x"))
-    await transport.aclose()
-    assert exc_info.value.sent is False
-    assert exc_info.value.timed_out is False
-
-
 class _FailingSession:
     """Stands in for a session whose requests raise before a response arrives."""
 
@@ -268,14 +252,39 @@ class _FailingSession:
 @pytest.mark.parametrize(
     ("error", "sent", "timed_out"),
     [
+        # A bound, non-listening socket can time out on macOS CI instead of
+        # refusing the connection, so inject the error to test its mapping.
+        (
+            aiohttp.ClientConnectorError(
+                ConnectionKey(
+                    host="127.0.0.1",
+                    port=80,
+                    is_ssl=False,
+                    ssl=False,
+                    proxy=None,
+                    proxy_auth=None,
+                    proxy_headers_hash=None,
+                ),
+                ConnectionRefusedError(errno.ECONNREFUSED, "Connection refused"),
+            ),
+            False,
+            False,
+        ),
         (aiohttp.ConnectionTimeoutError("connect"), False, True),
         (aiohttp.ServerTimeoutError("read"), True, True),
-        (asyncio.TimeoutError(), True, True),
+        (TimeoutError(), True, True),
         (aiohttp.ServerDisconnectedError(), True, False),
         (aiohttp.ClientPayloadError("payload"), True, False),
     ],
 )
 async def test_errors(error: BaseException, sent: bool, timed_out: bool):
+    """Map aiohttp failures to transport errors without relying on OS behavior.
+
+    Args:
+        error: The failure raised by the session.
+        sent: Whether the request could have reached the server.
+        timed_out: Whether the failure was a timeout.
+    """
     transport = AiohttpTransport(_FailingSession(error))  # pyright: ignore[reportArgumentType]
     request = _request("http://127.0.0.1/echo/x")
     with pytest.raises(TransportError) as exc_info:
@@ -283,6 +292,7 @@ async def test_errors(error: BaseException, sent: bool, timed_out: bool):
     assert exc_info.value.request is request
     assert exc_info.value.sent is sent
     assert exc_info.value.timed_out is timed_out
+    assert exc_info.value.__cause__ is error
 
 
 async def test_close_ownership(server: TestServer):

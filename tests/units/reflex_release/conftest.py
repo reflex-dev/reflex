@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
@@ -52,7 +53,7 @@ def commit_all(repo: Path, message: str = "wip") -> None:
     git(repo, "commit", "-q", "-m", message)
 
 
-def write_lockstep(repo: Path) -> None:
+def write_lockstep(repo: Path, *, publish_last: bool = True) -> None:
     """Make the repository's two packages a lockstep group.
 
     The root package publishes last and pins the sub-package exactly, mirroring
@@ -60,6 +61,7 @@ def write_lockstep(repo: Path) -> None:
 
     Args:
         repo: The repository root.
+        publish_last: Whether the root publishes last and pins its sibling exactly.
     """
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
@@ -67,9 +69,8 @@ def write_lockstep(repo: Path) -> None:
             "\n[tool.towncrier]",
             "\n[[tool.reflex-release.lockstep]]\n"
             'members = ["mypkg", "widget-core"]\n'
-            'publish-last = ["mypkg"]\n'
-            "pin-exact = true\n"
-            "\n[tool.towncrier]",
+            + ('publish-last = ["mypkg"]\npin-exact = true\n' if publish_last else "")
+            + "\n[tool.towncrier]",
         ),
         encoding="utf-8",
     )
@@ -123,33 +124,49 @@ def write_custom_build(repo: Path, extra: str = "", workflow: bool = True) -> No
         )
 
 
+@pytest.fixture(scope="session")
+def repo_template(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Create a git repository with a root package and one sub-package, once per session.
+
+    Args:
+        tmp_path_factory: The pytest temporary directory factory.
+
+    Returns:
+        The template repository root.
+    """
+    root = tmp_path_factory.mktemp("repo-template")
+    (root / "src" / "mypkg").mkdir(parents=True)
+    (root / "packages" / "widget-core" / "src").mkdir(parents=True)
+    (root / "packages" / "widget-core" / "pyproject.toml").write_text(
+        SUB_PYPROJECT.format(name="widget-core"),
+        encoding="utf-8",
+    )
+    (root / "pyproject.toml").write_text(
+        ROOT_PYPROJECT + "\n[tool.reflex-release]\n"
+        'root-package = "mypkg"\n'
+        'packages-dir = "packages"\n\n' + towncrier_config_toml(root),
+        encoding="utf-8",
+    )
+    for news in (root / "news", root / "packages" / "widget-core" / "news"):
+        news.mkdir()
+        (news / ".gitkeep").touch()
+    git(root, "init", "-q", "-b", "main")
+    commit_all(root, "init")
+    return root
+
+
 @pytest.fixture
-def repo(tmp_path: Path) -> Path:
-    """Create a git repository with a root package and one sub-package.
+def repo(tmp_path: Path, repo_template: Path) -> Path:
+    """Copy the session's template repository into the test's temporary directory.
 
     Args:
         tmp_path: The pytest temporary directory.
+        repo_template: The session's pristine repository to copy.
 
     Returns:
         The repository root.
     """
-    (tmp_path / "src" / "mypkg").mkdir(parents=True)
-    (tmp_path / "packages" / "widget-core" / "src").mkdir(parents=True)
-    (tmp_path / "packages" / "widget-core" / "pyproject.toml").write_text(
-        SUB_PYPROJECT.format(name="widget-core"),
-        encoding="utf-8",
-    )
-    (tmp_path / "pyproject.toml").write_text(
-        ROOT_PYPROJECT + "\n[tool.reflex-release]\n"
-        'root-package = "mypkg"\n'
-        'packages-dir = "packages"\n\n' + towncrier_config_toml(tmp_path),
-        encoding="utf-8",
-    )
-    for news in (tmp_path / "news", tmp_path / "packages" / "widget-core" / "news"):
-        news.mkdir()
-        (news / ".gitkeep").touch()
-    git(tmp_path, "init", "-q", "-b", "main")
-    commit_all(tmp_path, "init")
+    shutil.copytree(repo_template, tmp_path, dirs_exist_ok=True)
     return tmp_path
 
 

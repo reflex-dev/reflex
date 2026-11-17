@@ -6,7 +6,7 @@ targets. When ``CI=true`` the output is plain (no colors, no live progress) and
 
 Exit codes: 0 ok, 1 harness error (including every benchmark failing),
 2 regression found with ``--fail-on regression``, 3 inconclusive result with
-``--fail-on-inconclusive``.
+``--fail-on-inconclusive``, 4 nothing to compare.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from rich.console import Console
 from rich.status import Status
 from rich.text import Text
 
-from reflex_bench import ab, subjects
+from reflex_bench import ab, noise, subjects
 from reflex_bench import compare as comparing
 from reflex_bench.budgets import budgets_command
 from reflex_bench.collectors import cgroup
@@ -42,6 +42,7 @@ from reflex_bench.report.format import DOT, WARN, format_value
 from reflex_bench.report.markdown import render_comparison as markdown_comparison
 from reflex_bench.report.table import (
     make_console,
+    print_lines,
     render_comparison,
     render_header,
     render_run,
@@ -73,6 +74,7 @@ EXIT_OK = 0
 EXIT_ERROR = 1
 EXIT_REGRESSION = 2
 EXIT_INCONCLUSIVE = 3
+EXIT_NOTHING_COMPARED = 4
 EXIT_INTERRUPTED = 130
 # Subject venvs default to the harness's Python, which the workspace runs on.
 DEFAULT_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
@@ -439,7 +441,7 @@ def _exit_code(
         return EXIT_ERROR
     failed = comparing.failed_in_head(doc)
     if compared and not failed and not comparing.rows(doc):
-        return EXIT_ERROR
+        return EXIT_NOTHING_COMPARED
     counts = comparing.verdict_counts(doc)
     if fail_on == "regression" and (counts["regressed"] or failed):
         return EXIT_REGRESSION
@@ -1286,6 +1288,63 @@ def export(path: Path, target: str, output: Path | None) -> int:
         click.echo(text, nl=False)
     else:
         output.write_text(text, encoding="utf-8")
+    return EXIT_OK
+
+
+@cli.command("noise")
+@click.argument(
+    "paths", nargs=-1, required=True, type=click.Path(exists=True, path_type=Path)
+)
+@click.option(
+    "--kind",
+    type=click.Choice(RUN_KINDS),
+    default="daily",
+    show_default=True,
+    help="Read only results of this run kind.",
+)
+@click.option(
+    "--min-runs",
+    type=click.IntRange(min=2),
+    default=noise.DEFAULT_MIN_RUNS,
+    show_default=True,
+    help="The fewest runs a series needs for a threshold; fewer is 'noisy'.",
+)
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["term", "md", "json"]),
+    default="term",
+    show_default=True,
+)
+def noise_command(
+    paths: tuple[Path, ...], kind: RunKind, min_runs: int, output_format: str
+) -> int:
+    """Tabulate the noise of each metric across stored results.
+
+    PATHS are result files or directories of them (every *.json directly in
+    one), e.g. runs/<profile_id> of the benchmark-data branch.
+
+    Args:
+        paths: Result files and directories.
+        kind: The run kind to read.
+        min_runs: The fewest runs a series needs for a threshold.
+        output_format: ``term``, ``md`` or ``json``.
+
+    Returns:
+        The exit code; 1 when no result of that kind was found.
+    """
+    files = noise.result_files(paths)
+    matching = noise.of_kind([_load(path) for path in files], kind)
+    if not matching:
+        click.echo(f"no {kind} results in {len(files)} files", err=True)
+        return EXIT_ERROR
+    rows = noise.series(matching, kind=kind, min_runs=min_runs)
+    if output_format == "json":
+        click.echo(json.dumps(noise.to_json(rows, files), indent=2, allow_nan=False))
+    elif output_format == "md":
+        click.echo(noise.markdown(rows), nl=False)
+    else:
+        print_lines(make_console(plain=in_ci()), noise.table_lines(rows), right=(2,))
     return EXIT_OK
 
 

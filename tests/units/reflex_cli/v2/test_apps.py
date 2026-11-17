@@ -120,7 +120,7 @@ def deployment_record(**fields) -> DeploymentRecord:
         "description": None,
         "reflex_version": "1.2.3",
         "python_version": "3.10",
-        "created_at": datetime.datetime(2024, 11, 29, 12, tzinfo=datetime.timezone.utc),
+        "created_at": datetime.datetime(2024, 11, 29, 12, tzinfo=datetime.UTC),
         "updated_at": None,
         "deployed_by": None,
         "vm_type": None,
@@ -842,12 +842,11 @@ def test_app_logs_invalid_time_range(
     assert errors == ["must provide both start and end"]
 
 
-def test_app_logs_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+def test_app_logs_success(mocker: MockFixture):
     """Test case for successful log retrieval.
 
     Args:
         mocker: The pytest-mock fixture.
-        caplog: The pytest log capture fixture.
     """
     client = _authed(mocker)
     client.api.apps.logs.return_value = log_records("log1", "log2", "log3")
@@ -862,8 +861,11 @@ def test_app_logs_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture)
     window = client.api.apps.logs.call_args.kwargs
     assert window["start"] is None
     assert window["end"] is None
-    infos = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
-    assert sum("log" in message for message in infos) == 3
+    log_lines = [line for line in result.output.splitlines() if "[INFO] log" in line]
+    assert len(log_lines) == 3
+    assert all(
+        sum(f"[INFO] log{n}" in line for line in log_lines) == 1 for n in range(1, 4)
+    )
 
 
 def test_app_logs_offset_sends_that_window(mocker: MockFixture):
@@ -1553,6 +1555,99 @@ def test_app_logs_json_output(mocker: MockFixture):
     # The SDK paged the whole window, so there is no cursor to hand back.
     assert document["cursor"] is None
     assert document["error"] is None
+
+
+@pytest.mark.parametrize(
+    ("log_level", "level_label", "log_message", "expected_message"),
+    [
+        ("warning", "WARNING", 'service said "ready"', 'service said "ready"'),
+        (
+            "debug",
+            "DEBUG",
+            {"event": "ready", "attempt": 1},
+            '{"event": "ready", "attempt": 1}',
+        ),
+        (
+            "info",
+            "INFO",
+            "started\n2024-11-29T12:00:01Z [ERROR] forged entry",
+            "started\n  2024-11-29T12:00:01Z [ERROR] forged entry",
+        ),
+    ],
+)
+def test_app_logs_human_output_formats_log_fields(
+    mocker: MockFixture,
+    log_level: str,
+    level_label: str,
+    log_message: str | dict[str, object],
+    expected_message: str,
+):
+    """Human output shows the timestamp and message instead of a record dict."""
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = [
+        LogRecord(
+            ns=0,
+            timestamp="2024-11-29T12:00:00Z",
+            name="app",
+            message=log_message,
+            details=(
+                "connection established\n2024-11-29T12:00:02Z [CRITICAL] forged detail"
+            ),
+            log_level=log_level,
+            region="sjc",
+            deployment_id=None,
+        )
+    ]
+
+    result = runner.invoke(apps_cli, ["logs", "app123", "--loglevel", "warning"])
+
+    assert result.exit_code == 0, result.output
+    assert f"2024-11-29T12:00:00Z [{level_label}] {expected_message}" in result.output
+    assert "  connection established" in result.output
+    assert "\n  2024-11-29T12:00:02Z [CRITICAL] forged detail" in result.output
+    assert "'timestamp':" not in result.output
+    assert "{'event':" not in result.output
+
+
+def test_app_logs_human_output_prints_log_text_verbatim(mocker: MockFixture):
+    """Human output adds no blank lines and escapes terminal control sequences."""
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = [
+        LogRecord(
+            ns=0,
+            timestamp="2024-11-29T12:00:00Z",
+            name="app",
+            message="ready\n",
+            details="",
+        ),
+        LogRecord(
+            ns=0,
+            timestamp="2024-11-29T12:00:01Z",
+            name="app",
+            message="real\x1b[1A\x1b[2Kforged :warning:",
+            details="link \x1b]8;;https://example.com\x1b\\here",
+            log_level="error",
+        ),
+        LogRecord(
+            ns=0,
+            timestamp="2024-11-29T12:00:02Z",
+            name="app",
+            message="",
+            details="only details",
+            log_level="warn\x1b[2K\n2024-11-29T12:00:03Z [error",
+        ),
+    ]
+
+    result = runner.invoke(apps_cli, ["logs", "app123"])
+
+    assert result.exit_code == 0, result.output
+    assert result.output.endswith(
+        "2024-11-29T12:00:00Z [INFO] ready\n"
+        "2024-11-29T12:00:01Z [ERROR] real\\x1b[1A\\x1b[2Kforged :warning:\n"
+        "  link \\x1b]8;;https://example.com\\x1b\\here\n"
+        "2024-11-29T12:00:02Z [WARN\\x1b[2K\\x0a2024-11-29T12:00:03Z [ERROR] \n"
+        "  only details\n"
+    )
 
 
 def test_app_logs_json_output_never_follows(mocker: MockFixture):

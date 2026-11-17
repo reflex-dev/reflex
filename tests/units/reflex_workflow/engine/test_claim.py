@@ -120,7 +120,7 @@ async def due_behind_the_planners_back(
         cls: The workflow class.
         customers: How many customers to spread the rows over.
     """
-    later = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+    later = datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)
     async with runtime.session_factory() as session, session.begin():
         await session.execute(
             insert(cls),
@@ -193,7 +193,7 @@ async def test_a_group_that_cannot_be_claimed_does_not_stop_the_table(
     runtime, monkeypatch
 ):
     bad, good = "x" * 300 + ".com", "a.com"
-    due = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1)
+    due = datetime.datetime.now(datetime.UTC) - datetime.timedelta(seconds=1)
     async with runtime.session_factory() as session, session.begin():
         await session.execute(
             insert(Fetched),

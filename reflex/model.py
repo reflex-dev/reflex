@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 import re
-from collections import defaultdict
+import sys
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -18,7 +19,10 @@ if TYPE_CHECKING:
     from typing import TypeVar
 
     import sqlalchemy
+    import sqlalchemy.ext.asyncio
     import sqlmodel
+    from alembic.script.base import Script
+    from sqlmodel.ext.asyncio.session import AsyncSession
 
     SQLModelOrSqlAlchemy = (
         type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
@@ -63,10 +67,9 @@ class _ClassThatErrorsOnInit:
         _print_db_not_available(**kwargs)
 
 
-if find_spec("sqlalchemy"):
+if TYPE_CHECKING or find_spec("sqlalchemy"):
     import sqlalchemy
     import sqlalchemy.exc
-    import sqlalchemy.ext.asyncio
     import sqlalchemy.orm
 
     _ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
@@ -168,6 +171,9 @@ if find_spec("sqlalchemy"):
         if url in _ASYNC_ENGINE:
             return _ASYNC_ENGINE[url]
 
+        # Requires greenlet, which SQLAlchemy 2.1 only installs with the asyncio extra.
+        import sqlalchemy.ext.asyncio
+
         if not environment.ALEMBIC_CONFIG.get().exists():
             logger.warning(
                 "Database is not initialized, run [bold]reflex db init[/bold] first.",
@@ -193,6 +199,10 @@ if find_spec("sqlalchemy"):
     class ModelRegistry:
         """Registry for all models.
 
+        Until a SQLAlchemy model base is registered, every ``DeclarativeBase``
+        subclass that the app's modules hold under its qualified name counts as
+        registered too.
+
         Attributes:
             _metadata: Cache the metadata to avoid re-creating it.
         """
@@ -216,7 +226,7 @@ if find_spec("sqlalchemy"):
 
         @classmethod
         def get_models(cls, include_empty: bool = False) -> set[SQLModelOrSqlAlchemy]:
-            """Get registered models.
+            """Get registered models, with the detected bases unless one is registered.
 
             Args:
                 include_empty: If True, include models with empty metadata.
@@ -224,11 +234,51 @@ if find_spec("sqlalchemy"):
             Returns:
                 The registered models.
             """
+            sqlmodel = sys.modules.get("sqlmodel")
+            # A registered base opts out of detection; SQLModel ones, such as the
+            # always registered rx.Model, do not.
+            models = (
+                cls.models
+                if any(
+                    sqlmodel is None or not issubclass(model, sqlmodel.SQLModel)
+                    for model in cls.models
+                )
+                else cls.models | cls._find_bases()
+            )
             if include_empty:
-                return cls.models
+                return models
             return {
-                model for model in cls.models if not cls._model_metadata_is_empty(model)
+                model for model in models if not cls._model_metadata_is_empty(model)
             }
+
+        @staticmethod
+        def _find_bases() -> set[type[sqlalchemy.orm.DeclarativeBase]]:
+            """Find the model bases: the DeclarativeBase subclasses with their own metadata.
+
+            Only a base that its module holds under its qualified name counts, such
+            as ``Base`` or ``Namespace.Base``, so one that a reload of its module
+            replaced, or one made inside a function, does not.
+
+            Returns:
+                The model bases.
+            """
+            bases = set()
+            pending = sqlalchemy.orm.DeclarativeBase.__subclasses__()
+            while pending:
+                cls = pending.pop()
+                pending.extend(cls.__subclasses__())
+                if (
+                    "metadata" in cls.__dict__
+                    and functools.reduce(
+                        lambda obj, name: getattr(obj, name, None),
+                        cls.__qualname__.split("."),
+                        sys.modules.get(cls.__module__),
+                    )
+                    is cls
+                ):
+                    bases.add(cls)
+            logger.debug(f"Detected model bases: {sorted(map(str, bases))}")
+            return bases
 
         @staticmethod
         def _model_metadata_is_empty(model: SQLModelOrSqlAlchemy) -> bool:
@@ -260,7 +310,7 @@ if find_spec("sqlalchemy"):
                 # Merge the metadata from all the models.
                 # This allows mixing bare sqlalchemy models with sqlmodel models in one database.
                 metadata = sqlalchemy.MetaData()
-                for model in cls.get_models():
+                for model in models:
                     for table in model.metadata.tables.values():
                         table.to_metadata(metadata)
 
@@ -276,15 +326,25 @@ else:
     sqla_session = _print_db_not_available
     ModelRegistry = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
 
-if find_spec("sqlalchemy") and find_spec("alembic"):
-    import alembic.autogenerate
-    import alembic.command
-    import alembic.config
-    import alembic.operations.ops
-    import alembic.runtime.environment
-    import alembic.script
-    from alembic.runtime.migration import MigrationContext
-    from alembic.script.base import Script
+if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
+
+    def alembic_init():
+        """Create alembic.ini and the migration environment for the project."""
+        from reflex.utils import migrations
+
+        migrations.init()
+
+    def _update_legacy_env() -> None:
+        """Replace a stock env.py left by an earlier release before alembic runs it.
+
+        Logged as a warning: it changes a file, from a process that may show
+        nothing less.
+        """
+        from reflex.utils import migrations
+
+        backup = migrations.update_legacy_env()
+        if backup is not None:
+            logger.warning(migrations.UPDATED_ENV_MESSAGE.format(backup=backup))
 
     def format_revision(
         rev: Script,
@@ -292,6 +352,8 @@ if find_spec("sqlalchemy") and find_spec("alembic"):
         current_reached_ref: list[bool],
     ) -> str:
         """Format a single revision for display.
+
+        Deprecated: ``reflex db status`` prints ``alembic history --indicate-current``.
 
         Args:
             rev: The alembic script object
@@ -301,6 +363,12 @@ if find_spec("sqlalchemy") and find_spec("alembic"):
         Returns:
             Formatted string for display
         """
+        console.deprecate(
+            feature_name="reflex.model.format_revision",
+            reason="Run `alembic history --indicate-current` or `reflex db status`.",
+            deprecation_version="0.11.0",
+            removal_version="1.0.0",
+        )
         current = rev.revision
         message = rev.doc
 
@@ -320,67 +388,30 @@ if find_spec("sqlalchemy") and find_spec("alembic"):
         # Format output with message
         return f"  [{status_icon}] {current}{head_marker}, {message}"
 
-    def _alembic_config():
-        """Get the alembic configuration and script_directory.
-
-        Returns:
-            tuple of (config, script_directory)
-        """
-        config = alembic.config.Config(environment.ALEMBIC_CONFIG.get())
-        if not config.get_main_option("script_location"):
-            config.set_main_option("script_location", "version")
-        return config, alembic.script.ScriptDirectory.from_config(config)
-
-    def _alembic_render_item(
-        type_: str,
-        obj: Any,
-        autogen_context: alembic.autogenerate.api.AutogenContext,
-    ):
-        """Alembic render_item hook call.
-
-        This method is called to provide python code for the given obj,
-        but currently it is only used to add `sqlmodel` to the import list
-        when generating migration scripts.
-
-        See https://alembic.sqlalchemy.org/en/latest/api/runtime.html
-
-        Args:
-            type_: One of "schema", "table", "column", "index",
-                "unique_constraint", or "foreign_key_constraint".
-            obj: The object being rendered.
-            autogen_context: Shared AutogenContext passed to each render_item call.
-
-        Returns:
-            False - Indicating that the default rendering should be used.
-        """
-        if find_spec("sqlmodel"):
-            autogen_context.imports.add("import sqlmodel")
-        return False
-
-    def alembic_init():
-        """Initialize alembic for the project."""
-        alembic.command.init(
-            config=alembic.config.Config(environment.ALEMBIC_CONFIG.get()),
-            directory=str(environment.ALEMBIC_CONFIG.get().parent / "alembic"),
-        )
-
-    def get_migration_history():
+    def get_migration_history() -> tuple[str | None, list[Script]]:
         """Get migration history with current database state.
+
+        Deprecated: run ``alembic history --indicate-current`` or ``reflex db status``.
 
         Returns:
             tuple: (current_revision, revisions_list) where revisions_list is in chronological order
         """
-        # Get current revision from database
+        console.deprecate(
+            feature_name="reflex.model.get_migration_history",
+            reason="Run `alembic history --indicate-current` or `reflex db status`.",
+            deprecation_version="0.11.0",
+            removal_version="1.0.0",
+        )
+        import alembic.config
+        import alembic.script
+        from alembic.runtime.migration import MigrationContext
+
         with get_engine().connect() as connection:
-            context = MigrationContext.configure(connection)
-            current_rev = context.get_current_revision()
-
-        # Get all revisions from base to head
-        _, script_dir = _alembic_config()
-        revisions = list(script_dir.walk_revisions())
-        revisions.reverse()  # Reverse to get chronological order (base first)
-
-        return current_rev, revisions
+            current_rev = MigrationContext.configure(connection).get_current_revision()
+        config = alembic.config.Config(environment.ALEMBIC_CONFIG.get())
+        script_directory = alembic.script.ScriptDirectory.from_config(config)
+        # Chronological order, base first.
+        return current_rev, list(script_directory.walk_revisions())[::-1]
 
     def alembic_autogenerate(
         connection: sqlalchemy.engine.Connection,
@@ -389,143 +420,84 @@ if find_spec("sqlalchemy") and find_spec("alembic"):
     ) -> bool:
         """Generate migration scripts for alembic-detectable changes.
 
+        Deprecated: runs ``alembic check`` and ``alembic revision --autogenerate``
+        through the generated env.py, which connects on its own.
+
         Args:
-            connection: SQLAlchemy connection to use when detecting changes.
+            connection: Unused; env.py connects with ``db_url`` from rxconfig.py.
             message: Human readable identifier describing the generated revision.
             write_migration_scripts: If True, write autogenerated revisions to script directory.
 
         Returns:
             True when changes have been detected.
         """
+        console.deprecate(
+            feature_name="reflex.model.alembic_autogenerate",
+            reason="Run `alembic revision --autogenerate` or `reflex db makemigrations`.",
+            deprecation_version="0.11.0",
+            removal_version="1.0.0",
+        )
         if not environment.ALEMBIC_CONFIG.get().exists():
             return False
+        from reflex.utils import migrations
 
-        config, script_directory = _alembic_config()
-        revision_context = alembic.autogenerate.api.RevisionContext(
-            config=config,
-            script_directory=script_directory,
-            command_args=defaultdict(
-                lambda: None,
-                autogenerate=True,
-                head="head",
-                message=message,
-            ),
-        )
-        writer = alembic.autogenerate.rewriter.Rewriter()
-
-        @writer.rewrites(alembic.operations.ops.AddColumnOp)
-        def render_add_column_with_server_default(
-            context: MigrationContext,
-            revision: str | None,
-            op: Any,
-        ):
-            # Carry the sqlmodel default as server_default so that newly added
-            # columns get the desired default value in existing rows. Only scalar
-            # defaults can be rendered as a SQL literal. Evaluate callable defaults
-            # once so non-nullable columns can be added to tables with existing rows.
-            if op.column.default is not None and op.column.server_default is None:
-                default = op.column.default
-                value = default.arg(None) if default.is_callable else default.arg
-                op.column.server_default = sqlalchemy.DefaultClause(
-                    sqlalchemy.sql.expression.literal(value),
-                )
-            return op
-
-        def run_autogenerate(rev: str, context: MigrationContext):
-            revision_context.run_autogenerate(rev, context)
-            return []
-
-        with alembic.runtime.environment.EnvironmentContext(
-            config=config,
-            script=script_directory,
-            fn=run_autogenerate,
-        ) as env:
-            env.configure(
-                connection=connection,
-                target_metadata=ModelRegistry.get_metadata(),
-                render_item=_alembic_render_item,
-                process_revision_directives=writer,
-                compare_type=False,
-                include_schemas=environment.ALEMBIC_INCLUDE_SCHEMAS.get(),
-                render_as_batch=True,  # for sqlite compatibility
-            )
-            env.run_migrations()
-        changes_detected = False
-        if revision_context.generated_revisions:
-            upgrade_ops = revision_context.generated_revisions[-1].upgrade_ops
-            if upgrade_ops is not None:
-                changes_detected = bool(upgrade_ops.ops)
-        if changes_detected and write_migration_scripts:
-            # Must iterate the generator to actually write the scripts.
-            _ = tuple(revision_context.generate_scripts())
-        return changes_detected
-
-    def _alembic_upgrade(
-        connection: sqlalchemy.engine.Connection,
-        to_rev: str = "head",
-    ) -> None:
-        """Apply alembic migrations up to the given revision.
-
-        Args:
-            connection: SQLAlchemy connection to use when performing upgrade.
-            to_rev: Revision to migrate towards.
-        """
-        config, script_directory = _alembic_config()
-
-        def run_upgrade(rev: str, context: MigrationContext):
-            return script_directory._upgrade_revs(to_rev, rev)
-
-        with alembic.runtime.environment.EnvironmentContext(
-            config=config,
-            script=script_directory,
-            fn=run_upgrade,
-        ) as env:
-            env.configure(connection=connection)
-            env.run_migrations()
+        _update_legacy_env()
+        return migrations.autogenerate(message, write=write_migration_scripts)
 
     def migrate(autogenerate: bool = False) -> bool | None:
-        """Execute alembic migrations for all model classes.
+        """Apply alembic migrations, optionally autogenerating one first.
 
-        If alembic is not installed or has not been initialized for the project,
-        then no action is performed.
-
-        If there are no revisions currently tracked by alembic, then
-        an initial revision will be created based on sqlmodel metadata.
-
-        If models in the app have changed in incompatible ways that alembic
-        cannot automatically generate revisions for, the app may not be able to
-        start up until migration scripts have been corrected by hand.
+        Runs ``alembic upgrade head`` through the environment that
+        ``reflex db init`` wrote; if alembic has not been initialized for the
+        project, no action is performed.
 
         Args:
-            autogenerate: If True, generate migration script and use it to upgrade schema
-                (otherwise, just bring the schema to current "head" revision).
+            autogenerate: If True, generate a migration script for model changes
+                before bringing the schema to the current "head" revision.
 
         Returns:
             True - indicating the process was successful.
             None - indicating the process was skipped.
+            False - indicating that an env.py other than the template failed;
+                the error is logged instead of raised, so that an app calling
+                this at import still starts, as before env.py was run.
+
+        Raises:
+            CommandError: If alembic reports an error.
         """
         if not environment.ALEMBIC_CONFIG.get().exists():
             return None
+        from alembic.util.exc import CommandError
 
-        with get_engine().connect() as connection:
-            _alembic_upgrade(connection=connection)
-            if autogenerate:
-                changes_detected = alembic_autogenerate(connection=connection)
-                if changes_detected:
-                    _alembic_upgrade(connection=connection)
-            connection.commit()
+        from reflex.utils import migrations
+
+        _update_legacy_env()
+        try:
+            # Pending scripts are applied first: autogenerate needs the database at head.
+            migrations.run("upgrade", "head")
+            if autogenerate and migrations.autogenerate():
+                migrations.run("upgrade", "head")
+        except CommandError:
+            raise
+        except Exception as error:
+            if migrations.env_kind() != "custom":
+                raise
+            migrations.report_failure(error)
+            return False
         return True
 
 else:
     alembic_init = _print_db_not_available
-    get_migration_history = _print_db_not_available
     alembic_autogenerate = _print_db_not_available
+    format_revision = _print_db_not_available
+    get_migration_history = _print_db_not_available
     migrate = _print_db_not_available
 
-if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
+if TYPE_CHECKING or (
+    find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic")
+):
     import sqlmodel
     from reflex_base.utils.serializers import serialize_sqlmodel as serialize_sqlmodel
-    from sqlmodel.ext.asyncio.session import AsyncSession
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 
@@ -621,7 +593,7 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             """Generate migration scripts for alembic-detectable changes.
 
             Args:
-                connection: SQLAlchemy connection to use when detecting changes.
+                connection: Unused; env.py connects with ``db_url`` from rxconfig.py.
                 message: Human readable identifier describing the generated revision.
                 write_migration_scripts: If True, write autogenerated revisions to script directory.
 
@@ -637,21 +609,14 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
 
         @classmethod
         def migrate(cls, autogenerate: bool = False) -> bool | None:
-            """Execute alembic migrations for all sqlmodel Model classes.
+            """Apply alembic migrations, optionally autogenerating one first.
 
-            If alembic is not installed or has not been initialized for the project,
-            then no action is performed.
-
-            If there are no revisions currently tracked by alembic, then
-            an initial revision will be created based on sqlmodel metadata.
-
-            If models in the app have changed in incompatible ways that alembic
-            cannot automatically generate revisions for, the app may not be able to
-            start up until migration scripts have been corrected by hand.
+            If alembic has not been initialized for the project, no action is
+            performed.
 
             Args:
-                autogenerate: If True, generate migration script and use it to upgrade schema
-                    (otherwise, just bring the schema to current "head" revision).
+                autogenerate: If True, generate a migration script for model changes
+                    before bringing the schema to the current "head" revision.
 
             Returns:
                 True - indicating the process was successful.
@@ -698,6 +663,9 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
         """
         global _AsyncSessionLocal
         if url not in _AsyncSessionLocal:
+            import sqlalchemy.ext.asyncio
+            from sqlmodel.ext.asyncio.session import AsyncSession
+
             _AsyncSessionLocal[url] = sqlalchemy.ext.asyncio.async_sessionmaker(
                 bind=get_async_engine(url),
                 class_=AsyncSession,

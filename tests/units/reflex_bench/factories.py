@@ -13,10 +13,11 @@ from reflex_bench.context import Context, Subject
 from reflex_bench.drivers.events import LoadResult
 from reflex_bench.registry import Metric
 from reflex_bench.scheduler import Policy, finalize
-from reflex_bench.schema import SCHEMA_ID, BenchmarkDoc, MachineDoc, ResultDoc
+from reflex_bench.schema import SCHEMA_ID, BenchmarkDoc, MachineDoc, ResultDoc, RunKind
 
 VERSION = "sha256:" + "0" * 64
 WALL = Metric(unit="s", direction="lower")
+BYTES = Metric(unit="B", direction="lower", assume="exact")
 
 
 def make_subject(reflex_version: str | None = "0.9.12") -> Subject:
@@ -259,6 +260,55 @@ def make_doc(
         "policy": (policy or Policy()).to_doc(),
         "benchmarks": list(entries),
     }
+
+
+def make_run(
+    median: float,
+    *,
+    day: int,
+    kind: RunKind = "daily",
+    profile_id: str = "test-profile",
+    version: str = VERSION,
+    fixture_hash: str | None = None,
+    status: str = "ok",
+    interrupted: bool = False,
+) -> ResultDoc:
+    """Build a one-benchmark result of a scheduled run: wall samples with a 1 % CV around a median.
+
+    Args:
+        median: The median of the samples.
+        day: The day of September 2026 the run started on.
+        kind: The run kind.
+        profile_id: The machine profile.
+        version: The benchmark version.
+        fixture_hash: The entry's fixture content hash.
+        status: The entry status.
+        interrupted: Whether the run was interrupted.
+
+    Returns:
+        The document.
+    """
+    entry = make_entry(
+        "lifecycle.compile.warm",
+        {
+            "wall": (WALL, [0.99 * median, median, 1.01 * median]),
+            "bytes": (BYTES, [1000.0, 1000.0, 1000.0]),
+        },
+        params={"app": "playground"},
+        version=version,
+        status=status,
+    )
+    if fixture_hash is not None:
+        entry["fixture_hash"] = fixture_hash
+    doc = make_doc(
+        [entry],
+        machine=make_machine(profile_id),
+        started_at=f"2026-09-{day:02d}T03:17:00Z",
+    )
+    doc["invocation"]["kind"] = kind
+    if interrupted:
+        doc["interrupted"] = True
+    return doc
 
 
 def make_load_result(**changes: Any) -> LoadResult:
