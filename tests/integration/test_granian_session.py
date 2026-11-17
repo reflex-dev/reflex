@@ -28,7 +28,7 @@ async def test_granian_session_roundtrip(
     """
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
-    monkeypatch.setenv("REFLEX_SESSION_SECRET", "s" * 32)
+    monkeypatch.setenv("REFLEX_SECRET_KEY", "s" * 32)
     origin = f"http://127.0.0.1:{unused_tcp_port}"
     (tmp_path / "rxconfig.py").write_text(
         f"import reflex as rx\nconfig = rx.Config(app_name='granian_session', api_url={origin!r})\n",

@@ -90,23 +90,42 @@ that intentionally need to be readable in browser JavaScript.
 
 ## Signing keys
 
-Set `REFLEX_SESSION_SECRET` to a strong random secret of at least 32 bytes in
-your deployment's secret manager or environment. Never put it in `rxconfig.py`.
-If you load it from a local `.env`, add that file to `.gitignore`.
+Set `REFLEX_SECRET_KEY` to a random value of at least 32 bytes. Store it in
+your deployment's secret manager or environment. Never put it in
+`rxconfig.py`. If you load it from a local `.env` file, add that file to
+`.gitignore`. To generate a key:
 
-Without the variable, Reflex creates a 256-bit secret in
-`.web/backend/session_secret`, created with owner-only permissions on POSIX.
-On Windows, access follows the working directory's inherited ACLs. Workers on one host
-share it, and it survives hot reload, `reflex init`, and upgrades. Exported
-bundles exclude it. Production logs a warning when the generated key is used.
-All replicas and replacement deployments must receive the same environment
-secret to preserve sessions.
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
 
-For rotation, supply a comma-separated list with the new key first and the
-previous key second. New cookies use the first key; all listed keys verify.
-Keep the previous key for at least the maximum lifetime of cookies it signed.
-Refreshing a cookie preserves tab bindings, even after its old signing key is
-retired. There is no per-session revocation mechanism in this release.
+Give every replica and every new deployment the same `REFLEX_SECRET_KEY`. A
+server with a different key rejects the sessions that the other servers issued.
+
+Without `REFLEX_SECRET_KEY`, `reflex run` generates a temporary key at startup
+and shares it with its backend workers. The key is not saved, so all sessions
+reset when `reflex run` restarts. Reflex logs a warning when it generates a key.
+
+### Changing the key
+
+```md alert warning
+# Keep the old key when you add a new one.
+
+If you replace the old key with the new key, every session resets at once.
+```
+
+1. Put the new key first and keep the old key after it, separated by a comma:
+   `REFLEX_SECRET_KEY=<new key>,<old key>`. New cookies use the first key.
+   Cookies signed with the old key stay valid.
+2. Wait at least one session lifetime (`session_token_ttl`, seven days by
+   default). Active sessions move to the new key when their cookie refreshes.
+   Tab bindings are kept.
+3. Remove the old key: `REFLEX_SECRET_KEY=<new key>`.
+
+If the old key leaked, do not keep it. Set only the new key. Anyone who has the
+old key can sign valid cookies, so it must stop working at once, even though
+all sessions reset. There is no per-session revocation mechanism in this
+release.
 
 ## Server-side state access
 
