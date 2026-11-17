@@ -18,7 +18,7 @@ classifiers = [
 ]
 dependencies = [
   "packaging >=24.2,<27",
-  "towncrier >=24.8.0,<26",
+  "towncrier >=24.8.0,<27",
   "tzdata >=2024.1; sys_platform == 'win32'",
 ]
 

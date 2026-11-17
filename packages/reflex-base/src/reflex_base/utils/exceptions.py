@@ -32,6 +32,18 @@ class SessionAuthorizationError(ReflexError, PermissionError):
     """Raised when a browser session does not own the requested client state."""
 
 
+class AdminDashRemovedError(ReflexRuntimeError):
+    """Raised when an app uses the removed starlette-admin integration."""
+
+    def __init__(self) -> None:
+        """Initialize the exception with a link to the migration guide."""
+        super().__init__(
+            "The built-in admin dashboard (rx.AdminDash, rx.App(admin_dash=...)) was "
+            "removed. Mount starlette-admin yourself with api_transformer: "
+            "https://reflex.dev/docs/database/admin-dashboard/"
+        )
+
+
 class UploadTypeError(ReflexError, TypeError):
     """Custom TypeError for upload related errors."""
 
@@ -55,7 +67,7 @@ class ChildrenTypeError(ComponentTypeError):
             child: The child that caused the error.
         """
         super().__init__(
-            f"Component {component} received child {child!r} of type {type(child)}. "
+            f"Component {component} received child of type {type(child).__name__}. "
             "Accepted types are other components, state vars, or primitive Python types (dict excluded)."
         )
 
@@ -81,7 +93,7 @@ class VarTypeError(ReflexError, TypeError):
 
 
 class BackendVarFormatError(VarTypeError):
-    """Raised when a field with no frontend var, such as a backend var, is formatted as a string."""
+    """Raised when a field with no frontend var, such as a backend var, is used where a frontend var is needed."""
 
 
 class VarValueError(ReflexError, ValueError):
@@ -304,3 +316,7 @@ class UnretrievableVarValueError(ReflexError):
 
 class HybridPropertyError(ReflexError):
     """Raised when a hybrid property is misused while building its frontend var."""
+
+
+class ClientStateConflictError(ReflexError, ValueError):
+    """Raised when one client state name is declared with two different defaults."""

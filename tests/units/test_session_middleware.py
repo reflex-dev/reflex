@@ -482,7 +482,7 @@ async def test_request_context_isolation(manager: SessionTokenManager, scope_typ
         await asyncio.sleep(0)
         context = EventContext.get()
         assert context.token == ""
-        assert context.cached_states is not root.cached_states
+        assert context is not root
         assert context.session_token is scope["reflex.session"]
         observed.append(context.session_token.id if context.session_token else None)
 

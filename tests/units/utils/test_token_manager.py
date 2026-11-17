@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable, Generator
 from contextlib import asynccontextmanager
 from functools import partial
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -773,7 +773,7 @@ async def test_socket_record_subscriber_restores_deleted_live_record():
         )
     finally:
         await manager.close()
-    assert pickle.loads(await redis.get(key)) == record
+    assert pickle.loads(cast("bytes", await redis.get(key))) == record
 
 
 @pytest.fixture
