@@ -260,13 +260,16 @@ Change `layout.mapbox` to `layout.map` and remove `config.mapboxAccessToken`.
 Update numbered subplot references as well, such as `mapbox2` to `map2`. Review
 your map style and layers for Mapbox-specific URLs or credentials.
 
-Until Reflex 1.0, every Plotly component renders existing Mapbox figures. When a
-figure contains Mapbox traces or `layout.mapbox` keys, including figures received
-through state updates, the component logs a browser warning and renames the Mapbox
-names to their MapLibre names. This covers traces, subplot references, templates,
-animation frames and button arguments. The access token is ignored, and styles
-hosted by Mapbox (`mapbox://` URLs) do not load. `rx.plotly.mapbox` loads the same
-MapLibre bundle as `rx.plotly.map`.
+Until Reflex 1.0, `rx.plotly`, `rx.plotly.map` and the deprecated
+`rx.plotly.mapbox` keep rendering existing Mapbox figures. When a figure contains
+Mapbox traces or `layout.mapbox` keys, including figures received through state
+updates, the component logs a browser warning. It then passes Plotly a copy that
+uses MapLibre trace types, subplot references and layout keys, in the figure and
+its animation frames. Your figure is not changed. Templates, `geojson`,
+`customdata` and button arguments such as `"mapbox.zoom"` keep their names;
+migrate those yourself. The access token is ignored, and styles hosted by Mapbox
+(`mapbox://` URLs) do not load. Partial bundles without map traces, such as
+`rx.plotly.basic`, do not render maps.
 
 ### Plotly.js 4 compatibility
 

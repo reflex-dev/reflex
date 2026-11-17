@@ -227,11 +227,36 @@ def test_plotly_renames_mapbox_in_every_variant(
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
 def test_plotly_mapbox_renames_to_map():
-    """Rename Mapbox names anywhere in the figure without mutating the input."""
+    """Rename trace types, subplots and layout keys in the figure and its frames only."""
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [{"type": "Feature", "properties": {"mapbox": "a"}}],
+    }
+    template = {
+        "data": {"scattermapbox": [{"marker": {"size": 4}}]},
+        "layout": {"mapbox": {"style": "light"}},
+    }
+    updatemenus = [
+        {
+            "buttons": [
+                {"method": "animate", "args": [["mapbox"]]},
+                {
+                    "method": "relayout",
+                    "args": ["mapbox.style", "dark"],
+                    "args2": [{"mapbox.zoom": 5}],
+                },
+            ]
+        }
+    ]
     figure = {
         "data": [
-            {"type": "scattermapbox", "lat": [1, 2], "text": ["mapbox"]},
-            {"type": "choroplethmapbox", "subplot": "mapbox2"},
+            {"type": "scattermapbox", "lat": [1, 2], "customdata": [{"mapbox": 1}]},
+            {
+                "type": "choroplethmapbox",
+                "subplot": "mapbox2",
+                "geojson": geojson,
+                "featureidkey": "properties.mapbox",
+            },
             {"type": "densitymapbox", "subplot": "mapbox"},
             {"x": [1]},
         ],
@@ -239,22 +264,12 @@ def test_plotly_mapbox_renames_to_map():
             "mapbox": {"zoom": 3},
             "mapbox2": {},
             "xaxis": {"type": "log"},
-            "template": {
-                "data": {"scattermapbox": [{"marker": {"size": 4}}]},
-                "layout": {"mapbox": {"style": "light"}},
-            },
-            "updatemenus": [
-                {
-                    "buttons": [
-                        {"method": "relayout", "args": [{"mapbox2.zoom": 5}]},
-                        {"method": "relayout", "args": ["mapbox.style", "dark"]},
-                    ]
-                }
-            ],
+            "template": template,
+            "updatemenus": updatemenus,
         },
         "frames": [
             {
-                "name": "f1",
+                "name": "mapbox",
                 "data": [{"type": "scattermapbox", "subplot": "mapbox2"}],
                 "layout": {"mapbox": {"zoom": 4}},
             }
@@ -262,8 +277,13 @@ def test_plotly_mapbox_renames_to_map():
     }
     expected = {
         "data": [
-            {"type": "scattermap", "lat": [1, 2], "text": ["mapbox"]},
-            {"type": "choroplethmap", "subplot": "map2"},
+            {"type": "scattermap", "lat": [1, 2], "customdata": [{"mapbox": 1}]},
+            {
+                "type": "choroplethmap",
+                "subplot": "map2",
+                "geojson": geojson,
+                "featureidkey": "properties.mapbox",
+            },
             {"type": "densitymap", "subplot": "map"},
             {"x": [1]},
         ],
@@ -271,22 +291,12 @@ def test_plotly_mapbox_renames_to_map():
             "map": {"zoom": 3},
             "map2": {},
             "xaxis": {"type": "log"},
-            "template": {
-                "data": {"scattermap": [{"marker": {"size": 4}}]},
-                "layout": {"map": {"style": "light"}},
-            },
-            "updatemenus": [
-                {
-                    "buttons": [
-                        {"method": "relayout", "args": [{"map2.zoom": 5}]},
-                        {"method": "relayout", "args": ["map.style", "dark"]},
-                    ]
-                }
-            ],
+            "template": template,
+            "updatemenus": updatemenus,
         },
         "frames": [
             {
-                "name": "f1",
+                "name": "mapbox",
                 "data": [{"type": "scattermap", "subplot": "map2"}],
                 "layout": {"map": {"zoom": 4}},
             }

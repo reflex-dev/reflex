@@ -413,13 +413,17 @@ def test_plotly_mapbox_migration_warning(
             predicate=lambda message: message.text == MAPBOX_WARNING
         ):
             page.locator("#use-mapbox").click()
-    if route != "mapbox-layout":
+    plot = page.locator("#migration-plot")
+    if route == "mapbox-layout":
+        assert plot.evaluate(
+            "plot => Object.keys(plot.layout).filter(key => key.startsWith('map'))"
+        ) == ["map2"]
+    else:
         page.wait_for_function(
             """() => document.getElementById('migration-plot')
                 ?._fullLayout?.map?._subplot?.map?.loaded()""",
             timeout=60_000,
         )
-        plot = page.locator("#migration-plot")
         assert plot.evaluate("plot => plot._fullData[0].type") == "scattermap"
     assert warnings == [MAPBOX_WARNING]
     assert not errors

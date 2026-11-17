@@ -79,31 +79,27 @@ _DIV_ID_PROP = "divId"
 
 
 # Plotly.js 4 removed Mapbox. A figure with Mapbox traces or layout.mapbox keys
-# gets a one-time warning, then MapLibre names everywhere: keys at any depth
-# (layout, template, frames, relayout paths) and `type`, `subplot` and `args`
-# values. Remove with rx.plotly.mapbox in 1.0.
+# gets a one-time warning, then a copy for Plotly with MapLibre trace types,
+# subplot references and layout keys, in the figure and its animation frames.
+# The user's figure is not changed. Remove with rx.plotly.mapbox in 1.0.
 _MAPBOX_TO_MAP_JS = """
 const _rxMapboxToMapName = (name) =>
-    name.replace(/^((?:scatter|choropleth|density)?map)box(?=\\d*(?:\\.|$))/, "$1");
-const _rxRenamePlotlyMapbox = (value, key) => {
-    if (typeof value === "string") {
-        return key === "type" || key === "subplot" || key === "args"
-            ? _rxMapboxToMapName(value)
-            : value;
-    }
-    if (Array.isArray(value)) {
-        return typeof value[0] === "number"
-            ? value
-            : value.map((item) => _rxRenamePlotlyMapbox(item, key));
-    }
-    if (!value || typeof value !== "object") return value;
-    return Object.fromEntries(
-        Object.entries(value).map(([name, item]) => [
-            _rxMapboxToMapName(name),
-            _rxRenamePlotlyMapbox(item, name),
-        ])
-    );
-};
+    name.replace(/^((?:scatter|choropleth|density)?map)box(\\d*)$/, "$1$2");
+const _rxRenamePlotlyMapbox = ({ data, layout, ...rest }) => ({
+    ...rest,
+    ...(data && {
+        data: data.map((trace) => ({
+            ...trace,
+            ...(trace?.type && { type: _rxMapboxToMapName(trace.type) }),
+            ...(trace?.subplot && { subplot: _rxMapboxToMapName(trace.subplot) }),
+        })),
+    }),
+    ...(layout && {
+        layout: Object.fromEntries(
+            Object.entries(layout).map(([key, value]) => [_rxMapboxToMapName(key), value])
+        ),
+    }),
+});
 let _rxDidWarnPlotlyMapbox = false;
 const _rxPlotlyMapboxToMap = (figure) => {
     if (!(
@@ -120,7 +116,9 @@ const _rxPlotlyMapboxToMap = (figure) => {
             "Use the MapLibre names in the figure instead."
         );
     }
-    return _rxRenamePlotlyMapbox(figure);
+    const renamed = _rxRenamePlotlyMapbox(figure);
+    if (figure.frames) renamed.frames = figure.frames.map(_rxRenamePlotlyMapbox);
+    return renamed;
 };
 """
 
