@@ -440,6 +440,9 @@ filename = "CHANGELOG.md"
 title_format = "## {version} ({project_date})"
 issue_format = "[#{issue}](https://github.com/reflex-dev/reflex/issues/{issue})"
 start_string = "<!-- towncrier release notes start -->\n"
+# towncrier's template appends the issue links to the last line of an entry,
+# inside a trailing code fence; this one puts them above the block.
+template = "reflex_release:changelog.md"
 
 [[tool.towncrier.type]]
 directory = "breaking"
