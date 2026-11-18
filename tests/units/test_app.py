@@ -92,6 +92,7 @@ from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.shared import UPDATE_OTHER_CLIENT_TASKS
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
 from reflex.state import (
@@ -4635,6 +4636,93 @@ async def test_modify_state_rebinds_event_context_to_token(
         assert EventContext.get().token == "token-A"
     finally:
         EventContext.reset(actor_token)
+
+
+async def test_modify_state_by_shared_token_does_not_emit_to_it(
+    monkeypatch: pytest.MonkeyPatch,
+    clean_registration_context: RegistrationContext,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Modifying a shared state by its shared token only updates the linked clients.
+
+    No browser connects with a shared token, so emitting to it would only log a
+    disconnected client warning. A client token that is not connected still
+    logs it.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+        caplog: Capture the warnings of the app.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class CounterState(rx.SharedState):
+        count: int = 0
+
+    app = App(_state=State)
+    state_manager = app._state_manager = StateManagerMemory()
+    app._event_processor = Mock(
+        _root_context=EventContext(
+            token="", state_manager=state_manager, enqueue_impl=AsyncMock()
+        )
+    )
+    event_namespace = app._event_namespace = EventNamespace("/event", app)
+    event_namespace.emit = AsyncMock()
+    emit_update = event_namespace.emit_update = AsyncMock(
+        wraps=event_namespace.emit_update
+    )
+    await event_namespace.link_token_to_sid("client-sid", "client")
+
+    async with app.modify_state(
+        BaseStateToken(ident="client", cls=CounterState)
+    ) as root_state:
+        counter = await root_state.get_state(CounterState)
+        await counter._link_to("shared")
+    assert [call.kwargs["token"] for call in emit_update.await_args_list] == ["client"]
+
+    async with app.modify_state(
+        BaseStateToken(ident="client", cls=CounterState)
+    ) as root_state:
+        counter = await root_state.get_state(CounterState)
+        counter.count = 1
+    assert [call.kwargs["token"] for call in emit_update.await_args_list] == [
+        "client",
+        "client",
+    ]
+
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        async with app.modify_state(
+            BaseStateToken(ident="shared", cls=CounterState)
+        ) as root_state:
+            counter = await root_state.get_state(CounterState)
+            counter.count = 2
+        await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
+        assert [call.kwargs["token"] for call in emit_update.await_args_list] == [
+            "client",
+            "client",
+            "client",
+        ]
+        assert [record.getMessage() for record in caplog.records] == []
+
+        async with app.modify_state(
+            BaseStateToken(ident="gone", cls=CounterState)
+        ) as root_state:
+            counter = await root_state.get_state(CounterState)
+            counter.count = 3
+    assert [call.kwargs["token"] for call in emit_update.await_args_list] == [
+        "client",
+        "client",
+        "client",
+        "gone",
+    ]
+    assert [record.getMessage() for record in caplog.records] == [
+        "Attempting to send delta to disconnected client 'gone'"
+    ]
 
 
 def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
