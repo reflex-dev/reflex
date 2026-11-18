@@ -167,7 +167,7 @@ def onboard_new_user(event: NewUser) -> Onboarding | None:
 - `reply({event.id: triggers.Result.STARTED, ...})` is the response body. The platform retries only `ERROR`; `STARTED`, `DUPLICATE`, `SKIPPED` and `INVALID` are final.
 - `GET /_triggers` answers `entry_points.manifest()` after `verify(b"", headers)`, so the platform can offer the entry points, and their event schemas, to a trigger.
 
-The manifest names each entry point's workflow from the qualified name of its `start` step's function, so declare the step on the workflow class itself rather than on a shared base. Starting the run is reflex-workflow's `await row.start(entry.start, key=type(row).trigger_key)`, which returns `False` for a resend (`DUPLICATE`) and raises `RunConflict` for a clash on another unique column.
+The manifest names each entry point's workflow from the qualified name of its `start` step's function, so declare the step on the workflow class itself rather than on a shared base. Starting the run is `await row.start(entry.start, key=type(row).trigger_key)`, which needs a reflex-workflow newer than 0.1.0. It returns `False` for a resend (`DUPLICATE`) and raises `RunConflict` for a clash on another unique column.
 
 ## Authentication
 

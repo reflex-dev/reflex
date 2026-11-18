@@ -191,6 +191,18 @@ def _refusal(body: bytes, headers: dict[str, str], **kwargs) -> str:
             SECRET,
             "no signature matches",
         ),
+        (
+            WIRE_BODY,
+            {**WIRE_HEADERS, "webhook-timestamp": "9" * 400},
+            SECRET,
+            "webhook-timestamp is outside the allowed tolerance",
+        ),
+        (
+            WIRE_BODY,
+            {**WIRE_HEADERS, "webhook-signature": "v1,sîgnature"},
+            SECRET,
+            "no signature matches",
+        ),
     ],
 )
 def test_a_request_that_is_not_the_platforms_is_refused(body, headers, secret, reason):
@@ -314,3 +326,10 @@ def test_reply_maps_each_event_to_its_result():
     })
     assert body == b'{"e1":"STARTED","e2":"DUPLICATE","e3":"ERROR"}'
     assert json.loads(body) == {"e1": "STARTED", "e2": "DUPLICATE", "e3": "ERROR"}
+
+
+def test_a_huge_timestamp_is_out_of_tolerance_on_the_real_clock():
+    headers = {**WIRE_HEADERS, "webhook-timestamp": "9" * 400}
+    with pytest.raises(triggers.InvalidSignature) as raised:
+        triggers.verify(WIRE_BODY, headers, secret=SECRET)
+    assert str(raised.value) == "webhook-timestamp is outside the allowed tolerance"

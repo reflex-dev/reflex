@@ -69,6 +69,9 @@ TOLERANCE_SECONDS = 300
 WIRE_VERSION = 1
 """The version of the request and manifest bodies this module reads and writes."""
 
+_ID_HEADER = "webhook-id"
+_TIMESTAMP_HEADER = "webhook-timestamp"
+_SIGNATURE_HEADER = "webhook-signature"
 _SECRET_PREFIX = "whsec_"
 _SIGNATURE_VERSION = "v1"
 
@@ -187,9 +190,9 @@ def sign(
         for value in secrets
     )
     return {
-        "webhook-id": msg_id,
-        "webhook-timestamp": str(timestamp),
-        "webhook-signature": signatures,
+        _ID_HEADER: msg_id,
+        _TIMESTAMP_HEADER: str(timestamp),
+        _SIGNATURE_HEADER: signatures,
     }
 
 
@@ -226,9 +229,9 @@ def verify(
         msg = f"no trigger secret: {SECRET_ENV} is not set"
         raise InvalidSignature(msg)
     lowered = {name.lower(): value for name, value in headers.items()}
-    msg_id = lowered.get("webhook-id")
-    stamp = lowered.get("webhook-timestamp")
-    presented = lowered.get("webhook-signature")
+    msg_id = lowered.get(_ID_HEADER)
+    stamp = lowered.get(_TIMESTAMP_HEADER)
+    presented = lowered.get(_SIGNATURE_HEADER)
     if not msg_id or not stamp or not presented:
         msg = "missing webhook-id, webhook-timestamp or webhook-signature"
         raise InvalidSignature(msg)
@@ -237,19 +240,20 @@ def verify(
     except ValueError:
         msg = "webhook-timestamp is not a number"
         raise InvalidSignature(msg) from None
-    clock = time.time() if now is None else now
+    # In integers: a float clock minus a huge timestamp overflows.
+    clock = int(time.time() if now is None else now)
     if abs(clock - timestamp) > tolerance:
         msg = "webhook-timestamp is outside the allowed tolerance"
         raise InvalidSignature(msg)
     offered = [
-        value
+        value.encode()
         for version, _, value in (
             part.partition(",") for part in presented.split(" ") if part
         )
         if version == _SIGNATURE_VERSION
     ]
     for value in secrets:
-        expected = _signature(value, msg_id, timestamp, body)
+        expected = _signature(value, msg_id, timestamp, body).encode()
         if any(hmac.compare_digest(expected, candidate) for candidate in offered):
             return msg_id, timestamp
     msg = "no signature matches"
