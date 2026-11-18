@@ -4823,12 +4823,10 @@ def _declared_value(lookup_order: Sequence[type], name: str) -> Any:
         if name not in klass.__dict__:
             continue
         value = klass.__dict__[name]
+        if not _restates_type(value):
+            return value if found is MISSING or isinstance(value, Field) else found
         if found is MISSING:
             found = value
-        elif isinstance(value, Field) and not _restates_type(value):
-            return value
-        if not _restates_type(value):
-            return found
     return found
 
 
@@ -4953,6 +4951,54 @@ def _validate_state_declaration(
         seen.update(vars(base))
 
 
+def _type_name(hint: Any) -> str:
+    """Name a type hint for a message.
+
+    Args:
+        hint: The type hint.
+
+    Returns:
+        A class's qualified name, or the hint as written otherwise.
+    """
+    return hint.__qualname__ if isinstance(hint, type) else str(hint)
+
+
+def _warn_restated_type(
+    class_name: str, key: str, mixin: type, restated: Field, declared: Any
+) -> None:
+    """Warn when a mixin types a var as other than the var it uses is declared.
+
+    Args:
+        class_name: The qualified name of the class being created.
+        key: The var name.
+        mixin: The mixin declaring the var without a default.
+        restated: The mixin's field.
+        declared: What the var resolves to further along the lookup order.
+    """
+    owner = declared._owner if isinstance(declared, Field) else None
+    if owner is None:
+        return
+    try:
+        matches = types.typehint_issubclass(
+            declared.annotated_type, restated.annotated_type
+        )
+    except TypeError:
+        # A TypedDict refuses class checks, so it cannot be compared.
+        return
+    if matches:
+        return
+    # A registered state's module is rewritten; name the one it was declared in.
+    module = getattr(owner, "__original_module__", owner.__module__)
+    declared_type = _type_name(declared.annotated_type)
+    console.warn(
+        f"The var `{key}` in {class_name} is declared as {declared_type} by "
+        f"{module}.{owner.__name__}, but the mixin "
+        f"{mixin.__module__}.{mixin.__name__} types it as "
+        f"{_type_name(restated.annotated_type)}; the mixin's code uses the var "
+        f"declared as {declared_type}"
+    )
+
+
 def _validate_mixin_vars(
     class_name: str, lookup_order: Sequence[type], own_fields: Mapping[str, Field]
 ) -> None:
@@ -4960,10 +5006,10 @@ def _validate_mixin_vars(
 
     A state combines its mixins into one coherent state, and two independent
     mixins would each use their shared var as their own. A var the class
-    declares itself is the one its mixins share. A mixin may still declare
-    without a default a var of its parent state, which only types it for the
-    mixin. The mixins of the parent state are left out: they were checked with
-    it, and its vars may be redeclared.
+    declares itself is the one its mixins share. A mixin's var without a
+    default only types the var `_declared_value` finds further along, if any,
+    for the mixin. The mixins of the parent state are left out: they were
+    checked with it, and its vars may be redeclared.
 
     Args:
         class_name: The qualified name of the class being created.
@@ -4974,22 +5020,20 @@ def _validate_mixin_vars(
         MixinVarNameConflictError: If two such mixins declare the same var.
     """
     parent = next((base for base in lookup_order if _is_tree_state(base)), None)
-    mixins = [
-        base
-        for base in lookup_order
-        if getattr(base, "_mixin", False)
-        and not (parent is not None and issubclass(parent, base))
-    ]
-    if len(mixins) < 2:
-        return
-    parent_fields = parent.__fields__ if parent is not None else {}
     declared_by: dict[str, type] = {}
-    for base in mixins:
+    for base in lookup_order:
+        if not getattr(base, "_mixin", False) or (
+            parent is not None and issubclass(parent, base)
+        ):
+            continue
         for key, base_field in base.__own_fields__.items():
-            if key in own_fields or (
-                base_field._default_from_type and key in parent_fields
-            ):
+            if key in own_fields:
                 continue
+            if base_field._default_from_type:
+                declared = _declared_value(lookup_order, key)
+                if not _restates_type(declared):
+                    _warn_restated_type(class_name, key, base, base_field, declared)
+                    continue
             first = declared_by.setdefault(key, base)
             if not issubclass(first, base):
                 msg = (

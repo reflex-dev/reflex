@@ -17,7 +17,7 @@ import weakref
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Self, TypeVar
+from typing import Any, ClassVar, Literal, Self, TypedDict, TypeVar
 from unittest import mock
 
 import pytest
@@ -996,11 +996,31 @@ def test_abc_mixin(state_mixin: bool, clean_registration_context):
     assert concrete_state()._value() == 7
 
 
+def _mixin_conflict_message(key: str, state: str, first: str, second: str) -> str:
+    """Build the message raised for two mixins declaring the same var.
+
+    Args:
+        key: The var name.
+        state: The name of the class combining the mixins.
+        first: The name of the mixin declaring the var first.
+        second: The name of the other mixin.
+
+    Returns:
+        The full message.
+    """
+    return (
+        f"The var `{key}` in {__name__}.{state} is declared by both "
+        f"{__name__}.{first} and {__name__}.{second}, mixins that do not inherit "
+        "from one another; declare it on the state, rename it in one of them, or "
+        "declare it in a mixin both inherit from"
+    )
+
+
 def test_mixin_var_name_conflict(clean_registration_context):
     """Reject two mixins that do not inherit from one another declaring the same var.
 
-    Declaring it without a default conflicts too when the state has no var of that
-    name, which a ClassVar is not. So does declaring a backend var.
+    Declaring it without a default conflicts too when nothing else declares it,
+    which a ClassVar on the state does not. So does declaring a backend var.
 
     Args:
         clean_registration_context: An isolated state registry.
@@ -1010,9 +1030,12 @@ def test_mixin_var_name_conflict(clean_registration_context):
         shared: int = 1
 
     class SecondMixin(BaseState, mixin=True):
-        shared: int
+        shared: int = 2
 
     class AnnotatingMixin(BaseState, mixin=True):
+        shared: int
+
+    class OtherAnnotatingMixin(BaseState, mixin=True):
         shared: int
 
     class FirstBackendMixin(BaseState, mixin=True):
@@ -1021,40 +1044,139 @@ def test_mixin_var_name_conflict(clean_registration_context):
     class SecondBackendMixin(BaseState, mixin=True):
         _shared: int = 2
 
-    match = r"`shared`.*FirstMixin.*SecondMixin"
-    with pytest.raises(MixinVarNameConflictError, match=match):
+    with pytest.raises(MixinVarNameConflictError) as err:
 
         class SubState(FirstMixin, SecondMixin, State):
             pass
 
-    with pytest.raises(MixinVarNameConflictError, match=match):
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "SubState", "FirstMixin", "SecondMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
 
         class RootState(FirstMixin, SecondMixin, BaseState):
             pass
 
-    with pytest.raises(MixinVarNameConflictError, match=match):
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "RootState", "FirstMixin", "SecondMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
 
         class CombinedMixin(FirstMixin, SecondMixin, mixin=True):
             pass
 
-    with pytest.raises(
-        MixinVarNameConflictError, match=r"`shared`.*AnnotatingMixin.*SecondMixin"
-    ):
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "CombinedMixin", "FirstMixin", "SecondMixin"
+    )
 
-        class AnnotatedState(AnnotatingMixin, SecondMixin, State):
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class AnnotatedState(AnnotatingMixin, OtherAnnotatingMixin, State):
             pass
 
-    with pytest.raises(
-        MixinVarNameConflictError, match=r"`shared`.*AnnotatingMixin.*SecondMixin"
-    ):
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "AnnotatedState", "AnnotatingMixin", "OtherAnnotatingMixin"
+    )
 
-        class ClassVarState(AnnotatingMixin, SecondMixin, State):
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class ClassVarState(AnnotatingMixin, OtherAnnotatingMixin, State):
             shared: ClassVar[int] = 1  # pyright: ignore[reportIncompatibleVariableOverride]
 
-    with pytest.raises(MixinVarNameConflictError, match="`_shared`"):
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "ClassVarState", "AnnotatingMixin", "OtherAnnotatingMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
 
         class BackendState(FirstBackendMixin, SecondBackendMixin, State):
             pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "_shared", "BackendState", "FirstBackendMixin", "SecondBackendMixin"
+    )
+
+
+def test_mixin_var_without_default_types_a_mixins_var(clean_registration_context):
+    """A mixin's var without a default uses the var another mixin declares with one.
+
+    The parent state declaring the var too changes nothing: the mixin with the
+    default comes first along the MRO.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class TypingMixin(BaseState, mixin=True):
+        count: int
+
+    class ValueMixin(BaseState, mixin=True):
+        count: int = 3
+
+    class Parent(State):
+        count: int = 1
+
+    class NoParent(TypingMixin, ValueMixin, State):
+        pass
+
+    class WithParent(TypingMixin, ValueMixin, Parent):
+        pass
+
+    for state in (NoParent, WithParent):
+        assert state.get_fields()["count"]._owner is state
+        assert state.get_fields()["count"].default == 3
+
+
+def test_mixin_var_without_default_warns_on_another_type(clean_registration_context):
+    """Warn when a mixin types a var as other than the var it uses is declared.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class Point(TypedDict):
+        x: int
+
+    @dataclasses.dataclass
+    class Pair:
+        x: int = 0
+
+    class StrParent(State):
+        word: str = "a"
+
+    class IntParent(State):
+        word: int = 1
+
+    class PairParent(State):
+        point: Pair = Pair()
+
+    class IntMixin(BaseState, mixin=True):
+        word: int
+
+    class PointMixin(BaseState, mixin=True):
+        point: Point
+
+    with mock.patch("reflex_base.utils.console.warn") as warn:
+
+        class StrChild(IntMixin, StrParent):  # pyright: ignore[reportIncompatibleVariableOverride]
+            pass
+
+    warn.assert_called_once_with(
+        f"The var `word` in {__name__}.StrChild is declared as str by "
+        f"{__name__}.StrParent, but the mixin {__name__}.IntMixin types it as int; "
+        "the mixin's code uses the var declared as str"
+    )
+    with mock.patch("reflex_base.utils.console.warn") as warn:
+
+        class IntChild(IntMixin, IntParent):
+            pass
+
+        class PointChild(PointMixin, PairParent):  # pyright: ignore[reportIncompatibleVariableOverride]
+            pass
+
+    warn.assert_not_called()
 
 
 def test_mixins_may_type_a_var_the_state_declares(clean_registration_context):

@@ -226,6 +226,10 @@ class MixinVarNameConflictError(ReflexError, NameError):
     """Raised when two mixins that do not inherit from one another declare the same var."""
 
 
+class _BaseVarShadowsInheritedVarError(ReflexError, NameError):
+    """Deprecated: nothing raises it, as a substate may redeclare an inherited var."""
+
+
 class EventHandlerShadowsBuiltInStateMethodError(ReflexError, NameError):
     """Raised when an event handler shadows a built-in state method."""
 
@@ -316,3 +320,29 @@ class HybridPropertyError(ReflexError):
 
 class ClientStateConflictError(ReflexError, ValueError):
     """Raised when one client state name is declared with two different defaults."""
+
+
+def __getattr__(name: str) -> Any:
+    """Resolve the deprecated exception names, warning on use.
+
+    Args:
+        name: The module attribute being requested.
+
+    Returns:
+        The deprecated exception.
+
+    Raises:
+        AttributeError: If the module does not define the requested attribute.
+    """
+    if name == "BaseVarShadowsInheritedVarError":
+        from reflex_base.utils import console
+
+        console.deprecate(
+            feature_name="BaseVarShadowsInheritedVarError",
+            reason="Nothing raises it: a substate may redeclare an inherited var.",
+            deprecation_version="0.11.0",
+            removal_version="1.0",
+        )
+        return _BaseVarShadowsInheritedVarError
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
