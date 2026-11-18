@@ -7,7 +7,7 @@ import dataclasses
 import json
 import logging
 from collections.abc import Callable, Iterable, Sequence
-from inspect import getmodule
+from inspect import getattr_static, getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -1215,23 +1215,37 @@ def _walk_page_with_plugins(
     """Run a page compile's plugin hooks over an evaluated page without rendering it.
 
     The hooks register the libraries a frontend compile bundles for the page,
-    such as Radix Themes once implicit detection meets a Radix component.
+    such as Radix Themes once implicit detection meets a Radix component. The
+    tree is only traversed while a plugin has component hooks that can still
+    bundle a library.
 
     Args:
         compile_context: The context holding the compiler plugin hooks.
         page: The page definition.
         component: The evaluated page component.
     """
+    plugins = tuple(
+        plugin
+        for plugin in compile_context.hooks.plugins
+        # An enabled Radix plugin's ``enter_component`` bundles nothing more.
+        if not (isinstance(plugin, RadixThemesPlugin) and plugin.enabled)
+    )
+    if len(plugins) != len(compile_context.hooks.plugins):
+        compile_context.hooks = CompilerHooks(plugins=plugins)
+    hooks = compile_context.hooks
     page_context = PageContext(
         name=page.route, route=page.route, root_component=component
     )
     with compile_context, page_context:
-        compile_context.hooks.compile_component(
-            component, page_context=page_context, compile_context=compile_context
-        )
-        compile_context.hooks.compile_page(
-            page_context, page=page, compile_context=compile_context
-        )
+        if any(
+            getattr_static(type(plugin), hook) is not getattr_static(Plugin, hook)
+            for plugin in plugins
+            for hook in ("enter_component", "leave_component")
+        ):
+            hooks.compile_component(
+                component, page_context=page_context, compile_context=compile_context
+            )
+        hooks.compile_page(page_context, page=page, compile_context=compile_context)
 
 
 def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:

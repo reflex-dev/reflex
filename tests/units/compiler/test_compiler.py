@@ -1219,6 +1219,65 @@ def test_backend_compile_derives_bundled_libraries_without_registry(
         assert json.loads(registry_path.read_text()) == libraries
 
 
+@pytest.mark.parametrize(
+    ("explicit_radix_plugin", "expected_walks"),
+    [(True, 0), (False, 1)],
+)
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_stops_walking_pages_once_no_hook_can_bundle(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    explicit_radix_plugin: bool,
+    expected_walks: int,
+):
+    """Skip page traversal once an enabled Radix plugin is the only component hook.
+
+    Args:
+        tmp_path: A temporary project directory without a frontend build.
+        monkeypatch: Fixture for redirecting frontend and backend artifact paths.
+        mocker: Fixture for selecting the backend-only compile path.
+        explicit_radix_plugin: Whether rxconfig configures the Radix plugin.
+        expected_walks: The number of page trees traversed.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    class BackendWalkState(rx.State):
+        """State used to exercise backend page walks."""
+
+    def radix_page() -> Component:
+        """Render a page with a Radix Themes component.
+
+        Returns:
+            A Radix Themes component.
+        """
+        return rx.text("radix")
+
+    app = rx.App(_state=BackendWalkState)
+    app.add_page(radix_page, route="/radix")
+    app.add_page(radix_page, route="/radix-2")
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    mocker.patch.object(app, "_add_optional_endpoints")
+    plugins: list[rx.plugins.Plugin] = (
+        [rx.plugins.RadixThemesPlugin()] if explicit_radix_plugin else []
+    )
+    mocker.patch.object(
+        compiler,
+        "get_config",
+        return_value=rx.Config(app_name="testing", plugins=plugins),
+    )
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path / "web")
+    monkeypatch.setattr(prerequisites, "get_backend_dir", lambda: tmp_path / "backend")
+    mocker.patch.object(utils, "_compile_initial_state")
+    compile_component = mocker.spy(CompilerHooks, "compile_component")
+
+    assert compiler.compile_app(app, use_rich=False) is False
+
+    assert compile_component.call_count == expected_walks
+    assert "@radix-ui/themes" in RegistrationContext.get().bundled_libraries
+
+
 @pytest.mark.usefixtures("clean_registration_context")
 def test_frontend_compile_emits_bundled_library_registry(mocker: MockerFixture):
     """Frontend compilation emits the registry consumed by backend-only workers."""
