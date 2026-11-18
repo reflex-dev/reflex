@@ -263,3 +263,16 @@ def test_docs_sidebar_drawer_has_a_title_and_keyboard_close(navbar):
     assert (
         close.children[0].custom_attrs["aria-label"] == "Close documentation navigation"
     )
+
+
+def test_editorial_footer_product_links_skip_the_retired_pricing_page():
+    """The footer lists real product destinations; /pricing/ redirects to /demo/."""
+    from reflex_docs.views.editorial_footer import _FOOTER_LINKS
+
+    product = dict(_FOOTER_LINKS)["Product"]
+    assert [label for label, _ in product] == [
+        "AI Builder",
+        "Agent Toolkit",
+        "Enterprise",
+        "App Management",
+    ]
