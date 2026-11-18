@@ -735,9 +735,10 @@ def set_log_level(log_level: LogLevel | None):
         msg = f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
         raise TypeError(msg)
     global _log_level
-    if log_level != _log_level:
-        # Set the loglevel persistently for subprocesses.
-        os.environ["REFLEX_LOGLEVEL"] = log_level.value
+    # Always export the level, even when unchanged: an explicit level (e.g.
+    # an --loglevel flag equal to the current level) must still reach
+    # subprocesses and later config loads through REFLEX_LOGLEVEL.
+    os.environ["REFLEX_LOGLEVEL"] = log_level.value
     _log_level = log_level
     if is_managed_mode():
         configure()
