@@ -1,5 +1,7 @@
 """Components that are dynamically generated on the backend."""
 
+import dataclasses
+import json
 from typing import TYPE_CHECKING, Any, Union
 
 from reflex_base import constants
@@ -202,21 +204,26 @@ def load_dynamic_serializer():
         for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
             root_is_bundled = formatted_lib_name in libs_in_window
-            fallback = (
-                lib
-                if root_is_bundled or lib.startswith((".", "/", "$/", "http"))
-                else get_cdn_url(lib)
-            )
+            lib_is_path = lib.startswith((".", "/", "$/", "http"))
+            fallback = lib if root_is_bundled or lib_is_path else get_cdn_url(lib)
             for name in names:
                 subpath = name.package_path if name.package_path != "/" else ""
                 import_path = formatted_lib_name + subpath
                 is_bundled = root_is_bundled or import_path in libs_in_window
+                if subpath and not is_bundled and not lib_is_path:
+                    # jsdelivr requires `/+esm` to end the path, so the subpath
+                    # belongs in the CDN url rather than after it.
+                    imports.setdefault(get_cdn_url(lib + subpath), []).append(
+                        dataclasses.replace(name, package_path="/")
+                    )
+                    continue
                 imports.setdefault(lib if is_bundled else fallback, []).append(name)
                 if subpath and is_bundled:
                     _bundle_library(import_path)
 
         module_imports = []
         bundled_declarations = []
+        bundled_library_paths = set()
         for module in utils.compile_imports(imports):
             if module["lib"] not in libs_in_window and not module["lib"].startswith((
                 "$/",
@@ -225,6 +232,7 @@ def load_dynamic_serializer():
                 module_imports.append(module)
                 continue
 
+            bundled_library_paths.add(module["lib"])
             window_library = f"window.__reflex['{module['lib']}']"
             if module["default"]:
                 bundled_declarations.append(
@@ -259,6 +267,11 @@ def load_dynamic_serializer():
                 module_code_lines[ix] = line_stripped[1:-1]
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
+        # evalReactComponent loads these optional libraries before the import;
+        # the default libraries are always in window.__reflex.
+        optional_libraries = sorted(
+            bundled_library_paths.difference(_default_bundled_libraries())
+        )
 
         function_line = next(
             index
@@ -278,7 +291,7 @@ def load_dynamic_serializer():
         ]
 
         return "\n".join([
-            "//__reflex_evaluate",
+            f"//__reflex_evaluate:{json.dumps(optional_libraries)}",
             *module_code_lines,
         ])
 

@@ -27,7 +27,7 @@ DEV_ID = "9d4c2b1a-7e6f-4a5b-8c9d-0e1f2a3b4c5d"
 DEPLOYMENT_ID = "0e7b9d2c-5a4f-4c3b-8e1d-6f2a9b8c7d10"
 SOURCE_DEPLOYMENT_ID = "3c2b1a09-8f7e-4d6c-9b5a-4a3b2c1d0e9f"
 ENVIRONMENTS_PATH = f"/api/v1/apps/{APP_ID}/environments"
-UTC = datetime.timezone.utc
+UTC = datetime.UTC
 
 
 @pytest.fixture

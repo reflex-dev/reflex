@@ -114,7 +114,6 @@ def test_import_cli(
         pytest.param(["--version"], id="version"),
         pytest.param(["--help"], id="help"),
         pytest.param(["run", "--help"], id="run_help"),
-        pytest.param(["component", "--help"], id="component_help"),
         pytest.param(["cloud", "--help"], id="cloud_help"),
         pytest.param(["deploy", "--help"], id="deploy_help"),
     ],

@@ -1,0 +1,12 @@
+[project]
+name = "reflex-legacy-0-8-23"
+version = "0.0.0"
+description = "Locked reflex 0.8.23 environment the playground-0.8.23 CI job compiles examples/playground with."
+requires-python = ">=3.12,<3.13"
+# plotly: rx.plotly imports it when it renders. greenlet: reflex 0.8.23 imports
+# sqlalchemy.ext.asyncio at startup, and SQLAlchemy 2.1 only installs greenlet
+# with its asyncio extra.
+dependencies = ["reflex==0.8.23", "plotly>=6.0,<7.0", "greenlet"]
+
+[tool.uv]
+package = false

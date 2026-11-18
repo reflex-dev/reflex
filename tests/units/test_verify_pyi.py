@@ -1,16 +1,12 @@
 """Unit tests for scripts/verify_pyi.py (the published-artifact .pyi stub check)."""
 
 import io
-import sys
 import tarfile
 import zipfile
 from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
-
-if sys.version_info < (3, 11):
-    pytest.importorskip("tomli", reason="verify_pyi requires tomli on Python < 3.11")
 
 from scripts import verify_pyi
 

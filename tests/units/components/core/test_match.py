@@ -317,4 +317,4 @@ def test_match_multiple_default_cases(match_case):
 
 def test_match_no_cond():
     with pytest.raises(ValueError):
-        _ = Match.create(None)
+        _ = Match.create(None)  # pyright: ignore [reportCallIssue]

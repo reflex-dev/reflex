@@ -2,6 +2,21 @@
 
 <!-- towncrier release notes start -->
 
+## v0.2.1 (2026-11-11)
+
+### Features
+
+- `ReflexInstrumentor().instrument()` also turns on the trace points of `reflex-workflow` when it is installed: one `CONSUMER` span per step attempt, linked to the span that scheduled it. ([#7635](https://github.com/reflex-dev/reflex/issues/7635))
+
+
+## v0.2.0 (2026-10-08)
+
+### Breaking Changes
+
+- Require Python 3.11 or newer; Python 3.10 is no longer supported.
+- Require `reflex-base` 0.10 or newer.
+
+
 ## v0.1.0 (2026-09-11)
 
 ### Features

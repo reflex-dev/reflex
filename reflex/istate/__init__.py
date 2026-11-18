@@ -1,7 +1,6 @@
 """This module will provide interfaces for the state."""
 
 import pickle
-import sys
 from collections.abc import Callable
 from typing import Any
 
@@ -36,8 +35,6 @@ def debug_failed_pickles(obj: object, dumps: Callable[[object], bytes]):
     """
     if _is_picklable(obj, dumps):
         return
-    if sys.version_info < (3, 11):
-        return
     if isinstance(obj, dict):
         for k, v in obj.items():
             try:
@@ -55,7 +52,7 @@ def debug_failed_pickles(obj: object, dumps: Callable[[object], bytes]):
         for i, v in enumerate(obj):
             try:
                 debug_failed_pickles(v, dumps)
-            except HANDLED_PICKLE_ERRORS as e:  # noqa: PERF203
+            except HANDLED_PICKLE_ERRORS as e:
                 e.add_note(f"While pickling index {i} of {type(obj).__name__}")
                 raise
         return

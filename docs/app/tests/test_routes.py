@@ -1,13 +1,18 @@
 """Integration tests for all routes in Reflex."""
 
 import re
+import subprocess
+import sys
 from collections import Counter
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 import reflex as rx
+from reflex_base.components.component import BaseComponent
+from reflex_site_shared.docs.markdown import render_docgen_document
 
-from reflex_docs.pages.docs.metadata import docs_metadata
+from reflex_docs.pages.docs.metadata import component_title_name, docs_metadata
 
 
 @pytest.mark.parametrize(
@@ -18,6 +23,38 @@ def test_metadata_preserves_acronyms_and_code_identifiers(title, expected):
     """Normalize standalone acronyms without rewriting component names."""
     seo_title, _ = docs_metadata("/api-reference/cli/", title, None)
     assert seo_title.startswith(expected + " · ")
+
+
+@pytest.mark.parametrize(
+    ("components", "expected"),
+    [
+        (["rx.data_table"], "rx.data_table"),
+        (["rx.input.slot"], "rx.input.slot"),
+        (["rx.lucide.Icon"], "rx.icon"),
+        (["rx.toast.provider"], "rx.toast"),
+        (["rx.dialog.root", "rx.dialog.trigger", "rx.dialog.content"], "rx.dialog"),
+        (["rx.text", "rx.text.em"], "rx.text"),
+        (["rx.recharts.AreaChart", "rx.recharts.Area"], "rx.recharts.area_chart"),
+        (["rx.recharts.GraphingTooltip"], "rx.recharts.graphing_tooltip"),
+        (["rx.stack", "rx.hstack", "rx.vstack"], "rx.stack"),
+        (["pyplot"], "pyplot"),
+        (["rx.el.abbr", "rx.el.b"], None),
+        (["rx.el.svg.circle", "rx.el.svg.rect"], None),
+        ([], None),
+    ],
+)
+def test_component_title_name(components, expected):
+    """Library titles lead with the public name users call."""
+    assert component_title_name(components) == expected
+
+
+def test_metadata_component_title_keeps_breadcrumb_description():
+    """A component name leads the title, not the generic description."""
+    title, description = docs_metadata(
+        "/library/overlay/dialog/", "Dialog", None, component_name="rx.dialog"
+    )
+    assert title == "rx.dialog: Python Dialog Component · Reflex Docs"
+    assert description.startswith("Dialog · Overlay · Library: documentation")
 
 
 @pytest.fixture
@@ -76,6 +113,36 @@ def test_authentication_overview_moved_to_enterprise(routes_fixture):
 
     assert "/authentication/authentication-overview/" not in paths
     assert "/enterprise/auth/overview/" in paths
+
+
+def test_custom_components_routes_are_freed_for_their_redirects(routes_fixture):
+    """The removed custom components pages give way to redirects to wrapping React."""
+    paths = {route.path for route in routes_fixture if route.path}
+
+    assert not {path for path in paths if path.startswith("/custom-components/")}
+    assert "/wrapping-react/overview/" in paths
+
+
+def test_custom_components_urls_redirect_to_wrapping_react():
+    """Every removed custom components URL is registered as a redirect page."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from reflex_docs.reflex_docs import app\n"
+            "for route in ('custom-components', 'custom-components/overview', "
+            "'custom-components/command-reference', "
+            "'custom-components/prerequisites-for-publishing'):\n"
+            "    page = app._unevaluated_pages[route]\n"
+            "    assert '/wrapping-react/overview/' in str(page.on_load), route\n",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
 
 
 def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
@@ -286,6 +353,46 @@ def test_python_block_links_do_not_repeat_docs_basename():
     )
 
 
+@pytest.mark.parametrize("frontend_path", ["", "/docs"])
+@pytest.mark.parametrize(
+    "asset_name", ["scaling-architecture.svg", "scaling-job-lifecycle.svg"]
+)
+def test_scaling_full_size_links_match_the_displayed_assets(
+    monkeypatch, frontend_path, asset_name
+):
+    """Full-size diagram links must not add the router basename a second time."""
+    docs_app = Path(__file__).resolve().parent.parent
+    monkeypatch.chdir(docs_app)
+    config = rx.Config(app_name="asset_links", frontend_path=frontend_path)
+    monkeypatch.setattr("reflex.assets.get_config", lambda: config)
+    body, _ = render_docgen_document(
+        "docs/hosting/scaling.md", docs_app.parent / "hosting/scaling.md"
+    )
+    pending: list[BaseComponent] = [body]
+    images = []
+    links = []
+    while pending:
+        component = pending.pop()
+        pending.extend(component.children)
+        if component.tag == "img" and asset_name in str(getattr(component, "src", "")):
+            images.append(component)
+        elif component.tag in {"a", "Link"} and asset_name in str(component):
+            links.append(component)
+
+    assert len(images) == len(links) == 1
+    image_url = str(getattr(images[0], "src", "")).strip('"')
+    link = links[0]
+    if link.tag == "Link":
+        destination = str(link.to).strip('"')
+        assert urlsplit(destination).path == f"/hosting/{asset_name}", (
+            "React Router adds frontend_path to the destination; "
+            f"an already-prefixed asset URL would repeat it: {destination}"
+        )
+    else:
+        assert urlsplit(str(link.href).strip('"')).path == urlsplit(image_url).path
+    assert urlsplit(image_url).path == f"{frontend_path}/hosting/{asset_name}"
+
+
 # Router links that survive the basename check still have to name a real page.
 # A path reached through `href=`, `to=` or `rx.redirect(...)` is navigation and is
 # always checked. Bare path literals are checked only when their first segment is a
@@ -296,19 +403,25 @@ _ANY_PATH_LITERAL = re.compile(r"""["'](/[^"'\s]*)["']""")
 
 
 def test_python_block_links_resolve_to_real_routes(routes_fixture):
-    """Router links inside ```python blocks must name a registered docs route.
+    """Python block links must name a registered docs route or an existing asset.
 
     `test_doc_links.py` validates prose links off the markdown AST, which ignores
     fenced code blocks by design — so links written in ```python blocks are checked
     here instead.
     """
     known = {route.path.rstrip("/") for route in routes_fixture if route.path}
+    asset_root = Path(__file__).resolve().parent.parent / "assets"
+    asset_paths = {
+        "/" + asset.relative_to(asset_root).as_posix()
+        for asset in asset_root.rglob("*")
+        if asset.is_file()
+    }
     sections = {path.split("/")[1] for path in known if path.count("/") > 1}
 
     def is_broken(link: str, navigation: bool) -> bool:
         path = link.split("#")[0].rstrip("/")
         segments = path.split("/")
-        if len(segments) < 3 or path in known:
+        if len(segments) < 3 or path in known or path in asset_paths:
             return False
         # A misspelled section (/enterprize/...) still has to fail, so navigation
         # is validated whatever its first segment says.
@@ -430,3 +543,62 @@ def test_routes_have_specific_descriptions(routes_fixture):
         )
     ]
     assert not failures, failures
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/library/", "Python UI Component Library · Reflex Docs"),
+        (
+            "/library/tables-and-data-grids/",
+            "Tables And Data Grids Component Library · Reflex Docs",
+        ),
+        (
+            "/library/tables-and-data-grids/data-table/",
+            "rx.data_table: Python Data Table Component · Reflex Docs",
+        ),
+        (
+            "/library/overlay/dialog/",
+            "rx.dialog: Python Dialog Component · Reflex Docs",
+        ),
+        ("/library/data-display/icon/", "rx.icon: Python Icon Component · Reflex Docs"),
+        (
+            "/library/graphing/charts/areachart/",
+            "rx.recharts.area_chart: Python Area Chart Component · Reflex Docs",
+        ),
+        (
+            "/library/forms/select/low/",
+            "rx.select: Python Select (Low Level) Component · Reflex Docs",
+        ),
+        (
+            "/library/forms/input/low/",
+            "rx.input.slot: Python Input (Low Level) Component · Reflex Docs",
+        ),
+        ("/library/html/text/", "Text · HTML · Library · Reflex Docs"),
+        (
+            "/library/dynamic-rendering/foreach/",
+            "Foreach · Dynamic Rendering · Library · Reflex Docs",
+        ),
+    ],
+)
+def test_library_route_titles(routes_fixture, path, expected):
+    """Published library pages carry the final title search engines see."""
+    titles = {route.path: route.seo_title or route.title for route in routes_fixture}
+    assert titles[path] == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/api-reference/app/", "rx.App API Reference · Reflex Docs"),
+        ("/api-reference/state/", "rx.State API Reference · Reflex Docs"),
+        ("/api-reference/var/", "rx.Var API Reference · Reflex Docs"),
+        ("/api-reference/eventhandler/", "rx.EventHandler API Reference · Reflex Docs"),
+        ("/api-reference/eventspec/", "rx.event.EventSpec API Reference · Reflex Docs"),
+        ("/api-reference/statemanager/", "StateManager API Reference · Reflex Docs"),
+    ],
+)
+def test_api_reference_route_titles(routes_fixture, path, expected):
+    """API reference titles lead with the public name users type into search."""
+    titles = {route.path: route.seo_title or route.title for route in routes_fixture}
+    assert titles[path] == expected

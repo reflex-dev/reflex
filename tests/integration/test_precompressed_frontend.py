@@ -31,6 +31,11 @@ def PrecompressedFrontendApp():
             rx.text("Hello from Reflex"),
         )
 
+    def article():
+        return rx.el.main(rx.heading("Article"))
+
+    app.add_page(article, route="articles/[id]")
+
 
 @pytest.fixture(scope="module")
 def all_compression_formats_env() -> Generator[None, None, None]:
@@ -114,3 +119,25 @@ def test_prod_frontend_serves_precompressed_404_fallback(
     assert headers["content-encoding"] == accept_encoding
     if magic is not None:
         assert body[: len(magic)] == magic
+
+
+@pytest.mark.parametrize("accept_encoding", ["identity", "gzip"])
+def test_prod_frontend_serves_dynamic_route_with_200(
+    prod_test_app: AppHarnessProd,
+    accept_encoding: str,
+):
+    """Direct loads of valid dynamic-route URLs get the SPA fallback with 200."""
+    assert prod_test_app.frontend_url is not None
+
+    status, headers, body = request_raw(
+        prod_test_app.frontend_url,
+        "/articles/7",
+        headers={"Accept-Encoding": accept_encoding},
+    )
+
+    assert status == 200
+    if accept_encoding == "gzip":
+        assert headers["content-encoding"] == "gzip"
+        assert body[:2] == b"\x1f\x8b"
+    else:
+        assert b"<html" in body.lower()

@@ -18,6 +18,8 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _dev_hot_reload_active,
+    _drop_cached_var_values,
     _release_state_tree,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
@@ -96,12 +98,23 @@ class StateManagerDisk(StateManager):
     _write_debounce_seconds: float = dataclasses.field(
         default_factory=lambda: state_manager_disk_debounce().total_seconds()
     )
+    # Whether states read from disk drop their cached var values.
+    _drop_stale_cached_vars: bool = dataclasses.field(
+        default_factory=_dev_hot_reload_active, init=False
+    )
+
+    # Earliest time.monotonic() at which a state file on disk can expire.
+    _next_disk_purge: float = dataclasses.field(default=0.0, init=False)
+    # Token expiration used to compute _next_disk_purge.
+    _disk_purge_token_expiration: int = dataclasses.field(default=0, init=False)
 
     def __post_init__(self):
         """Create a new state manager."""
         path_ops.mkdir(self.states_directory)
 
-        self._purge_expired_states()
+        self._disk_purge_token_expiration, self._next_disk_purge = (
+            self._purge_expired_states()
+        )
 
     @functools.cached_property
     def states_directory(self) -> Path:
@@ -115,8 +128,18 @@ class StateManagerDisk(StateManager):
         """
         return prerequisites.get_states_dir().absolute()
 
-    def _purge_expired_states(self):
-        """Purge expired states from the disk."""
+    def _purge_expired_states(self) -> tuple[int, float]:
+        """Purge expired files and find the next possible disk expiration.
+
+        Returns:
+            The lifetime used and the monotonic time of the next possible
+            expiration, capped at one token lifetime from the scan's start so
+            newly created files are covered too.
+        """
+        token_expiration = self.token_expiration
+        scan_started = time.monotonic()
+        now = time.time()
+        next_expiration = now + token_expiration
         for path in path_ops.ls(self.states_directory):
             # check path is a pickle file
             if path.suffix != ".pkl":
@@ -126,9 +149,29 @@ class StateManagerDisk(StateManager):
             last_edited = path.stat().st_mtime
 
             # check if the file is older than the token expiration time
-            if time.time() - last_edited > self.token_expiration:
+            if time.time() - last_edited > token_expiration:
                 # remove the file
                 path.unlink()
+            else:
+                next_expiration = min(next_expiration, last_edited + token_expiration)
+        return token_expiration, scan_started + next_expiration - now
+
+    async def _maybe_purge_expired_states(self):
+        """Scan disk only when a file may expire or the token expiration changed.
+
+        Writes do not invalidate the deadline: a file written after a scan
+        started expires after the scan's cap of one token lifetime. The
+        deadline is monotonic, so moving the wall clock back cannot defer it.
+        """
+        if (
+            time.monotonic() < self._next_disk_purge
+            and self.token_expiration == self._disk_purge_token_expiration
+        ):
+            return
+        (
+            self._disk_purge_token_expiration,
+            self._next_disk_purge,
+        ) = await run_in_thread(self._purge_expired_states)
 
     def token_path(self, token: StateToken) -> Path:
         """Get the path for a token.
@@ -180,6 +223,8 @@ class StateManagerDisk(StateManager):
             if instance is not None:
                 # Ensure all substates exist, even if they weren't serialized previously.
                 instance.substates = fresh_instance.substates
+                if self._drop_stale_cached_vars:
+                    _drop_cached_var_values(instance)
             else:
                 instance = fresh_instance
             state.substates[substate.get_name()] = instance
@@ -222,6 +267,8 @@ class StateManagerDisk(StateManager):
             else:
                 # Ensure all substates exist, even if they were not serialized previously.
                 root_state.substates = fresh_root_state.substates
+                if self._drop_stale_cached_vars:
+                    _drop_cached_var_values(root_state)
             await self.populate_substates(token, root_state, root_state)
             self.states[token.cache_key] = root_state
             return cast(TOKEN_TYPE, root_state)
@@ -241,11 +288,10 @@ class StateManagerDisk(StateManager):
             token: The token used to identify the state object.
             substate: The substate to set.
         """
-        substate_token = token.with_cls(type(substate))
-
         if token.get_and_reset_touched_state(substate):
             pickle_state = token.serialize(substate)
             if pickle_state:
+                substate_token = token.with_cls(type(substate))
                 if not self.states_directory.exists():
                     self.states_directory.mkdir(parents=True, exist_ok=True)
                 await run_in_thread(
@@ -343,9 +389,9 @@ class StateManagerDisk(StateManager):
                         and not self._is_locked(token)
                     ):
                         self._purge_token(token)
-                await run_in_thread(self._purge_expired_states)
+                await self._maybe_purge_expired_states()
                 await self._process_write_queue_delay()
-            except asyncio.CancelledError:  # noqa: PERF203
+            except asyncio.CancelledError:
                 await self._flush_write_queue()
                 raise
             except Exception as e:

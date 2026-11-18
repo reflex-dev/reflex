@@ -8,7 +8,7 @@ import importlib
 import logging
 import os
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -326,6 +326,69 @@ class SequenceOptions:
 DEFAULT_SEQUENCE_OPTIONS = SequenceOptions()
 
 
+def _get_sequence_delimiter(
+    field_type: GenericType, options: SequenceOptions = DEFAULT_SEQUENCE_OPTIONS
+) -> str:
+    """Get the delimiter of a sequence environment variable.
+
+    A colon is part of an absolute Windows path, so a sequence of paths without
+    options of its own is separated by ``os.pathsep``, like ``REFLEX_ENV_FILE``.
+
+    Args:
+        field_type: The sequence type.
+        options: The options of the sequence.
+
+    Returns:
+        The delimiter.
+    """
+    if options is DEFAULT_SEQUENCE_OPTIONS and get_args(field_type) == (Path,):
+        return os.pathsep
+    return options.delimiter
+
+
+def _get_sequence_options(annotated_metadata: Sequence[Any]) -> SequenceOptions:
+    """Get the sequence options from the metadata of an Annotated type.
+
+    Args:
+        annotated_metadata: The metadata of the Annotated type.
+
+    Returns:
+        The first SequenceOptions in the metadata, otherwise the default options.
+    """
+    for arg in annotated_metadata:
+        if isinstance(arg, SequenceOptions):
+            return arg
+    return DEFAULT_SEQUENCE_OPTIONS
+
+
+# A colon, unless it follows the drive letter that starts a path and precedes a slash.
+_COLON_OUTSIDE_DRIVE = re.compile(r"(?<!^[A-Za-z])(?<!:[A-Za-z]):|:(?![\\/])")
+
+
+def _split_sequence(
+    value: str, field_type: GenericType, options: SequenceOptions
+) -> list[str]:
+    """Split the value of a sequence environment variable into its items.
+
+    Path lists were separated by a colon on every platform before they followed
+    ``os.pathsep``. Where the two differ, a value without ``os.pathsep`` is
+    still split on the colons that are not part of a drive, so ``data:lib``
+    keeps working on Windows.
+
+    Args:
+        value: The environment variable value.
+        field_type: The sequence type.
+        options: The options of the sequence.
+
+    Returns:
+        The items of the sequence.
+    """
+    delimiter = _get_sequence_delimiter(field_type, options)
+    if delimiter != options.delimiter and delimiter not in value:
+        return _COLON_OUTSIDE_DRIVE.split(value)
+    return value.split(delimiter)
+
+
 def interpret_env_var_value(
     value: str, field_type: GenericType, field_name: str
 ) -> Any:
@@ -358,7 +421,7 @@ def interpret_env_var_value(
         for arg in (union_types := get_args(field_type)):
             try:
                 return interpret_env_var_value(value, arg, field_name)
-            except (ValueError, EnvironmentVarValueError) as e:  # noqa: PERF203
+            except (ValueError, EnvironmentVarValueError) as e:
                 errors.append(e)
         msg = f"Could not interpret {value!r} for {field_name} as any of {union_types}: {errors}"
         raise EnvironmentVarValueError(msg)
@@ -421,14 +484,9 @@ def interpret_env_var_value(
                     continue
         msg = f"Invalid literal value: {value!r} for {field_name}, expected one of {literal_values}"
         raise EnvironmentVarValueError(msg)
-    # If the field was Annotated with SequenceOptions, extract the options
-    sequence_options = DEFAULT_SEQUENCE_OPTIONS
-    for arg in annotated_metadata:
-        if isinstance(arg, SequenceOptions):
-            sequence_options = arg
-            break
     if get_origin(field_type) in (list, Sequence):
-        items = value.split(sequence_options.delimiter)
+        sequence_options = _get_sequence_options(annotated_metadata)
+        items = _split_sequence(value, field_type, sequence_options)
         if sequence_options.strip:
             items = [item.strip() for item in items]
         return [
@@ -447,6 +505,21 @@ def interpret_env_var_value(
 
 
 T = TypeVar("T")
+
+# Callbacks run after ``EnvVar.set`` changes the variable of the same name, or
+# after env files are loaded, so values cached off the hot path stay in sync
+# with in-process changes.
+_SET_CALLBACKS: dict[str, list[Callable[[], object]]] = {}
+
+
+def _on_env_var_set(name: str, callback: Callable[[], object]) -> None:
+    """Run a callback whenever ``EnvVar.set`` or an env file changes the variable.
+
+    Args:
+        name: The environment variable name.
+        callback: The function to call after the variable changes.
+    """
+    _SET_CALLBACKS.setdefault(name, []).append(callback)
 
 
 def _serialize_env_value(value: Any) -> str:
@@ -544,10 +617,20 @@ class EnvVar(Generic[T]):
             if isinstance(value, enum.Enum):
                 value = value.value
             if isinstance(value, list):
-                str_value = ":".join(_serialize_env_value(v) for v in value)
+                field_type = value_inside_optional(self.type_)
+                annotated_metadata: tuple[Any, ...] = ()
+                if get_origin(field_type) is Annotated:
+                    annotated_args = get_args(field_type)
+                    annotated_metadata = annotated_args[1:]
+                    field_type = annotated_args[0]
+                str_value = _get_sequence_delimiter(
+                    field_type, _get_sequence_options(annotated_metadata)
+                ).join(_serialize_env_value(v) for v in value)
             else:
                 str_value = _serialize_env_value(value)
             os.environ[self.name] = str_value
+        for callback in _SET_CALLBACKS.get(self.name, ()):
+            callback()
 
 
 @lru_cache
@@ -711,7 +794,8 @@ class EnvironmentVariables:
     # Whether to skip purging the web directory in dev mode.
     REFLEX_PERSIST_WEB_DIR: EnvVar[bool] = env_var(False)
 
-    # This env var stores the execution mode of the app
+    # The execution mode of the app. `reflex run` and `reflex export` set it from
+    # their `--env` option, so do not set it yourself.
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
     # Whether to keep React's development-build owner-stack capture in dev mode.
@@ -757,13 +841,13 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
-    # Additional paths to include in the hot reload. Separated by a colon.
+    # Additional paths to include in the hot reload. Separated by os.pathsep; a colon also separates paths where os.pathsep is absent from the value.
     REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
-    # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
+    # Paths to exclude from the hot reload. Takes precedence over include paths. Separated like the include paths.
     REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
-    # Paths to override in the hot reload. Takes precedence over include and exclude paths. Separated by a colon.
+    # Paths to override in the hot reload. Takes precedence over include and exclude paths. Separated like the include paths.
     REFLEX_HOT_RELOAD_OVERRIDE_PATHS: EnvVar[list[Path]] = env_var([])
 
     # Enables different behavior for when the backend would do a cold start if it was inactive.
@@ -797,6 +881,13 @@ class EnvironmentVariables:
 
     # Whether to run Granian in a spawn process. This enables Reflex to pick up on environment variable changes between hot reloads.
     REFLEX_STRICT_HOT_RELOAD: EnvVar[bool] = env_var(False)
+
+    # The multiprocessing start method for production backend workers. Unset means "fork" wherever
+    # the interpreter itself defaults to a fork-based method (Linux), so workers share the app
+    # preloaded by the supervisor. Set to "spawn" for apps that are not fork-safe.
+    REFLEX_BACKEND_START_METHOD: EnvVar[
+        Literal["fork", "spawn", "forkserver"] | None
+    ] = env_var(None)
 
     # The path to the reflex log file. If not set, the log file will be stored in the reflex user directory.
     REFLEX_LOG_FILE: EnvVar[Path | None] = env_var(None)
@@ -1003,9 +1094,16 @@ def _load_dotenv_from_files(files: list[Path]):
         )
         return
 
+    loaded = False
     for env_file in files:
         if env_file.exists():
             load_dotenv(env_file, override=True)
+            loaded = True
+    if loaded:
+        # The files write os.environ directly, so notify every registered var.
+        for callbacks in _SET_CALLBACKS.values():
+            for callback in callbacks:
+                callback()
 
 
 def _paths_from_environment() -> list[Path]:

@@ -85,4 +85,4 @@ Run your app with `reflex run`, open the page, and drag the picker. The text sho
 
 ## Next steps
 
-Add only the props and callbacks you need, and test them against the React library's public API. For reusable packaging, see [custom components](/docs/custom-components/overview/). For state and event behavior, see [events](/docs/events/events-overview/) and the [state overview](/docs/state/overview/).
+Add only the props and callbacks you need, and test them against the React library's public API. For state and event behavior, see [events](/docs/events/events-overview/) and the [state overview](/docs/state/overview/).
