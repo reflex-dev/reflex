@@ -14,7 +14,7 @@ import pytest
 import pytest_asyncio
 from reflex_workflow import RunConflict, Workflow, connect_workflows, step
 from reflex_workflow.engine import handles
-from sqlalchemy import Index, String, UniqueConstraint, text
+from sqlalchemy import Index, String, UniqueConstraint, func, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -39,6 +39,7 @@ class Onboarding(Base, Workflow):
         UniqueConstraint("team", "seat", name="uq_handles_onboarding_seat"),
         Index("ix_handles_onboarding_note", "note"),
         Index("ix_handles_onboarding_ref", "ref", unique=True),
+        Index("ix_handles_onboarding_lower", func.lower(text("email")), unique=True),
         Index(
             "ix_handles_onboarding_slot",
             "slot",
@@ -55,10 +56,28 @@ class Onboarding(Base, Workflow):
     note: Mapped[str] = mapped_column(String, default="")
     ref: Mapped[str] = mapped_column(String, default=lambda: uuid.uuid4().hex)
     slot: Mapped[str] = mapped_column(String, default="")
+    email: Mapped[str] = mapped_column(String, default=lambda: uuid.uuid4().hex)
 
     @step
     async def welcome(self):
         """Do nothing; only the start is under test."""
+        return
+
+
+class Deferred(Base, Workflow):
+    """A run whose only unique constraint is deferrable."""
+
+    __tablename__ = "handles_deferred"
+    __table_args__ = (
+        UniqueConstraint("later", name="uq_handles_deferred_later", deferrable=True),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    later: Mapped[str] = mapped_column(String)
+
+    @step
+    async def go(self):
+        """Do nothing."""
         return
 
 
@@ -215,6 +234,12 @@ def test_key_must_be_one_unique_column_of_the_row():
     )
     assert _refusal(Onboarding, Onboarding.slot) == (
         f"ValueError: key= names Onboarding.slot, {not_unique}"
+    )
+    assert _refusal(Deferred, Deferred.later) == (
+        f"ValueError: key= names Deferred.later, {not_unique}"
+    )
+    assert _refusal(Onboarding, Onboarding.email) == (
+        f"ValueError: key= names Onboarding.email, {not_unique}"
     )
     assert _refusal(Seat, Seat.team) == (
         f"ValueError: key= names Seat.team, {not_unique}"

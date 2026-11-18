@@ -63,15 +63,19 @@ def key_column(cls: type[Workflow], key: QueryableAttribute[Any]) -> Column[Any]
         return column
     if column.unique:
         return column
+    # Postgres can't infer ON CONFLICT from a deferrable constraint, an
+    # expression index or a partial one.
     for constraint in table.constraints:
-        if isinstance(constraint, UniqueConstraint) and list(constraint.columns) == [
-            column
-        ]:
+        if (
+            isinstance(constraint, UniqueConstraint)
+            and not constraint.deferrable
+            and list(constraint.columns) == [column]
+        ):
             return column
     for index in table.indexes:
         if (
             index.unique
-            and list(index.columns) == [column]
+            and list(index.expressions) == [column]
             and index.dialect_options["postgresql"].get("where") is None
         ):
             return column
