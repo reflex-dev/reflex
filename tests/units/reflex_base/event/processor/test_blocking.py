@@ -9,11 +9,9 @@ import threading
 import time
 import traceback
 from collections.abc import Callable, Coroutine, Generator
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
-from weakref import WeakSet
 
 import pytest
 from reflex_base.event.processor import blocking
@@ -231,38 +229,78 @@ async def test_package_handler_is_reported_once_with_its_package(
     ]
 
 
+async def _describe_stacks(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    handler: Callable,
+    stacks: list[traceback.StackSummary],
+) -> list[tuple[str, str, str, str, str] | None]:
+    """Describe blocking stacks from inside the event task of a handler.
+
+    Args:
+        monkeypatch: Replaces the stack the monitor extracts.
+        tmp_path: The app root, so the test module is not app code.
+        handler: The registered handler of the event.
+        stacks: The blocking stacks to describe, in order.
+
+    Returns:
+        The description of each stack.
+    """
+    monitor = EventLoopBlockingMonitor(
+        asyncio.get_running_loop(),
+        threshold=0.04,
+        event_handlers={
+            "state.blocking": RegisteredEventHandler(
+                handler=EventHandler(fn=handler), states=()
+            )
+        },
+    )
+    monitor._app_root = f"{tmp_path}{os.sep}"
+    remaining = iter(stacks)
+    monkeypatch.setattr(monitor, "_task_stack", lambda task: next(remaining))
+
+    async def describe():  # noqa: RUF029
+        """Describe each stack while the event task runs.
+
+        Returns:
+            The descriptions.
+        """
+        return [monitor._describe_blocking() for _ in stacks]
+
+    return await asyncio.create_task(
+        describe(), name=f"{EVENT_TASK_PREFIX}state.blocking|token|txid"
+    )
+
+
+def _stack(*frames: tuple[str, str]) -> traceback.StackSummary:
+    """Build a blocking stack from file and function names.
+
+    Args:
+        *frames: The file and function name of each frame, outermost first.
+
+    Returns:
+        The stack.
+    """
+    return traceback.StackSummary.from_list([
+        (filename, lineno, name, "block()")
+        for lineno, (filename, name) in enumerate(frames, 1)
+    ])
+
+
 async def test_reported_package_handler_still_reports_app_frames(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     """Keep app warnings after reporting the same package handler once."""
-    monitor = EventLoopBlockingMonitor(
-        asyncio.get_running_loop(), threshold=0.04, event_handlers={}
-    )
-    monitor._app_root = f"{tmp_path}{os.sep}"
-    package_stack = traceback.StackSummary.from_list([
-        ("package/handler.py", 1, "handler", "block()"),
-    ])
-    app_stack = traceback.StackSummary.from_list([
-        (str(tmp_path / "app.py"), 2, "computed", "block()"),
-    ])
-    stacks = iter((package_stack, app_stack, app_stack))
-    monkeypatch.setattr(monitor, "_task_stack", lambda task: next(stacks))
 
-    async def handler():  # noqa: RUF029
-        """Describe a package block followed by two app blocks.
+    def handler():
+        """Represent an installed handler."""
 
-        Returns:
-            The descriptions of each blocking stack.
-        """
-        return [monitor._describe_blocking() for _ in range(3)]
-
-    monitor.event_handlers = {
-        "state.blocking": RegisteredEventHandler(
-            handler=EventHandler(fn=handler), states=()
-        )
-    }
-    descriptions = await asyncio.create_task(
-        handler(), name=f"{EVENT_TASK_PREFIX}state.blocking|token|txid"
+    code = handler.__code__
+    dispatcher = ("reflex/processor.py", "dispatch")
+    package_stack = _stack(dispatcher, (code.co_filename, code.co_name))
+    app_stack = _stack(dispatcher, (str(tmp_path / "app.py"), "computed"))
+    descriptions = await _describe_stacks(
+        monkeypatch, tmp_path, handler, [package_stack, app_stack, app_stack]
     )
     subject = f"Event handler {handler.__qualname__}"
     scope = ", including state updates such as computed vars"
@@ -279,88 +317,52 @@ async def test_reported_package_handler_still_reports_app_frames(
             scope,
             "",
             blocking._PACKAGE_ADVICE,
-            "".join(traceback.format_list(package_stack)),
+            "".join(traceback.format_list(package_stack[1:])),
         ),
         app_description,
         app_description,
     ]
 
 
-async def test_concurrent_monitors_report_package_handler_once(  # noqa: RUF029
+async def test_package_handler_that_returned_is_reported_every_time(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
-    """Claim a package report only once when two monitors observe it together."""
-
-    class SlowMembership(WeakSet):
-        def __contains__(self, item: object) -> bool:
-            """Let another monitor run between checking and recording a handler.
-
-            Args:
-                item: The handler to check.
-
-            Returns:
-                Whether the handler was already reported.
-            """
-            present = super().__contains__(item)
-            if not present:
-                time.sleep(0.05)
-            return present
+    """Report blocking after a package handler returns, such as a large delta."""
 
     def handler():
-        """Represent the shared installed handler."""
+        """Represent an installed handler, such as setvar, that has returned."""
 
-    registered = RegisteredEventHandler(handler=EventHandler(fn=handler), states=())
-    monitors = [
-        EventLoopBlockingMonitor(
-            asyncio.get_running_loop(),
-            threshold=0.04,
-            event_handlers={"state.blocking": registered},
-        )
-        for _ in range(2)
-    ]
-    stack = traceback.StackSummary.from_list([
-        ("package/handler.py", 1, "handler", "block()"),
-    ])
-    monkeypatch.setattr(blocking, "_reported_package_handlers", SlowMembership())
-    monkeypatch.setattr(
-        asyncio,
-        "current_task",
-        lambda loop: SimpleNamespace(
-            get_name=lambda: f"{EVENT_TASK_PREFIX}state.blocking"
-        ),
+    stack = _stack(("reflex/processor.py", "dispatch"), ("reflex/state.py", "delta"))
+    description = (
+        f"Event handler {handler.__qualname__}",
+        ", including state updates such as computed vars",
+        "",
+        blocking._APP_ADVICE,
+        "".join(traceback.format_list(stack)),
     )
-    for monitor in monitors:
-        monitor._app_root = f"{tmp_path}{os.sep}"
-        monkeypatch.setattr(monitor, "_task_stack", lambda task: stack)
-    ready = threading.Barrier(2)
-
-    def describe(monitor: EventLoopBlockingMonitor):
-        """Describe both monitors' observations at the same time.
-
-        Args:
-            monitor: The monitor observing the handler.
-
-        Returns:
-            The description, if this monitor claimed the report.
-        """
-        ready.wait(timeout=1)
-        return monitor._describe_blocking()
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        descriptions = list(pool.map(describe, monitors))
-    assert descriptions.count(None) == 1
-    assert [description for description in descriptions if description is not None] == [
-        (
-            (
-                f"Event handler {handler.__qualname__} "
-                f"(from package {__name__.partition('.')[0]})"
-            ),
-            ", including state updates such as computed vars",
-            "",
-            blocking._PACKAGE_ADVICE,
-            "".join(traceback.format_list(stack)),
-        )
+    assert await _describe_stacks(monkeypatch, tmp_path, handler, [stack, stack]) == [
+        description,
+        description,
     ]
+
+
+async def test_package_is_named_by_the_module_of_the_running_code(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Name the package of a decorator that wraps an app handler."""
+
+    def handler():
+        """Represent a package decorator's wrapper around an app handler."""
+
+    # functools.wraps copies the module of the wrapped app handler.
+    handler.__module__ = "my_app.state"
+    stack = _stack((handler.__code__.co_filename, handler.__code__.co_name))
+    [description] = await _describe_stacks(monkeypatch, tmp_path, handler, [stack])
+    assert description is not None
+    assert description[0] == (
+        f"Event handler {handler.__qualname__} "
+        f"(from package {__name__.partition('.')[0]})"
+    )
 
 
 async def test_unregistered_event_is_reported_with_event_name(

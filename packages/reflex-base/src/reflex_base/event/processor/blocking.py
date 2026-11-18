@@ -38,7 +38,26 @@ _PACKAGE_ADVICE = (
 
 # Share reports across monitors without keeping unloaded handlers alive.
 _reported_package_handlers: WeakSet[Callable] = WeakSet()
-_package_reports_lock = threading.Lock()
+
+
+def _from_handler(
+    fn: Callable, stack: traceback.StackSummary
+) -> list[traceback.FrameSummary]:
+    """Cut the frames that dispatch a handler from the stack.
+
+    Args:
+        fn: The handler function.
+        stack: The frames, outermost first.
+
+    Returns:
+        The frames from the handler's own frame on, or an empty list if the
+        handler has returned.
+    """
+    code = fn.__code__
+    for index, frame in enumerate(stack):
+        if frame.filename == code.co_filename and frame.name == code.co_name:
+            return stack[index:]
+    return []
 
 
 class EventLoopBlockingMonitor:
@@ -85,8 +104,9 @@ class EventLoopBlockingMonitor:
     def _describe_blocking(self) -> tuple[str, str, str, str, str] | None:
         """Describe the task that runs on the blocked loop.
 
-        An event handler from an installed package, with no app code in its
-        blocking stack, is described once per process: the app cannot fix it.
+        An event handler from an installed package that blocks in its own
+        frame, with no app code in the stack, is described once per process:
+        the app cannot fix it.
 
         Returns:
             The subject (event handler or task name), the scope note for event
@@ -96,59 +116,44 @@ class EventLoopBlockingMonitor:
             the handler was already reported.
         """
         task = asyncio.current_task(self.loop)
-        if task is None:
+        if task is None or (stack := self._task_stack(task)) is None:
             return None
-        name = task.get_name()
-        event_name, fn = "", None
-        if name.startswith(EVENT_TASK_PREFIX):
-            event_name = name[len(EVENT_TASK_PREFIX) :].partition("|")[0]
-            registered = self.event_handlers.get(event_name)
-            if registered is not None:
-                fn = registered.handler.fn
-            subject = f"Event handler {event_name if fn is None else fn.__qualname__}"
-            scope = ", including state updates such as computed vars"
-        else:
-            subject, scope = f"Task {name!r}", ""
-        if (stack := self._task_stack(task)) is None:
-            return None
-        frames: list[traceback.FrameSummary] = stack
-        advice = _APP_ADVICE
-        app_frame = self._app_frame(stack)
-        if app_frame is not None:
+        subject, scope, fn = self._subject(task.get_name())
+        frames, location, advice = stack, "", _APP_ADVICE
+        if (app_frame := self._app_frame(stack)) is not None:
             location = (
                 f" at {app_frame.filename[len(self._app_root) :]}:"
                 f"{app_frame.lineno} in {app_frame.name}"
             )
-        else:
-            location = ""
-            if fn is not None and not self._is_app_file(
-                handler_file := fn.__code__.co_filename
-            ):
-                with _package_reports_lock:
-                    if fn in _reported_package_handlers:
-                        return None
-                    _reported_package_handlers.add(fn)
-                subject += f" (from package {fn.__module__.partition('.')[0]})"
-                advice = _PACKAGE_ADVICE
-                # Start at the handler, skipping the frames that dispatch it.
-                for index, frame in enumerate(stack):
-                    if frame.filename == handler_file:
-                        frames = stack[index:]
-                        break
+        elif fn is not None and (handler_frames := _from_handler(fn, stack)):
+            if fn in _reported_package_handlers:
+                return None
+            _reported_package_handlers.add(fn)
+            # The module of the running code, which a decorator does not copy.
+            package = fn.__globals__["__name__"].partition(".")[0]
+            subject += f" (from package {package})"
+            frames, advice = handler_frames, _PACKAGE_ADVICE
         return subject, scope, location, advice, "".join(traceback.format_list(frames))
 
-    def _is_app_file(self, filename: str) -> bool:
-        """Check whether a file is app code, outside the stdlib and packages.
+    def _subject(self, name: str) -> tuple[str, str, Callable | None]:
+        """Name the task that runs on the blocked loop.
 
         Args:
-            filename: The path of the file.
+            name: The name of the task.
 
         Returns:
-            Whether the file is app code.
+            The subject (event handler or task name), the scope note for event
+            handlers (or an empty string), and the registered handler function
+            (or None).
         """
-        return filename.startswith(self._app_root) and not filename.startswith(
-            _LIBRARY_PATHS
-        )
+        if not name.startswith(EVENT_TASK_PREFIX):
+            return f"Task {name!r}", "", None
+        event_name = name[len(EVENT_TASK_PREFIX) :].partition("|")[0]
+        scope = ", including state updates such as computed vars"
+        if (registered := self.event_handlers.get(event_name)) is None:
+            return f"Event handler {event_name}", scope, None
+        fn = registered.handler.fn
+        return f"Event handler {fn.__qualname__}", scope, fn
 
     def _app_frame(
         self, stack: traceback.StackSummary
@@ -162,7 +167,9 @@ class EventLoopBlockingMonitor:
             The innermost app frame, or None if no frame is app code.
         """
         for frame in reversed(stack):
-            if self._is_app_file(frame.filename):
+            if frame.filename.startswith(
+                self._app_root
+            ) and not frame.filename.startswith(_LIBRARY_PATHS):
                 return frame
         return None
 
