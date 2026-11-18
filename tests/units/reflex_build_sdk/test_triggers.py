@@ -244,7 +244,15 @@ def test_sign_needs_a_secret():
             "the delivery is not version 1 of the trigger format",
         ),
         (b'{"version":1}', "the delivery has no events"),
-        (b'{"version":1,"events":[{"id":"e"}]}', "an event has no 'trigger_id'"),
+        (b'{"version":1,"events":[{"id":"e"}]}', "an event has no 'trigger_id' string"),
+        (
+            b'{"version":1,"events":[{"id":1,"trigger_id":"t","entry_point":"p"}]}',
+            "an event has no 'id' string",
+        ),
+        (
+            b'{"version":1,"events":[{"id":"e","trigger_id":"t","entry_point":""}]}',
+            "an event has no 'entry_point' string",
+        ),
         (b'{"version":1,"events":[1]}', "an event is not an object"),
     ],
 )

@@ -260,24 +260,27 @@ def verify(
     raise InvalidSignature(msg)
 
 
+_EVENT_IDS = ("id", "trigger_id", "entry_point")
+
+
 def _event(raw: Any) -> Event:
     if not isinstance(raw, dict):
         msg = "an event is not an object"
         raise InvalidDelivery(msg)
-    try:
-        event = Event(
-            id=str(raw["id"]),
-            trigger_id=str(raw["trigger_id"]),
-            entry_point=str(raw["entry_point"]),
-            payload=raw.get("payload"),
-            type=raw.get("type"),
-            environment=raw.get("environment"),
-            received_at=raw.get("received_at"),
-        )
-    except KeyError as missing:
-        msg = f"an event has no {missing.args[0]!r}"
-        raise InvalidDelivery(msg) from None
-    return event
+    for field in _EVENT_IDS:
+        value = raw.get(field)
+        if not isinstance(value, str) or not value:
+            msg = f"an event has no {field!r} string"
+            raise InvalidDelivery(msg)
+    return Event(
+        id=raw["id"],
+        trigger_id=raw["trigger_id"],
+        entry_point=raw["entry_point"],
+        payload=raw.get("payload"),
+        type=raw.get("type"),
+        environment=raw.get("environment"),
+        received_at=raw.get("received_at"),
+    )
 
 
 def parse_delivery(
