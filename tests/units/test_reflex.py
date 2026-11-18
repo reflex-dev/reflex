@@ -175,6 +175,64 @@ def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
     flush.assert_called_once_with()
 
 
+def _lock_web_dir_in_compile_worker(*_args, **_kwargs) -> bool:
+    """Take the ``.web`` lock in the compile worker, as a frontend install does.
+
+    Returns:
+        True once the lock was entered.
+    """
+    from reflex.utils import path_ops
+
+    with path_ops.file_lock(os.environ["REFLEX_TEST_WEB_DIR"]):
+        return True
+
+
+def test_compile_app_worker_reenters_parent_locks(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch, tmp_path
+):
+    """A compile worker reenters the ``.web`` lock its waiting parent holds.
+
+    ``reflex run --env preview`` holds the lock while a Granian compile worker
+    installs frontend packages under the same lock.
+    """
+    import multiprocessing
+    import threading
+
+    from reflex.utils import exec as exec_utils
+    from reflex.utils import path_ops, prerequisites
+
+    web_dir = tmp_path / ".web"
+    monkeypatch.setenv("REFLEX_DIR", str(tmp_path / "reflex-data"))
+    monkeypatch.setenv("REFLEX_TEST_WEB_DIR", str(web_dir))
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    mocker.patch.object(exec_utils, "should_prerender_routes", return_value=False)
+    mocker.patch.object(exec_utils, "set_dev_start_method")
+    mocker.patch.object(
+        prerequisites, "compile_or_validate_app", _lock_web_dir_in_compile_worker
+    )
+    errors: list[BaseException] = []
+
+    def compile_under_lock():
+        try:
+            with path_ops.file_lock(web_dir):
+                reflex._compile_app()
+        except BaseException as error:
+            errors.append(error)
+
+    thread = threading.Thread(target=compile_under_lock, daemon=True)
+    thread.start()
+    thread.join(DEFAULT_TIMEOUT)
+    deadlocked = thread.is_alive()
+    if deadlocked:
+        # Break the deadlock so the pool and the parent's lock are released.
+        for child in multiprocessing.active_children():
+            child.kill()
+        thread.join(DEFAULT_TIMEOUT)
+
+    assert not deadlocked
+    assert errors == []
+
+
 def test_compile_app_sets_start_method_before_compile_pool(mocker: MockerFixture):
     """The start method is fixed before the compile pool spawns any process."""
     from unittest import mock

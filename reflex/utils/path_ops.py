@@ -17,6 +17,7 @@ import threading
 import unicodedata
 from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import IO, Literal
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
@@ -364,13 +365,42 @@ def file_lock(path: str | Path) -> Iterator[Path]:
                 os.close(lock_fd)
 
 
-def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
-    """Atomically replace a JSON file with a complete document.
+def held_lock_paths() -> frozenset[Path]:
+    """Get the paths whose locks the current thread holds.
+
+    Returns:
+        The resolved paths of the locks this thread holds.
+    """
+    return frozenset(getattr(_held_locks, "paths", ()))
+
+
+def adopt_held_locks(paths: frozenset[Path]) -> None:
+    """Reenter, in this thread, locks a parent holds while it waits on this process.
 
     Args:
-        file_path: The destination JSON file.
-        value: The complete JSON object to write.
+        paths: Resolved lock paths from the parent's ``held_lock_paths``.
     """
+    held: set[Path] | None = getattr(_held_locks, "paths", None)
+    if held is None:
+        _held_locks.paths = set(paths)
+    else:
+        held.update(paths)
+
+
+@contextlib.contextmanager
+def atomic_write(file_path: Path, mode: Literal["w", "wb"] = "w") -> Iterator[IO]:
+    """Atomically replace a file with the contents written in the body.
+
+    A symlinked destination keeps its link; the file it points to is replaced.
+
+    Args:
+        file_path: The destination file.
+        mode: ``"w"`` for UTF-8 text or ``"wb"`` for bytes.
+
+    Yields:
+        The staging file. The target keeps its old contents until the body exits.
+    """
+    file_path = file_path.resolve()
     open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
     temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")
     # Preserve the old Path.touch behavior by letting umask set new-file mode.
@@ -379,10 +409,10 @@ def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
     try:
         if file_path.exists():
             shutil.copymode(file_path, temp_path)
-        temp_file = os.fdopen(temp_fd, "w", encoding="utf-8")
+        temp_file = os.fdopen(temp_fd, mode, encoding=None if "b" in mode else "utf-8")
         temp_fd = -1
         with temp_file:
-            json.dump(value, temp_file, ensure_ascii=False)
+            yield temp_file
             temp_file.flush()
             os.fsync(temp_file.fileno())
         temp_path.replace(file_path)
@@ -393,6 +423,17 @@ def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
         with contextlib.suppress(OSError):
             temp_path.unlink(missing_ok=True)
         raise
+
+
+def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
+    """Atomically replace a JSON file with a complete document.
+
+    Args:
+        file_path: The destination JSON file.
+        value: The complete JSON object to write.
+    """
+    with atomic_write(file_path) as json_file:
+        json.dump(value, json_file, ensure_ascii=False)
 
 
 def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> None:

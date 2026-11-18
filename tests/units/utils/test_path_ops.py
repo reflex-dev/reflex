@@ -814,6 +814,24 @@ def test_file_lock_sidecar_persists_with_private_permissions(tmp_path: Path):
         assert lock_path.stat().st_mode & 0o077 == 0
 
 
+def test_atomic_write_replaces_symlink_target(tmp_path: Path):
+    """Writing through a symlink replaces its target and keeps the link."""
+    target = tmp_path / "target.txt"
+    target.write_text("old", encoding="utf-8")
+    alias = tmp_path / "alias.txt"
+    try:
+        alias.symlink_to(target)
+    except OSError as error:
+        pytest.skip(f"symlinks unavailable: {error}")
+
+    with path_ops.atomic_write(alias) as file:
+        file.write("new")
+
+    assert alias.is_symlink()
+    assert target.read_text(encoding="utf-8") == "new"
+    assert list(tmp_path.glob(".*.tmp")) == []
+
+
 def test_update_json_file_normalizes_symlink_alias(tmp_path: Path):
     """Symlink aliases update and lock the canonical target path."""
     target = tmp_path / "reflex.json"
