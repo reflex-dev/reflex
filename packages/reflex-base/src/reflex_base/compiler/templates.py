@@ -36,36 +36,35 @@ def _merge_state_hooks(
     Returns:
         The hooks with one ``useStateContext`` call per state.
     """
-    fields_by_name: dict[str, dict[str, None] | None] = {}
-    state_hooks = 0
-    for hook in hooks:
-        if "useStateContext(" not in hook or not (match := _STATE_HOOK.fullmatch(hook)):
-            continue
-        state_hooks += 1
-        var_name, _, field_list = match.groups()
-        fields = fields_by_name.get(var_name, {})
-        if fields is not None and field_list is not None:
-            fields.update(dict.fromkeys(json.loads(field_list)))
-            fields_by_name[var_name] = fields
-        else:
-            fields_by_name[var_name] = None
-    if state_hooks == len(fields_by_name):
-        return hooks
-    merged = {}
+    merged: dict[str, VarData | None] = {}
+    # Per state variable: its first hook, the quoted state name, and the union
+    # of the field lists (None once a hook reads the whole substate).
+    states: dict[str, tuple[str, str, dict[str, None] | None]] = {}
     for hook, data in hooks.items():
         match = _STATE_HOOK.fullmatch(hook) if "useStateContext(" in hook else None
         if match is None:
             merged[hook] = data
             continue
-        var_name, state_name, _ = match.groups()
-        if var_name not in fields_by_name:
-            continue
-        fields = fields_by_name.pop(var_name)
+        var_name, state_name, field_list = match.groups()
+        fields = None if field_list is None else dict.fromkeys(json.loads(field_list))
+        if (first := states.get(var_name)) is None:
+            states[var_name] = (hook, state_name, fields)
+            merged[hook] = data
+        elif first[2] is not None:
+            states[var_name] = (
+                first[0],
+                state_name,
+                None if fields is None else first[2] | fields,
+            )
+    if len(merged) == len(hooks):
+        return hooks
+    first_hooks = {}
+    for var_name, (first, state_name, fields) in states.items():
         args = (
             state_name if fields is None else f"{state_name}, {json.dumps([*fields])}"
         )
-        merged[f"const {var_name} = useStateContext({args})"] = data
-    return merged
+        first_hooks[first] = f"const {var_name} = useStateContext({args})"
+    return {first_hooks.get(hook, hook): data for hook, data in merged.items()}
 
 
 class _RenderUtils:
