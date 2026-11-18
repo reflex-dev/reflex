@@ -70,6 +70,20 @@ def brush_simple():
     )
 ```
 
+```python test
+def test_dragging_brush_narrows_the_range(demo, page):
+    start = demo.get_by_role("slider").first
+    expect(start).to_have_attribute("aria-label", "Min value: 1, Max value: 40")
+    expect(demo.locator(".recharts-bar")).to_have_count(2)
+    box = start.bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(box["x"] + 300, box["y"] + box["height"] / 2, steps=10)
+    page.mouse.up()
+    expect(start).not_to_have_attribute("aria-label", "Min value: 1, Max value: 40")
+    expect(demo.locator(".recharts-xAxis-tick-labels text").first).not_to_have_text("1")
+```
+
 ## Position, Size, and Range
 
 This example showcases ways to set the Position, Size, and Range. The `gap` prop provides the spacing between stops on the brush when the graph will refresh. The `start_index` and `end_index` props defines the default range of the brush. `traveller_width` prop specifies the width of each handle ("traveller" in recharts lingo).
@@ -143,5 +157,26 @@ def brush_pos_size_range():
         data=data,
         width="100%",
         height=200,
+    )
+```
+
+```python test
+def test_brush_starts_at_given_range(demo):
+    expect(demo.get_by_role("slider").first).to_have_attribute(
+        "aria-label", "Min value: 4, Max value: 12"
+    )
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "12",
+    ])
+    expect(demo.locator(".recharts-area")).to_have_count(2)
+    expect(demo.locator(".recharts-brush-traveller rect").first).to_have_attribute(
+        "width", "15"
     )
 ```

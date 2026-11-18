@@ -59,6 +59,15 @@ def tree_grid_simple():
     )
 ```
 
+```python test
+def test_tree_expands_folders(demo):
+    documents = demo.get_by_role("row", name=re.compile("Documents"))
+    expect(documents.get_by_role("gridcell")).to_have_text(["Documents", "3072", ""])
+    expect(demo.get_by_role("gridcell", name="Projects")).to_have_count(0)
+    documents.locator(".ag-group-contracted").click()
+    expect(demo.get_by_role("gridcell", name="Projects")).to_be_visible()
+```
+
 Key configuration:
 
 - `auto_group_column_def` configures the tree column (the one with the expand/collapse arrows).
@@ -88,6 +97,23 @@ def tree_grid_custom():
         width="100%",
         height="500px",
     )
+```
+
+```python test
+def test_custom_path_tree(demo):
+    expect(demo.get_by_role("columnheader")).to_have_text([
+        "File Path",
+        "sum(Size)",
+        "Created",
+    ])
+    downloads = demo.get_by_role("row", name=re.compile(r"Downloads \(1\) 512000$"))
+    downloads.locator(".ag-group-contracted").click()
+    image = demo.get_by_role("row", name=re.compile("image.jpg"))
+    expect(image.get_by_role("gridcell")).to_have_text([
+        "image.jpg",
+        "512000",
+        "2023-10-03",
+    ])
 ```
 
 The function receives the row `data` and must return the array representing the row's position in the hierarchy. The JavaScript expression can build the array on the fly, e.g. `rx.Var("[data.host, ...data.path]")` to prefix each path with a host name.
@@ -147,6 +173,16 @@ def tree_grid_conditional():
         ),
         width="100%",
     )
+```
+
+```python test
+def test_switch_to_per_host_trees(demo):
+    expect(demo.get_by_role("gridcell", name="Documents (1)")).to_be_visible()
+    demo.get_by_role("switch").click()
+    server1 = demo.get_by_role("row", name=re.compile(r"server1 \(2\) 1024$"))
+    server1.locator(".ag-group-contracted").click()
+    expect(demo.get_by_role("gridcell", name="Documents (1)")).to_be_visible()
+    expect(demo.get_by_role("gridcell", name="server2 (2)")).to_be_visible()
 ```
 
 ## Formatting Aggregated Values

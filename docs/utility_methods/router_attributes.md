@@ -188,7 +188,7 @@ The `self.router.page` namespace is deprecated as of Reflex 0.8.1 and will be re
 
 ### Example Values on this Page
 
-```python eval
+```python eval notest
 rx.table.root(
     rx.table.header(
         rx.table.row(

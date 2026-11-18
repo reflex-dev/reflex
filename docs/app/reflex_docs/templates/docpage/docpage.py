@@ -496,7 +496,10 @@ def docpage(
                         rx.box(
                             rx.el.article(
                                 comp,
+                                # A demo's own wrapper (data-docs-demo) takes
+                                # no part in layout.
                                 class_name="docs-article [&>div]:!p-0"
+                                " [&>[data-docs-demo]>div]:!p-0"
                                 + (
                                     " [&_.rt-TableRoot]:!border-0 [&_.rt-TableRoot]:!rounded-none"
                                     " [&_.rt-TableCell]:!shadow-none [&_.rt-TableCell]:!border-b [&_.rt-TableCell]:!border-border"

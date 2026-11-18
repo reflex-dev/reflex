@@ -37,6 +37,17 @@ def blur_example():
     )
 ```
 
+```python test
+def test_text_area_sets_text_on_blur(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("Hello World!")
+    text_area = demo.get_by_placeholder("Type here...")
+    text_area.fill("Multi\nline")
+    expect(heading).to_have_text("Hello World!")
+    text_area.blur()
+    expect(heading).to_have_text("Multi\nline")
+```
+
 ## Text Area in forms
 
 Here we show how to use a text area in a form. We use the `name` prop to identify the text area in the form data. The form data is then passed to the `submit_feedback` method to be processed.
@@ -91,6 +102,16 @@ def feedback_form():
     )
 ```
 
+```python test
+def test_text_area_feedback_form(demo):
+    expect(demo.get_by_text("Are you enjoying Reflex?")).to_be_visible()
+    demo.get_by_placeholder("Write your feedback…").fill("Yes!")
+    demo.get_by_role("button", name="Send").click()
+    expect(demo.get_by_text("Thank you for your feedback!")).to_be_visible()
+    demo.get_by_role("button", name="Submit another response").click()
+    expect(demo.get_by_placeholder("Write your feedback…")).to_have_value("")
+```
+
 ## Submitting on Enter
 
 By default, pressing Enter in a text area inserts a new line. Set the
@@ -126,6 +147,20 @@ def enter_key_submit_example():
     )
 ```
 
+```python test
+def test_text_area_enter_key_submit(demo):
+    expect(demo.get_by_text("Nothing submitted yet.")).to_be_visible()
+    text_area = demo.get_by_placeholder("Type and press Enter to submit")
+    text_area.press_sequentially("first")
+    text_area.press("Shift+Enter")
+    text_area.press_sequentially("second")
+    expect(text_area).to_have_value("first\nsecond")
+    text_area.press("Enter")
+    expect(demo.get_by_text(re.compile("^Submitted: "))).to_have_text(
+        "Submitted: first\nsecond"
+    )
+```
+
 `enter_key_submit` accepts a Var, so it can be toggled dynamically — for
 example, disabling Enter-to-submit while a previous submission is still being
 processed: `enter_key_submit=~State.is_loading`.
@@ -157,6 +192,14 @@ def auto_height_example():
         min_height="0",
         width="100%",
     )
+```
+
+```python test
+def test_text_area_auto_height(demo):
+    text_area = demo.get_by_placeholder("Type a few lines — the box grows to fit")
+    one_line = text_area.bounding_box()["height"]
+    text_area.fill("one\ntwo\nthree\nfour")
+    assert text_area.bounding_box()["height"] > one_line * 2
 ```
 
 `auto_height` attaches a client-side handler that resizes the element on every

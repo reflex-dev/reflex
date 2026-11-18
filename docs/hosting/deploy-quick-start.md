@@ -37,7 +37,7 @@ Open **Deployments** in the project sidebar. If the project has no deployments y
 
 For the CLI workflow, copy the project-specific `reflex deploy --project ...` command.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/how_to_deploy.webp",
     alt="How to deploy page with Deployments selected and a project-specific Reflex CLI command",

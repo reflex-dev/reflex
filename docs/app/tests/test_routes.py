@@ -327,7 +327,10 @@ def _doc_markdown_files():
 # ```python blocks are resolved by React Router, which prepends the `/docs`
 # basename. Writing `/docs/...` there produces `/docs/docs/...`, which 404s.
 _ROUTER_LINK_IN_PYTHON_BLOCK = re.compile(r"[\"'](/docs/[^\"']*)[\"']")
-_PYTHON_BLOCK = re.compile(r"^```python[^\n]*\n(.*?)^```", re.MULTILINE | re.DOTALL)
+# `python test` blocks are not rendered: their paths are expected URLs, not links.
+_PYTHON_BLOCK = re.compile(
+    r"^```python(?![^\n]*\btest\b)[^\n]*\n(.*?)^```", re.MULTILINE | re.DOTALL
+)
 
 
 def test_python_block_links_do_not_repeat_docs_basename():

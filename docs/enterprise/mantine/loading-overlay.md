@@ -35,3 +35,14 @@ def loading_overlay_example():
         rx.button("Toggle Loading", on_click=LoadingOverlayState.toggle_loading),
     )
 ```
+
+```python test
+def test_toggle_loading_overlay(demo):
+    overlay = demo.locator(".mantine-LoadingOverlay-root")
+    expect(demo.get_by_text("Loading Overlay Example")).to_be_visible()
+    expect(overlay).to_have_count(0)
+    demo.get_by_role("button", name="Toggle Loading").click()
+    expect(overlay).to_be_visible()
+    demo.get_by_role("button", name="Toggle Loading").click()
+    expect(overlay).to_have_count(0)
+```

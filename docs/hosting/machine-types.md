@@ -13,7 +13,7 @@ Machine types define the CPU and RAM allocated to each app instance.
 3. Review the current CPU, RAM, and machine type.
 4. Select **Change VM**, choose a machine type, and review the change before confirming.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/settings_scale.webp",
     alt="Scale settings with the current and available VM types",

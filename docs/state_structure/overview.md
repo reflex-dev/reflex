@@ -176,6 +176,19 @@ def index():
     )
 ```
 
+```python test
+def test_greeter_reads_settings_state(demo, page):
+    demo.get_by_placeholder("Name").fill("Ada")
+    demo.get_by_role("button", name="Submit").click()
+    expect(demo.get_by_text("Hello Ada", exact=True)).to_be_visible()
+    demo.get_by_role("button").first.click()
+    page.get_by_role("dialog").get_by_role("textbox").fill("Hi")
+    page.keyboard.press("Escape")
+    demo.get_by_placeholder("Name").fill("Bob")
+    demo.get_by_role("button", name="Submit").click()
+    expect(demo.get_by_text("Hi Bob", exact=True)).to_be_visible()
+```
+
 ### Accessing Individual Var Values
 
 In addition to accessing entire state instances with `get_state`, you can retrieve individual variable values using the `get_var_value` method:
@@ -233,6 +246,17 @@ def var_value_example():
         align="center",
         spacing="4",
     )
+```
+
+```python test
+def test_get_var_value_reads_other_state(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Get Var Value Example")
+    demo.get_by_role("button", name="Get Count Value").click()
+    expect(demo.get_by_text("Current count: 0")).to_be_visible()
+    demo.get_by_role("button", name="Increment").click()
+    demo.get_by_role("button", name="Increment").click()
+    demo.get_by_role("button", name="Get Count Value").click()
+    expect(demo.get_by_text("Current count: 2")).to_be_visible()
 ```
 
 In this example:

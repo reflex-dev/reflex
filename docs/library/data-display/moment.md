@@ -41,10 +41,35 @@ def moment_update_example():
     )
 ```
 
+```python test
+def test_moment_update_button_refreshes_date(demo):
+    from datetime import datetime, timedelta
+
+    def shown():
+        return datetime.strptime(time.inner_text(), "%a %b %d %Y %H:%M:%S GMT%z")
+
+    button = demo.get_by_role("button", name=re.compile("^Update"))
+    time = button.locator("time")
+    before = time.inner_text()
+    stale = datetime.now().astimezone() - shown() > timedelta(seconds=2)
+    button.click()
+    if stale:
+        expect(time).not_to_have_text(before)
+    # The button now shows the current time.
+    assert abs(datetime.now().astimezone() - shown()) < timedelta(seconds=10)
+```
+
 ### Display the date as-is:
 
 ```python demo
 rx.moment(MomentState.date_now)
+```
+
+```python test
+def test_moment_default_format(demo):
+    expect(demo.locator("time")).to_have_text(
+        re.compile(r"^\w{3} \w{3} \d{2} \d{4} \d{2}:\d{2}:\d{2} GMT[+-]\d{4}$")
+    )
 ```
 
 ### Humanized interval
@@ -55,8 +80,20 @@ Sometimes we don't want to display just a raw date, but we want something more i
 rx.moment(MomentState.date_now, from_now=True)
 ```
 
+```python test
+def test_moment_from_now(page, demo):
+    page.get_by_role("button", name=re.compile("^Update")).click()
+    expect(demo.locator("time")).to_have_text("a few seconds ago")
+```
+
 ```python demo
 rx.moment(MomentState.date_now, to_now=True)
+```
+
+```python test
+def test_moment_to_now(page, demo):
+    page.get_by_role("button", name=re.compile("^Update")).click()
+    expect(demo.locator("time")).to_have_text("in a few seconds")
 ```
 
 You can also set a duration (in milliseconds) with `from_now_during` where the date will display as relative, then after that, it will be displayed as defined in `format`.
@@ -67,14 +104,31 @@ rx.moment(
 )  # after 100 seconds, date will display normally
 ```
 
+```python test
+def test_moment_from_now_during(page, demo):
+    # Recently updated, the date is still within the relative window.
+    page.get_by_role("button", name=re.compile("^Update")).click()
+    expect(demo.locator("time")).to_have_text("a few seconds ago")
+```
+
 ### Formatting dates
 
 ```python demo
 rx.moment(MomentState.date_now, format="YYYY-MM-DD")
 ```
 
+```python test
+def test_moment_date_format(demo):
+    expect(demo.locator("time")).to_have_text(re.compile(r"^\d{4}-\d{2}-\d{2}$"))
+```
+
 ```python demo
 rx.moment(MomentState.date_now, format="HH:mm:ss")
+```
+
+```python test
+def test_moment_time_format(demo):
+    expect(demo.locator("time")).to_have_text(re.compile(r"^\d{2}:\d{2}:\d{2}$"))
 ```
 
 ### Offset Date
@@ -126,6 +180,26 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_moment_add_offsets(demo):
+    from datetime import datetime, timedelta
+
+    times = demo.locator("time")
+    expect(times).to_have_text(
+        [re.compile(r"^\d{4}-\d{2}-\d{2} - \d{2}:\d{2}:\d{2}$")] * 8
+    )
+    parsed = [
+        datetime.strptime(text, "%Y-%m-%d - %H:%M:%S")
+        for text in times.all_inner_texts()
+    ]
+    years, _, _, weeks, days, _, minutes, seconds = parsed
+    base = seconds - timedelta(seconds=2)
+    assert years.year == base.year + 2
+    assert weeks - base == timedelta(weeks=2)
+    assert days - base == timedelta(days=2)
+    assert minutes - base == timedelta(minutes=2)
+```
+
 #### Subtract
 
 ```python demo
@@ -173,6 +247,26 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_moment_subtract_offsets(demo):
+    from datetime import datetime, timedelta
+
+    times = demo.locator("time")
+    expect(times).to_have_text(
+        [re.compile(r"^\d{4}-\d{2}-\d{2} - \d{2}:\d{2}:\d{2}$")] * 8
+    )
+    parsed = [
+        datetime.strptime(text, "%Y-%m-%d - %H:%M:%S")
+        for text in times.all_inner_texts()
+    ]
+    years, _, _, weeks, days, _, minutes, seconds = parsed
+    base = seconds + timedelta(seconds=2)
+    assert years.year == base.year - 2
+    assert base - weeks == timedelta(weeks=2)
+    assert base - days == timedelta(days=2)
+    assert base - minutes == timedelta(minutes=2)
+```
+
 ### Locales
 
 Each `rx.moment` defaults to English. Set `locale` on a component to render it
@@ -183,6 +277,21 @@ rx.vstack(
     rx.moment(MomentState.date_now, format="dddd D MMMM YYYY"),
     rx.moment(MomentState.date_now, format="dddd D MMMM YYYY", locale="fr"),
 )
+```
+
+```python test
+def test_moment_locales(demo):
+    english, french = demo.locator("time").all()
+    expect(english).to_have_text(
+        re.compile(
+            r"^(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day \d{1,2} [A-Z][a-z]+ \d{4}$"
+        )
+    )
+    expect(french).to_have_text(
+        re.compile(
+            r"^(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche) \d{1,2} \w+ \d{4}$"
+        )
+    )
 ```
 
 ### Shared defaults
@@ -202,6 +311,11 @@ def moment_provider_example():
         format="D MMM YYYY",
         timezone="Europe/Paris",
     )
+```
+
+```python test
+def test_moment_provider_defaults(demo):
+    expect(demo.locator("time")).to_have_text(["14 mars 2024", "14 Mar 2024"])
 ```
 
 ### Additional react-moment 2.x options
@@ -231,6 +345,16 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_moment_timezones(demo):
+    times = demo.locator("time")
+    expect(times).to_have_text(
+        [re.compile(r"^\w{3} \w{3} \d{2} \d{4} \d{2}:\d{2}:\d{2} GMT[+-]\d{4}$")] * 3
+    )
+    # Los Angeles, Paris and Tokyo each show a different local time.
+    assert len(set(times.all_inner_texts())) == 3
+```
+
 ### Client-side periodic update
 
 If a date is not passed to `rx.moment`, it will use the client's current time.
@@ -239,6 +363,13 @@ If you want to update the date every second, you can use the `interval` prop.
 
 ```python demo
 rx.moment(interval=1000, format="HH:mm:ss")
+```
+
+```python test
+def test_moment_interval_ticks(demo):
+    time = demo.locator("time")
+    expect(time).to_have_text(re.compile(r"^\d{2}:\d{2}:\d{2}$"))
+    expect(time).not_to_have_text(time.inner_text())
 ```
 
 The `on_change` event fires when the component mounts and whenever the date is updated.
@@ -275,4 +406,16 @@ def moment_live_example():
             on_change=MomentLiveState.set_updating,
         ),
     )
+```
+
+```python test
+def test_moment_on_change_and_live_switch(page, demo):
+    time = demo.locator("time")
+    before = time.inner_text()
+    switch = demo.get_by_role("switch")
+    switch.click()
+    expect(switch).to_be_checked()
+    # Every 5 second tick updates the time and fires on_change.
+    expect(time).not_to_have_text(before, timeout=10000)
+    expect(page.get_by_text(re.compile(r"^Date updated: ")).first).to_be_visible()
 ```

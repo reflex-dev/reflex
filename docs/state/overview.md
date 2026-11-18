@@ -60,7 +60,7 @@ backend names such as `_count` remain supported.
 
 These are the main concepts to understand how state works in Reflex:
 
-```python eval
+```python eval notest
 rx.grid(
     definition(
         "Base Var",
@@ -151,6 +151,15 @@ def index():
         color=ExampleState.color,
         _hover={"cursor": "pointer"},
     )
+```
+
+```python test
+def test_click_cycles_heading_color(demo):
+    heading = demo.get_by_role("heading", name="Welcome to Reflex!")
+    heading.click()
+    expect(heading).to_have_css("color", "rgb(255, 0, 0)")
+    heading.click()
+    expect(heading).to_have_css("color", "rgb(0, 128, 0)")
 ```
 
 The base vars are `colors` and `index`. They are the only vars in the app that

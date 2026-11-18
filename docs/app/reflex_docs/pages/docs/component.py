@@ -940,6 +940,18 @@ def component_docs(
     )
 
 
+def low_level_route(route: str) -> str:
+    """Return the route of a component's low-level docs page.
+
+    Args:
+        route: The route of the component's high-level docs page.
+
+    Returns:
+        The low-level page route.
+    """
+    return route.rstrip("/") + "/low/"
+
+
 def multi_docs(
     path: str,
     virtual_path: str,
@@ -1089,7 +1101,7 @@ def multi_docs(
     )
 
     @docpage(
-        set_path=path.rstrip("/") + "/low/",
+        set_path=low_level_route(path),
         t=title + " (Low Level)",
         description=ll_description,
         image=image,

@@ -34,3 +34,12 @@ def json_input_example():
         width="300px",
     )
 ```
+
+```python test
+def test_json_is_formatted_on_blur(demo):
+    box = demo.get_by_role("textbox")
+    expect(demo.get_by_text("Please enter valid JSON data.")).to_be_visible()
+    box.fill('{"a":1}')
+    box.blur()
+    expect(box).to_have_value('{\n  "a": 1\n}')
+```

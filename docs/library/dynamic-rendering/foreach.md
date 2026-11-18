@@ -48,6 +48,19 @@ def foreach_example():
     )
 ```
 
+```python test
+def test_foreach_renders_each_color(demo):
+    labels = demo.locator(".rt-Text")
+    colors = ["#E5484D", "#12A594", "#3E63DD", "#AD5700", "#F76B15", "#8E4EC6"]
+    expect(labels).to_have_text(colors)
+    expect(labels.first.locator("..")).to_have_css(
+        "background-color", "rgb(229, 72, 77)"
+    )
+    expect(labels.last.locator("..")).to_have_css(
+        "background-color", "rgb(142, 78, 198)"
+    )
+```
+
 The function can also take an index as a second argument.
 
 ```python demo exec
@@ -61,6 +74,15 @@ def foreach_example_index():
             ForeachState.colors, lambda color, index: colored_box_index(color, index)
         ),
         columns="2",
+    )
+```
+
+```python test
+def test_foreach_with_index(demo):
+    labels = demo.locator(".rt-Text")
+    expect(labels).to_have_text(["0", "1", "2", "3", "4", "5"])
+    expect(labels.first.locator("..")).to_have_css(
+        "background-color", "rgb(229, 72, 77)"
     )
 ```
 
@@ -89,6 +111,14 @@ def display_row(row: rx.Var[list[str]]):
 
 def nested_foreach_example():
     return rx.vstack(rx.foreach(NestedForeachState.numbers, display_row))
+```
+
+```python test
+def test_foreach_nested_lists(demo):
+    rows = demo.locator(".rt-Flex.rt-r-fd-row")
+    expect(rows).to_have_count(3)
+    for i, row in enumerate([["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"]]):
+        expect(rows.nth(i).locator("> div")).to_have_text(row)
 ```
 
 Below is a more complex example of foreach within a todo list.
@@ -164,6 +194,23 @@ def todo_example():
     )
 ```
 
+```python test
+def test_foreach_todo_list(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Todos")
+    items = demo.get_by_role("listitem")
+    expect(items.locator("p")).to_have_text(["Write Code", "Sleep", "Have Fun"])
+    demo.get_by_placeholder("Add a todo...").fill("Learn Reflex")
+    demo.get_by_role("button", name="Add").click()
+    expect(items.locator("p")).to_have_text([
+        "Write Code",
+        "Sleep",
+        "Have Fun",
+        "Learn Reflex",
+    ])
+    items.filter(has_text="Sleep").get_by_role("button", name="Done").click()
+    expect(items.locator("p")).to_have_text(["Write Code", "Have Fun", "Learn Reflex"])
+```
+
 ## Keys
 
 By default, `rx.foreach` keys each rendered item by its index, so React matches the rendered components to items by position.
@@ -194,6 +241,18 @@ def foreach_dict_example():
     return rx.grid(
         rx.foreach(SimpleDictForeachState.color_chart, display_color), columns="2"
     )
+```
+
+```python test
+def test_foreach_dict(demo):
+    labels = demo.locator(".rt-Text")
+    expect(labels).to_have_text(["1", "2", "3"])
+    for i, rgb in enumerate([
+        "rgb(62, 99, 221)",
+        "rgb(229, 72, 77)",
+        "rgb(18, 165, 148)",
+    ]):
+        expect(labels.nth(i).locator("..")).to_have_css("background-color", rgb)
 ```
 
 Now let's show a more complex example with dicts using the color example.
@@ -228,6 +287,21 @@ def foreach_complex_dict_example():
         columns="3",
         spacing="4",
     )
+```
+
+```python test
+def test_foreach_complex_dict(demo):
+    expect(demo.locator(".rt-Text")).to_have_text([
+        "#8E4EC6",
+        "#E5484D",
+        "#3E63DD",
+        "#F76B15",
+        "#AD5700",
+        "#E5484D",
+        "#12A594",
+        "#3E63DD",
+        "#AD5700",
+    ])
 ```
 
 ## API Reference

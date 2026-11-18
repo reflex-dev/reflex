@@ -85,6 +85,13 @@ rx.data_editor(
 )
 ```
 
+```python test
+def test_grid_draws_header_and_six_rows(demo):
+    # The grid is drawn on a canvas: a 36px header plus six 34px rows.
+    canvas = demo.get_by_test_id("data-grid-canvas")
+    expect(canvas).to_have_css("height", "240px")
+```
+
 ```python
 columns: list[dict[str, str]] = [
     {
@@ -248,12 +255,28 @@ Here we define a State, as shown below, that allows us to print the location of 
 rx.heading(DataEditorState_HP.clicked_data, as_="h2")
 ```
 
+```python test
+def test_heading_starts_without_a_cell(demo):
+    expect(demo.get_by_role("heading", level=2)).to_have_text("Cell clicked:")
+```
+
 ```python demo box
 rx.data_editor(
     columns=DataEditorState_HP.cols,
     data=DataEditorState_HP.data,
     on_cell_clicked=DataEditorState_HP.click_cell,
 )
+```
+
+```python test
+def test_clicking_a_cell_reports_its_position(demo, page):
+    grid = demo.get_by_test_id("data-grid-canvas").bounding_box()
+    # The header canvas, two rows tall with the "Data" group above the columns.
+    header = demo.locator("canvas").nth(1).bounding_box()["height"]
+    # Click the "Name" column of the second row (34px rows below the header).
+    page.mouse.click(grid["x"] + 200, grid["y"] + header + 34 + 17)
+    heading = page.get_by_role("heading", name=re.compile("^Cell clicked:"))
+    expect(heading).to_have_text("Cell clicked: [1, 1]")
 ```
 
 ```python
@@ -431,6 +454,14 @@ rx.data_editor(
     theme=DataEditorTheme(**dark_theme),
     height="30vh",
 )
+```
+
+```python test
+def test_dark_theme_is_applied(demo):
+    themed = demo.locator('[style*="--gdg-bg-cell: #16161b"]')
+    expect(themed).to_have_count(1)
+    expect(themed).to_have_css("--gdg-accent-color", "#8c96ff")
+    expect(demo.get_by_test_id("data-grid-canvas")).to_be_visible()
 ```
 
 ```python

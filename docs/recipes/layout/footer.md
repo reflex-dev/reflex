@@ -109,6 +109,34 @@ def footer() -> rx.Component:
     )
 ```
 
+```python test
+def test_basic_footer(demo):
+    expect(demo.get_by_role("heading")).to_have_text([
+        "Reflex",
+        "PRODUCTS",
+        "RESOURCES",
+    ])
+    expect(demo.get_by_text("© 2024 Reflex, Inc")).to_be_visible()
+    expect(demo.get_by_role("link")).to_have_text([
+        "Web Design",
+        "Web Development",
+        "E-commerce",
+        "Content Management",
+        "Mobile Apps",
+        "Blog",
+        "Case Studies",
+        "Whitepapers",
+        "Webinars",
+        "E-books",
+        "Privacy Policy",
+        "Terms of Service",
+        "IG",
+        "X",
+        "f",
+        "in",
+    ])
+```
+
 ## Newsletter form
 
 ```python demo exec
@@ -221,6 +249,16 @@ def footer_newsletter() -> rx.Component:
     )
 ```
 
+```python test
+def test_newsletter_footer(demo):
+    expect(demo.get_by_role("heading")).to_have_text(["PRODUCTS", "RESOURCES"])
+    expect(demo.get_by_text("JOIN OUR NEWSLETTER")).to_be_visible()
+    email = demo.get_by_placeholder("Your email address")
+    email.fill("ada@reflex.dev")
+    expect(email).to_have_value("ada@reflex.dev")
+    expect(demo.get_by_role("link")).to_have_count(14)
+```
+
 ## Three columns
 
 ```python demo exec
@@ -329,4 +367,34 @@ def footer_three_columns() -> rx.Component:
         ),
         width="100%",
     )
+```
+
+```python test
+def test_three_column_footer(demo):
+    expect(demo.get_by_role("heading")).to_have_text([
+        "PRODUCTS",
+        "RESOURCES",
+        "ABOUT US",
+    ])
+    expect(demo.get_by_role("link")).to_have_text([
+        "Web Design",
+        "Web Development",
+        "E-commerce",
+        "Content Management",
+        "Mobile Apps",
+        "Blog",
+        "Case Studies",
+        "Whitepapers",
+        "Webinars",
+        "E-books",
+        "Our Team",
+        "Careers",
+        "Contact Us",
+        "Privacy Policy",
+        "Terms of Service",
+        "IG",
+        "X",
+        "f",
+        "in",
+    ])
 ```

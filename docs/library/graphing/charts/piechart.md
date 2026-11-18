@@ -42,6 +42,19 @@ def pie_simple():
     )
 ```
 
+```python test
+def test_pie_labels_each_slice_value(demo):
+    expect(demo.locator(".recharts-pie-sector")).to_have_count(6)
+    expect(demo.locator(".recharts-pie-label-text")).to_have_text([
+        "400",
+        "300",
+        "300",
+        "200",
+        "278",
+        "189",
+    ])
+```
+
 We can also add two pies on one chart by using two `rx.recharts.pie` components.
 
 In this example `inner_radius` and `outer_radius` props are used. They define the doughnut shape of a pie chart: `inner_radius` creates the hollow center (use "0%" for a full pie), while `outer_radius` sets the overall size. The `padding_angle` prop, used on the green pie below, adds space between pie slices, enhancing visibility of individual segments.
@@ -88,6 +101,16 @@ def pie_double():
     )
 ```
 
+```python test
+def test_double_pie_shows_tooltip_for_inner_ring(demo):
+    pies = demo.locator(".recharts-pie")
+    expect(pies).to_have_count(2)
+    expect(pies.first.locator(".recharts-pie-sector")).to_have_count(6)
+    expect(pies.last.locator(".recharts-pie-sector")).to_have_count(6)
+    pies.last.locator(".recharts-pie-sector").nth(3).hover()
+    expect(demo.locator(".recharts-tooltip-item")).to_have_text("Group D : 9800")
+```
+
 ## Coloring Slices Individually
 
 Instead of storing a `fill` color in every data entry, you can pass `rx.recharts.cell` components as children of `rx.recharts.pie` — one cell per slice. Using `rx.foreach` with the index argument lets you cycle through a color palette, so the palette lives in one place and works for any number of slices. This example also combines `inner_radius` and `padding_angle` to render the pie as a donut, and uses `stroke` with `custom_attrs={"strokeWidth": 2}` to draw a separator around each slice. (Passing `stroke_width` directly is not forwarded to the underlying SVG element, so the width goes through `custom_attrs`.)
@@ -126,6 +149,16 @@ def pie_cells():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_pie_cells_color_each_browser(demo):
+    sectors = demo.locator(".recharts-pie-sector path")
+    expect(sectors).to_have_count(5)
+    for i, color in enumerate(["#6366F1", "#8B5CF6", "#A855F7", "#D946EF", "#EC4899"]):
+        expect(sectors.nth(i)).to_have_attribute("fill", color)
+    sectors.first.hover()
+    expect(demo.locator(".recharts-tooltip-item")).to_have_text("Chrome : 275")
 ```
 
 ## Gradient Fills
@@ -196,6 +229,20 @@ def pie_gradient():
     )
 ```
 
+```python test
+def test_pie_cells_use_radial_gradients(demo):
+    sectors = demo.locator(".recharts-pie-sector path")
+    expect(sectors).to_have_count(4)
+    for i, gradient_id in enumerate([
+        "pie_grad_a",
+        "pie_grad_b",
+        "pie_grad_c",
+        "pie_grad_d",
+    ]):
+        expect(demo.locator(f"radialGradient#{gradient_id} stop")).to_have_count(2)
+        expect(sectors.nth(i)).to_have_attribute("fill", f"url(#{gradient_id})")
+```
+
 ## Dynamic Data
 
 Chart data tied to a State var causes the chart to automatically update when the
@@ -263,6 +310,20 @@ def dynamic_pie_example():
         width="100%",
         height="15em",
     )
+```
+
+```python test
+def test_resource_buttons_update_pie(demo):
+    labels = demo.locator(".recharts-pie-label-text")
+    expect(labels).to_have_text(["1", "1", "1", "1"])
+    trophy = demo.get_by_text("🏆")
+    expect(trophy).to_have_text("🏆1")
+    demo.get_by_role("button", name="+").first.click()
+    demo.get_by_role("button", name="+").first.click()
+    expect(trophy).to_have_text("🏆3")
+    expect(labels).to_have_text(["3", "1", "1", "1"])
+    demo.get_by_role("button", name="-").nth(1).click()
+    expect(demo.get_by_text("🪵")).to_have_text("🪵0")
 ```
 
 ## Hover Events
@@ -339,6 +400,17 @@ def pie_hover():
         position="relative",
         width="100%",
     )
+```
+
+```python test
+def test_hovering_a_slice_shows_its_value(demo, page):
+    expect(demo.get_by_text("Hover a slice")).to_be_visible()
+    # The thin "Ruby" slice is hovered at its own middle, not the donut hole.
+    demo.locator(".recharts-pie-sector").last.hover()
+    expect(demo.get_by_role("heading")).to_have_text("5")
+    expect(demo.get_by_text("Ruby")).to_be_visible()
+    page.mouse.move(0, 0, steps=5)
+    expect(demo.get_by_text("Hover a slice")).to_be_visible()
 ```
 
 ## Related Charts

@@ -28,7 +28,7 @@ Or open the **Auth** tab and select **Add sign-in to this app**.
 import reflex as rx
 ```
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/app_auth_empty_state.webp",
     alt="The Auth tab of an app with no sign-in configured. A centred card shows a person icon, the heading 'No sign-in yet', explanatory text about letting people sign in with their Reflex account, and a primary button labelled 'Add sign-in to this app'.",
@@ -59,7 +59,7 @@ The **Who can sign in** setting decides which accounts the app will admit:
 
 **Anyone** is what every app starts on. The other three require the Pro or Enterprise plan.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/app_auth_audience_picker.webp",
     alt="The open 'Who can sign in' menu, listing Anyone, Project members, Invite only and Just the team. Anyone is selected with a tick; the other three are dimmed and each carries a small Pro badge.",
@@ -94,7 +94,7 @@ The **Users** section lists everyone who has signed in, with a count beside the 
 
 Search by email to filter the list, and page through it when the app has more people than one page holds.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/app_auth_users_table.webp",
     alt="The Users section of the Auth tab showing a table of five signed-in people with Person, First consented, Last active and Status columns. Above it are a heading reading 'Users', a count of people, a search box with placeholder 'Search by email...', and an 'Export CSV' button.",
@@ -126,7 +126,7 @@ People sign in on a Reflex-hosted page. The **Sign-in page** section decides wha
 - **Note** — optional, shown under the heading. Use it for something the person needs to know before they sign in, such as which address to use.
 - **Logo** — shown beside the name.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/app_auth_sign_in_page.webp",
     alt="The 'Sign-in page' section of the Auth tab, with a Display name field defaulting to the app's name, a Note field showing the placeholder about using a work address, an empty logo drop area with an Upload logo button, and a Save button.",

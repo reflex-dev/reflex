@@ -99,7 +99,7 @@ Store the Reflex authentication token and project ID as GitHub repository secret
 
 ### Inputs
 
-```python eval
+```python eval notest
 rx.table.root(
     rx.table.header(
         rx.table.row(

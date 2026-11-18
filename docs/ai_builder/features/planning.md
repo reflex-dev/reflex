@@ -18,7 +18,7 @@ Use a plan for work that affects several pages, integrations, or systems. Small,
 
 ## Review and Adjust the Plan
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/plan_mode.webp",
     alt="A populated implementation plan in Reflex Build",

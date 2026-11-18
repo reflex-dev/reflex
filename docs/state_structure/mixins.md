@@ -46,6 +46,14 @@ def counter_example():
     )
 ```
 
+```python test
+def test_mixin_counter_increments(demo):
+    expect(demo.get_by_role("heading")).to_have_text("App")
+    expect(demo.get_by_text("Count: 0", exact=True)).to_be_visible()
+    demo.get_by_role("button", name="Increment").click()
+    expect(demo.get_by_text("Count: 1", exact=True)).to_be_visible()
+```
+
 In this example, `MyState` automatically inherits the `count` variable, `count_display` computed variable, and `increment` event handler from `CounterMixin`.
 
 ## Multiple Mixin Inheritance
@@ -99,6 +107,20 @@ def multi_mixin_example():
     )
 ```
 
+```python test
+def test_multiple_mixins_combine(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Multi-Mixin App")
+    expect(demo.get_by_text("No logs yet")).to_be_visible()
+    expect(demo.get_by_text("Last updated: ", exact=True)).to_be_visible()
+    demo.get_by_role("button", name="Increment & Log").click()
+    expect(demo.get_by_text("Count: 1", exact=True)).to_be_visible()
+    expect(demo.get_by_text("Count incremented to 1")).to_be_visible()
+    expect(demo.get_by_text(re.compile(r"^Last updated: "))).to_have_text(
+        re.compile(r"^Last updated: \d\d:\d\d:\d\d$")
+    )
+    expect(demo.get_by_text("No logs yet")).to_be_hidden()
+```
+
 ## Backend Variables in Mixins
 
 Mixins can also include backend variables (prefixed with `_`) that are not sent to the client:
@@ -126,6 +148,13 @@ def database_example():
         spacing="4",
         align="center",
     )
+```
+
+```python test
+def test_backend_mixin_var_stays_on_server(demo):
+    expect(demo.get_by_role("heading")).to_have_text("User Management")
+    demo.get_by_role("button", name="Fetch Users").click()
+    expect(demo.get_by_text("User count: 0", exact=True)).to_be_visible()
 ```
 
 Backend variables are useful for storing sensitive data, database connections, or other server-side state that shouldn't be exposed to the client.
@@ -172,6 +201,17 @@ def formatting_example():
     )
 ```
 
+```python test
+def test_mixin_computed_vars_format_price(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Product: Widget")
+    expect(demo.get_by_text("Price: $0.00")).to_be_visible()
+    expect(demo.get_by_text("Positive: false")).to_be_visible()
+    demo.get_by_placeholder("Enter price").fill("12.5")
+    demo.get_by_placeholder("Enter price").blur()
+    expect(demo.get_by_text("Price: $12.50")).to_be_visible()
+    expect(demo.get_by_text("Positive: true")).to_be_visible()
+```
+
 ## Nested Mixin Inheritance
 
 Mixins can inherit from other mixins to create hierarchical functionality:
@@ -202,6 +242,16 @@ def nested_mixin_example():
         spacing="4",
         align="center",
     )
+```
+
+```python test
+def test_nested_mixin_values(demo):
+    expect(demo.locator("p")).to_have_text([
+        "Base: base",
+        "Extended: extended",
+        "Combined: base-extended",
+        "Final: final",
+    ])
 ```
 
 This pattern allows you to build complex functionality by composing simpler mixins.
@@ -338,6 +388,22 @@ def validation_example():
         align="center",
         width="300px",
     )
+```
+
+```python test
+def test_validation_mixin_reports_and_clears_errors(demo):
+    demo.get_by_role("button", name="Submit").click()
+    expect(demo.get_by_text("Name is required")).to_be_visible()
+    expect(demo.get_by_text("Invalid email format")).to_be_visible()
+    expect(demo.get_by_text("Message is required")).to_be_visible()
+    demo.get_by_placeholder("Name").fill("Ada")
+    demo.get_by_placeholder("Email").fill("ada@example.com")
+    demo.get_by_placeholder("Message").fill("Hello")
+    demo.get_by_role("button", name="Submit").click()
+    expect(demo.get_by_text("Name is required")).to_be_hidden()
+    expect(demo.get_by_text("Invalid email format")).to_be_hidden()
+    expect(demo.get_by_placeholder("Name")).to_have_value("")
+    expect(demo.get_by_placeholder("Message")).to_have_value("")
 ```
 
 By using state mixins, you can create modular, reusable state logic that keeps your application organized and reduces code duplication.

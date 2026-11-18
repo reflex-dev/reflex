@@ -15,6 +15,11 @@ Represents keyboard input or a hotkey.
 rx.text.kbd("Shift + Tab")
 ```
 
+```python test
+def test_kbd_renders_hotkey(demo):
+    expect(demo.locator("kbd")).to_have_text("Shift + Tab")
+```
+
 ## Size
 
 Use the `size` prop to control text size. This prop also provides correct line height and corrective letter spacing—as text size increases, the relative line height and letter spacing decrease.
@@ -33,4 +38,15 @@ rx.flex(
     direction="column",
     spacing="3",
 )
+```
+
+```python test
+def test_kbd_sizes_increase(demo):
+    keys = demo.locator("kbd")
+    expect(keys).to_have_count(9)
+    expect(keys).to_have_text(["Shift + Tab"] * 9)
+    sizes = keys.evaluate_all(
+        "els => els.map(e => parseFloat(getComputedStyle(e).fontSize))"
+    )
+    assert sizes == sorted(set(sizes))
 ```

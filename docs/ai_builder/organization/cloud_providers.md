@@ -40,7 +40,7 @@ Connecting Google Cloud takes two steps:
 
 Reflex validates the details and marks the provider connected.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/cloud-providers/connect_gcp.webp",
     alt="The Connect your GCP account dialog with fields for the service account key, project number, and region",

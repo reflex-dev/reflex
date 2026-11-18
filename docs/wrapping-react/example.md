@@ -411,3 +411,14 @@ rx.vstack(
     width="100%",
 )
 ```
+
+```python test
+def test_add_and_clear_nodes(demo):
+    nodes = demo.locator(".react-flow__node")
+    expect(nodes).to_have_text(["150", "25", "5"])
+    expect(demo.get_by_role("button", name=re.compile("^Edge from"))).to_have_count(2)
+    demo.get_by_role("button", name="Add node").click()
+    expect(nodes).to_have_text(["150", "25", "5", "4"])
+    demo.get_by_role("button", name="Clear graph").click()
+    expect(nodes).to_have_count(0)
+```

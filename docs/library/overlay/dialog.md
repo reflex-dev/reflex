@@ -75,6 +75,18 @@ rx.dialog.root(
 )
 ```
 
+```python test
+def test_dialog_opens_and_closes(demo, page):
+    demo.get_by_role("button", name="Open Dialog").click()
+    dialog = page.get_by_role("dialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Welcome to Reflex!")
+    expect(
+        dialog.get_by_text("This is a dialog component. You can render anything")
+    ).to_be_visible()
+    dialog.get_by_role("button", name="Close Dialog").click()
+    expect(dialog).to_be_hidden()
+```
+
 ## In context examples
 
 ```python demo
@@ -108,6 +120,19 @@ rx.dialog.root(
         ),
     ),
 )
+```
+
+```python test
+def test_dialog_edit_profile(demo, page):
+    demo.get_by_role("button", name="Edit Profile").click()
+    dialog = page.get_by_role("dialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Edit Profile")
+    expect(dialog.get_by_placeholder("Enter your name")).to_have_value("Freja Johnson")
+    expect(dialog.get_by_placeholder("Enter your email")).to_have_value(
+        "freja@example.com"
+    )
+    dialog.get_by_role("button", name="Save").click()
+    expect(dialog).to_be_hidden()
 ```
 
 ```python demo
@@ -153,6 +178,24 @@ rx.dialog.root(
 )
 ```
 
+```python test
+def test_dialog_users_table(demo, page):
+    demo.get_by_role("button", name="View users").click()
+    dialog = page.get_by_role("dialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Users")
+    expect(dialog.get_by_role("columnheader")).to_have_text([
+        "Full Name",
+        "Email",
+        "Group",
+    ])
+    expect(dialog.get_by_role("rowheader")).to_have_text([
+        "Danilo Rosa",
+        "Zahra Ambessa",
+    ])
+    dialog.get_by_role("button", name="Close").click()
+    expect(dialog).to_be_hidden()
+```
+
 ## Events when the Dialog opens or closes
 
 The `on_open_change` event is called when the `open` state of the dialog changes. It is used in conjunction with the `open` prop, which is passed to the event handler.
@@ -191,6 +234,26 @@ def dialog_example():
         direction="column",
         spacing="3",
     )
+```
+
+```python test
+def test_dialog_on_open_change_counts(demo, page):
+    # The open modal hides the page from the accessibility tree.
+    headings = demo.get_by_role("heading", include_hidden=True)
+    expect(headings).to_have_text([
+        "Number of times dialog opened or closed: 0",
+        "Dialog open: false",
+    ])
+    demo.get_by_role("button", name="Open Dialog").click()
+    expect(headings).to_have_text([
+        "Number of times dialog opened or closed: 1",
+        "Dialog open: true",
+    ])
+    page.get_by_role("dialog").get_by_role("button", name="Close Dialog").click()
+    expect(headings).to_have_text([
+        "Number of times dialog opened or closed: 2",
+        "Dialog open: false",
+    ])
 ```
 
 Check out the [menu docs](/docs/library/overlay/dropdown-menu/) for an example of opening a dialog from within a dropdown menu.
@@ -279,4 +342,16 @@ def index() -> rx.Component:
             max_width="450px",
         ),
     )
+```
+
+```python test
+def test_dialog_form_submits(demo, page):
+    demo.get_by_role("button", name="Add User").click()
+    dialog = page.get_by_role("dialog")
+    expect(dialog.get_by_role("heading")).to_have_text("Add New User")
+    dialog.get_by_placeholder("User Name").fill("Grace")
+    dialog.get_by_placeholder("user@reflex.dev").fill("grace@example.com")
+    dialog.get_by_role("button", name="Submit").click()
+    expect(dialog).to_be_hidden()
+    expect(page.get_by_text("User Grace has been added.")).to_be_visible()
 ```

@@ -140,6 +140,15 @@ def github_component_example():
     return GithubComponent.create()
 ```
 
+```python test
+def test_github_counter_increments(demo):
+    expect(demo.get_by_role("heading", name="Counter")).to_be_visible()
+    expect(demo.locator("strong")).to_have_text("0")
+    demo.get_by_role("button", name="Increment by one").click()
+    demo.get_by_role("button", name="Increment by one").click()
+    expect(demo.locator("strong")).to_have_text("2")
+```
+
 Although more complicated, this approach is useful when the local components
 have additional dependencies or build steps required to prepare the component
 for use.

@@ -62,3 +62,24 @@ def client_storage_example():
         ),
     )
 ```
+
+```python test
+def test_client_storage_persists_across_reload(demo, page):
+    inputs = demo.get_by_role("textbox")
+    expect(inputs).to_have_count(3)
+    inputs.nth(0).fill("cookie value")
+    inputs.nth(1).fill("local value")
+    inputs.nth(2).fill("custom value")
+    inputs.nth(2).blur()
+    # Wait for the backend to echo the values into browser storage.
+    page.wait_for_function(
+        "document.cookie.includes('CustomNamedCookie=')"
+        " && Object.values(localStorage).includes('local value')"
+    )
+    page.reload()
+    expect(inputs.nth(0)).to_have_value("cookie value")
+    expect(inputs.nth(1)).to_have_value("local value")
+    expect(inputs.nth(2)).to_have_value("custom value")
+    cookies = {c["name"]: c["value"] for c in page.context.cookies()}
+    assert cookies["CustomNamedCookie"] == "custom%20value"
+```

@@ -48,6 +48,27 @@ def line_simple():
     )
 ```
 
+```python test
+def test_line_chart_draws_pv_and_uv(demo):
+    expect(demo.locator(".recharts-line")).to_have_count(2)
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "Page A",
+        "Page B",
+        "Page C",
+        "Page D",
+        "Page E",
+        "Page F",
+        "Page G",
+    ])
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "0",
+        "2500",
+        "5000",
+        "7500",
+        "10000",
+    ])
+```
+
 ## Example with Props
 
 Our second example uses exactly the same data as our first example, except now we add some extra features to our line graphs. We add a `type_` prop to `rx.recharts.line` to style the lines differently. In addition, we add an `rx.recharts.cartesian_grid` to get a grid in the background, an `rx.recharts.legend` to give us a legend for our graphs and an `rx.recharts.graphing_tooltip` to add a box with text that appears when you pause the mouse pointer on an element in the graph.
@@ -85,6 +106,18 @@ def line_features():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_line_chart_tooltip_shows_hovered_values(demo):
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["pv", "uv"])
+    demo.locator(".recharts-line-dot").nth(2).hover()
+    tooltip = demo.locator(".recharts-default-tooltip")
+    expect(tooltip.locator(".recharts-tooltip-label")).to_have_text("Page C")
+    expect(tooltip.locator(".recharts-tooltip-item")).to_have_text([
+        "pv : 9800",
+        "uv : 2000",
+    ])
 ```
 
 ## Axis Labels
@@ -135,6 +168,12 @@ def line_axis_labels():
     )
 ```
 
+```python test
+def test_line_chart_axes_have_labels(demo):
+    expect(demo.locator(".recharts-line")).to_have_count(1)
+    expect(demo.locator(".recharts-label")).to_have_text(["Page", "Visits"])
+```
+
 ## Layout
 
 The `layout` prop allows you to set the orientation of the graph to be vertical or horizontal. The `margin` prop defines the spacing around the graph,
@@ -173,6 +212,20 @@ def line_vertical():
         height=300,
         width="100%",
     )
+```
+
+```python test
+def test_vertical_line_chart_lists_pages_on_y_axis(demo):
+    expect(demo.locator(".recharts-line")).to_have_count(2)
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "Page A",
+        "Page B",
+        "Page C",
+        "Page D",
+        "Page E",
+        "Page F",
+        "Page G",
+    ])
 ```
 
 ## Dynamic Data
@@ -242,6 +295,22 @@ def line_dynamic():
         ),
         width="100%",
     )
+```
+
+```python test
+def test_munge_button_and_selects_update_lines(demo, page):
+    pv_line = demo.locator(".recharts-line-curve").first
+    expect(pv_line).to_have_attribute("d", re.compile(r"\S"))
+    original = pv_line.get_attribute("d")
+    demo.get_by_role("button", name="Munge Data").click()
+    expect(pv_line).not_to_have_attribute("d", original)
+    munged = pv_line.get_attribute("d")
+    pv_select = demo.get_by_role("combobox").first
+    expect(pv_select).to_have_text("monotone")
+    pv_select.click()
+    page.get_by_role("option", name="step", exact=True).click()
+    expect(pv_select).to_have_text("step")
+    expect(pv_line).not_to_have_attribute("d", munged)
 ```
 
 To learn how to use the `sync_id`, `x_axis_id` and `y_axis_id` props check out the of the area chart [documentation](/docs/library/graphing/charts/areachart/), where these props are all described with examples.

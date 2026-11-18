@@ -106,6 +106,18 @@ rx.flex(
 )
 ```
 
+```python test
+def test_stack_row_and_column(demo):
+    boxes = demo.get_by_text("Example", exact=True)
+    expect(boxes).to_have_count(6)
+    rects = [boxes.nth(i).bounding_box() for i in range(6)]
+    row, column = rects[:3], rects[3:]
+    assert len({rect["y"] for rect in row}) == 1
+    assert [rect["x"] for rect in row] == sorted({rect["x"] for rect in row})
+    assert len({rect["x"] for rect in column}) == 1
+    assert [rect["y"] for rect in column] == sorted({rect["y"] for rect in column})
+```
+
 ## Hstack
 
 ```python demo
@@ -141,6 +153,21 @@ rx.hstack(
     ),
     width="100%",
 )
+```
+
+```python test
+def test_hstack_lays_out_horizontally(demo):
+    boxes = demo.get_by_text("Example", exact=True)
+    expect(boxes).to_have_count(5)
+    rects = [boxes.nth(i).bounding_box() for i in range(5)]
+    assert [rect["x"] for rect in rects] == sorted({rect["x"] for rect in rects})
+    # Side by side: every box shares vertical space with the first.
+    first = rects[0]
+    for rect in rects:
+        assert rect["y"] < first["y"] + first["height"]
+        assert first["y"] < rect["y"] + rect["height"]
+    # The 60% box is the widest; the 10% boxes keep their text's minimum width.
+    assert rects[4]["width"] > max(rect["width"] for rect in rects[:4])
 ```
 
 ## Vstack
@@ -180,6 +207,17 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_vstack_lays_out_vertically(demo):
+    boxes = demo.get_by_text("Example", exact=True)
+    expect(boxes).to_have_count(5)
+    rects = [boxes.nth(i).bounding_box() for i in range(5)]
+    for above, below in zip(rects, rects[1:]):
+        assert below["y"] >= above["y"] + above["height"]
+    for i, rect in enumerate(rects):
+        assert rect["width"] == pytest.approx((i + 1) * rects[0]["width"], rel=0.02)
+```
+
 ## Real World Example
 
 ```python demo
@@ -204,4 +242,14 @@ rx.hstack(
     ),
     gap="2em",
 )
+```
+
+```python test
+def test_hstack_real_world_columns(demo):
+    saving = demo.get_by_role("heading", name="Saving Money", level=2)
+    spending = demo.get_by_role("heading", name="Spending Money", level=2)
+    expect(demo.get_by_text("Saving money is an art")).to_be_visible()
+    expect(demo.get_by_text("Spending money is a balancing act")).to_be_visible()
+    assert saving.bounding_box()["y"] == spending.bounding_box()["y"]
+    assert spending.bounding_box()["x"] > saving.bounding_box()["x"]
 ```

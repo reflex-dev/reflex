@@ -81,6 +81,15 @@ rx.popover.root(
 )
 ```
 
+```python test
+def test_popover_opens_and_closes(demo, page):
+    demo.get_by_role("button", name="Popover").click()
+    popover = page.get_by_role("dialog")
+    expect(popover.get_by_text("Simple Example")).to_be_visible()
+    popover.get_by_role("button", name="Close").click()
+    expect(popover).to_be_hidden()
+```
+
 ## Examples in Context
 
 ```python demo
@@ -109,6 +118,17 @@ rx.popover.root(
 )
 ```
 
+```python test
+def test_popover_comment(demo, page):
+    demo.get_by_role("button", name="Comment").click()
+    popover = page.get_by_role("dialog")
+    popover.get_by_placeholder("Write a comment…").fill("Looks good")
+    popover.get_by_role("checkbox", name="Send to group").click()
+    expect(popover.get_by_role("checkbox", name="Send to group")).to_be_checked()
+    popover.get_by_role("button", name="Comment").click()
+    expect(popover).to_be_hidden()
+```
+
 ```python demo
 rx.popover.root(
     rx.popover.trigger(
@@ -134,6 +154,15 @@ rx.popover.root(
         style={"width": 360},
     ),
 )
+```
+
+```python test
+def test_popover_feedback(demo, page):
+    demo.get_by_role("button", name="Feedback").click()
+    popover = page.get_by_role("dialog")
+    expect(popover.get_by_placeholder("Write a comment…")).to_be_visible()
+    popover.get_by_role("button", name="Comment").click()
+    expect(popover).to_be_hidden()
 ```
 
 ## Popover with dynamic title
@@ -168,6 +197,14 @@ def index() -> rx.Component:
         ),
         rx.popover.content(rx.text("Success")),
     )
+```
+
+```python test
+def test_popover_dynamic_title(demo, page):
+    trigger = demo.get_by_role("button", name="EN")
+    expect(trigger).to_have_text("EN")
+    trigger.click()
+    expect(page.get_by_role("dialog")).to_have_text("Success")
 ```
 
 ## Events when the Popover opens or closes
@@ -211,4 +248,23 @@ def popover_example():
         direction="column",
         spacing="3",
     )
+```
+
+```python test
+def test_popover_on_open_change_counts(demo, page):
+    headings = demo.get_by_role("heading")
+    expect(headings).to_have_text([
+        "Number of times popover opened or closed: 0",
+        "Popover open: false",
+    ])
+    demo.get_by_role("button", name="Popover").click()
+    expect(headings).to_have_text([
+        "Number of times popover opened or closed: 1",
+        "Popover open: true",
+    ])
+    page.get_by_role("dialog").get_by_role("button", name="Close").click()
+    expect(headings).to_have_text([
+        "Number of times popover opened or closed: 2",
+        "Popover open: false",
+    ])
 ```

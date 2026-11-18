@@ -8,9 +8,18 @@ Tips:
 Examples:
 - Correct: WHITELISTED_PAGES = ["/getting-started/introduction"]
 - Incorrect: WHITELISTED_PAGES = ["/getting-started/introduction/"]
+
+The REFLEX_DOCS_WHITELIST environment variable, a comma-separated list of
+paths, replaces the list below, and set empty, builds all pages (the docs demo
+tests use it to compile only the pages they visit).
 """
 
+import os
+
 WHITELISTED_PAGES = []
+
+if (_env_pages := os.environ.get("REFLEX_DOCS_WHITELIST")) is not None:
+    WHITELISTED_PAGES = _env_pages.split(",") if _env_pages else []
 
 
 def _check_whitelisted_path(path: str):

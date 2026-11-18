@@ -15,7 +15,7 @@ Attach screenshots, documents, or sample data when the agent needs visual or fil
 
 An image is often the clearest way to communicate a layout, visual hierarchy, or specific UI issue:
 
-```python eval
+```python eval notest
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/image_prompt_attachment.webp",

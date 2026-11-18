@@ -36,3 +36,13 @@ def collapse_example():
         ),
     )
 ```
+
+```python test
+def test_toggle_collapse(demo):
+    text = demo.get_by_text("This is a collapsible section.")
+    expect(text).to_be_hidden()
+    demo.get_by_role("button", name="Toggle Collapse").click()
+    expect(text).to_be_visible()
+    demo.get_by_role("button", name="Toggle Collapse").click()
+    expect(text).to_be_hidden()
+```

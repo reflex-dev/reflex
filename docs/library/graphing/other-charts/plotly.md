@@ -39,6 +39,14 @@ def line_chart():
     )
 ```
 
+```python test
+def test_line_chart_shows_title_and_axes(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Life expectancy in Canada")
+    expect(demo.locator(".g-xtitle")).to_have_text("year")
+    expect(demo.locator(".g-ytitle")).to_have_text("lifeExp")
+    expect(demo.locator(".scatterlayer .trace")).to_have_count(1)
+```
+
 ## Plotly Express Chart Types
 
 [Plotly Express](https://plotly.com/python/plotly-express/) (`plotly.express`, imported as `px`) builds common chart types in a single line of Python, and every figure renders in Reflex with `rx.plotly`.
@@ -56,6 +64,12 @@ bar_fig = px.bar(
 
 def plotly_bar_chart():
     return rx.center(rx.plotly(width="100%", data=bar_fig))
+```
+
+```python test
+def test_bar_chart_has_a_legend_per_country(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Population of Oceania")
+    expect(demo.locator(".legendtext")).to_have_text(["Australia", "New Zealand"])
 ```
 
 ### Scatter Plot
@@ -77,6 +91,17 @@ def plotly_scatter_plot():
     return rx.center(rx.plotly(width="100%", data=scatter_fig))
 ```
 
+```python test
+def test_scatter_plot_colors_by_species(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Iris sepal dimensions")
+    expect(demo.locator(".legendtext")).to_have_text([
+        "setosa",
+        "versicolor",
+        "virginica",
+    ])
+    expect(demo.locator(".scatterlayer .point")).to_have_count(150)
+```
+
 ### Pie Chart
 
 Create a Plotly pie chart with `px.pie`:
@@ -88,6 +113,18 @@ pie_fig = px.pie(tips, values="tip", names="day", title="Tips by day")
 
 def plotly_pie_chart():
     return rx.center(rx.plotly(width="100%", data=pie_fig))
+```
+
+```python test
+def test_pie_chart_has_a_slice_per_day(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Tips by day")
+    expect(demo.locator(".slice")).to_have_count(4)
+    expect(demo.locator(".legendtext")).to_have_text([
+        "Sat",
+        "Sun",
+        "Thur",  # codespell:ignore
+        "Fri",
+    ])
 ```
 
 ### Heatmap
@@ -105,6 +142,13 @@ def plotly_heatmap():
     return rx.center(rx.plotly(width="100%", data=heatmap_fig))
 ```
 
+```python test
+def test_heatmap_renders(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Bill vs tip density heatmap")
+    expect(demo.locator(".heatmaplayer image")).to_have_count(1)
+    expect(demo.locator(".g-xtitle")).to_have_text("total_bill")
+```
+
 ### Histogram
 
 Create a Plotly histogram with `px.histogram`:
@@ -120,6 +164,13 @@ def plotly_histogram():
     return rx.center(rx.plotly(width="100%", data=histogram_fig))
 ```
 
+```python test
+def test_histogram_renders(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Distribution of total bills")
+    expect(demo.locator(".barlayer .trace")).to_have_count(1)
+    expect(demo.locator(".g-ytitle")).to_have_text("count")
+```
+
 ### Box Plot
 
 Create a Plotly box plot with `px.box`:
@@ -131,6 +182,17 @@ box_fig = px.box(box_data, x="day", y="total_bill", title="Total bill by day")
 
 def plotly_box_plot():
     return rx.center(rx.plotly(width="100%", data=box_fig))
+```
+
+```python test
+def test_box_plot_has_a_box_per_day(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Total bill by day")
+    expect(demo.locator(".xtick text")).to_have_text([
+        "Sun",
+        "Sat",
+        "Thur",  # codespell:ignore
+        "Fri",
+    ])
 ```
 
 ### Bubble Chart
@@ -156,6 +218,20 @@ def plotly_bubble_chart():
     return rx.center(rx.plotly(width="100%", data=bubble_fig))
 ```
 
+```python test
+def test_bubble_chart_colors_by_continent(demo):
+    expect(demo.locator(".gtitle")).to_have_text(
+        "GDP per capita vs life expectancy (2007)"
+    )
+    expect(demo.locator(".legendtext")).to_have_text([
+        "Asia",
+        "Europe",
+        "Africa",
+        "Americas",
+        "Oceania",
+    ])
+```
+
 ### Gantt Chart
 
 A Gantt chart is a type of bar chart that illustrates a project schedule: tasks are listed on the vertical axis, time intervals on the horizontal axis, and the width of each bar shows the duration of the activity. Create one with `px.timeline`:
@@ -175,6 +251,16 @@ def plotly_gantt_chart():
     return rx.center(rx.plotly(width="100%", data=gantt_fig))
 ```
 
+```python test
+def test_gantt_chart_lists_tasks_top_down(demo):
+    ticks = demo.locator(".ytick text")
+    expect(ticks).to_have_text(["Job C", "Job B", "Job A"])
+    expect(demo.locator(".barlayer .point")).to_have_count(3)
+    # The reversed axis puts the first task at the top.
+    job_a, job_c = ticks.last.bounding_box(), ticks.first.bounding_box()
+    assert job_a["y"] < job_c["y"]
+```
+
 ### Sunburst Chart
 
 Sunburst charts visualize hierarchical data spanning outwards radially from root to leaves: the root sits at the center and children are added to the outer rings. Create one with `px.sunburst`, defining the hierarchy with `names` and `parents`:
@@ -190,6 +276,12 @@ sunburst_fig = px.sunburst(family, names="character", parents="parent", values="
 
 def plotly_sunburst_chart():
     return rx.center(rx.plotly(width="100%", data=sunburst_fig))
+```
+
+```python test
+def test_sunburst_has_a_slice_per_character(demo):
+    expect(demo.locator(".slice")).to_have_count(9)
+    expect(demo.locator(".slicetext").first).to_have_text("Eve")
 ```
 
 ### Funnel Chart
@@ -214,6 +306,18 @@ def plotly_funnel_chart():
     return rx.center(rx.plotly(width="100%", data=funnel_fig))
 ```
 
+```python test
+def test_funnel_lists_each_stage(demo):
+    expect(demo.locator(".ytick text")).to_have_text([
+        "Invoice sent",
+        "Requested price",
+        "Potential customers",
+        "Downloads",
+        "Website visit",
+    ])
+    expect(demo.locator(".funnellayer .point")).to_have_count(5)
+```
+
 ## Locale Configuration
 
 Use `locale` to localize Plotly number/date formatting and modebar labels:
@@ -230,6 +334,15 @@ def localized_line_chart():
             data=fig,
             locale="de",
         ),
+    )
+```
+
+```python test
+def test_locale_translates_the_modebar(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Life expectancy in Canada")
+    expect(demo.locator(".modebar-btn").first).to_have_attribute(
+        "data-title",
+        "Graphen als PNG herunterladen",  # codespell:ignore
     )
 ```
 
@@ -261,6 +374,12 @@ def mountain_surface():
     return rx.center(
         rx.plotly(width="100%", data=fig),
     )
+```
+
+```python test
+def test_surface_plot_renders_in_3d(demo):
+    expect(demo.locator(".gl-container canvas")).to_have_count(1)
+    expect(demo.locator(".js-plotly-plot")).to_have_count(1)
 ```
 
 📊 **Dataset source:** [mt_bruno_elevation.csv](https://raw.githubusercontent.com/plotly/datasets/master/api_docs/mt_bruno_elevation.csv)
@@ -307,6 +426,14 @@ def candlestick_chart():
     return rx.center(rx.plotly(width="100%", data=candlestick_fig))
 ```
 
+```python test
+def test_candlestick_chart_shows_stock_prices(demo):
+    expect(demo.locator(".gtitle")).to_have_text("AAPL Stock Price")
+    expect(demo.locator(".g-ytitle")).to_have_text("AAPL Stock")
+    # Rising and falling days are drawn as separate traces.
+    expect(demo.locator(".boxlayer .trace")).to_have_count(2)
+```
+
 ### Waterfall Chart
 
 The waterfall chart visualizes how an initial value is affected by a series of positive and negative changes — for example, a profit and loss statement. Create one with `go.Waterfall`, marking each value as `"relative"` or `"total"` via the `measure` argument:
@@ -336,6 +463,20 @@ waterfall_fig.update_layout(title="Profit and loss statement 2018", showlegend=T
 
 def waterfall_chart():
     return rx.center(rx.plotly(width="100%", data=waterfall_fig))
+```
+
+```python test
+def test_waterfall_labels_each_step(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Profit and loss statement 2018")
+    expect(demo.locator(".xtick text")).to_have_text([
+        "Sales",
+        "Consulting",
+        "Net revenue",
+        "Purchases",
+        "Other expenses",
+        "Profit before tax",
+    ])
+    expect(demo.locator(".bartext")).to_have_text(["+60", "+80", "-40", "-20", "Total"])
 ```
 
 ### Bullet Chart
@@ -370,6 +511,13 @@ bullet_fig = go.Figure(
 
 def bullet_chart():
     return rx.center(rx.plotly(width="100%", data=bullet_fig))
+```
+
+```python test
+def test_bullet_gauge_shows_value_and_delta(demo):
+    expect(demo.locator(".indicatorlayer .title")).to_have_text("Revenue")
+    expect(demo.locator(".indicatorlayer .number")).to_have_text("180")
+    expect(demo.locator(".indicatorlayer .delta")).to_have_text("▼−20")
 ```
 
 ## Statistical Charts
@@ -407,6 +555,12 @@ def continuous_error_bands_chart():
     return rx.center(rx.plotly(width="100%", data=error_band_fig))
 ```
 
+```python test
+def test_error_band_draws_line_and_band(demo):
+    expect(demo.locator(".scatterlayer .trace")).to_have_count(2)
+    expect(demo.locator(".scatterlayer .trace .fills path")).to_have_count(1)
+```
+
 ## Maps
 
 ### Geo Map
@@ -428,6 +582,12 @@ geo_fig.update_layout(height=300, margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
 def geo_map_chart():
     return rx.center(rx.plotly(width="100%", data=geo_fig))
+```
+
+```python test
+def test_geo_map_renders_rivers_and_lakes(demo):
+    expect(demo.locator(".geo .layer.lakes path")).to_have_count(1)
+    expect(demo.locator(".geo .layer.rivers path")).to_have_count(1)
 ```
 
 ### Scatter Map
@@ -452,6 +612,12 @@ def scatter_map_chart():
     return rx.center(rx.plotly(width="100%", data=map_fig))
 ```
 
+```python test
+def test_scatter_map_renders_a_map_canvas(demo):
+    expect(demo.locator(".maplibregl-canvas")).to_have_count(1)
+    expect(demo.locator(".colorbar .cbtitle")).to_have_text("peak_hour")
+```
+
 ## Tables and Diagrams
 
 ### Table
@@ -471,6 +637,23 @@ table_fig = go.Figure(
 
 def plotly_table():
     return rx.center(rx.plotly(width="100%", data=table_fig))
+```
+
+```python test
+def test_table_shows_headers_and_scores(demo):
+    expect(demo.locator(".table-control-view")).to_have_count(1)
+    expect(demo.locator(".cell-text")).to_have_text([
+        "100",
+        "90",
+        "80",
+        "90",
+        "A Scores",
+        "95",
+        "85",
+        "75",
+        "95",
+        "B Scores",
+    ])
 ```
 
 ### Sankey Diagram
@@ -504,6 +687,20 @@ def plotly_sankey_diagram():
     return rx.center(rx.plotly(width="100%", data=sankey_fig))
 ```
 
+```python test
+def test_sankey_diagram_labels_nodes(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Basic Sankey Diagram")
+    expect(demo.locator(".sankey-node .node-label")).to_have_text([
+        "A1",
+        "A2",
+        "B1",
+        "B2",
+        "C1",
+        "C2",
+    ])
+    expect(demo.locator(".sankey-link")).to_have_count(6)
+```
+
 ## 3D Charts
 
 ### 3D Scatter Plot
@@ -523,6 +720,16 @@ scatter_3d_fig = px.scatter_3d(
 
 def scatter_3d_chart():
     return rx.center(rx.plotly(width="100%", data=scatter_3d_fig))
+```
+
+```python test
+def test_3d_scatter_plot_has_species_legend(demo):
+    expect(demo.locator(".gl-container canvas")).to_have_count(1)
+    expect(demo.locator(".legendtext")).to_have_text([
+        "setosa",
+        "versicolor",
+        "virginica",
+    ])
 ```
 
 ### 3D Axis
@@ -558,6 +765,12 @@ mesh_fig.update_layout(
 
 def axis_3d_chart():
     return rx.center(rx.plotly(width="100%", data=mesh_fig))
+```
+
+```python test
+def test_3d_mesh_renders(demo):
+    expect(demo.locator(".gl-container canvas")).to_have_count(1)
+    expect(demo.locator(".js-plotly-plot")).to_have_count(1)
 ```
 
 ## Plot as State Var
@@ -610,6 +823,15 @@ def line_chart_with_state():
     )
 ```
 
+```python test
+def test_selecting_a_country_redraws_the_chart(demo, page):
+    title = demo.locator(".gtitle")
+    expect(title).to_have_text("Life expectancy in Canada")
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="France").click()
+    expect(title).to_have_text("Life expectancy in France")
+```
+
 ## Adding Styles and Layouts
 
 Use `update_layout()` method to update the layout of your chart. Checkout [Plotly Layouts](https://plotly.com/python/reference/layout/) for all layouts props.
@@ -641,5 +863,14 @@ def add_styles():
         rx.plotly(width="100%", data=fig_1),
         width="100%",
         height="100%",
+    )
+```
+
+```python test
+def test_styled_chart_uses_custom_background(demo):
+    expect(demo.locator(".gtitle")).to_have_text("Life expectancy in Canada")
+    expect(demo.locator(".gtitle")).to_have_css("font-size", "25px")
+    expect(demo.locator(".plot .bg, .bglayer .bg").first).to_have_css(
+        "fill", "rgb(195, 215, 247)"
     )
 ```

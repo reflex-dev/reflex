@@ -112,6 +112,14 @@ rx.box(
 )
 ```
 
+```python test
+def test_tailwind_classes_apply(demo):
+    box = demo.get_by_text("Hello World")
+    expect(box).to_have_css("font-size", "40px")
+    expect(box).to_have_css("text-align", "center")
+    expect(box).to_have_css("color", "oklch(0.623 0.214 259.815)")
+```
+
 ## Disabling Tailwind
 
 To disable Tailwind in your project, simply don't include any Tailwind plugins in your configuration. This will prevent Tailwind styles from being applied to your application.
@@ -223,6 +231,18 @@ def tailwind_demo():
     )
 ```
 
+```python test
+def test_conditional_tailwind_class(demo):
+    button = demo.get_by_role("button", name="Click me")
+    expect(button).to_have_class("px-4 py-2 text-white rounded-md bg-blue-500")
+    blue = button.evaluate("el => getComputedStyle(el).backgroundColor")
+    button.click()
+    expect(button).to_have_class("px-4 py-2 text-white rounded-md bg-red-500")
+    expect(button).not_to_have_css("background-color", blue)
+    button.click()
+    expect(button).to_have_css("background-color", blue)
+```
+
 ## Using Tailwind Classes from the State
 
 When using Tailwind with Reflex, it's important to understand that class names must be statically defined in your code for Tailwind to properly compile them. If you dynamically generate class names from state variables or functions at runtime, Tailwind won't be able to detect these classes during the build process, resulting in missing styles in your application.
@@ -248,6 +268,15 @@ def tailwind_dynamic_class_demo():
         class_name=TailwindDynamicClassState.button_class,
         on_click=TailwindDynamicClassState.toggle_active,
     )
+```
+
+```python test
+def test_dynamic_class_name(demo):
+    button = demo.get_by_role("button", name="Click me: false")
+    expect(button).to_have_class("bg-secondary")
+    button.click()
+    button = demo.get_by_role("button", name="Click me: true")
+    expect(button).to_have_class("bg-accent")
 ```
 
 ## Using Tailwind with Reflex Core Components

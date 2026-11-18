@@ -51,6 +51,19 @@ def ag_grid_value_getter():
     )
 ```
 
+```python test
+def test_value_getters_compute_sum_and_difference(demo):
+    expect(demo.get_by_role("columnheader")).to_have_text([
+        "Column A",
+        "Column B",
+        "Sum",
+        "Difference",
+    ])
+    row = demo.get_by_role("row", name="3 30 33 27", exact=True)
+    expect(row.get_by_role("gridcell")).to_have_text(["3", "30", "33", "27"])
+    expect(demo.get_by_role("row")).to_have_count(6)
+```
+
 ## Value Formatter
 
 `value_formatter` is a property of the column definition that allows you to define a function that will be called to format the value of the cell. This function will receive the value of the cell as a parameter and should return the formatted value to be displayed on the cell.
@@ -88,6 +101,17 @@ def ag_grid_value_formatter():
         column_defs=column_defs,
         width="100%",
     )
+```
+
+```python test
+def test_value_formatters_add_currency(demo):
+    expect(demo.get_by_role("columnheader")).to_have_text([
+        "Product Name",
+        "Price ($)",
+        "Price (€)",
+    ])
+    row = demo.get_by_role("row", name=re.compile("^Product B "))
+    expect(row.get_by_role("gridcell")).to_have_text(["Product B", "$200", "200 €"])
 ```
 
 ## Formatter Patterns

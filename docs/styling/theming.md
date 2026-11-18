@@ -30,7 +30,7 @@ app = rx.App(
 
 Here are the props that can be passed to the `rx.theme` component:
 
-```python eval
+```python eval notest
 rx.table.root(
     rx.table.header(
         rx.table.row(
@@ -276,6 +276,18 @@ rx.flex(
 )
 ```
 
+```python test
+def test_color_scheme_buttons(demo):
+    buttons = demo.get_by_role("button", name="Hello World")
+    expect(buttons).to_have_count(2)
+    expect(buttons.first).to_have_attribute("data-accent-color", "tomato")
+    expect(buttons.last).to_have_attribute("data-accent-color", "teal")
+    expect(buttons.first).not_to_have_css(
+        "background-color",
+        buttons.last.evaluate("el => getComputedStyle(el).backgroundColor"),
+    )
+```
+
 ### Shades
 
 Sometime you may want to use a specific shade of a color from the theme. This is recommended vs using a hex color directly as it will automatically change when the theme changes appearance change from light/dark.
@@ -294,7 +306,14 @@ rx.flex(
 )
 ```
 
-```python eval
+```python test
+def test_radix_color_button(demo):
+    button = demo.get_by_role("button", name="Hello World")
+    expect(button).to_have_css("color", "rgb(251, 254, 251)")
+    expect(button).to_have_css("background-color", "rgb(148, 206, 154)")
+```
+
+```python eval notest
 rx.table.root(
     rx.table.header(
         rx.table.row(
@@ -418,6 +437,14 @@ rx.flex(
 )
 ```
 
+```python test
+def test_css_color_button(demo):
+    button = demo.get_by_role("button", name="Hello World")
+    expect(button).to_have_css("color", "rgb(255, 255, 255)")
+    expect(button).to_have_css("background-color", "rgb(135, 206, 250)")
+    expect(button).to_have_css("border", "1px solid rgb(176, 196, 222)")
+```
+
 ## Toggle Appearance
 
 To toggle between the light and dark mode manually, you can use the `toggle_color_mode` with the desired event trigger of your choice.
@@ -452,6 +479,17 @@ rx.color_mode_cond(
 )
 ```
 
+```python test
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_color_mode_cond_image(demo, page, scheme):
+    page.emulate_media(color_scheme=scheme)
+    page.reload()
+    expect(demo.get_by_role("img")).to_have_count(1)
+    expect(demo.get_by_role("img", name=f"Reflex Logo {scheme}")).to_have_attribute(
+        "src", f"https://web.reflex-assets.dev/logos/{scheme}/reflex.svg"
+    )
+```
+
 This can also be applied to props.
 
 ```python demo
@@ -460,4 +498,20 @@ rx.button(
     color=rx.color_mode_cond(light="black", dark="white"),
     background_color=rx.color_mode_cond(light="white", dark="black"),
 )
+```
+
+```python test
+@pytest.mark.parametrize(
+    ("scheme", "color", "background"),
+    [
+        ("light", "rgb(0, 0, 0)", "rgb(255, 255, 255)"),
+        ("dark", "rgb(255, 255, 255)", "rgb(0, 0, 0)"),
+    ],
+)
+def test_color_mode_cond_props(demo, page, scheme, color, background):
+    page.emulate_media(color_scheme=scheme)
+    page.reload()
+    button = demo.get_by_role("button", name="Hello World")
+    expect(button).to_have_css("color", color)
+    expect(button).to_have_css("background-color", background)
 ```

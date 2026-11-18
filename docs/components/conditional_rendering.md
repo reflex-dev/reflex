@@ -14,7 +14,7 @@ Recall from the [basics](/docs/getting-started/basics/) that we cannot use Pytho
 # Check out the API reference for [cond docs](/docs/library/dynamic-rendering/cond/).
 ```
 
-```python eval
+```python eval notest
 rx.box(height="2em")
 ```
 
@@ -40,6 +40,14 @@ def cond_simple_example():
     )
 ```
 
+```python test
+def test_cond_toggles_text(demo):
+    expect(demo.get_by_text("Text 1")).to_be_visible()
+    demo.get_by_role("button", name="Toggle").click()
+    expect(demo.get_by_text("Text 2")).to_be_visible()
+    expect(demo.get_by_text("Text 1")).to_be_hidden()
+```
+
 If `show` is `True` then the first component is rendered (in this case the blue text). Otherwise the second component is rendered (in this case the red text).
 
 ## Conditional Props
@@ -62,6 +70,14 @@ def cond_prop():
         color_scheme=rx.cond(PropCondState.value > 50, "green", "pink"),
         width="100%",
     )
+```
+
+```python test
+def test_cond_prop_changes_color_scheme(demo):
+    slider = demo.locator(".rt-SliderRoot")
+    expect(slider).to_have_attribute("data-accent-color", "pink")
+    demo.get_by_role("slider").press("ArrowRight")
+    expect(slider).to_have_attribute("data-accent-color", "green")
 ```
 
 ## Var Operations
@@ -122,4 +138,15 @@ def match_demo():
         direction="column",
         gap="2",
     )
+```
+
+```python test
+def test_match_shows_breed_text(demo, page):
+    expect(demo.get_by_text("Unknown cat breed selected.")).to_be_visible()
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="siamese").click()
+    expect(demo.get_by_text("Siamese cat selected.")).to_be_visible()
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="pug").click()
+    expect(demo.get_by_text("Unknown cat breed selected.")).to_be_visible()
 ```

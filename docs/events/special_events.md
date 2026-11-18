@@ -19,6 +19,16 @@ def special_events_example():
     return rx.button("Alert", on_click=SpecialEventsState.alert)
 ```
 
+```python test
+def test_alert_button_opens_window_alert(demo, page):
+    with page.expect_event("dialog") as dialog_info:
+        demo.get_by_role("button", name="Alert").click()
+    dialog = dialog_info.value
+    assert dialog.type == "alert"
+    assert dialog.message == "Hello World!"
+    dialog.dismiss()
+```
+
 Special events can also be triggered directly in the UI by attaching them to an event trigger.
 
 ```python

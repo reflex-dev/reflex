@@ -40,6 +40,27 @@ rx.data_table(
 )
 ```
 
+```python test
+def test_search_and_sort(demo):
+    rows = demo.get_by_role("rowgroup").last.get_by_role("row")
+    expect(rows).to_have_count(10)
+    demo.get_by_role("columnheader", name=re.compile("^Age")).get_by_role(
+        "button"
+    ).click()
+    expect(rows.first.get_by_role("gridcell")).to_have_text([
+        "Jordan Mickey",
+        "6-8",
+        "21",
+    ])
+    demo.get_by_role("searchbox").fill("Olynyk")
+    expect(rows).to_have_count(1)
+    expect(rows.first.get_by_role("gridcell")).to_have_text([
+        "Kelly Olynyk",
+        "7-0",
+        "25",
+    ])
+```
+
 ## Using pandas DataFrames
 
 The data_table component works seamlessly with pandas DataFrames. Pass the DataFrame directly to the `data` prop and the column names are extracted automatically.

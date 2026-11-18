@@ -87,6 +87,17 @@ def master_detail_grid():
     )
 ```
 
+```python test
+def test_expand_row_shows_detail_grid(demo):
+    expect(demo.get_by_role("gridcell", name="$299.99")).to_be_visible()
+    expect(demo.get_by_text("Orders Today")).to_have_count(0)
+    demo.get_by_role("row", name=re.compile("Product A")).locator(
+        ".ag-group-contracted"
+    ).click()
+    for text in ["Stock Level", "Orders Today", "Total Sales"]:
+        expect(demo.get_by_role("gridcell", name=text, exact=True)).to_be_visible()
+```
+
 ## How Detail Rows Are Provided
 
 `get_detail_row_data` follows AG Grid's asynchronous convention: the grid passes a `params` object containing the master row's `data` and a `successCallback` to invoke with the detail rows. The lambda above calls `params.successCallback` with the nested `counts` list of the expanded row.

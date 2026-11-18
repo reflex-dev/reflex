@@ -41,6 +41,14 @@ def event_triggers_example():
     )
 ```
 
+```python test
+def test_mouse_over_cycles_words(demo):
+    word = demo.get_by_role("heading")
+    expect(word).to_have_text("Welcome")
+    word.hover()
+    expect(word).to_have_text("to")
+```
+
 In this example, the heading component has the **event trigger**, `on_mouse_over`.
 Whenever the user hovers over the heading, the `next_word` **event handler** will be called to cycle the word. Once the handler returns, the UI will be updated to reflect the new state.
 

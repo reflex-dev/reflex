@@ -167,6 +167,14 @@ rx.image(
 )
 ```
 
+```python test
+def test_upload_screenshot(demo):
+    image = demo.get_by_role("img", name="Multiple file upload component example")
+    expect(image).to_have_attribute(
+        "src", "https://web.reflex-assets.dev/other/upload.webp"
+    )
+```
+
 ```python
 class State(rx.State):
     """The app state."""
@@ -240,6 +248,16 @@ rx.el.video(
     controls=True,
     loop=True,
 )
+```
+
+```python test
+def test_upload_video(demo):
+    video = demo.locator("video")
+    expect(video).to_have_attribute(
+        "src", "https://web.reflex-assets.dev/other/upload_single_video.webm"
+    )
+    expect(video).to_have_js_property("controls", True)
+    expect(video).to_have_js_property("loop", True)
 ```
 
 ```python

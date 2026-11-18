@@ -18,7 +18,7 @@ salary by employee. Use five sample employees from different departments.
 
 Before sending the prompt, you can attach a visual reference, choose a design system, set the app visibility, or add an integration. Keep **Agent Effort** on **Auto** unless you know the task needs more or less reasoning.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/builder_dashboard.webp",
     alt="Reflex Build dashboard with the app creation prompt",
@@ -33,7 +33,7 @@ When generation finishes, use **Preview** to interact with the app. Check that t
 
 If the result is close, keep it and ask for one targeted improvement at a time.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/tutorial/tutorial_first_result.webp",
     alt="The first generated employee dashboard shown in Preview",
@@ -52,7 +52,7 @@ Include a clear-filters action.
 
 Confirm that the table and chart stay in sync for a name search, a department selection, and the combined filters.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/tutorial/tutorial_filtering.webp",
     alt="The employee dashboard with its department filter open",
@@ -71,7 +71,7 @@ and keep the table and chart synchronized after every change.
 
 This prompt explicitly requests create, edit, and delete behavior. If the generated app uses only sample in-memory data, ask the agent to connect a database before relying on the data in production.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/tutorial/tutorial_employee_management.webp",
     alt="The Add employee form generated for the employee dashboard",
@@ -90,7 +90,7 @@ Match the dashboard's layout, spacing, and component styles.
 
 Use the route selector in **Preview** to check both pages and verify that navigation works in each direction.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/tutorial/tutorial_second_page.webp",
     alt="The generated Chat page open in Preview",
@@ -124,7 +124,7 @@ after each action.
 
 Generate the test, run it, and use the result to fix any broken interaction. See [Testing](/docs/ai/features/automated-testing/) for the complete workflow.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/testing_browser.webp",
     alt="Passing tests in the Reflex Build Testing panel",

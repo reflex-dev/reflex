@@ -31,3 +31,14 @@ def ring_progress_example():
         rx.button("Randomize", on_click=RingProgressState.random),
     )
 ```
+
+```python test
+def test_ring_progress_starts_half_full(demo):
+    section = demo.locator(".mantine-RingProgress-curve").last
+    half = "103.67255756846319, 103.67255756846319"
+    expect(section).to_have_attribute("stroke-dasharray", half)
+    demo.get_by_role("button", name="Randomize").click()
+    # The new value is random (and may be 50 again), so only check the ring
+    # still draws a single section after the update.
+    expect(demo.locator(".mantine-RingProgress-curve")).to_have_count(2)
+```

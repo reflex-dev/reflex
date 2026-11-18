@@ -42,6 +42,27 @@ def area_simple():
     )
 ```
 
+```python test
+def test_area_chart_plots_uv_by_page(demo):
+    expect(demo.locator(".recharts-area")).to_have_count(1)
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "Page A",
+        "Page B",
+        "Page C",
+        "Page D",
+        "Page E",
+        "Page F",
+        "Page G",
+    ])
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "0",
+        "1000",
+        "2000",
+        "3000",
+        "4000",
+    ])
+```
+
 ## Syncing Charts
 
 The `sync_id` prop allows you to sync two graphs. In the example, it is set to "1" for both charts, indicating that they should be synchronized. This means that any interactions (such as brushing) performed on one chart will be reflected in the other chart.
@@ -95,6 +116,18 @@ def area_sync():
     )
 ```
 
+```python test
+def test_synced_charts_share_tooltip(demo):
+    charts = demo.locator(".recharts-wrapper")
+    bar_chart, composed_chart = charts.first, charts.last
+    expect(bar_chart.locator(".recharts-bar-rectangle")).to_have_count(14)
+    expect(composed_chart.locator(".recharts-area")).to_have_count(1)
+    expect(composed_chart.locator(".recharts-line")).to_have_count(1)
+    expect(composed_chart.locator(".recharts-brush")).to_have_count(1)
+    bar_chart.locator(".recharts-bar-rectangle").nth(2).hover()
+    expect(composed_chart.locator(".recharts-tooltip-label")).to_have_text("Page C")
+```
+
 ## Stacked Area Chart
 
 The `stack_id` prop allows you to stack multiple areas on top of each other, creating a stacked area chart. In the example, it is set to "1" for both charts, indicating that they should be stacked together. This means that the areas of the charts will be vertically stacked, with the values of each chart contributing to the total height of the stacked areas.
@@ -135,6 +168,18 @@ def area_stack():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_stacked_areas_sum_to_total(demo):
+    expect(demo.locator(".recharts-area")).to_have_count(2)
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "0",
+        "3000",
+        "6000",
+        "9000",
+        "12000",
+    ])
 ```
 
 ## Gradient Fill
@@ -178,6 +223,14 @@ def area_gradient():
         data=data,
         width="100%",
         height=300,
+    )
+```
+
+```python test
+def test_area_uses_gradient_fill(demo):
+    expect(demo.locator("linearGradient#area_gradient stop")).to_have_count(2)
+    expect(demo.locator(".recharts-area-area")).to_have_attribute(
+        "fill", "url(#area_gradient)"
     )
 ```
 
@@ -226,6 +279,13 @@ def area_multi_axis():
     )
 ```
 
+```python test
+def test_area_chart_has_two_axes_per_side(demo):
+    expect(demo.locator(".recharts-xAxis")).to_have_count(2)
+    expect(demo.locator(".recharts-yAxis")).to_have_count(2)
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["pv", "uv"])
+```
+
 ## Layout
 
 Use the `layout` prop to set the orientation to either `"horizontal"` (default) or `"vertical"`.
@@ -260,6 +320,26 @@ def area_vertical():
         height=300,
         width="100%",
     )
+```
+
+```python test
+def test_vertical_layout_puts_pages_on_y_axis(demo):
+    # Recharts skips the "Page A" label to keep the category ticks apart.
+    expect(demo.locator(".recharts-yAxis-tick-labels text")).to_have_text([
+        "Page B",
+        "Page C",
+        "Page D",
+        "Page E",
+        "Page F",
+        "Page G",
+    ])
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "0",
+        "1000",
+        "2000",
+        "3000",
+        "4000",
+    ])
 ```
 
 ## Stateful Example
@@ -317,6 +397,22 @@ def area_stateful():
         ),
         width="100%",
     )
+```
+
+```python test
+def test_area_click_randomizes_and_select_changes_curve(demo):
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["pv", "uv"])
+    curve = demo.locator(".recharts-area-curve").first
+    expect(curve).to_have_attribute("d", re.compile(r"\S"))
+    original = curve.get_attribute("d")
+    demo.get_by_role("combobox").click()
+    demo.page.get_by_role("option", name="step").click()
+    expect(demo.get_by_role("combobox")).to_have_text("step")
+    expect(curve).not_to_have_attribute("d", original)
+    stepped = curve.get_attribute("d")
+    # Click inside the "pv" area beside the Page C peak, clear of the grid lines.
+    demo.locator(".recharts-area-area").last.click(position={"x": 160, "y": 300})
+    expect(curve).not_to_have_attribute("d", stepped)
 ```
 
 ## Related Charts

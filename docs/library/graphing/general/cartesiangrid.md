@@ -47,6 +47,17 @@ def cgrid_simple():
     )
 ```
 
+```python test
+def test_grid_draws_dashed_lines_both_ways(demo):
+    expect(
+        demo.locator(".recharts-cartesian-grid-horizontal line").first
+    ).to_have_attribute("stroke-dasharray", "4 4")
+    expect(
+        demo.locator(".recharts-cartesian-grid-vertical line").first
+    ).to_have_attribute("stroke-dasharray", "4 4")
+    expect(demo.locator(".recharts-line")).to_have_count(1)
+```
+
 ## Hidden Axes
 
 A `cartesian_grid` component can be used to hide the horizontal and vertical grid lines in a chart by setting the `horizontal` and `vertical` props to `False`. This can be useful when you want to show the grid lines only on one axis or when you want to create a cleaner look for the chart.
@@ -77,6 +88,14 @@ def cgrid_hidden():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_grid_hides_vertical_lines(demo):
+    expect(demo.locator(".recharts-cartesian-grid-vertical")).to_have_count(0)
+    expect(
+        demo.locator(".recharts-cartesian-grid-horizontal line").first
+    ).to_have_attribute("stroke-dasharray", "2 4")
 ```
 
 ## Styling the Grid
@@ -113,6 +132,13 @@ def cgrid_styled():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_grid_takes_a_class_name(demo):
+    lines = demo.locator(".recharts-cartesian-grid-horizontal line")
+    expect(lines.first).to_have_class("opacity-25")
+    expect(demo.locator(".recharts-cartesian-grid-vertical")).to_have_count(0)
 ```
 
 ## Custom Grid Lines
@@ -163,6 +189,19 @@ def cgrid_custom():
         width="100%",
         height=200,
     )
+```
+
+```python test
+def test_grid_lines_at_custom_points(demo):
+    horizontal = demo.locator(".recharts-cartesian-grid-horizontal line")
+    vertical = demo.locator(".recharts-cartesian-grid-vertical line")
+    expect(horizontal).to_have_count(3)
+    expect(vertical).to_have_count(3)
+    for i, y in enumerate(["0", "25", "50"]):
+        expect(horizontal.nth(i)).to_have_attribute("y1", y)
+    for i, x in enumerate(["65", "90", "115"]):
+        expect(vertical.nth(i)).to_have_attribute("x1", x)
+    expect(demo.locator(".recharts-scatter-symbol")).to_have_count(12)
 ```
 
 Use these props judiciously to enhance data visualization without cluttering the chart. They're particularly useful for highlighting specific data ranges or creating visual reference points.

@@ -45,7 +45,7 @@ Reflex Agent Skills give AI coding assistants up-to-date guidance for building R
 
 The skills are maintained in the [reflex-dev/agent-skills](https://github.com/reflex-dev/agent-skills) repository and are designed for agents that support the Agent Skills standard, including Claude Code, Cursor, OpenCode, OpenAI Codex, and Pi.
 
-```python eval
+```python eval notest
 skills_summary_cards()
 ```
 

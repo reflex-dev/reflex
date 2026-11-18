@@ -23,6 +23,16 @@ rx.list.unordered(
 )
 ```
 
+```python test
+def test_unordered_list_items(demo):
+    expect(demo.locator("ul > li")).to_have_text([
+        "Example 1",
+        "Example 2",
+        "Example 3",
+    ])
+    expect(demo.locator("ul")).to_have_css("list-style-type", "disc")
+```
+
 `list.ordered` has numbers to display the list items.
 
 ```python demo
@@ -31,6 +41,16 @@ rx.list.ordered(
     rx.list.item("Example 2"),
     rx.list.item("Example 3"),
 )
+```
+
+```python test
+def test_ordered_list_items(demo):
+    expect(demo.locator("ol > li")).to_have_text([
+        "Example 1",
+        "Example 2",
+        "Example 3",
+    ])
+    expect(demo.locator("ol")).to_have_css("list-style-type", "decimal")
 ```
 
 `list.unordered()` and `list.ordered()` can have no bullet points or numbers by setting the `list_style_type` prop to `none`.
@@ -52,6 +72,19 @@ rx.hstack(
 )
 ```
 
+```python test
+def test_lists_without_markers(demo):
+    lists = demo.locator("ul")
+    expect(lists).to_have_count(2)
+    for i in range(2):
+        expect(lists.nth(i)).to_have_css("list-style-type", "none")
+        expect(lists.nth(i).locator("li")).to_have_text([
+            "Example 1",
+            "Example 2",
+            "Example 3",
+        ])
+```
+
 Lists can also be used with icons.
 
 ```python demo
@@ -67,4 +100,12 @@ rx.list(
     rx.list.item(rx.icon("settings", color="grey"), " Settings"),
     list_style_type="none",
 )
+```
+
+```python test
+def test_list_with_icons(demo):
+    items = demo.locator("li")
+    expect(items).to_have_text(["Allowed", "Not", "Settings"])
+    for i, icon in enumerate(["circle-check-big", "octagon-x", "settings"]):
+        expect(items.nth(i).locator(f"svg.lucide-{icon}")).to_be_visible()
 ```

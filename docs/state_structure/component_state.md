@@ -55,6 +55,15 @@ def multiple_counters():
     )
 ```
 
+```python test
+def test_counters_have_independent_state(demo):
+    counts = demo.get_by_text(re.compile(r"^-?\d+$"))
+    expect(counts).to_have_text(["0", "0", "0"])
+    demo.get_by_role("button", name="Increment").nth(1).click()
+    demo.get_by_role("button", name="Decrement").nth(2).click()
+    expect(counts).to_have_text(["0", "1", "-1"])
+```
+
 The vars and event handlers defined on the `ReusableCounter`
 class are treated similarly to a normal State class, but will be scoped to the component instance. Each time a
 `reusable_counter` is created, a new state class for that instance of the component is also created.
@@ -70,7 +79,7 @@ Similar to a normal Component, the `ComponentState.create` classmethod accepts t
 These arguments may be used to customize the component, either by applying defaults or
 passing props to certain subcomponents.
 
-```python eval
+```python eval notest
 rx.divider()
 ```
 
@@ -160,6 +169,19 @@ def editable_text_example():
     )
 ```
 
+```python test
+def test_editable_text_saves_and_reverts(demo):
+    demo.get_by_text("Click to edit").click()
+    demo.get_by_role("textbox").fill("Saved text")
+    demo.get_by_role("button").nth(1).click()
+    expect(demo.get_by_text("Saved text", exact=True)).to_be_visible()
+    demo.get_by_text("Edit me!").click()
+    demo.get_by_role("textbox").fill("Discarded")
+    demo.get_by_role("button").nth(0).click()
+    expect(demo.get_by_text("Edit me!", exact=True)).to_be_visible()
+    expect(demo.get_by_text("Reflex is fun", exact=True)).to_be_visible()
+```
+
 Calling `cls.__fields__["text"].set_default` in `get_component` sets the default for
 that component's new state class, which owns a copy of each field: other
 components keep their own defaults. Resetting the component's state restores the
@@ -186,7 +208,7 @@ class ThemeToggle(rx.ComponentState):
         return rx.text(cls.theme, **props)
 ```
 
-```python eval
+```python eval notest
 rx.divider()
 ```
 
@@ -216,6 +238,16 @@ def editable_text_with_global_state():
     )
 ```
 
+```python test
+def test_editable_text_uses_global_state(demo):
+    expect(demo.get_by_text("GLOBAL STATE TEXT", exact=True)).to_be_visible()
+    demo.get_by_text("Global state text", exact=True).click()
+    demo.get_by_role("textbox").fill("shared value")
+    demo.get_by_role("textbox").press("Enter")
+    expect(demo.get_by_text("shared value", exact=True)).to_be_visible()
+    expect(demo.get_by_text("SHARED VALUE", exact=True)).to_be_visible()
+```
+
 ## Accessing the State
 
 The underlying state class of a `ComponentState` is accessible via the `.State` attribute. To use it,
@@ -237,7 +269,17 @@ def counter_sum():
     )
 ```
 
-```python eval
+```python test
+def test_total_sums_both_counters(demo):
+    total = demo.get_by_text(re.compile(r"^Total:"))
+    expect(total).to_have_text("Total: 0")
+    demo.get_by_role("button", name="Increment").first.click()
+    demo.get_by_role("button", name="Increment").last.click()
+    demo.get_by_role("button", name="Increment").last.click()
+    expect(total).to_have_text("Total: 3")
+```
+
+```python eval notest
 rx.divider()
 ```
 
@@ -265,4 +307,20 @@ def extended_counter():
             ),
         ),
     )
+```
+
+```python test
+def test_external_buttons_drive_counter_state(demo):
+    count = demo.get_by_text(re.compile(r"^-?\d+$"))
+    buttons = demo.get_by_role("button")
+    demo.get_by_role("button", name="Increment").click()
+    expect(count).to_have_text("1")
+    demo.get_by_role("button", name="Double").click()
+    expect(count).to_have_text("2")
+    demo.get_by_role("button", name="Triple").click()
+    expect(count).to_have_text("6")
+    buttons.nth(3).click()
+    expect(count).to_have_text("7")
+    buttons.nth(2).click()
+    expect(count).to_have_text("0")
 ```

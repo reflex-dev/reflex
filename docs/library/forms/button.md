@@ -48,6 +48,17 @@ def counter():
     )
 ```
 
+```python test
+def test_button_counter(demo):
+    count = demo.get_by_role("heading")
+    expect(count).to_have_text("0")
+    demo.get_by_role("button", name="Increment").click()
+    demo.get_by_role("button", name="Increment").click()
+    expect(count).to_have_text("2")
+    demo.get_by_role("button", name="Decrement").click()
+    expect(count).to_have_text("1")
+```
+
 ### Loading and Disabled
 
 The `loading` prop is used to indicate that the action triggered by the button is currently in progress. When set to `True`, the button displays a loading spinner, providing visual feedback to the user that the action is being processed. This also prevents multiple clicks while the button is in the loading state. By default, `loading` is set to `False`.
@@ -61,4 +72,12 @@ rx.flex(
     rx.button("Disabled", disabled=True),
     spacing="2",
 )
+```
+
+```python test
+def test_button_loading_and_disabled(demo):
+    expect(demo.get_by_role("button")).to_have_count(3)
+    expect(demo.get_by_role("button", name="Regular")).to_be_enabled()
+    expect(demo.get_by_role("button", name="Loading")).to_be_disabled()
+    expect(demo.get_by_role("button", name="Disabled")).to_be_disabled()
 ```

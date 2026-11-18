@@ -13,7 +13,7 @@ import reflex as rx
 3. Review the workspace resource check and deployment configuration.
 4. Confirm the deployment.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/hosting/builder_deploy_dialog.webp",
     alt="Deploy dialog with hosting provider choices in Reflex Build",

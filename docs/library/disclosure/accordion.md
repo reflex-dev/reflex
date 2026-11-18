@@ -63,6 +63,23 @@ rx.accordion.root(
 )
 ```
 
+```python test
+def test_accordion_opens_one_item_at_a_time(demo):
+    first = demo.get_by_text("The first accordion item's content")
+    second = demo.get_by_text("The second accordion item's content")
+    expect(demo.get_by_role("button")).to_have_text([
+        "First Item",
+        "Second Item",
+        "Third item",
+    ])
+    expect(first).to_be_hidden()
+    demo.get_by_role("button", name="First Item").click()
+    expect(first).to_be_visible()
+    demo.get_by_role("button", name="Second Item").click()
+    expect(second).to_be_visible()
+    expect(first).to_be_hidden()
+```
+
 ## Styling
 
 ### Type
@@ -86,6 +103,19 @@ rx.accordion.root(
     width="300px",
     type="multiple",
 )
+```
+
+```python test
+def test_accordion_type_multiple(demo):
+    first = demo.get_by_text("The first accordion item's content")
+    second = demo.get_by_text("The second accordion item's content")
+    demo.get_by_role("button", name="First Item").click()
+    demo.get_by_role("button", name="Second Item").click()
+    expect(first).to_be_visible()
+    expect(second).to_be_visible()
+    demo.get_by_role("button", name="First Item").click()
+    expect(first).to_be_hidden()
+    expect(second).to_be_visible()
 ```
 
 ### Default Value
@@ -117,6 +147,15 @@ rx.flex(
     direction="row",
     spacing="2",
 )
+```
+
+```python test
+def test_accordion_default_value(demo):
+    expect(demo.get_by_text("The second accordion item's content")).to_be_visible()
+    expect(demo.get_by_text("The first accordion item's content")).to_be_hidden()
+    expect(demo.get_by_role("button", name="Second Item")).to_have_attribute(
+        "aria-expanded", "true"
+    )
 ```
 
 ### Collapsible
@@ -156,6 +195,24 @@ rx.flex(
 )
 ```
 
+```python test
+def test_accordion_collapsible(demo):
+    roots = demo.locator("[data-variant]:has(> .AccordionItem)")
+    collapsible_content = roots.first.get_by_text("The first accordion item's content")
+    roots.first.get_by_role("button", name="First Item").click()
+    expect(collapsible_content).to_be_visible()
+    roots.first.get_by_role("button", name="First Item").click()
+    expect(collapsible_content).to_be_hidden()
+
+    fixed_trigger = roots.nth(1).get_by_role("button", name="First Item")
+    fixed_trigger.click()
+    expect(
+        roots.nth(1).get_by_text("The first accordion item's content")
+    ).to_be_visible()
+    # A non-collapsible accordion disables the trigger of its open item.
+    expect(fixed_trigger).to_be_disabled()
+```
+
 ### Disable
 
 We use the `disabled` prop to prevent interaction with the accordion and all its items.
@@ -175,6 +232,14 @@ rx.accordion.root(
     width="300px",
     disabled=True,
 )
+```
+
+```python test
+def test_accordion_disabled(demo):
+    triggers = demo.get_by_role("button")
+    expect(triggers).to_have_count(3)
+    for i in range(3):
+        expect(triggers.nth(i)).to_be_disabled()
 ```
 
 ### Orientation
@@ -202,6 +267,13 @@ rx.accordion.root(
 )
 ```
 
+```python test
+def test_accordion_vertical_keyboard(demo):
+    demo.get_by_role("button", name="First Item").focus()
+    demo.get_by_role("button", name="First Item").press("ArrowDown")
+    expect(demo.get_by_role("button", name="Second Item")).to_be_focused()
+```
+
 ```python demo
 rx.accordion.root(
     rx.accordion.item(
@@ -218,6 +290,13 @@ rx.accordion.root(
     width="300px",
     orientation="horizontal",
 )
+```
+
+```python test
+def test_accordion_horizontal_keyboard(demo):
+    demo.get_by_role("button", name="First Item").focus()
+    demo.get_by_role("button", name="First Item").press("ArrowRight")
+    expect(demo.get_by_role("button", name="Second Item")).to_be_focused()
 ```
 
 ### Variant
@@ -299,6 +378,17 @@ rx.flex(
 )
 ```
 
+```python test
+def test_accordion_variants(demo):
+    roots = demo.locator("[data-variant]:has(> .AccordionItem)")
+    expect(roots).to_have_count(5)
+    for i, variant in enumerate(["classic", "soft", "outline", "surface", "ghost"]):
+        expect(roots.nth(i)).to_have_attribute("data-variant", variant)
+    expect(demo.get_by_role("button", name="Third item")).to_have_count(5)
+    roots.last.get_by_role("button", name="Third item").click()
+    expect(roots.last.get_by_text("The third accordion item's content")).to_be_visible()
+```
+
 ### Color Scheme
 
 We use the `color_scheme` prop to assign a specific color to the accordion background, ignoring the global theme.
@@ -338,6 +428,14 @@ rx.flex(
     direction="row",
     spacing="2",
 )
+```
+
+```python test
+def test_accordion_color_schemes(demo):
+    roots = demo.locator("[data-accent-color]:has(> .AccordionItem)")
+    expect(roots).to_have_count(2)
+    expect(roots.first).to_have_attribute("data-accent-color", "grass")
+    expect(roots.nth(1)).to_have_attribute("data-accent-color", "green")
 ```
 
 ### Value
@@ -393,6 +491,15 @@ def index() -> rx.Component:
     )
 ```
 
+```python test
+def test_accordion_controlled_value(demo):
+    expect(demo.get_by_role("button", name="Test button")).to_be_visible()
+    demo.get_by_role("button", name="Is it unstyled?").click()
+    expect(demo.get_by_text("item_2 selected")).to_be_visible()
+    expect(demo.get_by_text("It's unstyled by default", exact=False)).to_be_visible()
+    expect(demo.get_by_role("button", name="Test button")).to_be_hidden()
+```
+
 ## AccordionItem
 
 The accordion item contains all the parts of a collapsible section.
@@ -423,6 +530,16 @@ rx.accordion.root(
 )
 ```
 
+```python test
+def test_accordion_item_values(demo):
+    third = demo.get_by_text("The third accordion item's content")
+    expect(third).to_be_hidden()
+    demo.get_by_role("button", name="Third item").click()
+    expect(third).to_be_visible()
+    demo.get_by_role("button", name="Third item").click()
+    expect(third).to_be_hidden()
+```
+
 ### Disable
 
 ```python demo
@@ -443,4 +560,11 @@ rx.accordion.root(
     width="300px",
     color_scheme="blue",
 )
+```
+
+```python test
+def test_accordion_item_disabled(demo):
+    expect(demo.get_by_role("button", name="First Item")).to_be_disabled()
+    demo.get_by_role("button", name="Second Item").click()
+    expect(demo.get_by_text("The second accordion item's content")).to_be_visible()
 ```

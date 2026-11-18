@@ -57,6 +57,17 @@ rx.text(
 )
 ```
 
+```python test
+def test_hover_card_shows_on_hover(demo, page):
+    expect(demo.get_by_text("Hover over the text to see the tooltip.")).to_have_text(
+        "Hover over the text to see the tooltip. Hover over me"
+    )
+    demo.get_by_role("link", name="Hover over me").hover()
+    expect(page.get_by_text("This is the hovercard content.")).to_be_visible()
+    page.mouse.move(0, 0)
+    expect(page.get_by_text("This is the hovercard content.")).to_be_hidden()
+```
+
 ```python demo
 rx.text(
     "Hover over the text to see the tooltip. ",
@@ -88,6 +99,13 @@ rx.text(
         ),
     ),
 )
+```
+
+```python test
+def test_hover_card_comment_form(demo, page):
+    demo.get_by_role("link", name="Hover over me").hover()
+    expect(page.get_by_placeholder("Write a comment…")).to_be_visible()
+    expect(page.get_by_role("checkbox", name="Send to group")).not_to_be_checked()
 ```
 
 ## Events when the Hovercard opens or closes
@@ -127,4 +145,24 @@ def hovercard_example():
         direction="column",
         spacing="3",
     )
+```
+
+```python test
+def test_hover_card_on_open_change_counts(demo, page):
+    headings = demo.get_by_role("heading")
+    expect(headings).to_have_text([
+        "Number of times hovercard opened or closed: 0",
+        "Hovercard open: false",
+    ])
+    demo.get_by_role("link", name="Hover over me").hover()
+    expect(page.get_by_text("This is the tooltip content.")).to_be_visible()
+    expect(headings).to_have_text([
+        "Number of times hovercard opened or closed: 1",
+        "Hovercard open: true",
+    ])
+    page.mouse.move(0, 0)
+    expect(headings).to_have_text([
+        "Number of times hovercard opened or closed: 2",
+        "Hovercard open: false",
+    ])
 ```

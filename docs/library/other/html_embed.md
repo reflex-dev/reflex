@@ -23,6 +23,12 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_html_embed_headings(demo):
+    for level in range(2, 7):
+        expect(demo.get_by_role("heading", level=level)).to_have_text("Hello World")
+```
+
 ```md alert
 # Missing Styles?
 
@@ -36,4 +42,11 @@ In this example, we render an image.
 rx.html(
     "<img src='https://web.reflex-assets.dev/other/reflex_banner.png' alt='Reflex banner' />"
 )
+```
+
+```python test
+def test_html_embed_image(demo):
+    expect(demo.get_by_role("img", name="Reflex banner")).to_have_attribute(
+        "src", "https://web.reflex-assets.dev/other/reflex_banner.png"
+    )
 ```

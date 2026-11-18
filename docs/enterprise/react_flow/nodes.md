@@ -298,3 +298,13 @@ def custom_node():
         width="100vw",
     )
 ```
+
+```python test
+def test_color_picker_node_updates_color(demo):
+    flow = demo.get_by_role("application")
+    node = flow.get_by_role("group").filter(has_text="Custom Color Picker Node")
+    expect(node.locator("strong")).to_have_text("#c9f1dd")
+    node.locator("input[type=color]").fill("#ff0000")
+    expect(node.locator("strong")).to_have_text("#ff0000")
+    expect(flow.get_by_role("group", name="Edge from 2 to 4")).to_be_attached()
+```

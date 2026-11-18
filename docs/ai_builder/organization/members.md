@@ -50,7 +50,7 @@ With [verified domains](/docs/ai/organization/domains/), people whose email matc
 
 Queued people hold no seat and have no access. When a seat frees up, select **Activate** to admit them.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/members/awaiting_seat.webp",
     alt="The Awaiting a seat section listing a user who joined by verified domain, with an Activate button",

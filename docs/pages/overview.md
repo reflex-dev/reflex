@@ -75,16 +75,36 @@ You can directly import the module or import another module that imports the dec
 rx.link("Reflex Home Page.", href="https://reflex.dev/")
 ```
 
+```python test
+def test_external_link_href(demo):
+    expect(demo.get_by_role("link", name="Reflex Home Page.")).to_have_attribute(
+        "href", "https://reflex.dev/"
+    )
+```
+
 You can also provide local links to other pages in your project without writing the full url.
 
 ```python demo
 rx.link("Example", href="/library/")
 ```
 
+```python test
+def test_internal_link_navigates(demo, page):
+    demo.get_by_role("link", name="Example").click()
+    expect(page).to_have_url(re.compile(r"/library/$"))
+```
+
 To open the link in a new tab, set the `is_external` prop to `True`.
 
 ```python demo
 rx.link("Open in new tab", href="https://reflex.dev/", is_external=True)
+```
+
+```python test
+def test_is_external_link_opens_new_tab(demo):
+    link = demo.get_by_role("link", name="Open in new tab")
+    expect(link).to_have_attribute("href", "https://reflex.dev/")
+    expect(link).to_have_attribute("target", "_blank")
 ```
 
 Check out the [link docs](/docs/library/typography/link/) to learn more.
@@ -108,6 +128,16 @@ rx.vstack(
         on_click=rx.redirect("https://github.com/reflex-dev/reflex/", is_external=True),
     ),
 )
+```
+
+```python test
+def test_redirect_buttons(demo, page):
+    page.context.route("https://github.com/**", lambda route: route.fulfill(body=""))
+    with page.expect_popup() as popup_info:
+        demo.get_by_role("button", name="open in new tab").click()
+    expect(popup_info.value).to_have_url("https://github.com/reflex-dev/reflex/")
+    demo.get_by_role("button", name="open in tab").click()
+    expect(page).to_have_url(re.compile(r"/api-reference/special-events/?$"))
 ```
 
 Redirect can also be run from an event handler in State, meaning logic can be added behind it. It is necessary to `return` the `rx.redirect()`.
@@ -143,6 +173,19 @@ def redirect_example():
             "Redirect to new page in State", on_click=Redirect2ExampleState.change_page
         ),
     )
+```
+
+```python test
+def test_redirect_from_state(demo, page):
+    page.context.route("https://github.com/**", lambda route: route.fulfill(body=""))
+    expect(demo.get_by_text("https://github.com/reflex-dev/reflex/")).to_be_visible()
+    demo.get_by_role("button", name="Change redirect location").click()
+    expect(
+        demo.get_by_text("https://github.com/reflex-dev/", exact=True)
+    ).to_be_visible()
+    with page.expect_popup() as popup_info:
+        demo.get_by_role("button", name="Redirect to new page in State").click()
+    expect(popup_info.value).to_have_url("https://github.com/reflex-dev/")
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=4423&end=4903

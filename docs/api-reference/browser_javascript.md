@@ -69,6 +69,26 @@ def sound_effect_demo():
     )
 ```
 
+```python test
+def test_call_script_plays_sound(demo, page):
+    # Swap the script's player for a counter, so no audio has to play.
+    page.wait_for_function("typeof window.playFromStart === 'function'")
+    page.evaluate(
+        "() => { window.played = [];"
+        " window.playFromStart = (sfx) => window.played.push(sfx.src); }"
+    )
+    demo.get_by_role("button", name="Play Immediately").click()
+    page.wait_for_function("window.played.length === 1")
+    demo.get_by_role("button", name="Play Later").click()
+    page.wait_for_function("window.played.length === 2")
+    played = page.evaluate("window.played")
+    # The asset URL carries a cache-busting query.
+    assert [src.rsplit("/", 1)[-1].split("?")[0] for src in played] == [
+        "vintage-button-sound-effect.mp3",
+        "vintage-button-sound-effect.mp3",
+    ]
+```
+
 ## External Scripts
 
 External scripts can be loaded either from the `assets` directory, or from CDN URL, and then controlled
@@ -90,6 +110,13 @@ rx.vstack(
     rx.button("Start Duststorm", on_click=rx.call_script("snowStorm.start()")),
     rx.button("Toggle Duststorm", on_click=rx.call_script("snowStorm.toggleSnow()")),
 )
+```
+
+```python test
+def test_external_script_buttons(demo):
+    expect(demo.get_by_role("button", name="Start Duststorm")).to_be_visible()
+    expect(demo.get_by_role("button", name="Toggle Duststorm")).to_be_visible()
+    pytest.skip("starting the storm needs the snowstorm script from cdn.jsdelivr.net")
 ```
 
 ## Accessing Client Side Values
@@ -132,6 +159,26 @@ def window_state_demo():
         rx.text_area(value=WindowState.location.to_string(), is_read_only=True),
         on_mount=WindowState.get_client_values,
     )
+```
+
+```python test
+def test_call_script_callback_values(demo, page):
+    import json
+
+    location = demo.get_by_role("textbox")
+    expect(location).not_to_have_value("{}")
+    position = demo.get_by_text("Scroll Position:")
+    on_mount = position.inner_text()
+    # Scroll elsewhere, so the button's values differ from those of on_mount.
+    page.evaluate("window.scrollBy(0, 40)")
+    demo.get_by_role("button", name="Update Values").click()
+    scroll_x, scroll_y = page.evaluate("[window.scrollX, window.scrollY]")
+    expected = f'Scroll Position: {{"x":{scroll_x},"y":{scroll_y}}}'
+    assert expected != on_mount
+    expect(position).to_have_text(expected)
+    value = json.loads(location.input_value())
+    assert value["href"] == page.url
+    assert value["pathname"] == "/docs/api-reference/browser-javascript/"
 ```
 
 ```md alert
@@ -222,6 +269,19 @@ def global_key_demo():
         rx.text("Press a, s, d or w to trigger an event"),
         rx.heading(f"Last watched key pressed: {GlobalHotkeyState.key}", as_="h2"),
     )
+```
+
+```python test
+def test_global_hotkey_watcher(demo, page):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("Last watched key pressed: ")
+    page.keyboard.press("s")
+    expect(heading).to_have_text("Last watched key pressed: s")
+    with page.expect_console_message(lambda m: m.text == "x"):
+        page.keyboard.press("x")
+    expect(heading).to_have_text("Last watched key pressed: s")
+    page.keyboard.press("w")
+    expect(heading).to_have_text("Last watched key pressed: w")
 ```
 
 This snippet can also be imported through pip: [reflex-global-hotkey](https://pypi.org/project/reflex-global-hotkey/).

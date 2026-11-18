@@ -43,6 +43,12 @@ def reference():
     )
 ```
 
+```python test
+def test_reference_area_highlights_a_region(demo):
+    expect(demo.locator(".recharts-reference-area")).to_have_count(1)
+    expect(demo.locator(".recharts-scatter-symbol")).to_have_count(7)
+```
+
 ## Reference Line
 
 The `rx.recharts.reference_line` component in rx.recharts is used to draw a horizontal or vertical line on the chart at a specified position. It helps to highlight important values, thresholds, or ranges on the axis, providing visual reference points for better data interpretation.
@@ -81,6 +87,16 @@ def reference_line():
         height=300,
         width="100%",
     )
+```
+
+```python test
+def test_reference_lines_are_labeled(demo):
+    expect(demo.locator(".recharts-reference-line")).to_have_count(3)
+    expect(demo.locator(".recharts-label")).to_have_text([
+        "Max PV PAGE",
+        "Max",
+        "Average",
+    ])
 ```
 
 ## Reference Dot
@@ -183,4 +199,13 @@ def reference_dot():
         height=200,
         width="100%",
     )
+```
+
+```python test
+def test_reference_dots_mark_points(demo):
+    dots = demo.locator(".recharts-reference-dot circle")
+    expect(dots).to_have_count(3)
+    for i, r in enumerate(["15", "20", "18"]):
+        expect(dots.nth(i)).to_have_attribute("r", r)
+    expect(demo.locator(".recharts-scatter-symbol")).to_have_count(12)
 ```

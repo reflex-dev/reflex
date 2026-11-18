@@ -45,6 +45,12 @@ def error():
     )
 ```
 
+```python test
+def test_scatter_points_have_x_and_y_error_bars(demo):
+    expect(demo.locator(".recharts-scatter-symbol")).to_have_count(7)
+    expect(demo.locator(".recharts-errorBar")).to_have_count(14)
+```
+
 ## Symmetric and Asymmetric Errors
 
 The `data_key` of an `rx.recharts.error_bar()` points at a field in each data row, and that field controls how far the whisker extends. Use a single number for a **symmetric** error — the same distance above and below the point — or a two-element `[low, high]` list for an **asymmetric** error. In the example above, some rows use `"errorY": 20` (symmetric) while others use `"errorY": [30, 20]` (asymmetric). The `direction` prop (`"x"` or `"y"`) chooses which axis the whisker runs along, so you can show error on one or both axes at once.
@@ -83,6 +89,20 @@ def line_error():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_line_points_have_error_bars(demo):
+    expect(demo.locator(".recharts-line")).to_have_count(1)
+    expect(demo.locator(".recharts-errorBar")).to_have_count(6)
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+    ])
 ```
 
 ## Related Charts

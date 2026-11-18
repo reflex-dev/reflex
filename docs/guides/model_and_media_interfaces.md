@@ -188,6 +188,31 @@ def model_interface():
     )
 ```
 
+```python test
+def test_flower_classifier_predicts_and_validates(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Flower classifier")
+    expect(
+        demo.get_by_text("Enter measurements and select Predict species.")
+    ).to_be_visible()
+    demo.get_by_role("button", name="Predict species").click()
+    expect(demo.get_by_text("setosa", exact=True)).to_be_visible()
+    demo.get_by_label("Petal length (cm)").fill("abc")
+    demo.get_by_role("button", name="Predict species").click()
+    expect(demo.get_by_role("alert")).to_have_text(
+        "Enter both measurements as numbers."
+    )
+    demo.get_by_label("Petal length (cm)").fill("20")
+    demo.get_by_role("button", name="Predict species").click()
+    expect(demo.get_by_role("alert")).to_have_text(
+        "Enter measurements greater than 0 and at most 10 cm."
+    )
+    demo.get_by_label("Petal length (cm)").fill("6.0")
+    demo.get_by_label("Petal width (cm)").fill("2.5")
+    demo.get_by_role("button", name="Predict species").click()
+    expect(demo.get_by_text("virginica", exact=True)).to_be_visible()
+    expect(demo.get_by_role("alert")).to_have_count(0)
+```
+
 ```python
 app = rx.App()
 app.add_page(model_interface, route="/")

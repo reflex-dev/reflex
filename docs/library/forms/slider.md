@@ -35,6 +35,16 @@ def slider_intro():
     )
 ```
 
+```python test
+def test_slider_commits_value(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("50")
+    demo.get_by_role("slider").press("End")
+    expect(heading).to_have_text("100")
+    demo.get_by_role("slider").press("ArrowLeft")
+    expect(heading).to_have_text("99")
+```
+
 ## Range Slider
 
 Range slider is created by passing a list of two values to the `default_value` prop. The list should contain two values that are in the range of the slider.
@@ -67,6 +77,18 @@ def range_slider_intro():
     )
 ```
 
+```python test
+def test_range_slider(demo):
+    headings = demo.get_by_role("heading")
+    expect(headings).to_have_text(["25", "75"])
+    thumbs = demo.get_by_role("slider")
+    expect(thumbs).to_have_count(2)
+    thumbs.first.press("ArrowRight")
+    expect(headings).to_have_text(["26", "75"])
+    thumbs.nth(1).press("End")
+    expect(headings).to_have_text(["26", "100"])
+```
+
 ## Live Updating Slider
 
 You can use the `on_change` prop to update the slider value as you interact with it. The `on_change` prop takes a function that will be called with the new value of the slider.
@@ -93,6 +115,14 @@ def live_slider_intro():
         ),
         width="100%",
     )
+```
+
+```python test
+def test_live_updating_slider(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("50")
+    demo.get_by_role("slider").press("Home")
+    expect(heading).to_have_text("0")
 ```
 
 ## Slider in forms
@@ -132,4 +162,15 @@ def slider_form_example():
         ),
         width="50%",
     )
+```
+
+```python test
+def test_slider_in_form(demo):
+    results = demo.locator(".rt-Badge")
+    expect(results).to_have_text("{}")
+    demo.get_by_role("button", name="Submit").click()
+    expect(results).to_have_text('{"slider":"40"}')
+    demo.get_by_role("slider").press("ArrowRight")
+    demo.get_by_role("button", name="Submit").click()
+    expect(results).to_have_text('{"slider":"41"}')
 ```

@@ -45,6 +45,11 @@ def radial_bar_simple():
     )
 ```
 
+```python test
+def test_radial_bar_draws_a_ring_per_item(demo):
+    expect(demo.locator(".recharts-radial-bar-sector")).to_have_count(7)
+```
+
 ## Advanced Example
 
 The `start_angle` and `end_angle` define the circular arc over which the bars are distributed, while `inner_radius` and `outer_radius` determine the radial extent of the bars from the center. Sweeping a half circle (`start_angle=180`, `end_angle=0`) is a common way to build a gauge chart.
@@ -77,6 +82,21 @@ def radial_bar_advanced():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_radial_bar_half_circle_with_labels(demo):
+    expect(demo.locator(".recharts-radial-bar-sector")).to_have_count(7)
+    expect(demo.locator(".recharts-radial-bar-background-sector")).to_have_count(7)
+    expect(demo.locator(".recharts-label-list text")).to_have_text([
+        "31.47",
+        "26.69",
+        "-15.69",
+        "8.22",
+        "-8.63",
+        "-2.63",
+        "6.67",
+    ])
 ```
 
 ## When to Use a Radial Bar Chart

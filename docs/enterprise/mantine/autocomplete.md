@@ -21,3 +21,13 @@ def autocomplete_example():
         ),
     )
 ```
+
+```python test
+def test_autocomplete_suggests_fruits(demo, page):
+    box = demo.get_by_role("textbox", name="Fruit Autocomplete")
+    expect(demo.get_by_text("Select a fruit from the list")).to_be_visible()
+    box.fill("an")
+    expect(page.get_by_role("option")).to_have_text(["Banana"])
+    page.get_by_role("option", name="Banana").click()
+    expect(box).to_have_value("Banana")
+```

@@ -27,6 +27,15 @@ rx.tooltip(
 )
 ```
 
+```python test
+def test_tooltip_shows_on_hover(demo, page):
+    demo.get_by_role("button", name="Hover over me").hover()
+    expect(page.get_by_role("tooltip")).to_have_text("This is the tooltip content.")
+    # Leave in steps: the tooltip keeps a hover grace area around its trigger.
+    page.mouse.move(0, 0, steps=10)
+    expect(page.get_by_role("tooltip")).to_have_count(0)
+```
+
 ## Events when the Tooltip opens or closes
 
 The `on_open_change` event is called when the `open` state of the tooltip changes. It is used in conjunction with the `open` prop, which is passed to the event handler.
@@ -60,4 +69,24 @@ def index():
         direction="column",
         spacing="3",
     )
+```
+
+```python test
+def test_tooltip_on_open_change_counts(demo, page):
+    headings = demo.get_by_role("heading")
+    expect(headings).to_have_text([
+        "Number of times tooltip opened or closed: 0",
+        "Tooltip open: false",
+    ])
+    demo.get_by_role("button", name="Hover over me").hover()
+    expect(page.get_by_role("tooltip")).to_have_text("This is the tooltip content.")
+    expect(headings).to_have_text([
+        "Number of times tooltip opened or closed: 1",
+        "Tooltip open: true",
+    ])
+    page.mouse.move(0, 0, steps=10)
+    expect(headings).to_have_text([
+        "Number of times tooltip opened or closed: 2",
+        "Tooltip open: false",
+    ])
 ```

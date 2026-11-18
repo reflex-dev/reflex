@@ -99,6 +99,14 @@ def focus_example():
     return rx.input(value=FocusState.text, on_focus=FocusState.change_text)
 ```
 
+```python test
+def test_on_focus_changes_value(demo):
+    field = demo.get_by_role("textbox")
+    expect(field).to_have_value("Change Me!")
+    field.focus()
+    expect(field).to_have_value("Changed!")
+```
+
 ## on_blur
 
 The on_blur event handler is called when focus has left the element (or left some element inside of it). For example, it's called when the user clicks outside of a focused text input.
@@ -119,6 +127,15 @@ def blur_example():
     return rx.input(value=BlurState.text, on_blur=BlurState.change_text)
 ```
 
+```python test
+def test_on_blur_changes_value(demo):
+    field = demo.get_by_role("textbox")
+    field.focus()
+    expect(field).to_have_value("Change Me!")
+    field.blur()
+    expect(field).to_have_value("Changed!")
+```
+
 ## on_change
 
 The on_change event handler is called when the value of an element has changed. For example, it's called when the user types into a text input each keystroke triggers the on change.
@@ -134,6 +151,16 @@ class ChangeState(rx.State):
 
 def change_example():
     return rx.switch(on_change=ChangeState.set_checked)
+```
+
+```python test
+def test_on_change_toggles_switch(demo):
+    switch = demo.get_by_role("switch")
+    expect(switch).not_to_be_checked()
+    switch.click()
+    expect(switch).to_be_checked()
+    switch.click()
+    expect(switch).not_to_be_checked()
 ```
 
 ## on_click
@@ -156,6 +183,14 @@ def click_example():
     return rx.button(ClickState.text, on_click=ClickState.change_text)
 ```
 
+```python test
+def test_on_click_toggles_text(demo):
+    demo.get_by_role("button", name="Change Me!").click()
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
+    demo.get_by_role("button", name="Changed!").click()
+    expect(demo.get_by_role("button", name="Change Me!")).to_be_visible()
+```
+
 ## on_context_menu
 
 The on_context_menu event handler is called when the user right-clicks on an element. For example, it's called when the user right-clicks on a button.
@@ -174,6 +209,13 @@ class ContextState(rx.State):
 
 def context_menu_example():
     return rx.button(ContextState.text, on_context_menu=ContextState.change_text)
+```
+
+```python test
+def test_on_context_menu_toggles_text(demo):
+    button = demo.get_by_role("button", name="Change Me!")
+    button.click(button="right")
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
 ```
 
 ## on_double_click
@@ -196,6 +238,13 @@ def double_click_example():
     return rx.button(
         DoubleClickState.text, on_double_click=DoubleClickState.change_text
     )
+```
+
+```python test
+def test_on_double_click_toggles_text(demo):
+    button = demo.get_by_role("button", name="Change Me!")
+    button.dblclick()
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
 ```
 
 ## on_mount
@@ -239,6 +288,14 @@ def mount_example():
     )
 ```
 
+```python test
+def test_on_mount_records_event(demo):
+    expect(demo.get_by_role("heading")).to_have_text("Component Lifecycle Demo")
+    events = demo.get_by_text(re.compile(r"^on_mount @ \d{4}-\d\d-\d\d \d\d:\d\d:\d\d"))
+    # React's StrictMode mounts twice in dev mode, so the count varies.
+    expect(events.first).to_be_visible()
+```
+
 ## on_unmount
 
 The on_unmount event handler is called after removing the component from the page. However, on_unmount will only be called for internal navigation, not when following external links or refreshing the page. This event is useful for cleaning up resources, saving state, or performing cleanup operations before a component is removed from the DOM.
@@ -273,6 +330,22 @@ def unmount_example():
     )
 ```
 
+```python test
+def test_on_unmount_cleans_up(demo, page):
+    expect(demo.get_by_role("heading")).to_have_text("Unmount Demo")
+    expect(demo.get_by_text("Resource resource-12345 initialized")).to_be_visible()
+    url = page.url
+    demo.get_by_role("button", name="Navigate Away (Triggers Unmount)").click()
+    expect(page).not_to_have_url(url)
+    page.go_back()
+    expect(page).to_have_url(url)
+    events = demo.get_by_text(
+        re.compile(r"^on_unmount @ \d{4}-\d\d-\d\d \d\d:\d\d:\d\d")
+    )
+    # React's StrictMode also unmounts once on load in dev mode.
+    expect(events.first).to_be_visible()
+```
+
 ## on_mouse_up
 
 The on_mouse_up event handler is called when the user releases a mouse button on an element. For example, it's called when the user releases the left mouse button on a button.
@@ -291,6 +364,13 @@ class MouseUpState(rx.State):
 
 def mouse_up_example():
     return rx.button(MouseUpState.text, on_mouse_up=MouseUpState.change_text)
+```
+
+```python test
+def test_on_mouse_up_toggles_text(demo):
+    button = demo.get_by_role("button", name="Change Me!")
+    button.click()
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
 ```
 
 ## on_mouse_down
@@ -313,6 +393,13 @@ def mouse_down_example():
     return rx.button(MouseDownState.text, on_mouse_down=MouseDownState.change_text)
 ```
 
+```python test
+def test_on_mouse_down_toggles_text(demo):
+    button = demo.get_by_role("button", name="Change Me!")
+    button.click()
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
+```
+
 ## on_mouse_enter
 
 The on_mouse_enter event handler is called when the user's mouse enters an element. For example, it's called when the user's mouse enters a button.
@@ -331,6 +418,13 @@ class MouseEnterState(rx.State):
 
 def mouse_enter_example():
     return rx.button(MouseEnterState.text, on_mouse_enter=MouseEnterState.change_text)
+```
+
+```python test
+def test_on_mouse_enter_toggles_text(demo):
+    button = demo.get_by_role("button", name="Change Me!")
+    button.hover()
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
 ```
 
 ## on_mouse_leave
@@ -353,6 +447,14 @@ def mouse_leave_example():
     return rx.button(MouseLeaveState.text, on_mouse_leave=MouseLeaveState.change_text)
 ```
 
+```python test
+def test_on_mouse_leave_toggles_text(demo, page):
+    button = demo.get_by_role("button", name="Change Me!")
+    button.hover()
+    page.mouse.move(0, 0)
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
+```
+
 ## on_mouse_move
 
 The on_mouse_move event handler is called when the user moves the mouse over an element. For example, it's called when the user moves the mouse over a button.
@@ -371,6 +473,13 @@ class MouseMoveState(rx.State):
 
 def mouse_move_example():
     return rx.button(MouseMoveState.text, on_mouse_move=MouseMoveState.change_text)
+```
+
+```python test
+def test_on_mouse_move_toggles_text(demo):
+    button = demo.get_by_role("button", name="Change Me!")
+    button.hover()
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
 ```
 
 ## on_mouse_out
@@ -393,6 +502,14 @@ def mouse_out_example():
     return rx.button(MouseOutState.text, on_mouse_out=MouseOutState.change_text)
 ```
 
+```python test
+def test_on_mouse_out_toggles_text(demo, page):
+    button = demo.get_by_role("button", name="Change Me!")
+    button.hover()
+    page.mouse.move(0, 0)
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
+```
+
 ## on_mouse_over
 
 The on_mouse_over event handler is called when the user's mouse enters an element. For example, it's called when the user's mouse enters a button.
@@ -411,6 +528,13 @@ class MouseOverState(rx.State):
 
 def mouse_over_example():
     return rx.button(MouseOverState.text, on_mouse_over=MouseOverState.change_text)
+```
+
+```python test
+def test_on_mouse_over_toggles_text(demo):
+    button = demo.get_by_role("button", name="Change Me!")
+    button.hover()
+    expect(demo.get_by_role("button", name="Changed!")).to_be_visible()
 ```
 
 ## on_scroll
@@ -441,6 +565,14 @@ def scroll_example():
     )
 ```
 
+```python test
+def test_on_scroll_toggles_text(demo):
+    expect(demo.get_by_text("Change Me!", exact=True)).to_be_visible()
+    box = demo.get_by_text("Scroll to make the text below change.").locator("..")
+    box.evaluate("el => { el.scrollTop = 10 }")
+    expect(demo.get_by_text("Changed!", exact=True)).to_be_attached()
+```
+
 ## on_key_down
 
 The on_key_down event handler is called when the user presses a key while the element has focus. The handler receives the name of the key (e.g. `"Enter"`, `"Escape"`, `"a"`, `"ArrowUp"`) and a dictionary describing the active modifier keys (`alt_key`, `ctrl_key`, `meta_key`, `shift_key`).
@@ -467,6 +599,15 @@ def key_down_example():
             on_key_down=KeyDownState.handle_key_down,
         ),
     )
+```
+
+```python test
+def test_on_key_down_reports_key(demo):
+    field = demo.get_by_placeholder("Focus me and press a key...")
+    field.press("a")
+    expect(demo.get_by_text("Last key pressed: a")).to_be_visible()
+    field.press("Enter")
+    expect(demo.get_by_text("You pressed Enter!")).to_be_visible()
 ```
 
 ## on_key_up

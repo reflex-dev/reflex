@@ -19,6 +19,13 @@ rx.image(
 )
 ```
 
+```python test
+def test_image_props(demo):
+    expect(demo.get_by_role("img", name="Reflex Logo")).to_have_attribute(
+        "src", "https://web.reflex-assets.dev/other/logo.jpg"
+    )
+```
+
 Check the docs for the component you are using to see what props are available and how they affect the component (see the `rx.image` [reference](/docs/library/media/image/#api-reference) page for example).
 
 ## Common Props
@@ -34,6 +41,13 @@ rx.box(
         "class-name-2",
     ],
 )
+```
+
+```python test
+def test_box_id_and_class_names(demo):
+    box = demo.locator("#box-id")
+    expect(box).to_have_text("Hello World")
+    expect(box).to_contain_class("class-name-1 class-name-2")
 ```
 
 In the example above, the `class_name` prop of the `rx.box` component is assigned a list of class names. This means the `rx.box` component will be styled with the CSS classes `class-name-1` and `class-name-2`.
@@ -52,6 +66,16 @@ rx.button(
     color="white",
     opacity=1,
 )
+```
+
+```python test
+def test_fancy_button_styles(demo):
+    button = demo.get_by_role("button", name="Fancy Button")
+    expect(button).to_have_css("color", "rgb(255, 255, 255)")
+    expect(button).to_have_css(
+        "background-image",
+        "linear-gradient(144deg, rgb(175, 64, 255), rgb(91, 66, 243) 50%, rgb(0, 221, 235))",
+    )
 ```
 
 See the [styling docs](/docs/styling/overview/) to learn more about customizing the appearance of your app.
@@ -89,6 +113,16 @@ def index():
         color_scheme=PropExampleState.color,
         on_click=PropExampleState.flip_color,
     )
+```
+
+```python test
+def test_state_var_prop_flips_color(demo):
+    button = demo.get_by_role("button", name="Hello World")
+    expect(button).to_have_attribute("data-accent-color", "red")
+    button.click()
+    expect(button).to_have_attribute("data-accent-color", "blue")
+    button.click()
+    expect(button).to_have_attribute("data-accent-color", "red")
 ```
 
 In this example, the `color_scheme` prop is bound to the `color` state var.

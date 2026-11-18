@@ -36,6 +36,15 @@ rx.image(
 )
 ```
 
+```python test
+def test_remote_image(demo):
+    logo = demo.get_by_role("img", name="Reflex logo")
+    expect(logo).to_have_attribute(
+        "src", "https://web.reflex-assets.dev/other/Reflex.svg"
+    )
+    expect(logo).to_have_css("width", "80px")
+```
+
 ```md alert
 # Always prefix the asset path with a forward slash `/` to reference the asset from the root of the project, or it may not display correctly on non-root pages.
 ```
@@ -59,6 +68,14 @@ Local assets are stored in the app's `assets/` directory and are referenced usin
 
 ```python demo
 rx.image(src=rx.asset("Reflex.svg"), alt="Reflex logo", width="5em")
+```
+
+```python test
+def test_local_asset_image_loads(demo):
+    logo = demo.get_by_role("img", name="Reflex logo")
+    expect(logo).to_have_attribute("src", re.compile(r"^/docs/Reflex\.svg(\?v=\w+)?$"))
+    expect(logo).to_have_js_property("complete", True)
+    assert logo.evaluate("img => img.naturalWidth") > 0
 ```
 
 #### Shared Assets

@@ -8,7 +8,7 @@ A smart checkboxes group where you can track all checked boxes, as well as place
 
 ## Recipe
 
-```python eval
+```python eval notest
 rx.center(
     rx.image(
         src="https://web.reflex-assets.dev/templates/smart_checkboxes.webp",

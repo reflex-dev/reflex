@@ -28,6 +28,13 @@ rx.grid(
 )
 ```
 
+```python test
+def test_grid_of_twelve_cards(demo):
+    expect(demo.get_by_text(re.compile(r"^Card \d+$"))).to_have_text([
+        f"Card {i}" for i in range(1, 13)
+    ])
+```
+
 ## Inset cards
 
 ```python demo
@@ -60,4 +67,12 @@ rx.grid(
     ],
     width="100%",
 )
+```
+
+```python test
+def test_grid_of_image_cards(demo):
+    expect(demo.get_by_role("img", name="Reflex banner image")).to_have_count(12)
+    expect(demo.get_by_role("paragraph")).to_have_text([
+        f"Card {i}" for i in range(1, 13)
+    ])
 ```

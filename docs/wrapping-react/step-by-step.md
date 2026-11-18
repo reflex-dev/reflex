@@ -64,6 +64,16 @@ def wrapped_color_example():
     )
 ```
 
+```python test
+def test_wrapped_picker_updates_state(demo):
+    text = demo.get_by_text(re.compile("^Selected color: "))
+    expect(text).to_have_text("Selected color: #6750a4")
+    demo.get_by_role("slider", name="Hue").focus()
+    demo.get_by_role("slider", name="Hue").press("ArrowRight")
+    expect(text).not_to_have_text("Selected color: #6750a4")
+    expect(text).to_have_text(re.compile("^Selected color: #[0-9a-f]{6}$"))
+```
+
 For a standalone app, add this after the example:
 
 ```python

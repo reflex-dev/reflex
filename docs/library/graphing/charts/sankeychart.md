@@ -50,6 +50,14 @@ def sankey_simple():
     )
 ```
 
+```python test
+def test_sankey_links_funnel_steps(demo):
+    expect(demo.locator(".recharts-sankey-node")).to_have_count(5)
+    expect(demo.locator(".recharts-sankey-link")).to_have_count(4)
+    demo.locator(".recharts-sankey-node").first.hover()
+    expect(demo.locator(".recharts-tooltip-item")).to_have_text("Website : 1200")
+```
+
 ## Stateful Example
 
 Chart data can be tied to a State var. This example randomizes the flow values when the button is clicked.
@@ -101,6 +109,27 @@ def sankey_stateful():
         rx.button("Randomize flows", on_click=SankeyState.randomize_flows),
         width="100%",
     )
+```
+
+```python test
+def test_randomize_button_changes_flows(demo):
+    links = demo.locator(".recharts-sankey-link")
+    expect(links).to_have_count(5)
+    expect(demo.locator(".recharts-sankey-node")).to_have_count(5)
+    trial_to_sales = links.nth(1)
+    expect(trial_to_sales).to_have_attribute("stroke-width", re.compile(r"\d"))
+    original = trial_to_sales.get_attribute("stroke-width")
+    # The new flows are random, so click until this link's width changes.
+    for _ in range(10):
+        demo.get_by_role("button", name="Randomize flows").click()
+        try:
+            expect(trial_to_sales).not_to_have_attribute(
+                "stroke-width", original, timeout=2000
+            )
+            break
+        except AssertionError:
+            continue
+    expect(trial_to_sales).not_to_have_attribute("stroke-width", original)
 ```
 
 
@@ -210,6 +239,25 @@ def sankey_custom_render():
         width="100%",
         height=340,
     )
+```
+
+```python test
+def test_custom_nodes_and_links_render_labels(demo):
+    labels = demo.locator(".recharts-surface text")
+    expect(labels).to_have_text([
+        "350",
+        "500",
+        "220",
+        "190",
+        "260",
+        "150",
+        "Sources",
+        "Direct",
+        "Search",
+        "Paid",
+        "Revenue",
+    ])
+    expect(demo.locator(".recharts-surface linearGradient")).to_have_count(6)
 ```
 
 ## Related Charts

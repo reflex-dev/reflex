@@ -30,6 +30,14 @@ def multi_update():
     )
 ```
 
+```python test
+def test_yield_counts_to_100(demo):
+    count = demo.get_by_text(re.compile(r"^\d+$"))
+    expect(count).to_have_text("0")
+    demo.get_by_role("button", name="Start").click()
+    expect(count).to_have_text("100")
+```
+
 Here is another example of yielding multiple updates with a loading icon.
 
 ```python demo exec
@@ -56,6 +64,16 @@ def progress_example():
         on_click=ProgressExampleState.increment,
         loading=ProgressExampleState.show_progress,
     )
+```
+
+```python test
+def test_button_shows_loading_while_incrementing(demo):
+    button = demo.get_by_role("button")
+    expect(button).to_have_text("0")
+    button.click()
+    expect(button).to_be_disabled()
+    expect(button).to_have_text("1")
+    expect(button).to_be_enabled()
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=6463&end=6835
@@ -102,4 +120,13 @@ def multiple_yield_example():
         on_click=YieldEventsState.increment,
         loading=YieldEventsState.show_progress,
     )
+```
+
+```python test
+def test_yielded_events_add_fifteen(demo):
+    button = demo.get_by_role("button")
+    expect(button).to_have_text("0")
+    button.click()
+    expect(button).to_be_disabled()
+    expect(button).to_have_text("15", timeout=10000)
 ```

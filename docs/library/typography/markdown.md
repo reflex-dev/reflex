@@ -22,6 +22,17 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_markdown_basic_elements(demo):
+    for level in (2, 3, 4):
+        expect(demo.get_by_role("heading", level=level)).to_have_text("Hello World!")
+    expect(demo.get_by_role("link", name="Github")).to_have_attribute(
+        "href", "https://github.com/reflex-dev/reflex"
+    )
+    expect(demo.locator("code")).to_have_text("reflex deploy")
+    expect(demo.locator("strong")).to_have_text("a single command")
+```
+
 ## Math Equations
 
 You can render math equations using LaTeX.
@@ -29,6 +40,12 @@ For inline equations, surround the equation with `$`:
 
 ```python demo
 rx.markdown("Pythagorean theorem: $a^2 + b^2 = c^2$.")
+```
+
+```python test
+def test_markdown_inline_math(demo):
+    expect(demo.locator(".katex")).to_be_visible()
+    expect(demo.locator(".katex annotation")).to_have_text("a^2 + b^2 = c^2")
 ```
 
 ```md alert warning
@@ -54,6 +71,13 @@ app.add_page(index)
 )
 ````
 
+```python test
+def test_markdown_code_block(demo):
+    expect(demo.locator("pre code")).to_have_text(
+        "import reflex as rx\nfrom .pages import index\n\napp = rx.App()\napp.add_page(index)"
+    )
+```
+
 ## Tables
 
 You can render tables using the `|` syntax:
@@ -67,6 +91,18 @@ rx.markdown(
 | Paragraph   | Text        |
 """
 )
+```
+
+```python test
+def test_markdown_table(demo):
+    table = demo.get_by_role("table")
+    expect(table.get_by_role("columnheader")).to_have_text(["Syntax", "Description"])
+    expect(table.get_by_role("cell")).to_have_text([
+        "Header",
+        "Title",
+        "Paragraph",
+        "Text",
+    ])
 ```
 
 ## Plugins
@@ -105,6 +141,11 @@ rx.markdown(
 )
 ```
 
+```python test
+def test_markdown_remark_emoji(demo):
+    expect(demo.locator("p")).to_have_text("Hello 😄! 🚀 🎉")
+```
+
 ### Rehype Plugin Example
 
 To make `rehype-raw` safer for untrusted HTML input we can use `rehype-sanitize`, which defaults to a safe schema similar to that used by Github.
@@ -117,6 +158,13 @@ rx.markdown(
         rx.markdown.plugin("rehype-sanitize@5.0.1", "rehypeSanitize"),
     ],
 )
+```
+
+```python test
+def test_markdown_rehype_sanitize(demo):
+    expect(demo.locator("p")).to_have_text("Here is some bold text and a .")
+    expect(demo.locator("strong")).to_have_text("bold")
+    expect(demo.locator("script")).to_have_count(0)
 ```
 
 ### Plugin Options
@@ -150,6 +198,16 @@ rx.markdown(
         ),
     ],
 )
+```
+
+```python test
+def test_markdown_autolink_headings(demo):
+    for level, slug in [(2, "heading-2"), (3, "heading-3")]:
+        heading = demo.get_by_role("heading", level=level)
+        expect(heading).to_have_attribute("id", slug)
+        link = heading.get_by_role("link")
+        expect(link).to_have_attribute("href", f"#{slug}")
+        expect(link).to_have_class(re.compile(r"\bheading-link\b"))
 ```
 
 ## Component Map
@@ -206,3 +264,22 @@ followed by a link to
         )
     )
 ````
+
+```python test
+def test_markdown_component_map(demo):
+    expect(demo.get_by_role("heading", level=2)).to_have_text([
+        "Hello World!",
+        "This is a Subheader",
+        "And Another Subheader",
+    ])
+    expect(demo.get_by_text("And then some more text here")).to_have_css(
+        "color", "rgb(0, 128, 0)"
+    )
+    expect(demo.get_by_role("link", name="Reflex")).to_have_css(
+        "color", "rgb(0, 0, 255)"
+    )
+    expect(demo.locator("code", has_text=re.compile("^code$"))).to_have_css(
+        "color", "rgb(128, 0, 128)"
+    )
+    expect(demo.get_by_text('component = rx.text("Hello World!")')).to_be_visible()
+```

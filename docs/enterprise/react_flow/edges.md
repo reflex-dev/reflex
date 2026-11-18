@@ -231,3 +231,13 @@ def very_simple_custom_edge_example():
         width="100%",
     )
 ```
+
+```python test
+def test_button_edge_deletes_itself(demo):
+    flow = demo.get_by_role("application")
+    expect(flow.get_by_role("group").filter(has_text="Node A")).to_have_text("Node A")
+    edge = flow.get_by_role("group", name="Edge from 1 to 2")
+    expect(edge).to_be_attached()
+    flow.get_by_role("button", name="×").click()
+    expect(edge).to_have_count(0)
+```

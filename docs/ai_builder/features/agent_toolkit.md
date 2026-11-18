@@ -8,7 +8,7 @@ Agent Toolkit configures assistants that run outside Reflex Build. For web searc
 import reflex as rx
 ```
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/agent_toolkit.webp",
     alt="Agent Toolkit MCP and coding assistant setup options",

@@ -34,6 +34,15 @@ def cond_example():
     )
 ```
 
+```python test
+def test_cond_toggles_between_components(demo):
+    expect(demo.get_by_text("Text 1")).to_be_visible()
+    expect(demo.get_by_text("Text 2")).to_have_count(0)
+    demo.get_by_role("button", name="Toggle").click()
+    expect(demo.get_by_text("Text 2")).to_be_visible()
+    expect(demo.get_by_text("Text 1")).to_have_count(0)
+```
+
 The second component is optional and can be omitted.
 If it is omitted, nothing is rendered if the condition is `False`.
 
@@ -58,6 +67,15 @@ def cond_optional_example():
         ),
         rx.text("This text is always visible", color="var(--gray-11)"),
     )
+```
+
+```python test
+def test_cond_without_else_renders_nothing(demo):
+    optional = demo.get_by_text("This text appears when condition is True")
+    expect(optional).to_be_visible()
+    demo.get_by_role("button", name="Toggle").click()
+    expect(optional).to_have_count(0)
+    expect(demo.get_by_text("This text is always visible")).to_be_visible()
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=6040&end=6463
@@ -116,6 +134,27 @@ def cond_complex_example():
     )
 ```
 
+```python test
+def test_cond_multiple_conditions(demo):
+    age = demo.get_by_text(re.compile(r"^Age: \d+$"))
+    expect(age).to_have_text("Age: 19")
+    expect(demo.get_by_text("You can work!")).to_be_visible()
+    # The new age is random, so click until it changes.
+    for _ in range(10):
+        demo.get_by_role("button", name="Toggle").click()
+        try:
+            expect(age).not_to_have_text("Age: 19", timeout=2000)
+            break
+        except AssertionError:
+            continue
+    expect(age).not_to_have_text("Age: 19")
+    value = int(age.inner_text().removeprefix("Age: "))
+    expected = "You can work!" if 18 <= value <= 65 else "You cannot work!"
+    expect(demo.get_by_text(re.compile(r"^You can(not)? work!$"))).to_have_text(
+        expected
+    )
+```
+
 ## Nested Conditional
 
 We can also nest `cond` components within each other to create more complex logic. In python we can have an `if` statement that then has several `elif` statements before finishing with an `else`. This is also possible in reflex using nested `cond` components. In this example we check whether a number is positive, negative or zero.
@@ -160,6 +199,23 @@ def cond_nested_example():
             ),
         ),
     )
+```
+
+```python test
+def test_cond_nested(demo):
+    result = demo.get_by_text(re.compile(r" is (Positive|Zero|Negative)!$"))
+    expect(result).to_have_text("0 is Zero!")
+    # The new number is random, so click until it changes.
+    for _ in range(10):
+        demo.get_by_role("button", name="Toggle").click()
+        try:
+            expect(result).not_to_have_text("0 is Zero!", timeout=2000)
+            break
+        except AssertionError:
+            continue
+    num = int(result.inner_text().split(" ")[0])
+    sign = "Positive" if num > 0 else "Zero" if num == 0 else "Negative"
+    expect(result).to_have_text(f"{num} is {sign}!")
 ```
 
 Here is a more advanced example where we have three numbers and we are checking which of the three is the largest. If any two of them are equal then we return that `Some of the numbers are equal!`.

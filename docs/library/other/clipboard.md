@@ -32,6 +32,21 @@ def clipboard_example():
     )
 ```
 
+```python test
+def test_clipboard_page_paste_shows_toast(page, demo):
+    expect(demo.get_by_text("Paste Content Here")).to_be_visible()
+    page.evaluate(
+        """() => {
+            const data = new DataTransfer();
+            data.setData("text/plain", "hello reflex");
+            document.body.dispatchEvent(
+                new ClipboardEvent("paste", {clipboardData: data, bubbles: true})
+            );
+        }"""
+    )
+    expect(page.get_by_text("Pasted text/plain data: hello reflex")).to_be_visible()
+```
+
 The `data` argument passed to the `on_paste` method is a list of tuples, where
 each tuple contains the MIME type of the pasted data and the data itself. Binary
 data will be base64 encoded as a data URI, and can be decoded using python's
@@ -78,4 +93,26 @@ def clipboard_image_example():
             alt="Image pasted from clipboard",
         ),
     )
+```
+
+```python test
+def test_clipboard_scoped_image_paste(page, demo):
+    paste = """(el, file) => {
+        const data = new DataTransfer();
+        if (file) {
+            data.items.add(new File([new Uint8Array([1, 2, 3])], "a.png", {type: "image/png"}));
+        } else {
+            data.setData("text/plain", "not an image");
+        }
+        const event = new ClipboardEvent("paste", {clipboardData: data, bubbles: true, cancelable: true});
+        el.dispatchEvent(event);
+        return event.defaultPrevented;
+    }"""
+    text_input = demo.get_by_placeholder("Paste Image (prevent default)")
+    assert text_input.evaluate(paste, False) is True
+    expect(page.get_by_text("Did not find an image in the pasted data")).to_be_visible()
+    demo.get_by_placeholder("Paste Image (stop propagation)").evaluate(paste, True)
+    expect(
+        demo.get_by_role("img", name="Image pasted from clipboard")
+    ).to_have_attribute("src", "data:image/png;base64,AQID")
 ```

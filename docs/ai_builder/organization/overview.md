@@ -17,7 +17,7 @@ Every project and app belongs to an organization, in both [Reflex Build](/docs/a
 
 Reflex has three levels.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/overview/organization_hierarchy.webp",
     alt="Diagram showing an organization containing projects, and each project containing apps",
@@ -53,7 +53,7 @@ Most teams need only one organization. Create a second when you want fully separ
 
 Open the **organization switcher** at the top of the page, choose **Create organization**, name it, and confirm.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/overview/create_organization.webp",
     alt="The organization switcher menu open, with the Create organization option highlighted",

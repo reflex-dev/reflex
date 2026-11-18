@@ -21,10 +21,23 @@ To create an avatar component with an image, pass the image URL as the `src` pro
 rx.avatar(src="https://web.reflex-assets.dev/other/logo.jpg")
 ```
 
+```python test
+def test_avatar_shows_image(demo):
+    expect(demo.get_by_role("img")).to_have_attribute(
+        "src", "https://web.reflex-assets.dev/other/logo.jpg"
+    )
+```
+
 To display a text such as initials, set the `fallback` prop without passing the `src` prop.
 
 ```python demo
 rx.avatar(fallback="RX")
+```
+
+```python test
+def test_avatar_shows_fallback_initials(demo):
+    expect(demo.locator(".rt-AvatarFallback")).to_have_text("RX")
+    expect(demo.get_by_role("img")).to_have_count(0)
 ```
 
 ## Styling
@@ -65,6 +78,12 @@ rx.flex(
 )
 ```
 
+```python test
+def test_avatar_sizes(demo):
+    expect(demo.locator(".rt-AvatarRoot")).to_have_count(9)
+    expect(demo.get_by_role("img")).to_have_count(9)
+```
+
 ### Variant
 
 The `variant` prop controls the visual style of the avatar fallback text. The variant can be `"solid"` or `"soft"`. The default is `"soft"`.
@@ -76,6 +95,13 @@ rx.flex(
     rx.avatar(fallback="RX"),
     spacing="2",
 )
+```
+
+```python test
+def test_avatar_variants(demo):
+    expect(demo.get_by_text("RX")).to_have_count(3)
+    expect(demo.locator(".rt-AvatarRoot.rt-variant-solid")).to_have_count(1)
+    expect(demo.locator(".rt-AvatarRoot.rt-variant-soft")).to_have_count(2)
 ```
 
 ### Color Scheme
@@ -92,6 +118,14 @@ rx.flex(
 )
 ```
 
+```python test
+def test_avatar_color_schemes(demo):
+    avatars = demo.locator(".rt-AvatarRoot")
+    expect(avatars).to_have_count(4)
+    for i, color in enumerate(["indigo", "cyan", "orange", "crimson"]):
+        expect(avatars.nth(i)).to_have_attribute("data-accent-color", color)
+```
+
 ### High Contrast
 
 The `high_contrast` prop increases color contrast of the fallback text with the background.
@@ -106,6 +140,12 @@ rx.grid(
     spacing="2",
     flow="column",
 )
+```
+
+```python test
+def test_avatar_high_contrast(demo):
+    expect(demo.get_by_text("RX")).to_have_count(4)
+    expect(demo.locator(".rt-AvatarRoot.rt-high-contrast")).to_have_count(2)
 ```
 
 ### Radius
@@ -146,6 +186,13 @@ rx.grid(
 )
 ```
 
+```python test
+def test_avatar_radius(demo):
+    expect(demo.locator(".rt-AvatarRoot")).to_have_count(10)
+    expect(demo.get_by_role("img")).to_have_count(5)
+    expect(demo.get_by_text("RX")).to_have_count(5)
+```
+
 ### Fallback
 
 The `fallback` prop indicates the rendered text when the `src` cannot be loaded.
@@ -156,6 +203,11 @@ rx.flex(
     rx.avatar(fallback="PC"),
     spacing="2",
 )
+```
+
+```python test
+def test_avatar_fallbacks(demo):
+    expect(demo.locator(".rt-AvatarFallback")).to_have_text(["RX", "PC"])
 ```
 
 ## Final Example
@@ -173,4 +225,14 @@ rx.flex(
     direction="column",
     spacing="1",
 )
+```
+
+```python test
+def test_avatar_profile_card(demo):
+    expect(demo.get_by_role("img")).to_have_attribute(
+        "src", "https://web.reflex-assets.dev/other/logo.jpg"
+    )
+    expect(demo.get_by_text("Reflex User")).to_be_visible()
+    expect(demo.get_by_text("@reflexuser")).to_be_visible()
+    expect(demo.get_by_role("button", name="Edit Profile")).to_be_visible()
 ```

@@ -510,7 +510,10 @@ def docs_layout(
                     if layout_config.breadcrumb is not None
                     else _breadcrumb(page)
                 ),
-                rx.el.article(content, class_name="[&>div]:!p-0"),
+                # A demo's own wrapper (data-docs-demo) takes no part in layout.
+                rx.el.article(
+                    content, class_name="[&>div]:!p-0 [&>[data-docs-demo]>div]:!p-0"
+                ),
                 rx.el.nav(
                     _pager_link(previous, "Back"),
                     rx.spacer(),

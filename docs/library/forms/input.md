@@ -50,6 +50,17 @@ def blur_example():
     )
 ```
 
+```python test
+def test_input_sets_text_on_blur(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("Hello World!")
+    textbox = demo.get_by_placeholder("Search here...")
+    textbox.fill("Blurred")
+    expect(heading).to_have_text("Hello World!")
+    textbox.blur()
+    expect(heading).to_have_text("Blurred")
+```
+
 The `on_change` event handler is called when the `value` of `input` has changed.
 
 ```python demo exec
@@ -70,6 +81,14 @@ def controlled_example():
             on_change=TextfieldControlled.set_text,
         ),
     )
+```
+
+```python test
+def test_debounced_controlled_input(demo):
+    textbox = demo.get_by_placeholder("Search here...")
+    expect(textbox).to_have_value("Hello World!")
+    textbox.fill("Debounced")
+    expect(demo.get_by_role("heading")).to_have_text("Debounced")
 ```
 
 Behind the scenes, the input component is implemented as a debounced input to avoid sending individual state updates per character to the backend while the user is still typing. This allows a state variable to directly control the `value` prop from the backend without the user experiencing input lag.
@@ -100,6 +119,13 @@ rx.vstack(
     rx.input(placeholder="Password", type="password"),
     rx.input(type="date"),
 )
+```
+
+```python test
+def test_input_types(demo):
+    expect(demo.get_by_placeholder("Username")).to_have_attribute("type", "text")
+    expect(demo.get_by_placeholder("Password")).to_have_attribute("type", "password")
+    expect(demo.locator("input[type=date]")).to_have_count(1)
 ```
 
 ## Submitting a form using input
@@ -150,6 +176,20 @@ def form_input1():
     )
 ```
 
+```python test
+def test_required_input_form(demo):
+    results = demo.locator(".rt-Badge")
+    textbox = demo.get_by_placeholder("Enter text...")
+    submit = demo.get_by_role("button", name="Submit")
+    submit.click()
+    expect(textbox).to_have_js_property("validity.valueMissing", True)
+    expect(results).to_have_text("{}")
+    textbox.fill("hello")
+    submit.click()
+    expect(results).to_have_text('{"input":"hello"}')
+    expect(textbox).to_have_value("")
+```
+
 To learn more about how to use forms in the [Form](/docs/library/forms/form/) docs.
 
 ## Setting a value without using a State var
@@ -161,4 +201,12 @@ rx.hstack(
     rx.input(id="input1"),
     rx.button("Erase", on_click=rx.set_value("input1", "")),
 )
+```
+
+```python test
+def test_set_value_erases_input(demo):
+    textbox = demo.get_by_role("textbox")
+    textbox.fill("to be erased")
+    demo.get_by_role("button", name="Erase").click()
+    expect(textbox).to_have_value("")
 ```

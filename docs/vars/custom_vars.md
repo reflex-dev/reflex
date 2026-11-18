@@ -52,6 +52,18 @@ def text_entry_example():
     )
 ```
 
+```python test
+def test_dataclass_custom_var(demo):
+    field = demo.get_by_placeholder("Text to transform...")
+    expect(field).to_have_value("hello world")
+    demo.get_by_role("button", name="Transform").click()
+    expect(demo.get_by_text("HELLO WORLD", exact=True)).to_be_visible()
+    field.fill("custom vars")
+    field.blur()
+    demo.get_by_role("button", name="Transform").click()
+    expect(demo.get_by_text("CUSTOM VARS", exact=True)).to_be_visible()
+```
+
 ## Alternative Approaches
 
 ### Using TypedDict

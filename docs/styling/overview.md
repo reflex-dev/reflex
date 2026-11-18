@@ -90,6 +90,17 @@ rx.text(
 )
 ```
 
+```python test
+def test_gradient_text(demo):
+    text = demo.get_by_text("Hello World")
+    expect(text).to_have_css(
+        "background-image",
+        "linear-gradient(271.68deg, rgb(238, 117, 106) 0.75%, rgb(117, 106, 238) 88.52%)",
+    )
+    expect(text).to_have_css("background-clip", "text")
+    expect(text).to_have_css("font-weight", "700")
+```
+
 Children components inherit inline styles unless they are overridden by their own inline styles.
 
 ```python demo
@@ -100,6 +111,20 @@ rx.box(
     ),
     color="blue",
 )
+```
+
+```python test
+@pytest.mark.xfail(
+    strict=True,
+    reason="rx.button sets its own text color, so Default Button stays white instead of inheriting the parent's blue as the docs claim.",
+)
+def test_children_inherit_inline_color(demo):
+    expect(demo.get_by_role("button", name="Red Button")).to_have_css(
+        "color", "rgb(255, 0, 0)"
+    )
+    expect(demo.get_by_role("button", name="Default Button")).to_have_css(
+        "color", "rgb(0, 0, 255)"
+    )
 ```
 
 ### Style Prop
@@ -131,6 +156,18 @@ rx.vstack(
     rx.text("Hello", style=text_style),
     rx.text("World", style=text_style),
 )
+```
+
+```python test
+def test_style_prop_reused(demo):
+    for word in ["Hello", "World"]:
+        text = demo.get_by_text(word, exact=True)
+        expect(text).to_have_css("color", "rgb(0, 128, 0)")
+        expect(text).to_have_css("font-weight", "700")
+        expect(text).to_have_css(
+            "box-shadow",
+            "rgba(240, 46, 170, 0.4) 5px 5px 0px 0px, rgba(240, 46, 170, 0.3) 10px 10px 0px 0px",
+        )
 ```
 
 ```python exec
@@ -168,6 +205,16 @@ rx.box(
 )
 ```
 
+```python test
+def test_later_style_overrides_earlier(demo):
+    box = demo.get_by_text("Multiple Styles")
+    expect(box).to_have_css("color", "rgb(255, 255, 255)")
+    expect(box).to_have_css("background-color", "rgb(107, 99, 246)")
+    expect(box).to_have_css("border-radius", "10px")
+    expect(box).to_have_css("border", "5px solid rgb(238, 117, 106)")
+    expect(box).to_have_css("padding", "10px")
+```
+
 The style dictionaries are applied in the order they are passed in. This means that styles defined later will override styles defined earlier.
 
 ## Theming
@@ -196,4 +243,12 @@ Below is an example of text that changes color when you hover over it.
 rx.box(
     rx.text("Hover Me", _hover={"color": "red"}),
 )
+```
+
+```python test
+def test_hover_turns_text_red(demo):
+    text = demo.get_by_text("Hover Me")
+    expect(text).not_to_have_css("color", "rgb(255, 0, 0)")
+    text.hover()
+    expect(text).to_have_css("color", "rgb(255, 0, 0)")
 ```

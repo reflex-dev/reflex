@@ -43,6 +43,18 @@ rx.grid(
 )
 ```
 
+```python test
+def test_grid_three_columns(demo):
+    cards = demo.locator(".rt-Card")
+    expect(cards).to_have_text([f"Card {i}" for i in range(1, 13)])
+    rects = [cards.nth(i).bounding_box() for i in range(12)]
+    # Cards fill rows left to right: three per row, four rows.
+    assert len({rect["x"] for rect in rects}) == 3
+    assert len({rect["y"] for rect in rects}) == 4
+    assert rects[1]["y"] == rects[0]["y"]
+    assert rects[3]["x"] == rects[0]["x"]
+```
+
 ```python demo
 rx.grid(
     rx.foreach(
@@ -55,4 +67,16 @@ rx.grid(
     spacing="4",
     width="100%",
 )
+```
+
+```python test
+def test_grid_three_rows_column_flow(demo):
+    cards = demo.locator(".rt-Card")
+    expect(cards).to_have_text([f"Card {i}" for i in range(1, 13)])
+    rects = [cards.nth(i).bounding_box() for i in range(12)]
+    # Cards fill columns top to bottom: three per column, four columns.
+    assert len({rect["y"] for rect in rects}) == 3
+    assert len({rect["x"] for rect in rects}) == 4
+    assert rects[1]["x"] == rects[0]["x"]
+    assert rects[3]["y"] == rects[0]["y"]
 ```

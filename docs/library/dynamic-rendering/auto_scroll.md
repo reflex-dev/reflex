@@ -47,6 +47,16 @@ def auto_scroll_example():
     )
 ```
 
+```python test
+def test_auto_scroll_follows_new_messages(demo):
+    add = demo.get_by_role("button", name="Add Message")
+    for n in range(2, 10):
+        add.click()
+        expect(demo.get_by_text(f"New message #{n}")).to_be_visible()
+    expect(demo.get_by_text("New message #9")).to_be_in_viewport()
+    expect(demo.get_by_text("Initial message")).not_to_be_in_viewport()
+```
+
 The `auto_scroll` component automatically scrolls to show the newest content when it's added. In this example, each time you click "Add Message", a new message is added to the list and the container automatically scrolls to display it.
 
 ## When to Use Auto Scroll

@@ -38,6 +38,18 @@ def tooltip_simple():
     )
 ```
 
+```python test
+def test_tooltip_lists_values_for_hovered_page(demo):
+    demo.locator(".recharts-bar-rectangle").nth(2).hover()
+    tooltip = demo.locator(".recharts-default-tooltip")
+    expect(tooltip.locator(".recharts-tooltip-label")).to_have_text("Page C")
+    expect(tooltip.locator(".recharts-tooltip-item")).to_have_text([
+        "amt : 2290",
+        "pv : 9800",
+        "uv : 2000",
+    ])
+```
+
 ## Custom Styling
 
 The `rx.recharts.graphing_tooltip` component allows for customization of the tooltip's style, position, and layout. `separator` sets the separator between the data key and value. `view_box` prop defines the dimensions of the chart's viewbox while `allow_escape_view_box` determines whether the tooltip can extend beyond the viewBox horizontally (x) or vertically (y). `wrapper_style` prop allows you to style the outer container or wrapper of the tooltip. `content_style` prop allows you to style the inner content area of the tooltip. `is_animation_active` prop determines if the tooltip animation is active or not.
@@ -81,5 +93,21 @@ def tooltip_custom_styling():
         data=data,
         height=300,
         width="100%",
+    )
+```
+
+```python test
+def test_styled_tooltip_uses_custom_separator(demo):
+    demo.locator(".recharts-bar-rectangle").nth(2).hover()
+    tooltip = demo.locator(".recharts-default-tooltip")
+    expect(tooltip.locator(".recharts-tooltip-label")).to_have_text("Page C")
+    expect(tooltip.locator(".recharts-tooltip-item")).to_have_text([
+        "amt - 2290",
+        "pv - 9800",
+        "uv - 2000",
+    ])
+    expect(tooltip).to_have_css("border-radius", "4px")
+    expect(demo.locator(".recharts-tooltip-wrapper")).to_have_css(
+        "border-radius", "8px"
     )
 ```

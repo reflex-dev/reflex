@@ -44,6 +44,18 @@ def decentralized_event_example():
     )
 ```
 
+```python test
+def test_decentralized_handler_increments(demo):
+    count = demo.get_by_role("heading")
+    expect(count).to_have_text("Count: 0")
+    demo.get_by_role("button", name="Increment by 1", exact=True).click()
+    expect(count).to_have_text("Count: 1")
+    demo.get_by_role("button", name="Increment by 5").click()
+    expect(count).to_have_text("Count: 6")
+    demo.get_by_role("button", name="Increment by 10").click()
+    expect(count).to_have_text("Count: 16")
+```
+
 In this example:
 
 1. We define a `MyState` class with a `count` variable

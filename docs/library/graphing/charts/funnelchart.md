@@ -46,6 +46,18 @@ def funnel_simple():
     )
 ```
 
+```python test
+def test_funnel_labels_each_stage(demo):
+    expect(demo.locator(".recharts-funnel-trapezoid")).to_have_count(5)
+    expect(demo.locator(".recharts-label-list text")).to_have_text([
+        "Sent",
+        "Viewed",
+        "Clicked",
+        "Add to Cart",
+        "Purchased",
+    ])
+```
+
 ## Event Triggers
 
 Funnel chart supports `on_click`, `on_mouse_enter`, `on_mouse_leave` and `on_mouse_move` event triggers, allows you to interact with the funnel chart and perform specific actions based on user interactions.
@@ -78,6 +90,16 @@ def funnel_events():
         width="100%",
         height=250,
     )
+```
+
+```python test
+def test_funnel_mouse_events_show_toasts(demo, page):
+    demo.locator(".recharts-funnel-trapezoid").first.hover()
+    expect(page.get_by_text("Mouse entered")).to_be_visible()
+    demo.locator(".recharts-funnel-trapezoid").first.click()
+    expect(page.get_by_text("Clicked on funnel chart")).to_be_visible()
+    page.mouse.move(0, 0, steps=5)
+    expect(page.get_by_text("Mouse left")).to_be_visible()
 ```
 
 ## Dynamic Data
@@ -124,6 +146,23 @@ def funnel_state():
     )
 ```
 
+```python test
+def test_clicking_funnel_randomizes_stages(demo):
+    stages = demo.locator(".recharts-funnel-trapezoid path")
+    expect(stages).to_have_count(5)
+    expect(demo.locator(".recharts-label-list text")).to_have_text([
+        "Sent",
+        "Viewed",
+        "Clicked",
+        "Add to Cart",
+        "Purchased",
+    ])
+    expect(stages.last).to_have_attribute("d", re.compile(r"\S"))
+    original = stages.last.get_attribute("d")
+    stages.first.click()
+    expect(stages.last).not_to_have_attribute("d", original)
+```
+
 ## Changing the Chart Animation
 
 The `is_animation_active` prop can be used to turn off the animation, but defaults to `True`. `animation_begin` sets the delay before animation starts, `animation_duration` determines how long the animation lasts, and `animation_easing` defines the speed curve of the animation for smooth transitions.
@@ -151,6 +190,26 @@ def funnel_animation():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_animated_funnel_draws_stages(demo):
+    expect(demo.locator(".recharts-funnel-trapezoid path")).to_have_count(4)
+    expect(demo.locator(".recharts-funnel-trapezoid path").first).to_have_attribute(
+        "name", "Visits"
+    )
+
+
+@pytest.mark.xfail(
+    strict=True, reason="rx.recharts.legend renders no items for a funnel"
+)
+def test_animated_funnel_legend_lists_stages(demo):
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text([
+        "Visits",
+        "Cart",
+        "Checkout",
+        "Purchase",
+    ])
 ```
 
 ## Related Charts

@@ -293,6 +293,27 @@ rx.box(
 )
 ```
 
+```python test
+def test_finished_dashboard_adds_user(page, demo):
+    expect(demo.get_by_role("heading")).to_have_text("Your customers, at a glance")
+    expect(demo.get_by_text("2 total")).to_be_visible()
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(2)
+    demo.get_by_role("button", name="Add User").click()
+    # Demos sharing a state open stacked copies of the dialog; use the top one.
+    dialog = page.locator("[role=dialog]").last
+    dialog.get_by_placeholder("User Name").fill("Ada Lovelace")
+    dialog.get_by_placeholder("user@reflex.dev").fill("ada@example.com")
+    dialog.get_by_label("Gender").click()
+    page.get_by_role("option", name="Female").click()
+    dialog.get_by_text("Submit", exact=True).click()
+    expect(dialog).to_be_hidden()
+    expect(demo.get_by_text("3 total")).to_be_visible()
+    expect(demo.get_by_role("row").last).to_have_text(
+        "Ada Lovelaceada@example.comFemale"
+    )
+    expect(page.get_by_text("User Ada Lovelace has been added.")).to_be_visible()
+```
+
 ## Setup
 
 1. [Install Reflex](/docs/getting-started/installation/) if you haven't already.
@@ -358,6 +379,27 @@ rx.box(
     border_radius="12px",
     padding="2em",
 )
+```
+
+```python test
+def test_static_table(demo):
+    rows = demo.get_by_role("row")
+    expect(rows).to_have_count(3)
+    expect(rows.nth(0).get_by_role("columnheader")).to_have_text([
+        "Name",
+        "Email",
+        "Gender",
+    ])
+    expect(rows.nth(1).get_by_role("cell")).to_have_text([
+        "Danilo Sousa",
+        "danilo@example.com",
+        "Male",
+    ])
+    expect(rows.nth(2).get_by_role("cell")).to_have_text([
+        "Zahra Ambessa",
+        "zahra@example.com",
+        "Female",
+    ])
 ```
 
 ```python
@@ -498,6 +540,19 @@ rx.box(
 )
 ```
 
+```python test
+def test_table_from_state(demo):
+    expect(demo.get_by_role("columnheader")).to_have_text(["Name", "Email", "Gender"])
+    expect(demo.get_by_role("cell")).to_have_text([
+        "Danilo Sousa",
+        "danilo@example.com",
+        "Male",
+        "Zahra Ambessa",
+        "zahra@example.com",
+        "Female",
+    ])
+```
+
 The table looks the same, but the rows now come from state — next we'll add a form that appends to `State.users` so new rows appear automatically.
 
 ## Add data with a form
@@ -525,6 +580,17 @@ rx.form(
 )
 ```
 
+```python test
+def test_form_fields(page, demo):
+    expect(demo.get_by_placeholder("User Name")).to_have_attribute("required", "")
+    expect(demo.get_by_placeholder("user@reflex.dev")).to_be_editable()
+    gender = demo.get_by_role("combobox", name="Gender")
+    expect(gender).to_have_text("Male")
+    gender.click()
+    page.get_by_role("option", name="Female").click()
+    expect(gender).to_have_text("Female")
+```
+
 The unstyled form above has no space between its fields. Wrap them in `rx.vstack` to add consistent gaps, use `align="stretch"` to give them matching widths, and limit the form to `24em` so it stays readable on wide screens. See the [layout](/docs/styling/layout/) docs for more options.
 
 ```python demo
@@ -549,6 +615,17 @@ rx.form(
     width="100%",
     max_width="24em",
 )
+```
+
+```python test
+def test_stacked_form_fields(demo):
+    name = demo.get_by_placeholder("User Name")
+    email = demo.get_by_placeholder("user@reflex.dev")
+    gender = demo.get_by_role("combobox", name="Gender")
+    expect(gender).to_have_text("Male")
+    name_box, email_box = name.bounding_box(), email.bounding_box()
+    assert email_box["y"] > name_box["y"]
+    assert email_box["x"] == name_box["x"]
 ```
 
 Now you have probably realised that we have all the form fields, but we have no way to submit the form. We can add a submit button to the form by adding a `rx.button` component to the `vstack` component. The `rx.button` component takes in the text that is displayed on the button and the `type` prop which is the type of button. The `type` prop is set to `submit` so that the form is submitted when the button is clicked.
@@ -672,6 +749,26 @@ rx.vstack(
     border_radius="12px",
     padding="2em",
 )
+```
+
+```python test
+def test_form_adds_user_to_table(page, demo):
+    demo.get_by_placeholder("User Name").fill("Ada Lovelace")
+    demo.get_by_placeholder("user@reflex.dev").fill("ada@example.com")
+    demo.get_by_role("button", name="Submit").click()
+    expect(demo.get_by_role("row")).to_have_count(4)
+    expect(demo.get_by_role("row").last.get_by_role("cell")).to_have_text([
+        "Ada Lovelace",
+        "ada@example.com",
+        "Male",
+    ])
+    expect(demo.get_by_placeholder("User Name")).to_have_value("")
+    expect(
+        page.get_by_text(
+            "User has been added: {'name': 'Ada Lovelace', "
+            "'email': 'ada@example.com', 'gender': 'Male'}."
+        )
+    ).to_be_visible()
 ```
 
 ```python
@@ -852,6 +949,30 @@ rx.dialog.root(
 )
 ```
 
+```python test
+def test_add_user_dialog_opens_and_cancels(page, demo):
+    demo.get_by_role("button", name="Add User").click()
+    # Demos sharing a state open stacked copies of the dialog; use the top one.
+    dialog = page.locator("[role=dialog]").last
+    expect(dialog.locator("h1")).to_have_text("Add New User")
+    expect(dialog.get_by_text("Fill the form with the user's info")).to_be_visible()
+    expect(dialog.get_by_label("Gender")).to_have_text("Male")
+    dialog.get_by_text("Cancel", exact=True).click()
+    expect(dialog).to_be_hidden()
+```
+
+```python test
+@pytest.mark.xfail(
+    strict=True,
+    reason="The next demo shares DialogState3, so two modal dialogs open and "
+    "each hides the other from the accessibility tree.",
+)
+def test_add_user_dialog_is_a_single_accessible_dialog(page, demo):
+    demo.get_by_role("button", name="Add User").click()
+    expect(page.locator("[role=dialog]").last).to_be_visible()
+    expect(page.get_by_role("dialog", name="Add New User")).to_have_count(1)
+```
+
 At this point we have an app that allows you to add users to a table by filling out a form. The form is placed in a dialog that can be opened by clicking the "Add User" button. We change the name of the component from `form` to `add_customer_button` and update this in our `index` component. The full app so far and code are below.
 
 ```python exec
@@ -932,6 +1053,23 @@ rx.vstack(
     border_radius="12px",
     padding="2em",
 )
+```
+
+```python test
+def test_dialog_adds_user_to_table(page, demo):
+    expect(demo.get_by_role("row")).to_have_count(3)
+    demo.get_by_role("button", name="Add User").click()
+    # Demos sharing a state open stacked copies of the dialog; use the top one.
+    dialog = page.locator("[role=dialog]").last
+    dialog.get_by_placeholder("User Name").fill("Grace Hopper")
+    dialog.get_by_placeholder("user@reflex.dev").fill("grace@example.com")
+    dialog.get_by_text("Submit", exact=True).click()
+    expect(dialog).to_be_hidden()
+    expect(demo.get_by_role("row").last.get_by_role("cell")).to_have_text([
+        "Grace Hopper",
+        "grace@example.com",
+        "Male",
+    ])
 ```
 
 ```python
@@ -1239,6 +1377,22 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_graph_updates_when_user_added(page, demo):
+    bars = demo.locator(".recharts-bar-rectangle")
+    demo.get_by_role("button", name="Add User").click()
+    # Demos sharing a state open stacked copies of the dialog; use the top one.
+    dialog = page.locator("[role=dialog]").last
+    dialog.get_by_placeholder("User Name").fill("Alan Turing")
+    dialog.get_by_placeholder("user@reflex.dev").fill("alan@example.com")
+    dialog.get_by_text("Submit", exact=True).click()
+    expect(dialog).to_be_hidden()
+    expect(demo.get_by_role("row")).to_have_count(4)
+    expect(bars).to_have_count(2)
+    expect(demo.get_by_role("application")).to_have_text("MaleFemale00.511.52")
+    expect(page.get_by_text("User Alan Turing has been added.")).to_be_visible()
+```
+
 ```python
 from collections import Counter
 
@@ -1412,6 +1566,13 @@ rx.vstack(
 )
 ```
 
+```python test
+def test_graph_loads_on_mount(demo):
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(2)
+    expect(demo.get_by_role("application")).to_have_text("MaleFemale00.250.50.751")
+    expect(demo.get_by_role("row")).to_have_count(3)
+```
+
 ```python
 app.add_page(
     index,
@@ -1530,6 +1691,27 @@ rx.box(
         "& p, & h3": {"text_align": "left"},
     },
 )
+```
+
+```python test
+def test_styled_dashboard_adds_user(page, demo):
+    expect(demo.get_by_role("heading")).to_have_text("Customers")
+    badge = demo.locator(".rt-Badge")
+    expect(badge).to_have_text("2")
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(2)
+    demo.get_by_role("button", name="Add User").click()
+    # Demos sharing a state open stacked copies of the dialog; use the top one.
+    dialog = page.locator("[role=dialog]").last
+    dialog.get_by_placeholder("User Name").fill("Katherine Johnson")
+    dialog.get_by_placeholder("user@reflex.dev").fill("katherine@example.com")
+    dialog.get_by_text("Submit", exact=True).click()
+    expect(dialog).to_be_hidden()
+    expect(badge).to_have_text("3")
+    expect(demo.get_by_role("row").last.get_by_role("cell")).to_have_text([
+        "Katherine Johnson",
+        "katherine@example.com",
+        "Male",
+    ])
 ```
 
 ```python

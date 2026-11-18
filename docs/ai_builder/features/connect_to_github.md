@@ -11,7 +11,7 @@ import reflex as rx
 
 Use this workflow to create and synchronize a GitHub repository for an individual Builder app through the `reflex-build` GitHub App. It gives the app a version history, lets you edit the code locally, and records each push as an ordinary Git commit.
 
-```python eval
+```python eval notest
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/git_integration_connect.webp",

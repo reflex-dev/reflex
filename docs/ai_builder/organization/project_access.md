@@ -27,7 +27,7 @@ Select **Add user** to open the member picker. It lists organization members who
 
 Choose one or more people, assign each a [project role](/docs/ai/organization/roles-and-permissions/), and select **Add to project**.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/project-access/add_project_members.webp",
     alt="The Add project members dialog showing selectable organization members and a role dropdown for each",
@@ -60,7 +60,7 @@ You can't change the following access here:
 
 Assigning project roles requires the project **Admin** role or organization admin.
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/project-access/project_member_roles.webp",
     alt="A project member list with a role dropdown open, and an organization admin shown with a non-editable badge",

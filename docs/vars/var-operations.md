@@ -57,6 +57,20 @@ def var_operations_example():
     )
 ```
 
+```python test
+def test_var_concatenation_follows_select(demo, page):
+    expect(demo.get_by_role("heading")).to_have_text("I just bought a bunch of DOGE")
+    expect(demo.get_by_text("is going to the moon!")).to_have_text(
+        "DOGE is going to the moon!"
+    )
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="ETH").click()
+    expect(demo.get_by_role("heading")).to_have_text("I just bought a bunch of ETH")
+    expect(demo.get_by_text("is going to the moon!")).to_have_text(
+        "ETH is going to the moon!"
+    )
+```
+
 ```md alert success
 # Vars support many common operations.
 
@@ -94,6 +108,29 @@ def var_equals_example():
             rx.text("The selected fruit is equal to the favorite fruit!"),
             rx.text("The selected fruit is not equal to the favorite fruit."),
         ),
+    )
+```
+
+```python test
+def test_var_equals(demo, page):
+    expect(
+        demo.get_by_text("The selected fruit is not equal to the favorite fruit.")
+    ).to_be_visible()
+    demo.get_by_role("combobox").click()
+    page.get_by_role("option", name="Banana").click()
+    expect(
+        demo.get_by_text("The selected fruit is equal to the favorite fruit!")
+    ).to_be_visible()
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="to_string() JSON-encodes the str var, rendering"
+    " '\"Banana\" is my favorite fruit!' with quotes",
+)
+def test_var_to_string(demo):
+    expect(demo.get_by_text("is my favorite fruit!")).to_have_text(
+        "Banana is my favorite fruit!"
     )
 ```
 
@@ -136,6 +173,19 @@ def var_operation_example():
         ),
         rx.button("Update", on_click=OperState.update),
     )
+```
+
+```python test
+def test_negate_absolute_length(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("The number: 0")
+    expect(demo.get_by_text("Numbers seen:")).to_have_text("Numbers seen:0")
+    for seen in (1, 2):
+        demo.get_by_role("button", name="Update").click()
+        expect(demo.get_by_text("Numbers seen:")).to_have_text(f"Numbers seen:{seen}")
+        number = int(heading.inner_text().removeprefix("The number: "))
+        expect(demo.get_by_text("Negated:")).to_have_text(f"Negated:{-number}")
+        expect(demo.get_by_text("Absolute:")).to_have_text(f"Absolute:{abs(number)}")
 ```
 
 ### Comparisons and Mathematical Operators
@@ -252,6 +302,51 @@ def var_comparison_example():
     )
 ```
 
+```python test
+def test_comparison_and_math_operators(demo):
+    expect(demo.get_by_role("row")).to_have_text([
+        "Integer 1Integer 2OperationOutcome",
+        "00Int 1 == Int 2true",
+        "00Int 1 != Int 2false",
+        "00Int 1 > Int 2false",
+        "00Int 1 >= Int 2true",
+        "00Int 1 < Int 2 false",
+        "00Int 1 <= Int 2true",
+        "00Int 1 + Int 20",
+        "00Int 1 - Int 20",
+        "00Int 1 * Int 20",
+        "00pow(Int 1, Int2)1",
+    ])
+    first_row = demo.get_by_role("row").nth(1)
+    # The numbers are random (and may both be 0 again), so click until they change.
+    for _ in range(10):
+        demo.get_by_role("button", name="Update").click()
+        try:
+            expect(first_row).not_to_have_text(re.compile(r"^00"), timeout=2000)
+            break
+        except AssertionError:
+            continue
+    expect(first_row).not_to_have_text(re.compile(r"^00"))
+    # Read the whole table at once, so the cells come from one render.
+    table = demo.get_by_role("table").evaluate(
+        "t => [...t.tBodies[0].rows].map(r => [...r.cells].map(c => c.innerText))"
+    )
+    n1, n2 = int(table[0][0]), int(table[0][1])
+    expected = [
+        str(n1 == n2).lower(),
+        str(n1 != n2).lower(),
+        str(n1 > n2).lower(),
+        str(n1 >= n2).lower(),
+        str(n1 < n2).lower(),
+        str(n1 <= n2).lower(),
+        str(n1 + n2),
+        str(n1 - n2),
+        str(n1 * n2),
+    ]
+    assert [row[3] for row in table[:9]] == expected
+    assert all(row[:2] == [str(n1), str(n2)] for row in table)
+```
+
 ### True Division, Floor Division and Remainder
 
 The operator `/` represents true division. The operator `//` represents floor division. The operator `%` represents the remainder of the division.
@@ -305,6 +400,26 @@ def var_div_example():
         ),
         rx.button("Update", on_click=DivState.update),
     )
+```
+
+```python test
+def test_division_operators(demo):
+    expect(demo.get_by_role("row")).to_have_text([
+        "Integer 1Integer 2OperationOutcome",
+        "3.51.4Int 1 / Int 22.5",
+        "3.51.4Int 1 // Int 22",
+        "3.51.4Int 1 % Int 20.7000000000000002",
+    ])
+    demo.get_by_role("button", name="Update").click()
+    expect(demo.get_by_role("rowheader").first).not_to_have_text("3.5")
+    # Read the whole table at once, so the cells come from one render.
+    table = demo.get_by_role("table").evaluate(
+        "t => [...t.tBodies[0].rows].map(r => [...r.cells].map(c => c.innerText))"
+    )
+    n1, n2 = float(table[0][0]), float(table[0][1])
+    assert float(table[0][3]) == pytest.approx(n1 / n2)
+    assert table[1][3] == str(int(n1 // n2))
+    assert float(table[2][3]) == pytest.approx(n1 % n2)
 ```
 
 ### And, Or and Not
@@ -364,6 +479,28 @@ def var_logical_example():
     )
 ```
 
+```python test
+def test_logical_operators(demo):
+    expect(demo.get_by_role("row")).to_have_text([
+        "Var 1Var 2OperationOutcome",
+        "truetrueLogical AND (&)true",
+        "truetrueLogical OR (|)true",
+        "truetrueThe invert of Var 1 (~)false",
+    ])
+    for _ in range(3):
+        demo.get_by_role("button", name="Update").click()
+        # Read the whole table at once, so the cells come from one render.
+        table = demo.get_by_role("table").evaluate(
+            "t => [...t.tBodies[0].rows].map(r => [...r.cells].map(c => c.innerText))"
+        )
+        var_1, var_2 = table[0][0] == "true", table[0][1] == "true"
+        assert [row[3] for row in table] == [
+            str(var_1 and var_2).lower(),
+            str(var_1 or var_2).lower(),
+            str(not var_1).lower(),
+        ]
+```
+
 ### Contains, Reverse and Join
 
 The 'in' operator is not supported for Var types, we must use the `Var.contains()` instead. When we use `contains`, the var must be of type: `dict`, `list`, `tuple` or `str`.
@@ -399,6 +536,20 @@ def var_list_example():
     )
 ```
 
+```python test
+def test_contains_reverse_join(demo):
+    expect(demo.get_by_role("heading")).to_have_text([
+        "List 1: 1,2,3,4,6",
+        "List 2: 7,8,9,10",
+        "List 3: p,y,t,h,o,n",
+    ])
+    expect(demo.get_by_text("List 1 Contains 3:")).to_have_text(
+        "List 1 Contains 3: true"
+    )
+    expect(demo.get_by_text("Reverse List 2:")).to_have_text("Reverse List 2: 10,9,8,7")
+    expect(demo.get_by_text("List 3 Joins:")).to_have_text("List 3 Joins: python")
+```
+
 ### Map, Filter, Reduce and Flat Map
 
 The `map` operation applies a function to each element of a list var. The function is called with a var representing one element and must build its result out of other var operations. (`foreach` is a deprecated alias for `map`.)
@@ -426,6 +577,21 @@ def var_map_filter_reduce_example():
         ),
         rx.text(f"Flattened: {MapFilterReduceState.nested.flat_map(lambda x: x)}"),
     )
+```
+
+```python test
+def test_map_filter_reduce_flat_map(demo):
+    expect(
+        demo.get_by_text(
+            re.compile(r"^(Doubled|Evens|Non-empty words|Total|Flattened):")
+        )
+    ).to_have_text([
+        "Doubled: 2,4,6,8,10",
+        "Evens: 2,4",
+        "Non-empty words: hello,world",
+        "Total: 15",
+        "Flattened: 1,2,3,4,5",
+    ])
 ```
 
 ### Set Operations
@@ -463,6 +629,28 @@ def var_set_example():
     )
 ```
 
+```python test
+def test_set_operations(demo):
+    def members(label):
+        text = demo.get_by_text(f"{label}:").inner_text().removeprefix(f"{label}: ")
+        return set(text.split(", "))
+
+    has_react = demo.get_by_text("Has react:")
+    subset = demo.get_by_text("Is subset of featured:")
+    expect(has_react).to_have_text("Has react: false")
+    expect(subset).to_have_text("Is subset of featured: false")
+    assert members("Tags") == {"python", "reflex"}
+    assert members("Union") == {"python", "reflex", "react"}
+    assert members("Intersection") == {"reflex"}
+
+    demo.get_by_role("button", name="Toggle react").click()
+    expect(has_react).to_have_text("Has react: true")
+    assert members("Tags") == {"python", "reflex", "react"}
+    assert members("Union") == {"python", "reflex", "react"}
+    assert members("Intersection") == {"reflex", "react"}
+    expect(subset).to_have_text("Is subset of featured: false")
+```
+
 ### Lower, Upper, Split
 
 The `lower` operator converts a string var to lowercase. The `upper` operator converts a string var to uppercase. The `split` operator splits a string var into a list.
@@ -484,6 +672,31 @@ def var_string_example():
             rx.text(f"List 2 Upper Case: {StringState.string_2.upper()}"),
             rx.text(f"Split String 2: {StringState.string_2.split()}"),
         ),
+    )
+```
+
+```python test
+def test_lower_upper_split(demo):
+    expect(demo.get_by_role("heading")).to_have_text([
+        "List 1: PYTHON is FUN",
+        "List 2: react is hard",
+    ])
+    expect(demo.get_by_text("List 1 Lower Case:")).to_have_text(
+        "List 1 Lower Case: python is fun"
+    )
+    expect(demo.get_by_text("List 2 Upper Case:")).to_have_text(
+        "List 2 Upper Case: REACT IS HARD"
+    )
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="split() with no separator splits into characters"
+    " (r,e,a,c,t, ,i,s, ,h,a,r,d) instead of on whitespace",
+)
+def test_split(demo):
+    expect(demo.get_by_text("Split String 2:")).to_have_text(
+        "Split String 2: react,is,hard"
     )
 ```
 
@@ -509,6 +722,11 @@ class GetItemState1(rx.State):
 
 def get_item_error_1():
     return rx.progress(value=GetItemState1.list_1[0])
+```
+
+```python test
+def test_typed_list_indexing(demo):
+    expect(demo.get_by_role("progressbar")).to_have_attribute("aria-valuenow", "50")
 ```
 
 ### Using with Foreach
@@ -580,6 +798,22 @@ def projects_example() -> rx.Component:
     return rx.box(rx.foreach(ProjectsState.projects, project_item))
 ```
 
+```python test
+def test_foreach_over_typed_dicts(demo):
+    expect(demo.locator(".rt-Badge")).to_have_text([
+        "Next.js",
+        "Prisma",
+        "Tailwind",
+        "Google Cloud",
+        "Docker",
+        "MySQL",
+        "Python",
+        "Flask",
+        "Google Cloud",
+        "Docker",
+    ])
+```
+
 The previous example had only a single type for each of the dictionaries `keys` and `values`. For complex multi-type data, you need to use a dataclass, as shown below.
 
 ```python demo exec
@@ -634,6 +868,20 @@ def actresses_example() -> rx.Component:
     return rx.box(rx.foreach(MultiDataTypeState.actresses, showlist))
 ```
 
+```python test
+def test_foreach_over_dataclasses(demo):
+    expect(demo.locator("p")).to_have_text([
+        "Ariana Grande",
+        "30",
+        "arianagrande.com",
+        "https://es.wikipedia.org/wiki/Ariana_Grande",
+        "Gal Gadot",
+        "38",
+        "http://www.galgadot.com/",
+        "https://es.wikipedia.org/wiki/Gal_Gadot",
+    ])
+```
+
 Setting the type of `actresses` to be `actresses: list[dict[str,str]]` would fail as it cannot be understood that the `value` for the `pages key` is actually a `list`.
 
 ## Combine Multiple Var Operations
@@ -663,6 +911,27 @@ def var_number_example():
         ),
         rx.button("Update", on_click=VarNumberState.update),
     )
+```
+
+```python test
+def test_combined_var_operations(demo):
+    heading = demo.get_by_role("heading")
+    expect(heading).to_have_text("The number is 0")
+    expect(demo.get_by_text("Even", exact=True)).to_be_visible()
+    for _ in range(3):
+        previous = heading.inner_text()
+        # The number is random, so click until it changes.
+        for _ in range(10):
+            demo.get_by_role("button", name="Update").click()
+            try:
+                expect(heading).not_to_have_text(previous, timeout=2000)
+                break
+            except AssertionError:
+                continue
+        expect(heading).not_to_have_text(previous)
+        number = int(heading.inner_text().removeprefix("The number is "))
+        parity = "Even" if number % 2 == 0 else "Odd"
+        expect(demo.get_by_text(parity, exact=True)).to_be_visible()
 ```
 
 We could have made a computed var that returns the parity of `number`, but

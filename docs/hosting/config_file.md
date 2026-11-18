@@ -46,7 +46,7 @@ packages:                          # Optional: empty by default
 
 ## Options reference
 
-```python demo-only
+```python demo-only notest
 rx.table.root(
     rx.table.header(
         rx.table.row(

@@ -34,6 +34,15 @@ def switch_intro():
     )
 ```
 
+```python test
+def test_switch_toggles_badge(demo):
+    badge = demo.locator(".rt-Badge")
+    expect(badge).to_have_text("false")
+    demo.get_by_role("switch").click()
+    expect(badge).to_have_text("true")
+    expect(demo.get_by_role("switch")).to_be_checked()
+```
+
 ## Control the value
 
 The `checked` prop is used to control the state of the switch. The event `on_change` is called when the state of the switch changes, when the `change_checked` event handler is called.
@@ -62,6 +71,17 @@ def control_switch_example():
             disabled=True,
         ),
     )
+```
+
+```python test
+def test_controlled_switches(demo):
+    switches = demo.get_by_role("switch")
+    expect(switches.first).to_be_checked()
+    expect(switches.nth(1)).to_be_checked()
+    expect(switches.nth(1)).to_be_disabled()
+    switches.first.click()
+    expect(switches.first).not_to_be_checked()
+    expect(switches.nth(1)).not_to_be_checked()
 ```
 
 ## Switch in forms
@@ -103,4 +123,14 @@ def switch_form_example():
         ),
         width="50%",
     )
+```
+
+```python test
+def test_switch_in_form(demo):
+    results = demo.locator(".rt-Badge")
+    expect(results).to_have_text("{}")
+    demo.get_by_role("switch").click()
+    demo.get_by_role("button", name="Submit").click()
+    expect(results).to_have_text('{"switch":"on"}')
+    expect(demo.get_by_role("switch")).not_to_be_checked()
 ```

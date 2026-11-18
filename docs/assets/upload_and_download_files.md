@@ -12,7 +12,7 @@ In this section, we will cover all you need to know for manipulating files in Re
 
 Before diving into file uploads and downloads, it's important to understand the difference between assets and the upload directory in Reflex:
 
-```python eval
+```python eval notest
 # Simple table comparing assets vs upload directory
 rx.table.root(
     rx.table.header(
@@ -129,6 +129,15 @@ For some basic usage, simply providing the path to your resource in a `rx.link` 
 rx.link("Download", href="/reflex_banner.webp")
 ```
 
+```python test
+def test_download_link_points_at_asset(demo, page):
+    link = demo.get_by_role("link", name="Download")
+    expect(link).to_have_attribute("href", "/docs/reflex_banner.webp")
+    response = page.request.get(link.evaluate("a => a.href"))
+    assert response.status == 200
+    assert response.headers["content-type"] == "image/webp"
+```
+
 ### With `rx.download` event
 
 Using the `rx.download` event will always prompt the browser to download the file, even if it could be displayed in the browser.
@@ -142,6 +151,13 @@ rx.button(
 )
 ```
 
+```python test
+def test_download_button(demo, page):
+    with page.expect_download() as download:
+        demo.get_by_role("button", name="Download").click()
+    assert download.value.suggested_filename == "reflex_banner.webp"
+```
+
 `rx.download` lets you specify a name for the file that will be downloaded, if you want it to be different from the name on the server side.
 
 ```python demo
@@ -149,6 +165,13 @@ rx.button(
     "Download and Rename",
     on_click=rx.download(url="/reflex_banner.webp", filename="different_name_logo.png"),
 )
+```
+
+```python test
+def test_download_and_rename(demo, page):
+    with page.expect_download() as download:
+        demo.get_by_role("button", name="Download and Rename").click()
+    assert download.value.suggested_filename == "different_name_logo.png"
 ```
 
 If the data to download is not already available at a known URL, pass the `data` directly to the `rx.download` event from the backend.
@@ -170,6 +193,15 @@ def download_random_data_button():
     return rx.button(
         "Download random numbers", on_click=DownloadState.download_random_data
     )
+```
+
+```python test
+def test_download_generated_csv(demo, page):
+    with page.expect_download() as download:
+        demo.get_by_role("button", name="Download random numbers").click()
+    assert download.value.suggested_filename == "random_numbers.csv"
+    with open(download.value.path()) as f:
+        assert re.fullmatch(r"\d{1,3}(,\d{1,3}){9}", f.read())
 ```
 
 The `data` arg accepts `str` or `bytes` data, a `data:` URI, `PIL.Image`, or any state Var. If the Var is not already a string, it will be converted to a string using `JSON.stringify`. This allows complex state structures to be offered as JSON downloads.

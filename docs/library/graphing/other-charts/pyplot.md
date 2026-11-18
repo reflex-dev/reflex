@@ -80,6 +80,15 @@ def pyplot_simple_example():
     )
 ```
 
+```python test
+def test_contour_plot_renders_as_image(demo):
+    plot = demo.get_by_role(
+        "img", name="Filled contour plot of a two-dimensional function"
+    )
+    expect(plot).to_be_visible()
+    expect(plot).to_have_attribute("src", re.compile(r"^data:image/"))
+```
+
 ```md alert info
 # You must close the figure after creating
 
@@ -124,6 +133,13 @@ def pyplot_line_example():
     )
 ```
 
+```python test
+def test_line_plot_renders_as_image(demo):
+    plot = demo.get_by_role("img", name="Sine and cosine curves from zero to ten")
+    expect(plot).to_be_visible()
+    expect(plot).to_have_attribute("src", re.compile(r"^data:image/"))
+```
+
 ## Bar Chart
 
 The same pattern works for a Matplotlib bar chart — call `ax.bar()` with your categories and values, then render the figure with `pyplot`.
@@ -158,6 +174,15 @@ def pyplot_bar_example():
         bg_color="#ffffff",
         width="100%",
     )
+```
+
+```python test
+def test_bar_chart_renders_as_image(demo):
+    plot = demo.get_by_role(
+        "img", name="Fruit inventory: apples 23, oranges 17, bananas 35, pears 29"
+    )
+    expect(plot).to_be_visible()
+    expect(plot).to_have_attribute("src", re.compile(r"^data:image/"))
 ```
 
 ## Stateful Example
@@ -273,6 +298,18 @@ def pyplot_example():
         height="100%",
         width="100%",
     )
+```
+
+```python test
+def test_randomize_and_slider_redraw_the_plot(demo):
+    plot = demo.get_by_role("img", name="Scatter plot of the current randomized points")
+    expect(plot).to_have_attribute("src", re.compile(r"^data:image/"))
+    original = plot.get_attribute("src")
+    demo.get_by_role("button", name="Randomize").click()
+    expect(plot).not_to_have_attribute("src", original)
+    randomized = plot.get_attribute("src")
+    demo.get_by_role("slider").press("End")
+    expect(plot).not_to_have_attribute("src", randomized)
 ```
 
 ## Common Questions

@@ -42,6 +42,18 @@ def scatter_simple():
     )
 ```
 
+```python test
+def test_scatter_plots_six_points(demo):
+    expect(demo.locator(".recharts-scatter-symbol")).to_have_count(6)
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "0",
+        "45",
+        "90",
+        "135",
+        "180",
+    ])
+```
+
 ## Multiple Scatters
 
 We can also add two scatters on one chart by using two `rx.recharts.scatter()` components, and we can define an `rx.recharts.z_axis()` which represents a third column of data and is represented by the size of the dots in the scatter plot.
@@ -79,6 +91,13 @@ def scatter_double():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_two_scatter_series_have_legend(demo):
+    expect(demo.locator(".recharts-scatter")).to_have_count(2)
+    expect(demo.locator(".recharts-scatter-symbol")).to_have_count(12)
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["A", "B"])
 ```
 
 To learn how to use the `x_axis_id` and `y_axis_id` props, check out the Multiple Axis section of the area chart [documentation](/docs/library/graphing/charts/areachart/).
@@ -129,6 +148,18 @@ def scatter_dynamic():
         height="15em",
         on_mount=ScatterChartState.compute_collatz({"start": "15"}),
     )
+```
+
+```python test
+def test_compute_plots_collatz_sequence(demo):
+    points = demo.locator(".recharts-scatter-symbol")
+    # The sequence starting at 15 has 18 steps down to 1.
+    expect(points).to_have_count(18)
+    start = demo.get_by_placeholder("Enter a number")
+    start.fill("6")
+    demo.get_by_role("button", name="Compute").click()
+    expect(points).to_have_count(9)
+    expect(start).to_have_value("")
 ```
 
 ## Legend Type and Shape
@@ -210,6 +241,25 @@ def scatter_shape():
     )
 ```
 
+```python test
+def test_selects_change_point_shape_and_legend_icon(demo, page):
+    point = demo.locator(".recharts-scatter-symbol path").first
+    legend_icon = demo.locator(".recharts-legend-item path")
+    expect(point).to_have_attribute("d", re.compile(r"\S"))
+    point_d = point.get_attribute("d")
+    legend_d = legend_icon.get_attribute("d")
+    legend_select = demo.get_by_role("combobox").first
+    shape_select = demo.get_by_role("combobox").last
+    shape_select.click()
+    page.get_by_role("option", name="star").click()
+    expect(shape_select).to_have_text("star")
+    expect(point).not_to_have_attribute("d", point_d)
+    legend_select.click()
+    page.get_by_role("option", name="diamond").click()
+    expect(legend_select).to_have_text("diamond")
+    expect(legend_icon).not_to_have_attribute("d", legend_d)
+```
+
 ## Distinguishing Series with Shapes
 
 When plotting several series on one chart, each `rx.recharts.scatter()` can be given its own `shape` in addition to its own `fill`, so the series stay distinguishable even where their points overlap. Available shapes include `"circle"`, `"square"`, `"triangle"`, `"diamond"`, `"star"`, `"cross"`, and `"wye"`.
@@ -258,6 +308,17 @@ def scatter_shapes():
     )
 ```
 
+```python test
+def test_three_series_use_distinct_shapes(demo):
+    expect(demo.locator(".recharts-scatter-symbol")).to_have_count(18)
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text(["A", "B", "C"])
+    # Each series draws its points with the path of its own shape.
+    shapes = demo.locator(".recharts-scatter").evaluate_all(
+        "ss => ss.map(s => s.querySelector('.recharts-symbols').getAttribute('d'))"
+    )
+    assert len(set(shapes)) == 3
+```
+
 ## Bubble Chart
 
 Adding an `rx.recharts.z_axis()` turns a scatter chart into a bubble chart: the `z` value of each point controls the bubble size, mapped to a pixel `range`. This lets you encode a third dimension of data alongside the x and y position.
@@ -286,6 +347,17 @@ def bubble_chart():
         width="100%",
         height=300,
     )
+```
+
+```python test
+def test_bubble_tooltip_shows_size(demo):
+    expect(demo.locator(".recharts-scatter-symbol")).to_have_count(6)
+    demo.locator(".recharts-scatter-symbol").first.hover()
+    expect(demo.locator(".recharts-tooltip-item")).to_have_text([
+        "size : 200",
+        "x : 100",
+        "y : 200",
+    ])
 ```
 
 ## Related Charts

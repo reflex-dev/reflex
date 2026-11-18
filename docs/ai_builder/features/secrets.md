@@ -11,7 +11,7 @@ Store API keys, tokens, database URLs, and other sensitive configuration in **Se
 import reflex as rx
 ```
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/app_secret_create.webp",
     alt="Adding app secrets in Reflex Build",
@@ -60,7 +60,7 @@ STRIPE_SECRET_KEY=sk_test_xxxxx
 OPENAI_API_KEY=sk-xxxxxx
 ```
 
-```python eval
+```python eval notest
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/project_secrets_raw_editor.webp",
     alt="Managing several secrets with the raw editor",

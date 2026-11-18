@@ -64,6 +64,24 @@ rx.box(
 )
 ```
 
+```python test
+def test_box_nested_widths_and_colors(demo):
+    labels = demo.get_by_text(
+        re.compile(r"^(CSS color|Radix Color|Radix Theme Color)$")
+    )
+    expect(labels).to_have_text([
+        "CSS color",
+        "CSS color",
+        "Radix Color",
+        "Radix Color",
+        "Radix Theme Color",
+    ])
+    expect(labels.nth(0)).to_have_css("background-color", "rgb(255, 255, 0)")
+    expect(labels.nth(1)).to_have_css("background-color", "rgb(255, 165, 0)")
+    widths = [labels.nth(i).bounding_box()["width"] for i in range(5)]
+    assert widths == sorted(set(widths))
+```
+
 ## Background
 
 To set a background [image](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_images) or
@@ -96,4 +114,21 @@ rx.flex(
     width="100%",
     height="10vh",
 )
+```
+
+```python test
+def test_box_backgrounds_in_a_row(demo):
+    boxes = demo.locator(".rt-Flex > div")
+    expect(boxes).to_have_count(4)
+    for i, kind in enumerate([
+        "linear-gradient",
+        "linear-gradient",
+        "radial-gradient",
+        "url",
+    ]):
+        expect(boxes.nth(i)).to_have_css("background-image", re.compile(rf"^{kind}\("))
+    rects = [boxes.nth(i).bounding_box() for i in range(4)]
+    assert len({rect["y"] for rect in rects}) == 1
+    assert [rect["x"] for rect in rects] == sorted(rect["x"] for rect in rects)
+    assert all(rect["height"] > 0 for rect in rects)
 ```

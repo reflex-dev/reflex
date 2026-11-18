@@ -53,7 +53,7 @@ def agent_toolkit_resources() -> rx.Component:
 
 The Agent Toolkit gives AI coding assistants the Reflex context they need to plan, code, run, and debug with the same assumptions as the Reflex docs.
 
-```python eval
+```python eval notest
 agent_toolkit_resources()
 ```
 

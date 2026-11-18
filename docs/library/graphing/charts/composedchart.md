@@ -44,6 +44,22 @@ def composed():
     )
 ```
 
+```python test
+def test_composed_chart_mixes_area_bar_and_line(demo):
+    expect(demo.locator(".recharts-area")).to_have_count(1)
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(7)
+    expect(demo.locator(".recharts-line")).to_have_count(1)
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "Page A",
+        "Page B",
+        "Page C",
+        "Page D",
+        "Page E",
+        "Page F",
+        "Page G",
+    ])
+```
+
 ## When to Use a Composed Chart
 
 A composed chart is useful whenever a single chart type can't tell the whole story. Common combinations include overlaying a trend `line` on top of `bar` totals, drawing an `area` for a range with a `line` for the actual value, or comparing a cumulative measure against a per-period one. Because each series — `rx.recharts.bar()`, `rx.recharts.line()`, and `rx.recharts.area()` — is a child of `rx.recharts.composed_chart()`, they all share the same `data`, x-axis, tooltip, and legend. Series are drawn in the order you list them, so later children render on top of earlier ones.
@@ -88,6 +104,25 @@ def composed_dual_axis():
         height=300,
         width="100%",
     )
+```
+
+```python test
+def test_composed_chart_has_dual_y_axes(demo):
+    expect(demo.locator(".recharts-yAxis")).to_have_count(2)
+    expect(demo.locator(".recharts-bar-rectangle")).to_have_count(7)
+    expect(demo.locator(".recharts-legend-item-text")).to_have_text([
+        "orders",
+        "revenue",
+    ])
+    expect(demo.locator(".recharts-xAxis-tick-labels text")).to_have_text([
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun",
+    ])
 ```
 
 ## Related Charts

@@ -133,6 +133,15 @@ rx.tabs.root(
 )
 ```
 
+```python test
+def test_tabs_switch_panels(demo):
+    demo.get_by_role("tab", name="Tab 1").click()
+    expect(demo.get_by_text("item on tab 1")).to_be_visible()
+    demo.get_by_role("tab", name="Tab 2").click()
+    expect(demo.get_by_text("item on tab 2")).to_be_visible()
+    expect(demo.get_by_text("item on tab 1")).to_be_hidden()
+```
+
 The `tabs` component is made up of a `rx.tabs.root` which groups `rx.tabs.list` and `rx.tabs.content` parts.
 
 ## Styling
@@ -156,6 +165,15 @@ rx.tabs.root(
     ),
     default_value="tab2",
 )
+```
+
+```python test
+def test_tabs_default_value(demo):
+    expect(demo.get_by_role("tab", name="Tab 2")).to_have_attribute(
+        "aria-selected", "true"
+    )
+    expect(demo.get_by_text("item on tab 2")).to_be_visible()
+    expect(demo.get_by_text("item on tab 1")).to_be_hidden()
 ```
 
 ### Orientation
@@ -192,6 +210,19 @@ rx.tabs.root(
 )
 ```
 
+```python test
+def test_tabs_vertical_orientation(demo):
+    tab1 = demo.get_by_role("tab", name="Tab 1")
+    expect(demo.get_by_role("tablist").last).to_have_attribute(
+        "aria-orientation", "vertical"
+    )
+    expect(demo.get_by_text("item on tab 1")).to_be_visible()
+    tab1.focus()
+    tab1.press("ArrowDown")
+    expect(demo.get_by_role("tab", name="Tab 2")).to_be_focused()
+    expect(demo.get_by_text("item on tab 2")).to_be_visible()
+```
+
 ```python demo
 rx.tabs.root(
     rx.tabs.list(
@@ -208,6 +239,16 @@ rx.tabs.root(
     default_value="tab1",
     orientation="horizontal",
 )
+```
+
+```python test
+def test_tabs_horizontal_orientation(demo):
+    tab1 = demo.get_by_role("tab", name="Tab 1")
+    expect(demo.get_by_text("item on tab 1")).to_be_visible()
+    tab1.focus()
+    tab1.press("ArrowRight")
+    expect(demo.get_by_role("tab", name="Tab 2")).to_be_focused()
+    expect(demo.get_by_text("item on tab 2")).to_be_visible()
 ```
 
 ### Value
@@ -257,6 +298,16 @@ def index() -> rx.Component:
     )
 ```
 
+```python test
+def test_tabs_controlled_value(demo):
+    status = demo.get_by_text(re.compile(r"clicked !$"))
+    expect(status).to_have_text("tab1 clicked !")
+    expect(demo.get_by_text("items on tab 1")).to_be_visible()
+    demo.get_by_role("tab", name="Tab 2").click()
+    expect(status).to_have_text("tab2 clicked !")
+    expect(demo.get_by_text("items on tab 2")).to_be_visible()
+```
+
 ## Tablist
 
 The Tablist is used to list the respective tabs to the tab component
@@ -281,6 +332,15 @@ rx.tabs.root(
 )
 ```
 
+```python test
+def test_tabs_trigger_values(demo):
+    expect(demo.get_by_role("tab", name=re.compile(r"^Tab \d$"))).to_have_count(3)
+    demo.get_by_role("tab", name="Tab 3").click()
+    expect(demo.get_by_role("tab", name="Tab 3")).to_have_attribute(
+        "aria-selected", "true"
+    )
+```
+
 ### Disable
 
 We use the `disabled` prop to disable the tab.
@@ -293,6 +353,12 @@ rx.tabs.root(
         rx.tabs.trigger("Tab 3", value="tab3", disabled=True),
     ),
 )
+```
+
+```python test
+def test_tabs_trigger_disabled(demo):
+    expect(demo.get_by_role("tab", name="Tab 3")).to_be_disabled()
+    expect(demo.get_by_role("tab", name="Tab 2")).to_be_enabled()
 ```
 
 ## Tabs Content

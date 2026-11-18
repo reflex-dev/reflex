@@ -1,0 +1,1 @@
+Set `REFLEX_PERSIST_LOCKFILES=false` to keep a frontend install from writing to or pruning the app's `reflex.lock/` directory, e.g. when a test harness runs the app from a checkout that must stay unchanged. Lockfiles there are still used to pin the install.

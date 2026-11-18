@@ -22,6 +22,11 @@ To create a badge component with only text inside, pass the text as an argument.
 rx.badge("New")
 ```
 
+```python test
+def test_badge_text(demo):
+    expect(demo.locator(".rt-Badge")).to_have_text("New")
+```
+
 ## Styling
 
 
@@ -39,6 +44,13 @@ rx.flex(
 )
 ```
 
+```python test
+def test_badge_sizes(demo):
+    badges = demo.locator(".rt-Badge")
+    expect(badges).to_have_text(["New", "New", "New"])
+    expect(demo.locator(".rt-Badge.rt-r-size-2")).to_have_count(1)
+```
+
 ### Variant
 
 The `variant` prop controls the visual style of the badge. The supported variant types are `"solid" | "soft" | "surface" | "outline"`. The variant default is `"soft"`.
@@ -54,6 +66,12 @@ rx.flex(
 )
 ```
 
+```python test
+def test_badge_variants(demo):
+    for variant, count in [("solid", 1), ("soft", 2), ("surface", 1), ("outline", 1)]:
+        expect(demo.locator(f".rt-Badge.rt-variant-{variant}")).to_have_count(count)
+```
+
 ### Color Scheme
 
 The `color_scheme` prop sets a specific color, ignoring the global theme.
@@ -66,6 +84,14 @@ rx.flex(
     rx.badge("New", color_scheme="crimson"),
     spacing="2",
 )
+```
+
+```python test
+def test_badge_color_schemes(demo):
+    badges = demo.locator(".rt-Badge")
+    expect(badges).to_have_count(4)
+    for i, color in enumerate(["indigo", "cyan", "orange", "crimson"]):
+        expect(badges.nth(i)).to_have_attribute("data-accent-color", color)
 ```
 
 ### High Contrast
@@ -93,6 +119,12 @@ rx.flex(
 )
 ```
 
+```python test
+def test_badge_high_contrast(demo):
+    expect(demo.locator(".rt-Badge")).to_have_count(8)
+    expect(demo.locator(".rt-Badge.rt-high-contrast")).to_have_count(4)
+```
+
 ### Radius
 
 The `radius` prop sets specific radius value, ignoring the global theme. It can take values `"none" | "small" | "medium" | "large" | "full"`.
@@ -106,6 +138,14 @@ rx.flex(
     rx.badge("New", radius="full"),
     spacing="3",
 )
+```
+
+```python test
+def test_badge_radius(demo):
+    badges = demo.locator(".rt-Badge")
+    expect(badges).to_have_count(5)
+    for i, radius in enumerate(["none", "small", "medium", "large", "full"]):
+        expect(badges.nth(i)).to_have_attribute("data-radius", radius)
 ```
 
 ## Final Example
@@ -122,4 +162,12 @@ rx.badge(
     ),
     color_scheme="grass",
 )
+```
+
+```python test
+def test_badge_with_icon(demo):
+    badge = demo.locator(".rt-Badge")
+    expect(badge).to_have_text("8.8%")
+    expect(badge).to_have_attribute("data-accent-color", "grass")
+    expect(badge.locator("svg.lucide-arrow-up")).to_be_visible()
 ```

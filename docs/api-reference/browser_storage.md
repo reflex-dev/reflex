@@ -319,6 +319,33 @@ def app_settings_example():
     )
 ```
 
+```python test
+@pytest.mark.xfail(
+    strict=True,
+    reason="Opening the dialog crashes the page: `FormLabel` must be used within"
+    " `FormField` or specify the `name` prop",
+)
+def test_settings_persist_in_local_storage(demo, page):
+    demo.get_by_role("button", name="App Settings").click()
+    dialog = page.get_by_role("dialog")
+    theme = dialog.get_by_role("textbox", name="Theme")
+    expect(theme).to_have_value("light")
+    expect(dialog.get_by_role("switch", name="Sidebar Visible")).to_be_checked()
+    expect(
+        dialog.get_by_role("textbox", name="Update Frequency (seconds)")
+    ).to_have_value("60")
+    theme.fill("dark")
+    expect(theme).to_have_value("dark")
+    dialog.get_by_role("button", name="Save").click()
+    expect(dialog).to_be_hidden()
+
+    page.reload()
+    demo.get_by_role("button", name="App Settings").click()
+    expect(
+        page.get_by_role("dialog").get_by_role("textbox", name="Theme")
+    ).to_have_value("dark")
+```
+
 ## Comparison of Storage Types
 
 Here's a comparison of the different client-side storage options in Reflex:

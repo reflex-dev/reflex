@@ -6,7 +6,7 @@ Restore a checkpoint to return the app source to the state produced by an earlie
 import reflex as rx
 ```
 
-```python eval
+```python eval notest
 rx.el.div(
     rx.image(
         src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/restore_checkpoint.webp",

@@ -54,6 +54,31 @@ rx.el.div(
 )
 ```
 
+```python test
+def test_integration_gallery_filters(demo):
+    cards = demo.get_by_role("link", name=re.compile("Learn more"))
+    all_filter = demo.get_by_role("button", name="All", exact=True)
+    expect(all_filter).to_have_attribute("aria-pressed", "true")
+    expect(cards).to_have_count(32)
+    demo.get_by_role("button", name="AI", exact=True).click()
+    expect(all_filter).to_have_attribute("aria-pressed", "false")
+    expect(cards).to_have_count(10)
+    expect(demo.get_by_role("heading", name="OpenAI", exact=True)).to_be_visible()
+    expect(demo.get_by_role("heading", name="Twilio", exact=True)).to_be_hidden()
+    demo.get_by_role("button", name="Communication", exact=True).click()
+    expect(cards).to_have_count(2)
+    expect(demo.get_by_role("heading", name="Resend", exact=True)).to_be_visible()
+    expect(demo.get_by_role("heading", name="Twilio", exact=True)).to_be_visible()
+
+
+def test_integration_request_dialog(demo, page):
+    expect(demo.get_by_text("Missing an integration?")).to_be_visible()
+    demo.get_by_text("here", exact=True).click()
+    dialog = page.get_by_role("dialog", name="Request Integration")
+    expect(dialog).to_be_visible()
+    expect(dialog.get_by_placeholder("Requested integration...")).to_be_focused()
+```
+
 <!-- faqs-start -->
 <!-- faqs-visible -->
 

@@ -154,6 +154,18 @@ def form_example():
     )
 ```
 
+```python test
+def test_form_submits_data(demo):
+    demo.get_by_placeholder("First Name").fill("Ada")
+    demo.get_by_placeholder("Last Name").fill("Lovelace")
+    demo.get_by_role("checkbox", name="Checked").click()
+    demo.get_by_role("button", name="Submit").click()
+    expect(demo.get_by_text(re.compile(r"^\{"))).to_have_text(
+        '{"first_name":"Ada","last_name":"Lovelace","check":"on"}'
+    )
+    expect(demo.get_by_placeholder("First Name")).to_have_value("")
+```
+
 ```md alert warning
 # When using the form you must include a button or input with `type='submit'`.
 ```
@@ -276,6 +288,20 @@ def typed_form_example():
         rx.divider(),
         rx.heading("Results", as_="h2"),
         rx.text(TypedFormState.form_data.to_string()),
+    )
+```
+
+```python test
+def test_typed_form_submits_data(demo):
+    expect(demo.get_by_text(re.compile(r"^null$"))).to_be_visible()
+    demo.get_by_placeholder("First Name").fill("Ada")
+    demo.get_by_placeholder("Last Name").fill("Lovelace")
+    demo.get_by_placeholder("Email").fill("ada@example.com")
+    demo.get_by_placeholder("Message").fill("Hello")
+    demo.get_by_role("button", name="Submit").click()
+    expect(demo.get_by_text(re.compile(r"^\{"))).to_have_text(
+        '{"first_name":"Ada","last_name":"Lovelace",'
+        '"email":"ada@example.com","message":"Hello"}'
     )
 ```
 
@@ -441,5 +467,20 @@ def dynamic_form():
         rx.divider(),
         rx.heading("Results", as_="h2"),
         rx.text(DynamicFormState.form_data.to_string()),
+    )
+```
+
+```python test
+def test_dynamic_form_adds_field(demo):
+    expect(demo.get_by_role("textbox")).to_have_count(4)
+    demo.get_by_placeholder("New Field").fill("Phone Number")
+    demo.get_by_role("button", name="+").click()
+    phone = demo.get_by_placeholder("Phone Number")
+    expect(phone).to_be_visible()
+    demo.get_by_placeholder("First Name").fill("Ada")
+    phone.fill("555")
+    demo.get_by_role("button", name="Submit").click()
+    expect(demo.get_by_text(re.compile(r"^\{"))).to_have_text(
+        '{"first_name":"Ada","last_name":"","email":"","phone_number":"555"}'
     )
 ```
