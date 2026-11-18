@@ -26,6 +26,7 @@ dependencies = [
   "packaging >=24.2,<27",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
   "python-multipart >=0.0.32,<1.0",
+  "python-engineio >=4.12.0,<5.0",
   "python-socketio >=5.12.0,<6.0",
   "redis >=6.4,<9.0",
   "rich >=13,<16",
@@ -33,19 +34,19 @@ dependencies = [
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.6",
   "reflex-base >= 0.10.2.dev0",
-  "reflex-components-code >= 0.10.2.dev0",
-  "reflex-components-core >= 0.10.2.dev0",
+  "reflex-components-code >= 0.11.0",
+  "reflex-components-core >= 0.11.0",
   "reflex-components-dataeditor >= 0.10.1",
   "reflex-components-gridjs >= 0.10.0",
-  "reflex-components-lucide >= 1.1.1",
+  "reflex-components-lucide >= 1.1.2",
   "reflex-components-markdown >= 0.10.0",
   "reflex-components-moment >= 0.10.1",
   "reflex-components-plotly >= 0.10.0",
-  "reflex-components-radix >= 0.10.2.dev0",
+  "reflex-components-radix >= 0.11.0",
   "reflex-components-react-player >= 0.10.0",
   "reflex-components-recharts >= 0.10.0",
   "reflex-components-sonner >= 0.10.0",
-  "reflex-hosting-cli >= 0.2.1",
+  "reflex-hosting-cli >= 0.2.2",
 ]
 
 classifiers = [
@@ -310,6 +311,7 @@ preview = true
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
 "packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
+"packages/reflex-base/hatch_build.py" = ["INP001"]
 "scripts/changed_paths.py" = ["T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
@@ -407,6 +409,8 @@ root-package = "reflex"
 root-source-dirs = ["reflex"]
 packages-dir = "packages"
 package-source-subdirs = ["src"]
+# reflex-base embeds the frontend javascript package as its web template.
+extra-source-dirs = { reflex-base = ["packages/reflex-frontend/src"] }
 # Changelog dates and r/pre-<date> branch names are stamped in the project's
 # home timezone, so an evening release is not dated tomorrow by a UTC runner.
 release-timezone = "America/Los_Angeles"
@@ -586,3 +590,5 @@ reflex.workspace = true
 
 [tool.uv.workspace]
 members = ["packages/*", "docs/app", "docs/package"]
+# A javascript package: reflex-base embeds it, and nothing installs it with uv.
+exclude = ["packages/reflex-frontend"]

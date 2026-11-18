@@ -36,6 +36,7 @@ from .sequence import (
     _determine_value_of_array_index,
     _literal_elements_json,
     _literal_elements_var_data,
+    array_or_empty_operation,
 )
 
 if TYPE_CHECKING:
@@ -65,6 +66,7 @@ def _set_type_like(var_type: GenericType, element_type: GenericType) -> GenericT
     Returns:
         ``set[element_type]``, or ``frozenset[element_type]`` for a frozenset.
     """
+    var_type = types.value_inside_optional(var_type)
     origin = get_origin(var_type) or var_type
     return (frozenset if origin is frozenset else set)[element_type]
 
@@ -322,16 +324,22 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
     def to_array(self) -> ArrayVar:
         """View the set as an array, for rx.foreach and array operations.
 
-        The frontend value is already an array, so this only changes the type.
-        An optional set stays optional.
+        The frontend value is already an array, so for a set that cannot be
+        None this only changes the type. An optional set is viewed as an empty
+        array while it holds None, as every set operation treats None as an
+        empty set.
 
         Returns:
             The set as an array var.
         """
-        array_type = Sequence[_determine_value_of_array_index(self._var_type)]
-        if types.is_optional(self._var_type):
-            array_type = array_type | None
-        return self.to(ArrayVar, array_type)
+        array = (
+            array_or_empty_operation(self)
+            if types.is_optional(self._var_type)
+            else self
+        )
+        return array.to(
+            ArrayVar, Sequence[_determine_value_of_array_index(self._var_type)]
+        )
 
     if TYPE_CHECKING:
 
@@ -586,7 +594,9 @@ def set_length_operation(value: SetVar) -> CustomVarOperationReturn[int]:
     Returns:
         The set length operation.
     """
-    return var_operation_return(js_expression=f"{value!s}.length", var_type=int)
+    return var_operation_return(
+        js_expression=f"{value.to_array()!s}.length", var_type=int
+    )
 
 
 @var_operation
@@ -620,7 +630,12 @@ def set_intersection_operation(
     Returns:
         The set intersection operation.
     """
-    return _set_helper_operation("pySetIntersection", lhs, rhs, var_type=lhs._var_type)
+    return _set_helper_operation(
+        "pySetIntersection",
+        lhs,
+        rhs,
+        var_type=types.value_inside_optional(lhs._var_type),
+    )
 
 
 @var_operation
@@ -636,7 +651,12 @@ def set_difference_operation(
     Returns:
         The set difference operation.
     """
-    return _set_helper_operation("pySetDifference", lhs, rhs, var_type=lhs._var_type)
+    return _set_helper_operation(
+        "pySetDifference",
+        lhs,
+        rhs,
+        var_type=types.value_inside_optional(lhs._var_type),
+    )
 
 
 @var_operation

@@ -2,13 +2,12 @@ import json
 import re
 import subprocess
 from collections.abc import Sequence
-from pathlib import Path
 from typing import Any, cast
 
 import pandas as pd
 import pytest
-import reflex_base
 from reflex_base.compiler.templates import _merge_state_hooks
+from reflex_base.constants import Templates
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils.format import format_state_name
 from reflex_base.vars.base import LiteralVar, Var
@@ -17,9 +16,7 @@ from reflex_components_dataeditor.dataeditor import DataEditor
 
 from reflex.state import BaseState
 
-_TEMPLATE_PATH = (
-    Path(reflex_base.__file__).parent / ".templates/web/utils/helpers/dataeditor.js"
-)
+_TEMPLATE_PATH = Templates.Dirs.WEB_TEMPLATE / "utils/helpers/dataeditor.js"
 
 
 def _helpers_js() -> str:
