@@ -1,1 +1,1 @@
-Changelog entries that end in a code block now get their issue links after the prose, above the block, instead of on the closing fence line.
+The issue links of a changelog entry that ends in a code block no longer land on its closing fence line.

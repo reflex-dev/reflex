@@ -343,7 +343,8 @@ showcontent = true
 
 `template` is towncrier's default Markdown template with one change: an entry
 that ends in a fenced code block gets its issue links after the prose, above
-the block, where the default template would append them to the closing fence.
+the block, or in a paragraph after the block when there is no prose to carry
+them, where the default template would append them to the closing fence.
 
 Version headings are written as `## v1.2.3 (2026-01-01)`. A custom
 `title_format` is honored, including when prerelease sections are collapsed —
