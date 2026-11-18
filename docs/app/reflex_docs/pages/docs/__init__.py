@@ -218,6 +218,14 @@ manual_titles = {
 }
 
 
+# Short navigation labels for docs whose filename-derived label would misspell
+# the term, e.g. "Fan Out" for fan_out.md. Unlike ``manual_titles`` these feed
+# the sidebar and the previous/next links, not the page title.
+nav_titles = {
+    "docs/workflows/fan_out.md": "Fan-Out",
+}
+
+
 ResolvedDoc = namedtuple("ResolvedDoc", ["route", "display_title", "category"])
 
 
@@ -575,7 +583,7 @@ def register_doc(virtual_doc: str, comp):
     """Register a doc into the namespace, doc_routes, and recipes_list."""
     path = virtual_doc.split("/")[1:-1]
     title = doc_title_from_path(virtual_doc)
-    title2 = to_title_case(title)
+    title2 = nav_titles.get(virtual_doc, to_title_case(title))
     route = doc_route_from_path(virtual_doc)
 
     build_nested_namespace(
