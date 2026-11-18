@@ -1,1 +1,1 @@
-Modifying a shared state by its shared token with `app.modify_state` no longer logs a "disconnected client" warning for that token: the linked clients still get the update.
+Modifying a shared state by its shared token with `app.modify_state` no longer logs a "disconnected client" warning for that token: `app.modify_state` now emits only to tokens that a browser connected with, and the linked clients still get the update.

@@ -93,7 +93,6 @@ from reflex.compiler.compiler import readable_name_from_component
 from reflex.istate.data import SessionData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.shared import SharedState
 from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,
@@ -2371,12 +2370,10 @@ class App(MiddlewareMixin, LifespanMixin):
                         await forked_context.release_lock()
                 delta = await state._get_resolved_delta()
                 state._clean()
-                # No browser connects with a shared state token: the clients
-                # linked to it get the delta through the shared state fan-out.
-                if delta and not (
-                    issubclass(token.cls, SharedState)
-                    and state._get_state_from_cache(token.cls)._linked_to == token.ident
-                ):
+                # Only a token a browser connected with has a socket to emit to.
+                # A shared state token never has one: its linked clients get the
+                # delta through the shared state fan-out.
+                if delta and state.rx_router_session.session_id:
                     # When the frontend vars are modified emit the delta to the frontend.
                     await self.event_namespace.emit_update(
                         update=StateUpdate(delta=delta),
