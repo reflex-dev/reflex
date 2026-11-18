@@ -19,6 +19,7 @@ from opentelemetry.trace import SpanKind
 from pytest_mock import MockerFixture
 from reflex_base import constants, otel
 from reflex_base.event.context import EventContext
+from reflex_base.event.processor import event_processor as processor_module
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
     QueueShutDown,
@@ -673,17 +674,33 @@ async def test_processor_reports_blocking_sync_handler(
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
 
-    assert "_blocking_sync_handler" in caplog.text
     # The probe that times the block lands up to a polling gap into it, so only
     # the report of a total is checked here; test_blocking checks its length
     # with a handler that blocks once a probe is queued.
-    assert re.search(r"blocked the event loop for \d+\.\d+s in total", caplog.text)
+    messages = [
+        re.sub(
+            r"(?<=line )\d+|(?<=\.py:)\d+|(?<=for )\d+\.\d+s", "N", record.getMessage()
+        )
+        for record in caplog.records
+    ]
+    subject = "Event handler _blocking_sync_handler"
     # The stack of the event task ends at the blocking line, without loop frames.
-    assert (
-        "Stack when the threshold was reached (most recent call last):" in caplog.text
-    )
-    assert "time.sleep(0.12)" in caplog.text
-    assert "base_events.py" not in caplog.text
+    assert messages == [
+        (
+            f"{subject} is blocking the event loop at "
+            f"{Path(__file__).relative_to(Path.cwd())}:N in _blocking_sync_handler "
+            "(threshold: 0.040s), including state updates such as computed vars. "
+            "Move blocking I/O to a thread pool or use a non-blocking async API.\n"
+            "Stack when the threshold was reached (most recent call last):\n"
+            f'  File "{processor_module.__file__}", line N, in _process_event_queue_entry\n'
+            "    return await self._execute_event(\n"
+            f'  File "{processor_module.__file__}", line N, in _execute_event\n'
+            "    result = registered_handler.handler.fn(**event.payload)\n"
+            f'  File "{__file__}", line N, in _blocking_sync_handler\n'
+            "    time.sleep(0.12)"
+        ),
+        f"{subject} blocked the event loop for N in total.",
+    ]
 
 
 async def test_processor_reports_innermost_app_frame(
