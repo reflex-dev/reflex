@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
+from typing import Any
 
 import pytest
-from pydantic import BaseModel, ValidationError
 from reflex_build_sdk import triggers
 
 SECRET = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
@@ -30,11 +31,44 @@ WIRE_HEADERS = {
 }
 
 
-class NewUser(BaseModel):
-    """What a sender posts."""
+@dataclasses.dataclass(frozen=True)
+class NewUser:
+    """What a sender posts, with the two methods the SDK asks of an event class."""
 
     user_id: str
     email: str
+
+    @classmethod
+    def model_validate(cls, obj: Any) -> NewUser:
+        """Build one from a payload, as pydantic does.
+
+        Args:
+            obj: The payload.
+
+        Returns:
+            The event.
+
+        Raises:
+            ValueError: If the payload is not an object with both fields.
+        """
+        try:
+            return cls(user_id=obj["user_id"], email=obj["email"])
+        except (KeyError, TypeError) as error:
+            msg = f"not a NewUser: {obj!r}"
+            raise ValueError(msg) from error
+
+    @classmethod
+    def model_json_schema(cls) -> dict[str, Any]:
+        """Describe the payload.
+
+        Returns:
+            A JSON schema.
+        """
+        return {
+            "type": "object",
+            "properties": {"user_id": {"type": "string"}, "email": {"type": "string"}},
+            "required": ["user_id", "email"],
+        }
 
 
 class FakeStep:
@@ -230,8 +264,8 @@ def test_entry_points_build_rows_and_describe_themselves():
 
     with pytest.raises(triggers.InvalidPayload) as raised:
         entry.build({"user_id": "u_3"})
-    assert isinstance(raised.value.__cause__, ValidationError)
-    assert str(raised.value) == str(raised.value.__cause__)
+    assert str(raised.value) == "not a NewUser: {'user_id': 'u_3'}"
+    assert isinstance(raised.value.__cause__, ValueError)
 
     assert entry_points.manifest() == {
         "version": 1,
