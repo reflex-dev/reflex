@@ -426,3 +426,26 @@ def test_unknown_route_serves_docs_recovery_page(page: Page):
         "href", "/docs/"
     )
     expect(page.locator('meta[name="robots"]')).to_have_attribute("content", "noindex")
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_prop_type_chips_stay_inside_their_column(page: Page, width: int):
+    """A long prop type, such as a dict of unions, wraps inside the Type column."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/library/data-display/code-block/")
+    row = page.locator("tr").filter(
+        has=page.locator("code", has_text=re.compile(r"^custom_style$"))
+    )
+    expect(row).to_have_count(1)
+    overflow = (
+        row
+        .locator("td")
+        .nth(1)
+        .evaluate("""cell => {
+        const bounds = cell.getBoundingClientRect();
+        return [...cell.querySelectorAll('code')]
+            .filter(chip => chip.getBoundingClientRect().right > bounds.right + 0.5)
+            .map(chip => chip.textContent);
+    }""")
+    )
+    assert overflow == []
