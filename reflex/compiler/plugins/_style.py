@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from reflex_base.breakpoints import Breakpoints
 from reflex_base.style import Style
 
 
@@ -14,9 +15,12 @@ def _copy_style_containers(value: Any) -> Any:
     Returns:
         A value whose nested dictionaries and lists belong to the caller.
     """
-    if type(value) is dict:
-        return {key: _copy_style_containers(item) for key, item in value.items()}
-    if type(value) is list:
+    value_type = type(value)
+    if value_type is dict or value_type is Breakpoints:
+        return value_type({
+            key: _copy_style_containers(item) for key, item in value.items()
+        })
+    if value_type is list:
         return [_copy_style_containers(item) for item in value]
     return value
 

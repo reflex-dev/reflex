@@ -49,16 +49,25 @@ def test_shared_style_normalizes_each_rule_once(
 
 def test_shared_style_returns_independent_containers() -> None:
     """Each result owns its nested containers; the rule stays unchanged."""
-    rule = {"_hover": {"color": "red"}, "padding": ["1px", "2px"]}
+    rule = {
+        "_hover": {"color": "red"},
+        "padding": ["1px", "2px"],
+        "margin": Breakpoints({"xs": "1px", "md": "2px"}),
+    }
     cache = _AppStyleCache()
     first = cache(rule)
     second = cache(rule)
     first["_hover"]["color"] = "pink"
     first["padding"][0] = "5px"
+    first["margin"].clear()
 
     assert str(second["_hover"]["color"]) == '"red"'
     assert str(second["padding"][0]) == '"1px"'
-    assert rule == {"_hover": {"color": "red"}, "padding": ["1px", "2px"]}
+    assert type(second["margin"]) is Breakpoints
+    assert len(second["margin"]) == 2
+    assert len(cache(rule)["margin"]) == 2
+    assert rule["_hover"] == {"color": "red"}
+    assert rule["padding"] == ["1px", "2px"]
 
 
 def test_shared_style_observes_replaced_rule() -> None:
