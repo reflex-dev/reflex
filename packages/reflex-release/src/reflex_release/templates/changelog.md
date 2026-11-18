@@ -47,7 +47,8 @@
                 {%- for line in lines %}
                     {%- set s = line.strip() %}
                     {%- if ns.open is none %}
-                        {%- if s[:3] in ("```", "~~~") %}
+                        {#- A backtick info string can't hold a backtick. #}
+                        {%- if s[:3] == "~~~" or (s[:3] == "```" and "`" not in s.lstrip("`")) %}
                             {%- set ns.open = s[0] * (s | length - s.lstrip(s[0]) | length) %}
                             {%- set ns.start = loop.index0 %}
                         {%- endif %}
@@ -58,7 +59,8 @@
                 {%- endfor %}
                 {%- set prose = lines[:ns.cut] | join("\n") | trim if ns.cut else "" %}
                 {#- Prose that itself ends in a code block can't take the links. #}
-                {%- set prose_ends_in_fence = prose.split("\n")[-1].strip()[:3] in ("```", "~~~") %}
+                {%- set last = prose.split("\n")[-1].strip() %}
+                {%- set prose_ends_in_fence = last[:3] in ("```", "~~~") and last.count(last[0]) == last | length %}
 
                 {%- if not text and issues_list %}
                     {#- Only issues: -  #1, #9, #142 #}

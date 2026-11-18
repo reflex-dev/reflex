@@ -17,6 +17,7 @@ FRAGMENTS = {
     "6.bugfix.md": "Code in the middle:\n\n~~~\nx\n~~~\n\nthen prose.\n",
     "7.bugfix.md": "Longer closing fence:\n\n~~~python\nx\n~~~~\n",
     "8.bugfix.md": "Two blocks:\n\n```\na\n```\n\n```\nb\n```\n",
+    "9.bugfix.md": "Inline code:\n\n```foo``` is a span.\n\n~~~\nx\n~~~\n",
 }
 
 EXPECTED = """\
@@ -83,6 +84,13 @@ EXPECTED = """\
   ```
 
   ([#8](https://github.com/OWNER/REPO/issues/8))
+- Inline code:
+
+  ```foo``` is a span. ([#9](https://github.com/OWNER/REPO/issues/9))
+
+  ~~~
+  x
+  ~~~
 """
 
 
