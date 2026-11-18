@@ -211,11 +211,10 @@ def breadcrumb_data(path: str, title: str) -> dict:
         href = _resolve_breadcrumb_href("/" + "/".join(segments[:index]))
         if href is None or base + href in seen:
             continue
-        label = to_title_case(to_snake_case(segment), sep=" ")
         items.append({
             "@type": "ListItem",
             "position": len(items) + 1,
-            "name": _BREADCRUMB_LABEL_OVERRIDES.get(label, label),
+            "name": _breadcrumb_label(segment),
             "item": base + href,
         })
         seen.add(base + href)
@@ -233,32 +232,80 @@ def breadcrumb_data(path: str, title: str) -> dict:
     }
 
 
-def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = None):
+def _uppercase_acronyms(label: str) -> str:
+    """Uppercase the acronyms among a label's words, such as ``Api`` to ``API``.
+
+    Args:
+        label: A space-separated label.
+
+    Returns:
+        The label with each acronym word uppercased.
+    """
+    return " ".join(
+        _BREADCRUMB_LABEL_OVERRIDES.get(word, word) for word in label.split()
+    )
+
+
+def _breadcrumb_label(segment: str) -> str:
+    """Turn a route segment into a breadcrumb label, keeping acronyms uppercase.
+
+    Args:
+        segment: A kebab- or snake-case route segment, such as ``api-reference``.
+
+    Returns:
+        The title-cased label, such as ``API Reference``.
+    """
+    return _uppercase_acronyms(to_title_case(to_snake_case(segment), sep=" "))
+
+
+def _breadcrumb_items(path: str, title: str | None) -> list[tuple[str, str | None]]:
+    """List the visible breadcrumb labels and their links.
+
+    Args:
+        path: The app-relative documentation path.
+        title: The current page's name, used for the last segment. When None, the
+            last segment is labelled from the route like its parents.
+
+    Returns:
+        A ``(label, href)`` pair per path segment. ``href`` is None for category
+        segments that have no page of their own.
+    """
+    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
+    items = []
+    current_path = ""
+    for segment in segments:
+        current_path += f"/{segment}"
+        items.append((
+            _breadcrumb_label(segment),
+            _resolve_breadcrumb_href(current_path),
+        ))
+    if items and title is not None:
+        items[-1] = (_uppercase_acronyms(title), items[-1][1])
+    return items
+
+
+def breadcrumb(
+    path: str,
+    nav_sidebar: rx.Component,
+    doc_content: str | None = None,
+    title: str | None = None,
+):
     from reflex_docs.components.docpage.navbar.buttons.sidebar import (
         docs_sidebar_drawer,
     )
 
-    # Split the path into segments, removing 'docs'.
-    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
-
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
 
-    # Iteratively build the href for each segment (paths are app-relative, no /docs prefix)
-    current_path = ""
-    for i, segment in enumerate(segments):
-        current_path += f"/{segment}"
-
-        label = to_title_case(to_snake_case(segment), sep=" ")
-        label = _BREADCRUMB_LABEL_OVERRIDES.get(label, label)
+    items = _breadcrumb_items(path, title)
+    for i, (label, href) in enumerate(items):
         base_class = ui.cn(
             "min-h-8 flex items-center text-sm font-[525] text-foreground last:text-muted-foreground",
-            "truncate" if i == len(segments) - 1 else "",
+            "truncate" if i == len(items) - 1 else "",
         )
 
         # Category segments (e.g. /ai, /hosting) often have no page of their own.
         # Render those as plain text so the breadcrumb doesn't link to a 404.
-        href = _resolve_breadcrumb_href(current_path)
         if href is None:
             breadcrumbs.append(rx.el.span(label, class_name=base_class))
         else:
@@ -275,7 +322,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             )
 
         # If it's not the last segment, add a separator
-        if i < len(segments) - 1:
+        if i < len(items) - 1:
             breadcrumbs.append(
                 ui.icon(
                     "ArrowRight01Icon",
@@ -487,6 +534,7 @@ def docpage(
                                 path=path if show_breadcrumb else "",
                                 nav_sidebar=nav_sidebar,
                                 doc_content=doc_content,
+                                title=title,
                             ),
                             class_name=(
                                 "docs-breadcrumb px-0 pt-0 mb-[2rem]"

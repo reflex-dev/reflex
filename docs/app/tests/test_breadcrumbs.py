@@ -124,3 +124,74 @@ def test_root_breadcrumb_has_one_location(path, monkeypatch):
             "item": "https://reflex.dev/docs/",
         }
     ]
+
+
+@pytest.mark.parametrize(
+    ("path", "title", "routes", "expected"),
+    [
+        (
+            "/changelog/upgrading/upgrading-to-0-11/",
+            "Upgrading to Reflex 0.11",
+            {"/changelog/", "/changelog/upgrading/upgrading-to-0-11/"},
+            [
+                ("Changelog", "/changelog/"),
+                ("Upgrading", None),
+                ("Upgrading to Reflex 0.11", "/changelog/upgrading/upgrading-to-0-11/"),
+            ],
+        ),
+        (
+            "/api-reference/cli/",
+            "Cli",
+            {"/api-reference/overview/", "/api-reference/cli/"},
+            [
+                ("API Reference", "/api-reference/overview/"),
+                ("CLI", "/api-reference/cli/"),
+            ],
+        ),
+        (
+            "/workflows/fan-out/",
+            "Fan-Out",
+            {"/workflows/overview/", "/workflows/fan-out/"},
+            [
+                ("Workflows", "/workflows/overview/"),
+                ("Fan-Out", "/workflows/fan-out/"),
+            ],
+        ),
+        (
+            "/ai/integrations/overview/",
+            None,
+            {"/ai/integrations/overview/"},
+            [
+                ("AI", None),
+                ("Integrations", "/ai/integrations/overview/"),
+                ("Overview", "/ai/integrations/overview/"),
+            ],
+        ),
+    ],
+)
+def test_breadcrumb_labels_name_the_page_and_keep_acronyms(
+    monkeypatch, path, title, routes, expected
+):
+    """The last crumb is the page title, and acronyms stay uppercase in any position."""
+    docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    monkeypatch.setattr(docpage_module, "_REGISTERED_DOC_ROUTES", routes)
+
+    assert docpage_module._breadcrumb_items(path, title) == expected
+
+
+def test_structured_breadcrumb_parents_keep_acronyms(monkeypatch):
+    """Structured breadcrumbs label multi-word parents like the visible ones."""
+    docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    monkeypatch.setattr(
+        "reflex_site_shared.utils.url.get_config",
+        lambda: SimpleNamespace(deploy_url="https://reflex.dev", frontend_path="/docs"),
+    )
+    monkeypatch.setattr(
+        docpage_module,
+        "_REGISTERED_DOC_ROUTES",
+        {"/api-reference/overview/", "/api-reference/cli/"},
+    )
+    items = docpage_module.breadcrumb_data("/api-reference/cli/", "CLI")[
+        "itemListElement"
+    ]
+    assert [item["name"] for item in items] == ["Documentation", "API Reference", "CLI"]

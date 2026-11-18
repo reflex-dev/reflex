@@ -1,0 +1,1 @@
+Docs breadcrumbs name the current page by its title, such as "Upgrading to Reflex 0.11" and "Fan-Out" instead of "Upgrading To 0 11" and "Fan Out", and keep acronyms uppercase in multi-word sections, such as "API Reference".
