@@ -36,6 +36,37 @@ if await expense.start(Expense.submit):
 
 `start` commits in a transaction of its own, separate from any session you have open. If your handler writes other rows too, the run has started even if those writes later fail.
 
+## Key a run on an outside event
+
+A row can have more than one unique constraint, and plain `start` returns `False` for a clash on any of them. When a webhook or a queue starts runs, you usually need to tell a resent event apart from a real conflict. Give the event's ID a unique column of its own and pass that column as `key`:
+
+```python
+from reflex_workflow import RunConflict
+
+
+class Onboarding(Base, Workflow):
+    __tablename__ = "onboarding"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[str] = mapped_column(String, unique=True)
+    event_id: Mapped[str | None] = mapped_column(String, unique=True)
+
+    ...
+
+
+try:
+    started = await Onboarding(user_id=user_id, event_id=event_id).start(
+        Onboarding.welcome, key=Onboarding.event_id
+    )
+except RunConflict as conflict:
+    # Another event already started onboarding this user.
+    ...
+```
+
+With `key`, `start` returns `False` only when a run with the same `event_id` already exists, so the resent event can be acknowledged and dropped. A clash on any other unique constraint, here a second run for the same `user_id`, raises `RunConflict`, whose `constraint` names the constraint the database reported.
+
+`key` must be a column that is unique on its own: a single-column primary key, a column with `unique=True`, a single-column `UniqueConstraint`, or a unique index on that column alone without a `WHERE` clause. `start` raises a `ValueError` for any other column. A nullable key column lets runs started without an event leave it empty, since empty values never clash.
+
 ## Find runs
 
 `Workflow.by` addresses the runs that match a SQL condition. It doesn't query anything until you call a method on the result:

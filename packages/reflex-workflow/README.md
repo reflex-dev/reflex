@@ -52,6 +52,12 @@ type error, and so is passing one workflow's step to another.
   row that hits a unique constraint is not inserted, so a key never starts two runs. It
   returns whether a run was started, and a row the database keyed itself is given that
   key, so `row.id` addresses the run that was just started.
+- **Start a run keyed on an outside event**: `await row.start(Onboarding.welcome,
+  key=Onboarding.trigger_key)` inserts with `ON CONFLICT (trigger_key) DO NOTHING`, so
+  `False` means exactly "a run with this key already exists" (a resent webhook), and a
+  clash on any *other* unique column raises `RunConflict`, naming the constraint ("this
+  user is already onboarding"). `key=` must name a single column that is unique on its
+  own; a nullable one lets rows started some other way leave it empty.
 - **Stop a run**: `await Onboarding.by(Onboarding.user_id == u).cancel()` ends every
   matching run where it stands — nothing scheduled, no wait, no held event — and what
   the run has already done stays. A cancelled run counts as finished to the run that

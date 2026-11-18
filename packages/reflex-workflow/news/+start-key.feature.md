@@ -1,0 +1,1 @@
+`start(first, key=Model.column)` keys a run on one unique column: `False` then means exactly "a run with this key already exists", and a clash on any other unique column raises `RunConflict` naming the constraint. Without `key=`, `start` behaves as before.
