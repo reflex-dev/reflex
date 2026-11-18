@@ -164,7 +164,7 @@ class RadarChartState(rx.State):
 
 
 def radar_dynamic():
-    return rx.hstack(
+    return rx.vstack(
         rx.recharts.radar_chart(
             rx.recharts.radar(
                 data_key="value",
@@ -174,6 +174,9 @@ def radar_dynamic():
             rx.recharts.polar_grid(),
             rx.recharts.polar_angle_axis(data_key="trait"),
             data=RadarChartState.traits,
+            outer_radius="50%",
+            width="100%",
+            height=300,
         ),
         rx.vstack(
             rx.foreach(
@@ -181,19 +184,23 @@ def radar_dynamic():
                 lambda trait_name, i: rx.hstack(
                     rx.text(trait_name, width="7em"),
                     rx.slider(
-                        default_value=RadarChartState.traits[i]["value"].to(int),
+                        value=[RadarChartState.traits[i]["value"].to(int)],
+                        max=RadarChartState.total_points,
                         on_change=lambda value: RadarChartState.set_trait(
                             trait_name, value[0]
                         ),
-                        width="25vw",
+                        width="100%",
+                        flex="1",
                     ),
-                    rx.text(RadarChartState.traits[i]["value"]),
+                    rx.text(RadarChartState.traits[i]["value"], width="2em"),
+                    width="100%",
+                    align="center",
                 ),
             ),
             rx.text("Remaining points: ", RadarChartState.remaining_points),
+            width="100%",
         ),
         width="100%",
-        height="15em",
     )
 ```
 

@@ -426,3 +426,40 @@ def test_unknown_route_serves_docs_recovery_page(page: Page):
         "href", "/docs/"
     )
     expect(page.locator('meta[name="robots"]')).to_have_attribute("content", "noindex")
+
+
+@pytest.mark.parametrize("width", [390, 1165, 1440])
+@pytest.mark.parametrize("color_mode", ["light", "dark"])
+def test_radar_allocation_matches_controls(page: Page, width: int, color_mode: str):
+    """Keyboard allocation stays in budget and chart labels remain inside its SVG."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.add_init_script(f"localStorage.setItem('theme', '{color_mode}')")
+    page.goto(f"{PREVIEW_URL}/docs/library/graphing/charts/radarchart/")
+    demo = page.locator(".docs-demo-preview").filter(has=page.get_by_role("slider"))
+    sliders = demo.get_by_role("slider")
+    expect(sliders).to_have_count(6)
+    strength = sliders.nth(0)
+    expect(strength).to_have_attribute("aria-valuenow", "15")
+    strength.focus()
+    strength.press("End")
+    expect(strength).to_have_attribute("aria-valuenow", "25")
+    expect(demo.get_by_text("Remaining points: 0", exact=True)).to_be_visible()
+    strength.press("End")
+    expect(strength).to_have_attribute("aria-valuenow", "25")
+    strength.press("ArrowLeft")
+    expect(strength).to_have_attribute("aria-valuenow", "24")
+    expect(demo.get_by_text("Remaining points: 1", exact=True)).to_be_visible()
+    strength.press("Home")
+    expect(strength).to_have_attribute("aria-valuenow", "0")
+    expect(demo.get_by_text("Remaining points: 25", exact=True)).to_be_visible()
+    sliders.nth(1).press("End")
+    expect(sliders.nth(1)).to_have_attribute("aria-valuenow", "40")
+    expect(demo.get_by_text("Remaining points: 0", exact=True)).to_be_visible()
+    labels = demo.locator(".recharts-polar-angle-axis-tick-value")
+    expect(labels).to_have_count(6)
+    assert labels.evaluate_all("""labels => labels.every(label => {
+        const bounds = label.getBoundingClientRect();
+        const chart = label.ownerSVGElement.getBoundingClientRect();
+        return bounds.left >= chart.left && bounds.right <= chart.right &&
+               bounds.top >= chart.top && bounds.bottom <= chart.bottom;
+    })""")
