@@ -1,29 +1,11 @@
-{#-
-══════════════════════════════════════════════════════════════════════════════
-TOWNCRIER MARKDOWN TEMPLATE
-══════════════════════════════════════════════════════════════════════════════
-
-─── Macro: heading ─────────────────────────────────────────────────────────
-Purpose:
-   Generates Markdown headings with the appropriate number of # characters.
-   Based on header_prefix (default: "#") and the level argument.
-
-Arguments:
-   level             The relative heading level (1=#, 2=##, 3=###, etc.)
--#}
+{#- towncrier's default Markdown template, plus one case: an entry that ends in
+    a fenced code block gets its issue links after the prose, above the block,
+    where the default appends them to the closing fence. -#}
 {%- macro heading(level) -%}
     {{- "#" * ( header_prefix | length + level -1 ) }}
 {%- endmacro -%}
-
-{#-
-─── Variable: newline ──────────────────────────────────────────────────────
-Purpose:
-    Consistent newline handling. -#}
 {%- set newline = "\n" -%}
-
-{#- ════════════════════════ TEMPLATE GENERATION ════════════════════════ -#}
-{#- ─── TITLE HEADING ─── #}
-{#- render_title is false when title_format is specified in the config #}
+{#- render_title is false when title_format is set in the config #}
 {%- if render_title %}
     {%- if versiondata.name %}
         {{- heading(1) ~ " " ~ versiondata.name ~ " " ~ versiondata.version ~ " (" ~ versiondata.date ~ ")" ~ newline }}
@@ -31,11 +13,9 @@ Purpose:
         {{- heading(1) ~ " " ~ versiondata.version ~ " (" ~ versiondata.date ~ ")" ~ newline }}
     {%- endif %}
 {%- endif %}
-{#- If title_format is specified, we start with a new line #}
 {{- newline }}
 
 {%- for section, _ in sections.items() %}
-    {#- ─── SECTION HEADING ─── #}
     {%- if section %}
         {{- newline }}
         {{- heading(2) ~ " " ~ section ~ newline }}
@@ -46,72 +26,62 @@ Purpose:
 
         {%- for category, val in definitions.items() if category in sections[section] %}
             {%- set issue_pks = [] %}
-            {#- ─── CATEGORY HEADING ─── #}
-            {#- Increase heading level if section is not present #}
             {{- heading(3 if section else 2) ~" " ~ definitions[category]['name'] ~ newline }}
             {{- newline }}
 
-            {#- ─── RENDER ENTRIES ─── #}
             {%- for text, values in sections[section][category].items() %}
-                {#- Prepare the string of issue numbers (e.g., "#1, #9, #142") #}
                 {%- set issue_pks = [] %}
                 {%- for v_issue in values %}
                     {%- set _= issue_pks.append(v_issue.split(": ", 1)[0]) %}
                 {%- endfor %}
                 {%- set issues_list = issue_pks | join(", ") %}
 
-                {#- Check if text contains a sublist #}
                 {%- set text_has_sublist = (("\n  - " in text) or ("\n  * " in text)) %}
 
-                {#- An entry ending in a fenced code block gets its issues after
-                    the prose, above the block: appended to the closing fence
-                    they would sit inside the code. #}
-                {%- set ns = namespace(cut=none) %}
+                {#- Walk the fenced blocks as CommonMark does: a run of three or
+                    more backticks or tildes opens one, and a line of only that
+                    character, at least as long, closes it. ns.cut is the index
+                    of the opener when the last line closes a block. #}
                 {%- set lines = text.split("\n") %}
-                {%- set fence = lines[-1].strip() %}
-                {%- if fence[:3] in ("```", "~~~") and fence.count(fence[0]) == fence | length %}
-                    {%- for i in range(lines | length - 2, -1, -1) if ns.cut is none and lines[i].lstrip().startswith(fence) %}
-                        {%- set ns.cut = i %}
-                    {%- endfor %}
-                {%- endif %}
+                {%- set ns = namespace(open=none, start=none, cut=none) %}
+                {%- for line in lines %}
+                    {%- set s = line.strip() %}
+                    {%- if ns.open is none %}
+                        {%- if s[:3] in ("```", "~~~") %}
+                            {%- set ns.open = s[0] * (s | length - s.lstrip(s[0]) | length) %}
+                            {%- set ns.start = loop.index0 %}
+                        {%- endif %}
+                    {%- elif s.startswith(ns.open) and s.count(s[0]) == s | length %}
+                        {%- set ns.open = none %}
+                        {%- set ns.cut = ns.start if loop.last else none %}
+                    {%- endif %}
+                {%- endfor %}
                 {%- set prose = lines[:ns.cut] | join("\n") | trim if ns.cut else "" %}
+                {#- Prose that itself ends in a code block can't take the links. #}
+                {%- set prose_ends_in_fence = prose.split("\n")[-1].strip()[:3] in ("```", "~~~") %}
 
-                {#- CASE 1: No text, only issues #}
-                {#- Output: -  #1, #9, #142 #}
                 {%- if not text and issues_list %}
+                    {#- Only issues: -  #1, #9, #142 #}
                     {{- "- " ~ issues_list ~ newline }}
-
-                {#- Cases where both text and issues exist #}
                 {%- elif text and issues_list %}
-                    {%- if text_has_sublist %}
-                        {#- CASE 3: Text with sublist #}
-                        {#- Output: - TEXT\n\n  (#1, #9, #142) #}
+                    {%- if text_has_sublist or (ns.cut is not none and (not prose or prose_ends_in_fence)) %}
+                        {#- Sublist, or a code block with no prose before it:
+                            - TEXT\n\n  (#1, #9, #142) #}
                         {{- "- " ~ text ~ newline ~ newline ~ "  (" ~ issues_list ~ ")" ~ newline }}
-                    {%- elif prose %}
-                        {#- CASE 4: Text ending in a code block #}
-                        {#- Output: - TEXT (#1, #9, #142)\n\n  CODE #}
-                        {{- "- " ~ prose ~ " (" ~ issues_list ~ ")" ~ newline ~ newline ~ lines[ns.cut:] | join("\n") ~ newline }}
                     {%- elif ns.cut is not none %}
-                        {#- CASE 5: Only a code block #}
-                        {#- Output: - CODE\n\n  (#1, #9, #142) #}
-                        {{- "- " ~ text ~ newline ~ newline ~ "  (" ~ issues_list ~ ")" ~ newline }}
+                        {#- Prose then a code block: - PROSE (#1, #9, #142)\n\n  CODE #}
+                        {{- "- " ~ prose ~ " (" ~ issues_list ~ ")" ~ newline ~ newline ~ lines[ns.cut:] | join("\n") ~ newline }}
                     {%- else %}
-                        {#- CASE 2: Text, no sublist #}
-                        {#- Output: - TEXT (#1, #9, #142) #}
+                        {#- - TEXT (#1, #9, #142) #}
                         {{- "- " ~ text ~ " (" ~ issues_list ~ ")" ~ newline }}
                     {%- endif %}
-
                 {%- elif text %}
-                    {#- Implicit Case: Text, but no issues #}
-                    {#- Output: - TEXT #}
                     {{- "- " ~ text ~ newline }}
                 {%- endif %}
             {%- endfor %}
 
-            {#- New line between list and link references #}
             {{- newline }}
 
-            {#- Link references #}
             {%- if issues_by_category[section][category] and "]: " in issues_by_category[section][category][0] %}
                 {%- for issue in issues_by_category[section][category] %}
                     {{- issue ~ newline }}
@@ -119,19 +89,14 @@ Purpose:
                 {{- newline }}
             {%- endif %}
 
-            {#- No changes in this category #}
             {%- if sections[section][category]|length == 0 %}
                 {{- newline }}
                 {{- "No significant changes." ~ newline * 2 }}
             {%- endif %}
         {%- endfor %}
     {%- else %}
-        {#- No changes in this section #}
         {{- "No significant changes." ~ newline * 2 }}
     {%- endif %}
 {%- endfor %}
-{#-
-Newline at the end of the rendered newsfile content.
-In this way the there are 2 newlines between the latest release and the previous release content.
--#}
+{#- Two newlines between the newest release and the previous content. -#}
 {{- newline -}}

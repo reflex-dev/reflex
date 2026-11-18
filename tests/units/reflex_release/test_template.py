@@ -15,6 +15,8 @@ FRAGMENTS = {
     "4.bugfix.md": "Plain entry.\n",
     "5.bugfix.md": "Sublist:\n\n- a\n- b\n",
     "6.bugfix.md": "Code in the middle:\n\n~~~\nx\n~~~\n\nthen prose.\n",
+    "7.bugfix.md": "Longer closing fence:\n\n~~~python\nx\n~~~~\n",
+    "8.bugfix.md": "Two blocks:\n\n```\na\n```\n\n```\nb\n```\n",
 }
 
 EXPECTED = """\
@@ -65,6 +67,22 @@ EXPECTED = """\
   ~~~
 
   then prose. ([#6](https://github.com/OWNER/REPO/issues/6))
+- Longer closing fence: ([#7](https://github.com/OWNER/REPO/issues/7))
+
+  ~~~python
+  x
+  ~~~~
+- Two blocks:
+
+  ```
+  a
+  ```
+
+  ```
+  b
+  ```
+
+  ([#8](https://github.com/OWNER/REPO/issues/8))
 """
 
 
