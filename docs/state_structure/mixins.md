@@ -227,7 +227,7 @@ class ChildState(DoublingMixin, ParentState):
     pass
 ```
 
-`ChildState.double` doubles `ParentState.count`, and the declaration types `count` for the mixin's own code. Reflex warns when that type does not match the type the variable is declared with. A variable another mixin of the state declares with a default is used the same way. Several mixins combined into one state may each declare a variable without a default, as long as the state, its parent state or another mixin declares it. When nothing else declares `count`, the mixin's declaration creates the variable, with the type's default (`0` here).
+`ChildState.double` doubles `ParentState.count`, and the declaration types `count` for the mixin's own code. Reflex warns when that type does not match the type the variable is declared with. A variable another mixin of the state declares with a default is used the same way. Several mixins combined into one state may each declare a variable without a default, as long as the state, its parent state or another mixin declares it with a default. When nothing else declares `count`, the mixin's declaration creates the variable, with the type's default (`0` here).
 
 ## Best Practices
 
@@ -247,7 +247,7 @@ class ChildState(DoublingMixin, ParentState):
 # Important Limitations
 
 - Mixins cannot be instantiated directly - they must be inherited by concrete State classes
-- Two mixins that do not inherit from one another cannot both declare a variable of the same name: creating the state that combines them raises `MixinVarNameConflictError`. The exceptions are a variable the state declares itself, which both mixins then use, and a variable a mixin declares without a default when the state's parent state or another mixin declares it. Mixins a parent state already combines do not count: a substate's mixins may redeclare their variables, like any inherited variable. Declare a variable the mixins share in a mixin both inherit from
+- Two mixins that do not inherit from one another cannot both declare a variable of the same name: creating the state that combines them raises `MixinVarNameConflictError`. The exceptions are a variable the state declares itself, which both mixins then use, and a variable a mixin declares without a default when the state's parent state declares it, or another mixin declares it with a default. Mixins a parent state already combines do not count: a substate's mixins may redeclare their variables, like any inherited variable. Declare a variable the mixins share in a mixin both inherit from
 - Mixins cannot override methods from the base State class
 - The `mixin=True` parameter is required when defining a mixin
 ```
