@@ -5744,6 +5744,123 @@ async def test_request_completes_without_a_value(
     )
 
 
+async def test_request_that_chains_completes_with_its_final_delta(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A handler that returns events sends its completion in the same message as its delta.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class ChainDoneState(State):
+        n: int = 0
+        m: int = 0
+
+        @event
+        def chain(self):
+            self.n = 1
+            return ChainDoneState.chained
+
+        @event
+        def chained(self):
+            self.m = 1
+
+    messages: list[tuple[Mapping[str, Any] | None, Sequence[Mapping[str, Any]]]] = []
+    root = real_base_state_processor._root_context
+    assert root is not None
+
+    async def emit_delta_impl(  # noqa: RUF029
+        token: str, delta: Mapping[str, Mapping[str, Any]]
+    ) -> None:
+        messages.append((delta, ()))
+
+    async def emit_result_impl(  # noqa: RUF029
+        token: str,
+        results: Sequence[Mapping[str, Any]],
+        delta: Mapping[str, Mapping[str, Any]] | None = None,
+    ) -> None:
+        messages.append((delta, results))
+
+    real_base_state_processor._root_context = dataclasses.replace(
+        root, emit_delta_impl=emit_delta_impl, emit_result_impl=emit_result_impl
+    )
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(ChainDoneState.chain())[0], request_id="c"
+        )
+        await future.wait_all()
+        await processor.join(5)
+
+    name = ChainDoneState.get_full_name()
+    done = [
+        delta
+        for delta, results in messages
+        if {"id": "c", "done": True} in list(results)
+    ]
+    assert len(done) == 1
+    assert done[0] is not None
+    assert done[0][name][f"n{FIELD_MARKER}"] == 1
+    # The chained event still ran, reporting nothing.
+    assert any(
+        delta is not None and delta.get(name, {}).get(f"m{FIELD_MARKER}") == 1
+        for delta, _ in messages
+    )
+    assert sum(len(results) for _, results in messages) == 1
+
+
+async def test_request_with_an_invalid_return_fails_after_its_delta(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    wire_log: list[tuple[str, Any]],
+    token: str,
+):
+    """Events mixed with values fail the request, after the handler's changes went out.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        wire_log: The ordered log of what reaches the frontend.
+        token: The client token.
+    """
+
+    class MixedReturnState(State):
+        value: str = "old"
+
+        @event
+        def handler(self):
+            self.value = "new"
+            return ["x", MixedReturnState.other]
+
+        @event
+        def other(self):
+            pass
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(MixedReturnState.handler())[0], request_id="r"
+        )
+        with pytest.raises(TypeError, match="must only return/yield"):
+            await future
+
+    records = _records(wire_log, "r")
+    assert len(records) == 1
+    assert records[0]["error"].startswith("TypeError: ")
+    error_at = wire_log.index(("result", records[0]))
+    key = f"value{FIELD_MARKER}"
+    assert any(
+        kind == "delta"
+        and entry.get(MixedReturnState.get_full_name(), {}).get(key) == "new"
+        for kind, entry in wire_log[:error_at]
+    )
+
+
 async def test_values_without_a_request_are_dropped(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

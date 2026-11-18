@@ -778,26 +778,31 @@ async def process_event(
     # to chain; an invalid one raises in chain_updates after the delta flush.
     is_result = _is_result(events)
     flush_root = ensure_locked(state, root_state)
-    if (
-        request_id is not None
-        and flush_root is not None
-        and (is_result or events is None)
-    ):
-        # The final flush carries the completion record, so finishing the
-        # request costs no message of its own: sent separately, it cut
-        # throughput by a third under load.
-        ctx = EventContext.get()
-        await ctx.emit_result(
-            _done_record(request_id, events),
-            delta=await _resolve_delta(ctx, flush_root),
-        )
-        ctx.mark_result_sent()
-    else:
+    if request_id is None or flush_root is None:
         await chain_updates(
             None if is_result else events,
             root_state=flush_root,
             handler_name=handler_name,
         )
+        return events if is_result else None
+    # Returned events are validated before anything is sent: an invalid one
+    # raises here, and the caller flushes the failed handler's changes.
+    chained = (
+        None
+        if is_result or events is None
+        else Event.from_event_type(_check_valid_yield(events, handler_name))
+    )
+    # The final flush carries the completion record, so finishing the request
+    # costs no message of its own: sent separately, it cut throughput by a
+    # third under load. The request does not wait for the events it chains.
+    ctx = EventContext.get()
+    await ctx.emit_result(
+        _done_record(request_id, events if is_result else None),
+        delta=await _resolve_delta(ctx, flush_root),
+    )
+    ctx.mark_result_sent()
+    if chained:
+        await _route_events(ctx, chained)
     return events if is_result else None
 
 
