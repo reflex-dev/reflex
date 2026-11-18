@@ -265,11 +265,22 @@ Until Reflex 1.0, `rx.plotly`, `rx.plotly.map` and the deprecated
 Mapbox traces or `layout.mapbox` keys, including figures received through state
 updates, the component logs a browser warning. It then passes Plotly a copy that
 uses MapLibre trace types, subplot references and layout keys, in the figure and
-its animation frames. Your figure is not changed. Templates, `geojson`,
-`customdata` and button arguments such as `"mapbox.zoom"` keep their names;
-migrate those yourself. The access token is ignored, and styles hosted by Mapbox
-(`mapbox://` URLs) do not load. Partial bundles without map traces, such as
-`rx.plotly.basic`, do not render maps.
+its animation frames. Your figure is not changed. Partial bundles without map
+traces, such as `rx.plotly.basic`, do not render maps.
+
+The rename does not cover everything. These still break after the upgrade, so
+change them yourself:
+
+- Buttons and sliders with Mapbox paths, such as `args=[{"mapbox.zoom": 5}]`, do
+  nothing. Use `map.zoom`.
+- `on_relayout` event data uses MapLibre keys, such as `"map.center"` and
+  `"map.zoom"`, not `"mapbox.center"` and `"mapbox.zoom"`.
+- Mapbox settings in a template are ignored. Set them in `layout.map`.
+- Styles hosted by Mapbox (`mapbox://` URLs) do not load, and the access token is
+  ignored. Use a MapLibre style or a tile service.
+- plotly.py 7 removes `go.Scattermapbox`, `px.scatter_mapbox` and the other
+  Mapbox classes. The rename cannot help there; migrate before you upgrade
+  plotly.py.
 
 ### Plotly.js 4 compatibility
 
