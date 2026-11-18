@@ -4342,22 +4342,16 @@ class Field(Generic[FIELD_TYPE]):
         Returns:
             The new field.
         """
-        replaced = type(self)(**{
-            "default": self.default,
-            "default_factory": self.default_factory,
+        # A default from the type is derived again, from the new type if any.
+        from_type = self._default_from_type
+        return type(self)(**{
+            "default": MISSING if from_type else self.default,
+            "default_factory": None if from_type else self.default_factory,
             "is_var": self.is_var,
             "annotated_type": self.annotated_type,
             "source_field": self,
             **kwargs,
         })
-        if (
-            self._default_from_type
-            and "default" not in kwargs
-            and "default_factory" not in kwargs
-        ):
-            # The default carried over still comes from the type.
-            replaced._default_from_type = True
-        return replaced
 
     @classmethod
     def _with_default(cls, value: Any, annotated_type: Any = MISSING) -> Self:
@@ -4405,6 +4399,7 @@ class Field(Generic[FIELD_TYPE]):
         else:
             self.default = MISSING
             self.default_factory = default_factory
+        self._default_from_type = False
 
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
@@ -4964,10 +4959,11 @@ def _validate_mixin_vars(
     """Reject a var that two mixins not inheriting from one another both declare.
 
     A state combines its mixins into one coherent state, and two independent
-    mixins would each use their shared var as their own. A mixin may still
-    declare without a default a var of the class or of its parent state, which
-    only types it for the mixin. The mixins of the parent state are left out:
-    they were checked with it, and its vars may be redeclared.
+    mixins would each use their shared var as their own. A var the class
+    declares itself is the one its mixins share. A mixin may still declare
+    without a default a var of its parent state, which only types it for the
+    mixin. The mixins of the parent state are left out: they were checked with
+    it, and its vars may be redeclared.
 
     Args:
         class_name: The qualified name of the class being created.
@@ -4990,8 +4986,8 @@ def _validate_mixin_vars(
     declared_by: dict[str, type] = {}
     for base in mixins:
         for key, base_field in base.__own_fields__.items():
-            if base_field._default_from_type and (
-                key in own_fields or key in parent_fields
+            if key in own_fields or (
+                base_field._default_from_type and key in parent_fields
             ):
                 continue
             first = declared_by.setdefault(key, base)
@@ -5000,8 +4996,8 @@ def _validate_mixin_vars(
                     f"The var `{key}` in {class_name} is declared "
                     f"by both {first.__module__}.{first.__name__} and "
                     f"{base.__module__}.{base.__name__}, mixins that do not inherit "
-                    "from one another; rename it in one of them, or declare it in a "
-                    "mixin both inherit from"
+                    "from one another; declare it on the state, rename it in one of "
+                    "them, or declare it in a mixin both inherit from"
                 )
                 raise MixinVarNameConflictError(msg)
 

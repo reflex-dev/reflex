@@ -1094,6 +1094,29 @@ def test_mixins_may_type_a_var_the_state_declares(clean_registration_context):
     assert RedeclaringChild.get_fields()["shared"].default == 3
 
 
+def test_state_resolves_its_mixins_var_name_conflict(clean_registration_context):
+    """A state declaring the var its mixins both declare settles the conflict.
+
+    Mixins from different libraries cannot be renamed, so the combining state's
+    own declaration is the var both mixins use.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int = 2
+
+    class ResolvedState(FirstMixin, SecondMixin, State):
+        shared: int = 3
+
+    assert ResolvedState.get_fields()["shared"]._owner is ResolvedState
+    assert ResolvedState.get_fields()["shared"].default == 3
+
+
 def test_mixin_may_redeclare_a_var_of_the_parents_mixin(clean_registration_context):
     """Only mixins combined into the same state conflict, not those of its parent.
 
@@ -1469,6 +1492,37 @@ def test_field_default_from_type():
     assert not from_type._replace(default=1)._default_from_type
     assert not Field(default=0, annotated_type=int)._default_from_type
     assert not Field(default_factory=list, annotated_type=list[int])._default_from_type
+
+
+def test_field_default_from_type_follows_new_type():
+    """A default that comes from the type is taken from the replacing type."""
+    from_type = Field(annotated_type=int)
+    assert from_type._replace(annotated_type=str).default == ""
+    assert from_type._replace(annotated_type=list[int]).default_value() == []
+
+
+def test_field_set_default_is_not_from_type():
+    """A default set on a field declared without one no longer comes from its type."""
+    field = Field(annotated_type=int)
+    field.set_default(5)
+    assert not field._default_from_type
+    assert field._replace().default == 5
+
+
+def test_reannotated_mixin_var_default_follows_new_type(clean_registration_context):
+    """Re-annotating a mixin's var declared without a default takes the new type's.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class IntMixin(BaseState, mixin=True):
+        value: int
+
+    class StrState(IntMixin, State):
+        value: str  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert StrState.get_fields()["value"].default == ""
 
 
 class TaggedField(Field[FIELD_TYPE]):

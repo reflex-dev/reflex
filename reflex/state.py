@@ -932,19 +932,24 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         fields = cls.__fields__
         for name, declared in list(fields.items()):
             f = _declared_value(cls.__mro__, name)
-            if not isinstance(f, Field):
-                if callable(f) or _is_descriptor(f):
-                    # Overridden by something else, like a property.
-                    del fields[name]
-                    continue
+            if isinstance(f, Field):
+                if (
+                    f._owner in tree_states
+                    and _inherited_value(cls.__mro__, name) is not f
+                ):
+                    # A mixin restating the parent state's var hides it on this
+                    # class; expose the parent's without rebinding it.
+                    type.__setattr__(cls, name, f)
+            elif callable(f) or _is_descriptor(f):
+                # Overridden by something else, like a property.
+                del fields[name]
+                continue
+            else:
                 # Declared by a plain base, which holds no field of its own.
                 f = declared
             if f._owner not in tree_states:
                 f = f._replace()
                 _bind_attr(cls, name, f)
-            elif _inherited_value(cls.__mro__, name) is not f:
-                # The mixin restating the parent state's var hides it on this class.
-                setattr(cls, name, f)
             fields[name] = f
 
     @classmethod
