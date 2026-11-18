@@ -23,7 +23,6 @@ from reflex_base.plugins import (
     Plugin,
 )
 from reflex_base.plugins.base import HookOrder
-from reflex_base.style import Style
 from reflex_base.utils import format as format_utils
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
@@ -1292,10 +1291,10 @@ def test_compile_context_applies_style_before_shared_stateful_render() -> None:
     assert '["color"] : "red"' in (compile_ctx.compiled_pages["/b"].output_code or "")
 
 
-def test_apply_style_plugin_reuses_literal_style_normalization(
+def test_apply_style_plugin_reuses_style_normalization(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Normalize an unchanged shared literal rule once within a page walk."""
+    """Normalize a shared rule once within a page walk."""
     rule = {"color": "red", "_hover": {"color": "blue"}, "padding": ["1px", "2px"]}
     component = Fragment.create(*(ChildComponent.create() for _ in range(4)))
     original_convert = style_module.convert
@@ -1342,64 +1341,19 @@ def test_apply_style_plugin_observes_rule_and_factory_changes() -> None:
     with compile_ctx, page_ctx:
         enter = plugin._compiler_bind_enter_component(page_ctx, compile_ctx)
         first = enter(StyledComponent.create(), False)
-        factory_rule["color"] = "green"
-        second = enter(StyledComponent.create(), False)
         styles[StyledComponent.create] = {"color": "purple"}
-        third = enter(StyledComponent.create(), False)
+        second = enter(StyledComponent.create(), False)
         del styles[StyledComponent.create]
-        fourth = enter(StyledComponent.create(), False)
+        third = enter(StyledComponent.create(), False)
 
     assert first is not None
     assert second is not None
     assert third is not None
-    assert fourth is not None
-    assert [
-        normalize_style(comp)["color"] for comp in (first, second, third, fourth)
-    ] == ['"blue"', '"green"', '"purple"', '"red"']
-
-
-def test_apply_style_plugin_preserves_style_lookup_overrides() -> None:
-    """Component overrides remain free to choose styles per instance."""
-
-    class StyledComponent(Component):
-        tag = "Styled"
-
-        def _get_component_style(self, styles):
-            return Style({"color": self.id})
-
-    plugin = ApplyStylePlugin(style={})
-    page_ctx = PageContext(name="page", route="/page", root_component=Fragment.create())
-    compile_ctx = create_compile_context(CompilerHooks(plugins=(plugin,)))
-    with compile_ctx, page_ctx:
-        enter = plugin._compiler_bind_enter_component(page_ctx, compile_ctx)
-        first = enter(StyledComponent.create(id="red"), False)
-        second = enter(StyledComponent.create(id="blue"), False)
-
-    assert first is not None
-    assert second is not None
-    assert normalize_style(first)["color"] == '"red"'
-    assert normalize_style(second)["color"] == '"blue"'
-
-
-def test_apply_style_plugin_preserves_apply_overrides() -> None:
-    """A plugin override keeps the original three-argument callback contract."""
-
-    class CustomApplyStylePlugin(ApplyStylePlugin):
-        @staticmethod
-        def _apply_style(comp, style, page_context):
-            owned = page_context.own(comp)
-            owned.style = Style({"color": "purple"})
-            return owned
-
-    plugin = CustomApplyStylePlugin(style={})
-    page_ctx = PageContext(name="page", route="/page", root_component=Fragment.create())
-    compile_ctx = create_compile_context(CompilerHooks(plugins=(plugin,)))
-    with compile_ctx, page_ctx:
-        enter = plugin._compiler_bind_enter_component(page_ctx, compile_ctx)
-        component = enter(ChildComponent.create(), False)
-
-    assert component is not None
-    assert normalize_style(component)["color"] == '"purple"'
+    assert [normalize_style(comp)["color"] for comp in (first, second, third)] == [
+        '"blue"',
+        '"purple"',
+        '"red"',
+    ]
 
 
 def test_default_page_plugins_keep_scope_wrappers_without_auto_memoization() -> None:

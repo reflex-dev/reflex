@@ -111,7 +111,7 @@ def test_compile_shared_app_styles(benchmark: BenchmarkFixture):
             "font_family": "Inter, sans-serif",
             "font_size": ["12px", "14px"],
             "line_height": "1.5",
-            "_selection": {"background": "#cdf"},
+            "::selection": {"background": "#cdf"},
         },
     })
 

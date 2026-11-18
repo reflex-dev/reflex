@@ -1,1 +1,1 @@
-Allow the compiler to reuse normalization of unchanged literal app style rules.
+Let the compiler normalize each shared `App.style` rule once per page.

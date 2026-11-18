@@ -113,7 +113,7 @@ class ApplyStylePlugin(Plugin):
         comp: Component,
         style: ComponentStyle,
         page_context: PageContext,
-        style_factory: Callable[[dict[str, Any]], Style] | None = None,
+        style_factory: Callable[[dict[str, Any]], Style] = Style,
     ) -> Component | None:
         """Apply app-level styles to a single component.
 
@@ -122,7 +122,7 @@ class ApplyStylePlugin(Plugin):
             style: The app-level component style map.
             page_context: The active page context, used to obtain a page-local
                 clone before rewriting ``style``.
-            style_factory: Optional page-local normalizer for the base style lookup.
+            style_factory: Normalizer for the matching app style rule.
 
         Returns:
             A page-local clone with the merged style, or ``None`` when the
@@ -133,12 +133,7 @@ class ApplyStylePlugin(Plugin):
             raise UserWarning(msg)
 
         new_style = comp._add_style()
-        component_style = (
-            comp._get_component_style(style, _style_factory=style_factory)
-            if style_factory is not None
-            and type(comp)._get_component_style is Component._get_component_style
-            else comp._get_component_style(style)
-        )
+        component_style = comp._get_component_style(style, _style_factory=style_factory)
         if not new_style and not component_style:
             return None
 
@@ -196,7 +191,6 @@ class ApplyStylePlugin(Plugin):
 
         apply_style = self._apply_style
         style_factory = _AppStyleCache()
-        use_style_cache = type(self)._apply_style is ApplyStylePlugin._apply_style
 
         def enter_component(
             comp: BaseComponent,
@@ -204,9 +198,7 @@ class ApplyStylePlugin(Plugin):
         ) -> BaseComponent | None:
             if not isinstance(comp, Component) or in_prop_tree:
                 return None
-            if use_style_cache:
-                return apply_style(comp, style, page_context, style_factory)
-            return apply_style(comp, style, page_context)
+            return apply_style(comp, style, page_context, style_factory)
 
         return enter_component
 
