@@ -1227,8 +1227,9 @@ def _walk_page_with_plugins(
     plugins = tuple(
         plugin
         for plugin in compile_context.hooks.plugins
-        # An enabled Radix plugin's ``enter_component`` bundles nothing more.
-        if not (isinstance(plugin, RadixThemesPlugin) and plugin.enabled)
+        # An enabled Radix plugin's ``enter_component`` bundles nothing more;
+        # a subclass keeps its own hooks.
+        if not (type(plugin) is RadixThemesPlugin and plugin.enabled)
     )
     if len(plugins) != len(compile_context.hooks.plugins):
         compile_context.hooks = CompilerHooks(plugins=plugins)
@@ -1242,7 +1243,7 @@ def _walk_page_with_plugins(
             for plugin in plugins
             for hook in ("enter_component", "leave_component")
         ):
-            hooks.compile_component(
+            page_context.root_component = hooks.compile_component(
                 component, page_context=page_context, compile_context=compile_context
             )
         hooks.compile_page(page_context, page=page, compile_context=compile_context)
@@ -1350,7 +1351,9 @@ def compile_app(
             else ()
         )
         compile_ctx = CompileContext(
-            app=app, pages=(), hooks=CompilerHooks(plugins=compiler_plugins)
+            app=app,
+            pages=tuple(app._unevaluated_pages.values()),
+            hooks=CompilerHooks(plugins=compiler_plugins),
         )
         with (
             log.timing(logger, "Evaluate Pages (Backend)"),

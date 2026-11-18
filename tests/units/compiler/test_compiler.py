@@ -10,7 +10,7 @@ from pathlib import Path, PureWindowsPath
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
-from reflex_base.components.component import Component
+from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
@@ -1219,6 +1219,55 @@ def test_backend_compile_derives_bundled_libraries_without_registry(
         assert json.loads(registry_path.read_text()) == libraries
 
 
+def _compile_backend_only_app(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    plugins: list[rx.plugins.Plugin],
+) -> list[str]:
+    """Run a backend-only compile with no registry over two Radix pages.
+
+    Args:
+        tmp_path: A temporary project directory without a frontend build.
+        monkeypatch: Fixture for redirecting frontend and backend artifact paths.
+        mocker: Fixture for selecting the backend-only compile path.
+        plugins: The plugins configured in rxconfig.
+
+    Returns:
+        The routes of the app, in evaluation order.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    class BackendWalkState(rx.State):
+        """State used to exercise backend page walks."""
+
+    def radix_page() -> Component:
+        """Render a page with a Radix Themes component.
+
+        Returns:
+            A Radix Themes component.
+        """
+        return rx.text("radix")
+
+    app = rx.App(_state=BackendWalkState)
+    app.add_page(radix_page, route="/radix")
+    app.add_page(radix_page, route="/radix-2")
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    mocker.patch.object(app, "_add_optional_endpoints")
+    mocker.patch.object(
+        compiler,
+        "get_config",
+        return_value=rx.Config(app_name="testing", plugins=plugins),
+    )
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path / "web")
+    monkeypatch.setattr(prerequisites, "get_backend_dir", lambda: tmp_path / "backend")
+    mocker.patch.object(utils, "_compile_initial_state")
+
+    assert compiler.compile_app(app, use_rich=False) is False
+    return list(app._unevaluated_pages)
+
+
 @pytest.mark.parametrize(
     ("explicit_radix_plugin", "expected_walks"),
     [(True, 0), (False, 1)],
@@ -1240,42 +1289,111 @@ def test_backend_compile_stops_walking_pages_once_no_hook_can_bundle(
         explicit_radix_plugin: Whether rxconfig configures the Radix plugin.
         expected_walks: The number of page trees traversed.
     """
-    monkeypatch.chdir(tmp_path)
-
-    class BackendWalkState(rx.State):
-        """State used to exercise backend page walks."""
-
-    def radix_page() -> Component:
-        """Render a page with a Radix Themes component.
-
-        Returns:
-            A Radix Themes component.
-        """
-        return rx.text("radix")
-
-    app = rx.App(_state=BackendWalkState)
-    app.add_page(radix_page, route="/radix")
-    app.add_page(radix_page, route="/radix-2")
-    mocker.patch.object(app, "_apply_decorated_pages")
-    mocker.patch.object(app, "_should_compile", return_value=False)
-    mocker.patch.object(app, "_add_optional_endpoints")
+    compile_component = mocker.spy(CompilerHooks, "compile_component")
     plugins: list[rx.plugins.Plugin] = (
         [rx.plugins.RadixThemesPlugin()] if explicit_radix_plugin else []
     )
-    mocker.patch.object(
-        compiler,
-        "get_config",
-        return_value=rx.Config(app_name="testing", plugins=plugins),
-    )
-    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path / "web")
-    monkeypatch.setattr(prerequisites, "get_backend_dir", lambda: tmp_path / "backend")
-    mocker.patch.object(utils, "_compile_initial_state")
-    compile_component = mocker.spy(CompilerHooks, "compile_component")
 
-    assert compiler.compile_app(app, use_rich=False) is False
+    _compile_backend_only_app(tmp_path, monkeypatch, mocker, plugins)
 
     assert compile_component.call_count == expected_walks
     assert "@radix-ui/themes" in RegistrationContext.get().bundled_libraries
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_runs_radix_plugin_subclass_hooks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Keep an enabled Radix plugin subclass and its own hooks in the backend walk.
+
+    Args:
+        tmp_path: A temporary project directory without a frontend build.
+        monkeypatch: Fixture for redirecting frontend and backend artifact paths.
+        mocker: Fixture for selecting the backend-only compile path.
+    """
+    compiled_routes: list[str] = []
+
+    class RecordingRadixPlugin(rx.plugins.RadixThemesPlugin):
+        """A Radix plugin subclass with its own page hook."""
+
+        def compile_page(self, page_ctx: PageContext, /, **kwargs) -> None:
+            """Record the compiled route.
+
+            Args:
+                page_ctx: The page being compiled.
+                kwargs: The compile hook context.
+            """
+            super().compile_page(page_ctx, **kwargs)
+            compiled_routes.append(page_ctx.route)
+
+    routes = _compile_backend_only_app(
+        tmp_path, monkeypatch, mocker, [RecordingRadixPlugin()]
+    )
+
+    assert compiled_routes == routes
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_gives_page_hooks_the_compile_view(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Page hooks see the replaced root and every page, as in a frontend compile.
+
+    Args:
+        tmp_path: A temporary project directory without a frontend build.
+        monkeypatch: Fixture for redirecting frontend and backend artifact paths.
+        mocker: Fixture for selecting the backend-only compile path.
+    """
+    replacements: dict[str, Component] = {}
+    page_roots: dict[str, BaseComponent] = {}
+    page_routes: dict[str, list[str]] = {}
+
+    class RootReplacingPlugin(rx.plugins.Plugin):
+        """Replace each page root and record what the page hook sees."""
+
+        def enter_component(
+            self,
+            comp: BaseComponent,
+            /,
+            *,
+            page_context: PageContext,
+            compile_context: CompileContext,
+            in_prop_tree: bool = False,
+        ) -> Component | None:
+            """Wrap the page root once.
+
+            Args:
+                comp: The component being compiled.
+                page_context: The page being compiled.
+                compile_context: The compile run.
+                in_prop_tree: Whether the component is in a prop subtree.
+
+            Returns:
+                The replacement root, or None for other components.
+            """
+            if page_context.route in replacements:
+                return None
+            replacements[page_context.route] = rx.box(comp)
+            return replacements[page_context.route]
+
+        def compile_page(self, page_ctx: PageContext, /, **kwargs) -> None:
+            """Record the page root and the pages of the compile run.
+
+            Args:
+                page_ctx: The page being compiled.
+                kwargs: The compile hook context.
+            """
+            page_roots[page_ctx.route] = page_ctx.root_component
+            page_routes[page_ctx.route] = [
+                page.route for page in kwargs["compile_context"].pages
+            ]
+
+    routes = _compile_backend_only_app(
+        tmp_path, monkeypatch, mocker, [RootReplacingPlugin()]
+    )
+
+    assert page_roots == replacements
+    assert page_routes == dict.fromkeys(routes, routes)
 
 
 @pytest.mark.usefixtures("clean_registration_context")
