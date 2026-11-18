@@ -144,18 +144,45 @@ class Delivery:
 
 
 def _key_bytes(secret: str) -> bytes:
+    """Decode a secret into the HMAC key.
+
+    Args:
+        secret: A ``whsec_``-prefixed base64 key, or a raw string.
+
+    Returns:
+        The key bytes.
+    """
     if secret.startswith(_SECRET_PREFIX):
         return base64.b64decode(secret.removeprefix(_SECRET_PREFIX))
     return secret.encode()
 
 
 def _signature(secret: str, msg_id: str, timestamp: int, body: bytes) -> str:
+    """Compute one Standard Webhooks signature.
+
+    Args:
+        secret: The secret to sign with.
+        msg_id: The request's id.
+        timestamp: The request's timestamp.
+        body: The request body.
+
+    Returns:
+        The base64 HMAC-SHA256 of ``{msg_id}.{timestamp}.{body}``.
+    """
     signed = f"{msg_id}.{timestamp}.".encode() + body
     digest = hmac.new(_key_bytes(secret), signed, hashlib.sha256).digest()
     return base64.b64encode(digest).decode()
 
 
 def _secrets(secret: str | Iterable[str]) -> list[str]:
+    """List the secrets given as one space-separated string or several.
+
+    Args:
+        secret: The secret or secrets.
+
+    Returns:
+        The non-empty secrets.
+    """
     return secret.split() if isinstance(secret, str) else [v for v in secret if v]
 
 
@@ -264,6 +291,17 @@ _EVENT_IDS = ("id", "trigger_id", "entry_point")
 
 
 def _event(raw: Any) -> Event:
+    """Read one event from a delivery body.
+
+    Args:
+        raw: The event as decoded from JSON.
+
+    Returns:
+        The event.
+
+    Raises:
+        InvalidDelivery: If it is not an object with non-empty string ids.
+    """
     if not isinstance(raw, dict):
         msg = "an event is not an object"
         raise InvalidDelivery(msg)
@@ -399,6 +437,17 @@ class EntryPoints:
         """
 
         def register(function: Callable[[E], R | None]) -> Callable[[E], R | None]:
+            """Register the function as an entry point.
+
+            Args:
+                function: Builds the row from the event.
+
+            Returns:
+                The function, unchanged.
+
+            Raises:
+                ValueError: If an entry point by that name is already declared.
+            """
             entry_name = name or function.__name__
             if entry_name in self._by_name:
                 msg = f"an entry point named {entry_name!r} is already declared"
