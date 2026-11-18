@@ -25,6 +25,7 @@ import pytest
 import pytest_asyncio
 from opentelemetry.trace import SpanKind, StatusCode
 from reflex_base import constants, otel
+from reflex_base.config import get_config
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
@@ -5629,3 +5630,44 @@ async def test_handler_cancelled_inside_the_locked_block_cancels_its_inline_runs
         BaseStateToken(ident=token, cls=State)
     )
     assert (await state.get_state(CancelInsideState)).log == ["ping"]
+
+
+async def test_returned_undecorated_state_method_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """With explicit event handlers, a returned undecorated method names the decorator.
+
+    It is a mistaken event like an uncalled event creator, not a result to drop.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(get_config(), "state_explicit_event_handlers", True)
+
+    class UndecoratedReturnState(State):
+        def plain(self):
+            pass
+
+        @event
+        def returns_plain(self):
+            return UndecoratedReturnState.plain
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(UndecoratedReturnState.returns_plain())[0]
+        )
+        with pytest.raises(
+            TypeError,
+            match=r"UndecoratedReturnState\.plain is not an event handler\. Decorate it with `@rx\.event`",
+        ):
+            await future
+        await processor.join(5)
+    assert len(captured) == 1
