@@ -45,6 +45,36 @@ _package_reports_lock = threading.Lock()
 _IMPORT_MACHINERY = "<frozen importlib._bootstrap"
 
 
+def _import_site(frames: list[FrameType]) -> tuple[int, str] | None:
+    """Find the import that runs in the frames and the module it imports.
+
+    Args:
+        frames: The frames, outermost first.
+
+    Returns:
+        The index of the outermost import machinery frame and the name of the
+        module the import statement imports, or None if no import runs.
+    """
+    importing = next(
+        (
+            index
+            for index, frame in enumerate(frames)
+            if frame.f_code.co_filename.startswith(_IMPORT_MACHINERY)
+        ),
+        None,
+    )
+    if importing is None:
+        return None
+    for frame in frames[importing:]:
+        # The outermost load is the import statement's module, even while a
+        # parent package or a finder runs. A lazy module body has no load frame.
+        if frame.f_code.co_name == "_find_and_load":
+            return importing, frame.f_locals["name"]
+        if frame.f_code.co_name == "<module>":
+            return importing, frame.f_globals["__name__"]
+    return None
+
+
 class _BlockingReport(NamedTuple):
     """What blocks the loop, sampled when the threshold was reached."""
 
@@ -121,46 +151,12 @@ class EventLoopBlockingMonitor:
             scope = ", including state updates such as computed vars"
         else:
             subject, scope = f"Task {name!r}", ""
-        importing = next(
-            (
-                index
-                for index, frame in enumerate(frames)
-                if frame.f_code.co_filename.startswith(_IMPORT_MACHINERY)
-            ),
-            None,
-        )
-        if importing is None:
-            app_frame = self._app_frame(frames)
-            activity = ""
-            advice = _APP_ADVICE
-        else:
-            # Point at the app line that starts the import, not inside the module.
-            app_frame = self._app_frame(frames[:importing])
-            # The outermost module body is the module the import statement names.
-            module = next(
-                (
-                    frame.f_globals.get("__name__")
-                    for frame in frames[importing:]
-                    if frame.f_code.co_name == "<module>"
-                ),
-                None,
-            )
-            activity = f" while importing {module or 'a module'}"
-            advice = (
-                f"Import {module or 'it'} at the top of a module so it loads with "
-                "the app, or load it in a thread first with `await asyncio.to_thread("
-                f"importlib.import_module, {repr(module) if module else 'name'})`."
-            )
-        location = (
-            ""
-            if app_frame is None
-            else f" at {app_frame.f_code.co_filename[len(self._app_root) :]}:"
-            f"{app_frame.f_lineno} in {app_frame.f_code.co_name}"
-        )
+        app_frame = self._app_frame(frames)
+        site = _import_site(frames)
+        activity = "" if site is None else f" while importing {site[1]}"
         if (
             fn is not None
             and app_frame is None
-            and self._app_frame(frames) is None
             and not self._is_app_file(handler_file := fn.__code__.co_filename)
         ):
             with _package_reports_lock:
@@ -170,10 +166,33 @@ class EventLoopBlockingMonitor:
             subject += f" (from package {fn.__module__.partition('.')[0]})"
             advice = _PACKAGE_ADVICE
             # Start at the handler, skipping the frames that dispatch it.
-            for index, frame in enumerate(frames):
-                if frame.f_code.co_filename == handler_file:
-                    frames = frames[index:]
-                    break
+            frames = frames[
+                next(
+                    (
+                        index
+                        for index, frame in enumerate(frames)
+                        if frame.f_code.co_filename == handler_file
+                    ),
+                    0,
+                ) :
+            ]
+        elif site is None:
+            advice = _APP_ADVICE
+        else:
+            importing, module = site
+            # Point at the app line that starts the import, not inside the module.
+            app_frame = self._app_frame(frames[:importing])
+            advice = (
+                f"Import {module} at the top of a module so it loads with the app, "
+                "or, in an async handler, load it in a thread first with `await "
+                f"asyncio.to_thread(importlib.import_module, {module!r})`."
+            )
+        location = (
+            ""
+            if app_frame is None
+            else f" at {app_frame.f_code.co_filename[len(self._app_root) :]}:"
+            f"{app_frame.f_lineno} in {app_frame.f_code.co_name}"
+        )
         return _BlockingReport(
             subject,
             f"{subject} is blocking the event loop{location}{activity} "

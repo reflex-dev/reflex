@@ -239,13 +239,19 @@ def _fake_frame(filename: str, lineno: int, name: str, module: str = "fake") -> 
         filename: The file of the function.
         lineno: The line the frame runs.
         name: The name of the function.
-        module: The name of the module the function belongs to.
+        module: The module the function belongs to, or the module that
+            ``_find_and_load`` loads.
 
     Returns:
         An object with the frame attributes the monitor reads.
     """
     code = compile("", filename, "exec").replace(co_name=name)
-    return SimpleNamespace(f_code=code, f_lineno=lineno, f_globals={"__name__": module})
+    return SimpleNamespace(
+        f_code=code,
+        f_lineno=lineno,
+        f_globals={"__name__": module},
+        f_locals={"name": module},
+    )
 
 
 def _extract(frames: list[Any]) -> traceback.StackSummary:
@@ -323,7 +329,12 @@ async def test_package_handler_import_keeps_package_advice(
     module_frame = _fake_frame("package/sdk.py", 1, "<module>", module="package.sdk")
     frames = [
         handler_frame,
-        _fake_frame("<frozen importlib._bootstrap>", 1371, "_find_and_load"),
+        _fake_frame(
+            "<frozen importlib._bootstrap>",
+            1371,
+            "_find_and_load",
+            module="package.sdk",
+        ),
         module_frame,
     ]
     monkeypatch.setattr(monitor, "_task_frames", lambda task: frames)
@@ -660,8 +671,8 @@ async def test_import_is_reported_at_the_import_site(
         "Event handler state.importing is blocking the event loop at importer.py:2 "
         "in load while importing heavy_sdk (threshold: 0.200s), including state "
         "updates such as computed vars. Import heavy_sdk at the top of a module so "
-        "it loads with the app, or load it in a thread first with "
-        "`await asyncio.to_thread(importlib.import_module, 'heavy_sdk')`."
+        "it loads with the app, or, in an async handler, load it in a thread first "
+        "with `await asyncio.to_thread(importlib.import_module, 'heavy_sdk')`."
     )
     assert [(frame.filename, frame.name) for frame in report.stack] == [
         (__file__, "handler"),
@@ -671,6 +682,109 @@ async def test_import_is_reported_at_the_import_site(
         (blocking.__file__, "_describe_blocking"),
         (blocking.__file__, "_task_frames"),
     ]
+
+
+class _ProbingFinder:
+    """Find no module, after a probe while looking for one name."""
+
+    def __init__(self, name: str, probe: Callable[[], None]) -> None:
+        """Probe while looking for a module.
+
+        Args:
+            name: The module to probe for.
+            probe: The function to call while looking for the module.
+        """
+        self.name = name
+        self.probe = probe
+
+    def find_spec(self, fullname: str, *args: Any) -> None:
+        """Probe for the module name, then find nothing.
+
+        Args:
+            fullname: The name of the module to find.
+            *args: The import path and target, unused.
+        """
+        if fullname == self.name:
+            self.probe()
+
+
+def _probe_in_parent_package(root: Path, probe: Callable[[], None]) -> None:
+    """Write a package whose parent probes, so the leaf is not yet loading.
+
+    Args:
+        root: The app root to write the package in.
+        probe: The function to call, unused: the package calls blocking_probe.
+    """
+    (root / "heavy_pkg" / "sub").mkdir(parents=True)
+    (root / "heavy_pkg" / "__init__.py").write_text(
+        "import blocking_probe\nblocking_probe.describe()\n"
+    )
+    (root / "heavy_pkg" / "sub" / "__init__.py").write_text("")
+    (root / "heavy_pkg" / "sub" / "leaf.py").write_text("")
+
+
+def _probe_in_finder(root: Path, probe: Callable[[], None]) -> None:
+    """Probe while a finder looks for the module, before any module body runs.
+
+    Args:
+        root: The app root, unused.
+        probe: The function to call while looking for the module.
+    """
+    sys.meta_path.insert(0, _ProbingFinder("virtual_sdk", probe))
+
+
+@pytest.mark.parametrize(
+    ("module", "setup"),
+    [
+        ("heavy_pkg.sub.leaf", _probe_in_parent_package),
+        ("virtual_sdk", _probe_in_finder),
+    ],
+    ids=["parent_package", "finder"],
+)
+async def test_import_names_the_module_the_statement_imports(
+    app_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    module: str,
+    setup: Callable[[Path, Callable[[], None]], None],
+):
+    """Name the module the import statement imports, wherever the import blocks."""
+    monitor = EventLoopBlockingMonitor(
+        asyncio.get_running_loop(), threshold=0.2, event_handlers={}
+    )
+    reports = []
+
+    def describe():
+        """Describe the blocking import."""
+        reports.append(monitor._describe_blocking())
+
+    monkeypatch.setitem(
+        sys.modules, "blocking_probe", SimpleNamespace(describe=describe)
+    )
+    monkeypatch.setattr(sys, "meta_path", list(sys.meta_path))
+    setup(app_root, describe)
+    (app_root / "importer.py").write_text(
+        f"def load():\n    try:\n        import {module}\n    except ImportError:\n"
+        "        pass\n"
+    )
+    importer = importlib.import_module("importer")
+
+    async def handler():  # noqa: RUF029
+        """Import a module for the first time on the loop."""
+        importer.load()
+
+    await asyncio.create_task(
+        handler(), name=f"{EVENT_TASK_PREFIX}state.importing|token|txid"
+    )
+
+    [report] = reports
+    assert report is not None
+    assert report.summary == (
+        "Event handler state.importing is blocking the event loop at importer.py:3 "
+        f"in load while importing {module} (threshold: 0.200s), including state "
+        f"updates such as computed vars. Import {module} at the top of a module so "
+        "it loads with the app, or, in an async handler, load it in a thread first "
+        f"with `await asyncio.to_thread(importlib.import_module, {module!r})`."
+    )
 
 
 async def test_blocking_import_is_logged_with_import_advice(
@@ -720,8 +834,9 @@ async def test_blocking_import_is_logged_with_import_advice(
     assert summary == (
         "Task 'loader' is blocking the event loop at importer.py:2 in load while "
         "importing slow_sdk (threshold: 0.040s). Import slow_sdk at the top of a "
-        "module so it loads with the app, or load it in a thread first with "
-        "`await asyncio.to_thread(importlib.import_module, 'slow_sdk')`."
+        "module so it loads with the app, or, in an async handler, load it in a "
+        "thread first with `await asyncio.to_thread(importlib.import_module, "
+        "'slow_sdk')`."
     )
     assert stack_title == (
         "Stack when the threshold was reached (most recent call last):"
