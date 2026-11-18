@@ -65,7 +65,7 @@ except RunConflict as conflict:
 
 With `key`, `start` returns `False` only when a run with the same `event_id` already exists, so the resent event can be acknowledged and dropped. A clash on any other unique constraint, here a second run for the same `user_id`, raises `RunConflict`, whose `constraint` names the constraint the database reported.
 
-`key` must be a column that is unique on its own: a single-column primary key, a column with `unique=True`, a single-column `UniqueConstraint` that isn't deferrable, or a unique index on that column alone, not on an expression of it and without a `WHERE` clause. `start` raises a `ValueError` for any other column. A nullable key column lets runs started without an event leave it empty, since empty values never clash.
+`key` must be a column that is unique on its own: a single-column primary key, a column with `unique=True`, a single-column `UniqueConstraint` that isn't deferrable, or a unique index on that column alone, not on an expression of it and without a `WHERE` clause. `start` raises a `ValueError` for any other column. A nullable key column lets runs started without an event leave it `NULL`, since `NULL` values never clash. An empty string is a value like any other and does clash.
 
 ## Find runs
 

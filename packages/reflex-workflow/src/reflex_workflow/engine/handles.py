@@ -59,7 +59,11 @@ def key_column(cls: type[Workflow], key: QueryableAttribute[Any]) -> Column[Any]
     if column is None or column.table is not table:
         msg = f"key= must be one column of {cls.__qualname__}, not {key!r}."
         raise TypeError(msg)
-    if column.primary_key and len(table.primary_key) == 1:
+    if (
+        column.primary_key
+        and len(table.primary_key) == 1
+        and not table.primary_key.deferrable
+    ):
         return column
     if column.unique:
         return column

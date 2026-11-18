@@ -14,7 +14,7 @@ import pytest
 import pytest_asyncio
 from reflex_workflow import RunConflict, Workflow, connect_workflows, step
 from reflex_workflow.engine import handles
-from sqlalchemy import Index, String, UniqueConstraint, func, text
+from sqlalchemy import Index, PrimaryKeyConstraint, String, UniqueConstraint, func, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -74,6 +74,20 @@ class Deferred(Base, Workflow):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     later: Mapped[str] = mapped_column(String)
+
+    @step
+    async def go(self):
+        """Do nothing."""
+        return
+
+
+class DeferredKey(Base, Workflow):
+    """A run whose primary key is deferrable."""
+
+    __tablename__ = "handles_deferred_key"
+    __table_args__ = (PrimaryKeyConstraint("id", deferrable=True),)
+
+    id: Mapped[int] = mapped_column()
 
     @step
     async def go(self):
@@ -257,6 +271,9 @@ def test_key_must_be_one_unique_column_of_the_row():
     )
     assert _refusal(Onboarding, Onboarding.email) == (
         f"ValueError: key= names Onboarding.email, {not_unique}"
+    )
+    assert _refusal(DeferredKey, DeferredKey.id) == (
+        f"ValueError: key= names DeferredKey.id, {not_unique}"
     )
     assert _refusal(Seat, Seat.team) == (
         f"ValueError: key= names Seat.team, {not_unique}"

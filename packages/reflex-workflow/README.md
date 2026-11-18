@@ -18,6 +18,7 @@ class Onboarding(Base, Workflow):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[str] = mapped_column(String, unique=True)
+    trigger_key: Mapped[str | None] = mapped_column(String, unique=True)
     email: Mapped[str] = mapped_column(String)
     nudges: Mapped[int] = mapped_column(default=0)
     status: Mapped[str] = mapped_column(String, default="welcoming")
