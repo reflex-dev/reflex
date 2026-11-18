@@ -1133,44 +1133,56 @@ def test_backend_compile_restores_registry_before_initial_state_serialization(
 
 @pytest.mark.parametrize("with_stateful_marker", [False, True])
 @pytest.mark.parametrize("with_saved_registry", [False, True])
+@pytest.mark.parametrize("explicit_radix_plugin", [False, True])
 @pytest.mark.usefixtures("clean_registration_context")
-def test_backend_compile_bundles_plugin_dependencies_before_initial_state_serialization(
+def test_backend_compile_derives_bundled_libraries_without_registry(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     mocker: MockerFixture,
-    with_stateful_marker: bool,
+    explicit_radix_plugin: bool,
     with_saved_registry: bool,
+    with_stateful_marker: bool,
 ):
-    """Keep plugin and saved libraries available to backend state serializers.
+    """Without a saved registry, backend startup derives the frontend's libraries.
 
     Args:
         tmp_path: A temporary project directory without a frontend build.
         monkeypatch: Fixture for redirecting frontend and backend artifact paths.
         mocker: Fixture for selecting the backend-only compile path.
-        with_stateful_marker: Whether startup takes the saved-page early return.
+        explicit_radix_plugin: Whether rxconfig configures the Radix plugin.
         with_saved_registry: Whether a previous frontend compile left a registry.
+        with_stateful_marker: Whether a previous start left a stateful-page marker.
     """
     monkeypatch.chdir(tmp_path)
 
-    class BackendPluginState(rx.State):
-        """State used to exercise backend plugin dependency registration."""
+    class BackendLibrariesState(rx.State):
+        """State used to exercise backend bundled-library derivation."""
 
-    app = rx.App(_state=BackendPluginState)
+    def radix_page() -> Component:
+        """Render a stateless page that only implicit Radix detection sees.
+
+        Returns:
+            A Radix Themes component.
+        """
+        return rx.text("radix")
+
+    app = rx.App(_state=BackendLibrariesState)
+    app.add_page(radix_page, route="/radix")
     mocker.patch.object(app, "_apply_decorated_pages")
     mocker.patch.object(app, "_should_compile", return_value=False)
-    mocker.patch.object(app, "_compile_page")
     mocker.patch.object(app, "_add_optional_endpoints")
+    plugins: list[rx.plugins.Plugin] = (
+        [rx.plugins.RadixThemesPlugin()] if explicit_radix_plugin else []
+    )
     mocker.patch.object(
         compiler,
         "get_config",
-        return_value=rx.Config(
-            app_name="testing", plugins=[rx.plugins.RadixThemesPlugin()]
-        ),
+        return_value=rx.Config(app_name="testing", plugins=plugins),
     )
 
     web_dir = tmp_path / "web"
+    registry_path = web_dir / constants.Dirs.BUNDLED_LIBRARIES
     if with_saved_registry:
-        registry_path = web_dir / constants.Dirs.BUNDLED_LIBRARIES
         registry_path.parent.mkdir(parents=True)
         registry_path.write_text(json.dumps(["page-library"]), encoding="utf-8")
     monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
@@ -1181,28 +1193,30 @@ def test_backend_compile_bundles_plugin_dependencies_before_initial_state_serial
     if with_stateful_marker:
         (backend_dir / constants.Dirs.STATEFUL_PAGES).write_text("[]", encoding="utf-8")
 
-    serialized_states: list[type[BaseState]] = []
+    serialized_libraries: list[list[str]] = []
 
-    def assert_libraries_registered(state: type[BaseState]) -> None:
-        """Assert active plugin libraries are registered before serialization.
+    def record_libraries(state: type[BaseState]) -> None:
+        """Record the libraries registered when the initial state is serialized.
 
         Args:
             state: The state class being serialized.
         """
-        assert state is BackendPluginState
-        libraries = RegistrationContext.get().bundled_libraries
-        assert "@radix-ui/themes" in libraries
-        if with_saved_registry:
-            assert "page-library" in libraries
-        serialized_states.append(state)
+        assert state is BackendLibrariesState
+        serialized_libraries.append(list(RegistrationContext.get().bundled_libraries))
 
-    mocker.patch.object(
-        utils, "_compile_initial_state", side_effect=assert_libraries_registered
-    )
+    mocker.patch.object(utils, "_compile_initial_state", side_effect=record_libraries)
 
     assert compiler.compile_app(app, use_rich=False) is False
 
-    assert serialized_states == [BackendPluginState]
+    [libraries] = serialized_libraries
+    if with_saved_registry:
+        # The registry of a frontend compile is the frontend's exact library set.
+        assert "page-library" in libraries
+        assert json.loads(registry_path.read_text()) == ["page-library"]
+    else:
+        assert "@radix-ui/themes" in libraries
+        # The derived set is saved so later starts restore it.
+        assert json.loads(registry_path.read_text()) == libraries
 
 
 @pytest.mark.usefixtures("clean_registration_context")

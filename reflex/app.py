@@ -1766,12 +1766,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self._plugin_routes_registered = True
 
-    def _compile_page(self, route: str, save_page: bool = True):
+    def _compile_page(self, route: str, save_page: bool = True) -> Component | None:
         """Compile a page.
 
         Args:
             route: The route of the page to compile.
             save_page: If True, the compiled page is saved to self._pages.
+
+        Returns:
+            The evaluated page, or None if it was evaluated earlier in this process.
         """
         # Evaluating a page has global side effects (dynamic state creation), so
         # skip routes already evaluated in this process to avoid duplicating them.
@@ -1779,7 +1782,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # page saved, or it is already saved. Otherwise fall through to build and
         # store the component so ``save_page=True`` still populates ``_pages``.
         if route in self._evaluated_pages and (not save_page or route in self._pages):
-            return
+            return None
 
         n_states_before = len(all_base_state_classes)
         component = compiler.compile_unevaluated_page(
@@ -1799,6 +1802,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._check_routes_conflict(route)
         if save_page:
             self._pages[route] = component
+        return component
 
     @property
     def _page_routes(self) -> list[str]:
