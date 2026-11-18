@@ -329,11 +329,11 @@ class Line(BaseHTML):
     tag = "line"
     x1: Var[str | int] = field(doc="The x-axis coordinate of the line starting point.")
     x2: Var[str | int] = field(
-        doc="The x-axis coordinate of the the line ending point."
+        doc="The x-axis coordinate of the line ending point."
     )
     y1: Var[str | int] = field(doc="The y-axis coordinate of the line starting point.")
     y2: Var[str | int] = field(
-        doc="The y-axis coordinate of the the line ending point."
+        doc="The y-axis coordinate of the line ending point."
     )
     path_length: Var[int] = field(doc="The total path length, in user units.")
 
