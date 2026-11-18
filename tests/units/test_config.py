@@ -2000,3 +2000,26 @@ def test_frontend_url_falls_back_to_localhost_frontend_port(
 
     config = rx.Config(app_name="a", deploy_url="https://example.com")
     assert config.frontend_url == "https://example.com"
+
+
+def test_reload_config_failure_keeps_previous_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, forked_registration_context
+):
+    """A failing rxconfig.py reload leaves the context's previous config in place."""
+    rxconfig_path = tmp_path / "rxconfig.py"
+    rxconfig_path.write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+            config = rx.Config(app_name="project1", state_explicit_event_handlers=True)
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+
+    good_config = reflex_base.config.reload_config()
+    rxconfig_path.write_text("raise RuntimeError('broken rxconfig')\n")
+    with pytest.raises(RuntimeError, match="broken rxconfig"):
+        reflex_base.config.reload_config()
+    assert reflex_base.config.get_config() is good_config
+    assert reflex_base.config.get_state_explicit_event_handlers() is True
