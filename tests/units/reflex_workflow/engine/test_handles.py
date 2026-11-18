@@ -113,6 +113,14 @@ async def workflows() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
 
 
 def _onboarding(**columns: object) -> Onboarding:
+    """Make a row whose unique columns clash with no other unless given.
+
+    Args:
+        **columns: Columns to set, over a fresh user_id and trigger_key.
+
+    Returns:
+        The transient row.
+    """
     columns.setdefault("user_id", f"u-{uuid.uuid4().hex}")
     columns.setdefault("trigger_key", uuid.uuid4().hex)
     return Onboarding(**columns)
@@ -219,6 +227,15 @@ def test_key_names_the_column_it_resolves_to():
 
 
 def _refusal(cls: type[Workflow], key: object) -> str:
+    """Describe how key_column refuses a key.
+
+    Args:
+        cls: The workflow class.
+        key: What was passed as key=.
+
+    Returns:
+        The exception's type and message.
+    """
     with pytest.raises((TypeError, ValueError)) as raised:
         handles.key_column(cls, key)  # pyright: ignore[reportArgumentType]
     return f"{type(raised.value).__name__}: {raised.value}"
