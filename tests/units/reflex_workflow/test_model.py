@@ -2,9 +2,14 @@
 
 The ``ty: ignore`` and ``pyright: ignore`` comments below mark calls that must fail
 type checking. Both checkers report an ignore that is no longer needed, so each fails
-if one of those calls stops being an error. A call with only a pyright ignore is one
-ty does not catch yet; the engine rejects each of them at runtime, which the tests of
-``resolve`` and of the engine's columns cover.
+if one of those calls stops being an error.
+
+A few carry only a pyright ignore. A step or wait that mixes two workflows is
+well-typed for a class inheriting both, since a workflow's type parameter is
+contravariant so that steps of a shared base serve every table; ty accepts it, and
+the tests of ``resolve`` reject it at runtime. The redeclared engine columns need a
+ty with attribute override checks (0.0.90 or later); the tests of the engine's
+columns reject them at runtime.
 """
 
 # pyright: reportUnnecessaryTypeIgnoreComment=true
@@ -111,8 +116,8 @@ class Mistaken(Base, Workflow):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    @step  # pyright: ignore[reportArgumentType]
-    async def returns_a_number(self):
+    @step  # pyright: ignore[reportArgumentType] # ty:ignore[invalid-argument-type]
+    async def returns_a_number(self) -> int:
         """Return a value that is not a transition.
 
         Returns:
