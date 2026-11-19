@@ -104,7 +104,11 @@ from reflex.state import (
 )
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
-from reflex.utils.token_manager import RedisTokenManager, SocketRecord
+from reflex.utils.token_manager import (
+    LocalTokenManager,
+    RedisTokenManager,
+    SocketRecord,
+)
 from tests.units.exception_handler_helpers import logged
 
 from .conftest import active_tracer, chdir, metric_points
@@ -4681,6 +4685,7 @@ async def test_modify_state_emits_only_to_connected_tokens(
         )
     )
     event_namespace = app._event_namespace = EventNamespace("/event", app)
+    event_namespace._token_manager = LocalTokenManager()
     event_namespace.emit = AsyncMock()
     emit_update = event_namespace.emit_update = AsyncMock(
         wraps=event_namespace.emit_update
