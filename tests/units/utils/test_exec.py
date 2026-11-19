@@ -749,8 +749,21 @@ def test_forcing_uvicorn_warns_about_a_missing_websocket_library(
     with caplog.at_level(logging.WARNING):
         assert exec_utils.should_use_granian() is (use_granian == "1")
 
-    warned = "has no websocket protocol library" in caplog.text
-    assert warned is (use_granian == "0")
+    assert caplog.record_tuples == (
+        [
+            (
+                "reflex.utils.exec",
+                logging.WARNING,
+                (
+                    "Uvicorn has no websocket protocol library installed, so the "
+                    "default WebSocket transport will not connect. Install "
+                    "`reflex[uvicorn]` or use Granian (REFLEX_USE_GRANIAN=1)."
+                ),
+            )
+        ]
+        if use_granian == "0"
+        else []
+    )
 
 
 def test_auto_detection_skips_uvicorn_without_a_websocket_library(
@@ -801,7 +814,22 @@ def test_granian_caps_the_message_size_at_what_it_can_receive(
         exec_utils._cap_message_size_for_granian()
 
     assert environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get() == effective
-    assert ("drops websocket frames over" in caplog.text) is (configured == "50000000")
+    assert caplog.record_tuples == (
+        [
+            (
+                "reflex.utils.exec",
+                logging.WARNING,
+                (
+                    f"REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE is {configured} bytes, but "
+                    f"Granian drops websocket frames over {effective} bytes; "
+                    "capping it there. Run uvicorn (`reflex[uvicorn]`, "
+                    "REFLEX_USE_GRANIAN=0) for larger messages."
+                ),
+            )
+        ]
+        if configured == "50000000"
+        else []
+    )
 
 
 def _fake_granian_prod(
