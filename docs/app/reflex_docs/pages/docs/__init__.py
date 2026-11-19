@@ -177,6 +177,9 @@ library_display_titles: dict[str, str] = {}
 doc_markdown_sources: dict[str, str] = {}
 
 
+# The heading spells the term with a hyphen, which the filename cannot.
+FAN_OUT_DOC = "docs/workflows/fan_out.md"
+
 manual_titles = {
     "docs/ai_builder/apis.md": "APIs",
     "docs/ai_builder/urls.md": "URLs",
@@ -187,7 +190,7 @@ manual_titles = {
     "docs/workflows/tutorial.md": "Tutorial: Build an Onboarding Workflow",
     "docs/workflows/runs.md": "Starting and Controlling Runs",
     "docs/workflows/events.md": "Waiting for Events",
-    "docs/workflows/fan_out.md": "Fan-Out",
+    FAN_OUT_DOC: "Fan-Out",
     "docs/workflows/concurrency.md": "Concurrency, Rate Limits, and Lanes",
     "docs/workflows/workers.md": "Running Workers",
     "docs/workflows/how_it_works.md": "How Workflows Work",
@@ -222,7 +225,7 @@ manual_titles = {
 # the term, e.g. "Fan Out" for fan_out.md. Unlike ``manual_titles`` these feed
 # the sidebar and the previous/next links, not the page title.
 nav_titles = {
-    "docs/workflows/fan_out.md": "Fan-Out",
+    FAN_OUT_DOC: "Fan-Out",
 }
 
 
