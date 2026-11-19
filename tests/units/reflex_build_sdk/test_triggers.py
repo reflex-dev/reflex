@@ -229,6 +229,25 @@ def test_an_empty_body_is_signed_for_the_manifest():
     assert str(raised.value) == "no signature matches"
 
 
+@pytest.mark.parametrize(
+    "secret", ["whsec_", "whsec_ ", "whsec_!!!!", "whsec_abc", f"{SECRET} whsec_!!!!"]
+)
+def test_a_secret_that_is_not_a_key_signs_and_verifies_nothing(secret):
+    body = b'{"version":1,"events":[]}'
+    # Signed with the empty HMAC key, which is no secret: anyone can make it.
+    forged = {
+        "webhook-id": "x",
+        "webhook-timestamp": str(NOW),
+        "webhook-signature": "v1,w5YtdHsZFTCAh8yZ6qzDwaVOf9Pj1HDgNL9ftrtCja0=",
+    }
+    assert _refusal(body, forged, secret=secret) == (
+        "InvalidSignature: a trigger secret is not a valid whsec_ key"
+    )
+    with pytest.raises(ValueError) as raised:
+        triggers.sign(body, secret, msg_id="x")
+    assert str(raised.value) == "a trigger secret is not a valid whsec_ key"
+
+
 def test_sign_needs_a_secret():
     with pytest.raises(ValueError) as raised:
         triggers.sign(b"", [], msg_id="dlv")
@@ -254,6 +273,27 @@ def test_sign_needs_a_secret():
             "an event has no 'entry_point' string",
         ),
         (b'{"version":1,"events":[1]}', "an event is not an object"),
+        (
+            (
+                b'{"version":1,"events":[{"id":"e","trigger_id":"t","entry_point":"p",'
+                b'"type":5}]}'
+            ),
+            "an event's 'type' is not a string",
+        ),
+        (
+            (
+                b'{"version":1,"events":[{"id":"e","trigger_id":"t","entry_point":"p",'
+                b'"environment":["x"]}]}'
+            ),
+            "an event's 'environment' is not a string",
+        ),
+        (
+            (
+                b'{"version":1,"events":[{"id":"e","trigger_id":"t","entry_point":"p",'
+                b'"received_at":{}}]}'
+            ),
+            "an event's 'received_at' is not a string",
+        ),
     ],
 )
 def test_a_signed_body_this_version_cannot_read_is_refused(body, reason):
@@ -318,6 +358,33 @@ def test_a_start_that_is_not_a_step_is_described_by_its_repr():
         "workflow": None,
         "start": "'welcome'",
     }
+
+
+class FakeCall:
+    """Stands in for a reflex-workflow step bound to its arguments."""
+
+    def __init__(self, step: FakeStep, *args: Any) -> None:  # noqa: D107
+        self.step = step
+        self.args = args
+
+    def __repr__(self) -> str:  # noqa: D105
+        return f"Call(step={self.step!r}, args={self.args!r})"
+
+
+def test_a_start_bound_to_arguments_is_described_by_its_step():
+    entry_points = triggers.EntryPoints()
+    start = FakeCall(WELCOME, "pro")
+    entry_points.add(event=NewUser, start=start, name="pro")(lambda e: None)
+    (described,) = entry_points.manifest()["entry_points"]
+    assert described == {
+        "name": "pro",
+        "event_schema": NewUser.model_json_schema(),
+        "workflow": "Onboarding",
+        "start": "welcome",
+    }
+    entry = entry_points.get("pro")
+    assert entry is not None
+    assert entry.start is start
 
 
 def test_reply_refuses_a_result_that_is_not_one_of_the_five():

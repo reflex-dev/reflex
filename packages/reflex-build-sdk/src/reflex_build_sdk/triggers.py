@@ -23,6 +23,9 @@ one result per event from the reply::
         results = {event.id: await start_event(event) for event in delivery.events}
         return Response(triggers.reply(results), media_type="application/json")
 
+``start_event`` answers ``Result.INVALID`` for an event whose entry point
+``entry_points.get`` doesn't find, or whose payload raises ``InvalidPayload``.
+
 The module uses the standard library only. ``event=`` takes any class with
 pydantic's ``model_validate`` and ``model_json_schema``, and ``start`` is kept as
 given, so neither pydantic nor reflex-workflow is imported here.
@@ -31,6 +34,7 @@ given, so neither pydantic nor reflex-workflow is imported here.
 from __future__ import annotations
 
 import base64
+import binascii
 import dataclasses
 import enum
 import hashlib
@@ -151,17 +155,28 @@ def _key_bytes(secret: str) -> bytes:
 
     Returns:
         The key bytes.
+
+    Raises:
+        ValueError: If a ``whsec_`` key is not base64 or decodes to nothing,
+            since an empty key is one anyone can sign with.
     """
-    if secret.startswith(_SECRET_PREFIX):
-        return base64.b64decode(secret.removeprefix(_SECRET_PREFIX))
-    return secret.encode()
+    if not secret.startswith(_SECRET_PREFIX):
+        return secret.encode()
+    try:
+        key = base64.b64decode(secret.removeprefix(_SECRET_PREFIX), validate=True)
+    except binascii.Error:
+        key = b""
+    if not key:
+        msg = f"a trigger secret is not a valid {_SECRET_PREFIX} key"
+        raise ValueError(msg)
+    return key
 
 
-def _signature(secret: str, msg_id: str, timestamp: int, body: bytes) -> str:
+def _signature(key: bytes, msg_id: str, timestamp: int, body: bytes) -> str:
     """Compute one Standard Webhooks signature.
 
     Args:
-        secret: The secret to sign with.
+        key: The HMAC key to sign with.
         msg_id: The request's id.
         timestamp: The request's timestamp.
         body: The request body.
@@ -170,7 +185,7 @@ def _signature(secret: str, msg_id: str, timestamp: int, body: bytes) -> str:
         The base64 HMAC-SHA256 of ``{msg_id}.{timestamp}.{body}``.
     """
     signed = f"{msg_id}.{timestamp}.".encode() + body
-    digest = hmac.new(_key_bytes(secret), signed, hashlib.sha256).digest()
+    digest = hmac.new(key, signed, hashlib.sha256).digest()
     return base64.b64encode(digest).decode()
 
 
@@ -205,16 +220,17 @@ def sign(
         The ``webhook-id``, ``webhook-timestamp`` and ``webhook-signature`` headers.
 
     Raises:
-        ValueError: If no secret is given.
+        ValueError: If no secret is given, or one is not a valid key.
     """
     secrets = _secrets(secret)
     if not secrets:
         msg = "sign needs at least one secret"
         raise ValueError(msg)
+    keys = [_key_bytes(value) for value in secrets]
     timestamp = int(time.time()) if timestamp is None else timestamp
     signatures = " ".join(
-        f"{_SIGNATURE_VERSION},{_signature(value, msg_id, timestamp, body)}"
-        for value in secrets
+        f"{_SIGNATURE_VERSION},{_signature(key, msg_id, timestamp, body)}"
+        for key in keys
     )
     return {
         _ID_HEADER: msg_id,
@@ -248,13 +264,18 @@ def verify(
         The request's id and timestamp.
 
     Raises:
-        InvalidSignature: If no secret is set, a header is missing, the
-            timestamp is out of tolerance, or no signature matches.
+        InvalidSignature: If no secret is set or one is not a valid key, a
+            header is missing, the timestamp is out of tolerance, or no
+            signature matches.
     """
     secrets = _secrets(os.environ.get(SECRET_ENV, "") if secret is None else secret)
     if not secrets:
         msg = f"no trigger secret: {SECRET_ENV} is not set"
         raise InvalidSignature(msg)
+    try:
+        keys = [_key_bytes(value) for value in secrets]
+    except ValueError as error:
+        raise InvalidSignature(str(error)) from None
     lowered = {name.lower(): value for name, value in headers.items()}
     msg_id = lowered.get(_ID_HEADER)
     stamp = lowered.get(_TIMESTAMP_HEADER)
@@ -279,8 +300,8 @@ def verify(
         )
         if version == _SIGNATURE_VERSION
     ]
-    for value in secrets:
-        expected = _signature(value, msg_id, timestamp, body).encode()
+    for key in keys:
+        expected = _signature(key, msg_id, timestamp, body).encode()
         if any(hmac.compare_digest(expected, candidate) for candidate in offered):
             return msg_id, timestamp
     msg = "no signature matches"
@@ -288,6 +309,7 @@ def verify(
 
 
 _EVENT_IDS = ("id", "trigger_id", "entry_point")
+_EVENT_OPTIONAL = ("type", "environment", "received_at")
 
 
 def _event(raw: Any) -> Event:
@@ -300,7 +322,8 @@ def _event(raw: Any) -> Event:
         The event.
 
     Raises:
-        InvalidDelivery: If it is not an object with non-empty string ids.
+        InvalidDelivery: If it is not an object with non-empty string ids, or
+            an optional field is neither a string nor absent.
     """
     if not isinstance(raw, dict):
         msg = "an event is not an object"
@@ -309,6 +332,10 @@ def _event(raw: Any) -> Event:
         value = raw.get(field)
         if not isinstance(value, str) or not value:
             msg = f"an event has no {field!r} string"
+            raise InvalidDelivery(msg)
+    for field in _EVENT_OPTIONAL:
+        if not isinstance(raw.get(field), str | None):
+            msg = f"an event's {field!r} is not a string"
             raise InvalidDelivery(msg)
     return Event(
         id=raw["id"],
@@ -402,13 +429,15 @@ class EntryPoint(Generic[E, R]):
         Returns:
             The name, the event's JSON schema, and the workflow and step it starts.
         """
-        fn = getattr(self.start, "fn", None)
+        # A step bound to its arguments (``Onboarding.welcome("pro")``) is a Call.
+        step = getattr(self.start, "step", self.start)
+        fn = getattr(step, "fn", None)
         owner = getattr(fn, "__qualname__", "").rpartition(".")[0] or None
         return {
             "name": self.name,
             "event_schema": self.event.model_json_schema(),
             "workflow": owner,
-            "start": getattr(self.start, "name", None) or repr(self.start),
+            "start": getattr(step, "name", None) or repr(self.start),
         }
 
 
