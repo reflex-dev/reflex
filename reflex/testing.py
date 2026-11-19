@@ -20,7 +20,7 @@ import textwrap
 import threading
 import time
 import types
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Callable, Coroutine, Iterator, Sequence
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypeVar
@@ -39,7 +39,7 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.istate.shared import SharedState as SharedState  # To register it.
-from reflex.state import reload_state_module
+from reflex.state import BaseState, State, all_base_state_classes, reload_state_module
 from reflex.utils.exec import _frontend_dev_command, _with_development_condition
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
@@ -84,6 +84,34 @@ def _get_uvicorn():
         )
         raise ImportError(msg) from exc
     return uvicorn
+
+
+def _iter_substates(state: type[BaseState]) -> Iterator[type[BaseState]]:
+    """Yield the registered substates below ``state``, parents first.
+
+    Args:
+        state: The state to walk from.
+
+    Yields:
+        Each substate in the active registration context.
+    """
+    for substate in state.get_substates():
+        yield substate
+        yield from _iter_substates(substate)
+
+
+def _restore_states(states: Sequence[type[BaseState]]) -> None:
+    """Re-register states that ``reload_state_module`` stripped from the context.
+
+    Args:
+        states: The stripped states, parents first.
+    """
+    for state in states:
+        RegistrationContext.register_base_state(state)
+        all_base_state_classes[state.get_full_name()] = None
+    # Dependencies may name any restored state, so resolve them once all are back.
+    for state in states:
+        state._init_var_dependency_dicts()
 
 
 if platform.system() == "Windows":
@@ -141,6 +169,9 @@ class AppHarness:
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
     _registry_token: contextvars.Token[RegistrationContext] | None = None
     _base_registration_context: ClassVar[RegistrationContext] | None = None
+    # A real app is imported only once, so the states stop() strips from it are
+    # kept per app module for its next harness to restore.
+    _stripped_app_states: ClassVar[dict[str, list[type[BaseState]]]] = {}
 
     @classmethod
     def create(
@@ -273,6 +304,9 @@ class AppHarness:
             # already-imported app re-runs only the top module, dropping every
             # submodule page/state/@rx.memo, so use reload=False (no reset).
             with chdir(self.app_path):
+                self._registry_token = RegistrationContext.set(
+                    self._fork_base_registration_context()
+                )
                 # Load this app's config before .web is initialized from it.
                 reload_config()
                 reflex.utils.prerequisites.initialize_frontend_dependencies()
@@ -280,6 +314,12 @@ class AppHarness:
                 os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
                 self.app_instance, self.app_module = (
                     reflex.utils.prerequisites.get_and_validate_app(reload=False)
+                )
+                # A real app stays bound to the context of its first import; stop()
+                # still resets the token to the context before the fork.
+                RegistrationContext.set(self.app_instance._registration_context)
+                _restore_states(
+                    AppHarness._stripped_app_states.pop(self.app_module.__name__, ())
                 )
                 self.app_asgi = self.app_instance()
             return
@@ -305,14 +345,9 @@ class AppHarness:
             )
             self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
-            # Use a new registration context for a new app.
-            if AppHarness._base_registration_context is None:
-                # Save the initial RegistrationContext for the app if we haven't already
-                AppHarness._base_registration_context = (
-                    RegistrationContext.ensure_context()
-                )
-            new_registration_context = AppHarness._base_registration_context.fork()
-            self._registry_token = RegistrationContext.set(new_registration_context)
+            self._registry_token = RegistrationContext.set(
+                self._fork_base_registration_context()
+            )
             # ensure config and app are reloaded when testing different app
             reload_config()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
@@ -323,12 +358,29 @@ class AppHarness:
             )
             self.app_asgi = self.app_instance()
 
+    @staticmethod
+    def _fork_base_registration_context() -> RegistrationContext:
+        """Fork the registration context that predates every harness.
+
+        Returns:
+            A fork with the base registrations and no app.
+        """
+        if AppHarness._base_registration_context is None:
+            AppHarness._base_registration_context = RegistrationContext.ensure_context()
+        return AppHarness._base_registration_context.fork()
+
     def _reload_state_module(self):
         """Forget the states of every module of the app's package, so they never reach the next app."""
         package = (
             self.app_module.__name__ if self.app_module else self.app_name
         ).partition(".")[0]
         prefix = f"{package}."
+        if self.app_source is None and self.app_module is not None:
+            AppHarness._stripped_app_states[self.app_module.__name__] = [
+                state
+                for state in _iter_substates(State)
+                if state.__module__ == package or state.__module__.startswith(prefix)
+            ]
         for module in [
             name for name in sys.modules if name == package or name.startswith(prefix)
         ]:
