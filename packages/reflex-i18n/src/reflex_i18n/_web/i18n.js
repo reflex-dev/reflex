@@ -203,10 +203,10 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
           error,
         );
       });
-    // In URL mode this locale equals the route's, so setting <html lang>/dir
-    // here agrees with LocaleRoute and also covers unwrapped (default-at-root)
-    // pages.
-    applyDocumentLocale(locale);
+    // With URL routing the routing wrap (on every page) owns <html lang>/dir.
+    if (!urlRouting) {
+      applyDocumentLocale(locale);
+    }
     return () => {
       cancelled = true;
     };
@@ -367,7 +367,6 @@ const useUrlLocaleSetter = (navigateLocale) =>
 // language is present synchronously during prerender.
 export function LocaleRoute({ locale, catalog, children }) {
   const setLocale = useUrlLocaleSetter(useLocaleNavigate());
-  useEffect(() => applyDocumentLocale(locale), [locale]);
   return createElement(
     I18nContext.Provider,
     { value: { locale, catalog, setLocale } },
@@ -423,8 +422,13 @@ export function HreflangLinks({ children }) {
   const navigateLocale = useLocaleNavigate();
   // This wrap is on every page with URL routing, unlike the provider and
   // LocaleRoute (absent from the default locale's unprefixed pages), so it
-  // publishes the setter rx.i18n.set_locale drives.
+  // publishes the setter rx.i18n.set_locale drives and keeps <html lang>/dir
+  // in step with the URL, including on the way back to an unprefixed page.
   usePublishedSetter(useUrlLocaleSetter(navigateLocale));
+  useEffect(
+    () => applyDocumentLocale(pathLocale(pathname) ?? defaultLocale),
+    [pathname],
+  );
   // When every locale is prefixed (defaultAtRoot off), an unprefixed URL has
   // no locale of its own; send it to its default-locale address.
   useEffect(() => {

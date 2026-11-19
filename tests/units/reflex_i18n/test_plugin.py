@@ -419,6 +419,35 @@ def test_source_formatters_match_the_runtime(tmp_path: Path):
 
 @requires_node
 @pytest.mark.parametrize(
+    ("pathname", "expected"),
+    [
+        ("/pricing", {"lang": "en", "dir": "ltr"}),
+        ("/ar/pricing", {"lang": "ar", "dir": "rtl"}),
+        ("/AR/pricing", {"lang": "ar", "dir": "rtl"}),
+    ],
+)
+def test_routing_wrap_sets_the_document_locale_of_every_page(
+    tmp_path: Path, pathname: str, expected: dict[str, str]
+):
+    """Leaving a right-to-left page for an unprefixed one restores ltr.
+
+    The routing wrap is the one piece on every routed page: ``LocaleRoute`` and
+    the provider are absent from unprefixed default-locale pages of an app
+    translating only server-side.
+    """
+    rendered = _render_runtime(
+        tmp_path,
+        "HreflangLinks",
+        locales=["en", "ar"],
+        default_locale="en",
+        url_routing=True,
+        pathname=pathname,
+    )
+    assert rendered["documentElement"] == expected
+
+
+@requires_node
+@pytest.mark.parametrize(
     ("locale", "direction"), [("AR", "rtl"), ("Ar-EG", "rtl"), ("EN", "ltr")]
 )
 def test_provider_sets_direction_case_insensitively(
