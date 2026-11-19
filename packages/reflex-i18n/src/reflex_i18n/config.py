@@ -121,10 +121,11 @@ class I18nConfig:
 
 
 def find_package_dir(package: str) -> Path:
-    """Locate an installed package's directory without importing it.
+    """Locate an installed package's directory, importing only its parents.
 
     Args:
-        package: The importable package name, e.g. ``"my_lib"``.
+        package: The importable package name, e.g. ``"my_lib"`` or
+            ``"my_lib.ui"``.
 
     Returns:
         The absolute package directory.
@@ -132,9 +133,13 @@ def find_package_dir(package: str) -> Path:
     Raises:
         ValueError: If no package of that name is installed.
     """
-    spec = importlib.util.find_spec(package)
+    msg = f"Cannot find the package {package!r}: it is not installed."
+    try:
+        # A dotted name imports its parent, which raises if that is missing.
+        spec = importlib.util.find_spec(package)
+    except ModuleNotFoundError as exc:
+        raise ValueError(msg) from exc
     if spec is None or not spec.submodule_search_locations:
-        msg = f"Cannot find the package {package!r}: it is not installed."
         raise ValueError(msg)
     return Path(next(iter(spec.submodule_search_locations))).resolve()
 

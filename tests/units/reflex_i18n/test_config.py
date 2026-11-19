@@ -98,11 +98,19 @@ def test_activating_resolves_catalog_package_dirs(
     assert get_active_catalog_dirs() == ()
 
 
-def test_activating_an_uninstalled_catalog_package_fails():
-    config = I18nConfig(locales=["en"], catalog_packages=["no_such_i18n_package"])
-    with pytest.raises(ValueError) as exc_info:
-        set_active_i18n_config(config)
-    assert str(exc_info.value) == (
-        "Cannot find the package 'no_such_i18n_package': it is not installed."
-    )
-    assert get_active_i18n_config() is None
+@pytest.mark.parametrize("package", ["no_such_i18n_package", "no_such_i18n_package.ui"])
+def test_activating_an_uninstalled_catalog_package_fails(package: str):
+    active = I18nConfig(locales=["en"])
+    set_active_i18n_config(active)
+    try:
+        with pytest.raises(ValueError) as exc_info:
+            set_active_i18n_config(
+                I18nConfig(locales=["en"], catalog_packages=[package])
+            )
+        assert str(exc_info.value) == (
+            f"Cannot find the package {package!r}: it is not installed."
+        )
+        # The failed activation leaves the previous config in place.
+        assert get_active_i18n_config() is active
+    finally:
+        set_active_i18n_config(None)
