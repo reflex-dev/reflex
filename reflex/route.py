@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import functools
 import re
+import string
 from collections.abc import Callable
 
 from reflex_base import constants
@@ -185,8 +186,115 @@ def get_route_regex(keyworded_route: str) -> re.Pattern:
     return re.compile(regex_pattern, re.IGNORECASE | re.ASCII)
 
 
+# React Router folds the case of ASCII letters only (its regex has no "u" flag).
+_ASCII_LOWER = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
+
+
+def _fold_case(segment: str) -> str:
+    """Lowercase the ASCII letters of a path segment, and nothing else.
+
+    Args:
+        segment: A route or path segment.
+
+    Returns:
+        The segment with its ASCII letters lowercased.
+    """
+    return segment.lower() if segment.isascii() else segment.translate(_ASCII_LOWER)
+
+
+class _RouteNode:
+    """A route trie node, reached by matching one path segment per level.
+
+    A route ending at a node is stored as its rank, its position in the order
+    ``get_router`` gives the routes; the lowest-ranked match wins.
+    """
+
+    __slots__ = ("catchall", "end", "min_rank", "optional", "single", "static")
+
+    def __init__(self, no_rank: int):
+        """Create an empty node.
+
+        Args:
+            no_rank: The rank meaning no route, above every real rank.
+        """
+        self.static: dict[str, _RouteNode] = {}
+        # A [arg] segment matches any one segment, an empty one included.
+        self.single: _RouteNode | None = None
+        # A [[arg]] segment matches no segment or one non-empty segment.
+        self.optional: _RouteNode | None = None
+        self.end = no_rank
+        # A [[...splat]] here matches every remaining segment, or none.
+        self.catchall = no_rank
+        # The best rank of any route through this node, to skip branches.
+        self.min_rank = no_rank
+
+    def child(self, part: str, no_rank: int) -> _RouteNode:
+        """Get or create the node a route segment leads to.
+
+        Args:
+            part: The keyworded route segment.
+            no_rank: The rank meaning no route.
+
+        Returns:
+            The child node.
+        """
+        if part == constants.RouteRegex.SINGLE_SEGMENT:
+            node = self.single = self.single or _RouteNode(no_rank)
+        elif part == constants.RouteRegex.DOUBLE_SEGMENT:
+            node = self.optional = self.optional or _RouteNode(no_rank)
+        elif (node := self.static.get(key := _fold_case(part))) is None:
+            node = self.static[key] = _RouteNode(no_rank)
+        return node
+
+
+def _match(
+    node: _RouteNode,
+    segments: list[str],
+    index: int,
+    catchall_from: int,
+    best: int,
+) -> int:
+    """Find the best-ranked route matching the path segments from ``index``.
+
+    Args:
+        node: The node reached by matching ``segments[:index]``.
+        segments: The case-folded path segments.
+        index: The first segment left to match.
+        catchall_from: The first index after every segment holding a newline,
+            which a catch-all, like the regex ``.`` it replaces, cannot match.
+        best: The best rank found so far.
+
+    Returns:
+        The best rank found, ``best`` if nothing here beats it.
+    """
+    if node.min_rank >= best:
+        return best
+    remaining = len(segments) - index
+    # A route may end with one trailing slash, which leaves an empty segment.
+    if node.end < best and (remaining == 0 or (remaining == 1 and not segments[index])):
+        best = node.end
+    if node.catchall < best and index >= catchall_from:
+        best = node.catchall
+    if remaining:
+        segment = segments[index]
+        if (static := node.static.get(segment)) is not None:
+            best = _match(static, segments, index + 1, catchall_from, best)
+        if node.single is not None:
+            best = _match(node.single, segments, index + 1, catchall_from, best)
+        if node.optional is not None and segment:
+            best = _match(node.optional, segments, index + 1, catchall_from, best)
+    if node.optional is not None:
+        best = _match(node.optional, segments, index, catchall_from, best)
+    return best
+
+
 def get_router(routes: list[str]) -> Callable[[str], str | None]:
     """Get a function that computes the route for a given path.
+
+    Routes are ranked by ``route_specificity``, ties in the order given, and a
+    path resolves to the best-ranked route it matches. Matching walks a trie of
+    route segments, so its cost follows the path's length, not the number of
+    routes.
 
     Args:
         routes: A list of routes to match against.
@@ -194,25 +302,47 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
     Returns:
         A function that takes a path and returns the first matching route,
         or None if no match is found.
+
+    Raises:
+        ValueError: If a catch-all segment is not the last segment of a route.
     """
     keyworded_routes = {
         replace_brackets_with_keywords(route): route for route in routes
     }
-    sorted_routes_by_specificity = sorted(
+    ranked_routes = sorted(
         keyworded_routes.items(),
         key=lambda item: route_specificity(item[0]),
     )
-    regexed_routes = [
-        (get_route_regex(keyworded_route), original_route)
-        for keyworded_route, original_route in sorted_routes_by_specificity
-    ]
+    no_rank = len(ranked_routes)
+    root = _RouteNode(no_rank)
+    index_rank = no_rank
+    for rank, (keyworded_route, _) in enumerate(ranked_routes):
+        if keyworded_route == constants.PageNames.INDEX_ROUTE:
+            # The index route matches the root path only.
+            index_rank = min(index_rank, rank)
+            continue
+        node = root
+        node.min_rank = min(node.min_rank, rank)
+        *parts, last = keyworded_route.split("/")
+        for part in parts:
+            if part == constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT:
+                msg = f"Catchall pattern `{constants.RouteRegex.SPLAT_CATCHALL}` must be at the end of the route."
+                raise ValueError(msg)
+            node = node.child(part, no_rank)
+            node.min_rank = min(node.min_rank, rank)
+        if last == constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT:
+            node.catchall = min(node.catchall, rank)
+        else:
+            node = node.child(last, no_rank)
+            node.min_rank = min(node.min_rank, rank)
+            node.end = min(node.end, rank)
 
     @functools.lru_cache(maxsize=4096)
     def get_route(path: str) -> str | None:
-        """Get the first route matching a path.
+        """Get the best-ranked route matching a path.
 
-        Memoized per path: matching is a linear regex scan over every route,
-        paid on every event otherwise.
+        Memoized per path, so an event pays only for a cache lookup once its
+        path has been seen.
 
         The path must be relative to ``frontend_path``, which is how the
         frontend reports it.
@@ -221,14 +351,17 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
             path: The path to match against the routes.
 
         Returns:
-            The first matching route, or None if no match is found.
+            The best-ranked matching route, or None if no route matches.
         """
-        path = "/" + path.removeprefix("/").removesuffix("/")
-        if path == "/index":
-            path = "/"
-        for regex, original_route in regexed_routes:
-            if regex.fullmatch(path):
-                return original_route
-        return None
+        path = path.removeprefix("/").removesuffix("/")
+        if path == "index":
+            path = ""
+        best = index_rank if not path else no_rank
+        segments = path.split("/")
+        catchall_from = 0
+        if "\n" in path:
+            catchall_from = max(i for i, s in enumerate(segments) if "\n" in s) + 1
+        best = _match(root, [_fold_case(s) for s in segments], 0, catchall_from, best)
+        return ranked_routes[best][1] if best < no_rank else None
 
     return get_route

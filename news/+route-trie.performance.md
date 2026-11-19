@@ -1,0 +1,1 @@
+Matching a URL to its page no longer slows down as an app adds pages: the backend walks a trie of route segments instead of trying each route's regex in turn, so resolving a new path takes about the same time with 10 routes or 1,000.
