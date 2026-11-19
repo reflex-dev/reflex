@@ -128,7 +128,14 @@ def sidebar_leaf_outer(
 
 
 def _descendant_links(item: SideBarBase) -> list[str]:
-    """Collect the links of every leaf below an item."""
+    """Collect the links of every leaf below an item.
+
+    Args:
+        item: The sidebar item whose descendants to walk.
+
+    Returns:
+        The links of every leaf nested anywhere below ``item``, in sidebar order.
+    """
     links = []
     for child in item.children:
         if child.children:
@@ -263,6 +270,9 @@ def sidebar_comp() -> rx.Component:
 
     The sidebar reads the route from react-router rather than from props, so a
     single mounted instance follows navigation without being rebuilt per page.
+
+    Returns:
+        The scrollable sidebar navigation for the active docs section.
     """
     from reflex_docs.pages.docs import ai_builder as ai_builder_pages
     from reflex_docs.pages.docs import enterprise, getting_started, state, ui
@@ -519,7 +529,11 @@ def sidebar_comp() -> rx.Component:
 
 
 def sidebar() -> rx.Component:
-    """Render the sidebar navigation for the current route."""
+    """Render the sidebar navigation for the current route.
+
+    Returns:
+        The ``#sidebar-container`` element wrapping the sidebar navigation.
+    """
     return rx.el.div(
         sidebar_comp(),
         id="sidebar-container",
@@ -534,6 +548,9 @@ def persistent_sidebar() -> rx.Component:
     scroll position and expanded groups instead of being rebuilt per page. It
     overlays the ``docs-sidebar-slot`` spacer each docpage reserves, and CSS
     hides it on pages without that slot.
+
+    Returns:
+        The fixed desktop sidebar overlay, for use as an app wrap.
     """
     return rx.fragment(
         rx.el.div(
