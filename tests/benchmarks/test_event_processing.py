@@ -15,13 +15,10 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EmitDeltaProtocol, EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
-from reflex_base.utils.format import (
-    format_event_handler,
-    orjson_dumps_socket,
-    orjson_loads,
-)
+from reflex_base.utils.format import format_event_handler, orjson_dumps_socket
 
 import reflex as rx
+from reflex.app import _sio_dumps, _sio_loads
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import StateUpdate
@@ -486,7 +483,7 @@ async def test_table_event_deltas():
 
 @pytest_asyncio.fixture
 async def wire_event_processing_harness():
-    """Set up event processing with JSON decoding and encoding.
+    """Set up event processing with the socket codec decoding and encoding.
 
     Yields:
         An async callable taking raw event JSON strings and the expected
@@ -498,9 +495,7 @@ async def wire_event_processing_harness():
         token: str, delta: Mapping[str, Mapping[str, Any]]
     ) -> None:
         wire_payloads.append(
-            orjson_dumps_socket(
-                ["event", StateUpdate(delta=delta)], separators=(",", ":")
-            )
+            _sio_dumps(["event", StateUpdate(delta=delta)], separators=(",", ":"))
         )
 
     async with _processing_pipeline(emit_delta_impl) as processor:
@@ -519,7 +514,7 @@ async def wire_event_processing_harness():
                     await p.enqueue(
                         TOKEN,
                         Event(
-                            name=(fields := orjson_loads(raw))["name"],
+                            name=(fields := _sio_loads(raw))["name"],
                             router_data=fields["router_data"],
                             payload=fields["payload"],
                         ),
