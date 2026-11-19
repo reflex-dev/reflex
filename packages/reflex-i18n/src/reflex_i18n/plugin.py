@@ -171,8 +171,6 @@ class I18nPlugin(Plugin):
         Raises:
             TypeError: If ``routing`` is not a PathPrefixRouting.
         """
-        from reflex_base.registry import RegistrationContext
-
         if self.routing is not None and not isinstance(self.routing, PathPrefixRouting):
             # The shipped client runtime (hreflang, language switcher, locale
             # detection) only understands path-prefix URLs.
@@ -191,13 +189,7 @@ class I18nPlugin(Plugin):
         # the ``reflex i18n`` command) don't register state.
         from . import state
 
-        # I18nState registers as a root substate on first import of .state. A
-        # second app in one process (tests, dev hot-reload) is built under a
-        # fresh RegistrationContext that lacks it, so re-register when absent
-        # (guarded: re-registering a known substate raises).
-        ctx = RegistrationContext.ensure_context()
-        if state.I18nState.get_full_name() not in ctx.base_states:
-            ctx.register_base_state(state.I18nState)
+        state._register_in_active_context()
 
     def get_static_assets(
         self, **context: Unpack[CommonContext]

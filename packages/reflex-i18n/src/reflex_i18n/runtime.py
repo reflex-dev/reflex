@@ -525,8 +525,11 @@ def _locale_dependency() -> Var | None:
     # Lazy import: registering this provider must not itself import .state (and
     # register I18nState); state is only needed once a real gettext computed
     # var invokes this during dependency scanning.
-    from .state import I18nState
+    from .state import I18nState, _register_in_active_context
 
+    # A getter can be scanned before this app's I18nPlugin is built, under a
+    # context the plugin has not registered I18nState in yet.
+    _register_in_active_context()
     return I18nState.locale
 
 

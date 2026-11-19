@@ -13,6 +13,7 @@ from collections.abc import Mapping
 
 from reflex_base.event.processor.scope import register_event_scope_provider
 from reflex_base.plugins.base import get_plugin
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData, computed_var
 from reflex_base.vars.function import FunctionStringVar, ReflexCallable
@@ -131,6 +132,17 @@ class I18nState(State):
             )
             raise ValueError(msg)
         self.locale_cookie = locale
+
+
+def _register_in_active_context() -> None:
+    """Register I18nState in the active RegistrationContext unless it already is.
+
+    I18nState registers itself on first import only, so a second app in one
+    process (tests, hot reload) is built under a fresh context that lacks it.
+    """
+    ctx = RegistrationContext.ensure_context()
+    if I18nState.get_full_name() not in ctx.base_states:
+        ctx.register_base_state(I18nState)
 
 
 def set_locale(locale: str | Var[str]) -> EventType:

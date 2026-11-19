@@ -386,6 +386,44 @@ async def test_format_computed_var_reformats_on_locale_change():
         set_active_i18n_config(None)
 
 
+def test_gettext_computed_var_registers_i18n_state_in_a_fresh_context():
+    """A gettext computed var registers I18nState in a context the plugin has not reached.
+
+    A second app in one process (tests, hot reload) defines its states under a
+    fresh RegistrationContext before its I18nPlugin is built, while I18nState,
+    imported once, is registered only in the first app's context.
+    """
+    from reflex_base.registry import RegistrationContext
+    from reflex_i18n.state import I18nState
+
+    import reflex as rx
+
+    i18n_name = I18nState.get_full_name()
+    saved_deps = {k: set(v) for k, v in I18nState._var_dependencies.items()}
+    saved_dirty = set(I18nState._potentially_dirty_states)
+    try:
+        with RegistrationContext.get().fork() as ctx:
+            ctx.base_states.pop(i18n_name, None)
+            ctx.get_substates(rx.State).discard(I18nState)
+            # Drop substate lookups cached under the outer context, as hot reload does.
+            rx.State.get_class_substate.cache_clear()
+
+            class FreshContextGreetingState(rx.State):
+                @rx.var
+                def greeting(self) -> str:
+                    return gettext("Welcome")
+
+            assert ctx.base_states[i18n_name] is I18nState
+            assert I18nState in ctx.get_substates(rx.State)
+            assert FreshContextGreetingState.computed_vars["greeting"]._deps(
+                objclass=FreshContextGreetingState
+            ) == {i18n_name: {"locale"}}
+    finally:
+        rx.State.get_class_substate.cache_clear()
+        I18nState._var_dependencies = saved_deps
+        I18nState._potentially_dirty_states = saved_dirty
+
+
 def test_negotiate_locale_is_case_insensitive():
     # RFC 5646 language tags are case-insensitive; the configured spelling is
     # returned regardless of the request's casing.
