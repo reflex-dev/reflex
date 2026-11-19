@@ -38,7 +38,6 @@ from reflex_base.components.memoize_helpers import (
     _var_data_key,
     get_memoization_strategy,
 )
-from reflex_base.components.tags.iter_tag import _loop_var_data
 from reflex_base.constants.compiler import (
     MemoizationDisposition,
     MemoizationMode,
@@ -51,7 +50,7 @@ from reflex_base.utils import console, format, memo_paths
 from reflex_base.utils.deterministic_hash import deterministic_hash
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
-from reflex_base.vars import VarData
+from reflex_base.vars import VarData, scoped_var_data
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import (
     ArgsFunctionOperation,
@@ -914,7 +913,7 @@ def _rest_placeholder(name: str) -> RestProp:
         The placeholder rest prop.
     """
     return RestProp(
-        _js_expr=name, _var_type=dict[str, Any], _var_data=_loop_var_data(name)
+        _js_expr=name, _var_type=dict[str, Any], _var_data=scoped_var_data(name)
     )
 
 
@@ -944,12 +943,12 @@ def _var_placeholder(
             else LiteralVar.create(runtime_value)._var_type
         )
         return Var(
-            _js_expr=name, _var_type=runtime_type, _var_data=_loop_var_data(name)
+            _js_expr=name, _var_type=runtime_type, _var_data=scoped_var_data(name)
         ).guess_type()
     return Var(
         _js_expr=name,
         _var_type=_annotation_inner_type(annotation),
-        _var_data=_loop_var_data(name),
+        _var_data=scoped_var_data(name),
     ).guess_type()
 
 
@@ -971,7 +970,7 @@ def _event_handler_placeholder(placeholder_name: str, args_spec: Any) -> Callabl
         A plain callable suitable as a memo-function placeholder.
     """
     prop_callback = Var(
-        _js_expr=placeholder_name, _var_data=_loop_var_data(placeholder_name)
+        _js_expr=placeholder_name, _var_data=scoped_var_data(placeholder_name)
     ).to(FunctionVar)
     primary_spec = args_spec[0] if isinstance(args_spec, tuple) else args_spec
 

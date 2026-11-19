@@ -259,6 +259,70 @@ def MemoEdgeCasesApp():
             rx.text(MemoHookState.unmounted.join(","), id="memo-hooks-unmounted"),
         )
 
+    def picker(
+        label: rx.Var[str] | str,
+        picked: rx.ClientStateVar,
+        choice: rx.Var[str] | str,
+        id: rx.Var[str] | str,
+    ) -> rx.Component:
+        # Hooks of its own, so it compiles into a wrapper that takes the
+        # client state hook out of the memo function.
+        return rx.el.button(
+            label,
+            title=picked.value,
+            on_click=picked.set(choice),
+            on_mount=MemoHookState.record_mount(label),
+            class_name="picker",
+            id=id,
+            key=id,
+        )
+
+    @rx.memo
+    def memo_loop_picker(name: rx.Var[str], items: rx.Var[list[str]]) -> rx.Component:
+        # Created in the memo body, used only inside the loop.
+        picked = rx.client_state("none")
+        return rx.box(
+            rx.foreach(
+                items,
+                lambda item: picker(item, picked, item, f"{name}-{item}"),
+            ),
+        )
+
+    @rx.memo
+    def memo_branch_picker(name: rx.Var[str], show: rx.Var[bool]) -> rx.Component:
+        # Created in the memo body, used only inside the branches.
+        picked = rx.client_state("none")
+        return rx.box(
+            rx.cond(
+                show,
+                picker("shown", picked, "shown", f"{name}-shown"),
+                picker("hidden", picked, "hidden", f"{name}-hidden"),
+            ),
+        )
+
+    @rx.memo
+    def memo_match_picker(name: rx.Var[str], show: rx.Var[bool]) -> rx.Component:
+        # Created in the memo body, used only inside the cases.
+        picked = rx.client_state("none")
+        return rx.box(
+            rx.match(
+                show,
+                (True, picker("shown", picked, "shown", f"{name}-shown")),
+                picker("hidden", picked, "hidden", f"{name}-hidden"),
+            ),
+        )
+
+    def memo_client_state():
+        return rx.box(
+            memo_loop_picker(name="loop-a", items=MemoHookState.items),
+            memo_loop_picker(name="loop-b", items=MemoHookState.items),
+            memo_branch_picker(name="branch-a", show=MemoHookState.show),
+            memo_branch_picker(name="branch-b", show=MemoHookState.show),
+            memo_match_picker(name="match-a", show=MemoHookState.show),
+            memo_match_picker(name="match-b", show=MemoHookState.show),
+            rx.button("toggle", on_click=MemoHookState.toggle, id="memo-cs-toggle"),
+        )
+
     def loop_item(item: rx.Var[str], index: rx.Var[int]) -> rx.Component:
         return rx.box(
             rx.text(
@@ -405,6 +469,7 @@ def MemoEdgeCasesApp():
     app = rx.App()
     app.add_page(index, title=MemoState.title_marker)
     app.add_page(memo_hooks, route="/memo-hooks")
+    app.add_page(memo_client_state, route="/memo-client-state")
 
 
 @pytest.fixture(scope="module")
@@ -1033,5 +1098,54 @@ def test_memo_body_hooks_follow_their_branch_and_loop_item(
     expect(mounted).to_have_text(_event_log("hidden"))
     # Strict mode also runs the cleanup of the branch it mounts twice.
     expect(unmounted).to_have_text(_event_log("shown", optional=("hidden",)))
+
+    assert not page_errors
+
+
+def test_memo_body_client_state_under_branch_or_loop_is_per_instance(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """Client state created in a memo body stays one slot per memo instance.
+
+    The state is used only inside an ``rx.foreach`` item, an ``rx.cond``
+    branch or an ``rx.match`` case that has hooks of its own, so the compiler
+    moves the ``useClientState`` call into a generated wrapper. Items and
+    branches of one instance still share the slot, and another instance of
+    the same memo has its own.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
+    page.goto(memo_app.frontend_url.removesuffix("/") + "/memo-client-state")
+    expect(page.locator(".picker")).to_have_count(8)
+
+    def titles(*ids: str) -> list[str | None]:
+        return [page.locator(f"#{id_}").get_attribute("title") for id_ in ids]
+
+    # A loop item sets the state for every item of its instance only.
+    page.click("#loop-a-alpha")
+    expect(page.locator("#loop-a-beta")).to_have_attribute("title", "alpha")
+    assert titles("loop-a-alpha", "loop-b-alpha", "loop-b-beta") == [
+        "alpha",
+        "none",
+        "none",
+    ]
+    page.click("#loop-b-beta")
+    expect(page.locator("#loop-b-alpha")).to_have_attribute("title", "beta")
+    assert titles("loop-a-alpha", "loop-a-beta") == ["alpha", "alpha"]
+
+    # A branch sets the state the other branch of its instance then reads.
+    page.click("#branch-a-shown")
+    page.click("#match-a-shown")
+    expect(page.locator("#branch-a-shown")).to_have_attribute("title", "shown")
+    expect(page.locator("#match-a-shown")).to_have_attribute("title", "shown")
+    page.click("#memo-cs-toggle")
+    expect(page.locator("#branch-a-hidden")).to_have_attribute("title", "shown")
+    expect(page.locator("#match-a-hidden")).to_have_attribute("title", "shown")
+    assert titles("branch-b-hidden", "match-b-hidden") == ["none", "none"]
 
     assert not page_errors
