@@ -7,19 +7,18 @@ from pathlib import Path
 
 import pytest
 
+# Seconds a script may run before it is considered hung. A script takes about a
+# second, but the first cold process of a run may compile the bytecode of every
+# module it imports, which takes over 30 seconds on a Windows runner.
+_SCRIPT_TIMEOUT = 180
 
-def _run_script(
-    script: str,
-    *,
-    cwd: Path | None = None,
-    timeout: int = 15,
-) -> None:
+
+def _run_script(script: str, *, cwd: Path | None = None) -> None:
     """Run an isolated script and report its captured failure output.
 
     Args:
         script: The Python source to execute in a fresh interpreter.
         cwd: The working directory for a temporary application fixture.
-        timeout: The maximum subprocess lifetime in seconds.
     """
     result = subprocess.run(
         [sys.executable, "-c", script],
@@ -28,7 +27,7 @@ def _run_script(
         capture_output=True,
         text=True,
         check=False,
-        timeout=timeout,
+        timeout=_SCRIPT_TIMEOUT,
     )
     assert result.returncode == 0, result.stdout + result.stderr
 
@@ -130,8 +129,7 @@ def custom(value: CUSTOM_TYPE) -> dict:
         script
         .replace("CUSTOM_REGISTRATION", custom_registration)
         .replace("COMPATIBILITY_IMPORT", repr(compatibility_import))
-        .replace("CUSTOM_ENABLED", repr(custom_type is not None)),
-        timeout=30,
+        .replace("CUSTOM_ENABLED", repr(custom_type is not None))
     )
 
 
@@ -410,8 +408,7 @@ finally:
     if not finished:
         os.kill(pid, signal.SIGKILL)
         os.waitpid(pid, 0)
-""".replace("OPERATION", repr(operation)).replace("IMPORT_TARGET", repr(import_target)),
-        timeout=30,
+""".replace("OPERATION", repr(operation)).replace("IMPORT_TARGET", repr(import_target))
     )
 
 
