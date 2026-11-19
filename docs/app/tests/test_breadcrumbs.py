@@ -127,21 +127,21 @@ def test_root_breadcrumb_has_one_location(path, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ("path", "title", "routes", "expected"),
+    ("path", "names", "routes", "expected"),
     [
         (
             "/changelog/upgrading/upgrading-to-0-11/",
-            "Upgrading to Reflex 0.11",
+            ("Upgrading to Reflex 0.11", "Upgrading to 0.11"),
             {"/changelog/", "/changelog/upgrading/upgrading-to-0-11/"},
             [
                 ("Changelog", "/changelog/"),
                 ("Upgrading", None),
-                ("Upgrading to Reflex 0.11", "/changelog/upgrading/upgrading-to-0-11/"),
+                ("Upgrading to 0.11", "/changelog/upgrading/upgrading-to-0-11/"),
             ],
         ),
         (
             "/api-reference/cli/",
-            "Cli",
+            ("Cli", "CLI"),
             {"/api-reference/overview/", "/api-reference/cli/"},
             [
                 ("API Reference", "/api-reference/overview/"),
@@ -150,7 +150,7 @@ def test_root_breadcrumb_has_one_location(path, monkeypatch):
         ),
         (
             "/workflows/fan-out/",
-            "Fan-Out",
+            ("Fan-Out", "Fan Out"),
             {"/workflows/overview/", "/workflows/fan-out/"},
             [
                 ("Workflows", "/workflows/overview/"),
@@ -158,8 +158,23 @@ def test_root_breadcrumb_has_one_location(path, monkeypatch):
             ],
         ),
         (
+            "/recipes/",
+            ("Overview", "Recipes Overview"),
+            {"/recipes/"},
+            [("Recipes", "/recipes/")],
+        ),
+        (
+            "/getting-started/chatapp-tutorial/",
+            ("Build a Streaming AI Chatbot in Python with Reflex", "Chat App Tutorial"),
+            {"/getting-started/chatapp-tutorial/"},
+            [
+                ("Getting Started", None),
+                ("Chat App Tutorial", "/getting-started/chatapp-tutorial/"),
+            ],
+        ),
+        (
             "/ai/integrations/overview/",
-            None,
+            (),
             {"/ai/integrations/overview/"},
             [
                 ("AI", None),
@@ -169,14 +184,29 @@ def test_root_breadcrumb_has_one_location(path, monkeypatch):
         ),
     ],
 )
-def test_breadcrumb_labels_name_the_page_and_keep_acronyms(
-    monkeypatch, path, title, routes, expected
+def test_breadcrumb_labels_spell_the_route_and_keep_acronyms(
+    monkeypatch, path, names, routes, expected
 ):
-    """The last crumb is the page title, and acronyms stay uppercase in any position."""
+    """The last crumb takes the first page name that spells its route segment.
+
+    A name with other words, such as an SEO title or a generic sidebar label, is
+    skipped so the crumb keeps naming the route.
+    """
     docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
     monkeypatch.setattr(docpage_module, "_REGISTERED_DOC_ROUTES", routes)
 
-    assert docpage_module._breadcrumb_items(path, title) == expected
+    assert docpage_module._breadcrumb_items(path, names) == expected
+
+
+def test_sidebar_label_finds_the_page_entry():
+    """The sidebar label lookup returns each page's label, with or without slashes."""
+    from reflex_docs.templates.docpage.sidebar import sidebar_label
+
+    assert sidebar_label("/changelog/upgrading/upgrading-to-0-11/") == (
+        "Upgrading to 0.11"
+    )
+    assert sidebar_label("api-reference/cli") == "CLI"
+    assert sidebar_label("/not-a-docs-page/") is None
 
 
 def test_structured_breadcrumb_parents_keep_acronyms(monkeypatch):

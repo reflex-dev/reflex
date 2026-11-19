@@ -3,7 +3,7 @@
 import functools
 import os
 import sys
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Sequence
 from pathlib import Path
 from urllib.parse import quote
 
@@ -258,13 +258,32 @@ def _breadcrumb_label(segment: str) -> str:
     return _uppercase_acronyms(to_title_case(to_snake_case(segment), sep=" "))
 
 
-def _breadcrumb_items(path: str, title: str | None) -> list[tuple[str, str | None]]:
+def _same_letters(label: str, segment: str) -> bool:
+    """Whether a label spells a route segment, ignoring case and punctuation.
+
+    Args:
+        label: A display name, such as ``Upgrading to 0.11``.
+        segment: A route segment, such as ``upgrading-to-0-11``.
+
+    Returns:
+        True when both have the same letters and digits in the same order.
+    """
+    return [c for c in label.lower() if c.isalnum()] == [
+        c for c in segment.lower() if c.isalnum()
+    ]
+
+
+def _breadcrumb_items(
+    path: str, names: Sequence[str] = ()
+) -> list[tuple[str, str | None]]:
     """List the visible breadcrumb labels and their links.
 
     Args:
         path: The app-relative documentation path.
-        title: The current page's name, used for the last segment. When None, the
-            last segment is labelled from the route like its parents.
+        names: The current page's display names, such as its title and sidebar
+            label. The first one that spells the last route segment labels it, so
+            "upgrading-to-0-11" reads "Upgrading to 0.11"; a name with other words
+            is skipped and the segment is title-cased like its parents.
 
     Returns:
         A ``(label, href)`` pair per path segment. ``href`` is None for category
@@ -279,8 +298,12 @@ def _breadcrumb_items(path: str, title: str | None) -> list[tuple[str, str | Non
             _breadcrumb_label(segment),
             _resolve_breadcrumb_href(current_path),
         ))
-    if items and title is not None:
-        items[-1] = (_uppercase_acronyms(title), items[-1][1])
+    if items:
+        for name in names:
+            label = _uppercase_acronyms(name)
+            if _same_letters(label, segments[-1]):
+                items[-1] = (label, items[-1][1])
+                break
     return items
 
 
@@ -288,7 +311,7 @@ def breadcrumb(
     path: str,
     nav_sidebar: rx.Component,
     doc_content: str | None = None,
-    title: str | None = None,
+    names: Sequence[str] = (),
 ):
     from reflex_docs.components.docpage.navbar.buttons.sidebar import (
         docs_sidebar_drawer,
@@ -297,7 +320,7 @@ def breadcrumb(
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
 
-    items = _breadcrumb_items(path, title)
+    items = _breadcrumb_items(path, names)
     for i, (label, href) in enumerate(items):
         base_class = ui.cn(
             "min-h-8 flex items-center text-sm font-[525] text-foreground last:text-muted-foreground",
@@ -478,7 +501,10 @@ def docpage(
             Returns:
                 The page with the template applied.
             """
-            from reflex_docs.templates.docpage.sidebar import get_prev_next
+            from reflex_docs.templates.docpage.sidebar import (
+                get_prev_next,
+                sidebar_label,
+            )
             from reflex_docs.templates.docpage.sidebar import sidebar as sb
             from reflex_docs.views.docs_navbar import docs_navbar
 
@@ -534,7 +560,11 @@ def docpage(
                                 path=path if show_breadcrumb else "",
                                 nav_sidebar=nav_sidebar,
                                 doc_content=doc_content,
-                                title=title,
+                                names=[
+                                    name
+                                    for name in (title, sidebar_label(path))
+                                    if name is not None
+                                ],
                             ),
                             class_name=(
                                 "docs-breadcrumb px-0 pt-0 mb-[2rem]"
