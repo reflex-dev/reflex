@@ -293,7 +293,12 @@ def scan_sources(source_dir: Path) -> Catalog:
     from babel.messages.extract import extract_from_dir
 
     catalog = Catalog()
-    location_root = Path(os.path.relpath(source_dir))
+    try:
+        location_root = Path(os.path.relpath(source_dir))
+    except ValueError:
+        # On Windows a directory on another drive than the project (a temp
+        # dir, an installed package) has no relative path.
+        location_root = source_dir
     for filename, lineno, message, _comments, context in extract_from_dir(
         source_dir,
         method_map=[("**.py", f"{__name__}:{_extract_python.__name__}")],

@@ -305,6 +305,28 @@ def test_scan_sources_finds_rx_t_under_every_import(
     ]
 
 
+def test_scan_sources_records_absolute_locations_across_drives(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    # Windows: relpath raises for a directory on another drive than the cwd.
+    def relpath(path: str, start: str | None = None) -> str:
+        msg = "path is on mount 'C:', start on mount 'D:'"
+        raise ValueError(msg)
+
+    monkeypatch.setattr("reflex_i18n.cli.os.path.relpath", relpath)
+    lib = tmp_path / "mylib"
+    lib.mkdir()
+    (lib / "ui.py").write_text(
+        'from reflex_i18n import N_\nLABEL = N_("Refill")\n', encoding="utf-8"
+    )
+
+    catalog = scan_sources(lib)
+
+    assert [(m.id, m.locations) for m in catalog if m.id] == [
+        ("Refill", [((lib / "ui.py").as_posix(), 2)])
+    ]
+
+
 def test_extract_catalog_leaves_package_messages_to_the_package(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
