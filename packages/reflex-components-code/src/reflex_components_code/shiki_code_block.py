@@ -590,7 +590,7 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
         transformer_styles = {}
         # Collect styles from transformers and wrapper
-        for transformer in code_block.transformers._var_value:  # ty:ignore[unresolved-attribute]
+        for transformer in code_block.transformers._var_value:  # ty:ignore[missing-attribute]
             if isinstance(transformer, ShikiBaseTransformers) and transformer.style:
                 transformer_styles.update(transformer.style)
         transformer_styles.update(code_wrapper_props.pop("style", {}))

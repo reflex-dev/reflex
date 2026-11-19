@@ -345,7 +345,7 @@ def test_background_task(
     expect(counter).to_have_text("620", timeout=40_000)
     expect(counter_async_cv).to_have_text("620", timeout=40_000)
     # all tasks should have exited and cleaned up
-    AppHarness.expect(lambda: not background_task.app_instance.event_processor._tasks)  # ty:ignore[unresolved-attribute]
+    AppHarness.expect(lambda: not background_task.app_instance.event_processor._tasks)  # ty:ignore[missing-union-attribute]
 
 
 def test_nested_async_with_self(

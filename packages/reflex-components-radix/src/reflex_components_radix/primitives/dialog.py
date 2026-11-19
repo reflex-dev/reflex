@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/react-dialog."""
 
-from typing import Any, ClassVar
+from typing import Annotated, Any, ClassVar
 
 from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -25,7 +25,7 @@ class DialogRoot(DialogElement):
 
     open: Var[bool] = field(doc="The controlled open state of the dialog.")
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."
     )
 
@@ -106,23 +106,23 @@ class DialogContent(elements.Div, DialogElement):
         doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
     )
 
-    on_open_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_open_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the dialog is opened."
     )
 
-    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_close_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the dialog is closed."
     )
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer is down outside the dialog."
     )
 
-    on_interact_outside: EventHandler[no_args_event_spec] = field(
+    on_interact_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer interacts outside the dialog."
     )
 

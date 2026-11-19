@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -41,7 +41,7 @@ class DrawerRoot(DrawerComponent):
 
     open: Var[bool] = field(doc="Whether the drawer is open or not.")
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fires when the drawer is opened or closed."
     )
 
@@ -53,7 +53,7 @@ class DrawerRoot(DrawerComponent):
         doc='Direction of the drawer. This adjusts the animations and the drag direction. Defaults to `"bottom"`'
     )
 
-    on_animation_end: EventHandler[passthrough_event_spec(bool)] = field(
+    on_animation_end: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Gets triggered after the open or close animation ends, it receives an open argument with the open state of the drawer by the time the function was triggered."
     )
 
@@ -155,23 +155,23 @@ class DrawerContent(DrawerComponent):
             "display": "flex",
         }
 
-    on_open_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_open_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the drawer content is opened."
     )
 
-    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_close_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the drawer content is closed."
     )
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer is down outside the drawer content."
     )
 
-    on_interact_outside: EventHandler[no_args_event_spec] = field(
+    on_interact_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when interacting outside the drawer content."
     )
 

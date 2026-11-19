@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Annotated
 
 from reflex_base.components.component import field
 from reflex_base.components.tags.tag import CommonTag
@@ -22,8 +23,10 @@ class Clipboard(Fragment):
         doc="The element ids to attach the event listener to. Defaults to all child components or the document."
     )
 
-    on_paste: EventHandler[passthrough_event_spec(list[tuple[str, str]])] = field(
-        doc="Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri."
+    on_paste: Annotated[EventHandler, passthrough_event_spec(list[tuple[str, str]])] = (
+        field(
+            doc="Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri."
+        )
     )
 
     on_paste_event_actions: Var[dict[str, bool | int]] = field(

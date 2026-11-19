@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Callable, Mapping, Sequence
 from typing import (
+    Annotated,
     Any,
     ClassVar,
     NotRequired,
@@ -47,19 +48,19 @@ class ChartBase(RechartsCharts):
         default=Var.create("100%"), doc="The height of chart container."
     )
 
-    on_click: EventHandler[no_args_event_spec] = field(
+    on_click: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of click on the component in this chart"
     )
 
-    on_mouse_enter: EventHandler[no_args_event_spec] = field(
+    on_mouse_enter: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseenter on the component in this chart"
     )
 
-    on_mouse_move: EventHandler[no_args_event_spec] = field(
+    on_mouse_move: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousemove on the component in this chart"
     )
 
-    on_mouse_leave: EventHandler[no_args_event_spec] = field(
+    on_mouse_leave: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseleave on the component in this chart"
     )
 
@@ -322,19 +323,19 @@ class PieChart(ChartBase):
         "Rectangle",
     ]
 
-    on_mouse_down: EventHandler[no_args_event_spec] = field(
+    on_mouse_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousedown on the sectors in this group"
     )
 
-    on_mouse_up: EventHandler[no_args_event_spec] = field(
+    on_mouse_up: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseup on the sectors in this group"
     )
 
-    on_mouse_over: EventHandler[no_args_event_spec] = field(
+    on_mouse_over: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseover on the sectors in this group"
     )
 
-    on_mouse_out: EventHandler[no_args_event_spec] = field(
+    on_mouse_out: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseout on the sectors in this group"
     )
 
@@ -816,11 +817,11 @@ class Treemap(RechartsCharts):
         doc="The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'. Default: \"ease\""
     )
 
-    on_animation_start: EventHandler[no_args_event_spec] = field(
+    on_animation_start: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of animation start"
     )
 
-    on_animation_end: EventHandler[no_args_event_spec] = field(
+    on_animation_end: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of animation end"
     )
 

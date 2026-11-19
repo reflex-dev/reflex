@@ -8,7 +8,7 @@ callbacks that record the deltas.
 import asyncio
 import json
 import traceback
-from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
+from collections.abc import AsyncGenerator, Awaitable, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
 from unittest import mock
@@ -298,7 +298,7 @@ def _table_events() -> list[Event]:
 async def _event_pipeline(
     events: list[Event],
     on_delta: Callable[[Mapping[str, Mapping[str, Any]]], Any],
-) -> AsyncIterator[Callable[[], Awaitable[None]]]:
+) -> AsyncGenerator[Callable[[], Awaitable[None]], None]:
     """Wire a ``BaseStateEventProcessor`` to an in-memory state manager.
 
     Args:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, TypedDict
+from typing import Annotated, Any, TypedDict
 
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler, no_args_event_spec
@@ -165,71 +165,71 @@ class ReactPlayer(Component):
         doc="Set to true to disable the default remote playback option on supported devices."
     )
 
-    on_ready: EventHandler[no_args_event_spec] = field(
+    on_ready: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when media is loaded and ready to play. If playing is set to true, media will play immediately."
     )
 
-    on_start: EventHandler[no_args_event_spec] = field(
+    on_start: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when media starts playing."
     )
 
-    on_play: EventHandler[no_args_event_spec] = field(
+    on_play: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when playing is set to true."
     )
 
-    on_playing: EventHandler[no_args_event_spec] = field(
+    on_playing: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when media starts or resumes playing after pausing or buffering."
     )
 
-    on_progress: EventHandler[_on_progress_signature] = field(
+    on_progress: Annotated[EventHandler, _on_progress_signature] = field(
         doc="Called while the video is loading only. Contains played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds. eg { played: 0.12, playedSeconds: 11.3, loaded: 0.34, loadedSeconds: 16.7 }"
     )
 
-    on_time_update: EventHandler[_on_time_update_signature] = field(
+    on_time_update: Annotated[EventHandler, _on_time_update_signature] = field(
         doc="Called when the media's current time changes (~4Hz, use .throttle to limit calls to backend)."
     )
 
-    on_duration_change: EventHandler[_on_duration_change_signature] = field(
+    on_duration_change: Annotated[EventHandler, _on_duration_change_signature] = field(
         doc="Callback containing duration of the media, in seconds."
     )
 
-    on_pause: EventHandler[no_args_event_spec] = field(
+    on_pause: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when media is paused."
     )
 
-    on_waiting: EventHandler[no_args_event_spec] = field(
+    on_waiting: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when media starts buffering."
     )
 
-    on_seeking: EventHandler[no_args_event_spec] = field(
+    on_seeking: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when the media is seeking."
     )
 
-    on_seeked: EventHandler[_on_time_update_signature] = field(
+    on_seeked: Annotated[EventHandler, _on_time_update_signature] = field(
         doc="Called when media seeks with seconds parameter."
     )
 
-    on_rate_change: EventHandler[_on_rate_change_signature] = field(
+    on_rate_change: Annotated[EventHandler, _on_rate_change_signature] = field(
         doc="Called when playback rate of the player changed. Only supported by YouTube, Vimeo (if enabled), Wistia, and file paths."
     )
 
-    on_ended: EventHandler[no_args_event_spec] = field(
+    on_ended: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when media finishes playing. Does not fire when loop is set to true."
     )
 
-    on_error: EventHandler[no_args_event_spec] = field(
+    on_error: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when an error occurs whilst attempting to play media."
     )
 
-    on_click_preview: EventHandler[no_args_event_spec] = field(
+    on_click_preview: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when user clicks the light mode preview."
     )
 
-    on_enter_picture_in_picture: EventHandler[no_args_event_spec] = field(
+    on_enter_picture_in_picture: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when picture-in-picture mode is enabled."
     )
 
-    on_leave_picture_in_picture: EventHandler[no_args_event_spec] = field(
+    on_leave_picture_in_picture: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Called when picture-in-picture mode is disabled."
     )
 

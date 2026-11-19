@@ -1,5 +1,7 @@
 """Custom avatar component."""
 
+from typing import Annotated
+
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportVar
@@ -55,7 +57,7 @@ class AvatarImage(AvatarBaseComponent):
     src: Var[str]
 
     # Callback when loading status changes
-    on_loading_status_change: EventHandler[passthrough_event_spec(str)]
+    on_loading_status_change: Annotated[EventHandler, passthrough_event_spec(str)]
 
     # The component to render
     render_: Var[Component]

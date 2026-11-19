@@ -239,7 +239,7 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
             The union of the two sets.
         """
         _check_other("union", self, other)
-        return set_union_operation(self, other)  # ty:ignore[invalid-return-type]
+        return set_union_operation(self, other)  # ty:ignore[invalid-explicit-return]
 
     def intersection(self, other: Any) -> SetVar[SET_VAR_TYPE]:
         """Get the elements in both this set and the other.
@@ -251,7 +251,7 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
             The intersection of the two sets.
         """
         _check_other("intersection", self, other)
-        return set_intersection_operation(self, other)  # ty:ignore[invalid-return-type]
+        return set_intersection_operation(self, other)  # ty:ignore[invalid-explicit-return]
 
     def difference(self, other: Any) -> SetVar[SET_VAR_TYPE]:
         """Get the elements in this set but not in the other.
@@ -263,7 +263,7 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
             The difference of the two sets.
         """
         _check_other("difference", self, other)
-        return set_difference_operation(self, other)  # ty:ignore[invalid-return-type]
+        return set_difference_operation(self, other)  # ty:ignore[invalid-explicit-return]
 
     def symmetric_difference(self, other: Any) -> SetVar[SET_VAR_TYPE]:
         """Get the elements in exactly one of this set and the other.
@@ -275,7 +275,7 @@ class SetVar(Var[SET_VAR_TYPE], python_types=(set, frozenset)):
             The symmetric difference of the two sets.
         """
         _check_other("symmetric_difference", self, other)
-        return set_symmetric_difference_operation(self, other)  # ty:ignore[invalid-return-type]
+        return set_symmetric_difference_operation(self, other)  # ty:ignore[invalid-explicit-return]
 
     def issubset(self, other: Any) -> BooleanVar:
         """Check if every element of this set is in the other.
@@ -783,7 +783,7 @@ class LiteralSetVar(CachedVarOperation, LiteralVar[SET_VAR_TYPE], SetVar[SET_VAR
         return _literal_elements_var_data(value)
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
         """Get all the VarData associated with the Var.
 
         Returns:

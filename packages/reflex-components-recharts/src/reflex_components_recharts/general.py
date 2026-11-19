@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, ClassVar
+from typing import Annotated, Any, ClassVar
 
 from reflex_base.components.component import Component, MemoizationLeaf, field
 from reflex_base.constants.colors import Color
@@ -56,7 +56,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         doc="If specified a positive number, debounced function will be used to handle the resize event. Default: 0"
     )
 
-    on_resize: EventHandler[no_args_event_spec] = field(
+    on_resize: Annotated[EventHandler, no_args_event_spec] = field(
         doc="If specified provides a callback providing the updated chart width and height values."
     )
 
@@ -122,35 +122,35 @@ class Legend(Recharts):
         doc="The margin of chart container, usually calculated internally."
     )
 
-    on_click: EventHandler[no_args_event_spec] = field(
+    on_click: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of click on the items in this group"
     )
 
-    on_mouse_down: EventHandler[no_args_event_spec] = field(
+    on_mouse_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousedown on the items in this group"
     )
 
-    on_mouse_up: EventHandler[no_args_event_spec] = field(
+    on_mouse_up: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseup on the items in this group"
     )
 
-    on_mouse_move: EventHandler[no_args_event_spec] = field(
+    on_mouse_move: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousemove on the items in this group"
     )
 
-    on_mouse_over: EventHandler[no_args_event_spec] = field(
+    on_mouse_over: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseover on the items in this group"
     )
 
-    on_mouse_out: EventHandler[no_args_event_spec] = field(
+    on_mouse_out: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseout on the items in this group"
     )
 
-    on_mouse_enter: EventHandler[no_args_event_spec] = field(
+    on_mouse_enter: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseenter on the items in this group"
     )
 
-    on_mouse_leave: EventHandler[no_args_event_spec] = field(
+    on_mouse_leave: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseleave on the items in this group"
     )
 

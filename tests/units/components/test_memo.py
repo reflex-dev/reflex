@@ -1541,7 +1541,7 @@ def test_component_returning_memo_is_transparent_for_child_validation():
 
     @rx.memo
     def transparent(children: rx.Var[rx.Component]) -> rx.Component:
-        return children  # ty:ignore[invalid-return-type]
+        return children  # ty:ignore[invalid-explicit-return]
 
     wrapped_child = transparent(RestrictedChild.create())
     parent = ValidParent.create(wrapped_child)
@@ -1575,7 +1575,7 @@ def test_component_memo_accepts_event_handler():
     @rx.memo
     def eh_memo(
         some_value: rx.Var[str],
-        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-type-form]
     ) -> rx.Component:
         return rx.vstack(
             rx.button(some_value, on_click=event(some_value)),
@@ -1610,7 +1610,7 @@ def test_component_memo_event_handler_compiles_to_prop_callback():
     @rx.memo
     def eh_compile_memo(
         some_value: rx.Var[str],
-        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-type-form]
     ) -> rx.Component:
         return rx.vstack(
             rx.button(some_value, on_click=event(some_value)),
@@ -1641,7 +1641,7 @@ def test_component_memo_event_handler_wires_event_chain_at_call_site():
     @rx.memo
     def eh_wired_memo(
         some_value: rx.Var[str],
-        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-type-form]
     ) -> rx.Component:
         return rx.button(some_value, on_click=event(some_value))
 
@@ -1659,7 +1659,7 @@ def test_var_returning_memo_rejects_event_handler():
 
         @rx.memo
         def bad_var_eh(
-            event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+            event: rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-type-form]
         ) -> rx.Var[str]:
             return rx.Var.create("x")
 
@@ -1670,7 +1670,7 @@ def test_component_memo_rejects_event_handler_with_default():
 
         @rx.memo
         def bad_eh_default(
-            event: rx.EventHandler[rx.event.passthrough_event_spec(str)] = None,
+            event: rx.EventHandler[rx.event.passthrough_event_spec(str)] = None,  # ty:ignore[invalid-type-form]
         ) -> rx.Component:
             return rx.button("hi")
 
@@ -1681,7 +1681,7 @@ def test_component_memo_rejects_event_handler_named_children():
 
         @rx.memo
         def bad_eh_children(
-            children: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+            children: rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-type-form]
         ) -> rx.Component:
             return rx.box()
 
@@ -2265,7 +2265,7 @@ def test_memo_tag_separates_same_named_classes_from_different_modules():
             "class Probe(Component):\n    tag = 'Probe'\n    library = 'probe-lib'\n",
             namespace,
         )
-        probes.append(namespace["Probe"].create())  # ty:ignore[unresolved-attribute]
+        probes.append(namespace["Probe"].create())  # ty:ignore[missing-union-attribute]
 
     a, b = probes
     assert type(a) is not type(b)

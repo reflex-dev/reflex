@@ -225,7 +225,7 @@ class Match(Component):
                     f" of type {type(return_value)!r} is not {return_type}"
                 )
                 raise MatchTypeError(msg)
-        return match_cases  # ty:ignore[invalid-return-type]
+        return match_cases  # ty:ignore[invalid-explicit-return]
 
     @classmethod
     def _create_match_cond_var_or_component(

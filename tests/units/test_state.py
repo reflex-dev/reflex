@@ -1230,22 +1230,22 @@ def test_add_var():
     assert not hasattr(ds1, "dynamic_int")
     ds1.add_var("dynamic_int", int, 42)
     # Existing and new instances get the default
-    assert ds1.dynamic_int == 42  # ty:ignore[unresolved-attribute]
-    assert DynamicState().dynamic_int == 42  # ty:ignore[unresolved-attribute]
-    assert isinstance(DynamicState.dynamic_int, Var)  # ty:ignore[unresolved-attribute]
+    assert ds1.dynamic_int == 42  # ty:ignore[missing-attribute]
+    assert DynamicState().dynamic_int == 42  # ty:ignore[missing-attribute]
+    assert isinstance(DynamicState.dynamic_int, Var)  # ty:ignore[missing-attribute]
 
     ds1.add_var("dynamic_list", list[int], [5, 10])
-    assert ds1.dynamic_list == [5, 10]  # ty:ignore[unresolved-attribute]
+    assert ds1.dynamic_list == [5, 10]  # ty:ignore[missing-attribute]
     ds2 = DynamicState()
-    assert ds2.dynamic_list == [5, 10]  # ty:ignore[unresolved-attribute]
-    ds2.dynamic_list.append(15)  # ty:ignore[unresolved-attribute]
-    assert ds2.dynamic_list == [5, 10, 15]  # ty:ignore[unresolved-attribute]
-    assert DynamicState().dynamic_list == [5, 10]  # ty:ignore[unresolved-attribute]
+    assert ds2.dynamic_list == [5, 10]  # ty:ignore[missing-attribute]
+    ds2.dynamic_list.append(15)  # ty:ignore[missing-attribute]
+    assert ds2.dynamic_list == [5, 10, 15]  # ty:ignore[missing-attribute]
+    assert DynamicState().dynamic_list == [5, 10]  # ty:ignore[missing-attribute]
 
     ds1.add_var("dynamic_dict", dict[str, int], {"k1": 5, "k2": 10})
-    assert ds1.dynamic_dict == {"k1": 5, "k2": 10}  # ty:ignore[unresolved-attribute]
-    assert ds2.dynamic_dict == {"k1": 5, "k2": 10}  # ty:ignore[unresolved-attribute]
-    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}  # ty:ignore[unresolved-attribute]
+    assert ds1.dynamic_dict == {"k1": 5, "k2": 10}  # ty:ignore[missing-attribute]
+    assert ds2.dynamic_dict == {"k1": 5, "k2": 10}  # ty:ignore[missing-attribute]
+    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}  # ty:ignore[missing-attribute]
 
 
 class InterdependentState(BaseState):
@@ -2189,7 +2189,7 @@ def test_cached_var_depends_on_event_handler(
             def __get__(self, instance: Any, owner: Any = None) -> Any:
                 return self if instance is None else MethodType(self, instance)
 
-        HandlerState.handler = MethodPartial(HandlerState.handler.fn)  # ty:ignore[invalid-assignment, unresolved-attribute]
+        HandlerState.handler = MethodPartial(HandlerState.handler.fn)  # ty:ignore[invalid-assignment, missing-attribute]
         assert isinstance(HandlerState.handler, functools.partial)
     else:
         assert isinstance(HandlerState.handler, EventHandler)
@@ -2569,7 +2569,7 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
         ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
             # The legacy modify_state token path emits the deprecation.
-            async with state_manager.modify_state(legacy_token) as state:
+            async with state_manager.modify_state(legacy_token) as state:  # ty:ignore[deprecated]
                 assert isinstance(state, State)
                 assert OnLoadState.get_name() in state.substates
             mock_deprecate.assert_called()
@@ -2583,7 +2583,7 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
         ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
             # The legacy get_state token path emits the same deprecation.
-            retrieved = await state_manager.get_state(legacy_token)
+            retrieved = await state_manager.get_state(legacy_token)  # ty:ignore[deprecated]
             assert isinstance(retrieved, State)
             assert OnLoadState.get_name() in retrieved.substates
             mock_deprecate.assert_called()
@@ -2597,7 +2597,7 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
         ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
             # The legacy set_state token path emits the same deprecation.
-            await state_manager.set_state(legacy_token, retrieved)
+            await state_manager.set_state(legacy_token, retrieved)  # ty:ignore[deprecated]
             mock_deprecate.assert_called()
             assert (
                 mock_deprecate.call_args.kwargs["feature_name"]
@@ -2609,7 +2609,7 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
         ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
             # A final legacy get_state lookup remains supported.
-            final = await state_manager.get_state(legacy_token)
+            final = await state_manager.get_state(legacy_token)  # ty:ignore[deprecated]
             assert isinstance(final, State)
             assert OnLoadState.get_name() in final.substates
             mock_deprecate.assert_called()
@@ -3578,7 +3578,7 @@ def test_mutable_dict(mutable_state: MutableTestState):
     mutable_value_third_ref = mutable_state.hashmap.pop("setdefault_mutable_key")
     assert not isinstance(mutable_value_third_ref, MutableProxy)
     assert_hashmap_dirty()
-    mutable_value_third_ref.append("baz")  # ty:ignore[unresolved-attribute]
+    mutable_value_third_ref.append("baz")  # ty:ignore[missing-union-attribute]
     assert not mutable_state.dirty_vars
     # Unfortunately previous refs still will mark the state dirty... nothing doing about that
     assert mutable_value.pop()
@@ -3779,21 +3779,21 @@ def test_reset_with_mutables():
         items: list[list[int]] = default
 
     instance = MutableResetState()
-    assert instance.items.__wrapped__ is not default  # ty:ignore[unresolved-attribute]
+    assert instance.items.__wrapped__ is not default  # ty:ignore[missing-attribute]
     assert instance.items == default == copied_default
     instance.items.append([3, 3])
     assert instance.items != default
     assert instance.items != copied_default
 
     instance.reset()
-    assert instance.items.__wrapped__ is not default  # ty:ignore[unresolved-attribute]
+    assert instance.items.__wrapped__ is not default  # ty:ignore[missing-attribute]
     assert instance.items == default == copied_default
     instance.items.append([3, 3])
     assert instance.items != default
     assert instance.items != copied_default
 
     instance.reset()
-    assert instance.items.__wrapped__ is not default  # ty:ignore[unresolved-attribute]
+    assert instance.items.__wrapped__ is not default  # ty:ignore[missing-attribute]
     assert instance.items == default == copied_default
     instance.items.append([3, 3])
     assert instance.items != default
@@ -3855,29 +3855,29 @@ def test_state_union_optional():
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
         custom_union: Custom1 | Custom2 | Custom3 = Custom1(foo="")
 
-    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # ty:ignore[unresolved-attribute]
-    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # ty:ignore[unresolved-attribute]
-    assert str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # ty:ignore[unresolved-attribute]
+    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # ty:ignore[missing-union-attribute]
+    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # ty:ignore[missing-union-attribute]
+    assert str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # ty:ignore[missing-union-attribute]
     assert (
-        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]?.["foo"]'  # ty:ignore[unresolved-attribute]
+        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]?.["foo"]'  # ty:ignore[missing-union-attribute]
     )
-    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]'  # ty:ignore[unresolved-attribute]
+    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]'  # ty:ignore[missing-union-attribute]
     assert (
-        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]?.["foo"]'  # ty:ignore[unresolved-attribute]
+        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]?.["foo"]'  # ty:ignore[missing-union-attribute]
     )
     assert (
-        str(UnionState.c3.c2r.c1r.foo)  # ty:ignore[unresolved-attribute]
+        str(UnionState.c3.c2r.c1r.foo)  # ty:ignore[missing-union-attribute]
         == f'{UnionState.c3!s}?.["c2r"]?.["c1r"]?.["foo"]'
     )
     assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}?.["c2"]'
     assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}?.["c2"]'
-    assert UnionState.custom_union.foo is not None  # ty:ignore[unresolved-attribute]
-    assert UnionState.custom_union.c1 is not None  # ty:ignore[unresolved-attribute]
-    assert UnionState.custom_union.c1r is not None  # ty:ignore[unresolved-attribute]
-    assert UnionState.custom_union.c2 is not None  # ty:ignore[unresolved-attribute]
-    assert UnionState.custom_union.c2r is not None  # ty:ignore[unresolved-attribute]
-    assert types.is_optional(UnionState.opt_int._var_type)  # ty:ignore[unresolved-attribute]
-    assert types.is_union(UnionState.int_float._var_type)  # ty:ignore[unresolved-attribute]
+    assert UnionState.custom_union.foo is not None  # ty:ignore[missing-union-attribute]
+    assert UnionState.custom_union.c1 is not None  # ty:ignore[missing-union-attribute]
+    assert UnionState.custom_union.c1r is not None  # ty:ignore[missing-union-attribute]
+    assert UnionState.custom_union.c2 is not None  # ty:ignore[missing-union-attribute]
+    assert UnionState.custom_union.c2r is not None  # ty:ignore[missing-union-attribute]
+    assert types.is_optional(UnionState.opt_int._var_type)  # ty:ignore[missing-attribute]
+    assert types.is_union(UnionState.int_float._var_type)  # ty:ignore[missing-attribute]
 
 
 def test_set_base_field_via_setter():
@@ -5553,12 +5553,12 @@ class MarkerMixin(State, mixin=True):
         """
         return "marked"
 
-    marked_computed.fget._custom_marker = object()  # ty:ignore[unresolved-attribute]
+    marked_computed.fget._custom_marker = object()  # ty:ignore[missing-attribute]
 
     def marked_handler(self):
         """An event handler tagged with a custom attribute."""
 
-    marked_handler._custom_marker = object()  # ty:ignore[unresolved-attribute]
+    marked_handler._custom_marker = object()  # ty:ignore[missing-attribute]
 
     def kwonly_default_handler(self, *, count: int = 1) -> int:
         """An event handler with a keyword-only default argument.
@@ -5582,7 +5582,7 @@ def test_copy_fn_preserves_custom_function_attributes() -> None:
     copied_computed_fget = UsesMarkerMixin.computed_vars["marked_computed"].fget
     assert copied_computed_fget is not orig_computed_fget
     assert (
-        copied_computed_fget._custom_marker  # ty:ignore[unresolved-attribute]
+        copied_computed_fget._custom_marker  # ty:ignore[missing-attribute]
         is orig_computed_fget._custom_marker
     )
 
@@ -5635,7 +5635,7 @@ def test_mixin_event_handler_preserves_background_task_marker() -> None:
         pass
 
     handler = UsesBackgroundTaskMixin.handle_in_background
-    assert handler.is_background  # pyright: ignore [reportAttributeAccessIssue] # ty:ignore[unresolved-attribute]
+    assert handler.is_background  # pyright: ignore [reportAttributeAccessIssue] # ty:ignore[missing-attribute]
 
 
 def test_assignment_to_undeclared_vars():
@@ -7217,7 +7217,7 @@ def test_unannotated_nested_empty_container_keeps_element_type() -> None:
     class NestedEmptyState(rx.State):
         nested = [[], [1]]
 
-    assert NestedEmptyState.nested[0][0]._var_type is int  # ty:ignore[unresolved-attribute]
+    assert NestedEmptyState.nested[0][0]._var_type is int  # ty:ignore[missing-union-attribute]
 
 
 def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
@@ -7230,7 +7230,7 @@ def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
             self.shadowed_value = 2
 
     class ShadowChild(ShadowParent):
-        shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+        shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]  # ty:ignore[incompatible-attribute-override]
 
     child_var = cast("Var", ShadowChild.shadowed_value)
     assert child_var._var_type is str
@@ -7259,7 +7259,7 @@ def test_base_var_shadowing_parent_before_mixin_does_not_raise() -> None:
     class ShadowMixin(BaseState, mixin=True):
         shadowed_value: str = "ninety-nine"
 
-    class ShadowChild(ShadowParent, ShadowMixin):  # pyright: ignore[reportIncompatibleVariableOverride]
+    class ShadowChild(ShadowParent, ShadowMixin):  # pyright: ignore[reportIncompatibleVariableOverride]  # ty:ignore[incompatible-attribute-override]
         pass
 
     assert isinstance(ShadowChild.shadowed_value, Var)
@@ -7369,7 +7369,7 @@ def test_redeclared_var_wins_over_a_closer_descriptor() -> None:
         outranked_value: int = 1  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
     class OutrankedChild(CloserMixin, OutrankedParent):
-        outranked_value: str = "x"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+        outranked_value: str = "x"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]  # ty:ignore[incompatible-attribute-override]
 
     assert OutrankedChild.get_fields()["outranked_value"]._owner is OutrankedChild
     assert cast("Var", OutrankedChild.outranked_value)._var_type is str
@@ -7587,7 +7587,7 @@ def test_previous_release_pickle_keys_are_reserved():
     with pytest.raises(StateValueError, match="_backend_vars"):
 
         class ClashingState(BaseState):
-            _backend_vars: dict = {}  # ty:ignore[invalid-attribute-override]
+            _backend_vars: dict = {}  # ty:ignore[incompatible-attribute-override]
 
 
 def test_setstate_drops_inherited_fields():
@@ -7774,8 +7774,8 @@ def test_undeclared_double_underscore_name_is_rejected(clean_registration_contex
     state_cls = make_state()
     assert state_cls.__name__ != "GuardState"
     state = state_cls()  # pyright: ignore[reportCallIssue]
-    state.bump()  # ty:ignore[unresolved-attribute]
-    state.bump_mixin()  # ty:ignore[unresolved-attribute]
+    state.bump()  # ty:ignore[missing-attribute]
+    state.bump_mixin()  # ty:ignore[missing-attribute]
     assert vars(state)["_GuardState__scratch"] == 1
     assert vars(state)["_GuardMixin__from_mixin"] == 1
     assert vars(state)["__marker__"] == 2
@@ -8122,7 +8122,7 @@ def test_static_and_class_methods_above_rx_event_are_deprecated_and_ignored() ->
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
 
         class StaticAboveState(BaseState):
-            @staticmethod
+            @staticmethod  # ty:ignore[invalid-argument-type]
             @rx.event
             def helper(value: int) -> int:
                 return value * 2
@@ -8133,7 +8133,7 @@ def test_static_and_class_methods_above_rx_event_are_deprecated_and_ignored() ->
                 return f"{cls.__name__}:{value}"
 
         class StaticAboveMixin(BaseState, mixin=True):
-            @staticmethod
+            @staticmethod  # ty:ignore[invalid-argument-type]
             @rx.event
             def mixin_helper(value: int) -> int:
                 return value * 2
@@ -8147,9 +8147,9 @@ def test_static_and_class_methods_above_rx_event_are_deprecated_and_ignored() ->
     ] * 3
     assert isinstance(StaticAboveState.__dict__["helper"], staticmethod)
     assert isinstance(StaticAboveState.__dict__["cls_helper"], classmethod)
-    assert StaticAboveState.helper(3) == 6  # ty:ignore[no-matching-overload]
-    assert StaticAboveState().helper(3) == 6  # ty:ignore[too-many-positional-arguments]
-    assert StaticAboveState.cls_helper(3) == "StaticAboveState:3"
+    assert StaticAboveState.helper(3) == 6
+    assert StaticAboveState().helper(3) == 6
+    assert StaticAboveState.cls_helper(3) == "StaticAboveState:3"  # ty:ignore[invalid-argument-type, too-many-positional-arguments]
     assert "helper" not in StaticAboveState.event_handlers
     assert "cls_helper" not in StaticAboveState.event_handlers
     assert UsesStaticAboveMixin.mixin_helper(4) == 8

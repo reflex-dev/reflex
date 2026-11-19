@@ -1058,7 +1058,7 @@ def test_user_memo_event_trigger_usecallback_leaves_page_scope() -> None:
 
     @rx.memo
     def clickable(
-        on_click: rx.EventHandler[rx.event.no_args_event_spec],
+        on_click: rx.EventHandler[rx.event.no_args_event_spec],  # ty:ignore[invalid-type-form]
     ) -> Component:
         return Plain.create(on_click=on_click)
 

@@ -1,7 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
 
 from collections.abc import Sequence
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -110,7 +110,7 @@ class SelectRoot(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    on_change: EventHandler[passthrough_event_spec(str)] = field(
+    on_change: Annotated[EventHandler, passthrough_event_spec(str)] = field(
         doc=(
             "Fires when the user selects a different option from the dropdown. "
             "The handler receives the new value as a string. Use this with "
@@ -120,7 +120,7 @@ class SelectRoot(RadixThemesComponent):
         )
     )
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc=(
             "Fires when the dropdown menu opens or closes. The handler receives "
             "a boolean, `True` when opening, `False` when closing. Useful for "
@@ -248,15 +248,15 @@ class SelectContent(RadixThemesComponent):
         )
     )
 
-    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_close_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the select content is closed."
     )
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when a pointer down event happens outside the select content."
     )
 

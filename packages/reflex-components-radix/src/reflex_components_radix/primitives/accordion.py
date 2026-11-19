@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -129,7 +129,7 @@ class AccordionRoot(AccordionComponent):
 
     _valid_children: ClassVar[list[str]] = ["AccordionItem"]
 
-    on_value_change: EventHandler[on_value_change_handler] = field(
+    on_value_change: Annotated[EventHandler, on_value_change_handler] = field(
         doc="Fired when the opened the accordions changes."
     )
 

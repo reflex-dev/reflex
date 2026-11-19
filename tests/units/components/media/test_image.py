@@ -34,4 +34,4 @@ def test_serialize_image(pil_image: Img):
 def test_set_src_str():
     """Test that setting the src works."""
     image = rx.image(src="pic2.jpeg")
-    assert str(image.src) == '"pic2.jpeg"'  # ty:ignore[unresolved-attribute]
+    assert str(image.src) == '"pic2.jpeg"'  # ty:ignore[missing-attribute]

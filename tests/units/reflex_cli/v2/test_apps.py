@@ -19,7 +19,7 @@ from rich.console import Console
 
 from .utils import api_error, as_click_command, fake_client
 
-hosting_cli = as_click_command(hosting_cli)  # ty:ignore[invalid-assignment]
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
 

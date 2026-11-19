@@ -69,7 +69,7 @@ import traceback
 import urllib.parse
 import uuid
 from collections.abc import (
-    AsyncIterator,
+    AsyncGenerator,
     Awaitable,
     Callable,
     Iterable,
@@ -983,7 +983,7 @@ class SessionPool:
 @contextlib.asynccontextmanager
 async def open_sessions(
     endpoint: Endpoint, count: int, shape: EventShape | None = None
-) -> AsyncIterator[SessionPool]:
+) -> AsyncGenerator[SessionPool, None]:
     """Prime sessions on the running loop and close them when the context ends.
 
     Args:

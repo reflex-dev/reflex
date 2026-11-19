@@ -34,13 +34,13 @@ def test_validate_data_table(data_table_state: rx.State, expected):
         expected: expected var name.
 
     """
-    if not types.is_dataframe(data_table_state.data._var_type):  # ty:ignore[unresolved-attribute]
+    if not types.is_dataframe(data_table_state.data._var_type):  # ty:ignore[missing-attribute]
         data_table_component = DataTable.create(
-            data=data_table_state.data,  # ty:ignore[unresolved-attribute]
-            columns=data_table_state.columns,  # ty:ignore[unresolved-attribute]
+            data=data_table_state.data,  # ty:ignore[missing-attribute]
+            columns=data_table_state.columns,  # ty:ignore[missing-attribute]
         )
     else:
-        data_table_component = DataTable.create(data=data_table_state.data)  # ty:ignore[unresolved-attribute]
+        data_table_component = DataTable.create(data=data_table_state.data)  # ty:ignore[missing-attribute]
 
     data_table_dict = data_table_component.render()
 

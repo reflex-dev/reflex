@@ -46,22 +46,22 @@ class EventComponent(Component):
     value: Var[str]
 
     # Custom event handler with typed return.
-    on_value_change: EventHandler[on_value_change_handler] = field(
+    on_value_change: EventHandler[on_value_change_handler] = field(  # ty:ignore[invalid-type-form]
         doc="Fired when the value changes.",
     )
 
     # Event handler with multiple return args.
-    on_pair_change: EventHandler[on_pair_change_handler] = field(
+    on_pair_change: EventHandler[on_pair_change_handler] = field(  # ty:ignore[invalid-type-form]
         doc="Fired when a key-value pair changes.",
     )
 
     # Passthrough event spec with single type.
-    on_item_select: EventHandler[passthrough_event_spec(str)] = field(
+    on_item_select: EventHandler[passthrough_event_spec(str)] = field(  # ty:ignore[invalid-type-form]
         doc="Fired when an item is selected.",
     )
 
     # Passthrough event spec with multiple types.
-    on_range_change: EventHandler[passthrough_event_spec(int, int)] = field(
+    on_range_change: EventHandler[passthrough_event_spec(int, int)] = field(  # ty:ignore[invalid-type-form]
         doc="Fired when the range changes.",
     )
 
@@ -72,6 +72,6 @@ class MultiSpecComponent(Component):
     value: Var[str]
 
     # Multiple event specs: can fire with no args or with a string value.
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(  # ty:ignore[invalid-type-form]
         doc="Fired when the open state changes.",
     )

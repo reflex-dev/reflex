@@ -2228,7 +2228,7 @@ class DynamicState(State):
         Returns:
             same as self.dynamic
         """
-        return self.dynamic  # ty:ignore[unresolved-attribute]
+        return self.dynamic  # ty:ignore[missing-attribute]
 
 
 def test_dynamic_arg_shadow(
@@ -2280,7 +2280,7 @@ def cleanup_dynamic_arg():
     """Fixture to reset DynamicState class vars after each test."""
     yield
     with contextlib.suppress(AttributeError):
-        del State.dynamic  # ty:ignore[unresolved-attribute]
+        del State.dynamic  # ty:ignore[missing-attribute]
 
     State.computed_vars.pop("dynamic", None)
     State.vars.pop("dynamic", None)
@@ -2413,14 +2413,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         if isinstance(app.state_manager, StateManagerRedis):
             # When redis is used, the state is not updated until the processing is complete
             state = await app.state_manager.get_state(substate_token)
-            assert state.dynamic == prev_exp_val  # ty:ignore[unresolved-attribute]
+            assert state.dynamic == prev_exp_val  # ty:ignore[missing-attribute]
 
         if environment.REFLEX_OPLOCK_ENABLED.get():
             await app.state_manager.close()
 
         # check that router data was written to the state_manager store
         state = await app.state_manager.get_state(substate_token)
-        assert state.dynamic == exp_val  # ty:ignore[unresolved-attribute]
+        assert state.dynamic == exp_val  # ty:ignore[missing-attribute]
 
         # a simple state update event should NOT trigger on_load or route var side effects
         emitted_deltas.clear()
@@ -4122,7 +4122,7 @@ class ClassBasedDecorator:
         Returns:
             The value returned by the wrapped function.
         """
-        return self.__wrapped__(*args, **kwargs)  # ty:ignore[unresolved-attribute]
+        return self.__wrapped__(*args, **kwargs)  # ty:ignore[missing-attribute]
 
 
 class ClassCustomExceptionHandler:

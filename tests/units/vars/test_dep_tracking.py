@@ -481,7 +481,7 @@ def test_hybrid_property_with_custom_var_dependencies():
         @has_last_name.var
         def _has_last_name_var(cls) -> Var[str]:
             # Reference an unrelated field here to confirm the tracker uses fget, not this.
-            return cls.unrelated  # ty:ignore[invalid-return-type]
+            return cls.unrelated  # ty:ignore[invalid-explicit-return]
 
         def func_using_hybrid_property(self):
             return self.has_last_name

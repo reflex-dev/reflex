@@ -58,8 +58,8 @@ def LinkedStateApp():
 
         @rx.event
         async def on_load_link_default(self):
-            linked_state = await self._link_to(self.room or "default")  # ty:ignore[unresolved-attribute]
-            assert linked_state._linked_to == (self.room or "default")  # ty:ignore[unresolved-attribute]
+            linked_state = await self._link_to(self.room or "default")  # ty:ignore[missing-attribute]
+            assert linked_state._linked_to == (self.room or "default")  # ty:ignore[missing-attribute]
 
         @rx.event
         async def handle_submit(self, form_data: dict[str, str]):
@@ -73,7 +73,7 @@ def LinkedStateApp():
 
         @rx.event
         async def on_load_link_default(self):
-            linked_state = await self._link_to(self.room or "default")  # ty:ignore[unresolved-attribute]
+            linked_state = await self._link_to(self.room or "default")  # ty:ignore[missing-attribute]
             initial_note = self.router.page.params.get("initial_note", "")
             if initial_note:
                 linked_state.note = initial_note

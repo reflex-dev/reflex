@@ -1,6 +1,6 @@
 """Custom OTP field component."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
@@ -81,13 +81,13 @@ class OTPFieldRoot(OTPFieldBaseComponent):
     required: Var[bool]
 
     # Event handler called on input, paste, or keyboard changes.
-    on_value_change: EventHandler[on_value_event_spec]
+    on_value_change: Annotated[EventHandler, on_value_event_spec]
 
     # Event handler called when characters are rejected by sanitization.
-    on_value_invalid: EventHandler[on_value_event_spec]
+    on_value_invalid: Annotated[EventHandler, on_value_event_spec]
 
     # Event handler called when all slots fill.
-    on_value_complete: EventHandler[on_value_event_spec]
+    on_value_complete: Annotated[EventHandler, on_value_event_spec]
 
     # The render prop
     render_: Var[Component]

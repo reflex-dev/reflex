@@ -7,7 +7,7 @@ import contextlib
 import dataclasses
 import time
 from collections import defaultdict
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncGenerator, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -193,7 +193,7 @@ class TracingStateManagerMemory(StateManagerMemory):
         self,
         token: StateToken[TOKEN_TYPE],
         **context: Unpack[StateModificationContext],
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> AsyncGenerator[TOKEN_TYPE, None]:
         """Record lock wait, hold, and flush stages.
 
         Args:

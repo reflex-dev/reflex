@@ -1766,7 +1766,7 @@ def test_unsupported_types_for_contains(var: Var):
         var: The base var.
     """
     with pytest.raises(TypeError) as err:
-        assert var.contains(1)  # ty:ignore[unresolved-attribute]
+        assert var.contains(1)  # ty:ignore[missing-attribute]
     assert (
         err.value.args[0]
         == f"Var of type {var._var_type} does not support contains check."

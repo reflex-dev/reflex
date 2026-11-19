@@ -7,7 +7,7 @@ import logging
 import os
 import time
 import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from datetime import timedelta
 from typing import Any, TypedDict, cast
 
@@ -626,7 +626,7 @@ class StateManagerRedis(StateManager):
         token: StateToken[TOKEN_TYPE],
         lock_id: bytes,
         **context: Unpack[StateModificationContext],
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> AsyncGenerator[TOKEN_TYPE, None]:
         """Load and save state under an existing lock, also when the handler fails.
 
         Args:
@@ -656,7 +656,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def _try_modify_state(
         self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[TOKEN_TYPE | None]:
+    ) -> AsyncGenerator[TOKEN_TYPE | None, None]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -761,7 +761,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def modify_state(
         self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> AsyncGenerator[TOKEN_TYPE, None]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -781,7 +781,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def _get_state_cached(
         self, token: StateToken[TOKEN_TYPE]
-    ) -> AsyncIterator[TOKEN_TYPE | None]:
+    ) -> AsyncGenerator[TOKEN_TYPE | None, None]:
         """Get the cached state for a token, while holding the local lease lock.
 
         Args:
@@ -813,7 +813,7 @@ class StateManagerRedis(StateManager):
                                     raise ValueError  # noqa: TRY301
                             except ValueError:
                                 await self.get_state(
-                                    token,  # ty:ignore[invalid-argument-type]
+                                    token,
                                     for_state_instance=cached_state,
                                 )
                         yield cast(TOKEN_TYPE, cached_state)
@@ -1083,7 +1083,9 @@ class StateManagerRedis(StateManager):
         self._redis_notify_keyspace_events_enabled = True
 
     @contextlib.asynccontextmanager
-    async def _lock_waiter(self, lock_key: bytes) -> AsyncIterator[asyncio.Event]:
+    async def _lock_waiter(
+        self, lock_key: bytes
+    ) -> AsyncGenerator[asyncio.Event, None]:
         """Create a lock waiter for a given lock key.
 
         Args:
@@ -1149,7 +1151,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def _request_lock_release(
         self, lock_key: bytes, lock_id: bytes
-    ) -> AsyncIterator[None]:
+    ) -> AsyncGenerator[None, None]:
         """Request the release of a redis lock.
 
         The instance stays a contender until its last waiter for the lock
@@ -1290,7 +1292,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def _lock(
         self, token: StateToken[Any], event_name: str | None = None
-    ) -> AsyncIterator[bytes]:
+    ) -> AsyncGenerator[bytes, None]:
         """Obtain a redis lock for a token.
 
         Args:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -74,11 +74,11 @@ class Slider(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    on_change: EventHandler[on_value_event_spec] = field(
+    on_change: Annotated[EventHandler, on_value_event_spec] = field(
         doc="Fired when the value of the slider changes."
     )
 
-    on_value_commit: EventHandler[on_value_event_spec] = field(
+    on_value_commit: Annotated[EventHandler, on_value_event_spec] = field(
         doc="Fired when a thumb is released after being dragged."
     )
 

@@ -293,7 +293,7 @@ def test_checker_reports_missing_and_optional_fields():
     component = {
         "properties": {
             key: value
-            for key, value in _COMPONENT["properties"].items()  # ty:ignore[unresolved-attribute]
+            for key, value in _COMPONENT["properties"].items()  # ty:ignore[missing-union-attribute]
             if key != "tags"
         },
         "required": ["id", "nested"],

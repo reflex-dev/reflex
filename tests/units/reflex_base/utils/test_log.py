@@ -404,7 +404,7 @@ def test_deprecate_skips_frames_compiled_from_strings(capsys):
         {"log": log},
         namespace,
     )
-    namespace["emit"]()  # ty:ignore[call-non-callable]
+    namespace["emit"]()  # ty:ignore[not-callable]
     out, _ = capsys.readouterr()
     assert "<string>" not in out
     assert "test_log.py" in out
@@ -654,7 +654,7 @@ def test_console_and_pipeline_share_one_log_file(monkeypatch, tmp_path):
     monkeypatch.setattr(
         console,
         "log_file_console",
-        console.log_file_console.__wrapped__,  # ty:ignore[unresolved-attribute]
+        console.log_file_console.__wrapped__,  # ty:ignore[missing-attribute]
     )
     reflex_logger = logging.getLogger("reflex")
     reflex_logger.addHandler(handler)
@@ -684,7 +684,7 @@ def _fresh_file_handler(
     """
     log_file = tmp_path / "full.log"
     monkeypatch.setenv("REFLEX_LOG_FILE", str(log_file))
-    handler = log._file_handler.__wrapped__()  # ty:ignore[unresolved-attribute]
+    handler = log._file_handler.__wrapped__()  # ty:ignore[missing-attribute]
     monkeypatch.setattr(log, "_file_handler", lambda: handler)
     return handler, log_file
 
@@ -727,7 +727,7 @@ def test_log_file_console_targets_file_after_external_close(
     monkeypatch.setattr(
         console,
         "log_file_console",
-        console.log_file_console.__wrapped__,  # ty:ignore[unresolved-attribute]
+        console.log_file_console.__wrapped__,  # ty:ignore[missing-attribute]
     )
     try:
         # What granian's post-fork dictConfig does to every existing handler.
@@ -743,7 +743,7 @@ def test_log_file_console_targets_file_after_external_close(
 def test_cached_log_file_console_survives_external_close(monkeypatch, tmp_path, capsys):
     """A file console created before the close keeps writing to the file."""
     handler, log_file = _fresh_file_handler(monkeypatch, tmp_path)
-    file_console = console.log_file_console.__wrapped__()  # ty:ignore[unresolved-attribute]
+    file_console = console.log_file_console.__wrapped__()  # ty:ignore[missing-attribute]
     monkeypatch.setattr(console, "log_file_console", lambda: file_console)
     try:
         console.print_to_log_file("record before close")
@@ -763,7 +763,7 @@ def test_file_handler_truncates_previous_run(monkeypatch, tmp_path):
     log_file = tmp_path / "full.log"
     log_file.write_text("records from a previous run\n", encoding="utf-8")
     monkeypatch.setenv("REFLEX_LOG_FILE", str(log_file))
-    handler = log._file_handler.__wrapped__()  # ty:ignore[unresolved-attribute]
+    handler = log._file_handler.__wrapped__()  # ty:ignore[missing-attribute]
     handler.close()
     assert log_file.read_text(encoding="utf-8") == ""
 

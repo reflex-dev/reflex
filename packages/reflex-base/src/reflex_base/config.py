@@ -8,7 +8,7 @@ import os
 import sys
 import threading
 import urllib.parse
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from importlib.machinery import PathFinder
@@ -976,7 +976,7 @@ def _project_local_modules(names: Iterable[str], project_root: Path) -> set[str]
 
 
 @contextmanager
-def _record_imports() -> Iterator[_ImportRecorder]:
+def _record_imports() -> Generator[_ImportRecorder, None, None]:
     """Record imports made on the current thread while rxconfig loads.
 
     Yields:

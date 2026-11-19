@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -42,7 +42,7 @@ class TabsRoot(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    on_change: EventHandler[passthrough_event_spec(str)] = field(
+    on_change: Annotated[EventHandler, passthrough_event_spec(str)] = field(
         doc="Fired when the value of the tabs changes."
     )
 

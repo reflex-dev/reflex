@@ -64,7 +64,7 @@ def test_route_matching(count: int, benchmark: BenchmarkFixture):
         count: Number of routes.
         benchmark: The CodSpeed benchmark fixture.
     """
-    match = get_router(_routes(count)).__wrapped__  # ty:ignore[unresolved-attribute]
+    match = get_router(_routes(count)).__wrapped__  # ty:ignore[missing-attribute]
     lookups = _lookups(count)
     paths = [path for path, _ in lookups]
 

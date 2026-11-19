@@ -61,7 +61,7 @@ def MemoApp():
     @rx.memo
     def my_memoed_component(
         some_value: rx.Var[str],
-        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-type-form]
     ) -> rx.Component:
         return rx.vstack(
             rx.button(some_value, id="memo-button", on_click=event(some_value)),
@@ -105,7 +105,7 @@ def MemoApp():
         item: rx.Var[str],
         position: rx.Var[int],
         label: rx.Var[str],
-        on_pick: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+        on_pick: rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-type-form]
     ) -> rx.Component:
         """One row of ``memo_rows``, with client state of its own.
 
@@ -135,7 +135,7 @@ def MemoApp():
     @rx.memo
     def memo_rows(
         label: rx.Var[str],
-        on_pick: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+        on_pick: rx.EventHandler[rx.event.passthrough_event_spec(str)],  # ty:ignore[invalid-type-form]
     ) -> rx.Component:
         """Loop over the order inside an explicitly memoized container.
 

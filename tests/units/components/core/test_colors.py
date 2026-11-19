@@ -143,4 +143,4 @@ def test_radix_color(color, expected):
         expected (str): The expected custom_style string, radix or literal
     """
     code_block = CodeBlock.create("Hello World", background_color=color)
-    assert str(code_block.custom_style["backgroundColor"]) == expected  # ty:ignore[unresolved-attribute]
+    assert str(code_block.custom_style["backgroundColor"]) == expected  # ty:ignore[missing-attribute]

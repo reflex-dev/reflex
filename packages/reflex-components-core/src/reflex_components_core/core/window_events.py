@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Annotated, Any, cast
 
 from reflex_base.components.component import field
 from reflex_base.event import EventHandler, key_event, no_args_event_spec
@@ -54,31 +54,31 @@ def _on_storage_spec(e: ObjectVar) -> tuple[Var[str], Var[str], Var[str], Var[st
 class WindowEventListener(Fragment):
     """A component that listens for window events."""
 
-    on_resize: EventHandler[_on_resize_spec] = field(
+    on_resize: Annotated[EventHandler, _on_resize_spec] = field(
         doc="Triggered when the browser window is resized. Receives the new width and height in pixels."
     )
-    on_scroll: EventHandler[_on_scroll_spec] = field(
+    on_scroll: Annotated[EventHandler, _on_scroll_spec] = field(
         doc="Triggered when the user scrolls the page. Receives the current horizontal and vertical scroll positions."
     )
-    on_focus: EventHandler[no_args_event_spec] = field(
+    on_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Triggered when the browser tab or window gains focus (e.g. user switches back to the tab)."
     )
-    on_blur: EventHandler[no_args_event_spec] = field(
+    on_blur: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Triggered when the browser tab or window loses focus (e.g. user switches to another tab)."
     )
-    on_visibility_change: EventHandler[_on_visibility_change_spec] = field(
+    on_visibility_change: Annotated[EventHandler, _on_visibility_change_spec] = field(
         doc="Triggered when the page becomes visible or hidden (e.g. tab switch or minimize). Receives a boolean indicating whether the document is hidden."
     )
-    on_before_unload: EventHandler[no_args_event_spec] = field(
+    on_before_unload: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Triggered just before the user navigates away from or closes the page. Useful for cleanup or prompting unsaved-changes warnings."
     )
-    on_key_down: EventHandler[key_event] = field(
+    on_key_down: Annotated[EventHandler, key_event] = field(
         doc="Triggered when a key is pressed anywhere on the page. Receives the key name and active modifier keys (shift, ctrl, alt, meta)."
     )
-    on_popstate: EventHandler[no_args_event_spec] = field(
+    on_popstate: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Triggered when the user navigates back or forward via the browser history buttons."
     )
-    on_storage: EventHandler[_on_storage_spec] = field(
+    on_storage: Annotated[EventHandler, _on_storage_spec] = field(
         doc="Triggered when localStorage or sessionStorage is modified in another tab. Receives the key, old value, new value, and the URL of the document that changed the storage."
     )
 

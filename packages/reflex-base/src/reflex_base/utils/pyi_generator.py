@@ -649,7 +649,7 @@ def _extract_class_props_as_ast_nodes(
                 #       with the annotation in some cases.
                 with contextlib.suppress(AttributeError, KeyError):
                     # Try to get default from pydantic field definition.
-                    default = target_class.__fields__[name].default  # ty:ignore[unresolved-attribute]
+                    default = target_class.__fields__[name].default  # ty:ignore[missing-attribute]
                     if isinstance(default, Var):
                         default = default._decode()
 
@@ -1195,7 +1195,7 @@ class StubGenerator(ast.NodeTransformer):
             The modified Module node.
         """
         self.generic_visit(node)
-        return self._remove_docstring(node)  # ty:ignore[invalid-return-type]
+        return self._remove_docstring(node)  # ty:ignore[invalid-explicit-return]
 
     def visit_Import(
         self, node: ast.Import | ast.ImportFrom

@@ -50,14 +50,14 @@ class StringAnnotationComponent(Component):
 
     value: Var[str]
 
-    on_empty: EventHandler[on_empty_handler] = field(
+    on_empty: EventHandler[on_empty_handler] = field(  # ty:ignore[invalid-type-form]
         doc="Fires with no args.",
     )
 
-    on_string: EventHandler[on_string_handler] = field(
+    on_string: EventHandler[on_string_handler] = field(  # ty:ignore[invalid-type-form]
         doc="Fires with a string.",
     )
 
-    on_multi: EventHandler[on_multi_handler] = field(
+    on_multi: EventHandler[on_multi_handler] = field(  # ty:ignore[invalid-type-form]
         doc="Fires with name and age.",
     )

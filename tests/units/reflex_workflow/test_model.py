@@ -4,12 +4,10 @@ The ``ty: ignore`` and ``pyright: ignore`` comments below mark calls that must f
 type checking. Both checkers report an ignore that is no longer needed, so each fails
 if one of those calls stops being an error.
 
-A few carry only a pyright ignore. A step or wait that mixes two workflows is
+A few carry only a pyright ignore: a step or wait that mixes two workflows. It is
 well-typed for a class inheriting both, since a workflow's type parameter is
 contravariant so that steps of a shared base serve every table; ty accepts it, and
-the tests of ``resolve`` reject it at runtime. The redeclared engine columns need a
-ty with attribute override checks (0.0.90 or later); the tests of the engine's
-columns reject them at runtime.
+the tests of ``resolve`` reject it at runtime.
 """
 
 # pyright: reportUnnecessaryTypeIgnoreComment=true
@@ -168,7 +166,7 @@ class Second(Base, Shared):
 
 def test_step_calls_are_typed_by_their_workflow():
     assert_type(Expense.decide("approve"), Call[Expense])
-    assert_type(  # ty:ignore[type-assertion-failure]
+    assert_type(
         wake_in(Expense.escalate(), datetime.timedelta(hours=1)), WakeIn[Expense]
     )
     assert_type(Expense.by(Expense.id == 1), RunHandle[Expense])
@@ -365,7 +363,7 @@ def engine_index(cls: type[Workflow], suffix: str) -> Index | None:
         The index, or None.
     """
     name = f"ix_{cls.__tablename__}_{suffix}"
-    table = cls.__table__  # pyright: ignore[reportAttributeAccessIssue] # ty:ignore[unresolved-attribute]
+    table = cls.__table__  # pyright: ignore[reportAttributeAccessIssue] # ty:ignore[missing-attribute]
     return next((index for index in table.indexes if index.name == name), None)
 
 
@@ -476,7 +474,7 @@ def test_a_workflow_that_takes_one_of_the_engines_columns_is_refused():
             )
             # Deliberately the collision: pyright sees it too, which is the
             # other half of the guard, for anyone who runs one.
-            parent: Mapped[Comment | None] = relationship(  # pyright: ignore[reportIncompatibleVariableOverride]
+            parent: Mapped[Comment | None] = relationship(  # pyright: ignore[reportIncompatibleVariableOverride]  # ty:ignore[incompatible-attribute-override]
                 remote_side=[id]
             )
 
@@ -492,7 +490,7 @@ def test_a_workflow_that_retypes_one_of_the_engines_columns_is_refused():
             __tablename__ = "wf_model_versioned"
 
             id: Mapped[int] = mapped_column(primary_key=True)
-            wf_version: Mapped[str] = mapped_column(String(8))  # pyright: ignore[reportIncompatibleVariableOverride]
+            wf_version: Mapped[str] = mapped_column(String(8))  # pyright: ignore[reportIncompatibleVariableOverride]  # ty:ignore[incompatible-attribute-override]
 
 
 def test_a_workflow_that_redeclares_an_event_column_alike_is_refused():
@@ -509,7 +507,7 @@ def test_a_workflow_that_redeclares_an_event_column_alike_is_refused():
             __tablename__ = "wf_model_loose"
 
             id: Mapped[int] = mapped_column(primary_key=True)
-            pending_event: Mapped[dict[str, Any]] = mapped_column(JSONB)  # pyright: ignore[reportIncompatibleVariableOverride]
+            pending_event: Mapped[dict[str, Any]] = mapped_column(JSONB)  # pyright: ignore[reportIncompatibleVariableOverride]  # ty:ignore[incompatible-mutable-override]
 
 
 def test_a_workflow_that_leaves_the_engines_columns_alone_is_not():

@@ -19,7 +19,7 @@ import time
 import traceback
 import urllib.parse
 from collections.abc import (
-    AsyncIterator,
+    AsyncGenerator,
     Callable,
     Collection,
     Coroutine,
@@ -1199,7 +1199,7 @@ class App(MiddlewareMixin, LifespanMixin):
         return stack
 
     @contextlib.asynccontextmanager
-    async def _setup_event_processor(self) -> AsyncIterator[None]:
+    async def _setup_event_processor(self) -> AsyncGenerator[None, None]:
         """Configure event processing with a fresh worker socket identity.
 
         Yields:
@@ -1657,7 +1657,7 @@ class App(MiddlewareMixin, LifespanMixin):
             state = self._state or State
             state.setup_dynamic_args(prepared.route_args)
 
-        self._load_events[page.route] = (  # ty:ignore[invalid-assignment] https://github.com/astral-sh/ty/issues/4394
+        self._load_events[page.route] = (
             (
                 list(page.on_load)
                 if is_non_string_sequence(page.on_load)
@@ -2296,7 +2296,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @overload
     @deprecated("pass token as rx.BaseStateToken instead of str")
-    def modify_state(  # ty:ignore[invalid-overload] https://github.com/astral-sh/ty/issues/2057
+    def modify_state(  # ty:ignore[inconsistent-overload-implementation] https://github.com/astral-sh/ty/issues/2057
         self,
         token: str,
         background: bool = False,
@@ -2304,7 +2304,7 @@ class App(MiddlewareMixin, LifespanMixin):
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
     @overload
-    def modify_state(  # ty:ignore[invalid-overload] https://github.com/astral-sh/ty/issues/2057
+    def modify_state(  # ty:ignore[inconsistent-overload-implementation] https://github.com/astral-sh/ty/issues/2057
         self,
         token: BaseStateToken,
         background: bool = False,
@@ -2318,7 +2318,7 @@ class App(MiddlewareMixin, LifespanMixin):
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
         **context: Unpack[StateModificationContext],
-    ) -> AsyncIterator[BaseState]:
+    ) -> AsyncGenerator[BaseState, None]:
         """Modify the state out of band.
 
         Args:

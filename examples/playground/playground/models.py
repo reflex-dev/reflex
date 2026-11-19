@@ -31,7 +31,7 @@ def seed_database():
     """
     with rx.session() as session:
         connection = session.connection()
-        product_table = Product.__table__  # ty:ignore[unresolved-attribute]
+        product_table = Product.__table__  # ty:ignore[missing-attribute]
         connection.execute(CreateTable(product_table, if_not_exists=True))
         table = Product.__tablename__
         if connection.exec_driver_sql(f"SELECT 1 FROM {table} LIMIT 1").first():

@@ -1,6 +1,6 @@
 """Custom select component."""
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from reflex_components_core.core.foreach import foreach
 
@@ -71,7 +71,7 @@ class SelectRoot(SelectBaseComponent):
     value: Var[Any]
 
     # Callback fired when the value of the select changes. Use when controlled.
-    on_value_change: EventHandler[passthrough_event_spec(str)]
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(str)]
 
     # Whether the select popup is initially open.
     # To render a controlled select popup, use the `open` prop instead.
@@ -81,7 +81,7 @@ class SelectRoot(SelectBaseComponent):
     open: Var[bool]
 
     # Event handler called when the select popup is opened or closed
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # A ref to the imperative `close` and `unmount` actions.
     # Supplying this ref does not disable automatic unmounting.
@@ -115,7 +115,7 @@ class SelectRoot(SelectBaseComponent):
     multiple: Var[bool]
 
     # Event handler called after any animations complete when the select popup is opened or closed
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]

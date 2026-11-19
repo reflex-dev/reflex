@@ -30,9 +30,9 @@ from typing import (  # noqa: UP035
     Tuple,
     TypeVar,
     Union,
-    _eval_type,  # ty:ignore[unresolved-import]
-    _GenericAlias,  # ty:ignore[unresolved-import]
-    _SpecialGenericAlias,  # ty:ignore[unresolved-import]
+    _eval_type,  # ty:ignore[missing-module-member]
+    _GenericAlias,  # ty:ignore[missing-module-member]
+    _SpecialGenericAlias,  # ty:ignore[missing-module-member]
     cast,
     get_args,
     is_typeddict,
@@ -788,7 +788,7 @@ def _apply_type_params(
         else:
             flattened.append(substitution.get(param, param))
     try:
-        return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue]
+        return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue] # ty:ignore[not-subscriptable]
     except TypeError:
         # Python 3.11 rejects a ParamSpec next to an unpacked TypeVarTuple, so
         # substitute by hand instead.
@@ -839,7 +839,7 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
             )
         return resolve_type_alias(value)
     if isinstance(cls, TypeAliasTypes):
-        return resolve_type_alias(cls.__value__)
+        return resolve_type_alias(cls.__value__)  # ty:ignore[missing-union-attribute]
     if is_union(cls):
         # Rebuild the union only when a member actually resolved, so the
         # common alias-free case allocates nothing.
@@ -1027,11 +1027,12 @@ def is_unserialized_property(
     if serializer is serializers.serialize_sqlalchemy_base:
         import sqlalchemy
 
-        return name not in sqlalchemy.inspect(cls).attrs
+        return name not in sqlalchemy.inspect(cls).attrs  # ty:ignore[missing-union-attribute]
 
     if dataclasses.is_dataclass(cls):
         return serializer is None and name not in {
-            field.name for field in dataclasses.fields(cls)
+            field.name
+            for field in dataclasses.fields(cls)  # ty:ignore[invalid-argument-type]
         }
     decorators = getattr(cls, "__pydantic_decorators__", None)
     if decorators is None or decorators.model_serializers:
@@ -1273,9 +1274,9 @@ def get_base_class(cls: GenericType) -> type:
         return type(get_args(cls)[0])
 
     if is_union(cls):
-        return tuple(get_base_class(arg) for arg in get_args(cls))  # ty:ignore[invalid-return-type]
+        return tuple(get_base_class(arg) for arg in get_args(cls))  # ty:ignore[invalid-explicit-return]
 
-    return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
+    return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls  # ty:ignore[missing-union-attribute]
 
 
 # "No extra items" sentinels of PEP 728 TypedDicts (typing on Python 3.15+,

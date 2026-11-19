@@ -159,7 +159,7 @@ def field(
         default_factory=default_factory,
         is_javascript=is_javascript_property,
         doc=doc,
-    )  # ty:ignore[invalid-return-type]
+    )  # ty:ignore[invalid-explicit-return]
 
 
 def _field_values_equal(a: Any, b: Any) -> bool:
@@ -2441,7 +2441,7 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar[Component], ComponentVa
         return str(render_dict_to_var(self._var_value.render()))
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
         """Get the VarData for the var.
 
         Returns:

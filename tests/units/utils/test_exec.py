@@ -426,8 +426,8 @@ def test_run_granian_backend_binds_listen_socket_in_supervisor(
     )
 
     (server,) = servers
-    server._init_shared_socket()  # ty:ignore[unresolved-attribute]
-    listener: socket.socket = server._sso  # ty:ignore[unresolved-attribute]
+    server._init_shared_socket()  # ty:ignore[missing-attribute]
+    listener: socket.socket = server._sso  # ty:ignore[missing-attribute]
     try:
         assert listener.get_inheritable()
         # Once a worker calls listen the supervisor's descriptor keeps the
@@ -436,7 +436,7 @@ def test_run_granian_backend_binds_listen_socket_in_supervisor(
         with socket.create_connection(listener.getsockname(), timeout=1):
             pass
     finally:
-        server._close_shared_socket()  # ty:ignore[unresolved-attribute]
+        server._close_shared_socket()  # ty:ignore[missing-attribute]
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Granian uses this path on Linux")

@@ -171,5 +171,5 @@ async def test_patch_state_recomputes_readers_after_restoring():
     linked.who = "linked"  # pyright: ignore[reportAttributeAccessIssue]
 
     async with _patch_state(original_state=original, linked_state=linked):
-        assert await reader.greeting == "linked"  # ty:ignore[unresolved-attribute]
-    assert await reader.greeting == "private"  # ty:ignore[unresolved-attribute]
+        assert await reader.greeting == "linked"  # ty:ignore[missing-attribute]
+    assert await reader.greeting == "private"  # ty:ignore[missing-attribute]

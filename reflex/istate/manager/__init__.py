@@ -5,7 +5,7 @@ import dataclasses
 import logging
 import sys
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterator
 from types import TracebackType
 from typing import TYPE_CHECKING, Generic, TypedDict, overload
 
@@ -111,7 +111,7 @@ class StateManager(ABC):
             from reflex.istate.manager.token import BaseStateToken
             from reflex.state import State
 
-            return BaseStateToken.from_legacy_token(token, root_state=State)  # ty:ignore[invalid-return-type]
+            return BaseStateToken.from_legacy_token(token, root_state=State)  # ty:ignore[invalid-explicit-return]
         return token
 
     @overload
@@ -200,7 +200,7 @@ class StateManager(ABC):
         self,
         token: StateToken[TOKEN_TYPE] | str,
         **context: Unpack[StateModificationContext],
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> AsyncGenerator[TOKEN_TYPE, None]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:

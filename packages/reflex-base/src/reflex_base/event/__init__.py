@@ -3739,7 +3739,7 @@ class EventNamespace:
                     deprecation_version="0.11.0",
                     removal_version="1.0",
                 )
-                return func  # ty:ignore[invalid-return-type]
+                return func  # ty:ignore[invalid-explicit-return]
             # A repeated @rx.event decorates the same function again: the
             # markers accumulate on it and these options win where both set one.
             inner_actions: Mapping[str, Any] = {}
@@ -3808,7 +3808,7 @@ class EventNamespace:
                         deprecation_version="0.11.0",
                         removal_version="1.0",
                     )
-                    return func  # ty:ignore[invalid-return-type]
+                    return func  # ty:ignore[invalid-explicit-return]
                 if registered:
                     # Already renamed: re-register it under the same name.
                     name = qualname
@@ -3826,11 +3826,11 @@ class EventNamespace:
 
             # A method: bound to its state class by __set_name__ when the
             # class body is executed.
-            return EventHandler(fn=func, event_actions=event_actions)  # ty:ignore[invalid-return-type]
+            return EventHandler(fn=func, event_actions=event_actions)  # ty:ignore[invalid-explicit-return]
 
         if func is not None:
             return wrapper(func)
-        return wrapper  # ty:ignore[invalid-return-type]
+        return wrapper
 
     get_event = staticmethod(get_event)
     get_hydrate_event = staticmethod(get_hydrate_event)

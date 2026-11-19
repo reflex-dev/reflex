@@ -38,7 +38,7 @@ import shutil
 import subprocess
 import sys
 import time
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Generator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
@@ -382,7 +382,9 @@ def _lock(handle: IO[bytes], *, wait: bool) -> bool:
 
 
 @contextlib.contextmanager
-def _locked(path: Path, on_wait: Callable[[], None] | None = None) -> Iterator[bool]:
+def _locked(
+    path: Path, on_wait: Callable[[], None] | None = None
+) -> Generator[bool, None, None]:
     """Hold an exclusive lock file, which also works between threads.
 
     Args:

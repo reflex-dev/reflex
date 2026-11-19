@@ -827,7 +827,7 @@ class EventProcessor:
         else:
             task = asyncio.create_task(coro, name=name)
         if sys.version_info < (3, 12):
-            task._event_ctx = entry.ctx  # ty:ignore[unresolved-attribute]
+            task._event_ctx = entry.ctx  # ty:ignore[missing-attribute]
         self._tasks[entry.ctx.txid] = task
         task.add_done_callback(self._finish_task)
         return task
@@ -966,7 +966,7 @@ class EventProcessor:
         """
         if sys.version_info < (3, 12):
             # py3.11 compat
-            task_ctx = task._event_ctx  # ty:ignore[unresolved-attribute]
+            task_ctx = task._event_ctx  # ty:ignore[missing-attribute]
         else:
             task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
@@ -1025,7 +1025,7 @@ class EventProcessor:
                     name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
                 )
                 if sys.version_info < (3, 12):
-                    t._event_ctx = task_ctx  # ty:ignore[unresolved-attribute]
+                    t._event_ctx = task_ctx  # ty:ignore[missing-attribute]
                 t.add_done_callback(self._finish_task)
                 return True
             logger.exception(f"Error in {task.get_name()} [txid={task_ctx.txid}]:")

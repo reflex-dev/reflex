@@ -164,7 +164,7 @@ def props_field(
         default=default,
         default_factory=default_factory,
         annotated_type=MISSING,
-    )  # ty:ignore[invalid-return-type]
+    )  # ty:ignore[invalid-explicit-return]
 
 
 @dataclass_transform(field_specifiers=(props_field,))

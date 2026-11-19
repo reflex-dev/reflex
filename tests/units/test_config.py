@@ -1413,7 +1413,7 @@ def test_concurrent_import_not_recorded_as_rxconfig_dep(
     try:
         assert race_gate.in_load.wait(timeout=5)
         # Import a project-local module from this thread while rxconfig loads.
-        import side_module  # noqa: F401  # ty:ignore[unresolved-import]
+        import side_module  # noqa: F401  # ty:ignore[import-not-found]
     finally:
         race_gate.release.set()
         loader.join(timeout=5)

@@ -1,6 +1,6 @@
 """Custom Accordion component."""
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from reflex_components_core.core.foreach import foreach
 from reflex_components_core.el.elements.typography import Div
@@ -53,7 +53,7 @@ class AccordionRoot(AccordionBaseComponent):
     value: Var[list[Any]]
 
     # Event handler called when an accordion item is expanded or collapsed. Provides the new value as an argument.
-    on_value_change: EventHandler[passthrough_event_spec(list[str])]
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(list[str])]
 
     # Allows the browser's built-in page search to find and expand the panel contents. Overrides the `keep_mounted` prop and uses `hidden="until-found"` to hide the element without removing it from the DOM. Defaults to False.
     hidden_until_found: Var[bool]
@@ -97,7 +97,7 @@ class AccordionItem(AccordionBaseComponent):
     value: Var[str]
 
     # Event handler called when the panel is opened or closed.
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]

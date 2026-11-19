@@ -79,7 +79,7 @@ _DATACLASSES_FILE = dataclasses.__file__
 # `_PROXY_SETATTR` skips the Python-level dispatch in `MutableProxy.__setattr__`;
 # `object.__setattr__` is not usable here: on Python <= 3.13 it rejects instances
 # whose static base (wrapt's C ObjectProxy) overrides tp_setattro.
-_PROXY_NEW: Callable[[type], Any] = getattr(
+_PROXY_NEW: Callable[[type], Any] = getattr(  # ty:ignore[invalid-assignment]
     wrapt, "BaseObjectProxy", wrapt.ObjectProxy
 ).__new__
 _PROXY_INIT = wrapt.ObjectProxy.__init__
@@ -93,8 +93,8 @@ _SCALAR_TYPES = frozenset({str, int, float, bool, type(None), bytes, tuple})
 # which the proxy's instance-level forwarding cannot answer for; the methods
 # `@dataclass` writes need no copy, resolving through the wrapped object.
 _DATACLASS_CLASS_ATTRS = (
-    dataclasses._FIELDS,  # ty:ignore[unresolved-attribute]
-    dataclasses._PARAMS,  # ty:ignore[unresolved-attribute]
+    dataclasses._FIELDS,  # ty:ignore[missing-attribute]
+    dataclasses._PARAMS,  # ty:ignore[missing-attribute]
     "__match_args__",
 )
 
@@ -492,7 +492,7 @@ class StateProxy(wrapt.ObjectProxy):
             await self.__wrapped__.get_state(state_cls),
             event=self._self_event,
             parent_state_proxy=self,
-        )  # ty:ignore[invalid-return-type]
+        )  # ty:ignore[invalid-explicit-return]
 
     async def _as_state_update(self, *args, **kwargs) -> StateUpdate:
         """Temporarily allow mutability to access parent_state.
@@ -1071,7 +1071,7 @@ class MutableProxy(wrapt.ObjectProxy):
                 new_path_segment = ("item", key)
         return self._wrap_recursive(wrapped(*args, **kwargs), new_path_segment)
 
-    def __getattr__(self, __name: str) -> Any:
+    def __getattr__(self, __name: str) -> Any:  # ty:ignore[lost-keyword-for-regular-parameter]
         """Get the attribute on the proxied object and return a proxy if mutable.
 
         Args:

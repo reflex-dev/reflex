@@ -1,6 +1,6 @@
 """Custom input component."""
 
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
 from reflex_components_core.el.elements.forms import Button
 from reflex_components_core.el.elements.forms import Input as ReflexInput
@@ -61,7 +61,7 @@ class InputRoot(InputBaseComponent, ReflexInput):
     """Root component for an input."""
 
     tag = "Input"
-    on_value_change: EventHandler[passthrough_event_spec(str, dict)]
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(str, dict)]
     render_: Var[Component]
 
     @classmethod
@@ -73,7 +73,7 @@ class InputRoot(InputBaseComponent, ReflexInput):
         """
         props["data-slot"] = "input"
         cls.set_class_name(ClassNames.INPUT, props)
-        return super().create(*children, **props)  # ty:ignore[invalid-return-type]
+        return super().create(*children, **props)  # ty:ignore[invalid-explicit-return]
 
 
 class HighLevelInput(InputBaseComponent):
@@ -172,7 +172,7 @@ class HighLevelInput(InputBaseComponent):
             on_click=set_focus(id),
             class_name=cn(f"{ClassNames.DIV} {INPUT_SIZE_VARIANTS[size]}", class_name),
             **props,
-        )  # ty:ignore[invalid-return-type]
+        )  # ty:ignore[invalid-explicit-return]
 
     @staticmethod
     def _create_clear_button(

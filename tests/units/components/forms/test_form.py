@@ -42,7 +42,7 @@ def test_render_on_submit():
         _var_type=EventChain,
     )
     f = Form.create(on_submit=submit_it)
-    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # ty:ignore[unresolved-attribute]
+    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # ty:ignore[missing-attribute]
     assert f"onSubmit:{exp_submit_name}" in f.render()["props"]
 
 
@@ -815,7 +815,7 @@ def test_on_submit_rejects_non_mapping_form_data():
             pass
 
     with pytest.raises(EventHandlerArgTypeMismatchError):
-        HTMLForm.create(on_submit=TagsState.on_submit)  # pyright: ignore[reportArgumentType]
+        HTMLForm.create(on_submit=TagsState.on_submit)  # pyright: ignore[reportArgumentType]  # ty:ignore[invalid-argument-type]
 
 
 def test_on_submit_accepts_controls_associated_via_form_attribute():

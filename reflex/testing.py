@@ -88,7 +88,7 @@ def _get_uvicorn():
 
 
 if platform.system() == "Windows":
-    FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # ty:ignore[unresolved-attribute]
+    FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # ty:ignore[missing-attribute]
     FRONTEND_POPEN_ARGS["shell"] = True
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True

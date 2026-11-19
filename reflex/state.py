@@ -300,7 +300,7 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     Returns:
         The marked function.
     """
-    fn.__override_base_method__ = True  # ty:ignore[unresolved-attribute]
+    fn.__override_base_method__ = True  # ty:ignore[missing-attribute]
     return fn
 
 
@@ -2664,7 +2664,7 @@ class State(BaseState):
             from reflex.istate.shared import SharedStateBaseInternal
 
             shared_base = await self.get_state(SharedStateBaseInternal)
-            return await shared_base._resolve_linked_state(state_cls, linked_token)  # ty:ignore[invalid-return-type]
+            return await shared_base._resolve_linked_state(state_cls, linked_token)  # ty:ignore[invalid-explicit-return]
         return await super()._get_state_from_redis(state_cls)
 
     @event

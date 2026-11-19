@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_base.components.component import Component, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -100,15 +100,15 @@ class Tooltip(RadixThemesComponent):
         doc="By default, screenreaders will announce the content inside the component. If this is not descriptive enough, or you have content that cannot be announced, use aria-label as a more descriptive label."
     )
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."
     )
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer is down outside the tooltip."
     )
 

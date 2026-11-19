@@ -1,6 +1,6 @@
 """Custom Slider component."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
@@ -79,10 +79,10 @@ class SliderRoot(SliderBaseComponent):
     value: Var[int | float | list[int | float]]
 
     # Callback function that is fired when the slider's value changed.
-    on_value_change: EventHandler[on_value_event_spec]
+    on_value_change: Annotated[EventHandler, on_value_event_spec]
 
     # Callback function that is fired when the pointerup is triggered.
-    on_value_committed: EventHandler[on_value_event_spec]
+    on_value_committed: Annotated[EventHandler, on_value_event_spec]
 
     # Locale information for formatting.
     locale: Var[str]

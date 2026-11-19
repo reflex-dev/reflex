@@ -75,7 +75,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             The array, guarded against None if its type allows None.
         """
         if types.is_optional(self._var_type):
-            return array_or_empty_operation(self)  # ty:ignore[invalid-return-type]
+            return array_or_empty_operation(self)
         return self
 
     def join(self, sep: StringVar | str = "") -> StringVar:
@@ -117,9 +117,9 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         Returns:
             The reversed array.
         """
-        return array_reverse_operation(self._or_empty())  # ty:ignore[invalid-return-type]
+        return array_reverse_operation(self._or_empty())  # ty:ignore[invalid-explicit-return]
 
-    def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]:
+    def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]:  # ty:ignore[invalid-generic-class]
         """Concatenate two arrays.
 
         Parameters:
@@ -135,7 +135,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
                 return other.__radd__(self)
             raise_unsupported_operand_types("+", (type(self), type(other)))
 
-        return array_concat_operation(self._or_empty(), other._or_empty())  # ty:ignore[invalid-return-type]
+        return array_concat_operation(self._or_empty(), other._or_empty())  # ty:ignore[invalid-explicit-return]
 
     @overload
     def __getitem__(self, i: slice) -> ArrayVar[ARRAY_VAR_TYPE]: ...
@@ -344,7 +344,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         Returns:
             The array pluck operation.
         """
-        return array_pluck_operation(self._or_empty(), field)  # ty:ignore[invalid-return-type]
+        return array_pluck_operation(self._or_empty(), field)  # ty:ignore[invalid-explicit-return]
 
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
@@ -360,7 +360,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
         ):
             raise_unsupported_operand_types("*", (type(self), type(other)))
 
-        return repeat_array_operation(self._or_empty(), other)  # ty:ignore[invalid-return-type]
+        return repeat_array_operation(self._or_empty(), other)  # ty:ignore[invalid-explicit-return]
 
     __rmul__ = __mul__
 
@@ -612,7 +612,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             (accumulator._js_expr, element._js_expr),
             return_expr,
             _var_type=Callable[
-                [accumulator_type, element._var_type], return_expr._var_type
+                [accumulator_type, element._var_type], return_expr._var_type  # ty:ignore[invalid-type-form]
             ],
         )
         if initial_var is None:
@@ -742,7 +742,7 @@ class LiteralArrayVar(
         return _literal_elements_var_data(value)
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
         """Get all the VarData associated with the Var.
 
         Returns:
@@ -1729,7 +1729,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         return "(" + "+".join(list_of_strs_filtered) + ")"
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
         """Get all the VarData asVarDatae Var.
 
         Returns:
@@ -2402,7 +2402,7 @@ class LiteralRangeVar(CachedVarOperation, LiteralVar[Sequence[int]], RangeVar):
         return f"Array.from({{ length: Math.ceil(({self._var_value.stop!s} - {self._var_value.start!s}) / {self._var_value.step!s}) }}, (_, i) => {self._var_value.start!s} + i * {self._var_value.step!s})"
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
         """Get all the var data.
 
         Returns:

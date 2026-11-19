@@ -1,6 +1,6 @@
 """Custom toggle group component."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex.components.component import Component
 from reflex.event import EventHandler, passthrough_event_spec
@@ -40,7 +40,9 @@ class ToggleGroupRoot(ToggleGroupBaseComponent):
     value: Var[list[str | int]]
 
     # Callback fired when the pressed states of the toggle group changes.
-    on_value_change: EventHandler[passthrough_event_spec(list[str | int], dict)]
+    on_value_change: Annotated[
+        EventHandler, passthrough_event_spec(list[str | int], dict)
+    ]
 
     # When false only one item in the group can be pressed. If any item in the group becomes pressed, the others will become unpressed. When true multiple items can be pressed. Defaults to False.
     multiple: Var[bool]

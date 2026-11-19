@@ -102,7 +102,7 @@ def test_the_engines_own_tables_take_no_constructor_arguments(monkeypatch):
     class Attempt(Base, dc.AttemptLog):
         """The attempt history on a dataclass base."""
 
-        __tablename__ = "wf_dataclass_attempt"
+        __tablename__ = "wf_dataclass_attempt"  # ty:ignore[incompatible-attribute-override]
 
     class Rate(Base, dc.RateBucket):
         """The rate buckets on a dataclass base."""

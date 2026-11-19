@@ -168,7 +168,7 @@ class Foreach(Component):
             if (render_fn_code := getattr(render_fn, "__code__", None)) is not None:
                 code_hash = md5(render_fn_code.co_code).hexdigest()
             elif isinstance(render_fn, functools.partial):
-                code_hash = md5(render_fn.func.__code__.co_code).hexdigest()  # ty:ignore[unresolved-attribute]
+                code_hash = md5(render_fn.func.__code__.co_code).hexdigest()  # ty:ignore[missing-attribute]
             else:
                 code_hash = md5(repr(render_fn).encode()).hexdigest()
             props["index_var_name"] = f"index_{code_hash}"

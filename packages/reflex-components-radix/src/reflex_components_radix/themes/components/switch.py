@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_base.components.component import field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -57,7 +57,7 @@ class Switch(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
 
-    on_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the value of the switch changes"
     )
 

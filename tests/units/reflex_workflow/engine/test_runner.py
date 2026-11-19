@@ -14,7 +14,7 @@ import json
 import os
 import time
 import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
 
 import pytest
 import pytest_asyncio
@@ -3731,7 +3731,7 @@ async def test_a_broken_on_idle_does_not_stop_the_worker(session_factory):
 async def only_worker(
     session_factory: async_sessionmaker[AsyncSession],
     on_idle: runner.OnIdle | None = None,
-) -> AsyncIterator[runner.Runner]:
+) -> AsyncGenerator[runner.Runner, None]:
     """Run a worker over Resting alone, as the only engine in this process.
 
     Its own runtime, because the counter ``wake`` waits on belongs to the

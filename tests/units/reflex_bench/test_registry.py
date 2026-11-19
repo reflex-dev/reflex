@@ -71,7 +71,7 @@ def _leaf(base: type) -> type:
         A leaf class whose own source is the same for every base.
     """
 
-    class Leaf(base):
+    class Leaf(base):  # ty:ignore[unsupported-base]
         """Inherit the measurement."""
 
     return Leaf

@@ -518,7 +518,7 @@ def _expire_token(state_manager: StateManager, token: str) -> None:
         state_manager._purge_token(BaseStateToken(ident=token, cls=State))
         return
     assert isinstance(state_manager, StateManagerRedis)
-    keys = state_manager.redis._internals["keys"]  # ty:ignore[unresolved-attribute]
+    keys = state_manager.redis._internals["keys"]  # ty:ignore[missing-attribute]
     for key in [key for key in keys if key.startswith(token.encode())]:
         del keys[key]
 
@@ -1066,7 +1066,7 @@ async def test_background_event_releases_the_dispatch_state_tree(
         @event(background=True)
         async def bg(self):
             dispatch_root.append(
-                weakref.ref(self.__wrapped__._get_root_state())  # ty:ignore[unresolved-attribute]
+                weakref.ref(self.__wrapped__._get_root_state())  # ty:ignore[missing-attribute]
             )
             async with self:
                 pass
@@ -1798,7 +1798,7 @@ async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
 
         @event
         def load_item(self):
-            item_id = self.item_id  # ty:ignore[unresolved-attribute]
+            item_id = self.item_id  # ty:ignore[missing-attribute]
             self.seen = [*self.seen, f"{self.router.url.path}|{item_id}"]
 
         @event
@@ -2362,7 +2362,7 @@ class _SlowModelImport(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         """
         self.imported = True
         time.sleep(self.seconds)
-        module.Model = type("Model", (), {})  # ty:ignore[unresolved-attribute]
+        module.Model = type("Model", (), {})  # ty:ignore[missing-attribute]
 
 
 async def test_dict_arg_handler_first_event_does_not_block_on_the_model_import(
@@ -4488,7 +4488,7 @@ async def test_locked_root_is_set_only_while_the_lock_is_held(
             seen["bg_outside"] = ctx.locked_root
             async with self:
                 seen["bg_inside"] = (
-                    ctx.locked_root is self.__wrapped__._get_root_state()  # ty:ignore[unresolved-attribute]
+                    ctx.locked_root is self.__wrapped__._get_root_state()  # ty:ignore[missing-attribute]
                 )
             seen["bg_after"] = ctx.locked_root
 

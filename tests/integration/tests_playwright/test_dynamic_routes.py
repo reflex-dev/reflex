@@ -26,7 +26,7 @@ def DynamicRoute():
 
         @rx.event
         def on_load(self):
-            page_data = f"{self.router.page.path}-{self.page_id or 'no page id'}"  # ty:ignore[unresolved-attribute]
+            page_data = f"{self.router.page.path}-{self.page_id or 'no page id'}"  # ty:ignore[missing-attribute]
             print(f"on_load: {page_data}")
             self.order.append(page_data)
 
@@ -46,7 +46,7 @@ def DynamicRoute():
         @rx.var
         def next_page(self) -> str:
             try:
-                return str(int(self.page_id) + 1)  # ty:ignore[unresolved-attribute]
+                return str(int(self.page_id) + 1)  # ty:ignore[missing-attribute]
             except ValueError:
                 return "0"
 
@@ -61,7 +61,7 @@ def DynamicRoute():
                 read_only=True,
                 id="token",
             ),
-            rx.input(value=rx.State.page_id, read_only=True, id="page_id"),  # ty:ignore[unresolved-attribute]
+            rx.input(value=rx.State.page_id, read_only=True, id="page_id"),  # ty:ignore[missing-attribute]
             rx.input(
                 value=DynamicState.router.page.raw_path,
                 read_only=True,
@@ -90,7 +90,7 @@ def DynamicRoute():
 
         @rx.var(cache=False)
         def arg(self) -> int:
-            return int(self.arg_str or 0)  # ty:ignore[unresolved-attribute]
+            return int(self.arg_str or 0)  # ty:ignore[missing-attribute]
 
     class ArgSubState(ArgState):
         @rx.var
@@ -99,7 +99,7 @@ def DynamicRoute():
 
         @rx.var
         def cached_arg_str(self) -> str:
-            return self.arg_str  # ty:ignore[unresolved-attribute]
+            return self.arg_str  # ty:ignore[missing-attribute]
 
     @rx.page(route="/arg/[arg_str]")
     def arg() -> rx.Component:
@@ -112,11 +112,11 @@ def DynamicRoute():
             rx.data_list.root(
                 rx.data_list.item(
                     rx.data_list.label("rx.State.arg_str (dynamic)"),
-                    rx.data_list.value(rx.State.arg_str, id="state-arg_str"),  # ty:ignore[unresolved-attribute]
+                    rx.data_list.value(rx.State.arg_str, id="state-arg_str"),  # ty:ignore[missing-attribute]
                 ),
                 rx.data_list.item(
                     rx.data_list.label("ArgState.arg_str (dynamic) (inherited)"),
-                    rx.data_list.value(ArgState.arg_str, id="argstate-arg_str"),  # ty:ignore[unresolved-attribute]
+                    rx.data_list.value(ArgState.arg_str, id="argstate-arg_str"),  # ty:ignore[missing-attribute]
                 ),
                 rx.data_list.item(
                     rx.data_list.label("ArgState.arg"),
@@ -124,7 +124,7 @@ def DynamicRoute():
                 ),
                 rx.data_list.item(
                     rx.data_list.label("ArgSubState.arg_str (dynamic) (inherited)"),
-                    rx.data_list.value(ArgSubState.arg_str, id="argsubstate-arg_str"),  # ty:ignore[unresolved-attribute]
+                    rx.data_list.value(ArgSubState.arg_str, id="argsubstate-arg_str"),  # ty:ignore[missing-attribute]
                 ),
                 rx.data_list.item(
                     rx.data_list.label("ArgSubState.arg (inherited)"),

@@ -150,4 +150,4 @@ def test_page_namespace_unknown_attribute_raises():
     """Unknown attributes on the page namespace raise AttributeError."""
     page_module = importlib.import_module("reflex.page")
     with pytest.raises(AttributeError, match=r"reflex\.page"):
-        _ = page_module.definitely_not_an_attribute  # ty:ignore[unresolved-attribute]
+        _ = page_module.definitely_not_an_attribute  # ty:ignore[missing-attribute]

@@ -2,7 +2,7 @@
 
 import logging
 import time
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -55,7 +55,7 @@ def export(
     detail: str | None = None
 
     @contextmanager
-    def _time_phase(name: str) -> Iterator[None]:
+    def _time_phase(name: str) -> Generator[None, None, None]:
         t0 = time.monotonic()
         try:
             yield

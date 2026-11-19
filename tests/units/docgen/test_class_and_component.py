@@ -49,7 +49,7 @@ def test_get_component_event_handlers_returns_default_descriptions():
 
 
 class _ComponentWithCustomTrigger(Component):
-    on_custom: EventHandler[no_args_event_spec] = field(
+    on_custom: EventHandler[no_args_event_spec] = field(  # ty:ignore[invalid-type-form]
         doc="Custom event fired on test."
     )
 

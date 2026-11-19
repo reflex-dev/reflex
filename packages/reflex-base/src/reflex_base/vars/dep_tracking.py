@@ -124,10 +124,10 @@ class DependencyTracker:
         """After initializing, populate the dependencies dict."""
         with contextlib.suppress(AttributeError):
             # unbox functools.partial
-            self.func = cast(FunctionType, self.func.func)  # ty:ignore[unresolved-attribute]
+            self.func = cast(FunctionType, self.func.func)  # ty:ignore[missing-union-attribute]
         with contextlib.suppress(AttributeError):
             # unbox EventHandler
-            self.func = cast(FunctionType, self.func.fn)  # ty:ignore[unresolved-attribute]
+            self.func = cast(FunctionType, self.func.fn)  # ty:ignore[missing-union-attribute]
 
         if isinstance(self.func, FunctionType):
             with contextlib.suppress(AttributeError, IndexError):

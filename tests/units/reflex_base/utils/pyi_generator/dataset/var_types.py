@@ -25,7 +25,7 @@ class EmptyComponent(Component):
 class EventOnlyComponent(Component):
     """A component with only custom event handlers, no data props."""
 
-    on_toggle: EventHandler[passthrough_event_spec(bool)] = field(
+    on_toggle: EventHandler[passthrough_event_spec(bool)] = field(  # ty:ignore[invalid-type-form]
         doc="Fired when toggled.",
     )
 

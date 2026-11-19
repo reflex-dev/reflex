@@ -6,7 +6,7 @@ import dataclasses
 import functools
 import logging
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Generic, cast
@@ -256,7 +256,7 @@ class StateManagerDisk(StateManager):
         if isinstance(token, BaseStateToken):
             # Find the root state
             root_state_cls = token.cls.get_root_state()
-            root_state = await self.load_state(token.with_cls(root_state_cls))  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/1824
+            root_state = await self.load_state(token.with_cls(root_state_cls))
             # Create a new root state tree with all substates instantiated.
             fresh_root_state = root_state_cls(_reflex_internal_init=True)
             if root_state is None:
@@ -300,7 +300,7 @@ class StateManagerDisk(StateManager):
 
         if isinstance(token, BaseStateToken) and isinstance(substate, BaseState):
             for substate_substate in substate.substates.values():
-                await self.set_state_for_substate(token, substate_substate)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/1824
+                await self.set_state_for_substate(token, substate_substate)
 
     def _is_locked(self, token: StateToken) -> bool:
         """Check whether a token's lock is currently held.
@@ -470,7 +470,7 @@ class StateManagerDisk(StateManager):
     @contextlib.asynccontextmanager
     async def modify_state(
         self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> AsyncGenerator[TOKEN_TYPE, None]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:

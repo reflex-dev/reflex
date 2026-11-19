@@ -846,7 +846,7 @@ def test_event_actions_on_state():
     assert isinstance(handler, EventHandler)
     assert not handler.event_actions
 
-    sp_handler = EventActionState.handler.stop_propagation  # ty:ignore[unresolved-attribute]
+    sp_handler = EventActionState.handler.stop_propagation
     assert sp_handler.event_actions == {"stopPropagation": True}
     # should NOT affect other references to the handler
     assert not handler.event_actions
@@ -2033,7 +2033,7 @@ def test_repeated_rx_event_on_a_decentralized_handler_in_main():
 
     handle.__module__ = "__main__"
     once = event(handle)
-    assert once.fn.__name__.startswith("_main___")  # ty:ignore[unresolved-attribute]
+    assert once.fn.__name__.startswith("_main___")  # ty:ignore[missing-attribute]
     twice = event(stop_propagation=True)(once)  # ty:ignore[invalid-argument-type]
 
     assert isinstance(twice, EventHandler)

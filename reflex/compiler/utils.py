@@ -884,9 +884,9 @@ def create_document_root(
 
     for component in head_components or []:
         if isinstance(component, Meta):
-            if component.char_set is not None:  # ty:ignore[unresolved-attribute]
+            if component.char_set is not None:  # ty:ignore[missing-attribute]
                 existing_meta_types.add("char_set")
-            if (name := component.name) is not None and name.equals(  # ty:ignore[unresolved-attribute]
+            if (name := component.name) is not None and name.equals(  # ty:ignore[missing-attribute]
                 Var.create("viewport")
             ):
                 existing_meta_types.add("viewport")

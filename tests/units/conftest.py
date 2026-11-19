@@ -265,11 +265,11 @@ def app_classes_module(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
 
     Entry.__module__ = module.__name__
     Entry.__qualname__ = "Entry"
-    module.Entry = Entry  # ty:ignore[unresolved-attribute]
-    module.Color = enum.Enum(  # ty:ignore[unresolved-attribute]
+    module.Entry = Entry  # ty:ignore[missing-attribute]
+    module.Color = enum.Enum(  # ty:ignore[missing-attribute]
         "Color", {"RED": "red", "BLUE": "blue"}, module=module.__name__
     )
-    module.Point = collections.namedtuple("Point", "x y", module=module.__name__)  # ty:ignore[unresolved-attribute]
+    module.Point = collections.namedtuple("Point", "x y", module=module.__name__)  # ty:ignore[missing-attribute]
     return module
 
 

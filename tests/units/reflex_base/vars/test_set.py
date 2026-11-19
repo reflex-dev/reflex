@@ -223,9 +223,9 @@ def test_set_concatenation_fallbacks():
     tags = _tags()
     other = Var(_js_expr="state.other").to(set[str])
     items = Var(_js_expr="state.items").to(list[str])
-    assert str(tags + other) == "[...state.tags, ...state.other]"
-    assert str(items + tags) == "[...state.items, ...state.tags]"
-    assert str(tags + items) == "[...state.tags, ...state.items]"
+    assert str(tags + other) == "[...state.tags, ...state.other]"  # ty:ignore[deprecated]
+    assert str(items + tags) == "[...state.items, ...state.tags]"  # ty:ignore[deprecated]
+    assert str(tags + items) == "[...state.tags, ...state.items]"  # ty:ignore[deprecated]
     with pytest.raises(VarTypeError):
         _ = items + 1  # ty:ignore[unsupported-operator]
 
@@ -269,8 +269,8 @@ def test_set_array_operations_are_deprecated(mocker):
     deprecate.reset_mock()
     assert str(tags.join(",")) == 'state.tags.join(",")'  # ty:ignore[deprecated]
     assert str(tags.reverse()) == "state.tags.slice().reverse()"  # ty:ignore[deprecated]
-    assert str(tags * 2) == ("Array.from({ length: 2 }).flatMap(() => state.tags)")
-    assert str(tags + tags.to_array()) == "[...state.tags, ...state.tags]"
+    assert str(tags * 2) == ("Array.from({ length: 2 }).flatMap(() => state.tags)")  # ty:ignore[deprecated]
+    assert str(tags + tags.to_array()) == "[...state.tags, ...state.tags]"  # ty:ignore[deprecated]
     assert str(tags.filter(lambda item: item == "a")).startswith("state.tags.filter(")  # ty:ignore[deprecated]
     assert str(tags.reduce(operator.add, "")).startswith("state.tags.reduce(")  # ty:ignore[deprecated]
     assert str(tags.flat_map(lambda item: item)).startswith("pyFlatMap(state.tags")  # ty:ignore[deprecated]
@@ -289,7 +289,7 @@ def test_set_comparison_and_field_contains_fallbacks(mocker):
     assert str(tags <= ["a"]) == '(compareArrays(state.tags, ["a"]) <= 0)'
     assert str(tags > other) == "(compareArrays(state.tags, state.other) > 0)"
     assert str(tags >= other) == "(compareArrays(state.tags, state.other) >= 0)"
-    assert str(tags.contains("a", "name")) == (
+    assert str(tags.contains("a", "name")) == (  # ty:ignore[deprecated]
         'state.tags.some(obj => obj["name"] === "a")'
     )
     # `number * set` is left out of the static types; it only warns at runtime.
@@ -297,7 +297,7 @@ def test_set_comparison_and_field_contains_fallbacks(mocker):
     assert number_times_set == (
         "Array.from({ length: state.count }).flatMap(() => state.tags)"
     )
-    assert str(tags * count) == number_times_set
+    assert str(tags * count) == number_times_set  # ty:ignore[deprecated]
     assert deprecate.call_count == 7
     assert deprecate.call_args_list[4].kwargs["feature_name"] == (
         "SetVar.contains(field)"
@@ -323,8 +323,8 @@ def test_state_set_fields_are_set_vars():
     typing.assert_type(SetState.tags, SetVar[set[str]])
     typing.assert_type(SetState.frozen, SetVar[frozenset[int]])
     typing.assert_type(SetState.maybe, SetVar[set[str]])
-    typing.assert_type(SetState.doubled, SetVar[set[str]])  # ty:ignore[type-assertion-failure]
-    typing.assert_type(SetState.frozen_doubled, SetVar[frozenset[int]])  # ty:ignore[type-assertion-failure]
+    typing.assert_type(SetState.doubled, SetVar[set[str]])
+    typing.assert_type(SetState.frozen_doubled, SetVar[frozenset[int]])
     typing.assert_type(SetState.tags.contains("x"), BooleanVar)
     assert isinstance(SetState.tags, SetVar)
     assert isinstance(SetState.frozen, SetVar)
@@ -421,12 +421,12 @@ def test_optional_set_deprecated_array_operations_treat_none_as_empty(mocker):
     mocker.patch("reflex_base.vars.set.console.deprecate")
     maybe = _maybe()
     assert str(maybe.join(",")) == '(state.maybe ?? []).join(",")'  # ty:ignore[deprecated]
-    assert str(maybe.contains("a", "name")) == (
+    assert str(maybe.contains("a", "name")) == (  # ty:ignore[deprecated]
         '(state.maybe ?? []).some(obj => obj["name"] === "a")'
     )
     items = Var(_js_expr="state.items").to(list[str])
-    assert str(maybe + items) == "[...(state.maybe ?? []), ...state.items]"
-    assert str(items + maybe) == "[...state.items, ...(state.maybe ?? [])]"
+    assert str(maybe + items) == "[...(state.maybe ?? []), ...state.items]"  # ty:ignore[deprecated]
+    assert str(items + maybe) == "[...state.items, ...(state.maybe ?? [])]"  # ty:ignore[deprecated]
 
 
 def test_optional_set_fields_of_state_and_objects_treat_none_as_empty():

@@ -1,5 +1,7 @@
 """Custom toggle component."""
 
+from typing import Annotated
+
 from reflex.components.component import Component
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportVar
@@ -39,7 +41,7 @@ class Toggle(ToggleBaseComponent):
     pressed: Var[bool]
 
     # Callback fired when the pressed state is changed.
-    on_pressed_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_pressed_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # Whether the component renders a native <button> element when replacing it via the render prop. Set to false if the rendered element is not a button (e.g. <div>). Defaults to True.
     native_button: Var[bool]

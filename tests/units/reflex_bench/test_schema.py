@@ -80,8 +80,8 @@ def test_interrupted_is_an_optional_boolean(doc: schema.ResultDoc):
 
 def test_unknown_keys_are_allowed_for_forward_compatibility(doc: schema.ResultDoc):
     extended = copy.deepcopy(doc)
-    extended["future"] = {"anything": 1}  # ty:ignore[invalid-key]
-    extended["benchmarks"][0]["future_field"] = [1, 2]  # ty:ignore[invalid-key]
+    extended["future"] = {"anything": 1}  # ty:ignore[invalid-typed-dict-key]
+    extended["benchmarks"][0]["future_field"] = [1, 2]  # ty:ignore[invalid-typed-dict-key]
     assert schema.validate(extended) == []
 
 
@@ -162,7 +162,7 @@ def test_wrong_container_types_are_rejected(
 
 @pytest.mark.parametrize(("key", "value"), [("warmup", "false"), ("arm", ["A"])])
 def test_sample_meta_types_are_checked(doc: schema.ResultDoc, key: str, value: Any):
-    doc["benchmarks"][0]["sample_meta"][1][key] = value  # ty:ignore[invalid-key]
+    doc["benchmarks"][0]["sample_meta"][1][key] = value  # ty:ignore[non-literal-typed-dict-key]
     assert schema.validate(doc) == [
         "benchmarks[0].sample_meta[1]: arm must be a string, warmup a boolean"
     ]

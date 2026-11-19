@@ -555,7 +555,7 @@ def _series(name: str) -> tuple[list[float], list[float]]:
     Returns:
         The x and y values.
     """
-    return {  # ty:ignore[invalid-return-type]
+    return {  # ty:ignore[invalid-explicit-return]
         "N4": ([1, 2, 3, 4], [2.1, 3.9, 6.2, 7.8]),
         "N5": (
             [0, 1000, 2000, 3000, 4000],

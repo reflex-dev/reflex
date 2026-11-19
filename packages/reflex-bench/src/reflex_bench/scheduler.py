@@ -32,7 +32,7 @@ import tempfile
 import threading
 import time
 import traceback
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Generator, Mapping, Sequence
 from concurrent.futures import Future
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -906,7 +906,7 @@ class Scheduler:
     @contextlib.contextmanager
     def open(
         self, planned: Planned, entry: BenchmarkDoc, *, arm: str = "A"
-    ) -> Iterator[Session]:
+    ) -> Generator[Session, None, None]:
         """Set up an instance and hold it open for :meth:`Session.sample_once`.
 
         Several sessions can be open at once, e.g. one per arm to interleave

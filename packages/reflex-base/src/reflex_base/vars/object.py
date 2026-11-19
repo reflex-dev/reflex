@@ -517,7 +517,7 @@ class LiteralObjectVar(
         )
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
         """Get all the var data.
 
         Returns:
@@ -535,7 +535,7 @@ class LiteralObjectVar(
     def create(
         cls,
         _var_value: object,
-        _var_type: type[OBJECT_TYPE] | None = None,
+        _var_type: type[OBJECT_TYPE] | None = None,  # ty:ignore[invalid-generic-class]
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar[OBJECT_TYPE]:
         """Create the literal object var.

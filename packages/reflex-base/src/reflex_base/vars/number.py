@@ -303,7 +303,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
         Returns:
             The number negation operation.
         """
-        return number_negate_operation(self)
+        return number_negate_operation(self)  # ty:ignore[invalid-explicit-return]
 
     def __invert__(self):
         """Boolean NOT the number.

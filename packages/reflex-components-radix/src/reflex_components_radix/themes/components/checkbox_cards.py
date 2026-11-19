@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from types import SimpleNamespace
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_base.components.component import field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -70,7 +70,7 @@ class CheckboxCardsRoot(RadixThemesComponent):
         doc="When true, keyboard navigation will loop from last item to first, and vice versa."
     )
 
-    on_value_change: EventHandler[passthrough_event_spec(list[str])] = field(
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(list[str])] = field(
         doc="Fired when the set of checked cards changes."
     )
 

@@ -25,7 +25,7 @@ def _hook(cs: ClientStateVar) -> str:
     Returns:
         The hook source line.
     """
-    hooks = list(cs._var_data.hooks)  # ty:ignore[unresolved-attribute]
+    hooks = list(cs._var_data.hooks)  # ty:ignore[missing-union-attribute]
     assert len(hooks) == 1, f"expected exactly one hook, got {hooks}"
     return hooks[0]
 
@@ -108,7 +108,7 @@ def test_named_var_is_global() -> None:
 
 def test_hook_imports_use_client_state() -> None:
     """The hook carries the useClientState import."""
-    imports = dict(cs_imports := client_state(0, name="x")._var_data.imports)  # ty:ignore[unresolved-attribute]
+    imports = dict(cs_imports := client_state(0, name="x")._var_data.imports)  # ty:ignore[missing-union-attribute]
     assert cs_imports is not None
     tags = {i.tag for i in imports[f"$/{Dirs.CLIENT_STATE_PATH}"]}
     assert tags == {"useClientState"}
@@ -130,7 +130,7 @@ def test_two_vars_dedupe_to_one_provider() -> None:
     target: dict[tuple[int, str], Any] = {}
     for name in ("a", "b"):
         cs = client_state(0, name=name)
-        insert_app_wraps(target, cs._var_data.app_wraps)  # ty:ignore[unresolved-attribute]
+        insert_app_wraps(target, cs._var_data.app_wraps)  # ty:ignore[missing-union-attribute]
     assert list(target) == [(CLIENT_STATE_APP_WRAP_PRIORITY, "ClientStateProvider")]
 
 

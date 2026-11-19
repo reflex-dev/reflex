@@ -791,7 +791,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                 frozen=True,
                 slots=True,
             )
-            class ToVarOperation(ToOperation, cls):  # ty:ignore[shadowed-type-variable]
+            class ToVarOperation(ToOperation, cls):  # ty:ignore[shadowed-type-variable, unsupported-base]
                 """Base class of converting a var to another var type."""
 
                 _original: Var = dataclasses.field(
@@ -1397,7 +1397,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             _var_data=VarData.merge(
                 VarData.from_state(state, self._js_expr), self._var_data
             ),
-        ).guess_type()  # ty:ignore[invalid-return-type]
+        ).guess_type()  # ty:ignore[invalid-explicit-return]
 
     def __eq__(self, other: Var | Any) -> BooleanVar:
         """Check if the current variable is equal to the given variable.
@@ -2342,8 +2342,8 @@ class cached_property:  # noqa: N801
                 if original_del is not None:
                     original_del(this)
 
-            delete_properties.cached_field_names = cached_field_names  # ty:ignore[unresolved-attribute]
-            delete_properties.original_del = original_del  # ty:ignore[unresolved-attribute]
+            delete_properties.cached_field_names = cached_field_names  # ty:ignore[missing-attribute]
+            delete_properties.original_del = original_del  # ty:ignore[missing-attribute]
             owner.__del__ = delete_properties
 
         elif name != self._attrname:
@@ -2430,7 +2430,7 @@ class CachedVarOperation:
 
         next_class = parent_classes[parent_classes.index(CachedVarOperation) + 1]
 
-        return next_class.__getattr__(self, name)  # ty:ignore[unresolved-attribute]
+        return next_class.__getattr__(self, name)  # ty:ignore[missing-attribute]
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
@@ -3275,7 +3275,7 @@ async def _default_async_computed_var(_self: BaseState) -> Any:  # noqa: RUF029
 class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
     """A computed var that wraps a coroutinefunction."""
 
-    _fget: Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]] = (
+    _fget: Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]] = (  # ty:ignore[incompatible-attribute-override]
         dataclasses.field(default=_default_async_computed_var)
     )
 
@@ -3416,7 +3416,7 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         return _awaitable_result()
 
     @property
-    def fget(self) -> Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]]:
+    def fget(self) -> Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]]:  # ty:ignore[incompatible-property-override]
         """The getter function.
 
         Returns:
@@ -3644,7 +3644,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
         return str(self._return)
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
         """Get the cached VarData.
 
         Returns:
@@ -4349,7 +4349,7 @@ class Field(Generic[FIELD_TYPE]):
             self.outer_type_ = self.annotated_type = annotated_type
 
             if type_origin is Annotated:
-                type_origin = annotated_type.__origin__
+                type_origin = annotated_type.__origin__  # ty:ignore[missing-union-attribute]
 
             self.type_ = self.type_origin = type_origin
         else:

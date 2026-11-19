@@ -44,7 +44,7 @@ from reflex_base.constants.base import Reflex
 from reflex_base.utils.decorator import once
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Iterator
+    from collections.abc import Hashable
     from typing import TextIO
 
 # Level between INFO and WARNING for user-facing success messages.
@@ -766,7 +766,7 @@ def is_debug() -> bool:
 
 
 @contextlib.contextmanager
-def timing(logger: logging.Logger, msg: str) -> Iterator[None]:
+def timing(logger: logging.Logger, msg: str) -> Generator[None, None, None]:
     """Time a block of code and log the duration at debug level.
 
     Args:

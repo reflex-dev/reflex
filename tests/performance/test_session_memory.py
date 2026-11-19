@@ -8,7 +8,7 @@ import json
 import subprocess
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
@@ -50,7 +50,7 @@ def _held_sessions(
     token_prefix: str,
     count: int,
     payload: dict[str, Any],
-) -> Iterator[None]:
+) -> Generator[None, None, None]:
     """Hold primed sessions from a subprocess so client memory stays external.
 
     Args:

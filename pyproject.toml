@@ -186,15 +186,7 @@ exclude = [
 ]
 
 [tool.ty.rules]
-invalid-method-override = "ignore"
-unsupported-base = "ignore"
-# `EventHandler[some_arg_spec]` is the public spelling for declaring an event
-# trigger; `EventHandler.__class_getitem__` turns it into `Annotated[EventHandler,
-# some_arg_spec]`. The subscript argument is a function, not a type, so ty rejects
-# it in a type expression (intentionally, see astral-sh/ty#3388). Component authors
-# outside this repo hit the same thing, so ignore the rule rather than rewriting
-# every annotation to the `Annotated[...]` form.
-not-subscriptable = "ignore"
+incompatible-method-override = "ignore"
 
 # The calls in this file must fail type checking; an ignore that stops being used
 # means one of them type-checks now.

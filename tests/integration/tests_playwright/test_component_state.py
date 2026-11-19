@@ -146,7 +146,7 @@ def ComponentStateApp():
             configured,
             rx.button(
                 "Inc A",
-                on_click=mc_a.State.increment,  # ty:ignore[unresolved-attribute]
+                on_click=mc_a.State.increment,  # ty:ignore[missing-attribute]
                 id="inc-a",
             ),
             rx.text(

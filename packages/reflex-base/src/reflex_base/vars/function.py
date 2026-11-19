@@ -364,7 +364,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         return f"({func_expr}{call}{', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
         """Get all the var data associated with the var.
 
         Returns:
@@ -397,7 +397,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         """
         func_type = value_inside_optional(func._var_type)
         function_return_type = (
-            func_type.__args__[-1] if getattr(func_type, "__args__", None) else Any
+            func_type.__args__[-1] if getattr(func_type, "__args__", None) else Any  # ty:ignore[missing-union-attribute]
         )
         if (
             function_return_type is not Any

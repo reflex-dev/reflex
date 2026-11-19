@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import inspect
 import time
-from collections.abc import Iterator, Mapping
+from collections.abc import Generator, Mapping
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
@@ -72,7 +72,7 @@ _pending_delta_records: ContextVar[list[_DeltaRecord] | None] = ContextVar(
 
 
 @contextlib.contextmanager
-def _suppress_delta_recording() -> Iterator[None]:
+def _suppress_delta_recording() -> Generator[None, None, None]:
     """Stop delta values built in this block from counting as sent to the client.
 
     For a delta that is computed for its side effects and then discarded, whose

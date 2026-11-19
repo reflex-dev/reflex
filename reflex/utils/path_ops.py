@@ -15,7 +15,7 @@ import stat
 import sys
 import threading
 import unicodedata
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Generator, Mapping
 from pathlib import Path
 
 from reflex_base.config import get_config
@@ -312,7 +312,7 @@ def _lock_descriptor(descriptor: int) -> None:
 
 
 @contextlib.contextmanager
-def file_lock(path: str | Path) -> Iterator[Path]:
+def file_lock(path: str | Path) -> Generator[Path, None, None]:
     """Lock a file or directory across processes, or proceed unlocked if unavailable.
 
     The lock is a sidecar in Reflex's per-user data directory, so it never

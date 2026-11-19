@@ -43,7 +43,7 @@ def test_validate_cond(cond_state: BaseState):
         cond_state: A fixture.
     """
     cond_component = cond(
-        cond_state.value,  # ty:ignore[unresolved-attribute]
+        cond_state.value,  # ty:ignore[missing-attribute]
         Text.create("cond is True"),
         Text.create("cond is False"),
     )
@@ -51,7 +51,7 @@ def test_validate_cond(cond_state: BaseState):
     assert cond_dict["name"] == "Fragment"
 
     [condition] = cond_dict["children"]
-    assert condition["cond_state"] == str(cond_state.value.bool())  # ty:ignore[unresolved-attribute]
+    assert condition["cond_state"] == str(cond_state.value.bool())  # ty:ignore[missing-attribute]
 
     # true value
     true_value = condition["true_value"]

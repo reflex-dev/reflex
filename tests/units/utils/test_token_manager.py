@@ -696,8 +696,8 @@ async def test_socket_record_subscriber_restores_deleted_live_record():
     )
     manager.sid_to_token[sid] = token
     await manager._store_socket_record(token, record)
-    event_log = redis._internals["event_log"]  # ty:ignore[unresolved-attribute]
-    on_update = redis._internals["event_log_on_update"]  # ty:ignore[unresolved-attribute]
+    event_log = redis._internals["event_log"]  # ty:ignore[missing-attribute]
+    on_update = redis._internals["event_log_on_update"]  # ty:ignore[missing-attribute]
 
     async def logged(channel: bytes, data: bytes, start: int = 0):
         """Wait until the mock redis logs an event.

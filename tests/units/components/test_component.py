@@ -44,8 +44,8 @@ from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 from reflex import (
-    _COMPONENTS_BASE_MAPPING,  # ty:ignore[unresolved-import]
-    _COMPONENTS_CORE_MAPPING,  # ty:ignore[unresolved-import]
+    _COMPONENTS_BASE_MAPPING,  # ty:ignore[missing-module-member]
+    _COMPONENTS_CORE_MAPPING,  # ty:ignore[missing-module-member]
 )
 from reflex.state import BaseState
 from reflex.utils import imports
@@ -162,7 +162,7 @@ def component2() -> type[Component]:
         # A test list prop.
         arr: Var[list[str]]
 
-        on_prop_event: EventHandler[on_prop_event_spec]
+        on_prop_event: EventHandler[on_prop_event_spec]  # ty:ignore[invalid-type-form]
 
         @classmethod
         def get_event_triggers(cls) -> dict[str, Any]:
@@ -1937,8 +1937,8 @@ def test_custom_component_declare_event_handlers_in_fields():
             }
 
     class TestComponent(Component):
-        on_b: EventHandler[input_event]
-        on_d: EventHandler[no_args_event_spec]
+        on_b: EventHandler[input_event]  # ty:ignore[invalid-type-form]
+        on_d: EventHandler[no_args_event_spec]  # ty:ignore[invalid-type-form]
         on_e: EventHandler
 
     custom_component = ReferenceComponent.create()

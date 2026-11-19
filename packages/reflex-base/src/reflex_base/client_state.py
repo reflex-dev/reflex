@@ -9,7 +9,7 @@ import itertools
 import json
 import re
 import sys
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Generator, Iterable
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any
 
@@ -222,7 +222,7 @@ def _check_declarations(hooks: Iterable[str]) -> None:
 
 
 @contextlib.contextmanager
-def _collect_declarations() -> Iterator[None]:
+def _collect_declarations() -> Generator[None, None, None]:
     """Compare client state declarations across every body rendered inside.
 
     A fresh record per compile, so a declaration edited before a hot reload

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from functools import partial
 from hashlib import md5
-from typing import Any, ClassVar, Literal, get_origin, get_type_hints
+from typing import Annotated, Any, ClassVar, Literal, get_origin, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.tags.tag import CommonTag
@@ -417,8 +417,8 @@ class Form(BaseHTML):
         doc="The name used to make this form's submit handler function unique."
     )
 
-    on_submit: EventHandler[
-        on_submit_event, on_submit_mapping_event, on_submit_string_event
+    on_submit: Annotated[
+        EventHandler, (on_submit_event, on_submit_mapping_event, on_submit_string_event)
     ] = field(doc="Fired when the form is submitted")
 
     @classmethod
@@ -441,9 +441,9 @@ class Form(BaseHTML):
         # Render the form hooks and use the hash of the resulting code to create a unique name.
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
-        form._validate_on_submit_typed_dict_fields()  # ty:ignore[unresolved-attribute]
-        form._deprecate_id_only_form_controls()  # ty:ignore[unresolved-attribute]
-        form.handle_submit_unique_name = md5(  # ty:ignore[unresolved-attribute]
+        form._validate_on_submit_typed_dict_fields()  # ty:ignore[missing-attribute]
+        form._deprecate_id_only_form_controls()  # ty:ignore[missing-attribute]
+        form.handle_submit_unique_name = md5(  # ty:ignore[missing-attribute]
             str(form._get_all_hooks()).encode("utf-8")
         ).hexdigest()
         return form
@@ -819,23 +819,27 @@ class BaseInput(VoidBaseHTML):
 
     value: Var[str | int | float] = field(doc="Value of the input")
 
-    on_key_down: EventHandler[key_event] = field(doc="Fired when a key is pressed down")
+    on_key_down: Annotated[EventHandler, key_event] = field(
+        doc="Fired when a key is pressed down"
+    )
 
-    on_key_up: EventHandler[key_event] = field(doc="Fired when a key is released")
+    on_key_up: Annotated[EventHandler, key_event] = field(
+        doc="Fired when a key is released"
+    )
 
 
 class CheckboxInput(BaseInput):
     """Display the input element."""
 
-    on_change: EventHandler[checked_input_event] = field(
+    on_change: Annotated[EventHandler, checked_input_event] = field(
         doc="Fired when the input value changes"
     )
 
-    on_focus: EventHandler[checked_input_event] = field(
+    on_focus: Annotated[EventHandler, checked_input_event] = field(
         doc="Fired when the input gains focus"
     )
 
-    on_blur: EventHandler[checked_input_event] = field(
+    on_blur: Annotated[EventHandler, checked_input_event] = field(
         doc="Fired when the input loses focus"
     )
 
@@ -843,29 +847,33 @@ class CheckboxInput(BaseInput):
 class ValueNumberInput(BaseInput):
     """Display the input element."""
 
-    on_change: EventHandler[float_input_event, int_input_event, input_event] = field(
-        doc="Fired when the input value changes"
-    )
+    on_change: Annotated[
+        EventHandler, (float_input_event, int_input_event, input_event)
+    ] = field(doc="Fired when the input value changes")
 
-    on_focus: EventHandler[float_input_event, int_input_event, input_event] = field(
-        doc="Fired when the input gains focus"
-    )
+    on_focus: Annotated[
+        EventHandler, (float_input_event, int_input_event, input_event)
+    ] = field(doc="Fired when the input gains focus")
 
-    on_blur: EventHandler[float_input_event, int_input_event, input_event] = field(
-        doc="Fired when the input loses focus"
-    )
+    on_blur: Annotated[
+        EventHandler, (float_input_event, int_input_event, input_event)
+    ] = field(doc="Fired when the input loses focus")
 
 
 class Input(BaseInput):
     """Display the input element."""
 
-    on_change: EventHandler[input_event] = field(
+    on_change: Annotated[EventHandler, input_event] = field(
         doc="Fired when the input value changes"
     )
 
-    on_focus: EventHandler[input_event] = field(doc="Fired when the input gains focus")
+    on_focus: Annotated[EventHandler, input_event] = field(
+        doc="Fired when the input gains focus"
+    )
 
-    on_blur: EventHandler[input_event] = field(doc="Fired when the input loses focus")
+    on_blur: Annotated[EventHandler, input_event] = field(
+        doc="Fired when the input loses focus"
+    )
 
     @classmethod
     def create(cls, *children, **props):
@@ -1023,7 +1031,7 @@ class Select(BaseHTML):
 
     size: Var[str | int] = field(doc="Number of visible options in a drop-down list")
 
-    on_change: EventHandler[input_event] = field(
+    on_change: Annotated[EventHandler, input_event] = field(
         doc="Fired when the select value changes"
     )
 
@@ -1130,17 +1138,25 @@ class Textarea(RawTextBaseHTML):
         doc="How the text in the textarea is to be wrapped when submitting the form"
     )
 
-    on_change: EventHandler[input_event] = field(
+    on_change: Annotated[EventHandler, input_event] = field(
         doc="Fired when the input value changes"
     )
 
-    on_focus: EventHandler[input_event] = field(doc="Fired when the input gains focus")
+    on_focus: Annotated[EventHandler, input_event] = field(
+        doc="Fired when the input gains focus"
+    )
 
-    on_blur: EventHandler[input_event] = field(doc="Fired when the input loses focus")
+    on_blur: Annotated[EventHandler, input_event] = field(
+        doc="Fired when the input loses focus"
+    )
 
-    on_key_down: EventHandler[key_event] = field(doc="Fired when a key is pressed down")
+    on_key_down: Annotated[EventHandler, key_event] = field(
+        doc="Fired when a key is pressed down"
+    )
 
-    on_key_up: EventHandler[key_event] = field(doc="Fired when a key is released")
+    on_key_up: Annotated[EventHandler, key_event] = field(
+        doc="Fired when a key is released"
+    )
 
     @classmethod
     def create(cls, *children, **props):

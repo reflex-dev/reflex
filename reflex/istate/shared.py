@@ -3,7 +3,7 @@
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from dataclasses import MISSING
 from typing import TYPE_CHECKING, Self, TypeVar
 
@@ -397,7 +397,7 @@ class SharedStateBaseInternal(State):
     @contextlib.asynccontextmanager
     async def _modify_linked_states(
         self, previous_dirty_vars: dict[str, set[str]] | None = None
-    ) -> AsyncIterator[None]:
+    ) -> AsyncGenerator[None, None]:
         """Take lock, fetch all linked states, and patch them into the current state tree.
 
         If previous_dirty_vars is NOT provided, then any dirty vars after

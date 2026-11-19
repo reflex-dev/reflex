@@ -16,7 +16,7 @@ import json
 import multiprocessing
 import threading
 import time
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Generator
 from typing import Any, cast
 
 import pytest
@@ -57,7 +57,7 @@ OLD_REPLY = (
 
 
 @contextlib.contextmanager
-def serving(server: EchoServer) -> Iterator[str]:
+def serving(server: EchoServer) -> Generator[str, None, None]:
     """Run an echo server on a thread with its own event loop.
 
     Args:

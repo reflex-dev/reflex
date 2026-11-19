@@ -596,10 +596,10 @@ def format_queue_events(
 
     payloads = []
     if not is_non_string_sequence(events):
-        events = [events]  # ty:ignore[invalid-assignment] https://github.com/astral-sh/ty/issues/4394
+        events = [events]
 
     # Process each event/spec/lambda (similar to Component._create_event_chain).
-    for spec in events:  # ty:ignore[not-iterable] https://github.com/astral-sh/ty/issues/4394
+    for spec in events:
         specs: list[EventSpec] = []
         if isinstance(spec, (EventHandler, EventSpec)):
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]

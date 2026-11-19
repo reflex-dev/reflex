@@ -133,7 +133,7 @@ def test_hybrid_property_var_fn_backend_var_access_raises():
 
         @value.var
         def _value_var(cls) -> Var[str]:
-            return cls._secret  # ty:ignore[invalid-return-type]
+            return cls._secret  # ty:ignore[invalid-explicit-return]
 
     with pytest.raises(HybridPropertyError, match="_secret"):
         _ = VarFnBackendState.value
@@ -156,7 +156,7 @@ def test_hybrid_property_var_fn_sees_state_dunders():
         def _value_var(cls) -> Var[str]:
             seen["name"] = cls.__name__
             seen["module"] = cls.__module__
-            return cls.name  # ty:ignore[invalid-return-type]
+            return cls.name  # ty:ignore[invalid-explicit-return]
 
     _ = DunderState.value
     assert seen == {"name": "DunderState", "module": DunderState.__module__}
@@ -194,7 +194,7 @@ def test_hybrid_property_var_returns_new_descriptor():
 
         @original.var
         def _full_var(cls) -> Var:
-            return cls.first  # ty:ignore[invalid-return-type]
+            return cls.first  # ty:ignore[invalid-explicit-return]
 
     class StateB(Mixin, rx.State):
         first: str = "x"
@@ -251,7 +251,7 @@ def test_hybrid_property_not_evaluated_during_class_creation():
         @doubled.var
         def _doubled_var(cls) -> Var[int]:
             calls.append("var")
-            return cls.count * 2  # ty:ignore[invalid-return-type]
+            return cls.count * 2  # ty:ignore[invalid-explicit-return]
 
     assert calls == []
     _ = LazyState.doubled
@@ -270,7 +270,7 @@ def test_hybrid_property_var_fn_under_own_name():
 
         @doubled.var
         def _doubled_var(cls) -> Var[int]:
-            return cls.count * 3  # ty:ignore[invalid-return-type]
+            return cls.count * 3  # ty:ignore[invalid-explicit-return]
 
     # the alias does not linger on the class
     assert "_doubled_var" not in AliasState.__dict__
@@ -395,7 +395,7 @@ def test_hybrid_property_var_fn_as_classmethod():
         @doubled.var
         @classmethod
         def doubled(cls) -> Var[int]:
-            return cls.count * 4  # ty:ignore[invalid-return-type]
+            return cls.count * 4  # ty:ignore[invalid-explicit-return]
 
     assert ClassmethodVarState(_reflex_internal_init=True).doubled == 0  # ty:ignore[unknown-argument]
     assert str(Var.create(ClassmethodVarState.doubled)) == str(
@@ -705,7 +705,7 @@ def test_hybrid_property_inherited_annotated_name_keeps_descriptor():
     class HybridBase:
         @hybrid_property
         def doubled(self) -> int:
-            return self.count * 2  # ty:ignore[unresolved-attribute]
+            return self.count * 2  # ty:ignore[missing-attribute]
 
     class InheritedState(HybridBase, rx.State):
         count: int = 3
@@ -862,7 +862,7 @@ def test_hybrid_property_class_access_var_type_follows_getter():
         @upper_names.var
         @classmethod
         def _upper_names_var(cls) -> Var[list[str]]:
-            return cls.names  # ty:ignore[invalid-return-type]
+            return cls.names  # ty:ignore[invalid-explicit-return]
 
     # the operations these var types carry must be available on class access
     assert isinstance(LadderState.positive & True, Var)

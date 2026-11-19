@@ -1,7 +1,7 @@
 """Custom drawer component."""
 
 from collections.abc import Sequence
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_components_core.el.elements.typography import Div
 
@@ -60,7 +60,7 @@ class DrawerRoot(DrawerBaseComponent):
     open: Var[bool]
 
     # Event handler called when the drawer is opened or closed.
-    on_open_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # Direction of the swipe gesture to dismiss. Defaults to 'down'.
     swipe_direction: Var[LiteralSwipeDirectionType]
@@ -72,7 +72,7 @@ class DrawerRoot(DrawerBaseComponent):
     disable_pointer_dismissal: Var[bool]
 
     # Event handler called after any animations complete when the drawer is opened or closed.
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Array of snap points. Numbers between 0 and 1 represent fractions of the viewport height, and numbers greater than 1 are treated as pixel values. String values support `px` and `rem` units.
     snap_points: Sequence[str | float] | None
@@ -81,7 +81,9 @@ class DrawerRoot(DrawerBaseComponent):
     snap_point: Var[str | float | None]
 
     # Event handler called when the snap point changes.
-    on_snap_point_change: EventHandler[passthrough_event_spec(str | float | None)]
+    on_snap_point_change: Annotated[
+        EventHandler, passthrough_event_spec(str | float | None)
+    ]
 
     @classmethod
     def create(cls, *children, **props) -> BaseUIComponent:
