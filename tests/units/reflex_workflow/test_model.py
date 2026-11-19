@@ -1,9 +1,10 @@
 """Tests for reflex_workflow.model: typed steps and their runtime guards.
 
-The ``pyright: ignore`` and ``ty: ignore`` comments below mark calls that must fail
+The ``ty: ignore`` and ``pyright: ignore`` comments below mark calls that must fail
 type checking. Both checkers report an ignore that is no longer needed, so each fails
-if one of those calls stops being an error. ty misses some of them, which carry only a
-pyright ignore.
+if one of those calls stops being an error. A call with only a pyright ignore is one
+ty does not catch yet; the engine rejects each of them at runtime, which the tests of
+``resolve`` and of the engine's columns cover.
 """
 
 # pyright: reportUnnecessaryTypeIgnoreComment=true

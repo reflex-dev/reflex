@@ -108,7 +108,6 @@ dev = [
   "psutil",
   "psycopg[binary]",
   "pydantic",
-  "pyright",
   "pytest-asyncio",
   "pytest-benchmark",
   "pytest-codspeed",
@@ -492,7 +491,6 @@ backend_held = [
 ]
 backend_pinned = [
     # Linters are pinned deliberately and bumped on their own cadence.
-    "pyright",
     "ty",
     "ruff",
 ]

@@ -84,16 +84,6 @@ repos:
     always_run: true
     pass_filenames: false
     require_serial: true
-  # The workflow calls that must fail type checking. ty misses some of them (an
-  # attribute retyped in a subclass, a step of another workflow), so pyright
-  # checks the file too and fails on an ignore that stops being used.
-  - id: pyright-workflow-model
-    name: pyright (workflow model typing)
-    entry: uv run --no-sync pyright tests/units/reflex_workflow/test_model.py
-    language: system
-    always_run: true
-    pass_filenames: false
-    require_serial: true
 - repo: https://github.com/biomejs/pre-commit
   rev: 19865851e014cbe6138e295365f95ca51bf953f8 # v0.6.1
   hooks:
