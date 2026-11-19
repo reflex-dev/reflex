@@ -230,11 +230,7 @@ export async function loader({ request }) {
   if (request.headers.get("x-reflex-shell-gen") === "1") {
     return { state: null };
   }
-  // Fetch state data from the Python backend.  This loader runs in two cases:
-  // (a) Full SSR render for bots — ssr-serve.js routes bot requests here.
-  // (b) .data requests for client-side navigation — React Router calls the
-  //     loader to fetch route data as JSON for the next page.
-  // Both cases need real state data from the backend.
+  // Fetch the page's state from the Python backend for a server render.
   const backendUrl = getBackendURL(env.SSR_DATA);
   const { pathname, search } = new URL(request.url);
   try {
@@ -256,6 +252,13 @@ export async function loader({ request }) {
     console.error("SSR data fetch failed:", e);
   }
   return { state: null };
+}
+
+// The client reads the loader's state only on mount and the live session runs
+// on_load, so client-side navigations skip the loader instead of running the
+// page's on_load handlers a second time on the backend.
+export function shouldRevalidate() {
+  return false;
 }
 """
     else:

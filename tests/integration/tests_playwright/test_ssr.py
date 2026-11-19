@@ -12,6 +12,7 @@ verifies:
 from __future__ import annotations
 
 from collections.abc import Callable, Generator
+from urllib.parse import urlsplit
 
 import httpx
 import pytest
@@ -291,6 +292,9 @@ def test_client_navigation(pages_url: str, page: Page):
 def test_navigate_between_posts(pages_url: str, page: Page):
     """Navigate from Post A -> home -> Post B to verify multi-step navigation.
 
+    Client-side navigations leave the SSR loader alone: the live session runs
+    the page's on_load handlers, so a loader run would repeat them.
+
     Args:
         pages_url: The URL the app's pages are served below.
         page: A Playwright page.
@@ -300,6 +304,9 @@ def test_navigate_between_posts(pages_url: str, page: Page):
     title = page.get_by_test_id("post-title")
     expect(title).to_be_visible(timeout=15000)
     expect(title).to_have_text("Hello World")
+
+    requests: list[str] = []
+    page.on("request", lambda request: requests.append(request.url))
 
     # Go back to index.
     back = page.get_by_test_id("back-link")
@@ -318,6 +325,7 @@ def test_navigate_between_posts(pages_url: str, page: Page):
 
     content2 = page.get_by_test_id("post-content")
     expect(content2).to_have_text("Another post for navigation tests.")
+    assert [url for url in requests if urlsplit(url).path.endswith(".data")] == []
 
 
 def test_ssr_data_endpoint(frontend_path: str):

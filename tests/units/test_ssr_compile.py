@@ -108,6 +108,22 @@ def test_default_ssr_is_false():
     assert parsed["ssr"] is False
 
 
+def _apply(text: str, *edits: tuple[str, str]) -> str:
+    """Apply text replacements whose old text occurs exactly once.
+
+    Args:
+        text: The text to edit.
+        *edits: (old, new) pairs, applied in order.
+
+    Returns:
+        The edited text.
+    """
+    for old, new in edits:
+        assert text.count(old) == 1, old
+        text = text.replace(old, new)
+    return text
+
+
 def _render_root(runtime_ssr: bool) -> str:
     """Render root template with minimal valid params.
 
@@ -128,98 +144,156 @@ def _render_root(runtime_ssr: bool) -> str:
     )
 
 
-def test_root_template_has_loader_when_ssr_true():
-    """With runtime_ssr=True, root.jsx template contains the SSR loader."""
-    result = _render_root(runtime_ssr=True)
+SSR_ROOT_LOADER = """
+export async function loader({ request }) {
+  // Short-circuit during static shell generation (no backend available).
+  if (request.headers.get("x-reflex-shell-gen") === "1") {
+    return { state: null };
+  }
+  // Fetch the page's state from the Python backend for a server render.
+  const backendUrl = getBackendURL(env.SSR_DATA);
+  const { pathname, search } = new URL(request.url);
+  try {
+    const res = await fetch(backendUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("cookie") ? { "Cookie": request.headers.get("cookie") } : {}),
+      },
+      body: JSON.stringify({
+        path: pathname + search,
+        headers: Object.fromEntries(request.headers),
+      }),
+    });
+    if (res.ok) {
+      return res.json();
+    }
+  } catch (e) {
+    console.error("SSR data fetch failed:", e);
+  }
+  return { state: null };
+}
 
-    assert "export async function loader" in result
-    assert "getBackendURL" in result
-    assert "SSR_DATA" in result
+// The client reads the loader's state only on mount and the live session runs
+// on_load, so client-side navigations skip the loader instead of running the
+// page's on_load handlers a second time on the backend.
+export function shouldRevalidate() {
+  return false;
+}
+"""
 
 
-def test_root_template_loader_checks_shell_gen_header():
-    """The SSR loader short-circuits for shell generation requests."""
-    result = _render_root(runtime_ssr=True)
-
-    assert "x-reflex-shell-gen" in result
-    assert "state: null" in result
-    # isbot check should NOT be in the loader — bot routing is in ssr-serve.js.
-    assert "isbot" not in result
-
-
-def test_root_template_loader_forwards_query_string():
-    """The SSR loader sends the query string along with the path."""
-    result = _render_root(runtime_ssr=True)
-
-    assert "path: pathname + search," in result
-
-
-def test_root_template_no_loader_when_ssr_false():
-    """With runtime_ssr=False, root.jsx template has no SSR loader."""
-    result = _render_root(runtime_ssr=False)
-
-    assert "export async function loader" not in result
-    assert "getBackendURL" not in result
-
-
-def test_context_template_has_ssr_state_when_ssr_true():
-    """With runtime_ssr=True, context.js reads the root loader state."""
-    result = context_template(
-        initial_state={"test_state": {"field_rx_state_": "value"}},
-        state_name="test_state",
-        client_storage=None,
-        is_dev_mode=False,
-        default_color_mode='"system"',
-        runtime_ssr=True,
+def test_root_template_ssr_loader():
+    """With runtime_ssr=True, root.jsx exports the SSR loader and never revalidates it."""
+    expected = _apply(
+        _render_root(runtime_ssr=False),
+        (
+            "import { Outlet } from 'react-router';",
+            (
+                "import { Outlet } from 'react-router';"
+                '\nimport { getBackendURL } from "$/utils/state";'
+                '\nimport env from "$/env.json";'
+            ),
+        ),
+        (
+            "\n\nfunction ReflexProviders(",
+            SSR_ROOT_LOADER + "\n\nfunction ReflexProviders(",
+        ),
     )
 
-    assert 'useRouteLoaderData("root")' in result
-    assert "ssrHydrated" in result
-    assert "ssrState" in result
+    assert _render_root(runtime_ssr=True) == expected
 
 
-def test_context_template_no_ssr_state_when_ssr_false():
-    """With runtime_ssr=False, context.js has no SSR-related code."""
-    result = context_template(
-        initial_state={"test_state": {"field_rx_state_": "value"}},
-        state_name="test_state",
-        client_storage=None,
-        is_dev_mode=False,
-        default_color_mode='"system"',
-        runtime_ssr=False,
+def test_root_template_ssr_off_is_default():
+    """With runtime_ssr=False, root.jsx is the template's default output."""
+    assert _render_root(runtime_ssr=False) == app_root_template(
+        imports=[],
+        custom_codes=[],
+        hooks={},
+        window_libraries=[],
+        render={"contents": "children"},
+        dynamic_imports=set(),
     )
 
-    assert "useRouteLoaderData" not in result
-    assert "ssrHydrated" not in result
-    assert "ssrState" not in result
 
+def _render_context(runtime_ssr: bool) -> str:
+    """Render the context template for a single-substate app.
 
-def test_context_template_ssr_store_uses_ssr_state():
-    """With runtime_ssr=True, the state stores start from ssrState."""
-    result = context_template(
+    Args:
+        runtime_ssr: Whether runtime SSR is enabled.
+
+    Returns:
+        Rendered template string.
+    """
+    return context_template(
         initial_state={"my_app.state": {"count_rx_state_": 0}},
         state_name="my_app.state",
         client_storage=None,
         is_dev_mode=False,
         default_color_mode='"system"',
-        runtime_ssr=True,
+        runtime_ssr=runtime_ssr,
     )
 
-    assert "createStateStore({ ...initialState, ...ssrState })" in result
-    assert "ssrState?.[substateName] ?? initialState[substateName]" in result
+
+def test_context_template_ssr_state():
+    """With runtime_ssr=True, the stores and event loop start from the root loader's state."""
+    expected = _apply(
+        _render_context(runtime_ssr=False),
+        (
+            'import { jsx } from "@emotion/react";\n',
+            (
+                'import { jsx } from "@emotion/react";'
+                '\nimport { useRouteLoaderData } from "react-router"\n'
+            ),
+        ),
+        (
+            "\nexport { ColorModeContext,",
+            """
+// State the backend rendered for this request (see the root loader), or null
+// when the static SPA shell was served.
+const useSSRState = () => useRouteLoaderData("root")?.state ?? null;
+
+export { ColorModeContext,""",
+        ),
+        (
+            "  const dispatch = useContext(DispatchContext)\n",
+            (
+                "  const dispatch = useContext(DispatchContext)"
+                "\n  const ssrHydrated = useSSRState() !== null\n"
+            ),
+        ),
+        ("    clientStorage,\n  )", "    clientStorage,\n    ssrHydrated,\n  )"),
+        (
+            "  const [store] = useState(() => createStateStore(initialState));",
+            (
+                "  const ssrState = useSSRState();"
+                "\n  const [store] = useState(() => "
+                "createStateStore({ ...initialState, ...ssrState }));"
+            ),
+        ),
+        (
+            (
+                "  return createElement(StateStoreProviders, "
+                "{ children, store: serverStateStore });"
+            ),
+            (
+                "  const ssrState = useSSRState();"
+                "\n  return createElement(StateStoreProviders, { children, store: "
+                "{ ...serverStateStore, getSnapshot: (substateName) => "
+                "ssrState?.[substateName] ?? initialState[substateName] } });"
+            ),
+        ),
+    )
+
+    assert _render_context(runtime_ssr=True) == expected
 
 
-def test_context_template_static_store_no_ssr_state():
-    """With runtime_ssr=False, the state stores use initialState directly."""
-    result = context_template(
+def test_context_template_ssr_off_is_default():
+    """With runtime_ssr=False, context.js is the template's default output."""
+    assert _render_context(runtime_ssr=False) == context_template(
         initial_state={"my_app.state": {"count_rx_state_": 0}},
         state_name="my_app.state",
         client_storage=None,
         is_dev_mode=False,
         default_color_mode='"system"',
-        runtime_ssr=False,
     )
-
-    assert "createStateStore(initialState)" in result
-    assert "store: serverStateStore" in result
-    assert "ssrState" not in result
