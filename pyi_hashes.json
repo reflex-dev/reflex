@@ -58,7 +58,7 @@
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/__init__.pyi": "758646fcd894b0acb09bfb6b97f2d475",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/alert_dialog.pyi": "c4fc4b724c07f7cce647e8c72046d01a",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/aspect_ratio.pyi": "376e58873fa3431e178420d6c5806967",
-  "packages/reflex-components-radix/src/reflex_components_radix/themes/components/avatar.pyi": "ca8e7b05994c4bfb0e7f6ca611d48275",
+  "packages/reflex-components-radix/src/reflex_components_radix/themes/components/avatar.pyi": "b303eed12f7bf3aad159b3cf5ac8e33e",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/badge.pyi": "73ebf22c8fbb2d1388a3f1cd55eb1919",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/button.pyi": "3cd7cc1df19d44e14da3b291e4689ba2",
   "packages/reflex-components-radix/src/reflex_components_radix/themes/components/callout.pyi": "dd3e37e000cc6b0455634a7c6ed7786f",
