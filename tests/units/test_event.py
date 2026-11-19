@@ -1106,6 +1106,16 @@ def test_event_decorator_backward_compatibility():
     assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)
 
 
+def test_event_decorator_accepts_bound_method():
+    """rx.event sets no attribute on what it decorates, so a bound method works."""
+
+    class Obj:
+        def method(self):
+            pass
+
+    event(Obj().method)  # pyright: ignore[reportCallIssue, reportArgumentType]
+
+
 def test_event_var_in_rx_cond():
     """Test that EventVar and EventChainVar cannot be used in rx.cond()."""
     from reflex_components_core.core.cond import cond as rx_cond
