@@ -6,6 +6,7 @@ postgresql:// URL for a database the tests may wipe.
 
 from __future__ import annotations
 
+import asyncio
 import os
 import uuid
 from collections.abc import AsyncIterator
@@ -14,7 +15,16 @@ import pytest
 import pytest_asyncio
 from reflex_workflow import RunConflict, Workflow, connect_workflows, step
 from reflex_workflow.engine import handles
-from sqlalchemy import Index, PrimaryKeyConstraint, String, UniqueConstraint, func, text
+from reflex_workflow.model import as_call
+from sqlalchemy import (
+    Index,
+    PrimaryKeyConstraint,
+    String,
+    UniqueConstraint,
+    func,
+    text,
+    update,
+)
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -156,6 +166,52 @@ async def test_a_repeat_of_the_key_returns_false():
     resend = _onboarding(trigger_key=key)
     assert await resend.start(Onboarding.welcome, **KEYED) is False
     assert resend.id is None
+
+
+async def _blocked_on_a_lock(factory: async_sessionmaker[AsyncSession]) -> None:
+    """Wait until another connection is waiting on a lock.
+
+    Args:
+        factory: A session factory for the test database.
+    """
+    query = text(
+        "SELECT count(*) FROM pg_stat_activity"
+        " WHERE wait_event_type = 'Lock' AND datname = current_database()"
+    )
+    for _ in range(500):
+        async with factory() as session:
+            if (await session.execute(query)).scalar_one():
+                return
+        await asyncio.sleep(0.01)
+    msg = "the start never waited on the other copy"
+    raise AssertionError(msg)
+
+
+@needs_postgres
+@in_module_loop
+async def test_a_resend_racing_the_original_returns_false(
+    workflows: async_sessionmaker[AsyncSession],
+):
+    # Postgres checks only the key's index before inserting. A copy committed
+    # after that check is found first on user_id, which raises 23505 on a row
+    # that is the same event.
+    user, key = f"u-{uuid.uuid4().hex}", uuid.uuid4().hex
+    async with workflows() as original, original.begin():
+        await original.execute(
+            handles.insertion(
+                _onboarding(user_id=user, trigger_key=None), as_call(Onboarding.welcome)
+            )
+        )
+        resend = asyncio.ensure_future(
+            _onboarding(user_id=user, trigger_key=key).start(
+                Onboarding.welcome, **KEYED
+            )
+        )
+        await _blocked_on_a_lock(workflows)
+        await original.execute(
+            update(Onboarding).where(Onboarding.user_id == user).values(trigger_key=key)
+        )
+    assert await resend is False
 
 
 @needs_postgres

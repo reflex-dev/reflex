@@ -5,7 +5,16 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
-from sqlalchemy import Table, UniqueConstraint, and_, func, or_, select, update
+from sqlalchemy import (
+    PrimaryKeyConstraint,
+    Table,
+    UniqueConstraint,
+    and_,
+    func,
+    or_,
+    select,
+    update,
+)
 from sqlalchemy import true as sqlalchemy_true
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
@@ -59,19 +68,12 @@ def key_column(cls: type[Workflow], key: QueryableAttribute[Any]) -> Column[Any]
     if column is None or column.table is not table:
         msg = f"key= must be one column of {cls.__qualname__}, not {key!r}."
         raise TypeError(msg)
-    if (
-        column.primary_key
-        and len(table.primary_key) == 1
-        and not table.primary_key.deferrable
-    ):
-        return column
-    if column.unique:
-        return column
-    # Postgres can't infer ON CONFLICT from a deferrable constraint, an
-    # expression index or a partial one.
+    # unique=True and a primary key are constraints here too. Postgres can't
+    # infer ON CONFLICT from a deferrable constraint, an expression index or a
+    # partial one.
     for constraint in table.constraints:
         if (
-            isinstance(constraint, UniqueConstraint)
+            isinstance(constraint, PrimaryKeyConstraint | UniqueConstraint)
             and not constraint.deferrable
             and list(constraint.columns) == [column]
         ):
@@ -90,24 +92,23 @@ def key_column(cls: type[Workflow], key: QueryableAttribute[Any]) -> Column[Any]
     raise ValueError(msg)
 
 
-def _violated_constraint(error: IntegrityError) -> str | None:
-    """Name the unique constraint a failed insert broke, or None if it was not one.
+def _unique_violation(error: IntegrityError) -> tuple[bool, str | None]:
+    """Tell whether a failed insert broke a unique constraint, and which.
 
     Args:
         error: What the insert raised.
 
     Returns:
-        The constraint's name, ``""`` for a unique violation the driver did not
-        name, or None for any other integrity error.
+        Whether it was a unique violation, and the constraint's name when the
+        driver reported one.
     """
     orig = error.orig
     if orig is None or getattr(orig, "sqlstate", None) != _UNIQUE_VIOLATION:
-        return None
+        return False, None
     # psycopg names it on diag; SQLAlchemy's asyncpg adapter chains asyncpg's error.
-    return (
+    return True, (
         getattr(getattr(orig, "diag", None), "constraint_name", None)
         or getattr(orig.__cause__, "constraint_name", None)
-        or ""
     )
 
 
@@ -181,16 +182,23 @@ async def start(
     """
     runtime = current()
     stmt = insertion(row, first, key=key)
-    try:
-        async with runtime.session_factory() as session, session.begin():
-            inserted = (await session.execute(stmt)).first()
-            if inserted is not None:
-                await notify.announce(session, type(row).__tablename__)
-    except IntegrityError as error:
-        constraint = None if key is None else _violated_constraint(error)
-        if constraint is None:
-            raise
-        raise RunConflict(constraint or None) from error
+    # Postgres checks only the key's index before inserting, so a copy of this
+    # event committed after that check clashes on another unique column. Once
+    # it has committed, a second attempt finds it on the key and does nothing.
+    inserted = None
+    for last in (False, True):
+        try:
+            async with runtime.session_factory() as session, session.begin():
+                inserted = (await session.execute(stmt)).first()
+                if inserted is not None:
+                    await notify.announce(session, type(row).__tablename__)
+            break
+        except IntegrityError as error:
+            unique, constraint = _unique_violation(error)
+            if key is None or not unique:
+                raise
+            if last:
+                raise RunConflict(constraint) from error
     if inserted is None:
         return False
     for name, value in zip(rows.pk_keys(type(row)), inserted, strict=True):

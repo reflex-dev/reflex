@@ -21,7 +21,7 @@ The mixin that turns a mapped SQLAlchemy model into a workflow. Each row is one 
 ### Workflow.start
 
 ```python
-async def start(self, first: Step | Call, *, key: InstrumentedAttribute | None = None) -> bool
+async def start(self, first: Step | Call, *, key: QueryableAttribute | None = None) -> bool
 ```
 
 Inserts this row and schedules `first` to run now. Returns `True` if a run was started, or `False` if the row conflicted with an existing one on a unique constraint. Sets a database-generated primary key on the instance.
