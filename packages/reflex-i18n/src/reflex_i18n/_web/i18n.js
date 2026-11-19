@@ -275,6 +275,7 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
 // list of many formatted values reuses one formatter per (locale, options).
 const _numberFormatters = new Map();
 const _dateFormatters = new Map();
+const _languageNames = new Map();
 
 // In normal use the key set is small (locales x compile-time option sets), but
 // runtime-varying options (a Var in `options=`) could grow it, so cap the cache
@@ -307,6 +308,25 @@ const toDate = (value) => {
   return new Date(s.replace(" ", "T"));
 };
 
+const LANGUAGE_NAMES = { type: "language", languageDisplay: "standard" };
+
+// A language's name in another language ("Portugiesisch (Brasilien)"), or the
+// tag itself for one Intl cannot name.
+const languageName = (tag, inLocale) => {
+  try {
+    return (
+      getFormatter(
+        _languageNames,
+        Intl.DisplayNames,
+        inLocale,
+        LANGUAGE_NAMES,
+      ).of(tag) ?? tag
+    );
+  } catch {
+    return tag;
+  }
+};
+
 export function useFormat() {
   const { locale } = useContext(I18nContext);
   const formatNumber = useCallback(
@@ -329,7 +349,11 @@ export function useFormat() {
       ).format(toDate(value)),
     [locale],
   );
-  return [formatNumber, formatDate];
+  const formatLanguage = useCallback(
+    (tag) => languageName(tag, locale),
+    [locale],
+  );
+  return [formatNumber, formatDate, formatLanguage];
 }
 
 export function useLocale() {

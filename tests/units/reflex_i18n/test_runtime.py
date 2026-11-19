@@ -14,9 +14,11 @@ from reflex_i18n.runtime import (
     format_date,
     format_datetime,
     format_decimal,
+    format_language,
     format_number,
     format_percent,
     format_time,
+    format_weekday,
     get_locale,
     gettext,
     gettext_noop,
@@ -561,4 +563,34 @@ def test_pick_translation_defaults_to_the_active_locale():
 def test_picking_helpers_imply_the_locale_dependency():
     # Computed vars picking a text refresh when the locale changes, like gettext.
     for helper in (fallback_chain, pick_translation, pick_translation_locale):
+        assert helper in _implicit_dependency_providers
+
+
+def test_format_language_names_a_language_in_the_active_locale():
+    assert format_language("de") == "German"
+    with use_locale("de"):
+        assert [format_language(tag) for tag in ("en", "pt-BR", "zh-Hant")] == [
+            "Englisch",
+            "Portugiesisch (Brasilien)",
+            "Chinesisch (Traditionell)",
+        ]
+        # A language Babel does not know keeps its tag.
+        assert format_language("qq") == "qq"
+
+
+def test_format_weekday_names_a_weekday_in_the_active_locale():
+    assert format_weekday(0) == "Monday"
+    assert format_weekday(6, length="short") == "Sun"
+    with use_locale("de"):
+        assert [
+            format_weekday(0, length=length) for length in ("long", "short", "narrow")
+        ] == [
+            "Montag",
+            "Mo",
+            "M",
+        ]
+
+
+def test_formatting_helpers_imply_the_locale_dependency():
+    for helper in (format_language, format_weekday):
         assert helper in _implicit_dependency_providers

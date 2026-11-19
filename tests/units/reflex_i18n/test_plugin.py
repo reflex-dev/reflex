@@ -13,7 +13,13 @@ from reflex_i18n.config import I18nConfig, set_active_i18n_config
 from reflex_i18n.format import _SOURCE_FMT_DATE, _SOURCE_FMT_NUMBER
 from reflex_i18n.plugin import _RUNTIME_SOURCE
 from reflex_i18n.registry import clear_messages
-from reflex_i18n.runtime import pick_translation_locale
+from reflex_i18n.runtime import (
+    WeekdayLength,
+    format_language,
+    format_weekday,
+    pick_translation_locale,
+    use_locale,
+)
 from reflex_i18n.state import _resolve_locale
 from reflex_i18n.vars import _SOURCE_PICK_LOCALE
 
@@ -421,6 +427,40 @@ def test_client_picks_translations_like_the_server(tmp_path: Path):
     ]
     assert rendered["result"] == {"runtime": configured, "inline": unconfigured}
     assert configured == ["en", "de", "en", "de-CH", "en", "it", "DE", "en-GB", ""]
+
+
+@requires_node
+@pytest.mark.parametrize("locale", ["de", "en"])
+def test_client_names_languages_and_weekdays_like_the_server(
+    tmp_path: Path, locale: str
+):
+    """Intl in the browser and Babel on the server agree on these names."""
+    tags = ["en", "de", "fr", "it", "nl", "pt-BR", "zh-Hant", "lt"]
+    lengths: list[WeekdayLength] = ["long", "short", "narrow"]
+    rendered = _render_runtime(
+        tmp_path,
+        "I18nProvider",
+        locales=[locale],
+        default_locale=locale,
+        action=(
+            "const [fmtNumber, fmtDate, fmtLanguage] = mod.useFormat();"
+            f"const tags = {json.dumps(tags)};"
+            f"const lengths = {json.dumps(lengths)};"
+            "return {"
+            "languages: tags.map((tag) => fmtLanguage(tag)),"
+            "weekdays: lengths.map((weekday) => [0, 1, 2, 3, 4, 5, 6].map("
+            "(day) => fmtDate(new Date(2024, 0, 1 + day), { weekday })))};"
+        ),
+    )
+    with use_locale(locale):
+        server = {
+            "languages": [format_language(tag) for tag in tags],
+            "weekdays": [
+                [format_weekday(day, length=length) for day in range(7)]
+                for length in lengths
+            ],
+        }
+    assert rendered["result"] == server
 
 
 @requires_node

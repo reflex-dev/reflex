@@ -5,7 +5,14 @@ from reflex_base.vars.base import Var
 from reflex_i18n import I18nConfig, currency, date, datetime, number, percent, time
 from reflex_i18n.component import I18nProvider
 from reflex_i18n.config import set_active_i18n_config
-from reflex_i18n.format import _locale_var, locale_var
+from reflex_i18n.format import (
+    _SOURCE_FMT_DATE,
+    _SOURCE_FMT_LANGUAGE,
+    _locale_var,
+    language_name,
+    locale_var,
+    weekday,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -83,7 +90,7 @@ def test_datetime_uses_both_styles():
 def test_format_var_data_injects_hook_and_provider():
     var_data = number(_num())._get_all_var_data()
     assert var_data is not None
-    assert "const [ fmtNumber, fmtDate ] = useFormat()" in var_data.hooks
+    assert "const [ fmtNumber, fmtDate, fmtLanguage ] = useFormat()" in var_data.hooks
     assert any(lib == "$/utils/i18n" for lib, _ in var_data.imports)
     priority, provider = var_data.app_wraps[0]
     assert priority == 58
@@ -95,7 +102,7 @@ def test_number_and_date_share_one_hook():
     var_data = combined._get_all_var_data()
     assert var_data is not None
     hooks = [h for h in var_data.hooks if "useFormat" in h]
-    assert hooks == ["const [ fmtNumber, fmtDate ] = useFormat()"]
+    assert hooks == ["const [ fmtNumber, fmtDate, fmtLanguage ] = useFormat()"]
 
 
 def test_locale_var_reads_hook():
@@ -175,3 +182,28 @@ def test_date_non_component_options_keep_the_curated_length():
     js = str(date(Var(_js_expr="state.day"), options={"timeZone": "UTC"}))
     assert '["dateStyle"] : "medium"' in js
     assert '["timeZone"] : "UTC"' in js
+
+
+def test_language_name_reads_the_format_hook():
+    var = language_name(Var(_js_expr="state.tag", _var_type=str))
+    assert str(var) == "(fmtLanguage(state.tag))"
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert var_data.hooks == (
+        "const [ fmtNumber, fmtDate, fmtLanguage ] = useFormat()",
+    )
+
+
+def test_weekday_formats_a_reference_date():
+    var = weekday(Var(_js_expr="state.day", _var_type=int), length="short")
+    assert str(var) == (
+        '(fmtDate(new Date(2024, 0, 1 + state.day), ({ ["weekday"] : "short" })))'
+    )
+
+
+def test_language_name_and_weekday_without_plugin_format_inline():
+    set_active_i18n_config(None)
+    assert str(language_name("pt-BR")) == f'({_SOURCE_FMT_LANGUAGE!s}("pt-BR"))'
+    assert str(weekday(2)) == (
+        f'({_SOURCE_FMT_DATE!s}(new Date(2024, 0, 1 + 2), ({{ ["weekday"] : "long" }})))'
+    )

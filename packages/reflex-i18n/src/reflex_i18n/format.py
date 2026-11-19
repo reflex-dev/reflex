@@ -19,6 +19,7 @@ from reflex_base.vars.sequence import StringVar
 
 from .component import _PROVIDER_PRIORITY, _provider
 from .config import UNCONFIGURED_LOCALE, get_active_i18n_config
+from .runtime import WeekdayLength
 
 if TYPE_CHECKING:
     # Aliased so the `date`/`time`/`datetime` functions below don't shadow it.
@@ -34,7 +35,7 @@ def _format_var_data() -> VarData:
     """
     return VarData(
         imports={"$/utils/i18n": [ImportVar(tag="useFormat")]},
-        hooks={"const [ fmtNumber, fmtDate ] = useFormat()": None},
+        hooks={"const [ fmtNumber, fmtDate, fmtLanguage ] = useFormat()": None},
         app_wraps=((_PROVIDER_PRIORITY, _provider()),),
     )
 
@@ -82,6 +83,20 @@ def _fmt_date() -> FunctionVar[_Formatter]:
     )
 
 
+@functools.cache
+def _fmt_language() -> FunctionVar[ReflexCallable[[str], str]]:
+    """The client-side language namer for the active locale.
+
+    Returns:
+        The ``fmtLanguage`` hook function as a callable Var.
+    """
+    return FunctionStringVar.create(
+        "fmtLanguage",
+        _var_type=ReflexCallable[[str], str],
+        _var_data=_format_var_data(),
+    )
+
+
 # Without an I18nPlugin there is no client runtime: format inline in the
 # locale the server formats in then. The date normalization mirrors the
 # runtime's ``toDate``.
@@ -100,6 +115,17 @@ _SOURCE_FMT_DATE: FunctionVar[_Formatter] = FunctionStringVar.create(
     ': /^\\d{2}:\\d{2}/.test(s) ? new Date("1970-01-01T" + s) '
     ': new Date(s.replace(" ", "T"))); })',
     _var_type=_Formatter,
+)
+
+
+_SOURCE_FMT_LANGUAGE: FunctionVar[ReflexCallable[[str], str]] = (
+    FunctionStringVar.create(
+        "((tag) => { try { "
+        f'return new Intl.DisplayNames(["{UNCONFIGURED_LOCALE}"], '
+        '{ type: "language", languageDisplay: "standard" }).of(tag) ?? tag; '
+        "} catch { return tag; } })",
+        _var_type=ReflexCallable[[str], str],
+    )
 )
 
 
@@ -392,3 +418,41 @@ def locale_var() -> StringVar:
     if get_active_i18n_config() is None:
         return LiteralVar.create(UNCONFIGURED_LOCALE).to(str)
     return _locale_var()
+
+
+def language_name(locale: Var[str] | str) -> StringVar:
+    """Name a language in the active locale, e.g. ``Englisch`` for ``en``.
+
+    Args:
+        locale: The language tag to name.
+
+    Returns:
+        A StringVar resolving to the language's name, or the tag itself for a
+        language the browser does not know.
+    """
+    namer = (
+        _fmt_language()
+        if get_active_i18n_config() is not None
+        else _SOURCE_FMT_LANGUAGE
+    )
+    return namer.call(locale).to(str)
+
+
+def weekday(day: Var[int] | int, *, length: WeekdayLength = "long") -> StringVar:
+    """Name a weekday in the active locale, e.g. ``Montag``.
+
+    Args:
+        day: The weekday, 0 for Monday as ``datetime.date.weekday()`` counts.
+        length: ``long``, ``short`` or ``narrow``.
+
+    Returns:
+        A StringVar resolving to the weekday's name.
+    """
+    day_var = LiteralVar.create(day)
+    # 2024-01-01 was a Monday.
+    reference = Var(
+        _js_expr=f"new Date(2024, 0, 1 + {day_var!s})",
+        _var_data=day_var._get_all_var_data(),
+    )
+    options = _date_options(options={"weekday": length})
+    return _date_formatter().call(reference, options).to(str)

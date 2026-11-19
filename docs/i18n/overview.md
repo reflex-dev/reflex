@@ -277,6 +277,12 @@ class CartState(rx.State):
 `rx.i18n.locale` exposes the active locale as a var, e.g. to drive
 `rx.moment(PriceState.created, locale=rx.i18n.locale)`.
 
+Languages and weekdays have names in every locale too. `rx.i18n.language_name`
+names a language tag (`"pt-BR"` shows as "Portugiesisch (Brasilien)" to a German
+visitor) and `rx.i18n.weekday` names a weekday, counted from 0 for Monday like
+`datetime.date.weekday()`, with `length="long"`, `"short"` or `"narrow"`. Their
+server-side counterparts are `format_language` and `format_weekday`.
+
 Two caveats:
 
 - **Naive datetimes client-side** are shown in the visitor's local time zone (a

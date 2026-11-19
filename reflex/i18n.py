@@ -21,12 +21,15 @@ try:
         format_date,
         format_datetime,
         format_decimal,
+        format_language,
         format_number,
         format_percent,
         format_time,
+        format_weekday,
         get_locale,
         gettext,
         gettext_noop,
+        language_name,
         language_switcher,
         locale_url,
         match_locale,
@@ -43,6 +46,7 @@ try:
         t,
         use_locale,
         validate_locale,
+        weekday,
     )
 
     # Accessed as rx.i18n.date / .time / .datetime. Kept out of __all__ (below)
@@ -81,12 +85,15 @@ __all__ = [
     "format_date",
     "format_datetime",
     "format_decimal",
+    "format_language",
     "format_number",
     "format_percent",
     "format_time",
+    "format_weekday",
     "get_locale",
     "gettext",
     "gettext_noop",
+    "language_name",
     "language_switcher",
     "locale",
     "locale_url",
@@ -105,6 +112,7 @@ __all__ = [
     "t",
     "use_locale",
     "validate_locale",
+    "weekday",
 ]
 
 # reflex_i18n defers these so importing it does not import

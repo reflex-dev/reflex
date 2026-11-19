@@ -19,7 +19,7 @@ from .config import (
 # date/datetime/time use the alias form and are omitted from __all__ so
 # `from reflex_i18n import *` cannot shadow the stdlib names; they remain
 # available as rx.i18n.date / .time / .datetime (prefer attribute access).
-from .format import currency, number, percent
+from .format import currency, language_name, number, percent, weekday
 from .format import date as date
 from .format import datetime as datetime
 from .format import time as time
@@ -32,9 +32,11 @@ from .runtime import (
     format_date,
     format_datetime,
     format_decimal,
+    format_language,
     format_number,
     format_percent,
     format_time,
+    format_weekday,
     get_locale,
     gettext,
     gettext_noop,
@@ -76,12 +78,15 @@ __all__ = [
     "format_date",
     "format_datetime",
     "format_decimal",
+    "format_language",
     "format_number",
     "format_percent",
     "format_time",
+    "format_weekday",
     "get_locale",
     "gettext",
     "gettext_noop",
+    "language_name",
     "language_switcher",
     "locale_url",
     "match_locale",
@@ -99,6 +104,7 @@ __all__ = [
     "t",
     "use_locale",
     "validate_locale",
+    "weekday",
 ]
 
 # Importing ``.state`` registers ``I18nState`` as a substate (a global side

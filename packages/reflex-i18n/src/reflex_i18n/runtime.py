@@ -16,7 +16,7 @@ import io
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager, contextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from reflex_base.vars.dep_tracking import register_implicit_dependency
 
@@ -615,6 +615,55 @@ def format_datetime(value: datetime.datetime, *, length: str = "medium") -> str:
     return dates.format_datetime(value, format=length, locale=_babel_locale())
 
 
+def format_language(locale: str) -> str:
+    """Name a language in the active locale (server-side), e.g. ``Englisch``.
+
+    Args:
+        locale: The language tag to name, e.g. ``"pt-BR"``.
+
+    Returns:
+        The language's name, e.g. ``Portugiesisch (Brasilien)``, or the tag
+        itself for a language Babel does not know.
+    """
+    from babel import Locale, UnknownLocaleError
+
+    try:
+        name = Locale.parse(locale.replace("-", "_")).get_display_name(_babel_locale())
+    except (ValueError, UnknownLocaleError):
+        return locale
+    return name or locale
+
+
+# The lengths of a weekday's name, as ``Intl.DateTimeFormat``'s ``weekday``
+# option spells them.
+WeekdayLength = Literal["long", "short", "narrow"]
+
+# The Babel width of each weekday length.
+_WEEKDAY_WIDTHS: dict[WeekdayLength, Literal["wide", "abbreviated", "narrow"]] = {
+    "long": "wide",
+    "short": "abbreviated",
+    "narrow": "narrow",
+}
+
+
+def format_weekday(day: int, *, length: WeekdayLength = "long") -> str:
+    """Name a weekday in the active locale (server-side), e.g. ``Montag``.
+
+    Args:
+        day: The weekday, 0 for Monday as ``datetime.date.weekday()`` counts.
+        length: ``long``, ``short`` or ``narrow``.
+
+    Returns:
+        The weekday's name as it stands on its own (not inside a date).
+    """
+    from babel import dates
+
+    names = dates.get_day_names(
+        _WEEKDAY_WIDTHS[length], context="stand-alone", locale=_babel_locale()
+    )
+    return names[day]
+
+
 def _locale_dependency() -> Var | None:
     """The var a gettext-family call implies a dependency on.
 
@@ -654,6 +703,8 @@ register_implicit_dependency(
         format_date,
         format_time,
         format_datetime,
+        format_language,
+        format_weekday,
     ),
     _locale_dependency,
 )

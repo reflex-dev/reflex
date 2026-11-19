@@ -30,6 +30,7 @@ from .component import HreflangLinks, LocaleRoute, _provider
 from .config import I18nConfig, get_active_catalog_dirs, set_active_i18n_config
 from .format import (
     _fmt_date,
+    _fmt_language,
     _fmt_number,
     _format_var_data,
     _locale_var,
@@ -110,6 +111,7 @@ def _reset_provider() -> None:
         _locale_var_data,
         _fmt_number,
         _fmt_date,
+        _fmt_language,
         _locale_var,
         _pick_var_data,
         _pick,
