@@ -433,6 +433,11 @@ class RedisTokenManager(LocalTokenManager):
         Args:
             emit_update: The function to emit state updates.
         """
+        # Every attempt, including a retry after a failure, gets connects to
+        # wait for its subscription.
+        self._lost_and_found_wait_deadline = (
+            asyncio.get_running_loop().time() + LOST_AND_FOUND_SUBSCRIBE_TIMEOUT
+        )
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(
                 f"channel:{self._get_lost_and_found_key(self.instance_id)}"
@@ -474,8 +479,9 @@ class RedisTokenManager(LocalTokenManager):
         Redis drops a delta another instance publishes before the subscription
         is confirmed, so a connect waits for it before storing the socket record
         that sends other instances' deltas here. Connects wait only until
-        ``LOST_AND_FOUND_SUBSCRIBE_TIMEOUT`` seconds after the subscriber
-        started, so a redis that cannot confirm it does not stall every connect.
+        ``LOST_AND_FOUND_SUBSCRIBE_TIMEOUT`` seconds after the current
+        subscription attempt started, so a redis that cannot confirm it does
+        not stall every connect.
 
         Args:
             emit_update: The function to emit state updates.

@@ -771,7 +771,7 @@ async def test_processor_reports_blocking_after_handler_returns(
 
     async def _execute_event(self: EventProcessor, **kwargs):
         await execute_event(self, **kwargs)
-        _BLOCKING_REPORTED.wait(_MAX_BLOCK_SECONDS)
+        _blocking_sync_handler()
 
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
     monkeypatch.setattr(EventProcessor, "_execute_event", _execute_event)
@@ -780,9 +780,29 @@ async def test_processor_reports_blocking_after_handler_returns(
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(noop_event())[0])
 
-    assert "_noop_handler" in blocking_caplog.text
-    assert "blocked the event loop" in blocking_caplog.text
-    assert "_BLOCKING_REPORTED.wait(_MAX_BLOCK_SECONDS)" in blocking_caplog.text
+    messages = [
+        re.sub(
+            r"(?<=line )\d+|(?<=\.py:)\d+|(?<=for )\d+\.\d+s", "N", record.getMessage()
+        )
+        for record in blocking_caplog.records
+    ]
+    subject = "Event handler _noop_handler"
+    assert messages == [
+        (
+            f"{subject} is blocking the event loop at "
+            f"{Path(__file__).relative_to(Path.cwd())}:N in _blocking_sync_handler "
+            "(threshold: 0.040s), including state updates such as computed vars. "
+            "Move blocking I/O to a thread pool or use a non-blocking async API.\n"
+            "Stack when the threshold was reached (most recent call last):\n"
+            f'  File "{processor_module.__file__}", line N, in _process_event_queue_entry\n'
+            "    return await self._execute_event(\n"
+            f'  File "{__file__}", line N, in _execute_event\n'
+            "    _blocking_sync_handler()\n"
+            f'  File "{__file__}", line N, in _blocking_sync_handler\n'
+            "    time.sleep(0.01)"
+        ),
+        f"{subject} blocked the event loop for N in total.",
+    ]
 
 
 async def test_enqueue_returns_future(
