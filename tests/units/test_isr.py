@@ -5,9 +5,11 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
+from types import SimpleNamespace
 
 import pytest
 
+from reflex import isr
 from reflex.isr import (
     CachedPage,
     ISRManager,
@@ -38,6 +40,7 @@ class FakeRenderer:
         self.gate = gate
         self.fail = fail
         self.calls = 0
+        self.started = asyncio.Event()
 
     async def __call__(self, path: str) -> RenderResult | None:
         """Render the path, optionally blocking on the gate or failing.
@@ -49,6 +52,7 @@ class FakeRenderer:
             A render result, or None when configured to fail.
         """
         self.calls += 1
+        self.started.set()
         if self.gate is not None:
             await self.gate.wait()
         if self.fail:
@@ -214,6 +218,121 @@ async def test_render_failure_is_not_cached():
     # A subsequent request retries (nothing was cached).
     await mgr.get_html("/p")
     assert renderer.calls == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("invalidate", ["path", "tag"])
+async def test_render_overtaken_by_invalidation_is_not_cached(invalidate: str):
+    """A render in flight during an invalidation is served but not cached.
+
+    It may hold the content the invalidation was meant to drop.
+
+    Args:
+        invalidate: Whether the page is invalidated by path or by tag.
+    """
+    gate = asyncio.Event()
+    renderer = FakeRenderer(tags=("blog",), gate=gate)
+    mgr = _manager(renderer)
+
+    render = asyncio.create_task(mgr.get_html("/p"))
+    await renderer.started.wait()
+    if invalidate == "path":
+        await mgr.revalidate_path("/p")
+    else:
+        await mgr.revalidate_tag("blog")
+    gate.set()
+
+    assert await render == "<html>rendered</html>:/p:1"
+    assert await mgr.get_html("/p") == "<html>rendered</html>:/p:2"
+    assert await mgr.get_html("/p") == "<html>rendered</html>:/p:2"
+
+
+@pytest.mark.asyncio
+async def test_redis_set_rejects_render_overtaken_by_invalidation():
+    """A page rendered before an invalidation is not stored, a later one is."""
+    redis = prerequisites.get_redis()
+    if redis is None:
+        pytest.skip("Test requires redis")
+    cache = RedisISRCache(redis)
+    key = f"test:{uuid.uuid4().hex}"
+    page = CachedPage(html="<p>", generated_at=1.0, revalidate=60)
+    try:
+        before = await cache.epoch()
+        await cache.delete(key)
+        assert await cache.set(key, page, before) is False
+        assert await cache.get(key) is None
+
+        assert await cache.set(key, page, await cache.epoch()) is True
+        assert await cache.get(key) == page
+    finally:
+        await redis.delete(RedisISRCache._PAGE_PREFIX + key)
+        await redis.aclose()
+
+
+@pytest.mark.asyncio
+async def test_redis_tag_index_expires_with_its_last_page(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A tag's index drops expired pages and expires with the last one it holds."""
+    redis = prerequisites.get_redis()
+    if redis is None:
+        pytest.skip("Test requires redis")
+    cache = RedisISRCache(redis)
+    tag = f"test-{uuid.uuid4().hex}"
+    tag_key = RedisISRCache._TAG_PREFIX + tag
+    keys = [f"test:{uuid.uuid4().hex}:{name}" for name in ("a", "b", "c")]
+    # Pages keep their stale copy for a day past the revalidate window.
+    grace = 86400
+    now = float(int(time.time()))
+
+    async def store(key: str, revalidate: float) -> None:
+        """Store a page carrying the tag.
+
+        Args:
+            key: The cache key.
+            revalidate: The page's revalidate window.
+        """
+        page = CachedPage(
+            html=key, generated_at=now, revalidate=revalidate, tags=(tag,)
+        )
+        assert await cache.set(key, page, await cache.epoch()) is True
+
+    async def members():
+        """Read the tag's index.
+
+        Returns:
+            The indexed cache keys with their expiry, soonest first.
+        """
+        return await redis.zrange(tag_key, 0, -1, withscores=True)
+
+    try:
+        monkeypatch.setattr(isr, "time", SimpleNamespace(time=lambda: now))
+        await store(keys[0], 60)
+        assert await members() == [(keys[0].encode(), now + 60 + grace)]
+        assert await redis.expiretime(tag_key) == now + 60 + grace
+
+        # A page that never goes stale keeps the index for good.
+        await store(keys[1], 0)
+        assert await members() == [
+            (keys[0].encode(), now + 60 + grace),
+            (keys[1].encode(), float("inf")),
+        ]
+        assert await redis.ttl(tag_key) == -1
+
+        # Once the first page expired, the next write drops it from the index.
+        now += 60 + grace + 1
+        await store(keys[2], 60)
+        assert await members() == [
+            (keys[2].encode(), now + 60 + grace),
+            (keys[1].encode(), float("inf")),
+        ]
+        assert await redis.ttl(tag_key) == -1
+
+        assert await cache.invalidate_tag(tag) == 2
+        assert not await redis.exists(tag_key)
+    finally:
+        await redis.delete(tag_key, *(RedisISRCache._PAGE_PREFIX + key for key in keys))
+        await redis.aclose()
 
 
 @pytest.mark.asyncio

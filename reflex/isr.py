@@ -145,17 +145,32 @@ class ISRCache(Protocol):
         """
         ...
 
-    async def set(self, key: str, page: CachedPage) -> None:
-        """Store a page and index its tags.
+    async def epoch(self) -> int:
+        """Get the invalidation epoch, which every invalidation advances.
+
+        Returns:
+            The current epoch.
+        """
+        ...
+
+    async def set(self, key: str, page: CachedPage, epoch: int) -> bool:
+        """Store a page and index its tags, unless an invalidation came after ``epoch``.
+
+        A render that started before an invalidation may hold the content it
+        was meant to drop, so its page is not stored.
 
         Args:
             key: The cache key.
             page: The page to store.
+            epoch: The :meth:`epoch` read before the page was rendered.
+
+        Returns:
+            Whether the page was stored.
         """
         ...
 
     async def delete(self, key: str) -> None:
-        """Remove a cached page.
+        """Remove a cached page, advancing the invalidation epoch.
 
         Args:
             key: The cache key.
@@ -184,7 +199,7 @@ class ISRCache(Protocol):
         ...
 
     async def invalidate_tag(self, tag: str) -> int:
-        """Delete every cached page carrying ``tag``.
+        """Delete every cached page carrying ``tag``, advancing the invalidation epoch.
 
         Args:
             tag: The tag to invalidate.
@@ -206,6 +221,7 @@ class MemoryISRCache:
         self._pages: dict[str, CachedPage] = {}
         self._tags: dict[str, set[str]] = {}
         self._locks: dict[str, str] = {}
+        self._epoch = 0
 
     async def get(self, key: str) -> CachedPage | None:
         """Get a cached page.
@@ -218,23 +234,39 @@ class MemoryISRCache:
         """
         return self._pages.get(key)
 
-    async def set(self, key: str, page: CachedPage) -> None:
-        """Store a page and index its tags.
+    async def epoch(self) -> int:
+        """Get the invalidation epoch.
+
+        Returns:
+            The current epoch.
+        """
+        return self._epoch
+
+    async def set(self, key: str, page: CachedPage, epoch: int) -> bool:
+        """Store a page and index its tags, unless an invalidation came after ``epoch``.
 
         Args:
             key: The cache key.
             page: The page to store.
+            epoch: The epoch read before the page was rendered.
+
+        Returns:
+            Whether the page was stored.
         """
+        if epoch != self._epoch:
+            return False
         self._pages[key] = page
         for tag in page.tags:
             self._tags.setdefault(tag, set()).add(key)
+        return True
 
     async def delete(self, key: str) -> None:
-        """Remove a cached page.
+        """Remove a cached page, advancing the invalidation epoch.
 
         Args:
             key: The cache key.
         """
+        self._epoch += 1
         self._pages.pop(key, None)
 
     async def acquire_lock(self, key: str, ttl: float) -> str | None:
@@ -271,6 +303,7 @@ class MemoryISRCache:
         Returns:
             The number of pages removed.
         """
+        self._epoch += 1
         keys = self._tags.pop(tag, set())
         for key in keys:
             self._pages.pop(key, None)
@@ -287,12 +320,43 @@ return 0
 """
 
 
+# Stores a page unless the invalidation epoch in KEYS[1] moved past ARGV[1],
+# and indexes it in each tag's sorted set (KEYS[3:]) scored by the page's
+# expiry: expired members are pruned and a set expires with its last page.
+# ARGV: epoch, page JSON, page TTL in seconds (0 = none), cache key, now.
+_SET_PAGE_SCRIPT = """
+if (redis.call('GET', KEYS[1]) or '0') ~= ARGV[1] then
+    return 0
+end
+local ttl = tonumber(ARGV[3])
+local expires = '+inf'
+if ttl > 0 then
+    redis.call('SET', KEYS[2], ARGV[2], 'EX', ttl)
+    expires = tostring(tonumber(ARGV[5]) + ttl)
+else
+    redis.call('SET', KEYS[2], ARGV[2])
+end
+for i = 3, #KEYS do
+    redis.call('ZADD', KEYS[i], expires, ARGV[4])
+    redis.call('ZREMRANGEBYSCORE', KEYS[i], '-inf', '(' .. ARGV[5])
+    local last = redis.call('ZRANGE', KEYS[i], -1, -1, 'WITHSCORES')[2]
+    if last == 'inf' then
+        redis.call('PERSIST', KEYS[i])
+    else
+        redis.call('EXPIREAT', KEYS[i], math.ceil(tonumber(last)))
+    end
+end
+return 1
+"""
+
+
 class RedisISRCache:
     """Redis-backed ISR cache shared across all workers."""
 
     _PAGE_PREFIX = "reflex_isr:page:"
     _LOCK_PREFIX = "reflex_isr:lock:"
     _TAG_PREFIX = "reflex_isr:tag:"
+    _EPOCH_KEY = "reflex_isr:epoch"
 
     def __init__(self, redis: Redis) -> None:
         """Store the async Redis client.
@@ -314,32 +378,55 @@ class RedisISRCache:
         raw = await self._redis.get(self._PAGE_PREFIX + key)
         return CachedPage.from_json(raw) if raw is not None else None
 
-    async def set(self, key: str, page: CachedPage) -> None:
-        """Store a page and index its tags.
+    async def epoch(self) -> int:
+        """Get the invalidation epoch.
+
+        Returns:
+            The current epoch.
+        """
+        return int(await self._redis.get(self._EPOCH_KEY) or 0)
+
+    async def set(self, key: str, page: CachedPage, epoch: int) -> bool:
+        """Store a page and index its tags, unless an invalidation came after ``epoch``.
 
         The stored value gets a generous TTL (well past ``revalidate``) so stale
         entries remain available for stale-while-revalidate but do not leak
-        forever.
+        forever; each tag index expires with the last page it holds.
 
         Args:
             key: The cache key.
             page: The page to store.
+            epoch: The epoch read before the page was rendered.
+
+        Returns:
+            Whether the page was stored.
         """
         # Keep stale entries around for SWR: TTL = revalidate window + 24h grace.
-        ttl = int(page.revalidate) + 86400 if page.revalidate > 0 else None
-        pipe = self._redis.pipeline()
-        pipe.set(self._PAGE_PREFIX + key, page.to_json(), ex=ttl)
-        for tag in page.tags:
-            pipe.sadd(self._TAG_PREFIX + tag, key)
-        await pipe.execute()
+        ttl = int(page.revalidate) + 86400 if page.revalidate > 0 else 0
+        stored = await self._redis.eval(  # pyright: ignore[reportGeneralTypeIssues]
+            _SET_PAGE_SCRIPT,
+            2 + len(page.tags),
+            self._EPOCH_KEY,
+            self._PAGE_PREFIX + key,
+            *(self._TAG_PREFIX + tag for tag in page.tags),
+            epoch,
+            page.to_json(),
+            ttl,
+            key,
+            time.time(),
+        )
+        return bool(stored)
 
     async def delete(self, key: str) -> None:
-        """Remove a cached page.
+        """Remove a cached page, advancing the invalidation epoch.
 
         Args:
             key: The cache key.
         """
-        await self._redis.delete(self._PAGE_PREFIX + key)
+        pipe = self._redis.pipeline()
+        pipe.incr(self._EPOCH_KEY)
+        pipe.delete(self._PAGE_PREFIX + key)
+        await pipe.execute()
 
     async def acquire_lock(self, key: str, ttl: float) -> str | None:
         """Acquire the single-flight lock via ``SET NX EX``.
@@ -375,12 +462,14 @@ class RedisISRCache:
         Returns:
             The number of pages removed.
         """
+        # Advanced first: a page stored before this reads into the tag's set
+        # below, and a render storing after it is rejected.
+        await self._redis.incr(self._EPOCH_KEY)
         tag_key = self._TAG_PREFIX + tag
-        # redis.asyncio stubs type set-commands with their sync (non-awaitable)
-        # return type; smembers is awaitable at runtime.
-        keys = await self._redis.smembers(tag_key)  # pyright: ignore[reportGeneralTypeIssues]
-        if not keys:
-            return 0
+        # Members scored in the past belong to pages that already expired.
+        keys: list[bytes | str] = await self._redis.zrangebyscore(  # pyright: ignore[reportAssignmentType]
+            tag_key, time.time(), "+inf"
+        )
         page_keys = [
             self._PAGE_PREFIX + (k.decode() if isinstance(k, bytes) else k)
             for k in keys
@@ -497,8 +586,10 @@ class ISRManager:
             path: The request path.
 
         Returns:
-            The rendered HTML, or None on failure.
+            The rendered HTML, or None on failure. A render that an invalidation
+            overtakes is returned but not cached.
         """
+        epoch = await self.cache.epoch()
         try:
             result = await self.renderer(path)
         except Exception:
@@ -519,6 +610,7 @@ class ISRManager:
                 revalidate=revalidate,
                 tags=result.tags,
             ),
+            epoch,
         )
         return result.html
 
