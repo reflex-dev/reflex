@@ -47,7 +47,7 @@ def test_cross_reference_excluded_from_prev_next_chain():
 
 
 def test_upgrade_guide_leads_the_changelog_section():
-    """The 0.10 upgrade guide sits in an Upgrading accordion atop the Changelog section."""
+    """The upgrade guides sit, newest first, in an Upgrading accordion atop the Changelog section."""
     from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import learn
     from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
         changelog_items,
@@ -55,8 +55,10 @@ def test_upgrade_guide_leads_the_changelog_section():
 
     upgrading = changelog_items[0]
     assert upgrading.names == "Upgrading"
-    assert [child.names for child in upgrading.children] == ["Upgrading to 0.10"]
-    assert upgrading.children[0].link == "/changelog/upgrading/upgrading-to-0-10/"
+    assert [(child.names, child.link) for child in upgrading.children] == [
+        ("Upgrading to 0.11", "/changelog/upgrading/upgrading-to-0-11/"),
+        ("Upgrading to 0.10", "/changelog/upgrading/upgrading-to-0-10/"),
+    ]
     assert changelog_items[1].link == "/changelog/"
 
     getting_started = next(item for item in learn if item.names == "Getting Started")

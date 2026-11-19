@@ -789,13 +789,59 @@ def test_component_create_unallowed_types(children, test_component):
 
 
 def test_component_create_backend_var_child(test_component):
-    """A backend var child reports its repr rather than formatting the field."""
+    """A backend var child reports its type rather than formatting the field."""
 
     class BackendChildState(BaseState):
         _secret: int = 42
 
-    with pytest.raises(ChildrenTypeError, match=r"received child Field\(default=42"):
+    with pytest.raises(ChildrenTypeError, match=r"received child of type Field\."):
         test_component.create(BackendChildState._secret)
+
+
+class EventChildState(BaseState):
+    """State with an event handler to pass as a child."""
+
+    def do_something(self):
+        """An event handler."""
+
+
+@pytest.mark.parametrize(
+    ("make_child", "type_name"),
+    [
+        pytest.param(lambda: rx.redirect("/x"), "EventSpec", id="event_spec"),
+        pytest.param(
+            lambda: EventChildState.do_something, "EventHandler", id="event_handler"
+        ),
+        pytest.param(
+            lambda: EventChain(
+                events=[rx.redirect("/x")], args_spec=no_args_event_spec
+            ),
+            "EventChain",
+            id="event_chain",
+        ),
+    ],
+)
+def test_component_create_event_child(make_child, type_name, test_component):
+    """An event child names its type and adds a note on how to run the event.
+
+    Args:
+        make_child: Builds the event child.
+        type_name: The type name the message reports.
+        test_component: A test component.
+    """
+    with pytest.raises(ChildrenTypeError) as exc_info:
+        test_component.create(make_child())
+    assert str(exc_info.value) == (
+        f"Component TestComponent received child of type {type_name}. Accepted types "
+        "are other components, state vars, or primitive Python types (dict excluded)."
+    )
+    assert exc_info.value.__notes__ == [
+        (
+            "Bind an event to an event trigger such as on_click, or pass it to "
+            "on_load in app.add_page to run it when the page loads. "
+            "See https://reflex.dev/docs/events/events-overview/"
+        )
+    ]
 
 
 def test_component_create_backend_var_prop():
@@ -2599,3 +2645,16 @@ def test_set_props_iteration_skips_unset_props_and_keeps_defaults():
         "third": '"set"',
     }
     assert "first" not in vars(component)
+
+
+def test_ref_hook_registers_through_state_helper():
+    """Id refs register through a hook instead of writing ``refs`` during render."""
+    component = Box.create(id="my-box")
+
+    hook = component._get_ref_hook()
+
+    assert hook is not None
+    assert str(hook) == 'const ref_my_box = useRegisteredRef("ref_my_box");'
+    hook_imports = component._get_hooks_imports()
+    assert list(hook_imports["$/utils/state"]) == [ImportVar(tag="useRegisteredRef")]
+    assert "react" not in hook_imports

@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from reflex_base.constants import Templates
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
@@ -24,10 +25,7 @@ def test_client_runtime(script: str) -> None:
         script: Runtime regression script to execute.
     """
     tests = Path(__file__).parent
-    source = (
-        tests.parents[2]
-        / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
-    )
+    source = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
     result = subprocess.run(
         [
             "node",
