@@ -498,7 +498,6 @@ if TYPE_CHECKING or (
 ):
     import sqlmodel
     from reflex_base.utils.serializers import serialize_sqlmodel as serialize_sqlmodel
-    from sqlmodel.main import SQLModelConfig
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 
@@ -541,11 +540,11 @@ if TYPE_CHECKING or (
 
         id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
-        model_config = SQLModelConfig(
-            arbitrary_types_allowed=True,
-            use_enum_values=True,
-            extra="allow",
-        )
+        model_config = {  # pyright: ignore [reportAssignmentType] # ty:ignore[invalid-assignment]
+            "arbitrary_types_allowed": True,
+            "use_enum_values": True,
+            "extra": "allow",
+        }
 
         def __init_subclass__(cls, **kwargs):
             """Automatically register subclasses as models."""

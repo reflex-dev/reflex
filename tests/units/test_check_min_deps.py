@@ -95,7 +95,7 @@ def test_ty_config_mirrors_root_rule_severities():
     config = check_min_deps._ty_config()
 
     assert config.startswith("[rules]\n")
-    assert 'invalid-method-override = "ignore"' in config
+    assert 'incompatible-method-override = "ignore"' in config
 
 
 @pytest.mark.parametrize(
