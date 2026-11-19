@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1350" viewBox="0 0 800 1350" role="img" aria-labelledby="title description">
+  <title id="title">Reference architecture for a scaled Reflex application</title>
+  <desc id="description">A browser loads a static frontend and exchanges events and updates through a WebSocket-capable load balancer with replaceable backend replicas. Backends use a primary database for writes and fresh reads, lagging read replicas only for eligible reads, regional Redis for session state, and an optional separate application cache. An ordinary Redis URL connects backends through a provider-managed failover endpoint to the regional Redis current primary. Redis replication to a replica is asynchronous. Endpoint switching, connection recovery and persistence depend on the selected provider and configuration; the endpoint alone does not prevent data loss. A reliable job handoff publishes to a task broker. Independent workers persist outcomes in shared durable storage before acknowledging success. Queue persistence, recovery, result storage, and idempotency must be configured and tested.</desc>
+  <defs>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172b4d; font-size: 16px; }
+      .title { font-size: 25px; font-weight: 700; }
+      .heading { font-size: 18px; font-weight: 650; }
+      .small { font-size: 15px; }
+      .muted { fill: #465a72; }
+      .card { fill: #fff; stroke: #c4cfde; stroke-width: 1.5; }
+      .blue-card { fill: #eff6ff; stroke: #93b9e8; stroke-width: 1.5; }
+      .purple-card { fill: #f4f0ff; stroke: #b9a5e1; stroke-width: 1.5; }
+      .data { fill: none; stroke: #275d9d; stroke-width: 2; stroke-linejoin: round; }
+      .async { fill: none; stroke: #7145a5; stroke-width: 2.5; stroke-linejoin: round; }
+      .replication { fill: none; stroke: #15776e; stroke-width: 2; stroke-dasharray: 8 5; stroke-linejoin: round; }
+      .label { paint-order: stroke; stroke: #fff; stroke-width: 7px; stroke-linejoin: round; }
+    </style>
+    <marker id="data-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#275d9d"/></marker>
+    <marker id="async-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7145a5"/></marker>
+    <marker id="replication-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#15776e"/></marker>
+  </defs>
+  <rect width="800" height="1350" rx="16" fill="#fff"/>
+  <text x="30" y="39" class="title">A production app, split by responsibility</text>
+  <text x="30" y="67" class="muted">Illustrative topology. Add services only when the application needs them.</text>
+  <path d="M30 98 H68" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
+  <text x="80" y="103" class="small">Request / response</text>
+  <path d="M310 98 H348" class="async" marker-end="url(#async-arrow)"/>
+  <text x="360" y="103" class="small">Async job</text>
+  <path d="M550 98 H588" class="replication" marker-end="url(#replication-arrow)"/>
+  <text x="600" y="103" class="small">Replication</text>
+
+  <rect x="40" y="145" width="225" height="85" rx="10" class="blue-card"/>
+  <text x="152" y="177" text-anchor="middle" class="heading">Browser</text>
+  <text x="152" y="204" text-anchor="middle">React UI</text>
+  <rect x="530" y="145" width="230" height="85" rx="10" class="card"/>
+  <text x="645" y="177" text-anchor="middle" class="heading">Static frontend / CDN</text>
+  <text x="645" y="204" text-anchor="middle">HTML, JavaScript, assets</text>
+  <path d="M265 187 H530" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
+  <text x="397" y="174" text-anchor="middle" class="small label">HTTPS: load frontend</text>
+
+  <rect x="40" y="310" width="225" height="90" rx="10" class="blue-card"/>
+  <text x="152" y="345" text-anchor="middle" class="heading">Load balancer</text>
+  <text x="152" y="373" text-anchor="middle">WebSocket-capable</text>
+  <path d="M152 230 V310" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
+  <text x="170" y="263" class="small">HTTP / WebSocket</text>
+  <text x="170" y="286" class="small">events ↔ updates</text>
+  <rect x="440" y="290" width="320" height="130" rx="12" class="blue-card"/>
+  <text x="600" y="321" text-anchor="middle" class="heading">Reflex backend replicas</text>
+  <rect x="457" y="340" width="86" height="36" rx="6" class="card"/>
+  <rect x="557" y="340" width="86" height="36" rx="6" class="card"/>
+  <rect x="657" y="340" width="86" height="36" rx="6" class="card"/>
+  <text x="500" y="364" text-anchor="middle">1</text>
+  <text x="600" y="364" text-anchor="middle">2</text>
+  <text x="700" y="364" text-anchor="middle">N</text>
+  <text x="600" y="402" text-anchor="middle" class="small">Same code • compatible state schema</text>
+  <path d="M265 355 H440" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
+  <text x="352" y="338" text-anchor="middle" class="small label">Route connections</text>
+
+  <path d="M600 420 V467 H150 V540" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
+  <path d="M400 467 V540" class="data" marker-end="url(#data-arrow)"/>
+  <path d="M600 467 H660 V540" class="data" marker-end="url(#data-arrow)"/>
+  <circle cx="400" cy="467" r="3.5" fill="#275d9d"/>
+  <circle cx="600" cy="467" r="3.5" fill="#275d9d"/>
+  <text x="150" y="510" text-anchor="middle" class="small label">Writes / fresh reads</text>
+  <text x="400" y="510" text-anchor="middle" class="small label">Lag-tolerant reads</text>
+  <text x="660" y="510" text-anchor="middle" class="small label">Ordinary Redis URL</text>
+  <rect x="550" y="540" width="220" height="120" rx="10" class="card"/>
+  <text x="660" y="575" text-anchor="middle" class="heading">Provider-managed</text>
+  <text x="660" y="601" text-anchor="middle" class="heading">failover endpoint</text>
+  <text x="660" y="629" text-anchor="middle" class="small">Provider-specific behavior</text>
+  <path d="M660 660 V740" class="data" marker-start="url(#data-arrow)" marker-end="url(#data-arrow)"/>
+  <text x="679" y="695" class="small label">State /</text>
+  <text x="679" y="717" class="small label">locks</text>
+
+  <rect x="40" y="540" width="220" height="120" rx="10" class="card"/>
+  <text x="150" y="575" text-anchor="middle" class="heading">Primary database</text>
+  <text x="150" y="604" text-anchor="middle">Business records</text>
+  <text x="150" y="629" text-anchor="middle">Jobs + result references</text>
+  <rect x="290" y="540" width="220" height="120" rx="10" class="card"/>
+  <text x="400" y="575" text-anchor="middle" class="heading">Read replica DBs</text>
+  <text x="400" y="604" text-anchor="middle">Read-only routing</text>
+  <text x="400" y="629" text-anchor="middle">May lag behind primary</text>
+  <path d="M150 660 V710 H400 V660" class="replication" marker-end="url(#replication-arrow)"/>
+  <text x="275" y="737" text-anchor="middle" class="small">Asynchronous DB replication</text>
+
+  <rect x="550" y="740" width="220" height="120" rx="10" class="card"/>
+  <text x="660" y="775" text-anchor="middle" class="heading">Regional state Redis</text>
+  <text x="660" y="804" text-anchor="middle">Current primary</text>
+  <text x="660" y="829" text-anchor="middle">Shared by this region</text>
+  <rect x="550" y="935" width="220" height="60" rx="10" class="card"/>
+  <text x="660" y="972" text-anchor="middle">State Redis replica</text>
+  <path d="M660 860 V935" class="replication" marker-end="url(#replication-arrow)"/>
+  <text x="643" y="892" text-anchor="end" class="small label">Async</text>
+  <text x="643" y="913" text-anchor="end" class="small label">replication</text>
+
+  <path d="M150 467 H17 V848 H40" class="data" marker-end="url(#data-arrow)"/>
+  <rect x="40" y="800" width="220" height="100" rx="10" class="card"/>
+  <text x="150" y="834" text-anchor="middle" class="heading">Optional cache</text>
+  <text x="150" y="861" text-anchor="middle">Separate Redis service</text>
+  <text x="150" y="886" text-anchor="middle" class="small">Cache get / set + TTLs</text>
+
+  <path d="M760 355 H793 V1055 H150 V1090" class="async" marker-end="url(#async-arrow)"/>
+  <text x="405" y="1043" text-anchor="middle" class="small label">Publish after reliable handoff (see job lifecycle)</text>
+  <rect x="40" y="1090" width="220" height="100" rx="10" class="purple-card"/>
+  <text x="150" y="1125" text-anchor="middle" class="heading">Task queue / broker</text>
+  <text x="150" y="1153" text-anchor="middle">Configure persistence</text>
+  <text x="150" y="1177" text-anchor="middle" class="small">and delivery / recovery</text>
+  <rect x="470" y="1090" width="290" height="100" rx="10" class="purple-card"/>
+  <text x="615" y="1125" text-anchor="middle" class="heading">Independent workers</text>
+  <text x="615" y="1153" text-anchor="middle">Idempotent task effects</text>
+  <text x="615" y="1177" text-anchor="middle" class="small">Shared inputs + result storage</text>
+  <path d="M260 1122 H470" class="async" marker-end="url(#async-arrow)"/>
+  <text x="365" y="1110" text-anchor="middle" class="small label">Deliver / redeliver</text>
+  <path d="M470 1170 H260" class="async" marker-end="url(#async-arrow)"/>
+  <text x="365" y="1158" text-anchor="middle" class="small label">Ack after persistence</text>
+  <path d="M615 1190 V1240 H29 V626 H40" class="data" marker-end="url(#data-arrow)"/>
+  <text x="380" y="1227" text-anchor="middle" class="small label">Persist outcomes in shared durable storage</text>
+  <text x="40" y="1282" class="muted">Storage persistence, replication lag and job recovery depend on configuration.</text>
+  <text x="40" y="1307" class="muted">A provider endpoint alone does not guarantee recovery or prevent data loss.</text>
+</svg>

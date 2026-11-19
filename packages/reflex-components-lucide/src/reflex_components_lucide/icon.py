@@ -1,11 +1,12 @@
 """Lucide Icon component."""
 
+import dataclasses
 import logging
 
 from reflex_base.components.component import Component, field
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import LiteralVar, Var, var_operation, var_operation_return
 from reflex_base.vars.sequence import LiteralStringVar, StringVar
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,26 @@ class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
     library = LUCIDE_LIBRARY
+
+
+@var_operation
+def dynamic_icon_name_operation(tag: StringVar):
+    """Convert an icon tag to the name Lucide's DynamicIcon expects.
+
+    Underscores become hyphens, and the hyphen that snake_case puts inside
+    digit-x-digit names (``grid_2x_2`` -> ``grid-2x-2``) is dropped so the
+    name matches Lucide's own ``grid-2x2``.
+
+    Args:
+        tag: The snake_case or kebab-case icon tag.
+
+    Returns:
+        The kebab-case Lucide icon name.
+    """
+    return var_operation_return(
+        js_expression=f'{tag!s}.replaceAll("_", "-").replace(/(\\d)x-(\\d)/g, "$1x$2")',
+        var_type=str,
+    )
 
 
 class Icon(LucideIconComponent):
@@ -73,7 +94,9 @@ class Icon(LucideIconComponent):
             if not isinstance(tag_stringified, StringVar):
                 msg = f"Icon name must be a string, got {tag_var._var_type}"
                 raise TypeError(msg)
-            return DynamicIcon.create(name=tag_stringified.replace("_", "-"), **props)
+            return DynamicIcon.create(
+                name=dynamic_icon_name_operation(tag_stringified), **props
+            )
 
         if tag not in LUCIDE_ICON_LIST:
             icons_sorted = sorted(
@@ -95,7 +118,8 @@ class Icon(LucideIconComponent):
         props["_import_path"] = f"/dist/esm/icons/{file_name}.mjs"
         return super().create(**props)
 
-    def _get_imports(self):
+    @property
+    def import_var(self) -> ImportVar:
         """Emit a deep per-icon import instead of a lucide-react barrel import.
 
         Importing a static icon by name from the ``lucide-react`` barrel pulls
@@ -105,20 +129,11 @@ class Icon(LucideIconComponent):
         module avoids this and is lucide's recommended form.
 
         Returns:
-            The imports needed by the component.
+            The deep default import for the icon.
         """
-        imports_ = super()._get_imports()
-        if self.library and self._import_path:
-            imports_.pop(self.library, None)
-            imports_[LUCIDE_LIBRARY] = [
-                ImportVar(
-                    self.tag,
-                    is_default=True,
-                    alias=self.alias,
-                    package_path=self._import_path,
-                )
-            ]
-        return imports_
+        return dataclasses.replace(
+            super().import_var, is_default=True, package_path=self._import_path
+        )
 
 
 class DynamicIcon(LucideIconComponent):
@@ -129,14 +144,16 @@ class DynamicIcon(LucideIconComponent):
     name: Var[str]
     size: Var[int]
 
-    def _get_imports(self):
-        imports_ = super()._get_imports()
-        if self.library:
-            imports_.pop(self.library)
-        imports_[LUCIDE_LIBRARY] = [
-            ImportVar("DynamicIcon", package_path="/dynamic.mjs")
-        ]
-        return imports_
+    @property
+    def import_var(self) -> ImportVar:
+        """Import the dynamic icon from Lucide's dynamic module.
+
+        Returns:
+            The named dynamic module import.
+        """
+        return dataclasses.replace(
+            super().import_var, is_default=False, package_path="/dynamic.mjs"
+        )
 
 
 LUCIDE_ICON_LIST = [
