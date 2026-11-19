@@ -228,6 +228,18 @@ def normalize_locale(locale: str) -> str:
         ValueError: If the locale is not a hyphen-separated language tag.
     """
     validate_locale(locale)
+    return spell_locale(locale)
+
+
+def spell_locale(locale: str) -> str:
+    """Spell a language tag canonically, like :func:`normalize_locale`, unvalidated.
+
+    Args:
+        locale: The tag to spell.
+
+    Returns:
+        The configured spelling, else the conventional case.
+    """
     lowered = locale.lower()
     if _active_config is not None:
         for configured in _active_config.locales:

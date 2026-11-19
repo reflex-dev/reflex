@@ -20,7 +20,12 @@ from typing import TYPE_CHECKING, Literal
 
 from reflex_base.vars.dep_tracking import register_implicit_dependency
 
-from .config import check_configured_locale, get_active_i18n_config, source_locale
+from .config import (
+    check_configured_locale,
+    get_active_i18n_config,
+    source_locale,
+    spell_locale,
+)
 
 if TYPE_CHECKING:
     import datetime
@@ -326,8 +331,9 @@ def fallback_chain(locale: str | None = None) -> tuple[str, ...]:
 
     The locale itself, then the source locale, the fallback locale and the
     other configured locales, each followed by its own language (``de-AT``,
-    ``de``), so trying the keys of a ``{locale: text}`` mapping in this order
-    (e.g. an SQL ``COALESCE``) prefers the same language like
+    ``de``) and spelled like :func:`~reflex_i18n.config.normalize_locale`
+    spells stored keys. Trying the keys of a ``{locale: text}`` mapping in this
+    order (e.g. an SQL ``COALESCE``) thus prefers the same language like
     :func:`pick_translation` does.
 
     Args:
@@ -347,7 +353,7 @@ def fallback_chain(locale: str | None = None) -> tuple[str, ...]:
     chain: dict[str, str] = {}
     for candidate in candidates:
         for tag in (candidate, candidate.split("-")[0]):
-            chain.setdefault(tag.lower(), tag)
+            chain.setdefault(tag.lower(), spell_locale(tag))
     return tuple(chain.values())
 
 

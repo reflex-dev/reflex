@@ -519,7 +519,9 @@ def test_fallback_chain_follows_the_config():
         )
     )
     assert fallback_chain("de") == ("de", "en", "fr")
-    assert fallback_chain("EN") == ("EN", "de", "fr")
+    # Spelled like stored keys, whatever the caller's case.
+    assert fallback_chain("EN") == ("en", "de", "fr")
+    assert fallback_chain("PT-br") == ("pt-BR", "pt", "de", "en", "fr")
     assert fallback_chain("pt-BR") == ("pt-BR", "pt", "de", "en", "fr")
     assert fallback_chain("de-AT") == ("de-AT", "de", "en", "fr")
     assert fallback_chain() == ("de", "en", "fr")
@@ -554,7 +556,7 @@ def test_pick_translation_locale(
     )
 
 
-@pytest.mark.parametrize("locale", ["de-AT", "de", "en", "fr", "it"])
+@pytest.mark.parametrize("locale", ["de-AT", "de", "en", "EN", "fr", "it"])
 def test_trying_keys_along_the_fallback_chain_matches_the_picker(locale: str):
     """Exact key lookups in chain order (e.g. an SQL COALESCE) pick the same text.
 

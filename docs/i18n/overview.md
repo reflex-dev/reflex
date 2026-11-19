@@ -219,10 +219,11 @@ locale changes.
 
 On the server, `pick_translation(texts)` picks for the current visitor (or for
 the locale `use_locale` set), and `fallback_chain(locale)` returns the order
-itself, each locale followed by its own language (`de-AT`, `de`). Trying the
-keys in that order, e.g. in an SQL `COALESCE`, picks what `pick_translation`
-picks as long as the keys are languages without a region; a key like `de-CH`
-is found only where the chain names it. `normalize_locale` spells a language
+itself, each locale followed by its own language (`de-AT`, `de`) and spelled
+the way `normalize_locale` spells stored keys. Trying the keys in that order,
+e.g. in an SQL `COALESCE`, picks what `pick_translation` picks as long as the
+keys are normalized languages without a region; a key like `de-CH` is found
+only where the chain names it. `normalize_locale` spells a language
 tag the way the plugin does, which keeps stored keys consistent.
 
 ## Formatting numbers and dates
