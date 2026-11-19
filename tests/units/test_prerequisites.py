@@ -572,8 +572,12 @@ def test_initialize_vite_config_writes_utf8(tmp_path, monkeypatch):
     with chdir(tmp_path):
         frontend_skeleton.initialize_vite_config()
 
+    # Swapping the host into an ASCII render pins it as written verbatim.
+    expected = _compile_vite_config(
+        Config(app_name="test", vite_allowed_hosts=["placeholder.example"])
+    ).replace('"placeholder.example"', '"königsallee.example"')
     written = web_dir / constants.ReactRouter.VITE_CONFIG_FILE
-    assert "königsallee.example" in written.read_text(encoding="utf-8")
+    assert written.read_text(encoding="utf-8") == expected
 
 
 def test_react_compiler_vite_config():
@@ -2799,9 +2803,15 @@ def test_read_package_json_object_undecodable_bytes(tmp_path, caplog):
     package_json_path = tmp_path / constants.PackageJson.PATH
     package_json_path.write_bytes(b'{"name": "\xff\xfe"}')
 
-    assert frontend_skeleton._read_package_json_object(package_json_path) == {}
+    with caplog.at_level("WARNING"):
+        assert frontend_skeleton._read_package_json_object(package_json_path) == {}
 
-    assert "treating it as empty" in caplog.text
+    assert caplog.messages == [
+        (
+            f"Failed to read {package_json_path}: 'utf-8' codec can't decode byte "
+            "0xff in position 10: invalid start byte; treating it as empty."
+        )
+    ]
 
 
 @pytest.fixture
