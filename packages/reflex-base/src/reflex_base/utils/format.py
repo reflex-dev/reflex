@@ -465,6 +465,19 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     return (state_full_name, ctx.get_handler_name(handler.state, func_name))
 
 
+def _event_handler_full_name(handler: EventHandler) -> str:
+    """Get the full name events address a handler by under the active resolver.
+
+    Args:
+        handler: The event handler.
+
+    Returns:
+        ``state.handler`` for a handler of a state, else its bare name.
+    """
+    state, name = get_event_handler_parts(handler)
+    return name if handler.state is None else f"{state}.{name}"
+
+
 def format_event_handler(handler: EventHandler) -> str:
     """Format an event handler.
 
@@ -486,11 +499,8 @@ def format_event_handler(handler: EventHandler) -> str:
     cached = handler._formatted_name
     if cached is not None and cached[0] is resolver:
         return cached[1]
-    state, name = get_event_handler_parts(handler)
-    if handler.state is None:
-        full = name
-    else:
-        full = f"{state}.{name}"
+    full = _event_handler_full_name(handler)
+    if handler.state is not None:
         if (issued := _issued_event_handlers.get(full)) is None:
             issued = _issued_event_handlers[full] = weakref.WeakKeyDictionary()
         issued.setdefault(handler.state, set()).add(

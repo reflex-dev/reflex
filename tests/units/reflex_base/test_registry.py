@@ -625,6 +625,40 @@ def test_handlers_resolving_to_one_name_raise(
                 pass
 
 
+def test_handler_is_registered_under_the_name_its_events_carry(
+    clean_registration_context: RegistrationContext,
+):
+    """The registry key is the formatted name, even for an empty resolved name.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+
+    class EmptyFoo:
+        def resolve_state_name(self, state_cls):
+            return None
+
+        def resolve_handler_name(self, state_cls, handler_name):
+            return "" if handler_name == "foo" else None
+
+        def resolve_var_name(self, state_cls, var_name):
+            return None
+
+        def digest(self):
+            return ""
+
+    with temporary_resolver(EmptyFoo()):
+
+        class EmptyNamedHandlerState(BaseState):
+            def foo(self):
+                pass
+
+        handler = EmptyNamedHandlerState.event_handlers["foo"]
+        name = format.format_event_handler(handler)
+        assert name == f"{EmptyNamedHandlerState.get_full_name()}."
+        assert clean_registration_context.event_handlers[name].handler is handler
+
+
 def test_refresh_keys_keeps_reloaded_substates_out(
     clean_registration_context: RegistrationContext,
 ):

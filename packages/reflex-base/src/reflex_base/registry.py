@@ -71,9 +71,9 @@ def _event_handler_key(handler: EventHandler) -> str:
     Returns:
         The handler's full name under the active resolver.
     """
-    from reflex_base.utils.format import get_event_handler_parts
+    from reflex_base.utils.format import _event_handler_full_name
 
-    return ".".join(filter(None, get_event_handler_parts(handler)))
+    return _event_handler_full_name(handler)
 
 
 @runtime_checkable
