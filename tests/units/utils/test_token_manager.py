@@ -9,6 +9,7 @@ from typing import cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from redis.asyncio.client import PubSub
 
 from reflex import config
 from reflex.app import EventNamespace
@@ -673,6 +674,35 @@ class TestRedisTokenManager:
         assert manager._lost_and_found_task is None
         mock_redis.aclose.assert_awaited_once()
 
+    async def test_lost_and_found_subscribe_timeout_warns_and_connects(
+        self,
+        manager: RedisTokenManager,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ):
+        """A connect goes ahead with a warning when redis never confirms the subscription.
+
+        Args:
+            manager: RedisTokenManager fixture instance, whose pubsub never confirms.
+            monkeypatch: The pytest monkeypatch fixture.
+            caplog: The pytest log capture fixture.
+        """
+        monkeypatch.setattr(
+            "reflex.utils.token_manager.LOST_AND_FOUND_SUBSCRIBE_TIMEOUT", 0.01
+        )
+
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+
+        assert manager._lost_and_found_task is not None
+        assert not manager._lost_and_found_task.done()
+        assert [record.getMessage() for record in caplog.records] == [
+            (
+                "Redis did not confirm the lost and found subscription in time; "
+                "updates from other instances may be lost until it does."
+            )
+        ]
+        await manager.close()
+
     async def test_close_without_tasks(self, manager, mock_redis):
         """Test close works when no background tasks were started.
 
@@ -948,6 +978,40 @@ async def test_redis_token_manager_lost_and_found(
     emit2_mock.assert_not_called()
     emit1_mock.assert_called_once()
     emit1_mock.reset_mock()
+
+
+@pytest.mark.usefixtures("redis_url")
+@pytest.mark.asyncio
+async def test_redis_token_manager_lost_and_found_subscribes_before_connecting(
+    event_namespace_factory: Callable[[], EventNamespace],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A connect waits for the lost and found subscription, so no update is lost.
+
+    Redis drops a message published before its subscriber is subscribed, and
+    the socket record tells other instances to publish as soon as it is stored.
+
+    Args:
+        event_namespace_factory: Factory fixture for EventNamespace instances.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    psubscribe = PubSub.psubscribe
+
+    async def slow_psubscribe(self: PubSub, *args, **kwargs):
+        if any("lost_and_found" in str(arg) for arg in args):
+            await asyncio.sleep(0.5)
+        return await psubscribe(self, *args, **kwargs)
+
+    monkeypatch.setattr(PubSub, "psubscribe", slow_psubscribe)
+    event_namespace1 = event_namespace_factory()
+    emit1_mock: Mock = event_namespace1.emit  # pyright: ignore[reportAssignmentType]
+    event_namespace2 = event_namespace_factory()
+
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    await event_namespace2.emit_update(StateUpdate(), token="token1")
+    await _wait_for_call_count_positive(emit1_mock)
+
+    emit1_mock.assert_called_once()
 
 
 @pytest.mark.usefixtures("redis_url")
