@@ -4,24 +4,26 @@ description: Connect your apps to Anthropic's Claude models for advanced AI capa
 ---
 # Anthropic Integration
 
-The **Anthropic Integration** allows your app to use [Anthropic’s Claude models](https://www.anthropic.com/claude) for tasks such as text generation, summarization, reasoning, and other advanced AI capabilities. Once connected, you can call Claude directly from your workflows, UI actions, or automated triggers.
+The **Anthropic Integration** allows your app to use [Anthropic’s Claude models](https://claude.com/product/overview) for tasks such as text generation, summarization, reasoning, and other advanced AI capabilities. Once connected, you can call Claude directly from your workflows, UI actions, or automated triggers.
 
 
 ## Step 1: Obtain an Anthropic API Key
 
-1. Go to the [Anthropic Console](https://console.anthropic.com/).
-2. Navigate to **API Keys** in your account settings.
-3. Click **Create Key** and give it a descriptive name (e.g., “AI Builder”).
+1. Go to the [Claude Console](https://platform.claude.com/) and log in or create an account.
+2. Open the [API keys](https://platform.claude.com/settings/keys) page.
+3. Click **Create key**, give it a descriptive name (e.g., “AI Builder”), and select an expiration.
 4. Copy the generated key.
 
-   * **Example:** `sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+   * **Example:** `sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 
 ## Step 2: Configure the Integration in Your App
 
-1. Go to **Integrations → Add Anthropic** in your app settings.
-2. Paste your **Anthropic API Key** in the input field.
-3. Click **Connect** to validate and save your integration.
+1. In Reflex Build, open the **Integrations** tab and select the **Anthropic** card.
+2. Click **Add connection** and paste your API key into **ANTHROPIC_API_KEY**.
+3. Click **Connect** to save the connection.
+
+Leave **ANTHROPIC_BASE_URL** at its default (`https://api.anthropic.com`) unless you send requests through a proxy or gateway.
 
 Once connected, your app can use Claude for AI-powered features across workflows and components.
 

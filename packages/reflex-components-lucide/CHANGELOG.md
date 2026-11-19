@@ -1,3 +1,17 @@
+## v1.1.2 (2026-11-11)
+
+### Bug Fixes
+
+- Fix `rx.icon` with a Var tag rendering blank for digit-x-digit icons such as `grid_2x_2`, `grid_2x_2_check` and `grid_3x_3`. ([#7674](https://github.com/reflex-dev/reflex/issues/7674))
+
+
+## v1.1.1 (2026-10-26)
+
+### Bug Fixes
+
+- Preserve imports required by icon props and expose the correct Lucide module through `import_var`. ([#7604](https://github.com/reflex-dev/reflex/issues/7604))
+
+
 ## v1.1.0 (2026-10-08)
 
 ### Breaking Changes
