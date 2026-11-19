@@ -11,10 +11,11 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import functools
 import hashlib
 import json
 import logging
-from collections.abc import Collection, Iterable, Iterator
+from collections.abc import Callable, Collection, Iterable, Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
@@ -32,8 +33,9 @@ SCHEMA_VERSION = 1
 # Names listed in the stale-config warning before it summarizes the rest.
 _STALE_WARNING_LIMIT = 5
 
-# The frontend keys plain objects by root state name, so a state id must not
-# read an inherited Object.prototype member while that state is absent.
+# The frontend keys plain objects by dotted state path, so a root state's id,
+# a path on its own, must not read an inherited Object.prototype member while
+# that state is absent.
 _OBJECT_PROTOTYPE_MEMBERS = frozenset({
     "__defineGetter__",
     "__defineSetter__",
@@ -89,42 +91,45 @@ def _validate_minified_id(label: str, value: str) -> None:
         raise ValueError(msg)
 
 
-def _is_state_id(value: str) -> bool:
+def _is_state_id(value: str, *, root: bool) -> bool:
     """Whether a minified id can name a state in the compiled frontend.
 
     The frontend joins path segments with ``__``, so ``a`` + ``_b`` and
     ``a_`` + ``b`` would both read ``a___b``; an id with no underscore at
     either end and none doubled can only ever split one way. It also keys
-    plain objects by state name, which inherit the Object.prototype members.
+    plain objects by dotted state path, which inherit the Object.prototype
+    members; only a root's path is its id alone.
 
     Args:
         value: The candidate state id.
+        root: Whether the state has no parent.
 
     Returns:
-        Whether the id may name a state.
+        Whether the id may name the state.
     """
     return not (
         value.startswith("_")
         or value.endswith("_")
         or "__" in value
-        or value in _OBJECT_PROTOTYPE_MEMBERS
+        or (root and value in _OBJECT_PROTOTYPE_MEMBERS)
     )
 
 
-def _invalid_state_id_message(state_path: str, state_id: str) -> str:
+def _invalid_state_id_message(state_path: str, state_id: str, *, root: bool) -> str:
     """Explain why a state id is rejected and how to replace it.
 
     Args:
         state_path: The state's config path.
         state_id: Its id, which :func:`_is_state_id` rejects.
+        root: Whether the state has no parent.
 
     Returns:
         The message.
     """
     reason = (
-        "a state id may not name an Object.prototype member, which the "
+        "a root state id may not name an Object.prototype member, which the "
         "frontend's state maps would inherit"
-        if state_id in _OBJECT_PROTOTYPE_MEMBERS
+        if root and state_id in _OBJECT_PROTOTYPE_MEMBERS
         else "a state id may not start or end with '_' or contain '__', which "
         "would make two state paths read the same once dots become '__'"
     )
@@ -212,10 +217,9 @@ def _load_minify_config_uncached(*, for_repair: bool = False) -> MinifyConfig | 
             msg = f"Invalid {MINIFY_JSON}: state '{key}' must be an object with a string 'id' and a 'parent': {value}"
             raise ValueError(msg)
         _validate_minified_id(f"state '{key}'", value["id"])
-        if not for_repair and not _is_state_id(value["id"]):
-            msg = (
-                f"Invalid {MINIFY_JSON}: {_invalid_state_id_message(key, value['id'])}"
-            )
+        root = value["parent"] is None
+        if not for_repair and not _is_state_id(value["id"], root=root):
+            msg = f"Invalid {MINIFY_JSON}: {_invalid_state_id_message(key, value['id'], root=root)}"
             raise ValueError(msg)
         parent = value.get("parent")
         if parent is not None and not isinstance(parent, str):
@@ -687,7 +691,7 @@ def _assign_next_ids(
     new_keys: Iterable[str],
     existing_ids: Collection[str],
     reassign_deleted: bool,
-    for_states: bool = False,
+    is_valid: Callable[[str], bool] | None = None,
     skip: Collection[str] = (),
 ) -> dict[str, str]:
     """Assign minified ids to ``new_keys`` while skipping ``existing_ids``.
@@ -700,8 +704,7 @@ def _assign_next_ids(
         existing_ids: Already-used ids in the same scope.
         reassign_deleted: When ``True``, scan from 0 (filling gaps);
             otherwise start past the highest decoded ``existing_ids``.
-        for_states: Whether the ids name states, which skip the ids
-            :func:`_is_state_id` rejects.
+        is_valid: Whether an id may be taken, for ids with rules of their own.
         skip: Ids to avoid that are not in the scope, so do not move its max.
 
     Returns:
@@ -716,7 +719,7 @@ def _assign_next_ids(
     out: dict[str, str] = {}
     for key in sorted(new_keys):
         while (name := int_to_minified_name(next_id)) in pool or (
-            for_states and not _is_state_id(name)
+            is_valid is not None and not is_valid(name)
         ):
             next_id += 1
         out[key] = name
@@ -768,7 +771,11 @@ def _assign_state_ids(
     """
     siblings, parent = _state_id_scope(states, parent_key, set(state_paths))
     return _assign_next_ids(
-        state_paths, siblings, reassign_deleted, for_states=True, skip=parent
+        state_paths,
+        siblings,
+        reassign_deleted,
+        is_valid=functools.partial(_is_state_id, root=parent_key is None),
+        skip=parent,
     )
 
 
@@ -811,7 +818,7 @@ def _rehome_invalid_state_ids(
     """
     for state_path in sorted(states):
         entry = states[state_path]
-        if _is_state_id(entry["id"]):
+        if _is_state_id(entry["id"], root=entry["parent"] is None):
             continue
         entry["id"] = _assign_state_ids(
             states, (state_path,), entry["parent"], reassign_deleted
@@ -918,11 +925,10 @@ def validate_minify_config(
                 "'reflex minify init'."
             )
 
-    errors.extend(
-        _invalid_state_id_message(state_path, entry["id"])
-        for state_path, entry in config["states"].items()
-        if not _is_state_id(entry["id"])
-    )
+    for state_path, entry in config["states"].items():
+        root = entry["parent"] is None
+        if not _is_state_id(entry["id"], root=root):
+            errors.append(_invalid_state_id_message(state_path, entry["id"], root=root))
 
     for parent_key, pairs in parent_to_pairs.items():
         parent_name = parent_key if parent_key is not None else "root"
