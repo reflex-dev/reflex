@@ -382,9 +382,13 @@ mapping it entirely if you do not want it: a deployment without one pays nothing
 ## In a Reflex app
 
 `rx.Model` is a SQLModel, and a step on one is an unannotated attribute that pydantic
-refuses, so workflows are declared on a `DeclarativeBase` of their own. Register it so
-`reflex db makemigrations` sees the tables, and build the session factory on Reflex's
-own async engine so the app has one pool:
+refuses, so workflows are declared on a `DeclarativeBase`, such as the one the app's
+other tables use (with the `reflex_workflow.dataclass` mixins if it is a
+`MappedAsDataclass`). `reflex db makemigrations` finds a base by itself when the module
+that defines it holds it under its own name; an app that registers its bases with
+`rx.ModelRegistry.register` registers this one too, since once any base is registered
+the others are left out of migrations.
+Build the session factory on Reflex's own async engine so the app has one pool:
 
 ```python
 import reflex as rx
@@ -396,9 +400,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     pass
-
-
-rx.ModelRegistry.register(Base)
 
 
 class Expense(Base, Workflow):
@@ -567,11 +568,26 @@ arrives calls it, and the request is held open until the worker has run the
 work or has nothing left to take. Holding it open is the point on hosts that
 only give an instance CPU while it is answering a request.
 
+In a Reflex app, the route goes on a FastAPI app passed as `api_transformer`, in
+the process that runs the worker:
+
 ```python
-@app.api.get("/wake")
+from datetime import timedelta
+
+import reflex as rx
+import reflex_workflow
+from fastapi import FastAPI, Response
+
+api = FastAPI()
+
+
+@api.post("/wake")
 async def wake_workflows() -> Response:
     caught_up = await reflex_workflow.wake(timedelta(seconds=50))
     return Response(status_code=200 if caught_up else 503)
+
+
+app = rx.App(api_transformer=api)
 ```
 
 It returns True once the worker has made a pass that claimed nothing, with none
