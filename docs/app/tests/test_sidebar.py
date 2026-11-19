@@ -230,3 +230,28 @@ def test_groups_open_for_any_descendant_of_the_initial_route():
     assert str(nested.open) == (
         '["/postgres/", "/sqlite/"].includes(docsSidebarInitialUrl)'
     )
+
+
+def test_workflow_sidebar_labels_match_page_headings():
+    """Building Workflows labels spell each page the way its heading does."""
+    from reflex_docs.templates.docpage.sidebar.sidebar import get_prev_next
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import (
+        get_sidebar_items_workflows,
+    )
+
+    building = next(
+        item
+        for item in get_sidebar_items_workflows()
+        if item.names == "Building Workflows"
+    )
+    assert [(child.names, child.link) for child in building.children] == [
+        ("Defining Workflows", "/workflows/defining-workflows/"),
+        ("Steps", "/workflows/steps/"),
+        ("Runs", "/workflows/runs/"),
+        ("Events", "/workflows/events/"),
+        ("Schedules", "/workflows/schedules/"),
+        ("Fan-Out", "/workflows/fan-out/"),
+        ("Concurrency", "/workflows/concurrency/"),
+    ]
+    _, next_ = get_prev_next("/workflows/schedules/")
+    assert next_ is not None and next_.names == "Fan-Out"

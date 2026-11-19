@@ -358,3 +358,6 @@ html:not(:has(.docs-sidebar-slot)) .docs-persistent-sidebar { display: none; }
 .docs-landing .docs-action-secondary > div { border: 0; background: var(--card); color: var(--foreground); box-shadow: var(--docs-control-shadow); }
 .docs-landing .docs-action-secondary > div:hover { background: var(--subtle); }
 :is(.dark, .dark-theme) .docs-landing .docs-action-secondary > div:hover { background: var(--accent); }
+
+/* Recharts colors legend labels with their series color; keep that on the icon only. */
+.recharts-legend-item-text { color: var(--foreground) !important; }

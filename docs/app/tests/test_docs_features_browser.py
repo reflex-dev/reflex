@@ -488,3 +488,34 @@ def test_unknown_route_serves_docs_recovery_page(page: Page):
         "href", "/docs/"
     )
     expect(page.locator('meta[name="robots"]')).to_have_attribute("content", "noindex")
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "library/graphing/general/legend",
+        "library/graphing/general/axis",
+        "library/graphing/charts/areachart",
+        "library/graphing/charts/barchart",
+        "library/graphing/charts/linechart",
+        "library/graphing/charts/radarchart",
+        "library/graphing/charts/scatterchart",
+        "library/graphing/charts/composedchart",
+    ],
+)
+@pytest.mark.parametrize(
+    ("color_mode", "foreground"),
+    [("light", "rgb(10, 10, 10)"), ("dark", "rgb(245, 245, 245)")],
+)
+def test_recharts_legend_labels_use_reading_color(
+    page: Page, path: str, color_mode: str, foreground: str
+):
+    """Legend labels use the theme foreground; only their icons carry the series color."""
+    page.emulate_media(color_scheme=color_mode)
+    page.add_init_script(f"localStorage.setItem('theme', '{color_mode}')")
+    page.goto(f"{PREVIEW_URL}/docs/{path}/")
+    expect(page.locator("html")).to_have_class(re.compile(rf"\b{color_mode}\b"))
+    labels = page.locator(".recharts-legend-item-text")
+    expect(labels.first).to_be_visible()
+    colors = labels.evaluate_all("els => els.map(el => getComputedStyle(el).color)")
+    assert colors == [foreground] * len(colors)

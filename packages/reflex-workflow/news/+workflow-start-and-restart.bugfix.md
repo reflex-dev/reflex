@@ -1,1 +1,0 @@
-`start()` stores a column the caller set to `None` as `None`, rather than falling back to the column's default. `deliver(..., restart=True)` leaves a cancelled step its lease, as `run()` does, so the restarted step waits for it instead of running beside it.
