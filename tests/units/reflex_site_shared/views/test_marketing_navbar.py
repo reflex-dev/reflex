@@ -1,5 +1,6 @@
 """Shared marketing navigation behavior across consuming applications."""
 
+import inspect
 from collections.abc import Iterator
 from typing import Any
 
@@ -83,7 +84,7 @@ def test_navigation_does_not_link_the_retired_pricing_page():
         marketing_navbar(),
         marketing_mobile_drawer(),
         navbar_sidebar_drawer(rx.el.button()),
-        footer_index.__wrapped__(),
+        inspect.unwrap(footer_index)(),
     ):
         hrefs = [
             str(node.href).strip('"')
