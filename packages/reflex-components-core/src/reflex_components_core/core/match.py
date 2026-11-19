@@ -212,14 +212,9 @@ class Match(Component):
             MatchTypeError: If the return types of cases are different.
         """
         first_case_return = match_cases[0][-1]
-        return_type: type[Var] | type[BaseComponent]
-        if isinstance(first_case_return, BaseComponent):
-            return_type = BaseComponent
-        elif isinstance(first_case_return, Var):
-            return_type = Var
-        else:
-            msg = "Return value must be a var or component"
-            raise MatchTypeError(msg)
+        return_type = (
+            BaseComponent if isinstance(first_case_return, BaseComponent) else Var
+        )
 
         for index, case in enumerate(match_cases):
             return_value = case[-1]

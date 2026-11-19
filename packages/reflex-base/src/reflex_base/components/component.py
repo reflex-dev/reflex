@@ -136,7 +136,7 @@ def field(
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_javascript_property: bool | None = None,
     doc: str | None = None,
-) -> Any:
+) -> FIELD_TYPE:
     """Create a field for a component.
 
     Args:
@@ -159,7 +159,7 @@ def field(
         default_factory=default_factory,
         is_javascript=is_javascript_property,
         doc=doc,
-    )
+    )  # ty:ignore[invalid-return-type]
 
 
 def _field_values_equal(a: Any, b: Any) -> bool:

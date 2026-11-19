@@ -1746,17 +1746,33 @@ VAR_SUBCLASS = TypeVar("VAR_SUBCLASS", bound=Var)
 VAR_INSIDE = TypeVar("VAR_INSIDE")
 
 
-@dataclasses.dataclass(eq=False, frozen=True)
 class ToOperation:
     """A var operation that converts a var to another type."""
 
-    _js_expr: str = ""
-    _var_type: GenericType = Any
-    _var_data: VarData | None = None
-    _original: Var = dataclasses.field(
-        default_factory=lambda: Var(_js_expr="null", _var_type=None)
-    )
-    _default_var_type: ClassVar[GenericType] = Any
+    if TYPE_CHECKING:
+        # The fields of the Var dataclass this mixin is combined with.
+        _js_expr: str
+        _var_type: GenericType
+        _var_data: VarData | None
+        _original: Var
+        _default_var_type: ClassVar[GenericType]
+
+        def __init__(
+            self,
+            *,
+            _js_expr: str,
+            _var_type: GenericType,
+            _var_data: VarData | None,
+            _original: Var,
+        ) -> None:
+            """Initialize the cast var.
+
+            Args:
+                _js_expr: The JavaScript expression, read from ``_original`` instead.
+                _var_type: The type the var is cast to.
+                _var_data: The var data added by the cast.
+                _original: The var being cast.
+            """
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute of the var.

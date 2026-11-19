@@ -1171,8 +1171,9 @@ class StateManagerRedis(StateManager):
             # Waiters that leave while this one awaits count it as staying, so
             # deregister again once they are gone. A cancellation of this
             # cleanup leaves the registration to expire with its pexpire.
+            srem = cast("Callable[..., Awaitable[int]]", self.redis.srem)
             while self._n_lock_waiters(lock_key) <= 1:
-                await self.redis.srem(lock_key + b"_waiters", self._instance_id)
+                await srem(lock_key + b"_waiters", self._instance_id)
                 if self._n_lock_waiters(lock_key) <= 1:
                     break
                 # A waiter that queued meanwhile may have registered before the SREM.

@@ -1083,7 +1083,7 @@ def test_mixin_var_name_conflict(clean_registration_context):
     with pytest.raises(MixinVarNameConflictError) as err:
 
         class ClassVarState(AnnotatingMixin, OtherAnnotatingMixin, State):
-            shared: ClassVar[int] = 1  # ty:ignore[invalid-attribute-override]
+            shared: ClassVar[int] = 1  # pyright: ignore[reportIncompatibleVariableOverride] # ty:ignore[invalid-attribute-override]
 
     assert str(err.value) == _mixin_conflict_message(
         "shared", "ClassVarState", "AnnotatingMixin", "OtherAnnotatingMixin"

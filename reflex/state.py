@@ -972,14 +972,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 if _inherited_value(cls.__mro__, name) is not value:
                     continue
                 if is_computed_var(value):
-                    fget = value.fget
-                    if not isinstance(fget, FunctionType):
-                        continue
                     _bind_attr(
                         cls,
                         name,
                         value._replace(
-                            fget=cls._copy_fn(fget),
+                            # A computed var's fget is the decorated function.
+                            fget=cls._copy_fn(cast("FunctionType", value.fget)),
                             _var_data=VarData.from_state(cls),
                         ),
                     )
