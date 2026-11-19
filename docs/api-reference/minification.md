@@ -118,11 +118,11 @@ Loading it checks the schema version, that `states` and `events` are objects,
 that every state entry has a string `id` and a `parent` that is a string or
 `null`, that every id uses the alphabet above, that no state id has an
 underscore at an end or doubled and no root state id is such a name, and that
-no two handlers of a state share an id; keys it does not know are ignored. On a file that fails
-these checks, compiling or serving the app logs a warning and runs without
-minification. The `reflex minify` commands stop with an error naming the
-problem, except for the last two, which `validate` reports and `sync` repairs.
-Sibling states sharing an id are reported by `reflex minify validate`.
+no two handlers of a state share an id; keys it does not know are ignored. On a
+file that fails these checks, compiling or serving the app logs a warning and
+runs without minification. The `reflex minify` commands stop with an error
+naming the problem, except for the last two, which `validate` reports and `sync`
+repairs. Sibling states sharing an id are reported by `reflex minify validate`.
 
 ### `parent` and reserved ids
 
