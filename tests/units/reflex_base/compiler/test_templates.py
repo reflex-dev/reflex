@@ -73,9 +73,8 @@ def test_render_hooks_declares_a_merged_state_hook_before_its_readers():
 
     state_var = format_state_name(FieldHookState.get_full_name())
     fields = f'["a{FIELD_MARKER}", "b{FIELD_MARKER}"]'
-    lines = [line.strip() for line in rendered.splitlines() if line.strip()]
-    assert [line for line in lines if state_var in line] == [
+    assert rendered == "\n".join([
         f'const {state_var} = useStateContext("{FieldHookState.get_full_name()}", {fields})',
         f"const parentRead = {state_var}.a{FIELD_MARKER}",
         f"const childValue = {state_var}.b{FIELD_MARKER}",
-    ]
+    ])
