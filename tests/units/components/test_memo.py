@@ -2013,6 +2013,17 @@ def test_self_referencing_var_memo():
     assert "recursive_count" in str(invoked)
 
 
+def _this_memo_module_path() -> str:
+    """Get the path the memos defined in this test module compile to.
+
+    Returns:
+        The mirrored memo module path.
+    """
+    segments = memo_paths.module_to_mirrored_segments(__name__)
+    assert segments is not None
+    return compiler_utils.get_memo_module_path(segments)
+
+
 def test_memo_reregisters_on_use_after_registry_clear():
     """Using a ``@rx.memo`` repopulates ``MEMOS`` after the registry is cleared,
     so the compiler still emits its module.
@@ -2030,12 +2041,35 @@ def test_memo_reregisters_on_use_after_registry_clear():
 
     # Using (rendering) the memo must re-register it.
     sample_card(title="Hello")
-    assert key in MEMOS
+    assert MEMOS.keys() == {key}
 
     # ...so the compiler still emits its module.
     sym = memo_paths.mirrored_symbol("SampleCard", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    assert any(f"const {sym} = memo(" in code for _, code in files)
+    assert files == [
+        (
+            _this_memo_module_path(),
+            "\n"
+            'import {isTrue} from "$/utils/state"\n'
+            "import {Box as RadixThemesBox,Heading as RadixThemesHeading}"
+            ' from "@radix-ui/themes"\n'
+            'import {jsx} from "@emotion/react"\n'
+            'import {Fragment,memo,useEffect} from "react"\n'
+            + "\n" * 8
+            + "\n".join([
+                f"export const {sym} = /*#__PURE__*/ (() => {{",
+                f"const {sym} = memo(({{title:titleRxMemo}}) => {{",
+                "    ",
+                "    return(",
+                "        jsx(RadixThemesBox,{},jsx(RadixThemesHeading,{},titleRxMemo))",
+                "    )",
+                "});",
+                f'{sym}.displayName = "SampleCard";',
+                f"return {sym};",
+                "})();\n",
+            ]),
+        )
+    ]
 
 
 def test_nested_var_memo_reregistered_before_compile_snapshot():
@@ -2057,21 +2091,37 @@ def test_nested_var_memo_reregistered_before_compile_snapshot():
     inner_key = ("inner_fmt", __name__)
     outer_key = ("outer_fmt", __name__)
     inner_sym = memo_paths.mirrored_symbol("inner_fmt", __name__)
+    outer_sym = memo_paths.mirrored_symbol("outer_fmt", __name__)
 
     MEMOS.clear()
 
     # Rendering the outer memo re-registers only itself; its lazy body (which
     # references inner) is not read yet.
     outer_fmt(value=rx.Var.create("x"))
-    assert outer_key in MEMOS
-    assert inner_key not in MEMOS
+    assert MEMOS.keys() == {outer_key}
 
     # The compiler pre-pass settles the registry before it snapshots MEMOS.
     materialize_registered_memo_bodies()
-    assert inner_key in MEMOS
+    assert MEMOS.keys() == {outer_key, inner_key}
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    assert any(f"export const {inner_sym} =" in code for _, code in files)
+    assert files == [
+        (
+            _this_memo_module_path(),
+            "\n"
+            'import {isTrue} from "$/utils/state"\n'
+            'import {jsx} from "@emotion/react"\n'
+            'import {Fragment,useEffect} from "react"\n'
+            + "\n" * 6
+            + "\n".join([
+                f"export const {outer_sym} = ((value) => ({inner_sym}(value)));",
+                "",
+                f'export const {inner_sym} = ((value) => ("["+value+"]"));',
+                "",
+                "\n",
+            ]),
+        )
+    ]
 
 
 def test_cached_memo_bodies_reregister_nested_memos_after_registry_clear():
@@ -2106,12 +2156,53 @@ def test_cached_memo_bodies_reregister_nested_memos_after_registry_clear():
     wrapping_card(title="Hello")
     materialize_registered_memo_bodies()
 
-    assert ("nested_fmt", __name__) in MEMOS
-    assert ("NestedCard", __name__) in MEMOS
+    names = ("wrapping_fmt", "nested_fmt", "WrappingCard", "NestedCard")
+    assert MEMOS.keys() == {(name, __name__) for name in names}
+    wrapping_fmt_sym, nested_fmt_sym, wrapping_card_sym, nested_card_sym = (
+        memo_paths.mirrored_symbol(name, __name__) for name in names
+    )
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    for name in ("nested_fmt", "NestedCard"):
-        sym = memo_paths.mirrored_symbol(name, __name__)
-        assert any(f"export const {sym} =" in code for _, code in files)
+    assert files == [
+        (
+            _this_memo_module_path(),
+            "\n"
+            'import {isTrue} from "$/utils/state"\n'
+            "import {Box as RadixThemesBox,Text as RadixThemesText}"
+            ' from "@radix-ui/themes"\n'
+            'import {jsx} from "@emotion/react"\n'
+            'import {Fragment,memo,useEffect} from "react"\n'
+            + "\n" * 6
+            + "\n".join([
+                f"export const {wrapping_fmt_sym} = ((value) => ({nested_fmt_sym}(value)));",
+                "",
+                f'export const {nested_fmt_sym} = ((value) => ("["+value+"]"));',
+                "",
+                "",
+                "",
+                f"export const {wrapping_card_sym} = /*#__PURE__*/ (() => {{",
+                f"const {wrapping_card_sym} = memo(({{title:titleRxMemo}}) => {{",
+                "    ",
+                "    return(",
+                f"        jsx(RadixThemesBox,{{}},jsx({nested_card_sym},{{title:titleRxMemo}},))",
+                "    )",
+                "});",
+                f'{wrapping_card_sym}.displayName = "WrappingCard";',
+                f"return {wrapping_card_sym};",
+                "})();",
+                "",
+                f"export const {nested_card_sym} = /*#__PURE__*/ (() => {{",
+                f"const {nested_card_sym} = memo(({{title:titleRxMemo}}) => {{",
+                "    ",
+                "    return(",
+                '        jsx(RadixThemesText,{as:"p"},titleRxMemo)',
+                "    )",
+                "});",
+                f'{nested_card_sym}.displayName = "NestedCard";',
+                f"return {nested_card_sym};",
+                "})();\n",
+            ]),
+        )
+    ]
 
 
 def test_reregister_used_memo_skips_passthrough_auto_memos():
