@@ -132,20 +132,22 @@ def test_formatting_without_plugin_formats_inline_in_the_unconfigured_locale():
     set_active_i18n_config(None)
     var = number(_num())
     assert str(var) == (
-        '(((value, options) => new Intl.NumberFormat("en", options).format(value))'
-        "(state.value, ({  })))"
+        '(((value, options) => value == null ? "" : '
+        'new Intl.NumberFormat("en", options).format(value))(state.value, ({  })))'
     )
     assert var._get_all_var_data() is None
     var = date(Var(_js_expr="state.day"))
     assert str(var) == (
         "(((value, options) => { "
+        'if (value == null) return ""; '
         'const s = String(value).replace(/(\\.\\d{3})\\d+/, "$1"); '
-        'return new Intl.DateTimeFormat("en", options).format('
-        "value instanceof Date ? value "
+        "const date = value instanceof Date ? value "
         ': typeof value === "number" ? new Date(value) '
         ': /^\\d{4}-\\d{2}-\\d{2}$/.test(s) ? new Date(s + "T00:00:00") '
         ': /^\\d{2}:\\d{2}/.test(s) ? new Date("1970-01-01T" + s) '
-        ': new Date(s.replace(" ", "T"))); })'
+        ': new Date(s.replace(" ", "T")); '
+        'return Number.isNaN(date.getTime()) ? "" : '
+        'new Intl.DateTimeFormat("en", options).format(date); })'
         '(state.day, ({ ["dateStyle"] : "medium" })))'
     )
     assert var._get_all_var_data() is None

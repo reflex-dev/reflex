@@ -260,7 +260,7 @@ Curated options — `min_fraction_digits`, `max_fraction_digits`, `grouping`,
 `compact`, and `length` (`"short"`/`"medium"`/`"long"`/`"full"`) — cover the
 common cases; pass `options={...}` for raw
 [`Intl`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat)
-options.
+options. A `None` value (or a date that does not parse) renders as empty text.
 
 **In state (server-side).** Use the `format_*` helpers, e.g. when building a
 translated string. Like `gettext`, a computed var using one reformats when the

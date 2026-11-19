@@ -479,8 +479,11 @@ def test_client_names_languages_and_weekdays_like_the_server(
 @requires_node
 def test_source_formatters_match_the_runtime(tmp_path: Path):
     """Without the plugin, values format as the runtime formats them in ``en``."""
-    numbers = [[1234.5, {}], [0.19, {"style": "percent"}]]
+    # A missing value or a date that does not parse formats as empty text.
+    numbers = [[1234.5, {}], [0.19, {"style": "percent"}], [None, {}]]
     dates = [
+        None,
+        "not a date",
         0,
         "2026-07-18",
         "2026-07-18 14:30:00.123456",
@@ -508,8 +511,10 @@ def test_source_formatters_match_the_runtime(tmp_path: Path):
             "source: format(sourceNumber, sourceDate)};"
         ),
     )
-    assert len(rendered["result"]["runtime"]) == len(numbers) + len(dates)
-    assert rendered["result"]["source"] == rendered["result"]["runtime"]
+    runtime = rendered["result"]["runtime"]
+    assert len(runtime) == len(numbers) + len(dates)
+    assert [runtime[2], runtime[3], runtime[4]] == ["", "", ""]
+    assert rendered["result"]["source"] == runtime
 
 
 @requires_node

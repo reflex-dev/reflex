@@ -337,24 +337,32 @@ const languageName = (tag, inLocale) => {
 
 export function useFormat() {
   const { locale } = useContext(I18nContext);
+  // A missing value (or a date that does not parse) formats as empty text,
+  // rather than as 0 or a thrown RangeError.
   const formatNumber = useCallback(
     (value, options) =>
-      getFormatter(
-        _numberFormatters,
-        Intl.NumberFormat,
-        locale,
-        options,
-      ).format(value),
+      value == null
+        ? ""
+        : getFormatter(
+            _numberFormatters,
+            Intl.NumberFormat,
+            locale,
+            options,
+          ).format(value),
     [locale],
   );
   const formatDate = useCallback(
-    (value, options) =>
-      getFormatter(
-        _dateFormatters,
-        Intl.DateTimeFormat,
-        locale,
-        options,
-      ).format(toDate(value)),
+    (value, options) => {
+      const date = value == null ? undefined : toDate(value);
+      return date === undefined || Number.isNaN(date.getTime())
+        ? ""
+        : getFormatter(
+            _dateFormatters,
+            Intl.DateTimeFormat,
+            locale,
+            options,
+          ).format(date);
+    },
     [locale],
   );
   const formatLanguage = useCallback(

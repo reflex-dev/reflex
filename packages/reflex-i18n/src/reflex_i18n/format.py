@@ -101,19 +101,21 @@ def _fmt_language() -> FunctionVar[ReflexCallable[[str], str]]:
 # locale the server formats in then. The date normalization mirrors the
 # runtime's ``toDate``.
 _SOURCE_FMT_NUMBER: FunctionVar[_Formatter] = FunctionStringVar.create(
-    "((value, options) => "
+    '((value, options) => value == null ? "" : '
     f'new Intl.NumberFormat("{UNCONFIGURED_LOCALE}", options).format(value))',
     _var_type=_Formatter,
 )
 _SOURCE_FMT_DATE: FunctionVar[_Formatter] = FunctionStringVar.create(
     "((value, options) => { "
+    'if (value == null) return ""; '
     'const s = String(value).replace(/(\\.\\d{3})\\d+/, "$1"); '
-    f'return new Intl.DateTimeFormat("{UNCONFIGURED_LOCALE}", options).format('
-    "value instanceof Date ? value "
+    "const date = value instanceof Date ? value "
     ': typeof value === "number" ? new Date(value) '
     ': /^\\d{4}-\\d{2}-\\d{2}$/.test(s) ? new Date(s + "T00:00:00") '
     ': /^\\d{2}:\\d{2}/.test(s) ? new Date("1970-01-01T" + s) '
-    ': new Date(s.replace(" ", "T"))); })',
+    ': new Date(s.replace(" ", "T")); '
+    'return Number.isNaN(date.getTime()) ? "" : '
+    f'new Intl.DateTimeFormat("{UNCONFIGURED_LOCALE}", options).format(date); }})',
     _var_type=_Formatter,
 )
 
