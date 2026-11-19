@@ -470,6 +470,8 @@ def test_routing_wrap_redirects_unprefixed_path(
         ("/de/pricing", "en", [["/pricing", None]]),
         ("/pricing", "fr", []),
         ("/de//evil.example", "en", [["/evil.example", None]]),
+        ("/DE/pricing", "en", [["/pricing", None]]),
+        ("/DE/pricing", "de", [["/de/pricing", None]]),
     ],
 )
 def test_routing_wrap_drives_switch_locale(
@@ -523,6 +525,7 @@ def test_language_switcher_links_stay_on_site(
     ("pathname", "expected"),
     [
         ("/de/pricing", ["/pricing", "/de/pricing", "/pricing", "/de/pricing"]),
+        ("/DE/pricing", ["/pricing", "/de/pricing", "/pricing", "/de/pricing"]),
         ("//de/pricing", ["/pricing", "/de/pricing", "/pricing", "/de/pricing"]),
         ("///de", ["/", "/de", "/", "/de"]),
         (

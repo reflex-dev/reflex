@@ -376,17 +376,25 @@ export function LocaleRoute({ locale, catalog, children }) {
 }
 
 // Path-prefix helpers (mirror reflex_i18n.routing.PathPrefixRouting).
-const pathLocale = (pathname) => {
-  const head = pathname.replace(/^\/+/, "").split("/")[0];
-  return locales.includes(head) ? head : undefined;
-};
+
+// The configured locale a path segment names, matched case-insensitively as
+// React Router matches paths, in the configured spelling.
+const localesBySegment = new Map(
+  locales.map((locale) => [locale.toLowerCase(), locale]),
+);
+const segmentLocale = (segment) => localesBySegment.get(segment.toLowerCase());
+
+const pathLocale = (pathname) =>
+  segmentLocale(pathname.replace(/^\/+/, "").split("/")[0]);
 
 // One leading slash: "//host" is a protocol-relative URL off the site.
 const sitePath = (path) => "/" + path.replace(/^\/+/, "");
 
 const delocalizePath = (pathname) => {
   const [head, ...rest] = pathname.replace(/^\/+/, "").split("/");
-  return sitePath(locales.includes(head) ? rest.join("/") : pathname);
+  return sitePath(
+    segmentLocale(head) === undefined ? pathname : rest.join("/"),
+  );
 };
 
 const localizePath = (base, locale) => {

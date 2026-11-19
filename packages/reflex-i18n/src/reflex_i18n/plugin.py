@@ -36,7 +36,7 @@ from .format import (
     _locale_var_data,
 )
 from .registry import collected_messages, format_message_list, untranslated_messages
-from .routing import PathPrefixRouting
+from .routing import PathPrefixRouting, segment_locale
 from .vars import _i18n_var_data, _translate, _translate_plural
 
 if TYPE_CHECKING:
@@ -226,7 +226,7 @@ class I18nPlugin(Plugin):
         for page in context["pages"]:
             base_path = "/" if page.route == "index" else f"/{page.route}"
             head = base_path.lstrip("/").partition("/")[0]
-            if head in self.locales:
+            if segment_locale(head, self.locales) is not None:
                 # Such a route would be indistinguishable from the localized
                 # URLs this plugin generates (and shadow or collide with them).
                 msg = (

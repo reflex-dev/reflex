@@ -51,6 +51,18 @@ def test_path_prefix_delocalize_and_locale_of():
     assert r.locale_of("/pricing", LOCALES, "en") == "en"
 
 
+def test_path_prefix_matches_locale_segments_case_insensitively():
+    # The router serves /DE/pricing from the /de/pricing page.
+    r = PathPrefixRouting()
+    assert r.delocalize("/DE/pricing", ["en", "pt-BR"]) == "/DE/pricing"
+    assert r.delocalize("/PT-br/pricing", ["en", "pt-BR"]) == "/pricing"
+    assert r.locale_of("/PT-br/pricing", ["en", "pt-BR"], "en") == "pt-BR"
+    assert r.alternates("/PT-br/pricing", ["en", "pt-BR"], "en") == {
+        "en": "/pricing",
+        "pt-BR": "/pt-BR/pricing",
+    }
+
+
 def test_path_prefix_alternates():
     r = PathPrefixRouting()
     assert r.alternates("/de/pricing", LOCALES, "en") == {
@@ -200,6 +212,22 @@ def test_expand_routes_rejects_locale_prefixed_app_route():
     ctx = _fake_context([_page("de/pricing")])
     with pytest.raises(RouteValueError, match="reserved"):
         plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+
+
+def test_expand_routes_rejects_a_locale_prefix_in_any_case():
+    from reflex_base.utils.exceptions import RouteValueError
+
+    plugin = I18nPlugin(
+        locales=LOCALES, default_locale="en", routing=PathPrefixRouting()
+    )
+    ctx = _fake_context([_page("DE/pricing")])
+    with pytest.raises(RouteValueError) as exc_info:
+        plugin.expand_routes(add_page=ctx["add_page"], pages=ctx["pages"])  # pyright: ignore[reportCallIssue]
+    assert str(exc_info.value) == (
+        "App route '/DE/pricing' starts with configured locale 'DE'; "
+        "locale-prefixed URLs are reserved by I18nPlugin routing. Rename the "
+        "route or drop the locale."
+    )
 
 
 def test_expand_routes_rejects_bare_locale_app_route():

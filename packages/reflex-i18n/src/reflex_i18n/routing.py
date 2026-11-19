@@ -75,6 +75,23 @@ class LocaleRouting(abc.ABC):
         return {loc: self.localize(base, loc, default_locale) for loc in locales}
 
 
+def segment_locale(segment: str, locales: Sequence[str]) -> str | None:
+    """The configured locale a URL path segment names, if any.
+
+    Matched case-insensitively, as the router matches paths (``/DE/pricing``
+    reaches the ``/de/pricing`` page), and returned in the configured spelling.
+
+    Args:
+        segment: A path segment, e.g. ``"de"``.
+        locales: The app's configured locales.
+
+    Returns:
+        The configured locale, or None if the segment names none.
+    """
+    lowered = segment.lower()
+    return next((locale for locale in locales if locale.lower() == lowered), None)
+
+
 @dataclasses.dataclass
 class PathPrefixRouting(LocaleRouting):
     """Serve each locale under a path prefix, e.g. ``/de/pricing``.
@@ -115,7 +132,8 @@ class PathPrefixRouting(LocaleRouting):
         """
         head, _, rest = path.lstrip("/").partition("/")
         # One leading slash: "//host" is a protocol-relative URL off the site.
-        return "/" + (rest if head in locales else path).lstrip("/")
+        located = segment_locale(head, locales) is not None
+        return "/" + (rest if located else path).lstrip("/")
 
     def locale_of(self, path: str, locales: Sequence[str], default_locale: str) -> str:
         """Return the locale named by the leading path segment, else default.
@@ -129,4 +147,4 @@ class PathPrefixRouting(LocaleRouting):
             The locale for the path.
         """
         head = path.lstrip("/").partition("/")[0]
-        return head if head in locales else default_locale
+        return segment_locale(head, locales) or default_locale
