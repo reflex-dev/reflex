@@ -7280,17 +7280,24 @@ def test_keyed_name_does_not_collide_when_unkeyed_is_created_first():
 
 @pytest.mark.parametrize(
     "bad_key",
-    ["not an identifier", "1leading_digit", "", 1, ("a",)],
-    ids=["spaces", "digit", "empty", "int", "tuple"],
+    ["not an identifier", "1leading_digit", "", 1, ("a",), "cartItem", "Cart"],
+    ids=["spaces", "digit", "empty", "int", "tuple", "camel", "capitalized"],
 )
 def test_component_state_rejects_an_unusable_key(bad_key):
     """A key becomes part of a class name, so it has to be an identifier string.
 
+    The default state name is snake-cased, so ``cartItem`` would name the same
+    state as ``cart_item``.
+
     Args:
         bad_key: A key that cannot name a class.
     """
-    with pytest.raises(ValueError, match="valid Python identifier"):
+    with pytest.raises(ValueError) as error:
         KeyedCounter.create(_state_key=bad_key)
+    assert str(error.value) == (
+        "_state_key must be a string that is a valid Python identifier without "
+        f"uppercase letters, got {bad_key!r}."
+    )
 
 
 def test_component_state_rejects_a_duplicate_key():

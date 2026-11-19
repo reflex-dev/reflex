@@ -281,9 +281,11 @@ cart_counter = ReusableCounter.create(_state_key="cart")
 wishlist_counter = ReusableCounter.create(_state_key="wishlist")
 ```
 
-The key must be a valid Python identifier, and unique among the keyed instances
-of components with that class name. Keyed instances do not advance the counter,
-so adding one leaves the names of the unkeyed instances alone.
+The key must be a valid Python identifier without uppercase letters, since the
+state's default name is snake-cased and `cartItem` would name the same state as
+`cart_item`. It must also be unique among the keyed instances of components with
+that class name. Keyed instances do not advance the counter, so adding one leaves
+the names of the unkeyed instances alone.
 
 Reusing a key raises: one key names one state. To render a keyed component on
 several pages, create it once and embed that same instance in each page, rather
