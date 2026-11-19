@@ -154,3 +154,19 @@ async def test_locale_scope_uses_the_cookie_without_url_routing(
 
     with await _locale_scope(root):
         assert get_locale() == "de"
+
+
+@pytest.mark.asyncio
+async def test_locale_scope_keeps_a_session_locale_a_deploy_removed(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # A session resolved its locale before the config dropped it; its events
+    # must keep working rather than fail the configured-locale check.
+    root = await _root_on("/pricing", cookie="fr")
+    assert (await root.get_state(I18nState)).locale == "fr"
+    monkeypatch.setattr(
+        get_config(), "plugins", [I18nPlugin(locales=["en", "de"], default_locale="en")]
+    )
+
+    with await _locale_scope(root):
+        assert get_locale() == "fr"

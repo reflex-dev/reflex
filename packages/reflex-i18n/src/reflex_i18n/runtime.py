@@ -14,7 +14,7 @@ import functools
 import gettext as _gettext_module
 import io
 from collections.abc import Callable, Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
@@ -39,7 +39,27 @@ _translations: dict[str, _gettext_module.NullTranslations] = {}
 
 
 @contextmanager
-def use_locale(locale: str | None) -> Iterator[None]:
+def active_locale(locale: str | None) -> Iterator[None]:
+    """Set the active locale for the duration of the context, unchecked.
+
+    The event scope enters a client's resolved locale with it; a client session
+    may still hold a locale a later deploy removed from the config.
+
+    Args:
+        locale: The locale to activate, or None to leave translations
+            untranslated.
+
+    Yields:
+        None
+    """
+    token = _active_locale.set(locale)
+    try:
+        yield
+    finally:
+        _active_locale.reset(token)
+
+
+def use_locale(locale: str | None) -> AbstractContextManager[None]:
     """Translate and format in a locale for the duration of the context.
 
     Events already run in their client's locale; use this where there is no
@@ -49,19 +69,15 @@ def use_locale(locale: str | None) -> Iterator[None]:
         locale: The locale to activate, or None to leave translations
             untranslated.
 
-    Yields:
-        None
+    Returns:
+        A context manager activating the locale.
 
     Raises:
         ValueError: If the locale is not one of the configured locales.
     """
     if locale is not None:
         check_configured_locale(locale)
-    token = _active_locale.set(locale)
-    try:
-        yield
-    finally:
-        _active_locale.reset(token)
+    return active_locale(locale)
 
 
 def get_locale() -> str | None:

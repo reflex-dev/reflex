@@ -28,7 +28,7 @@ from .config import (
     check_configured_locale,
     get_active_i18n_config,
 )
-from .runtime import negotiate_locale, use_locale
+from .runtime import active_locale, negotiate_locale
 
 # Switches the client-side locale, without a round trip to the server.
 _SWITCH_LOCALE = FunctionStringVar.create(
@@ -187,7 +187,7 @@ async def _locale_scope(
         i18n_state._route_locale = route_locale
     # I18nState.locale is the single source of truth, so what gettext returns
     # and what dynamic translations depend on can never disagree.
-    return use_locale(i18n_state.locale)
+    return active_locale(i18n_state.locale)
 
 
 register_event_scope_provider(_locale_scope)
