@@ -53,8 +53,13 @@ _KEYWORDS = {
     _T_CONTEXT_KEYWORD: {2: ((1, "c"), 2), 3: ((1, "c"), 2, 3)},
 }
 
-# Modules rx.t can be imported from by name.
-_T_MODULES = frozenset({"reflex", "reflex.i18n", "reflex_i18n", "reflex_i18n.vars"})
+# The attribute paths rx.t is reachable under from each module that exposes it.
+_T_PATHS = {
+    "reflex": ("t", "i18n.t"),
+    "reflex.i18n": ("t",),
+    "reflex_i18n": ("t", "vars.t"),
+    "reflex_i18n.vars": ("t",),
+}
 
 _POT_FILENAME = "messages.pot"
 
@@ -174,19 +179,18 @@ def _t_call_names(tree: ast.Module) -> set[str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name == "reflex":
-                    bound = alias.asname or alias.name
-                    names.update((f"{bound}.t", f"{bound}.i18n.t"))
-                elif alias.name in ("reflex.i18n", "reflex_i18n"):
-                    # `import reflex.i18n` binds `reflex`, spelling the full path.
-                    names.add(f"{alias.asname or alias.name}.t")
-        elif isinstance(node, ast.ImportFrom) and node.level == 0:
+                # `import a.b as x` binds the submodule; `import a.b` binds `a`.
+                module = alias.name if alias.asname else alias.name.split(".")[0]
+                bound = alias.asname or module
+                names.update(f"{bound}.{path}" for path in _T_PATHS.get(module, ()))
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
             for alias in node.names:
                 bound = alias.asname or alias.name
-                if node.module in _T_MODULES and alias.name == "t":
+                if alias.name == "t" and node.module in _T_PATHS:
                     names.add(bound)
-                elif node.module == "reflex" and alias.name == "i18n":
-                    names.add(f"{bound}.t")
+                else:
+                    paths = _T_PATHS.get(f"{node.module}.{alias.name}", ())
+                    names.update(f"{bound}.{path}" for path in paths)
     return names
 
 

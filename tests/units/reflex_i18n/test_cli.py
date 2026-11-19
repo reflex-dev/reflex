@@ -269,6 +269,42 @@ def test_scan_sources_finds_literal_rx_t_calls(
     ]
 
 
+@pytest.mark.parametrize(
+    ("imports", "call"),
+    [
+        ("import reflex as rx", "rx.t"),
+        ("import reflex as rx", "rx.i18n.t"),
+        ("import reflex", "reflex.t"),
+        ("import reflex.i18n", "reflex.i18n.t"),
+        ("import reflex.i18n as i18n", "i18n.t"),
+        ("from reflex import i18n", "i18n.t"),
+        ("from reflex import t", "t"),
+        ("from reflex.i18n import t as tr", "tr"),
+        ("import reflex_i18n", "reflex_i18n.t"),
+        ("import reflex_i18n.vars", "reflex_i18n.vars.t"),
+        ("import reflex_i18n.vars as v", "v.t"),
+        ("from reflex_i18n import vars as v", "v.t"),
+        ("from reflex_i18n.vars import t", "t"),
+    ],
+)
+def test_scan_sources_finds_rx_t_under_every_import(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, imports: str, call: str
+):
+    monkeypatch.chdir(tmp_path)
+    lib = tmp_path / "mylib"
+    lib.mkdir()
+    (lib / "ui.py").write_text(
+        f'{imports}\nlabel = {call}("Save")\nother = t2("Not reflex")\n',
+        encoding="utf-8",
+    )
+
+    catalog = scan_sources(lib)
+
+    assert [(m.id, m.locations) for m in catalog if m.id] == [
+        ("Save", [("mylib/ui.py", 2)])
+    ]
+
+
 def test_extract_catalog_leaves_package_messages_to_the_package(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
