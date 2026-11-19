@@ -343,7 +343,7 @@ export function useTranslation() {
   return [t_, tp_];
 }
 
-// --- URL-based locale routing (opt-in via I18nPlugin(routing=...)) ---
+// URL-based locale routing, opt-in via I18nPlugin(routing=...).
 
 // The URL-routing locale setter: validate, then navigate to the current page in
 // that locale. Independent of the I18nProvider, which an app that uses neither
