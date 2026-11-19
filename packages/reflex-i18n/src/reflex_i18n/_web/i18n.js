@@ -371,12 +371,12 @@ const pathLocale = (pathname) => {
   return locales.includes(head) ? head : undefined;
 };
 
+// One leading slash: "//host" is a protocol-relative URL off the site.
+const sitePath = (path) => "/" + path.replace(/^\/+/, "");
+
 const delocalizePath = (pathname) => {
   const [head, ...rest] = pathname.replace(/^\//, "").split("/");
-  if (locales.includes(head)) {
-    return "/" + rest.join("/");
-  }
-  return pathname.startsWith("/") ? pathname : "/" + pathname;
+  return sitePath(locales.includes(head) ? rest.join("/") : pathname);
 };
 
 const localizePath = (base, locale) => {
@@ -467,7 +467,7 @@ export function LanguageSwitcher(props) {
           key: locale,
           href:
             basename +
-            (urlRouting ? localizePath(base, locale) : pathname) +
+            (urlRouting ? localizePath(base, locale) : sitePath(pathname)) +
             rest,
           hrefLang: locale,
           "aria-current": locale === active ? "true" : undefined,

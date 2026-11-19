@@ -45,6 +45,8 @@ def test_path_prefix_delocalize_and_locale_of():
     assert r.delocalize("/de/pricing", LOCALES) == "/pricing"
     assert r.delocalize("/pricing", LOCALES) == "/pricing"
     assert r.delocalize("/de", LOCALES) == "/"
+    assert r.delocalize("/de//evil.example", LOCALES) == "/evil.example"
+    assert r.delocalize("//evil.example", LOCALES) == "/evil.example"
     assert r.locale_of("/de/pricing", LOCALES, "en") == "de"
     assert r.locale_of("/pricing", LOCALES, "en") == "en"
 

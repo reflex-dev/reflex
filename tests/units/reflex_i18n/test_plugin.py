@@ -52,8 +52,9 @@ export const useNavigate = () => (to, options) =>
 }
 
 # Renders one runtime component with browser globals from argv, runs the
-# optional action script against the module, and prints the navigations, state
-# updates and onLocaleChange calls they made, and the <html> attributes set.
+# optional action script against the module and the rendered element, and
+# prints the navigations, state updates and onLocaleChange calls they made, the
+# <html> attributes set and the action's return value.
 _RUNTIME_DRIVER = """
 import { pathToFileURL } from "node:url";
 const [modulePath, component, env, action] = process.argv.slice(2);
@@ -69,14 +70,20 @@ Object.defineProperty(globalThis, "navigator", {
 globalThis.document = { cookie: "", documentElement: {} };
 globalThis.location = { protocol: "http:" };
 const mod = await import(pathToFileURL(modulePath).href);
-mod[component]({
+const rendered = mod[component]({
   children: null,
   onLocaleChange: (locale) => localeChanges.push(locale),
 });
-new Function("mod", action)(mod);
+const result = new Function("mod", "rendered", action)(mod, rendered);
 const { documentElement } = globalThis.document;
 process.stdout.write(
-  JSON.stringify({ navigations, stateUpdates, localeChanges, documentElement }),
+  JSON.stringify({
+    navigations,
+    stateUpdates,
+    localeChanges,
+    documentElement,
+    result,
+  }),
 );
 """
 
@@ -104,11 +111,12 @@ def _render_runtime(
         default_at_root: Whether the default locale is served unprefixed.
         pathname: The router location's path.
         languages: The browser's preferred languages.
-        action: JS run after the render with the runtime module as ``mod``.
+        action: JS run after the render with the runtime module as ``mod``
+            and the rendered element as ``rendered``.
 
     Returns:
         The recorded ``navigations``, ``stateUpdates``, ``localeChanges`` and
-        ``documentElement`` attributes.
+        ``documentElement`` attributes, and the action's ``result``.
     """
     config = {
         "locales": locales,
@@ -313,6 +321,7 @@ def test_routing_wrap_redirects_unprefixed_path(
         ("/pricing", "de", [["/de/pricing", None]]),
         ("/de/pricing", "en", [["/pricing", None]]),
         ("/pricing", "fr", []),
+        ("/de//evil.example", "en", [["/evil.example", None]]),
     ],
 )
 def test_routing_wrap_drives_switch_locale(
@@ -334,6 +343,31 @@ def test_routing_wrap_drives_switch_locale(
         action=f"mod.switchLocale({locale!r}, {{ notifyServer: false }})",
     )
     assert rendered["navigations"] == expected
+
+
+@requires_node
+@pytest.mark.parametrize(
+    ("url_routing", "pathname", "expected"),
+    [
+        (True, "/de//evil.example", ["/evil.example", "/de/evil.example"]),
+        (True, "//evil.example", ["/evil.example", "/de/evil.example"]),
+        (False, "//evil.example", ["/evil.example", "/evil.example"]),
+    ],
+)
+def test_language_switcher_links_stay_on_site(
+    tmp_path: Path, url_routing: bool, pathname: str, expected: list[str]
+):
+    """A path with an empty leading segment yields no protocol-relative link."""
+    rendered = _render_runtime(
+        tmp_path,
+        "LanguageSwitcher",
+        locales=["en", "de"],
+        default_locale="en",
+        url_routing=url_routing,
+        pathname=pathname,
+        action="return rendered.children.map((link) => link.props.href);",
+    )
+    assert rendered["result"] == expected
 
 
 @requires_node

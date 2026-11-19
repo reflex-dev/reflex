@@ -114,9 +114,8 @@ class PathPrefixRouting(LocaleRouting):
             The base URL path.
         """
         head, _, rest = path.lstrip("/").partition("/")
-        if head in locales:
-            return f"/{rest}" if rest else "/"
-        return path if path.startswith("/") else f"/{path}"
+        # One leading slash: "//host" is a protocol-relative URL off the site.
+        return "/" + (rest if head in locales else path).lstrip("/")
 
     def locale_of(self, path: str, locales: Sequence[str], default_locale: str) -> str:
         """Return the locale named by the leading path segment, else default.
