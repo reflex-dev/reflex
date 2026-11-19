@@ -107,10 +107,12 @@ def schedule_disconnect_reap(app: "App", token: str) -> asyncio.Task | None:
         token: The client token that disconnected.
 
     Returns:
-        The scheduled reap task, or None when reaping is disabled.
+        The scheduled reap task, or None when reaping is disabled or the app
+        defines no shared state.
     """
     grace = environment.REFLEX_SHARED_STATE_DISCONNECT_GRACE.get()
-    if grace <= 0 or app._state is None:
+    # Without shared states no client has links, so skip reading its state.
+    if grace <= 0 or app._state is None or not SharedStateBaseInternal.get_substates():
         return None
     if (
         previous := DISCONNECT_REAP_TASKS.get(token)
@@ -134,6 +136,30 @@ def schedule_disconnect_reap(app: "App", token: str) -> asyncio.Task | None:
     return task
 
 
+async def _read_client_links(
+    app: "App", root_cls: type[BaseState], token: str
+) -> dict[str, str]:
+    """Read which shared tokens a client's states are linked to.
+
+    A read-only peek; racing a concurrent event is fine, since any later event
+    through a link re-adds the client anyway.
+
+    Args:
+        app: The application object.
+        root_cls: The app's root state class.
+        token: The client token.
+
+    Returns:
+        A copy of the client's links, keyed by shared state name.
+    """
+    root_state = await app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=root_cls)
+    )
+    if not isinstance(root_state, State):
+        return {}
+    return dict(root_state._reflex_internal_links or {})
+
+
 async def _reap_disconnected_client(app: "App", token: str, grace: float) -> None:
     """Unsubscribe a client from its linked shared states unless it reconnected.
 
@@ -142,6 +168,11 @@ async def _reap_disconnected_client(app: "App", token: str, grace: float) -> Non
         token: The client token that disconnected.
         grace: Seconds to wait for a reconnect before unsubscribing.
     """
+    if (root_cls := app._state) is None:
+        return
+    # The client's state expires a token lifetime after its last write, which
+    # may fall within the grace: read its links while they still exist.
+    links = await _read_client_links(app, root_cls, token)
     await asyncio.sleep(grace)
     if (event_namespace := app.event_namespace) is None:
         return
@@ -149,19 +180,11 @@ async def _reap_disconnected_client(app: "App", token: str, grace: float) -> Non
     if await token_manager.is_token_connected(token):
         # The client reconnected, possibly to another instance.
         return
-    if app._state is None:
-        return
-    # Read-only peek at the client's links; racing a concurrent event is fine,
-    # since any later event through the link re-adds the client anyway.
-    root_state = await app.state_manager.get_state(
-        BaseStateToken(ident=token, cls=app._state)
-    )
-    if not isinstance(root_state, State):
-        return
-    links = dict(root_state._reflex_internal_links or {})
+    # Add the links made by events still running when the client disconnected.
+    links.update(await _read_client_links(app, root_cls, token))
     for state_name, linked_token in links.items():
         try:
-            state_cls = app._state.get_class_substate(state_name)
+            state_cls = root_cls.get_class_substate(state_name)
             async with app.modify_state(
                 BaseStateToken(ident=linked_token, cls=state_cls)
             ) as shared_root:

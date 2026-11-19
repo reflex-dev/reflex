@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from reflex_base.registry import RegistrationContext
 
 import reflex as rx
 from reflex.istate.shared import (
@@ -162,6 +163,27 @@ def _mock_reap_app(token_manager) -> tuple[Mock, Mock, list[str]]:
     return app, shared, modified_tokens
 
 
+@pytest.fixture
+def shared_state_defined(
+    monkeypatch: pytest.MonkeyPatch, clean_registration_context: RegistrationContext
+):
+    """Define a shared state, without which no disconnect reap is scheduled.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class ReapRoomState(SharedState):
+        pass
+
+
 async def test_reap_disconnected_client_unsubscribes():
     """A client that stayed disconnected is removed from its linked states."""
     app, shared, modified_tokens = _mock_reap_app(LocalTokenManager())
@@ -222,6 +244,41 @@ async def test_reap_skips_unsubscribed_client():
     shared._on_subscriber_disconnected.assert_not_awaited()
 
 
+@pytest.mark.parametrize("linked_before_grace", [True, False])
+async def test_reap_unsubscribes_links_read_before_or_after_grace(
+    monkeypatch: pytest.MonkeyPatch, linked_before_grace: bool
+):
+    """A link only readable before or only after the grace is still reaped.
+
+    Before only: the client's state expired during the grace. After only: an
+    event still running at the disconnect linked the client.
+    """
+    sleep = asyncio.sleep
+    app, shared, modified_tokens = _mock_reap_app(LocalTokenManager())
+    get_state = app.state_manager.get_state
+    linked_root = get_state.return_value
+    unlinked_root = Mock(spec=State)
+    unlinked_root._reflex_internal_links = {}
+    before, after = (
+        (linked_root, unlinked_root)
+        if linked_before_grace
+        else (unlinked_root, linked_root)
+    )
+    get_state.return_value = before
+
+    async def grace_passes(delay):
+        get_state.return_value = after
+        await sleep(0)
+
+    monkeypatch.setattr(asyncio, "sleep", grace_passes)
+
+    await _reap_disconnected_client(app, "gone", grace=60)
+
+    assert modified_tokens == ["room-token"]
+    assert shared._linked_from == {"other"}
+    shared._on_subscriber_disconnected.assert_awaited_once_with("gone")
+
+
 def test_schedule_disconnect_reap_disabled(monkeypatch):
     """Grace 0 disables scheduling entirely."""
     monkeypatch.setenv("REFLEX_SHARED_STATE_DISCONNECT_GRACE", "0")
@@ -231,6 +288,18 @@ def test_schedule_disconnect_reap_disabled(monkeypatch):
     assert not DISCONNECT_REAP_TASKS
 
 
+def test_schedule_disconnect_reap_without_shared_states(
+    monkeypatch: pytest.MonkeyPatch, clean_registration_context: RegistrationContext
+):
+    """An app defining no shared state has no links to reap."""
+    monkeypatch.setenv("REFLEX_SHARED_STATE_DISCONNECT_GRACE", "60")
+    app, _, _ = _mock_reap_app(LocalTokenManager())
+
+    assert schedule_disconnect_reap(app, "gone") is None
+    assert not DISCONNECT_REAP_TASKS
+
+
+@pytest.mark.usefixtures("shared_state_defined")
 async def test_schedule_disconnect_reap_restarts_grace(monkeypatch):
     """A new disconnect for the same token cancels the pending reap."""
     monkeypatch.setenv("REFLEX_SHARED_STATE_DISCONNECT_GRACE", "60")
@@ -251,6 +320,7 @@ async def test_schedule_disconnect_reap_restarts_grace(monkeypatch):
     assert modified_tokens == []
 
 
+@pytest.mark.usefixtures("shared_state_defined")
 async def test_schedule_disconnect_reap_lets_started_cleanup_finish(monkeypatch):
     """A new disconnect restarts the grace without cancelling a started cleanup."""
     monkeypatch.setenv("REFLEX_SHARED_STATE_DISCONNECT_GRACE", "60")
@@ -287,6 +357,7 @@ async def test_schedule_disconnect_reap_lets_started_cleanup_finish(monkeypatch)
     assert not STARTED_REAP_TASKS
 
 
+@pytest.mark.usefixtures("shared_state_defined")
 @pytest.mark.parametrize("blocked_link", [0, 1])
 async def test_superseded_reap_leaves_unlink_to_new_grace(
     monkeypatch, blocked_link: int
