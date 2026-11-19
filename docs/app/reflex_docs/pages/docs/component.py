@@ -288,13 +288,22 @@ def _type_label(type_: Any) -> str:
         type_: A class, union or parameterized generic.
 
     Returns:
-        A short label, such as ``str | Var | Color`` or ``dict[str, str]``.
+        A short label, such as ``str | Var | Color``, ``dict[str, str]`` or
+        ``Literal["left", "right"]``.
     """
     origin = get_origin(type_)
     if origin in (Union, UnionType):
         return " | ".join(map(_type_label, get_args(type_)))
+    if origin is Literal:
+        values = ", ".join(
+            f'"{value}"' if isinstance(value, str) else str(value)
+            for value in get_args(type_)
+        )
+        return f"Literal[{values}]"
     if args := get_args(type_):
         return f"{_type_label(origin)}[{', '.join(map(_type_label, args))}]"
+    if type_ is type(None):
+        return "None"
     return getattr(type_, "__name__", str(type_))
 
 
@@ -434,7 +443,7 @@ def prop_docs(
                                         type_name,
                                         color_scheme=color,
                                         variant="soft",
-                                        class_name="code-style leading-normal whitespace-normal [overflow-wrap:anywhere]",
+                                        class_name="code-style leading-normal whitespace-normal break-words",
                                     )
                                 ]
                             ),

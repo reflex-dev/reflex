@@ -437,15 +437,14 @@ def test_prop_type_chips_stay_inside_their_column(page: Page, width: int):
         has=page.locator("code", has_text=re.compile(r"^custom_style$"))
     )
     expect(row).to_have_count(1)
-    overflow = (
-        row
-        .locator("td")
-        .nth(1)
-        .evaluate("""cell => {
+    type_cell = row.locator("td").nth(1)
+    expect(type_cell).to_have_text("Dict[str, str | Var | Color]")
+    # A type name with no break opportunity must still wrap inside the column.
+    expect(type_cell.locator("code")).to_have_css("overflow-wrap", "anywhere")
+    overflow = type_cell.evaluate("""cell => {
         const bounds = cell.getBoundingClientRect();
         return [...cell.querySelectorAll('code')]
             .filter(chip => chip.getBoundingClientRect().right > bounds.right + 0.5)
             .map(chip => chip.textContent);
     }""")
-    )
     assert overflow == []
