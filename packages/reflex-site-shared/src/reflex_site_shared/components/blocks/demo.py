@@ -18,10 +18,13 @@ _DATA_TAB_VALUE = "data"
 
 
 class DeferredDemo(rx.Component):
-    """Mount a costly interactive preview when it approaches the viewport."""
+    """Mount a costly interactive preview when visible and the browser is idle."""
 
     library = "$/public/components/DeferredDemo"
     tag = "DeferredDemo"
+
+    # Identifies the demo so it remounts immediately once shown, e.g. after a tab switch.
+    demo_id: rx.Var[str]
 
 
 def _reflex_build_icon() -> rx.Component:

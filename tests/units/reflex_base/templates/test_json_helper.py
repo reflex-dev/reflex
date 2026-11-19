@@ -6,9 +6,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import reflex_base
+from reflex_base.constants import Templates
 
-WEB_TEMPLATE = Path(reflex_base.__file__).parent / ".templates" / "web"
+WEB_TEMPLATE = Templates.Dirs.WEB_TEMPLATE
 JSON_HELPER_PATH = WEB_TEMPLATE / "utils" / "helpers" / "json.js"
 
 # Parses each payload with the helper and reports the result, using a JSON-safe

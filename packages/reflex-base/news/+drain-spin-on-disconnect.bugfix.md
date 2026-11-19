@@ -1,0 +1,1 @@
+Stop the page freezing when the connection drops while queued events are being sent. An event that awaited JavaScript (an `rx.call_script` or `rx.call_function` with a callback) with a state event queued behind it left the tab unresponsive if the socket closed before the script finished.
