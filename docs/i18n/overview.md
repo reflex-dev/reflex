@@ -333,7 +333,8 @@ class AuthState(rx.State):
         return rx.i18n.set_locale(user.language)
 ```
 
-`rx.i18n.language_switcher()` is a prebuilt switcher with one `<a>` per locale.
+`rx.i18n.language_switcher()` is a prebuilt switcher with one `<a>` per locale,
+labelled with each language's own name ("English", "Deutsch").
 Here it switches static and dynamic content just like `set_locale`, and becomes
 a set of real crawlable links once URL routing is on (below).
 

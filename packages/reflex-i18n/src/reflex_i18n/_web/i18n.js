@@ -531,7 +531,7 @@ export function HreflangLinks({ children }) {
   return createElement(Fragment, null, ...links, children);
 }
 
-// A language switcher: one <a> per locale. With URL routing these are real
+// A language switcher: one <a> per locale, labelled with the language's own name. With URL routing these are real
 // links to the current page in each locale, so crawlers follow them and the
 // URL stays the source of truth; without it there is only one URL per page, so
 // they set the locale through the provider (and cookie) instead.
@@ -557,6 +557,9 @@ export function LanguageSwitcher(props) {
             (urlRouting ? localizePath(base, locale) : sitePath(pathname)) +
             rest,
           hrefLang: locale,
+          // Each language is named in itself, so a visitor finds their own
+          // whatever the page's language is.
+          lang: locale,
           "aria-current": locale === active ? "true" : undefined,
           onClick: urlRouting
             ? undefined
@@ -565,7 +568,7 @@ export function LanguageSwitcher(props) {
                 setLocale(locale);
               },
         },
-        locale,
+        languageName(locale, locale),
       ),
     ),
   );

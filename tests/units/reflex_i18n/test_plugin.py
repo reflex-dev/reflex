@@ -607,6 +607,26 @@ def test_routing_wrap_drives_switch_locale(
 
 
 @requires_node
+def test_language_switcher_names_each_language_in_itself(tmp_path: Path):
+    rendered = _render_runtime(
+        tmp_path,
+        "LanguageSwitcher",
+        locales=["en", "de", "fr", "pt-BR"],
+        default_locale="en",
+        action=(
+            "return rendered.children.map("
+            "(link) => [link.props.lang, link.children[0]]);"
+        ),
+    )
+    assert rendered["result"] == [
+        ["en", "English"],
+        ["de", "Deutsch"],
+        ["fr", "français"],
+        ["pt-BR", "português (Brasil)"],
+    ]
+
+
+@requires_node
 @pytest.mark.parametrize(
     ("url_routing", "pathname", "expected"),
     [
