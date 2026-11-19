@@ -11,11 +11,11 @@ from typing import TYPE_CHECKING
 
 from reflex_base.utils import console
 
-from .config import LOCALE_COOKIE_NAME, I18nConfig
+from .config import LOCALE_COOKIE_NAME, I18nConfig, get_active_catalog_dirs
 from .registry import MessageKey, format_message_list
 
 if TYPE_CHECKING:
-    from babel.messages.catalog import Catalog
+    from babel.messages.catalog import Catalog, Message
 
 _FALLBACK_PLURAL_EXPR = "n != 1"
 
@@ -81,6 +81,57 @@ def read_po_catalog(path: Path, locale: str | None = None) -> Catalog:
     return catalog
 
 
+def is_translated(message: Message) -> bool:
+    """Whether a catalog entry carries a usable translation.
+
+    Args:
+        message: The catalog entry.
+
+    Returns:
+        False for a fuzzy (stale) entry or one with an empty (plural) form.
+    """
+    if message.fuzzy:
+        return False
+    strings = message.string
+    if isinstance(strings, str):
+        return bool(strings)
+    return bool(strings) and all(strings)
+
+
+def load_catalog(locale: str) -> Catalog | None:
+    """Read a locale's catalogs: the app's, completed by its catalog packages'.
+
+    The app's translation of a message wins; a package's fills in where the app
+    has none (or only a fuzzy or partial one).
+
+    Args:
+        locale: The locale whose catalogs to read.
+
+    Returns:
+        The merged catalog, or None if no catalog directory has the locale.
+    """
+    merged: Catalog | None = None
+    for catalog_dir in get_active_catalog_dirs():
+        path = catalog_dir / f"{locale}.po"
+        if not path.exists():
+            continue
+        catalog = read_po_catalog(path, locale)
+        if merged is None:
+            merged = catalog
+            continue
+        for message in catalog:
+            if not message.id or not is_translated(message):
+                continue
+            current = merged.get(message.id, message.context)
+            if current is not None:
+                if is_translated(current):
+                    continue
+                # Assigning onto an existing entry would keep its empty string.
+                merged.delete(message.id, message.context)
+            merged[message.id] = message
+    return merged
+
+
 def compile_catalog_module(
     catalog: Catalog | None,
     used_messages: Sequence[MessageKey],
@@ -142,16 +193,14 @@ def _lookup_translation(
     message = catalog.get(key.msgid, key.context)
     # A fuzzy entry carries a stale translation; fall back to the source text
     # (the server side already excludes fuzzy via write_mo).
-    if message is None or message.fuzzy:
+    if message is None or not is_translated(message):
         return None
     strings = message.string
     if key.plural is None:
-        return strings or None if isinstance(strings, str) else None
+        return strings if isinstance(strings, str) else None
     if isinstance(strings, str):
-        strings = (strings,)
-    if not strings or not all(strings):
-        return None
-    return list(strings)
+        return [strings]
+    return list(strings) if strings else None
 
 
 def default_plural_expr_js(catalog: Catalog | None, locale: str) -> str:

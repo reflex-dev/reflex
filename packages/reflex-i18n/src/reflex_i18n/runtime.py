@@ -16,17 +16,11 @@ import io
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from reflex_base.vars.dep_tracking import register_implicit_dependency
 
-from .config import (
-    UNCONFIGURED_LOCALE,
-    check_configured_locale,
-    get_active_catalog_dir,
-    get_active_i18n_config,
-)
+from .config import UNCONFIGURED_LOCALE, check_configured_locale, get_active_i18n_config
 
 if TYPE_CHECKING:
     import datetime
@@ -79,23 +73,6 @@ def get_locale() -> str | None:
     return _active_locale.get()
 
 
-def _catalog_path(locale: str) -> Path | None:
-    """Find the ``.po`` catalog for a locale.
-
-    Args:
-        locale: The locale to find a catalog for.
-
-    Returns:
-        The path of the catalog file, or None if the app has no i18n config
-        or the file does not exist.
-    """
-    catalog_dir = get_active_catalog_dir()
-    if catalog_dir is None:
-        return None
-    path = catalog_dir / f"{locale}.po"
-    return path if path.exists() else None
-
-
 class _CatalogTranslations(_gettext_module.GNUTranslations):
     """A catalog's translator, picking plurals by the rule the client compiles."""
 
@@ -103,7 +80,7 @@ class _CatalogTranslations(_gettext_module.GNUTranslations):
         """Compile the catalog into a gettext translator.
 
         Args:
-            catalog: The catalog from ``read_po_catalog``.
+            catalog: The catalog from ``load_catalog``.
         """
         from babel.messages.mofile import write_mo
 
@@ -152,12 +129,11 @@ def _source_translations() -> _SourceTranslations:
     Returns:
         A pass-through translator using the default locale's plural rule.
     """
-    from .catalog import default_plural_expr_js, read_po_catalog
+    from .catalog import default_plural_expr_js, load_catalog
 
     config = get_active_i18n_config()
     locale = config.default_locale if config is not None else UNCONFIGURED_LOCALE
-    path = _catalog_path(locale)
-    catalog = read_po_catalog(path, locale) if path is not None else None
+    catalog = load_catalog(locale)
     # The expression the client's defaultPlural evaluates, in C syntax.
     plural = _gettext_module.c2py(default_plural_expr_js(catalog, locale))
     return _SourceTranslations(plural)
@@ -177,15 +153,14 @@ def _get_translations(locale: str) -> _gettext_module.NullTranslations:
     if cached is not None:
         return cached
 
-    path = _catalog_path(locale)
-    if path is None:
-        translations: _gettext_module.NullTranslations = (
-            _gettext_module.NullTranslations()
-        )
-    else:
-        from .catalog import read_po_catalog
+    from .catalog import load_catalog
 
-        translations = _CatalogTranslations(read_po_catalog(path, locale))
+    catalog = load_catalog(locale)
+    translations = (
+        _gettext_module.NullTranslations()
+        if catalog is None
+        else _CatalogTranslations(catalog)
+    )
 
     translations.add_fallback(_source_translations())
     _translations[locale] = translations

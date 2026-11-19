@@ -1,8 +1,14 @@
 """Tests for the i18n configuration."""
 
+from pathlib import Path
+
 import pytest
 from reflex_i18n import I18nConfig
-from reflex_i18n.config import get_active_i18n_config, set_active_i18n_config
+from reflex_i18n.config import (
+    get_active_catalog_dirs,
+    get_active_i18n_config,
+    set_active_i18n_config,
+)
 
 
 def test_config_defaults():
@@ -67,4 +73,36 @@ def test_active_config_roundtrip():
     set_active_i18n_config(config)
     assert get_active_i18n_config() is config
     set_active_i18n_config(None)
+    assert get_active_i18n_config() is None
+
+
+def test_activating_resolves_catalog_package_dirs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.chdir(tmp_path)
+    package_dir = tmp_path / "site" / "mylib"
+    package_dir.mkdir(parents=True)
+    (package_dir / "__init__.py").write_text("", encoding="utf-8")
+    monkeypatch.syspath_prepend(str(tmp_path / "site"))
+
+    config = I18nConfig(locales=["en"], catalog_packages=["mylib"])
+    assert config.catalog_packages == ("mylib",)
+    set_active_i18n_config(config)
+    try:
+        assert get_active_catalog_dirs() == (
+            (tmp_path / "locales").resolve(),
+            package_dir.resolve() / "locales",
+        )
+    finally:
+        set_active_i18n_config(None)
+    assert get_active_catalog_dirs() == ()
+
+
+def test_activating_an_uninstalled_catalog_package_fails():
+    config = I18nConfig(locales=["en"], catalog_packages=["no_such_i18n_package"])
+    with pytest.raises(ValueError) as exc_info:
+        set_active_i18n_config(config)
+    assert str(exc_info.value) == (
+        "Cannot find the package 'no_such_i18n_package': it is not installed."
+    )
     assert get_active_i18n_config() is None

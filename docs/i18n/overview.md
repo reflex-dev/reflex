@@ -424,6 +424,31 @@ using it to translate. Without an `I18nPlugin`, `rx.t` renders the source text
 and the `rx.i18n` formatters format in English, as the server-side `format_*`
 helpers do outside any locale.
 
+A package can ship its translations too: one `.po` file per locale in a
+`locales/` directory inside the package (make sure its distribution includes
+them). Manage them from the package's repository, no app needed:
+
+```bash
+reflex i18n init de --package my_lib   # create my_lib/locales/de.po
+reflex i18n extract --package my_lib   # update the catalogs after changing text
+reflex i18n check --package my_lib     # fail on untranslated messages (CI)
+```
+
+Extraction finds `gettext`-family calls, `N_` markers and `rx.t` calls with
+literal text. Text computed at runtime is invisible to it, so mark it with `N_`
+where it is defined.
+
+An app uses a package's translations by listing the package:
+
+```python
+I18nPlugin(locales=["de", "en"], default_locale="de", catalog_packages=["my_lib"])
+```
+
+Its catalogs then translate the package's messages in the browser and on the
+server, and `reflex i18n extract` leaves those messages out of the app's own
+catalogs. Where the app's catalog translates one of them as well, the app's
+translation wins.
+
 ## How it works
 
 - `rx.t` compiles to a client-side lookup. At build time Reflex generates one

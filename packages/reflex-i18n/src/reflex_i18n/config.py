@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import importlib.util
 import re
 from collections.abc import Sequence
 from pathlib import Path
@@ -14,6 +15,9 @@ LOCALE_COOKIE_NAME = "reflex_locale"
 # The locale an app without an I18nPlugin renders and formats in, server-side
 # and client-side alike.
 UNCONFIGURED_LOCALE = "en"
+
+# The directory inside a package holding the catalogs it ships.
+PACKAGE_CATALOG_DIR = "locales"
 
 # A BCP 47-shaped tag: alphabetic language, optional alphanumeric subtags.
 # Locales double as URL path segments, JS catalog identifiers and `Intl` /
@@ -58,12 +62,17 @@ class I18nConfig:
     # ones (Accept-Language negotiation); the default locale unless set.
     fallback_locale: str = "en"
 
+    # Installed packages whose own catalogs (<package>/locales/{locale}.po)
+    # translate their messages; the app's catalogs take precedence.
+    catalog_packages: tuple[str, ...] = ()
+
     def __init__(
         self,
         locales: Sequence[str],
         default_locale: str = "en",
         catalog_dir: str = "locales",
         fallback_locale: str | None = None,
+        catalog_packages: Sequence[str] = (),
     ):
         """Initialize and validate the i18n configuration.
 
@@ -74,6 +83,8 @@ class I18nConfig:
                 ``{locale}.po`` catalogs.
             fallback_locale: The locale for a visitor whose browser asks for
                 none of the configured ones. Defaults to ``default_locale``.
+            catalog_packages: Installed packages whose own catalogs
+                (``<package>/locales/{locale}.po``) translate their messages.
 
         Raises:
             ValueError: If no locales are given, a locale is repeated, a locale
@@ -106,14 +117,35 @@ class I18nConfig:
         object.__setattr__(self, "default_locale", default_locale)
         object.__setattr__(self, "catalog_dir", catalog_dir)
         object.__setattr__(self, "fallback_locale", fallback_locale)
+        object.__setattr__(self, "catalog_packages", tuple(catalog_packages))
+
+
+def find_package_dir(package: str) -> Path:
+    """Locate an installed package's directory without importing it.
+
+    Args:
+        package: The importable package name, e.g. ``"my_lib"``.
+
+    Returns:
+        The absolute package directory.
+
+    Raises:
+        ValueError: If no package of that name is installed.
+    """
+    spec = importlib.util.find_spec(package)
+    if spec is None or not spec.submodule_search_locations:
+        msg = f"Cannot find the package {package!r}: it is not installed."
+        raise ValueError(msg)
+    return Path(next(iter(spec.submodule_search_locations))).resolve()
 
 
 _active_config: I18nConfig | None = None
 
-# Absolute catalog directory, captured when the app is constructed (cwd is the
-# app root then). Used at compile and request time so catalog loading does not
-# depend on the process cwd, which is not guaranteed to be the app root later.
-_active_catalog_dir: Path | None = None
+# Absolute catalog directories, captured when the app is constructed (cwd is
+# the app root then): the app's first, then each catalog package's. Used at
+# compile and request time so catalog loading does not depend on the process
+# cwd, which is not guaranteed to be the app root later.
+_active_catalog_dirs: tuple[Path, ...] = ()
 
 
 def set_active_i18n_config(config: I18nConfig | None) -> None:
@@ -129,11 +161,20 @@ def set_active_i18n_config(config: I18nConfig | None) -> None:
     # Inline to avoid a circular import; runtime imports from this module.
     from .runtime import clear_translations_cache
 
-    global _active_config, _active_catalog_dir
-    _active_config = config
-    _active_catalog_dir = (
-        (Path.cwd() / config.catalog_dir).resolve() if config is not None else None
+    global _active_config, _active_catalog_dirs
+    catalog_dirs = (
+        (
+            (Path.cwd() / config.catalog_dir).resolve(),
+            *(
+                find_package_dir(package) / PACKAGE_CATALOG_DIR
+                for package in config.catalog_packages
+            ),
+        )
+        if config is not None
+        else ()
     )
+    _active_config = config
+    _active_catalog_dirs = catalog_dirs
     # Drop translators built from the previous catalog dir (or from catalogs
     # edited before a dev hot reload re-activated the config).
     clear_translations_cache()
@@ -167,10 +208,11 @@ def check_configured_locale(locale: str) -> None:
         raise ValueError(msg)
 
 
-def get_active_catalog_dir() -> Path | None:
-    """Get the absolute catalog directory of the running app.
+def get_active_catalog_dirs() -> tuple[Path, ...]:
+    """Get the absolute catalog directories of the running app, by precedence.
 
     Returns:
-        The absolute catalog directory, or None if i18n is not configured.
+        The app's catalog directory, then each catalog package's; empty if i18n
+        is not configured.
     """
-    return _active_catalog_dir
+    return _active_catalog_dirs

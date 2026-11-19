@@ -93,6 +93,26 @@ def test_gettext_noop_leaves_message_untranslated(tmp_path: Path, monkeypatch):
         assert gettext(label) == "Hallo"
 
 
+def test_gettext_reads_catalog_package_translations(tmp_path: Path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    package_dir = tmp_path / "site" / "mylib"
+    package_dir.mkdir(parents=True)
+    (package_dir / "__init__.py").write_text("", encoding="utf-8")
+    monkeypatch.syspath_prepend(str(tmp_path / "site"))
+    _write_po(tmp_path / "locales", "de", 'msgid "Save"\nmsgstr "Sichern"\n')
+    _write_po(
+        package_dir / "locales",
+        "de",
+        'msgid "Save"\nmsgstr "Speichern"\n\nmsgid "Cancel"\nmsgstr "Abbrechen"\n',
+    )
+    set_active_i18n_config(I18nConfig(locales=["en", "de"], catalog_packages=["mylib"]))
+
+    with use_locale("de"):
+        assert gettext("Save") == "Sichern"
+        assert gettext("Cancel") == "Abbrechen"
+        assert gettext("Back") == "Back"
+
+
 def test_set_active_config_drops_stale_translators(tmp_path: Path, monkeypatch):
     """Re-activating a config (hot reload) picks up edited .po catalogs."""
     monkeypatch.chdir(tmp_path)

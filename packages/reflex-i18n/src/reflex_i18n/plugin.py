@@ -24,10 +24,10 @@ from .catalog import (
     compile_catalog_module,
     compile_index_module,
     default_plural_expr_js,
-    read_po_catalog,
+    load_catalog,
 )
 from .component import HreflangLinks, LocaleRoute, _provider
-from .config import I18nConfig, get_active_catalog_dir, set_active_i18n_config
+from .config import I18nConfig, get_active_catalog_dirs, set_active_i18n_config
 from .format import (
     _fmt_date,
     _fmt_number,
@@ -152,6 +152,7 @@ class I18nPlugin(Plugin):
     default_locale: str = "en"
     fallback_locale: str | None = None
     catalog_dir: str = "locales"
+    catalog_packages: Sequence[str] = ()
     routing: PathPrefixRouting | None = None
 
     def _config(self) -> I18nConfig:
@@ -165,6 +166,7 @@ class I18nPlugin(Plugin):
             default_locale=self.default_locale,
             catalog_dir=self.catalog_dir,
             fallback_locale=self.fallback_locale,
+            catalog_packages=self.catalog_packages,
         )
 
     def __post_init__(self):
@@ -284,7 +286,7 @@ class I18nPlugin(Plugin):
         context["add_save_task"](self._compile_catalogs)
 
     def _compile_catalogs(self) -> list[tuple[str, str]]:
-        """Compile per-locale catalog modules from the app's ``.po`` files.
+        """Compile the per-locale catalog modules from the ``.po`` catalogs.
 
         Returns:
             Pairs of (``.web``-relative path, module code).
@@ -293,18 +295,16 @@ class I18nPlugin(Plugin):
 
         config = self._config()
         used_messages = collected_messages()
-        # The absolute directory captured when the app was constructed: the
+        # The absolute directories captured when the app was constructed: the
         # process cwd is not guaranteed to still be the app root at compile.
-        catalog_dir = get_active_catalog_dir() or Path.cwd() / self.catalog_dir
+        catalog_dirs = get_active_catalog_dirs()
+        app_catalog_dir = (
+            catalog_dirs[0] if catalog_dirs else Path.cwd() / self.catalog_dir
+        )
         default_at_root = bool(getattr(self.routing, "default_at_root", True))
         deploy_url = get_config().deploy_url or ""
 
-        default_po = catalog_dir / f"{config.default_locale}.po"
-        default_catalog = (
-            read_po_catalog(default_po, config.default_locale)
-            if default_po.exists()
-            else None
-        )
+        default_catalog = load_catalog(config.default_locale)
 
         results: list[tuple[str, str]] = [
             (
@@ -324,12 +324,11 @@ class I18nPlugin(Plugin):
             if locale == config.default_locale:
                 catalog = default_catalog
             else:
-                po_path = catalog_dir / f"{locale}.po"
-                catalog = read_po_catalog(po_path, locale) if po_path.exists() else None
+                catalog = load_catalog(locale)
                 if catalog is None:
                     console.warn(
                         f"No translation catalog found for locale {locale!r} "
-                        f"(expected {po_path})."
+                        f"(expected {app_catalog_dir / f'{locale}.po'})."
                     )
             results.append((
                 f"{_I18N_WEB_DIR}/{locale}.js",
