@@ -315,9 +315,11 @@ class AppHarness:
                 self.app_instance, self.app_module = (
                     reflex.utils.prerequisites.get_and_validate_app(reload=False)
                 )
-                # A real app stays bound to the context of its first import; stop()
-                # still resets the token to the context before the fork.
-                RegistrationContext.set(self.app_instance._registration_context)
+                # A real app stays bound to the context of its first import, so it
+                # takes this run's config; stop() still resets to the pre-fork context.
+                app_context = self.app_instance._registration_context
+                app_context._set_config(get_config())
+                RegistrationContext.set(app_context)
                 _restore_states(
                     AppHarness._stripped_app_states.pop(self.app_module.__name__, ())
                 )

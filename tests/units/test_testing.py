@@ -300,7 +300,8 @@ def test_app_harness_keeps_real_app_states_across_harnesses(tmp_path, monkeypatc
     """A real app's states come back for its next harness; real apps never share a context.
 
     A real app is imported only once, so ``stop()`` must not lose the states it
-    strips, and a second real app must not register into the first one's context.
+    strips, the next harness must still read its config from disk, and a second
+    real app must not register into the first one's context.
 
     Args:
         tmp_path: pytest tmp_path fixture
@@ -350,8 +351,13 @@ def test_app_harness_keeps_real_app_states_across_harnesses(tmp_path, monkeypatc
         first.stop()
         assert _real_app_registrations("real_app_a") == (set(), {}, set(), set())
 
+        (roots[0] / "rxconfig.py").write_text(
+            "import reflex as rx\n\n"
+            "config = rx.Config(app_name='real_app_a', frontend_path='/next')\n"
+        )
         again = start(roots[0])
         assert again.app_instance is first.app_instance
+        assert reflex_base.config.get_config().frontend_path == "/next"
         assert _real_app_registrations("real_app_a") == expected("real_app_a")
         again.stop()
 
