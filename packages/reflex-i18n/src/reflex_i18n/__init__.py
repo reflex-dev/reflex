@@ -28,9 +28,11 @@ from .runtime import (
     format_number,
     format_percent,
     format_time,
+    get_locale,
     gettext,
     ngettext,
     pgettext,
+    use_locale,
 )
 from .vars import t
 
@@ -64,6 +66,7 @@ __all__ = [
     "format_number",
     "format_percent",
     "format_time",
+    "get_locale",
     "gettext",
     "language_switcher",
     "locale_url",
@@ -73,6 +76,7 @@ __all__ = [
     "pgettext",
     "set_locale",
     "t",
+    "use_locale",
 ]
 
 # Importing ``.state`` registers ``I18nState`` as a substate (a global side

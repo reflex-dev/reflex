@@ -21,7 +21,11 @@ from typing import TYPE_CHECKING
 
 from reflex_base.vars.dep_tracking import register_implicit_dependency
 
-from .config import get_active_catalog_dir, get_active_i18n_config
+from .config import (
+    check_configured_locale,
+    get_active_catalog_dir,
+    get_active_i18n_config,
+)
 
 if TYPE_CHECKING:
     import datetime
@@ -41,7 +45,10 @@ _translations: dict[str, _gettext_module.NullTranslations] = {}
 
 @contextmanager
 def use_locale(locale: str | None) -> Iterator[None]:
-    """Set the active locale for the duration of the context.
+    """Translate and format in a locale for the duration of the context.
+
+    Events already run in their client's locale; use this where there is no
+    client, e.g. a background job writing a report for a user.
 
     Args:
         locale: The locale to activate, or None to leave translations
@@ -49,7 +56,12 @@ def use_locale(locale: str | None) -> Iterator[None]:
 
     Yields:
         None
+
+    Raises:
+        ValueError: If the locale is not one of the configured locales.
     """
+    if locale is not None:
+        check_configured_locale(locale)
     token = _active_locale.set(locale)
     try:
         yield
@@ -58,7 +70,7 @@ def use_locale(locale: str | None) -> Iterator[None]:
 
 
 def get_locale() -> str | None:
-    """Get the locale active for the current client.
+    """Get the active locale: the client's during an event, else ``use_locale``'s.
 
     Returns:
         The active locale, or None if none is set.

@@ -145,6 +145,27 @@ Note: translate at render time (in a computed var) or at the moment you emit a
 message. A translated string stored in a plain var earlier will not
 re-translate on its own when the locale changes.
 
+### Outside an event
+
+Event handlers and computed vars translate into their visitor's locale
+automatically. Code that runs without a visitor (a background job, a scheduled
+report, a message sent to someone else) has no locale until you set one with
+`rx.i18n.use_locale`. `gettext` and the `format_*` helpers below follow it:
+
+```python
+import datetime
+
+from reflex_i18n import format_date, gettext as _, use_locale
+
+
+def monthly_report_title(user_locale: str, month: datetime.date) -> str:
+    with use_locale(user_locale):
+        return _("Report for {month}").format(month=format_date(month))
+```
+
+`use_locale` raises a `ValueError` for a locale the plugin does not list.
+`rx.i18n.get_locale()` returns the locale in effect, or `None` outside any.
+
 ## Formatting numbers and dates
 
 Numbers, currencies, percentages and dates are formatted differently per locale

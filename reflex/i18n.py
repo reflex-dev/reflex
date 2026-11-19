@@ -23,6 +23,7 @@ try:
         format_number,
         format_percent,
         format_time,
+        get_locale,
         gettext,
         language_switcher,
         locale_url,
@@ -31,6 +32,7 @@ try:
         percent,
         pgettext,
         t,
+        use_locale,
     )
 
     # Accessed as rx.i18n.date / .time / .datetime. Kept out of __all__ (below)
@@ -70,6 +72,7 @@ __all__ = [
     "format_number",
     "format_percent",
     "format_time",
+    "get_locale",
     "gettext",
     "language_switcher",
     "locale",
@@ -80,6 +83,7 @@ __all__ = [
     "pgettext",
     "set_locale",
     "t",
+    "use_locale",
 ]
 
 # reflex_i18n defers these so importing it does not import

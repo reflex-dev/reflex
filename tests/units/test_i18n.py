@@ -44,3 +44,12 @@ def test_i18n_names_leave_star_import_without_reflex_i18n():
 def test_i18n_names_exported_with_reflex_i18n():
     # The generated stub re-exports rx.t and rx.i18n through __all__.
     assert {"i18n", "t", "gettext", "I18nPlugin", "set_locale"} <= set(rx.__all__)
+
+
+def test_reflex_i18n_exposes_locale_scope_helpers():
+    import reflex_i18n.runtime
+
+    import reflex.i18n
+
+    assert reflex.i18n.use_locale is reflex_i18n.runtime.use_locale
+    assert reflex.i18n.get_locale is reflex_i18n.runtime.get_locale

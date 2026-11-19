@@ -15,6 +15,7 @@ from reflex_i18n.runtime import (
     format_number,
     format_percent,
     format_time,
+    get_locale,
     gettext,
     negotiate_locale,
     ngettext,
@@ -61,6 +62,23 @@ def test_gettext_translates_active_locale(tmp_path: Path, monkeypatch):
     with use_locale("de"):
         assert gettext("Hello") == "Hallo"
     assert gettext("Hello") == "Hello"
+
+
+def test_use_locale_rejects_unconfigured_locale():
+    set_active_i18n_config(I18nConfig(locales=["en", "de"]))
+    with pytest.raises(ValueError) as exc_info, use_locale("fr"):
+        pass
+    assert str(exc_info.value) == (
+        "Locale 'fr' is not configured. Configured locales: ['en', 'de']."
+    )
+    assert get_locale() is None
+
+
+def test_get_locale_reports_use_locale():
+    assert get_locale() is None
+    with use_locale("de"):
+        assert get_locale() == "de"
+    assert get_locale() is None
 
 
 def test_set_active_config_drops_stale_translators(tmp_path: Path, monkeypatch):

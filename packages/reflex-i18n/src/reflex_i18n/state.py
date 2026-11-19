@@ -22,7 +22,7 @@ from reflex.event import EventType, event, run_script
 from reflex.istate.storage import Cookie
 from reflex.state import BaseState, State, _override_base_method
 
-from .config import LOCALE_COOKIE_NAME, get_active_i18n_config
+from .config import LOCALE_COOKIE_NAME, check_configured_locale, get_active_i18n_config
 from .runtime import negotiate_locale, use_locale
 
 # Switches the client-side locale, without a round trip to the server.
@@ -124,13 +124,7 @@ class I18nState(State):
         Raises:
             ValueError: If the locale is not configured.
         """
-        config = get_active_i18n_config()
-        if config is not None and locale not in config.locales:
-            msg = (
-                f"Locale {locale!r} is not configured. Configured locales: "
-                f"{list(config.locales)}."
-            )
-            raise ValueError(msg)
+        check_configured_locale(locale)
         self.locale_cookie = locale
 
 

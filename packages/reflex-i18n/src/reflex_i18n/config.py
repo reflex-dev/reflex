@@ -129,6 +129,25 @@ def get_active_i18n_config() -> I18nConfig | None:
     return _active_config
 
 
+def check_configured_locale(locale: str) -> None:
+    """Check that a locale is one of the running app's configured locales.
+
+    Args:
+        locale: The locale to check.
+
+    Raises:
+        ValueError: If i18n is configured and the locale is not among its
+            locales.
+    """
+    config = _active_config
+    if config is not None and locale not in config.locales:
+        msg = (
+            f"Locale {locale!r} is not configured. Configured locales: "
+            f"{list(config.locales)}."
+        )
+        raise ValueError(msg)
+
+
 def get_active_catalog_dir() -> Path | None:
     """Get the absolute catalog directory of the running app.
 
