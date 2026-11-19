@@ -328,6 +328,7 @@ def test_navigate_between_posts(pages_url: str, page: Page):
     assert [url for url in requests if urlsplit(url).path.endswith(".data")] == []
 
 
+@pytest.mark.usefixtures("ssr_blog_app")
 def test_ssr_data_endpoint(frontend_path: str):
     """The /_ssr_data backend endpoint should return serialized state.
 
