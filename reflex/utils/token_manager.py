@@ -20,7 +20,8 @@ from reflex.utils.tasks import ensure_task
 
 logger = logging.getLogger(__name__)
 
-# Seconds a connect waits for the lost and found subscription before going ahead.
+# Seconds after the lost and found subscriber starts that connects wait for
+# redis to confirm its subscription before going ahead without it.
 LOST_AND_FOUND_SUBSCRIBE_TIMEOUT = 5
 
 if TYPE_CHECKING:
@@ -231,6 +232,8 @@ class RedisTokenManager(LocalTokenManager):
         self._socket_record_task: asyncio.Task | None = None
         self._lost_and_found_task: asyncio.Task | None = None
         self._lost_and_found_subscribed = asyncio.Event()
+        # Event loop time until which connects wait for the subscription.
+        self._lost_and_found_wait_deadline = 0.0
 
     def _get_redis_key(self, token: str) -> str:
         """Get Redis key for token mapping.
@@ -470,19 +473,26 @@ class RedisTokenManager(LocalTokenManager):
 
         Redis drops a delta another instance publishes before the subscription
         is confirmed, so a connect waits for it before storing the socket record
-        that sends other instances' deltas here. Only the first connect of an
-        instance waits.
+        that sends other instances' deltas here. Connects wait only until
+        ``LOST_AND_FOUND_SUBSCRIBE_TIMEOUT`` seconds after the subscriber
+        started, so a redis that cannot confirm it does not stall every connect.
 
         Args:
             emit_update: The function to emit state updates.
         """
         if self._lost_and_found_subscribed.is_set():
             return
-        self.ensure_lost_and_found_task(emit_update)
+        loop = asyncio.get_running_loop()
+        if self._lost_and_found_task is None or self._lost_and_found_task.done():
+            self.ensure_lost_and_found_task(emit_update)
+            self._lost_and_found_wait_deadline = (
+                loop.time() + LOST_AND_FOUND_SUBSCRIBE_TIMEOUT
+            )
+        if (remaining := self._lost_and_found_wait_deadline - loop.time()) <= 0:
+            return
         try:
             await asyncio.wait_for(
-                self._lost_and_found_subscribed.wait(),
-                timeout=LOST_AND_FOUND_SUBSCRIBE_TIMEOUT,
+                self._lost_and_found_subscribed.wait(), timeout=remaining
             )
         except TimeoutError:
             logger.warning(

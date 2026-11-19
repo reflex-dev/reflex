@@ -60,6 +60,7 @@ runs:
           if [ "$attempt" = 3 ]; then
             exit 1
           fi
+          # 10 seconds before the second try, 20 before the third.
           sleep $((attempt * 10))
         done
         changed=$(
