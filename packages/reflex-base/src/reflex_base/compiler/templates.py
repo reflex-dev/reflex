@@ -179,7 +179,7 @@ def app_root_template(
 
     if ssr.is_enabled():
         ssr_imports = (
-            'import { useLoaderData } from "react-router";\n'
+            'import { data as ssrData, useLoaderData } from "react-router";\n'
             'import { getBackendURL } from "$/utils/state";\n'
             'import { SSRStateContext } from "$/utils/context";\n'
             'import env from "$/env.json";'
@@ -206,7 +206,16 @@ export async function loader({ request }) {
   } catch (e) {
     console.error("SSR data fetch failed:", e);
   }
-  return { state: null };
+  // The page renders with default state; the error status keeps it out of
+  // caches (the ISR render tier keeps the stale page or serves the shell).
+  return ssrData({ state: null }, { status: 503 });
+}
+
+// The client reads the loader's state only on mount and the live session runs
+// on_load, so client-side navigations skip the loader instead of running the
+// page's on_load handlers a second time on the backend.
+export function shouldRevalidate() {
+  return false;
 }
 """
         layout_body = (
