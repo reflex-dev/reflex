@@ -504,7 +504,10 @@ def render(name: str, config: Config) -> str:
     internal_paths: list[str] = []
     for package in config.internal_packages:
         prefixes = config.package_source_prefixes(package)
-        if not prefixes:
+        # Only the root package can be without source of its own, and its
+        # extra-source-dirs do not make up for that: a trigger on those alone
+        # would never fire for a change to the package itself.
+        if package == config.root_package and not config.root_source_dirs:
             fail(
                 f"{package} is the repository-root package and is listed in "
                 "internal-packages, so its auto-release trigger needs to know "
@@ -912,6 +915,9 @@ def towncrier_config_toml(root: Path) -> str:
         'title_format = "## {version} ({project_date})"',
         f'issue_format = "[#{{issue}}](https://github.com/{slug}/issues/{{issue}})"',
         'start_string = "<!-- towncrier release notes start -->\\n"',
+        "# towncrier's template appends the issue links to the last line of an",
+        "# entry, inside a trailing code fence; this one puts them above the block.",
+        'template = "reflex_release:changelog.md"',
     ]
     for directory, display in TOWNCRIER_TYPES:
         lines += [

@@ -1,5 +1,7 @@
 """Tests for the docs sidebar structure and prev/next chain."""
 
+from pathlib import Path
+
 import pytest
 
 
@@ -45,7 +47,7 @@ def test_cross_reference_excluded_from_prev_next_chain():
 
 
 def test_upgrade_guide_leads_the_changelog_section():
-    """The 0.10 upgrade guide sits in an Upgrading accordion atop the Changelog section."""
+    """The upgrade guides sit, newest first, in an Upgrading accordion atop the Changelog section."""
     from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import learn
     from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
         changelog_items,
@@ -53,8 +55,10 @@ def test_upgrade_guide_leads_the_changelog_section():
 
     upgrading = changelog_items[0]
     assert upgrading.names == "Upgrading"
-    assert [child.names for child in upgrading.children] == ["Upgrading to 0.10"]
-    assert upgrading.children[0].link == "/changelog/upgrading/upgrading-to-0-10/"
+    assert [(child.names, child.link) for child in upgrading.children] == [
+        ("Upgrading to 0.11", "/changelog/upgrading/upgrading-to-0-11/"),
+        ("Upgrading to 0.10", "/changelog/upgrading/upgrading-to-0-10/"),
+    ]
     assert changelog_items[1].link == "/changelog/"
 
     getting_started = next(item for item in learn if item.names == "Getting Started")
@@ -114,6 +118,46 @@ def test_group_with_nested_pages_remains_expandable():
     assert rendered.count('jsx("details"') == 2
     assert 'href:"/postgres/"' in rendered
     assert 'href:"/sqlite/"' in rendered
+
+
+@pytest.mark.parametrize("active", [False, True])
+@pytest.mark.parametrize("title", ["AG Chart", "Overview", "Testing"])
+def test_single_page_group_label_uses_foreground(title, active):
+    """Direct-link labels must not inherit the link wrapper's muted color."""
+    import reflex as rx
+
+    from reflex_docs.templates.docpage.sidebar.sidebar import sidebar_item_comp
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem
+
+    component = sidebar_item_comp(
+        0,
+        SideBarItem(
+            names=title,
+            children=[SideBarItem(names="Overview", link="/enterprise/ag-chart/")],
+        ),
+        rx.Var.create([]),
+        rx.Var.create("/enterprise/ag-chart/" if active else "/enterprise/testing/"),
+    )
+    label = component.children[0].children[0].children[0]
+    assert label.tag == "p"
+    assert "text-foreground" in str(label.class_name).strip('"').split()
+
+
+@pytest.mark.parametrize(
+    ("stylesheet", "selector"),
+    [
+        ("docs-theme.css", ".docs-sidebar"),
+        ("docs-header-theme.css", ".docs-sidebar-drawer"),
+    ],
+)
+def test_inactive_sidebar_styles_use_foreground(stylesheet, selector):
+    """Desktop and mobile theme overrides must keep inactive links readable."""
+    css = (Path(__file__).parents[1] / "assets" / stylesheet).read_text()
+    rule = css.split(
+        f"{selector} a:where(:not([aria-current='page'], [aria-current='true'])) p {{",
+        1,
+    )[1].split("}", 1)[0]
+    assert "color: var(--foreground)" in rule
 
 
 def test_api_reference_groups_related_symbols():
