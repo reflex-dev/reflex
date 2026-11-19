@@ -608,9 +608,9 @@ def _is_port(text: str) -> bool:
         text: The text after the ``:`` of an address.
 
     Returns:
-        Whether the text is made of ASCII digits only.
+        Whether the text is ASCII digits for a number from 0 to 65535.
     """
-    return text.isascii() and text.isdigit()
+    return len(text) <= 5 and text.isascii() and text.isdigit() and int(text) < 65536
 
 
 def _forwarded_client_ip(entry: str) -> str | None:
@@ -636,9 +636,13 @@ def _forwarded_client_ip(entry: str) -> str | None:
         # ``ipaddress`` keeps it without validating it.
         return None
     try:
-        return str(ipaddress.ip_address(entry))
+        ip = ipaddress.ip_address(entry)
     except ValueError:
         return None
+    # A dual-stack proxy writes an IPv4 client as ``::ffff:a.b.c.d``.
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return str(ip)
 
 
 def _origin_matches_request(
