@@ -108,6 +108,7 @@ dev = [
   "psutil",
   "psycopg[binary]",
   "pydantic",
+  "pyright",
   "pytest-asyncio",
   "pytest-benchmark",
   "pytest-codspeed",
@@ -195,6 +196,14 @@ unsupported-base = "ignore"
 # outside this repo hit the same thing, so ignore the rule rather than rewriting
 # every annotation to the `Annotated[...]` form.
 not-subscriptable = "ignore"
+
+# The calls in this file must fail type checking; an ignore that stops being used
+# means one of them type-checks now.
+[[tool.ty.overrides]]
+include = ["tests/units/reflex_workflow/test_model.py"]
+
+[tool.ty.overrides.rules]
+unused-ignore-comment = "error"
 
 [tool.ruff]
 target-version = "py311"
@@ -483,6 +492,7 @@ backend_held = [
 ]
 backend_pinned = [
     # Linters are pinned deliberately and bumped on their own cadence.
+    "pyright",
     "ty",
     "ruff",
 ]
