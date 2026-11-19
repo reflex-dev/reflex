@@ -14,9 +14,9 @@ Everything here is a no-op unless ``config.ssr_mode`` is not ``OFF``.
 
 from __future__ import annotations
 
-import asyncio
 import inspect
 import traceback
+from collections import deque
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl
 
@@ -26,6 +26,7 @@ from starlette.responses import Response
 
 from reflex.event import Event
 from reflex.istate.data import RouterData
+from reflex.istate.delta import _resolve_delta
 from reflex.route import extract_route_params
 from reflex.state import BaseState, State
 from reflex.utils import console, format
@@ -75,52 +76,70 @@ def _build_router_data(
     return router_data
 
 
-async def _run_on_load_event(state: BaseState, event: Event, path: str) -> None:
+async def _run_on_load_event(state: BaseState, event: Event) -> list[Event]:
     """Run a single resolved on_load event on the ephemeral SSR state.
 
     Resolves the handler's target substate from ``event.name`` and invokes it
     directly (rather than going through the session-managed event queue, which
     needs a real client token and state manager).  Handlers mutate the state in
-    place; their return value is consumed but discarded since the whole tree is
-    serialized later.
+    place.
 
     Args:
         state: The ephemeral root state instance.
         event: The resolved on_load event (``event.name`` is the dotted handler).
-        path: The URL path (for error logging).
-    """
-    try:
-        # e.g. "reflex___state____state.blog_state.on_load" -> substate + method.
-        *substate_path, method = event.name.split(".")
-        substate = state.get_substate(substate_path)
-        handler = substate.event_handlers[method]
 
-        result = handler.fn(substate, **event.payload)
-        if asyncio.iscoroutine(result):
-            result = await result
-        if inspect.isgenerator(result):
-            for _ in result:
-                pass
-        elif inspect.isasyncgen(result):
-            async for _ in result:
-                pass
-    except Exception:
-        console.warn(f"SSR on_load handler failed for {path}: {traceback.format_exc()}")
+    Returns:
+        The backend events the handler returned or yielded. Frontend events
+        and background tasks are left to the browser's live session.
+    """
+    # e.g. "reflex___state____state.blog_state.on_load" -> substate + method.
+    *substate_path, method = event.name.split(".")
+    substate = state.get_substate(substate_path)
+    handler = substate.event_handlers[method]
+    if handler.is_background:
+        return []
+
+    result = handler.fn(substate, **event.payload)
+    if inspect.isawaitable(result):
+        result = await result
+    chained: list[Any]
+    if inspect.isasyncgen(result):
+        chained = [item async for item in result]
+    elif inspect.isgenerator(result):
+        chained = []
+        try:
+            while True:
+                chained.append(next(result))
+        except StopIteration as stop:
+            chained.append(stop.value)
+    else:
+        chained = [result]
+    return [
+        chained_event
+        for item in chained
+        for chained_event in Event.from_event_type(item, router_data=state.router_data)
+        if not chained_event.name.startswith("_")
+    ]
 
 
 async def _run_on_load_events(app: App, state: BaseState, path: str) -> None:
-    """Run the route's on_load handlers on the ephemeral SSR state.
+    """Run the route's on_load handlers and the backend events they chain.
 
     Args:
         app: The app to get load events from.
         state: The ephemeral root state instance.
         path: The URL path (for error logging).
     """
-    load_events = app.get_load_events(path)
-    if not load_events:
-        return
-    for event in Event.from_event_type(load_events, router_data=state.router_data):
-        await _run_on_load_event(state, event, path)
+    queue = deque(
+        Event.from_event_type(app.get_load_events(path), router_data=state.router_data)
+    )
+    while queue:
+        try:
+            queue.extend(await _run_on_load_event(state, queue.popleft()))
+        except Exception:
+            console.warn(
+                f"SSR on_load handler failed for {path}: {traceback.format_exc()}"
+            )
 
 
 def ssr_data(app: App):
@@ -174,7 +193,8 @@ def ssr_data(app: App):
 
         await _run_on_load_events(app, state, path)
 
-        json_str = format.json_dumps({"state": state.dict()})
+        # Async computed vars are awaited, as a hydrate sends them.
+        json_str = format.json_dumps({"state": await _resolve_delta(state.dict())})
         return Response(
             content=json_str,
             media_type="application/json",

@@ -237,6 +237,126 @@ async def test_ssr_data_on_load_payload():
 
 
 @pytest.mark.asyncio
+async def test_ssr_data_on_load_chained_events():
+    """Backend events an on_load handler returns or yields run before serializing.
+
+    Frontend events and background tasks are left to the browser's session.
+    """
+
+    class ChainLoadState(rx.State):
+        steps: list[str] = []
+
+        @rx.event
+        def load(self):
+            """Record the step and chain a backend and a frontend event.
+
+            Returns:
+                The chained events.
+            """
+            self.steps.append("load")
+            return [ChainLoadState.returned, rx.redirect("/elsewhere")]
+
+        @rx.event
+        def returned(self):
+            """Record the step and chain events from a generator.
+
+            Returns:
+                The event chained by the generator's return.
+
+            Yields:
+                The chained events.
+            """
+            self.steps.append("returned")
+            yield ChainLoadState.yielded("first")
+            yield
+            return ChainLoadState.yielded("generator-return")  # noqa: B901
+
+        @rx.event
+        async def yielded(self, value: str):
+            """Record the chained value.
+
+            Args:
+                value: The value to record.
+            """
+            self.steps.append(value)
+
+        @rx.event(background=True)
+        async def background(self):
+            """Record a step from a background task."""
+            async with self:
+                self.steps.append("background")
+
+    class OtherChainState(rx.State):
+        touched: bool = False
+
+        @rx.event
+        async def touch(self):
+            """Mark the state and chain a background task.
+
+            Yields:
+                The background task.
+            """
+            self.touched = True
+            yield ChainLoadState.background
+
+    app = App()
+    app._state = ChainLoadState
+    app.add_page(
+        lambda: rx.text("chain"),
+        route="/chain",
+        on_load=[ChainLoadState.load, OtherChainState.touch],
+    )
+
+    response = await ssr_data(app)(_make_request("/chain"))
+
+    data = _parse_response(response)
+    assert data["state"][ChainLoadState.get_full_name()] == {
+        "steps_rx_state_": ["load", "returned", "first", "generator-return"],
+    }
+    assert data["state"][OtherChainState.get_full_name()] == {
+        "touched_rx_state_": True,
+    }
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_async_computed_var():
+    """Async computed vars are awaited, as a hydrate sends them."""
+
+    class AsyncVarState(rx.State):
+        name: str = "default"
+
+        @rx.event
+        def load(self):
+            """Set the name the computed var reads."""
+            self.name = "loaded"
+
+        @rx.var
+        async def greeting(self) -> str:
+            """Greet the name.
+
+            Returns:
+                The greeting.
+            """
+            return f"hello {self.name}"
+
+    app = App()
+    app._state = AsyncVarState
+    app.add_page(
+        lambda: rx.text(AsyncVarState.greeting),
+        route="/async-var",
+        on_load=AsyncVarState.load,
+    )
+
+    response = await ssr_data(app)(_make_request("/async-var"))
+
+    data = _parse_response(response)
+    assert data["state"][AsyncVarState.get_full_name()] == {
+        "name_rx_state_": "loaded",
+        "greeting_rx_state_": "hello loaded",
+    }
+
+
+@pytest.mark.asyncio
 async def test_ssr_data_query_params():
     """Query parameters reach on_load, with route params taking precedence."""
 
