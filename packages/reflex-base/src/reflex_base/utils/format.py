@@ -1010,6 +1010,15 @@ _ORJSON_SOCKET_OPTS = (
 
 
 def _replace_non_finite_floats(obj: Any) -> Any:
+    """Replace non-finite floats with sentinels and escape colliding strings.
+
+    Args:
+        obj: The value to walk.
+
+    Returns:
+        ``obj`` itself when nothing changed, else a copy with the replacements
+        (a changed tuple becomes a list).
+    """
     # Copy-on-write: only allocate a new container if a child actually
     # changed. ``is`` works as a "did we replace this" check because
     # unchanged values are returned as the same object.
@@ -1076,6 +1085,14 @@ def _json_dumps_socket_fallback(obj: Any) -> str:
     from reflex_base.utils import serializers
 
     def _default(o: Any) -> Any:
+        """Serialize a custom type, then walk the result like the payload.
+
+        Args:
+            o: The value the stdlib cannot serialize.
+
+        Returns:
+            The serialized value with sentinels applied.
+        """
         return _replace_non_finite_floats(serializers.serialize(o))
 
     kwargs["default"] = _default

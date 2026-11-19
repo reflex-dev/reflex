@@ -80,6 +80,11 @@ def _orjson_enabled(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPa
     ],
 )
 def test_orjson_round_trip(value):
+    """``orjson_loads`` reads back what ``orjson_dumps`` wrote.
+
+    Args:
+        value: A JSON-native value.
+    """
     assert orjson_loads(orjson_dumps(value)) == value
 
 
@@ -88,6 +93,7 @@ def test_orjson_round_trip(value):
 
 
 def test_orjson_dumps_socket_accepts_separators_kwarg():
+    """socket.io's ``separators`` argument is accepted and output stays compact."""
     out = orjson_dumps_socket({"a": 1}, separators=(",", ":"))
     assert out == '{"a":1}'
 
@@ -131,32 +137,39 @@ def _wire(out: str) -> Any:
 
 
 def test_nan_top_level():
+    """A bare NaN survives the socket round trip."""
     assert _wire(orjson_dumps_socket(float("nan"))) == "nan"
 
 
 def test_inf_top_level():
+    """A bare Infinity survives the socket round trip."""
     assert _wire(orjson_dumps_socket(float("inf"))) == "inf"
 
 
 def test_neg_inf_top_level():
+    """A bare -Infinity survives the socket round trip."""
     assert _wire(orjson_dumps_socket(float("-inf"))) == "-inf"
 
 
 def test_nan_in_list():
+    """NaN survives inside a list."""
     assert _wire(orjson_dumps_socket([1.0, float("nan"), 2.0])) == [1.0, "nan", 2.0]
 
 
 def test_nan_in_dict():
+    """NaN survives inside a dict."""
     out = orjson_dumps_socket({"x": float("nan"), "y": 1.0})
     assert _wire(out) == {"x": "nan", "y": 1.0}
 
 
 def test_non_finite_floats_deeply_nested():
+    """Non-finite floats survive at any nesting depth."""
     out = orjson_dumps_socket({"a": {"b": [{"c": float("nan")}, float("inf")]}})
     assert _wire(out) == {"a": {"b": [{"c": "nan"}, "inf"]}}
 
 
 def test_all_three_non_finite_floats():
+    """NaN, Infinity and -Infinity survive side by side."""
     out = orjson_dumps_socket([float("nan"), float("inf"), float("-inf")])
     assert _wire(out) == ["nan", "inf", "-inf"]
 
@@ -178,11 +191,17 @@ def test_nan_inside_dataclass_field():
 
 @pytest.mark.parametrize("sentinel", [NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL])
 def test_sentinel_string_value_is_escaped(sentinel):
+    """A user string equal to a sentinel gets the escape prefix.
+
+    Args:
+        sentinel: The colliding sentinel string.
+    """
     out = orjson_dumps_socket({"a": sentinel})
     assert orjson_loads(out) == {"a": SENTINEL_ESCAPE_PREFIX + sentinel}
 
 
 def test_escape_prefixed_string_is_escaped_again():
+    """A user string already carrying the escape prefix is escaped once more."""
     value = SENTINEL_ESCAPE_PREFIX + "user data"
     out = orjson_dumps_socket([value])
     assert orjson_loads(out) == [SENTINEL_ESCAPE_PREFIX + value]
@@ -200,6 +219,11 @@ def test_escape_prefixed_string_is_escaped_again():
     ],
 )
 def test_non_sentinel_string_unchanged(value):
+    """Strings that merely resemble a sentinel pass through unchanged.
+
+    Args:
+        value: A near miss of a sentinel.
+    """
     assert orjson_loads(orjson_dumps_socket([value])) == [value]
 
 
@@ -212,6 +236,8 @@ def test_walker_escapes_sentinel_string():
 
 
 def test_sentinel_string_inside_dataclass_field():
+    """A sentinel string in a dataclass field is escaped too."""
+
     @dataclasses.dataclass
     class Message:
         text: str
@@ -224,21 +250,25 @@ def test_sentinel_string_inside_dataclass_field():
 
 
 def test_walker_returns_unchanged_dict_as_is():
+    """The walker returns a dict without replacements as the same object."""
     obj = {"a": 1, "b": [1, 2, 3], "c": {"d": "hi"}}
     assert _replace_non_finite_floats(obj) is obj
 
 
 def test_walker_returns_unchanged_list_as_is():
+    """The walker returns a list without replacements as the same object."""
     obj = [1, 2.0, "x", {"k": "v"}]
     assert _replace_non_finite_floats(obj) is obj
 
 
 def test_walker_returns_unchanged_tuple_as_is():
+    """The walker returns a tuple without replacements as the same object."""
     obj = (1, 2.0, "x")
     assert _replace_non_finite_floats(obj) is obj
 
 
 def test_walker_preserves_unchanged_subtree_when_sibling_changes():
+    """The walker copies only the containers on a changed path."""
     inner = {"safe": 1.0, "also_safe": [1, 2]}
     outer = {"a": inner, "b": float("nan")}
     result = _replace_non_finite_floats(outer)
@@ -248,11 +278,14 @@ def test_walker_preserves_unchanged_subtree_when_sibling_changes():
 
 
 def test_walker_converts_modified_tuple_to_list():
+    """A tuple the walker changes comes back as a list."""
     t = (1, float("nan"), "x")
     assert _replace_non_finite_floats(t) == [1, NAN_SENTINEL, "x"]
 
 
 def test_walker_passes_through_unknown_types():
+    """The walker returns values it does not recognize unchanged."""
+
     class Sentinel:
         pass
 
@@ -297,6 +330,8 @@ def test_socket_output_matches_json_dumps_for_finite_inputs(value):
 
 
 def test_enum_value_serialized_consistently():
+    """An Enum serializes the same through both backends."""
+
     class Color(Enum):
         RED = "red"
         BLUE = "blue"
@@ -338,6 +373,12 @@ class _FloatSubclass(float):
     ],
 )
 def test_native_subclass_serializes_to_base_value(value, expected):
+    """A str/int/float subclass serializes as its base value.
+
+    Args:
+        value: The subclass instance.
+        expected: Its base value.
+    """
     assert orjson_loads(orjson_dumps_socket({"v": value})) == {"v": expected}
 
 
@@ -346,6 +387,11 @@ def test_native_subclass_serializes_to_base_value(value, expected):
     [_IntSubclass(25), _StrSubclass("hello"), _FloatSubclass(1.5)],
 )
 def test_native_subclass_matches_json_dumps(value):
+    """A str/int/float subclass serializes as the stdlib does.
+
+    Args:
+        value: The subclass instance.
+    """
     assert json.loads(orjson_dumps_socket({"v": value})) == json.loads(
         json_dumps({"v": value})
     )
@@ -573,6 +619,8 @@ def test_builtin_subclass_serializer_bypassed_by_both_backends(
 
 
 def test_int_subclass_inside_dataclass_field():
+    """An int subclass in a dataclass field serializes as its base value."""
+
     @dataclasses.dataclass
     class Pagination:
         page: int
@@ -596,6 +644,7 @@ def test_datetime_uses_space_separator_not_iso_t():
 
 
 def test_int_dict_keys_coerced_to_strings():
+    """Non-string dict keys become strings, as with the stdlib."""
     out = orjson_dumps_socket({1: "a", 2: "b"})
     assert orjson_loads(out) == {"1": "a", "2": "b"}
 
@@ -638,6 +687,7 @@ def test_fallback_emits_bare_non_finite_tokens(no_orjson):
 
 
 def test_fallback_uses_compact_separators(no_orjson):
+    """The stdlib fallback emits compact output."""
     assert orjson_dumps_socket({"a": 1, "b": [2, 3]}) == '{"a":1,"b":[2,3]}'
 
 
@@ -675,6 +725,12 @@ def test_fallback_skips_walk_on_clean_payload(no_orjson, monkeypatch):
 
 @pytest.mark.parametrize("sentinel", [NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL])
 def test_fallback_escapes_colliding_strings(no_orjson, sentinel):
+    """The stdlib fallback escapes sentinel-colliding strings.
+
+    Args:
+        no_orjson: Fixture disabling orjson.
+        sentinel: The colliding sentinel string.
+    """
     out = orjson_dumps_socket({"a": sentinel})
     assert json.loads(out) == {"a": SENTINEL_ESCAPE_PREFIX + sentinel}
 
@@ -752,6 +808,7 @@ def test_orjson_dumps_indent_4_falls_back_to_stdlib():
 
 
 def test_orjson_dumps_indent_2_matches_orjson():
+    """Two-space indentation is rendered by orjson itself."""
     import orjson as orjson_module
 
     assert (
@@ -804,12 +861,28 @@ def test_orjson_none_and_nan_together():
 
 
 def _wire_packet(delta_values: dict) -> list:
+    """Build a socket packet carrying a ``StateUpdate``.
+
+    Args:
+        delta_values: The vars of the single state in the delta.
+
+    Returns:
+        The packet as socket.io emits it.
+    """
     from reflex.state import StateUpdate
 
     return ["event", StateUpdate(delta={"state": delta_values})]
 
 
 def _delta_values(wire: str) -> dict:
+    """Extract the state's vars from a serialized packet.
+
+    Args:
+        wire: The serialized packet.
+
+    Returns:
+        The vars of the single state in the delta.
+    """
     return json.loads(wire)[1]["delta"]["state"]
 
 

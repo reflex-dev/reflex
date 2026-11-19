@@ -284,6 +284,11 @@ class WireBenchState(rx.State):
 
 
 def _handle_backend_exception(ex: Exception) -> None:
+    """Fail the benchmark on an exception the event processor caught.
+
+    Args:
+        ex: The exception.
+    """
     formatted_exc = "\n".join(traceback.format_exception(ex))
     pytest.fail(f"Event processor raised an unexpected exception:\n{formatted_exc}")
 
