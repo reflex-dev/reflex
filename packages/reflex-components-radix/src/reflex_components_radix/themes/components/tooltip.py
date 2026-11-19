@@ -49,7 +49,7 @@ class Tooltip(RadixThemesComponent):
     )
 
     side: Var[LiteralSideType] = field(
-        doc='The preferred side of the trigger to render against when open. Will be reversed when collisions occur and `avoid_collisions` is enabled.The position of the tooltip. Defaults to "top".'
+        doc='The preferred side of the trigger to render against when open. Will be reversed when collisions occur and `avoid_collisions` is enabled. Defaults to "top".'
     )
 
     side_offset: Var[float | int] = field(

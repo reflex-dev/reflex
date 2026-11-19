@@ -177,6 +177,9 @@ library_display_titles: dict[str, str] = {}
 doc_markdown_sources: dict[str, str] = {}
 
 
+# The heading spells the term with a hyphen, which the filename cannot.
+FAN_OUT_DOC = "docs/workflows/fan_out.md"
+
 manual_titles = {
     "docs/ai_builder/apis.md": "APIs",
     "docs/ai_builder/urls.md": "URLs",
@@ -187,7 +190,7 @@ manual_titles = {
     "docs/workflows/tutorial.md": "Tutorial: Build an Onboarding Workflow",
     "docs/workflows/runs.md": "Starting and Controlling Runs",
     "docs/workflows/events.md": "Waiting for Events",
-    "docs/workflows/fan_out.md": "Fan-Out",
+    FAN_OUT_DOC: "Fan-Out",
     "docs/workflows/concurrency.md": "Concurrency, Rate Limits, and Lanes",
     "docs/workflows/workers.md": "Running Workers",
     "docs/workflows/how_it_works.md": "How Workflows Work",
@@ -215,6 +218,14 @@ manual_titles = {
     "docs/enterprise/ag_grid/aligned-grids.md": "AG Grid Aligned Grids in Python",
     "docs/enterprise/ag_grid/tree-data.md": "AG Grid Tree Data in Python",
     "docs/enterprise/ag_grid/master-detail.md": "AG Grid Master Detail in Python",
+}
+
+
+# Short navigation labels for docs whose filename-derived label would misspell
+# the term, e.g. "Fan Out" for fan_out.md. Unlike ``manual_titles`` these feed
+# the sidebar and the previous/next links, not the page title.
+nav_titles = {
+    FAN_OUT_DOC: "Fan-Out",
 }
 
 
@@ -575,7 +586,7 @@ def register_doc(virtual_doc: str, comp):
     """Register a doc into the namespace, doc_routes, and recipes_list."""
     path = virtual_doc.split("/")[1:-1]
     title = doc_title_from_path(virtual_doc)
-    title2 = to_title_case(title)
+    title2 = nav_titles.get(virtual_doc, to_title_case(title))
     route = doc_route_from_path(virtual_doc)
 
     build_nested_namespace(
