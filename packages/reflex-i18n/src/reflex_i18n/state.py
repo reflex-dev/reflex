@@ -22,7 +22,12 @@ from reflex.event import EventType, event, run_script
 from reflex.istate.storage import Cookie
 from reflex.state import BaseState, State, _override_base_method
 
-from .config import LOCALE_COOKIE_NAME, check_configured_locale, get_active_i18n_config
+from .config import (
+    LOCALE_COOKIE_NAME,
+    UNCONFIGURED_LOCALE,
+    check_configured_locale,
+    get_active_i18n_config,
+)
 from .runtime import negotiate_locale, use_locale
 
 # Switches the client-side locale, without a round trip to the server.
@@ -45,7 +50,7 @@ def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
     """
     config = get_active_i18n_config()
     if config is None:
-        return locale_cookie or "en"
+        return locale_cookie or UNCONFIGURED_LOCALE
     if locale_cookie and locale_cookie in config.locales:
         return locale_cookie
     return negotiate_locale(accept_language, config.locales, config.fallback_locale)

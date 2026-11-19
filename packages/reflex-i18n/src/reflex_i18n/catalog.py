@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 from reflex_base.utils import console
 
 from .config import LOCALE_COOKIE_NAME, I18nConfig
-from .registry import MessageKey
+from .registry import MessageKey, format_message_list
 
 if TYPE_CHECKING:
     from babel.messages.catalog import Catalog
@@ -109,11 +109,9 @@ def compile_catalog_module(
             continue
         entries.append(f"  [{json.dumps(key.catalog_key)}, {json.dumps(translation)}],")
     if missing and not is_default_locale:
-        missing_list = "\n".join(f"  {key.message!r}" for key in missing[:10])
-        more = f"\n  ... and {len(missing) - 10} more" if len(missing) > 10 else ""
         console.warn(
             f"{len(missing)} translation(s) missing for locale {locale!r} "
-            f"(falling back to the default locale):\n{missing_list}{more}"
+            f"(falling back to the default locale):\n{format_message_list(missing)}"
         )
     messages_body = "\n".join(entries)
     plural = catalog.plural_expr if catalog is not None else _FALLBACK_PLURAL_EXPR

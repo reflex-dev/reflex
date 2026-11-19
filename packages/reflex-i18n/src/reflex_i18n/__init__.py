@@ -52,8 +52,8 @@ N_ = gettext_noop
 # "date", "datetime" and "time" are intentionally omitted (see the import
 # above): reachable as rx.i18n.date/.time/.datetime but excluded from
 # `import *` so they cannot shadow the stdlib names. "locale" is omitted for a
-# different reason: `import *` resolves every exported name, and that one only
-# builds once an I18nPlugin is configured.
+# different reason: `import *` resolves every exported name, and that one
+# depends on whether an I18nPlugin is configured by the time it is built.
 __all__ = [
     "LOCALE_COOKIE_NAME",
     "I18nConfig",
@@ -107,8 +107,8 @@ def __getattr__(name: str) -> Any:
 
         return getattr(state, name)
     if name == "locale":
-        from .format import _locale_var
+        from .format import locale_var
 
-        return _locale_var()
+        return locale_var()
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)

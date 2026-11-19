@@ -404,6 +404,14 @@ A typical workflow: run `reflex i18n extract` after adding or changing strings,
 fill in the `msgstr` values in each locale's `.po` file, and add
 `reflex i18n check` to CI to catch missing translations.
 
+## Translating a library
+
+A package that other apps install marks its text the same way: `rx.t` in
+components, `gettext` in state, `N_` for constants. It does not need the apps
+using it to translate. Without an `I18nPlugin`, `rx.t` renders the source text
+and the `rx.i18n` formatters format in English, as the server-side `format_*`
+helpers do outside any locale.
+
 ## How it works
 
 - `rx.t` compiles to a client-side lookup. At build time Reflex generates one

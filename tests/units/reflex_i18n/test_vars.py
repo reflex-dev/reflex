@@ -1,11 +1,20 @@
 """Tests for the rx.t translation var."""
 
+import json
+import shutil
+import subprocess
+
 import pytest
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_i18n import I18nConfig, t
 from reflex_i18n.component import I18nProvider
 from reflex_i18n.config import set_active_i18n_config
-from reflex_i18n.registry import MessageKey, clear_messages, collected_messages
+from reflex_i18n.registry import (
+    MessageKey,
+    clear_messages,
+    collected_messages,
+    untranslated_messages,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -133,3 +142,62 @@ def test_t_plural_requires_count():
 def test_t_count_requires_plural():
     with pytest.raises(ValueError, match="count and plural"):
         t("{count} item", count=1)
+
+
+def test_t_without_plugin_renders_source_text():
+    # A library's rx.t still builds in an app that does not translate.
+    set_active_i18n_config(None)
+    var = t("Hello")
+    assert str(var) == '"Hello"'
+    assert var._get_all_var_data() is None
+
+    name_var = Var(_js_expr="state.name", _var_type=str)
+    var = t("Hello {name}!", name=name_var)
+    assert str(var) == (
+        "(((message, plural, count, params) => "
+        "(plural !== null && count != 1 ? plural : message)"
+        ".replace(/\\{(\\w+)\\}/g, (match, name) => "
+        "name in params ? String(params[name]) : match))"
+        '("Hello {name}!", null, null, ({ ["name"] : state.name })))'
+    )
+    # No translation hook and no provider: only the params' own var data.
+    assert var._get_all_var_data() is None
+
+    assert (
+        collected_messages()
+        == untranslated_messages()
+        == (
+            MessageKey("Hello"),
+            MessageKey("Hello {name}!"),
+        )
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_t_without_plugin_interpolates_like_the_runtime():
+    set_active_i18n_config(None)
+    expressions = [
+        t("Hello {name}!", name="Ada"),
+        t("{count} item", plural="{count} items", count=1),
+        t("{count} item", plural="{count} items", count=2),
+        t("{count} file", plural="{count} files", count=0, context="disk"),
+        t("{known} and {unknown}", known=True),
+    ]
+    script = (
+        f"process.stdout.write(JSON.stringify([{', '.join(map(str, expressions))}]))"
+    )
+    result = subprocess.run(
+        ["node", "-e", script], capture_output=True, text=True, check=True
+    )
+    assert json.loads(result.stdout) == [
+        "Hello Ada!",
+        "1 item",
+        "2 items",
+        "0 files",
+        "true and {unknown}",
+    ]
+
+
+def test_t_with_plugin_records_nothing_untranslated():
+    t("Hello")
+    assert untranslated_messages() == ()

@@ -5,7 +5,7 @@ from reflex_base.vars.base import Var
 from reflex_i18n import I18nConfig, currency, date, datetime, number, percent, time
 from reflex_i18n.component import I18nProvider
 from reflex_i18n.config import set_active_i18n_config
-from reflex_i18n.format import _locale_var
+from reflex_i18n.format import _locale_var, locale_var
 
 
 @pytest.fixture(autouse=True)
@@ -119,21 +119,36 @@ def test_shadowing_names_excluded_from_star_export():
         assert name in reflex_i18n.__all__
 
 
-def test_formatting_without_plugin_raises():
+def test_formatting_without_plugin_formats_inline_in_the_unconfigured_locale():
+    # Without the plugin there is no client runtime to import from, so a
+    # library's formatting var still builds and formats like the server does.
     set_active_i18n_config(None)
-    with pytest.raises(RuntimeError, match="requires the i18n plugin"):
-        number(_num())
-    with pytest.raises(RuntimeError, match="requires the i18n plugin"):
-        date(Var(_js_expr="state.day"))
+    var = number(_num())
+    assert str(var) == (
+        '(((value, options) => new Intl.NumberFormat("en", options).format(value))'
+        "(state.value, ({  })))"
+    )
+    assert var._get_all_var_data() is None
+    var = date(Var(_js_expr="state.day"))
+    assert str(var) == (
+        "(((value, options) => { "
+        'const s = String(value).replace(/(\\.\\d{3})\\d+/, "$1"); '
+        'return new Intl.DateTimeFormat("en", options).format('
+        "value instanceof Date ? value "
+        ': typeof value === "number" ? new Date(value) '
+        ': /^\\d{4}-\\d{2}-\\d{2}$/.test(s) ? new Date(s + "T00:00:00") '
+        ': /^\\d{2}:\\d{2}/.test(s) ? new Date("1970-01-01T" + s) '
+        ': new Date(s.replace(" ", "T"))); })'
+        '(state.day, ({ ["dateStyle"] : "medium" })))'
+    )
+    assert var._get_all_var_data() is None
 
 
-def test_locale_var_requires_config():
-    # Without the plugin there is no client runtime to import from; emitting
-    # the var anyway would break the frontend build.
+def test_locale_var_without_plugin_is_the_unconfigured_locale():
     set_active_i18n_config(None)
-    _locale_var.cache_clear()
-    with pytest.raises(RuntimeError, match="I18nPlugin"):
-        _locale_var()
+    var = locale_var()
+    assert str(var) == '"en"'
+    assert var._get_all_var_data() is None
 
 
 def test_format_vars_are_hashable():

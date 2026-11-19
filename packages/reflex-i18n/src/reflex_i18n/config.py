@@ -11,6 +11,10 @@ from pathlib import Path
 # runtime and the server-side locale resolution.
 LOCALE_COOKIE_NAME = "reflex_locale"
 
+# The locale an app without an I18nPlugin renders and formats in, server-side
+# and client-side alike.
+UNCONFIGURED_LOCALE = "en"
+
 # A BCP 47-shaped tag: alphabetic language, optional alphanumeric subtags.
 # Locales double as URL path segments, JS catalog identifiers and `Intl` /
 # `Accept-Language` tags, all of which are hyphen-separated, so the underscore

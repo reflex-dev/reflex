@@ -49,16 +49,21 @@ class MessageKey(NamedTuple):
 
 
 _collected: dict[MessageKey, None] = {}
+# Messages built while no I18nPlugin was configured: they render the source
+# text for good, even if a plugin is configured afterwards.
+_untranslated: dict[MessageKey, None] = {}
 # (context, message) -> plural. gettext keys entries by msgctxt + msgid, so
 # one msgid cannot carry both a singular and a plural (or two plurals).
 _plural_by_msgid: dict[tuple[str | None, str], str | None] = {}
 
 
-def register(key: MessageKey) -> None:
+def register(key: MessageKey, *, translated: bool = True) -> None:
     """Record a message used by the app.
 
     Args:
         key: The message to record.
+        translated: False if the message was built without an I18nPlugin and
+            so renders its source text.
 
     Raises:
         ValueError: If the message or context contains the gettext context
@@ -82,6 +87,8 @@ def register(key: MessageKey) -> None:
         )
         raise ValueError(msg)
     _collected[key] = None
+    if not translated:
+        _untranslated[key] = None
 
 
 def collected_messages() -> tuple[MessageKey, ...]:
@@ -93,7 +100,32 @@ def collected_messages() -> tuple[MessageKey, ...]:
     return tuple(_collected)
 
 
+def untranslated_messages() -> tuple[MessageKey, ...]:
+    """Get the messages built without an I18nPlugin, in first-use order.
+
+    Returns:
+        The messages that render their source text.
+    """
+    return tuple(_untranslated)
+
+
+def format_message_list(keys: tuple[MessageKey, ...] | list[MessageKey]) -> str:
+    """List messages for a console warning, at most ten of them.
+
+    Args:
+        keys: The messages to list.
+
+    Returns:
+        One indented line per message, then a count of the ones left out.
+    """
+    lines = [f"  {key.message!r}" for key in keys[:10]]
+    if len(keys) > 10:
+        lines.append(f"  ... and {len(keys) - 10} more")
+    return "\n".join(lines)
+
+
 def clear_messages() -> None:
     """Clear the registry. Only intended for tests."""
     _collected.clear()
+    _untranslated.clear()
     _plural_by_msgid.clear()

@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING
 from reflex_base.vars.dep_tracking import register_implicit_dependency
 
 from .config import (
+    UNCONFIGURED_LOCALE,
     check_configured_locale,
     get_active_catalog_dir,
     get_active_i18n_config,
@@ -154,7 +155,7 @@ def _source_translations() -> _SourceTranslations:
     from .catalog import default_plural_expr_js, read_po_catalog
 
     config = get_active_i18n_config()
-    locale = config.default_locale if config is not None else "en"
+    locale = config.default_locale if config is not None else UNCONFIGURED_LOCALE
     path = _catalog_path(locale)
     catalog = read_po_catalog(path, locale) if path is not None else None
     # The expression the client's defaultPlural evaluates, in C syntax.
@@ -324,7 +325,7 @@ def _format_locale() -> str:
     if locale is not None:
         return locale
     config = get_active_i18n_config()
-    return config.default_locale if config is not None else "en"
+    return config.default_locale if config is not None else UNCONFIGURED_LOCALE
 
 
 def _babel_locale() -> str:

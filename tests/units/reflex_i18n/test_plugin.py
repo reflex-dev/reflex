@@ -10,6 +10,7 @@ import pytest
 from reflex_base.utils import console
 from reflex_i18n import I18nPlugin, PathPrefixRouting, t
 from reflex_i18n.config import I18nConfig, set_active_i18n_config
+from reflex_i18n.format import _SOURCE_FMT_DATE, _SOURCE_FMT_NUMBER
 from reflex_i18n.plugin import _RUNTIME_SOURCE
 from reflex_i18n.registry import clear_messages
 from reflex_i18n.state import _resolve_locale
@@ -190,11 +191,6 @@ def test_plugin_activates_config():
     assert 't_("Hello"' in str(var)
 
 
-def test_t_without_plugin_raises():
-    with pytest.raises(RuntimeError, match="requires the i18n plugin"):
-        t("Hello")
-
-
 def test_plugin_ships_client_runtime():
     plugin = I18nPlugin(locales=["en"])
     assert dict(plugin.get_static_assets()) == {
@@ -239,6 +235,31 @@ def test_plugin_emits_index_and_locale_modules(tmp_path: Path, monkeypatch):
             "]);\n"
         ),
     }
+
+
+def test_pre_compile_warns_about_messages_built_before_the_plugin(
+    tmp_path: Path, monkeypatch
+):
+    monkeypatch.chdir(tmp_path)
+    warnings: list[str] = []
+    monkeypatch.setattr(console, "warn", warnings.append)
+    # e.g. a module rxconfig.py imports before it constructs the plugin.
+    t("Too early")
+    plugin = I18nPlugin(locales=["en", "de"], default_locale="en")
+    t("In time")
+    save_tasks: list[Any] = []
+
+    plugin.pre_compile(add_save_task=save_tasks.append)  # pyright: ignore[reportCallIssue]
+
+    assert save_tasks == [plugin._compile_catalogs]
+    assert warnings == [
+        (
+            "1 rx.t message(s) were built before I18nPlugin was configured and "
+            "always render their source text:\n"
+            "  'Too early'\n"
+            "Build them inside a page or component function instead."
+        )
+    ]
 
 
 def test_plugin_missing_catalog_file_still_emits_module(tmp_path: Path, monkeypatch):
@@ -323,6 +344,42 @@ def test_client_negotiation_matches_server(
     )
     server = _resolve_locale("", ", ".join(languages))
     assert rendered["stateUpdates"][0] == server == expected
+
+
+@requires_node
+def test_source_formatters_match_the_runtime(tmp_path: Path):
+    """Without the plugin, values format as the runtime formats them in ``en``."""
+    numbers = [[1234.5, {}], [0.19, {"style": "percent"}]]
+    dates = [
+        0,
+        "2026-07-18",
+        "2026-07-18 14:30:00.123456",
+        "2026-07-18T14:30:00+02:00",
+        "14:30:00",
+    ]
+    date_options = {"timeZone": "UTC", "dateStyle": "medium", "timeStyle": "long"}
+    rendered = _render_runtime(
+        tmp_path,
+        "I18nProvider",
+        locales=["en"],
+        default_locale="en",
+        action=(
+            "const [fmtNumber, fmtDate] = mod.useFormat();"
+            f"const sourceNumber = {_SOURCE_FMT_NUMBER!s};"
+            f"const sourceDate = {_SOURCE_FMT_DATE!s};"
+            f"const numbers = {json.dumps(numbers)};"
+            f"const dates = {json.dumps(dates)};"
+            f"const dateOptions = {json.dumps(date_options)};"
+            "const format = (number, date) => ["
+            "...numbers.map(([value, options]) => number(value, options)),"
+            "...dates.map((value) => date(value, dateOptions))];"
+            "return {"
+            "runtime: format(fmtNumber, fmtDate),"
+            "source: format(sourceNumber, sourceDate)};"
+        ),
+    )
+    assert len(rendered["result"]["runtime"]) == len(numbers) + len(dates)
+    assert rendered["result"]["source"] == rendered["result"]["runtime"]
 
 
 @requires_node

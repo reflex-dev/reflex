@@ -18,25 +18,11 @@ from reflex_base.vars.function import FunctionStringVar, FunctionVar, ReflexCall
 from reflex_base.vars.sequence import StringVar
 
 from .component import _PROVIDER_PRIORITY, _provider
-from .config import get_active_i18n_config
+from .config import UNCONFIGURED_LOCALE, get_active_i18n_config
 
 if TYPE_CHECKING:
     # Aliased so the `date`/`time`/`datetime` functions below don't shadow it.
     import datetime as _datetime
-
-
-def _require_config() -> None:
-    """Ensure the i18n plugin is configured.
-
-    Raises:
-        RuntimeError: If no I18nPlugin is configured.
-    """
-    if get_active_i18n_config() is None:
-        msg = (
-            "rx.i18n formatting requires the i18n plugin. Add "
-            "I18nPlugin(locales=[...]) to rx.Config(plugins=[...])."
-        )
-        raise RuntimeError(msg)
 
 
 @functools.cache
@@ -94,6 +80,45 @@ def _fmt_date() -> FunctionVar[_Formatter]:
     return FunctionStringVar.create(
         "fmtDate", _var_type=_Formatter, _var_data=_format_var_data()
     )
+
+
+# Without an I18nPlugin there is no client runtime: format inline in the
+# locale the server formats in then. The date normalization mirrors the
+# runtime's ``toDate``.
+_SOURCE_FMT_NUMBER: FunctionVar[_Formatter] = FunctionStringVar.create(
+    "((value, options) => "
+    f'new Intl.NumberFormat("{UNCONFIGURED_LOCALE}", options).format(value))',
+    _var_type=_Formatter,
+)
+_SOURCE_FMT_DATE: FunctionVar[_Formatter] = FunctionStringVar.create(
+    "((value, options) => { "
+    'const s = String(value).replace(/(\\.\\d{3})\\d+/, "$1"); '
+    f'return new Intl.DateTimeFormat("{UNCONFIGURED_LOCALE}", options).format('
+    "value instanceof Date ? value "
+    ': typeof value === "number" ? new Date(value) '
+    ': /^\\d{4}-\\d{2}-\\d{2}$/.test(s) ? new Date(s + "T00:00:00") '
+    ': /^\\d{2}:\\d{2}/.test(s) ? new Date("1970-01-01T" + s) '
+    ': new Date(s.replace(" ", "T"))); })',
+    _var_type=_Formatter,
+)
+
+
+def _number_formatter() -> FunctionVar[_Formatter]:
+    """The number formatter for the app: the runtime's, else an inline one.
+
+    Returns:
+        The formatter as a callable Var.
+    """
+    return _SOURCE_FMT_NUMBER if get_active_i18n_config() is None else _fmt_number()
+
+
+def _date_formatter() -> FunctionVar[_Formatter]:
+    """The date formatter for the app: the runtime's, else an inline one.
+
+    Returns:
+        The formatter as a callable Var.
+    """
+    return _SOURCE_FMT_DATE if get_active_i18n_config() is None else _fmt_date()
 
 
 def _number_options(
@@ -160,7 +185,6 @@ def number(
     Returns:
         A StringVar resolving to the localized number.
     """
-    _require_config()
     opts = _number_options(
         min_fraction_digits=min_fraction_digits,
         max_fraction_digits=max_fraction_digits,
@@ -168,7 +192,7 @@ def number(
         compact=compact,
         options=options,
     )
-    return _fmt_number().call(value, opts).to(str)
+    return _number_formatter().call(value, opts).to(str)
 
 
 def currency(
@@ -195,7 +219,6 @@ def currency(
     Returns:
         A StringVar resolving to the localized currency amount.
     """
-    _require_config()
     opts = _number_options(
         style="currency",
         currency=currency,
@@ -205,7 +228,7 @@ def currency(
         compact=compact,
         options=options,
     )
-    return _fmt_number().call(value, opts).to(str)
+    return _number_formatter().call(value, opts).to(str)
 
 
 def percent(
@@ -228,7 +251,6 @@ def percent(
     Returns:
         A StringVar resolving to the localized percentage.
     """
-    _require_config()
     opts = _number_options(
         style="percent",
         min_fraction_digits=min_fraction_digits,
@@ -236,7 +258,7 @@ def percent(
         grouping=grouping,
         options=options,
     )
-    return _fmt_number().call(value, opts).to(str)
+    return _number_formatter().call(value, opts).to(str)
 
 
 # ``Intl.DateTimeFormat`` throws when ``dateStyle``/``timeStyle`` are combined
@@ -300,9 +322,8 @@ def date(
     Returns:
         A StringVar resolving to the localized date.
     """
-    _require_config()
     return (
-        _fmt_date()
+        _date_formatter()
         .call(value, _date_options(date_style=length, options=options))
         .to(str)
     )
@@ -324,9 +345,8 @@ def time(
     Returns:
         A StringVar resolving to the localized time.
     """
-    _require_config()
     return (
-        _fmt_date()
+        _date_formatter()
         .call(value, _date_options(time_style=length, options=options))
         .to(str)
     )
@@ -348,9 +368,8 @@ def datetime(
     Returns:
         A StringVar resolving to the localized date and time.
     """
-    _require_config()
     opts = _date_options(date_style=length, time_style=length, options=options)
-    return _fmt_date().call(value, opts).to(str)
+    return _date_formatter().call(value, opts).to(str)
 
 
 @functools.cache
@@ -360,5 +379,16 @@ def _locale_var() -> StringVar:
     Returns:
         A StringVar resolving to the active locale code.
     """
-    _require_config()
     return Var(_js_expr="i18nLocale", _var_data=_locale_var_data()).to(str)
+
+
+def locale_var() -> StringVar:
+    """The active locale as a client-side var (``rx.i18n.locale``).
+
+    Returns:
+        The runtime's active locale, or the fixed locale an app without an
+        I18nPlugin formats in.
+    """
+    if get_active_i18n_config() is None:
+        return LiteralVar.create(UNCONFIGURED_LOCALE).to(str)
+    return _locale_var()

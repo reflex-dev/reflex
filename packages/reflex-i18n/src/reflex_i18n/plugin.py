@@ -35,7 +35,7 @@ from .format import (
     _locale_var,
     _locale_var_data,
 )
-from .registry import collected_messages
+from .registry import collected_messages, format_message_list, untranslated_messages
 from .routing import PathPrefixRouting
 from .vars import _i18n_var_data, _translate, _translate_plural
 
@@ -270,6 +270,17 @@ class I18nPlugin(Plugin):
         Args:
             context: The pre-compile context.
         """
+        untranslated = untranslated_messages()
+        if untranslated:
+            # Built while the config was still loading, e.g. by a module
+            # rxconfig.py imports before constructing this plugin.
+            console.warn(
+                f"{len(untranslated)} rx.t message(s) were built before "
+                "I18nPlugin was configured and always render their source "
+                "text:\n"
+                f"{format_message_list(untranslated)}\n"
+                "Build them inside a page or component function instead."
+            )
         context["add_save_task"](self._compile_catalogs)
 
     def _compile_catalogs(self) -> list[tuple[str, str]]:
