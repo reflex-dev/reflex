@@ -488,8 +488,12 @@ def test_resolve_implementation_without_implementation(
         pass
 
     assert clean_registration_context.get_states_implementing(UnusedMixin) == ()
-    with pytest.raises(StateValueError, match="No registered state implements"):
+    with pytest.raises(StateValueError) as err:
         clean_registration_context.resolve_implementation(UnusedMixin)
+    assert str(err.value) == (
+        "No registered state implements UnusedMixin. "
+        "Define a state which inherits from it before resolving it."
+    )
 
 
 def test_resolve_implementation_ambiguous(
@@ -511,8 +515,13 @@ def test_resolve_implementation_ambiguous(
     class AmbiguousImpl2(AmbiguousMixin, BaseState):
         pass
 
-    with pytest.raises(StateValueError, match="implemented by more than one state"):
+    with pytest.raises(StateValueError) as err:
         clean_registration_context.resolve_implementation(AmbiguousMixin)
+    assert str(err.value) == (
+        "AmbiguousMixin is implemented by more than one state: "
+        f"{AmbiguousImpl1.get_full_name()}, {AmbiguousImpl2.get_full_name()}. "
+        "Resolving it is ambiguous, pass the wanted state class explicitly."
+    )
 
 
 def test_resolve_implementation_cache_is_invalidated(
@@ -544,8 +553,13 @@ def test_resolve_implementation_cache_is_invalidated(
         CacheImpl,
         CacheImpl2,
     }
-    with pytest.raises(StateValueError, match="implemented by more than one state"):
+    with pytest.raises(StateValueError) as err:
         clean_registration_context.resolve_implementation(CacheMixin)
+    assert str(err.value) == (
+        "CacheMixin is implemented by more than one state: "
+        f"{CacheImpl.get_full_name()}, {CacheImpl2.get_full_name()}. "
+        "Resolving it is ambiguous, pass the wanted state class explicitly."
+    )
 
 
 def test_reset_compile_caches_empties_per_compile_maps(

@@ -7497,8 +7497,13 @@ async def test_get_state_mixin_ambiguous(clean_registration_context):
         pass
 
     root = AmbiguousRootState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
-    with pytest.raises(StateValueError, match="implemented by more than one state"):
+    with pytest.raises(StateValueError) as err:
         await root.get_state(AmbiguousMixin)
+    assert str(err.value) == (
+        "AmbiguousMixin is implemented by more than one state: "
+        f"{AmbiguousState1.get_full_name()}, {AmbiguousState2.get_full_name()}. "
+        "Resolving it is ambiguous, pass the wanted state class explicitly."
+    )
 
 
 async def test_state_manager_mixin_token(
@@ -7558,8 +7563,13 @@ async def test_state_manager_mixin_token_ambiguous(
     class SecondUserState(TwiceUsedMixin, AmbiguousTokenRootState):
         pass
 
-    with pytest.raises(StateValueError, match="implemented by more than one state"):
+    with pytest.raises(StateValueError) as err:
         await state_manager.get_state(BaseStateToken(ident=token, cls=TwiceUsedMixin))
+    assert str(err.value) == (
+        "TwiceUsedMixin is implemented by more than one state: "
+        f"{FirstUserState.get_full_name()}, {SecondUserState.get_full_name()}. "
+        "Resolving it is ambiguous, pass the wanted state class explicitly."
+    )
 
 
 def test_previous_release_pickle_keys_are_reserved():
