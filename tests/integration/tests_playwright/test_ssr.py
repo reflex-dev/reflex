@@ -2,19 +2,20 @@
 
 Spins up a blog app with ``runtime_ssr=True`` via ``AppHarnessSSR``, then
 verifies:
-  - Bots receive fully rendered HTML with blog data.
+  - Bots receive fully rendered HTML with blog data, the home page included.
   - Normal users receive the SPA shell (no blog content in raw HTML).
+  - Both hold below a frontend_path prefix.
   - Playwright (a real browser) can navigate to dynamic routes and hydrate.
   - The ``/_ssr_data`` backend endpoint returns serialized state.
 """
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 
 import httpx
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Browser, Page, expect
 
 import reflex as rx
 from reflex.testing import AppHarnessSSR
@@ -58,9 +59,17 @@ def SSRBlogApp():
                 self.author = ""
                 self.not_found = True
 
+    class IndexState(rx.State):
+        post_count: rx.Field[int] = rx.field(0)
+
+        @rx.event
+        def on_load_index(self):
+            self.post_count = len(POSTS)
+
     def index() -> rx.Component:
         return rx.container(
             rx.heading("SSR Blog", size="8", data_testid="index-heading"),
+            rx.text(IndexState.post_count, data_testid="post-count"),
             rx.vstack(
                 rx.link(
                     "Hello World",
@@ -97,7 +106,7 @@ def SSRBlogApp():
         )
 
     app = rx.App()
-    app.add_page(index)
+    app.add_page(index, on_load=IndexState.on_load_index)
 
 
 GOOGLEBOT_UA = (
@@ -110,74 +119,139 @@ CHROME_UA = (
 )
 
 
+@pytest.fixture(scope="module", params=["", "/app"], ids=["no-prefix", "prefix"])
+def frontend_path(request: pytest.FixtureRequest) -> str:
+    """Run every test with and without a frontend_path.
+
+    Args:
+        request: pytest fixture for accessing the current parameter.
+
+    Returns:
+        The frontend_path value for this test instance.
+    """
+    return request.param
+
+
 @pytest.fixture(scope="module")
-def ssr_blog_app(tmp_path_factory) -> Generator[AppHarnessSSR, None, None]:
+def ssr_blog_app(
+    tmp_path_factory: pytest.TempPathFactory, frontend_path: str
+) -> Generator[AppHarnessSSR, None, None]:
     """Create and start the SSR blog app.
 
     Args:
         tmp_path_factory: pytest fixture for creating temporary directories.
+        frontend_path: The frontend_path the app is served below.
 
     Yields:
         AppHarnessSSR: A running harness for the SSR blog app.
     """
-    with AppHarnessSSR.create(
-        root=tmp_path_factory.mktemp("ssr_blog"),
-        app_source=SSRBlogApp,
-    ) as harness:
-        assert harness.app_instance is not None, "app is not running"
-        yield harness
+    with pytest.MonkeyPatch.context() as mp:
+        if frontend_path:
+            mp.setenv("REFLEX_FRONTEND_PATH", frontend_path)
+        else:
+            mp.delenv("REFLEX_FRONTEND_PATH", raising=False)
+        with AppHarnessSSR.create(
+            root=tmp_path_factory.mktemp("ssr_blog"),
+            app_source=SSRBlogApp,
+        ) as harness:
+            assert harness.app_instance is not None, "app is not running"
+            yield harness
 
 
-def test_bot_gets_ssr_html(ssr_blog_app: AppHarnessSSR):
+@pytest.fixture
+def pages_url(ssr_blog_app: AppHarnessSSR, frontend_path: str) -> str:
+    """The URL the app's pages are served below.
+
+    Args:
+        ssr_blog_app: The running SSR blog app harness.
+        frontend_path: The frontend_path the app is served below.
+
+    Returns:
+        The frontend URL followed by the frontend_path.
+    """
+    assert ssr_blog_app.frontend_url is not None
+    return ssr_blog_app.frontend_url + frontend_path
+
+
+@pytest.fixture
+def server_html(browser: Browser) -> Generator[Callable[[str, str], Page], None, None]:
+    """Open pages with scripts disabled, so they show the HTML the server sent.
+
+    Args:
+        browser: The Playwright browser.
+
+    Yields:
+        A function opening a URL with the given user agent.
+    """
+    contexts = []
+
+    def open_page(url: str, user_agent: str) -> Page:
+        context = browser.new_context(user_agent=user_agent, java_script_enabled=False)
+        contexts.append(context)
+        page = context.new_page()
+        page.goto(url)
+        return page
+
+    yield open_page
+    for context in contexts:
+        context.close()
+
+
+def test_bot_gets_ssr_html(pages_url: str, server_html: Callable[[str, str], Page]):
     """Bots (Googlebot) should receive fully rendered HTML with blog data.
 
     Args:
-        ssr_blog_app: The running SSR blog app harness.
+        pages_url: The URL the app's pages are served below.
+        server_html: Opens a page showing the HTML the server sent.
     """
-    assert ssr_blog_app.frontend_url is not None
-    url = f"{ssr_blog_app.frontend_url}/blog/hello-world"
-    resp = httpx.get(url, headers={"User-Agent": GOOGLEBOT_UA}, follow_redirects=True)
-    assert resp.status_code == 200
-    body = resp.text
-    # The HTML should contain the actual blog post data (server-rendered).
-    assert "Hello World" in body
-    assert "First post content for SSR testing." in body
-    assert "Test Author" in body
+    page = server_html(f"{pages_url}/blog/hello-world", GOOGLEBOT_UA)
+
+    expect(page.get_by_test_id("post-title")).to_have_text("Hello World")
+    expect(page.get_by_test_id("post-content")).to_have_text(
+        "First post content for SSR testing."
+    )
+    expect(page.get_by_test_id("post-author")).to_have_text("Test Author")
 
 
-def test_normal_user_gets_spa_shell(ssr_blog_app: AppHarnessSSR):
+def test_bot_gets_ssr_home_page(
+    pages_url: str, server_html: Callable[[str, str], Page]
+):
+    """The home page is server-rendered for bots too, not served as the shell.
+
+    Args:
+        pages_url: The URL the app's pages are served below.
+        server_html: Opens a page showing the HTML the server sent.
+    """
+    page = server_html(f"{pages_url}/", GOOGLEBOT_UA)
+
+    expect(page.get_by_test_id("post-count")).to_have_text("2")
+
+
+def test_normal_user_gets_spa_shell(
+    pages_url: str, server_html: Callable[[str, str], Page]
+):
     """Normal users should receive the SPA shell without blog-specific content.
 
     Args:
-        ssr_blog_app: The running SSR blog app harness.
+        pages_url: The URL the app's pages are served below.
+        server_html: Opens a page showing the HTML the server sent.
     """
-    assert ssr_blog_app.frontend_url is not None
-    url = f"{ssr_blog_app.frontend_url}/blog/hello-world"
-    resp = httpx.get(
-        url,
-        headers={
-            "User-Agent": CHROME_UA,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        },
-        follow_redirects=True,
-    )
-    assert resp.status_code == 200
-    body = resp.text
-    # The SPA shell should NOT contain post-specific rendered content.
-    assert "First post content for SSR testing." not in body
-    # But it should be valid HTML with the app shell structure.
-    assert "<html" in body.lower()
+    page = server_html(f"{pages_url}/blog/hello-world", CHROME_UA)
+
+    # The shell is the home page rendered without backend state.
+    expect(page.get_by_test_id("index-heading")).to_have_text("SSR Blog")
+    expect(page.get_by_test_id("post-count")).to_have_text("0")
+    expect(page.get_by_test_id("post-content")).to_have_count(0)
 
 
-def test_direct_access_blog_post(ssr_blog_app: AppHarnessSSR, page: Page):
+def test_direct_access_blog_post(pages_url: str, page: Page):
     """Navigating directly to a blog post URL should hydrate and show content.
 
     Args:
-        ssr_blog_app: The running SSR blog app harness.
+        pages_url: The URL the app's pages are served below.
         page: A Playwright page.
     """
-    assert ssr_blog_app.frontend_url is not None
-    page.goto(f"{ssr_blog_app.frontend_url}/blog/hello-world")
+    page.goto(f"{pages_url}/blog/hello-world")
 
     title = page.get_by_test_id("post-title")
     expect(title).to_be_visible(timeout=15000)
@@ -190,15 +264,14 @@ def test_direct_access_blog_post(ssr_blog_app: AppHarnessSSR, page: Page):
     expect(author).to_have_text("Test Author", timeout=15000)
 
 
-def test_client_navigation(ssr_blog_app: AppHarnessSSR, page: Page):
+def test_client_navigation(pages_url: str, page: Page):
     """Clicking a link on the index should navigate to the blog post via SPA.
 
     Args:
-        ssr_blog_app: The running SSR blog app harness.
+        pages_url: The URL the app's pages are served below.
         page: A Playwright page.
     """
-    assert ssr_blog_app.frontend_url is not None
-    page.goto(ssr_blog_app.frontend_url)
+    page.goto(f"{pages_url}/")
 
     heading = page.get_by_test_id("index-heading")
     expect(heading).to_be_visible(timeout=15000)
@@ -215,17 +288,15 @@ def test_client_navigation(ssr_blog_app: AppHarnessSSR, page: Page):
     expect(title).to_have_text("Hello World")
 
 
-def test_navigate_between_posts(ssr_blog_app: AppHarnessSSR, page: Page):
+def test_navigate_between_posts(pages_url: str, page: Page):
     """Navigate from Post A -> home -> Post B to verify multi-step navigation.
 
     Args:
-        ssr_blog_app: The running SSR blog app harness.
+        pages_url: The URL the app's pages are served below.
         page: A Playwright page.
     """
-    assert ssr_blog_app.frontend_url is not None
-
     # Start at the first post.
-    page.goto(f"{ssr_blog_app.frontend_url}/blog/hello-world")
+    page.goto(f"{pages_url}/blog/hello-world")
     title = page.get_by_test_id("post-title")
     expect(title).to_be_visible(timeout=15000)
     expect(title).to_have_text("Hello World")
@@ -249,18 +320,18 @@ def test_navigate_between_posts(ssr_blog_app: AppHarnessSSR, page: Page):
     expect(content2).to_have_text("Another post for navigation tests.")
 
 
-def test_ssr_data_endpoint(ssr_blog_app: AppHarnessSSR):
+def test_ssr_data_endpoint(frontend_path: str):
     """The /_ssr_data backend endpoint should return serialized state.
 
     Args:
-        ssr_blog_app: The running SSR blog app harness.
+        frontend_path: The frontend_path the app is served below.
     """
     api_url = rx.config.get_config().api_url
     assert api_url is not None
 
     resp = httpx.post(
         f"{api_url}/{rx.constants.Endpoint.SSR_DATA.value}",
-        json={"path": "/blog/hello-world", "headers": {}},
+        json={"path": f"{frontend_path}/blog/hello-world", "headers": {}},
     )
     assert resp.status_code == 200
 
@@ -286,15 +357,14 @@ def test_ssr_data_endpoint(ssr_blog_app: AppHarnessSSR):
     )
 
 
-def test_not_found_post(ssr_blog_app: AppHarnessSSR, page: Page):
+def test_not_found_post(pages_url: str, page: Page):
     """Navigating to a non-existent slug should show the "Post Not Found" text.
 
     Args:
-        ssr_blog_app: The running SSR blog app harness.
+        pages_url: The URL the app's pages are served below.
         page: A Playwright page.
     """
-    assert ssr_blog_app.frontend_url is not None
-    page.goto(f"{ssr_blog_app.frontend_url}/blog/does-not-exist")
+    page.goto(f"{pages_url}/blog/does-not-exist")
 
     not_found = page.get_by_test_id("not-found")
     expect(not_found).to_be_visible(timeout=15000)

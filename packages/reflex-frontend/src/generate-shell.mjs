@@ -4,7 +4,8 @@
  * With ssr:true, `react-router build` does not emit index.html because all
  * HTML is rendered at request time.  The production server (ssr-serve.js)
  * serves this pre-built shell to regular users for instant load with zero
- * SSR overhead; only bots go through the SSR path.
+ * SSR overhead; only bots go through the SSR path.  The Reflex build moves the
+ * shell below frontend_path, where ssr-serve.js reads it.
  *
  * The X-Reflex-Shell-Gen header tells the root loader to short-circuit and
  * return { state: null } without contacting the Python backend.
@@ -21,7 +22,8 @@ const __dirname =
 const build = await import(join(__dirname, "build", "server", "index.js"));
 const handler = createRequestHandler(build, "production");
 
-const request = new Request("http://localhost/", {
+// The app's index route lives at its basename (frontend_path).
+const request = new Request(new URL(build.basename, "http://localhost"), {
   headers: {
     "User-Agent": "Mozilla/5.0 Chrome/120 (Shell Generator)",
     "X-Reflex-Shell-Gen": "1",
