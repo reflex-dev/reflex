@@ -13,14 +13,14 @@ import copy
 import functools
 import gettext as _gettext_module
 import io
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager, contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
 from reflex_base.vars.dep_tracking import register_implicit_dependency
 
-from .config import check_configured_locale, source_locale
+from .config import check_configured_locale, get_active_i18n_config, source_locale
 
 if TYPE_CHECKING:
     import datetime
@@ -256,6 +256,34 @@ def gettext_noop(message: str) -> str:
     return message
 
 
+def match_locale(requested: Iterable[str], supported: Iterable[str]) -> str | None:
+    """Find the supported locale that best serves a list of requested ones.
+
+    For each requested tag in turn: the supported locale with the same tag,
+    else the first one with the same primary language (``de-AT`` -> ``de``).
+    Tags compare case-insensitively (RFC 5646).
+
+    Args:
+        requested: The wanted locales, most wanted first.
+        supported: The locales on offer.
+
+    Returns:
+        The matching locale in its supported spelling, or None.
+    """
+    by_tag: dict[str, str] = {}
+    by_language: dict[str, str] = {}
+    for locale in supported:
+        tag = locale.lower()
+        by_tag[tag] = locale
+        by_language.setdefault(tag.split("-")[0], locale)
+    for tag in requested:
+        lowered = tag.lower()
+        match = by_tag.get(lowered) or by_language.get(lowered.split("-")[0])
+        if match is not None:
+            return match
+    return None
+
+
 def negotiate_locale(
     accept_language: str, supported: Sequence[str], default: str
 ) -> str:
@@ -269,13 +297,6 @@ def negotiate_locale(
     Returns:
         The best matching supported locale, or ``default``.
     """
-    # RFC 5646 language tags are case-insensitive: match lowercased but return
-    # the configured spelling.
-    by_tag = {locale.lower(): locale for locale in supported}
-    by_language: dict[str, str] = {}
-    for locale in supported:
-        by_language.setdefault(locale.split("-")[0].lower(), locale)
-
     ranked: list[tuple[float, int, str]] = []
     for index, entry in enumerate(accept_language.split(",")):
         tag, _, params = entry.strip().partition(";")
@@ -297,12 +318,74 @@ def negotiate_locale(
         # Sort by quality descending, then by original order for ties.
         ranked.append((-quality, index, tag))
 
-    for _, _, tag in sorted(ranked):
-        if (exact := by_tag.get(tag)) is not None:
-            return exact
-        if (language_match := by_language.get(tag.split("-")[0])) is not None:
-            return language_match
-    return default
+    return match_locale((tag for _, _, tag in sorted(ranked)), supported) or default
+
+
+def fallback_chain(locale: str | None = None) -> tuple[str, ...]:
+    """The locales to try, in order, for content wanted in a locale.
+
+    The locale itself, then the source locale, the fallback locale and the
+    other configured locales.
+
+    Args:
+        locale: The wanted locale; the active one (else the source locale) if
+            None.
+
+    Returns:
+        The locales, without case-insensitive duplicates.
+    """
+    wanted = locale or get_locale() or source_locale()
+    config = get_active_i18n_config()
+    if config is None:
+        return (wanted,)
+    chain: dict[str, str] = {}
+    for candidate in (
+        wanted,
+        config.default_locale,
+        config.fallback_locale,
+        *config.locales,
+    ):
+        chain.setdefault(candidate.lower(), candidate)
+    return tuple(chain.values())
+
+
+def pick_translation_locale(
+    translations: Mapping[str, str], locale: str | None = None
+) -> str | None:
+    """The locale whose text to show from a ``{locale: text}`` mapping.
+
+    The best match for the fallback chain of the wanted locale among the
+    locales with text, else the first locale with text.
+
+    Args:
+        translations: The texts by locale, e.g. a translated database field.
+        locale: The wanted locale; the active one (else the source locale) if
+            None.
+
+    Returns:
+        A key of ``translations``, or None if no text is there.
+    """
+    available = [key for key, text in translations.items() if text.strip()]
+    if not available:
+        return None
+    return match_locale(fallback_chain(locale), available) or available[0]
+
+
+def pick_translation(
+    translations: Mapping[str, str], locale: str | None = None
+) -> str | None:
+    """The text to show from a ``{locale: text}`` mapping.
+
+    Args:
+        translations: The texts by locale, e.g. a translated database field.
+        locale: The wanted locale; the active one (else the source locale) if
+            None.
+
+    Returns:
+        The text :func:`pick_translation_locale` chooses, or None.
+    """
+    key = pick_translation_locale(translations, locale)
+    return None if key is None else translations[key]
 
 
 def _format_locale() -> str:
@@ -550,7 +633,7 @@ def _locale_dependency() -> Var | None:
 
 
 # Registered here rather than in :mod:`.state` so a computed var that calls
-# gettext (or a ``format_*`` helper) gains its dependency on the active locale
+# gettext (or a ``format_*`` or pick helper) gains its dependency on the active locale
 # as soon as the app imports it — before (and independently of) I18nPlugin
 # construction, which in a backend worker can happen after the getter's
 # dependencies are scanned and cached. Registering only populates a dict; the
@@ -561,6 +644,9 @@ register_implicit_dependency(
         gettext,
         ngettext,
         pgettext,
+        fallback_chain,
+        pick_translation,
+        pick_translation_locale,
         format_number,
         format_decimal,
         format_currency,

@@ -27,6 +27,7 @@ from .nav import language_switcher, locale_url
 from .plugin import I18nPlugin
 from .routing import PathPrefixRouting
 from .runtime import (
+    fallback_chain,
     format_currency,
     format_date,
     format_datetime,
@@ -37,11 +38,14 @@ from .runtime import (
     get_locale,
     gettext,
     gettext_noop,
+    match_locale,
     ngettext,
     pgettext,
+    pick_translation,
+    pick_translation_locale,
     use_locale,
 )
-from .vars import t
+from .vars import pick, pick_locale, t
 
 if TYPE_CHECKING:
     from reflex_base.vars.sequence import StringVar
@@ -67,6 +71,7 @@ __all__ = [
     "I18nState",
     "PathPrefixRouting",
     "currency",
+    "fallback_chain",
     "format_currency",
     "format_date",
     "format_datetime",
@@ -79,11 +84,16 @@ __all__ = [
     "gettext_noop",
     "language_switcher",
     "locale_url",
+    "match_locale",
     "ngettext",
     "normalize_locale",
     "number",
     "percent",
     "pgettext",
+    "pick",
+    "pick_locale",
+    "pick_translation",
+    "pick_translation_locale",
     "set_locale",
     "source_locale",
     "t",

@@ -37,7 +37,14 @@ from .format import (
 )
 from .registry import collected_messages, format_message_list, untranslated_messages
 from .routing import PathPrefixRouting, segment_locale
-from .vars import _i18n_var_data, _translate, _translate_plural
+from .vars import (
+    _i18n_var_data,
+    _pick,
+    _pick_locale,
+    _pick_var_data,
+    _translate,
+    _translate_plural,
+)
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
@@ -104,6 +111,9 @@ def _reset_provider() -> None:
         _fmt_number,
         _fmt_date,
         _locale_var,
+        _pick_var_data,
+        _pick,
+        _pick_locale,
     ):
         cached.cache_clear()
 

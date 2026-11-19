@@ -71,19 +71,19 @@ const writeCookie = (name, value) => {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax${secure}`;
 };
 
-// Match a requested locale list against the supported locales: exact tag
-// first, then primary-language prefix (e.g. "de-AT" -> "de"). Like the
-// server's negotiate_locale, tags match case-insensitively (RFC 5646) and
-// resolve to the configured spelling.
-const negotiate = (requested) => {
+// The supported locale that best serves a list of requested ones: for each
+// requested tag in turn, the supported locale with the same tag, else the first
+// one with the same primary language ("de-AT" -> "de"). Tags compare
+// case-insensitively (RFC 5646). Mirrors reflex_i18n.runtime.match_locale.
+export const matchLocale = (requested, supported) => {
   const byTag = new Map();
   const byLanguage = new Map();
-  for (const supported of locales) {
-    const tag = supported.toLowerCase();
-    byTag.set(tag, supported);
+  for (const locale of supported) {
+    const tag = locale.toLowerCase();
+    byTag.set(tag, locale);
     const language = tag.split("-")[0];
     if (!byLanguage.has(language)) {
-      byLanguage.set(language, supported);
+      byLanguage.set(language, locale);
     }
   }
   for (const tag of requested) {
@@ -96,13 +96,35 @@ const negotiate = (requested) => {
   return undefined;
 };
 
+// The locales to try, in order, for content wanted in a locale. Mirrors
+// reflex_i18n.runtime.fallback_chain.
+export const fallbackChain = (locale) => {
+  const chain = new Map();
+  for (const tag of [locale, defaultLocale, fallbackLocale, ...locales]) {
+    if (!chain.has(tag.toLowerCase())) {
+      chain.set(tag.toLowerCase(), tag);
+    }
+  }
+  return [...chain.values()];
+};
+
+// The locale whose text to show from a {locale: text} mapping, "" if it has
+// no text. Mirrors reflex_i18n.runtime.pick_translation_locale.
+export const pickTranslationLocale = (translations, locale) => {
+  const available = Object.keys(translations ?? {}).filter(
+    (key) => String(translations[key] ?? "").trim() !== "",
+  );
+  return matchLocale(fallbackChain(locale), available) ?? available[0] ?? "";
+};
+
 const initialLocale = () => {
   const fromCookie = readCookie(cookieName);
   if (fromCookie && locales.includes(fromCookie)) {
     return fromCookie;
   }
   return (
-    negotiate(navigator.languages ?? [navigator.language]) ?? fallbackLocale
+    matchLocale(navigator.languages ?? [navigator.language], locales) ??
+    fallbackLocale
   );
 };
 
@@ -312,6 +334,25 @@ export function useFormat() {
 
 export function useLocale() {
   return useContext(I18nContext).locale;
+}
+
+// [pick, pickLocale] for {locale: text} mappings, defaulting to the active
+// locale; both return "" when the mapping has no text.
+export function usePick() {
+  const { locale: active } = useContext(I18nContext);
+  const pickLocale = useCallback(
+    (translations, locale) =>
+      pickTranslationLocale(translations, locale ?? active),
+    [active],
+  );
+  const pick = useCallback(
+    (translations, locale) => {
+      const key = pickLocale(translations, locale);
+      return key === "" ? "" : translations[key];
+    },
+    [pickLocale],
+  );
+  return [pick, pickLocale];
 }
 
 export function useTranslation() {

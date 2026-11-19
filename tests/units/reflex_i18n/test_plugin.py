@@ -13,7 +13,9 @@ from reflex_i18n.config import I18nConfig, set_active_i18n_config
 from reflex_i18n.format import _SOURCE_FMT_DATE, _SOURCE_FMT_NUMBER
 from reflex_i18n.plugin import _RUNTIME_SOURCE
 from reflex_i18n.registry import clear_messages
+from reflex_i18n.runtime import pick_translation_locale
 from reflex_i18n.state import _resolve_locale
+from reflex_i18n.vars import _SOURCE_PICK_LOCALE
 
 requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 
@@ -379,6 +381,46 @@ def test_provider_follows_the_server_locale(
     )
     assert rendered["stateUpdates"] == expected
     assert rendered["localeChanges"] == []
+
+
+_PICK_CASES = [
+    ({"de": "Hallo", "en": "Hello"}, "en"),
+    ({"de": "Hallo", "en": "Hello"}, "fr"),
+    ({"en": "Hello", "fr": "Bonjour"}, "it"),
+    ({"de-CH": "Grüezi", "en": "Hello"}, "de-AT"),
+    ({"de": "  ", "en": "Hello"}, "de"),
+    ({"it": "Ciao"}, "de"),
+    ({"DE": "Hallo", "en": "Hello"}, "de"),
+    ({"en-GB": "Colour", "de": "Farbe"}, "en"),
+    ({}, "de"),
+]
+
+
+@requires_node
+def test_client_picks_translations_like_the_server(tmp_path: Path):
+    """The runtime and the plugin-less inline picker match pick_translation_locale."""
+    rendered = _render_runtime(
+        tmp_path,
+        "I18nProvider",
+        locales=["de", "en", "fr"],
+        default_locale="de",
+        fallback_locale="en",
+        action=(
+            f"const cases = {json.dumps(_PICK_CASES)};"
+            f"const inline = {_SOURCE_PICK_LOCALE!s};"
+            "return {"
+            "runtime: cases.map(([t, l]) => mod.pickTranslationLocale(t, l)),"
+            "inline: cases.map(([t, l]) => inline(t, l))};"
+        ),
+    )
+    set_active_i18n_config(I18nConfig(["de", "en", "fr"], "de", fallback_locale="en"))
+    configured = [pick_translation_locale(t, wanted) or "" for t, wanted in _PICK_CASES]
+    set_active_i18n_config(None)
+    unconfigured = [
+        pick_translation_locale(t, wanted) or "" for t, wanted in _PICK_CASES
+    ]
+    assert rendered["result"] == {"runtime": configured, "inline": unconfigured}
+    assert configured == ["en", "de", "en", "de-CH", "en", "it", "DE", "en-GB", ""]
 
 
 @requires_node

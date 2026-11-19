@@ -1,4 +1,4 @@
-"""The ``rx.t`` translation var for static component content."""
+"""The ``rx.t`` translation var for static content and ``rx.i18n.pick`` for data."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from reflex_base.vars.function import FunctionStringVar, FunctionVar, ReflexCall
 from reflex_base.vars.sequence import StringVar
 
 from .component import _PROVIDER_PRIORITY, _provider
-from .config import get_active_i18n_config
+from .config import UNCONFIGURED_LOCALE, get_active_i18n_config
 from .registry import MessageKey, register
 
 
@@ -165,3 +165,111 @@ def t(
         return _translate().call(key.catalog_key, params_var).to(str)
 
     return _translate_plural().call(key.catalog_key, plural, count, params_var).to(str)
+
+
+@functools.cache
+def _pick_var_data() -> VarData:
+    """VarData for the pick vars: the ``usePick`` hook and the provider.
+
+    Returns:
+        The shared VarData.
+    """
+    return VarData(
+        imports={"$/utils/i18n": [ImportVar(tag="usePick")]},
+        hooks={"const [ pick_, pickLocale_ ] = usePick()": None},
+        app_wraps=((_PROVIDER_PRIORITY, _provider()),),
+    )
+
+
+# ``usePick`` destructures to ``[pick_, pickLocale_]``; both take the
+# ``{locale: text}`` mapping and the wanted locale (null for the active one).
+_Pick = ReflexCallable[[Mapping[str, str], str | None], str]
+
+
+@functools.cache
+def _pick() -> FunctionVar[_Pick]:
+    """The client-side text picker.
+
+    Returns:
+        The ``pick_`` hook function as a callable Var.
+    """
+    return FunctionStringVar.create(
+        "pick_", _var_type=_Pick, _var_data=_pick_var_data()
+    )
+
+
+@functools.cache
+def _pick_locale() -> FunctionVar[_Pick]:
+    """The client-side picker of the locale whose text to show.
+
+    Returns:
+        The ``pickLocale_`` hook function as a callable Var.
+    """
+    return FunctionStringVar.create(
+        "pickLocale_", _var_type=_Pick, _var_data=_pick_var_data()
+    )
+
+
+# Without an I18nPlugin there is no client runtime: pick as
+# pick_translation_locale does, from the fallback chain of the wanted locale
+# alone, which is all that chain holds without a configuration.
+_SOURCE_PICK_LOCALE_JS = (
+    "((translations, locale) => { "
+    "const keys = Object.keys(translations ?? {}).filter("
+    '(key) => String(translations[key] ?? "").trim() !== ""); '
+    f'const wanted = String(locale ?? "{UNCONFIGURED_LOCALE}").toLowerCase(); '
+    "return keys.find((key) => key.toLowerCase() === wanted) "
+    '?? keys.find((key) => key.toLowerCase().split("-")[0] === wanted.split("-")[0]) '
+    '?? keys[0] ?? ""; })'
+)
+_SOURCE_PICK_LOCALE: FunctionVar[_Pick] = FunctionStringVar.create(
+    _SOURCE_PICK_LOCALE_JS, _var_type=_Pick
+)
+_SOURCE_PICK: FunctionVar[_Pick] = FunctionStringVar.create(
+    "((translations, locale) => { "
+    f"const key = {_SOURCE_PICK_LOCALE_JS}(translations, locale); "
+    'return key === "" ? "" : translations[key]; })',
+    _var_type=_Pick,
+)
+
+
+def pick(
+    translations: Var[Mapping[str, str]] | Mapping[str, str],
+    locale: Var[str] | str | None = None,
+) -> StringVar:
+    """Show the text of a ``{locale: text}`` mapping in the active locale.
+
+    For translated data, such as a database field holding a text per
+    language. Falls back along the locale's fallback chain like
+    :func:`~reflex_i18n.runtime.pick_translation`, and re-picks instantly when
+    the locale changes.
+
+    Args:
+        translations: The texts by locale.
+        locale: The wanted locale; the active one if None.
+
+    Returns:
+        A StringVar resolving to the picked text, or ``""`` if there is none.
+    """
+    function = _pick() if get_active_i18n_config() is not None else _SOURCE_PICK
+    return function.call(translations, locale).to(str)
+
+
+def pick_locale(
+    translations: Var[Mapping[str, str]] | Mapping[str, str],
+    locale: Var[str] | str | None = None,
+) -> StringVar:
+    """The locale whose text :func:`pick` shows, e.g. for an element's ``lang``.
+
+    Args:
+        translations: The texts by locale.
+        locale: The wanted locale; the active one if None.
+
+    Returns:
+        A StringVar resolving to the picked locale, or ``""`` if there is no
+        text.
+    """
+    function = (
+        _pick_locale() if get_active_i18n_config() is not None else _SOURCE_PICK_LOCALE
+    )
+    return function.call(translations, locale).to(str)

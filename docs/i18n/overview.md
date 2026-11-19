@@ -192,6 +192,36 @@ def monthly_report_title(user_locale: str, month: datetime.date) -> str:
 `use_locale` raises a `ValueError` for a locale the plugin does not list.
 `rx.i18n.get_locale()` returns the locale in effect, or `None` outside any.
 
+## Translated data
+
+Some text is data rather than part of your app: a product name or a
+description entered once per language, stored for example as a
+`{locale: text}` dict. `rx.i18n.pick` shows it in the visitor's language:
+
+```python
+class ProductState(rx.State):
+    description: dict[str, str] = {"en": "Sparkling water", "de": "Mineralwasser"}
+
+
+def product_card():
+    return rx.text(
+        rx.i18n.pick(ProductState.description),
+        lang=rx.i18n.pick_locale(ProductState.description),
+    )
+```
+
+When there is no text in the visitor's locale, the server and the browser fall
+back in the same order: a text in the same language (`de-AT` takes `de`), the
+default locale, the `fallback_locale`, the other configured locales, and
+finally any text there is. `rx.i18n.pick_locale` returns the language actually
+shown, e.g. for the element's `lang`. The browser re-picks instantly when the
+locale changes.
+
+On the server, `pick_translation(texts)` picks for the current visitor (or for
+the locale `use_locale` set), and `fallback_chain(locale)` returns the order
+itself, e.g. to build an SQL `COALESCE`. `normalize_locale` spells a language
+tag the way the plugin does, which keeps stored keys consistent.
+
 ## Formatting numbers and dates
 
 Numbers, currencies, percentages and dates are formatted differently per locale

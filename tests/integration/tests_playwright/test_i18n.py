@@ -51,6 +51,8 @@ def I18nApp():
         # Set at emit time by an event handler; translated server-side into
         # the active locale via gettext.
         message: str = ""
+        # Translated data, e.g. a database field holding a text per language.
+        greeting_texts: dict[str, str] = {"de": "Guten Morgen", "en": "Good morning"}
 
         @rx.event
         def increment(self):
@@ -101,6 +103,11 @@ def I18nApp():
                 id="static-count",
             ),
             rx.text(PageState.message, id="dynamic-message"),
+            rx.text(
+                rx.i18n.pick(PageState.greeting_texts),
+                lang=rx.i18n.pick_locale(PageState.greeting_texts),
+                id="picked-greeting",
+            ),
             rx.text(PageState.computed_greeting, id="computed-greeting"),
             rx.text(
                 rx.i18n.number(PageState.amount, min_fraction_digits=2),
@@ -290,6 +297,25 @@ def test_client_follows_a_locale_the_server_chose(i18n_app: AppHarness, page: Pa
     expect(page.locator("#computed-greeting")).to_have_text("Willkommen")
     cookies = {c.get("name"): c.get("value") for c in page.context.cookies()}
     assert cookies.get("reflex_locale") == "de"
+
+
+def test_picked_translation_follows_the_locale(i18n_app: AppHarness, page: Page):
+    """rx.i18n.pick shows translated data in the active locale, switching instantly.
+
+    Args:
+        i18n_app: Running harness for the i18n app.
+        page: Playwright page.
+    """
+    assert i18n_app.frontend_url is not None
+    page.goto(i18n_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+    picked = page.locator("#picked-greeting")
+    expect(picked).to_have_text("Good morning")
+    expect(picked).to_have_attribute("lang", "en")
+
+    page.click("#to-de")
+    expect(picked).to_have_text("Guten Morgen")
+    expect(picked).to_have_attribute("lang", "de")
 
 
 def test_memo_component_translations_switch_locale(i18n_app: AppHarness, page: Page):

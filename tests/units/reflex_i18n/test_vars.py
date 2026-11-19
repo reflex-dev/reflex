@@ -5,8 +5,9 @@ import shutil
 import subprocess
 
 import pytest
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var
-from reflex_i18n import I18nConfig, t
+from reflex_i18n import I18nConfig, pick, pick_locale, t
 from reflex_i18n.component import I18nProvider
 from reflex_i18n.config import set_active_i18n_config
 from reflex_i18n.registry import (
@@ -15,6 +16,7 @@ from reflex_i18n.registry import (
     collected_messages,
     untranslated_messages,
 )
+from reflex_i18n.vars import _SOURCE_PICK, _SOURCE_PICK_LOCALE
 
 
 @pytest.fixture(autouse=True)
@@ -201,3 +203,29 @@ def test_t_without_plugin_interpolates_like_the_runtime():
 def test_t_with_plugin_records_nothing_untranslated():
     t("Hello")
     assert untranslated_messages() == ()
+
+
+def test_pick_reads_the_use_pick_hook():
+    texts = Var(_js_expr="state.texts")
+    var = pick(texts)
+    assert str(var) == "(pick_(state.texts, null))"
+    assert str(pick_locale(texts, "it")) == '(pickLocale_(state.texts, "it"))'
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert var_data.hooks == ("const [ pick_, pickLocale_ ] = usePick()",)
+    assert dict(var_data.imports)["$/utils/i18n"] == (ImportVar(tag="usePick"),)
+    assert len(var_data.app_wraps) == 1
+    priority, provider = var_data.app_wraps[0]
+    assert priority == 58
+    assert isinstance(provider, I18nProvider)
+
+
+def test_pick_without_plugin_picks_inline():
+    set_active_i18n_config(None)
+    texts = Var(_js_expr="state.texts")
+    var = pick(texts)
+    assert str(var) == f"({_SOURCE_PICK!s}(state.texts, null))"
+    assert var._get_all_var_data() is None
+    assert str(pick_locale(texts, "it")) == (
+        f'({_SOURCE_PICK_LOCALE!s}(state.texts, "it"))'
+    )

@@ -5,9 +5,11 @@ import decimal
 from pathlib import Path
 
 import pytest
+from reflex_base.vars.dep_tracking import _implicit_dependency_providers
 from reflex_i18n.config import I18nConfig, set_active_i18n_config
 from reflex_i18n.runtime import (
     clear_translations_cache,
+    fallback_chain,
     format_currency,
     format_date,
     format_datetime,
@@ -18,9 +20,12 @@ from reflex_i18n.runtime import (
     get_locale,
     gettext,
     gettext_noop,
+    match_locale,
     negotiate_locale,
     ngettext,
     pgettext,
+    pick_translation,
+    pick_translation_locale,
     use_locale,
 )
 
@@ -480,3 +485,80 @@ def test_negotiate_locale_is_case_insensitive():
     supported = ["en", "de-DE", "de-AT"]
     assert negotiate_locale("DE-at", supported, "en") == "de-AT"
     assert negotiate_locale("de-de;q=0.9", supported, "en") == "de-DE"
+
+
+@pytest.mark.parametrize(
+    ("requested", "supported", "expected"),
+    [
+        (["de"], ["en", "de"], "de"),
+        (["DE-at"], ["en", "de-AT"], "de-AT"),
+        (["de-AT"], ["en", "de"], "de"),
+        (["de"], ["en", "de-CH", "de-AT"], "de-CH"),
+        (["fr", "de"], ["en", "de"], "de"),
+        (["fr"], ["en", "de"], None),
+        ([], ["en"], None),
+    ],
+)
+def test_match_locale(requested: list[str], supported: list[str], expected: str | None):
+    assert match_locale(requested, supported) == expected
+
+
+def test_fallback_chain_without_config():
+    assert fallback_chain() == ("en",)
+    assert fallback_chain("fr") == ("fr",)
+    with use_locale("de"):
+        assert fallback_chain() == ("de",)
+
+
+def test_fallback_chain_follows_the_config():
+    set_active_i18n_config(
+        I18nConfig(
+            locales=["de", "en", "fr"], default_locale="de", fallback_locale="en"
+        )
+    )
+    assert fallback_chain("de") == ("de", "en", "fr")
+    assert fallback_chain("EN") == ("EN", "de", "fr")
+    assert fallback_chain("pt-BR") == ("pt-BR", "de", "en", "fr")
+    assert fallback_chain() == ("de", "en", "fr")
+    with use_locale("fr"):
+        assert fallback_chain() == ("fr", "de", "en")
+
+
+@pytest.mark.parametrize(
+    ("translations", "locale", "expected"),
+    [
+        ({"de": "Hallo", "en": "Hello"}, "en", "en"),
+        ({"de": "Hallo", "en": "Hello"}, "fr", "de"),
+        ({"en": "Hello", "fr": "Bonjour"}, "it", "en"),
+        ({"de-CH": "Grüezi", "en": "Hello"}, "de-AT", "de-CH"),
+        ({"de": "  ", "en": "Hello"}, "de", "en"),
+        ({"it": "Ciao"}, "de", "it"),
+        ({"DE": "Hallo", "en": "Hello"}, "de", "DE"),
+        ({}, "de", None),
+    ],
+)
+def test_pick_translation_locale(
+    translations: dict[str, str], locale: str, expected: str | None
+):
+    set_active_i18n_config(
+        I18nConfig(
+            locales=["de", "en", "fr"], default_locale="de", fallback_locale="en"
+        )
+    )
+    assert pick_translation_locale(translations, locale) == expected
+    assert pick_translation(translations, locale) == (
+        None if expected is None else translations[expected]
+    )
+
+
+def test_pick_translation_defaults_to_the_active_locale():
+    texts = {"de": "Hallo", "en": "Hello"}
+    assert pick_translation(texts) == "Hello"
+    with use_locale("de"):
+        assert pick_translation(texts) == "Hallo"
+
+
+def test_picking_helpers_imply_the_locale_dependency():
+    # Computed vars picking a text refresh when the locale changes, like gettext.
+    for helper in (fallback_chain, pick_translation, pick_translation_locale):
+        assert helper in _implicit_dependency_providers
