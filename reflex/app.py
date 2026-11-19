@@ -18,6 +18,7 @@ import tempfile
 import time
 import traceback
 import urllib.parse
+from collections import deque
 from collections.abc import (
     AsyncIterator,
     Callable,
@@ -91,6 +92,7 @@ from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
 from reflex.istate.data import RouterData, SessionData
+from reflex.istate.delta import _resolve_delta
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
@@ -2537,44 +2539,52 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
-async def _run_ssr_on_load(state: BaseState, load_event: Any, path: str) -> None:
-    """Execute a single on_load handler on the ephemeral SSR state.
+async def _run_ssr_on_load(
+    state: BaseState, load_events: Sequence[IndividualEventType[()]], path: str
+) -> None:
+    """Run on_load events and the backend events they chain on the ephemeral SSR state.
+
+    Frontend events and background tasks are left to the browser's live session.
 
     Args:
         state: The ephemeral root state instance.
-        load_event: The on_load event handler to execute.
+        load_events: The page's on_load events.
         path: The URL path (for error logging).
     """
-    try:
-        handler_fn = (
-            load_event.handler if hasattr(load_event, "handler") else load_event
-        )
-        # Get the full handler name.
-        if hasattr(handler_fn, "fn") and hasattr(handler_fn, "state_full_name"):
-            handler_name = f"{handler_fn.state_full_name}.{handler_fn.fn.__name__}"
-        else:
-            handler_name = str(handler_fn)
-
-        # Find the target substate and event handler.
-        *substate_path, handler_attr = handler_name.split(".")
-        target_state = state.get_substate(substate_path)
-        event_handler = target_state.event_handlers[handler_attr]
-
-        # Execute the handler on the target substate.
-        result = event_handler.fn(target_state)
-        if asyncio.iscoroutine(result):
-            result = await result
-        # For generators (event chains), consume them but ignore returned events.
-        if inspect.isgenerator(result):
-            for _ in result:
-                pass
-        if inspect.isasyncgen(result):
-            async for _ in result:
-                pass
-    except Exception:
-        logger.warning(
-            f"SSR on_load handler failed for {path}: {traceback.format_exc()}"
-        )
+    queue = deque(Event.from_event_type(load_events))
+    while queue:
+        event = queue.popleft()
+        try:
+            *substate_path, name = event.name.split(".")
+            substate = state.get_substate(substate_path)
+            handler = substate.event_handlers[name]
+            if handler.is_background:
+                continue
+            result = handler.fn(substate, **event.payload)
+            if inspect.isawaitable(result):
+                result = await result
+            chained: list[Any]
+            if inspect.isasyncgen(result):
+                chained = [item async for item in result]
+            elif inspect.isgenerator(result):
+                chained = []
+                try:
+                    while True:
+                        chained.append(next(result))
+                except StopIteration as stop:
+                    chained.append(stop.value)
+            else:
+                chained = [result]
+            queue.extend(
+                chained_event
+                for item in chained
+                for chained_event in Event.from_event_type(item)
+                if not chained_event.name.startswith("_")
+            )
+        except Exception:
+            logger.warning(
+                f"SSR on_load handler failed for {path}: {traceback.format_exc()}"
+            )
 
 
 def ssr_data(app: App):
@@ -2654,15 +2664,10 @@ def ssr_data(app: App):
         state.router_data = router_data
         state.router = RouterData.from_router_data(router_data)
 
-        # Get on_load event handlers for this route.
-        load_events = app.get_load_events(path)
+        await _run_ssr_on_load(state, app.get_load_events(path), path)
 
-        # Execute each on_load handler directly on the ephemeral state.
-        for load_event in load_events:
-            await _run_ssr_on_load(state, load_event, path)
-
-        # Serialize the full state tree for the frontend.
-        full_state = state.dict()
+        # Serialize the full state tree for the frontend, async vars awaited.
+        full_state = await _resolve_delta(state.dict())
 
         # Use Reflex's json serializer to handle custom types (RouterData, etc.)
         json_str = format.json_dumps({"state": full_state})
