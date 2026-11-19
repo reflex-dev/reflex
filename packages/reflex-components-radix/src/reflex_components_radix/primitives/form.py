@@ -9,17 +9,21 @@ from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.utils.form import FormData as _FormData
 from reflex_base.vars.base import Var
 from reflex_components_core.core.debounce import DebounceInput
+from reflex_components_core.el.elements.forms import BaseInput, Select, Textarea
 from reflex_components_core.el.elements.forms import Form as HTMLForm
 
-from reflex_components_radix.themes.components.text_field import TextFieldRoot
-
 from .base import RadixPrimitiveComponentWithClassName
+
+# Radix Form.Control composes with native form controls only: an input, select
+# or textarea, or a component rendering one. Its other primitives, such as
+# Checkbox and Select, do not compose with it.
+_FORM_CONTROL_CHILD_TYPES = (BaseInput, Select, Textarea, DebounceInput)
 
 
 class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
-    library = "@radix-ui/react-form@0.1.16"
+    library = "@radix-ui/react-form@0.3.0"
 
 
 class FormRoot(FormComponent, HTMLForm):
@@ -48,6 +52,9 @@ class FormField(FormComponent):
     tag = "Field"
 
     alias = "RadixFormField"
+
+    # Radix passes the field's name to the control its ``FormControl`` renders.
+    _is_form_field = True
 
     name: Var[str] = field(
         doc="The name of the form field, that is passed down to the control and used to match with validation messages."
@@ -89,28 +96,50 @@ class FormControl(FormComponent):
 
     alias = "RadixFormControl"
 
+    # Renders an input, or its child with ``as_child``, named by the enclosing
+    # ``FormField`` unless the control or its child carries a ``name``.
+    _is_form_field_control = True
+
+    name: Var[str] = field(
+        doc="The name of the control, in place of the name of the enclosing form field."
+    )
+
     @classmethod
     def create(cls, *children, **props):
         """Create a Form Control component.
 
+        The control renders an input, or the native form control its child
+        renders, which then takes the enclosing form field's name and
+        validation messages.
+
         Args:
-            *children: The children of the form.
-            **props: The properties of the form.
+            *children: The control to render, if any.
+            **props: The properties of the form control.
 
         Returns:
             The form control component.
 
         Raises:
-            ValueError: If the number of children is greater than 1.
-            TypeError: If a child exists but it is not a TextFieldInput.
+            ValueError: If more than one child is given.
+            TypeError: If the child does not render a native form control.
         """
         if len(children) > 1:
             msg = f"FormControl can only have at most one child, got {len(children)} children"
             raise ValueError(msg)
         for child in children:
-            if not isinstance(child, (TextFieldRoot, DebounceInput)):
-                msg = "Only Radix TextFieldRoot and DebounceInput are allowed as children of FormControl"
+            if not isinstance(child, _FORM_CONTROL_CHILD_TYPES):
+                msg = (
+                    "The child of rx.form.control must render a native form "
+                    "control: rx.input, rx.text_area, rx.debounce_input, "
+                    "rx.el.input, rx.el.select or rx.el.textarea, not "
+                    f"{type(child).__name__}. Radix forms do not compose with "
+                    "other controls such as rx.checkbox or rx.select; give those "
+                    "a `name` and place them under rx.form.root or rx.form.field "
+                    "instead."
+                )
                 raise TypeError(msg)
+            # Radix renders the child as the control only with asChild.
+            props["as_child"] = True
         return super().create(*children, **props)
 
 

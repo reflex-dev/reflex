@@ -9,6 +9,10 @@ def get_sidebar_items_changelog():
         names="Upgrading",
         children=[
             SideBarItem(
+                names="Upgrading to 0.11",
+                link=changelog.upgrading.upgrading_to_0_11.path,
+            ),
+            SideBarItem(
                 names="Upgrading to 0.10",
                 link=changelog.upgrading.upgrading_to_0_10.path,
             ),

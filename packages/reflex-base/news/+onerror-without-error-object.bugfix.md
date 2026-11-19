@@ -1,1 +1,0 @@
-A frontend error event that carries no `Error` object, such as the benign `ResizeObserver loop` notification, no longer throws inside `window.onerror` and is now reported to `handle_frontend_exception`.

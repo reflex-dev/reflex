@@ -20,5 +20,5 @@ def test_cn_uses_clsx_and_tailwind_merge() -> None:
     assert var_data is not None
     assert dict(var_data.imports) == {
         "clsx@2.1.1": (ImportVar(tag="clsx", is_default=True),),
-        "tailwind-merge@3.6.0": (ImportVar(tag="twMerge"),),
+        "tailwind-merge@3.7.0": (ImportVar(tag="twMerge"),),
     }

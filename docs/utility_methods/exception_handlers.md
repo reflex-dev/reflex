@@ -26,6 +26,25 @@ On a mismatch:
 
 The backend logs one warning per mismatched connection.
 
+An immediate reload can cost the user input not yet sent or an interaction in progress, for example when a rolling deploy reconnects every open tab to a new backend. Before it reloads or shows the banner, a production page dispatches a cancelable `reflex:state-mismatch` event on `window`, with the state schema hashes of the frontend and the backend in `event.detail.frontend` and `event.detail.backend`. A listener that calls `event.preventDefault()` skips both, and the app decides what to show and when to reload:
+
+```python
+app = rx.App(
+    head_components=[
+        rx.script(
+            """
+            window.addEventListener("reflex:state-mismatch", (event) => {
+                event.preventDefault();
+                // Show your own notice, and reload when it is safe.
+            });
+            """
+        ),
+    ],
+)
+```
+
+The event comes with every connect and reconnect that hits a mismatch, also after a reload the app started itself. The reload cooldown only guards the reload Reflex does on its own, so an app that reloads needs its own guard against a reload loop. In development, the event is not dispatched, so try your listener with `reflex run --env prod` or an exported build.
+
 Independently of that check, if a backend update names a substate that the compiled frontend does not recognize, Reflex skips that substate. Updates to known substates and subsequent events continue to work. Reflex warns in the browser console and reports each unknown substate to `frontend_exception_handler` once per connection. If the warning persists after a reload, rebuild the frontend and check that `api_url` points to the intended backend. Reflex only skips unknown substates; it does not reconcile other differences, such as a renamed state or a changed var.
 
 ```md alert warning

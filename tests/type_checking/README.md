@@ -8,18 +8,16 @@ These are not runtime tests. Nothing here is executed; the assertions are
 them checker-agnostic: the same file proves the contract to pyright, ty, and
 anything added later.
 
-Both checkers gate this directory through pre-commit. The `pyright` hook is
-passed the files being committed, so locally it sees these examples only when
-they change; CI runs `pre-commit run --all-files`, where it sees all of them.
-The `ty` hook always runs over this directory regardless of what changed, since
-what these examples catch is a source edit elsewhere altering an inferred type.
+Both checkers gate this directory through pre-commit. The `ty` hook and two
+`pyright-type-checking-*` hooks always run over this directory regardless of
+what changed, since what these examples catch is a source edit elsewhere
+altering an inferred type. `ty` pins Python 3.14; pyright runs once under the
+3.11 floor and once under 3.14, because a name in a class body resolves
+differently before 3.14's deferred annotations. The plain `pyright` hook also
+sees these files, under the running interpreter, when they are committed.
 
-Write examples that hold across the whole supported range. Note that neither
-hook currently enforces that: `ty` pins 3.14 and pyright uses the running
-interpreter, so a 3.12+ construct would pass both while breaking a user on
-the 3.11 floor. Pointing `--python-version` at the
-floor instead would close that, at the cost of not checking the version most
-contributors develop on.
+Write examples that hold across the whole supported range: the 3.11 pyright
+hook rejects a 3.12+ construct.
 
 Write an example here when the thing worth protecting is what a user's editor
 shows, rather than what the code does:
