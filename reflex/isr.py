@@ -25,6 +25,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import dataclasses
+import hmac
 import json
 import os
 import time
@@ -864,8 +865,8 @@ def create_isr_app(
     rendered and cached per raw request path; the query string is neither
     forwarded nor part of the cache key, so the page's ``on_load`` fills in
     query-dependent content after hydration.  The
-    revalidation endpoint requires a matching ``X-Reflex-ISR-Token`` header when
-    the ``REFLEX_ISR_REVALIDATE_TOKEN`` env var is set.
+    revalidation endpoint exists only when the ``REFLEX_ISR_REVALIDATE_TOKEN``
+    env var is set, and requires a matching ``X-Reflex-ISR-Token`` header.
 
     Run in production as an app factory, e.g.
     ``granian --factory reflex.isr:create_isr_app``.
@@ -879,7 +880,7 @@ def create_isr_app(
     """
     mgr = manager if manager is not None else create_manager()
     shell_html = shell if shell is not None else _load_shell()
-    revalidate_token = os.environ.get("REFLEX_ISR_REVALIDATE_TOKEN")
+    revalidate_token = os.environ.get("REFLEX_ISR_REVALIDATE_TOKEN", "").encode()
 
     async def serve(request: Request) -> Response:
         """Serve a page via ISR, falling back to the SPA shell.
@@ -911,8 +912,9 @@ def create_isr_app(
         Returns:
             A JSON summary, or 401 when the token does not match.
         """
-        if revalidate_token and (
-            request.headers.get("x-reflex-isr-token") != revalidate_token
+        if not hmac.compare_digest(
+            request.headers.get("x-reflex-isr-token", "").encode(),
+            revalidate_token,
         ):
             return JSONResponse({"error": "unauthorized"}, status_code=401)
         body = await request.json()
@@ -940,10 +942,13 @@ def create_isr_app(
             if aclose is not None:
                 await aclose()
 
+    # Without a token anyone reaching the page server could clear its cache.
+    revalidate_routes = (
+        [Route("/_isr/revalidate", revalidate, methods=["POST"])]
+        if revalidate_token
+        else []
+    )
     return Starlette(
-        routes=[
-            Route("/_isr/revalidate", revalidate, methods=["POST"]),
-            Route("/{path:path}", serve, methods=["GET"]),
-        ],
+        routes=[*revalidate_routes, Route("/{path:path}", serve, methods=["GET"])],
         lifespan=_lifespan,
     )

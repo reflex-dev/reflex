@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from starlette.testclient import TestClient
 
 import reflex as rx
@@ -114,24 +115,29 @@ def test_falls_back_to_shell_on_render_failure():
     assert r.text == "<html>SHELL</html>"
 
 
-def test_revalidate_path_endpoint():
+def test_revalidate_path_endpoint(monkeypatch: pytest.MonkeyPatch):
     """POST /_isr/revalidate with a path drops that page from cache."""
+    monkeypatch.setenv("REFLEX_ISR_REVALIDATE_TOKEN", "secret")
     renderer = _Renderer()
     client = _client(renderer)
 
     client.get("/p")
     assert renderer.calls == 1
 
-    resp = client.post("/_isr/revalidate", json={"path": "/p"})
+    resp = client.post(
+        "/_isr/revalidate",
+        json={"path": "/p"},
+        headers={"X-Reflex-ISR-Token": "secret"},
+    )
     assert resp.status_code == 200
     assert resp.json() == {"revalidated": True, "tag_pages": 0}
 
-    client.get("/p")
-    assert renderer.calls == 2  # re-rendered after invalidation
+    assert client.get("/p").text == "<html>/p#2</html>"  # re-rendered
 
 
-def test_revalidate_tag_endpoint():
+def test_revalidate_tag_endpoint(monkeypatch: pytest.MonkeyPatch):
     """POST /_isr/revalidate with a tag invalidates all tagged pages."""
+    monkeypatch.setenv("REFLEX_ISR_REVALIDATE_TOKEN", "secret")
     renderer = _Renderer()
     client = _client(renderer)
 
@@ -139,7 +145,11 @@ def test_revalidate_tag_endpoint():
     client.get("/b")
     assert renderer.calls == 2
 
-    resp = client.post("/_isr/revalidate", json={"tag": "t"})
+    resp = client.post(
+        "/_isr/revalidate",
+        json={"tag": "t"},
+        headers={"X-Reflex-ISR-Token": "secret"},
+    )
     assert resp.json() == {"revalidated": True, "tag_pages": 2}
 
     client.get("/a")
@@ -147,19 +157,40 @@ def test_revalidate_tag_endpoint():
     assert renderer.calls == 4
 
 
-def test_revalidate_requires_token_when_configured(monkeypatch):
-    """When REFLEX_ISR_REVALIDATE_TOKEN is set, the endpoint enforces it."""
+@pytest.mark.parametrize("headers", [{}, {"X-Reflex-ISR-Token": "wrong"}])
+def test_revalidate_rejects_a_missing_or_wrong_token(
+    monkeypatch: pytest.MonkeyPatch, headers: dict[str, str]
+):
+    """A request without the configured token leaves the cache alone.
+
+    Args:
+        monkeypatch: Sets the revalidation token.
+        headers: The request headers.
+    """
     monkeypatch.setenv("REFLEX_ISR_REVALIDATE_TOKEN", "secret")
     renderer = _Renderer()
     client = _client(renderer)
+    client.get("/p")
 
-    assert client.post("/_isr/revalidate", json={"path": "/p"}).status_code == 401
-    ok = client.post(
-        "/_isr/revalidate",
-        json={"path": "/p"},
-        headers={"X-Reflex-ISR-Token": "secret"},
-    )
-    assert ok.status_code == 200
+    resp = client.post("/_isr/revalidate", json={"path": "/p"}, headers=headers)
+
+    assert resp.status_code == 401
+    assert resp.json() == {"error": "unauthorized"}
+    assert client.get("/p").text == "<html>/p#1</html>"
+
+
+def test_revalidate_disabled_without_token(monkeypatch: pytest.MonkeyPatch):
+    """Without a configured token, nobody can clear the cache over HTTP."""
+    monkeypatch.delenv("REFLEX_ISR_REVALIDATE_TOKEN", raising=False)
+    renderer = _Renderer()
+    client = _client(renderer)
+    client.get("/p")
+
+    resp = client.post("/_isr/revalidate", json={"path": "/p"})
+
+    assert resp.status_code == 405
+    assert resp.text == "Method Not Allowed"
+    assert client.get("/p").text == "<html>/p#1</html>"
 
 
 def test_config_helpers_reflect_isr_settings():
