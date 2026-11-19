@@ -126,6 +126,9 @@ def test_activating_an_uninstalled_catalog_package_fails(package: str):
         ("ZH-hant-tw", "zh-Hant-TW"),
         ("es-419", "es-419"),
         ("sl-ROZAJ", "sl-rozaj"),
+        ("sl-latn-it-NEDIS", "sl-Latn-IT-nedis"),
+        ("EN-us-U-CA-Gregory", "en-US-u-ca-gregory"),
+        ("de-X-ABCD-DE", "de-x-abcd-de"),
     ],
 )
 def test_normalize_locale_uses_the_conventional_case(locale: str, expected: str):

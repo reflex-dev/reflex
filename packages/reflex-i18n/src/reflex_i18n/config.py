@@ -234,7 +234,14 @@ def normalize_locale(locale: str) -> str:
             if configured.lower() == lowered:
                 return configured
     language, *subtags = lowered.split("-")
-    return "-".join([language, *map(_subtag_case, subtags)])
+    cased = [language]
+    # From a singleton on (an extension such as "u-ca-gregory" or private use
+    # "x-..."), subtags are not scripts or regions and stay lowercase.
+    in_extension = False
+    for subtag in subtags:
+        in_extension = in_extension or len(subtag) == 1
+        cased.append(subtag if in_extension else _subtag_case(subtag))
+    return "-".join(cased)
 
 
 def source_locale() -> str:
