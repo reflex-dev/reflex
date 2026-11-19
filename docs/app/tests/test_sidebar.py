@@ -47,7 +47,7 @@ def test_cross_reference_excluded_from_prev_next_chain():
 
 
 def test_upgrade_guide_leads_the_changelog_section():
-    """The 0.10 upgrade guide sits in an Upgrading accordion atop the Changelog section."""
+    """The upgrade guides sit, newest first, in an Upgrading accordion atop the Changelog section."""
     from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import learn
     from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
         changelog_items,
@@ -55,8 +55,10 @@ def test_upgrade_guide_leads_the_changelog_section():
 
     upgrading = changelog_items[0]
     assert upgrading.names == "Upgrading"
-    assert [child.names for child in upgrading.children] == ["Upgrading to 0.10"]
-    assert upgrading.children[0].link == "/changelog/upgrading/upgrading-to-0-10/"
+    assert [(child.names, child.link) for child in upgrading.children] == [
+        ("Upgrading to 0.11", "/changelog/upgrading/upgrading-to-0-11/"),
+        ("Upgrading to 0.10", "/changelog/upgrading/upgrading-to-0-10/"),
+    ]
     assert changelog_items[1].link == "/changelog/"
 
     getting_started = next(item for item in learn if item.names == "Getting Started")
@@ -203,3 +205,28 @@ def test_api_reference_section_order_places_every_page_once():
 
     links = [item.link for item in api_reference]
     assert len(links) == len(set(links)) == len(paths)
+
+
+def test_workflow_sidebar_labels_match_page_headings():
+    """Building Workflows labels spell each page the way its heading does."""
+    from reflex_docs.templates.docpage.sidebar.sidebar import get_prev_next
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import (
+        get_sidebar_items_workflows,
+    )
+
+    building = next(
+        item
+        for item in get_sidebar_items_workflows()
+        if item.names == "Building Workflows"
+    )
+    assert [(child.names, child.link) for child in building.children] == [
+        ("Defining Workflows", "/workflows/defining-workflows/"),
+        ("Steps", "/workflows/steps/"),
+        ("Runs", "/workflows/runs/"),
+        ("Events", "/workflows/events/"),
+        ("Schedules", "/workflows/schedules/"),
+        ("Fan-Out", "/workflows/fan-out/"),
+        ("Concurrency", "/workflows/concurrency/"),
+    ]
+    _, next_ = get_prev_next("/workflows/schedules/")
+    assert next_ is not None and next_.names == "Fan-Out"

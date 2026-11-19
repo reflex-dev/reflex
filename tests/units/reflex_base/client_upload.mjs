@@ -30,7 +30,9 @@ class StreamedRequest {
   }
 
   /** Receive more of the response, as one progress event of the browser. */
-  receive(text, { done = false } = {}) {
+  receive(text, { done = false, status = 200 } = {}) {
+    // The browser knows the status before any of the body arrives.
+    this.status = status;
     this.responseText += text;
     this.onprogress({
       lengthComputable: done,
@@ -39,8 +41,7 @@ class StreamedRequest {
     });
   }
 
-  finish(status = 200) {
-    this.status = status;
+  finish() {
     this.onload();
   }
 }
@@ -67,7 +68,6 @@ const { uploadFiles } = module.namespace;
 /** Start an upload with `handler` as the socket's event listener. */
 function startUpload(handler) {
   const socket = { _callbacks: { $event: [handler] } };
-  const refs = {};
   const uploaded = uploadFiles(
     "state.handle_upload",
     [],
@@ -76,12 +76,11 @@ function startUpload(handler) {
     {},
     {},
     socket,
-    refs,
+    {},
     (url) => url,
     () => "token",
   );
-  const request = StreamedRequest.sent.at(-1);
-  return { uploaded, request, refs };
+  return { uploaded, request: StreamedRequest.sent.at(-1) };
 }
 
 /** Upload with `handler` as the socket's event listener, and stream the updates. */
@@ -100,12 +99,10 @@ async function streamUpdates(handler) {
   await uploaded;
 }
 
-test("an unparseable chunk is reported at load without Content-Length", async (t) => {
+test("an unparsable chunk is reported at load without Content-Length", async (t) => {
   const log = t.mock.method(console, "log", () => {});
   const handled = [];
-  const { uploaded, request, refs } = startUpload((update) =>
-    handled.push(update),
-  );
+  const { uploaded, request } = startUpload((update) => handled.push(update));
   request.receive('{"n":1}\n{"broken":');
   request.receive("oops}\n");
   assert.equal(log.mock.calls.length, 0);
@@ -115,7 +112,6 @@ test("an unparseable chunk is reported at load without Content-Length", async (t
   assert.equal(log.mock.calls.length, 1);
   assert.equal(log.mock.calls[0].arguments[0], "Error parsing chunk");
   assert.equal(log.mock.calls[0].arguments[1], '{"broken":oops}');
-  assert.deepEqual(refs, {});
 });
 
 test("load handles a final chunk completed after the last progress event", async (t) => {
@@ -134,6 +130,7 @@ test("load handles a final chunk completed after the last progress event", async
 test("load handles a response with no progress events", async () => {
   const handled = [];
   const { uploaded, request } = startUpload((update) => handled.push(update));
+  request.status = 200;
   request.responseText = '{"n":1}\n{"n":2}';
   request.finish();
   await uploaded;
@@ -153,6 +150,21 @@ test("a computable progress ratio of one is not response completion", async (t) 
   assert.equal(log.mock.calls.length, 0);
 });
 
+test("an error frame handled at load fails the upload", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request } = startUpload((update) => handled.push(update));
+  request.receive('{"n":1}\n');
+  request.responseText += '{"error": "handler failed"}\n';
+  request.finish();
+  assert.equal(await uploaded, false);
+  assert.deepEqual(handled, [{ n: 1 }]);
+  assert.deepEqual(
+    log.mock.calls.map((call) => call.arguments),
+    [["Upload error:", "handler failed"]],
+  );
+});
+
 test("an empty response does not report a parse error", async (t) => {
   const log = t.mock.method(console, "log", () => {});
   const handled = [];
@@ -162,23 +174,6 @@ test("an empty response does not report a parse error", async (t) => {
   await uploaded;
   assert.deepEqual(handled, []);
   assert.equal(log.mock.calls.length, 0);
-});
-
-test("load does not parse an HTTP error response", async (t) => {
-  const log = t.mock.method(console, "log", () => {});
-  const handled = [];
-  const { uploaded, request, refs } = startUpload((update) =>
-    handled.push(update),
-  );
-  request.responseText = '{"n":1}';
-  request.finish(500);
-  assert.equal(await uploaded, false);
-  assert.deepEqual(handled, []);
-  assert.deepEqual(
-    log.mock.calls.map((call) => call.arguments),
-    [["Upload error:", "HTTP error! status: 500"]],
-  );
-  assert.deepEqual(refs, {});
 });
 
 test("a synchronous listener handles each streamed update once", async () => {
@@ -230,3 +225,41 @@ for (const [kind, fail] of Object.entries(failures)) {
     );
   });
 }
+
+test("an error frame ending the stream fails the upload, not the listener", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request } = startUpload((update) =>
+    handled.push(update.delta.state.n),
+  );
+  request.receive(
+    '{"delta": {"state": {"n": 1}}}\n{"error": "handler failed"}\n',
+    {
+      done: true,
+    },
+  );
+  request.finish();
+  assert.equal(await uploaded, false);
+  assert.deepEqual(handled, [1]);
+  assert.deepEqual(
+    log.mock.calls.map((call) => call.arguments),
+    [["Upload error:", "handler failed"]],
+  );
+});
+
+test("an error response fails the upload by its status, not as a chunk", async (t) => {
+  const log = t.mock.method(console, "log", () => {});
+  const handled = [];
+  const { uploaded, request } = startUpload((update) => handled.push(update));
+  request.receive("The upload handler raised an exception.", {
+    done: true,
+    status: 500,
+  });
+  request.finish();
+  assert.equal(await uploaded, false);
+  assert.deepEqual(handled, []);
+  assert.deepEqual(
+    log.mock.calls.map((call) => call.arguments),
+    [["Upload error:", "HTTP error! status: 500"]],
+  );
+});

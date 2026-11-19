@@ -1488,12 +1488,12 @@ def test_db_commands_run_without_sqlmodel(
     monkeypatch.setattr(
         reflex, "find_spec", lambda name: None if name == "sqlmodel" else object()
     )
-    monkeypatch.setattr(prerequisites, "get_app", lambda: None)
+    monkeypatch.setattr(prerequisites, "get_compiled_app", lambda dry_run: None)
     monkeypatch.setattr(prerequisites, "check_db_initialized", lambda: False)
 
     result = click.testing.CliRunner().invoke(reflex.db_cli, ["migrate"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1, result.output
     assert "pip install reflex[db]" not in caplog.text
 
 
