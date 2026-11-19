@@ -4655,8 +4655,8 @@ async def test_modify_state_emits_only_to_connected_tokens(
 
     A shared state token has no socket: its linked clients get the update
     through the shared state fan-out. A browser token that another client links
-    to still gets the emit, and a browser that disconnected still logs the
-    warning.
+    to, or whose state expired while it stayed connected, still gets the emit,
+    and a browser that disconnected still logs the warning.
 
     Args:
         monkeypatch: Restore root metadata changed by defining a shared state.
@@ -4685,11 +4685,21 @@ async def test_modify_state_emits_only_to_connected_tokens(
     emit_update = event_namespace.emit_update = AsyncMock(
         wraps=event_namespace.emit_update
     )
-    for token in ("client", "target", "gone"):
+    for token in ("client", "target", "expired", "gone"):
         await event_namespace.link_token_to_sid(f"{token}-sid", token)
     await event_namespace._token_manager.disconnect_token("gone", "gone-sid")
 
     async def modify(token: str, count: int | None = None, link: str = "") -> list:
+        """Modify the counter of a token and wait for the shared state fan-out.
+
+        Args:
+            token: The token to modify.
+            count: The count to set, if any.
+            link: The token to link the counter to, if any.
+
+        Returns:
+            The tokens passed to emit_update.
+        """
         emit_update.reset_mock()
         async with app.modify_state(
             BaseStateToken(ident=token, cls=CounterState)
@@ -4702,6 +4712,18 @@ async def test_modify_state_emits_only_to_connected_tokens(
         await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
         return [call.kwargs["token"] for call in emit_update.await_args_list]
 
+    def app_warnings() -> list[str]:
+        """Get the warnings logged by the app.
+
+        Returns:
+            The messages of the reflex.app warning records.
+        """
+        return [
+            record.getMessage()
+            for record in caplog.records
+            if record.name == "reflex.app" and record.levelno == logging.WARNING
+        ]
+
     with caplog.at_level(logging.WARNING, logger="reflex.app"):
         assert await modify("client", link="shared") == ["client"]
         assert await modify("client", count=1) == ["client"]
@@ -4709,18 +4731,19 @@ async def test_modify_state_emits_only_to_connected_tokens(
         assert await modify("shared", count=2) == ["client"]
         # A shared token that no client linked to yet has no socket either.
         assert await modify("unlinked", count=3) == []
-        assert caplog.records == []
+        assert app_warnings() == []
 
         # A browser token that another client links to is still connected.
         await modify("target", count=4)
         await modify("client", link="target")
         assert await modify("target", count=5) == ["target", "client"]
-        assert caplog.records == []
+        # A connected browser whose state expired has lost its session id.
+        state_manager._purge_token(BaseStateToken(ident="expired", cls=State))
+        assert await modify("expired", count=6) == ["expired"]
+        assert app_warnings() == []
 
-        assert await modify("gone", count=6) == ["gone"]
-    assert [record.getMessage() for record in caplog.records] == [
-        "Attempting to send delta to disconnected client 'gone'"
-    ]
+        assert await modify("gone", count=7) == ["gone"]
+    assert app_warnings() == ["Attempting to send delta to disconnected client 'gone'"]
 
 
 def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):

@@ -2370,10 +2370,16 @@ class App(MiddlewareMixin, LifespanMixin):
                         await forked_context.release_lock()
                 delta = await state._get_resolved_delta()
                 state._clean()
-                # Only a token a browser connected with has a socket to emit to.
-                # A shared state token never has one: its linked clients get the
-                # delta through the shared state fan-out.
-                if delta and state.rx_router_session.session_id:
+                # Emit to a token a browser connected with, or that has a socket
+                # (its state may have expired and lost the session id). A shared
+                # state token never has one: its linked clients get the delta
+                # through the shared state fan-out.
+                if delta and (
+                    state.rx_router_session.session_id
+                    or await self.event_namespace._token_manager.is_token_connected(
+                        token.ident
+                    )
+                ):
                     # When the frontend vars are modified emit the delta to the frontend.
                     await self.event_namespace.emit_update(
                         update=StateUpdate(delta=delta),
