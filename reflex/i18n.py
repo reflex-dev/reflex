@@ -29,11 +29,14 @@ try:
         language_switcher,
         locale_url,
         ngettext,
+        normalize_locale,
         number,
         percent,
         pgettext,
+        source_locale,
         t,
         use_locale,
+        validate_locale,
     )
 
     # Accessed as rx.i18n.date / .time / .datetime. Kept out of __all__ (below)
@@ -81,12 +84,15 @@ __all__ = [
     "locale",
     "locale_url",
     "ngettext",
+    "normalize_locale",
     "number",
     "percent",
     "pgettext",
     "set_locale",
+    "source_locale",
     "t",
     "use_locale",
+    "validate_locale",
 ]
 
 # reflex_i18n defers these so importing it does not import

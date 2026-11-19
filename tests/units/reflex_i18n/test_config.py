@@ -7,7 +7,9 @@ from reflex_i18n import I18nConfig
 from reflex_i18n.config import (
     get_active_catalog_dirs,
     get_active_i18n_config,
+    normalize_locale,
     set_active_i18n_config,
+    source_locale,
 )
 
 
@@ -112,5 +114,46 @@ def test_activating_an_uninstalled_catalog_package_fails(package: str):
         )
         # The failed activation leaves the previous config in place.
         assert get_active_i18n_config() is active
+    finally:
+        set_active_i18n_config(None)
+
+
+@pytest.mark.parametrize(
+    ("locale", "expected"),
+    [
+        ("DE", "de"),
+        ("pt-br", "pt-BR"),
+        ("ZH-hant-tw", "zh-Hant-TW"),
+        ("es-419", "es-419"),
+        ("sl-ROZAJ", "sl-rozaj"),
+    ],
+)
+def test_normalize_locale_uses_the_conventional_case(locale: str, expected: str):
+    assert normalize_locale(locale) == expected
+
+
+def test_normalize_locale_prefers_the_configured_spelling():
+    set_active_i18n_config(I18nConfig(locales=["en", "PT-br"]))
+    try:
+        assert normalize_locale("pt-BR") == "PT-br"
+        assert normalize_locale("en-us") == "en-US"
+    finally:
+        set_active_i18n_config(None)
+
+
+def test_normalize_locale_rejects_invalid_tags():
+    with pytest.raises(ValueError) as exc_info:
+        normalize_locale("en_US")
+    assert str(exc_info.value) == (
+        "Invalid locale 'en_US': expected a hyphen-separated language tag such as "
+        "'en', 'pt-BR' or 'zh-Hant'."
+    )
+
+
+def test_source_locale_is_the_default_locale():
+    assert source_locale() == "en"
+    set_active_i18n_config(I18nConfig(locales=["de", "en"], default_locale="de"))
+    try:
+        assert source_locale() == "de"
     finally:
         set_active_i18n_config(None)

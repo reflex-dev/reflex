@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 
 from reflex_base.vars.dep_tracking import register_implicit_dependency
 
-from .config import UNCONFIGURED_LOCALE, check_configured_locale, get_active_i18n_config
+from .config import check_configured_locale, source_locale
 
 if TYPE_CHECKING:
     import datetime
@@ -147,8 +147,7 @@ def _source_translations() -> _SourceTranslations:
     """
     from .catalog import default_plural_expr_js, load_catalog
 
-    config = get_active_i18n_config()
-    locale = config.default_locale if config is not None else UNCONFIGURED_LOCALE
+    locale = source_locale()
     catalog = load_catalog(locale)
     # The expression the client's defaultPlural evaluates, in C syntax.
     plural = _gettext_module.c2py(default_plural_expr_js(catalog, locale))
@@ -313,10 +312,7 @@ def _format_locale() -> str:
         The locale code for server-side formatting.
     """
     locale = _active_locale.get()
-    if locale is not None:
-        return locale
-    config = get_active_i18n_config()
-    return config.default_locale if config is not None else UNCONFIGURED_LOCALE
+    return locale if locale is not None else source_locale()
 
 
 def _babel_locale() -> str:

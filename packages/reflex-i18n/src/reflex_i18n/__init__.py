@@ -8,7 +8,13 @@ content is translated server-side with :func:`gettext` / :func:`ngettext` /
 
 from typing import TYPE_CHECKING, Any
 
-from .config import LOCALE_COOKIE_NAME, I18nConfig
+from .config import (
+    LOCALE_COOKIE_NAME,
+    I18nConfig,
+    normalize_locale,
+    source_locale,
+    validate_locale,
+)
 
 # date/datetime/time use the alias form and are omitted from __all__ so
 # `from reflex_i18n import *` cannot shadow the stdlib names; they remain
@@ -74,12 +80,15 @@ __all__ = [
     "language_switcher",
     "locale_url",
     "ngettext",
+    "normalize_locale",
     "number",
     "percent",
     "pgettext",
     "set_locale",
+    "source_locale",
     "t",
     "use_locale",
+    "validate_locale",
 ]
 
 # Importing ``.state`` registers ``I18nState`` as a substate (a global side

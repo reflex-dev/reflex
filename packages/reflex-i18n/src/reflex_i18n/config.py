@@ -194,6 +194,61 @@ def get_active_i18n_config() -> I18nConfig | None:
     return _active_config
 
 
+def _subtag_case(subtag: str) -> str:
+    """The conventional case of a non-initial subtag (RFC 5646 section 2.1.1).
+
+    Args:
+        subtag: A subtag after the language, e.g. ``"hant"`` or ``"br"``.
+
+    Returns:
+        Title case for a script, upper case for a region, else lower case.
+    """
+    if len(subtag) == 4 and subtag.isalpha():
+        return subtag.title()
+    if (len(subtag) == 2 and subtag.isalpha()) or (
+        len(subtag) == 3 and subtag.isdigit()
+    ):
+        return subtag.upper()
+    return subtag.lower()
+
+
+def normalize_locale(locale: str) -> str:
+    """Spell a language tag canonically.
+
+    A tag naming a configured locale (tags are case-insensitive) takes the
+    configured spelling; any other tag its conventional case.
+
+    Args:
+        locale: The tag to normalize, e.g. ``"PT-br"``.
+
+    Returns:
+        The canonical spelling, e.g. ``"pt-BR"``.
+
+    Raises:
+        ValueError: If the locale is not a hyphen-separated language tag.
+    """
+    validate_locale(locale)
+    lowered = locale.lower()
+    if _active_config is not None:
+        for configured in _active_config.locales:
+            if configured.lower() == lowered:
+                return configured
+    language, *subtags = lowered.split("-")
+    return "-".join([language, *map(_subtag_case, subtags)])
+
+
+def source_locale() -> str:
+    """The language the app's source text is written in.
+
+    Returns:
+        The configured default locale, or ``UNCONFIGURED_LOCALE`` without an
+        I18nPlugin.
+    """
+    if _active_config is None:
+        return UNCONFIGURED_LOCALE
+    return _active_config.default_locale
+
+
 def check_configured_locale(locale: str) -> None:
     """Check that a locale is one of the running app's configured locales.
 
