@@ -537,8 +537,8 @@ def format_queue_events(
 
     The resulting code can be passed to interfaces that expect a callback
     function and when triggered it dispatches the events through `addEvents`.
-    The name resolves via the attached imports in compiled modules and via a
-    local alias in the `applyEvent` eval context.
+    The name resolves via the attached imports in compiled modules and via an
+    explicit environment in the `applyResultCallback` execution context.
 
     Args:
         events: The events to queue.
@@ -671,8 +671,21 @@ def format_state_local(state_cls: type[BaseState]) -> str:
     return local if full_name == state_cls._get_default_full_name() else f"$rx_{local}"
 
 
+# The marker Var.__format__ puts before a Var's expression in an f-string.
+_VAR_MARKER = re.compile(
+    re.escape(constants.REFLEX_VAR_OPENING_TAG)
+    + ".*?"
+    + re.escape(constants.REFLEX_VAR_CLOSING_TAG),
+    flags=re.DOTALL,
+)
+
+
 def format_ref(ref: str) -> str:
     """Format a ref.
+
+    A Var formatted into an f-string leaves a marker holding its hash, which
+    changes from one run to the next; the marker is dropped and the Var's
+    expression after it names the ref, so the name is the same in every build.
 
     Args:
         ref: The ref to format.
@@ -680,6 +693,7 @@ def format_ref(ref: str) -> str:
     Returns:
         The formatted ref.
     """
+    ref = _VAR_MARKER.sub("", ref)
     # Replace all non-word characters with underscores.
     clean_ref = re.sub(r"[^\w]+", "_", ref)
     return f"ref_{clean_ref}"
@@ -805,6 +819,10 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
 def format_array_ref(refs: str, idx: Var | None) -> str:
     """Format a ref accessed by array.
 
+    A Var formatted into an f-string leaves a marker holding its hash; like
+    `format_ref`, the marker is dropped so the name is the same in every
+    build.
+
     Args:
         refs : The ref array to access.
         idx : The index of the ref in the array.
@@ -812,6 +830,7 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     Returns:
         The formatted ref.
     """
+    refs = _VAR_MARKER.sub("", refs)
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
         return f"refs_{clean_ref}[{idx!s}]"

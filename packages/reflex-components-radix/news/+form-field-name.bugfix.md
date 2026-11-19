@@ -1,0 +1,1 @@
+`rx.form.field` and `rx.form.control` tell form compilation that a form control takes the field's `name`, so a control named only by its field no longer triggers the id-based submission deprecation warning or a `TypedDict` form field mismatch.

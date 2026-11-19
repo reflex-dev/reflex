@@ -86,8 +86,8 @@ cli-command = "uvx reflex-release@0.1.0"
 # this tool pins, so upgrading reflex-release moves them too — and `sync
 # --check` reports that as drift until you regenerate. Set either one to keep
 # your own cadence, or to "" to install whatever setup-uv defaults to.
-uv-version = "0.12.5"
-python-version = "3.14.7"
+uv-version = "0.13.6"
+python-version = "3.14.10"
 
 # Whether the release may be approved by the person who triggered it. True (the
 # default) keeps GitHub's own behavior: the environment's reviewer list decides
@@ -112,6 +112,11 @@ packages-dir = "packages"
 # Sub-package subdirectories that hold publishable source. A sub-package with
 # none of them counts its whole directory (minus news/ and CHANGELOG.md).
 package-source-subdirs = ["src"]
+
+# Directories outside a package that it also ships, such as assets its build
+# embeds. A change under one counts as a change to that package, so it needs a
+# news fragment there. Default: none.
+extra-source-dirs = { widget-core = ["packages/widget-js/src"] }
 
 # Changelog dates and prerelease branch names are stamped in this timezone, so
 # an evening release is not dated tomorrow by a UTC runner. Default: "UTC".
@@ -326,6 +331,7 @@ filename = "CHANGELOG.md"
 title_format = "## {version} ({project_date})"
 issue_format = "[#{issue}](https://github.com/OWNER/REPO/issues/{issue})"
 start_string = "<!-- towncrier release notes start -->\n"
+template = "reflex_release:changelog.md"
 
 [[tool.towncrier.type]]
 directory = "breaking"
@@ -334,6 +340,11 @@ showcontent = true
 
 # ... deprecation, feature, bugfix, performance, docs, misc
 ```
+
+`template` is towncrier's default Markdown template with one change: an entry
+that ends in a fenced code block gets its issue links after the prose, above
+the block, or in a paragraph after the block when there is no prose to carry
+them, where the default template would append them to the closing fence.
 
 Version headings are written as `## v1.2.3 (2026-01-01)`. A custom
 `title_format` is honored, including when prerelease sections are collapsed —
