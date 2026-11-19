@@ -20,11 +20,12 @@ import pytest
 from opentelemetry import trace
 from reflex_base import constants, otel
 from reflex_base.config import get_config
+from reflex_base.constants import Templates
 from reflex_base.registry import RegistrationContext
 from starlette.routing import WebSocketRoute
 
 from reflex import event_namespace
-from reflex.app import App
+from reflex.app import App, _SocketOriginCheck
 from reflex.channels import (
     MAX_MESSAGE_BUFFERS,
     RESERVED_EVENTS,
@@ -58,9 +59,7 @@ _DISCONNECT = object()
 # A connect frame without a boot event.
 CONNECT_FRAME = [CONNECT_MESSAGE]
 
-WEB_TEMPLATE_ROOT = (
-    Path(__file__).parents[2] / "packages/reflex-base/src/reflex_base/.templates/web"
-)
+WEB_TEMPLATE_ROOT = Templates.Dirs.WEB_TEMPLATE
 WEBSOCKET_JS_TEMPLATE = WEB_TEMPLATE_ROOT / "utils/helpers/websocket.js"
 
 
@@ -728,34 +727,53 @@ async def test_binary_frame_closes_connection(namespace: WebsocketEventNamespace
     assert websocket.close_code == 1003
 
 
+@pytest.fixture
+def origin_checked_namespace(namespace_app: Mock) -> WebsocketEventNamespace:
+    """A namespace that accepts only https://allowed.example.
+
+    Returns:
+        The namespace.
+    """
+    return WebsocketEventNamespace(
+        "/_event",
+        namespace_app,
+        origin_check=_SocketOriginCheck(
+            ("https://allowed.example",), same_origin=False, trusted_proxy_hops=0
+        ),
+    )
+
+
 @pytest.mark.asyncio
 async def test_disallowed_origin_is_rejected(
-    namespace: WebsocketEventNamespace, mocker
+    origin_checked_namespace: WebsocketEventNamespace,
 ):
     """A cross-origin connection is closed before being accepted."""
-    from reflex_base.config import get_config
-
-    mocker.patch.object(
-        get_config(), "cors_allowed_origins", ("https://allowed.example",)
-    )
     websocket = FakeWebSocket(origin="https://evil.example")
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await origin_checked_namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
 
     assert not websocket.accepted
     assert websocket.close_code == 1008
 
 
 @pytest.mark.asyncio
-async def test_allowed_origin_is_accepted(namespace: WebsocketEventNamespace, mocker):
+async def test_allowed_origin_is_accepted(
+    origin_checked_namespace: WebsocketEventNamespace,
+):
     """A connection from an allowed origin is accepted."""
-    from reflex_base.config import get_config
-
-    mocker.patch.object(
-        get_config(), "cors_allowed_origins", ("https://allowed.example",)
-    )
     websocket = await serve(
-        namespace, websocket=FakeWebSocket(origin="https://allowed.example")
+        origin_checked_namespace,
+        websocket=FakeWebSocket(origin="https://allowed.example"),
     )
+
+    assert websocket.accepted
+
+
+@pytest.mark.asyncio
+async def test_client_without_an_origin_is_accepted(
+    origin_checked_namespace: WebsocketEventNamespace,
+):
+    """A non-browser client sends no Origin, which no origin policy refuses."""
+    websocket = await serve(origin_checked_namespace, websocket=FakeWebSocket())
 
     assert websocket.accepted
 
@@ -823,6 +841,7 @@ async def test_websocket_event_uses_frontend_traceparent(
     async def enqueue(token, event):
         await asyncio.sleep(0)
         seen.append(trace.get_current_span().get_span_context())
+        return Mock()
 
     namespace_app.event_processor.enqueue = enqueue
     traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"

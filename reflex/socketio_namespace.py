@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import urllib.parse
 from collections.abc import Awaitable, MutableMapping
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
@@ -11,6 +12,7 @@ from reflex_base import otel
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
+from starlette.datastructures import Headers
 
 from reflex.event_namespace import (
     _CLIENT_ERROR,
@@ -25,9 +27,10 @@ from reflex.event_namespace import (
 if TYPE_CHECKING:
     import asyncio
 
+    from engineio import AsyncServer as AsyncEngineIOServer
     from reflex_base.config import Config
 
-    from reflex.app import App
+    from reflex.app import App, _SocketOriginCheck
 
 
 def _sio_dumps(obj: Any, **kwargs: Any) -> str:
@@ -280,7 +283,61 @@ class _HeaderMiddleware:
         return await self.app(scope, receive, modified_send)
 
 
-def create_socketio_app(app: App, config: Config) -> ASGIApp:
+class _DrainOversizedBodyMiddleware:
+    """Drain an oversized polling POST, answer 400, and close its session.
+
+    engine.io rejects a POST over ``max_http_buffer_size`` without reading its
+    body, which strands the browser mid-send, and holds the 400 until a poll
+    takes the session's CLOSE packet. This middleware reads the body first,
+    answers itself, and closes the session without waiting for a poll.
+    """
+
+    def __init__(self, app: ASGIApp, eio: AsyncEngineIOServer) -> None:
+        """Wrap the socket app.
+
+        Args:
+            app: The socket ASGI app.
+            eio: The engine.io server whose buffer limit and sessions apply.
+        """
+        self.app = app
+        self.eio = eio
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Drain and reject an oversized POST; pass other requests through.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        if (
+            scope["type"] != "http"
+            or scope["method"] != "POST"
+            or int(Headers(scope=scope).get("content-length", 0))
+            <= self.eio.max_http_buffer_size
+        ):
+            await self.app(scope, receive, send)
+            return
+        while (await receive()).get("more_body"):
+            pass
+        await send({
+            "type": "http.response.start",
+            "status": 400,
+            "headers": [(b"content-type", b"text/plain")],
+        })
+        await send({"type": "http.response.body", "body": b'"Bad Request"'})
+        sid = urllib.parse.parse_qs(scope["query_string"].decode("latin-1")).get(
+            "sid", [""]
+        )[0]
+        if socket := self.eio.sockets.get(sid):
+            await socket.close(wait=False)
+
+
+def create_socketio_app(
+    app: App,
+    config: Config,
+    cors_allowed_origins: list[str] | _SocketOriginCheck,
+) -> ASGIApp:
     """Create the Socket.IO server for an app and return its ASGI app.
 
     Creates ``app.sio`` if the user did not supply their own server.
@@ -288,6 +345,7 @@ def create_socketio_app(app: App, config: Config) -> ASGIApp:
     Args:
         app: The Reflex app.
         config: The app configuration.
+        cors_allowed_origins: The origins that may open the event websocket.
 
     Returns:
         The ASGI app serving the Socket.IO server.
@@ -302,7 +360,7 @@ def create_socketio_app(app: App, config: Config) -> ASGIApp:
             async_mode="asgi",
             # An empty list disables CORS handling; engineio reads "*" among
             # the origins as allowing any.
-            cors_allowed_origins=[] if polling else list(config.cors_allowed_origins),
+            cors_allowed_origins=[] if polling else cors_allowed_origins,
             cors_credentials=not polling,
             max_http_buffer_size=policy.max_message_size,
             ping_interval=policy.ping_interval,
@@ -320,4 +378,7 @@ def create_socketio_app(app: App, config: Config) -> ASGIApp:
         raise RuntimeError(msg)
 
     # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-    return _HeaderMiddleware(EngineIOApp(app.sio, socketio_path=""))
+    socket_app = EngineIOApp(app.sio, socketio_path="")
+    # Drain oversized polling POST bodies before engine.io rejects them, so
+    # the 400 response does not strand a half-sent request on the client.
+    return _HeaderMiddleware(_DrainOversizedBodyMiddleware(socket_app, app.sio.eio))

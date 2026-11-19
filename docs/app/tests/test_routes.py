@@ -585,3 +585,20 @@ def test_library_route_titles(routes_fixture, path, expected):
     """Published library pages carry the final title search engines see."""
     titles = {route.path: route.seo_title or route.title for route in routes_fixture}
     assert titles[path] == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/api-reference/app/", "rx.App API Reference · Reflex Docs"),
+        ("/api-reference/state/", "rx.State API Reference · Reflex Docs"),
+        ("/api-reference/var/", "rx.Var API Reference · Reflex Docs"),
+        ("/api-reference/eventhandler/", "rx.EventHandler API Reference · Reflex Docs"),
+        ("/api-reference/eventspec/", "rx.event.EventSpec API Reference · Reflex Docs"),
+        ("/api-reference/statemanager/", "StateManager API Reference · Reflex Docs"),
+    ],
+)
+def test_api_reference_route_titles(routes_fixture, path, expected):
+    """API reference titles lead with the public name users type into search."""
+    titles = {route.path: route.seo_title or route.title for route in routes_fixture}
+    assert titles[path] == expected

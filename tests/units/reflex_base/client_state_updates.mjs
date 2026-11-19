@@ -8,6 +8,7 @@ const source = fs.readFileSync(process.argv[2], "utf8");
 // sessionStorage key shared with the auto reload on frontend errors.
 const LAST_RELOADED_KEY = "reflex_last_reloaded_on_error";
 const BANNER_ID = "reflex-new-version-banner";
+const MISMATCH_EVENT = "reflex:state-mismatch";
 const FRONTEND_SCHEMA = "frontend-schema";
 
 /** A DOM element stub: enough for the banner the runtime builds. */
@@ -38,6 +39,7 @@ async function createConnection(
   const saved = new Map();
   const reloads = [];
   const session = new Map([["token", "test-token"]]);
+  const windowEvents = new EventTarget();
   if (lastReload !== undefined) {
     session.set(LAST_RELOADED_KEY, String(lastReload));
   }
@@ -46,6 +48,7 @@ async function createConnection(
     setItem: (key, value) => session.set(key, String(value)),
   };
   const body = element("body");
+  let authPayload;
   const socket = {
     connected: true,
     io: {
@@ -56,6 +59,13 @@ async function createConnection(
     on: (name, handler) => handlers.set(name, handler),
     emit: (name, value) => sent.push({ name, value }),
     connect: () => {
+      if (typeof socket.auth === "function") {
+        socket.auth((auth) => {
+          authPayload = auth;
+        });
+      } else {
+        authPayload = socket.auth;
+      }
       socket.connected = true;
       handlers.get("connect")();
     },
@@ -81,6 +91,7 @@ async function createConnection(
           sessionStorage,
           addEventListener() {},
           removeEventListener() {},
+          dispatchEvent: (event) => windowEvents.dispatchEvent(event),
         },
         document: {
           body,
@@ -133,6 +144,8 @@ async function createConnection(
     reloads,
     session,
     socket,
+    authPayload: () => authPayload,
+    readAuth: () => socket.auth((auth) => (authPayload = auth)),
     reports: () => sent.filter((event) => event.name === "client_error"),
     receive: (update) => handlers.get("event")(update),
     reconnect: () => handlers.get("connect")(),
@@ -141,6 +154,7 @@ async function createConnection(
       socket.connected = false;
       socketRef.current.reconnect();
     },
+    windowEvents,
     banner: () => body.children.find((node) => node.id === BANNER_ID),
     mismatch: (cooldown = 10000) =>
       handlers.get("state_mismatch")({
@@ -156,13 +170,15 @@ async function createConnection(
  * Register a test once per transport.
  * @param name The test name.
  * @param fn The test body, given a `connect` that opens a connection over the
- *   transport.
+ *   transport, and the test context.
  */
 const transportTest = (name, fn) => {
   for (const socketio of [false, true]) {
     test(`${name} (${socketio ? "socket.io" : "websocket"})`, (t) =>
-      fn((dispatch, options) =>
-        createConnection(t, dispatch, { ...options, socketio }),
+      fn(
+        (dispatch, options) =>
+          createConnection(t, dispatch, { ...options, socketio }),
+        t,
       ));
   }
 };
@@ -207,14 +223,15 @@ transportTest(
   "the state schema rides in the connect auth on connect and reconnect",
   async (connect) => {
     const c = await connect();
-    assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
-    assert.equal(c.socket.auth.event.name, "test.hydrate");
-    assert.deepEqual(c.socket.auth.event.payload.hashes, []);
+    c.readAuth();
+    assert.equal(c.authPayload().state_schema, FRONTEND_SCHEMA);
+    assert.equal(c.authPayload().event.name, "test.hydrate");
+    assert.deepEqual(c.authPayload().event.payload.hashes, []);
 
     c.reconnectSocket();
     assert.equal(c.socket.connected, true);
-    assert.equal(c.socket.auth.state_schema, FRONTEND_SCHEMA);
-    assert.equal(c.socket.auth.event.payload.hashes, undefined);
+    assert.equal(c.authPayload().state_schema, FRONTEND_SCHEMA);
+    assert.equal(c.authPayload().event.payload.hashes, undefined);
   },
 );
 
@@ -236,7 +253,8 @@ transportTest(
     assert.ok(banner);
     assert.equal(banner.attributes.role, "alert");
     assert.match(banner.children[0], /new version/i);
-    assert.equal(c.warn.mock.callCount(), 2);
+    // Every mismatch warns once, the one that reloaded included.
+    assert.equal(c.warn.mock.callCount(), 3);
     const button = banner.children.find((node) => node.tag === "button");
     assert.equal(button.textContent, "Reload");
 
@@ -277,12 +295,67 @@ transportTest(
   },
 );
 
-transportTest("a mismatch in dev only warns", async (connect) => {
+transportTest(
+  "a mismatch in prod dispatches a cancelable window event first",
+  async (connect) => {
+    const c = await connect();
+    const seen = [];
+    c.windowEvents.addEventListener(MISMATCH_EVENT, (event) =>
+      seen.push({
+        cancelable: event.cancelable,
+        detail: event.detail,
+        reloads: c.reloads.length,
+      }),
+    );
+    c.mismatch();
+    assert.deepEqual(seen, [
+      {
+        cancelable: true,
+        detail: { frontend: FRONTEND_SCHEMA, backend: "backend-schema" },
+        reloads: 0,
+      },
+    ]);
+    // A listener that does not cancel it leaves the default action in place.
+    assert.equal(c.reloads.length, 1);
+  },
+);
+
+transportTest(
+  "canceling the window event skips the reload and the banner",
+  async (connect) => {
+    // Without a recent reload the default would reload, with one show the banner.
+    for (const lastReload of [undefined, Date.now() - 1000]) {
+      const c = await connect({}, { lastReload });
+      c.windowEvents.addEventListener(MISMATCH_EVENT, (event) =>
+        event.preventDefault(),
+      );
+      c.mismatch();
+      c.mismatch();
+      assert.equal(c.reloads.length, 0);
+      assert.equal(c.banner(), undefined);
+      assert.equal(c.session.get(LAST_RELOADED_KEY), lastReload?.toString());
+      // The console still names both hashes when the app handles the mismatch.
+      assert.equal(c.warn.mock.callCount(), 2);
+      assert.match(
+        c.warn.mock.calls[0].arguments[0],
+        /frontend-schema.*backend-schema/,
+      );
+
+      await c.enqueue([{ name: "test.event", payload: { id: 1 } }]);
+      assert.deepEqual(c.sent.at(-1).value.payload, { id: 1 });
+    }
+  },
+);
+
+transportTest("a mismatch in dev only warns", async (connect, t) => {
   const c = await connect({}, { isDevMode: true });
+  const listener = t.mock.fn();
+  c.windowEvents.addEventListener(MISMATCH_EVENT, listener);
   c.mismatch();
   c.mismatch();
   assert.equal(c.warn.mock.callCount(), 2);
   assert.match(c.warn.mock.calls[0].arguments[0], /backend-schema/);
+  assert.equal(listener.mock.callCount(), 0);
   assert.equal(c.reloads.length, 0);
   assert.equal(c.banner(), undefined);
   assert.equal(c.session.has(LAST_RELOADED_KEY), false);

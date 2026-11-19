@@ -2,13 +2,28 @@
 
 import asyncio
 import logging
-from typing import Any
+import re
+from collections.abc import AsyncGenerator
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import pytest_asyncio
+from pytest_mock import MockerFixture
 from reflex_base import constants, otel
+from reflex_base.registry import RegistrationContext
+from reflex_base.utils import format
+from socketio import ASGIApp as EngineIOApp
+from socketio import AsyncServer
 
-from reflex.socketio_namespace import EventNamespace, _sio_dumps, _sio_loads
+import reflex as rx
+from reflex.app import App
+from reflex.socketio_namespace import (
+    EventNamespace,
+    _DrainOversizedBodyMiddleware,
+    _sio_dumps,
+    _sio_loads,
+)
 
 from .conftest import metric_points
 
@@ -819,3 +834,410 @@ async def test_on_event_builds_router_data_without_connect(
         assert (
             event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
         )
+
+
+@pytest_asyncio.fixture
+async def app_namespace() -> AsyncGenerator[EventNamespace, None]:
+    """A namespace serving a real app whose event processor is mocked.
+
+    Yields:
+        The namespace.
+    """
+    app = App()
+    app._event_processor = Mock(enqueue=AsyncMock())
+    namespace = EventNamespace("/event", app)
+    yield namespace
+    # The token manager is backed by redis when one is configured; drop the
+    # tokens these tests link so they do not show up in another test's
+    # enumeration of the shared instance.
+    await namespace._token_manager.disconnect_all()
+
+
+def _dropped_result_warning(label: str) -> str:
+    """The full warning for a frontend event whose return value is dropped.
+
+    Args:
+        label: How the warning names the handler.
+
+    Returns:
+        The expected warning message.
+    """
+    return (
+        f"Event handler {label} returned a value, but it was triggered from the "
+        "frontend, so the value is dropped: only backend code that awaits the "
+        "handler receives its return value. Return None or events to chain from "
+        "a handler used as an event trigger."
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("outcome", "warns"),
+    [
+        (42, True),
+        ({"rows": []}, True),
+        (None, False),
+        ([], False),
+        ("raise", False),
+        ("cancel", False),
+    ],
+)
+async def test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped(
+    token: str,
+    clean_registration_context: RegistrationContext,
+    app_namespace: EventNamespace,
+    mocker: MockerFixture,
+    outcome: Any,
+    warns: bool,
+):
+    """A value returned by a handler the frontend triggered warns, once per handler.
+
+    Only backend code awaiting a handler receives its return value. ``[]`` is
+    how a handler said "no events" before return values were results, so it
+    does not warn.
+
+    Args:
+        token: A token.
+        clean_registration_context: Keeps the test's state out of the shared
+            registration context; the app below is created inside it.
+        app_namespace: The event namespace fixture.
+        mocker: pytest-mock fixture.
+        outcome: What the event's future resolves to, or how it ends.
+        warns: Whether the dropped value is warned about.
+    """
+
+    class DroppedResultState(rx.State):
+        @rx.event
+        def handler(self):
+            pass
+
+    namespace = app_namespace
+    assert namespace.app._registration_context is clean_registration_context
+    await namespace._token_manager.link_token_to_sid(token, "sid1")
+    namespace.app.sio = Mock(get_environ=Mock(return_value=_connect_environ(token)))
+    warn = mocker.patch("reflex.event_namespace.logger.warning")
+    loop = asyncio.get_running_loop()
+    futures = [loop.create_future(), loop.create_future()]
+    enqueue_mock = cast(AsyncMock, namespace.app.event_processor.enqueue)
+    enqueue_mock.side_effect = futures
+    payload = {
+        **_client_event(),
+        "name": format.format_event_handler(
+            DroppedResultState.event_handlers["handler"]
+        ),
+    }
+    for future in futures:
+        await namespace.on_event("sid1", payload)
+        if outcome == "raise":
+            future.set_exception(ValueError("handler failed"))
+        elif outcome == "cancel":
+            future.cancel()
+        else:
+            future.set_result(outcome)
+    await asyncio.sleep(0)
+
+    if not warns:
+        warn.assert_not_called()
+        return
+    warn.assert_called_once_with(
+        _dropped_result_warning(
+            "test_on_event_warns_once_in_dev_when_a_frontend_result_is_dropped"
+            ".<locals>.DroppedResultState.handler"
+        )
+    )
+
+
+@pytest.mark.asyncio
+async def test_on_event_does_not_watch_frontend_results_in_prod(
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """In prod, a frontend event's future gets no callback: the check is dev only.
+
+    Args:
+        token: A token.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    app = App()
+    future = Mock()
+    app._event_processor = Mock(enqueue=AsyncMock(return_value=future))
+    namespace = EventNamespace("/event", app)
+    try:
+        await namespace._token_manager.link_token_to_sid(token, "sid1")
+        namespace.app.sio = Mock(get_environ=Mock(return_value=_connect_environ(token)))
+        await namespace.on_event("sid1", _client_event())
+    finally:
+        await namespace._token_manager.disconnect_all()
+    cast(AsyncMock, app.event_processor.enqueue).assert_awaited_once()
+    future.add_done_callback.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_dropped_result_warning_names_an_unregistered_event(  # noqa: RUF029
+    app_namespace: EventNamespace,
+    mocker: MockerFixture,
+):
+    """An event missing from the app's registry is named by its event name.
+
+    Args:
+        app_namespace: The event namespace fixture.
+        mocker: pytest-mock fixture.
+    """
+    warn = mocker.patch("reflex.event_namespace.logger.warning")
+    future = asyncio.get_running_loop().create_future()
+    future.set_result(42)
+    app_namespace._warn_dropped_result("unregistered_state.handler", future)
+    warn.assert_called_once_with(_dropped_result_warning("unregistered_state.handler"))
+
+
+def _polling_engine_app(max_size: int):
+    """Build the socket ASGI app the way ``App._setup_state`` mounts it.
+
+    Args:
+        max_size: Value for engine.io's ``max_http_buffer_size``.
+
+    Returns:
+        A (socket.io ASGI app, engine.io server) pair for a fresh engine.io
+        server.
+    """
+    sio = AsyncServer(
+        async_mode="asgi",
+        max_http_buffer_size=max_size,
+        async_handlers=False,
+    )
+    return EngineIOApp(sio, socketio_path=""), sio.eio
+
+
+async def _asgi_http_call(
+    app,
+    method: str,
+    query_string: str,
+    body: bytes = b"",
+    chunk_size: int = 65536,
+    path: str = "/",
+):
+    """Drive one HTTP request through an ASGI app with a chunked body.
+
+    Args:
+        app: The ASGI app to call.
+        method: The HTTP method.
+        query_string: The raw query string.
+        body: The request body.
+        chunk_size: Size of each http.request message body chunk.
+        path: The request path.
+
+    Returns:
+        A tuple of (status, response body, request bytes consumed from receive).
+    """
+    chunks = [body[i : i + chunk_size] for i in range(0, len(body), chunk_size)] or [
+        b""
+    ]
+    sent = []
+    consumed = 0
+    index = 0
+
+    async def receive():  # noqa: RUF029
+        """Yield the request body one chunk at a time, then disconnect.
+
+        Returns:
+            http.request messages for each chunk, then http.disconnect.
+        """
+        nonlocal consumed, index
+        if index < len(chunks):
+            chunk = chunks[index]
+            index += 1
+            consumed += len(chunk)
+            return {
+                "type": "http.request",
+                "body": chunk,
+                "more_body": index < len(chunks),
+            }
+        return {"type": "http.disconnect"}
+
+    async def send(message):  # noqa: RUF029
+        """Record an outgoing ASGI message.
+
+        Args:
+            message: The ASGI message sent by the app.
+        """
+        sent.append(message)
+
+    headers = []
+    if method == "POST":
+        headers.append((b"content-length", str(len(body)).encode()))
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": method,
+        "scheme": "http",
+        "path": path,
+        "raw_path": path.encode(),
+        "query_string": query_string.encode("latin-1"),
+        "root_path": "",
+        "headers": headers,
+        "client": ("127.0.0.1", 12345),
+        "server": ("127.0.0.1", 8000),
+    }
+    await app(scope, receive, send)
+    status = next(m["status"] for m in sent if m["type"] == "http.response.start")
+    response_body = b"".join(
+        m.get("body", b"") for m in sent if m["type"] == "http.response.body"
+    )
+    return status, response_body, consumed
+
+
+async def _polling_handshake(app, path: str = "/") -> str:
+    """Open an engine.io polling session.
+
+    Args:
+        app: The ASGI app serving engine.io.
+        path: The request path.
+
+    Returns:
+        The query string that addresses the new session.
+    """
+    status, response_body, _ = await _asgi_http_call(
+        app, "GET", "EIO=4&transport=polling", path=path
+    )
+    assert status == 200
+    sid = re.search(r'"sid":"([^"]+)"', response_body.decode())
+    assert sid is not None
+    return f"EIO=4&transport=polling&sid={sid.group(1)}"
+
+
+async def _oversized_post(app, query_string: str, path: str = "/"):
+    """POST a 1000-byte body in 100-byte chunks, failing after 10 seconds.
+
+    Args:
+        app: The ASGI app serving engine.io.
+        query_string: The query string that addresses the session.
+        path: The request path.
+
+    Returns:
+        A tuple of (status, response body, request bytes consumed from receive).
+    """
+    return await asyncio.wait_for(
+        _asgi_http_call(
+            app, "POST", query_string, b"x" * 1000, chunk_size=100, path=path
+        ),
+        timeout=10,
+    )
+
+
+async def test_engineio_rejects_oversized_polling_post_without_draining_body():
+    """Document the engine.io behavior _DrainOversizedBodyMiddleware works around.
+
+    engine.io rejects a polling POST larger than max_http_buffer_size with 400
+    without reading the request body, stranding the client mid-send.
+    """
+    app, _ = _polling_engine_app(max_size=100)
+    query = await _polling_handshake(app)
+
+    # Park a poll so engine.io can deliver its CLOSE packet and answer the POST.
+    poll_task = asyncio.create_task(_asgi_http_call(app, "GET", query))
+    await asyncio.sleep(0.1)
+
+    status, _, consumed = await _oversized_post(app, query)
+    poll_status, _, _ = await asyncio.wait_for(poll_task, timeout=5)
+    assert status == 400
+    assert poll_status == 200
+    assert consumed < 1000
+
+
+async def test_drain_oversized_body_middleware_drains_and_rejects_oversized_post():
+    """Oversized polling POST bodies are drained so the client can finish sending."""
+    socket_app, eio = _polling_engine_app(max_size=100)
+    app = _DrainOversizedBodyMiddleware(socket_app, eio)
+    query = await _polling_handshake(app)
+
+    # A parked poll still receives the CLOSE packet of the rejected session.
+    poll_task = asyncio.create_task(_asgi_http_call(app, "GET", query))
+    await asyncio.sleep(0.1)
+
+    status, _, consumed = await _oversized_post(app, query)
+    poll_status, _, _ = await asyncio.wait_for(poll_task, timeout=5)
+    assert status == 400
+    assert poll_status == 200
+    assert consumed == 1000
+
+    # The reconnect handshake is served normally after the rejected POST.
+    await _polling_handshake(app)
+
+
+async def test_drain_oversized_body_middleware_answers_post_without_parked_poll():
+    """The oversized POST is answered even when no poll is in flight.
+
+    The rejection must not wait for a poll to consume the session CLOSE packet.
+    """
+    socket_app, eio = _polling_engine_app(max_size=100)
+    app = _DrainOversizedBodyMiddleware(socket_app, eio)
+    query = await _polling_handshake(app)
+
+    status, response_body, consumed = await _oversized_post(app, query)
+    assert status == 400
+    assert response_body == b'"Bad Request"'
+    assert consumed == 1000
+
+    # A later poll learns the session is gone instead of the POST hanging.
+    poll_status, _, _ = await asyncio.wait_for(
+        _asgi_http_call(app, "GET", query), timeout=5
+    )
+    assert poll_status == 400
+
+
+async def test_drain_oversized_body_middleware_closes_session_for_non_utf8_query():
+    """A query string that is not UTF-8 still closes the rejected session."""
+    socket_app, eio = _polling_engine_app(max_size=100)
+    app = _DrainOversizedBodyMiddleware(socket_app, eio)
+    query = await _polling_handshake(app)
+
+    status, _, _ = await _oversized_post(app, f"{query}&x=\xff")
+    assert status == 400
+    assert eio.sockets[query.rpartition("=")[2]].closed
+
+
+async def test_app_event_endpoint_drains_oversized_polling_post(
+    monkeypatch: pytest.MonkeyPatch, forked_registration_context: RegistrationContext
+):
+    """The App's event endpoint drains and answers an oversized polling POST."""
+    monkeypatch.setenv("REFLEX_TRANSPORT", "polling")
+    app = App(
+        enable_state=False,
+        sio=AsyncServer(async_mode="asgi", max_http_buffer_size=100),
+    )
+    app._enable_state()
+    assert app._api is not None
+    path = f"{constants.Endpoint.EVENT}/"
+    query = await _polling_handshake(app._api, path)
+
+    status, _, consumed = await _oversized_post(app._api, query, path)
+    assert status == 400
+    assert consumed == 1000
+
+
+async def test_drain_oversized_body_middleware_passes_regular_requests_through():
+    """Requests within the size limit reach the downstream app untouched."""
+    received = []
+
+    async def echo_app(scope, receive, send):
+        """Echo app that records the first request body and replies 200.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive callable.
+            send: The ASGI send callable.
+        """
+        received.append(await receive())
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"ok"})
+
+    app = _DrainOversizedBodyMiddleware(echo_app, _polling_engine_app(100)[1])
+    status, response_body, _ = await _asgi_http_call(app, "POST", "", b"hello")
+    assert status == 200
+    assert response_body == b"ok"
+    assert received[0]["body"] == b"hello"
+
+    status, _, _ = await _asgi_http_call(app, "GET", "", b"")
+    assert status == 200

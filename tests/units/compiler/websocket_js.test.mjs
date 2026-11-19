@@ -4,7 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 const helpers = new URL(
-  "../../../packages/reflex-base/src/reflex_base/.templates/web/utils/helpers/",
+  "../../../packages/reflex-frontend/src/utils/helpers/",
   import.meta.url,
 );
 const source = await readFile(new URL("websocket.js", helpers), "utf8");

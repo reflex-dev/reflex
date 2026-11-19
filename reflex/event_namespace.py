@@ -6,6 +6,7 @@ import asyncio
 import collections
 import contextlib
 import dataclasses
+import functools
 import json
 import logging
 import time
@@ -20,6 +21,7 @@ from reflex_base import constants, otel
 from reflex_base.config import get_config
 from reflex_base.environment import auto_reload_cooldown, environment
 from reflex_base.event import _EVENT_FIELDS, Event
+from reflex_base.utils.types import is_non_string_sequence
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from typing_extensions import Buffer
 
@@ -28,10 +30,11 @@ from reflex.istate.data import SessionData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import StateUpdate
 from reflex.utils import exceptions, format
+from reflex.utils.exec import is_prod_mode
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 if TYPE_CHECKING:
-    from reflex.app import App
+    from reflex.app import App, _SocketOriginCheck
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +124,36 @@ def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, st
     return decoded
 
 
+def _trusted_forwarded_value(
+    value: str, trusted_proxy_hops: int, *, appended: bool = True
+) -> str | None:
+    """Pick the entry a trusted proxy chain wrote into a comma-separated header.
+
+    A proxy that appends what it received makes the entry ``trusted_proxy_hops``
+    from the right the outermost trusted proxy's, and any entry left of it the
+    client's. Proxies set ``X-Forwarded-Host`` and ``X-Forwarded-Proto`` rather
+    than append to them, so for those a chain shorter than
+    ``trusted_proxy_hops`` holds only entries trusted proxies wrote, and its
+    leftmost entry is the outermost one.
+
+    Args:
+        value: The header value, e.g. of ``X-Forwarded-For``.
+        trusted_proxy_hops: The number of trusted reverse proxies; 0 trusts none.
+        appended: Whether every trusted proxy appends an entry, as for
+            ``X-Forwarded-For``.
+
+    Returns:
+        The trusted entry, or None when no proxy is trusted, the header is
+        empty, or an appended chain is shorter than ``trusted_proxy_hops``.
+    """
+    if not trusted_proxy_hops:
+        return None
+    entries = [entry.strip() for entry in value.split(",") if entry.strip()]
+    if len(entries) >= trusted_proxy_hops:
+        return entries[-trusted_proxy_hops]
+    return None if appended or not entries else entries[0]
+
+
 def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[str, Any]:
     """Build the router_data entries that are constant for a connection.
 
@@ -142,12 +175,11 @@ def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[st
 
     # X-Forwarded-For is client-controlled unless the request arrived through
     # a configured chain of trusted reverse proxies.
-    trusted_proxy_hops = get_config().trusted_proxy_hops
-    if trusted_proxy_hops:
-        forwarded_for = headers.get("x-forwarded-for", "")
-        forwarded_ips = [ip.strip() for ip in forwarded_for.split(",") if ip.strip()]
-        if len(forwarded_ips) >= trusted_proxy_hops:
-            client_ip = forwarded_ips[-trusted_proxy_hops]
+    forwarded_ip = _trusted_forwarded_value(
+        headers.get("x-forwarded-for", ""), get_config().trusted_proxy_hops
+    )
+    if forwarded_ip is not None:
+        client_ip = forwarded_ip
     return {
         constants.RouteVar.SESSION_ID: sid,
         constants.RouteVar.HEADERS: headers,
@@ -597,6 +629,12 @@ class BaseEventNamespace(ABC):
         self._client_error_budget = self._error_budget("client_error reports")
         self._handler_error_budget = self._error_budget("handler errors")
 
+        # In dev, warn about values that handlers triggered from the frontend
+        # return, which nothing receives. Read once: handle_event is the hot path.
+        self._warn_dropped_results = not is_prod_mode()
+        # The handlers already warned about, so each warns once.
+        self._warned_dropped_results: set[str] = set()
+
     @classmethod
     def _error_budget(cls, label: str) -> _ErrorBudget:
         """Build a budget for one kind of client-triggered error logging.
@@ -925,10 +963,43 @@ class BaseEventNamespace(ABC):
             msg = "Failed to normalize event router_data."
             raise exceptions.EventDeserializationError(msg) from ex
         if not otel.enabled:
-            await self.app.event_processor.enqueue(token, event)
+            future = await self.app.event_processor.enqueue(token, event)
+        else:
+            with otel.remote_context(data):
+                future = await self.app.event_processor.enqueue(token, event)
+        if self._warn_dropped_results:
+            future.add_done_callback(
+                functools.partial(self._warn_dropped_result, event.name)
+            )
+
+    def _warn_dropped_result(self, name: str, future: asyncio.Future) -> None:
+        """Warn once per handler that a frontend event's return value is dropped.
+
+        The frontend event discards its future, so only backend code awaiting
+        the handler receives what it returns.
+
+        Args:
+            name: The name of the event the frontend sent.
+            future: The event's future, done.
+        """
+        if future.cancelled() or future.exception() is not None:
             return
-        with otel.remote_context(data):
-            await self.app.event_processor.enqueue(token, event)
+        result = future.result()
+        # An empty list is how a handler said "no events" before return
+        # values were results.
+        if result is None or (is_non_string_sequence(result) and not result):
+            return
+        if name in self._warned_dropped_results:
+            return
+        self._warned_dropped_results.add(name)
+        registered = self.app._registration_context.event_handlers.get(name)
+        label = registered.handler.fn.__qualname__ if registered else name
+        logger.warning(
+            f"Event handler {label} returned a value, but it was "
+            "triggered from the frontend, so the value is dropped: only backend "
+            "code that awaits the handler receives its return value. Return None "
+            "or events to chain from a handler used as an event trigger."
+        )
 
     async def handle_ping(self, sid: str) -> None:
         """Handle an application-level ping test event.
@@ -1055,14 +1126,22 @@ class WebsocketEventNamespace(BaseEventNamespace):
 
     supports_channels = True
 
-    def __init__(self, namespace: str, app: App):
+    def __init__(
+        self,
+        namespace: str,
+        app: App,
+        origin_check: _SocketOriginCheck | None = None,
+    ):
         """Initialize the websocket event namespace.
 
         Args:
             namespace: The namespace.
             app: The application object.
+            origin_check: Decides which browser origins may connect; None
+                accepts any.
         """
         super().__init__(namespace, app)
+        self._origin_check = origin_check
         self._connections: dict[str, _Connection] = {}
         # Open channel sessions per connection, by session id and channel name.
         self._channel_sessions: dict[str, dict[str, ChannelSession]] = {}
@@ -1403,21 +1482,25 @@ class WebsocketEventNamespace(BaseEventNamespace):
             otel.record_message_size(utf8_size(payload), "receive")
         return None
 
-    @staticmethod
-    def _origin_allowed(origin: str | None) -> bool:
-        """Check a connection's Origin header against the CORS config.
+    def _origin_allowed(self, origin: str | None, headers: Mapping[str, str]) -> bool:
+        """Check a connection's Origin header against the app's origin policy.
 
         Args:
             origin: The Origin header value, if any.
+            headers: The connection's request headers.
 
         Returns:
             Whether the connection is allowed.
         """
-        if origin is None:
-            # Non-browser clients don't send an Origin header.
+        # Non-browser clients don't send an Origin header.
+        if origin is None or self._origin_check is None:
             return True
-        allowed_origins = get_config().cors_allowed_origins
-        return "*" in allowed_origins or origin in allowed_origins
+        return self._origin_check.allows(
+            origin,
+            headers.get("host"),
+            headers.get("x-forwarded-host"),
+            headers.get("x-forwarded-proto", ""),
+        )
 
     async def _handle_frame(
         self, sid: str, text: str, scope: MutableMapping[str, Any], max_size: int
@@ -1519,7 +1602,8 @@ class WebsocketEventNamespace(BaseEventNamespace):
         Args:
             websocket: The client websocket connection.
         """
-        if not self._origin_allowed(websocket.headers.get("origin")):
+        headers = websocket.headers
+        if not self._origin_allowed(headers.get("origin"), headers):
             # Reject cross-origin connections before accepting.
             await websocket.close(code=1008)
             return

@@ -27,6 +27,9 @@ def set_env_json():
         "TRANSPORT": "polling" if config.transport == "polling" else "websocket",
         "SOCKETIO": config.transport != "websocket",
         "TEST_MODE": is_in_app_harness(),
+        # The socket subprotocol; reflex.json is not bundled, as it holds the
+        # project hash and the last run time, which change every build.
+        "REFLEX_VERSION": constants.Reflex.VERSION,
     }
     for plugin in config.plugins:
         contribution = plugin.update_env_json()
