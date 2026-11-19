@@ -1169,7 +1169,10 @@ def test_lookup_resolves_var_key(temp_minify_json, cli_runner):
         assert output_data[1]["full_path"] == f"{state_path}.count"
 
     text = cli_runner.invoke(cli, ["minify", "lookup", "b.cN"])
-    assert f"{__name__}.VarLookupState.count" in text.output
+    assert text.exit_code == 0, text.output
+    assert text.output == (
+        f"{__name__}.VarLookupState\n{__name__}.VarLookupState.count\n"
+    )
 
 
 def test_list_reports_var_ids(temp_minify_json, cli_runner):
@@ -1197,8 +1200,19 @@ def test_list_reports_var_ids(temp_minify_json, cli_runner):
     ]
 
     text = cli_runner.invoke(cli, ["minify", "list"])
-    assert "|-- Vars:" in text.output or "`-- Vars:" in text.output
-    assert 'count -> "c"' in text.output
+    assert text.exit_code == 0, text.output
+    # The states of other test modules share the tree, so compare this state's
+    # rows past the two columns its siblings decide.
+    rows = [line[8:] for line in text.output.splitlines()]
+    start = rows.index('VarListState -> "b"')
+    assert rows[start : start + 6] == [
+        'VarListState -> "b"',
+        "|-- Event Handlers:",
+        "|   `-- setvar",
+        "`-- Vars:",
+        '    |-- count -> "c"',
+        "    `-- label",
+    ]
 
 
 def test_minify_help_shows_no_docstring_sections(cli_runner):
@@ -1382,11 +1396,12 @@ def test_lookup_shows_both_readings_of_a_name_another_handler_holds_as_id(
 
     text = cli_runner.invoke(cli, ["minify", "lookup", "b.count"])
     assert text.exit_code == 0, text.output
-    lines = text.output.splitlines()
-    assert f"{__name__}.NameIdState.total" in lines
-    assert f"{__name__}.NameIdState.count" in lines
-    assert "REFLEX_MINIFY_VARS" in text.output
-    assert "REFLEX_MINIFY_EVENTS" not in text.output
+    assert " ".join(text.output.split()) == (
+        f"Warning: Segment 'count' is the id of total of {__name__}.NameIdState "
+        "with REFLEX_MINIFY_VARS on, but names count with it off; showing both. "
+        f"{__name__}.NameIdState {__name__}.NameIdState.total "
+        f"{__name__}.NameIdState.count"
+    )
 
     # A handler holding its own name as id is a single reading.
     result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.own"])
