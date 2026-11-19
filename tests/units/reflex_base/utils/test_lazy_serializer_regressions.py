@@ -7,10 +7,14 @@ from pathlib import Path
 
 import pytest
 
-# Seconds a script may run before it is considered hung. A script takes about a
-# second, but the first cold process of a run may compile the bytecode of every
-# module it imports, which takes over 30 seconds on a Windows runner.
-_SCRIPT_TIMEOUT = 180
+# Seconds a script may run before it dumps every thread's stack and exits. A
+# script takes about a second, yet a cold interpreter on a Windows runner has
+# taken over 30, and a hang in the import locks these tests exercise looks the
+# same from outside: the stacks tell the two apart.
+_SCRIPT_DUMP_SECONDS = 60
+
+# Seconds the parent waits for a script that could not even dump its stacks.
+_SCRIPT_TIMEOUT = _SCRIPT_DUMP_SECONDS + 30
 
 
 def _run_script(script: str, *, cwd: Path | None = None) -> None:
@@ -21,7 +25,13 @@ def _run_script(script: str, *, cwd: Path | None = None) -> None:
         cwd: The working directory for a temporary application fixture.
     """
     result = subprocess.run(
-        [sys.executable, "-c", script],
+        [
+            sys.executable,
+            "-c",
+            "import faulthandler\n"
+            f"faulthandler.dump_traceback_later({_SCRIPT_DUMP_SECONDS}, exit=True)\n"
+            + script,
+        ],
         cwd=cwd,
         env={**os.environ, "REFLEX_TELEMETRY_ENABLED": "false"},
         capture_output=True,
