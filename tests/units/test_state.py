@@ -5110,17 +5110,31 @@ config = rx.Config(
 
         # Wiring an undecorated method to a trigger names the missing decorator
         # instead of calling it with the component as `self`.
-        for trigger in (
-            ExplicitState.helper,
-            ExplicitState.mixin_helper,
-            lambda: ExplicitState.helper,
-            lambda: ExplicitState.mixin_helper,
+        hint = (
+            "Decorate it with `@rx.event`: with `state_explicit_event_handlers` enabled, "
+            "undecorated methods stay plain methods. "
+            "See https://reflex.dev/docs/events/events-overview/#explicit-event-handlers"
+        )
+        for trigger, method in (
+            (ExplicitState.helper, ExplicitState.helper),
+            (ExplicitState.mixin_helper, ExplicitState.mixin_helper),
+            (lambda: ExplicitState.helper, ExplicitState.helper),
+            (lambda: ExplicitState.mixin_helper, ExplicitState.mixin_helper),
         ):
-            with pytest.raises(
-                EventHandlerValueError,
-                match=r"@rx\.event.*state_explicit_event_handlers",
-            ):
+            with pytest.raises(EventHandlerValueError) as exc_info:
                 rx.button(on_click=trigger)
+            assert str(exc_info.value) == (
+                f"{method.__qualname__} is wired to on_click but is not an event handler. {hint}"
+            )
+
+        with pytest.raises(EventHandlerValueError) as exc_info:
+            rx.App().add_page(
+                lambda: rx.text("x"), route="/load", on_load=ExplicitState.helper
+            )
+        assert str(exc_info.value) == (
+            f"{ExplicitState.helper.__qualname__} is wired to on_load "
+            f"but is not an event handler. {hint}"
+        )
 
         # A callback the state merely exposes stays usable as a trigger elsewhere.
         rx.button(on_click=shared_explicit_callback)
