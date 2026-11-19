@@ -1127,12 +1127,10 @@ export const connect = async (
   // the state schema goes along on every (re)connect, since a reconnect can
   // land on another backend version.
   const bootAuth = (first) => (callback) => {
-    // A server-rendered page already ran its on_load handlers and holds no
-    // compiled defaults to diff against, so its first connect only hydrates.
+    // A server-rendered page holds no compiled defaults to diff against, so its
+    // first connect gets the full state; the live session still loads the page.
     const boot_event = withRouterData(
-      first && ssrHydrated
-        ? ReflexEvent(`${app.state_name}.hydrate`)
-        : app.initialEvents(first)[0],
+      app.initialEvents(first && !ssrHydrated)[0],
       params,
     );
     bootRoute = currentRouteKey();
