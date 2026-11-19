@@ -32,6 +32,23 @@ SCHEMA_VERSION = 1
 # Names listed in the stale-config warning before it summarizes the rest.
 _STALE_WARNING_LIMIT = 5
 
+# The frontend keys plain objects by root state name, so a state id must not
+# read an inherited Object.prototype member while that state is absent.
+_OBJECT_PROTOTYPE_MEMBERS = frozenset({
+    "__defineGetter__",
+    "__defineSetter__",
+    "__lookupGetter__",
+    "__lookupSetter__",
+    "__proto__",
+    "constructor",
+    "hasOwnProperty",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+    "toLocaleString",
+    "toString",
+    "valueOf",
+})
+
 
 class StateEntry(TypedDict):
     """A single state entry in ``minify.json``.
@@ -73,11 +90,12 @@ def _validate_minified_id(label: str, value: str) -> None:
 
 
 def _is_state_id(value: str) -> bool:
-    """Whether a minified id keeps its state's path unambiguous once formatted.
+    """Whether a minified id can name a state in the compiled frontend.
 
-    The compiled frontend joins path segments with ``__``, so ``a`` + ``_b``
-    and ``a_`` + ``b`` would both read ``a___b``. An id with no underscore at
-    either end and none doubled can only ever split one way.
+    The frontend joins path segments with ``__``, so ``a`` + ``_b`` and
+    ``a_`` + ``b`` would both read ``a___b``; an id with no underscore at
+    either end and none doubled can only ever split one way. It also keys
+    plain objects by state name, which inherit the Object.prototype members.
 
     Args:
         value: The candidate state id.
@@ -85,10 +103,15 @@ def _is_state_id(value: str) -> bool:
     Returns:
         Whether the id may name a state.
     """
-    return not (value.startswith("_") or value.endswith("_") or "__" in value)
+    return not (
+        value.startswith("_")
+        or value.endswith("_")
+        or "__" in value
+        or value in _OBJECT_PROTOTYPE_MEMBERS
+    )
 
 
-def _ambiguous_state_id_message(state_path: str, state_id: str) -> str:
+def _invalid_state_id_message(state_path: str, state_id: str) -> str:
     """Explain why a state id is rejected and how to replace it.
 
     Args:
@@ -98,10 +121,16 @@ def _ambiguous_state_id_message(state_path: str, state_id: str) -> str:
     Returns:
         The message.
     """
+    reason = (
+        "a state id may not name an Object.prototype member, which the "
+        "frontend's state maps would inherit"
+        if state_id in _OBJECT_PROTOTYPE_MEMBERS
+        else "a state id may not start or end with '_' or contain '__', which "
+        "would make two state paths read the same once dots become '__'"
+    )
     return (
-        f"state '{state_path}' has id {state_id!r}; a state id may not start or "
-        "end with '_' or contain '__', which would make two state paths read the "
-        "same once dots become '__'. Run 'reflex minify sync' to reassign it."
+        f"state '{state_path}' has id {state_id!r}; {reason}. "
+        "Run 'reflex minify sync' to reassign it."
     )
 
 
@@ -184,7 +213,9 @@ def _load_minify_config_uncached(*, for_repair: bool = False) -> MinifyConfig | 
             raise ValueError(msg)
         _validate_minified_id(f"state '{key}'", value["id"])
         if not for_repair and not _is_state_id(value["id"]):
-            msg = f"Invalid {MINIFY_JSON}: {_ambiguous_state_id_message(key, value['id'])}"
+            msg = (
+                f"Invalid {MINIFY_JSON}: {_invalid_state_id_message(key, value['id'])}"
+            )
             raise ValueError(msg)
         parent = value.get("parent")
         if parent is not None and not isinstance(parent, str):
@@ -765,12 +796,12 @@ def _reassign_duplicate_ids(
         ids.update(_assign_next_ids(duplicates, kept, reassign_deleted))
 
 
-def _rehome_ambiguous_ids(
+def _rehome_invalid_state_ids(
     states: dict[str, StateEntry], reassign_deleted: bool
 ) -> None:
     """Replace the state ids :func:`_is_state_id` rejects, in place.
 
-    Files written before that rule may hold them, orphaned entries included,
+    Files written before those rules may hold them, orphaned entries included,
     and the app refuses to load such a file. Parents come first, so a child is
     checked against its parent's final id.
 
@@ -888,7 +919,7 @@ def validate_minify_config(
             )
 
     errors.extend(
-        _ambiguous_state_id_message(state_path, entry["id"])
+        _invalid_state_id_message(state_path, entry["id"])
         for state_path, entry in config["states"].items()
         if not _is_state_id(entry["id"])
     )
@@ -1016,7 +1047,7 @@ def sync_minify_config(
         for state_path, minified_name in assigned.items():
             new_states[state_path] = StateEntry(id=minified_name, parent=parent_key)
 
-    _rehome_ambiguous_ids(new_states, reassign_deleted)
+    _rehome_invalid_state_ids(new_states, reassign_deleted)
     _rehome_conflicting_ids(new_states, all_states, reassign_deleted, reparented)
 
     for state_path, state_events in new_events.items():

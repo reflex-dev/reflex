@@ -1493,6 +1493,39 @@ def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
     assert _load_minify_config_uncached() is not None
 
 
+def test_state_id_naming_a_prototype_member_is_rejected_and_reassigned(
+    temp_minify_json,
+):
+    """A root state on ``constructor`` would find ``Object`` as its dispatcher.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+    root = type("PrototypeIdRoot", (BaseState,), {"__module__": __name__})
+    path = get_state_full_path(root)
+    config = generate_minify_config(root)
+    config["states"][path]["id"] = "constructor"
+    write_config(temp_minify_json, config)
+    message = (
+        f"state '{path}' has id 'constructor'; a state id may not name an "
+        "Object.prototype member, which the frontend's state maps would "
+        "inherit. Run 'reflex minify sync' to reassign it."
+    )
+
+    with pytest.raises(ValueError) as error:
+        _load_minify_config_uncached()
+    assert str(error.value) == f"Invalid {MINIFY_JSON}: {message}"
+    loaded = _load_minify_config_uncached(for_repair=True)
+    assert loaded is not None
+    errors, _warnings, _missing = validate_minify_config(loaded, root)
+    assert errors == [message]
+
+    synced = sync_minify_config(loaded, root)
+    assert synced["states"] == {path: StateEntry(id="a", parent=None)}
+    save_minify_config(synced)
+    assert _load_minify_config_uncached() == synced
+
+
 def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
     """Two handlers of a state on one id would leave one unreachable.
 
