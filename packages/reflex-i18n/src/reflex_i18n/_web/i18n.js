@@ -369,12 +369,13 @@ export function useLocale() {
 }
 
 // [pick, pickLocale] for {locale: text} mappings, defaulting to the active
-// locale; both return "" when the mapping has no text.
+// locale (for a missing or empty one, as on the server); both return "" when
+// the mapping has no text.
 export function usePick() {
   const { locale: active } = useContext(I18nContext);
   const pickLocale = useCallback(
     (translations, locale) =>
-      pickTranslationLocale(translations, locale ?? active),
+      pickTranslationLocale(translations, locale || active),
     [active],
   );
   const pick = useCallback(

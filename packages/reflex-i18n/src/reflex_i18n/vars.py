@@ -217,7 +217,7 @@ _SOURCE_PICK_LOCALE_JS = (
     "((translations, locale) => { "
     "const keys = Object.keys(translations ?? {}).filter("
     '(key) => String(translations[key] ?? "").trim() !== ""); '
-    f'const wanted = String(locale ?? "{UNCONFIGURED_LOCALE}").toLowerCase(); '
+    f'const wanted = String(locale || "{UNCONFIGURED_LOCALE}").toLowerCase(); '
     "return keys.find((key) => key.toLowerCase() === wanted) "
     '?? keys.find((key) => key.toLowerCase().split("-")[0] === wanted.split("-")[0]) '
     '?? keys[0] ?? ""; })'

@@ -15,6 +15,7 @@ from reflex_i18n.plugin import _RUNTIME_SOURCE
 from reflex_i18n.registry import clear_messages
 from reflex_i18n.runtime import (
     WeekdayLength,
+    fallback_chain,
     format_language,
     format_weekday,
     pick_translation_locale,
@@ -416,16 +417,28 @@ def test_client_picks_translations_like_the_server(tmp_path: Path):
             f"const inline = {_SOURCE_PICK_LOCALE!s};"
             "return {"
             "runtime: cases.map(([t, l]) => mod.pickTranslationLocale(t, l)),"
-            "inline: cases.map(([t, l]) => inline(t, l))};"
+            "inline: cases.map(([t, l]) => inline(t, l)),"
+            "chains: cases.map(([, l]) => mod.fallbackChain(l)),"
+            "unset: [mod.pickTranslationLocale(cases[0][0]), inline(cases[0][0], '')]};"
         ),
     )
     set_active_i18n_config(I18nConfig(["de", "en", "fr"], "de", fallback_locale="en"))
     configured = [pick_translation_locale(t, wanted) or "" for t, wanted in _PICK_CASES]
+    chains = [list(fallback_chain(wanted)) for _, wanted in _PICK_CASES]
+    configured_unset = pick_translation_locale(_PICK_CASES[0][0])
     set_active_i18n_config(None)
     unconfigured = [
         pick_translation_locale(t, wanted) or "" for t, wanted in _PICK_CASES
     ]
-    assert rendered["result"] == {"runtime": configured, "inline": unconfigured}
+    unconfigured_unset = pick_translation_locale(_PICK_CASES[0][0], "")
+    assert rendered["result"] == {
+        "runtime": configured,
+        "inline": unconfigured,
+        "chains": chains,
+        # A missing or empty locale means the default one in the browser, as
+        # outside an event on the server.
+        "unset": [configured_unset, unconfigured_unset],
+    }
     assert configured == ["en", "de", "en", "de-CH", "en", "it", "DE", "en-GB", ""]
 
 
