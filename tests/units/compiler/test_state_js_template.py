@@ -1,15 +1,40 @@
 """Regression tests for the state.js frontend template."""
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
+from reflex_base.constants import Templates
 
-STATE_JS_TEMPLATE = (
-    Path(__file__).parents[3]
-    / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
+STATE_JS_TEMPLATE = Templates.Dirs.WEB_TEMPLATE / "utils" / "state.js"
+
+ADD_EVENTS_ALIAS = "const addEvents = (...args) => eventLoop.addEvents(...args);"
+
+USER_CODE_RUNS = re.compile(r"runScript\(\s*event\.payload\.(\w+),\s*addEvents\b")
+
+TOP_LEVEL_FUNCTION = re.compile(
+    r"^(?:export )?const (\w+) = (?:async )?\(", re.MULTILINE
 )
+
+
+def _enclosing_function(content: str, index: int) -> tuple[str, str]:
+    """Find the top-level function containing the given offset.
+
+    Args:
+        content: The state.js source.
+        index: An offset inside one of its top-level functions.
+
+    Returns:
+        The enclosing function's name and source text.
+    """
+    declaration = [
+        m for m in TOP_LEVEL_FUNCTION.finditer(content) if m.start() < index
+    ][-1]
+    return declaration.group(1), content[
+        declaration.start() : content.index("\n};\n", index)
+    ]
 
 
 def test_socket_startup_lifecycle() -> None:
@@ -124,17 +149,37 @@ def test_state_js_reconnect_helper_respects_fatal_mismatch() -> None:
     )
     # Counting every spelling, `socket.current?.connect()` included, so a
     # direct call cannot slip past the guard by writing itself differently.
-    # The only other call is the first connect of a new socket, made once its
-    # handlers are installed.
-    first_connect = (
-        'document.addEventListener("visibilitychange", checkVisibility);\n'
-        "  socket.current.connect();\n};"
-    )
+    # The only other call is the first connect of a new socket, made at the end
+    # of `connect` once its handlers are installed.
+    first_connect = "\n  socket.current.connect();\n};"
     assert reconnect_helper.count(".connect(") == 1, (
         "socket reconnection should only happen inside the reconnect helper."
     )
     assert content.count(".connect(") == 2
     assert first_connect in content
+
+
+def test_every_user_code_eval_can_reach_add_events() -> None:
+    """Every scope that runs user code must declare the `addEvents` alias.
+
+    `runScript` takes the late-bound alias as a parameter, so each function
+    passing user code -- serialized callbacks, `_call_script`, and the handlers
+    `_call_function` returns -- has to declare it first. The dispatch itself is
+    covered by `packages/reflex-frontend/tests/run_script.test.js`.
+    """
+    content = STATE_JS_TEMPLATE.read_text()
+
+    sites = list(USER_CODE_RUNS.finditer(content))
+    assert [m.group(1) for m in sites] == ["callback", "javascript_code", "function"]
+    for site in sites:
+        name, body = _enclosing_function(content, site.start())
+        assert ADD_EVENTS_ALIAS in body, (
+            f"`{name}` runs `{site.group()}` but does not declare the "
+            "addEvents alias it passes."
+        )
+        assert body.index(ADD_EVENTS_ALIAS) < body.index(site.group()), (
+            f"`{name}` declares the addEvents alias after `{site.group()}`."
+        )
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")

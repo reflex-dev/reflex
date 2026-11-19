@@ -1,1 +1,0 @@
-`VarData(position=...)` and `Hooks.HookPosition` are deprecated and ignored: hooks render in declaration order. Remove the `position` argument; to place a hook after another one, put the one it reads in its `VarData(hooks=...)`.

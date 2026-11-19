@@ -6,7 +6,7 @@ import logging
 from reflex_base.components.component import Component, field
 from reflex_base.utils import format
 from reflex_base.utils.imports import ImportVar
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import LiteralVar, Var, var_operation, var_operation_return
 from reflex_base.vars.sequence import LiteralStringVar, StringVar
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,26 @@ class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
     library = LUCIDE_LIBRARY
+
+
+@var_operation
+def dynamic_icon_name_operation(tag: StringVar):
+    """Convert an icon tag to the name Lucide's DynamicIcon expects.
+
+    Underscores become hyphens, and the hyphen that snake_case puts inside
+    digit-x-digit names (``grid_2x_2`` -> ``grid-2x-2``) is dropped so the
+    name matches Lucide's own ``grid-2x2``.
+
+    Args:
+        tag: The snake_case or kebab-case icon tag.
+
+    Returns:
+        The kebab-case Lucide icon name.
+    """
+    return var_operation_return(
+        js_expression=f'{tag!s}.replaceAll("_", "-").replace(/(\\d)x-(\\d)/g, "$1x$2")',
+        var_type=str,
+    )
 
 
 class Icon(LucideIconComponent):
@@ -74,7 +94,9 @@ class Icon(LucideIconComponent):
             if not isinstance(tag_stringified, StringVar):
                 msg = f"Icon name must be a string, got {tag_var._var_type}"
                 raise TypeError(msg)
-            return DynamicIcon.create(name=tag_stringified.replace("_", "-"), **props)
+            return DynamicIcon.create(
+                name=dynamic_icon_name_operation(tag_stringified), **props
+            )
 
         if tag not in LUCIDE_ICON_LIST:
             icons_sorted = sorted(
