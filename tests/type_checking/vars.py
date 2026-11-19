@@ -35,6 +35,11 @@ _any_var: Var[Any] = Var.create(None)
 assert_type(_any_var.to(bool), BooleanVar)
 assert_type(_any_var.to(str), StringVar[str])
 assert_type(_any_var.to(int), NumberVar[int])
+# A `Var` subclass as the output type returns that subclass. The overload took
+# an instance of the subclass rather than the class, so these fell through to
+# the catch-all one, which newer ty versions solve as `Unknown`.
+assert_type(_any_var.to(StringVar), StringVar[str])
+assert_type(_any_var.to(BooleanVar), BooleanVar)
 
 # `guess_type` narrows on the declared inner type via a `self` annotation, so
 # the `Var[bool]` overload is the one the `bool` shadow affected.
