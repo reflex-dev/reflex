@@ -29,7 +29,12 @@ from reflex_base.utils.format import (
     orjson_dumps_socket,
     orjson_loads,
 )
-from reflex_base.utils.serializers import serializer
+from reflex_base.utils.serializers import (
+    get_serializer,
+    serialize_enum,
+    serialize_uuid,
+    serializer,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -363,6 +368,14 @@ class _DictForSerializer(dict):
     pass
 
 
+class _MixinForLaterEnum:
+    pass
+
+
+class _MixinForEarlierEnum:
+    pass
+
+
 @pytest.fixture
 def isolated_serializer_registry(monkeypatch: pytest.MonkeyPatch):
     """Undo serializer registrations made by the test.
@@ -397,6 +410,69 @@ def test_stock_enum_and_uuid_serializers_agree_with_orjson(value):
     payload = {"v": value}
     assert orjson_dumps(payload) == json_dumps(payload, separators=(",", ":"))
     assert orjson_dumps_socket(payload) == json_dumps(payload, separators=(",", ":"))
+
+
+@pytest.mark.parametrize(
+    ("type_", "stock"), [(_EnumForSerializer, serialize_enum), (UUID, serialize_uuid)]
+)
+def test_resolving_stock_enum_and_uuid_serializers_keeps_orjson(
+    isolated_serializer_registry, type_: type, stock
+):
+    """Resolving a bundled, opted-out serializer leaves the orjson paths on.
+
+    Args:
+        isolated_serializer_registry: Fixture restoring the global registry.
+        type_: A type orjson emits natively.
+        stock: The bundled serializer for it.
+    """
+    assert get_serializer(type_) is stock
+    assert isolated_serializer_registry._orjson_registry_shadowed is False
+
+
+def test_mixin_serializer_inherited_by_later_enum_wins_over_orjson(
+    isolated_serializer_registry,
+):
+    """An Enum defined after a serializer for its mixin still bypasses orjson.
+
+    Args:
+        isolated_serializer_registry: Fixture restoring the global registry.
+    """
+
+    @serializer
+    def serialize_mixin(value: _MixinForLaterEnum) -> str:
+        return "CUSTOM"
+
+    class Status(_MixinForLaterEnum, Enum):
+        ACTIVE = "raw"
+
+    # State var validation resolves the serializer of each field's type.
+    assert get_serializer(Status) is serialize_mixin
+    value = {"v": Status.ACTIVE}
+    assert isolated_serializer_registry._orjson_registry_shadowed is True
+    assert orjson_dumps(value) == '{"v":"CUSTOM"}'
+    assert orjson_dumps_socket(value) == '{"v":"CUSTOM"}'
+
+
+def test_mixin_serializer_inherited_by_earlier_enum_wins_over_orjson(
+    isolated_serializer_registry,
+):
+    """A serializer for the mixin of an existing Enum bypasses orjson at once.
+
+    Args:
+        isolated_serializer_registry: Fixture restoring the global registry.
+    """
+
+    class Status(_MixinForEarlierEnum, Enum):
+        ACTIVE = "raw"
+
+    @serializer
+    def serialize_mixin(value: _MixinForEarlierEnum) -> str:
+        return "CUSTOM"
+
+    value = {"v": Status.ACTIVE}
+    assert isolated_serializer_registry._orjson_registry_shadowed is True
+    assert orjson_dumps(value) == '{"v":"CUSTOM"}'
+    assert orjson_dumps_socket(value) == '{"v":"CUSTOM"}'
 
 
 def test_custom_enum_serializer_wins_over_orjson(isolated_serializer_registry):

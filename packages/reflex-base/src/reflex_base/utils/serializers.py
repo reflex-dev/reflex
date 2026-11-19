@@ -36,6 +36,7 @@ from uuid import UUID
 
 from reflex_base.constants.colors import Color
 from reflex_base.utils import _serializer_types, types
+from reflex_base.utils.format import _mark_orjson_registry_shadowed
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,9 @@ deserializers = {
 # dataclasses are absent because ``format`` passes those through explicitly.
 _ORJSON_NATIVE_TYPES = (Enum, UUID)
 
+# Serializers whose output orjson's native handling already matches.
+_ORJSON_NATIVE_SERIALIZERS: set[Serializer] = set()
+
 
 def _union_members(type_: Any) -> tuple[Any, ...]:
     """Return the members of a union annotation, or empty for anything else.
@@ -84,6 +88,35 @@ def _union_members(type_: Any) -> tuple[Any, ...]:
     if get_origin(type_) in (Union, UnionType):
         return get_args(type_)
     return ()
+
+
+def _reaches_orjson_native_type(type_: Any) -> bool:
+    """Check whether a serializer registered for a type applies to an Enum or UUID.
+
+    Args:
+        type_: The annotation a serializer was registered under.
+
+    Returns:
+        Whether the type, a union member or an existing subclass is an Enum or UUID.
+    """
+    # ``get_serializer`` resolves a union's members through ``issubclass``, and
+    # an annotation is not necessarily a class.
+    pending = [
+        candidate
+        for candidate in (type_, *_union_members(type_))
+        if isinstance(candidate, type)
+    ]
+    seen = set(pending)
+    while pending:
+        cls = pending.pop()
+        if issubclass(cls, _ORJSON_NATIVE_TYPES):
+            return True
+        # An Enum mixing ``cls`` in inherits its serializer.
+        for subclass in type.__subclasses__(cls):
+            if subclass not in seen:
+                seen.add(subclass)
+                pending.append(subclass)
+    return False
 
 
 def _get_optional_type_name(type_: type) -> str | None:
@@ -190,15 +223,9 @@ def serializer(
         SERIALIZERS[type_] = fn
         get_serializer.cache_clear()
 
-        # ``type_`` comes from an annotation, so it is not necessarily a class.
-        # A union registers under the union itself, and ``get_serializer``
-        # resolves a member through ``issubclass``, so its members count too.
-        if not _orjson_native_equivalent and any(
-            isinstance(candidate, type) and issubclass(candidate, _ORJSON_NATIVE_TYPES)
-            for candidate in (type_, *_union_members(type_))
-        ):
-            from reflex_base.utils.format import _mark_orjson_registry_shadowed
-
+        if _orjson_native_equivalent:
+            _ORJSON_NATIVE_SERIALIZERS.add(fn)
+        elif _reaches_orjson_native_type(type_):
             _mark_orjson_registry_shadowed()
 
         # Return the function.
@@ -367,7 +394,17 @@ def get_serializer(type_: type) -> Serializer | None:
     Returns:
         The serializer for the type, or None if there is no serializer.
     """
-    return _find_serializer(type_, SERIALIZERS, _OPTIONAL_SERIALIZERS)
+    serializer_fn = _find_serializer(type_, SERIALIZERS, _OPTIONAL_SERIALIZERS)
+    # An Enum created after a serializer for one of its bases resolves to that
+    # serializer, which orjson would bypass.
+    if (
+        serializer_fn is not None
+        and serializer_fn not in _ORJSON_NATIVE_SERIALIZERS
+        and isinstance(type_, type)
+        and issubclass(type_, _ORJSON_NATIVE_TYPES)
+    ):
+        _mark_orjson_registry_shadowed()
+    return serializer_fn
 
 
 @functools.lru_cache

@@ -708,8 +708,8 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
-# orjson has no passthrough option for Enum/uuid.UUID, so a serializer
-# registered for one would be silently bypassed. Fall back to the stdlib.
+# orjson has no passthrough option for Enum/uuid.UUID, so a serializer that
+# applies to one would be silently bypassed. Fall back to the stdlib.
 _orjson_registry_shadowed = False
 
 
