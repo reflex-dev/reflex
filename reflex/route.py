@@ -120,7 +120,8 @@ def _get_route_params_regex(route: str) -> tuple[re.Pattern, dict[str, str]] | N
             regex_parts.append(f"/(?P<{arg.group(1)}>[^/]*)")
         else:
             regex_parts.append(re.escape("/" + part))
-    return re.compile("".join(regex_parts)), route_args
+    # Match as case-insensitively as get_route_regex does.
+    return re.compile("".join(regex_parts), re.IGNORECASE | re.ASCII), route_args
 
 
 def extract_route_params(path: str, route: str) -> dict[str, str | list[str]]:

@@ -57,6 +57,24 @@ def test_extract_route_params_decodes_like_react_router(
 
 
 @pytest.mark.parametrize(
+    ("path", "route", "expected"),
+    [
+        ("/Blog/Hello", "blog/[slug]", {"slug": "Hello"}),
+        ("/DOCS/EN/intro", "docs/[[lang]]/[page]", {"lang": "EN", "page": "intro"}),
+        ("/Files/a/B", "files/[[...splat]]", {"splat": ["a", "B"]}),
+        ("/blog/x", "Blog/[slug]", {"slug": "x"}),
+        # React Router folds ASCII case only.
+        ("/k\u0131t/x", "kit/[slug]", {}),
+        ("/\u212ait/x", "kit/[slug]", {}),
+    ],
+)
+def test_extract_route_params_ignores_case(path: str, route: str, expected: dict):
+    # get_router resolves any casing of a path to its route, so the params of
+    # that route come from the same case-insensitive match.
+    assert extract_route_params(path, route) == expected
+
+
+@pytest.mark.parametrize(
     "route_name",
     [
         "/products/[id]/[id]",
