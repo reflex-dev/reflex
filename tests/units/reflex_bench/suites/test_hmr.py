@@ -535,13 +535,18 @@ def test_a_reload_by_the_harness_is_bounded_by_the_hooks_remaining_time(
     ctx: Context, monkeypatch: pytest.MonkeyPatch
 ):
     # A stalled preview page must not hold a reload past the hook's deadline.
-    monkeypatch.setattr(hmr, "WAIT_S", 0.3)
     bench = hmr.RenderLeafPreview()
     bench.setup(ctx)
     bench.prepare(ctx)
     tab = _tab(bench)
     tab.misses = 10**9
-    with pytest.raises(TimeoutError, match="while refreshing it"):
+    # Only the sample runs on the short budget: the restore that conclude
+    # waits for would spend it before its first poll on a loaded runner.
+    with (
+        monkeypatch.context() as clock,
+        pytest.raises(TimeoutError, match="while refreshing it"),
+    ):
+        clock.setattr(hmr, "WAIT_S", 0.3)
         bench.sample(ctx)
     timeouts = [call[1] for call in tab.calls if call[0] == "reload"]
     assert timeouts

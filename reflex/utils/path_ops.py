@@ -15,7 +15,7 @@ import stat
 import sys
 import threading
 import unicodedata
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path
 
 from reflex_base.config import get_config
@@ -364,12 +364,12 @@ def file_lock(path: str | Path) -> Iterator[Path]:
                 os.close(lock_fd)
 
 
-def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
+def _write_json_file(file_path: Path, value: object) -> None:
     """Atomically replace a JSON file with a complete document.
 
     Args:
         file_path: The destination JSON file.
-        value: The complete JSON object to write.
+        value: The complete JSON value to write.
     """
     open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
     temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")
@@ -447,13 +447,16 @@ def samefile(file1: Path, file2: Path) -> bool:
     return False
 
 
-def update_directory_tree(src: Path, dest: Path):
+def update_directory_tree(
+    src: Path, dest: Path, *, on_copy: Callable[[Path], None] | None = None
+):
     """Recursively copies a directory tree from src to dest.
     Only copies files if the destination file is missing or modified earlier than the source file.
 
     Args:
         src: Source directory
         dest: Destination directory
+        on_copy: Optional callback receiving each destination file after it is copied.
 
     Raises:
         ValueError: If the source is not a directory
@@ -470,9 +473,11 @@ def update_directory_tree(src: Path, dest: Path):
 
         if item.is_dir():
             # Recursively copy subdirectories
-            update_directory_tree(item, dest_item)
+            update_directory_tree(item, dest_item, on_copy=on_copy)
         elif item.is_file() and (
             not dest_item.exists() or item.stat().st_mtime > dest_item.stat().st_mtime
         ):
             # Copy file if it doesn't exist in the destination or is older than the source
             shutil.copy2(item, dest_item)
+            if on_copy is not None:
+                on_copy(dest_item)

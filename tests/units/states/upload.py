@@ -70,6 +70,35 @@ class _FileUploadMixin(BaseState, mixin=True):
         """Handle uploaded files with a non-default parameter name."""
         self.img_list = [f"count:{len(uploads)}"]
 
+    async def failing_upload(self, files: list[rx.UploadFile]):
+        """Raise before producing any update.
+
+        Args:
+            files: The uploaded files.
+
+        Raises:
+            OSError: Always.
+        """
+        msg = "File name too long"
+        raise OSError(msg)
+
+    async def yield_then_fail_upload(self, files: list[rx.UploadFile]):
+        """Stream one update, then raise.
+
+        Args:
+            files: The uploaded files.
+
+        Yields:
+            Once, after recording a partial result.
+
+        Raises:
+            OSError: After the first update.
+        """
+        self.img_list = ["partial"]
+        yield
+        msg = "File name too long"
+        raise OSError(msg)
+
     @rx.event(background=True)
     async def bg_upload(self, files: list[rx.UploadFile]):
         """Background task cannot be upload handler.

@@ -74,6 +74,16 @@ repos:
     always_run: true
     pass_filenames: false
     require_serial: true
+  # The same examples under the oldest supported Python, whatever the running
+  # interpreter: an annotation in a class body resolves differently before
+  # 3.14's deferred annotations.
+  - id: ty-type-checking-3.11
+    name: ty-type-checking (Python 3.11)
+    entry: uv run --no-sync ty check --python-version 3.11 tests/type_checking
+    language: system
+    always_run: true
+    pass_filenames: false
+    require_serial: true
 - repo: https://github.com/biomejs/pre-commit
   rev: 19865851e014cbe6138e295365f95ca51bf953f8 # v0.6.1
   hooks:

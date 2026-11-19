@@ -1,1 +1,0 @@
-Authentication validation now reports the HTTP status when the control plane refuses the request, and only suggests trying again later for failures that may succeed on retry (timeouts, HTTP 429 and server errors).
