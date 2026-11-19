@@ -244,6 +244,12 @@ def dropdown_menu_example():
     )
 ```
 
+```md alert warning
+# An `on_click` on the trigger's child does not run while the menu is modal.
+
+The menu is modal by default: it opens on pointer down and blocks pointer events outside it, so the click that follows never reaches the element inside `menu.trigger`. Use `on_open_change` on `menu.root` to react to the menu opening, or `on_select` on a `menu.item` to react to a choice. If the trigger's child must handle the click itself, pass `modal=False` to `menu.root`.
+```
+
 ## Opening a Dialog from Menu using State
 
 Accessing an overlay component from within another overlay component is a common use case but does not always work exactly as expected.
