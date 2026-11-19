@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from reflex_base.utils import console
-from reflex_i18n import I18nPlugin, t
+from reflex_i18n import I18nPlugin, PathPrefixRouting, t
 from reflex_i18n.config import set_active_i18n_config
 from reflex_i18n.plugin import _RUNTIME_SOURCE
 from reflex_i18n.registry import clear_messages
@@ -332,6 +332,7 @@ def test_provider_sets_direction_case_insensitively(
     [
         (False, "/pricing", [["/en/pricing", {"replace": True}]]),
         (False, "/de/pricing", []),
+        (False, "//de/pricing", []),
         (True, "/pricing", []),
     ],
 )
@@ -410,6 +411,47 @@ def test_language_switcher_links_stay_on_site(
         action="return rendered.children.map((link) => link.props.href);",
     )
     assert rendered["result"] == expected
+
+
+@requires_node
+@pytest.mark.parametrize(
+    ("pathname", "expected"),
+    [
+        ("/de/pricing", ["/pricing", "/de/pricing", "/pricing", "/de/pricing"]),
+        ("//de/pricing", ["/pricing", "/de/pricing", "/pricing", "/de/pricing"]),
+        ("///de", ["/", "/de", "/", "/de"]),
+        (
+            "/de//evil.example",
+            ["/evil.example", "/de/evil.example", "/evil.example", "/de/evil.example"],
+        ),
+        (
+            "//evil.example",
+            ["/evil.example", "/de/evil.example", "/evil.example", "/evil.example"],
+        ),
+    ],
+)
+def test_hreflang_links_match_server_routing(
+    tmp_path: Path, pathname: str, expected: list[str]
+):
+    """The client reads a path's locale and base as ``PathPrefixRouting`` does."""
+    locales = ["en", "de"]
+    rendered = _render_runtime(
+        tmp_path,
+        "HreflangLinks",
+        locales=locales,
+        default_locale="en",
+        url_routing=True,
+        pathname=pathname,
+        action="return rendered.children.slice(0, -1).map((link) => link.props.href);",
+    )
+    routing = PathPrefixRouting()
+    alternates = routing.alternates(pathname, locales, "en")
+    server = [
+        *alternates.values(),
+        alternates["en"],
+        alternates[routing.locale_of(pathname, locales, "en")],
+    ]
+    assert rendered["result"] == server == expected
 
 
 @requires_node

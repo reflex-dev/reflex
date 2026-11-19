@@ -367,7 +367,7 @@ export function LocaleRoute({ locale, catalog, children }) {
 
 // Path-prefix helpers (mirror reflex_i18n.routing.PathPrefixRouting).
 const pathLocale = (pathname) => {
-  const head = pathname.replace(/^\//, "").split("/")[0];
+  const head = pathname.replace(/^\/+/, "").split("/")[0];
   return locales.includes(head) ? head : undefined;
 };
 
@@ -375,7 +375,7 @@ const pathLocale = (pathname) => {
 const sitePath = (path) => "/" + path.replace(/^\/+/, "");
 
 const delocalizePath = (pathname) => {
-  const [head, ...rest] = pathname.replace(/^\//, "").split("/");
+  const [head, ...rest] = pathname.replace(/^\/+/, "").split("/");
   return sitePath(locales.includes(head) ? rest.join("/") : pathname);
 };
 
