@@ -1,0 +1,1 @@
+`var.to(StringVar)` and other `Var` subclasses passed as the output type are now typed as that subclass under ty as well; ty 0.0.107 inferred them as `Unknown`, so `rx.cond` typed a branch holding one as a `Component`.
