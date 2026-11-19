@@ -28,7 +28,10 @@ from reflex_docs.docgen_pipeline import (
     render_inline_markdown,
     render_markdown,
 )
-from reflex_docs.pages.docs.metadata import truncate_meta_description
+from reflex_docs.pages.docs.metadata import (
+    component_title_name,
+    truncate_meta_description,
+)
 from reflex_docs.templates.docpage import docpage, h2_comp
 
 
@@ -1038,6 +1041,7 @@ def multi_docs(
         description=description,
         image=image,
         source_path=actual_path,
+        component_name=component_title_name([c[1] for c in component_list[1:]]),
     )
     def out():
         toc = get_docgen_toc(actual_path)
@@ -1090,6 +1094,7 @@ def multi_docs(
         description=ll_description,
         image=image,
         source_path=ll_actual_path,
+        component_name=component_title_name([c[1] for c in ll_list[1:]]),
     )
     def ll():
         ll_virtual = virtual_path.replace(".md", "-ll.md")

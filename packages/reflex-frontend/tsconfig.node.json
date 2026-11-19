@@ -1,0 +1,11 @@
+{
+  // Type-checks the build files at the top of `src`, which an app runs in node.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["es2023"],
+    "types": ["node"]
+  },
+  "include": ["src/*.js"],
+  // Imports babel, which an app installs only when the React Compiler is on.
+  "exclude": ["src/vite-plugin-react-compiler.js"]
+}
