@@ -325,7 +325,10 @@ def fallback_chain(locale: str | None = None) -> tuple[str, ...]:
     """The locales to try, in order, for content wanted in a locale.
 
     The locale itself, then the source locale, the fallback locale and the
-    other configured locales.
+    other configured locales, each followed by its own language (``de-AT``,
+    ``de``), so trying the keys of a ``{locale: text}`` mapping in this order
+    (e.g. an SQL ``COALESCE``) prefers the same language like
+    :func:`pick_translation` does.
 
     Args:
         locale: The wanted locale; the active one (else the source locale) if
@@ -336,16 +339,15 @@ def fallback_chain(locale: str | None = None) -> tuple[str, ...]:
     """
     wanted = locale or get_locale() or source_locale()
     config = get_active_i18n_config()
-    if config is None:
-        return (wanted,)
+    candidates = (
+        (wanted,)
+        if config is None
+        else (wanted, config.default_locale, config.fallback_locale, *config.locales)
+    )
     chain: dict[str, str] = {}
-    for candidate in (
-        wanted,
-        config.default_locale,
-        config.fallback_locale,
-        *config.locales,
-    ):
-        chain.setdefault(candidate.lower(), candidate)
+    for candidate in candidates:
+        for tag in (candidate, candidate.split("-")[0]):
+            chain.setdefault(tag.lower(), tag)
     return tuple(chain.values())
 
 

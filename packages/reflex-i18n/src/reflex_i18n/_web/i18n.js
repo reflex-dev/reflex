@@ -96,13 +96,21 @@ export const matchLocale = (requested, supported) => {
   return undefined;
 };
 
-// The locales to try, in order, for content wanted in a locale. Mirrors
+// The locales to try, in order, for content wanted in a locale (the default
+// locale if none), each followed by its own language. Mirrors
 // reflex_i18n.runtime.fallback_chain.
 export const fallbackChain = (locale) => {
   const chain = new Map();
-  for (const tag of [locale, defaultLocale, fallbackLocale, ...locales]) {
-    if (!chain.has(tag.toLowerCase())) {
-      chain.set(tag.toLowerCase(), tag);
+  for (const candidate of [
+    locale || defaultLocale,
+    defaultLocale,
+    fallbackLocale,
+    ...locales,
+  ]) {
+    for (const tag of [candidate, candidate.split("-")[0]]) {
+      if (!chain.has(tag.toLowerCase())) {
+        chain.set(tag.toLowerCase(), tag);
+      }
     }
   }
   return [...chain.values()];

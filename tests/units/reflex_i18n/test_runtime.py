@@ -520,7 +520,8 @@ def test_fallback_chain_follows_the_config():
     )
     assert fallback_chain("de") == ("de", "en", "fr")
     assert fallback_chain("EN") == ("EN", "de", "fr")
-    assert fallback_chain("pt-BR") == ("pt-BR", "de", "en", "fr")
+    assert fallback_chain("pt-BR") == ("pt-BR", "pt", "de", "en", "fr")
+    assert fallback_chain("de-AT") == ("de-AT", "de", "en", "fr")
     assert fallback_chain() == ("de", "en", "fr")
     with use_locale("fr"):
         assert fallback_chain() == ("fr", "de", "en")
@@ -551,6 +552,19 @@ def test_pick_translation_locale(
     assert pick_translation(translations, locale) == (
         None if expected is None else translations[expected]
     )
+
+
+@pytest.mark.parametrize("locale", ["de-AT", "de", "en", "fr", "it"])
+def test_trying_keys_along_the_fallback_chain_matches_the_picker(locale: str):
+    """Exact key lookups in chain order (e.g. an SQL COALESCE) pick the same text.
+
+    This holds when the stored keys are languages; a key with a region is found
+    by the chain only if the chain names it.
+    """
+    set_active_i18n_config(I18nConfig(locales=["en", "de", "fr"]))
+    texts = {"en": "Hello", "de": "Hallo", "fr": "Bonjour"}
+    first_key = next(tag for tag in fallback_chain(locale) if tag in texts)
+    assert first_key == pick_translation_locale(texts, locale)
 
 
 def test_pick_translation_defaults_to_the_active_locale():
