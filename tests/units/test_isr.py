@@ -336,6 +336,58 @@ async def test_redis_tag_index_expires_with_its_last_page(
 
 
 @pytest.mark.asyncio
+async def test_redis_invalidate_tag_keeps_pages_stored_meanwhile_findable(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A page stored while a tag is invalidated stays indexed under that tag."""
+    redis = prerequisites.get_redis()
+    if redis is None:
+        pytest.skip("Test requires redis")
+    cache = RedisISRCache(redis)
+    tag = f"test-{uuid.uuid4().hex}"
+    keys: list[str] = []
+    execute_command = redis.execute_command
+    storing = False
+
+    async def store_after(*args, **options):
+        """Run a command, then store a page as a render finishing right after it.
+
+        Args:
+            *args: The command and its arguments.
+            **options: The command options.
+
+        Returns:
+            The command's result.
+        """
+        nonlocal storing
+        result = await execute_command(*args, **options)
+        if not storing:
+            storing = True
+            keys.append(key := f"test:{uuid.uuid4().hex}")
+            page = CachedPage(
+                html=key, generated_at=time.time(), revalidate=0, tags=(tag,)
+            )
+            assert await cache.set(key, page, await cache.epoch()) is True
+            storing = False
+        return result
+
+    try:
+        monkeypatch.setattr(redis, "execute_command", store_after)
+        await cache.invalidate_tag(tag)
+        monkeypatch.undo()
+
+        await cache.invalidate_tag(tag)
+        assert [await cache.get(key) for key in keys] == [None] * len(keys)
+    finally:
+        monkeypatch.undo()
+        await redis.delete(
+            RedisISRCache._TAG_PREFIX + tag,
+            *(RedisISRCache._PAGE_PREFIX + key for key in keys),
+        )
+        await redis.aclose()
+
+
+@pytest.mark.asyncio
 async def test_redis_release_lock_keeps_lock_of_next_owner():
     """Releasing an expired lock leaves the lock another worker acquired since."""
     redis = prerequisites.get_redis()

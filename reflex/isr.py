@@ -351,6 +351,20 @@ return 1
 """
 
 
+# Advances the epoch in KEYS[1] and deletes the tag's sorted set in KEYS[2] with
+# every page it holds that has not expired by ARGV[1] (page key prefix ARGV[2]),
+# atomically, so no page gets stored and indexed between lookup and deletion.
+_INVALIDATE_TAG_SCRIPT = """
+redis.call('INCR', KEYS[1])
+local members = redis.call('ZRANGEBYSCORE', KEYS[2], ARGV[1], '+inf')
+for _, member in ipairs(members) do
+    redis.call('DEL', ARGV[2] .. member)
+end
+redis.call('DEL', KEYS[2])
+return #members
+"""
+
+
 class RedisISRCache:
     """Redis-backed ISR cache shared across all workers."""
 
@@ -463,20 +477,14 @@ class RedisISRCache:
         Returns:
             The number of pages removed.
         """
-        # Advanced first: a page stored before this reads into the tag's set
-        # below, and a render storing after it is rejected.
-        await self._redis.incr(self._EPOCH_KEY)
-        tag_key = self._TAG_PREFIX + tag
-        # Members scored in the past belong to pages that already expired.
-        keys: list[bytes | str] = await self._redis.zrangebyscore(  # pyright: ignore[reportAssignmentType]
-            tag_key, time.time(), "+inf"
+        return await self._redis.eval(  # pyright: ignore[reportGeneralTypeIssues]
+            _INVALIDATE_TAG_SCRIPT,
+            2,
+            self._EPOCH_KEY,
+            self._TAG_PREFIX + tag,
+            time.time(),
+            self._PAGE_PREFIX,
         )
-        page_keys = [
-            self._PAGE_PREFIX + (k.decode() if isinstance(k, bytes) else k)
-            for k in keys
-        ]
-        await self._redis.delete(*page_keys, tag_key)
-        return len(page_keys)
 
 
 def cache_key(build_id: str, path: str) -> str:
