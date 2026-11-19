@@ -26,7 +26,7 @@ from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 
 from reflex import reflex
-from reflex.minify import clear_config_cache, get_state_full_path
+from reflex.minify import _get_minify_json_path, clear_config_cache, get_state_full_path
 from reflex.state import State
 from reflex.testing import DEFAULT_TIMEOUT
 from tests.units.minify_helpers import install_config
@@ -70,6 +70,18 @@ def cli_runner(monkeypatch: pytest.MonkeyPatch) -> CliRunner:
 
     monkeypatch.setattr(prerequisites, "get_compiled_app", lambda *a, **kw: mock.Mock())
     return CliRunner()
+
+
+def _unwrapped(output: str) -> str:
+    """Undo the wrapping log messages get at the terminal width.
+
+    Args:
+        output: The captured CLI output.
+
+    Returns:
+        Its words, separated by single spaces.
+    """
+    return " ".join(output.split())
 
 
 def _run_cli_probe(probe: str) -> dict[str, object]:
@@ -683,8 +695,7 @@ def test_lookup_resolves_minified_path(temp_minify_json, cli_runner):
     result = cli_runner.invoke(cli, ["minify", "lookup", "b.c"])
 
     assert result.exit_code == 0, result.output
-    assert "AppState" in result.output
-    assert "ChildState" in result.output
+    assert result.output == f"{__name__}.AppState\n{__name__}.ChildState\n"
 
 
 def test_lookup_accepts_full_wire_path(temp_minify_json, cli_runner):
@@ -739,10 +750,16 @@ def test_lookup_fails_without_minify_json(temp_minify_json, cli_runner):
     from reflex.reflex import cli
 
     clear_config_cache()
-    result = cli_runner.invoke(cli, ["minify", "lookup", "a.b"])
+    # Wide enough that the path, whose length varies, is not wrapped.
+    result = cli_runner.invoke(
+        cli, ["minify", "lookup", "a.b"], env={"COLUMNS": "1000"}
+    )
 
     assert result.exit_code == 1
-    assert "minify.json does not exist" in " ".join(result.output.split())
+    assert result.output == (
+        f"{_get_minify_json_path()} does not exist. Use 'reflex minify init' to "
+        "create it.\n"
+    )
 
 
 def test_lookup_reads_the_configured_minify_json(
@@ -785,7 +802,10 @@ def test_lookup_fails_for_malformed_config(
 
     assert result.exit_code == 1
     assert isinstance(result.exception, SystemExit)
-    assert "Invalid JSON" in result.output
+    assert _unwrapped(result.output) == (
+        "Invalid JSON in minify.json: Expecting property name enclosed in double "
+        "quotes: line 1 column 2 (char 1)"
+    )
 
 
 def test_lookup_fails_for_invalid_path(temp_minify_json, cli_runner):
@@ -802,7 +822,10 @@ def test_lookup_fails_for_invalid_path(temp_minify_json, cli_runner):
     result = cli_runner.invoke(cli, ["minify", "lookup", "b.xyz"])
 
     assert result.exit_code == 1
-    assert "No state, event handler or var found" in result.output
+    assert _unwrapped(result.output) == (
+        "No state, event handler or var found for minified segment 'xyz' in path "
+        "'b.xyz'"
+    )
 
 
 def test_lookup_resolves_event_handler(temp_minify_json, cli_runner):
@@ -852,7 +875,9 @@ def test_lookup_event_handler_text_output(temp_minify_json, cli_runner):
     result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
 
     assert result.exit_code == 0, result.output
-    assert f"{__name__}.HandlerTextState.increment" in result.output
+    assert result.output == (
+        f"{__name__}.HandlerTextState\n{__name__}.HandlerTextState.increment\n"
+    )
 
 
 def test_lookup_reports_ambiguous_final_segment(temp_minify_json, cli_runner):
@@ -889,8 +914,12 @@ def test_lookup_reports_ambiguous_final_segment(temp_minify_json, cli_runner):
     text_result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
 
     assert text_result.exit_code == 0, text_result.output
-    assert "is the id of a state and of an event handler" in text_result.output
-    assert "AmbiguousParentState.increment" in text_result.output
+    assert _unwrapped(text_result.output) == (
+        "Warning: Segment 'a' is the id of a state and of an event handler of "
+        f"{__name__}.AmbiguousParentState; showing each. "
+        f"{__name__}.AmbiguousParentState {__name__}.AmbiguousChildState "
+        f"{__name__}.AmbiguousParentState.increment"
+    )
 
 
 @pytest.mark.parametrize("minified", [True, False])
@@ -1031,7 +1060,9 @@ def test_lookup_handler_id_only_matches_final_segment(temp_minify_json, cli_runn
     result = cli_runner.invoke(cli, ["minify", "lookup", "b.c.d"])
 
     assert result.exit_code == 1
-    assert "No state found for minified segment 'c'" in result.output
+    assert _unwrapped(result.output) == (
+        "No state found for minified segment 'c' in path 'b.c.d'"
+    )
 
 
 def test_lookup_with_json_output(temp_minify_json, cli_runner):
@@ -1049,11 +1080,16 @@ def test_lookup_with_json_output(temp_minify_json, cli_runner):
     result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b"])
 
     assert result.exit_code == 0, result.output
-    output_data = json.loads(result.output)
-    assert isinstance(output_data, list)
-    assert len(output_data) == 1
-    assert output_data[0]["class"] == "JsonTestState"
-    assert output_data[0]["state_id"] == "b"
+    assert json.loads(result.output) == [
+        {
+            "kind": "state",
+            "minified": "b",
+            "state_id": "b",
+            "module": __name__,
+            "class": "JsonTestState",
+            "full_path": get_state_full_path(JsonTestState),
+        }
+    ]
 
 
 @pytest.mark.parametrize("command", ["list", "lookup"])
@@ -1241,30 +1277,36 @@ def test_minify_help_shows_no_docstring_sections(cli_runner):
 
 def test_minify_sync_repairs_ambiguous_state_ids(temp_minify_json, cli_runner):
     """``validate`` flags an id the loader now rejects; ``sync`` reassigns it."""
-    from reflex.minify import StateEntry, _load_minify_config_uncached
+    from reflex.minify import (
+        _load_minify_config_uncached,
+        generate_minify_config,
+        save_minify_config,
+    )
     from reflex.reflex import cli
 
     class RepairedState(State):
         pass
 
-    install_config(
-        states={
-            get_state_full_path(RepairedState): StateEntry(
-                id="_", parent="reflex.state.State"
-            )
-        },
-        include_state_root=True,
-    )
+    path = get_state_full_path(RepairedState)
+    # Every other state has an entry, so validate reports nothing else.
+    config = generate_minify_config()
+    config["states"][path]["id"] = "_"
+    save_minify_config(config)
+    clear_config_cache()
 
     validated = cli_runner.invoke(cli, ["minify", "validate"])
     assert validated.exit_code == 1
-    assert "reflex minify sync" in validated.output
+    assert _unwrapped(validated.output) == (
+        f"Errors found: - state '{path}' has id '_'; a state id may not start or "
+        "end with '_' or contain '__', which would make two state paths read the "
+        "same once dots become '__'. Run 'reflex minify sync' to reassign it."
+    )
 
     synced = cli_runner.invoke(cli, ["minify", "sync"])
     assert synced.exit_code == 0, synced.output
     config = _load_minify_config_uncached()
     assert config is not None
-    assert config["states"][get_state_full_path(RepairedState)]["id"] != "_"
+    assert config["states"][path]["id"] != "_"
 
 
 def test_lookup_shows_every_handler_sharing_an_id(temp_minify_json, cli_runner):
@@ -1291,9 +1333,13 @@ def test_lookup_shows_every_handler_sharing_an_id(temp_minify_json, cli_runner):
     assert handlers == ["first", "second"]
 
     text = cli_runner.invoke(cli, ["minify", "lookup", "b.x"])
-    assert "first" in text.output
-    assert "second" in text.output
-    assert "reflex minify sync" in text.output
+    assert text.exit_code == 0, text.output
+    assert _unwrapped(text.output) == (
+        f"Warning: first, second of {__name__}.SharedIdState share the id 'x', so "
+        "all but one are unreachable. Run 'reflex minify sync' to reassign them. "
+        f"{__name__}.SharedIdState {__name__}.SharedIdState.first "
+        f"{__name__}.SharedIdState.second"
+    )
 
 
 def test_lookup_ignores_deleted_handlers_holding_an_id(temp_minify_json, cli_runner):
@@ -1338,9 +1384,11 @@ def test_lookup_warns_about_an_id_reserved_for_a_deleted_handler(
 
     result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
     assert result.exit_code == 0, result.output
-    assert f"{__name__}.ReservedIdState.a" in result.output
-    assert "old" in result.output
-    assert "deleted" in result.output
+    assert _unwrapped(result.output) == (
+        "Warning: 'a' is also the id minify.json keeps reserved for deleted old "
+        f"of {__name__}.ReservedIdState, which an older frontend may still send. "
+        f"{__name__}.ReservedIdState {__name__}.ReservedIdState.a"
+    )
 
 
 def test_lookup_shows_both_readings_of_a_name_another_handler_holds_as_id(
@@ -1380,8 +1428,7 @@ def test_lookup_shows_both_readings_of_a_name_another_handler_holds_as_id(
 
     text = cli_runner.invoke(cli, ["minify", "lookup", "b.foo"])
     assert text.exit_code == 0, text.output
-    # The warning wraps to the terminal width.
-    assert " ".join(text.output.split()) == (
+    assert _unwrapped(text.output) == (
         f"Warning: Segment 'foo' is the id of bar of {__name__}.NameIdState with "
         "REFLEX_MINIFY_EVENTS on, but names foo with it off; showing both. "
         f"{__name__}.NameIdState {__name__}.NameIdState.bar "
@@ -1396,7 +1443,7 @@ def test_lookup_shows_both_readings_of_a_name_another_handler_holds_as_id(
 
     text = cli_runner.invoke(cli, ["minify", "lookup", "b.count"])
     assert text.exit_code == 0, text.output
-    assert " ".join(text.output.split()) == (
+    assert _unwrapped(text.output) == (
         f"Warning: Segment 'count' is the id of total of {__name__}.NameIdState "
         "with REFLEX_MINIFY_VARS on, but names count with it off; showing both. "
         f"{__name__}.NameIdState {__name__}.NameIdState.total "

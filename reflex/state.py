@@ -3375,9 +3375,9 @@ class ComponentState(State, mixin=True):
         Args:
             children: The children of the component.
             _state_key: Names this instance's state. Must be a valid Python
-                identifier and unique among the keyed instances of components
-                with this class name. Unkeyed instances are named by creation
-                order instead.
+                identifier without uppercase letters and unique among the keyed
+                instances of components with this class name. Unkeyed instances
+                are named by creation order instead.
             props: The props of the component.
 
         Returns:
@@ -3393,11 +3393,17 @@ class ComponentState(State, mixin=True):
 
         if _state_key is not None:
             # It becomes part of a class name, so anything that is not an
-            # identifier string is rejected here rather than further in.
-            if not isinstance(_state_key, str) or not _state_key.isidentifier():
+            # identifier string is rejected here rather than further in. The
+            # default state name is snake-cased, which reads ``cartItem`` as
+            # ``cart_item``, so capitals would let two keys name one state.
+            if (
+                not isinstance(_state_key, str)
+                or not _state_key.isidentifier()
+                or _state_key != _state_key.lower()
+            ):
                 msg = (
-                    "_state_key must be a string that is a valid Python identifier, "
-                    f"got {_state_key!r}."
+                    "_state_key must be a string that is a valid Python identifier "
+                    f"without uppercase letters, got {_state_key!r}."
                 )
                 raise ValueError(msg)
             # Doubled separator: an unkeyed name is always ``_n`` followed by

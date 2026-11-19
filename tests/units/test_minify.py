@@ -2270,7 +2270,7 @@ def test_state_id_naming_a_prototype_member_is_rejected_and_reassigned(
     config["states"][path]["id"] = "constructor"
     write_config(temp_minify_json, config)
     message = (
-        f"state '{path}' has id 'constructor'; a state id may not name an "
+        f"state '{path}' has id 'constructor'; a root state id may not name an "
         "Object.prototype member, which the frontend's state maps would "
         "inherit. Run 'reflex minify sync' to reassign it."
     )
@@ -2287,6 +2287,23 @@ def test_state_id_naming_a_prototype_member_is_rejected_and_reassigned(
     assert synced["states"] == {path: StateEntry(id="a", parent=None)}
     save_minify_config(synced)
     assert _load_minify_config_uncached() == synced
+
+
+def test_nested_state_id_may_name_a_prototype_member(temp_minify_json):
+    """A nested state's frontend key is its dotted path, never a bare id.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+    root = type("PrototypeIdParent", (BaseState,), {"__module__": __name__})
+    child = type("PrototypeIdChild", (root,), {"__module__": __name__})
+    config = generate_minify_config(root)
+    config["states"][get_state_full_path(child)]["id"] = "constructor"
+    write_config(temp_minify_json, config)
+
+    assert _load_minify_config_uncached() == config
+    assert validate_minify_config(config, root) == ([], [], [])
+    assert sync_minify_config(config, root) == config
 
 
 def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
