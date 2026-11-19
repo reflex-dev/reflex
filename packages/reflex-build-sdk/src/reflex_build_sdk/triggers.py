@@ -323,7 +323,7 @@ def _event(raw: Any) -> Event:
 
     Raises:
         InvalidDelivery: If it is not an object with non-empty string ids, or
-            an optional field is neither a string nor absent.
+            an optional field is neither a string nor null (or absent).
     """
     if not isinstance(raw, dict):
         msg = "an event is not an object"
