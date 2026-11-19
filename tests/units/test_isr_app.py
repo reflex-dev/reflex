@@ -61,8 +61,8 @@ def test_serves_and_caches_rendered_html():
     r2 = client.get("/blog/hello")
 
     assert r1.status_code == 200
-    assert "/blog/hello#1" in r1.text
-    assert r1.text == r2.text
+    assert r1.text == "<html>/blog/hello#1</html>"
+    assert r2.text == "<html>/blog/hello#1</html>"
     assert renderer.calls == 1  # second request hit the cache
 
 
@@ -74,9 +74,9 @@ def test_renders_and_caches_the_raw_path():
     encoded = client.get("/blog/a%2Fb")
     decoded = client.get("/blog/a/b")
 
-    assert "/blog/a%2Fb#1" in encoded.text
-    assert "/blog/a/b#2" in decoded.text
-    assert client.get("/blog/a%2Fb").text == encoded.text
+    assert encoded.text == "<html>/blog/a%2Fb#1</html>"
+    assert decoded.text == "<html>/blog/a/b#2</html>"
+    assert client.get("/blog/a%2Fb").text == "<html>/blog/a%2Fb#1</html>"
     assert renderer.paths == ["/blog/a%2Fb", "/blog/a/b"]
 
 
@@ -88,7 +88,8 @@ def test_caches_by_path_without_query_string():
     first = client.get("/search?q=a")
     second = client.get("/search?q=b")
 
-    assert first.text == second.text
+    assert first.text == "<html>/search#1</html>"
+    assert second.text == "<html>/search#1</html>"
     assert renderer.paths == ["/search"]
 
 
@@ -110,7 +111,7 @@ def test_falls_back_to_shell_on_render_failure():
 
     r = client.get("/anything")
     assert r.status_code == 200
-    assert "SHELL" in r.text
+    assert r.text == "<html>SHELL</html>"
 
 
 def test_revalidate_path_endpoint():
@@ -123,7 +124,7 @@ def test_revalidate_path_endpoint():
 
     resp = client.post("/_isr/revalidate", json={"path": "/p"})
     assert resp.status_code == 200
-    assert resp.json()["revalidated"] is True
+    assert resp.json() == {"revalidated": True, "tag_pages": 0}
 
     client.get("/p")
     assert renderer.calls == 2  # re-rendered after invalidation
@@ -139,7 +140,7 @@ def test_revalidate_tag_endpoint():
     assert renderer.calls == 2
 
     resp = client.post("/_isr/revalidate", json={"tag": "t"})
-    assert resp.json()["tag_pages"] == 2
+    assert resp.json() == {"revalidated": True, "tag_pages": 2}
 
     client.get("/a")
     client.get("/b")
