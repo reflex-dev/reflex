@@ -16,6 +16,7 @@ import {
   defaultLocale,
   defaultPlural,
   deployUrl,
+  fallbackLocale,
   loaders,
   locales,
   urlRouting,
@@ -101,7 +102,7 @@ const initialLocale = () => {
     return fromCookie;
   }
   return (
-    negotiate(navigator.languages ?? [navigator.language]) ?? defaultLocale
+    negotiate(navigator.languages ?? [navigator.language]) ?? fallbackLocale
   );
 };
 

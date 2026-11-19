@@ -150,6 +150,7 @@ class I18nPlugin(Plugin):
 
     locales: Sequence[str]
     default_locale: str = "en"
+    fallback_locale: str | None = None
     catalog_dir: str = "locales"
     routing: PathPrefixRouting | None = None
 
@@ -163,6 +164,7 @@ class I18nPlugin(Plugin):
             locales=self.locales,
             default_locale=self.default_locale,
             catalog_dir=self.catalog_dir,
+            fallback_locale=self.fallback_locale,
         )
 
     def __post_init__(self):

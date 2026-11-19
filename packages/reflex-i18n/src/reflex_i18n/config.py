@@ -50,11 +50,16 @@ class I18nConfig:
     # Directory (relative to the app root) containing {locale}.po catalogs.
     catalog_dir: str = "locales"
 
+    # The locale for a visitor whose browser asks for none of the configured
+    # ones (Accept-Language negotiation); the default locale unless set.
+    fallback_locale: str = "en"
+
     def __init__(
         self,
         locales: Sequence[str],
         default_locale: str = "en",
         catalog_dir: str = "locales",
+        fallback_locale: str | None = None,
     ):
         """Initialize and validate the i18n configuration.
 
@@ -63,10 +68,13 @@ class I18nConfig:
             default_locale: The locale the source-text msgids are written in.
             catalog_dir: Directory (relative to the app root) containing
                 ``{locale}.po`` catalogs.
+            fallback_locale: The locale for a visitor whose browser asks for
+                none of the configured ones. Defaults to ``default_locale``.
 
         Raises:
             ValueError: If no locales are given, a locale is repeated, a locale
-                is not a language tag, or the default locale is not among them.
+                is not a language tag, or the default or fallback locale is not
+                among them.
         """
         locales_tuple = tuple(locales)
         if not locales_tuple:
@@ -78,15 +86,22 @@ class I18nConfig:
             raise ValueError(msg)
         for locale in locales_tuple:
             validate_locale(locale)
-        if default_locale not in locales_tuple:
-            msg = (
-                f"I18nConfig.default_locale {default_locale!r} must be one of "
-                f"the configured locales {locales_tuple!r}."
-            )
-            raise ValueError(msg)
+        if fallback_locale is None:
+            fallback_locale = default_locale
+        for name, locale in (
+            ("default_locale", default_locale),
+            ("fallback_locale", fallback_locale),
+        ):
+            if locale not in locales_tuple:
+                msg = (
+                    f"I18nConfig.{name} {locale!r} must be one of the "
+                    f"configured locales {locales_tuple!r}."
+                )
+                raise ValueError(msg)
         object.__setattr__(self, "locales", locales_tuple)
         object.__setattr__(self, "default_locale", default_locale)
         object.__setattr__(self, "catalog_dir", catalog_dir)
+        object.__setattr__(self, "fallback_locale", fallback_locale)
 
 
 _active_config: I18nConfig | None = None

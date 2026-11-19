@@ -237,6 +237,14 @@ On a visitor's first load, the locale is negotiated from their browser's
 `Accept-Language`, falling back to `default_locale`. Once they pick a language
 it is remembered in a cookie.
 
+The source language is not always the best guess for a visitor whose browser
+asks for none of your locales. An app written in German that also ships English
+can send everyone else to English with `fallback_locale`:
+
+```python
+I18nPlugin(locales=["de", "en"], default_locale="de", fallback_locale="en")
+```
+
 Switch languages with `rx.i18n.set_locale`, which updates both static and
 dynamic content:
 

@@ -46,6 +46,15 @@ def test_resolve_locale_falls_back_to_default():
     assert _resolve_locale("", "ja,ko") == "en"
 
 
+def test_resolve_locale_falls_back_to_fallback_locale():
+    set_active_i18n_config(
+        I18nConfig(locales=["de", "en"], default_locale="de", fallback_locale="en")
+    )
+    assert _resolve_locale("", "ja,ko") == "en"
+    assert _resolve_locale("", "de-AT") == "de"
+    assert _resolve_locale("", "") == "en"
+
+
 def test_resolve_locale_without_config():
     set_active_i18n_config(None)
     assert _resolve_locale("", "de") == "en"

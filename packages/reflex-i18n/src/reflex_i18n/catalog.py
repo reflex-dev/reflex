@@ -214,6 +214,7 @@ def compile_index_module(
         f"{_GENERATED_HEADER}"
         f"export const locales = {json.dumps(list(config.locales))};\n"
         f"export const defaultLocale = {json.dumps(config.default_locale)};\n"
+        f"export const fallbackLocale = {json.dumps(config.fallback_locale)};\n"
         f"export const cookieName = {json.dumps(LOCALE_COOKIE_NAME)};\n"
         f"export const urlRouting = {json.dumps(url_routing)};\n"
         f"export const defaultAtRoot = {json.dumps(default_at_root)};\n"

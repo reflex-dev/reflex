@@ -10,6 +10,7 @@ def test_config_defaults():
     assert config.locales == ("en", "de")
     assert config.default_locale == "en"
     assert config.catalog_dir == "locales"
+    assert config.fallback_locale == "en"
 
 
 def test_config_accepts_any_sequence():
@@ -25,6 +26,20 @@ def test_config_requires_locales():
 def test_config_default_locale_must_be_supported():
     with pytest.raises(ValueError, match="must be one of"):
         I18nConfig(locales=["en", "de"], default_locale="fr")
+
+
+def test_config_fallback_locale_defaults_to_default_locale():
+    config = I18nConfig(locales=["de", "en"], default_locale="de")
+    assert config.fallback_locale == "de"
+
+
+def test_config_fallback_locale_must_be_supported():
+    with pytest.raises(ValueError) as exc_info:
+        I18nConfig(locales=["de", "en"], default_locale="de", fallback_locale="fr")
+    assert str(exc_info.value) == (
+        "I18nConfig.fallback_locale 'fr' must be one of the configured locales "
+        "('de', 'en')."
+    )
 
 
 @pytest.mark.parametrize(

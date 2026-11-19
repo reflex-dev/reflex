@@ -34,7 +34,7 @@ _SWITCH_LOCALE = FunctionStringVar.create(
 
 
 def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
-    """Resolve a locale: chosen cookie, then Accept-Language, then default.
+    """Resolve a locale: chosen cookie, then Accept-Language, then fallback.
 
     Args:
         locale_cookie: The user's chosen locale, or empty if none.
@@ -48,7 +48,7 @@ def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
         return locale_cookie or "en"
     if locale_cookie and locale_cookie in config.locales:
         return locale_cookie
-    return negotiate_locale(accept_language, config.locales, config.default_locale)
+    return negotiate_locale(accept_language, config.locales, config.fallback_locale)
 
 
 def _locale_from_path(path: str) -> str | None:
