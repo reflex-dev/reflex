@@ -215,7 +215,7 @@ class DynamicRouteArgShadowsStateVarError(ReflexError, NameError):
 
 
 class DynamicRouteArgNotFoundError(ReflexError, AttributeError):
-    """Raised when a dynamic route arg is requested that no added page declares."""
+    """Raised when a dynamic route arg is requested that no added page declares as such."""
 
 
 class ComputedVarShadowsStateVarError(ReflexError, NameError):

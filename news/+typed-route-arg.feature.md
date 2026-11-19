@@ -1,1 +1,1 @@
-Add `rx.State.route_arg(name)`, which returns the var of a page's dynamic route argument with a type: a `StringVar` for `[name]`, an `ArrayVar[list[str]]` for the `[[...splat]]` catch-all. Type checkers do not know `rx.State.name`, which is only added with the page.
+Add `rx.State.route_arg(name)` and `rx.State.route_catch_all()`, which return the var of a page's dynamic route argument with a type: a `StringVar` for `[name]`, an `ArrayVar[list[str]]` for the `[[...splat]]` catch-all. Type checkers do not know `rx.State.name`, which is only added with the page.
