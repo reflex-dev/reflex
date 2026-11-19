@@ -306,21 +306,45 @@ def test_a_ping_during_hydration_is_answered_and_not_counted(
 
 
 @pytest.mark.parametrize(
-    ("protocol", "frames", "match"),
+    ("protocol", "frames", "message"),
     [
-        ("websocket", [CLOSED], "received 1008"),
-        ("websocket", ['{"not":"a message"}'], "unexpected frame"),
-        ("websocket", [b"\x00\x01"], "unexpected frame"),
-        ("websocket", [WEBSOCKET.emit("reload", "/")], "reload"),
-        ("socketio", ['44/_event,{"message":"nope"}'], "refused"),
-        ("socketio", [SIO_DISCONNECT_FRAME], "disconnected"),
-        ("socketio", ["1"], "disconnected"),
-        ("socketio", ["6"], "unexpected frame"),
-        ("socketio", [SOCKETIO.emit("reload", "/")], "reload"),
+        (
+            "websocket",
+            [CLOSED],
+            "received 1008 (policy violation); no close frame sent",
+        ),
+        (
+            "websocket",
+            ['{"not":"a message"}'],
+            """unexpected frame: '{"not":"a message"}'""",
+        ),
+        ("websocket", [b"\x00\x01"], "unexpected frame: b'\\x00\\x01'"),
+        (
+            "websocket",
+            [WEBSOCKET.emit("reload", "/")],
+            "the server asked the page to reload",
+        ),
+        (
+            "socketio",
+            ['44/_event,{"message":"nope"}'],
+            'the server refused /_event: {"message":"nope"}',
+        ),
+        (
+            "socketio",
+            [SIO_DISCONNECT_FRAME],
+            f"the server disconnected the session ({SIO_DISCONNECT_FRAME!r})",
+        ),
+        ("socketio", ["1"], "the server disconnected the session ('1')"),
+        ("socketio", ["6"], "unexpected frame: '6'"),
+        (
+            "socketio",
+            [SOCKETIO.emit("reload", "/")],
+            "the server asked the page to reload",
+        ),
     ],
 )
 def test_a_frame_that_ends_the_session_fails_the_hydration(
-    protocol: WireProtocol, frames: list[Reply], match: str
+    protocol: WireProtocol, frames: list[Reply], message: str
 ):
     codec = CODECS[protocol]
 
@@ -329,19 +353,25 @@ def test_a_frame_that_ends_the_session_fails_the_hydration(
         return frames if args is not None and args[0] in {CONNECT, HANDSHAKE} else []
 
     ws = FakeTransport(script, codec)
-    with pytest.raises((ProtocolError, ConnectionClosedError), match=match):
+    with pytest.raises((ProtocolError, ConnectionClosedError)) as exc_info:
         run(wire.WireSession(ws, "tok", codec=codec).hydrate())
+    assert str(exc_info.value) == message
 
 
 @pytest.mark.parametrize(
-    ("first", "match"), [(ACK, "did not open"), ("3", "unexpected frame")]
+    ("first", "message"),
+    [
+        (ACK, f"the server did not open an engine.io session: {ACK!r}"),
+        ("3", "unexpected frame: '3'"),
+    ],
 )
 def test_a_socketio_server_that_does_not_open_fails_the_hydration(
-    first: str, match: str
+    first: str, message: str
 ):
     ws = FakeTransport(lambda message: [], greeting=[first])
-    with pytest.raises(ProtocolError, match=match):
+    with pytest.raises(ProtocolError) as exc_info:
         run(wire.WireSession(ws, "tok", codec=SOCKETIO).hydrate())
+    assert str(exc_info.value) == message
 
 
 async def hydrated_exchange(
@@ -460,14 +490,24 @@ def test_a_navigation_with_on_load_events_is_summed_until_hydrated():
 
 
 @pytest.mark.parametrize(
-    ("protocol", "end", "error", "match"),
+    ("protocol", "end", "error", "message"),
     [
-        ("websocket", CLOSED, ConnectionClosedError, "received 1008"),
-        ("socketio", SIO_DISCONNECT_FRAME, ProtocolError, "disconnected"),
+        (
+            "websocket",
+            CLOSED,
+            ConnectionClosedError,
+            "received 1008 (policy violation); no close frame sent",
+        ),
+        (
+            "socketio",
+            SIO_DISCONNECT_FRAME,
+            ProtocolError,
+            f"the server disconnected the session ({SIO_DISCONNECT_FRAME!r})",
+        ),
     ],
 )
 def test_a_disconnect_while_waiting_for_the_reply_fails(
-    protocol: WireProtocol, end: Reply, error: type[Exception], match: str
+    protocol: WireProtocol, end: Reply, error: type[Exception], message: str
 ):
     codec = CODECS[protocol]
     simple = SHAPES["simple"].name
@@ -478,8 +518,9 @@ def test_a_disconnect_while_waiting_for_the_reply_fails(
         await session.hydrate()
         return await session.exchange(SHAPES["simple"], 1)
 
-    with pytest.raises(error, match=match):
+    with pytest.raises(error) as exc_info:
         run(exchange())
+    assert str(exc_info.value) == message
 
 
 @contextlib.contextmanager

@@ -25,7 +25,7 @@ from reflex.socketio_namespace import (
     _sio_loads,
 )
 
-from .conftest import metric_points
+from .conftest import logged_records, metric_points
 
 
 @pytest.fixture
@@ -133,6 +133,13 @@ async def test_connect_reports_state_schema_mismatch(
             if r.name == "reflex.event_namespace" and r.levelno == logging.WARNING
         ]
 
+    def mismatch(frontend: str, sid: str) -> str:
+        return (
+            f"Frontend state schema {frontend} for session {sid} does not match "
+            "the backend state schema backend-schema: the frontend was built for "
+            "another version of the app and is told to reload."
+        )
+
     with caplog.at_level(logging.WARNING, logger="reflex.event_namespace"):
         await namespace.on_connect(
             "sid1",
@@ -147,10 +154,7 @@ async def test_connect_reports_state_schema_mismatch(
         )
         token, event = namespace_app.event_processor.enqueue.await_args.args
         assert (token, event.name) == ("tok1", "state.hydrate_and_load")
-        (message,) = warnings()
-        assert "frontend-schema" in message
-        assert "backend-schema" in message
-        assert "sid1" in message
+        assert warnings() == [mismatch("frontend-schema", "sid1")]
 
         # The client-supplied hash is sanitized and bounded before it is logged.
         caplog.clear()
@@ -160,12 +164,9 @@ async def test_connect_reports_state_schema_mismatch(
             {"event": boot_event, "state_schema": "x\nforged line [bold]" + "y" * 500},
         )
 
-    (message,) = warnings()
-    assert "forged" in message
-    assert "\n" not in message
-    assert "\\[bold]" in message
-    assert "(truncated)" in message
-    assert len(message) < 400
+    assert warnings() == [
+        mismatch("x forged line \\[bold]" + "y" * 28 + "... (truncated)", "sid2")
+    ]
 
 
 @pytest.mark.asyncio
@@ -217,7 +218,8 @@ async def test_connect_whose_boot_event_fails_is_refused(
     Raising instead would leave the session registered with Socket.IO yet
     unanswered, so the client would neither hydrate nor retry.
     """
-    namespace_app.event_processor.enqueue.side_effect = ValueError("bad boot event")
+    error = ValueError("bad boot event")
+    namespace_app.event_processor.enqueue.side_effect = error
     environ = {
         "QUERY_STRING": "token=tok1",
         "asgi.scope": {"type": "websocket", "headers": []},
@@ -229,7 +231,14 @@ async def test_connect_whose_boot_event_fails_is_refused(
     await asyncio.sleep(0)
 
     assert refused is False
-    assert "Error handling the boot event" in caplog.text
+    assert logged_records(caplog, logging.ERROR) == [
+        (
+            "reflex.event_namespace",
+            logging.ERROR,
+            "Error handling the boot event for session sid1.",
+            error,
+        )
+    ]
     assert "sid1" not in namespace.sid_to_token
     assert "tok1" not in namespace.token_to_sid
     assert namespace._scopes == {}
@@ -670,11 +679,12 @@ async def test_client_error_values_are_sanitized_and_truncated(
     await namespace.on_client_error(
         "known_sid", {"error_type": "custom_type", "message": evil}
     )
-    (message,) = frontend_errors
-    assert "\x1b" not in message
-    assert "\n" not in message
-    assert "\t" not in message
-    assert len(message) < 700
+    # Each control character becomes a space, within the 500 character bound.
+    assert frontend_errors == [
+        "[SID: known_sid] custom_type:  [31mINJECT [0m FAKE LOG LINE "
+        + "A" * 455
+        + "... (truncated)"
+    ]
 
 
 @pytest.mark.asyncio

@@ -6,6 +6,7 @@ import socket
 import sys
 import threading
 import time
+import traceback
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -384,23 +385,36 @@ def test_failed_backend_startup_logs_and_fails_fast(tmp_path, capsys):
         tmp_path: pytest tmp_path fixture
         capsys: pytest capsys fixture
     """
+    boom = RuntimeError("lifespan boom")
 
     @contextlib.asynccontextmanager
     async def lifespan(app):
-        msg = "lifespan boom"
-        raise RuntimeError(msg)
+        raise boom
         yield
 
     server = reflex_testing._EmbeddedServer(Starlette(lifespan=lifespan))
     harness = _harness_with_backend(tmp_path, server)
     with _running(server):
         started = time.monotonic()
-        with pytest.raises(RuntimeError, match="stopped without serving"):
+        with pytest.raises(RuntimeError) as exc_info:
             harness._poll_for_servers(timeout=10)
         assert time.monotonic() - started < 5
-    out = capsys.readouterr().out
-    assert "ASGI lifespan startup failed" in out
-    assert "RuntimeError: lifespan boom" in out
+    assert str(exc_info.value) == (
+        f"Server on port {server.port} stopped without serving; see the log above."
+    )
+    # Starlette reports the traceback from its lifespan frame down, which granian
+    # logs before its own record of the failure with the full traceback.
+    starlette_tb = boom.__traceback__
+    while starlette_tb is not None and (
+        starlette_tb.tb_frame.f_code.co_qualname != "Router.lifespan"
+    ):
+        starlette_tb = starlette_tb.tb_next
+    assert capsys.readouterr().out == (
+        f"[ERROR] {''.join(traceback.format_exception(type(boom), boom, starlette_tb))}\n"
+        "[ERROR] ASGI lifespan startup failed\n"
+        f"{''.join(traceback.format_exception(boom))}"
+        "[ERROR] Unexpected exit from worker-1\n"
+    )
     # The socket is released although no worker ever served it.
     _assert_port_free(server.host, server.port)
 
@@ -424,8 +438,11 @@ def test_embedded_server_stopped_before_run_never_serves():
     server.should_exit = True
     server.run()
     shutdown.assert_awaited_once()
-    with pytest.raises(RuntimeError, match="stopped without serving"):
+    with pytest.raises(RuntimeError) as exc_info:
         server.wait_started(timeout=0)
+    assert str(exc_info.value) == (
+        f"Server on port {server.port} stopped without serving; see the log above."
+    )
     _assert_port_free(server.host, server.port)
 
 

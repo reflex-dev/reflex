@@ -52,7 +52,7 @@ from reflex.event_namespace import (
 from reflex.istate.data import HeaderData
 from reflex.utils.token_manager import SocketRecord
 
-from .conftest import active_tracer, metric_points
+from .conftest import active_tracer, logged_records, metric_points
 
 _DISCONNECT = object()
 
@@ -397,7 +397,8 @@ async def test_boot_event_handler_error_ends_the_session(
     Kept open, the session would leave the client waiting for a hydrate that
     never comes; closed, the client reconnects and retries, as on Socket.IO.
     """
-    namespace_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
+    error = RuntimeError("server bug")
+    namespace_app.event_processor.enqueue.side_effect = error
     with caplog.at_level(logging.ERROR, logger="reflex.event_namespace"):
         websocket = await serve(
             namespace, [CONNECT_MESSAGE, {"event": boot_event}], ["ping"], connect=False
@@ -406,10 +407,14 @@ async def test_boot_event_handler_error_ends_the_session(
     assert websocket.close_code == 1011
     assert ["ping", "pong"] not in websocket.sent
     assert "tok1" not in namespace.token_to_sid
-    assert any(
-        "Error handling the boot event" in record.getMessage()
-        for record in caplog.records
-    )
+    assert logged_records(caplog, logging.ERROR) == [
+        (
+            "reflex.event_namespace",
+            logging.ERROR,
+            "Error handling the boot event for session <sid>.",
+            error,
+        )
+    ]
 
 
 class ReceiveBoundWebSocket(FakeWebSocket):
@@ -625,7 +630,8 @@ async def test_handler_error_keeps_connection(
     caplog: pytest.LogCaptureFixture,
 ):
     """A server-side handler failure is logged and the connection survives."""
-    namespace_app.event_processor.enqueue.side_effect = RuntimeError("server bug")
+    error = RuntimeError("server bug")
+    namespace_app.event_processor.enqueue.side_effect = error
     with caplog.at_level(logging.ERROR, logger="reflex.event_namespace"):
         websocket = await serve(
             namespace,
@@ -635,11 +641,14 @@ async def test_handler_error_keeps_connection(
 
     assert websocket.close_code is None
     assert ["ping", "pong"] in websocket.sent
-    assert any(
-        record.levelno == logging.ERROR
-        and "Error handling socket event" in record.getMessage()
-        for record in caplog.records
-    )
+    assert logged_records(caplog, logging.ERROR) == [
+        (
+            "reflex.event_namespace",
+            logging.ERROR,
+            "Error handling socket event 'event' for session <sid>.",
+            error,
+        )
+    ]
 
 
 @pytest.mark.asyncio
@@ -965,8 +974,12 @@ def test_custom_sio_with_an_explicit_websocket_transport_is_refused(
     from socketio import AsyncServer
 
     monkeypatch.setenv("REFLEX_TRANSPORT", "websocket")
-    with pytest.raises(RuntimeError, match=r"requires the Socket\.IO transport"):
+    with pytest.raises(RuntimeError) as exc_info:
         App(sio=AsyncServer(async_mode="asgi"))
+    assert str(exc_info.value) == (
+        "A custom `sio` server requires the Socket.IO transport; "
+        'set transport="socketio" (or "polling") in rxconfig.py.'
+    )
 
 
 def test_custom_sio_with_socketio_transport(
@@ -1008,8 +1021,12 @@ def test_app_socketio_reexports_without_the_extra(monkeypatch: pytest.MonkeyPatc
 
     for name in ("EventNamespace", "AsyncServer"):
         assert not hasattr(reflex.app, name)
-        with pytest.raises(AttributeError, match=r"reflex\[socketio\]"):
+        with pytest.raises(AttributeError) as exc_info:
             getattr(reflex.app, name)
+        assert str(exc_info.value) == (
+            f"reflex.app.{name} needs the optional python-socketio package; "
+            "install it with: pip install 'reflex[socketio]'."
+        )
 
 
 @pytest.mark.parametrize(
@@ -1269,9 +1286,12 @@ def test_malformed_channel_frame_is_rejected(frame: bytes):
 
 def test_channel_frame_rejects_too_many_attachments():
     """A frame declaring more attachments than the cap raises."""
-    header = json.dumps(["e", None, "c", [0] * 65]).encode()
-    with pytest.raises(ValueError, match="more than"):
+    header = json.dumps(["e", None, "c", [0] * (MAX_MESSAGE_BUFFERS + 1)]).encode()
+    with pytest.raises(ValueError) as exc_info:
         decode_channel_frame(len(header).to_bytes(4, "little") + header)
+    assert str(exc_info.value) == (
+        f"Binary frame carries more than {MAX_MESSAGE_BUFFERS} attachments."
+    )
 
 
 @pytest.mark.asyncio
@@ -1437,13 +1457,13 @@ async def test_channel_handler_error_keeps_connection(
     namespace: WebsocketEventNamespace, namespace_app: Mock, caplog
 ):
     """A channel handler raising is logged without dropping the connection."""
+    error = RuntimeError("handler failed")
 
     class BoomChannel(Channel):
         name = "boom"
 
         async def on_message(self, session, event, data, buffers) -> None:
-            msg = "handler failed"
-            raise RuntimeError(msg)
+            raise error
 
     namespace_app._channels = {"boom": BoomChannel()}
     websocket = FakeWebSocket()
@@ -1454,7 +1474,14 @@ async def test_channel_handler_error_keeps_connection(
 
     assert websocket.close_code is None
     assert ["ping", "pong"] in websocket.sent
-    assert "handler failed" in caplog.text
+    assert logged_records(caplog, logging.ERROR) == [
+        (
+            "reflex.event_namespace",
+            logging.ERROR,
+            "Error handling 'go' on channel 'boom' for session <sid>.",
+            error,
+        )
+    ]
 
 
 @pytest.mark.asyncio
@@ -1725,8 +1752,9 @@ def test_decoding_a_too_deeply_nested_header_is_a_value_error(mocker):
     )
     frame = encode_channel_frame("push", None, "probe", [b"\x00"])
 
-    with pytest.raises(ValueError, match="nested too deeply"):
+    with pytest.raises(ValueError) as exc_info:
         decode_channel_frame(frame)
+    assert str(exc_info.value) == "Binary frame header is nested too deeply."
 
 
 @pytest.mark.asyncio
@@ -2098,7 +2126,8 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
     websocket = LosesItsToken()
     websocket.feed([OPEN_MESSAGE, None, "probe"], frame)
 
-    with caplog.at_level(logging.DEBUG):
+    # The reflex logger may carry a level of its own; capture below it too.
+    with caplog.at_level(logging.DEBUG, logger="reflex"):
         await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
         await _drain_tasks()
 
@@ -2108,8 +2137,14 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
     namespace_app.event_processor.enqueue.assert_not_awaited()
     assert channel.messages == []
     # Nothing the client sent reached the log, at any level.
-    assert "[fake] log line" not in caplog.text
-    assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
+    assert logged_records(caplog, logging.DEBUG) == [
+        (
+            "reflex.event_namespace",
+            logging.DEBUG,
+            "Closing session <sid>: its token is gone.",
+            None,
+        )
+    ]
 
 
 @pytest.mark.asyncio

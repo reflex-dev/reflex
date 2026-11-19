@@ -5,6 +5,7 @@ import dataclasses
 import enum
 import io
 import platform
+import re
 import sys
 import traceback
 import uuid
@@ -699,6 +700,33 @@ def metric_points(reader: InMemoryMetricReader, name: str) -> list:
         for metric in sm.metrics
         if metric.name == name
         for point in metric.data.data_points
+    ]
+
+
+_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+
+def logged_records(
+    caplog: pytest.LogCaptureFixture, level: int
+) -> list[tuple[str, int, str, BaseException | None]]:
+    """List the captured records at or above a level, with each uuid as ``<sid>``.
+
+    Args:
+        caplog: The log capture fixture.
+        level: The lowest level to list.
+
+    Returns:
+        Each record's logger, level, message and attached exception.
+    """
+    return [
+        (
+            record.name,
+            record.levelno,
+            _UUID.sub("<sid>", record.getMessage()),
+            record.exc_info[1] if record.exc_info else None,
+        )
+        for record in caplog.records
+        if record.levelno >= level
     ]
 
 

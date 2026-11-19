@@ -5411,8 +5411,9 @@ def test_register_channel_rejects_a_duplicate_name():
     app = App(enable_state=True)
     app.register_channel(_ProbeChannel())
 
-    with pytest.raises(RuntimeError, match="already registered"):
+    with pytest.raises(RuntimeError) as exc_info:
         app.register_channel(_ProbeChannel())
+    assert str(exc_info.value) == "A channel named 'probe' is already registered."
 
 
 @pytest.mark.parametrize("state", [None, State])
@@ -5434,7 +5435,17 @@ def test_register_channel_skips_without_the_event_websocket(
         app.register_channel(_ProbeChannel())
 
     assert app._channels == {}
-    assert "needs the event websocket" in caplog.text
+    assert caplog.record_tuples == [
+        (
+            "reflex.app",
+            logging.WARNING,
+            (
+                "Channel 'probe' is not served: it needs the event websocket, "
+                "which exists only when state is enabled "
+                "(rx.App(enable_state=True), the default)."
+            ),
+        )
+    ]
 
 
 def test_register_channel_skips_without_the_websocket_transport(
@@ -5454,7 +5465,17 @@ def test_register_channel_skips_without_the_websocket_transport(
         app.register_channel(_ProbeChannel())
 
     assert app._channels == {}
-    assert "requires the plain WebSocket transport" in caplog.text
+    assert caplog.record_tuples == [
+        (
+            "reflex.app",
+            logging.WARNING,
+            (
+                "Channel 'probe' is not served: it requires the plain WebSocket "
+                "transport; remove the transport setting in rxconfig.py or set "
+                'transport="websocket".'
+            ),
+        )
+    ]
 
 
 async def test_await_inside_app_modify_state_runs_inline(app_with_processor: App):

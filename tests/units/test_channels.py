@@ -14,6 +14,53 @@ from reflex.channels import (
 )
 
 
+def _invalid_name_message(name: Any) -> str:
+    """Build the error for a channel name that is unusable on the wire.
+
+    Args:
+        name: The rejected name.
+
+    Returns:
+        The complete error message.
+    """
+    return (
+        f"Invalid channel name {name!r}: expected 1-64 characters from "
+        "[A-Za-z0-9_./:-]."
+    )
+
+
+def _reserved_message(event: str) -> str:
+    """Build the error for a reserved message name.
+
+    Args:
+        event: The rejected message name.
+
+    Returns:
+        The complete error message.
+    """
+    return (
+        f"Channel message name {event!r} is reserved: the client-side handle "
+        "reports its own lifecycle under it, and names starting with '_' belong "
+        "to the channel protocol."
+    )
+
+
+def _attachments_message(event: str, count: int) -> str:
+    """Build the error for a message with more attachments than a frame holds.
+
+    Args:
+        event: The message name.
+        count: The number of attachments.
+
+    Returns:
+        The complete error message.
+    """
+    return (
+        f"Channel message {event!r} carries {count} attachments, over the "
+        f"{MAX_MESSAGE_BUFFERS} a frame may hold."
+    )
+
+
 class CollectingChannel(Channel):
     """A channel that records every message its transport was asked to send."""
 
@@ -70,8 +117,9 @@ def test_valid_channel_names(name: str):
 @pytest.mark.parametrize("name", ["", "x" * 65, "has space", 'quote"', "new\nline"])
 def test_invalid_channel_names(name: str):
     """Names that would need escaping on the wire are rejected."""
-    with pytest.raises(ValueError, match="Invalid channel name"):
+    with pytest.raises(ValueError) as exc_info:
         validate_channel_name(name)
+    assert str(exc_info.value) == _invalid_name_message(name)
 
 
 def test_channel_rejects_an_unusable_name():
@@ -80,8 +128,9 @@ def test_channel_rejects_an_unusable_name():
     class BadChannel(CollectingChannel):
         name = "not a name"
 
-    with pytest.raises(ValueError, match="Invalid channel name"):
+    with pytest.raises(ValueError) as exc_info:
         BadChannel()
+    assert str(exc_info.value) == _invalid_name_message("not a name")
 
 
 @pytest.mark.asyncio
@@ -212,8 +261,9 @@ async def test_send_rejects_more_attachments_than_a_frame_holds():
     session = channel.session("sid1")
     buffers = [b"\x00"] * (MAX_MESSAGE_BUFFERS + 1)
 
-    with pytest.raises(ValueError, match="attachments"):
+    with pytest.raises(ValueError) as exc_info:
         await session.send("push", None, buffers)
+    assert str(exc_info.value) == _attachments_message("push", len(buffers))
 
     assert channel.sent == []
 
@@ -225,10 +275,11 @@ async def test_room_fan_out_rejects_oversized_messages_before_delivering():
     channel.session("sid1").join("all")
     channel.session("sid2").join("all")
 
-    with pytest.raises(ValueError, match="attachments"):
+    with pytest.raises(ValueError) as exc_info:
         await channel.send_to_room(
             "all", "push", None, [b""] * (MAX_MESSAGE_BUFFERS + 1)
         )
+    assert str(exc_info.value) == _attachments_message("push", MAX_MESSAGE_BUFFERS + 1)
 
     assert channel.sent == []
 
@@ -253,8 +304,9 @@ def test_channel_with_an_unusable_name_reports_it(name: Any):
 
     BadChannel.name = name  # pyright: ignore[reportAttributeAccessIssue]
 
-    with pytest.raises(ValueError, match="Invalid channel name"):
+    with pytest.raises(ValueError) as exc_info:
         BadChannel()
+    assert str(exc_info.value) == _invalid_name_message(name)
 
 
 def test_channel_without_a_name_reports_it():
@@ -267,8 +319,9 @@ def test_channel_without_a_name_reports_it():
             """Ignore inbound messages."""
             return
 
-    with pytest.raises(ValueError, match="Invalid channel name"):
+    with pytest.raises(ValueError) as exc_info:
         NamelessChannel()
+    assert str(exc_info.value) == _invalid_name_message(None)
 
 
 @pytest.mark.asyncio
@@ -304,27 +357,39 @@ async def test_send_rejects_reserved_message_names(event: str):
     channel = CollectingChannel()
     session = channel.session("sid1")
 
-    with pytest.raises(ValueError, match="reserved"):
+    with pytest.raises(ValueError) as exc_info:
         await session.send(event, {"anything": True})
+    assert str(exc_info.value) == _reserved_message(event)
 
     assert channel.sent == []
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("event", "buffers"),
-    [("_error", ()), ("push", [b""] * (MAX_MESSAGE_BUFFERS + 1)), (42, ())],
+    ("event", "buffers", "message"),
+    [
+        ("_error", (), _reserved_message("_error")),
+        (
+            "push",
+            [b""] * (MAX_MESSAGE_BUFFERS + 1),
+            _attachments_message("push", MAX_MESSAGE_BUFFERS + 1),
+        ),
+        (42, (), "Channel message name 42 is not a non-empty string."),
+    ],
 )
-async def test_fan_out_validates_even_when_nobody_listens(event: Any, buffers: Any):
+async def test_fan_out_validates_even_when_nobody_listens(
+    event: Any, buffers: Any, message: str
+):
     """A message that could never be sent fails whether or not anyone is in the room.
 
     Otherwise the mistake only surfaces once a client happens to join.
     """
     channel = CollectingChannel()
 
-    with pytest.raises(ValueError, match="Channel message"):
+    with pytest.raises(ValueError) as room_error:
         await channel.send_to_room("empty", event, None, buffers)
-    with pytest.raises(ValueError, match="Channel message"):
+    with pytest.raises(ValueError) as token_error:
         await channel.send_to_token("nobody", event, None, buffers)
+    assert [str(room_error.value), str(token_error.value)] == [message, message]
 
     assert channel.sent == []
