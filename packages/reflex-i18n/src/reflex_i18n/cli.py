@@ -23,11 +23,14 @@ from .registry import MessageKey, collected_messages
 if TYPE_CHECKING:
     from babel.messages.catalog import Catalog
 
-# Call names extracted for server-side (dynamic) translation. Matched
-# syntactically by Babel, so the conventional ``gettext as _`` alias works.
+# Call names extracted for server-side (dynamic) translation, and the markers
+# for text translated later. Matched syntactically by Babel, so the
+# conventional ``gettext as _`` and ``gettext_noop as N_`` aliases work.
 _GETTEXT_KEYWORDS = {
     "_": None,
+    "N_": None,
     "gettext": None,
+    "gettext_noop": None,
     "ngettext": (1, 2),
     "pgettext": ((1, "c"), 2),
 }

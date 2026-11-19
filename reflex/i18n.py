@@ -25,6 +25,7 @@ try:
         format_time,
         get_locale,
         gettext,
+        gettext_noop,
         language_switcher,
         locale_url,
         ngettext,
@@ -54,6 +55,7 @@ if TYPE_CHECKING:
     from reflex_i18n import set_locale as set_locale
 
 _ = gettext
+N_ = gettext_noop
 
 # "date", "datetime" and "time" are intentionally omitted: they are available
 # as rx.i18n.date/.time/.datetime but excluded from `import *` so they cannot
@@ -74,6 +76,7 @@ __all__ = [
     "format_time",
     "get_locale",
     "gettext",
+    "gettext_noop",
     "language_switcher",
     "locale",
     "locale_url",

@@ -145,6 +145,32 @@ Note: translate at render time (in a computed var) or at the moment you emit a
 message. A translated string stored in a plain var earlier will not
 re-translate on its own when the locale changes.
 
+### Text defined at import time
+
+A module-level constant or an enum label is created before any visitor has a
+locale, so translating it right there would freeze it in the default language.
+Mark it with `N_` (short for `gettext_noop`) instead: it returns the text
+unchanged, but `reflex i18n extract` adds it to the catalogs. Translate the
+value where it is shown, with `rx.t` in a component or `gettext` in state:
+
+```python
+from reflex_i18n import N_, gettext as _
+
+EMPTY_CART = N_("Your cart is empty")
+
+
+def cart_hint():
+    return rx.text(rx.t(EMPTY_CART))
+
+
+class CartState(rx.State):
+    hint: str = ""
+
+    @rx.event
+    def clear(self):
+        self.hint = _(EMPTY_CART)
+```
+
 ### Outside an event
 
 Event handlers and computed vars translate into their visitor's locale

@@ -30,6 +30,7 @@ from .runtime import (
     format_time,
     get_locale,
     gettext,
+    gettext_noop,
     ngettext,
     pgettext,
     use_locale,
@@ -44,8 +45,9 @@ if TYPE_CHECKING:
     # The active locale as a client-side var; resolved lazily (see below).
     locale: StringVar
 
-# gettext alias, the conventional shorthand for marking translatable strings.
+# The conventional gettext shorthands: ``_`` translates, ``N_`` only marks.
 _ = gettext
+N_ = gettext_noop
 
 # "date", "datetime" and "time" are intentionally omitted (see the import
 # above): reachable as rx.i18n.date/.time/.datetime but excluded from
@@ -68,6 +70,7 @@ __all__ = [
     "format_time",
     "get_locale",
     "gettext",
+    "gettext_noop",
     "language_switcher",
     "locale_url",
     "ngettext",

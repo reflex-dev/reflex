@@ -17,6 +17,7 @@ from reflex_i18n.runtime import (
     format_time,
     get_locale,
     gettext,
+    gettext_noop,
     negotiate_locale,
     ngettext,
     pgettext,
@@ -79,6 +80,17 @@ def test_get_locale_reports_use_locale():
     with use_locale("de"):
         assert get_locale() == "de"
     assert get_locale() is None
+
+
+def test_gettext_noop_leaves_message_untranslated(tmp_path: Path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _write_po(tmp_path / "locales", "de", 'msgid "Hello"\nmsgstr "Hallo"\n')
+    set_active_i18n_config(I18nConfig(locales=["en", "de"], default_locale="en"))
+
+    with use_locale("de"):
+        label = gettext_noop("Hello")
+        assert label == "Hello"
+        assert gettext(label) == "Hallo"
 
 
 def test_set_active_config_drops_stale_translators(tmp_path: Path, monkeypatch):

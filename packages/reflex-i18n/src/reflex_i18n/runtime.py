@@ -249,6 +249,22 @@ def pgettext(context: str, message: str) -> str:
     return _get_translations(locale).pgettext(context, message)
 
 
+def gettext_noop(message: str) -> str:
+    """Mark a message for extraction without translating it (aliased ``N_``).
+
+    For text defined before any locale is known, such as a module-level
+    constant or an enum label: ``reflex i18n extract`` picks the literal up
+    here, and the code translates the value later with ``gettext`` or ``rx.t``.
+
+    Args:
+        message: The source-locale message.
+
+    Returns:
+        The message, unchanged.
+    """
+    return message
+
+
 def negotiate_locale(
     accept_language: str, supported: Sequence[str], default: str
 ) -> str:

@@ -81,8 +81,9 @@ def t(
     client-side from ``params``, so params may be state Vars.
 
     Args:
-        message: The message in the default locale. Must be a literal string
-            so it can be extracted into catalogs at compile time.
+        message: The message in the default locale. Must be a string known
+            when the component is built (not a Var) so it is collected into
+            catalogs at compile time; a constant marked with ``N_`` works.
         plural: The plural form of the message in the default locale.
         count: The quantity selecting the plural form. Required with
             ``plural``, and implicitly available as the ``{count}``

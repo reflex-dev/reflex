@@ -69,6 +69,26 @@ def test_extract_catalog_records_gettext_locations(
     assert message.locations == [(f"{layout}/app.py", 2)]
 
 
+def test_extract_catalog_picks_up_noop_markers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.chdir(tmp_path)
+    app_dir = tmp_path / "myapp"
+    app_dir.mkdir()
+    (app_dir / "labels.py").write_text(
+        "from reflex_i18n import N_, gettext_noop\n"
+        'LABELS = {1: N_("Refill"), 2: gettext_noop("Removal")}\n',
+        encoding="utf-8",
+    )
+
+    catalog = extract_catalog(app_dir, ())
+
+    assert [(m.id, m.locations) for m in catalog if m.id] == [
+        ("Refill", [("myapp/labels.py", 2)]),
+        ("Removal", [("myapp/labels.py", 2)]),
+    ]
+
+
 def test_merge_preserves_existing_translation(tmp_path: Path):
     app_dir = tmp_path / "myapp"
     _write_app_source(app_dir)
