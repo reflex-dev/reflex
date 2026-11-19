@@ -36,13 +36,13 @@ def github_button() -> rx.Component:
             size="sm",
             variant="ghost",
             native_button=False,
-            class_name="gap-2 rounded-full px-3 text-sm font-normal text-muted-foreground hover:text-foreground",
+            class_name="gap-2 rounded-[8px] px-3 text-sm font-normal text-muted-foreground hover:text-foreground",
         ),
         href=GITHUB_URL,
         target="_blank",
         rel="noopener noreferrer",
         custom_attrs={"aria-label": label},
-        class_name="docs-navbar-github rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        class_name="docs-navbar-github rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     )
 
 
@@ -145,7 +145,7 @@ def menu_item(
             href=href,
             aria_current=rx.cond(active, "page", None),
             class_name=ui.cn(
-                "docs-navbar-link inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full px-3 text-sm font-normal leading-none transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                "docs-navbar-link inline-flex h-9 items-center justify-center whitespace-nowrap rounded-[8px] px-3 text-sm font-normal leading-none transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 rx.cond(
                     active,
                     "bg-accent text-foreground",
@@ -193,11 +193,11 @@ def navigation_menu() -> rx.Component:
                         "Book a Demo",
                         size="sm",
                         variant="primary",
-                        class_name="rounded-full whitespace-nowrap px-4 text-sm font-normal",
+                        class_name="rounded-[8px] whitespace-nowrap px-4 text-sm font-normal",
                         native_button=False,
                     ),
                     href="https://reflex.dev/demo/",
-                    class_name="docs-navbar-cta rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                    class_name="docs-navbar-cta rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 ),
                 unstyled=True,
                 class_name="xl:flex hidden",

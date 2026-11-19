@@ -123,18 +123,17 @@ def get_memoized_event_triggers(
             continue
 
         rendered_chain = LiteralVar.create(event)
+        rendered_js = str(rendered_chain)
         rendered_data = rendered_chain._get_all_var_data()
         event_var_data = [
             data for arg in event_args if (data := arg._get_all_var_data()) is not None
         ]
-        chain_hash = md5(
-            str(rendered_chain).encode("utf-8"), usedforsecurity=False
-        ).hexdigest()
+        chain_hash = md5(rendered_js.encode("utf-8"), usedforsecurity=False).hexdigest()
         memo_name = f"{event_trigger}_{chain_hash}"
 
-        var_deps = ["addEvents", "ReflexEvent"]
-        var_deps.extend(_get_deps_from_event_trigger(event))
-
+        var_deps = list(_get_deps_from_event_trigger(event))
+        # Keep hook bindings here; the React Compiler adapter can use Babel's
+        # scopes to remove unused dependencies without losing captured values.
         for var_data in event_var_data:
             for hook in var_data.hooks:
                 var_deps.extend(_get_hook_deps(hook))
@@ -144,7 +143,7 @@ def get_memoized_event_triggers(
             rendered_data,
             VarData(
                 hooks=[
-                    f"const {memo_name} = useCallback({rendered_chain!s}, [{', '.join(var_deps)}])"
+                    f"const {memo_name} = useCallback({rendered_js}, [{', '.join(var_deps)}])"
                 ],
                 imports={"react": [ImportVar(tag="useCallback")]},
             ),
@@ -175,7 +174,6 @@ def _var_data_key(data: VarData | None) -> tuple | None:
         data.imports,
         data.hooks,
         tuple(id(dep) for dep in data.deps),
-        data.position,
         tuple(id(component) for component in data.components),
         tuple((priority, id(component)) for priority, component in data.app_wraps),
     )
@@ -247,6 +245,45 @@ def _is_structural_memoization_child(component: Component) -> bool:
     return bool(isinstance(component, Foreach))
 
 
+def scope_var_names(component: Component, *, recursive: bool) -> dict[str, None]:
+    """Get the scoped variables that a component reads from its surroundings.
+
+    A loop variable names itself in ``VarData.deps``, and every var built
+    from it carries that name. A generated function that the
+    component moves into must receive these names as props.
+
+    Args:
+        component: The component to inspect.
+        recursive: Whether the descendants move into the same function.
+
+    Returns:
+        The variable names, insertion-ordered, without those that a loop
+        inside the component binds itself.
+    """
+    from reflex_components_core.core.foreach import Foreach
+
+    names: dict[str, None] = {}
+    var_datas = [
+        *(
+            var._get_all_var_data()
+            for var in component._get_vars(include_children=False)
+        ),
+        *component._get_added_hooks().values(),
+    ]
+    for var_data in var_datas:
+        if var_data is not None:
+            names.update(dict.fromkeys(str(dep) for dep in var_data.deps))
+    if recursive:
+        for child in component.children:
+            if isinstance(child, Component):
+                names.update(scope_var_names(child, recursive=True))
+        if isinstance(component, Foreach):
+            tag = component._render()
+            names.pop(tag.arg_var_name, None)
+            names.pop(tag.index_var_name, None)
+    return names
+
+
 def passthrough_children_var(
     children: list[BaseComponent],
 ) -> ArrayVar[list[BaseComponent]] | None:
@@ -301,4 +338,5 @@ __all__ = [
     "get_memoized_event_triggers",
     "is_snapshot_boundary",
     "passthrough_children_var",
+    "scope_var_names",
 ]

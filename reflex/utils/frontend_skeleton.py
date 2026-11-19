@@ -374,7 +374,7 @@ def sync_root_package_json_to_web() -> bool:
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)
-    output_path.write_bytes(rendered.encode("utf-8"))
+    _write_package_json(output_path, rendered)
     return changed
 
 
@@ -412,6 +412,16 @@ def sync_web_lockfiles_to_root():
         sync_web_lockfile_to_root(name)
 
 
+def _write_package_json(package_json_path: Path, content: str):
+    """Write package.json as UTF-8 with LF newlines, the way bun writes it.
+
+    Args:
+        package_json_path: The package.json file to write.
+        content: The rendered package.json content.
+    """
+    package_json_path.write_text(content, encoding="utf-8", newline="\n")
+
+
 def _read_package_json_object(package_json_path: Path) -> dict:
     """Read a package.json file as a JSON object.
 
@@ -426,8 +436,7 @@ def _read_package_json_object(package_json_path: Path) -> dict:
         return {}
     try:
         parsed = json.loads(package_json_path.read_text(encoding="utf-8"))
-    # ValueError covers both json.JSONDecodeError and UnicodeDecodeError.
-    except (ValueError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         logger.warning(
             f"Failed to read {package_json_path}: {e}; treating it as empty."
         )
@@ -619,16 +628,15 @@ def update_package_json_overrides() -> bool:
 
     package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
     logger.debug(f"Applying framework overrides to {package_json_path}")
-    package_json_path.write_text(orjson_dumps(package_json), encoding="utf-8")
+    # Match bun's layout so its later rewrites leave the file unchanged.
+    _write_package_json(package_json_path, orjson_dumps(package_json, indent=2) + "\n")
     return True
 
 
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    # Bytes, matching sync_root_package_json_to_web() so the file it writes is
-    # byte-identical to the rendered content on every platform.
-    output_path.write_bytes(_compile_package_json().encode("utf-8"))
+    _write_package_json(output_path, _compile_package_json())
 
 
 def _compile_vite_config(config: Config):

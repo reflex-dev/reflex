@@ -8,7 +8,7 @@ import logging
 from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from sqlalchemy import and_, case, func, null, or_, select, update
+from sqlalchemy import Update, and_, case, func, null, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -191,7 +191,7 @@ def lease(
     cls: type[Workflow],
     picked: Any,
     steps: Collection[str] | None,
-):
+) -> Update:
     """Build the update that leases the picked rows.
 
     Args:

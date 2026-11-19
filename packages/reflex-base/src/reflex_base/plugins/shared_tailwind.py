@@ -162,7 +162,7 @@ export default {{
     theme: {orjson_dumps(theme or {})},
     {f"darkMode: {orjson_dumps(dark_mode)}," if dark_mode is not None else ""}
     {f"corePlugins: {orjson_dumps(core_plugins)}," if core_plugins is not None else ""}
-    {f"importants: {orjson_dumps(important)}," if important is not None else ""}
+    {f"important: {orjson_dumps(important)}," if important is not None else ""}
     {f"prefix: {orjson_dumps(prefix)}," if prefix is not None else ""}
     {f"separator: {orjson_dumps(separator)}," if separator is not None else ""}
     {f"presets: [{', '.join(f'preset{i}' for i in range(1, len(presets) + 1))}]," if presets else ""}
