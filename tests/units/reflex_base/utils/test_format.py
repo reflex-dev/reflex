@@ -61,3 +61,13 @@ def test_format_data_editor_column_deprecated(mocker: MockerFixture):
 
     deprecate.assert_called_once()
     assert deprecate.call_args.kwargs["feature_name"] == "format_data_editor_column"
+
+
+def test_sorted_json_uses_cached_encoder() -> None:
+    """Sorting mapping keys should not allocate a new encoder per call."""
+    obj = {"b": {"z": 1, "a": 2}, "a": 3}
+    assert format.json_dumps(obj, sort_keys=True) == (
+        '{"a": 3, "b": {"a": 2, "z": 1}}'
+    )
+    encoder = format._get_json_encoder(None, sort_keys=True)
+    assert encoder is format._get_json_encoder(None, sort_keys=True)
