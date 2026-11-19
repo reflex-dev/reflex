@@ -808,7 +808,7 @@ Stop the development server, then set your API key in the same terminal before r
 export OPENAI_API_KEY="sk-..."
 ```
 
-For PowerShell, use `$env:OPENAI_API_KEY="your-api-key"`. Restart with `uv run reflex run`. Keep the key in the backend environment; do not put it in frontend code or commit it to the repository. The examples below use `gpt-4o-mini`; your API project must have access to that model.
+For PowerShell, use `$env:OPENAI_API_KEY="your-api-key"`. Restart with `uv run reflex run`. Keep the key in the backend environment; do not put it in frontend code or commit it to the repository. The examples below use `gpt-6-luna`; your API project must have access to that model.
 
 > **Using another AI provider?** You can keep the same chat interface and state structure while adapting the `answer` event handler for Anthropic, Google Gemini, or Cohere. Use the provider's Python SDK, credentials, request format, and streaming response format. Changing only the model name is not enough when switching between different APIs.
 
@@ -864,7 +864,7 @@ import os
 import reflex as rx
 from openai import APIError, AsyncOpenAI
 
-MODEL = "gpt-4o-mini"
+MODEL = "gpt-6-luna"
 
 
 class State(rx.State):
@@ -905,6 +905,7 @@ class State(rx.State):
             async with AsyncOpenAI(api_key=api_key) as client:
                 stream = await client.chat.completions.create(
                     model=MODEL,
+                    reasoning_effort="none",
                     messages=messages,
                     stream=True,
                 )
@@ -1016,7 +1017,7 @@ import os
 import reflex as rx
 from openai import APIError, AsyncOpenAI
 
-MODEL = "gpt-4o-mini"
+MODEL = "gpt-6-luna"
 
 
 class State(rx.State):
@@ -1057,6 +1058,7 @@ class State(rx.State):
             async with AsyncOpenAI(api_key=api_key) as client:
                 stream = await client.chat.completions.create(
                     model=MODEL,
+                    reasoning_effort="none",
                     messages=messages,
                     stream=True,
                 )
