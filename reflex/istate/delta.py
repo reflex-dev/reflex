@@ -249,7 +249,8 @@ def build_delta(state: BaseState) -> Delta:
     # Token of the client this delta is for, used to know which values it has.
     token = state.router.session.client_token if pending is not None else ""
     full_name = state.get_full_name()
-    state_cls = type(state)
+    # A StateProxy passes itself as state; its __class__ is the wrapped state's.
+    state_cls = state.__class__
     subdelta: dict[str, Any] = {}
     for prop in delta_vars:
         key = format_var_key(state_cls, prop)

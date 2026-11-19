@@ -8035,6 +8035,47 @@ def test_minified_vars_reach_the_wire(temp_minify_json, monkeypatch):
     assert state.get_delta() == {"r.w": {"c": 2, "d": 4}}
 
 
+class ProxiedWireVarState(BaseState):
+    """A root state whose var minifies, read through a background task's proxy."""
+
+    count: int = 0
+
+
+@pytest.mark.asyncio
+async def test_minified_vars_reach_the_wire_through_a_state_proxy(
+    temp_minify_json: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+):
+    """A background task's StateProxy keys its dict and delta by the wrapped state.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    path = get_state_full_path(ProxiedWireVarState)
+    install_config(
+        states={path: StateEntry(id="p", parent=None)},
+        vars={path: {"count": "c"}},
+    )
+    state_token = BaseStateToken(ident=token, cls=ProxiedWireVarState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(root)
+
+    async with proxy:
+        proxy.count = 2
+        assert proxy.get_delta() == {"p": {"c": 2}}
+        expected = proxy.__wrapped__.dict()
+        assert expected["p"]["c"] == 2
+        assert proxy.dict() == expected
+
+
 def test_minified_names_rebuilt_for_existing_states(temp_minify_json, monkeypatch):
     """Installing a config after the states exist renames what they send.
 

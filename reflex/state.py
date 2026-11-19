@@ -2350,7 +2350,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         else:
             computed_vars = {}
         variables = {**base_vars, **computed_vars}
-        state_cls = type(self)
+        # A StateProxy runs this as self; its __class__ is the wrapped state's.
+        state_cls = self.__class__
         d = {
             self.get_full_name(): {
                 format.format_var_key(state_cls, k): variables[k]
