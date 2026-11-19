@@ -7,7 +7,7 @@ import dataclasses
 import json
 import logging
 from collections.abc import Callable, Iterable, Sequence
-from inspect import getmodule
+from inspect import getattr_static, getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -1194,6 +1194,61 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
+def _bundle_plugin_frontend_dependencies(plugins: Sequence[Plugin]) -> None:
+    """Register the frontend libraries required by compiler plugins.
+
+    Args:
+        plugins: The compiler plugins active for this app.
+    """
+    from reflex_base.components.dynamic import _bundle_library
+
+    for plugin in plugins:
+        for dependency in plugin.get_frontend_dependencies():
+            _bundle_library(dependency)
+
+
+def _walk_page_with_plugins(
+    compile_context: CompileContext,
+    page: UnevaluatedPage,
+    component: Component,
+) -> None:
+    """Run a page compile's plugin hooks over an evaluated page without rendering it.
+
+    The hooks register the libraries a frontend compile bundles for the page,
+    such as Radix Themes once implicit detection meets a Radix component. The
+    tree is only traversed while a plugin has component hooks that can still
+    bundle a library.
+
+    Args:
+        compile_context: The context holding the compiler plugin hooks.
+        page: The page definition.
+        component: The evaluated page component.
+    """
+    plugins = tuple(
+        plugin
+        for plugin in compile_context.hooks.plugins
+        # An enabled Radix plugin's ``enter_component`` bundles nothing more;
+        # a subclass keeps its own hooks.
+        if not (type(plugin) is RadixThemesPlugin and plugin.enabled)
+    )
+    if len(plugins) != len(compile_context.hooks.plugins):
+        compile_context.hooks = CompilerHooks(plugins=plugins)
+    hooks = compile_context.hooks
+    page_context = PageContext(
+        name=page.route, route=page.route, root_component=component
+    )
+    with compile_context, page_context:
+        if any(
+            getattr_static(type(plugin), hook) is not getattr_static(Plugin, hook)
+            for plugin in plugins
+            for hook in ("enter_component", "leave_component")
+        ):
+            page_context.root_component = hooks.compile_component(
+                component, page_context=page_context, compile_context=compile_context
+            )
+        hooks.compile_page(page_context, page=page, compile_context=compile_context)
+
+
 def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
     """Run plugin ``register_route`` hooks at their point in the compile lifecycle.
 
@@ -1252,10 +1307,7 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import (
-        _bundle_library,
-        _reset_bundled_libraries_for_compile,
-    )
+    from reflex_base.components.dynamic import _reset_bundled_libraries_for_compile
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1264,7 +1316,15 @@ def compile_app(
     app._pages = {}
 
     should_compile = app._should_compile()
-    if not dry_run and not should_compile:
+    # Without the registry a compile saves, the libraries the frontend bundles
+    # are derived from the compiler plugins' page hooks, which need every page.
+    derive_libraries = (
+        not should_compile
+        and compile_initial_state
+        and app._state is not None
+        and not utils._restore_bundled_libraries()
+    )
+    if not dry_run and not should_compile and not derive_libraries:
         stateful_pages = _read_stateful_pages_marker()
     else:
         stateful_pages = None
@@ -1273,7 +1333,6 @@ def compile_app(
             logger.debug(f"BE Evaluating stateful page: {route}")
             app._compile_page(route, save_page=False)
         if compile_initial_state and app._state is not None:
-            utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
@@ -1286,19 +1345,33 @@ def compile_app(
     # With compilation skipped, every page is evaluated but none is rendered. A
     # dry run writes no marker either, so a later backend start evaluates afresh.
     if not should_compile:
+        compiler_plugins = (
+            _resolve_radix_themes_plugin(app, config.plugins)[0]
+            if derive_libraries
+            else ()
+        )
+        compile_ctx = CompileContext(
+            app=app,
+            pages=tuple(app._unevaluated_pages.values()),
+            hooks=CompilerHooks(plugins=compiler_plugins),
+        )
         with (
             log.timing(logger, "Evaluate Pages (Backend)"),
             otel.span("reflex.compile.evaluate_pages"),
         ):
-            for route in app._unevaluated_pages:
+            for route, page in app._unevaluated_pages.items():
                 logger.debug(f"Evaluating page: {route}")
-                app._compile_page(route, save_page=False)
+                component = app._compile_page(route, save_page=False)
+                if derive_libraries and component is not None:
+                    _walk_page_with_plugins(compile_ctx, page, component)
+        _bundle_plugin_frontend_dependencies(compiler_plugins)
 
         if not dry_run:
             app._write_stateful_pages_marker()
         if compile_initial_state and app._state is not None:
-            utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
+            if derive_libraries and not dry_run:
+                utils._save_bundled_libraries()
         app._add_optional_endpoints()
         return False
 
@@ -1316,9 +1389,7 @@ def compile_app(
     # Page evaluation rebuilds every chain that is not interned by handler, so
     # entries from an earlier compile can only retain dead chains.
     RegistrationContext.ensure_context()._reset_compile_caches()
-    for plugin in compiler_plugins:
-        for dependency in plugin.get_frontend_dependencies():
-            _bundle_library(dependency)
+    _bundle_plugin_frontend_dependencies(compiler_plugins)
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
