@@ -6,9 +6,11 @@ import functools
 from typing import Any
 
 from reflex_base.components.component import Component
+from reflex_base.constants import CompileVars
 from reflex_base.event import EventHandler, passthrough_event_spec
 from reflex_base.plugins.base import get_plugin
-from reflex_base.vars.base import Var
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.number import ternary_operation
 
 # Outside the ErrorBoundary (55) so error fallback UI can translate too.
 _PROVIDER_PRIORITY = 58
@@ -29,13 +31,19 @@ class I18nProvider(Component):
     # Fires with the locale a user picks through the provider (cookie mode only).
     on_locale_change: EventHandler[passthrough_event_spec(str)]
 
+    # The locale the server resolved for this client, empty until the page has
+    # hydrated (cookie mode only). The provider switches to it, so static text
+    # follows whatever the server translates in.
+    server_locale: Var[str]
+
 
 @functools.cache
 def _provider() -> I18nProvider:
     """The provider app wrap shared by every feature that needs it.
 
     In cookie mode it reports a client-side switch to ``I18nState`` so the
-    server's locale follows; the URL owns the locale otherwise.
+    server's locale follows, and follows a locale the server chose itself; the
+    URL owns the locale otherwise.
 
     Returns:
         The provider for the configured plugin.
@@ -48,9 +56,17 @@ def _provider() -> I18nProvider:
     if plugin is None or plugin.routing is not None:
         return I18nProvider.create()
 
+    from reflex.state import State
+
     from .state import I18nState
 
-    return I18nProvider.create(on_locale_change=I18nState.set_locale)
+    return I18nProvider.create(
+        on_locale_change=I18nState.set_locale,
+        # The compiled initial state carries a placeholder until hydration.
+        server_locale=ternary_operation(
+            State.vars[CompileVars.IS_HYDRATED], I18nState.locale, LiteralVar.create("")
+        ),
+    )
 
 
 class LocaleRoute(Component):

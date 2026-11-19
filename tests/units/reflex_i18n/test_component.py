@@ -8,6 +8,7 @@ from pytest_mock import MockerFixture
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.format import format_event_handler
 from reflex_i18n import I18nPlugin, PathPrefixRouting, language_switcher, t
+from reflex_i18n.component import I18nProvider, _provider
 from reflex_i18n.config import set_active_i18n_config
 from reflex_i18n.plugin import _reset_provider
 from reflex_i18n.registry import clear_messages
@@ -15,6 +16,7 @@ from reflex_i18n.state import I18nState
 
 import reflex as rx
 from reflex.compiler import compiler
+from reflex.state import State
 
 CompileApp = Callable[[PathPrefixRouting | None], tuple[str, str]]
 
@@ -86,3 +88,23 @@ def test_provider_follows_a_newly_configured_plugin(compile_app: CompileApp):
     compile_app(None)
     code, _ = compile_app(PathPrefixRouting())
     assert "onLocaleChange" not in code
+
+
+def _provider_for(
+    mocker: MockerFixture, routing: PathPrefixRouting | None
+) -> I18nProvider:
+    with RegistrationContext():
+        plugin = I18nPlugin(locales=["en", "de"], routing=routing)
+        config = rx.Config(app_name="i18n_test", plugins=[plugin])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        return _provider()
+
+
+def test_cookie_mode_provider_follows_the_server_locale(mocker: MockerFixture):
+    assert str(_provider_for(mocker, None).server_locale) == (
+        f'({State.is_hydrated!s} ? {I18nState.locale!s} : "")'
+    )
+
+
+def test_url_routing_provider_ignores_the_server_locale(mocker: MockerFixture):
+    assert _provider_for(mocker, PathPrefixRouting()).server_locale is None

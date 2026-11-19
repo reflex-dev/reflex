@@ -285,6 +285,18 @@ def language_switcher():
 Static (`rx.t`) content updates instantly; dynamic (state) content updates on
 the next server round-trip.
 
+Once a page has loaded, the browser follows the locale the server holds for it.
+A backend handler can therefore pick the language itself, e.g. the one stored in
+a user's profile after they log in:
+
+```python
+class AuthState(rx.State):
+    @rx.event
+    async def on_login(self):
+        user = await load_user(self.router.session.client_token)
+        return rx.i18n.set_locale(user.language)
+```
+
 `rx.i18n.language_switcher()` is a prebuilt switcher with one `<a>` per locale.
 Here it switches static and dynamic content just like `set_locale`, and becomes
 a set of real crawlable links once URL routing is on (below).

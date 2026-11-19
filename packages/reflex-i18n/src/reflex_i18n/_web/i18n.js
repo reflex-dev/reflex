@@ -150,7 +150,7 @@ const useLocaleNavigate = () => {
   );
 };
 
-export function I18nProvider({ children, onLocaleChange }) {
+export function I18nProvider({ children, onLocaleChange, serverLocale }) {
   const { pathname } = useLocation();
   const navigateLocale = useLocaleNavigate();
   // The compiled event binding (cookie mode only) may change identity between
@@ -173,6 +173,15 @@ export function I18nProvider({ children, onLocaleChange }) {
       setCookieLocale(initialLocale());
     }
   }, []);
+
+  // Once hydrated, the server's locale wins: it is the one server-side
+  // translations use, and it follows a locale a backend handler chose (e.g. the
+  // one saved in a user's profile).
+  useEffect(() => {
+    if (!urlRouting && serverLocale && locales.includes(serverLocale)) {
+      setCookieLocale(serverLocale);
+    }
+  }, [serverLocale]);
 
   useEffect(() => {
     let cancelled = false;

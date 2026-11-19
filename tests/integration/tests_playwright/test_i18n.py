@@ -60,6 +60,12 @@ def I18nApp():
         def greet(self):
             self.message = _("Welcome")
 
+        @rx.event
+        def use_saved_locale(self):
+            # A locale the backend chose, e.g. from a user's profile: only the
+            # server event, without the client switch rx.i18n.set_locale adds.
+            return rx.i18n.I18nState.set_locale("de")
+
         @rx.var
         def computed_greeting(self) -> str:
             # No explicit locale reference: auto-detection injects the
@@ -109,6 +115,7 @@ def I18nApp():
             rx.button("greet", on_click=PageState.greet, id="greet"),
             rx.button("de", on_click=rx.i18n.set_locale("de"), id="to-de"),
             rx.button("en", on_click=rx.i18n.set_locale("en"), id="to-en"),
+            rx.button("saved", on_click=PageState.use_saved_locale, id="server-de"),
             rx.i18n.language_switcher(id="switcher"),
         )
 
@@ -264,6 +271,25 @@ def test_switcher_retranslates_server_side(i18n_app: AppHarness, page: Page):
 
     page.click('#switcher a[hreflang="en"]')
     expect(page.locator("#computed-greeting")).to_have_text("Welcome")
+
+
+def test_client_follows_a_locale_the_server_chose(i18n_app: AppHarness, page: Page):
+    """Static content follows a locale a backend handler set on I18nState.
+
+    Args:
+        i18n_app: Running harness for the i18n app.
+        page: Playwright page.
+    """
+    assert i18n_app.frontend_url is not None
+    page.goto(i18n_app.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("")
+    expect(page.locator("#static-hello")).to_have_text("Hello")
+
+    page.click("#server-de")
+    expect(page.locator("#static-hello")).to_have_text("Hallo")
+    expect(page.locator("#computed-greeting")).to_have_text("Willkommen")
+    cookies = {c.get("name"): c.get("value") for c in page.context.cookies()}
+    assert cookies.get("reflex_locale") == "de"
 
 
 def test_memo_component_translations_switch_locale(i18n_app: AppHarness, page: Page):

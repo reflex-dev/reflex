@@ -60,7 +60,7 @@ export const useNavigate = () => (to, options) =>
 _RUNTIME_DRIVER = """
 import { pathToFileURL } from "node:url";
 const [modulePath, component, env, action] = process.argv.slice(2);
-const { pathname, languages } = JSON.parse(env);
+const { pathname, languages, props } = JSON.parse(env);
 globalThis.navigations = [];
 globalThis.stateUpdates = [];
 const localeChanges = [];
@@ -75,6 +75,7 @@ const mod = await import(pathToFileURL(modulePath).href);
 const rendered = mod[component]({
   children: null,
   onLocaleChange: (locale) => localeChanges.push(locale),
+  ...props,
 });
 const result = new Function("mod", "rendered", action)(mod, rendered);
 const { documentElement } = globalThis.document;
@@ -101,6 +102,7 @@ def _render_runtime(
     default_at_root: bool = True,
     pathname: str = "/",
     languages: tuple[str, ...] = ("en",),
+    props: dict[str, Any] | None = None,
     action: str = "",
 ) -> dict[str, Any]:
     """Render a component of the shipped client runtime against stub modules.
@@ -116,6 +118,7 @@ def _render_runtime(
         default_at_root: Whether the default locale is served unprefixed.
         pathname: The router location's path.
         languages: The browser's preferred languages.
+        props: Extra props for the component.
         action: JS run after the render with the runtime module as ``mod``
             and the rendered element as ``rendered``.
 
@@ -148,7 +151,11 @@ def _render_runtime(
     module.write_text(source)
     driver = tmp_path / "driver.mjs"
     driver.write_text(_RUNTIME_DRIVER)
-    env = json.dumps({"pathname": pathname, "languages": list(languages)})
+    env = json.dumps({
+        "pathname": pathname,
+        "languages": list(languages),
+        "props": props or {},
+    })
     result = subprocess.run(
         ["node", str(driver), str(module), component, env, action],
         capture_output=True,
@@ -344,6 +351,34 @@ def test_client_negotiation_matches_server(
     )
     server = _resolve_locale("", ", ".join(languages))
     assert rendered["stateUpdates"][0] == server == expected
+
+
+@requires_node
+@pytest.mark.parametrize(
+    ("server_locale", "url_routing", "expected"),
+    [
+        # Not hydrated yet: the browser's own pick stands.
+        ("", False, ["en"]),
+        # A locale the server resolved or a handler chose wins.
+        ("de", False, ["en", "de"]),
+        ("fr", False, ["en"]),
+        # The URL owns the locale.
+        ("de", True, []),
+    ],
+)
+def test_provider_follows_the_server_locale(
+    tmp_path: Path, server_locale: str, url_routing: bool, expected: list[str]
+):
+    rendered = _render_runtime(
+        tmp_path,
+        "I18nProvider",
+        locales=["en", "de"],
+        default_locale="en",
+        url_routing=url_routing,
+        props={"serverLocale": server_locale},
+    )
+    assert rendered["stateUpdates"] == expected
+    assert rendered["localeChanges"] == []
 
 
 @requires_node

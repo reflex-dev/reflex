@@ -101,12 +101,11 @@ class I18nState(State):
 
     @computed_var(
         cache=True,
-        backend=True,
         auto_deps=False,
         deps=["locale_cookie", "_route_locale"],
     )
     def locale(self) -> str:
-        """The locale in effect for this client (server-side).
+        """The locale in effect for this client, which the provider follows.
 
         Returns:
             The resolved locale.
