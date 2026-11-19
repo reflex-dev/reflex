@@ -35,7 +35,7 @@ def initialize_gitignore(
     if gitignore_file.exists():
         current_ignore = [ln.strip() for ln in gitignore_file.read_text().splitlines()]
 
-    if gitignore_file.exists() and set(files_to_ignore).issubset(current_ignore):
+    if set(files_to_ignore).issubset(current_ignore):
         logger.debug(f"{gitignore_file} already up to date.")
         return
     files_to_ignore = [ln for ln in files_to_ignore if ln not in current_ignore]
