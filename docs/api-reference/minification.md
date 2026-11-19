@@ -128,25 +128,26 @@ A state id must be unique **among its siblings**, and must differ from its
 parent's id — otherwise a relative path like `a.a` would be ambiguous. Two
 states under different parents may both be `"b"`. A state id also may not start
 or end with `_` or contain `__`: the compiled frontend joins a state's path with
-`__`, and `a` + `_b` would read the same as `a_` + `b`; `reflex minify sync`
-replaces such an id in a file written before this rule. An event id and a var
-id must each be unique **within their state**. A var id is a key of its state's
-object in the frontend, so it cannot be a name every JavaScript object already
-has (`constructor`, `toString`, `__proto__`, …) or end in `_rx_state_`, the
-suffix of an unminified var key.
+`__`, and `a` + `_b` would read the same as `a_` + `b`. Nor can it be a name
+every JavaScript object already has (`constructor`, `toString`, `__proto__`, …),
+which the frontend's state maps, keyed by state name, would find inherited.
+`reflex minify sync` replaces such an id in a file written before these rules.
+An event id and a var id must each be unique **within their state**. A var id
+is a key of its state's object in the frontend, so it cannot be such a name
+either, or end in `_rx_state_`, the suffix of an unminified var key.
 
 The file is written sorted and with a stable layout, so regenerating it produces
 no spurious diffs. It is hand-editable, but in practice let the CLI maintain it.
 Loading it checks the schema version, that `states`, `events` and (when
 present) `vars` are objects, that every state entry has a string `id` and a
 `parent` that is a string or `null`, that every id uses the alphabet above and
-no var id is reserved, that no state id has an underscore at an end or doubled,
-and that no two handlers or vars of a state share an id; keys it does not know
-are ignored. On a file that fails these checks, compiling or serving the app
-logs a warning and runs without minification. The `reflex minify` commands stop
-with an error naming the problem, except for the last two, which `validate`
-reports and `sync` repairs. Sibling states sharing an id are reported by
-`reflex minify validate`.
+no var id is reserved, that no state id has an underscore at an end or doubled
+or is such a name, and that no two handlers or vars of a state share an id;
+keys it does not know are ignored. On a file that fails these checks, compiling
+or serving the app logs a warning and runs without minification. The `reflex
+minify` commands stop with an error naming the problem, except for the last
+two, which `validate` reports and `sync` repairs. Sibling states sharing an id
+are reported by `reflex minify validate`.
 
 ### `parent` and reserved ids
 

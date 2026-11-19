@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from textwrap import dedent
 from types import SimpleNamespace
 from unittest import mock
 
@@ -1207,8 +1208,21 @@ def test_minify_help_shows_no_docstring_sections(cli_runner):
     result = cli_runner.invoke(cli, ["minify", "--help"])
 
     assert result.exit_code == 0, result.output
-    assert "Manage state, event and var name minification." in result.output
-    assert "Args:" not in result.output
+    assert result.output == dedent("""\
+        Usage: cli minify [OPTIONS] COMMAND [ARGS]...
+
+          Manage state, event and var name minification.
+
+        Options:
+          --help  Show this message and exit.
+
+        Commands:
+          init      Initialize minify.json with IDs for all states, events and vars.
+          list      Print the state tree with IDs and minified names.
+          lookup    Lookup a state, event handler or var by its minified path...
+          sync      Synchronize minify.json with the current codebase.
+          validate  Validate minify.json against the current codebase.
+        """)
 
 
 def test_minify_sync_repairs_ambiguous_state_ids(temp_minify_json, cli_runner):
@@ -1352,12 +1366,13 @@ def test_lookup_shows_both_readings_of_a_name_another_handler_holds_as_id(
 
     text = cli_runner.invoke(cli, ["minify", "lookup", "b.foo"])
     assert text.exit_code == 0, text.output
-    lines = text.output.splitlines()
-    assert f"{__name__}.NameIdState.bar" in lines
-    assert f"{__name__}.NameIdState.foo" in lines
-    assert "REFLEX_MINIFY_EVENTS" in text.output
-    assert "share the id" not in text.output
-    assert "showing each" not in text.output
+    # The warning wraps to the terminal width.
+    assert " ".join(text.output.split()) == (
+        f"Warning: Segment 'foo' is the id of bar of {__name__}.NameIdState with "
+        "REFLEX_MINIFY_EVENTS on, but names foo with it off; showing both. "
+        f"{__name__}.NameIdState {__name__}.NameIdState.bar "
+        f"{__name__}.NameIdState.foo"
+    )
 
     result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.count"])
     assert result.exit_code == 0, result.output
