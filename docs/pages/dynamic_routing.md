@@ -18,6 +18,12 @@ Regular dynamic routes in Reflex allow you to match specific segments in a URL d
 The dynamic route arguments are accessible as `rx.State.id` and `rx.State.category` here as the var is added to the root state, so that it is accessible from any state.
 ```
 
+```md alert info
+# Accessing a dynamic route argument with type checking
+
+The var is added to the root state when the page is added, so type checkers do not know `rx.State.id`. `rx.State.route_arg("id")` returns the same var as a `StringVar`, and `rx.State.route_arg("splat")` the one of a catch-all route as an `ArrayVar[list[str]]`.
+```
+
 Example:
 
 ```python

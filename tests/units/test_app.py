@@ -46,6 +46,7 @@ from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 from reflex_base.vars.base import computed_var
+from reflex_base.vars.sequence import ArrayVar, StringVar
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core import _upload as upload_module
@@ -368,6 +369,26 @@ def test_add_page_set_route_dynamic(index_page: ComponentCallable):
         EmptyState.get_full_name(): {"rx_router_page"},
     }
     assert "rx_router_page" in app._state()._var_dependencies
+
+
+def test_route_arg(index_page: ComponentCallable):
+    """Get the vars of a page's dynamic route args through route_arg.
+
+    Args:
+        index_page: The index page.
+    """
+    app = App(_state=EmptyState)
+    assert app._state is not None
+    app.add_page(index_page, route="/route-arg/[dynamic]/[[...splat]]")
+
+    # the same vars as the attributes the page added, e.g. `EmptyState.dynamic`
+    for name, var_cls in (("dynamic", StringVar), ("splat", ArrayVar)):
+        var = app._state.route_arg(name)
+        assert isinstance(var, var_cls)
+        assert var._js_expr == getattr(app._state, name)._js_expr
+
+    with pytest.raises(exceptions.DynamicRouteArgNotFoundError, match="not_added"):
+        app._state.route_arg("not_added")
 
 
 def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):

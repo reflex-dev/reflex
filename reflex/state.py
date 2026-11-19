@@ -23,6 +23,7 @@ from typing import (
     Any,
     BinaryIO,
     ClassVar,
+    Literal,
     ParamSpec,
     Self,
     TypeVar,
@@ -48,6 +49,7 @@ from reflex_base.event import (
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicComponentInvalidSignatureError,
+    DynamicRouteArgNotFoundError,
     DynamicRouteArgShadowsStateVarError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
@@ -140,6 +142,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+    from reflex_base.vars.sequence import ArrayVar, StringVar
 
 
 var = computed_var
@@ -1667,6 +1670,38 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         cls.computed_vars.update(dynamic_vars)
         cls.vars.update(dynamic_vars)
         cls._update_substate_vars(dynamic_vars)
+
+    @overload
+    @classmethod
+    def route_arg(cls, name: Literal["splat"]) -> ArrayVar[list[str]]: ...  # pyright: ignore[reportOverlappingOverload]
+
+    @overload
+    @classmethod
+    def route_arg(cls, name: str) -> StringVar: ...
+
+    @classmethod
+    def route_arg(cls, name: str) -> StringVar | ArrayVar[list[str]]:
+        """Get the var of a dynamic route arg, typed.
+
+        Adding a page at ``/post/[pid]`` installs the var ``rx.State.pid``. Type
+        checkers cannot see that attribute, which only exists once the page is
+        added; ``rx.State.route_arg("pid")`` returns the same var as a
+        ``StringVar``, and ``rx.State.route_arg("splat")`` the one of a
+        ``[[...splat]]`` catch-all as an ``ArrayVar[list[str]]``.
+
+        Args:
+            name: The name of the dynamic route arg, ``"splat"`` for the catch-all.
+
+        Returns:
+            The var of the dynamic route arg.
+
+        Raises:
+            DynamicRouteArgNotFoundError: If no added page declares the arg.
+        """
+        if not isinstance(cls.vars.get(name), DynamicRouteVar):
+            msg = f"No page added so far declares the dynamic route arg {name!r}."
+            raise DynamicRouteArgNotFoundError(msg)
+        return getattr(cls, name)
 
     if TYPE_CHECKING or environment.REFLEX_ENV_MODE.get() != constants.Env.PROD:
 
