@@ -494,17 +494,22 @@ class RedisTokenManager(LocalTokenManager):
             self._lost_and_found_wait_deadline = (
                 loop.time() + LOST_AND_FOUND_SUBSCRIBE_TIMEOUT
             )
-        if (remaining := self._lost_and_found_wait_deadline - loop.time()) <= 0:
-            return
-        try:
-            await asyncio.wait_for(
-                self._lost_and_found_subscribed.wait(), timeout=remaining
-            )
-        except TimeoutError:
-            logger.warning(
-                "Redis did not confirm the lost and found subscription in time; "
-                "updates from other instances may be lost until it does."
-            )
+        waited = False
+        while not self._lost_and_found_subscribed.is_set():
+            # Re-read each time: a timeout can fire up to a clock tick early,
+            # and a new subscription attempt moves the deadline.
+            if (remaining := self._lost_and_found_wait_deadline - loop.time()) <= 0:
+                if waited:
+                    logger.warning(
+                        "Redis did not confirm the lost and found subscription in "
+                        "time; updates from other instances may be lost until it does."
+                    )
+                return
+            waited = True
+            with contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(
+                    self._lost_and_found_subscribed.wait(), timeout=remaining
+                )
 
     async def _get_token_owner(self, token: str, refresh: bool = False) -> str | None:
         """Get the instance ID of the owner of a token.
