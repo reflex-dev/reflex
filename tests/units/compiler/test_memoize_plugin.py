@@ -3693,7 +3693,7 @@ def _scoped_memo_modules(memo: Any) -> tuple[bool, dict[str, str]]:
 
     The symbols of the memo and of the wrapper generated inside its body are
     replaced by ``Memo`` and ``Wrapper``, and content digests and generated
-    client state names by fixed text, so assertions can name them.
+    client state names by fixed text, so the code compares in full.
 
     Args:
         memo: The ``@rx.memo`` component function.
@@ -3721,6 +3721,46 @@ def _scoped_memo_modules(memo: Any) -> tuple[bool, dict[str, str]]:
     return definition is not memo._definition, modules
 
 
+def _mount_effect(on_mount: str, on_unmount: str = "") -> list[str]:
+    """The lines of the effect an ``on_mount`` / ``on_unmount`` pair compiles to.
+
+    Args:
+        on_mount: The JS of the mount event.
+        on_unmount: The JS of the unmount event, if any.
+
+    Returns:
+        The lines of the ``useEffect`` hook.
+    """
+
+    def run(event: str) -> str:
+        return (
+            f"((...args) => (addEvents([({event})], args, ({{  }}))))()"
+            if event
+            else ""
+        )
+
+    return [
+        "                useEffect(() => {",
+        f"                    {run(on_mount)}",
+        "                    return () => {",
+        f"                        {run(on_unmount)}",
+        "                    }",
+        "                }, []);",
+    ]
+
+
+def _code(*lines: str) -> str:
+    """Join the lines of compiled code.
+
+    Args:
+        lines: The lines.
+
+    Returns:
+        The code.
+    """
+    return "\n".join(lines)
+
+
 def _console_log(value: str) -> str:
     """The JS of an ``rx.console_log`` event.
 
@@ -3743,75 +3783,171 @@ _PING = (
 )
 
 
-@pytest.mark.parametrize(
-    ("render", "call", "read"),
-    [
-        pytest.param(
-            lambda show, which, items, label, item: rx.cond(show, item(label)),
-            "jsx(Wrapper,{labelRxMemo:labelRxMemo},labelRxMemo)",
-            "labelRxMemo",
-            id="cond",
-        ),
-        pytest.param(
-            lambda show, which, items, label, item: rx.match(
-                which, ("x", item(label)), rx.fragment()
-            ),
-            "jsx(Wrapper,{labelRxMemo:labelRxMemo},labelRxMemo)",
-            "labelRxMemo",
-            id="match",
-        ),
-        pytest.param(
-            lambda show, which, items, label, item: rx.foreach(
-                items, lambda it: item(it, key=it)
-            ),
-            "jsx(Wrapper,{itRxState:it_rx_state_,key:it_rx_state_},it_rx_state_)",
-            "it_rx_state_",
-            id="foreach",
-        ),
-    ],
-)
-def test_memo_body_hooks_under_branch_or_loop_move_into_a_wrapper(
-    render: Callable[..., Component], call: str, read: str
-) -> None:
-    """Lifecycle events under a branch or a loop in a memo body get a component.
+def test_memo_body_cond_branch_hooks_compile_into_a_wrapper() -> None:
+    """A lifecycle event under ``rx.cond`` in a memo body gets its own component.
 
-    Regression for reflex-dev/reflex#7836: the effect was hoisted to the top
-    of the memo function, so it ran when the memo mounted, whatever branch was
-    shown, and outside the loop whose variable it read. The memo's own root
-    keeps its effect.
+    Regression for reflex-dev/reflex#7836: the branch's effect was hoisted to
+    the top of the memo function, so it ran when the memo mounted, whatever
+    branch was shown. The memo's own root keeps its effect.
     """
 
     @rx.memo
-    def scoped(
-        show: rx.Var[bool],
-        which: rx.Var[str],
-        items: rx.Var[list[str]],
-        label: rx.Var[str],
-    ) -> Component:
-        def item(text: Var, **props: Any) -> Component:
-            return rx.el.p(
-                text,
-                on_mount=rx.console_log(text),
-                on_unmount=rx.console_log("bye"),
-                **props,
-            )
-
+    def branch(show: rx.Var[bool], label: rx.Var[str]) -> Component:
         return rx.el.div(
-            render(show, which, items, label, item), on_mount=rx.console_log("root")
+            rx.cond(
+                show,
+                rx.el.p(
+                    label,
+                    on_mount=rx.console_log(label),
+                    on_unmount=rx.console_log("bye"),
+                ),
+            ),
+            on_mount=rx.console_log("root"),
         )
 
-    changed, modules = _scoped_memo_modules(scoped)
+    changed, modules = _scoped_memo_modules(branch)
 
     assert changed
-    memo, wrapper = modules["Memo"], modules["Wrapper"]
-    # The memo calls the wrapper where the branch or item renders, with the
-    # scoped vars it reads as props.
-    assert call in memo
-    assert _console_log('"root"') in memo
-    assert _console_log('"bye"') not in memo
-    assert _console_log(read) in wrapper
-    assert _console_log('"bye"') in wrapper
-    assert _console_log('"root"') not in wrapper
+    assert modules == {
+        "Memo": _code(
+            "Memo = /*#__PURE__*/ (() => {",
+            "const Memo = memo(({show:showRxMemo, label:labelRxMemo}) => {",
+            "    ",
+            *_mount_effect(_console_log('"root"')),
+            "    return(",
+            '        jsx("div",{},jsx(Fragment,{},(showRxMemo?(jsx(Fragment,{},'
+            "jsx(Wrapper,{labelRxMemo:labelRxMemo},labelRxMemo))):"
+            "(jsx(Fragment,{},)))))",
+            "    )",
+            "});",
+            'Memo.displayName = "Branch";',
+            "return Memo;",
+            "})();",
+        ),
+        "Wrapper": _code(
+            "Wrapper = /*#__PURE__*/ (() => {",
+            "const Wrapper = memo(({children, labelRxMemo:labelRxMemo, ...rest}) => {",
+            "    ",
+            *_mount_effect(_console_log("labelRxMemo"), _console_log('"bye"')),
+            "    return(",
+            '        jsx("p",{...mergeSlotProps(rest, ({  }))},children)',
+            "    )",
+            "});",
+            'Wrapper.displayName = "P";',
+            "return Wrapper;",
+            "})();",
+        ),
+    }
+
+
+def test_memo_body_match_case_hooks_compile_into_a_wrapper() -> None:
+    """A lifecycle event under ``rx.match`` in a memo body gets its own component.
+
+    Regression for reflex-dev/reflex#7836: the case's effect was hoisted to
+    the top of the memo function, so it ran when the memo mounted, whatever
+    case was shown.
+    """
+
+    @rx.memo
+    def case(which: rx.Var[str], label: rx.Var[str]) -> Component:
+        return rx.match(
+            which,
+            ("x", rx.el.p(label, on_mount=rx.console_log(label))),
+            rx.fragment(),
+        )
+
+    changed, modules = _scoped_memo_modules(case)
+
+    assert changed
+    assert modules == {
+        "Memo": _code(
+            "Memo = /*#__PURE__*/ (() => {",
+            "const Memo = memo(({which:whichRxMemo, label:labelRxMemo}) => {",
+            "    ",
+            "    return(",
+            "        jsx(Fragment,{},(() => {",
+            "  switch (JSON.stringify(whichRxMemo)) {",
+            '    case JSON.stringify("x"):',
+            "      return jsx(Wrapper,{labelRxMemo:labelRxMemo},labelRxMemo);",
+            "      break;",
+            "    default:",
+            "      return jsx(Fragment,{},);",
+            "      break;",
+            "  }",
+            "})())",
+            "    )",
+            "});",
+            'Memo.displayName = "Case";',
+            "return Memo;",
+            "})();",
+        ),
+        "Wrapper": _code(
+            "Wrapper = /*#__PURE__*/ (() => {",
+            "const Wrapper = memo(({children, labelRxMemo:labelRxMemo, ...rest}) => {",
+            "    ",
+            *_mount_effect(_console_log("labelRxMemo")),
+            "    return(",
+            '        jsx("p",{...mergeSlotProps(rest, ({  }))},children)',
+            "    )",
+            "});",
+            'Wrapper.displayName = "P";',
+            "return Wrapper;",
+            "})();",
+        ),
+    }
+
+
+def test_memo_body_foreach_item_hooks_compile_into_a_wrapper() -> None:
+    """A lifecycle event of an ``rx.foreach`` item in a memo body runs per item.
+
+    Regression for reflex-dev/reflex#7836: the item's effect was hoisted above
+    the loop, where reading the loop variable threw a ``ReferenceError`` that
+    took the page into the error boundary.
+    """
+
+    @rx.memo
+    def loop(items: rx.Var[list[str]]) -> Component:
+        return rx.el.ul(
+            rx.foreach(
+                items,
+                lambda item: rx.el.li(item, key=item, on_mount=rx.console_log(item)),
+            )
+        )
+
+    changed, modules = _scoped_memo_modules(loop)
+
+    assert changed
+    assert modules == {
+        "Memo": _code(
+            "Memo = /*#__PURE__*/ (() => {",
+            "const Memo = memo(({items:itemsRxMemo}) => {",
+            "    ",
+            "    return(",
+            '        jsx("ul",{},Array.prototype.map.call(itemsRxMemo ?? [],'
+            "((item_rx_state_,index)=>(jsx(Wrapper,{itemRxState:item_rx_state_,"
+            "key:item_rx_state_},item_rx_state_)))))",
+            "    )",
+            "});",
+            'Memo.displayName = "Loop";',
+            "return Memo;",
+            "})();",
+        ),
+        "Wrapper": _code(
+            "Wrapper = /*#__PURE__*/ (() => {",
+            "const Wrapper = memo(({children, itemRxState:item_rx_state_, ...rest})"
+            " => {",
+            "    ",
+            *_mount_effect(_console_log("item_rx_state_")),
+            "    return(",
+            '        jsx("li",{...mergeSlotProps(rest, ({ key:item_rx_state_ }))},'
+            "children)",
+            "    )",
+            "});",
+            'Wrapper.displayName = "Li";',
+            "return Wrapper;",
+            "})();",
+        ),
+    }
 
 
 def test_memo_body_wrapper_receives_event_handler_param() -> None:
@@ -3829,13 +3965,39 @@ def test_memo_body_wrapper_receives_event_handler_param() -> None:
     changed, modules = _scoped_memo_modules(handler)
 
     assert changed
-    memo, wrapper = modules["Memo"], modules["Wrapper"]
-    assert 'jsx(Wrapper,{onPingRxMemo:onPingRxMemo},"x")' in memo
-    assert _PING not in memo
-    assert _PING in wrapper
-    # The handler that calls the parameter lists it as a dependency.
-    assert "(() => (onPingRxMemo()))" in wrapper
-    assert "[onPingRxMemo])" in wrapper
+    assert modules == {
+        "Memo": _code(
+            "Memo = /*#__PURE__*/ (() => {",
+            "const Memo = memo(({show:showRxMemo, onPing:onPingRxMemo}) => {",
+            "    ",
+            "    return(",
+            "        jsx(Fragment,{},(showRxMemo?(jsx(Fragment,{},jsx(Wrapper,"
+            '{onPingRxMemo:onPingRxMemo},"x"))):(jsx(Fragment,{},))))',
+            "    )",
+            "});",
+            'Memo.displayName = "Handler";',
+            "return Memo;",
+            "})();",
+        ),
+        "Wrapper": _code(
+            "Wrapper = /*#__PURE__*/ (() => {",
+            "const Wrapper = memo(({children, onPingRxMemo:onPingRxMemo, ...rest})"
+            " => {",
+            "    ",
+            *_mount_effect(_PING),
+            "const on_click = useCallback(((_e) => (addEvents([("
+            'ReflexEvent("_call_function", ({ ["function"] : (() => (onPingRxMemo())),'
+            ' ["callback"] : null }), ({  })))], [_e], ({  })))), [onPingRxMemo])',
+            "    return(",
+            '        jsx("button",{...mergeSlotProps(rest, ({ onClick:on_click }))},'
+            "children)",
+            "    )",
+            "});",
+            'Wrapper.displayName = "Button";',
+            "return Wrapper;",
+            "})();",
+        ),
+    }
 
 
 def test_memo_body_component_reading_rest_or_children_stays_in_the_memo() -> None:
@@ -3861,26 +4023,74 @@ def test_memo_body_component_reading_rest_or_children_stays_in_the_memo() -> Non
     assert not ctx.auto_memo_components
 
 
+_SET_ONE = (
+    "const on_click = useCallback(((_e) => (((...args) => ((() => "
+    '(cs$0RxClientStateSet(1)))(({ ["button"] : _e?.["button"], ["buttons"] : '
+    '_e?.["buttons"], ["client_x"] : _e?.["clientX"], ["client_y"] : '
+    '_e?.["clientY"], ["alt_key"] : _e?.["altKey"], ["ctrl_key"] : '
+    '_e?.["ctrlKey"], ["meta_key"] : _e?.["metaKey"], ["shift_key"] : '
+    '_e?.["shiftKey"] }), ...args)))(_e))), [cs$0RxClientState, '
+    "cs$0RxClientStateSet])"
+)
+
+
 @pytest.mark.parametrize(
-    "render",
+    ("render", "memo_lines", "wrapper_params", "wrapper_props"),
     [
-        pytest.param(lambda show, which, items, item: rx.cond(show, item()), id="cond"),
+        pytest.param(
+            lambda show, which, items, item: rx.cond(show, item()),
+            [
+                (
+                    "        jsx(Fragment,{},(showRxMemo?(jsx(Fragment,{},"
+                    'jsx(Wrapper,{},"x"))):(jsx(Fragment,{},))))'
+                ),
+            ],
+            "",
+            "",
+            id="cond",
+        ),
         pytest.param(
             lambda show, which, items, item: rx.match(
                 which, ("x", item()), rx.fragment()
             ),
+            [
+                "        jsx(Fragment,{},(() => {",
+                "  switch (JSON.stringify(whichRxMemo)) {",
+                '    case JSON.stringify("x"):',
+                '      return jsx(Wrapper,{},"x");',
+                "      break;",
+                "    default:",
+                "      return jsx(Fragment,{},);",
+                "      break;",
+                "  }",
+                "})())",
+            ],
+            "",
+            "",
             id="match",
         ),
         pytest.param(
             lambda show, which, items, item: rx.foreach(
                 items, lambda item_: item(key=item_)
             ),
+            [
+                (
+                    "        Array.prototype.map.call(itemsRxMemo ?? [],"
+                    "((item__rx_state_,index)=>(jsx(Wrapper,{itemRxState:"
+                    'item__rx_state_,key:item__rx_state_},"x"))))'
+                ),
+            ],
+            "itemRxState:item__rx_state_, ",
+            "key:item__rx_state_, ",
             id="foreach",
         ),
     ],
 )
 def test_memo_scope_owns_client_state_used_only_under_a_branch_or_loop(
     render: Callable[..., Component],
+    memo_lines: list[str],
+    wrapper_params: str,
+    wrapper_props: str,
 ) -> None:
     """Client state used only under a branch or a loop stays per memo instance.
 
@@ -3907,11 +4117,35 @@ def test_memo_scope_owns_client_state_used_only_under_a_branch_or_loop(
     changed, modules = _scoped_memo_modules(stateful)
 
     assert changed
-    memo, wrapper = modules["Memo"], modules["Wrapper"]
-    assert 'withClientStateScope(memo(Component), ["cs$0"])' in memo
-    assert "useClientState" not in memo
-    assert 'useClientState(0, "cs$0")' in wrapper
-    assert "withClientStateScope" not in wrapper
+    assert modules == {
+        "Memo": _code(
+            "Memo = (((Component) => withClientStateScope(memo(Component), "
+            '["cs$0"])))(({show:showRxMemo, which:whichRxMemo, items:itemsRxMemo})'
+            " => {",
+            "    ",
+            "    return(",
+            *memo_lines,
+            "    )",
+            "});",
+            'Memo.displayName = "Stateful";',
+        ),
+        "Wrapper": _code(
+            "Wrapper = /*#__PURE__*/ (() => {",
+            f"const Wrapper = memo(({{children, {wrapper_params}...rest}}) => {{",
+            "    ",
+            *_mount_effect(_PING),
+            'const [cs$0RxClientState, cs$0RxClientStateSet] = useClientState(0, "cs$0")',
+            _SET_ONE,
+            "    return(",
+            f'        jsx("button",{{...mergeSlotProps(rest, ({{ {wrapper_props}'
+            "onClick:on_click }))},children)",
+            "    )",
+            "});",
+            'Wrapper.displayName = "Button";',
+            "return Wrapper;",
+            "})();",
+        ),
+    }
 
 
 def test_memo_body_foreach_item_with_hooks_keyed_by_index_warns(
