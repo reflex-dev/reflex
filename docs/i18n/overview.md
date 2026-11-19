@@ -446,8 +446,7 @@ I18nPlugin(locales=["de", "en"], default_locale="de", catalog_packages=["my_lib"
 
 Its catalogs then translate the package's messages in the browser and on the
 server, and `reflex i18n extract` leaves those messages out of the app's own
-catalogs. Where the app's catalog translates one of them as well, the app's
-translation wins.
+catalogs.
 
 ## How it works
 
