@@ -160,3 +160,23 @@ def _namespace_annotations(
     assert_type(event_type, EventType[str])
     assert_type(spec, EventSpec)
     _event_prop(_HandlerState.one(1))
+
+
+class _RepeatedState(State):
+    @event(throttle=300)
+    @event(background=True)
+    async def configured_twice(self, step: int) -> None: ...
+
+    @event
+    @event(throttle=300)
+    def bare_over_configured(self, step: int, label: str) -> None: ...
+
+    @event(stop_propagation=True)
+    @event
+    def configured_over_bare(self) -> None: ...
+
+
+# A repeated @rx.event is one handler, typed like a single decorator.
+assert_type(_RepeatedState.configured_twice, EventCallback[int])
+assert_type(_RepeatedState.bare_over_configured, EventCallback[int, str])
+assert_type(_RepeatedState.configured_over_bare, EventCallback[()])
