@@ -1,6 +1,7 @@
 """Tests for RegistrationContext."""
 
 import sys
+from pathlib import Path
 from textwrap import dedent
 from typing import Any, cast
 
@@ -436,3 +437,18 @@ def test_reset_compile_caches_empties_per_compile_maps(
     assert not clean_registration_context._memo_body_analyses
     assert not clean_registration_context._memoized_event_triggers
     assert not clean_registration_context._bound_event_chains
+
+
+def test_fork_carries_script_modules(tmp_path: Path):
+    """JavaScript modules imported before a fork still compile into the forked app.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+    """
+    module = tmp_path / "party.js"
+    with RegistrationContext.get().fork() as original:
+        original.script_modules["app.party"] = module
+        with original.fork() as forked:
+            assert forked.script_modules == {"app.party": module}
+            forked.script_modules["app.other"] = module
+        assert original.script_modules == {"app.party": module}

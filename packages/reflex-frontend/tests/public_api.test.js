@@ -83,6 +83,7 @@ const PUBLIC_API = {
   ],
   "$/utils/react-theme": ["ThemeProvider", "useTheme"],
   "$/utils/script_env": ["env"],
+  "$/utils/scripts": [],
   "$/utils/helpers/array": ["default"],
   "$/utils/helpers/datetime": ["default"],
   "$/utils/helpers/debounce": ["default"],

@@ -32,10 +32,12 @@ from reflex_base.components.memo import (
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.js.modules import find_package_imports, module_key, render_stub
+from reflex_base.js.source import SCRIPT_SOURCE_EXTENSIONS, find_exports, module_files
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import format, imports, memo_paths, serializers, types
-from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.exceptions import ReflexRuntimeError, VarTypeError
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -298,6 +300,81 @@ def _compile_bundled_libraries() -> tuple[str, str]:
     """
     bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
     return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
+
+
+def compile_script_modules() -> tuple[
+    list[tuple[str, str]], dict[str, list[ImportVar]], list[tuple[Path, Path]]
+]:
+    """Compile the JavaScript modules the app imports from Python.
+
+    Each module and the local files it imports, directly or not, are copied
+    under ``utils/script_modules`` at their paths from the directory that holds
+    the module's top-level package, so relative imports resolve as they do in
+    the source tree. ``utils/scripts.js`` re-exports each module under its
+    module key, and a type stub is written next to it, for type checkers.
+
+    Returns:
+        The (path, code) outputs of the scripts, the npm packages they import,
+        to install, and the (source, target) copies of the other files they
+        reference, such as stylesheets and images, which may be binary.
+
+    Raises:
+        ReflexRuntimeError: If a module imports a file outside its top-level
+            package's directory.
+    """
+    web_dir = get_web_dir()
+    modules_dir = web_dir / constants.Dirs.SCRIPT_MODULES_PATH
+    outputs: list[tuple[str, str]] = []
+    copies: list[tuple[Path, Path]] = []
+    package_imports: dict[str, list[ImportVar]] = {}
+    index: list[str] = []
+    copied: set[Path] = set()
+    modules = RegistrationContext.ensure_context().script_modules
+    for name, path in sorted(modules.items()):
+        root = path.resolve().parents[name.count(".")]
+        for file in module_files(path):
+            if not file.is_relative_to(root):
+                msg = (
+                    f"The JavaScript module {name} imports {file}, which is "
+                    f"outside {root}, the directory of its package."
+                )
+                raise ReflexRuntimeError(msg)
+            if file in copied:
+                continue
+            copied.add(file)
+            target = modules_dir / file.relative_to(root)
+            if file.suffix not in SCRIPT_SOURCE_EXTENSIONS:
+                copies.append((file, target))
+                continue
+            source = file.read_text(encoding="utf-8")
+            outputs.append((str(target), source))
+            for specifier in find_package_imports(source):
+                package_imports[specifier] = [ImportVar(tag=None, render=False)]
+        specifier = (modules_dir / path.resolve().relative_to(root)).relative_to(
+            web_dir
+        )
+        index.append(f'export * as {module_key(name)} from "$/{specifier.as_posix()}";')
+        exports = find_exports(path.read_text(encoding="utf-8"))
+        outputs.append((str(path.with_suffix(".pyi")), render_stub(path, exports)))
+    outputs.append((
+        str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS)),
+        "\n".join(index) + "\n" if index else "export {};\n",
+    ))
+    return outputs, package_imports, copies
+
+
+def copy_files(copies: Iterable[tuple[Path, Path]]) -> None:
+    """Copy files byte for byte, skipping those whose target is up to date.
+
+    Args:
+        copies: The (source, target) pairs.
+    """
+    for source, target in copies:
+        data = source.read_bytes()
+        if target.is_file() and target.read_bytes() == data:
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
 
 
 def _restore_bundled_libraries() -> bool:
