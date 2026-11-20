@@ -92,6 +92,7 @@ from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.shared import UPDATE_OTHER_CLIENT_TASKS
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
 from reflex.state import (
@@ -103,7 +104,11 @@ from reflex.state import (
 )
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
-from reflex.utils.token_manager import RedisTokenManager, SocketRecord
+from reflex.utils.token_manager import (
+    LocalTokenManager,
+    RedisTokenManager,
+    SocketRecord,
+)
 from tests.units.exception_handler_helpers import logged
 
 from .conftest import active_tracer, chdir, metric_points
@@ -4474,10 +4479,11 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
             exp_delta = {Sub.get_full_name(): {"sub_count_rx_state_": 1}}
         else:
             exp_delta = {Base.get_full_name(): {"count_rx_state_": 1}}
-        assert (
-            app._event_namespace.emit_update.call_args.kwargs["update"].delta
-            == exp_delta
-        )
+        assert app._event_namespace.emit_update.call_args.kwargs == {
+            "update": StateUpdate(delta=exp_delta),
+            "token": token,
+            "suppress_warnings": True,
+        }
     else:
         assert app._event_namespace.emit_update.call_count == 0
 
@@ -4635,6 +4641,107 @@ async def test_modify_state_rebinds_event_context_to_token(
         assert EventContext.get().token == "token-A"
     finally:
         EventContext.reset(actor_token)
+
+
+async def test_modify_state_emits_only_to_connected_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+    clean_registration_context: RegistrationContext,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Modify state emits only to tokens that a browser connected with.
+
+    A shared state token has no socket: its linked clients get the update
+    through the shared state fan-out. A browser token that another client links
+    to, or whose state expired while it stayed connected, still gets the emit.
+    Modify state logs no warning for a token without a socket, while a regular
+    emit to a browser that disconnected still does.
+
+    Args:
+        monkeypatch: Restore root metadata changed by defining a shared state.
+        clean_registration_context: Isolate the temporary shared state class.
+        caplog: Capture the warnings of the app.
+    """
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class CounterState(rx.SharedState):
+        count: int = 0
+
+    app = App(_state=State)
+    state_manager = app._state_manager = StateManagerMemory()
+    app._event_processor = Mock(
+        _root_context=EventContext(
+            token="", state_manager=state_manager, enqueue_impl=AsyncMock()
+        )
+    )
+    event_namespace = app._event_namespace = EventNamespace("/event", app)
+    event_namespace._token_manager = LocalTokenManager()
+    emit = event_namespace.emit = AsyncMock()
+    for token in ("client", "target", "expired", "gone"):
+        await event_namespace.link_token_to_sid(f"{token}-sid", token)
+    await event_namespace._token_manager.disconnect_token("gone", "gone-sid")
+
+    async def modify(token: str, count: int | None = None, link: str = "") -> list:
+        """Modify the counter of a token and wait for the shared state fan-out.
+
+        Args:
+            token: The token to modify.
+            count: The count to set, if any.
+            link: The token to link the counter to, if any.
+
+        Returns:
+            The socket ids the updates were emitted to.
+        """
+        emit.reset_mock()
+        async with app.modify_state(
+            BaseStateToken(ident=token, cls=CounterState)
+        ) as root_state:
+            counter = await root_state.get_state(CounterState)
+            if link:
+                await counter._link_to(link)
+            if count is not None:
+                counter.count = count
+        await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
+        return [call.kwargs["to"] for call in emit.await_args_list]
+
+    def app_warnings() -> list[str]:
+        """Get the warnings logged by the app.
+
+        Returns:
+            The messages of the reflex.app warning records.
+        """
+        return [
+            record.getMessage()
+            for record in caplog.records
+            if record.name == "reflex.app" and record.levelno == logging.WARNING
+        ]
+
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
+        assert await modify("client", link="shared") == ["client-sid"]
+        assert await modify("client", count=1) == ["client-sid"]
+        # The shared token gets no emit; its linked client gets the fan-out.
+        assert await modify("shared", count=2) == ["client-sid"]
+        # A shared token that no client linked to yet has no socket either.
+        assert await modify("unlinked", count=3) == []
+
+        # A browser token that another client links to is still connected.
+        await modify("target", count=4)
+        await modify("client", link="target")
+        assert await modify("target", count=5) == ["target-sid", "client-sid"]
+        # A connected browser whose state expired still gets the emit.
+        state_manager._purge_token(BaseStateToken(ident="expired", cls=State))
+        assert await modify("expired", count=6) == ["expired-sid"]
+
+        assert await modify("gone", count=7) == []
+        assert app_warnings() == []
+
+        await event_namespace.emit_update(StateUpdate(), token="gone")
+    assert emit.await_count == 0
+    assert app_warnings() == ["Attempting to send delta to disconnected client 'gone'"]
 
 
 def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
