@@ -28,6 +28,8 @@ from reflex_site_shared.route import Route, get_path
 from reflex_site_shared.templates.docs import docs_layout_shell
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
 
+from reflex_docs.utils.acronyms import uppercase_acronyms
+
 _REGISTERED_DOC_ROUTES: set[str] = set()
 
 # The docs app lives at <repo>/docs/app; source files are linked relative to <repo>.
@@ -39,15 +41,6 @@ GITHUB_REPO_URL = "https://github.com/reflex-dev/reflex"
 
 # Normalized route -> GitHub edit URL used by the page footer.
 doc_edit_hrefs: dict[str, str] = {}
-
-# Title-cased breadcrumb labels that should be displayed as acronyms.
-_BREADCRUMB_LABEL_OVERRIDES: dict[str, str] = {
-    "Ai": "AI",
-    "Api": "API",
-    "Sdk": "SDK",
-    "Cli": "CLI",
-    "Css": "CSS",
-}
 
 
 def _normalize_doc_route(path: str) -> str:
@@ -232,20 +225,6 @@ def breadcrumb_data(path: str, title: str) -> dict:
     }
 
 
-def _uppercase_acronyms(label: str) -> str:
-    """Uppercase the acronyms among a label's words, such as ``Api`` to ``API``.
-
-    Args:
-        label: A space-separated label.
-
-    Returns:
-        The label with each acronym word uppercased.
-    """
-    return " ".join(
-        _BREADCRUMB_LABEL_OVERRIDES.get(word, word) for word in label.split()
-    )
-
-
 def _breadcrumb_label(segment: str) -> str:
     """Turn a route segment into a breadcrumb label, keeping acronyms uppercase.
 
@@ -255,7 +234,7 @@ def _breadcrumb_label(segment: str) -> str:
     Returns:
         The title-cased label, such as ``API Reference``.
     """
-    return _uppercase_acronyms(to_title_case(to_snake_case(segment), sep=" "))
+    return uppercase_acronyms(to_title_case(to_snake_case(segment), sep=" "))
 
 
 def _same_letters(label: str, segment: str) -> bool:
@@ -300,7 +279,7 @@ def _breadcrumb_items(
         ))
     if items:
         for name in names:
-            label = _uppercase_acronyms(name)
+            label = uppercase_acronyms(name)
             if _same_letters(label, segments[-1]):
                 items[-1] = (label, items[-1][1])
                 break

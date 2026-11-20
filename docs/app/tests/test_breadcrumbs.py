@@ -182,6 +182,38 @@ def test_root_breadcrumb_has_one_location(path, monkeypatch):
                 ("Overview", "/ai/integrations/overview/"),
             ],
         ),
+        (
+            "/enterprise/mcp/authentication/",
+            ("MCP Authentication", "Authentication"),
+            {"/enterprise/overview/", "/enterprise/mcp/authentication/"},
+            [
+                ("Enterprise", "/enterprise/overview/"),
+                ("MCP", None),
+                ("Authentication", "/enterprise/mcp/authentication/"),
+            ],
+        ),
+        (
+            "/library/html/html/",
+            ("HTML Elements", "HTML"),
+            {"/library/html/html/"},
+            [("Library", None), ("HTML", None), ("HTML", "/library/html/html/")],
+        ),
+        (
+            "/ai/organization/sso/",
+            ("Sso", "SSO"),
+            {"/ai/organization/sso/"},
+            [("AI", None), ("Organization", None), ("SSO", "/ai/organization/sso/")],
+        ),
+        (
+            "/ai/integrations/github/",
+            ("Github",),
+            {"/ai/integrations/github/"},
+            [
+                ("AI", None),
+                ("Integrations", None),
+                ("GitHub", "/ai/integrations/github/"),
+            ],
+        ),
     ],
 )
 def test_breadcrumb_labels_spell_the_route_and_keep_acronyms(
@@ -207,6 +239,26 @@ def test_sidebar_label_finds_the_page_entry():
     )
     assert sidebar_label("api-reference/cli") == "CLI"
     assert sidebar_label("/not-a-docs-page/") is None
+
+
+@pytest.mark.parametrize(
+    ("route", "label"),
+    [
+        ("/ai/integrations/github/", "GitHub"),
+        ("/ai/integrations/openai/", "OpenAI"),
+        ("/ai/features/connect-to-github/", "Connect To GitHub"),
+        ("/library/other/html-embed/", "HTML Embed"),
+        ("/hosting/cli/vmtypes/", "VM Types"),
+    ],
+)
+def test_page_titles_and_sidebar_labels_keep_acronyms(route, label):
+    """Page titles and sidebar labels spell acronyms and brands like the page."""
+    from reflex_docs.pages import routes
+    from reflex_docs.templates.docpage.sidebar import sidebar_label
+
+    page = next(page for page in routes if page.path.strip("/") == route.strip("/"))
+    assert label in page.title
+    assert sidebar_label(route) == label
 
 
 def test_structured_breadcrumb_parents_keep_acronyms(monkeypatch):
