@@ -1,0 +1,1 @@
+`reflex run --env prod` now forces the exit on a repeated Ctrl-C (or SIGTERM) while a lifespan task's cleanup is stuck, as `reflex run` in dev already did: a repeat more than a second after the first stop kills the workers and prints "Forced exit: the cleanup did not finish."

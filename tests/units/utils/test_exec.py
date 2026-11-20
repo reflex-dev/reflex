@@ -1021,6 +1021,73 @@ def test_run_granian_backend_prod_respawns_failed_workers(
     assert options["respawn_failed_workers"] is expected
 
 
+def test_run_granian_backend_prod_reports_shutdown_before_stopping_workers(
+    mocker: MockerFixture,
+):
+    """``on_shutdown`` runs when the server begins to stop, ahead of the workers."""
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(exec_utils, "_backend_start_method", return_value=None)
+    granian_server = pytest.importorskip("granian.server")
+    calls: list[tuple[str, int]] = []
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def serve(self):
+            self.shutdown(3)
+
+        def shutdown(self, exit_code: int = 0):
+            calls.append(("stop workers", exit_code))
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+
+    exec_utils.run_granian_backend_prod(
+        host="127.0.0.1",
+        port=8000,
+        loglevel=exec_utils.LogLevel.DEBUG,
+        on_shutdown=lambda: calls.append(("on_shutdown", 0)),
+    )
+
+    assert calls == [("on_shutdown", 0), ("stop workers", 3)]
+
+
+@pytest.mark.parametrize("use_granian", [True, False])
+def test_run_backend_prod_passes_on_shutdown_to_granian_only(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch, use_granian: bool
+):
+    """Only granian shuts down in this process, so only it gets ``on_shutdown``."""
+    monkeypatch.delenv(
+        environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.name, raising=False
+    )
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=use_granian)
+    granian = mocker.patch.object(exec_utils, "run_granian_backend_prod")
+    uvicorn = mocker.patch.object(exec_utils, "run_uvicorn_backend_prod")
+
+    def on_shutdown():
+        pass
+
+    exec_utils.run_backend_prod(
+        "127.0.0.1", 8000, exec_utils.LogLevel.DEBUG, on_shutdown=on_shutdown
+    )
+
+    if use_granian:
+        assert granian.mock_calls == [
+            mocker.call(
+                "127.0.0.1", 8000, exec_utils.LogLevel.DEBUG, on_shutdown=on_shutdown
+            )
+        ]
+        assert uvicorn.mock_calls == []
+    else:
+        assert granian.mock_calls == []
+        assert uvicorn.mock_calls == [
+            mocker.call("127.0.0.1", 8000, exec_utils.LogLevel.DEBUG)
+        ]
+
+
 def test_run_granian_backend_prod_rejects_invalid_respawn_setting(
     mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
