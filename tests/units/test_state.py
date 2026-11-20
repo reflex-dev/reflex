@@ -2189,7 +2189,8 @@ def test_cached_var_depends_on_event_handler(
             def __get__(self, instance: Any, owner: Any = None) -> Any:
                 return self if instance is None else MethodType(self, instance)
 
-        HandlerState.handler = MethodPartial(HandlerState.handler.fn)  # ty:ignore[invalid-assignment, missing-attribute]
+        handler_fn = HandlerState.event_handlers["handler"].fn
+        monkeypatch.setattr(HandlerState, "handler", MethodPartial(handler_fn))
         assert isinstance(HandlerState.handler, functools.partial)
     else:
         assert isinstance(HandlerState.handler, EventHandler)
