@@ -134,6 +134,7 @@ class SpecialFormMemoState(BaseState):
     items: Field[list[str]] = field(default_factory=lambda: ["a"])
     flag: Field[bool] = field(default=True)
     value: Field[str] = field(default="a")
+    locale: Field[str] = field(default="fr")
 
     @rx.event
     def record(self, index: int, form_data: dict):
@@ -413,6 +414,97 @@ def test_special_form_memo_wrappers_render_structural_body(
     assert state_wiring not in page_output
     assert body_marker in memo_code
     assert body_marker not in page_output
+
+
+def test_moment_all_locales_import_deduplicates_real_memo_imports() -> None:
+    """A reactive Moment locale removes specific locale imports across memo modules."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: Fragment.create(
+            rx.moment("2024-03-14", locale="fr"),
+            rx.moment("2024-03-14", locale=SpecialFormMemoState.locale),
+        )
+    )
+    shared_imports: dict[str, list[ImportVar]] = {}
+
+    _memo_files, memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+        page_imports=page_ctx.frontend_imports,
+        shared_imports=shared_imports,
+    )
+    locale_imports = [
+        import_var.tag
+        for imports in (page_ctx.frontend_imports, memo_imports)
+        for import_var in imports.get("", [])
+        if (import_var.tag or "").startswith("moment/locale/")
+        or import_var.tag == "moment/min/locales"
+    ]
+    shared_locale_imports = [
+        import_var.tag
+        for import_var in shared_imports.get("", [])
+        if import_var.tag == "moment/min/locales"
+    ]
+
+    assert shared_locale_imports == ["moment/min/locales"]
+    assert locale_imports == []
+
+
+def test_moment_all_locales_import_deduplicates_app_root_imports() -> None:
+    """An app-root wrapper keeps the shared bundle without a duplicate locale."""
+    from reflex.compiler.compiler import compile_app_root
+
+    app_root_code = compile_app_root(
+        Fragment.create(rx.moment("2024-03-14", locale="fr")),
+        shared_imports={"": [ImportVar(tag="moment/min/locales")]},
+    )[1]
+
+    moment_locale_import_lines = [
+        line
+        for line in app_root_code.splitlines()
+        if line.startswith('import "moment/')
+    ]
+    assert moment_locale_import_lines == ['import "moment/min/locales"']
+
+
+def test_moment_literal_locale_keeps_narrow_import() -> None:
+    """A literal-only Moment locale does not pull in the all-locales bundle."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, page_ctx = _compile_single_page(lambda: rx.moment("2024-03-14", locale="fr"))
+    shared_imports: dict[str, list[ImportVar]] = {}
+
+    _memo_files, memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+        page_imports=page_ctx.frontend_imports,
+        shared_imports=shared_imports,
+    )
+    locale_imports = [
+        import_var.tag
+        for imports in (page_ctx.frontend_imports, memo_imports)
+        for import_var in imports.get("", [])
+        if (import_var.tag or "").startswith("moment/locale/")
+        or import_var.tag == "moment/min/locales"
+    ]
+
+    assert locale_imports == ["moment/locale/fr"]
+    assert shared_imports == {}
+
+
+def test_moment_all_locales_without_moment_import_is_left_alone() -> None:
+    """Do not fail when a side-effect import has no default Moment import."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    page_imports = {"": [ImportVar(tag="moment/min/locales")]}
+    shared_imports: dict[str, list[ImportVar]] = {}
+
+    compile_memo_components(
+        page_imports=page_imports,
+        shared_imports=shared_imports,
+    )
+
+    assert page_imports == {"": [ImportVar(tag="moment/min/locales")]}
+    assert shared_imports == {}
 
 
 def test_foreach_snapshot_memo_applies_component_styles() -> None:
