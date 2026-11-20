@@ -280,8 +280,10 @@ def _exported_names() -> list[str]:
     """
     from importlib.util import find_spec
 
+    # Not list(): on Python 3.15 the lazy names are bound in this namespace,
+    # where `list` is rx.list.
     if find_spec("reflex_i18n") is not None:
-        return list(_ALL)
+        return _ALL
     i18n_names = {"i18n", *_MAPPING["i18n"]}
     return [name for name in _ALL if name not in i18n_names]
 
