@@ -20,11 +20,23 @@ from datetime import date, datetime, time, timedelta
 from enum import Enum
 from importlib.util import find_spec
 from pathlib import Path
-from typing import Any, Literal, NamedTuple, TypeVar, get_type_hints, overload
+from types import UnionType
+from typing import (
+    Any,
+    Literal,
+    NamedTuple,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
+)
 from uuid import UUID
 
 from reflex_base.constants.colors import Color
 from reflex_base.utils import _serializer_types, types
+from reflex_base.utils.format import _mark_orjson_registry_shadowed
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +68,57 @@ deserializers = {
 }
 
 
+# orjson serializes these without consulting ``default``. Datetimes and
+# dataclasses are absent because ``format`` passes those through explicitly.
+_ORJSON_NATIVE_TYPES = (Enum, UUID)
+
+# Serializers whose output orjson's native handling already matches.
+_ORJSON_NATIVE_SERIALIZERS: set[Serializer] = set()
+
+
+def _union_members(type_: Any) -> tuple[Any, ...]:
+    """Return the members of a union annotation, or empty for anything else.
+
+    Args:
+        type_: The annotation a serializer was registered under.
+
+    Returns:
+        The union's members, or an empty tuple.
+    """
+    if get_origin(type_) in (Union, UnionType):
+        return get_args(type_)
+    return ()
+
+
+def _reaches_orjson_native_type(type_: Any) -> bool:
+    """Check whether a serializer registered for a type applies to an Enum or UUID.
+
+    Args:
+        type_: The annotation a serializer was registered under.
+
+    Returns:
+        Whether the type, a union member or an existing subclass is an Enum or UUID.
+    """
+    # ``get_serializer`` resolves a union's members through ``issubclass``, and
+    # an annotation is not necessarily a class.
+    pending = [
+        candidate
+        for candidate in (type_, *_union_members(type_))
+        if isinstance(candidate, type)
+    ]
+    seen = set(pending)
+    while pending:
+        cls = pending.pop()
+        if issubclass(cls, _ORJSON_NATIVE_TYPES):
+            return True
+        # An Enum mixing ``cls`` in inherits its serializer.
+        for subclass in type.__subclasses__(cls):
+            if subclass not in seen:
+                seen.add(subclass)
+                pending.append(subclass)
+    return False
+
+
 def _get_optional_type_name(type_: type) -> str | None:
     """Identify an optional type by identity in an already-loaded module.
 
@@ -80,6 +143,7 @@ def serializer(
     fn: None = None,
     to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]: ...
 
 
@@ -88,6 +152,7 @@ def serializer(
     fn: SERIALIZED_FUNCTION,
     to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> SERIALIZED_FUNCTION: ...
 
 
@@ -95,6 +160,7 @@ def serializer(
     fn: SERIALIZED_FUNCTION | None = None,
     to: Any = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> SERIALIZED_FUNCTION | Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]:
     """Decorator to add a serializer for a given type.
 
@@ -102,6 +168,8 @@ def serializer(
         fn: The function to decorate.
         to: The type returned by the serializer. If this is `str`, then any Var created from this type will be treated as a string.
         overwrite: Whether to overwrite the existing serializer.
+        _orjson_native_equivalent: Internal. orjson's native output already matches
+            this serializer, so keep the orjson fast paths enabled.
 
     Returns:
         The decorated function.
@@ -154,6 +222,11 @@ def serializer(
         # Register the serializer.
         SERIALIZERS[type_] = fn
         get_serializer.cache_clear()
+
+        if _orjson_native_equivalent:
+            _ORJSON_NATIVE_SERIALIZERS.add(fn)
+        elif _reaches_orjson_native_type(type_):
+            _mark_orjson_registry_shadowed()
 
         # Return the function.
         return fn
@@ -321,7 +394,17 @@ def get_serializer(type_: type) -> Serializer | None:
     Returns:
         The serializer for the type, or None if there is no serializer.
     """
-    return _find_serializer(type_, SERIALIZERS, _OPTIONAL_SERIALIZERS)
+    serializer_fn = _find_serializer(type_, SERIALIZERS, _OPTIONAL_SERIALIZERS)
+    # An Enum created after a serializer for one of its bases resolves to that
+    # serializer, which orjson would bypass.
+    if (
+        serializer_fn is not None
+        and serializer_fn not in _ORJSON_NATIVE_SERIALIZERS
+        and isinstance(type_, type)
+        and issubclass(type_, _ORJSON_NATIVE_TYPES)
+    ):
+        _mark_orjson_registry_shadowed()
+    return serializer_fn
 
 
 @functools.lru_cache
@@ -477,7 +560,8 @@ def serialize_path(path: Path) -> str:
     return str(path.as_posix())
 
 
-@serializer
+# orjson emits ``en.value`` for an Enum, exactly what this returns.
+@serializer(_orjson_native_equivalent=True)
 def serialize_enum(en: Enum) -> str:
     """Serialize a enum to a JSON string.
 
@@ -490,7 +574,8 @@ def serialize_enum(en: Enum) -> str:
     return en.value
 
 
-@serializer(to=str)
+# orjson emits ``str(uuid)`` for a UUID, exactly what this returns.
+@serializer(to=str, _orjson_native_equivalent=True)
 def serialize_uuid(uuid: UUID) -> str:
     """Serialize a UUID to a JSON string.
 
@@ -559,6 +644,28 @@ def serialize_dataframe(df: _serializer_types.DataFrame) -> dict:
     }
 
 
+def _loads_plotly(data: str) -> Any:
+    """Parse JSON that plotly produced, with the parser plotly dumped it with.
+
+    Args:
+        data: The JSON plotly emitted.
+
+    Returns:
+        The parsed figure or template data.
+    """
+    from plotly.io.json import config as plotly_json_config
+
+    from reflex_base.utils.format import orjson_loads
+
+    # plotly's orjson engine and orjson_loads share the same 64-bit integer
+    # range, so the parse is exact whenever plotly dumped with orjson. Its
+    # stdlib engine can emit wider integers (a big id in customdata), which
+    # orjson would round to a float.
+    if plotly_json_config.default_engine == "json":
+        return json.loads(data)
+    return orjson_loads(data)
+
+
 def serialize_figure(figure: _serializer_types.Figure) -> dict:
     """Serialize a plotly figure.
 
@@ -570,7 +677,7 @@ def serialize_figure(figure: _serializer_types.Figure) -> dict:
     """
     from plotly.io import to_json
 
-    return json.loads(str(to_json(figure)))
+    return _loads_plotly(str(to_json(figure)))
 
 
 def serialize_template(template: _serializer_types.Template) -> dict:
@@ -585,8 +692,8 @@ def serialize_template(template: _serializer_types.Template) -> dict:
     from plotly.io import to_json
 
     return {
-        "data": json.loads(str(to_json(template.data))),
-        "layout": json.loads(str(to_json(template.layout))),
+        "data": _loads_plotly(str(to_json(template.data))),
+        "layout": _loads_plotly(str(to_json(template.layout))),
     }
 
 
@@ -844,10 +951,11 @@ def _prepare_serializers_for_fork() -> None:
             if module is not None and isinstance(vars(module).get(name), type):
                 # JSON engines can defer imports until their first invocation.
                 # Finish those imports too, without holding a serializer lock.
+                # The parse side defers imports as well, so warm it too.
                 with suppress(ImportError):
                     from plotly.io import to_json
 
-                    to_json({"data": []}, validate=False)
+                    _loads_plotly(str(to_json({"data": []}, validate=False)))
 
                 return
 

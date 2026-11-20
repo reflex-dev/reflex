@@ -6,7 +6,6 @@ import collections.abc
 import dataclasses
 import decimal
 import inspect
-import json
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from datetime import date
@@ -19,6 +18,7 @@ from reflex_base import constants
 from reflex_base.constants.base import REFLEX_VAR_OPENING_TAG, Dirs
 from reflex_base.utils import console, types
 from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.format import orjson_dumps
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.types import GenericType, get_origin, unionize
 
@@ -1667,7 +1667,7 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
             )
 
         return LiteralStringVar(
-            _js_expr=json.dumps(value),
+            _js_expr=orjson_dumps(value),
             _var_type=_var_type,
             _var_data=_var_data,
             _var_value=value,
@@ -1679,7 +1679,7 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
         Returns:
             The JSON representation of the var.
         """
-        return json.dumps(self._var_value)
+        return orjson_dumps(self._var_value)
 
 
 @dataclasses.dataclass(
@@ -2410,6 +2410,6 @@ class LiteralRangeVar(CachedVarOperation, LiteralVar[Sequence[int]], RangeVar):
         Returns:
             The JSON representation of the var.
         """
-        return json.dumps(
+        return orjson_dumps(
             list(self._var_value),
         )

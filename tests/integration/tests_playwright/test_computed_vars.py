@@ -65,6 +65,11 @@ def ComputedVars():
         def special_floats(self) -> list[float]:
             return [42.9, float("nan"), float("inf"), float("-inf")]
 
+        # sentinel-colliding strings must survive the socket round trip
+        @rx.var(cache=True, initial_value=[])
+        def sentinel_strings(self) -> list[str]:
+            return ["__reflex_nan__", "__reflex_esc__x", "__reflex_inf__"]
+
         @rx.event
         def increment(self):
             self.count += 1
@@ -116,6 +121,11 @@ def ComputedVars():
                 rx.text(
                     State.special_floats.join(", "),
                     id="special_floats",
+                ),
+                rx.text("sentinel_strings:"),
+                rx.text(
+                    State.sentinel_strings.join(", "),
+                    id="sentinel_strings",
                 ),
             ),
         )
@@ -171,6 +181,9 @@ def test_computed_vars(
         expect(page.locator(f"#{element_id}")).to_have_text("0")
     expect(page.locator("#special_floats")).to_have_text(
         "42.9, NaN, Infinity, -Infinity"
+    )
+    expect(page.locator("#sentinel_strings")).to_have_text(
+        "__reflex_nan__, __reflex_esc__x, __reflex_inf__"
     )
 
     increment = page.locator("#increment")

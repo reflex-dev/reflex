@@ -6,7 +6,6 @@ import asyncio
 import concurrent.futures
 import contextlib
 import copy
-import json
 import operator
 import os
 import tempfile
@@ -308,8 +307,8 @@ def _restore_bundled_libraries() -> bool:
     """
     path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
     try:
-        bundled_libraries = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        bundled_libraries = format.orjson_loads(path.read_bytes())
+    except (OSError, ValueError):
         return False
     if not isinstance(bundled_libraries, list) or not all(
         isinstance(library, str) for library in bundled_libraries
@@ -1169,7 +1168,7 @@ def _read_file_manifest(manifest_path: Path) -> dict[str, str | None]:
         Relative paths and optional fingerprints, or an empty mapping if invalid.
     """
     try:
-        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        data = format.orjson_loads(manifest_path.read_bytes())
     except (OSError, ValueError):
         return {}
     entries: Iterable[tuple[object, object]]
@@ -1208,8 +1207,9 @@ def _write_file_manifest(
     os.close(fd)
     tmp_path = Path(tmp_name)
     try:
-        with tmp_path.open("w", encoding="utf-8") as fh:
-            json.dump(relative_paths, fh, sort_keys=True)
+        tmp_path.write_text(
+            format.orjson_dumps(relative_paths, sort_keys=True), encoding="utf-8"
+        )
         tmp_path.replace(manifest_path)
     except Exception:
         # Best-effort cleanup; manifest write is recoverable on the next run.

@@ -13,6 +13,7 @@ from reflex_base.plugins.embed import get_embed_plugin
 
 from reflex.compiler import templates
 from reflex.utils import net, path_ops
+from reflex.utils.format import orjson_dumps
 from reflex.utils.path_ops import write_file
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
@@ -545,7 +546,7 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
         react_router_config["prerender"] = True
         react_router_config["build"] = constants.Dirs.BUILD_DIR
 
-    return f"export default {json.dumps(react_router_config)};"
+    return f"export default {orjson_dumps(react_router_config)};"
 
 
 def _compile_package_json():
@@ -607,7 +608,18 @@ def update_package_json_overrides() -> bool:
         # full file upstream, so this only happens for a hand-damaged .web.
         return False
 
+    # A null is what the package managers themselves read as "no overrides", so
+    # treat it as absent; framework entries (security pins) must still land.
     overrides = package_json.get("overrides") or {}
+    if not isinstance(overrides, dict):
+        # Anything else cannot be merged into without discarding what the user
+        # wrote, so leave it for them to fix before dependency resolution.
+        logger.warning(
+            f"Expected an object for `overrides` in {package_json_path}, got "
+            f"{type(overrides).__name__}; not applying framework overrides."
+        )
+        return False
+
     if all(
         overrides.get(name) == version
         for name, version in constants.PackageJson.OVERRIDES.items()
@@ -617,9 +629,7 @@ def update_package_json_overrides() -> bool:
     package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
     logger.debug(f"Applying framework overrides to {package_json_path}")
     # Match bun's layout so its later rewrites leave the file unchanged.
-    _write_package_json(
-        package_json_path, json.dumps(package_json, indent=2, ensure_ascii=False) + "\n"
-    )
+    _write_package_json(package_json_path, orjson_dumps(package_json, indent=2) + "\n")
     return True
 
 
@@ -654,7 +664,9 @@ def _compile_vite_config(config: Config):
 def initialize_vite_config():
     """Render and write in .web the vite.config.js file using Reflex config."""
     vite_config_file_path = get_web_dir() / constants.ReactRouter.VITE_CONFIG_FILE
-    vite_config_file_path.write_text(_compile_vite_config(get_config()))
+    vite_config_file_path.write_text(
+        _compile_vite_config(get_config()), encoding="utf-8"
+    )
 
 
 def initialize_bun_config():

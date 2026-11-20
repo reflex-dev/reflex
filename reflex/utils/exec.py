@@ -407,7 +407,7 @@ def get_routes_manifest_router() -> Callable[[str], str | None] | None:
 
     manifest = get_web_dir() / constants.Dirs.ROUTES_MANIFEST
     try:
-        routes = json.loads(manifest.read_text())
+        routes = json.loads(manifest.read_text(encoding="utf-8"))
     except OSError:
         return None
     except ValueError as err:

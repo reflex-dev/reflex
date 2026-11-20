@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO, Self, cast
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import exceptions
-from reflex_base.utils.format import json_dumps
+from reflex_base.utils.format import orjson_dumps_socket
 from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
 from starlette.datastructures import FormData, Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
@@ -556,8 +556,11 @@ def _decode_event_args(encoded: str | None) -> dict[str, Any]:
     if not encoded:
         return {}
     try:
+        # stdlib, not orjson: this is a client-supplied payload unpacked
+        # straight into the handler event, and orjson rounds integers outside
+        # -2**63..2**64-1 (snowflakes, large database keys).
         decoded = json.loads(encoded)
-    except json.JSONDecodeError as exc:
+    except ValueError as exc:
         raise HTTPException(
             status_code=400, detail="Malformed upload event args."
         ) from exc
@@ -724,10 +727,10 @@ async def _upload_buffered_file(
                     raise HTTPException(
                         status_code=500, detail=_UPLOAD_HANDLER_ERROR
                     ) from err
-                yield json_dumps({"error": _UPLOAD_HANDLER_ERROR}) + "\n"
+                yield orjson_dumps_socket({"error": _UPLOAD_HANDLER_ERROR}) + "\n"
                 return
             sent = True
-            yield json_dumps(StateUpdate(delta=delta)) + "\n"
+            yield orjson_dumps_socket(StateUpdate(delta=delta)) + "\n"
 
     return _UploadStreamingResponse(
         _ndjson_updates(),
