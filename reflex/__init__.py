@@ -242,6 +242,7 @@ _SUBMODULES: set[str] = {
     "testing",
     "utils",
     "vars",
+    "js",
     "config",
     "compiler",
     "plugins",

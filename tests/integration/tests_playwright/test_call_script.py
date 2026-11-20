@@ -44,6 +44,7 @@ def CallScript():
         external_counter: rx.Field[int] = rx.field(0)
         value: str = "Initial"
         last_result: rx.Field[int] = rx.field(0)
+        env_result: str = ""
 
         @rx.event
         def call_script_callback(self, result):
@@ -194,6 +195,16 @@ def CallScript():
         @rx.event
         def set_value(self, value: str):
             self.value = value
+
+        @rx.event
+        def set_env_result(self, value: str):
+            self.env_result = value
+
+        @rx.event
+        def env_var_backend(self):
+            return rx.run_script(
+                rx.js.env.add_events(CallScriptState.set_env_result("env var backend"))
+            )
 
         @rx.event
         def reset_(self):
@@ -353,6 +364,30 @@ def CallScript():
                     callback=CallScriptState.setvar("last_result"),
                 ),
                 id="call_with_var_str_cast_wrapped_inline",
+            ),
+            rx.input(id="env_target", default_value="from the ref"),
+            rx.input(value=CallScriptState.env_result, id="env_result", read_only=True),
+            rx.button(
+                "env_string",
+                on_click=rx.call_script(
+                    "env.ref('env_target').current.value",
+                    callback=CallScriptState.set_env_result,
+                ),
+                id="env_string",
+            ),
+            rx.button(
+                "env_var_frontend",
+                on_click=rx.run_script(
+                    rx.js.env.add_events(
+                        CallScriptState.set_env_result("env var frontend")
+                    )
+                ),
+                id="env_var_frontend",
+            ),
+            rx.button(
+                "env_var_backend",
+                on_click=CallScriptState.env_var_backend,
+                id="env_var_backend",
             ),
         )
 
@@ -525,3 +560,21 @@ def test_call_script_w_var(
     inline_return_button.click()
     call_with_var_str_cast_wrapped_inline_button.click()
     expect(last_result).to_have_value("8")
+
+
+def test_script_env(call_script_page: Page):
+    """Scripts reach the script environment as `env` and through `rx.js.env`.
+
+    Args:
+        call_script_page: Playwright page.
+    """
+    env_result = call_script_page.locator("#env_result")
+
+    call_script_page.locator("#env_string").click()
+    expect(env_result).to_have_value("from the ref")
+
+    call_script_page.locator("#env_var_frontend").click()
+    expect(env_result).to_have_value("env var frontend")
+
+    call_script_page.locator("#env_var_backend").click()
+    expect(env_result).to_have_value("env var backend")
