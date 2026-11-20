@@ -5,6 +5,7 @@ import shutil
 import subprocess
 from collections import UserList
 from collections.abc import Callable, Mapping, Sequence
+from pathlib import Path
 from typing import Any, TypeVar, cast, get_type_hints
 from unittest.mock import patch
 
@@ -25,9 +26,11 @@ from reflex_base.event import (
     event,
     event_sequence,
     fix_events,
+    get_event,
     on_submit_event,
     on_submit_string_event,
 )
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console, format, log
 from reflex_base.utils.exceptions import (
@@ -42,7 +45,12 @@ from rich.console import Console
 from typing_extensions import TypeAliasType
 
 import reflex as rx
+from reflex.istate.manager import StateManager
+from reflex.istate.manager.token import BaseStateToken
+from reflex.istate.proxy import StateProxy
+from reflex.minify import StateEntry, get_state_full_path
 from reflex.state import BaseState
+from tests.units.minify_helpers import install_config, set_minify_modes
 from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 
@@ -1739,6 +1747,51 @@ def test_copied_handler_leaves_the_cached_resolver_behind():
         copied = clone(handler)
         assert copied._formatted_name is None
         assert copied == handler
+
+
+class ProxiedEventState(BaseState):
+    """A root state whose background handler names itself through its proxy."""
+
+    outside: str = ""
+    inside: str = ""
+
+    @rx.event(background=True)
+    async def handle(self):
+        """Record this handler's event name, outside and inside the lock."""
+        outside = get_event(self, "handle")
+        async with self:
+            self.outside = outside
+            self.inside = get_event(self, "handle")
+
+
+async def test_get_event_names_a_state_proxy_by_the_wrapped_state(
+    temp_minify_json: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+):
+    """A background task's StateProxy resolves its handler through the wrapped state.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    set_minify_modes(monkeypatch, states=True, events=True)
+    path = get_state_full_path(ProxiedEventState)
+    install_config(
+        states={path: StateEntry(id="p", parent=None)},
+        events={path: {"handle": "h"}},
+    )
+    state_token = BaseStateToken(ident=token, cls=ProxiedEventState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(root)
+
+    await ProxiedEventState.event_handlers["handle"].fn(proxy)
+    assert (proxy.outside, proxy.inside) == ("p.h", "p.h")
 
 
 def test_event_handler_type_hints_resolve():
