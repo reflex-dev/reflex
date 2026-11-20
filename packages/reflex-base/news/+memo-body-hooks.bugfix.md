@@ -1,0 +1,1 @@
+Lifecycle events and `add_hooks` of a component under `rx.cond`, `rx.match` or `rx.foreach` in an `@rx.memo` function now run with their branch and once per loop item, as on a page, instead of when the memo mounts. A component that spreads the memo's `rx.RestProp` or wraps its `children` keeps the old behavior.
