@@ -46,6 +46,23 @@ Whenever the user hovers over the heading, the `next_word` **event handler** wil
 
 Adding the `@rx.event` decorator above the event handler is strongly recommended. This decorator enables proper static type checking, which ensures event handlers receive the correct number and types of arguments.
 
+## Explicit Event Handlers
+
+By default, every public method of a state (one whose name does not start with `_`) is treated as an event handler, whether or not it is decorated. To make `@rx.event` mandatory and keep undecorated public methods as plain Python helpers, enable `state_explicit_event_handlers` in `rxconfig.py`:
+
+```python
+config = rx.Config(
+    app_name="my_app",
+    state_explicit_event_handlers=True,
+)
+```
+
+This also applies to states from third-party packages, so they must decorate their event handlers for the option to be usable in your app.
+
+The option is applied when a state class is created. `reflex run` loads `rxconfig.py` before it imports your app. Other entry points that import your state modules first, such as a test suite or an ASGI server pointed at the app module, must set the `REFLEX_STATE_EXPLICIT_EVENT_HANDLERS` environment variable instead.
+
+A call such as `State.delete(item.id)` in page code also needs the decorator. Without it, `State.delete` is a plain function, so Python calls it while the page compiles.
+
 ## What's in this section?
 
 In the event section of the documentation, you will explore the different types of events supported by Reflex, along with the different ways to call them.

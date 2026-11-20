@@ -14,6 +14,7 @@ from .base import (
     get_leaf_vars,
     get_unique_variable_name,
     get_uuid_string_var,
+    scoped_var_data,
     var_operation,
     var_operation_return,
 )
@@ -72,6 +73,7 @@ __all__ = [
     "number",
     "object",
     "ref",
+    "scoped_var_data",
     "sequence",
     "set",
     "use_hook_var",
