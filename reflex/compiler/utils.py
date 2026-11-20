@@ -317,25 +317,21 @@ def compile_script_modules() -> tuple[
 ]:
     """Compile the JavaScript modules the app imports from Python.
 
-        Each module and the local files it imports, directly or not, are copied
-        under ``utils/script_modules`` at their paths from the directory that holds
-        the module's top-level package, so relative imports resolve as they do in
-        the source tree. ``utils/scripts.js`` re-exports each module under its
-        module key.
+    Each module and the local files it imports, directly or not, are copied
+    under ``utils/script_modules`` at their paths from the directory that holds
+    the module's top-level package, so relative imports resolve as they do in
+    the source tree. ``utils/scripts.js`` re-exports each module under its
+    module key.
 
     Returns:
-    <<<<<<< HEAD
-            The (path, code) outputs, and the npm packages to install: those the
-            modules import, and typescript, which reads their types for the stubs.
-    =======
-            The (path, code) outputs of the scripts, the npm packages they import,
-            to install, and the (source, target) copies of the other files they
-            reference, such as stylesheets and images, which may be binary.
-    >>>>>>> farhan/focused-darwin-dx76ek-js-modules
+        The (path, code) outputs of the scripts; the npm packages to install,
+        which are those the scripts import and typescript, which reads their
+        types for the stubs; and the (source, target) copies of the other files
+        they reference, such as stylesheets and images, which may be binary.
 
     Raises:
-            ReflexRuntimeError: If a module imports a file outside its top-level
-                package's directory.
+        ReflexRuntimeError: If a module imports a file outside its top-level
+            package's directory.
     """
     web_dir = get_web_dir()
     modules_dir = web_dir / constants.Dirs.SCRIPT_MODULES_PATH

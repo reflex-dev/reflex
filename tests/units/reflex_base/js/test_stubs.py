@@ -129,8 +129,9 @@ def test_renamed_parameters_do_not_collide():
             [_param("$value", "any"), _param("arg0", "any"), _param("arg0_", "any")],
         )
     ]
-    assert render_stub(Path("send.js"), "abc", exports).splitlines()[-1] == (
-        "def send(arg0__: _Any, arg0: _Any, arg0_: _Any, /) -> _EventSpec: ..."
+    assert render_stub(Path("send.js"), "abc", exports) == (
+        stub_header(Path("send.js"), "abc") + "\n" + IMPORTS + "\n"
+        "def send(arg0__: _Any, arg0: _Any, arg0_: _Any, /) -> _EventSpec: ...\n"
     )
 
 
@@ -146,9 +147,10 @@ def test_only_trailing_optional_parameters_have_defaults():
             ],
         )
     ]
-    assert render_stub(Path("send.ts"), "abc", exports).splitlines()[-1] == (
+    assert render_stub(Path("send.ts"), "abc", exports) == (
+        stub_header(Path("send.ts"), "abc") + "\n" + IMPORTS + "\n"
         f"def send(prefix: {HANDLER}, count: _float | _Var[_float], "
-        f"suffix: {HANDLER} = ..., /) -> _EventSpec: ..."
+        f"suffix: {HANDLER} = ..., /) -> _EventSpec: ...\n"
     )
 
 
@@ -163,10 +165,11 @@ def test_exports_named_like_types_do_not_replace_them():
         _export("Var", [_param("n", "number")]),
         _export("_str", []),
     ]
-    assert render_stub(Path("m.js"), "abc", exports).splitlines()[-2:] == [
-        f"def str(value: {HANDLER}, str: _float | _Var[_float], /) -> _EventSpec: ...",
-        "def Var(n: _float | _Var[_float], /) -> _EventSpec: ...",
-    ]
+    assert render_stub(Path("m.js"), "abc", exports) == (
+        stub_header(Path("m.js"), "abc") + "\n" + IMPORTS + "\n"
+        f"def str(value: {HANDLER}, str: _float | _Var[_float], /) -> _EventSpec: ...\n"
+        "def Var(n: _float | _Var[_float], /) -> _EventSpec: ...\n"
+    )
 
 
 def test_render_untyped_stub():
