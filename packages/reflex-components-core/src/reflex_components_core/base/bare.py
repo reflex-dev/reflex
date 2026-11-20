@@ -85,9 +85,8 @@ class Bare(Component):
             The hooks for the component.
         """
         hooks = super()._get_all_hooks_internal()
-        if isinstance(self.contents, Var):
-            for component in _components_from_var(self.contents):
-                hooks |= component._get_all_hooks_internal()
+        for component in self._contents_components():
+            hooks |= component._get_all_hooks_internal()
         return hooks
 
     def _get_all_hooks(self) -> dict[str, VarData | None]:
@@ -97,9 +96,8 @@ class Bare(Component):
             The hooks for the component.
         """
         hooks = super()._get_all_hooks()
-        if isinstance(self.contents, Var):
-            for component in _components_from_var(self.contents):
-                hooks |= component._get_all_hooks()
+        for component in self._contents_components():
+            hooks |= component._get_all_hooks()
         return hooks
 
     def _get_all_dynamic_imports(self) -> set[str]:
@@ -109,9 +107,8 @@ class Bare(Component):
             The dynamic imports.
         """
         dynamic_imports = super()._get_all_dynamic_imports()
-        if isinstance(self.contents, Var):
-            for component in _components_from_var(self.contents):
-                dynamic_imports |= component._get_all_dynamic_imports()
+        for component in self._contents_components():
+            dynamic_imports |= component._get_all_dynamic_imports()
         return dynamic_imports
 
     def _get_all_custom_code(self) -> dict[str, None]:
@@ -121,9 +118,8 @@ class Bare(Component):
             The custom code.
         """
         custom_code = super()._get_all_custom_code()
-        if isinstance(self.contents, Var):
-            for component in _components_from_var(self.contents):
-                custom_code |= component._get_all_custom_code()
+        for component in self._contents_components():
+            custom_code |= component._get_all_custom_code()
         return custom_code
 
     def _get_all_app_wrap_components(
@@ -141,14 +137,13 @@ class Bare(Component):
         app_wrap_components = super()._get_all_app_wrap_components(
             ignore_ids=ignore_ids
         )
-        if isinstance(self.contents, Var):
-            for component in _components_from_var(self.contents):
-                component_id = id(component)
-                if isinstance(component, Component) and component_id not in ignore_ids:
-                    ignore_ids.add(component_id)
-                    app_wrap_components |= component._get_all_app_wrap_components(
-                        ignore_ids=ignore_ids
-                    )
+        for component in self._contents_components():
+            component_id = id(component)
+            if isinstance(component, Component) and component_id not in ignore_ids:
+                ignore_ids.add(component_id)
+                app_wrap_components |= component._get_all_app_wrap_components(
+                    ignore_ids=ignore_ids
+                )
         return app_wrap_components
 
     def _get_all_refs(self) -> dict[str, None]:
@@ -158,9 +153,8 @@ class Bare(Component):
             The refs for the children.
         """
         refs = super()._get_all_refs()
-        if isinstance(self.contents, Var):
-            for component in _components_from_var(self.contents):
-                refs |= component._get_all_refs()
+        for component in self._contents_components():
+            refs |= component._get_all_refs()
         return refs
 
     def _contents_vars(self) -> tuple[Var, ...]:
@@ -183,6 +177,21 @@ class Bare(Component):
         cached = (contents,) if rendered is contents else (contents, rendered)
         self._vars_cache = cached
         return cached
+
+    def _contents_components(self) -> Iterator[BaseComponent]:
+        """The components carried by the contents and the var rendered for them.
+
+        A custom ``to_string()`` can bring components the contents lack.
+
+        Yields:
+            Each component once, those of the contents first.
+        """
+        seen: set[int] = set()
+        for var in self._contents_vars():
+            for component in _components_from_var(var):
+                if id(component) not in seen:
+                    seen.add(id(component))
+                    yield component
 
     def _render(self) -> CommonTag:
         return Tagless(contents=f"{self._contents_vars()[-1]!s}")
@@ -213,11 +222,10 @@ class Bare(Component):
 
         are_components_touched = False
 
-        if isinstance(self.contents, Var):
-            for component in _components_from_var(self.contents):
-                if isinstance(component, Component):
-                    component._add_style_recursive(style, theme)
-                    are_components_touched = True
+        for component in self._contents_components():
+            if isinstance(component, Component):
+                component._add_style_recursive(style, theme)
+                are_components_touched = True
 
         if are_components_touched:
             GLOBAL_CACHE.clear()

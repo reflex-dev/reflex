@@ -1,4 +1,5 @@
 import pytest
+from reflex_base.components.component import Component
 from reflex_base.components.tags.tagless import Tagless
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import ObjectVar
@@ -90,3 +91,59 @@ def test_string_form_is_built_once_per_contents():
         "items",
         "(JSON.stringify(items))",
     ]
+
+
+BOX_HOOK = "const box = useBox()"
+BOX_CODE = "const boxDefaults = {};"
+
+
+class HookedBox(Component):
+    """A component with a hook and custom code of its own."""
+
+    tag = "HookedBox"
+    library = "hooked-box"
+
+    def add_hooks(self) -> list[str]:
+        """Add the box hook.
+
+        Returns:
+            The hooks.
+        """
+        return [BOX_HOOK]
+
+    def add_custom_code(self) -> list[str]:
+        """Add the box defaults.
+
+        Returns:
+            The custom code.
+        """
+        return [BOX_CODE]
+
+
+class BoxedVar(ObjectVar[dict]):
+    """An object var whose string form renders through a component."""
+
+    def to_string(self, use_json: bool = True) -> StringVar:
+        """Render the object through a box component.
+
+        Args:
+            use_json: Unused.
+
+        Returns:
+            The boxed text.
+        """
+        return Var(
+            _js_expr=f"box({self!s})",
+            _var_data=VarData(components=(HookedBox.create(id="box"),)),
+        ).to(str)
+
+
+def test_rendered_string_form_brings_its_components():
+    """Components carried by the string form count like those of the contents."""
+    comp = Bare.create(BoxedVar(_js_expr="data", _var_type=dict))
+
+    assert comp.render()["contents"] == "box(data)"
+    assert BOX_HOOK in comp._get_all_hooks()
+    assert BOX_CODE in comp._get_all_custom_code()
+    assert comp._get_all_refs() == HookedBox.create(id="box")._get_all_refs()
+    assert comp._get_all_refs()
