@@ -21,10 +21,12 @@ The mixin that turns a mapped SQLAlchemy model into a workflow. Each row is one 
 ### Workflow.start
 
 ```python
-async def start(self, first: Step | Call) -> bool
+async def start(self, first: Step | Call, *, key: QueryableAttribute | None = None) -> bool
 ```
 
 Inserts this row and schedules `first` to run now. Returns `True` if a run was started, or `False` if the row conflicted with an existing one on a unique constraint. Sets a database-generated primary key on the instance.
+
+With `key`, a column of this table that is unique on its own, only a clash on that column returns `False`, and a clash on any other unique constraint raises [`RunConflict`](#runconflict). See [Key a run on an outside event](/docs/workflows/runs/#key-a-run-on-an-outside-event).
 
 ### Workflow.by
 
@@ -237,6 +239,15 @@ DEFAULT_LANE = "default"
 ```
 
 The lane a step is in, and a worker serves, unless told otherwise.
+
+## RunConflict
+
+```python
+class RunConflict(Exception):
+    constraint: str | None
+```
+
+Raised by `start(first, key=...)` when the new row clashes with an existing one on a unique constraint other than `key`. `constraint` is the name of that constraint, or `None` if the database driver didn't report it.
 
 ## Dataclass variants
 
