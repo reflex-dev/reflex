@@ -1,11 +1,11 @@
 ---
 tags: AI Builder
-description: Create apps and follow-up changes from code with the generations API, then poll or stream each run, read the thread's messages, and stop a run.
+description: Create apps and follow-up changes from code with the generations API, then poll or stream each run, answer its questions and permission requests, read the thread's messages, and stop a run.
 ---
 
 # Generations API
 
-The generations API runs the AI Builder agent from your own code. One request creates a new app or sends a follow-up prompt to an existing one. You then follow the run by polling or over server-sent events, read what the agent wrote, and stop the run if you need to.
+The generations API runs the AI Builder agent from your own code. One request creates a new app or sends a follow-up prompt to an existing one. You then follow the run by polling or over server-sent events, answer it when it stops to ask something, read what the agent wrote, and stop the run if you need to.
 
 A **generation** is one agent run, started by one prompt. A **thread** is the conversation behind one app. Every generation belongs to a thread, and a thread runs at most one generation at a time.
 
@@ -51,6 +51,7 @@ curl -X POST "$REFLEX_URL/api/v1/generations" \
   "id": "6f1c0a52-...",
   "thread_id": "b3e2d9a0-...",
   "status": "queued",
+  "epoch": null,
   "detail": null,
   "app_id": null,
   "error_type": null,
@@ -206,9 +207,13 @@ Treat `status` as an open set of strings. A future release can add a new `awaiti
 
 `detail` is null when the run is not waiting. It can also be null on a waiting run whose question could not be read back, so decide on `status`, and treat `detail` as extra information when present.
 
-### Answer a question
+### Answer a waiting run
 
-Only `awaiting_question` can be answered through this API. Answer it by creating a follow-up generation on the same `thread_id`, with the answer as the prompt:
+Two of the waiting statuses can be answered through this API: `awaiting_question` and `awaiting_permission`. Resolve the others in the AI Builder.
+
+#### Answer a question
+
+Answer `awaiting_question` by creating a follow-up generation on the same `thread_id`, with the answer as the prompt:
 
 ```bash
 curl -X POST "$REFLEX_URL/api/v1/generations" \
@@ -217,10 +222,31 @@ curl -X POST "$REFLEX_URL/api/v1/generations" \
   -d '{"prompt": "Use the Pro and Team plans only.", "thread_id": "<thread-uuid>"}'
 ```
 
-A prompt sent while the run is in any other `awaiting_` status ends in that same status again. A text reply is not treated as a permission grant, and an integration has to be connected rather than described. Resolve those in the AI Builder.
+#### Allow or deny a permission request
+
+Answer `awaiting_permission` with `POST /generations/{id}/resolve`. A text prompt does not work here: the agent does not treat a text reply as a permission grant, so the run parks on the same card again.
+
+Read the generation first, and send back its `epoch` with your decision. `decision` is `allow` or `deny`, and `gate` is always `permission`.
+
+```bash
+curl -X POST "$REFLEX_URL/api/v1/generations/$GENERATION_ID/resolve" \
+  -H "X-API-Token: $REFLEX_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"gate": "permission", "decision": "allow", "epoch": 3}'
+```
+
+The answer starts a new generation on the same thread and answers 201 with it. Follow that new generation, not the one you resolved. With `allow` the agent carries out the action in `detail`; with `deny` it continues without it.
+
+- Repeating the same answer is safe: it answers with the generation the first answer started. A repeat that arrives while the first is still starting gets the live-run 409, whose `generation_id` is that generation.
+- `epoch` proves which card you are answering. A run that is restarted keeps its id and gets a new epoch and a new card, so an answer with an old epoch is refused with 409 and the current `epoch`. Read the generation again and answer the card it is waiting on now.
+- A card that has already been answered, here or in the AI Builder, is refused with 409.
+- Resolving needs edit access to the thread. A caller who can see the run but not edit it is refused with 403.
+
+In any other `awaiting_` status, a prompt ends in that same status again: an integration has to be connected, and environment variables set, in the AI Builder.
 
 ### Other fields
 
+- `epoch`: which incarnation of the run this describes. A run that is restarted keeps its id and gets a new epoch. Send it back when you [resolve a permission request](#allow-or-deny-a-permission-request). Null on a just-created run.
 - `app_id`: the app the thread builds. Null for a thread with no app yet.
 - `error_type`: on a `failed` run, a short machine-readable reason. An open set of values, like `status`.
 - `stop_reason`: on a `stopped` run, `user` when somebody asked for the stop, otherwise the platform's own reason, such as `queue_timeout`, `worker_lost`, or `superseded`. It is also set on a live run that has been asked to stop and has not stopped yet.
@@ -351,12 +377,23 @@ The thread already has a live generation. `detail` is an object, and `generation
 {"detail": {"message": "A generation is already running for this thread.", "generation_id": "6f1c0a52-..."}}
 ```
 
+`POST /generations/{id}/resolve` adds two more object-shaped 409s. Read the generation again before answering:
+
+```json
+{"detail": {"message": "This generation has restarted since that card was read. Read it again and answer the card it is waiting on now.", "epoch": 4}}
+```
+
+```json
+{"detail": {"message": "This generation is not waiting on a permission card; its status is running.", "status": "running"}}
+```
+
 Every other 409 has a string `detail`:
 
 - A request with the same `Idempotency-Key` is still being processed. Retry shortly.
 - An earlier request with the same `Idempotency-Key` left an app this request cannot continue. The message names that app's thread id; send follow-ups to it, or use a new key.
 - The thread is archived.
 - A browser test is running on the app. Retry when it finishes.
+- On resolve, the card has already been answered, or it changed while the answer was being sent.
 
 ### 422: invalid requests
 
@@ -427,7 +464,7 @@ for m in json.load(sys.stdin)["messages"]:
 done
 ```
 
-If the run ended in `awaiting_question`, read the questions from `detail` on `GET /generations/{id}` and answer with a follow-up on `$THREAD_ID`, as in [Answer a question](#answer-a-question).
+If the run ended in `awaiting_question`, read the questions from `detail` on `GET /generations/{id}` and answer with a follow-up on `$THREAD_ID`, as in [Answer a question](#answer-a-question). If it ended in `awaiting_permission`, allow or deny it with the run's `epoch`, as in [Allow or deny a permission request](#allow-or-deny-a-permission-request).
 
 ## Related
 
