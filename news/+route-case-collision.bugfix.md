@@ -1,0 +1,1 @@
+Reject app and plugin pages whose route matches the same URLs as an already registered route (letter case and dynamic segment names are ignored by the router), since one of the pages would be unreachable.
