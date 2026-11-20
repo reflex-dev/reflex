@@ -349,9 +349,9 @@ async def verify(cls: type[Plain | Grouped], workers: set[int]) -> dict[str, Any
     by_worker: dict[int, list[Any]] = collections.defaultdict(list)
     by_group: dict[str, list[Any]] = collections.defaultdict(list)
     for row in rows:
-        by_worker[row[0]].append((row[1], row[2]))
+        by_worker[row[0]].append((row[1], row[2]))  # ty:ignore[invalid-argument-type]
         if cls is Grouped:
-            by_group[row[4]].append((row[1], row[2]))
+            by_group[row[4]].append((row[1], row[2]))  # ty:ignore[invalid-argument-type]
     worker_peak = max(peak_overlap(spans) for spans in by_worker.values())
     group_peak = max((peak_overlap(spans) for spans in by_group.values()), default=0)
 
@@ -368,7 +368,8 @@ async def verify(cls: type[Plain | Grouped], workers: set[int]) -> dict[str, Any
         "worker_peak": worker_peak,
         "group_peak": group_peak if cls is Grouped else None,
         "late_ms": sorted(
-            (started - due).total_seconds() * 1000 for _, started, _, due, *_ in rows
+            (started - due).total_seconds() * 1000  # ty:ignore[unsupported-operator]
+            for _, started, _, due, *_ in rows
         ),
     }
 
@@ -690,7 +691,7 @@ async def main() -> None:
     trials: dict[str, list[dict[str, Any]]] = collections.defaultdict(list)
     for trial in range(args.repeat):
         for name, scenario in scenarios:
-            trials[name].append(await measure(layout, **scenario))
+            trials[name].append(await measure(layout, **scenario))  # ty:ignore[invalid-argument-type]
             print(f"trial {trial + 1}: {name}: {json.dumps(trials[name][-1])}")
     results = [
         summarize(

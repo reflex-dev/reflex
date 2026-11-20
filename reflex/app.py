@@ -20,7 +20,7 @@ import time
 import traceback
 import urllib.parse
 from collections.abc import (
-    AsyncIterator,
+    AsyncGenerator,
     Callable,
     Collection,
     Coroutine,
@@ -1244,7 +1244,7 @@ class App(MiddlewareMixin, LifespanMixin):
         return stack
 
     @contextlib.asynccontextmanager
-    async def _setup_event_processor(self) -> AsyncIterator[None]:
+    async def _setup_event_processor(self) -> AsyncGenerator[None, None]:
         """Configure event processing with a fresh worker socket identity.
 
         Yields:
@@ -1509,7 +1509,9 @@ class App(MiddlewareMixin, LifespanMixin):
         if route is not None:
             return format.format_route(route)
         if isinstance(component, Callable):
-            return format.format_route(format.to_kebab_case(component.__name__))
+            return format.format_route(
+                format.to_kebab_case(format.callable_name(component))
+            )
         return None
 
     def add_page(
@@ -2339,7 +2341,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @overload
     @deprecated("pass token as rx.BaseStateToken instead of str")
-    def modify_state(
+    def modify_state(  # ty:ignore[inconsistent-overload-implementation] https://github.com/astral-sh/ty/issues/2057
         self,
         token: str,
         background: bool = False,
@@ -2347,7 +2349,7 @@ class App(MiddlewareMixin, LifespanMixin):
     ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
 
     @overload
-    def modify_state(
+    def modify_state(  # ty:ignore[inconsistent-overload-implementation] https://github.com/astral-sh/ty/issues/2057
         self,
         token: BaseStateToken,
         background: bool = False,
@@ -2361,7 +2363,7 @@ class App(MiddlewareMixin, LifespanMixin):
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
         **context: Unpack[StateModificationContext],
-    ) -> AsyncIterator[BaseState]:
+    ) -> AsyncGenerator[BaseState, None]:
         """Modify the state out of band.
 
         Args:
@@ -2544,7 +2546,7 @@ async def health(_request: Request) -> JSONResponse:
             - "db" (bool or str): Database status - True, False, or "NA".
             - "redis" (bool or str): Redis status - True, False, or "NA".
     """
-    health_status = {"status": True}
+    health_status: dict[str, bool | None] = {"status": True}
     status_code = 200
 
     tasks = []

@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import dataclasses
 import logging
-from typing import Any
 
 from reflex_base.components.app_wraps import (
     collect_var_app_wraps_for_component,
@@ -46,7 +45,7 @@ from reflex_base.components.memoize_helpers import (
     scope_var_names,
 )
 from reflex_base.constants.compiler import MemoizationDisposition
-from reflex_base.plugins import ComponentAndChildren, PageContext
+from reflex_base.plugins import CompileContext, ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
 from reflex_base.vars.base import LiteralVar, Var, scoped_var_data
 from reflex_components_core.base.bare import Bare
@@ -307,7 +306,7 @@ def _warn_index_keyed_item(foreach: Foreach, where: str) -> None:
 def _scope_instance_hooks(
     component: Component,
     page_context: PageContext,
-    compile_context: Any,
+    compile_context: CompileContext,
     *,
     where: str | None = None,
     reserved: frozenset[str] = frozenset(),
@@ -366,7 +365,7 @@ def _scope_instance_hooks(
 def _scope_branch_hooks(
     component: Component,
     page_context: PageContext,
-    compile_context: Any,
+    compile_context: CompileContext,
     where: str,
     reserved: frozenset[str],
 ) -> Component:
@@ -401,7 +400,7 @@ def _scope_branch_hooks(
 
 
 def scope_memo_body_hooks(
-    definition: MemoComponentDefinition, compile_context: Any
+    definition: MemoComponentDefinition, compile_context: CompileContext
 ) -> MemoComponentDefinition:
     """Scope the hooks under a branch or a loop in an ``@rx.memo`` body.
 
@@ -482,7 +481,7 @@ class MemoizeStatefulPlugin(Plugin):
         /,
         *,
         page_context: PageContext,
-        compile_context: Any,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
     ) -> BaseComponent | ComponentAndChildren | None:
         """Memoize snapshot-boundary subtrees before descent.
@@ -550,7 +549,7 @@ class MemoizeStatefulPlugin(Plugin):
         /,
         *,
         page_context: PageContext,
-        compile_context: Any,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
     ) -> BaseComponent | ComponentAndChildren | None:
         """Wrap non-boundary memoizables and pop any suppression this component pushed.
@@ -610,7 +609,7 @@ class MemoizeStatefulPlugin(Plugin):
     def _build_wrapper(
         comp: Component,
         page_context: PageContext,
-        compile_context: Any,
+        compile_context: CompileContext,
         in_loop: bool = False,
         reserved: frozenset[str] = frozenset(),
     ) -> BaseComponent | None:

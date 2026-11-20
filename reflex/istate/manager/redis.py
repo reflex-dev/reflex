@@ -7,7 +7,7 @@ import logging
 import os
 import time
 import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from datetime import timedelta
 from typing import Any, TypedDict, cast
 
@@ -626,7 +626,7 @@ class StateManagerRedis(StateManager):
         token: StateToken[TOKEN_TYPE],
         lock_id: bytes,
         **context: Unpack[StateModificationContext],
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> AsyncGenerator[TOKEN_TYPE, None]:
         """Load and save state under an existing lock, also when the handler fails.
 
         Args:
@@ -656,7 +656,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def _try_modify_state(
         self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[TOKEN_TYPE | None]:
+    ) -> AsyncGenerator[TOKEN_TYPE | None, None]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -761,7 +761,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def modify_state(
         self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> AsyncGenerator[TOKEN_TYPE, None]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -781,7 +781,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def _get_state_cached(
         self, token: StateToken[TOKEN_TYPE]
-    ) -> AsyncIterator[TOKEN_TYPE | None]:
+    ) -> AsyncGenerator[TOKEN_TYPE | None, None]:
         """Get the cached state for a token, while holding the local lease lock.
 
         Args:
@@ -813,7 +813,8 @@ class StateManagerRedis(StateManager):
                                     raise ValueError  # noqa: TRY301
                             except ValueError:
                                 await self.get_state(
-                                    token, for_state_instance=cached_state
+                                    token,
+                                    for_state_instance=cached_state,
                                 )
                         yield cast(TOKEN_TYPE, cached_state)
                         return
@@ -1023,7 +1024,7 @@ class StateManagerRedis(StateManager):
             lock_waiter_key_pattern: self._handle_lock_contention,
         }
         async with self.redis.pubsub() as pubsub:
-            await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
+            await pubsub.psubscribe(**handlers)
             try:
                 # Notifications are only delivered once redis confirms the subscription.
                 async for message in pubsub.listen():
@@ -1082,7 +1083,9 @@ class StateManagerRedis(StateManager):
         self._redis_notify_keyspace_events_enabled = True
 
     @contextlib.asynccontextmanager
-    async def _lock_waiter(self, lock_key: bytes) -> AsyncIterator[asyncio.Event]:
+    async def _lock_waiter(
+        self, lock_key: bytes
+    ) -> AsyncGenerator[asyncio.Event, None]:
         """Create a lock waiter for a given lock key.
 
         Args:
@@ -1148,7 +1151,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def _request_lock_release(
         self, lock_key: bytes, lock_id: bytes
-    ) -> AsyncIterator[None]:
+    ) -> AsyncGenerator[None, None]:
         """Request the release of a redis lock.
 
         The instance stays a contender until its last waiter for the lock
@@ -1170,11 +1173,9 @@ class StateManagerRedis(StateManager):
             # Waiters that leave while this one awaits count it as staying, so
             # deregister again once they are gone. A cancellation of this
             # cleanup leaves the registration to expire with its pexpire.
+            srem = cast("Callable[..., Awaitable[int]]", self.redis.srem)
             while self._n_lock_waiters(lock_key) <= 1:
-                await cast(
-                    "Awaitable[int]",
-                    self.redis.srem(lock_key + b"_waiters", self._instance_id),
-                )
+                await srem(lock_key + b"_waiters", self._instance_id)
                 if self._n_lock_waiters(lock_key) <= 1:
                     break
                 # A waiter that queued meanwhile may have registered before the SREM.
@@ -1291,7 +1292,7 @@ class StateManagerRedis(StateManager):
     @contextlib.asynccontextmanager
     async def _lock(
         self, token: StateToken[Any], event_name: str | None = None
-    ) -> AsyncIterator[bytes]:
+    ) -> AsyncGenerator[bytes, None]:
         """Obtain a redis lock for a token.
 
         Args:

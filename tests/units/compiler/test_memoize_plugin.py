@@ -382,21 +382,15 @@ def test_special_form_memo_wrappers_render_structural_body(
                 lambda item: rx.text(item),
             )
         if special_form == "cond":
-            return cast(
-                Component,
-                rx.cond(
-                    SpecialFormMemoState.flag,
-                    rx.text("yes"),
-                    rx.text("no"),
-                ),
+            return rx.cond(
+                SpecialFormMemoState.flag,
+                rx.text("yes"),
+                rx.text("no"),
             )
-        return cast(
-            Component,
-            rx.match(
-                SpecialFormMemoState.value,
-                ("a", rx.text("A")),
-                rx.text("default"),
-            ),
+        return rx.match(
+            SpecialFormMemoState.value,
+            ("a", rx.text("A")),
+            rx.text("default"),
         )
 
     ctx, page_ctx = _compile_single_page(lambda: rx.box(special_child()))
@@ -597,7 +591,7 @@ def test_foreach_form_submit_handler_receives_loop_index() -> None:
             rx.Var.range(3),
             lambda index: rx.form(
                 rx.input(name="input"),
-                on_submit=lambda form_data: SpecialFormMemoState.record(
+                on_submit=lambda form_data: SpecialFormMemoState.record(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     index, form_data
                 ),
             ),
@@ -918,21 +912,15 @@ def test_common_memoization_snapshot_helper_classifies_snapshot_cases() -> None:
             lambda item: rx.text(item),
         )
     )
-    cond_fragment = cast(
-        Component,
-        rx.cond(
-            SpecialFormMemoState.flag,
-            rx.text("yes"),
-            rx.text("no"),
-        ),
+    cond_fragment = rx.cond(
+        SpecialFormMemoState.flag,
+        rx.text("yes"),
+        rx.text("no"),
     )
-    match_fragment = cast(
-        Component,
-        rx.match(
-            SpecialFormMemoState.value,
-            ("a", rx.text("A")),
-            rx.text("default"),
-        ),
+    match_fragment = rx.match(
+        SpecialFormMemoState.value,
+        ("a", rx.text("A")),
+        rx.text("default"),
     )
 
     # A parent with a structural-memoization child (Foreach) is itself
@@ -1074,7 +1062,7 @@ def test_user_memo_event_trigger_usecallback_leaves_page_scope() -> None:
 
     @rx.memo
     def clickable(
-        on_click: rx.EventHandler[rx.event.no_args_event_spec],
+        on_click: rx.EventHandler[rx.event.no_args_event_spec],  # ty:ignore[invalid-type-form]
     ) -> Component:
         return Plain.create(on_click=on_click)
 
@@ -1250,8 +1238,12 @@ def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> No
         fake_create_passthrough_component_memo,
     )
 
-    first_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
-    second_compile = SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    first_compile = cast(
+        CompileContext, SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    )
+    second_compile = cast(
+        CompileContext, SimpleNamespace(memoize_wrappers={}, auto_memo_components={})
+    )
     page_context = cast(
         PageContext, SimpleNamespace(source_module=None, client_state_names=set())
     )
@@ -2574,7 +2566,7 @@ def test_form_memo_preserves_control_refs(form_factory) -> None:
         lambda: form_factory(
             rx.box(
                 rx.input(id="plain_field"),
-                rx.input(id="debounced_field", on_change=rx.console_log),
+                rx.input(id="debounced_field", on_change=rx.console_log),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                 rx.radio_group(["a", "b"], id="unset_field"),
                 rx.text("Label", id="label"),
                 id="wrapper",
@@ -3141,7 +3133,7 @@ def _memo_export_line(files: object, symbol: str) -> str:
     Returns:
         The matching export line.
     """
-    for _path, code in files:  # pyright: ignore [reportGeneralTypeIssues]
+    for _path, code in files:  # ty:ignore[not-iterable]
         for line in code.splitlines():
             if line.startswith("export const") and symbol in line:
                 return line
@@ -3623,7 +3615,7 @@ def _module_by_export(files: object) -> dict[str, str]:
         Each ``export const`` block keyed by its exported symbol.
     """
     modules: dict[str, str] = {}
-    for _path, code in files:  # pyright: ignore [reportGeneralTypeIssues]
+    for _path, code in files:  # ty:ignore[not-iterable]
         for block in code.split("export const ")[1:]:
             modules[block.split(" ", 1)[0]] = block
     return modules
@@ -3955,7 +3947,8 @@ def test_memo_body_wrapper_receives_event_handler_param() -> None:
 
     @rx.memo
     def handler(
-        show: rx.Var[bool], on_ping: rx.EventHandler[rx.event.no_args_event_spec]
+        show: rx.Var[bool],
+        on_ping: rx.EventHandler[rx.event.no_args_event_spec],  # ty:ignore[invalid-type-form]
     ) -> Component:
         return rx.cond(
             show,

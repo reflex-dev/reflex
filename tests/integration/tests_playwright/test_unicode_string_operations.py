@@ -25,12 +25,12 @@ def UnicodeStringApp():
     def index():
         return rx.vstack(
             rx.text(
-                UnicodeState.value.length(),  # pyright: ignore[reportAttributeAccessIssue]
+                UnicodeState.value.length(),  # ty:ignore[missing-attribute]
                 id="length",
             ),
             rx.text(UnicodeState.value[::-1], id="reverse"),
             rx.text(
-                UnicodeState.value.reversed(),  # pyright: ignore[reportAttributeAccessIssue]
+                UnicodeState.value.reversed(),  # ty:ignore[missing-attribute]
                 id="reversed",
             ),
             rx.text(UnicodeState.value * 2, id="repeat"),
@@ -44,7 +44,7 @@ def UnicodeStringApp():
                 id="foreach",
             ),
             rx.text(
-                UnicodeState.value.split().length(),  # pyright: ignore[reportAttributeAccessIssue]
+                UnicodeState.value.split().length(),  # ty:ignore[missing-attribute]
                 id="split-length",
             ),
             rx.box(
@@ -61,13 +61,13 @@ def UnicodeStringApp():
             rx.text(UnicodeState.value[1], id="character"),
             rx.text(UnicodeState.value[1:], id="slice"),
             rx.text(
-                UnicodeState.plain.length(),  # pyright: ignore[reportAttributeAccessIssue]
+                UnicodeState.plain.length(),  # ty:ignore[missing-attribute]
                 id="plain-length",
             ),
             rx.text(UnicodeState.plain[1:3], id="plain-slice"),
             rx.text(UnicodeState.plain[-1], id="plain-character"),
             rx.text(
-                UnicodeState.missing.length(),  # pyright: ignore[reportAttributeAccessIssue, reportOptionalMemberAccess]
+                UnicodeState.missing.length(),  # ty:ignore[missing-attribute]
                 id="missing-length",
             ),
         )

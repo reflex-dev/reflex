@@ -507,16 +507,15 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
         """
         return self._derive(fdel, fdel=fdel)
 
+    # The callable form comes first: ty reads a `@classmethod` in a class body as a
+    # plain function, and a staticmethod is callable.
+    @overload
+    def var(self, func: Callable[[Any], _V2], /) -> HybridProperty[_T, _O, _V2]: ...
+
     @overload
     def var(
         self, func: classmethod[_O, ..., _V2], /
     ) -> HybridProperty[_T, _O, _V2]: ...
-
-    @overload
-    def var(self, func: staticmethod[[Any], _V2], /) -> HybridProperty[_T, _O, _V2]: ...
-
-    @overload
-    def var(self, func: Callable[[Any], _V2], /) -> HybridProperty[_T, _O, _V2]: ...
 
     def var(self, func: Any, /) -> Any:
         """Set the (optional) var function for the property.

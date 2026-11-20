@@ -44,7 +44,7 @@ from reflex_base.constants.base import Reflex
 from reflex_base.utils.decorator import once
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Iterator
+    from collections.abc import Hashable
     from typing import TextIO
 
 # Level between INFO and WARNING for user-facing success messages.
@@ -224,7 +224,7 @@ class RichConsoleHandler(logging.Handler):
                 "markup": markup,
                 **getattr(record, _RICH_KWARGS_FIELD, {}),
             }
-            console.print(f"{prefix}{record.getMessage()}", **print_kwargs)
+            console.print(f"{prefix}{record.getMessage()}", **print_kwargs)  # ty:ignore[invalid-argument-type]
             if record.exc_info and record.exc_info[0] is not None:
                 # Tracebacks may contain user data; never parse them as markup.
                 # Never word-wrap them either: wrapping breaks file paths.
@@ -246,7 +246,7 @@ class RichConsoleHandler(logging.Handler):
         Returns:
             The formatted traceback.
         """
-        return _EXC_FORMATTER.formatException(record.exc_info)  # pyright: ignore[reportArgumentType]
+        return _EXC_FORMATTER.formatException(record.exc_info)  # ty:ignore[invalid-argument-type]
 
 
 def _write_json(payload: dict, *, stderr: bool):
@@ -766,7 +766,7 @@ def is_debug() -> bool:
 
 
 @contextlib.contextmanager
-def timing(logger: logging.Logger, msg: str) -> Iterator[None]:
+def timing(logger: logging.Logger, msg: str) -> Generator[None, None, None]:
     """Time a block of code and log the duration at debug level.
 
     Args:

@@ -5,11 +5,12 @@ from __future__ import annotations
 import ast
 import builtins
 import dataclasses
+import inspect
 import logging
 import sys
 import types
 import typing
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from enum import Enum
 from functools import lru_cache
 from importlib.util import find_spec
@@ -29,9 +30,9 @@ from typing import (  # noqa: UP035
     Tuple,
     TypeVar,
     Union,
-    _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
-    _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
-    _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
+    _eval_type,  # ty:ignore[missing-module-member]
+    _GenericAlias,  # ty:ignore[missing-module-member]
+    _SpecialGenericAlias,  # ty:ignore[missing-module-member]
     cast,
     get_args,
     is_typeddict,
@@ -51,6 +52,21 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     PROPERTY_CLASSES: tuple[type, ...]
+
+
+def set_signature(fn: Any, signature: inspect.Signature) -> None:
+    """Attach an explicit ``__signature__`` to a callable.
+
+    ``__signature__`` is an optional attribute that ``inspect.signature`` reads
+    when present, but it is not part of a function's static type, so it is set
+    here through an ``Any``-typed handle rather than direct attribute access.
+
+    Args:
+        fn: The callable to annotate.
+        signature: The signature to expose for ``fn``.
+    """
+    fn.__signature__ = signature
+
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
@@ -98,68 +114,68 @@ VAR6 = TypeVar("VAR6", bound="Var")
 VAR7 = TypeVar("VAR7", bound="Var")
 
 
-class _ArgsSpec0(Protocol):
+class _ArgsSpec0(Hashable, Protocol):
     def __call__(self) -> Sequence[Var]: ...
 
 
-class _ArgsSpec1(Protocol):
-    def __call__(self, var1: VAR1, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+class _ArgsSpec1(Hashable, Protocol):
+    def __call__(self, var1: VAR1, /) -> Sequence[Var]: ...
 
 
-class _ArgsSpec2(Protocol):
-    def __call__(self, var1: VAR1, var2: VAR2, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+class _ArgsSpec2(Hashable, Protocol):
+    def __call__(self, var1: VAR1, var2: VAR2, /) -> Sequence[Var]: ...
 
 
-class _ArgsSpec3(Protocol):
-    def __call__(self, var1: VAR1, var2: VAR2, var3: VAR3, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+class _ArgsSpec3(Hashable, Protocol):
+    def __call__(self, var1: VAR1, var2: VAR2, var3: VAR3, /) -> Sequence[Var]: ...
 
 
-class _ArgsSpec4(Protocol):
+class _ArgsSpec4(Hashable, Protocol):
     def __call__(
         self,
-        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
-        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
-        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
-        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var1: VAR1,
+        var2: VAR2,
+        var3: VAR3,
+        var4: VAR4,
         /,
     ) -> Sequence[Var]: ...
 
 
-class _ArgsSpec5(Protocol):
+class _ArgsSpec5(Hashable, Protocol):
     def __call__(
         self,
-        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
-        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
-        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
-        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
-        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        var1: VAR1,
+        var2: VAR2,
+        var3: VAR3,
+        var4: VAR4,
+        var5: VAR5,
         /,
     ) -> Sequence[Var]: ...
 
 
-class _ArgsSpec6(Protocol):
+class _ArgsSpec6(Hashable, Protocol):
     def __call__(
         self,
-        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
-        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
-        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
-        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
-        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
-        var6: VAR6,  # pyright: ignore [reportInvalidTypeVarUse]
+        var1: VAR1,
+        var2: VAR2,
+        var3: VAR3,
+        var4: VAR4,
+        var5: VAR5,
+        var6: VAR6,
         /,
     ) -> Sequence[Var]: ...
 
 
-class _ArgsSpec7(Protocol):
+class _ArgsSpec7(Hashable, Protocol):
     def __call__(
         self,
-        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
-        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
-        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
-        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
-        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
-        var6: VAR6,  # pyright: ignore [reportInvalidTypeVarUse]
-        var7: VAR7,  # pyright: ignore [reportInvalidTypeVarUse]
+        var1: VAR1,
+        var2: VAR2,
+        var3: VAR3,
+        var4: VAR4,
+        var5: VAR5,
+        var6: VAR6,
+        var7: VAR7,
         /,
     ) -> Sequence[Var]: ...
 
@@ -545,7 +561,7 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
 
 def _unionize(args: list[GenericType]) -> GenericType:
     if not args:
-        return Any  # pyright: ignore [reportReturnType]
+        return Any
     if len(args) == 1:
         return args[0]
     return Union[tuple(args)]  # noqa: UP007
@@ -635,8 +651,9 @@ def has_args(cls: type) -> bool:
         return True
 
     # Check if the class inherits from a generic class (using __orig_bases__)
-    if hasattr(cls, "__orig_bases__"):
-        for base in cls.__orig_bases__:
+    orig_bases = getattr(cls, "__orig_bases__", None)
+    if orig_bases is not None:
+        for base in orig_bases:
             if get_args(base):
                 return True
 
@@ -771,7 +788,7 @@ def _apply_type_params(
         else:
             flattened.append(substitution.get(param, param))
     try:
-        return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue]
+        return value[tuple(flattened)]  # pyright: ignore[reportIndexIssue] # ty:ignore[not-subscriptable]
     except TypeError:
         # Python 3.11 rejects a ParamSpec next to an unpacked TypeVarTuple, so
         # substitute by hand instead.
@@ -822,7 +839,7 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
             )
         return resolve_type_alias(value)
     if isinstance(cls, TypeAliasTypes):
-        return resolve_type_alias(cls.__value__)
+        return resolve_type_alias(cls.__value__)  # ty:ignore[missing-union-attribute]
     if is_union(cls):
         # Rebuild the union only when a member actually resolved, so the
         # common alias-free case allocates nothing.
@@ -1010,11 +1027,12 @@ def is_unserialized_property(
     if serializer is serializers.serialize_sqlalchemy_base:
         import sqlalchemy
 
-        return name not in sqlalchemy.inspect(cls).attrs
+        return name not in sqlalchemy.inspect(cls).attrs  # ty:ignore[missing-union-attribute]
 
     if dataclasses.is_dataclass(cls):
         return serializer is None and name not in {
-            field.name for field in dataclasses.fields(cls)
+            field.name
+            for field in dataclasses.fields(cls)  # ty:ignore[invalid-argument-type]
         }
     decorators = getattr(cls, "__pydantic_decorators__", None)
     if decorators is None or decorators.model_serializers:
@@ -1105,7 +1123,7 @@ def _get_column_access_type(cls: type, name: str) -> GenericType | None:
     """
     import sqlalchemy
 
-    column = sqlalchemy.inspect(cls).columns[name]
+    column = sqlalchemy.inspect(cls, raiseerr=True).columns[name]
     type_ = _get_column_python_type(column.type)
     if type_ is None or type_ is object:
         type_ = _get_mapped_annotation(cls, name) or type_
@@ -1195,8 +1213,8 @@ def get_attribute_access_type(
                     return list[
                         get_attribute_access_type(
                             attr.target_class,
-                            attr.remote_attr.key,  # pyright: ignore [reportAttributeAccessIssue]
-                        )
+                            attr.remote_attr.key,
+                        )  # ty:ignore[invalid-type-form]
                     ]
         elif (
             sqlmodel_type is not None
@@ -1207,7 +1225,7 @@ def get_attribute_access_type(
             and declares_annotation(cls, name)
         ):
             # Check in the annotations directly (for sqlmodel.Relationship)
-            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
+            hints = get_type_hints(cls)
             if name in hints:
                 type_ = hints[name]
                 type_origin = get_origin(type_)
@@ -1226,7 +1244,7 @@ def get_attribute_access_type(
         # ForwardRef resolution of unrelated annotations.
         try:
             if declares_annotation(cls, name):
-                hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
+                hints = get_type_hints(cls)
                 if name in hints:
                     return hints[name]
         except NameError as e:
@@ -1256,9 +1274,9 @@ def get_base_class(cls: GenericType) -> type:
         return type(get_args(cls)[0])
 
     if is_union(cls):
-        return tuple(get_base_class(arg) for arg in get_args(cls))  # pyright: ignore [reportReturnType]
+        return tuple(get_base_class(arg) for arg in get_args(cls))  # ty:ignore[invalid-explicit-return]
 
-    return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
+    return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls  # ty:ignore[missing-union-attribute]
 
 
 # "No extra items" sentinels of PEP 728 TypedDicts (typing on Python 3.15+,
@@ -1686,13 +1704,14 @@ def validate_literal(key: str, value: Any, expected_type: type, comp_name: str):
     """
     from reflex_base.vars import Var
 
+    expected_args = get_args(expected_type)
     if (
         is_literal(expected_type)
         and not isinstance(value, Var)  # validating vars is not supported yet.
         and not is_encoded_fstring(value)  # f-strings are not supported.
-        and value not in expected_type.__args__
+        and value not in expected_args
     ):
-        allowed_values = expected_type.__args__
+        allowed_values = expected_args
         if value not in allowed_values:
             allowed_value_str = ",".join([
                 str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values
@@ -1955,7 +1974,7 @@ def _resolve_annotation(
 
 def resolve_annotations(
     raw_annotations: Mapping[str, type[Any]], module_name: str | None
-) -> dict[str, type[Any]]:
+) -> dict[str, type[Any] | ForwardRef]:
     """Partially taken from typing.get_type_hints.
 
     Resolve string or ForwardRef annotations into type objects if possible.
@@ -1965,7 +1984,9 @@ def resolve_annotations(
         module_name: The name of the module.
 
     Returns:
-        The resolved annotations.
+        The resolved annotations. Entries that could not be resolved remain
+        as ``ForwardRef`` instances (callers can re-resolve them later via
+        ``update_forward_refs``).
     """
     module = sys.modules.get(module_name, None) if module_name is not None else None
 

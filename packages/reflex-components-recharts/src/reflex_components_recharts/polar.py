@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, ClassVar
+from typing import Annotated, Any, ClassVar
 
 from reflex_base.components.component import field
 from reflex_base.constants import EventTriggers
@@ -330,35 +330,35 @@ class PolarAngleAxis(Recharts):
     # Valid children components.
     _valid_children: ClassVar[list[str]] = ["Label"]
 
-    on_click: EventHandler[no_args_event_spec] = field(
+    on_click: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of click on the ticks of this axis."
     )
 
-    on_mouse_down: EventHandler[no_args_event_spec] = field(
+    on_mouse_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousedown on the ticks of this axis."
     )
 
-    on_mouse_up: EventHandler[no_args_event_spec] = field(
+    on_mouse_up: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseup on the ticks of this axis."
     )
 
-    on_mouse_move: EventHandler[no_args_event_spec] = field(
+    on_mouse_move: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousemove on the ticks of this axis."
     )
 
-    on_mouse_over: EventHandler[no_args_event_spec] = field(
+    on_mouse_over: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseover on the ticks of this axis."
     )
 
-    on_mouse_out: EventHandler[no_args_event_spec] = field(
+    on_mouse_out: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseout on the ticks of this axis."
     )
 
-    on_mouse_enter: EventHandler[no_args_event_spec] = field(
+    on_mouse_enter: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of moustenter on the ticks of this axis."
     )
 
-    on_mouse_leave: EventHandler[no_args_event_spec] = field(
+    on_mouse_leave: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseleave on the ticks of this axis."
     )
 

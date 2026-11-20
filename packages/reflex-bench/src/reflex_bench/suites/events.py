@@ -322,7 +322,7 @@ def server_env(
         with redis), and ``REFLEX_REDIS_URL`` only for redis, since reflex uses
         redis whenever a URL is configured.
     """
-    result = {
+    result: dict[str, str] = {
         **env,
         **cache_env(states_dir=states_dir),
         "REFLEX_STATE_MANAGER_MODE": manager,

@@ -7,7 +7,7 @@ import contextlib
 import dataclasses
 import time
 from collections import defaultdict
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncGenerator, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -142,7 +142,7 @@ class AttributionState(rx.State):
     async def thread_offload(self):
         """Move CPU work off the event-loop thread."""
         _record_state_stage("handler_started")
-        self.value += await asyncio.to_thread(sum, range(100_000))
+        self.value += await asyncio.to_thread(sum, range(100_000))  # ty:ignore[unsupported-operator]
         _record_state_stage("handler_finished")
         _record_state_stage("delta_started")
 
@@ -193,7 +193,7 @@ class TracingStateManagerMemory(StateManagerMemory):
         self,
         token: StateToken[TOKEN_TYPE],
         **context: Unpack[StateModificationContext],
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> AsyncGenerator[TOKEN_TYPE, None]:
         """Record lock wait, hold, and flush stages.
 
         Args:

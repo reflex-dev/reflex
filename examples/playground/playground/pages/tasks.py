@@ -32,7 +32,7 @@ def task_row(task: rx.vars.ObjectVar[Task]) -> rx.Component:
     return rx.hstack(
         rx.checkbox(
             checked=task.done,
-            on_change=lambda _: TasksState.toggle(task.id),
+            on_change=lambda _: TasksState.toggle(task.id),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
         ),
         rx.text(
             task.title,
@@ -123,7 +123,7 @@ def tasks() -> rx.Component:
                 *[
                     rx.input(
                         placeholder=f"note on {tag}",
-                        on_blur=lambda value, tag=tag: TasksState.set_note(tag, value),
+                        on_blur=lambda value, tag=tag: TasksState.set_note(tag, value),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                         id=f"tasks-note-{tag}",
                     )
                     for tag in TAG_CHOICES

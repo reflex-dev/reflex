@@ -518,7 +518,7 @@ def _expire_token(state_manager: StateManager, token: str) -> None:
         state_manager._purge_token(BaseStateToken(ident=token, cls=State))
         return
     assert isinstance(state_manager, StateManagerRedis)
-    keys = state_manager.redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+    keys = state_manager.redis._internals["keys"]  # ty:ignore[missing-attribute]
     for key in [key for key in keys if key.startswith(token.encode())]:
         del keys[key]
 
@@ -1066,7 +1066,7 @@ async def test_background_event_releases_the_dispatch_state_tree(
         @event(background=True)
         async def bg(self):
             dispatch_root.append(
-                weakref.ref(self.__wrapped__._get_root_state())  # pyright: ignore [reportAttributeAccessIssue]
+                weakref.ref(self.__wrapped__._get_root_state())  # ty:ignore[missing-attribute]
             )
             async with self:
                 pass
@@ -1798,7 +1798,7 @@ async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
 
         @event
         def load_item(self):
-            item_id = self.item_id  # pyright: ignore[reportAttributeAccessIssue]
+            item_id = self.item_id  # ty:ignore[missing-attribute]
             self.seen = [*self.seen, f"{self.router.url.path}|{item_id}"]
 
         @event
@@ -2362,7 +2362,7 @@ class _SlowModelImport(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         """
         self.imported = True
         time.sleep(self.seconds)
-        module.Model = type("Model", (), {})  # pyright: ignore[reportAttributeAccessIssue]
+        module.Model = type("Model", (), {})  # ty:ignore[missing-attribute]
 
 
 async def test_dict_arg_handler_first_event_does_not_block_on_the_model_import(
@@ -2387,8 +2387,8 @@ async def test_dict_arg_handler_first_event_does_not_block_on_the_model_import(
     slow_import = _SlowModelImport(seconds=0.3)
     # Record the current entries first, so teardown restores (or removes) them.
     for namespace, key in ((sys.modules, "reflex.model"), (vars(rx), "model")):
-        monkeypatch.setitem(namespace, key, None)
-        monkeypatch.delitem(namespace, key)
+        monkeypatch.setitem(namespace, key, None)  # ty:ignore[invalid-argument-type]
+        monkeypatch.delitem(namespace, key)  # ty:ignore[invalid-argument-type]
     monkeypatch.setattr(sys, "meta_path", [slow_import, *sys.meta_path])
     monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
     real_base_state_processor.event_loop_blocking_threshold = 0.05
@@ -2461,7 +2461,7 @@ def test_prepare_event_payload_falls_back_to_form_data_dict(caplog):
 def test_prepare_event_payload_falls_back_when_hints_do_not_resolve():
     """Unresolvable annotations still never expose the wrapped form entries."""
 
-    def handler(self, form_data: "_UndefinedFormData"):  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+    def handler(self, form_data: "_UndefinedFormData"):  # noqa: F821  # ty:ignore[unresolved-reference]
         pass
 
     payload = _prepare_event_payload(
@@ -3560,7 +3560,7 @@ async def test_hydrate_delivers_storage_override_assignments(
 
     DependentState.computed_vars["sibling"].add_dependency(
         DependentState,
-        StorageState.value,  # pyright: ignore[reportArgumentType]
+        StorageState.value,  # ty:ignore[invalid-argument-type]
     )
     wired_app.add_page(
         lambda: rx.text(
@@ -4488,7 +4488,7 @@ async def test_locked_root_is_set_only_while_the_lock_is_held(
             seen["bg_outside"] = ctx.locked_root
             async with self:
                 seen["bg_inside"] = (
-                    ctx.locked_root is self.__wrapped__._get_root_state()  # pyright: ignore[reportAttributeAccessIssue]
+                    ctx.locked_root is self.__wrapped__._get_root_state()  # ty:ignore[missing-attribute]
                 )
             seen["bg_after"] = ctx.locked_root
 

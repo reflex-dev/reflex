@@ -9,7 +9,7 @@ import json
 import logging
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Generator
 from enum import Enum
 from pathlib import Path
 from types import ModuleType
@@ -44,7 +44,9 @@ class _ReflexBaseBlocker:
 
 
 @contextlib.contextmanager
-def _without_reflex_base() -> Iterator[tuple[ModuleType, ModuleType, ModuleType]]:
+def _without_reflex_base() -> Generator[
+    tuple[ModuleType, ModuleType, ModuleType], None, None
+]:
     """Import the CLI's logging modules as if reflex-base were not installed.
 
     Yields:
@@ -134,7 +136,7 @@ def test_fallback_success_level():
     with _without_reflex_base() as (_, fallback_log, _console):
         assert not fallback_log.HAS_REFLEX_BASE
         assert fallback_log.SUCCESS == log.SUCCESS == 25
-        assert logging.getLevelName(fallback_log.SUCCESS) == "SUCCESS"
+        assert logging.getLevelName(fallback_log.SUCCESS) == "SUCCESS"  # ty:ignore[deprecated]
 
 
 def test_fallback_log_level_enum_matches_reflex_base():
@@ -490,7 +492,9 @@ class _ReflexBaseLogBlocker:
 
 
 @contextlib.contextmanager
-def _with_old_reflex_base() -> Iterator[tuple[ModuleType, ModuleType, ModuleType]]:
+def _with_old_reflex_base() -> Generator[
+    tuple[ModuleType, ModuleType, ModuleType], None, None
+]:
     """Import the CLI's logging modules against a reflex 0.9.6 style reflex-base.
 
     That release ships ``reflex_base.constants.base`` -- so the CLI's optional
@@ -512,7 +516,7 @@ def _with_old_reflex_base() -> Iterator[tuple[ModuleType, ModuleType, ModuleType
     blocker = _ReflexBaseLogBlocker()
     sys.meta_path.insert(0, blocker)
     old_constants_base = ModuleType("reflex_base.constants.base")
-    old_constants_base.LogLevel = _OldBaseLogLevel  # pyright: ignore[reportAttributeAccessIssue]
+    old_constants_base.LogLevel = _OldBaseLogLevel  # ty:ignore[missing-attribute]
     sys.modules["reflex_base.constants.base"] = old_constants_base
     try:
         yield (
@@ -579,7 +583,7 @@ def test_loglevel_option_still_offers_every_choice_on_old_reflex_base():
     """
     with _with_old_reflex_base() as (_, _fallback_log, _console):
         cli_options = importlib.import_module("reflex_cli.utils.cli_options")
-        (option,) = cli_options.loglevel_option(lambda: None).__click_params__
+        (option,) = cli_options.loglevel_option(lambda: None).__click_params__  # ty:ignore[missing-attribute]
 
         assert list(option.type.choices) == [level.value for level in _OldBaseLogLevel]
 

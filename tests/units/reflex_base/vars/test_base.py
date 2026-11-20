@@ -134,7 +134,7 @@ def test_custom_field_attr_survives_annotated_rebuild():
     setattr(f, _MARKER_ATTR, "tag")
 
     class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
+        name: str = f  # ty:ignore[invalid-assignment]
 
     rebuilt = MyState.get_fields()["name"]
     assert getattr(rebuilt, _MARKER_ATTR, None) == "tag"
@@ -174,10 +174,10 @@ def test_reserved_annotation_attr_not_copied():
     it would shadow the real class annotation.
     """
     f = field("x")
-    f.annotation = int  # pyright: ignore[reportAttributeAccessIssue]
+    f.annotation = int  # ty:ignore[missing-attribute]
 
     class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
+        name: str = f  # ty:ignore[invalid-assignment]
 
     rebuilt = MyState.get_fields()["name"]
     assert "annotation" not in rebuilt.__dict__
@@ -199,13 +199,13 @@ def test_custom_attr_is_carried_by_reference():
 
     check = Check()
     f = field("x")
-    f._check = check  # pyright: ignore[reportAttributeAccessIssue]
+    f._check = check  # ty:ignore[missing-attribute]
 
     class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
+        name: str = f  # ty:ignore[invalid-assignment]
 
     rebuilt = MyState.get_fields()["name"]
-    assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
+    assert rebuilt._check is check  # ty:ignore[missing-attribute]
 
 
 def _type_alias_types() -> list[type]:
@@ -289,7 +289,7 @@ def test_state_var_type_alias(alias_cls: type) -> None:
     chart_key = alias_cls("ChartKey", Literal["day", "week"])
 
     class TypeAliasState(State):
-        key: chart_key = "day"  # pyright: ignore[reportInvalidTypeForm]
+        key: chart_key = "day"  # pyright: ignore[reportInvalidTypeForm]  # ty:ignore[invalid-type-form]
 
     assert isinstance(TypeAliasState.key, StringVar)
     assert TypeAliasState.key._var_type == Literal["day", "week"]
@@ -440,7 +440,7 @@ def test_serializer_attribute_error_is_not_masked() -> None:
         pass
 
     def serialize_point(value: Point) -> str:
-        return value.label  # pyright: ignore[reportAttributeAccessIssue]
+        return value.label  # ty:ignore[missing-attribute]
 
     serializers.serializer(serialize_point)
     try:
@@ -622,8 +622,8 @@ def test_literal_var_dispatch_sees_through_proxies(clean_registration_context):
     )
     state = state_cls()
     try:
-        assert str(LiteralVar.create(state.mapping)) == '({ ["a"] : 1 })'  # pyright: ignore [reportAttributeAccessIssue]
-        assert str(LiteralVar.create(state.items)) == "[1, 2]"  # pyright: ignore [reportAttributeAccessIssue]
+        assert str(LiteralVar.create(state.mapping)) == '({ ["a"] : 1 })'
+        assert str(LiteralVar.create(state.items)) == "[1, 2]"
         assert MutableProxy not in base._literal_var_by_type
     finally:
         base._literal_var_by_type.clear()
@@ -936,7 +936,7 @@ def test_reserved_annotation_only(clean_registration_context):
     with pytest.raises(StateValueError, match="_init_bookkeeping"):
 
         class ShadowState(BaseState):
-            _init_bookkeeping: int
+            _init_bookkeeping: int  # ty:ignore[incompatible-attribute-override]
 
 
 def test_reserved_mixin_var(clean_registration_context):
@@ -1084,7 +1084,7 @@ def test_mixin_var_name_conflict(clean_registration_context):
     with pytest.raises(MixinVarNameConflictError) as err:
 
         class ClassVarState(AnnotatingMixin, OtherAnnotatingMixin, State):
-            shared: ClassVar[int] = 1  # pyright: ignore[reportIncompatibleVariableOverride]
+            shared: ClassVar[int] = 1  # pyright: ignore[reportIncompatibleVariableOverride] # ty:ignore[incompatible-attribute-override]
 
     assert str(err.value) == _mixin_conflict_message(
         "shared", "ClassVarState", "AnnotatingMixin", "OtherAnnotatingMixin"
@@ -1161,7 +1161,7 @@ def test_mixin_var_without_default_warns_on_another_type(clean_registration_cont
 
     with mock.patch("reflex_base.utils.console.warn") as warn:
 
-        class StrChild(IntMixin, StrParent):  # pyright: ignore[reportIncompatibleVariableOverride]
+        class StrChild(IntMixin, StrParent):  # pyright: ignore[reportIncompatibleVariableOverride]  # ty:ignore[incompatible-attribute-override]
             pass
 
     warn.assert_called_once_with(
@@ -1174,7 +1174,7 @@ def test_mixin_var_without_default_warns_on_another_type(clean_registration_cont
         class IntChild(IntMixin, IntParent):
             pass
 
-        class PointChild(PointMixin, PairParent):  # pyright: ignore[reportIncompatibleVariableOverride]
+        class PointChild(PointMixin, PairParent):  # pyright: ignore[reportIncompatibleVariableOverride]  # ty:ignore[incompatible-attribute-override]
             pass
 
     warn.assert_not_called()
@@ -1497,7 +1497,7 @@ def test_custom_state_metaclass_validates_reserved_names(clean_registration_cont
     with pytest.raises(StateValueError, match="get_fields"):
 
         class ShadowState(BaseState, metaclass=_CookieMeta):
-            get_fields: int = 7
+            get_fields: int = 7  # ty:ignore[incompatible-attribute-override]
 
 
 def test_state_root_reserves_its_own_namespace():
@@ -1516,7 +1516,7 @@ def test_state_root_reserves_its_own_namespace():
     with pytest.raises(StateValueError, match="bookkeeping"):
 
         class ShadowMethod(Root):
-            bookkeeping: int = 7
+            bookkeeping: int = 7  # ty:ignore[incompatible-attribute-override]
 
     with pytest.raises(StateValueError, match="_reflex_state_root"):
         type("ShadowMarker", (Root,), {"__module__": __name__, "_reflex_state_root": 7})
@@ -1547,7 +1547,7 @@ def test_state_roots_do_not_share_reserved_names():
     with pytest.raises(StateValueError, match="alpha"):
 
         class ShadowA(RootA):
-            alpha: int = 3
+            alpha: int = 3  # ty:ignore[incompatible-attribute-override]
 
 
 def test_only_states_below_a_root_are_tree_states():
@@ -1643,7 +1643,7 @@ def test_reannotated_mixin_var_default_follows_new_type(clean_registration_conte
         value: int
 
     class StrState(IntMixin, State):
-        value: str  # pyright: ignore[reportIncompatibleVariableOverride]
+        value: str  # pyright: ignore[reportIncompatibleVariableOverride]  # ty:ignore[incompatible-attribute-override]
 
     assert StrState.get_fields()["value"].default == ""
 
@@ -1678,7 +1678,7 @@ def test_field_subclass_is_kept():
     """A field declared with a Field subclass stays one wherever it is copied."""
 
     class Parent(State):
-        annotated: int = TaggedField(default=1, tag="a")  # pyright: ignore[reportAssignmentType]
+        annotated: int = TaggedField(default=1, tag="a")  # ty:ignore[invalid-assignment]
         generic: TaggedField[int] = TaggedField(default=2, tag="g")
         unannotated = TaggedField(default="x", tag="u")
 
@@ -1689,7 +1689,7 @@ def test_field_subclass_is_kept():
         annotated: int = 5
 
     class Mixin(State, mixin=True):
-        mixed: int = TaggedField(default=4, tag="m")  # pyright: ignore[reportAssignmentType]
+        mixed: int = TaggedField(default=4, tag="m")  # ty:ignore[invalid-assignment]
 
     class UsesMixin(Mixin, State):
         pass
@@ -1761,9 +1761,9 @@ def test_backend_field_is_not_type_checked():
     T = TypeVar("T")
 
     class Model(EvenMoreBasicBaseState):
-        _value: T  # pyright: ignore[reportGeneralTypeIssues]
+        _value: T  # ty:ignore[unbound-type-variable]
 
-    model = Model()  # pyright: ignore[reportCallIssue]
+    model = Model()  # ty:ignore[missing-argument]
     model._value = 1
     assert model._value == 1
 
@@ -1901,7 +1901,7 @@ def test_untyped_var_item_access_backend_var_key_raises_format_error():
     with pytest.raises(
         BackendVarFormatError, match=r"Backend var 'Model\._secret' exists only"
     ):
-        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
+        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue] # ty:ignore[not-subscriptable]
 
 
 @pytest.mark.parametrize(
@@ -1970,7 +1970,7 @@ def test_classvar_over_inherited_field_is_not_a_field():
         count: int = 0
 
     class Child(Parent):
-        count: ClassVar[int] = 5  # pyright: ignore[reportIncompatibleVariableOverride]
+        count: ClassVar[int] = 5  # ty:ignore[incompatible-attribute-override]
 
     assert Child.get_fields()["count"] is Parent.get_fields()["count"]
     assert "count" not in Child.base_vars
@@ -2067,7 +2067,7 @@ def test_class_assignment_error_suggests_set_default():
 
     for value in (["a"], ("a",)):
         with pytest.raises(TypeError) as exc_info:
-            S.items = value  # pyright: ignore[reportAttributeAccessIssue]
+            S.items = value  # ty:ignore[invalid-assignment]
         assert f"{S.__name__}.__fields__['items'].set_default(...)" in str(
             exc_info.value
         )
@@ -2152,12 +2152,12 @@ def test_class_assignment_of_other_attributes_is_allowed():
         _config: ClassVar[str] = "old"
 
     class Child(Parent):
-        _value: ClassVar[str] = "child"  # pyright: ignore[reportIncompatibleVariableOverride]
+        _value: ClassVar[str] = "child"  # ty:ignore[incompatible-attribute-override]
 
     Child._value = "new"
     Parent._config = "new"
     Parent.extra = 1  # pyright: ignore[reportAttributeAccessIssue]
-    assert (Child._value, Parent._config, Parent.extra) == ("new", "new", 1)  # pyright: ignore[reportAttributeAccessIssue]
+    assert (Child._value, Parent._config, Parent.extra) == ("new", "new", 1)  # ty:ignore[missing-attribute]
     assert Parent.get_fields()["_value"].default == "old"
 
 
@@ -2230,11 +2230,11 @@ def test_computed_var_type_mismatch_is_logged_once_per_value(
 
         @computed_var
         def cached(self) -> int:
-            return str(self.count)  # pyright: ignore [reportReturnType]
+            return str(self.count)  # ty:ignore[invalid-explicit-return]
 
         @computed_var(cache=False)
         def uncached(self) -> int:
-            return str(self.count)  # pyright: ignore [reportReturnType]
+            return str(self.count)  # ty:ignore[invalid-explicit-return]
 
     state = MismatchState()
     with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
@@ -2263,11 +2263,11 @@ async def test_async_computed_var_type_mismatch_is_logged_once_per_value(
 
         @computed_var
         async def cached(self) -> int:
-            return str(self.count)  # pyright: ignore [reportReturnType]
+            return str(self.count)  # ty:ignore[invalid-explicit-return]
 
         @computed_var(cache=False)
         async def uncached(self) -> int:
-            return str(self.count)  # pyright: ignore [reportReturnType]
+            return str(self.count)  # ty:ignore[invalid-explicit-return]
 
     state = AsyncMismatchState()
     with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
@@ -2502,8 +2502,8 @@ def test_field_read_wraps_mutable_values(annotation: Any, value: Any):
     )
     state = state_cls()
     state.item = value  # pyright: ignore [reportAttributeAccessIssue]
-    assert isinstance(state.item, MutableProxy)  # pyright: ignore [reportAttributeAccessIssue]
-    assert state.item.__wrapped__ is value  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(state.item, MutableProxy)  # ty:ignore[missing-attribute]
+    assert state.item.__wrapped__ is value  # ty:ignore[missing-attribute]
 
 
 def test_cached_computed_var_checks_return_type_on_recompute_only(
@@ -2606,13 +2606,13 @@ def test_state_var_type_check_depth_follows_env_mode(
 
         @computed_var
         def as_ints(self) -> list[int]:
-            return self.wrong_elements  # pyright: ignore[reportReturnType]
+            return self.wrong_elements  # ty:ignore[invalid-explicit-return]
 
     environment.REFLEX_ENV_MODE.set(env_mode)
     state = DepthState()
 
     with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
-        state.items = ["a"]  # pyright: ignore[reportAttributeAccessIssue]
+        state.items = ["a"]  # ty:ignore[invalid-assignment]
         state.wrong_elements = ["b"]
         _ = state.as_ints
     name = type(state).__name__
@@ -2622,7 +2622,7 @@ def test_state_var_type_check_depth_follows_env_mode(
 
     caplog.clear()
     with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
-        state.items = "not a list"  # pyright: ignore[reportAttributeAccessIssue]
+        state.items = "not a list"  # ty:ignore[invalid-assignment]
     assert any(f"{name}.items" in r.getMessage() for r in caplog.records)
 
 
@@ -2728,7 +2728,7 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         __counter__: int = 2  # pyright: ignore[reportIncompatibleVariableOverride]
 
     class Unannotated(Parent):
-        __counter__ = 2  # pyright: ignore[reportAssignmentType]
+        __counter__ = 2  # pyright: ignore[reportAssignmentType]  # ty:ignore[invalid-assignment]
 
     for child in (Annotated, Unannotated):
         child_field = child.__fields__["__counter__"]

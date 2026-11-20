@@ -222,7 +222,7 @@ async def test_memory_state_manager_get_state_refreshes_expiration(
 
     same_state = await state_manager_memory.get_state(state_token)
     assert same_state is state
-    assert state_manager_memory._token_expires_at[token] > expires_at
+    assert state_manager_memory._token_expires_at[token][0] > expires_at[0]
 
     await asyncio.sleep(0.6)
 
@@ -247,7 +247,7 @@ async def test_memory_state_manager_set_state_refreshes_expiration(
 
     await state_manager_memory.set_state(state_token, state)
 
-    assert state_manager_memory._token_expires_at[token] > expires_at
+    assert state_manager_memory._token_expires_at[token][0] > expires_at[0]
 
     await asyncio.sleep(0.6)
 
@@ -270,7 +270,7 @@ async def test_memory_state_manager_multiple_accesses_extend_expiration(
     for _ in range(3):
         await asyncio.sleep(0.25)
         assert await state_manager_memory.get_state(state_token) is state
-        assert state_manager_memory._token_expires_at[token] > expires_at
+        assert state_manager_memory._token_expires_at[token][0] > expires_at[0]
         expires_at = state_manager_memory._token_expires_at[token]
 
     await asyncio.sleep(0.6)
@@ -333,7 +333,7 @@ async def test_memory_state_manager_refreshes_expiration_after_locked_access(
         await asyncio.sleep(1.2)
         assert token in state_manager_memory.states
 
-    assert state_manager_memory._token_expires_at[token] > expires_at
+    assert state_manager_memory._token_expires_at[token][0] > expires_at[0]
 
     await asyncio.sleep(0.6)
 

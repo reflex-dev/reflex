@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -26,7 +26,7 @@ class PopoverRoot(RadixThemesComponent):
         doc="The modality of the popover. When set to true, interaction with outside elements will be disabled and only popover content will be visible to screen readers."
     )
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."
     )
 
@@ -82,27 +82,27 @@ class PopoverContent(elements.Div, RadixThemesComponent):
         doc="Whether to hide the content when the trigger becomes fully occluded. Defaults to False."
     )
 
-    on_open_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_open_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the dialog is opened."
     )
 
-    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_close_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the dialog is closed."
     )
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer is down outside the dialog."
     )
 
-    on_focus_outside: EventHandler[no_args_event_spec] = field(
+    on_focus_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when focus moves outside the dialog."
     )
 
-    on_interact_outside: EventHandler[no_args_event_spec] = field(
+    on_interact_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer interacts outside the dialog."
     )
 

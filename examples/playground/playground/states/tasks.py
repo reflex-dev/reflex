@@ -167,7 +167,7 @@ class TasksState(rx.State):
         Args:
             value: One of ``all``, ``open`` and ``done``.
         """
-        if value in FILTERS:
+        if isinstance(value, str) and value in FILTERS:
             self.filter = value
 
     @rx.event

@@ -13,7 +13,7 @@ import collections
 import contextlib
 import dataclasses
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncGenerator, Callable
 from pathlib import Path
 from typing import Any
 
@@ -369,7 +369,7 @@ def test_measure_connects_hydrates_and_leaves_the_namespace(
     headers: list[dict[str, str]] = []
 
     @contextlib.asynccontextmanager
-    async def connect(url: str, **kwargs: Any) -> AsyncIterator[FakeTransport]:
+    async def connect(url: str, **kwargs: Any) -> AsyncGenerator[FakeTransport, None]:
         urls.append(url)
         headers.append(kwargs["additional_headers"])
         transports.append(ws := FakeTransport(playground_script()))
@@ -425,7 +425,7 @@ def test_measure_against_the_echo_server_counts_real_frames():
 
 def test_measure_times_out(monkeypatch: pytest.MonkeyPatch):
     @contextlib.asynccontextmanager
-    async def connect(url: str, **kwargs: Any) -> AsyncIterator[FakeTransport]:
+    async def connect(url: str, **kwargs: Any) -> AsyncGenerator[FakeTransport, None]:
         yield FakeTransport(lambda message: [])
 
     async def hang(session: wire.WireSession) -> None:
@@ -614,7 +614,7 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
             log.append("app stop")
 
     @contextlib.asynccontextmanager
-    async def connect(url: str, **kwargs: Any) -> AsyncIterator[FakeTransport]:
+    async def connect(url: str, **kwargs: Any) -> AsyncGenerator[FakeTransport, None]:
         log.append("connect")
         yield FakeTransport(playground_script(replies=state.replies))
 

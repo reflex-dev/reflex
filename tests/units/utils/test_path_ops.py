@@ -84,7 +84,7 @@ def _pause_json_update_before_write(
             raise TimeoutError(msg)
         original_write_json_file(target, value)
 
-    path_ops._write_json_file = pause_before_write
+    path_ops._write_json_file = pause_before_write  # ty:ignore[invalid-assignment]
     path_ops.update_json_file(file_path, update)
 
 
@@ -120,7 +120,7 @@ def _crash_during_json_update(file_path: str, partial_dump_written) -> None:
         partial_dump_written.set()
         os._exit(23)
 
-    path_ops.json.dump = crashing_dump
+    path_ops.json.dump = crashing_dump  # ty:ignore[invalid-assignment]
     path_ops.update_json_file(target, {"crashed": True})
 
 

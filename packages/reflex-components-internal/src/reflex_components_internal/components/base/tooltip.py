@@ -1,6 +1,6 @@
 """Tooltip component from base-ui components."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
@@ -47,10 +47,10 @@ class TooltipRoot(TooltipBaseComponent):
     default_open: Var[bool]
 
     # Event handler called when the tooltip is opened or closed.
-    on_open_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # Event handler called after any animations complete when the tooltip is opened or closed.
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Determines which axis the tooltip should track the cursor on. Defaults to "None".
     track_cursor_axis: Var[LiteralTrackCursorAxis]

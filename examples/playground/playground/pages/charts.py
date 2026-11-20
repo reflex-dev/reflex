@@ -7,7 +7,7 @@ import reflex as rx
 from playground.layout import layout
 from playground.states.charts import KINDS, MAX_POINTS, MIN_POINTS, ChartsState
 
-CHART_SIZE = {"width": "100%", "height": 280}
+CHART_SIZE: dict[str, Any] = {"width": "100%", "height": 280}
 
 
 def waves_chart() -> rx.Component | rx.Var:

@@ -1,6 +1,6 @@
 """Custom popover component."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
@@ -52,10 +52,10 @@ class PopoverRoot(PopoverBaseComponent):
     open: Var[bool]
 
     # Event handler called when the popover is opened or closed
-    on_open_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # Event handler called after any animations complete when the popover is opened or closed.
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Determines if the popover enters a modal state when open.
     # - True: user interaction is limited to just the popover: focus is trapped, document page scroll is locked, and pointer interactions on outside elements are disabled.

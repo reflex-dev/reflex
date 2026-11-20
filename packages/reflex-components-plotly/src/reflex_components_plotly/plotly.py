@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, TypedDict, TypeVar
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.event import EventHandler, no_args_event_spec
@@ -155,83 +155,83 @@ class Plotly(NoSSRComponent):
         doc="If true, the graph will resize when the window is resized.",
     )
 
-    on_after_plot: EventHandler[no_args_event_spec] = field(
+    on_after_plot: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired after the plot is redrawn."
     )
 
-    on_animated: EventHandler[no_args_event_spec] = field(
+    on_animated: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired after the plot was animated."
     )
 
-    on_animating_frame: EventHandler[no_args_event_spec] = field(
+    on_animating_frame: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired while animating a single frame (does not currently pass data through)."
     )
 
-    on_animation_interrupted: EventHandler[no_args_event_spec] = field(
+    on_animation_interrupted: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when an animation is interrupted (to start a new animation for example)."
     )
 
-    on_autosize: EventHandler[no_args_event_spec] = field(
+    on_autosize: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the plot is responsively sized."
     )
 
-    on_before_hover: EventHandler[no_args_event_spec] = field(
+    on_before_hover: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired whenever mouse moves over a plot."
     )
 
-    on_button_clicked: EventHandler[no_args_event_spec] = field(
+    on_button_clicked: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when a plotly UI button is clicked."
     )
 
-    on_click: EventHandler[_event_points_data_signature] = field(
+    on_click: Annotated[EventHandler, _event_points_data_signature] = field(
         doc="Fired when the plot is clicked."
     )
 
-    on_deselect: EventHandler[no_args_event_spec] = field(
+    on_deselect: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when a selection is cleared (via double click)."
     )
 
-    on_double_click: EventHandler[no_args_event_spec] = field(
+    on_double_click: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the plot is double clicked."
     )
 
-    on_hover: EventHandler[_event_points_data_signature] = field(
+    on_hover: Annotated[EventHandler, _event_points_data_signature] = field(
         doc="Fired when a plot element is hovered over."
     )
 
-    on_relayout: EventHandler[no_args_event_spec] = field(
+    on_relayout: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired after the plot is laid out (zoom, pan, etc)."
     )
 
-    on_relayouting: EventHandler[no_args_event_spec] = field(
+    on_relayouting: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired while the plot is being laid out."
     )
 
-    on_restyle: EventHandler[no_args_event_spec] = field(
+    on_restyle: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired after the plot style is changed."
     )
 
-    on_redraw: EventHandler[no_args_event_spec] = field(
+    on_redraw: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired after the plot is redrawn."
     )
 
-    on_selected: EventHandler[_event_points_data_signature] = field(
+    on_selected: Annotated[EventHandler, _event_points_data_signature] = field(
         doc="Fired after selecting plot elements."
     )
 
-    on_selecting: EventHandler[_event_points_data_signature] = field(
+    on_selecting: Annotated[EventHandler, _event_points_data_signature] = field(
         doc="Fired while dragging a selection."
     )
 
-    on_transitioning: EventHandler[no_args_event_spec] = field(
+    on_transitioning: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired while an animation is occurring."
     )
 
-    on_transition_interrupted: EventHandler[no_args_event_spec] = field(
+    on_transition_interrupted: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when a transition is stopped early."
     )
 
-    on_unhover: EventHandler[_event_points_data_signature] = field(
+    on_unhover: Annotated[EventHandler, _event_points_data_signature] = field(
         doc="Fired when a hovered element is no longer hovered."
     )
 
@@ -445,7 +445,7 @@ const {name} = ClientSide(() =>
 class PlotlyBasic(Plotly):
     """Display a basic plotly graph."""
 
-    tag: str = "BasicPlotlyPlot"
+    tag = "BasicPlotlyPlot"
 
     library = "react-plotly.js@4.1.0"
 
@@ -465,13 +465,13 @@ class PlotlyBasic(Plotly):
         Returns:
             The dynamic imports for the plotly basic component.
         """
-        return dynamic_plotly_import(self.tag, "plotly.js-basic-dist-min")
+        return dynamic_plotly_import(self.tag, "plotly.js-basic-dist-min")  # ty:ignore[invalid-argument-type]
 
 
 class PlotlyCartesian(Plotly):
     """Display a plotly cartesian graph."""
 
-    tag: str = "CartesianPlotlyPlot"
+    tag = "CartesianPlotlyPlot"
 
     library = "react-plotly.js@4.1.0"
 
@@ -491,13 +491,13 @@ class PlotlyCartesian(Plotly):
         Returns:
             The dynamic imports for the plotly cartesian component.
         """
-        return dynamic_plotly_import(self.tag, "plotly.js-cartesian-dist-min")
+        return dynamic_plotly_import(self.tag, "plotly.js-cartesian-dist-min")  # ty:ignore[invalid-argument-type]
 
 
 class PlotlyGeo(Plotly):
     """Display a plotly geo graph."""
 
-    tag: str = "GeoPlotlyPlot"
+    tag = "GeoPlotlyPlot"
 
     library = "react-plotly.js@4.1.0"
 
@@ -517,13 +517,13 @@ class PlotlyGeo(Plotly):
         Returns:
             The dynamic imports for the plotly geo component.
         """
-        return dynamic_plotly_import(self.tag, "plotly.js-geo-dist-min")
+        return dynamic_plotly_import(self.tag, "plotly.js-geo-dist-min")  # ty:ignore[invalid-argument-type]
 
 
 class PlotlyGl3d(Plotly):
     """Display a plotly 3d graph."""
 
-    tag: str = "Gl3dPlotlyPlot"
+    tag = "Gl3dPlotlyPlot"
 
     library = "react-plotly.js@4.1.0"
 
@@ -543,13 +543,13 @@ class PlotlyGl3d(Plotly):
         Returns:
             The dynamic imports for the plotly 3d component.
         """
-        return dynamic_plotly_import(self.tag, "plotly.js-gl3d-dist-min")
+        return dynamic_plotly_import(self.tag, "plotly.js-gl3d-dist-min")  # ty:ignore[invalid-argument-type]
 
 
 class PlotlyGl2d(Plotly):
     """Display a plotly 2d graph."""
 
-    tag: str = "Gl2dPlotlyPlot"
+    tag = "Gl2dPlotlyPlot"
 
     library = "react-plotly.js@4.1.0"
 
@@ -569,13 +569,13 @@ class PlotlyGl2d(Plotly):
         Returns:
             The dynamic imports for the plotly 2d component.
         """
-        return dynamic_plotly_import(self.tag, "plotly.js-gl2d-dist-min")
+        return dynamic_plotly_import(self.tag, "plotly.js-gl2d-dist-min")  # ty:ignore[invalid-argument-type]
 
 
 class PlotlyMap(Plotly):
     """Display a Plotly MapLibre graph without a Mapbox access token."""
 
-    tag: str = "MapPlotlyPlot"
+    tag = "MapPlotlyPlot"
 
     lib_dependencies: list[str] = ["plotly.js-map-dist-min@4.3.0"]
 
@@ -593,7 +593,7 @@ class PlotlyMap(Plotly):
         Returns:
             The dynamic import for the Plotly map component.
         """
-        return dynamic_plotly_import(self.tag, "plotly.js-map-dist-min")
+        return dynamic_plotly_import(self.tag, "plotly.js-map-dist-min")  # ty:ignore[invalid-argument-type]
 
 
 class PlotlyMapbox(PlotlyMap):
@@ -640,7 +640,7 @@ class PlotlyMapbox(PlotlyMap):
 class PlotlyFinance(Plotly):
     """Display a plotly finance graph."""
 
-    tag: str = "FinancePlotlyPlot"
+    tag = "FinancePlotlyPlot"
 
     library = "react-plotly.js@4.1.0"
 
@@ -660,13 +660,13 @@ class PlotlyFinance(Plotly):
         Returns:
             The dynamic imports for the plotly finance component.
         """
-        return dynamic_plotly_import(self.tag, "plotly.js-finance-dist-min")
+        return dynamic_plotly_import(self.tag, "plotly.js-finance-dist-min")  # ty:ignore[invalid-argument-type]
 
 
 class PlotlyStrict(Plotly):
     """Display a plotly strict graph."""
 
-    tag: str = "StrictPlotlyPlot"
+    tag = "StrictPlotlyPlot"
 
     library = "react-plotly.js@4.1.0"
 
@@ -686,4 +686,4 @@ class PlotlyStrict(Plotly):
         Returns:
             The dynamic imports for the plotly strict component.
         """
-        return dynamic_plotly_import(self.tag, "plotly.js-strict-dist-min")
+        return dynamic_plotly_import(self.tag, "plotly.js-strict-dist-min")  # ty:ignore[invalid-argument-type]

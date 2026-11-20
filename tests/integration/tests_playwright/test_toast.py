@@ -44,7 +44,7 @@ def ToastApp():
                 A toast with upload action and cancel buttons.
             """
             upload_event = ToastActionState.handle_upload(
-                rx.upload_files(upload_id=self.upload_id)  # pyright: ignore [reportArgumentType]
+                rx.upload_files(upload_id=self.upload_id)
             )
             yield rx.toast(
                 "Upload from backend toast",
@@ -62,8 +62,8 @@ def ToastApp():
             """
             yield rx.call_script(
                 "1",
-                callback=lambda _: ToastActionState.handle_upload(
-                    rx.upload_files(upload_id=self.upload_id)  # pyright: ignore [reportArgumentType]
+                callback=lambda _: ToastActionState.handle_upload(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870 https://github.com/astral-sh/ty/issues/4098
+                    rx.upload_files(upload_id=self.upload_id)
                 ),
             )
 
@@ -126,13 +126,13 @@ def ToastApp():
                     action={
                         "label": "UploadAction",
                         "on_click": ToastActionState.handle_upload(
-                            rx.upload_files(upload_id="callback-upload")  # pyright: ignore [reportArgumentType]
+                            rx.upload_files(upload_id="callback-upload")
                         ),
                     },
                     cancel={
                         "label": "UploadCancel",
                         "on_click": ToastActionState.handle_upload(
-                            rx.upload_files(upload_id="callback-upload")  # pyright: ignore [reportArgumentType]
+                            rx.upload_files(upload_id="callback-upload")
                         ),
                     },
                     duration=30000,
@@ -148,8 +148,8 @@ def ToastApp():
                 id="script-upload",
                 on_click=rx.call_script(
                     "1",
-                    callback=lambda _: ToastActionState.handle_upload(
-                        rx.upload_files(upload_id="callback-upload")  # pyright: ignore [reportArgumentType]
+                    callback=lambda _: ToastActionState.handle_upload(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870 https://github.com/astral-sh/ty/issues/4098
+                        rx.upload_files(upload_id="callback-upload")
                     ),
                 ),
             ),
@@ -162,7 +162,7 @@ def ToastApp():
                 "Direct Upload",
                 id="direct-upload",
                 on_click=ToastActionState.handle_upload(
-                    rx.upload_files(upload_id="callback-upload")  # pyright: ignore [reportArgumentType]
+                    rx.upload_files(upload_id="callback-upload")
                 ),
             ),
             rx.button(

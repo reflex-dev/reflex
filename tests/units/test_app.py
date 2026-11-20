@@ -338,7 +338,7 @@ def test_add_page_backend_var_meta_raises_format_error(
         exceptions.BackendVarFormatError,
         match=r"Backend var 'BackendMetaState\._meta' exists only",
     ):
-        app.add_page(index_page, route="/meta", **{key: BackendMetaState._meta})  # pyright: ignore[reportArgumentType]
+        app.add_page(index_page, route="/meta", **{key: BackendMetaState._meta})  # ty:ignore[invalid-argument-type]
 
 
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
@@ -809,7 +809,7 @@ async def test_dynamic_var_event(
         clean_registration_context: The registration context fixture, which is cleared before each test.
     """
     clean_registration_context.register_base_state(test_state)
-    state = test_state()  # pyright: ignore [reportCallIssue]
+    state = test_state()  # ty:ignore[missing-argument]
     state.add_var("int_val", int, 0)
 
     def set_int_val(self, value: int):
@@ -1045,7 +1045,7 @@ def dict_mutation_state():
 
         def add_age(self):
             """Add an age to the dict."""
-            self.details.update({"age": 20})  # pyright: ignore [reportCallIssue, reportArgumentType]
+            self.details.update({"age": 20})  # ty:ignore[no-matching-overload]
 
         def change_name(self):
             """Change the name in the dict."""
@@ -1083,7 +1083,7 @@ def dict_mutation_state():
 
         def change_friend_name(self):
             """Change the friend's name in the nested dict."""
-            self.friend_in_nested_dict["friend"]["name"] = "Tommy"
+            self.friend_in_nested_dict["friend"]["name"] = "Tommy"  # ty:ignore[invalid-assignment]
 
         def remove_friend(self):
             """Remove the friend from the nested dict."""
@@ -1091,7 +1091,7 @@ def dict_mutation_state():
 
         def add_friend_age(self):
             """Add an age to the friend in the nested dict."""
-            self.friend_in_nested_dict["friend"]["age"] = 30
+            self.friend_in_nested_dict["friend"]["age"] = 30  # ty:ignore[invalid-assignment]
 
     return DictMutationTestState()
 
@@ -2233,7 +2233,7 @@ class DynamicState(State):
         Returns:
             same as self.dynamic
         """
-        return self.dynamic  # pyright: ignore[reportAttributeAccessIssue]
+        return self.dynamic  # ty:ignore[missing-attribute]
 
 
 def test_dynamic_arg_shadow(
@@ -2285,7 +2285,7 @@ def cleanup_dynamic_arg():
     """Fixture to reset DynamicState class vars after each test."""
     yield
     with contextlib.suppress(AttributeError):
-        del State.dynamic  # pyright: ignore[reportAttributeAccessIssue]
+        del State.dynamic  # ty:ignore[missing-attribute]
 
     State.computed_vars.pop("dynamic", None)
     State.vars.pop("dynamic", None)
@@ -2418,14 +2418,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         if isinstance(app.state_manager, StateManagerRedis):
             # When redis is used, the state is not updated until the processing is complete
             state = await app.state_manager.get_state(substate_token)
-            assert state.dynamic == prev_exp_val  # pyright: ignore[reportAttributeAccessIssue]
+            assert state.dynamic == prev_exp_val  # ty:ignore[missing-attribute]
 
         if environment.REFLEX_OPLOCK_ENABLED.get():
             await app.state_manager.close()
 
         # check that router data was written to the state_manager store
         state = await app.state_manager.get_state(substate_token)
-        assert state.dynamic == exp_val  # pyright: ignore[reportAttributeAccessIssue]
+        assert state.dynamic == exp_val  # ty:ignore[missing-attribute]
 
         # a simple state update event should NOT trigger on_load or route var side effects
         emitted_deltas.clear()
@@ -3553,19 +3553,19 @@ def test_app_wrap_priority(
     class Fragment1(Component):
         tag = "Fragment1"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
             return {(99, "Box"): rx.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
             return {(50, "Text"): rx.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
             return {(10, "Fragment2"): Fragment2.create()}
 
     def page():
@@ -4101,8 +4101,8 @@ def test_exception_handler_annotation_resolves_outside_reflex_app():
     """String annotations resolve in the handler's module, not reflex.app."""
     rx.App(
         # A narrower annotation than ``Exception`` is the case under test.
-        frontend_exception_handler=custom_exception_handler_with_custom_error,  # pyright: ignore[reportArgumentType]
-        backend_exception_handler=custom_exception_handler_with_custom_error,  # pyright: ignore[reportArgumentType]
+        frontend_exception_handler=custom_exception_handler_with_custom_error,  # ty:ignore[invalid-argument-type]
+        backend_exception_handler=custom_exception_handler_with_custom_error,  # ty:ignore[invalid-argument-type]
     )
 
 
@@ -4127,7 +4127,7 @@ class ClassBasedDecorator:
         Returns:
             The value returned by the wrapped function.
         """
-        return self.__wrapped__(*args, **kwargs)  # pyright: ignore[reportAttributeAccessIssue]
+        return self.__wrapped__(*args, **kwargs)  # ty:ignore[missing-attribute]
 
 
 class ClassCustomExceptionHandler:
@@ -4152,7 +4152,7 @@ def test_exception_handler_unwraps_class_based_decorator():
 def test_exception_handler_rejects_class():
     """A class is rejected because its signature is the one of its constructor."""
     with pytest.raises(ValueError, match="does not take the required argument"):
-        rx.App(frontend_exception_handler=ClassCustomExceptionHandler)  # pyright: ignore[reportArgumentType] - the class itself is the case under test
+        rx.App(frontend_exception_handler=ClassCustomExceptionHandler)  # ty:ignore[invalid-argument-type] - the class itself is the case under test
 
 
 @logged
@@ -4266,7 +4266,7 @@ def test_backend_exception_handler_rejects_invalid_resolved_return_annotation():
     # An ``int`` return type is the case under test.
     handler = backend_exception_handler_with_invalid_string_return_annotation
     with pytest.raises(ValueError, match="has the wrong return type"):
-        rx.App(backend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+        rx.App(backend_exception_handler=handler)  # ty:ignore[invalid-argument-type]
 
 
 def frontend_handler_with_type_checking_only_return(
@@ -4294,14 +4294,14 @@ def frontend_handler_with_type_checking_only_exception(
 def test_exception_handler_allows_type_checking_only_return_annotation():
     """A name imported only under TYPE_CHECKING does not stop the validation."""
     handler = frontend_handler_with_type_checking_only_return
-    rx.App(frontend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+    rx.App(frontend_exception_handler=handler)  # ty:ignore[invalid-argument-type]
 
 
 def test_exception_handler_rejects_type_checking_only_exception_annotation():
     """An exception annotation that cannot be resolved is rejected, not crashed on."""
     with pytest.raises(ValueError, match="has the wrong type for exception argument"):
         handler = frontend_handler_with_type_checking_only_exception
-        rx.App(frontend_exception_handler=handler)  # pyright: ignore[reportArgumentType]
+        rx.App(frontend_exception_handler=handler)  # ty:ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize(
@@ -4779,7 +4779,7 @@ def test_registered_middleware_are_classes(
     assert app._api is not None
     # Mimic the instrumentation's patch on every middleware in the stack.
     for middleware in app._api.user_middleware:
-        middleware.cls.__call__ = middleware.cls.__call__
+        middleware.cls.__call__ = middleware.cls.__call__  # ty:ignore[invalid-assignment]
 
 
 async def test_root_middleware_sets_contexts(app_with_processor: App):
@@ -7530,5 +7530,5 @@ def test_add_page_rejects_undecorated_on_load(monkeypatch: pytest.MonkeyPatch):
             app.add_page(
                 lambda: rx.text("x"),
                 route="/load",
-                on_load=OnLoadState.load,  # pyright: ignore[reportArgumentType]
+                on_load=OnLoadState.load,  # ty:ignore[invalid-argument-type]
             )

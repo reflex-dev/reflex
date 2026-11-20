@@ -698,7 +698,7 @@ def test_compile_client_storage_rejects_factory_producing_storage(
         )
 
     class LiteralStorageState(State):
-        theme: rx.Field[Literal["light", "dark"]] = rx.field(  # pyright: ignore[reportAssignmentType]
+        theme: rx.Field[Literal["light", "dark"]] = rx.field(  # ty:ignore[invalid-assignment]
             default_factory=lambda: rx.LocalStorage("light", name="theme")
         )
 

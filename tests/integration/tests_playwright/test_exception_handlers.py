@@ -26,6 +26,7 @@ def TestApp():
         def set_react_error(self, value: bool):
             self.react_error = value
 
+        @rx.event
         def divide_by_number(self, number: int):
             """Divide by number and print the result.
 
@@ -46,7 +47,7 @@ def TestApp():
             ),
             rx.button(
                 "induce_backend_error",
-                on_click=lambda: TestAppState.divide_by_number(0),  # pyright: ignore [reportCallIssue]
+                on_click=lambda: TestAppState.divide_by_number(0),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                 id="induce-backend-error-btn",
             ),
             rx.button(

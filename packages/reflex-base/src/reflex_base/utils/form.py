@@ -173,7 +173,7 @@ class FormData(Mapping[_K, _V_co]):
         """
         return type(self), (list(self._items),)
 
-    def getlist(self, key: _K) -> list[_V_co]:
+    def getlist(self, key: _K) -> list[_V_co]:  # ty:ignore[invalid-generic-class]
         """Get every value of a key.
 
         Args:
@@ -186,7 +186,7 @@ class FormData(Mapping[_K, _V_co]):
 
     getAll = getlist  # noqa: N815
 
-    def multi_items(self) -> list[tuple[_K, _V_co]]:
+    def multi_items(self) -> list[tuple[_K, _V_co]]:  # ty:ignore[invalid-generic-class]
         """Get every ``(key, value)`` item, repeated keys included.
 
         Returns:

@@ -54,38 +54,22 @@ repos:
     require_serial: true
 - repo: local
   hooks:
-  - id: pyright
-    name: pyright
-    entry: uv run --no-sync pyright
+  - id: ty
+    name: ty
+    entry: uv run --no-sync ty check
     language: system
     types: [python]
+    pass_filenames: false
     require_serial: true
 - repo: local
   hooks:
-  # The second opinion the assert_type examples exist for. Always runs: what
-  # these examples catch is a source change altering an inferred type, so
-  # scoping the hook to the examples themselves would never fire on the edit
-  # that broke them.
-  - id: ty
-    name: ty
+  # The assert_type examples, which the ty hook checks under the oldest Python
+  # the project supports, re-checked against the newest. Always runs: what these
+  # examples catch is a source change altering an inferred type, so scoping the
+  # hook to the examples themselves would never fire on the edit that broke them.
+  - id: ty-type-checking
+    name: ty-type-checking
     entry: uv run --no-sync ty check --python-version 3.14 tests/type_checking
-    language: system
-    always_run: true
-    pass_filenames: false
-    require_serial: true
-  # pyright over the examples under pinned Python versions, whatever the
-  # running interpreter: an annotation in a class body resolves differently
-  # before 3.14's deferred annotations.
-  - id: pyright-type-checking-3.11
-    name: pyright type_checking (Python 3.11)
-    entry: uv run --no-sync pyright --pythonversion 3.11 tests/type_checking
-    language: system
-    always_run: true
-    pass_filenames: false
-    require_serial: true
-  - id: pyright-type-checking-3.14
-    name: pyright type_checking (Python 3.14)
-    entry: uv run --no-sync pyright --pythonversion 3.14 tests/type_checking
     language: system
     always_run: true
     pass_filenames: false

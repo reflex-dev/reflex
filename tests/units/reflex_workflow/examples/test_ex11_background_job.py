@@ -82,8 +82,9 @@ async def test_progress_is_the_same_whether_or_not_anyone_was_watching(running):
 
     order = ["queued", "planning", "rendering", "uploading", "done"]
     # Nothing the watching client saw went backwards.
-    assert [order.index(stage) for stage in seen] == sorted(
-        order.index(stage) for stage in seen
+    assert [order.index(stage) for stage in seen] == sorted(  # ty:ignore[invalid-argument-type]
+        order.index(stage)  # ty:ignore[invalid-argument-type]
+        for stage in seen
     )
     for run_id in (watched, unwatched):
         row = await Job.by(Job.run_id == run_id).get()

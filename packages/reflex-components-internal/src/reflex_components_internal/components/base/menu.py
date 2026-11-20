@@ -1,6 +1,6 @@
 """Custom menu component."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_components_core.core.foreach import foreach
 from reflex_components_core.el.elements.forms import Input as ReflexInput
@@ -100,7 +100,7 @@ class MenuFilterProvider(MenuBaseComponent):
     value: Var[str]
 
     # Called with the new query when it changes.
-    on_value_change: EventHandler[passthrough_event_spec(str)]
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(str)]
 
     # Highlight the first match while filtering, or always when set to "always".
     auto_highlight: Var[bool | Literal["always"]]
@@ -139,13 +139,13 @@ class MenuRoot(MenuBaseComponent):
     open: Var[bool]
 
     # Event handler called when the menu is opened or closed.
-    on_open_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # Event handler called after any animations complete when the menu is closed.
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Called with the item label (or None) and reason: "keyboard", "pointer", or "none".
-    on_item_highlighted: EventHandler[_on_item_highlighted_spec]
+    on_item_highlighted: Annotated[EventHandler, _on_item_highlighted_spec]
 
     # When in a submenu, determines whether pressing the Escape key closes the entire menu, or only the current child menu. Defaults to True.
     close_parent_on_esc: Var[bool]
@@ -453,16 +453,16 @@ class MenuSubMenuRoot(MenuBaseComponent):
     open: Var[bool]
 
     # Event handler called when the menu is opened or closed.
-    on_open_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # When in a submenu, determines whether pressing the Escape key closes the entire menu, or only the current child menu. Defaults to True.
     close_parent_on_esc: Var[bool]
 
     # Event handler called after any animations complete when the menu is closed.
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Called with the item label (or None) and reason: "keyboard", "pointer", or "none".
-    on_item_highlighted: EventHandler[_on_item_highlighted_spec]
+    on_item_highlighted: Annotated[EventHandler, _on_item_highlighted_spec]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]
@@ -575,7 +575,7 @@ class MenuRadioGroup(MenuBaseComponent):
     value: Var[str | int]
 
     # Function called when the selected value changes.
-    on_value_change: EventHandler[passthrough_event_spec(str | int, dict)]
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(str | int, dict)]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]
@@ -668,7 +668,7 @@ class MenuCheckboxItem(MenuBaseComponent):
     checked: Var[bool]
 
     # Event handler called when the checkbox item is ticked or unticked.
-    on_checked_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_checked_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # Whether to close the menu when the item is clicked. Defaults to False.
     close_on_click: Var[bool]

@@ -44,8 +44,8 @@ from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 from reflex import (
-    _COMPONENTS_BASE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
-    _COMPONENTS_CORE_MAPPING,  # pyright: ignore[reportAttributeAccessIssue]
+    _COMPONENTS_BASE_MAPPING,  # ty:ignore[missing-module-member]
+    _COMPONENTS_CORE_MAPPING,  # ty:ignore[missing-module-member]
 )
 from reflex.state import BaseState
 from reflex.utils import imports
@@ -162,7 +162,7 @@ def component2() -> type[Component]:
         # A test list prop.
         arr: Var[list[str]]
 
-        on_prop_event: EventHandler[on_prop_event_spec]
+        on_prop_event: EventHandler[on_prop_event_spec]  # ty:ignore[invalid-type-form]
 
         @classmethod
         def get_event_triggers(cls) -> dict[str, Any]:
@@ -519,6 +519,23 @@ def test_add_style_create(component1, component2):
     assert str(c2.style["color"]) == '"black"'
 
 
+def test_add_style_from_style_instance(component1, component2):
+    """Test that a Style used as the app style still styles components by key.
+
+    Args:
+        component1: A test component.
+        component2: A test component.
+    """
+    style = Style({
+        component1: {"color": "white"},
+        component2.create: {"color": "black"},
+    })
+    c1 = component1.create()._add_style_recursive(style)
+    c2 = component2.create()._add_style_recursive(style)
+    assert {key: str(value) for key, value in c1.style.items()} == {"color": '"white"'}
+    assert {key: str(value) for key, value in c2.style.items()} == {"color": '"black"'}
+
+
 def test_get_imports(component1, component2):
     """Test getting the imports of a component.
 
@@ -851,7 +868,7 @@ def test_component_create_backend_var_prop():
         _size: str = "3"
 
     with pytest.raises(TypeError, match=r"got value Field\(default='3'"):
-        rx.heading("x", size=BackendPropState._size)  # pyright: ignore[reportArgumentType]
+        rx.heading("x", size=BackendPropState._size)  # ty:ignore[invalid-argument-type]
 
 
 class BackendSrcState(BaseState):
@@ -1405,7 +1422,8 @@ class EventState(rx.State):
     def handler(self):
         """A handler that does nothing."""
 
-    def handler2(self, arg):
+    @rx.event
+    def handler2(self, arg: int):
         """A handler that takes an arg.
 
         Args:
@@ -1528,17 +1546,17 @@ class EventState(rx.State):
             id="direct-event-handler",
         ),
         pytest.param(
-            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
+            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),  # ty:ignore[no-matching-overload]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-arg",
         ),
         pytest.param(
-            rx.fragment(on_blur=EventState.handler2(EventState.v)),  # pyright: ignore [reportCallIssue]
+            rx.fragment(on_blur=EventState.handler2(EventState.v)),
             [ARG_VAR, EventState.v],
             id="direct-event-handler-arg2",
         ),
         pytest.param(
-            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
+            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),  # ty:ignore[invalid-argument-type, no-matching-overload] https://github.com/astral-sh/ty/issues/4098
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
         ),
@@ -1844,7 +1862,8 @@ def test_validate_invalid_children():
                 rx.fragment(invalid_component()),
                 rx.fragment(
                     rx.foreach(
-                        LiteralVar.create([1, 2, 3]), lambda x: invalid_component(x)
+                        LiteralVar.create([1, 2, 3]),
+                        lambda x: invalid_component(x),
                     )
                 ),
             )
@@ -1935,8 +1954,8 @@ def test_custom_component_declare_event_handlers_in_fields():
             }
 
     class TestComponent(Component):
-        on_b: EventHandler[input_event]
-        on_d: EventHandler[no_args_event_spec]
+        on_b: EventHandler[input_event]  # ty:ignore[invalid-type-form]
+        on_d: EventHandler[no_args_event_spec]  # ty:ignore[invalid-type-form]
         on_e: EventHandler
 
     custom_component = ReferenceComponent.create()
@@ -1991,7 +2010,7 @@ def test_invalid_event_trigger():
 )
 def test_component_add_imports(tags):
     class BaseComponent(Component):
-        def _get_imports(self) -> ImportDict:  # pyright: ignore [reportIncompatibleMethodOverride]
+        def _get_imports(self) -> ImportDict:
             return {}
 
     class Reference(Component):
@@ -2003,7 +2022,7 @@ def test_component_add_imports(tags):
             )
 
     class TestBase(Component):
-        def add_imports(  # pyright: ignore [reportIncompatibleMethodOverride]
+        def add_imports(
             self,
         ) -> dict[str, str | ImportVar | list[str] | list[ImportVar]]:
             return {"foo": "bar"}
@@ -2033,7 +2052,7 @@ def test_component_add_hooks():
         pass
 
     class GrandchildComponent1(ChildComponent1):
-        def add_hooks(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        def add_hooks(self):
             return [
                 "const hook2 = 43",
                 "const hook3 = 44",
@@ -2046,11 +2065,11 @@ def test_component_add_hooks():
             ]
 
     class GrandchildComponent2(ChildComponent1):
-        def _get_hooks(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        def _get_hooks(self):
             return "const hook5 = 46"
 
     class GreatGrandchildComponent2(GrandchildComponent2):
-        def add_hooks(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        def add_hooks(self):
             return [
                 "const hook2 = 43",
                 "const hook6 = 47",
@@ -2125,7 +2144,7 @@ def test_component_add_custom_code():
             ]
 
     class GrandchildComponent2(ChildComponent1):
-        def _get_custom_code(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        def _get_custom_code(self):
             return "const custom_code5 = 46"
 
     class GreatGrandchildComponent2(GrandchildComponent2):
@@ -2324,7 +2343,7 @@ def test_add_style_embedded_vars(test_state: type[TestState]):
     class StyledComponent(ParentComponent):
         tag = "StyledComponent"
 
-        def add_style(self):  # pyright: ignore [reportIncompatibleMethodOverride]
+        def add_style(self):
             return {
                 "color": v1,
                 "fake": v2,
@@ -2435,7 +2454,7 @@ class TriggerState(rx.State):
             rx.box(
                 rx.text(
                     "random text",
-                    on_blur=lambda: TriggerState.do_something,
+                    on_blur=lambda: TriggerState.do_something,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                 ),
             ),
             True,

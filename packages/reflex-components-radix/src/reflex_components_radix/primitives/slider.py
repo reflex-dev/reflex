@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -50,12 +50,12 @@ class SliderRoot(SliderComponent):
 
     min_steps_between_thumbs: Var[int]
 
-    on_value_change: EventHandler[passthrough_event_spec(list[float])] = field(
-        doc="Fired when the value of a thumb changes."
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(list[float])] = (
+        field(doc="Fired when the value of a thumb changes.")
     )
 
-    on_value_commit: EventHandler[passthrough_event_spec(list[float])] = field(
-        doc="Fired when a thumb is released."
+    on_value_commit: Annotated[EventHandler, passthrough_event_spec(list[float])] = (
+        field(doc="Fired when a thumb is released.")
     )
 
     def add_style(self) -> dict[str, Any] | None:

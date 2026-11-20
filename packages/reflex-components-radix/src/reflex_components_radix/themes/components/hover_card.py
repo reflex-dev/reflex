@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -36,7 +36,7 @@ class HoverCardRoot(RadixThemesComponent):
         doc="The duration from when the mouse leaves the trigger until the hover card closes."
     )
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."
     )
 

@@ -10,7 +10,7 @@ import re
 import shutil
 import tempfile
 import uuid
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -393,7 +393,7 @@ def _resolve_deploy_provider(
 @contextlib.contextmanager
 def _restore_provider_on_failure(
     app: App | AppSummary, switched_from: str | None, client: AuthenticatedClient
-) -> Iterator[None]:
+) -> Generator[None, None, None]:
     """Re-pin the previous provider if the deploy fails after a switch.
 
     Switching a deployed app to a new provider tears down its old resources up
@@ -440,7 +440,9 @@ def _restore_provider_on_failure(
 
 
 @contextlib.contextmanager
-def _warn_if_bounds_outlive_deploy(app_name: str, applied: bool) -> Iterator[None]:
+def _warn_if_bounds_outlive_deploy(
+    app_name: str, applied: bool
+) -> Generator[None, None, None]:
     """Report instance bounds that stuck when the deploy they were for failed.
 
     Bounds are app state, not deployment state: there is no deployment-scoped
@@ -552,7 +554,7 @@ def _apply_full_deploy(
 @contextlib.contextmanager
 def _warn_if_full_deploy_outlives_deploy(
     app_name: str, stopped: bool
-) -> Iterator[None]:
+) -> Generator[None, None, None]:
     """Report an app left down by a hosting-mode flip whose deploy then failed.
 
     Flipping the mode stops a running app so the redeploy brings it back up in
@@ -724,8 +726,7 @@ def deploy(
                     "app_id must be a string or None. Please check your config file."
                 )
                 raise SystemExit(1)
-        if not packages:
-            packages = config.get("packages", None)
+        packages = config.get("packages", None)
         if not include_db:
             include_db = config.get("include_db", False)
         if not strategy:
@@ -1010,9 +1011,7 @@ def deploy(
 
         if envfile:
             try:
-                from dotenv import (
-                    dotenv_values,  # pyright: ignore[reportMissingImports]
-                )
+                from dotenv import dotenv_values
 
                 # A bare `KEY` line with no `=` parses to None, which names
                 # no value to set; only assignments become secrets.
@@ -1049,7 +1048,7 @@ def deploy(
                     False,
                     True,
                     True,
-                )  # pyright: ignore[reportCallIssue]
+                )  # ty:ignore[missing-argument]
             else:
                 export_fn(
                     str(temporary_dir_path),
@@ -1058,7 +1057,7 @@ def deploy(
                     False,
                     True,
                     include_db,
-                    True,  # pyright: ignore[reportCallIssue]
+                    True,  # ty:ignore[too-many-positional-arguments]
                 )
         except Exception as ex:
             logger.error(f"Unable to export due to: {ex}")
@@ -1072,7 +1071,7 @@ def deploy(
             if rx_version.release < breaking_release:
                 export_fn(
                     str(temporary_dir_path), server_url, host_url, True, False, True
-                )  # pyright: ignore[reportCallIssue]
+                )  # ty:ignore[missing-argument]
             else:
                 export_fn(
                     str(temporary_dir_path),
@@ -1081,7 +1080,7 @@ def deploy(
                     True,
                     False,
                     include_db,
-                    True,  # pyright: ignore[reportCallIssue]
+                    True,  # ty:ignore[too-many-positional-arguments]
                 )
         except ImportError as ie:
             logger.error(
@@ -1136,7 +1135,7 @@ def deploy(
                             hostname=extract_domain(host_url) if hostname else None,
                             secrets=processed_envs,
                             packages=packages,
-                            strategy=strategy,  # pyright: ignore[reportArgumentType]
+                            strategy=strategy,  # ty:ignore[invalid-argument-type]
                             description=deployment_description,
                             on_upload_progress=lambda sent, total: progress.update(
                                 upload, completed=sent, total=total

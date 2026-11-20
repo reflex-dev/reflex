@@ -2,7 +2,7 @@
 
 import contextlib
 import pickle
-from collections.abc import Generator, Iterator
+from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -93,7 +93,7 @@ def connection_banner(
 
 
 @contextlib.contextmanager
-def browser_offline(page: Page) -> Iterator[None]:
+def browser_offline(page: Page) -> Generator[None, None, None]:
     """Temporarily take the browser context offline.
 
     Args:

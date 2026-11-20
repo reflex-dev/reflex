@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from reflex_base.components.component import (
     Component,
@@ -248,7 +248,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
         doc="The locale for this component. Defaults to the nearest rx.moment_provider locale, or English.",
     )
 
-    on_change: EventHandler[passthrough_event_spec(str)] = field(
+    on_change: Annotated[EventHandler, passthrough_event_spec(str)] = field(
         doc="Fires when the component mounts and when the date changes, including when interval is 0. React Strict Mode can invoke the mount event twice in development."
     )
 

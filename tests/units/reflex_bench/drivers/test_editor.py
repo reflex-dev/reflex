@@ -125,7 +125,7 @@ def test_write_is_one_replace_right_after_t0(
     t0 = edit.write()
     assert [name for name, _ in events] == ["fsync", "t0", "replace"]
     assert events[1] == ("t0", t0)
-    src, dst = events[2][1]  # pyright: ignore[reportGeneralTypeIssues]
+    src, dst = events[2][1]  # ty:ignore[not-iterable]
     # A sibling on the same file system, named so file watchers ignore it
     # (watchfiles' default filter skips names ending in "~").
     assert src.parent == dst.parent == target.path.parent

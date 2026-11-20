@@ -12,7 +12,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 from logging.config import fileConfig
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import sqlalchemy
 from alembic import command, context, util
@@ -196,7 +196,7 @@ def render_item(
     return False
 
 
-def configure(**kwargs: object) -> None:
+def configure(**kwargs: Any) -> None:
     """Configure the migration context with the app's models and settings.
 
     Args:

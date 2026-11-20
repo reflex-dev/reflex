@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
@@ -37,7 +37,7 @@ def performance_redis_url() -> str:
 
 
 @asynccontextmanager
-async def real_redis_state_manager() -> AsyncIterator[StateManagerRedis]:
+async def real_redis_state_manager() -> AsyncGenerator[StateManagerRedis, None]:
     """Create an isolated state manager backed by a reachable Redis server.
 
     The configured database must be empty and dedicated to performance tests;
@@ -53,7 +53,7 @@ async def real_redis_state_manager() -> AsyncIterator[StateManagerRedis]:
     url = performance_redis_url()
     redis = Redis.from_url(url)
     try:
-        await redis.ping()  # pyright: ignore [reportGeneralTypeIssues]
+        await redis.ping()
         if await redis.dbsize():
             msg = (
                 f"Redis database at {url!r} is not empty; performance tests "

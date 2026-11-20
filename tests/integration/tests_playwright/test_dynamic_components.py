@@ -9,8 +9,6 @@ from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
-# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false
-
 
 def DynamicComponents():
     """App with var operations."""

@@ -279,7 +279,7 @@ def test_backend_var_event_arg_reports_repr():
     with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
         S.on_event(S._secret)
     with pytest.raises(EventHandlerTypeError, match=r"Got Field\(default=42"):
-        cast(EventSpec, S.on_event()).add_args(S._secret)  # pyright: ignore[reportArgumentType]
+        cast(EventSpec, S.on_event()).add_args(S._secret)  # ty:ignore[invalid-argument-type]
 
 
 class BackendTriggerState(BaseState):
@@ -338,7 +338,7 @@ def test_backend_var_upload_progress_raises_format_error():
     """A backend var passed as on_upload_progress raises the backend var format error."""
     upload = rx.upload_files(
         upload_id="u",
-        on_upload_progress=BackendTriggerState._secret,  # pyright: ignore[reportArgumentType]
+        on_upload_progress=BackendTriggerState._secret,  # ty:ignore[invalid-argument-type]
     )
     with pytest.raises(
         BackendVarFormatError,
@@ -354,7 +354,7 @@ def test_state_event_handler_caches_unresolved_type_hints():
         @event
         def on_event(
             self,
-            event: "_LateBoundEventType",  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+            event: "_LateBoundEventType",  # ty:ignore[unresolved-reference]  # noqa: F821
         ):
             pass
 
@@ -846,7 +846,7 @@ def test_event_actions_on_state():
     assert isinstance(handler, EventHandler)
     assert not handler.event_actions
 
-    sp_handler = EventActionState.handler.stop_propagation  # pyright: ignore [reportFunctionMemberAccess]
+    sp_handler = EventActionState.handler.stop_propagation
     assert sp_handler.event_actions == {"stopPropagation": True}
     # should NOT affect other references to the handler
     assert not handler.event_actions
@@ -952,7 +952,7 @@ def test_event_bound_method() -> None:
             return S.e(arg)
 
     w = Wrapper()
-    _ = rx.input(on_change=w.get_handler)
+    _ = rx.input(on_change=w.get_handler)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
 
 
 def test_event_decorator_with_event_actions():
@@ -1113,7 +1113,7 @@ def test_event_decorator_accepts_bound_method():
         def method(self):
             pass
 
-    event(Obj().method)  # pyright: ignore[reportCallIssue, reportArgumentType]
+    event(Obj().method)  # ty:ignore[no-matching-overload]
 
 
 def test_event_var_in_rx_cond():
@@ -1781,8 +1781,8 @@ def test_rx_event_on_a_function_without_a_state_parameter_stays_a_function():
     before = set(RegistrationContext.get().event_handlers)
 
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        decorated_ping = event(ping)  # pyright: ignore [reportCallIssue, reportArgumentType]
-        decorated_summarize = event(stop_propagation=True)(summarize)  # pyright: ignore [reportArgumentType]
+        decorated_ping = event(ping)
+        decorated_summarize = event(stop_propagation=True)(summarize)
 
     assert [call.kwargs["feature_name"] for call in mock_deprecate.call_args_list] == [
         "@rx.event on a function without a state parameter"
@@ -1819,7 +1819,7 @@ def test_rx_event_on_a_non_state_class_method_still_calls_it() -> None:
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
 
         class Helper:
-            @rx.event  # pyright: ignore [reportCallIssue, reportArgumentType]
+            @rx.event
             def compute(self, x: int) -> int:
                 return x * 2
 
@@ -1828,7 +1828,7 @@ def test_rx_event_on_a_non_state_class_method_still_calls_it() -> None:
         == "@rx.event on a method of a class that is not a state"
     )
     assert isinstance(Helper.compute, EventHandler)
-    assert Helper().compute(3) == 6  # pyright: ignore [reportCallIssue]
+    assert Helper().compute(3) == 6
 
 
 @pytest.mark.parametrize(
@@ -1891,7 +1891,7 @@ def test_repeated_rx_event_merges_event_actions():
     """The outer @rx.event's options win where both decorators set one."""
 
     class MergedState(BaseState):
-        @event(throttle=300, stop_propagation=True)  # pyright: ignore [reportArgumentType]
+        @event(throttle=300, stop_propagation=True)  # ty:ignore[invalid-argument-type]
         @event(throttle=100, debounce=50)
         def handle(self):
             pass
@@ -1907,12 +1907,12 @@ def test_repeated_rx_event_outer_false_and_zero_override():
     """An outer False or 0 turns off the inner decorator's action."""
 
     class OverrideState(BaseState):
-        @event(prevent_default=False, temporal=False)  # pyright: ignore [reportArgumentType]
+        @event(prevent_default=False, temporal=False)  # ty:ignore[invalid-argument-type]
         @event(prevent_default=True, temporal=True, debounce=50)
         def handle(self):
             pass
 
-        @event(throttle=0)  # pyright: ignore [reportArgumentType]
+        @event(throttle=0)  # ty:ignore[invalid-argument-type]
         @event(throttle=300)
         def throttled(self):
             pass
@@ -1929,7 +1929,7 @@ def test_repeated_rx_event_outer_false_overrides_background_and_supersedes():
     """An outer background=False or supersedes=False turns off the inner True."""
 
     class OverrideFlagsState(BaseState):
-        @event(background=False, supersedes=False)  # pyright: ignore [reportArgumentType]
+        @event(background=False, supersedes=False)  # ty:ignore[invalid-argument-type]
         @event(background=True, supersedes=True)
         async def handle(self):
             pass
@@ -1957,7 +1957,7 @@ def test_rx_event_on_a_handler_of_another_state_raises(options: dict):
     with pytest.raises(TypeError, match="already an event handler"):
 
         class OtherState(BaseState):
-            alias = event(OwnerState.handle, **options)  # pyright: ignore [reportArgumentType, reportCallIssue]
+            alias = event(OwnerState.handle, **options)  # ty:ignore[no-matching-overload]
 
     handler = OwnerState.__dict__["handle"]
     assert handler.is_background is False
@@ -1979,7 +1979,7 @@ def test_repeated_rx_event_on_a_mixin_is_copied_with_merged_actions():
     """A state copying a mixin's repeated @rx.event gets the merged actions."""
 
     class RepeatedMixin(BaseState, mixin=True):
-        @event(stop_propagation=True)  # pyright: ignore [reportArgumentType]
+        @event(stop_propagation=True)  # ty:ignore[invalid-argument-type]
         @event(background=True, throttle=100)
         async def work(self):
             pass
@@ -2004,7 +2004,7 @@ def test_repeated_rx_event_on_a_decentralized_handler():
 
     before = set(RegistrationContext.get().event_handlers)
 
-    @event(stop_propagation=True)  # pyright: ignore [reportArgumentType]
+    @event(stop_propagation=True)  # ty:ignore[invalid-argument-type]
     @event(throttle=300)
     def e(s: S):
         s.field = "foo"
@@ -2032,9 +2032,9 @@ def test_repeated_rx_event_on_a_decentralized_handler_in_main():
         s.field = "foo"
 
     handle.__module__ = "__main__"
-    once = event(handle)  # pyright: ignore [reportArgumentType]
-    assert once.fn.__name__.startswith("_main___")
-    twice = event(stop_propagation=True)(once)  # pyright: ignore [reportArgumentType]
+    once = event(handle)
+    assert once.fn.__name__.startswith("_main___")  # ty:ignore[missing-attribute]
+    twice = event(stop_propagation=True)(once)  # ty:ignore[invalid-argument-type]
 
     assert isinstance(twice, EventHandler)
     assert twice.fn is once.fn

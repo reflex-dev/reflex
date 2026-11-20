@@ -16,7 +16,7 @@ import json
 import multiprocessing
 import os
 import uuid
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncGenerator, Sequence
 from multiprocessing.connection import Connection
 from multiprocessing.process import BaseProcess
 from typing import Any
@@ -65,7 +65,7 @@ class EchoServer:
         self.ping_timeout_s = ping_timeout_s
 
     @contextlib.asynccontextmanager
-    async def serve(self, host: str, port: int) -> AsyncIterator[int]:
+    async def serve(self, host: str, port: int) -> AsyncGenerator[int, None]:
         """Listen for connections while the context is open.
 
         Args:

@@ -8,7 +8,7 @@ import datetime
 import enum
 import logging
 from collections.abc import (
-    AsyncIterator,
+    AsyncGenerator,
     Awaitable,
     Callable,
     Collection,
@@ -382,7 +382,7 @@ async def run_workflows(
     listen_engine: AsyncEngine | None = None,
     on_idle: OnIdle | None = None,
     suspends_when_idle: bool = False,
-) -> AsyncIterator[None]:
+) -> AsyncGenerator[None, None]:
     """Run workflow steps in this process for the lifetime of the block.
 
     Enter it from the app's lifespan. Several processes can run it against the same
@@ -572,7 +572,7 @@ async def connect_workflows(
     session_factory: async_sessionmaker[AsyncSession],
     *,
     lease: datetime.timedelta = datetime.timedelta(minutes=5),
-) -> AsyncIterator[None]:
+) -> AsyncGenerator[None, None]:
     """Address workflow runs from a process that does not run them.
 
     A web process that starts runs, delivers approvals and reads their state needs

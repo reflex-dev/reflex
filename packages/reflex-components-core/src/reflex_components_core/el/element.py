@@ -10,13 +10,13 @@ class Element(Component):
 
     _is_tag_in_global_scope: ClassVar[bool] = True
 
-    def __eq__(self, other: object):
+    def __eq__(self, value: object):
         """Two elements are equal if they have the same tag.
 
         Args:
-            other: The other element.
+            value: The other element.
 
         Returns:
             True if the elements have the same tag, False otherwise.
         """
-        return isinstance(other, Element) and self.tag == other.tag
+        return isinstance(value, Element) and self.tag == value.tag

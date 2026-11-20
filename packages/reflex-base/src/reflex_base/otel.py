@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from collections.abc import Awaitable, Callable, Iterator, Mapping
+from collections.abc import Awaitable, Callable, Generator, Mapping
 from contextlib import contextmanager, nullcontext
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
@@ -426,7 +426,7 @@ def compile_span(
 @contextmanager
 def event_span(
     event: Event, ctx: EventContext, registered_handler: RegisteredEventHandler
-) -> Iterator[trace.Span]:
+) -> Generator[trace.Span, None, None]:
     """Open the span for one event handler execution and record its duration.
 
     Chained events are INTERNAL children of the span that enqueued them;

@@ -451,6 +451,34 @@ class ModeComp(Component):
     assert "mode: str =" not in result
 
 
+def test_stub_class_field_default_kept_as_ellipsis():
+    source = """
+from reflex_base.components.props import NoExtrasAllowedProps
+
+class SomeProps(NoExtrasAllowedProps):
+    required: str
+    optional: str | None = None
+"""
+    result = _generate_stub_from_source(source)
+    # A class field's default decides whether it is required in the synthesized
+    # __init__, so its presence has to survive into the stub as `...`.
+    assert result == (
+        "from collections.abc import Callable, Mapping, Sequence\n"
+        "from typing import Annotated, Any, Dict, Literal, Optional, Union\n"
+        "from reflex_components_core.core.breakpoints import Breakpoints\n"
+        "from reflex_base.event import EventChain, EventHandler, EventSpec, "
+        "EventType, FORM_SUBMIT_MAPPING, KeyInputInfo, PointerEventInfo\n"
+        "from reflex_base.style import Style\n"
+        "from reflex_base.vars.base import Var\n"
+        "import reflex\n"
+        "from reflex_base.components.props import NoExtrasAllowedProps\n"
+        "\n"
+        "class SomeProps(NoExtrasAllowedProps):\n"
+        "    required: str\n"
+        "    optional: str | None = ..."
+    )
+
+
 def test_stub_classvar_preserved():
     source = """
 from typing import ClassVar

@@ -108,7 +108,7 @@ async def test_close_health_redis(mocker: MockerFixture):
         # Case 2: Database connection error (OperationalError)
         (
             MagicMock(),
-            sqlalchemy.exc.OperationalError("error", "error", "error"),  # pyright: ignore[reportArgumentType]
+            sqlalchemy.exc.OperationalError("error", "error", "error"),  # ty:ignore[invalid-argument-type]
             {"db": False},
         ),
     ],

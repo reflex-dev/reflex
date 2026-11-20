@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Annotated, Any, ClassVar
 
 from reflex_base.components.component import (
     Component,
@@ -234,9 +234,9 @@ class GhostUpload(Fragment):
     """A ghost upload component."""
 
     # Fired when files are dropped.
-    on_drop: EventHandler[_on_drop_args_spec]
+    on_drop: Annotated[EventHandler, _on_drop_args_spec]
 
-    on_drop_rejected: EventHandler[_on_drop_rejected_spec] = field(
+    on_drop_rejected: Annotated[EventHandler, _on_drop_rejected_spec] = field(
         doc="Fired when dropped files do not meet the specified criteria."
     )
 
@@ -278,9 +278,9 @@ class Upload(MemoizationLeaf):
     is_used: ClassVar[bool] = False
 
     # Fired when files are dropped.
-    on_drop: EventHandler[_on_drop_args_spec]
+    on_drop: Annotated[EventHandler, _on_drop_args_spec]
 
-    on_drop_rejected: EventHandler[_on_drop_rejected_spec] = field(
+    on_drop_rejected: Annotated[EventHandler, _on_drop_rejected_spec] = field(
         doc="Fired when dropped files do not meet the specified criteria."
     )
 

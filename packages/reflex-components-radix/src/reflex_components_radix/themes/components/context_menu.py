@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
 from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -40,7 +40,7 @@ class ContextMenuRoot(RadixThemesComponent):
 
     _invalid_children: ClassVar[list[str]] = ["ContextMenuItem"]
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."
     )
 
@@ -128,23 +128,23 @@ class ContextMenuContent(RadixThemesComponent):
         doc="Whether to hide the content when the trigger becomes fully occluded. Defaults to False."
     )
 
-    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_close_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when focus moves back after closing."
     )
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when a pointer down event happens outside the context menu."
     )
 
-    on_focus_outside: EventHandler[no_args_event_spec] = field(
+    on_focus_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when focus moves outside the context menu."
     )
 
-    on_interact_outside: EventHandler[no_args_event_spec] = field(
+    on_interact_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer interacts outside the context menu."
     )
 
@@ -162,7 +162,7 @@ class ContextMenuSub(RadixThemesComponent):
         doc="The open state of the submenu when it is initially rendered. Use when you do not need to control its open state."
     )
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."
     )
 
@@ -230,19 +230,19 @@ class ContextMenuSubContent(RadixThemesComponent):
 
     _valid_parents: ClassVar[list[str]] = ["ContextMenuSub"]
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when a pointer down event happens outside the context menu."
     )
 
-    on_focus_outside: EventHandler[no_args_event_spec] = field(
+    on_focus_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when focus moves outside the context menu."
     )
 
-    on_interact_outside: EventHandler[no_args_event_spec] = field(
+    on_interact_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when interacting outside the context menu."
     )
 
@@ -274,7 +274,7 @@ class ContextMenuItem(RadixThemesComponent):
         "ContextMenuGroup",
     ]
 
-    on_select: EventHandler[no_args_event_spec] = field(
+    on_select: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the item is selected."
     )
 
@@ -332,7 +332,7 @@ class ContextMenuRadioGroup(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    on_change: EventHandler[passthrough_event_spec(str)] = field(
+    on_change: Annotated[EventHandler, passthrough_event_spec(str)] = field(
         doc="Fired when the value of the radio group changes."
     )
 
@@ -363,7 +363,7 @@ class ContextMenuRadioItem(HighLevelRadioGroup):
         doc="When true, prevents the user from interacting with the item."
     )
 
-    on_select: EventHandler[no_args_event_spec] = field(
+    on_select: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Event handler called when the user selects an item (via mouse or keyboard). Calling event.preventDefault in this handler will prevent the context menu from closing when selecting that item."
     )
 

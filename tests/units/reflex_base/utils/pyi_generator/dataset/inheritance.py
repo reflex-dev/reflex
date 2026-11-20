@@ -27,7 +27,7 @@ class InteractiveWidget(BaseWidget):
     # The placeholder text.
     placeholder: Var[str] = field(doc="Placeholder text.")
 
-    on_value_change: EventHandler[passthrough_event_spec(str)] = field(
+    on_value_change: EventHandler[passthrough_event_spec(str)] = field(  # ty:ignore[invalid-type-form]
         doc="Fired when value changes.",
     )
 

@@ -410,7 +410,7 @@ class TestEnvVar:
     def test_set_string_value(self):
         """Test setting a string value."""
         env_var_instance = EnvVar("TEST_VAR", "default", str)
-        env_var_instance.set("new_value")  # type: ignore[arg-type]
+        env_var_instance.set("new_value")  # ty:ignore[invalid-argument-type]
         assert os.environ.get("TEST_VAR") == "new_value"
         # Clean up
         del os.environ["TEST_VAR"]
@@ -429,7 +429,7 @@ class TestEnvVar:
     def test_set_enum_value(self):
         """Test setting an enum value."""
         env_var_instance = EnvVar("TEST_VAR", _TestEnum.VALUE1, _TestEnum)
-        env_var_instance.set(_TestEnum.VALUE2)  # type: ignore[arg-type]
+        env_var_instance.set(_TestEnum.VALUE2)  # ty:ignore[invalid-argument-type]
         assert os.environ.get("TEST_VAR") == "value2"
         # Clean up
         del os.environ["TEST_VAR"]
@@ -437,7 +437,7 @@ class TestEnvVar:
     def test_set_list_value(self):
         """Test setting a list value."""
         env_var_instance = EnvVar("TEST_VAR", [], list[int])
-        env_var_instance.set([1, 2, 3])  # type: ignore[arg-type]
+        env_var_instance.set([1, 2, 3])  # ty:ignore[invalid-argument-type]
         assert os.environ.get("TEST_VAR") == "1:2:3"
         # Clean up
         del os.environ["TEST_VAR"]
@@ -793,7 +793,7 @@ def test_timedelta_env_var_round_trips_through_set(
     ):
         # `EnvVar` binds its type var to the class object, so a value argument
         # never matches - the same quirk the other `set` tests here work around.
-        env_var_instance.set(value)  # type: ignore[arg-type]
+        env_var_instance.set(value)  # ty:ignore[invalid-argument-type]
         assert env_var_instance.get() == value
 
 
@@ -1000,7 +1000,7 @@ def test_env_var_set_runs_callbacks_for_its_name(monkeypatch: pytest.MonkeyPatch
     assert calls == []
 
     env_var_instance = EnvVar(name, None, str)
-    env_var_instance.set("value")  # type: ignore[arg-type]
+    env_var_instance.set("value")  # ty:ignore[invalid-argument-type]
     env_var_instance.set(None)
     assert calls == ["value", None]
 
@@ -1087,7 +1087,7 @@ def test_path_list_env_value_accepts_colon_list_without_pathsep(
         (list[Path] | None, r"C:\app;D:\lib"),
         (Annotated[list[Path], "meta"], r"C:\app;D:\lib"),
         (
-            Annotated[list[Path], "meta"] | None,  # pyright: ignore[reportOperatorIssue]
+            Annotated[list[Path], "meta"] | None,
             r"C:\app;D:\lib",
         ),
         (Annotated[list[Path], SequenceOptions(delimiter=",")], r"C:\app,D:\lib"),

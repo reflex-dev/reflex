@@ -25,7 +25,7 @@ def _hook(cs: ClientStateVar) -> str:
     Returns:
         The hook source line.
     """
-    hooks = list(cs._var_data.hooks)  # pyright: ignore [reportOptionalMemberAccess]
+    hooks = list(cs._var_data.hooks)  # ty:ignore[missing-union-attribute]
     assert len(hooks) == 1, f"expected exactly one hook, got {hooks}"
     return hooks[0]
 
@@ -61,7 +61,7 @@ def _app_wraps(var_data: VarData | None) -> list[tuple[int, str]]:
         A list of (priority, tag) pairs.
     """
     assert var_data is not None
-    return [(priority, wrap.tag or "") for priority, wrap in var_data.app_wraps]  # pyright: ignore [reportAttributeAccessIssue]
+    return [(priority, wrap.tag or "") for priority, wrap in var_data.app_wraps]
 
 
 def test_single_hook_no_useState() -> None:
@@ -108,7 +108,7 @@ def test_named_var_is_global() -> None:
 
 def test_hook_imports_use_client_state() -> None:
     """The hook carries the useClientState import."""
-    imports = dict(cs_imports := client_state(0, name="x")._var_data.imports)  # pyright: ignore [reportOptionalMemberAccess]
+    imports = dict(cs_imports := client_state(0, name="x")._var_data.imports)  # ty:ignore[missing-union-attribute]
     assert cs_imports is not None
     tags = {i.tag for i in imports[f"$/{Dirs.CLIENT_STATE_PATH}"]}
     assert tags == {"useClientState"}
@@ -130,7 +130,7 @@ def test_two_vars_dedupe_to_one_provider() -> None:
     target: dict[tuple[int, str], Any] = {}
     for name in ("a", "b"):
         cs = client_state(0, name=name)
-        insert_app_wraps(target, cs._var_data.app_wraps)  # pyright: ignore [reportOptionalMemberAccess]
+        insert_app_wraps(target, cs._var_data.app_wraps)  # ty:ignore[missing-union-attribute]
     assert list(target) == [(CLIENT_STATE_APP_WRAP_PRIORITY, "ClientStateProvider")]
 
 
@@ -219,7 +219,7 @@ def test_set_rejects_multi_arg_callable() -> None:
     """An updater may only take the current value."""
     cs = client_state(0, name="x")
     with pytest.raises(VarTypeError):
-        cs.set(lambda a, b: a + b)  # pyright: ignore [reportCallIssue]  # noqa: FURB118 - a lambda is what is under test
+        cs.set(lambda a, b: a + b)  # noqa: FURB118 - a lambda is what is under test
 
 
 def test_set_passes_function_var_through() -> None:
@@ -254,7 +254,7 @@ def _bound(fn: Any, *arg_types: type) -> str:
     from reflex_base.event import EventChain, passthrough_event_spec
 
     return str(
-        Var.create(EventChain.create(fn, args_spec=passthrough_event_spec(*arg_types)))
+        Var.create(EventChain.create(fn, args_spec=passthrough_event_spec(*arg_types)))  # ty:ignore[invalid-argument-type]
     )
 
 
@@ -352,7 +352,7 @@ def test_camel_case_names_get_distinct_setters() -> None:
 def test_var_name_rejects_var() -> None:
     """A Var name would only exist at runtime, so it is rejected."""
     with pytest.raises(ValueError, match="not a Var"):
-        client_state(name=Var("dynamic"))  # pyright: ignore [reportArgumentType]
+        client_state(name=Var("dynamic"))  # ty:ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize("bad", ["1foo", "my-name", "a b", "", "a.b", "count\n"])
@@ -377,7 +377,7 @@ def test_generated_names_unaffected_by_unrelated_var_names() -> None:
 
     before = int(client_state()._state_name.removeprefix("cs$"))
     get_unique_variable_name()
-    rx.Var.create([1, 2, 3]).to(list).map(lambda x: x)  # pyright: ignore [reportAttributeAccessIssue]
+    rx.Var.create([1, 2, 3]).to(list).map(lambda x: x)
     after = int(client_state()._state_name.removeprefix("cs$"))
     assert after == before + 1
 
@@ -441,7 +441,7 @@ def test_name_addressed_paths_require_global(accessor: str) -> None:
 def test_set_value_delegates_and_deprecates(caplog: pytest.LogCaptureFixture) -> None:
     """``set_value`` still works, and says to use ``set``."""
     cs = client_state(0, name="counter")
-    assert str(cs.set_value(42)) == str(cs.set(42))
+    assert str(cs.set_value(42)) == str(cs.set(42))  # ty:ignore[deprecated]
     assert "set_value" in caplog.text
 
 
@@ -538,7 +538,7 @@ def test_hash_distinguishes_vars() -> None:
 def test_var_name_rejects_non_string() -> None:
     """A non-string, non-Var name is rejected."""
     with pytest.raises(ValueError, match="must be a string"):
-        client_state(name=5)  # pyright: ignore [reportArgumentType]
+        client_state(name=5)  # ty:ignore[invalid-argument-type]
 
 
 def test_var_default_is_used_directly() -> None:
@@ -610,6 +610,7 @@ def test_retrieve_with_callback_serializes_the_handler() -> None:
     class RetrieveState(rx.State):
         value: str = ""
 
+        @rx.event
         def got(self, value: str):
             self.value = value
 
@@ -912,7 +913,7 @@ def test_name_rejects_dollar_and_non_ascii(bad: str) -> None:
 def test_name_type_error_names_the_bad_value() -> None:
     """A non-string name is rejected with the offending value in the message."""
     with pytest.raises(ValueError, match=r"must be a string, got int: 5"):
-        client_state(name=5)  # pyright: ignore [reportArgumentType]
+        client_state(name=5)  # ty:ignore[invalid-argument-type]
 
 
 @pytest.mark.usefixtures("preserve_memo_registries")

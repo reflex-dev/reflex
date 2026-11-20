@@ -95,7 +95,7 @@ def make_machine(profile_id: str = "test-profile", **changes: Any) -> MachineDoc
         "virtualized": False,
         "tools": {"bun": True, "node": True, "chromium": False},
     }
-    machine.update(changes)  # pyright: ignore[reportCallIssue, reportArgumentType]
+    machine.update(changes)  # ty:ignore[invalid-argument-type]
     return machine
 
 
@@ -131,7 +131,7 @@ def make_entry(
         "params": dict(params or {}),
         "kind": "time",
         "version": version,
-        "status": status,  # pyright: ignore[reportAssignmentType]
+        "status": status,  # ty:ignore[invalid-argument-type]
         "error": error,
         "traceback_tail": None,
         "dims": {},

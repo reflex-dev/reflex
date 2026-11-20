@@ -1,6 +1,6 @@
 """Custom dialog component."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_components_core.el.elements.typography import Div
 
@@ -49,7 +49,7 @@ class DialogRoot(DialogBaseComponent):
     open: Var[bool]
 
     # Event handler called when the dialog is opened or closed
-    on_open_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # Determines whether pointer dismissal (clicking outside) is disabled. Defaults to False.
     disable_pointer_dismissal: Var[bool]
@@ -61,7 +61,7 @@ class DialogRoot(DialogBaseComponent):
     modal: Var[bool | Literal["trap-focus"]]
 
     # Event handler called after any animations complete when the dialog is opened or closed.
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     @classmethod
     def create(cls, *children, **props) -> BaseUIComponent:

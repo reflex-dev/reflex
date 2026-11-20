@@ -140,7 +140,7 @@ def upload_sub_state_event_spec():
     Returns:
         Event Spec.
     """
-    return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # pyright: ignore [reportCallIssue]
+    return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # ty:ignore[invalid-argument-type, unknown-argument]
 
 
 @pytest.fixture
@@ -150,7 +150,7 @@ def upload_event_spec():
     Returns:
         Event Spec.
     """
-    return EventSpec(handler=UploadState.handle_upload1, upload=True)  # pyright: ignore [reportCallIssue]
+    return EventSpec(handler=UploadState.handle_upload1, upload=True)  # ty:ignore[invalid-argument-type, unknown-argument]
 
 
 @pytest.fixture
@@ -284,11 +284,11 @@ def app_classes_module(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
 
     Entry.__module__ = module.__name__
     Entry.__qualname__ = "Entry"
-    module.Entry = Entry  # pyright: ignore[reportAttributeAccessIssue]
-    module.Color = enum.Enum(  # pyright: ignore[reportAttributeAccessIssue]
+    module.Entry = Entry  # ty:ignore[missing-attribute]
+    module.Color = enum.Enum(  # ty:ignore[missing-attribute]
         "Color", {"RED": "red", "BLUE": "blue"}, module=module.__name__
     )
-    module.Point = collections.namedtuple("Point", "x y", module=module.__name__)  # pyright: ignore[reportAttributeAccessIssue]
+    module.Point = collections.namedtuple("Point", "x y", module=module.__name__)  # ty:ignore[missing-attribute]
     return module
 
 

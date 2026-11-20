@@ -15,7 +15,7 @@ import os
 import re
 import urllib.error
 import urllib.request
-from collections.abc import Iterator
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -122,7 +122,7 @@ def home(tmp_path_factory: pytest.TempPathFactory) -> Path:
 @contextlib.contextmanager
 def _running_playground(
     tmp_path: Path, home: Path, spec: str, mode: str
-) -> Iterator[AppProcess]:
+) -> Generator[AppProcess, None, None]:
     """Start a fresh copy of the playground.
 
     Args:

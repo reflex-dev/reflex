@@ -234,7 +234,7 @@ def mock_redis() -> Redis:
         if script == _COUNT_OTHER_CONTENDERS_SCRIPT:
             waiters_key, instance_id = keys_and_args
             contenders = await redis_mock.scard(waiters_key)
-            return contenders - (instance_id in keys.get(_key_bytes(waiters_key), ()))
+            return contenders - (instance_id in keys.get(_key_bytes(waiters_key), ()))  # ty:ignore[unsupported-operator]
         if script != _FENCED_SAVE_SCRIPT:
             msg = "mock_redis only emulates the state manager's scripts."
             raise NotImplementedError(msg)

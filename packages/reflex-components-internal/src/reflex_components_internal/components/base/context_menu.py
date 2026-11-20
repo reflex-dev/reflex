@@ -1,6 +1,6 @@
 """Custom context menu component."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_components_core.core.foreach import foreach
 
@@ -77,7 +77,7 @@ class ContextMenuRoot(ContextMenuBaseComponent):
     open: Var[bool]
 
     # Event handler called when the context menu is opened or closed.
-    on_open_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # A ref to imperative actions. When specified, the context menu will not be unmounted when closed. Instead, the unmount function must be called to unmount the context menu manually. Useful when the context menu's animation is controlled by an external library.
     actions_ref: Var[str]
@@ -86,7 +86,7 @@ class ContextMenuRoot(ContextMenuBaseComponent):
     close_parent_on_esc: Var[bool]
 
     # Event handler called after any animations complete when the context menu is closed.
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]
@@ -377,7 +377,7 @@ class ContextMenuRadioGroup(ContextMenuBaseComponent):
     value: Var[str | int]
 
     # Event handler called when the value changes.
-    on_value_change: EventHandler[passthrough_event_spec(str | int, dict)]
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(str | int, dict)]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]
@@ -469,7 +469,7 @@ class ContextMenuCheckboxItem(ContextMenuBaseComponent):
     checked: Var[bool]
 
     # Event handler called when the checkbox item is ticked or unticked.
-    on_checked_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_checked_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # Whether to close the context menu when the item is clicked. Defaults to False.
     close_on_click: Var[bool]
@@ -530,13 +530,13 @@ class ContextMenuSubmenuRoot(ContextMenuBaseComponent):
     open: Var[bool]
 
     # Event handler called when the submenu is opened or closed.
-    on_open_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # When in a submenu, determines whether pressing the Escape key closes the entire menu, or only the current child menu. Defaults to True.
     close_parent_on_esc: Var[bool]
 
     # Event handler called after any animations complete when the submenu is closed.
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]

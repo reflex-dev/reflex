@@ -38,9 +38,9 @@ def LifespanApp(
 
     @asynccontextmanager
     async def lifespan_context(app, inc: int = 1):
-        global lifespan_context_global
+        global lifespan_context_global  # ty:ignore[unresolved-global]
         print(f"Lifespan context entered: {app}.")
-        lifespan_context_global += inc  # pyright: ignore[reportUnboundVariable]
+        lifespan_context_global += inc
         try:
             yield
         finally:
@@ -48,22 +48,22 @@ def LifespanApp(
             lifespan_context_global += inc
 
     async def lifespan_task(inc: int = 1):
-        global lifespan_task_global
+        global lifespan_task_global  # ty:ignore[unresolved-global]
         print("Lifespan global started.")
         try:
             while True:
-                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable, reportPossiblyUnboundVariable]
+                lifespan_task_global += inc
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError as ce:
             print(f"Lifespan global cancelled: {ce}.")
             lifespan_task_global = 0
 
     async def raw_asyncio_task_coro():
-        global raw_asyncio_task_global
+        global raw_asyncio_task_global  # ty:ignore[unresolved-global]
         print("Raw asyncio task started.")
         try:
             while True:
-                raw_asyncio_task_global += 1  # pyright: ignore[reportUnboundVariable, reportPossiblyUnboundVariable]
+                raw_asyncio_task_global += 1
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError as ce:
             print(f"Raw asyncio task cancelled: {ce}.")
@@ -149,8 +149,8 @@ def LifespanApp(
 
     @asynccontextmanager
     async def transformer_lifespan(app: FastAPI):
-        global transformer_lifespan_global
-        transformer_lifespan_global += 1  # pyright: ignore[reportUnboundVariable]
+        global transformer_lifespan_global  # ty:ignore[unresolved-global]
+        transformer_lifespan_global += 1
         try:
             yield
         finally:

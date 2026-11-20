@@ -191,8 +191,8 @@ def test_props_base_dict_conversion(props_class, props_kwargs, expected_dict):
 class EventProps(PropsBase):
     """Test props with event handler fields."""
 
-    on_click: EventHandler[no_args_event_spec]
-    not_start_with_on: EventHandler[passthrough_event_spec(str)]
+    on_click: EventHandler[no_args_event_spec]  # ty:ignore[invalid-type-form]
+    not_start_with_on: EventHandler[passthrough_event_spec(str)]  # ty:ignore[invalid-type-form]
 
 
 def test_event_handler_props():
@@ -206,8 +206,8 @@ def test_event_handler_props():
             pass
 
     props = EventProps(
-        on_click=FooState.handle_click,  # pyright: ignore[reportArgumentType]
-        not_start_with_on=FooState.handle_input,  # pyright: ignore[reportArgumentType]
+        on_click=FooState.handle_click,
+        not_start_with_on=FooState.handle_input,
     )
     props_dict = props.dict()
     assert isinstance(props_dict["onClick"], EventChain)

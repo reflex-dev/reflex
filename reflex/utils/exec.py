@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 # The frontend dev server process, stopped by `reflex run` when it unwinds.
 frontend_process = None
 _frontend_process_lock = threading.Lock()
-_frontend_shutting_down = False
+_frontend_shutting_down: bool = False
 # Seconds the frontend tree gets to exit on SIGTERM before SIGKILL.
 _FRONTEND_STOP_TIMEOUT = 5
 
@@ -303,7 +303,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present: bool = T
                 "env": _with_development_condition(frontend_env(os.environ))
             }
             if constants.IS_WINDOWS and backend_present:
-                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
+                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # ty:ignore[missing-attribute]
             process = processes.new_process(
                 run_command,
                 cwd=get_web_dir(),
@@ -825,7 +825,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.server import Server as Granian
     from reflex_base.environment import _load_dotenv_from_env
 
-    class ParentBoundGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
+    class ParentBoundGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues] # ty:ignore[unsupported-base]
         """Granian server that binds the listen socket in the supervisor.
 
         On Linux each worker otherwise binds only after loading the app, so
