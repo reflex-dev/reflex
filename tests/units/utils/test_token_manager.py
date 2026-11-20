@@ -1064,6 +1064,78 @@ async def test_redis_token_manager_waits_again_while_resubscribing(
         await manager.close()
 
 
+@pytest.mark.asyncio
+async def test_redis_token_manager_waits_during_resubscribe_backoff(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A connect waits through retry backoff for the next subscription."""
+    first_subscription_failed = asyncio.Event()
+    retry_delay_started = asyncio.Event()
+    release_retry_delay = asyncio.Event()
+    second_subscription_confirmed = asyncio.Event()
+    attempts = 0
+
+    async def listen():
+        """Confirm the first attempt, then fail and control the retry.
+
+        Yields:
+            Subscription confirmations for each attempt.
+
+        Raises:
+            ConnectionError: When the first subscription fails.
+        """
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            yield {"type": "psubscribe"}
+            first_subscription_failed.set()
+            await release_first_subscription.wait()
+            msg = "connection lost"
+            raise ConnectionError(msg)
+        yield {"type": "psubscribe"}
+        second_subscription_confirmed.set()
+        await asyncio.Event().wait()
+
+    @asynccontextmanager
+    async def pubsub():
+        yield Mock(psubscribe=AsyncMock(), listen=listen)
+
+    async def controlled_sleep(delay: float):
+        """Pause only the retry delay until the test releases it."""
+        if abs(delay - 0.05) < 1e-9:
+            retry_delay_started.set()
+            await release_retry_delay.wait()
+        else:
+            await original_sleep(delay)
+
+    original_sleep = asyncio.sleep
+    release_first_subscription = asyncio.Event()
+    monkeypatch.setattr(
+        "reflex.utils.token_manager.ensure_task",
+        functools.partial(ensure_task, exception_delay=0.05),
+    )
+    monkeypatch.setattr("reflex.utils.tasks.asyncio.sleep", controlled_sleep)
+    manager = RedisTokenManager(Mock(pubsub=pubsub, aclose=AsyncMock()))
+    try:
+        await manager.ensure_lost_and_found_subscribed(AsyncMock())
+        await first_subscription_failed.wait()
+        release_first_subscription.set()
+        await retry_delay_started.wait()
+
+        waiting = asyncio.create_task(
+            manager.ensure_lost_and_found_subscribed(AsyncMock())
+        )
+        await asyncio.sleep(0)
+        assert not waiting.done()
+
+        release_retry_delay.set()
+        await second_subscription_confirmed.wait()
+        await waiting
+        assert manager._lost_and_found_subscribed.is_set()
+    finally:
+        await manager.close()
+
+
 @pytest.mark.usefixtures("redis_url")
 @pytest.mark.asyncio
 async def test_redis_token_manager_lost_and_found_subscribes_before_connecting(
