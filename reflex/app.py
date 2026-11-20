@@ -33,7 +33,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ForwardRef, overload
 
-from engineio import json as engineio_json
 from reflex_base import constants, otel
 from reflex_base.client_state import _collect_declarations
 from reflex_base.components.component import Component, ComponentStyle
@@ -189,9 +188,8 @@ def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
     return json.loads(data, **kwargs)
 
 
-# Socket.IO codec: encodes non-finite floats as sentinel strings that the
-# frontend reviver restores, escaping user strings that would collide. Decoding
-# stays on the stdlib because orjson rounds integers outside -2**63..2**64-1
+# Socket.IO codec: encodes with orjson when installed. Decoding stays on the
+# stdlib because orjson rounds integers outside -2**63..2**64-1
 # to floats, and inbound payloads carry client-supplied ids (snowflakes,
 # database keys) that must survive exactly.
 _SOCKET_JSON_CODEC = SimpleNamespace(
@@ -1166,15 +1164,6 @@ class App(MiddlewareMixin, LifespanMixin):
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
             raise RuntimeError(msg)
-        else:
-            # socket.io types this attribute as the json module it defaults to.
-            packet_class: Any = self.sio.packet_class
-            if packet_class.json is engineio_json:
-                # A custom server that kept socket.io's default codec does not
-                # escape user strings colliding with the non-finite float
-                # sentinels the frontend revives, so install ours; a codec the
-                # user chose deliberately is left alone.
-                _install_socket_json_codec(self.sio)
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         socket_app = EngineIOApp(self.sio, socketio_path="")

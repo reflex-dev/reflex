@@ -1,7 +1,6 @@
 """Tests for orjson-based serializers in reflex_base.utils.format.
 
-Covers ``orjson_dumps``, ``orjson_loads``, ``orjson_dumps_socket`` and the
-``_replace_non_finite_floats`` walker.
+Covers ``orjson_dumps``, ``orjson_loads`` and ``orjson_dumps_socket``.
 """
 
 from __future__ import annotations
@@ -19,11 +18,6 @@ from uuid import UUID
 import pytest
 from reflex_base.style import Style
 from reflex_base.utils.format import (
-    INF_SENTINEL,
-    NAN_SENTINEL,
-    NEG_INF_SENTINEL,
-    SENTINEL_ESCAPE_PREFIX,
-    _replace_non_finite_floats,
     json_dumps,
     orjson_dumps,
     orjson_dumps_socket,
@@ -114,7 +108,7 @@ def _wire(out: str) -> Any:
     """Decode a socket payload the way the frontend does.
 
     Non-finite floats come back as ``'nan'``/``'inf'``/``'-inf'`` so they
-    compare by value; sentinel strings stay strings (escaped user data).
+    compare by value.
 
     Args:
         out: The serialized socket payload.
@@ -184,113 +178,6 @@ def test_nan_inside_dataclass_field():
 
     out = orjson_dumps_socket({"p": Point(float("nan"), 1.0)})
     assert _wire(out) == {"p": {"x": "nan", "y": 1.0}}
-
-
-# user strings colliding with a sentinel must be escaped, not revived
-
-
-@pytest.mark.parametrize("sentinel", [NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL])
-def test_sentinel_string_value_is_escaped(sentinel):
-    """A user string equal to a sentinel gets the escape prefix.
-
-    Args:
-        sentinel: The colliding sentinel string.
-    """
-    out = orjson_dumps_socket({"a": sentinel})
-    assert orjson_loads(out) == {"a": SENTINEL_ESCAPE_PREFIX + sentinel}
-
-
-def test_escape_prefixed_string_is_escaped_again():
-    """A user string already carrying the escape prefix is escaped once more."""
-    value = SENTINEL_ESCAPE_PREFIX + "user data"
-    out = orjson_dumps_socket([value])
-    assert orjson_loads(out) == [SENTINEL_ESCAPE_PREFIX + value]
-
-
-@pytest.mark.parametrize(
-    "value",
-    [
-        "nan",
-        "__reflex_nan__ ",
-        "__reflex_nan",
-        "prefix__reflex_nan__",
-        "__reflex_custom__",
-        "__reflex",
-    ],
-)
-def test_non_sentinel_string_unchanged(value):
-    """Strings that merely resemble a sentinel pass through unchanged.
-
-    Args:
-        value: A near miss of a sentinel.
-    """
-    assert orjson_loads(orjson_dumps_socket([value])) == [value]
-
-
-def test_walker_escapes_sentinel_string():
-    """The walker escapes sentinel strings, covering the stdlib fallback too."""
-    assert (
-        _replace_non_finite_floats(NAN_SENTINEL)
-        == SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL
-    )
-
-
-def test_sentinel_string_inside_dataclass_field():
-    """A sentinel string in a dataclass field is escaped too."""
-
-    @dataclasses.dataclass
-    class Message:
-        text: str
-
-    out = orjson_dumps_socket({"m": Message(NAN_SENTINEL)})
-    assert orjson_loads(out) == {"m": {"text": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL}}
-
-
-# copy-on-write walker behavior
-
-
-def test_walker_returns_unchanged_dict_as_is():
-    """The walker returns a dict without replacements as the same object."""
-    obj = {"a": 1, "b": [1, 2, 3], "c": {"d": "hi"}}
-    assert _replace_non_finite_floats(obj) is obj
-
-
-def test_walker_returns_unchanged_list_as_is():
-    """The walker returns a list without replacements as the same object."""
-    obj = [1, 2.0, "x", {"k": "v"}]
-    assert _replace_non_finite_floats(obj) is obj
-
-
-def test_walker_returns_unchanged_tuple_as_is():
-    """The walker returns a tuple without replacements as the same object."""
-    obj = (1, 2.0, "x")
-    assert _replace_non_finite_floats(obj) is obj
-
-
-def test_walker_preserves_unchanged_subtree_when_sibling_changes():
-    """The walker copies only the containers on a changed path."""
-    inner = {"safe": 1.0, "also_safe": [1, 2]}
-    outer = {"a": inner, "b": float("nan")}
-    result = _replace_non_finite_floats(outer)
-    assert result is not outer
-    assert result["a"] is inner
-    assert result["b"] == NAN_SENTINEL
-
-
-def test_walker_converts_modified_tuple_to_list():
-    """A tuple the walker changes comes back as a list."""
-    t = (1, float("nan"), "x")
-    assert _replace_non_finite_floats(t) == [1, NAN_SENTINEL, "x"]
-
-
-def test_walker_passes_through_unknown_types():
-    """The walker returns values it does not recognize unchanged."""
-
-    class Sentinel:
-        pass
-
-    s = Sentinel()
-    assert _replace_non_finite_floats(s) is s
 
 
 # format compatibility with the existing json_dumps
@@ -678,8 +565,8 @@ def no_orjson(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_fallback_emits_bare_non_finite_tokens(no_orjson):
-    """Without orjson, non-finite floats stay as bare stdlib tokens; the
-    frontend's bare-token rewriter restores them, so no walk is needed.
+    """Without orjson, non-finite floats stay as bare stdlib tokens, which the
+    frontend's ``parseJson`` restores.
     """
     assert (
         orjson_dumps_socket([1.0, float("nan"), float("inf")]) == "[1.0,NaN,Infinity]"
@@ -691,59 +578,13 @@ def test_fallback_uses_compact_separators(no_orjson):
     assert orjson_dumps_socket({"a": 1, "b": [2, 3]}) == '{"a":1,"b":[2,3]}'
 
 
-@pytest.mark.parametrize(
-    "payload",
-    [
-        {"path": "bad\udcff"},
-        # The collision walk re-dumps, so it needs the guard too.
-        {"path": "bad\udcff", "v": NAN_SENTINEL},
-    ],
-)
-def test_socket_output_always_encodes_as_utf8(payload: dict):
+def test_socket_output_always_encodes_as_utf8():
     """A lone surrogate must not reach the transport unescaped.
 
-    orjson rejects one outright, so both payloads take the stdlib fallback,
+    orjson rejects one outright, so the payload takes the stdlib fallback,
     whose ``ensure_ascii=False`` would otherwise emit an unencodable string.
-
-    Args:
-        payload: A payload carrying a lone surrogate.
     """
-    orjson_dumps_socket(payload).encode("utf-8")
-
-
-def test_fallback_skips_walk_on_clean_payload(no_orjson, monkeypatch):
-    """The walker must not run when the output contains no sentinel prefix."""
-    from reflex_base.utils import format as format_module
-
-    def _fail(_obj):
-        pytest.fail("walker ran on a clean payload")
-
-    monkeypatch.setattr(format_module, "_replace_non_finite_floats", _fail)
-    out = orjson_dumps_socket({"rows": [{"id": 1, "name": "x"}] * 5, "f": 1.5})
-    assert json.loads(out) == {"rows": [{"id": 1, "name": "x"}] * 5, "f": 1.5}
-
-
-@pytest.mark.parametrize("sentinel", [NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL])
-def test_fallback_escapes_colliding_strings(no_orjson, sentinel):
-    """The stdlib fallback escapes sentinel-colliding strings.
-
-    Args:
-        no_orjson: Fixture disabling orjson.
-        sentinel: The colliding sentinel string.
-    """
-    out = orjson_dumps_socket({"a": sentinel})
-    assert json.loads(out) == {"a": SENTINEL_ESCAPE_PREFIX + sentinel}
-
-
-def test_fallback_collision_walk_sentinelizes_non_finite_floats(no_orjson):
-    """When a collision triggers the walk, NaN in the same payload becomes a
-    sentinel too, keeping the re-dumped output strict JSON.
-    """
-    out = orjson_dumps_socket({"s": NAN_SENTINEL, "f": float("nan")})
-    assert json.loads(out) == {
-        "s": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
-        "f": NAN_SENTINEL,
-    }
+    assert orjson_dumps_socket({"path": "bad\udcff"}) == '{"path":"bad\\udcff"}'
 
 
 @pytest.mark.parametrize(
@@ -755,14 +596,10 @@ def test_fallback_collision_walk_sentinelizes_non_finite_floats(no_orjson):
         'with "quotes" and \\ backslash',
         "control\nchars\t",
         "ünïcödé ✨",
-        NAN_SENTINEL,
-        SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
     ],
 )
 def test_orjson_dumps_bare_string_matches_stdlib(value):
     """The bare-string fast path must produce exactly what ``json_dumps`` does.
-
-    Sentinels are not escaped here: escaping only applies to socket payloads.
 
     Args:
         value: The string to serialize.
@@ -826,13 +663,13 @@ def test_orjson_dumps_type_error_fallback_preserves_kwargs():
 
 
 def test_orjson_serializes_clean_payload_in_one_pass(monkeypatch: pytest.MonkeyPatch):
-    """A payload without None/NaN/collisions must not reach the stdlib path."""
+    """A payload without None/NaN must not reach the stdlib path."""
     from reflex_base.utils import format as format_module
 
     def _fail(_obj):
         pytest.fail("stdlib path ran on a clean payload")
 
-    monkeypatch.setattr(format_module, "_json_dumps_socket_fallback", _fail)
+    monkeypatch.setattr(format_module, "_json_dumps_socket", _fail)
     payload = {"rows": [{"id": 1, "name": "x", "balance": 1.5}] * 3}
     assert orjson_loads(orjson_dumps_socket(payload)) == payload
 
@@ -855,70 +692,6 @@ def test_orjson_none_and_nan_together():
     """Real None stays null while NaN in the same payload stays non-finite."""
     out = orjson_dumps_socket({"a": None, "b": float("nan")})
     assert _wire(out) == {"a": None, "b": "nan"}
-
-
-# real packet shape: sentinels inside StateUpdate must survive every fallback
-
-
-def _wire_packet(delta_values: dict) -> list:
-    """Build a socket packet carrying a ``StateUpdate``.
-
-    Args:
-        delta_values: The vars of the single state in the delta.
-
-    Returns:
-        The packet as socket.io emits it.
-    """
-    from reflex.state import StateUpdate
-
-    return ["event", StateUpdate(delta={"state": delta_values})]
-
-
-def _delta_values(wire: str) -> dict:
-    """Extract the state's vars from a serialized packet.
-
-    Args:
-        wire: The serialized packet.
-
-    Returns:
-        The vars of the single state in the delta.
-    """
-    return json.loads(wire)[1]["delta"]["state"]
-
-
-def test_fallback_escapes_collision_inside_state_update(no_orjson):
-    """Sentinel-colliding strings nested in a StateUpdate must be escaped by
-    the stdlib fallback, not shipped raw for the JS reviver to corrupt.
-    """
-    wire = orjson_dumps_socket(
-        _wire_packet({"v": NAN_SENTINEL, "e": SENTINEL_ESCAPE_PREFIX + "x"})
-    )
-    assert _delta_values(wire) == {
-        "v": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
-        "e": SENTINEL_ESCAPE_PREFIX + SENTINEL_ESCAPE_PREFIX + "x",
-    }
-
-
-def test_fallback_nan_inside_state_update_with_collision(no_orjson):
-    """When a collision forces the walking re-dump, NaN nested in the
-    StateUpdate becomes a sentinel so the output stays strict JSON.
-    """
-    wire = orjson_dumps_socket(_wire_packet({"v": NAN_SENTINEL, "f": float("nan")}))
-    assert _delta_values(wire) == {
-        "v": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
-        "f": NAN_SENTINEL,
-    }
-
-
-def test_type_error_fallback_escapes_collision_inside_state_update():
-    """Orjson raises TypeError for >64-bit ints; the stdlib fallback must
-    still escape colliding strings nested in the StateUpdate.
-    """
-    wire = orjson_dumps_socket(_wire_packet({"big": 2**70, "v": NAN_SENTINEL}))
-    assert _delta_values(wire) == {
-        "big": 2**70,
-        "v": SENTINEL_ESCAPE_PREFIX + NAN_SENTINEL,
-    }
 
 
 # orjson_dumps routes custom types through the serializer registry

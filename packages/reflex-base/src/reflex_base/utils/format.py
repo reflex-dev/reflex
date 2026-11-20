@@ -911,8 +911,8 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
     serializes with the stdlib -- but a byte comparison against a file rendered
     by the other backend can report a spurious change.
 
-    Use ``orjson_dumps_socket`` for socket payloads: it also escapes user
-    strings that collide with the sentinels the frontend reviver strips.
+    Use ``orjson_dumps_socket`` for socket payloads: it serializes unregistered
+    types as ``null`` instead of raising.
 
     Args:
         obj: The object to serialize.
@@ -992,84 +992,18 @@ def orjson_loads(data: str | bytes) -> Any:
     return orjson.loads(data)
 
 
-# Shared with the JS-side reviver in utils/helpers/json.js, which rewrites bare
-# NaN/Infinity tokens to these sentinel strings before parsing. Colliding user
-# strings get the escape prefix; the reviver strips one level.
-NAN_SENTINEL = "__reflex_nan__"
-INF_SENTINEL = "__reflex_inf__"
-NEG_INF_SENTINEL = "__reflex_neg_inf__"
-SENTINEL_ESCAPE_PREFIX = "__reflex_esc__"
-_SENTINELS = frozenset({NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL})
-_SENTINEL_COMMON_PREFIX = "__reflex_"
-_SENTINEL_PREFIX_BYTES = b"__reflex_"
-_INF = float("inf")
-
 _ORJSON_SOCKET_OPTS = (
     (orjson.OPT_NON_STR_KEYS | _ORJSON_PASSTHROUGH_OPTS) if orjson is not None else 0
 )
+_COMPACT_SEPARATORS = (",", ":")
 
 
-def _replace_non_finite_floats(obj: Any) -> Any:
-    """Replace non-finite floats with sentinels and escape colliding strings.
+def _json_dumps_socket(obj: Any) -> str:
+    """Serialize a socket payload with the stdlib.
 
-    Args:
-        obj: The value to walk.
-
-    Returns:
-        ``obj`` itself when nothing changed, else a copy with the replacements
-        (a changed tuple becomes a list).
-    """
-    # Copy-on-write: only allocate a new container if a child actually
-    # changed. ``is`` works as a "did we replace this" check because
-    # unchanged values are returned as the same object.
-    if isinstance(obj, str):
-        if obj.startswith(_SENTINEL_COMMON_PREFIX) and (
-            obj in _SENTINELS or obj.startswith(SENTINEL_ESCAPE_PREFIX)
-        ):
-            return SENTINEL_ESCAPE_PREFIX + obj
-        return obj
-    if isinstance(obj, float):
-        if obj != obj:
-            return NAN_SENTINEL
-        if obj == _INF:
-            return INF_SENTINEL
-        if obj == -_INF:
-            return NEG_INF_SENTINEL
-        return obj
-    if isinstance(obj, dict):
-        new = None
-        for k, v in obj.items():
-            v2 = _replace_non_finite_floats(v)
-            if v2 is not v:
-                if new is None:
-                    new = dict(obj)
-                new[k] = v2
-        return new if new is not None else obj
-    if isinstance(obj, (list, tuple)):
-        new = None
-        for i, v in enumerate(obj):
-            v2 = _replace_non_finite_floats(v)
-            if v2 is not v:
-                if new is None:
-                    new = list(obj)
-                new[i] = v2
-        return new if new is not None else obj
-    return obj
-
-
-def _json_dumps_socket_fallback(obj: Any) -> str:
-    """Serialize a socket payload with stdlib json using dump-then-scan.
-
-    Bare NaN/Infinity tokens are restored by the frontend's bare-token
-    rewriter, so the sentinel walk only runs when the output contains the
-    sentinel prefix (a possible collision). The re-dump must escape strings
-    produced by ``serializers.serialize`` for custom types (e.g. the delta
-    inside a ``StateUpdate``), which the plain walker cannot reach — hence
-    the walking ``default`` callback.
-
-    Both dumps go through ``_utf8_safe``: a lone surrogate (which orjson
-    rejects, routing the payload here) would otherwise produce a string the
-    socket transport cannot encode.
+    NaN and infinities stay bare tokens, which the frontend's ``parseJson``
+    restores. ``_utf8_safe`` covers a lone surrogate, which orjson rejects and
+    so routes here.
 
     Args:
         obj: The object to serialize.
@@ -1077,42 +1011,22 @@ def _json_dumps_socket_fallback(obj: Any) -> str:
     Returns:
         A compact JSON string ready for socket emit.
     """
-    kwargs: dict[str, Any] = {"separators": (",", ":")}
-    out = json_dumps(obj, **kwargs)
-    if _SENTINEL_COMMON_PREFIX not in out:
-        return _utf8_safe(out, obj, **kwargs)
-
-    from reflex_base.utils import serializers
-
-    def _default(o: Any) -> Any:
-        """Serialize a custom type, then walk the result like the payload.
-
-        Args:
-            o: The value the stdlib cannot serialize.
-
-        Returns:
-            The serialized value with sentinels applied.
-        """
-        return _replace_non_finite_floats(serializers.serialize(o))
-
-    kwargs["default"] = _default
-    walked = _replace_non_finite_floats(obj)
-    return _utf8_safe(json_dumps(walked, **kwargs), walked, **kwargs)
+    return _utf8_safe(
+        json_dumps(obj, _COMPACT_SEPARATORS), obj, separators=_COMPACT_SEPARATORS
+    )
 
 
 def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     """Serialize obj for socket emit, preserving non-finite floats.
 
     Routes custom types through ``serializers.serialize`` (matching the stdlib
-    ``json_dumps`` behavior). NaN/Infinity survive as bare tokens (stdlib) or
-    sentinel strings (collision escaping); the frontend restores both.
+    ``json_dumps`` behavior). NaN/Infinity reach the frontend as the bare
+    tokens the stdlib emits.
 
     Tries orjson first and keeps its output only when the payload provably
     contains no non-finite float, i.e. when no ``null`` was emitted. orjson
     collapses NaN/Infinity to ``null``, which is indistinguishable from a
-    genuine ``None``, and telling the two apart means visiting every value in
-    Python -- measurably more expensive than letting the stdlib serialize the
-    payload once. So an ambiguous payload is handed to the stdlib instead.
+    genuine ``None``, so an ambiguous payload is handed to the stdlib instead.
 
     Accepts and ignores ``**kwargs`` so the callable is compatible with
     socket.io's encoder, which calls ``dumps(data, separators=(',', ':'))``.
@@ -1127,17 +1041,17 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     """
     del kwargs  # Output is always compact; socket.io's separators arg is moot.
     if orjson is None or _orjson_registry_shadowed:
-        return _json_dumps_socket_fallback(obj)
+        return _json_dumps_socket(obj)
 
     try:
         out = orjson.dumps(obj, default=_orjson_default, option=_ORJSON_SOCKET_OPTS)
     except TypeError:
         # Payloads orjson can't represent even via default (e.g. int > 64-bit).
-        return _json_dumps_socket_fallback(obj)
+        return _json_dumps_socket(obj)
 
-    if b"null" not in out and _SENTINEL_PREFIX_BYTES not in out:
+    if b"null" not in out:
         return out.decode()
-    return _json_dumps_socket_fallback(obj)
+    return _json_dumps_socket(obj)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
