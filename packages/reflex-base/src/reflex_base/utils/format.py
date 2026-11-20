@@ -681,6 +681,9 @@ _issued_var_keys: weakref.WeakKeyDictionary[type[BaseState], dict[str, str]] = (
 _issued_event_handlers: dict[
     str, weakref.WeakKeyDictionary[type[BaseState], set[str]]
 ] = {}
+# Whether an install may have changed a name after any was handed out; until
+# then, compiled code cannot hold a stale one.
+_renamed_after_issue = False
 
 
 # The prefix of a renamed state's local; see ``format_state_local``.
@@ -731,6 +734,22 @@ def issued_event_handlers(name: str) -> Mapping[type[BaseState], Collection[str]
         ``{state: handler names}``, empty if the name was never handed out.
     """
     return _issued_event_handlers.get(name, {})
+
+
+def _note_names_changed() -> None:
+    """Record an install that may change names; see :func:`names_may_be_stale`."""
+    global _renamed_after_issue
+    if _issued_state_locals or _issued_var_keys or _issued_event_handlers:
+        _renamed_after_issue = True
+
+
+def names_may_be_stale() -> bool:
+    """Whether an install may have changed a name after it was handed out.
+
+    Returns:
+        ``False`` while every name handed out is still the one in use.
+    """
+    return _renamed_after_issue
 
 
 @cache

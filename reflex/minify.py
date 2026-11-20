@@ -801,7 +801,8 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
     renamed state or handler, by each state local or var key once handed out
     that no state or var goes by now, and by each event name once handed out
     that no handler it was handed out for goes by now -- which text merely
-    looking like one never was.
+    looking like one never was. Skipped until an install may have changed a
+    name after one was handed out, as nothing can be stale before that.
 
     Args:
         outputs: ``(path, code)`` pairs of the compiled frontend.
@@ -817,8 +818,11 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
         format_var_key,
         issued_states,
         issued_var_keys,
+        names_may_be_stale,
     )
 
+    if not names_may_be_stale():
+        return
     references = _renamed_default_references()
     registered: set[type[BaseState]] | None = None
     live_keys: dict[type[BaseState], set[str]] = {}

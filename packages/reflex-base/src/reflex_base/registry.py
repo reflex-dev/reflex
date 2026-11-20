@@ -576,7 +576,11 @@ class RegistrationContext(BaseContext):
                 to revert to built-in names.
         """
         global _names_built_under
-        from reflex_base.utils.format import format_state_local, format_var_key
+        from reflex_base.utils.format import (
+            _note_names_changed,
+            format_state_local,
+            format_var_key,
+        )
 
         previous = self.name_resolver
         object.__setattr__(self, "name_resolver", resolver)
@@ -587,6 +591,7 @@ class RegistrationContext(BaseContext):
         ):
             _names_built_under = resolver
             return
+        _note_names_changed()
         # Each cache is shared by all state classes, so any one clears them all.
         if (cls := next(iter(self.base_states.values()), None)) is not None:
             cls.get_name.cache_clear()

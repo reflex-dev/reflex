@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import logging
 import os
+import weakref
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 from reflex_base.event import EventHandler
 from reflex_base.registry import DefaultNameResolver, RegistrationContext, scheme_digest
+from reflex_base.utils import format
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import format_event_handler, format_queue_events
 
@@ -1903,6 +1905,52 @@ def test_stale_state_names_are_rejected(temp_minify_json, monkeypatch):
         error = _stale_names_error(stale)
         assert f"state {path}" in error
         assert "page.jsx" in error
+
+
+def test_stale_names_are_scanned_only_once_an_install_renames(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Compiled code holds no stale name until an install renames a handed-out one.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class UnscannedState(State):
+        count: int = 0
+
+    path = get_state_full_path(UnscannedState)
+    stale_expr = str(UnscannedState.count)
+    local = format.format_state_name(UnscannedState._get_default_full_name())
+    monkeypatch.setattr(format, "_renamed_after_issue", False)
+    set_minify_modes(monkeypatch, states=True)
+
+    # Another resolver that renames nothing leaves the scan off.
+    clear_config_cache()
+    assert not format.names_may_be_stale()
+
+    install_config(states={path: StateEntry(id="z", parent="reflex.state.State")})
+    assert format.names_may_be_stale()
+    assert _stale_names_error(stale_expr) == (
+        "The compiled frontend refers to names the active name resolver does "
+        f"not use:\n  state {path}, as '{local}' in page.jsx\n"
+        "They come from Vars built while another resolver was installed, e.g. by "
+        "a component created at import time of a module loaded before this app "
+        f"directory (and its {MINIFY_JSON}) was, or while another app's was. "
+        "Import the app from its directory, or create those components inside "
+        "the page function."
+    )
+
+    monkeypatch.setattr(format, "_renamed_after_issue", False)
+    assert _stale_names_error(stale_expr) == ""
+
+    # Nothing handed out before a rename cannot have gone stale.
+    monkeypatch.setattr(format, "_issued_state_locals", {})
+    monkeypatch.setattr(format, "_issued_var_keys", weakref.WeakKeyDictionary())
+    monkeypatch.setattr(format, "_issued_event_handlers", {})
+    format._note_names_changed()
+    assert not format.names_may_be_stale()
 
 
 def test_stale_event_names_are_rejected_when_only_events_minify(
