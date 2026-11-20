@@ -63,23 +63,13 @@ repos:
     require_serial: true
 - repo: local
   hooks:
-  # The assert_type examples, re-checked against the newest Python the project
-  # supports. Always runs: what these examples catch is a source change altering
-  # an inferred type, so scoping the hook to the examples themselves would never
-  # fire on the edit that broke them.
+  # The assert_type examples, which the ty hook checks under the oldest Python
+  # the project supports, re-checked against the newest. Always runs: what these
+  # examples catch is a source change altering an inferred type, so scoping the
+  # hook to the examples themselves would never fire on the edit that broke them.
   - id: ty-type-checking
     name: ty-type-checking
     entry: uv run --no-sync ty check --python-version 3.14 tests/type_checking
-    language: system
-    always_run: true
-    pass_filenames: false
-    require_serial: true
-  # The same examples under the oldest supported Python, whatever the running
-  # interpreter: an annotation in a class body resolves differently before
-  # 3.14's deferred annotations.
-  - id: ty-type-checking-3.11
-    name: ty-type-checking (Python 3.11)
-    entry: uv run --no-sync ty check --python-version 3.11 tests/type_checking
     language: system
     always_run: true
     pass_filenames: false
