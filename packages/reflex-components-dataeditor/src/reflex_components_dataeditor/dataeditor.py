@@ -10,8 +10,7 @@ from typing import Any, Literal, TypedDict
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.components.literals import LiteralRowMarker
-from reflex_base.components.state_context import get_event_app_wraps
-from reflex_base.constants.compiler import CompileVars, Imports
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.event import (
     EventChain,
     EventHandler,
@@ -506,6 +505,29 @@ class DataEditor(NoSSRComponent):
             self.library: ["GridCellKind", "CompactSelection"],
         }
 
+    def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
+        """Render the grid, making onDelete return true after queuing its events.
+
+        Args:
+            props: The props to render (if None, then use get_props).
+
+        Returns:
+            The tag to render.
+        """
+        tag = super()._render(props)
+        if (on_delete := self.event_triggers.get("on_delete")) is not None:
+            # Glide uses the return value of onDelete: true deletes the selection,
+            # and any other non-boolean is taken as the selection to delete.
+            handler = LiteralVar.create(on_delete)
+            tag = tag.add_props(
+                on_delete=Var(
+                    _js_expr=f"((selection) => {{ ({handler!s})(selection); return true; }})",
+                    _var_type=EventChain,
+                    _var_data=handler._get_all_var_data(),
+                )
+            )
+        return tag
+
     def add_custom_code(self) -> list[str]:
         """Add custom code for reconstructing GridSelection with CompactSelection objects.
 
@@ -647,22 +669,6 @@ class DataEditor(NoSSRComponent):
 
         # Disable on_paste by default if not provided.
         props.setdefault("on_paste", False)
-
-        if (on_delete := props.get("on_delete")) is not None:
-            # Glide reads the return value of onDelete: true deletes the
-            # selection, and any value other than a boolean or undefined (such
-            # as the promise of addEvents) is taken as the selection to delete.
-            props["on_delete"] = EventChain.create(
-                on_delete,
-                args_spec=cls.get_event_triggers()["on_delete"],
-                key="on_delete",
-                invocation=FunctionStringVar.create(
-                    f"((...args) => {{ {CompileVars.ADD_EVENTS}(...args); return true; }})",
-                    _var_data=VarData(
-                        imports=Imports.EVENTS, app_wraps=get_event_app_wraps()
-                    ),
-                ),
-            )
 
         # Apply the reconstruction function to grid_selection if it's a Var
         if (grid_selection := props.get("grid_selection")) is not None and isinstance(

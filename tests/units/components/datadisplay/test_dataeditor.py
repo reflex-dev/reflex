@@ -6,8 +6,8 @@ from typing import Any, cast
 
 import pandas as pd
 import pytest
-from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.constants import Templates
+from reflex_base.event import EventChain
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import ArrayVar
 from reflex_components_dataeditor.dataeditor import DataEditor, GridSelection
@@ -445,33 +445,39 @@ console.log(JSON.stringify([
     ]
 
 
-def _memoized_on_delete(editor: DataEditor) -> str:
-    """Define the memoized onDelete callback of a grid as onDelete.
+def _on_delete_chain(handler: Any) -> EventChain | Var:
+    """Bind a delete handler to the on_delete trigger as a prebuilt chain.
 
     Args:
-        editor: The grid component.
+        handler: The event handler.
 
     Returns:
-        The hook that defines the memoized callback, then its binding to onDelete.
+        The event chain.
     """
-    memo = get_memoized_event_triggers(editor)["on_delete"]
-    var_data = memo._get_all_var_data()
-    assert var_data is not None
-    hook = next(h for h in var_data.hooks if h.startswith(f"const {memo!s} ="))
-    return f"{hook};\nconst onDelete = {memo!s};"
+    return EventChain.create(
+        handler, args_spec=DataEditor.get_event_triggers()["on_delete"], key="on_delete"
+    )
 
 
 @pytest.mark.parametrize(
-    "define_on_delete",
+    ("make_on_delete", "calls"),
     [
+        pytest.param(lambda handler: handler, 1, id="handler"),
+        pytest.param(lambda handler: [handler, handler], 2, id="list"),
+        pytest.param(_on_delete_chain, 1, id="EventChain"),
         pytest.param(
-            lambda editor: f"const onDelete = {_prop(editor, 'onDelete')};",
-            id="rendered",
+            lambda handler: LiteralVar.create(_on_delete_chain(handler)),
+            1,
+            id="LiteralEventChainVar",
         ),
-        pytest.param(_memoized_on_delete, id="memoized"),
+        pytest.param(
+            lambda handler: Var(_js_expr="onDeleteCallback", _var_type=EventChain),
+            1,
+            id="EventChain-var",
+        ),
     ],
 )
-def test_dataeditor_on_delete_lets_the_grid_delete(define_on_delete):
+def test_dataeditor_on_delete_lets_the_grid_delete(make_on_delete, calls: int):
     """The onDelete callback queues the event and returns true for Glide.
 
     Glide reads the return value of onDelete synchronously and treats any value
@@ -479,7 +485,8 @@ def test_dataeditor_on_delete_lets_the_grid_delete(define_on_delete):
     returns, as the selection to delete.
 
     Args:
-        define_on_delete: Builds the JS that defines the callback as onDelete.
+        make_on_delete: Builds the on_delete value from the delete handler.
+        calls: How many times the handler is queued.
     """
 
     class DeleteState(BaseState):
@@ -487,7 +494,12 @@ def test_dataeditor_on_delete_lets_the_grid_delete(define_on_delete):
         def delete(self, selection: GridSelection):
             pass
 
-    editor = _create(columns=["Name"], data=[["Alice"]], on_delete=DeleteState.delete)
+    editor = _create(
+        columns=["Name"],
+        data=[["Alice"]],
+        on_delete=make_on_delete(DeleteState.delete),
+    )
+    name = f"{DeleteState.get_full_name()}.delete"
     selection = {
         "current": {
             "cell": [0, 1],
@@ -499,13 +511,15 @@ def test_dataeditor_on_delete_lets_the_grid_delete(define_on_delete):
     }
     test_script = f"""
 const queued = [];
-const useCallback = (callback) => callback;
 const ReflexEvent = (name, payload) => ({{ name, payload }});
 const addEvents = (events, args) => {{
   queued.push({{ events, args }});
   return Promise.resolve();
 }};
-{define_on_delete(editor)}
+// The JS callback that the EventChain-typed Var names.
+const onDeleteCallback = (selection) =>
+  addEvents([ReflexEvent("{name}", {{ selection }})], [selection], {{}});
+const onDelete = {_prop(editor, "onDelete")};
 const selection = {json.dumps(selection)};
 console.log(JSON.stringify({{ result: onDelete(selection), queued }}));
 """
@@ -514,13 +528,9 @@ console.log(JSON.stringify({{ result: onDelete(selection), queued }}));
         "result": True,
         "queued": [
             {
-                "events": [
-                    {
-                        "name": f"{DeleteState.get_full_name()}.delete",
-                        "payload": {"selection": selection},
-                    }
-                ],
+                "events": [{"name": name, "payload": {"selection": selection}}],
                 "args": [selection],
             }
-        ],
+        ]
+        * calls,
     }
