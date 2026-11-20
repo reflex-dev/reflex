@@ -5,9 +5,19 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import (
+    PrimaryKeyConstraint,
+    Table,
+    UniqueConstraint,
+    and_,
+    func,
+    or_,
+    select,
+    update,
+)
 from sqlalchemy import true as sqlalchemy_true
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 
 from reflex_workflow.engine import execute, notify, rows
 from reflex_workflow.engine.runtime import current
@@ -17,6 +27,7 @@ from reflex_workflow.model import (
     TAKEN_KEY,
     WORKFLOW_COLUMNS,
     Call,
+    RunConflict,
     StepRef,
     Workflow,
     as_call,
@@ -25,18 +36,96 @@ from reflex_workflow.model import (
 )
 
 if TYPE_CHECKING:
-    from sqlalchemy import ColumnElement
+    from sqlalchemy import Column, ColumnElement
+    from sqlalchemy.orm import QueryableAttribute
 
 W = TypeVar("W", bound=Workflow)
 
+_UNIQUE_VIOLATION = "23505"
 
-def insertion(row: Workflow, first: Call[Any], parent: dict[str, Any] | None = None):
+
+def key_column(cls: type[Workflow], key: QueryableAttribute[Any]) -> Column[Any]:
+    """Resolve the ``key=`` given to ``start`` into the one column it names.
+
+    Args:
+        cls: The workflow class the run is a row of.
+        key: A mapped attribute of ``cls``, such as ``Onboarding.trigger_key``.
+
+    Returns:
+        The table's column.
+
+    Raises:
+        TypeError: If ``key`` is not a single column of ``cls``'s table.
+        ValueError: If that column is not unique on its own.
+    """
+    table = rows.mapper(cls).local_table
+    if not isinstance(table, Table):
+        msg = f"{cls.__qualname__} is not mapped to a table."
+        raise TypeError(msg)
+    expression = getattr(key, "expression", None)
+    columns = getattr(expression, "base_columns", None) or ()
+    column = next(iter(columns)) if len(columns) == 1 else None
+    if column is None or column.table is not table:
+        msg = f"key= must be one column of {cls.__qualname__}, not {key!r}."
+        raise TypeError(msg)
+    # unique=True and a primary key are constraints here too. Postgres can't
+    # infer ON CONFLICT from a deferrable constraint, an expression index or a
+    # partial one.
+    for constraint in table.constraints:
+        if (
+            isinstance(constraint, PrimaryKeyConstraint | UniqueConstraint)
+            and not constraint.deferrable
+            and list(constraint.columns) == [column]
+        ):
+            return column
+    for index in table.indexes:
+        if (
+            index.unique
+            and list(index.expressions) == [column]
+            and index.dialect_options["postgresql"].get("where") is None
+        ):
+            return column
+    msg = (
+        f"key= names {cls.__qualname__}.{column.key}, which is not unique on its "
+        "own; give it unique=True."
+    )
+    raise ValueError(msg)
+
+
+def _unique_violation(error: IntegrityError) -> tuple[bool, str | None]:
+    """Tell whether a failed insert broke a unique constraint, and which.
+
+    Args:
+        error: What the insert raised.
+
+    Returns:
+        Whether it was a unique violation, and the constraint's name when the
+        driver reported one.
+    """
+    orig = error.orig
+    if orig is None or getattr(orig, "sqlstate", None) != _UNIQUE_VIOLATION:
+        return False, None
+    # psycopg names it on diag; SQLAlchemy's asyncpg adapter chains asyncpg's error.
+    return True, (
+        getattr(getattr(orig, "diag", None), "constraint_name", None)
+        or getattr(orig.__cause__, "constraint_name", None)
+    )
+
+
+def insertion(
+    row: Workflow,
+    first: Call[Any],
+    parent: dict[str, Any] | None = None,
+    *,
+    key: QueryableAttribute[Any] | None = None,
+):
     """Build the statement that starts one run.
 
     Args:
         row: A transient instance of a workflow class.
         first: The first step call.
         parent: The run fanning this one out, when it has one.
+        key: The unique column whose clash alone means the run already exists.
 
     Returns:
         An insert that does nothing if the row is already there, returning its key.
@@ -64,15 +153,17 @@ def insertion(row: Workflow, first: Call[Any], parent: dict[str, Any] | None = N
         parent=parent,
         wf_version=0,
     )
-    return (
-        pg_insert(cls)
-        .values(values)
-        .on_conflict_do_nothing()
-        .returning(*mapper.primary_key)
-    )
+    stmt = pg_insert(cls).values(values)
+    if key is None:
+        stmt = stmt.on_conflict_do_nothing()
+    else:
+        stmt = stmt.on_conflict_do_nothing(index_elements=[key_column(cls, key)])
+    return stmt.returning(*mapper.primary_key)
 
 
-async def start(row: W, first: Call[W]) -> bool:
+async def start(
+    row: W, first: Call[W], *, key: QueryableAttribute[Any] | None = None
+) -> bool:
     """Insert a row and schedule its first step, unless it already exists.
 
     A row the database keyed itself is given its key here, so the caller can
@@ -81,20 +172,37 @@ async def start(row: W, first: Call[W]) -> bool:
     Args:
         row: A transient instance of a workflow class.
         first: The first step call.
+        key: The unique column whose clash alone means the run already exists.
 
     Returns:
         Whether a new run was started.
+
+    Raises:
+        RunConflict: With ``key``, if the row clashes on another unique column.
     """
     runtime = current()
-    stmt = insertion(row, first)
-    async with runtime.session_factory() as session, session.begin():
-        inserted = (await session.execute(stmt)).first()
-        if inserted is not None:
-            await notify.announce(session, type(row).__tablename__)
+    stmt = insertion(row, first, key=key)
+    # Postgres checks only the key's index before inserting, so a copy of this
+    # event committed after that check clashes on another unique column. Once
+    # it has committed, a second attempt finds it on the key and does nothing.
+    inserted = None
+    for last in (False, True):
+        try:
+            async with runtime.session_factory() as session, session.begin():
+                inserted = (await session.execute(stmt)).first()
+                if inserted is not None:
+                    await notify.announce(session, type(row).__tablename__)
+            break
+        except IntegrityError as error:
+            unique, constraint = _unique_violation(error)
+            if key is None or not unique:
+                raise
+            if last:
+                raise RunConflict(constraint) from error
     if inserted is None:
         return False
-    for key, value in zip(rows.pk_keys(type(row)), inserted, strict=True):
-        setattr(row, key, value)
+    for name, value in zip(rows.pk_keys(type(row)), inserted, strict=True):
+        setattr(row, name, value)
     runtime.wake.set()
     return True
 

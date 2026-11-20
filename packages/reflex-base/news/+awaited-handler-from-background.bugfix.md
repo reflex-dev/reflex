@@ -1,0 +1,1 @@
+Awaiting an event handler from a background task now behaves like the inline call: an exception the task catches is no longer also reported to the backend exception handler (no error toast), and a `supersedes=True` handler run that finished before a newer one superseded it returns its result instead of raising `CancelledError`.
