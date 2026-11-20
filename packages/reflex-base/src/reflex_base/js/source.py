@@ -18,10 +18,17 @@ SCRIPT_SOURCE_EXTENSIONS = (".js", ".ts", ".mjs", ".jsx", ".tsx")
 STYLESHEET_EXTENSION = ".css"
 # Tried in order for an import without an extension, as the bundler does.
 _RESOLVE_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx", ".mjs")
+# The extension of the declaration file that types a runtime file.
+_DECLARATION_EXTENSION = ".d.ts"
 
 _CSS_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
 _CSS_REFERENCE_RE = re.compile(
     r"""@import\s+(?:url\(\s*)?["']?([^"')\s;]+)|url\(\s*["']?([^"')\s]+)["']?\s*\)"""
+)
+# Types a module uses from files it does not import: JSDoc `import("./types")`
+# and `/// <reference path="./types.d.ts" />`, both inside comments.
+_TYPE_REFERENCE_RE = re.compile(
+    r"""\bimport\(\s*["'](\.[^"']+)["']\s*\)|///\s*<reference\s+path=["']([^"']+)["']"""
 )
 _IDENTIFIER_RE = re.compile(r"[A-Za-z_$\u0080-￿][\w$\u0080-￿]*")
 # A `/` after one of these starts a regular expression, not a division.
@@ -543,6 +550,27 @@ def find_stylesheet_references(source: str) -> list[str]:
     )
 
 
+def find_type_references(source: str) -> list[str]:
+    """Find the local files a module reads types from without importing them.
+
+    These are JSDoc ``import("./types")`` and triple-slash references, which
+    sit in comments and so are not imports, but change the module's types.
+
+    Args:
+        source: The module source.
+
+    Returns:
+        The relative references, without duplicates.
+    """
+    return list(
+        dict.fromkeys(
+            jsdoc or reference
+            for jsdoc, reference in _TYPE_REFERENCE_RE.findall(source)
+            if (jsdoc or reference).startswith(".")
+        )
+    )
+
+
 def strip_query(specifier: str) -> str:
     """Remove the query and fragment of an import specifier.
 
@@ -580,11 +608,36 @@ def _resolve_local(directory: Path, specifier: str) -> Path | None:
     return next((candidate for candidate in candidates if candidate.is_file()), None)
 
 
+def _resolve_declaration(directory: Path, specifier: str) -> Path | None:
+    """Find the declaration file that types what a relative import names.
+
+    TypeScript reads ``helpers.d.ts`` for ``./helpers`` and ``./helpers.js``
+    alike, and ``types/index.d.ts`` for a directory ``./types``, beside the
+    runtime file or, for a types-only import, alone.
+
+    Args:
+        directory: The importing file's directory.
+        specifier: The relative specifier.
+
+    Returns:
+        The declaration file, or None if there is none.
+    """
+    target = directory / strip_query(specifier)
+    stem = target.with_suffix("") if target.suffix in _RESOLVE_EXTENSIONS else target
+    candidates = (
+        stem.with_name(stem.name + _DECLARATION_EXTENSION),
+        target / f"index{_DECLARATION_EXTENSION}",
+    )
+    return next((candidate for candidate in candidates if candidate.is_file()), None)
+
+
 def module_files(path: Path) -> list[Path]:
     """Find a module and every local file it imports, directly or not.
 
-    Scripts' relative imports are followed, and so are the ``@import`` and
-    ``url(...)`` references of the stylesheets among them.
+    Scripts' relative imports are followed, with the files their types come
+    from (``.d.ts`` files, JSDoc ``import("./types")``, triple-slash
+    references), and so are the ``@import`` and ``url(...)`` references of the
+    stylesheets among them.
 
     Args:
         path: The module.
@@ -597,10 +650,23 @@ def module_files(path: Path) -> list[Path]:
     while pending:
         file = pending.pop()
         if file.suffix in SCRIPT_SOURCE_EXTENSIONS:
+            source = file.read_text(encoding="utf-8")
+            specifiers = [
+                *(
+                    specifier
+                    for specifier in find_imports(source)
+                    if specifier.startswith(".")
+                ),
+                *find_type_references(source),
+            ]
+            # The runtime file the bundler loads, and the declaration typing it.
             targets = [
-                _resolve_local(file.parent, specifier)
-                for specifier in find_imports(file.read_text(encoding="utf-8"))
-                if specifier.startswith(".")
+                resolved
+                for specifier in specifiers
+                for resolved in (
+                    _resolve_local(file.parent, specifier),
+                    _resolve_declaration(file.parent, specifier),
+                )
             ]
         elif file.suffix == STYLESHEET_EXTENSION:
             targets = [

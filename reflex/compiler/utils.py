@@ -9,6 +9,7 @@ import copy
 import json
 import operator
 import os
+import subprocess
 import tempfile
 import traceback
 from collections.abc import Iterable, Mapping, Sequence
@@ -32,11 +33,20 @@ from reflex_base.components.memo import (
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.js.modules import find_package_imports, module_key, render_stub
+from reflex_base.js.modules import find_package_imports, module_key
 from reflex_base.js.source import SCRIPT_SOURCE_EXTENSIONS, find_exports, module_files
+from reflex_base.js.stubs import (
+    SIGNATURES_SCRIPT,
+    TYPESCRIPT_PACKAGE,
+    exports_by_file,
+    module_digest,
+    render_stub,
+    render_untyped_stub,
+    stub_header,
+)
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import format, imports, memo_paths, serializers, types
+from reflex_base.utils import console, format, imports, memo_paths, serializers, types
 from reflex_base.utils.exceptions import ReflexRuntimeError, VarTypeError
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
@@ -311,12 +321,13 @@ def compile_script_modules() -> tuple[
     under ``utils/script_modules`` at their paths from the directory that holds
     the module's top-level package, so relative imports resolve as they do in
     the source tree. ``utils/scripts.js`` re-exports each module under its
-    module key, and a type stub is written next to it, for type checkers.
+    module key.
 
     Returns:
-        The (path, code) outputs of the scripts, the npm packages they import,
-        to install, and the (source, target) copies of the other files they
-        reference, such as stylesheets and images, which may be binary.
+        The (path, code) outputs of the scripts; the npm packages to install,
+        which are those the scripts import and typescript, which reads their
+        types for the stubs; and the (source, target) copies of the other files
+        they reference, such as stylesheets and images, which may be binary.
 
     Raises:
         ReflexRuntimeError: If a module imports a file outside its top-level
@@ -354,8 +365,8 @@ def compile_script_modules() -> tuple[
             web_dir
         )
         index.append(f'export * as {module_key(name)} from "$/{specifier.as_posix()}";')
-        exports = find_exports(path.read_text(encoding="utf-8"))
-        outputs.append((str(path.with_suffix(".pyi")), render_stub(path, exports)))
+    if modules:
+        package_imports[TYPESCRIPT_PACKAGE] = [ImportVar(tag=None, render=False)]
     outputs.append((
         str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS)),
         "\n".join(index) + "\n" if index else "export {};\n",
@@ -375,6 +386,83 @@ def copy_files(copies: Iterable[tuple[Path, Path]]) -> None:
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
+
+
+def _read_script_signatures(paths: Sequence[Path]) -> dict[Path, list] | None:
+    """Read the signatures of the functions JavaScript modules export.
+
+    Runs ``script-signatures.js`` in ``.web``, which needs typescript installed.
+
+    Args:
+        paths: The modules.
+
+    Returns:
+        The exports of each module by resolved path, or None if they could not
+        be read.
+    """
+    runtime = path_ops.get_node_path() or path_ops.get_bun_path()
+    if runtime is None:
+        console.warn(
+            "Found neither node nor bun to read the types of JavaScript modules."
+        )
+        return None
+    try:
+        process = subprocess.run(
+            [str(runtime), SIGNATURES_SCRIPT, *map(str, paths)],
+            cwd=get_web_dir(),
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=True,
+        )
+        return exports_by_file(json.loads(process.stdout))
+    except subprocess.CalledProcessError as error:
+        detail = error.stderr.strip()
+    except (OSError, subprocess.SubprocessError, ValueError) as error:
+        detail = str(error)
+    console.warn(f"Could not read the types of JavaScript modules: {detail}")
+    return None
+
+
+def compile_script_stubs() -> list[tuple[str, str]]:
+    """Write a type stub next to each JavaScript module the app imports.
+
+    Argument types come from the module's TypeScript annotations or JSDoc. A
+    stub whose header records the current module, the local files it imports
+    and the app's packages is kept, so typescript only runs when one changed. When the types cannot
+    be read, the stub has untyped arguments and is retried on the next compile.
+
+    Returns:
+        The (path, code) outputs for the stubs to rewrite.
+    """
+    stale: dict[Path, str] = {}
+    try:
+        # A package upgrade can change the types a module uses.
+        dependencies = (get_web_dir() / constants.PackageJson.PATH).read_bytes()
+    except OSError:
+        dependencies = b""
+    for path in RegistrationContext.ensure_context().script_modules.values():
+        digest = module_digest(path, dependencies)
+        try:
+            current = path.with_suffix(".pyi").read_text(encoding="utf-8")
+        except OSError:
+            current = ""
+        if current.partition("\n")[0] != stub_header(path, digest):
+            stale[path] = digest
+    if not stale:
+        return []
+    signatures = _read_script_signatures(list(stale)) or {}
+    return [
+        (
+            str(path.with_suffix(".pyi")),
+            render_stub(path, digest, signatures[path.resolve()])
+            if path.resolve() in signatures
+            else render_untyped_stub(
+                path, "untyped", find_exports(path.read_text(encoding="utf-8"))
+            ),
+        )
+        for path, digest in stale.items()
+    ]
 
 
 def _restore_bundled_libraries() -> bool:

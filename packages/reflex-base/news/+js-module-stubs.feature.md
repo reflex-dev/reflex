@@ -1,0 +1,1 @@
+Type the stubs written next to JavaScript modules imported from Python: `script-signatures.js` reads each export's parameters from TypeScript annotations or JSDoc, and typescript is installed with apps that import a module.

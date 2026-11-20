@@ -142,3 +142,34 @@ def test_find_stylesheet_references():
         "fonts.css",
         "./bg.png",
     ]
+
+
+def test_module_files_keeps_runtime_files_beside_declarations(tmp_path: Path):
+    """A declaration file is tracked beside the runtime file it describes.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+    """
+    module = tmp_path / "party.js"
+    module.write_text(
+        'import { help } from "./helpers";\n'
+        'import { format } from "./format.js";\n'
+        'import type { Count } from "./types";\n'
+        'import type { Shape } from "./shapes";\n'
+    )
+    (tmp_path / "shapes").mkdir()
+    (tmp_path / "shapes" / "index.d.ts").write_text("export type Shape = string;\n")
+    (tmp_path / "helpers.js").write_text("export const help = 1;\n")
+    (tmp_path / "helpers.d.ts").write_text("export declare const help: number;\n")
+    (tmp_path / "format.js").write_text("export const format = 1;\n")
+    (tmp_path / "format.d.ts").write_text("export declare const format: number;\n")
+    (tmp_path / "types.d.ts").write_text("export type Count = number;\n")
+    assert module_files(module) == [
+        module.resolve(),
+        (tmp_path / "helpers.js").resolve(),
+        (tmp_path / "helpers.d.ts").resolve(),
+        (tmp_path / "format.js").resolve(),
+        (tmp_path / "format.d.ts").resolve(),
+        (tmp_path / "types.d.ts").resolve(),
+        (tmp_path / "shapes" / "index.d.ts").resolve(),
+    ]
