@@ -563,6 +563,27 @@ const runScript = (code, addEvents, socket, navigate, params) => {
 };
 
 /**
+ * Call an exported function of a JavaScript module the app imports from
+ * Python. The modules are bundled, so nothing is evaluated: the event names the
+ * module and the function, and carries the arguments as JSON.
+ *
+ * Loaded on first use, so an app that never calls one does not fetch the chunk.
+ * @param {{module: string, function: string, args: any[]}} payload The call.
+ * @returns {Promise<any>} The function's result.
+ */
+const callModuleFunction = async ({ module, function: name, args }) => {
+  /** @type {Record<string, Record<string, any>>} */
+  const modules = await import("$/utils/scripts");
+  const fn = Object.hasOwn(modules, module) ? modules[module][name] : undefined;
+  if (typeof fn !== "function") {
+    throw new TypeError(
+      `${module.replaceAll("$", ".")}.${name} is not a function exported by a JavaScript module this app imports.`,
+    );
+  }
+  return await fn(...args);
+};
+
+/**
  * Invoke an event's result callback, if it declared one.
  *
  * The callback arrives as a string built by ``format_queue_events``, which
@@ -822,6 +843,18 @@ export const applyEvent = async (event, socket, navigate, params) => {
       );
     } catch (e) {
       console.log("_call_function", e);
+      if (window?.onerror) {
+        window.onerror(e.message, null, null, null, e);
+      }
+    }
+    return;
+  }
+
+  if (event.name === "_call_js") {
+    try {
+      await callModuleFunction(event.payload);
+    } catch (e) {
+      console.log("_call_js", e);
       if (window?.onerror) {
         window.onerror(e.message, null, null, null, e);
       }

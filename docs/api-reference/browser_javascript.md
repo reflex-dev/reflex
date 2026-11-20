@@ -176,6 +176,64 @@ Prefer `env` over the other names a script can see, such as `refs` or
 `ReflexEvent`: those are internals of the frontend and may change between
 Reflex versions.
 
+## JavaScript Modules
+
+For more than a line of Javascript, write it in a `.js` (or `.ts`) file in your
+app package and import its exported functions in Python. You get your editor's
+Javascript support in the file, and nothing is evaluated: the module is bundled
+with the app, and calling one of its functions sends only the function's name
+and its arguments as JSON. Apps whose Content Security Policy forbids
+`unsafe-eval` can use them.
+
+```javascript
+// my_app/scripts/party.js
+import confetti from "canvas-confetti";
+import { env } from "$/utils/script_env";
+
+export function celebrate(count, elementId) {
+  confetti({ particleCount: count });
+  document.getElementById(elementId).scrollIntoView();
+}
+
+export function report(handler, value) {
+  env.addEvents([env.event(handler, { value })]);
+}
+```
+
+```python
+from my_app.scripts.party import celebrate, report
+
+
+class PartyState(rx.State):
+    count: int = 200
+
+    @rx.event
+    def finish(self):
+        return celebrate(self.count, "results")
+
+    @rx.event
+    def done(self, value: str): ...
+
+
+rx.button("🎉", on_click=celebrate(PartyState.count, "results"))
+rx.button("Report", on_click=report(PartyState.done, "clicked"))
+```
+
+- Each named export becomes a function returning an event. Use it in an event
+  trigger, or return or yield it from an event handler. Passed to a trigger
+  uncalled, like `rx.input(on_change=set_title)`, it receives the trigger's
+  arguments.
+- Arguments are sent as JSON. An event handler arrives as its full name, which
+  the function can dispatch with `env.addEvents([env.event(name, payload)])`.
+- The function's return value is not sent back to the backend; report results
+  through `env.addEvents`.
+- Packages the module imports, such as `canvas-confetti`, are installed with
+  the app. Pin a version with `frontend_packages` in `rxconfig.py`.
+- The `.js` and `.ts` files beside the module are bundled with it, so it can
+  import them with relative paths such as `./helpers.js`.
+- Reflex writes a type stub (`party.pyi`) next to the module when it compiles
+  the app, so type checkers resolve the import.
+
 ## Using React Hooks
 
 To use React Hooks directly in a Reflex app, you must subclass `rx.Component`,

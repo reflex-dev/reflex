@@ -10,6 +10,7 @@ from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from pathlib import Path
 
     from reflex.app import App
     from reflex.state import BaseState
@@ -71,6 +72,10 @@ class RegistrationContext(BaseContext):
         repr=False,
     )
     _explicit_bundled_libraries: dict[str, None] = dataclasses.field(
+        default_factory=dict, repr=False
+    )
+    # JavaScript modules imported from Python, by module name.
+    script_modules: dict[str, Path] = dataclasses.field(
         default_factory=dict, repr=False
     )
     _app: App | None = dataclasses.field(default=None, repr=False)

@@ -32,6 +32,13 @@ from reflex_base.components.memo import (
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.js.finder import SCRIPT_EXTENSIONS
+from reflex_base.js.modules import (
+    find_exports,
+    find_package_imports,
+    module_key,
+    render_stub,
+)
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import format, imports, memo_paths, serializers, types
@@ -298,6 +305,55 @@ def _compile_bundled_libraries() -> tuple[str, str]:
     """
     bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
     return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
+
+
+def compile_script_modules() -> tuple[
+    list[tuple[str, str]], dict[str, list[ImportVar]]
+]:
+    """Compile the JavaScript modules the app imports from Python.
+
+    Each module is copied under ``utils/script_modules`` at the path of its
+    Python name, with the script files beside it so its relative imports
+    resolve, and ``utils/scripts.js`` re-exports it under its module key. A
+    type stub is written next to the module, for type checkers.
+
+    Returns:
+        The (path, code) outputs, and the npm packages the modules import, to
+        install.
+    """
+    web_dir = get_web_dir()
+    outputs: list[tuple[str, str]] = []
+    package_imports: dict[str, list[ImportVar]] = {}
+    index: list[str] = []
+    copied: set[Path] = set()
+    modules = RegistrationContext.ensure_context().script_modules
+    for name, path in sorted(modules.items()):
+        package_dir = Path(*name.split(".")[:-1])
+        for file in sorted(path.parent.iterdir()):
+            if file.suffix not in SCRIPT_EXTENSIONS or file in copied:
+                continue
+            copied.add(file)
+            source = file.read_text(encoding="utf-8")
+            outputs.append((
+                str(
+                    web_dir
+                    / constants.Dirs.SCRIPT_MODULES_PATH
+                    / package_dir
+                    / file.name
+                ),
+                source,
+            ))
+            for specifier in find_package_imports(source):
+                package_imports[specifier] = [ImportVar(tag=None, render=False)]
+        target = f"$/{constants.Dirs.SCRIPT_MODULES_PATH}/{package_dir.as_posix()}/{path.name}"
+        index.append(f'export * as {module_key(name)} from "{target}";')
+        exports = find_exports(path.read_text(encoding="utf-8"))
+        outputs.append((str(path.with_suffix(".pyi")), render_stub(path, exports)))
+    outputs.append((
+        str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS)),
+        "\n".join(index) + "\n" if index else "export {};\n",
+    ))
+    return outputs, package_imports
 
 
 def _restore_bundled_libraries() -> bool:

@@ -38,6 +38,21 @@ def CallScript():
 
     external_scripts = inline_scripts.replace("inline", "external")
 
+    import importlib
+
+    # A JavaScript module beside the app, imported from Python.
+    Path(__file__).with_name("page_script.js").write_text(
+        'import { env } from "$/utils/script_env";\n'
+        "export function setText(id, text) {\n"
+        "  document.getElementById(id).textContent = text;\n"
+        "}\n"
+        "export async function report(handler, value) {\n"
+        "  await Promise.resolve();\n"
+        "  env.addEvents([env.event(handler, { value })]);\n"
+        "}\n"
+    )
+    page_script = importlib.import_module(__name__.rpartition(".")[0] + ".page_script")
+
     class CallScriptState(rx.State):
         results: rx.Field[list[str | dict | list | None]] = rx.field([])
         inline_counter: rx.Field[int] = rx.field(0)
@@ -199,6 +214,10 @@ def CallScript():
         @rx.event
         def set_env_result(self, value: str):
             self.env_result = value
+
+        @rx.event
+        def js_module_backend(self):
+            return page_script.setText("js_module_text", "from the backend")
 
         @rx.event
         def env_var_backend(self):
@@ -389,6 +408,24 @@ def CallScript():
                 on_click=CallScriptState.env_var_backend,
                 id="env_var_backend",
             ),
+            rx.text("", id="js_module_text"),
+            rx.button(
+                "js_module_frontend",
+                on_click=page_script.setText("js_module_text", "from a trigger"),
+                id="js_module_frontend",
+            ),
+            rx.button(
+                "js_module_backend",
+                on_click=CallScriptState.js_module_backend,
+                id="js_module_backend",
+            ),
+            rx.button(
+                "js_module_report",
+                on_click=page_script.report(
+                    CallScriptState.set_env_result, "from a module"
+                ),
+                id="js_module_report",
+            ),
         )
 
 
@@ -578,3 +615,21 @@ def test_script_env(call_script_page: Page):
 
     call_script_page.locator("#env_var_backend").click()
     expect(env_result).to_have_value("env var backend")
+
+
+def test_js_module(call_script_page: Page):
+    """Functions of a JavaScript module imported from Python run by name.
+
+    Args:
+        call_script_page: Playwright page.
+    """
+    text = call_script_page.locator("#js_module_text")
+
+    call_script_page.locator("#js_module_frontend").click()
+    expect(text).to_have_text("from a trigger")
+
+    call_script_page.locator("#js_module_backend").click()
+    expect(text).to_have_text("from the backend")
+
+    call_script_page.locator("#js_module_report").click()
+    expect(call_script_page.locator("#env_result")).to_have_value("from a module")

@@ -1590,6 +1590,8 @@ def compile_app(
         ),
         utils._compile_bundled_libraries(),
     ])
+    script_module_outputs, script_module_imports = utils.compile_script_modules()
+    compile_results.extend(script_module_outputs)
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
@@ -1611,7 +1613,9 @@ def compile_app(
         log.timing(logger, "Install Frontend Packages"),
         otel.span("reflex.compile.install_frontend_packages"),
     ):
-        app._get_frontend_packages(all_imports)
+        app._get_frontend_packages(
+            utils.merge_imports(all_imports, script_module_imports)
+        )
 
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,

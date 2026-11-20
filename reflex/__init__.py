@@ -84,6 +84,7 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
+from reflex_base.js import finder as _js_finder
 from reflex_base.utils import lazy_loader
 from reflex_components_radix.mappings import RADIX_MAPPING
 
@@ -255,6 +256,10 @@ getattr, __dir__, __all__ = lazy_loader.attach(
     submod_attrs=_SUBMOD_ATTRS,
     **_EXTRA_MAPPINGS,
 )
+
+
+# Let app code import the JavaScript modules beside it.
+_js_finder.install()
 
 
 def __getattr__(name: str):

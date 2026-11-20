@@ -42,6 +42,10 @@ class Dirs(SimpleNamespace):
     CLIENT_STATE_PATH = UTILS + "/client_state"
     # The name of the script environment file.
     SCRIPT_ENV_PATH = UTILS + "/script_env"
+    # The index of the JavaScript modules an app imports from Python.
+    SCRIPTS_PATH = UTILS + "/scripts"
+    # The directory those modules are copied to.
+    SCRIPT_MODULES_PATH = UTILS + "/script_modules"
     # The name of the output directory.
     BUILD_DIR = "build"
     # The name of the static files directory.
