@@ -1,0 +1,1 @@
+A callable taking `*args` passed to an event trigger, such as `on_mount=lambda *args: ...`, now receives all of the trigger's arguments, and works with triggers that pass none, instead of failing to compile or getting only the first argument.

@@ -16,7 +16,7 @@ from types import ModuleType
 from typing import Any
 
 from reflex_base.event import EventHandler, EventSpec, server_side
-from reflex_base.js.source import find_exports, find_imports
+from reflex_base.js.source import find_exports, find_imports, strip_query
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.format import format_event_handler
 
@@ -35,13 +35,15 @@ def find_package_imports(source: str) -> list[str]:
 
     Returns:
         The import specifiers that name a package, such as ``canvas-confetti``
-        or ``@scope/pkg/sub``, without duplicates.
+        or ``@scope/pkg/sub``, without query or fragment, without duplicates.
     """
-    return [
-        specifier
-        for specifier in find_imports(source)
-        if not specifier.startswith(_LOCAL_PREFIXES)
-    ]
+    return list(
+        dict.fromkeys(
+            strip_query(specifier)
+            for specifier in find_imports(source)
+            if not specifier.startswith(_LOCAL_PREFIXES)
+        )
+    )
 
 
 def module_key(name: str) -> str:

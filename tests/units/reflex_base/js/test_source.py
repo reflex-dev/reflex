@@ -100,6 +100,7 @@ def test_module_files_follows_relative_imports(tmp_path: Path):
         'import "./party.css";\n'
         'import { w } from "./widgets";\n'
         'import { missing } from "./missing";\n'
+        'import text from "./message.txt?raw";\n'
         'import confetti from "canvas-confetti";\n'
     )
     (tmp_path / "lib" / "a.ts").write_text('import { b } from "../b.js";\n')
@@ -112,12 +113,14 @@ def test_module_files_follows_relative_imports(tmp_path: Path):
     (tmp_path / "img" / "bg.png").write_bytes(b"\x89PNG")
     (tmp_path / "widgets" / "index.js").write_text("export const w = 1;\n")
     (tmp_path / "unused.js").write_text("export const u = 1;\n")
+    (tmp_path / "message.txt").write_text("hello\n")
     assert module_files(module) == [
         module.resolve(),
         (tmp_path / "lib" / "a.ts").resolve(),
         (tmp_path / "b.ts").resolve(),
         (tmp_path / "party.css").resolve(),
         (tmp_path / "widgets" / "index.js").resolve(),
+        (tmp_path / "message.txt").resolve(),
         (tmp_path / "theme.css").resolve(),
         (tmp_path / "img" / "bg.png").resolve(),
     ]

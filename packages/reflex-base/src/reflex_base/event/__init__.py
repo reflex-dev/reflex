@@ -2624,6 +2624,12 @@ def args_specs_from_fields(
     }
 
 
+_VARIADIC_PARAMETER_KINDS = (
+    inspect.Parameter.VAR_POSITIONAL,
+    inspect.Parameter.VAR_KEYWORD,
+)
+
+
 def check_fn_match_arg_spec(
     user_func: Callable,
     user_func_parameters: Mapping[str, inspect.Parameter],
@@ -2646,7 +2652,12 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
-    user_args = list(user_func_parameters)
+    # `*args` and `**kwargs` take any number of arguments, none included.
+    user_args = [
+        name
+        for name, parameter in user_func_parameters.items()
+        if parameter.kind not in _VARIADIC_PARAMETER_KINDS
+    ]
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
         user_args = user_args[1:]
@@ -2748,10 +2759,15 @@ def call_event_fn(
     # Check that fn signature matches arg_spec
     check_fn_match_arg_spec(fn, parameters, parsed_args, key=key)
 
-    number_of_fn_args = len(parameters)
-
-    # Call the function with the parsed args.
-    out = fn(*[*parsed_args][:number_of_fn_args])
+    # Call the function with the parsed args: as many as it takes, or all of
+    # them when it takes `*args`.
+    if any(
+        parameter.kind is inspect.Parameter.VAR_POSITIONAL
+        for parameter in parameters.values()
+    ):
+        out = fn(*parsed_args)
+    else:
+        out = fn(*[*parsed_args][: len(parameters)])
 
     def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
         """Wrap a mixed event-like Var into a callable frontend dispatcher.

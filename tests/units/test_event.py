@@ -2040,3 +2040,24 @@ def test_repeated_rx_event_on_a_decentralized_handler_in_main():
     assert twice.fn is once.fn
     assert twice.event_actions == {"stopPropagation": True}
     assert S.event_handlers[twice.fn.__name__] is twice
+
+
+def test_call_event_fn_passes_every_trigger_argument_to_varargs():
+    """A callable taking ``*args`` gets all of a trigger's arguments, however many.
+
+    ``*args`` is not a required argument, so a trigger with none is valid too.
+    """
+    from reflex_base.event import call_event_fn
+
+    received: list[tuple[str, ...]] = []
+
+    def record(*args: Var) -> EventSpec:
+        received.append(tuple(str(arg) for arg in args))
+        return rx.noop()
+
+    def no_args() -> list[Var]:
+        return []
+
+    call_event_fn(record, no_args, key="on_mount")
+    call_event_fn(record, lambda a, b: [a, b], key="on_resize")
+    assert received == [(), ("_a", "_b")]

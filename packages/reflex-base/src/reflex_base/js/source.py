@@ -174,11 +174,29 @@ def _skip_regex(source: str, start: int) -> int:
 
 
 def _line_end(source: str, index: int) -> int:
+    """Find the end of the line a ``//`` comment starts on.
+
+    Args:
+        source: The source.
+        index: The index of the comment.
+
+    Returns:
+        The index of the line break, or the end of the source.
+    """
     end = source.find("\n", index)
     return len(source) if end < 0 else end
 
 
 def _comment_end(source: str, index: int) -> int:
+    """Find the end of a ``/* */`` comment.
+
+    Args:
+        source: The source.
+        index: The index of the comment.
+
+    Returns:
+        The index after the closing ``*/``, or the end of the source.
+    """
     end = source.find("*/", index + 2)
     return len(source) if end < 0 else end + 2
 
@@ -254,6 +272,16 @@ def tokenize(source: str) -> list[Token]:
 
 
 def _is(token: Token | None, kind: str, value: str | None = None) -> bool:
+    """Whether a token is of a kind, and has a value if one is given.
+
+    Args:
+        token: The token, or None past the end.
+        kind: The kind.
+        value: The value, or None for any.
+
+    Returns:
+        Whether it matches.
+    """
     return (
         token is not None
         and token.kind == kind
@@ -262,6 +290,15 @@ def _is(token: Token | None, kind: str, value: str | None = None) -> bool:
 
 
 def _at(tokens: list[Token], index: int) -> Token | None:
+    """Get the token at an index.
+
+    Args:
+        tokens: The tokens.
+        index: The index, which may be out of range.
+
+    Returns:
+        The token, or None if there is none.
+    """
     return tokens[index] if 0 <= index < len(tokens) else None
 
 
@@ -499,15 +536,30 @@ def find_stylesheet_references(source: str) -> list[str]:
     )
     return list(
         dict.fromkeys(
-            reference.split("?")[0].split("#")[0]
+            strip_query(reference)
             for reference in references
             if not reference.startswith(("/", "#", "data:")) and "://" not in reference
         )
     )
 
 
+def strip_query(specifier: str) -> str:
+    """Remove the query and fragment of an import specifier.
+
+    Args:
+        specifier: The specifier, such as ``./logo.png?url``.
+
+    Returns:
+        The path part, such as ``./logo.png``.
+    """
+    return specifier.split("?", 1)[0].split("#", 1)[0]
+
+
 def _resolve_local(directory: Path, specifier: str) -> Path | None:
     """Find the file a relative import names, as the bundler would.
+
+    A query or fragment, as in Vite's ``./logo.png?url``, is not part of the
+    file name; the copied module keeps it.
 
     Args:
         directory: The importing file's directory.
@@ -516,7 +568,7 @@ def _resolve_local(directory: Path, specifier: str) -> Path | None:
     Returns:
         The file, or None if there is none.
     """
-    target = directory / specifier
+    target = directory / strip_query(specifier)
     candidates = [
         target,
         *(target.with_name(target.name + ext) for ext in _RESOLVE_EXTENSIONS),
