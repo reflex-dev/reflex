@@ -229,8 +229,9 @@ rx.button("Report", on_click=report(PartyState.done, "clicked"))
   through `env.addEvents`.
 - Packages the module imports, such as `canvas-confetti`, are installed with
   the app. Pin a version with `frontend_packages` in `rxconfig.py`.
-- The `.js` and `.ts` files beside the module are bundled with it, so it can
-  import them with relative paths such as `./helpers.js`.
+- Local files the module imports with relative paths, such as `./helpers.js`
+  or `./party.css`, are bundled with it, and so are the files they import. They
+  must be inside the directory of your app's package.
 - Reflex writes a type stub (`party.pyi`) next to the module when it compiles
   the app, so type checkers resolve the import and check each call. Argument
   types come from TypeScript annotations or, in a `.js` file, JSDoc:

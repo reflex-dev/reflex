@@ -33,8 +33,8 @@ from reflex_base.components.memo import (
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.js.finder import SCRIPT_EXTENSIONS
-from reflex_base.js.modules import find_exports, find_package_imports, module_key
+from reflex_base.js.modules import find_package_imports, module_key
+from reflex_base.js.source import SCRIPT_SOURCE_EXTENSIONS, find_exports, module_files
 from reflex_base.js.stubs import (
     SIGNATURES_SCRIPT,
     TYPESCRIPT_PACKAGE,
@@ -47,7 +47,7 @@ from reflex_base.js.stubs import (
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import console, format, imports, memo_paths, serializers, types
-from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.exceptions import ReflexRuntimeError, VarTypeError
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -317,40 +317,51 @@ def compile_script_modules() -> tuple[
 ]:
     """Compile the JavaScript modules the app imports from Python.
 
-    Each module is copied under ``utils/script_modules`` at the path of its
-    Python name, with the script files beside it so its relative imports
-    resolve, and ``utils/scripts.js`` re-exports it under its module key.
+    Each module and the local files it imports, directly or not, are copied
+    under ``utils/script_modules`` at their paths from the directory that holds
+    the module's top-level package, so relative imports resolve as they do in
+    the source tree. ``utils/scripts.js`` re-exports each module under its
+    module key.
 
     Returns:
         The (path, code) outputs, and the npm packages to install: those the
         modules import, and typescript, which reads their types for the stubs.
+
+    Raises:
+        ReflexRuntimeError: If a module imports a file outside its top-level
+            package's directory.
     """
     web_dir = get_web_dir()
+    modules_dir = web_dir / constants.Dirs.SCRIPT_MODULES_PATH
     outputs: list[tuple[str, str]] = []
     package_imports: dict[str, list[ImportVar]] = {}
     index: list[str] = []
     copied: set[Path] = set()
     modules = RegistrationContext.ensure_context().script_modules
     for name, path in sorted(modules.items()):
-        package_dir = Path(*name.split(".")[:-1])
-        for file in sorted(path.parent.iterdir()):
-            if file.suffix not in SCRIPT_EXTENSIONS or file in copied:
+        root = path.resolve().parents[name.count(".")]
+        for file in module_files(path):
+            if not file.is_relative_to(root):
+                msg = (
+                    f"The JavaScript module {name} imports {file}, which is "
+                    f"outside {root}, the directory of its package."
+                )
+                raise ReflexRuntimeError(msg)
+            if file in copied:
                 continue
             copied.add(file)
+            target = modules_dir / file.relative_to(root)
+            if file.suffix not in SCRIPT_SOURCE_EXTENSIONS:
+                outputs.append((str(target), file.read_text(encoding="utf-8")))
+                continue
             source = file.read_text(encoding="utf-8")
-            outputs.append((
-                str(
-                    web_dir
-                    / constants.Dirs.SCRIPT_MODULES_PATH
-                    / package_dir
-                    / file.name
-                ),
-                source,
-            ))
+            outputs.append((str(target), source))
             for specifier in find_package_imports(source):
                 package_imports[specifier] = [ImportVar(tag=None, render=False)]
-        target = f"$/{constants.Dirs.SCRIPT_MODULES_PATH}/{package_dir.as_posix()}/{path.name}"
-        index.append(f'export * as {module_key(name)} from "{target}";')
+        specifier = (modules_dir / path.resolve().relative_to(root)).relative_to(
+            web_dir
+        )
+        index.append(f'export * as {module_key(name)} from "$/{specifier.as_posix()}";')
     if modules:
         package_imports[TYPESCRIPT_PACKAGE] = [ImportVar(tag=None, render=False)]
     outputs.append((

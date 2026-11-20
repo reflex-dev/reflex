@@ -18,6 +18,7 @@ from reflex_base.js.stubs import (
     render_untyped_stub,
 )
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
 from reflex_components_core.el.elements.metadata import Link
@@ -821,7 +822,7 @@ def test_compile_script_modules(
     monkeypatch: pytest.MonkeyPatch,
     clean_registration_context: RegistrationContext,
 ):
-    """Imported JavaScript modules are copied with their siblings and indexed.
+    """Imported JavaScript modules are copied with the local files they import.
 
     Args:
         tmp_path: pytest tmp_path fixture.
@@ -831,16 +832,25 @@ def test_compile_script_modules(
     web_dir = tmp_path / ".web"
     monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
     scripts = tmp_path / "app" / "scripts"
-    scripts.mkdir(parents=True)
+    (scripts / "formatters").mkdir(parents=True)
     party = scripts / "party.js"
     party.write_text(
-        'import confetti from "canvas-confetti";\n'
-        'import { describe } from "./helpers.js";\n'
+        'import confetti from\n  "canvas-confetti";\n'
+        'import { describe } from "./helpers";\n'
+        'import "./party.css";\n'
         "export function celebrate(count) {}\n"
     )
     helpers = scripts / "helpers.js"
-    helpers.write_text('import dayjs from "dayjs";\nexport const describe = 1;\n')
-    (scripts / "notes.txt").write_text("not a script")
+    helpers.write_text(
+        'import dayjs from "dayjs";\n'
+        'import { count } from "./formatters/count.js";\n'
+        "export const describe = 1;\n"
+    )
+    count = scripts / "formatters" / "count.ts"
+    count.write_text("export const count = (n: number) => `${n}`;\n")
+    css = scripts / "party.css"
+    css.write_text("canvas { pointer-events: none; }\n")
+    (scripts / "unused.js").write_text('import "left-pad";\n')
     typed = tmp_path / "app" / "typed.ts"
     typed.write_text("export function typed(n: number) {}\n")
     clean_registration_context.script_modules.update({
@@ -850,11 +860,13 @@ def test_compile_script_modules(
 
     outputs, package_imports = utils.compile_script_modules()
 
-    modules_dir = web_dir / "utils" / "script_modules"
+    modules_dir = web_dir / "utils" / "script_modules" / "app"
     assert outputs == [
-        (str(modules_dir / "app" / "scripts" / "helpers.js"), helpers.read_text()),
-        (str(modules_dir / "app" / "scripts" / "party.js"), party.read_text()),
-        (str(modules_dir / "app" / "typed.ts"), typed.read_text()),
+        (str(modules_dir / "scripts" / "party.js"), party.read_text()),
+        (str(modules_dir / "scripts" / "helpers.js"), helpers.read_text()),
+        (str(modules_dir / "scripts" / "party.css"), css.read_text()),
+        (str(modules_dir / "scripts" / "formatters" / "count.ts"), count.read_text()),
+        (str(modules_dir / "typed.ts"), typed.read_text()),
         (
             str(web_dir / "utils" / "scripts.js"),
             (
@@ -868,6 +880,35 @@ def test_compile_script_modules(
         "dayjs": [rx.ImportVar(tag=None, render=False)],
         TYPESCRIPT_PACKAGE: [rx.ImportVar(tag=None, render=False)],
     }
+
+
+def test_compile_script_modules_rejects_files_outside_the_package(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    clean_registration_context: RegistrationContext,
+):
+    """A module may not import a file outside its top-level package's directory.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+        clean_registration_context: a fresh registry of imported modules.
+    """
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path / ".web")
+    root = tmp_path / "project"
+    (root / "app").mkdir(parents=True)
+    outside = tmp_path / "shared.js"
+    outside.write_text("export const x = 1;\n")
+    party = root / "app" / "party.js"
+    party.write_text('import { x } from "../../shared.js";\n')
+    clean_registration_context.script_modules["app.party"] = party
+
+    with pytest.raises(ReflexRuntimeError) as error:
+        utils.compile_script_modules()
+    assert str(error.value) == (
+        f"The JavaScript module app.party imports {outside.resolve()}, which is "
+        f"outside {root.resolve()}, the directory of its package."
+    )
 
 
 def test_compile_script_modules_without_modules(
