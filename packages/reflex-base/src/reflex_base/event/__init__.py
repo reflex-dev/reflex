@@ -2207,7 +2207,8 @@ def get_event(state: "BaseState", event: str):
     """
     from reflex_base.registry import RegistrationContext
 
-    state_cls = type(state)
+    # A StateProxy passes itself as state; its __class__ is the wrapped state's.
+    state_cls = state.__class__
     # The handler name is resolver-dependent (minify.json rewrites it), so it
     # cannot be interpolated raw; states without their own copy keep it as-is.
     ctx = RegistrationContext.try_get()
