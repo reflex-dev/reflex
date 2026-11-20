@@ -7291,11 +7291,14 @@ def test_component_state_rejects_a_duplicate_key():
     """A key is unique among the instances of a component."""
     KeyedCounter.create(_state_key="only_once")
 
-    with pytest.raises(
-        StateValueError,
-        match=r"_state_key='only_once' is already used by .*KeyedCounter",
-    ):
+    with pytest.raises(StateValueError) as error:
         KeyedCounter.create(_state_key="only_once")
+    assert str(error.value) == (
+        f"_state_key='only_once' is already used by a {__name__}.KeyedCounter "
+        "instance. A key names one state per component: create the component "
+        "once and reuse that instance on every page that renders it, or pick "
+        "another key."
+    )
 
 
 @pytest.mark.parametrize(
