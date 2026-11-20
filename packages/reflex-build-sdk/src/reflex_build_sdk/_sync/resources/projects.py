@@ -120,7 +120,7 @@ class Roles:
         Returns:
             The permission names, sorted.
         """
-        permissions = self._client._request(  # ty:ignore[no-matching-overload]
+        permissions = self._client._request(
             "GET",
             f"project/{path_segment(project_id)}/role/{path_segment(role_id)}",
             builtins.list[dict[str, Any]] | None,
@@ -250,7 +250,7 @@ class Members:
         Returns:
             The members.
         """
-        members = self._client._request(  # ty:ignore[no-matching-overload]
+        members = self._client._request(
             "GET",
             f"project/{path_segment(project_id)}/users",
             builtins.list[ProjectMember] | None,
@@ -270,7 +270,7 @@ class Members:
             ``"applied"``, or ``"pending_approval"`` when the project requires an
             admin to approve the change first.
         """
-        result = self._client._request(  # ty:ignore[no-matching-overload]
+        result = self._client._request(
             "POST",
             "project/users/invite",
             dict[str, Any] | None,
@@ -426,7 +426,7 @@ class Projects:
         Returns:
             The projects.
         """
-        projects = self._client._request(  # ty:ignore[no-matching-overload]
+        projects = self._client._request(
             "GET", "project", builtins.list[ProjectSummary] | None
         )
         return projects or []

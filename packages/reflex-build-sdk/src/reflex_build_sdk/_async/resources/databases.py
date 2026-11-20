@@ -52,7 +52,7 @@ class AsyncDatabase:
         Returns:
             The database, or None if the app has none.
         """
-        database = await self._client._request(  # ty:ignore[no-matching-overload]
+        database = await self._client._request(
             "GET",
             f"apps/{path_segment(app_id)}/database",
             ManagedDatabase | _NoDatabase,

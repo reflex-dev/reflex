@@ -119,7 +119,7 @@ class AsyncRoles:
         Returns:
             The permission names, sorted.
         """
-        permissions = await self._client._request(  # ty:ignore[no-matching-overload]
+        permissions = await self._client._request(
             "GET",
             f"project/{path_segment(project_id)}/role/{path_segment(role_id)}",
             builtins.list[dict[str, Any]] | None,
@@ -251,7 +251,7 @@ class AsyncMembers:
         Returns:
             The members.
         """
-        members = await self._client._request(  # ty:ignore[no-matching-overload]
+        members = await self._client._request(
             "GET",
             f"project/{path_segment(project_id)}/users",
             builtins.list[ProjectMember] | None,
@@ -271,7 +271,7 @@ class AsyncMembers:
             ``"applied"``, or ``"pending_approval"`` when the project requires an
             admin to approve the change first.
         """
-        result = await self._client._request(  # ty:ignore[no-matching-overload]
+        result = await self._client._request(
             "POST",
             "project/users/invite",
             dict[str, Any] | None,
@@ -431,7 +431,7 @@ class AsyncProjects:
         Returns:
             The projects.
         """
-        projects = await self._client._request(  # ty:ignore[no-matching-overload]
+        projects = await self._client._request(
             "GET", "project", builtins.list[ProjectSummary] | None
         )
         return projects or []

@@ -237,7 +237,7 @@ class AsyncEnvironments:
         Returns:
             The secrets copied.
         """
-        body = await self._client._request(  # ty:ignore[no-matching-overload]
+        body = await self._client._request(
             "POST",
             f"apps/{path_segment(app_id)}/environments/{path_segment(environment_id)}/copy-missing-secrets",
             _NamedCopiedSecrets | _CountedCopiedSecrets,
