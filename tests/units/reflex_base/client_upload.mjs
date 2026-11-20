@@ -51,6 +51,7 @@ globalThis.XMLHttpRequest = StreamedRequest;
 
 const dependencies = {
   "$/env.json": { default: { UPLOAD: "http://backend/_upload" } },
+  "$/utils/context-registry": { app: { schemeDigest: "" } },
   "$/utils/helpers/json": { parseJson: JSON.parse },
 };
 const module = new SourceTextModule(source);

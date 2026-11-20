@@ -12,8 +12,7 @@ export async function createQueueRuntime(
     initialEvents: () => [],
     initialState: {},
     onLoadInternalEvent: unused,
-    state_name: "test_state",
-    exception_state_name: "test_exception_state",
+    main_state_name: "reflex___state",
   };
   const dependencies = {
     "test:browser": {
