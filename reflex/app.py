@@ -19,6 +19,7 @@ import tempfile
 import time
 import traceback
 import urllib.parse
+from collections import deque
 from collections.abc import (
     AsyncIterator,
     Callable,
@@ -91,10 +92,12 @@ from reflex._upload import UploadFile as UploadFile
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
-from reflex.istate.data import SessionData
+from reflex.istate.data import RouterData, SessionData
+from reflex.istate.delta import _resolve_delta
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
+    extract_route_params,
     get_route_args,
     replace_brackets_with_keywords,
     verify_route_validity,
@@ -1397,6 +1400,12 @@ class App(MiddlewareMixin, LifespanMixin):
             health,
             methods=["GET"],
         )
+        if config.runtime_ssr:
+            self._api.add_route(
+                config.prepend_backend_path(str(constants.Endpoint.SSR_DATA)),
+                ssr_data(self),
+                methods=["POST"],
+            )
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -2050,9 +2059,9 @@ class App(MiddlewareMixin, LifespanMixin):
         pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
         page_imports = {i for i in page_imports if i not in pinned}
 
-        frontend_packages = get_config().frontend_packages
+        config = get_config()
         filtered_frontend_packages = []
-        for package in frontend_packages:
+        for package in config.frontend_packages:
             if package in page_imports:
                 logger.warning(
                     f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
@@ -2060,7 +2069,12 @@ class App(MiddlewareMixin, LifespanMixin):
                 continue
             filtered_frontend_packages.append(package)
         page_imports.update(filtered_frontend_packages)
-        js_runtimes.install_frontend_packages(page_imports, get_config())
+        if config.runtime_ssr:
+            page_imports.update(
+                f"{name}@{version}"
+                for name, version in constants.PackageJson.SSR_DEPENDENCIES.items()
+            )
+        js_runtimes.install_frontend_packages(page_imports, config)
 
     @staticmethod
     def _get_frontend_package_name(import_name: str) -> str | None:
@@ -2571,6 +2585,150 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+async def _run_ssr_on_load(
+    state: BaseState, load_events: Sequence[IndividualEventType[()]], path: str
+) -> None:
+    """Run on_load events and the backend events they chain on the ephemeral SSR state.
+
+    Frontend events and background tasks are left to the browser's live session.
+
+    Args:
+        state: The ephemeral root state instance.
+        load_events: The page's on_load events.
+        path: The URL path (for error logging).
+    """
+    queue = deque(Event.from_event_type(load_events))
+    while queue:
+        event = queue.popleft()
+        try:
+            *substate_path, name = event.name.split(".")
+            substate = state.get_substate(substate_path)
+            handler = substate.event_handlers[name]
+            if handler.is_background:
+                continue
+            result = handler.fn(substate, **event.payload)
+            if inspect.isawaitable(result):
+                result = await result
+            chained: list[Any]
+            if inspect.isasyncgen(result):
+                chained = [item async for item in result]
+            elif inspect.isgenerator(result):
+                chained = []
+                try:
+                    while True:
+                        chained.append(next(result))
+                except StopIteration as stop:
+                    chained.append(stop.value)
+            else:
+                chained = [result]
+            queue.extend(
+                chained_event
+                for item in chained
+                for chained_event in Event.from_event_type(item)
+                if not chained_event.name.startswith("_")
+            )
+        except Exception:
+            logger.warning(
+                f"SSR on_load handler failed for {path}: {traceback.format_exc()}"
+            )
+
+
+def ssr_data(app: App):
+    """SSR data loader endpoint.
+
+    Creates an ephemeral state, sets route params, runs on_load handlers,
+    and returns the serialized state for server-side rendering.
+
+    Args:
+        app: The app to get SSR data for.
+
+    Returns:
+        The SSR data handler function.
+    """
+
+    async def ssr_data_handler(request: Request) -> Response:
+        """Handle an SSR data request.
+
+        Args:
+            request: The Starlette request object.
+
+        Returns:
+            Response with the serialized state as JSON.
+        """
+        body = await request.json()
+
+        # The browser path and query string, including frontend_path.
+        path, _, search = body.get("path", "/").partition("?")
+        headers = body.get("headers", {})
+
+        if not app._state:
+            return Response(
+                content='{"state": null}',
+                media_type="application/json",
+            )
+
+        # Create an ephemeral state instance (no persistent session).
+        # Use State (root) rather than app._state which may be a subclass
+        # with inherited vars that can't be set without a parent.
+        state = State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+
+        # The router and router data take the path relative to frontend_path,
+        # as the client sends it; the loader only runs below that basename.
+        page_path = path.removeprefix(get_config().frontend_path.rstrip("/")) or "/"
+
+        # Resolve the route pattern from the concrete path.
+        resolved_route = app.router(page_path) or "404"
+
+        # Extract route params from the path by matching against the route pattern.
+        # e.g. route="blog/[slug]", path="/blog/hello-world" => {"slug": "hello-world"}
+        params = extract_route_params(page_path, resolved_route)
+
+        # Build router_data dict (same structure as process() uses).
+        router_data = {
+            constants.RouteVar.PATH: "/" + resolved_route.removeprefix("/"),
+            constants.RouteVar.ORIGIN: f"{page_path}?{search}" if search else page_path,
+            # Route params win over query values, as in the client's router data.
+            constants.RouteVar.QUERY: {
+                **dict(urllib.parse.parse_qsl(search, keep_blank_values=True)),
+                **params,
+            },
+            constants.RouteVar.CLIENT_TOKEN: "__ssr__",
+            constants.RouteVar.SESSION_ID: "__ssr__",
+            constants.RouteVar.HEADERS: {
+                "origin": headers.get(
+                    "origin", headers.get("host", "http://localhost")
+                ),
+                **headers,
+            },
+            constants.RouteVar.CLIENT_IP: (
+                request.client.host if request.client else "0.0.0.0"
+            ),
+        }
+        router_data[constants.RouteVar.QUERY] = format.format_query_params(router_data)
+
+        # Set router data on the state — this triggers DynamicRouteVar recomputation.
+        state.router_data = router_data
+        state.router = RouterData.from_router_data(router_data)
+
+        await _run_ssr_on_load(state, app.get_load_events(path), path)
+
+        # Serialize the full state tree for the frontend, async vars awaited.
+        full_state = await _resolve_delta(state.dict())
+
+        # Use Reflex's json serializer to handle custom types (RouterData, etc.)
+        json_str = format.json_dumps({"state": full_state})
+
+        return Response(
+            content=json_str,
+            media_type="application/json",
+            headers={
+                "Cache-Control": "no-cache",
+            },
+        )
+
+    return ssr_data_handler
+
+
 def _utf8_size(data: str) -> int:
     """Size of a serialized message in UTF-8 bytes.
 
@@ -2982,6 +3140,21 @@ class EventNamespace(AsyncNamespace):
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
+        # Server-side extraction of dynamic route params as a fallback.
+        # When the SPA shell is served for a direct page visit, the client
+        # may not have route params yet (React Router lazy route discovery
+        # hasn't completed), so extract them from the pathname to ensure
+        # on_load handlers receive correct params like slug, id, etc.
+        if path:
+            server_params = extract_route_params(
+                path, router_data[constants.RouteVar.PATH]
+            )
+            if server_params:
+                query = router_data.get(constants.RouteVar.QUERY, {})
+                for key, value in server_params.items():
+                    if not query.get(key):
+                        query[key] = value
+                router_data[constants.RouteVar.QUERY] = query
         if not otel.enabled:
             future = await self.app.event_processor.enqueue(token, event)
         else:

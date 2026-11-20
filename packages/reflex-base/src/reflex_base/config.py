@@ -203,6 +203,7 @@ class BaseConfig:
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
         event_loop_blocking_threshold: Minimum event-loop blocking duration in seconds to report in development. Set to 0 to disable detection.
+        runtime_ssr: Enable runtime server-side rendering for search engine crawlers on dynamic routes.
     """
 
     app_name: str
@@ -299,6 +300,8 @@ class BaseConfig:
     transport: Literal["websocket", "polling"] = "websocket"
 
     event_loop_blocking_threshold: float = 0.2
+
+    runtime_ssr: bool = False
 
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
