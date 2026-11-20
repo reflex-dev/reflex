@@ -376,7 +376,9 @@ jobs:
           run-uv-sync: true
       - name: Read the Bun version Reflex pins
         id: bun
-        run: echo "version=$(uv run python -c 'from reflex_base.constants import Bun; print(Bun.VERSION)')" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(uv run python -c 'from reflex_base.constants import Bun; print(Bun.VERSION)')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Install Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
