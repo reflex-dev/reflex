@@ -28,7 +28,6 @@ _FOOTER_LINKS = (
             ("Agent Toolkit", "/docs/ai/integrations/agent-toolkit/"),
             ("Enterprise", "/docs/enterprise/overview/"),
             ("App Management", "/hosting/"),
-            ("Pricing", "/pricing/"),
         ),
     ),
     (

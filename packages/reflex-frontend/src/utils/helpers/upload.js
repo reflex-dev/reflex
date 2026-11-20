@@ -42,10 +42,14 @@ export const uploadFiles = async (
   let resp_idx = 0;
   // Set when the server ends the stream with an error frame (handler raised).
   let stream_error;
-  const eventHandler = (progressEvent) => {
+  const eventHandler = (responseText, complete = false) => {
     const event_callbacks = socket._callbacks.$event;
     // Whenever called, responseText will contain the entire response so far.
-    const chunks = progressEvent.event.target.responseText.trim().split("\n");
+    const response = responseText.trim();
+    if (!response) {
+      return;
+    }
+    const chunks = response.split("\n");
     // So only process _new_ chunks beyond resp_idx.
     for (const chunk_json of chunks.slice(resp_idx)) {
       let chunk;
@@ -54,7 +58,7 @@ export const uploadFiles = async (
       } catch (e) {
         // The last chunk may be incomplete; the next progress event parses it
         // again, so only report errors when the full response is available.
-        if (progressEvent.progress === 1) {
+        if (complete) {
           console.log("Error parsing chunk", chunk_json, e);
         }
         return;
@@ -98,9 +102,13 @@ export const uploadFiles = async (
 
     // Set up event handlers
     xhr.onload = function () {
+      const ok = xhr.status >= 200 && xhr.status < 300;
+      if (ok) {
+        eventHandler(xhr.responseText, true);
+      }
       if (stream_error !== undefined) {
         reject(new Error(stream_error));
-      } else if (xhr.status >= 200 && xhr.status < 300) {
+      } else if (ok) {
         resolve({
           data: xhr.responseText,
           status: xhr.status,
@@ -137,20 +145,10 @@ export const uploadFiles = async (
     }
 
     // Handle download progress with streaming response parsing
-    xhr.onprogress = function (event) {
+    xhr.onprogress = function () {
       // Only a 2xx body is an update stream; onload reports an error status.
       if (xhr.status < 200 || xhr.status >= 300) return;
-      if (eventHandler) {
-        const progressEvent = {
-          event: {
-            target: {
-              responseText: xhr.responseText,
-            },
-          },
-          progress: event.lengthComputable ? event.loaded / event.total : 0,
-        };
-        eventHandler(progressEvent);
-      }
+      eventHandler(xhr.responseText);
     };
 
     // Handle abort controller
