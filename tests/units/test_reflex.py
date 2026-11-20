@@ -697,7 +697,10 @@ def test_lookup_resolves_minified_path(temp_minify_json, cli_runner):
     result = cli_runner.invoke(cli, ["minify", "lookup", "b.c"])
 
     assert result.exit_code == 0, result.output
-    assert result.output == f"{__name__}.AppState\n{__name__}.ChildState\n"
+    # A locally defined state takes a suffix when its name is already taken.
+    assert result.output == (
+        f"{__name__}.{AppState.__name__}\n{__name__}.{ChildState.__name__}\n"
+    )
 
 
 def test_lookup_accepts_full_wire_path(temp_minify_json, cli_runner):

@@ -543,7 +543,7 @@ def test_set_name_resolver_propagates_through_format_event_handler():
 
 
 def test_resolver_swap_clears_lru_caches():
-    """``set_name_resolver`` invalidates per-class name caches immediately."""
+    """``set_name_resolver`` invalidates the name caches immediately."""
     with temporary_resolver(stub_resolver(state_name="first")) as ctx:
         assert State.get_full_name() == "first"
         ctx.set_name_resolver(stub_resolver(state_name="second"))

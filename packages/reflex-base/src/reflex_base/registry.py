@@ -333,10 +333,7 @@ class RegistrationContext(BaseContext):
         Returns:
             The registration context instance, or ``None``.
         """
-        try:
-            return cls.get()
-        except LookupError:
-            return None
+        return cls._context_var.get(None)
 
     @classmethod
     def register_base_state(cls, state_cls: type[BaseState]) -> type[BaseState]:
@@ -527,7 +524,7 @@ class RegistrationContext(BaseContext):
     def set_name_resolver(self, resolver: NameResolver) -> None:
         """Install ``resolver`` and rebuild the registry under the new names.
 
-        Clears the per-class name caches, rebuilds the Vars every registered
+        Clears the shared name caches, rebuilds the Vars every registered
         state holds (parents first) and calls :meth:`refresh_keys`. Uses
         ``object.__setattr__`` to mutate the frozen ``name_resolver`` slot.
 
@@ -542,7 +539,8 @@ class RegistrationContext(BaseContext):
         from reflex_base.utils.format import format_state_local, format_var_key
 
         object.__setattr__(self, "name_resolver", resolver)
-        for cls in self.base_states.values():
+        # Each cache is shared by all state classes, so any one clears them all.
+        if (cls := next(iter(self.base_states.values()), None)) is not None:
             cls.get_name.cache_clear()
             cls.get_full_name.cache_clear()
             cls._get_substate_path.cache_clear()
