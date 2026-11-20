@@ -632,6 +632,9 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     root_state = ctx.locked_root
     if root_state is None:
         (future,) = await ctx.enqueue(event)
+        # An exception the event raises is delivered here, like the inline
+        # call's, so it is this caller's to catch or to fail with.
+        future.awaited = True
         return await future
     if handler.is_background:
         msg = (
