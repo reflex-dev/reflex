@@ -87,17 +87,21 @@ class I18nConfig:
                 (``<package>/locales/{locale}.po``) translate their messages.
 
         Raises:
-            ValueError: If no locales are given, a locale is repeated, a locale
-                is not a language tag, or the default or fallback locale is not
-                among them.
+            ValueError: If no locales are given, a locale is repeated in any
+                case, a locale is not a language tag, or the default or fallback
+                locale is not among them.
         """
         locales_tuple = tuple(locales)
         if not locales_tuple:
             msg = "I18nConfig.locales must contain at least one locale."
             raise ValueError(msg)
-        if len(set(locales_tuple)) != len(locales_tuple):
-            # A repeated locale would emit its route and catalog module twice.
-            msg = f"I18nConfig.locales must not repeat a locale: {locales_tuple!r}."
+        if len({locale.lower() for locale in locales_tuple}) != len(locales_tuple):
+            # Tags are case-insensitive, like the router and catalog lookups, so
+            # "en" and "EN" would claim one route and catalog module twice.
+            msg = (
+                "I18nConfig.locales must not repeat a locale (tags are "
+                f"case-insensitive): {locales_tuple!r}."
+            )
             raise ValueError(msg)
         for locale in locales_tuple:
             validate_locale(locale)

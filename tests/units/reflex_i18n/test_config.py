@@ -65,9 +65,16 @@ def test_config_accepts_language_tags():
     assert config.locales == ("en", "pt-BR", "zh-Hant")
 
 
-def test_config_rejects_duplicate_locales():
-    with pytest.raises(ValueError, match="must not repeat"):
-        I18nConfig(locales=["en", "de", "en"])
+@pytest.mark.parametrize("locales", [("en", "de", "en"), ("en", "de", "EN")])
+def test_config_rejects_duplicate_locales(locales: tuple[str, ...]):
+    # Case-only repeats too: the router and catalog lookups ignore case, so
+    # client and server would each pick a different one of the two.
+    with pytest.raises(ValueError) as exc_info:
+        I18nConfig(locales=locales)
+    assert str(exc_info.value) == (
+        "I18nConfig.locales must not repeat a locale (tags are case-insensitive): "
+        f"{locales!r}."
+    )
 
 
 def test_active_config_roundtrip():
