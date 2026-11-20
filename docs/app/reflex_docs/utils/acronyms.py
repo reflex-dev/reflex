@@ -24,6 +24,7 @@ ACRONYMS: dict[str, str] = {
     "Sso": "SSO",
     "Svg": "SVG",
     "Ui": "UI",
+    "Url": "URL",
     "Urls": "URLs",
 }
 

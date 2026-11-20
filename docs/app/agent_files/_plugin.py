@@ -12,6 +12,8 @@ from reflex_base.plugins import CommonContext, Plugin
 from reflex_site_shared.utils.url import public_url
 from typing_extensions import Unpack
 
+from reflex_docs.utils.acronyms import uppercase_acronyms
+
 MCP_DOC_PATHS = {
     "ai/integrations/mcp-installation.md",
     "ai/integrations/mcp-overview.md",
@@ -80,20 +82,7 @@ class MarkdownIndexEntry:
 def _format_title(value: str) -> str:
     """Format a route or file segment as a title."""
     words = re.split(r"[-_\s]+", value)
-    acronyms = {
-        "ag": "AG",
-        "ai": "AI",
-        "api": "API",
-        "cli": "CLI",
-        "css": "CSS",
-        "html": "HTML",
-        "ide": "IDE",
-        "mcp": "MCP",
-        "ui": "UI",
-        "url": "URL",
-        "urls": "URLs",
-    }
-    return " ".join(acronyms.get(word.lower(), word.capitalize()) for word in words)
+    return uppercase_acronyms(" ".join(word.capitalize() for word in words))
 
 
 def _extract_markdown_title(source: str) -> str | None:

@@ -26,6 +26,20 @@ def test_metadata_preserves_acronyms_and_code_identifiers(title, expected):
 
 
 @pytest.mark.parametrize(
+    ("path", "title", "expected"),
+    [
+        ("/enterprise/ag-grid/pivot-mode/", "Pivot Mode", "Pivot Mode · AG Grid"),
+        ("/ai/integrations/github/", "Github", "GitHub · Integrations · AI"),
+        ("/ui/overview/", "Overview", "Overview · UI"),
+    ],
+)
+def test_metadata_title_uses_the_shared_acronyms(path, title, expected):
+    """Search titles spell acronyms like the breadcrumbs and sidebar."""
+    seo_title, _ = docs_metadata(path, title, None)
+    assert seo_title.startswith(expected + " · ")
+
+
+@pytest.mark.parametrize(
     ("components", "expected"),
     [
         (["rx.data_table"], "rx.data_table"),
