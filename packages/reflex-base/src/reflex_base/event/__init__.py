@@ -295,7 +295,8 @@ _UNDECORATED_STATE_METHOD_MARKER = "_rx_undecorated_state_method"
 # How to fix a reference to an undecorated state method; ends its error.
 _UNDECORATED_STATE_METHOD_HINT = (
     "Decorate it with `@rx.event`: with `state_explicit_event_handlers` enabled, "
-    "undecorated methods stay plain methods."
+    "undecorated methods stay plain methods. "
+    "See https://reflex.dev/docs/events/events-overview/#explicit-event-handlers"
 )
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
