@@ -791,6 +791,30 @@ def get_cache() -> ISRCache:
     return MemoryISRCache()
 
 
+# The redis client revalidate_path and revalidate_tag share, closed on app shutdown.
+_redis: Redis | None = None
+
+
+def _get_redis() -> Redis | None:
+    """Get the long-lived redis client used for on-demand revalidation.
+
+    Returns:
+        The asynchronous redis client, or None if redis is not configured.
+    """
+    global _redis
+    if _redis is None:
+        _redis = prerequisites.get_redis()
+    return _redis
+
+
+async def close_redis() -> None:
+    """Close the cached revalidation redis client, if one was created."""
+    global _redis
+    if _redis is not None:
+        await _redis.aclose(close_connection_pool=True)
+        _redis = None
+
+
 async def revalidate_path(path: str, *, config: Config | None = None) -> None:
     """Invalidate the ISR cache entry for ``path`` from application code.
 
@@ -803,7 +827,7 @@ async def revalidate_path(path: str, *, config: Config | None = None) -> None:
         path: The percent-encoded path to invalidate (e.g. ``/blog/hello-world``).
         config: The config to read the build id from (defaults to global).
     """
-    redis = prerequisites.get_redis()
+    redis = _get_redis()
     if redis is not None:
         await RedisISRCache(redis).delete(cache_key(get_build_id(config), path))
 
@@ -819,7 +843,7 @@ async def revalidate_tag(tag: str) -> int:
     Returns:
         The number of pages invalidated (0 when no ``redis_url`` is configured).
     """
-    redis = prerequisites.get_redis()
+    redis = _get_redis()
     if redis is None:
         return 0
     return await RedisISRCache(redis).invalidate_tag(tag)

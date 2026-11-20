@@ -141,6 +141,18 @@ async def test_lifespan_shutdown_closes_health_redis(mocker):
     close.assert_awaited_once()
 
 
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_closes_isr_redis(mocker):
+    """Lifespan shutdown releases the ISR revalidation redis client."""
+    close = mocker.patch("reflex.isr.close_redis", new_callable=mocker.AsyncMock)
+    mixin = LifespanMixin()
+
+    async with mixin._run_lifespan_tasks(Starlette()):
+        close.assert_not_awaited()
+
+    close.assert_awaited_once_with()
+
+
 async def _run_coroutine_lifespan_task(task) -> list[dict]:
     """Run a coroutine lifespan task through startup and shutdown.
 

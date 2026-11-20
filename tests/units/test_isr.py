@@ -8,6 +8,7 @@ import uuid
 from types import SimpleNamespace
 
 import pytest
+from pytest_mock import MockerFixture
 
 from reflex import isr
 from reflex.isr import (
@@ -447,3 +448,32 @@ async def test_redis_release_lock_keeps_lock_of_next_owner():
     finally:
         await redis.delete(lock_key)
         await redis.aclose()
+
+
+@pytest.mark.asyncio
+async def test_revalidation_reuses_one_redis_client(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """revalidate_path and revalidate_tag share one client until it is closed."""
+    monkeypatch.setattr(isr, "_redis", None)
+    pipeline = mocker.MagicMock(execute=mocker.AsyncMock())
+    client = mocker.MagicMock(
+        pipeline=mocker.MagicMock(return_value=pipeline),
+        eval=mocker.AsyncMock(return_value=2),
+        aclose=mocker.AsyncMock(),
+    )
+    get_redis = mocker.patch.object(prerequisites, "get_redis", return_value=client)
+
+    await isr.revalidate_path("/a")
+    await isr.revalidate_path("/b")
+    assert await isr.revalidate_tag("t") == 2
+    assert get_redis.call_count == 1
+    assert pipeline.execute.await_count == 2
+
+    await isr.close_redis()
+    client.aclose.assert_awaited_once_with(close_connection_pool=True)
+    await isr.close_redis()
+    client.aclose.assert_awaited_once_with(close_connection_pool=True)
+
+    await isr.revalidate_path("/c")
+    assert get_redis.call_count == 2
