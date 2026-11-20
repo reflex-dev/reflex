@@ -4,18 +4,19 @@ from __future__ import annotations
 
 import gettext
 import json
+import logging
 import re
 from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
-
-from reflex_base.utils import console
 
 from .config import LOCALE_COOKIE_NAME, I18nConfig, get_active_catalog_dirs
 from .registry import MessageKey, format_message_list
 
 if TYPE_CHECKING:
     from babel.messages.catalog import Catalog, Message
+
+logger = logging.getLogger(__name__)
 
 _FALLBACK_PLURAL_EXPR = "n != 1"
 
@@ -71,7 +72,7 @@ def read_po_catalog(path: Path, locale: str | None = None) -> Catalog:
             catalog = read_po(po_file)
     expr = catalog.plural_expr
     if not _is_portable_plural_expr(expr):
-        console.warn(
+        logger.warning(
             f"Ignoring unsupported Plural-Forms expression {expr!r} in {path}; "
             f"falling back to {_FALLBACK_PLURAL_EXPR!r}."
         )
@@ -160,7 +161,7 @@ def compile_catalog_module(
             continue
         entries.append(f"  [{json.dumps(key.catalog_key)}, {json.dumps(translation)}],")
     if missing and not is_default_locale:
-        console.warn(
+        logger.warning(
             f"{len(missing)} translation(s) missing for locale {locale!r} "
             f"(falling back to the default locale):\n{format_message_list(missing)}"
         )

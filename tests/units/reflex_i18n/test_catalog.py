@@ -1,10 +1,10 @@
 """Tests for compiling .po catalogs into per-locale JS modules."""
 
+import logging
 from pathlib import Path
 
 import pytest
 from babel.messages.catalog import Catalog
-from reflex_base.utils import console
 from reflex_i18n.catalog import (
     compile_catalog_module,
     compile_index_module,
@@ -15,6 +15,18 @@ from reflex_i18n.catalog import (
 )
 from reflex_i18n.config import I18nConfig, set_active_i18n_config
 from reflex_i18n.registry import MessageKey
+
+
+def _warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    """The warnings logged so far.
+
+    Args:
+        caplog: The log capture.
+
+    Returns:
+        Their messages.
+    """
+    return [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
 
 
 def _catalog(locale: str = "de") -> Catalog:
@@ -189,18 +201,16 @@ def test_read_po_catalog_uses_locale_plural_rules(tmp_path: Path):
 
 @pytest.mark.parametrize("expr", ["alert('xss')", "(n !== 1)", "n/10 == 1", "n == 010"])
 def test_read_po_catalog_replaces_an_unsupported_plural_rule(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, expr: str
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, expr: str
 ):
     # The rule is embedded in the client's JS and run by gettext on the server;
     # one gettext cannot parse (code, or JS-only syntax), or that JS evaluates
     # differently (float division, a leading-zero literal), gives way to the
     # generic rule for both.
-    warnings: list[str] = []
-    monkeypatch.setattr(console, "warn", warnings.append)
     header = f'"Plural-Forms: nplurals=2; plural={expr};\\n"'
     po_path = _write_po(tmp_path, "de", header)
     catalog = read_po_catalog(po_path, "de")
-    assert warnings == [
+    assert _warnings(caplog) == [
         (
             f"Ignoring unsupported Plural-Forms expression {expr!r} in {po_path}; "
             "falling back to 'n != 1'."

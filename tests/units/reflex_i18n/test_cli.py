@@ -1,5 +1,6 @@
 """Tests for the reflex i18n CLI helpers and command discovery."""
 
+import logging
 import sys
 import types
 from pathlib import Path
@@ -172,11 +173,14 @@ def test_init_rejects_a_locale_that_is_not_a_language_tag():
     assert "Invalid locale" in result.output
 
 
-def test_report_marks_the_default_locale_as_the_source_catalog(capsys):
+def test_report_marks_the_default_locale_as_the_source_catalog(
+    caplog: pytest.LogCaptureFixture,
+):
     # The default locale's empty msgstr entries are the source text, not a
     # translation gap, so they must not be reported as missing.
+    caplog.set_level(logging.INFO)
     _report(LocaleStats("en", missing=7), is_source=True)
-    output = capsys.readouterr().out
+    output = caplog.text
     assert "source catalog" in output
     assert "missing" not in output
 

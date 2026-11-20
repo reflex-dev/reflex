@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 import re
 from collections.abc import Sequence
 from pathlib import Path
@@ -14,7 +15,6 @@ from reflex_base.plugins.base import (
     Plugin,
     PreCompileContext,
 )
-from reflex_base.utils import console
 from reflex_base.utils.exceptions import RouteValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData
@@ -50,6 +50,8 @@ from .vars import (
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
     from reflex_base.plugins.compiler import PageContext
+
+logger = logging.getLogger(__name__)
 
 # The compiled catalog modules are written under ``.web/i18n``.
 _I18N_WEB_DIR = "i18n"
@@ -288,7 +290,7 @@ class I18nPlugin(Plugin):
         if untranslated:
             # Built while the config was still loading, e.g. by a module
             # rxconfig.py imports before constructing this plugin.
-            console.warn(
+            logger.warning(
                 f"{len(untranslated)} rx.t message(s) were built before "
                 "I18nPlugin was configured and always render their source "
                 "text:\n"
@@ -338,7 +340,7 @@ class I18nPlugin(Plugin):
             else:
                 catalog = load_catalog(locale)
                 if catalog is None:
-                    console.warn(
+                    logger.warning(
                         f"No translation catalog found for locale {locale!r} "
                         f"(expected {app_catalog_dir / f'{locale}.po'})."
                     )

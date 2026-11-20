@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 import dataclasses
+import logging
 import os
 import sys
 from collections.abc import Collection, Iterator, Sequence
@@ -17,7 +18,7 @@ from typing import IO, TYPE_CHECKING
 import click
 from reflex_base.config import get_config
 from reflex_base.plugins.base import get_plugin
-from reflex_base.utils import console
+from reflex_base.utils import log
 
 from .config import PACKAGE_CATALOG_DIR, find_package_dir, validate_locale
 from .plugin import I18nPlugin
@@ -26,6 +27,8 @@ from .registry import MessageKey, collected_messages
 if TYPE_CHECKING:
     from babel.messages.catalog import Catalog
     from babel.messages.extract import _ExtractionResult, _PyOptions
+
+logger = logging.getLogger(__name__)
 
 # An rx.t call as Babel extraction methods report one: line, keyword, messages,
 # comments.
@@ -426,11 +429,13 @@ def _report(stats: LocaleStats, *, is_source: bool = False) -> None:
     """
     detail = f"{stats.missing} missing, {stats.fuzzy} fuzzy, {stats.obsolete} obsolete"
     if is_source:
-        console.info(f"  {stats.locale}: source catalog ({stats.obsolete} obsolete)")
+        logger.info(f"  {stats.locale}: source catalog ({stats.obsolete} obsolete)")
     elif stats.incomplete:
-        console.warn(f"  {stats.locale}: {detail}")
+        logger.warning(f"  {stats.locale}: {detail}")
     else:
-        console.success(f"  {stats.locale}: complete ({stats.obsolete} obsolete)")
+        logger.log(
+            log.SUCCESS, f"  {stats.locale}: complete ({stats.obsolete} obsolete)"
+        )
 
 
 def _app_source_dir() -> Path:
@@ -500,9 +505,9 @@ def extract_command(package: str | None):
     template, catalog_dir, locales, source_locale = _managed_catalogs(package)
 
     _write_catalog(template, catalog_dir / _POT_FILENAME)
-    console.info(f"Extracted {len(template)} messages.")
+    logger.info(f"Extracted {len(template)} messages.")
     if not locales:
-        console.info(
+        logger.info(
             f"No catalogs yet: create one with `reflex i18n init <locale> "
             f"--package {package}`."
         )
@@ -512,7 +517,7 @@ def extract_command(package: str | None):
             merge_into_locale(template, catalog_dir / f"{locale}.po", locale),
             is_source=locale == source_locale,
         )
-    console.success("Catalogs updated.")
+    logger.log(log.SUCCESS, "Catalogs updated.")
 
 
 @i18n_cli.command(name="init")
@@ -540,9 +545,11 @@ def init_command(locale: str, package: str | None):
         raise click.ClickException(msg)
 
     stats = merge_into_locale(template, po_path, locale)
-    console.success(f"Created {po_path} with {stats.missing} messages to translate.")
+    logger.log(
+        log.SUCCESS, f"Created {po_path} with {stats.missing} messages to translate."
+    )
     if package is None and locale not in locales:
-        console.info(
+        logger.info(
             f"Add {locale!r} to I18nPlugin(locales=[...]) in rxconfig.py to ship it."
         )
 
@@ -576,4 +583,4 @@ def check_command(package: str | None):
     if incomplete:
         msg = "Some locales have untranslated or fuzzy messages."
         raise click.ClickException(msg)
-    console.success("All locales are complete.")
+    logger.log(log.SUCCESS, "All locales are complete.")

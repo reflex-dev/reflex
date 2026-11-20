@@ -1,13 +1,13 @@
 """Tests for the I18nPlugin: config activation and catalog emission."""
 
 import json
+import logging
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
 
 import pytest
-from reflex_base.utils import console
 from reflex_i18n import I18nPlugin, PathPrefixRouting, t
 from reflex_i18n.config import I18nConfig, set_active_i18n_config
 from reflex_i18n.format import _SOURCE_FMT_DATE, _SOURCE_FMT_NUMBER
@@ -98,6 +98,18 @@ process.stdout.write(
   }),
 );
 """
+
+
+def _warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    """The warnings logged so far.
+
+    Args:
+        caplog: The log capture.
+
+    Returns:
+        Their messages.
+    """
+    return [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
 
 
 def _render_runtime(
@@ -254,11 +266,9 @@ def test_plugin_emits_index_and_locale_modules(tmp_path: Path, monkeypatch):
 
 
 def test_pre_compile_warns_about_messages_built_before_the_plugin(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch, caplog: pytest.LogCaptureFixture
 ):
     monkeypatch.chdir(tmp_path)
-    warnings: list[str] = []
-    monkeypatch.setattr(console, "warn", warnings.append)
     # e.g. a module rxconfig.py imports before it constructs the plugin.
     t("Too early")
     plugin = I18nPlugin(locales=["en", "de"], default_locale="en")
@@ -268,7 +278,7 @@ def test_pre_compile_warns_about_messages_built_before_the_plugin(
     plugin.pre_compile(add_save_task=save_tasks.append)  # pyright: ignore[reportCallIssue]
 
     assert save_tasks == [plugin._compile_catalogs]
-    assert warnings == [
+    assert _warnings(caplog) == [
         (
             "1 rx.t message(s) were built before I18nPlugin was configured and "
             "always render their source text:\n"
@@ -278,10 +288,10 @@ def test_pre_compile_warns_about_messages_built_before_the_plugin(
     ]
 
 
-def test_plugin_missing_catalog_file_still_emits_module(tmp_path: Path, monkeypatch):
+def test_plugin_missing_catalog_file_still_emits_module(
+    tmp_path: Path, monkeypatch, caplog: pytest.LogCaptureFixture
+):
     monkeypatch.chdir(tmp_path)
-    warnings: list[str] = []
-    monkeypatch.setattr(console, "warn", warnings.append)
     plugin = I18nPlugin(locales=["en", "de"], default_locale="en")
     t("Hello")
 
@@ -293,7 +303,7 @@ def test_plugin_missing_catalog_file_still_emits_module(tmp_path: Path, monkeypa
         "export const messages = new Map([\n\n]);\n"
     )
     po_path = tmp_path.resolve() / "locales" / "de.po"
-    assert warnings == [
+    assert _warnings(caplog) == [
         f"No translation catalog found for locale 'de' (expected {po_path}).",
         (
             "1 translation(s) missing for locale 'de' (falling back to the default "
