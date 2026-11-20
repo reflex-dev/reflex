@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pytest_mock import MockerFixture
 from reflex_base import constants
-from reflex_base.compiler.templates import app_root_template
+from reflex_base.compiler.templates import app_root_template, context_template
 
 import reflex as rx
 from reflex.route import extract_route_params
@@ -158,3 +158,97 @@ def test_root_template_ssr_loader(mocker: MockerFixture):
     )
 
     assert _render_root(mocker, constants.SsrMode.ALWAYS) == expected
+
+
+def _render_context(mocker: MockerFixture, ssr_mode: constants.SsrMode) -> str:
+    """Render the context template for a two-state app.
+
+    Args:
+        mocker: Patches the config the template reads the SSR mode from.
+        ssr_mode: The SSR mode to render with.
+
+    Returns:
+        Rendered template string.
+    """
+    mocker.patch(
+        "reflex_base.ssr.get_config",
+        return_value=rx.Config(app_name="test", ssr_mode=ssr_mode),
+    )
+    return context_template(
+        is_dev_mode=False,
+        default_color_mode='"light"',
+        initial_state={"state": {"a": 1}, "state.sub": {"b": 2}},
+        initial_state_hashes=["names", "state-hash", "sub-hash"],
+        state_name="state",
+    )
+
+
+def test_context_template_ssr_hydration(mocker: MockerFixture):
+    """With SSR on, the store starts from SSR state and the event loop knows it.
+
+    The compiled hashes stay in place: a page served without SSR state (an ISR
+    shell, the static build) still diffs its first hydrate against them.
+    """
+    plain = _render_context(mocker, constants.SsrMode.OFF)
+    hashes = 'export const initialStateHashes = ["names", "state-hash", "sub-hash"]\n'
+    assert plain.count(hashes) == 1
+    expected = plain
+    for old, new in (
+        ("import { useContext, ", "import { createContext, useContext, "),
+        (
+            'export const defaultColorMode = "light"\n',
+            (
+                'export const defaultColorMode = "light"\n'
+                "export const SSRStateContext = createContext(null);\n"
+            ),
+        ),
+        (
+            (
+                "  const dispatch = useContext(DispatchContext)\n"
+                "  const [addEventsLocal, connectErrors] = useEventLoop(\n"
+                "    dispatch,\n"
+                "    initialEvents,\n"
+                "    clientStorage,\n"
+            ),
+            (
+                "  const dispatch = useContext(DispatchContext)\n"
+                "  const ssrHydrated = useContext(SSRStateContext) !== null\n"
+                "  const [addEventsLocal, connectErrors] = useEventLoop(\n"
+                "    dispatch,\n"
+                "    initialEvents,\n"
+                "    clientStorage,\n"
+                "    ssrHydrated,\n"
+            ),
+        ),
+        (
+            (
+                "function ClientStateProvider({ children }) {\n"
+                "  const [store] = useState(() => createStateStore(initialState));\n"
+            ),
+            (
+                "function ClientStateProvider({ children }) {\n"
+                "  const ssrState = useContext(SSRStateContext);\n"
+                "  const [store] = useState(() => createStateStore(ssrState ? "
+                "Object.fromEntries(Object.entries(initialState).map(([name, value]) => "
+                "[name, ssrState[name] ?? value])) : initialState));\n"
+            ),
+        ),
+        (
+            (
+                "function ServerStateProvider({ children }) {\n"
+                "  return createElement(StateStoreProviders, "
+                "{ children, store: serverStateStore });\n"
+            ),
+            (
+                "function ServerStateProvider({ children }) {\n"
+                "  const ssrState = useContext(SSRStateContext);\n"
+                "  return createElement(StateStoreProviders, { children, store: "
+                "ssrState ? { ...serverStateStore, getSnapshot: (name) => "
+                "ssrState[name] ?? initialState[name] } : serverStateStore });\n"
+            ),
+        ),
+    ):
+        assert expected.count(old) == 1, old
+        expected = expected.replace(old, new)
+
+    assert _render_context(mocker, constants.SsrMode.ALWAYS) == expected

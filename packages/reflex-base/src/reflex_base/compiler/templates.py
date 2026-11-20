@@ -435,10 +435,14 @@ export const initialEvents = () => []
     )
 
     if ssr_enabled:
-        # The store may start from SSR state, so the first hydrate needs it all.
-        initial_state_hashes = None
-        ssr_context_str = "export const SSRStateContext = createContext(null);"
-        ssr_state_hook = "const ssrState = useContext(SSRStateContext);"
+        ssr_context_str = "\nexport const SSRStateContext = createContext(null);"
+        # A store that starts from SSR state no longer matches the compiled
+        # hashes, so the event loop sends its first hydrate without them.
+        ssr_hydrated_str = (
+            "\n  const ssrHydrated = useContext(SSRStateContext) !== null"
+        )
+        ssr_hydrated_arg = "\n    ssrHydrated,"
+        ssr_state_hook = "\n  const ssrState = useContext(SSRStateContext);"
         # Server-rendered substates take precedence over the compiled defaults.
         client_initial_state = (
             "ssrState ? Object.fromEntries(Object.entries(initialState).map("
@@ -449,8 +453,7 @@ export const initialEvents = () => []
             "(name) => ssrState[name] ?? initialState[name] } : serverStateStore"
         )
     else:
-        ssr_context_str = ""
-        ssr_state_hook = ""
+        ssr_context_str = ssr_hydrated_str = ssr_hydrated_arg = ssr_state_hook = ""
         client_initial_state = "initialState"
         server_state_store = "serverStateStore"
 
@@ -492,8 +495,7 @@ export const initialState = {initial_state_json}
 export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
 export const stateSchema = {json.dumps(state_schema)}
 
-export const defaultColorMode = {default_color_mode}
-{ssr_context_str}
+export const defaultColorMode = {default_color_mode}{ssr_context_str}
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
 {state_str}
@@ -558,11 +560,11 @@ export function ClientSide(component, name) {{
 }}
 
 export function EventLoopProvider({{ children }}) {{
-  const dispatch = useContext(DispatchContext)
+  const dispatch = useContext(DispatchContext){ssr_hydrated_str}
   const [addEventsLocal, connectErrors] = useEventLoop(
     dispatch,
     initialEvents,
-    clientStorage,
+    clientStorage,{ssr_hydrated_arg}
   )
   // Publish the dispatchers so JSX literals constructed outside the
   // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
@@ -637,8 +639,7 @@ function StateStoreProviders({{ children, store }}) {{
   );
 }}
 
-function ClientStateProvider({{ children }}) {{
-  {ssr_state_hook}
+function ClientStateProvider({{ children }}) {{{ssr_state_hook}
   const [store] = useState(() => createStateStore({client_initial_state}));
   useEffect(() => store.mergeInitialState(initialState), [store, initialState]);
   return createElement(StateStoreProviders, {{ children, store }});
@@ -652,8 +653,7 @@ const serverStateStore = {{
   subscribe: () => () => {{}},
 }};
 
-function ServerStateProvider({{ children }}) {{
-  {ssr_state_hook}
+function ServerStateProvider({{ children }}) {{{ssr_state_hook}
   return createElement(StateStoreProviders, {{ children, store: {server_state_store} }});
 }}
 
