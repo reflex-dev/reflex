@@ -124,7 +124,7 @@ def install_config(
     """Build, save, and activate a ``minify.json`` in one call.
 
     Calls ``clear_config_cache()`` afterward — that re-installs the resolver
-    and clears every per-class lru_cache, so tests don't need to call
+    and rebuilds whatever names it changes, so tests don't need to call
     ``State.get_name.cache_clear()`` etc. by hand.
 
     Args:

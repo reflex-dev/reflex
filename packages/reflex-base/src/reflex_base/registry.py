@@ -11,7 +11,15 @@ from __future__ import annotations
 import dataclasses
 import logging
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any, Protocol, Self, TypeVar, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Protocol,
+    Self,
+    TypeVar,
+    runtime_checkable,
+)
 
 from reflex_base.context.base import BaseContext
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
@@ -107,6 +115,9 @@ class NameResolver(Protocol):
 class DefaultNameResolver:
     """No-op resolver — every state and handler keeps its default name."""
 
+    # Equal digests mean equal names; see ``_same_names``.
+    _digest_covers_names: ClassVar[bool] = True
+
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
         return None
 
@@ -126,6 +137,33 @@ class DefaultNameResolver:
 
     def digest(self) -> str:  # noqa: D102
         return ""
+
+
+# The resolver the names cached on the state classes, which every context
+# shares, were last rebuilt under.
+_names_built_under: NameResolver | None = None
+
+
+def _same_names(a: NameResolver | None, b: NameResolver) -> bool:
+    """Whether two resolvers are known to give every name alike.
+
+    Only a built-in resolver's digest covers every name it gives; a custom one
+    may rename while reporting ``""``.
+
+    Args:
+        a: A resolver, or ``None`` if unknown.
+        b: Another resolver.
+
+    Returns:
+        Whether both are built-in and their digests are equal.
+    """
+    # Read off the class itself: a subclass may rename under the same digest.
+    return (
+        a is not None
+        and type(a).__dict__.get("_digest_covers_names", False)
+        and type(b).__dict__.get("_digest_covers_names", False)
+        and a.digest() == b.digest()
+    )
 
 
 def scheme_digest() -> str:
@@ -527,6 +565,7 @@ class RegistrationContext(BaseContext):
         Clears the shared name caches, rebuilds the Vars every registered
         state holds (parents first) and calls :meth:`refresh_keys`. Uses
         ``object.__setattr__`` to mutate the frozen ``name_resolver`` slot.
+        A built-in resolver giving the names already in use is only swapped in.
 
         A Var built from a state's Vars before the install -- say by a
         module-level component -- keeps the names it was built with; the
@@ -536,9 +575,18 @@ class RegistrationContext(BaseContext):
             resolver: The resolver to install. Pass :class:`DefaultNameResolver`
                 to revert to built-in names.
         """
+        global _names_built_under
         from reflex_base.utils.format import format_state_local, format_var_key
 
+        previous = self.name_resolver
         object.__setattr__(self, "name_resolver", resolver)
+        # The names are cached on classes every context shares, so the last
+        # install anywhere must give them alike too.
+        if _same_names(previous, resolver) and _same_names(
+            _names_built_under, resolver
+        ):
+            _names_built_under = resolver
+            return
         # Each cache is shared by all state classes, so any one clears them all.
         if (cls := next(iter(self.base_states.values()), None)) is not None:
             cls.get_name.cache_clear()
@@ -553,6 +601,7 @@ class RegistrationContext(BaseContext):
         ):
             cls._rebuild_vars()
         self.refresh_keys()
+        _names_built_under = resolver
 
     def refresh_keys(self) -> None:
         """Re-key the name-keyed dicts using current ``get_full_name`` values.

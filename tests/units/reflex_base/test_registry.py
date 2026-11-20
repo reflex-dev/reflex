@@ -17,7 +17,7 @@ from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 from reflex.state import BaseState, State
 from reflex.testing import chdir
-from tests.units.minify_helpers import minify_resolver
+from tests.units.minify_helpers import make_config, minify_resolver
 from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 
@@ -548,6 +548,31 @@ def test_resolver_swap_clears_lru_caches():
         assert State.get_full_name() == "first"
         ctx.set_name_resolver(stub_resolver(state_name="second"))
         assert State.get_full_name() == "second"
+
+
+def test_builtin_resolver_giving_the_names_in_use_is_only_swapped_in():
+    """A built-in resolver with the digest in use keeps the Vars as they are."""
+    with temporary_resolver(DefaultNameResolver()) as ctx:
+        var = State.base_vars["is_hydrated"]
+        unminified = minify_resolver()
+        ctx.set_name_resolver(unminified)
+        assert ctx.name_resolver is unminified
+        assert State.base_vars["is_hydrated"] is var
+        # A custom resolver may rename under any digest, so it always rebuilds.
+        ctx.set_name_resolver(stub_resolver())
+        assert State.base_vars["is_hydrated"] is not var
+
+
+def test_reinstalling_a_resolver_undoes_the_names_a_fork_installed():
+    """The names are cached on classes the fork shares, so they are rebuilt."""
+    with temporary_resolver(DefaultNameResolver()) as ctx:
+        with ctx.fork() as fork:
+            fork.set_name_resolver(
+                minify_resolver(make_config(include_state_root=True), states=True)
+            )
+            assert State.get_name() == "a"
+        ctx.set_name_resolver(ctx.name_resolver)
+        assert State.get_name() == RegistrationContext.default_state_name(State)
 
 
 def test_chain_of_resolvers():

@@ -18,7 +18,7 @@ import logging
 import re
 from collections.abc import Callable, Collection, Iterable, Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypedDict
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, TypedDict
 
 from reflex_base.constants.state import FIELD_MARKER
 
@@ -425,6 +425,8 @@ class MinifyNameResolver:
     source: _ConfigSource | None = None
 
     _digest: str | None = dataclasses.field(default=None, repr=False)
+    # Equal digests mean equal names; see ``reflex_base.registry._same_names``.
+    _digest_covers_names: ClassVar[bool] = True
 
     def digest(self) -> str:
         """Digest the wire names this resolver rewrites.
