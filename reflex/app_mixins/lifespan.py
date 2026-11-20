@@ -93,7 +93,9 @@ async def _receive_message(
 
 
 @contextlib.asynccontextmanager
-async def _run_asgi_lifespan(app: ASGIApp, server_scope: Scope):
+async def _run_asgi_lifespan(
+    app: ASGIApp, server_scope: Scope, affected_lifespan_names: Sequence[str] = ()
+):
     """Send ASGI lifespan events to an app around the body of the context.
 
     Like an ASGI server's "auto" lifespan mode, an app that raises, returns or
@@ -103,6 +105,8 @@ async def _run_asgi_lifespan(app: ASGIApp, server_scope: Scope):
     Args:
         app: The ASGI app.
         server_scope: The server's lifespan scope, whose ``state`` the app shares.
+        affected_lifespan_names: Names of transformer lifespans that this app may
+            prevent from starting.
 
     Yields:
         None once the app has started.
@@ -120,7 +124,24 @@ async def _run_asgi_lifespan(app: ASGIApp, server_scope: Scope):
         try:
             message = await _receive_message(app_task, sent) or {"type": "no answer"}
         except Exception as err:
-            message = {"type": repr(err)}
+            app_name = getattr(app, "__qualname__", type(app).__qualname__)
+            affected_lifespans = (
+                f"The following wrapped transformer lifespans may be skipped: "
+                f"{', '.join(affected_lifespan_names)}."
+                if affected_lifespan_names
+                else "Nested application lifespans may not run."
+            )
+            logger.warning(
+                "ASGI lifespan startup raised %r in %s. %s If this is middleware, "
+                "pass non-HTTP scopes through "
+                "(e.g. check scope['type'] or use scope.get('path', '')).",
+                err,
+                app_name,
+                affected_lifespans,
+                exc_info=True,
+            )
+            yield
+            return
         if message["type"] == "lifespan.startup.failed":
             msg = f"Lifespan startup of {app!r} failed: {message.get('message', '')}"
             raise RuntimeError(msg)
@@ -269,7 +290,11 @@ class LifespanMixin(AppMixin):
 
     @contextlib.asynccontextmanager
     async def _run_lifespan(
-        self, starlette_app: Starlette, asgi_apps: Sequence[ASGIApp], scope: Scope
+        self,
+        starlette_app: Starlette,
+        asgi_apps: Sequence[ASGIApp],
+        scope: Scope,
+        affected_lifespan_names: Sequence[Sequence[str]] = (),
     ):
         """Run the lifespan tasks, then the ASGI lifespan protocol of each app.
 
@@ -279,14 +304,24 @@ class LifespanMixin(AppMixin):
             starlette_app: The Starlette app passed to tasks accepting ``starlette_app``.
             asgi_apps: The apps to send lifespan events to, in startup order.
             scope: The server's lifespan scope, whose ``state`` the apps share.
+            affected_lifespan_names: Names of transformer lifespans that each app may
+                prevent from starting.
 
         Yields:
             None once every lifespan has started.
         """
         async with contextlib.AsyncExitStack() as stack:
             await stack.enter_async_context(self._run_lifespan_tasks(starlette_app))
-            for asgi_app in asgi_apps:
-                await stack.enter_async_context(_run_asgi_lifespan(asgi_app, scope))
+            for index, asgi_app in enumerate(asgi_apps):
+                await stack.enter_async_context(
+                    _run_asgi_lifespan(
+                        asgi_app,
+                        scope,
+                        affected_lifespan_names[index]
+                        if index < len(affected_lifespan_names)
+                        else (),
+                    )
+                )
             yield
 
     @overload
