@@ -280,17 +280,12 @@ class AppHarness:
             if isinstance(self.app_source, functools.partial):
                 self.app_source = self.app_source.func
             # get the source from a function or module object
-            source_code = "\n".join(
-                [
-                    "\n".join(
-                        [
-                            self.get_app_global_source(k, v)
-                            for k, v in app_globals.items()
-                        ]
-                    ),
-                    self._get_source_from_app_source(self.app_source),
-                ]
-            )
+            source_code = "\n".join([
+                "\n".join([
+                    self.get_app_global_source(k, v) for k, v in app_globals.items()
+                ]),
+                self._get_source_from_app_source(self.app_source),
+            ])
             get_config().loglevel = reflex.constants.LogLevel.INFO
             with chdir(self.app_path):
                 reflex.reflex._init(
@@ -522,13 +517,11 @@ class AppHarness:
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
             # The development condition lets react-router's dev CLI skip the
             # relaunch it otherwise needs to enable that condition.
-            env=_with_development_condition(
-                {
-                    **os.environ,
-                    "PORT": "0",
-                    "NO_COLOR": "1",
-                }
-            ),
+            env=_with_development_condition({
+                **os.environ,
+                "PORT": "0",
+                "NO_COLOR": "1",
+            }),
             **FRONTEND_POPEN_ARGS,
         )
 
