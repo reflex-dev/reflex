@@ -2186,8 +2186,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         if include_computed:
             self._mark_dirty_computed_vars()
+        # Read stored fields straight from the instance dict; defaults not
+        # stored yet go through `get_value`.
+        values = self.__dict__
         base_vars = {
-            prop_name: self.get_value(prop_name) for prop_name in self.base_vars
+            prop_name: values[prop_name]
+            if prop_name in values
+            else self.get_value(prop_name)
+            for prop_name in self.base_vars
         }
         if initial and include_computed:
             computed_vars = {
