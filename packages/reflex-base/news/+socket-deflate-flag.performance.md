@@ -1,0 +1,1 @@
+Add the `REFLEX_SOCKET_PER_MESSAGE_DEFLATE` environment variable, controlling whether uvicorn compresses websocket messages with permessage-deflate; Granian never negotiates it, so the variable has no effect there.

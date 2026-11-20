@@ -27,6 +27,7 @@ const PUBLIC_API = {
     "evalReactComponent",
     "generateUUID",
     "getBackendURL",
+    "getChannel",
     "getFormData",
     "getRefValue",
     "getRefValues",
@@ -85,7 +86,7 @@ const PUBLIC_API = {
   "$/utils/helpers/array": ["default"],
   "$/utils/helpers/datetime": ["default"],
   "$/utils/helpers/debounce": ["default"],
-  "$/utils/helpers/json": ["parseJson"],
+  "$/utils/helpers/json": ["parseJson", "parseJsonLenient", "undefinedToNull"],
   "$/utils/helpers/paste": ["default"],
   "$/utils/helpers/range": ["default"],
   "$/utils/helpers/set": [
@@ -100,6 +101,13 @@ const PUBLIC_API = {
   ],
   "$/utils/helpers/throttle": ["default"],
   "$/utils/helpers/upload": ["uploadFiles"],
+  "$/utils/helpers/websocket": [
+    "ReflexWebSocket",
+    "decodeChannelFrame",
+    "disableChannels",
+    "encodeChannelFrame",
+    "getChannel",
+  ],
   "$/components/reflex/radix_themes_color_mode_provider": ["default"],
   "$/components/shiki/code": ["Code"],
 };

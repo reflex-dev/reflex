@@ -2,6 +2,9 @@
 
 import asyncio
 import json
+import socket
+import sys
+import time
 from types import SimpleNamespace
 
 import pytest
@@ -15,7 +18,13 @@ from tests.benchmarks.support.report import (
     PerformanceReport,
     percentile,
 )
-from tests.benchmarks.support.socket_client import run_clients
+
+# The benchmark socket client speaks the wire protocols through reflex-bench,
+# which is Linux-only like its own tests. Imported anywhere else, it would also
+# make coverage count that whole untested package, so it is imported in tests.
+linux_only = pytest.mark.skipif(
+    sys.platform != "linux", reason="the benchmark socket client builds on reflex-bench"
+)
 
 
 def test_percentile_interpolates_and_validates():
@@ -140,9 +149,12 @@ def test_pipeline_trace_preserves_repeated_stage_pairs():
     }
 
 
+@linux_only
 @pytest.mark.asyncio
 async def test_run_clients_leaves_default_executor_usable():
     """The load helper does not close the event loop's default executor."""
+    from tests.benchmarks.support.socket_client import run_clients
+
     results = await run_clients(
         2,
         lambda index, executor: asyncio.get_running_loop().run_in_executor(
@@ -152,6 +164,21 @@ async def test_run_clients_leaves_default_executor_usable():
 
     assert results == [0, 1]
     assert await asyncio.to_thread(lambda: "still-usable") == "still-usable"
+
+
+@linux_only
+@pytest.mark.asyncio
+async def test_reconnect_client_detects_the_protocol_within_its_timeout():
+    """Detecting a hung backend's protocol is bounded by the client's timeout."""
+    from tests.benchmarks.support.socket_client import run_reconnect_client
+
+    # The listener never answers the upgrade.
+    with socket.create_server(("127.0.0.1", 0)) as listener:
+        url = f"http://127.0.0.1:{listener.getsockname()[1]}"
+        started = time.monotonic()
+        result = await run_reconnect_client(url, "token", {}, timeout=0.1)
+    assert result.errors == ("response_timeout",)
+    assert time.monotonic() - started < 5
 
 
 class _FakeRedis:
@@ -322,3 +349,24 @@ def test_baseline_server_startup_failure_surfaces_thread_exception(monkeypatch):
         BaselineSocketServer(response={}),
     ):
         pass
+
+
+@linux_only
+@pytest.mark.parametrize(("timeout", "interval"), [(None, 1.0), ("100ms", 0.05)])
+def test_idle_clients_answer_pings_within_the_ping_timeout(
+    monkeypatch: pytest.MonkeyPatch, timeout: str | None, interval: float
+):
+    """Held sessions poll for pings fast enough to beat the server's deadline.
+
+    A pong goes out at the first poll after its ping, so the gap between
+    client frames is the ping interval plus the poll period; it has to stay
+    under the interval plus the ping timeout.
+    """
+    from tests.benchmarks.support import idle_clients
+
+    if timeout is None:
+        monkeypatch.delenv("REFLEX_SOCKET_TIMEOUT", raising=False)
+    else:
+        monkeypatch.setenv("REFLEX_SOCKET_TIMEOUT", timeout)
+
+    assert idle_clients._keepalive_interval() == pytest.approx(interval)

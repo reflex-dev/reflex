@@ -18,6 +18,9 @@ async function setup({
   disabled = false,
   hidden = false,
   storedToken = "original-token",
+  transport = "websocket",
+  socketio = false,
+  importFails = false,
   deferNamespaceConnect = false,
   deferConnectAck = false,
   stateName = "root",
@@ -78,13 +81,17 @@ async function setup({
   window.setTimeout = context.setTimeout;
   window.clearTimeout = context.clearTimeout;
 
-  function io(url, opts) {
+  /** A transport double shared by the plain WebSocket and socket.io clients. */
+  function fakeSocket(kind, url, opts) {
     const handlers = new Map();
     const socket = {
+      kind,
       handlers,
       connected: false,
+      opens: 0,
       namespaceConnects: 0,
       disconnects: 0,
+      offs: 0,
       events: [],
       // Like socket.io-client: the URL path names the namespace.
       nsp: new URL(url).pathname,
@@ -95,7 +102,7 @@ async function setup({
         // The handshake announces the server's limit.
         engine: {
           _maxPayload: maxPayload,
-          transport: { name: opts.transports[0] },
+          transport: { name: opts.transports?.[0] },
         },
         // Like socket.io-parser's Encoder.encodeAsString.
         encoder: {
@@ -107,14 +114,15 @@ async function setup({
           },
         },
         decoder: {},
-        opens: 0,
-        open(callback) {
-          this.opens++;
-          this.openCallback = callback;
-        },
+      },
+      open() {
+        this.opens++;
       },
       on(name, handler) {
         handlers.set(name, handler);
+      },
+      off() {
+        this.offs++;
       },
       connect() {
         // A ready transport can deliver these synchronously on namespace connect.
@@ -128,25 +136,48 @@ async function setup({
           assert.ok(handlers.has(name), `missing handler: ${name}`);
         }
         this.finishNamespaceConnect = () => {
+          // Both clients call an auth function as they send the connect.
           if (typeof this.auth === "function") {
             this.auth((auth) => {
               this.auth = auth;
             });
           }
-          // Like Manager._packet: encode the auth callback's resolved payload.
-          const frames = this.io.encoder.encode({
-            type: 0,
-            nsp: this.nsp,
-            data: this.auth,
-          });
-          if (frames.length === 0) {
+          if (kind === "socketio") {
+            // Like Manager._packet: encode the auth callback's resolved payload.
+            const frames = this.io.encoder.encode({
+              type: 0,
+              nsp: this.nsp,
+              data: this.auth,
+            });
+            if (frames.length === 0) {
+              return;
+            }
+            this.frames.push(...frames.map((frame) => `4${frame}`));
+          } else if (
+            JSON.stringify(["_connect", this.auth]).length > maxPayload
+          ) {
+            // Like ReflexWebSocket when the backend refuses its connect frame
+            // for its size.
+            const error = new Error(
+              "Hydration payload exceeds the server limit. Reduce browser storage data and reload.",
+            );
+            error.code = "hydration_payload_too_large";
+            handlers.get("connect_error")(error);
             return;
           }
-          this.frames.push(...frames.map((frame) => `4${frame}`));
           this.namespaceConnects++;
           if (this.namespaceConnects <= dropConnects) {
-            // The transport closes before the CONNECT is acknowledged. A
-            // transport error reports connect_error before the disconnect.
+            // The transport closes before the CONNECT is acknowledged.
+            if (kind === "websocket") {
+              // The plain WebSocket reports a close before its handshake as a
+              // failed attempt only.
+              handlers.get("connect_error")(
+                new Error("websocket connection failed"),
+              );
+              return;
+            }
+            // A socket.io transport error reports connect_error before the
+            // disconnect.
             if (dropReason === "transport error") {
               handlers.get("connect_error")(new Error("xhr post error"));
             }
@@ -175,11 +206,25 @@ async function setup({
     sockets.push(socket);
     return socket;
   }
+  // Called with `new`: a constructor returning an object yields that object.
+  function ReflexWebSocket(url, opts) {
+    return fakeSocket("websocket", url, opts);
+  }
+  const io = (url, opts) => fakeSocket("socketio", url, opts);
   const imports = {
     "socket.io-client": { default: io },
+    "$/utils/helpers/websocket": {
+      ReflexWebSocket,
+      disableChannels() {},
+      getChannel() {},
+    },
     mergician: { mergician() {} },
     "$/env.json": {
-      default: { EVENT: eventUrl, TRANSPORT: "websocket" },
+      default: {
+        EVENT: eventUrl,
+        TRANSPORT: transport,
+        SOCKETIO: socketio,
+      },
     },
     "$/reflex.json": { default: { version: "test" } },
     "universal-cookie": { default: class {} },
@@ -223,22 +268,15 @@ async function setup({
       getClientStore: () => ({}),
       setClientState: () => {},
     },
-    "$/utils/helpers/json": { parseJson: JSON.parse },
+    "$/utils/helpers/json": {
+      parseJsonLenient() {},
+      undefinedToNull: (_k, v) => (v === undefined ? null : v),
+    },
     "$/utils/helpers/debounce": { default() {} },
     "$/utils/helpers/throttle": { default() {} },
     "$/utils/helpers/upload": { uploadFiles() {} },
   };
-  const module = new vm.SourceTextModule(source, {
-    context,
-    initializeImportMeta(meta) {
-      meta.hot = {
-        dispose(fn) {
-          dispose = fn;
-        },
-      };
-    },
-  });
-  await module.link((name) => {
+  const link = (name) => {
     // state.js imports itself to hand its exports to server-provided scripts.
     if (name === "$/utils/state") return module;
     assert.ok(imports[name], `unexpected import: ${name}`);
@@ -250,7 +288,29 @@ async function setup({
       },
       { context },
     );
+  };
+  const module = new vm.SourceTextModule(source, {
+    context,
+    initializeImportMeta(meta) {
+      meta.hot = {
+        dispose(fn) {
+          dispose = fn;
+        },
+      };
+    },
+    // The socket.io client is imported on demand.
+    async importModuleDynamically(name) {
+      if (importFails) {
+        // A chunk missing after a redeploy; browsers cache the failure.
+        throw new TypeError("Failed to fetch dynamically imported module");
+      }
+      const imported = link(name);
+      await imported.link(() => {});
+      await imported.evaluate();
+      return imported;
+    },
   });
+  await module.link(link);
   await module.evaluate();
   const socket = { current: null };
   return {
@@ -287,13 +347,13 @@ async function setup({
   };
 }
 
-test("warm the transport without hydrating, then reuse it with every handler attached", async () => {
+test("warm the transport without opening a session, then reuse it with every handler attached", async () => {
   const app = await setup();
   app.flush();
   assert.equal(app.sockets.length, 1);
-  assert.equal(app.sockets[0].io.opens, 1);
+  assert.equal(app.sockets[0].kind, "websocket");
+  assert.equal(app.sockets[0].opens, 1);
   assert.equal(app.sockets[0].namespaceConnects, 0);
-  assert.equal(app.sockets[0].io.opts.autoConnect, false);
   assert.deepEqual(app.firstHydrates, []);
   await app.connect();
   assert.equal(app.sockets.length, 1);
@@ -446,9 +506,14 @@ const frameSize = (frame, transport) =>
     ? [...frame].length
     : new TextEncoder().encode(frame).byteLength;
 
-/** Connect an app whose first hydrate carries the payload, with the given server limit. */
+/** Connect a socket.io app whose first hydrate carries the payload, with the given server limit. */
 async function connectWith(transport, firstPayload, maxPayload, options = {}) {
-  const app = await setup({ firstPayload, maxPayload, ...options });
+  const app = await setup({
+    socketio: true,
+    firstPayload,
+    maxPayload,
+    ...options,
+  });
   app.flush();
   await app.connect([transport]);
   return app;
@@ -521,41 +586,48 @@ test("websocket limits count code points, polling limits count UTF-8 bytes", asy
   assert.match(polling.connectErrors[0].message, /bytes/);
 });
 
-test("an oversized first hydrate is reported once and not rebuilt per event", async () => {
-  const app = await connectWith(
-    "websocket",
-    { vars: { large: "x".repeat(1_000_001) } },
-    1_000_000,
-  );
-  const socket = app.socket.current;
-  // Later events reconnect through connect(), and a visible tab directly.
-  await app.connect();
-  socket.reconnect();
+for (const socketio of [false, true]) {
+  const over = socketio ? " over socket.io" : "";
 
-  assert.deepEqual(app.firstHydrates, [true]);
-  assert.equal(socket.namespaceConnects, 0);
-  assert.equal(app.timers.size, 0);
-  assert.equal(app.connectErrors.length, 1);
-  assert.equal(app.consoleErrors.length, 1);
-});
+  test(`an oversized first hydrate${over} is reported once and not rebuilt per event`, async () => {
+    const app = await setup({
+      socketio,
+      firstPayload: { vars: { large: "x".repeat(1_000_001) } },
+    });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    // Later events reconnect through connect(), and a visible tab directly.
+    await app.connect();
+    socket.reconnect();
 
-test("an oversized full hydrate on reconnect is reported, not retried", async () => {
-  const app = await setup({
-    reconnectPayload: { vars: { large: "x".repeat(1_000_001) } },
+    assert.deepEqual(app.firstHydrates, [true]);
+    assert.equal(socket.namespaceConnects, 0);
+    assert.equal(app.timers.size, 0);
+    assert.equal(app.connectErrors.length, 1);
+    assert.equal(app.connectErrors[0].code, "hydration_payload_too_large");
+    assert.deepEqual(app.consoleErrors, [[app.connectErrors[0].message]]);
   });
-  app.flush();
-  await app.connect();
-  const socket = app.socket.current;
-  socket.connected = false;
-  socket.handlers.get("disconnect")("transport close");
-  socket.reconnect();
 
-  assert.equal(socket.namespaceConnects, 1);
-  assert.deepEqual(app.firstHydrates, [true, false]);
-  assert.equal(app.timers.size, 0);
-  assert.equal(app.connectErrors.length, 1);
-  assert.match(app.connectErrors[0].message, /exceeds/);
-});
+  test(`an oversized full hydrate on reconnect${over} is reported, not retried`, async () => {
+    const app = await setup({
+      socketio,
+      reconnectPayload: { vars: { large: "x".repeat(1_000_001) } },
+    });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    socket.connected = false;
+    socket.handlers.get("disconnect")("transport close");
+    socket.reconnect();
+
+    assert.equal(socket.namespaceConnects, 1);
+    assert.deepEqual(app.firstHydrates, [true, false]);
+    assert.equal(app.timers.size, 0);
+    assert.equal(app.connectErrors.length, 1);
+    assert.match(app.connectErrors[0].message, /exceeds/);
+  });
+}
 
 test("a new session's token is saved only once the mounted app connects", async () => {
   const app = await setup({ storedToken: null });
@@ -587,21 +659,80 @@ test("a warm transport carrying another session's token is replaced", async () =
   assert.equal(app.socket.current.io.opts.query.token, "replaced-token");
 });
 
-test("reconnect uses the assigned token and requests a full hydrate", async () => {
-  const app = await setup();
-  app.flush();
-  await app.connect();
-  app.socket.current.connected = false;
-  app.socket.current.reconnect();
-  assert.equal(app.sockets.length, 1);
-  assert.equal(app.socket.current.io.opts.query.token, "assigned-token");
-  assert.deepEqual(app.firstHydrates, [true, false]);
-  assert.equal(app.socket.current.namespaceConnects, 2);
-});
+for (const socketio of [false, true]) {
+  test(`reconnect ${socketio ? "over socket.io " : ""}uses the assigned token and requests a full hydrate`, async () => {
+    const app = await setup({ socketio });
+    app.flush();
+    await app.connect();
+    assert.equal(app.socket.current.kind, socketio ? "socketio" : "websocket");
+    app.socket.current.connected = false;
+    app.socket.current.reconnect();
+    assert.equal(app.sockets.length, 1);
+    assert.equal(app.socket.current.io.opts.query.token, "assigned-token");
+    assert.deepEqual(app.firstHydrates, [true, false]);
+    assert.equal(app.socket.current.auth.event.name, "root.hydrate_and_load");
+    assert.equal(app.socket.current.namespaceConnects, 2);
+  });
+}
 
-test("a transport closed before the namespace connects backs off with an error", async () => {
-  const app = await setup({ dropConnects: Infinity });
-  app.flush();
+for (const socketio of [false, true]) {
+  const over = socketio ? " over socket.io" : "";
+
+  test(`a transport closed before the namespace connects${over} backs off with an error`, async () => {
+    const app = await setup({ socketio, dropConnects: Infinity });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    assert.equal(socket.kind, socketio ? "socketio" : "websocket");
+    assert.equal(socket.namespaceConnects, 1);
+    assert.equal(app.connectErrors.length, 1);
+    assert.deepEqual([...app.timers.values()], [200]);
+
+    const [retry] = app.timers.keys();
+    app.timers.clear();
+    retry();
+    assert.equal(socket.namespaceConnects, 2);
+    assert.equal(app.connectErrors.length, 2);
+    assert.deepEqual([...app.timers.values()], [400]);
+  });
+
+  test(`a connect${over} cancels the pending retry`, async () => {
+    const app = await setup({ socketio, dropConnects: 1 });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    assert.equal(app.timers.size, 1);
+
+    // Another path, such as the page becoming visible, reconnects first.
+    socket.reconnect();
+    assert.equal(socket.connected, true);
+    assert.equal(app.timers.size, 0);
+
+    socket.connected = false;
+    socket.handlers.get("disconnect")("io server disconnect");
+    assert.equal(socket.namespaceConnects, 2);
+    assert.equal(app.timers.size, 0);
+  });
+
+  test(`a dropped connection${over} reconnects at once`, async () => {
+    const app = await setup({ socketio });
+    app.flush();
+    await app.connect();
+    const socket = app.socket.current;
+    socket.connected = false;
+    socket.handlers.get("disconnect")("transport close");
+    assert.equal(socket.namespaceConnects, 2);
+    assert.equal(app.connectErrors.length, 0);
+    assert.equal(app.timers.size, 0);
+  });
+}
+
+test("a socket.io transport error before the namespace connects retries once with backoff", async () => {
+  const app = await setup({
+    socketio: true,
+    dropConnects: 2,
+    dropReason: "transport error",
+  });
   await app.connect();
   const socket = app.socket.current;
   assert.equal(socket.namespaceConnects, 1);
@@ -612,80 +743,26 @@ test("a transport closed before the namespace connects backs off with an error",
   app.timers.clear();
   retry();
   assert.equal(socket.namespaceConnects, 2);
-  assert.equal(app.connectErrors.length, 2);
   assert.deepEqual([...app.timers.values()], [400]);
 });
 
-test("a transport error before the namespace connects retries once with backoff", async () => {
-  const app = await setup({ dropConnects: 2, dropReason: "transport error" });
-  app.flush();
-  await app.connect();
-  const socket = app.socket.current;
-  assert.equal(socket.namespaceConnects, 1);
-  assert.equal(app.connectErrors.length, 1);
-  assert.deepEqual([...app.timers.values()], [200]);
-
-  const [retry] = app.timers.keys();
-  app.timers.clear();
-  retry();
-  assert.equal(socket.namespaceConnects, 2);
-  assert.deepEqual([...app.timers.values()], [400]);
-});
-
-test("a connect cancels the pending retry", async () => {
-  const app = await setup({ dropConnects: 1 });
-  app.flush();
-  await app.connect();
-  const socket = app.socket.current;
-  assert.equal(app.timers.size, 1);
-
-  // Another path, such as the page becoming visible, reconnects first.
-  socket.reconnect();
-  assert.equal(socket.connected, true);
-  assert.equal(app.timers.size, 0);
-
-  socket.connected = false;
-  socket.handlers.get("disconnect")("io server disconnect");
-  assert.equal(socket.namespaceConnects, 2);
-  assert.equal(app.timers.size, 0);
-});
-
-test("a dropped connection reconnects at once", async () => {
-  const app = await setup();
-  app.flush();
-  await app.connect();
-  const socket = app.socket.current;
-  socket.connected = false;
-  socket.handlers.get("disconnect")("transport close");
-  assert.equal(socket.namespaceConnects, 2);
-  assert.equal(app.connectErrors.length, 0);
-  assert.equal(app.timers.size, 0);
-});
-
-for (const reason of ["error", "timeout", "pagehide", "hot reload"]) {
+for (const reason of ["timeout", "pagehide", "hot reload"]) {
   test(`discard an unclaimed warm transport on ${reason}`, async () => {
     const app = await setup();
     app.flush();
     const warm = app.sockets[0];
-    if (reason === "error") warm.io.openCallback(new Error("offline"));
     if (reason === "timeout") [...app.timers.keys()][0]();
     if (reason === "pagehide") app.window.dispatchEvent(new Event("pagehide"));
     if (reason === "hot reload") app.dispose();
     assert.equal(warm.disconnects, 1);
+    // The transport's offline listener goes with it.
+    assert.equal(warm.offs, 1);
     assert.equal(app.timers.size, 0);
     await app.connect();
     assert.equal(app.sockets.length, 2);
     assert.equal(app.socket.current.namespaceConnects, 1);
   });
 }
-
-test("a late warmup error cannot close the socket after React claims it", async () => {
-  const app = await setup();
-  app.flush();
-  await app.connect();
-  app.socket.current.io.openCallback(new Error("late failure"));
-  assert.equal(app.socket.current.disconnects, 0);
-});
 
 test("a synchronous mount does not leave a second speculative connection", async () => {
   const app = await setup();
@@ -708,22 +785,48 @@ test("blocked session storage does not throw from speculative setup", async () =
   };
   app.flush();
   assert.equal(app.sockets.length, 0);
-  await assert.rejects(app.connect(), /storage blocked/);
+  // Reported, not rejected: the unhandled rejection handler adds an event,
+  // which reconnects, which would fail again without end.
+  await app.connect();
+  assert.equal(app.sockets.length, 0);
+  assert.match(String(app.connectErrors[0]), /storage blocked/);
+  // A later attempt is not locked out by the failed one.
+  app.window.sessionStorage.getItem = () => "original-token";
+  await app.connect();
+  assert.equal(app.sockets.length, 1);
 });
 
-test("a caller selecting another transport gets its requested configuration", async () => {
-  const app = await setup();
-  app.flush();
-  await app.connect(["polling"]);
-  assert.equal(app.sockets[0].disconnects, 1);
-  assert.equal(app.socket.current.io.opts.transports[0], "polling");
+test("a socket.io client that fails to load is a connection error", async () => {
+  const app = await setup({ socketio: true, importFails: true });
+  await app.connect();
+  assert.equal(app.socket.current, null);
+  assert.equal(app.connectErrors.length, 1);
+  assert.match(String(app.connectErrors[0]), /dynamically imported module/);
 });
+
+for (const transport of ["websocket", "polling"]) {
+  test(`socket.io over ${transport} gets the engine.io transport and the boot event`, async () => {
+    // TRANSPORT is an engine.io name, handed to socket.io-client as is.
+    const app = await setup({ socketio: true, transport });
+    app.flush();
+    await app.connect([transport]);
+    assert.equal(app.sockets.length, 1);
+    assert.equal(app.socket.current.kind, "socketio");
+    assert.equal(app.socket.current.io.opts.autoConnect, false);
+    assert.deepEqual([...app.socket.current.io.opts.transports], [transport]);
+    assert.equal(app.socket.current.namespaceConnects, 1);
+    assert.deepEqual(app.firstHydrates, [true]);
+    assert.equal(app.socket.current.auth.event.router_data.pathname, "/page");
+  });
+}
 
 for (const config of [
   { browser: false },
   { stateful: false },
   { disabled: true },
   { hidden: true },
+  // The socket.io client is only loaded on connect.
+  { socketio: true },
 ]) {
   test(`skip speculative connections for ${JSON.stringify(config)}`, async () => {
     const app = await setup(config);

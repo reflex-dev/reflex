@@ -11,8 +11,17 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-const io = vi.hoisted(() => vi.fn());
-vi.mock("socket.io-client", () => ({ default: io }));
+// Creates the transport: the plain WebSocket by default, socket.io when the
+// app is configured for it. The fake stands in for either.
+const createTransport = vi.hoisted(() => vi.fn());
+vi.mock("socket.io-client", () => ({ default: createTransport }));
+vi.mock("$/utils/helpers/websocket", async (importOriginal) => ({
+  ...(await importOriginal()),
+  // Called with `new`: a constructor returning an object yields that object.
+  ReflexWebSocket: function ReflexWebSocket(url, opts) {
+    return createTransport(url, opts);
+  },
+}));
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -21,7 +30,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const SPIN_LIMIT = 2000;
 
 /**
- * Stand in for a socket.io socket.
+ * Stand in for the event transport.
  *
  * A drain that polls a disconnected socket without yielding never returns to
  * the event loop, so it would hang the test run rather than fail a test. The
@@ -91,7 +100,7 @@ let looseSockets;
 
 beforeEach(async () => {
   vi.resetModules();
-  io.mockReset().mockImplementation(fakeSocket);
+  createTransport.mockReset().mockImplementation(fakeSocket);
   looseSockets = [];
   sessionStorage.clear();
   state = await import("$/utils/state");
@@ -158,7 +167,7 @@ const mountEventLoop = async () => {
   return {
     addEvents: (...args) => mounted.addEvents(...args),
     connectErrors: () => mounted.connectErrors,
-    socket: io.mock.results[0]?.value,
+    socket: createTransport.mock.results[0]?.value,
     render,
     unmount: () => act(async () => root.unmount()),
   };
@@ -243,14 +252,14 @@ test("a connection lost while the mounted loop drains leaves the rest queued", a
 
 test("an unmounted event loop is not reconnected when the page becomes visible", async () => {
   const loop = await mountEventLoop();
-  expect(io).toHaveBeenCalledTimes(1);
+  expect(createTransport).toHaveBeenCalledTimes(1);
   await loop.unmount();
 
   document.dispatchEvent(new Event("visibilitychange"));
   await Promise.resolve();
 
   expect(document.visibilityState).toBe("visible");
-  expect(io).toHaveBeenCalledTimes(1);
+  expect(createTransport).toHaveBeenCalledTimes(1);
 });
 
 test("unmounting the event loop removes its visibility listener at once", async () => {
@@ -279,7 +288,7 @@ test("a mounted event loop reconnects its socket when the page becomes visible",
   document.dispatchEvent(new Event("visibilitychange"));
 
   expect(socket.connect).toHaveBeenCalledTimes(1);
-  expect(io).toHaveBeenCalledTimes(1);
+  expect(createTransport).toHaveBeenCalledTimes(1);
   await loop.unmount();
 });
 
@@ -306,7 +315,7 @@ test("a connection that cannot be attempted is a connection error, not a rejecti
   process.off("unhandledRejection", record);
 
   expect(rejections).toEqual([]);
-  expect(io).not.toHaveBeenCalled();
+  expect(createTransport).not.toHaveBeenCalled();
   expect(loop.connectErrors().at(-1)).toBe(denied);
   await loop.unmount();
 });

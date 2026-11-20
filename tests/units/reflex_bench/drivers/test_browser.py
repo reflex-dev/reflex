@@ -19,14 +19,14 @@ import time
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import psutil
 import pytest
 from reflex_bench import machine
 from reflex_bench.drivers import browser as browser_module
 from reflex_bench.drivers.app_process import Readiness
-from reflex_bench.drivers.browser import Anchor, Browser
+from reflex_bench.drivers.browser import Anchor, Browser, Tab
 from reflex_bench.scheduler import ABANDON_GRACE_S
 
 HTML = Path(__file__).parents[1] / "fixtures" / "html"
@@ -160,6 +160,37 @@ def test_anchor_maps_the_wall_clock_to_perf_counter():
 def test_the_page_script_is_one_file_next_to_the_driver():
     script = Path(browser_module.__file__).with_name("bench_page.js")
     assert script.read_text(encoding="utf-8") == browser_module.BENCH_JS
+
+
+class _Events:
+    """A page or DevTools session that ignores what a tab asks of it."""
+
+    def on(self, *args: Any) -> None:
+        """Ignore a listener."""
+
+    def send(self, *args: Any) -> None:
+        """Ignore a command."""
+
+
+def test_received_frames_count_the_messages_of_both_protocols():
+    tab = Tab(cast(Any, _Events()), cast(Any, _Events()))
+    frames: list[str | bytes] = [
+        '["event",{"delta":{}}]',
+        '["_ping"]',
+        '42/_event,["event",{"delta":{}}]',
+        '42["reload","/"]',
+        # Socket.IO's open, ack and ping, and binary frames carry no message.
+        '0{"sid":"a"}',
+        '40/_event,{"sid":"a"}',
+        "2",
+        b"\x00\x01",
+    ]
+    for frame in frames:
+        tab._on_frame_received(frame)
+    assert tab.ws_events == {"event": 2, "_ping": 1, "reload": 1}
+    assert tab.ws_bytes == sum(
+        len(frame.encode() if isinstance(frame, str) else frame) for frame in frames
+    )
 
 
 @needs_chromium

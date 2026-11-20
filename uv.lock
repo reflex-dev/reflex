@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11, <4.0"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
@@ -24,28 +24,28 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
-reflex-components-plotly = false
-reflex-components-react-player = false
-reflex-components-moment = false
-reflex-components-sonner = false
+certifi = "2026-10-21T00:00:00Z"
 hatch-reflex-pyi = false
 pillow = "2026-10-21T00:00:00Z"
-reflex-components-gridjs = false
 reflex = false
-reflex-enterprise = false
+reflex-base = false
+reflex-build-sdk = false
 reflex-components-code = false
-reflex-components-recharts = false
 reflex-components-core = false
 reflex-components-dataeditor = false
-reflex-base = false
-reflex-components-markdown = false
-virtualenv = "2026-10-23T00:00:00Z"
-reflex-build-sdk = false
-certifi = "2026-10-21T00:00:00Z"
+reflex-components-gridjs = false
 reflex-components-internal = false
 reflex-components-lucide = false
+reflex-components-markdown = false
+reflex-components-moment = false
+reflex-components-plotly = false
 reflex-components-radix = false
+reflex-components-react-player = false
+reflex-components-recharts = false
+reflex-components-sonner = false
+reflex-enterprise = false
 reflex-hosting-cli = false
+virtualenv = "2026-10-23T00:00:00Z"
 
 [manifest]
 members = [
@@ -1630,6 +1630,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/2b/27/b55f1a5278918be765fb2fd8b20966bc72bbdd3f789f031937cceea7834a/griffelib-2.3.2.tar.gz", hash = "sha256:df00c7a0dee3d86268d76788997a1859272cb1fb7b865658e043d2c0c3d52e60", size = 234729, upload-time = "2026-10-06T09:54:37.222Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/e5/0ae74c83c1cab2c14daadf28bd0143eb14bb81503834af987b66badc7b61/griffelib-2.3.2-py3-none-any.whl", hash = "sha256:8e710afededd5607f95bf3c8ccc175ee306e7084459faf27b9f9f44ef2a7a274", size = 169420, upload-time = "2026-10-06T09:54:32.038Z" },
+]
+
+[[package]]
+name = "gunicorn"
+version = "27.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/b3/addb4f148b938633977d983b852c82177b6c92d17837102a9a2aca061905/gunicorn-27.0.0.tar.gz", hash = "sha256:88d52e7c60b3af07bc8db431fbb450a94780f2cbe7c420c7cf1891392661c591", size = 932048, upload-time = "2026-11-10T11:20:59.207Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/2b/367de7fc2fd4cfd1814b0a31da023195eb4037c1fddc4d9e11cc965e1c00/gunicorn-27.0.0-py3-none-any.whl", hash = "sha256:1380f2f520abc3beb9e72cd2e728bd2d08a19b3ff6ac03ebd8da71d1798a4008", size = 261789, upload-time = "2026-11-10T11:20:57.621Z" },
 ]
 
 [[package]]
@@ -4046,9 +4055,7 @@ dependencies = [
     { name = "httpx" },
     { name = "packaging" },
     { name = "psutil", marker = "sys_platform == 'win32'" },
-    { name = "python-engineio" },
     { name = "python-multipart" },
-    { name = "python-socketio" },
     { name = "redis" },
     { name = "reflex-base" },
     { name = "reflex-components-code" },
@@ -4081,10 +4088,18 @@ db = [
 pydantic = [
     { name = "reflex-base", extra = ["pydantic"] },
 ]
+socketio = [
+    { name = "python-engineio" },
+    { name = "python-socketio" },
+]
 testing = [
     { name = "psutil" },
     { name = "selenium" },
+]
+uvicorn = [
+    { name = "gunicorn" },
     { name = "uvicorn" },
+    { name = "websockets" },
 ]
 
 [package.dev-dependencies]
@@ -4125,6 +4140,7 @@ dev = [
     { name = "pytest-rerunfailures" },
     { name = "pytest-split" },
     { name = "python-dotenv" },
+    { name = "python-socketio" },
     { name = "pyyaml" },
     { name = "reflex-bench" },
     { name = "reflex-build-sdk", extra = ["aiohttp", "httpx", "httpx2"] },
@@ -4149,16 +4165,17 @@ requires-dist = [
     { name = "aiosqlite", marker = "extra == 'db'", specifier = ">=0.20.0" },
     { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
     { name = "click", specifier = ">=8.2" },
-    { name = "granian", extras = ["reload"], specifier = ">=2.7.4" },
+    { name = "granian", extras = ["reload"], specifier = ">=2.8.1" },
     { name = "greenlet", marker = "extra == 'db'", specifier = ">=3.3" },
+    { name = "gunicorn", marker = "extra == 'uvicorn'", specifier = ">=23.0" },
     { name = "httpx", specifier = ">=0.26,<1.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
     { name = "psutil", marker = "extra == 'testing'", specifier = ">=7.0.0,<8.0" },
     { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
-    { name = "python-engineio", specifier = ">=4.12.0,<5.0" },
+    { name = "python-engineio", marker = "extra == 'socketio'", specifier = ">=4.12.0,<5.0" },
     { name = "python-multipart", specifier = ">=0.0.32,<1.0" },
-    { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
+    { name = "python-socketio", marker = "extra == 'socketio'", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=6.4,<9.0" },
     { name = "reflex-base", editable = "packages/reflex-base" },
     { name = "reflex-base", extras = ["pydantic"], marker = "extra == 'pydantic'", editable = "packages/reflex-base" },
@@ -4180,10 +4197,11 @@ requires-dist = [
     { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24" },
     { name = "starlette", specifier = ">=1.3.1" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
-    { name = "uvicorn", marker = "extra == 'testing'", specifier = ">=0.34.0,<1.0" },
+    { name = "uvicorn", marker = "extra == 'uvicorn'", specifier = ">=0.20.0" },
+    { name = "websockets", marker = "extra == 'uvicorn'", specifier = ">=13.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.6" },
 ]
-provides-extras = ["db", "pydantic", "testing"]
+provides-extras = ["db", "pydantic", "socketio", "testing", "uvicorn"]
 
 [package.metadata.requires-dev]
 bench = [
@@ -4222,6 +4240,7 @@ dev = [
     { name = "pytest-rerunfailures" },
     { name = "pytest-split" },
     { name = "python-dotenv" },
+    { name = "python-socketio" },
     { name = "pyyaml" },
     { name = "reflex-bench", editable = "packages/reflex-bench" },
     { name = "reflex-build-sdk", extras = ["aiohttp", "httpx", "httpx2"], editable = "packages/reflex-build-sdk" },
@@ -4531,7 +4550,7 @@ dependencies = [
     { name = "plotly-express" },
     { name = "psycopg", extra = ["binary"] },
     { name = "python-frontmatter" },
-    { name = "reflex", extra = ["db"] },
+    { name = "reflex", extra = ["db", "socketio"] },
     { name = "reflex-components-internal" },
     { name = "reflex-docgen" },
     { name = "reflex-enterprise" },
@@ -4569,7 +4588,7 @@ requires-dist = [
     { name = "plotly-express" },
     { name = "psycopg", extras = ["binary"] },
     { name = "python-frontmatter" },
-    { name = "reflex", extras = ["db"], editable = "." },
+    { name = "reflex", extras = ["db", "socketio"], editable = "." },
     { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-enterprise", specifier = ">=0.9.9" },

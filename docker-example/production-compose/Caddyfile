@@ -2,7 +2,7 @@
 
 encode gzip
 
-@backend_routes path /_event/* /ping /_health /_upload /_upload/*
+@backend_routes path /_event /_event/* /ping /_health /_upload /_upload/*
 handle @backend_routes {
 	reverse_proxy app:8000
 }

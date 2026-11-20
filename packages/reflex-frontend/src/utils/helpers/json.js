@@ -70,3 +70,26 @@ export const parseJson = (str) => {
     return parseNonFiniteFloats(str);
   }
 };
+
+/**
+ * Parse JSON, tolerating bare non-finite float tokens.
+ * @param text The text to parse.
+ * @param fallback The value to return if the text is unparsable.
+ * @returns The parsed value, or the fallback.
+ */
+export const parseJsonLenient = (text, fallback) => {
+  try {
+    return parseJson(text);
+  } catch {
+    return fallback;
+  }
+};
+
+/**
+ * JSON.stringify replacer that sends undefined fields as null instead of
+ * removing them. Also assigned as the socket.io encoder replacer.
+ * @param _k The key being serialized.
+ * @param v The value being serialized.
+ * @returns The value to serialize.
+ */
+export const undefinedToNull = (_k, v) => (v === undefined ? null : v);
