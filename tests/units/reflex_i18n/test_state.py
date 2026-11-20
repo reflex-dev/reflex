@@ -4,13 +4,15 @@ import contextlib
 from typing import TYPE_CHECKING, cast
 
 import pytest
+from reflex_base import constants
 from reflex_base.config import get_config
+from reflex_base.utils import console
 from reflex_i18n import I18nConfig, I18nPlugin, PathPrefixRouting
 from reflex_i18n.config import set_active_i18n_config
 from reflex_i18n.runtime import get_locale
 from reflex_i18n.state import I18nState, _locale_scope, _resolve_locale, set_locale
 
-from reflex.istate.data import PageData
+from reflex.istate.data import RouterData
 from reflex.state import State
 
 if TYPE_CHECKING:
@@ -101,18 +103,22 @@ def test_locale_depends_on_the_route_locale():
     assert deps[I18nState.get_full_name()] == {"locale_cookie", "_route_locale"}
 
 
-async def _root_on(path: str, cookie: str) -> State:
+async def _root_on(path: str, cookie: str, accept_language: str = "") -> State:
     """Build a root state on a given page, with a locale cookie set.
 
     Args:
         path: The page path the client is on.
         cookie: The locale chosen by the user, if any.
+        accept_language: The client's Accept-Language header.
 
     Returns:
         The root state.
     """
     root = State()
-    root.rx_router_page = PageData(path=path)
+    root.router = RouterData.from_router_data({
+        constants.RouteVar.PATH: path,
+        constants.RouteVar.HEADERS: {"accept-language": accept_language},
+    })
     (await root.get_state(I18nState)).locale_cookie = cookie
     return root
 
@@ -170,3 +176,41 @@ async def test_locale_scope_keeps_a_session_locale_a_deploy_removed(
 
     with await _locale_scope(root):
         assert get_locale() == "fr"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("routing", "expected"),
+    [(None, "fr"), (PathPrefixRouting(), "de")],
+    ids=["cookie", "url"],
+)
+async def test_locale_scope_reads_the_router_fields_directly(
+    monkeypatch: pytest.MonkeyPatch, routing: PathPrefixRouting | None, expected: str
+):
+    # The scope runs on every event, so it must not compose a RouterData view,
+    # whose deprecated page accessor also logs a warning.
+    monkeypatch.setattr(
+        get_config(),
+        "plugins",
+        [I18nPlugin(locales=["en", "de", "fr"], default_locale="en", routing=routing)],
+    )
+    root = await _root_on("/de/pricing", cookie="", accept_language="fr")
+    built: list[RouterData] = []
+    deprecations: list[str] = []
+
+    def build_router(**fields) -> RouterData:
+        router = RouterData(**fields)
+        built.append(router)
+        return router
+
+    monkeypatch.setattr("reflex.state.RouterData", build_router)
+    monkeypatch.setattr(
+        console,
+        "deprecate",
+        lambda *, feature_name, **_: deprecations.append(feature_name),
+    )
+
+    with await _locale_scope(root):
+        assert get_locale() == expected
+    assert built == []
+    assert deprecations == []

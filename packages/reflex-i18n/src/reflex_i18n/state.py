@@ -56,25 +56,6 @@ def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
     return negotiate_locale(accept_language, config.locales, config.fallback_locale)
 
 
-def _locale_from_path(path: str) -> str | None:
-    """The locale a URL path names, when URL-based routing is enabled.
-
-    Args:
-        path: The page path the client is on.
-
-    Returns:
-        The locale owned by the path, or None if this app does not route
-        locales through the URL.
-    """
-    from .plugin import I18nPlugin
-
-    plugin = get_plugin(I18nPlugin)
-    config = get_active_i18n_config()
-    if plugin is None or plugin.routing is None or config is None:
-        return None
-    return plugin.routing.locale_of(path, config.locales, config.default_locale)
-
-
 class I18nState(State):
     """Substate holding the active locale for the current client."""
 
@@ -115,7 +96,7 @@ class I18nState(State):
         # initial cookie-mode value but is fixed per session, so it is not a
         # dependency.
         return self._route_locale or _resolve_locale(
-            self.locale_cookie, self.router.headers.accept_language
+            self.locale_cookie, self.rx_router_headers.accept_language
         )
 
     @event
@@ -177,14 +158,18 @@ async def _locale_scope(
     # config: the provider is registered process-wide once i18n is imported,
     # but an app not using i18n (possible when several apps share a process)
     # must be a no-op so it never touches I18nState.
-    if get_plugin(I18nPlugin) is None:
+    plugin = get_plugin(I18nPlugin)
+    if plugin is None:
         return contextlib.nullcontext()
     i18n_state = await root_state.get_state(I18nState)
-    # Record the URL's locale so translated computed vars are invalidated when
-    # the visitor navigates to another prefix.
-    route_locale = _locale_from_path(i18n_state.router.page.path)
-    if route_locale is not None and route_locale != i18n_state._route_locale:
-        i18n_state._route_locale = route_locale
+    # Record the URL's locale (the route id is the client's page path) so
+    # translated computed vars are invalidated on navigating to another prefix.
+    if plugin.routing is not None and (config := get_active_i18n_config()) is not None:
+        route_locale = plugin.routing.locale_of(
+            i18n_state.rx_router_route_id, config.locales, config.default_locale
+        )
+        if route_locale != i18n_state._route_locale:
+            i18n_state._route_locale = route_locale
     # I18nState.locale is the single source of truth, so what gettext returns
     # and what dynamic translations depend on can never disagree.
     return active_locale(i18n_state.locale)
