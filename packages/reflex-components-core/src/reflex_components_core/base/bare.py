@@ -180,15 +180,23 @@ class Bare(Component):
                 refs |= component._get_all_refs()
         return refs
 
-    def _render(self) -> CommonTag:
+    def _rendered_contents(self) -> Var:
+        """The var this component renders: booleans and objects as their string form.
+
+        Returns:
+            The rendered var.
+        """
         contents = (
             Var.create(self.contents)
             if not isinstance(self.contents, Var)
             else self.contents
         )
         if isinstance(contents, (BooleanVar, ObjectVar)):
-            return Tagless(contents=f"{contents.to_string()!s}")
-        return Tagless(contents=f"{contents!s}")
+            return contents.to_string()
+        return contents
+
+    def _render(self) -> CommonTag:
+        return Tagless(contents=f"{self._rendered_contents()!s}")
 
     def render(self) -> dict:
         """Render the component as a dictionary.
@@ -198,14 +206,7 @@ class Bare(Component):
         Returns:
             The rendered component.
         """
-        contents = (
-            Var.create(self.contents)
-            if not isinstance(self.contents, Var)
-            else self.contents
-        )
-        if isinstance(contents, (BooleanVar, ObjectVar)):
-            return {"contents": f"{contents.to_string()!s}"}
-        return {"contents": f"{contents!s}"}
+        return {"contents": f"{self._rendered_contents()!s}"}
 
     def _add_style_recursive(
         self, style: ComponentStyle, theme: Component | None = None
@@ -244,6 +245,9 @@ class Bare(Component):
             ignore_ids: The ids to ignore.
 
         Yields:
-            The contents if it is a Var, otherwise nothing.
+            The contents, and the var rendered for them when that differs.
         """
         yield self.contents
+        rendered = self._rendered_contents()
+        if rendered is not self.contents:
+            yield rendered
