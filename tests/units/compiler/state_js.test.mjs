@@ -10,6 +10,13 @@ const source = await readFile(
   ),
   "utf8",
 );
+const websocketSource = await readFile(
+  new URL(
+    "../../../packages/reflex-frontend/src/utils/helpers/websocket.js",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 /** Evaluate the actual frontend module with controlled transport and browser APIs. */
 async function setup({
@@ -67,6 +74,7 @@ async function setup({
     console: { ...console, error: (...args) => consoleErrors.push(args) },
     URL,
     TextEncoder,
+    TextDecoder,
     URLSearchParams,
     performance,
     localStorage,
@@ -289,6 +297,16 @@ async function setup({
       { context },
     );
   };
+  // The hydrate size error state.js reports comes from the real transport module.
+  const transportModule = new vm.SourceTextModule(websocketSource, { context });
+  await transportModule.link(link);
+  await transportModule.evaluate();
+  const { HYDRATION_PAYLOAD_TOO_LARGE, hydrationTooLargeError } =
+    transportModule.namespace;
+  Object.assign(imports["$/utils/helpers/websocket"], {
+    HYDRATION_PAYLOAD_TOO_LARGE,
+    hydrationTooLargeError,
+  });
   const module = new vm.SourceTextModule(source, {
     context,
     initializeImportMeta(meta) {
@@ -550,13 +568,12 @@ for (const transport of ["websocket", "polling"]) {
     assert.equal(app.connectErrors.length, 1);
     const [error] = app.connectErrors;
     assert.equal(error.code, "hydration_payload_too_large");
-    assert.ok(error.message.includes(`(${size} `));
-    assert.ok(error.message.includes(`(${size - 1} `));
-    assert.match(
+    const unit = transport === "websocket" ? "characters" : "bytes";
+    assert.equal(
       error.message,
-      transport === "websocket" ? /characters/ : /bytes/,
+      `Hydration payload (${size} ${unit}) exceeds the server limit ` +
+        `(${size - 1} ${unit}). Reduce browser storage data and reload.`,
     );
-    assert.match(error.message, /browser storage/i);
     assert.deepEqual(app.consoleErrors, [[error.message]]);
   });
 }

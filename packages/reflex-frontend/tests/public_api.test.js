@@ -102,11 +102,13 @@ const PUBLIC_API = {
   "$/utils/helpers/throttle": ["default"],
   "$/utils/helpers/upload": ["uploadFiles"],
   "$/utils/helpers/websocket": [
+    "HYDRATION_PAYLOAD_TOO_LARGE",
     "ReflexWebSocket",
     "decodeChannelFrame",
     "disableChannels",
     "encodeChannelFrame",
     "getChannel",
+    "hydrationTooLargeError",
   ],
   "$/components/reflex/radix_themes_color_mode_provider": ["default"],
   "$/components/shiki/code": ["Code"],

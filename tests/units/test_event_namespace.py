@@ -2374,7 +2374,7 @@ def test_client_error_constants_match_frontend():
     Nothing at runtime keeps the definitions in sync, so pin them here.
     """
     assert (
-        "const HYDRATION_PAYLOAD_TOO_LARGE = "
+        "export const HYDRATION_PAYLOAD_TOO_LARGE = "
         f'"{constants.ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE}";'
         in WEBSOCKET_JS_TEMPLATE.read_text()
     )
@@ -2389,8 +2389,4 @@ def test_client_error_constants_match_frontend():
     assert (
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
-    )
-    assert (
-        "const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "
-        f'"{constants.ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE}"' in state_js
     )

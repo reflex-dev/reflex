@@ -19,7 +19,7 @@ const MAX_MESSAGE_SIZE_REASON = "max_message_size=";
 
 // The code of the error that reports such a refused hydrate (must match
 // ClientErrorType.HYDRATION_PAYLOAD_TOO_LARGE in reflex_base/constants/event.py).
-const HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
+export const HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
 
 // Backend protocol version that speaks channels. A backend older than this
 // closes the connection on a binary frame, so channels stay shut until the
@@ -147,15 +147,16 @@ const oversizedMessage = (subject, frame, limit) =>
  * The error for a connect frame over the backend's inbound message limit.
  *
  * Every retry would carry the same hydrate, so the code marks it as final.
- * @param frame The serialized connect frame.
- * @param limit The limit in bytes; falsy when the backend did not name it.
+ * @param size The size of the connect frame.
+ * @param limit The limit; falsy when the backend did not name it.
+ * @param unit What the size and the limit count.
  * @returns The error.
  */
-const hydrationTooLargeError = (frame, limit) => {
+export const hydrationTooLargeError = (size, limit, unit = "bytes") => {
   /** @type {Error & { code?: string }} */
   const error = new Error(
-    `Hydration payload (${frameByteLength(frame)} bytes) exceeds the server limit` +
-      (limit ? ` (${limit} bytes)` : "") +
+    `Hydration payload (${size} ${unit}) exceeds the server limit` +
+      (limit ? ` (${limit} ${unit})` : "") +
       ". Reduce browser storage data and reload.",
   );
   error.code = HYDRATION_PAYLOAD_TOO_LARGE;
@@ -759,7 +760,7 @@ export class ReflexWebSocket extends LocalEmitter {
           "connect_error",
           event.code === 1009
             ? hydrationTooLargeError(
-                this._connectFrame,
+                frameByteLength(this._connectFrame),
                 event.reason.startsWith(MAX_MESSAGE_SIZE_REASON) &&
                   event.reason.slice(MAX_MESSAGE_SIZE_REASON.length),
               )
@@ -794,7 +795,10 @@ export class ReflexWebSocket extends LocalEmitter {
     const limit = this._maxMessageSize;
     if (exceedsMessageLimit(frame, limit)) {
       this._teardown("io client disconnect", undefined);
-      this._emitLocal("connect_error", hydrationTooLargeError(frame, limit));
+      this._emitLocal(
+        "connect_error",
+        hydrationTooLargeError(frameByteLength(frame), limit),
+      );
       return;
     }
     this._connectFrame = frame;

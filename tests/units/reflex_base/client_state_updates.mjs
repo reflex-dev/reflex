@@ -104,6 +104,7 @@ async function createConnection(
         sessionStorage,
       },
       "$/utils/helpers/websocket": {
+        HYDRATION_PAYLOAD_TOO_LARGE: "hydration_payload_too_large",
         // Called with `new`: a constructor returning an object yields that object.
         ReflexWebSocket: function () {
           created.push("websocket");
@@ -111,6 +112,7 @@ async function createConnection(
         },
         disableChannels() {},
         getChannel() {},
+        hydrationTooLargeError() {},
       },
       "socket.io-client": {
         default: () => {

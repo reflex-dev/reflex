@@ -65,9 +65,11 @@ export async function createQueueRuntime(
       uploadFiles: uploadFiles ?? unused,
     },
     "$/utils/helpers/websocket": {
+      HYDRATION_PAYLOAD_TOO_LARGE: "hydration_payload_too_large",
       ReflexWebSocket: unused,
       disableChannels: unused,
       getChannel: unused,
+      hydrationTooLargeError: unused,
     },
     ...dependencyOverrides,
   };

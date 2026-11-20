@@ -23,9 +23,11 @@ import { parseJsonLenient, undefinedToNull } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 import {
+  HYDRATION_PAYLOAD_TOO_LARGE,
   ReflexWebSocket,
   disableChannels,
   getChannel,
+  hydrationTooLargeError,
 } from "$/utils/helpers/websocket";
 
 // Re-exported so components can reach a side channel through the module they
@@ -54,7 +56,6 @@ const STATE_MISMATCH_WINDOW_EVENT = "reflex:state-mismatch";
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
-const ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE = "hydration_payload_too_large";
 
 // Connection errors kept for display, oldest dropped first.
 const MAX_CONNECT_ERRORS = 10;
@@ -1225,13 +1226,8 @@ export const connect = async (
         const size = 1 + frameSize(encoded[0], transport);
         if (size > engine._maxPayload) {
           const unit = transport === "websocket" ? "characters" : "bytes";
-          /** @type {Error & { code?: string }} */
-          const error = new Error(
-            `Hydration payload (${size} ${unit}) exceeds the server limit (${engine._maxPayload} ${unit}). Reduce browser storage data and reload.`,
-          );
-          error.code = ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE;
           socket.current.disconnect();
-          retryConnect(error);
+          retryConnect(hydrationTooLargeError(size, engine._maxPayload, unit));
           return [];
         }
         return encoded;
@@ -1354,7 +1350,7 @@ export const connect = async (
   // wait_connect stays set, so reconnect() does not rebuild the hydrate.
   const retryConnect = (error) => {
     setConnectErrors((connectErrors) => addConnectError(connectErrors, error));
-    if (error.code === ERROR_TYPE_HYDRATION_PAYLOAD_TOO_LARGE) {
+    if (error.code === HYDRATION_PAYLOAD_TOO_LARGE) {
       console.error(error.message);
       return;
     }
