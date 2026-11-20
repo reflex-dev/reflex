@@ -89,7 +89,7 @@ If the thread already has a live generation, the request is refused with 409 and
 
 ### Attachments
 
-Attaching files takes two steps: upload each file to a signed URL, then name it in the create request.
+Attaching files takes three steps: request a signed upload URL for each file, upload the file to it, then name it in the create request.
 
 **1. Request upload URLs.** Declare every file with its exact byte size.
 
@@ -383,8 +383,11 @@ Two shapes, depending on where the request was refused:
 
 This script creates an app and follows its events for up to 10 minutes. If the run is still going after that, it stops the run and waits for it to end. It then reads the whole transcript, once nothing more can be written to it.
 
+Set `REFLEX_URL` and `REFLEX_TOKEN` as in [Base URL and authentication](#base-url-and-authentication), and `PROJECT_ID` to the project the app is created in. The script needs `curl` and `python3`.
+
 ```bash
 set -euo pipefail
+: "${REFLEX_URL:?}" "${REFLEX_TOKEN:?}" "${PROJECT_ID:?set it to the project the app is created in}"
 API="$REFLEX_URL/api/v1"
 AUTH=(-H "X-API-Token: $REFLEX_TOKEN")
 field() { python3 -c "import json,sys; v=json.load(sys.stdin)[\"$1\"]; print('' if v is None else v)"; }
@@ -393,7 +396,7 @@ is_live() { case "$1" in preparing|queued|running|pushing) return 0 ;; *) return
 # 1. Create the app.
 created=$(curl -sf -X POST "$API/generations" "${AUTH[@]}" \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Idempotency-Key: $(python3 -c 'import uuid; print(uuid.uuid4())')" \
   -d "{\"prompt\": \"Build a todo list app with due dates.\", \"project_id\": \"$PROJECT_ID\"}")
 GENERATION_ID=$(echo "$created" | field id)
 THREAD_ID=$(echo "$created" | field thread_id)
