@@ -1,7 +1,10 @@
 """Tests for implicit computed-var dependencies (dep_tracking registry)."""
 
+from collections.abc import Callable
+
 import pytest
 import reflex_i18n
+from reflex_base.vars.base import Var
 from reflex_base.vars.dep_tracking import (
     _implicit_dependency_providers,
     register_implicit_dependency,
@@ -18,7 +21,7 @@ def clean_registry():
     later tests.
 
     Yields:
-        None
+        The registrations made on import, for tests that need the real ones.
     """
     from reflex_i18n.state import I18nState
 
@@ -26,7 +29,7 @@ def clean_registry():
     _implicit_dependency_providers.clear()
     saved_deps = {k: set(v) for k, v in I18nState._var_dependencies.items()}
     saved_dirty = set(I18nState._potentially_dirty_states)
-    yield
+    yield saved
     _implicit_dependency_providers.clear()
     _implicit_dependency_providers.update(saved)
     I18nState._var_dependencies = saved_deps
@@ -84,6 +87,27 @@ def test_format_computed_var_gains_locale_dependency():
     deps = PriceState.computed_vars["label"]._deps(objclass=PriceState)
     assert deps.get(i18n_name) == {"locale"}
     assert "amount" in deps[PriceState.get_full_name()]
+
+
+def test_get_locale_computed_var_gains_locale_dependency(
+    clean_registry: dict[object, Callable[[], Var | None]],
+):
+    # Through reflex-i18n's own registration: a getter branching on the
+    # locale must recompute when it changes, like one calling gettext.
+    from reflex_i18n import get_locale
+    from reflex_i18n.state import I18nState
+
+    import reflex as rx
+
+    _implicit_dependency_providers.update(clean_registry)
+
+    class LocaleBranchState(rx.State):
+        @rx.var
+        def greeting(self) -> str:
+            return "Hallo" if get_locale() == "de" else "Hello"
+
+    deps = LocaleBranchState.computed_vars["greeting"]._deps(objclass=LocaleBranchState)
+    assert deps.get(I18nState.get_full_name()) == {"locale"}
 
 
 def test_no_registration_no_extra_dependency():

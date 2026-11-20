@@ -698,6 +698,7 @@ def _locale_dependency() -> Var | None:
 # the tuple dedupes it.
 register_implicit_dependency(
     (
+        get_locale,
         gettext,
         ngettext,
         pgettext,
