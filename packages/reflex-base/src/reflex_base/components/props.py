@@ -375,9 +375,7 @@ class PropsBase(metaclass=PropsBaseMeta):
         """
         if isinstance(value, PropsBase):
             # Convert nested PropsBase objects
-            return value.dict(
-                exclude_none=exclude_none, include=include, exclude=exclude
-            )
+            return value.dict(exclude_none=exclude_none)
         if isinstance(value, dict):
             # Convert dictionary keys to camelCase
             return {
