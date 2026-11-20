@@ -6,6 +6,7 @@ import contextlib
 import dataclasses
 import inspect
 import itertools
+import json
 import re
 import sys
 from collections.abc import Callable, Iterable, Iterator
@@ -14,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 from reflex_base.components.client_state_context import get_client_state_app_wraps
 from reflex_base.constants import Dirs
-from reflex_base.constants.state import CAMEL_CASE_CLIENT_STATE_MARKER
+from reflex_base.constants.state import CAMEL_CASE_CLIENT_STATE_MARKER, CLIENT_STATE_REF
 from reflex_base.event import (
     EventChain,
     EventHandler,
@@ -235,6 +236,16 @@ def _collect_declarations() -> Iterator[None]:
         yield
     finally:
         _compile_declarations.reset(token)
+
+
+# The store's entry point on the global `refs` object, which `run_script` code
+# can reach, and the devtools handle for inspecting client state.
+_client_state_store_ref = Var(
+    _js_expr=f"refs[{json.dumps(CLIENT_STATE_REF)}]",
+    _var_data=VarData(
+        imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]},
+    ),
+)
 
 
 def _client_state_set(var_name: str, value: Any):
@@ -590,9 +601,9 @@ class ClientStateVar(Var):
 
         Unlike `value` this needs no hook, so it can be used in any javascript
         scope that has the page's imports -- a wrapped library's callback or
-        `add_custom_code` -- and in `rx.call_script` code or a Var passed to
-        `push`, which run in the runtime module. It is a point-in-time read with
-        no reactivity; prefer `value` inside components.
+        `add_custom_code` -- and in `rx.call_script` code, which runs in the
+        runtime module, or a Var passed to `push`. It is a point-in-time read
+        with no reactivity; prefer `value` inside components.
 
         Returns:
             An accessor for the client state variable.
@@ -678,9 +689,12 @@ class ClientStateVar(Var):
         if isinstance(value, Var):
             # A Var is a client-side expression, which cannot survive the JSON
             # event payload -- it would arrive as its own source text. Evaluate
-            # it on the client instead, through `global_set`, whose import comes
-            # along when a page compiles the push into one of its triggers.
-            return run_script(self.global_set.to(FunctionVar).call(value))
+            # it on the client instead, reaching the store through `refs`.
+            # Formatting the Vars keeps their imports, which a page that
+            # compiles the push into one of its triggers needs.
+            return run_script(
+                f"{_client_state_store_ref}.set({LiteralVar.create(self._state_name)}, {value})"
+            )
         return server_side(
             "_client_state_set",
             inspect.signature(_client_state_set),
