@@ -242,22 +242,38 @@ def test_sidebar_label_finds_the_page_entry():
 
 
 @pytest.mark.parametrize(
-    ("route", "label"),
+    ("route", "title", "label"),
     [
-        ("/ai/integrations/github/", "GitHub"),
-        ("/ai/integrations/openai/", "OpenAI"),
-        ("/ai/features/connect-to-github/", "Connect To GitHub"),
-        ("/library/other/html-embed/", "HTML Embed"),
-        ("/hosting/cli/vmtypes/", "VM Types"),
+        (
+            "/ai/integrations/github/",
+            "GitHub · Integrations · AI · Reflex Docs",
+            "GitHub",
+        ),
+        (
+            "/ai/integrations/openai/",
+            "OpenAI · Integrations · AI · Reflex Docs",
+            "OpenAI",
+        ),
+        (
+            "/ai/features/connect-to-github/",
+            "Connect To GitHub · Features · AI · Reflex Docs",
+            "Connect To GitHub",
+        ),
+        (
+            "/library/other/html-embed/",
+            "rx.html: Python HTML Embed Component · Reflex Docs",
+            "HTML Embed",
+        ),
+        ("/hosting/cli/vmtypes/", "VM Types", "VM Types"),
     ],
 )
-def test_page_titles_and_sidebar_labels_keep_acronyms(route, label):
+def test_page_titles_and_sidebar_labels_keep_acronyms(route, title, label):
     """Page titles and sidebar labels spell acronyms and brands like the page."""
     from reflex_docs.pages import routes
     from reflex_docs.templates.docpage.sidebar import sidebar_label
 
     page = next(page for page in routes if page.path.strip("/") == route.strip("/"))
-    assert label in page.title
+    assert page.title == title
     assert sidebar_label(route) == label
 
 
