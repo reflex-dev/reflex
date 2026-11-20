@@ -1150,7 +1150,14 @@ async def test_redis_token_manager_wait_during_resubscribe_backoff_stops_on_clos
     state_wait_started = asyncio.Event()
 
     async def listen():
-        """Fail the first subscription so the background task enters backoff."""
+        """Fail the first subscription so the background task enters backoff.
+
+        Yields:
+            A dummy subscription confirmation message.
+
+        Raises:
+            ConnectionError: To simulate a lost connection after the first message.
+        """
         yield {"type": "psubscribe"}
         first_subscription_failed.set()
         await release_first_subscription.wait()
