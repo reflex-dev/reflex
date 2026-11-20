@@ -61,9 +61,13 @@ def test_serves_and_caches_rendered_html():
     r1 = client.get("/blog/hello")
     r2 = client.get("/blog/hello")
 
-    assert r1.status_code == 200
-    assert r1.text == "<html>/blog/hello#1</html>"
-    assert r2.text == "<html>/blog/hello#1</html>"
+    for response in (r1, r2):
+        assert response.status_code == 200
+        assert response.content == b"<html>/blog/hello#1</html>"
+        assert dict(response.headers) == {
+            "content-length": "26",
+            "content-type": "text/html; charset=utf-8",
+        }
     assert renderer.calls == 1  # second request hit the cache
 
 
@@ -112,7 +116,11 @@ def test_falls_back_to_shell_on_render_failure():
 
     r = client.get("/anything")
     assert r.status_code == 200
-    assert r.text == "<html>SHELL</html>"
+    assert r.content == b"<html>SHELL</html>"
+    assert dict(r.headers) == {
+        "content-length": "18",
+        "content-type": "text/html; charset=utf-8",
+    }
 
 
 def test_revalidate_path_endpoint(monkeypatch: pytest.MonkeyPatch):

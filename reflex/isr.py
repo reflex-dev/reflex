@@ -32,7 +32,7 @@ import time
 import traceback
 import uuid
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, cast, runtime_checkable
 
 import httpx
 from reflex_base import constants
@@ -74,13 +74,13 @@ class CachedPage:
     """A cached rendered page.
 
     Attributes:
-        html: The rendered HTML document.
+        html: The rendered HTML document, UTF-8 encoded.
         generated_at: Unix timestamp when the page was rendered.
         revalidate: Seconds until the page is considered stale (``<= 0`` never).
         tags: Revalidation tags associated with the page.
     """
 
-    html: str
+    html: bytes
     generated_at: float
     revalidate: float
     tags: tuple[str, ...] = ()
@@ -99,30 +99,35 @@ class CachedPage:
         now = time.time() if now is None else now
         return (now - self.generated_at) >= self.revalidate
 
-    def to_json(self) -> str:
-        """Serialize the page for storage.
+    def meta_json(self) -> str:
+        """Serialize everything but the HTML, which is stored as is beside it.
 
         Returns:
             A JSON string.
         """
-        return json.dumps(dataclasses.asdict(self))
+        return json.dumps({
+            "generated_at": self.generated_at,
+            "revalidate": self.revalidate,
+            "tags": self.tags,
+        })
 
     @classmethod
-    def from_json(cls, raw: str | bytes) -> CachedPage:
-        """Deserialize a page from storage.
+    def from_stored(cls, html: bytes, meta: str | bytes) -> CachedPage:
+        """Rebuild a page from its stored HTML and metadata.
 
         Args:
-            raw: The JSON string/bytes produced by :meth:`to_json`.
+            html: The stored HTML document.
+            meta: The JSON produced by :meth:`meta_json`.
 
         Returns:
             The reconstructed page.
         """
-        data = json.loads(raw)
+        data = json.loads(meta)
         return cls(
-            html=data["html"],
+            html=html,
             generated_at=data["generated_at"],
             revalidate=data["revalidate"],
-            tags=tuple(data.get("tags", ())),
+            tags=tuple(data["tags"]),
         )
 
 
@@ -321,25 +326,26 @@ return 0
 """
 
 
-# Stores a page unless the invalidation epoch in KEYS[1] moved past ARGV[1],
-# and indexes it in each tag's sorted set (KEYS[3:]) scored by the page's
-# expiry: expired members are pruned and a set expires with its last page.
-# ARGV: epoch, page JSON, page TTL in seconds (0 = none), cache key, now.
+# Stores a page as a hash of its HTML and metadata JSON unless the invalidation
+# epoch in KEYS[1] moved past ARGV[1], and indexes it in each tag's sorted set
+# (KEYS[3:]) scored by the page's expiry: expired members are pruned and a set
+# expires with its last page.
+# ARGV: epoch, HTML, metadata JSON, page TTL in seconds (0 = none), cache key, now.
 _SET_PAGE_SCRIPT = """
 if (redis.call('GET', KEYS[1]) or '0') ~= ARGV[1] then
     return 0
 end
-local ttl = tonumber(ARGV[3])
+redis.call('DEL', KEYS[2])
+redis.call('HSET', KEYS[2], 'html', ARGV[2], 'meta', ARGV[3])
+local ttl = tonumber(ARGV[4])
 local expires = '+inf'
 if ttl > 0 then
-    redis.call('SET', KEYS[2], ARGV[2], 'EX', ttl)
-    expires = tostring(tonumber(ARGV[5]) + ttl)
-else
-    redis.call('SET', KEYS[2], ARGV[2])
+    redis.call('EXPIRE', KEYS[2], ttl)
+    expires = tostring(tonumber(ARGV[6]) + ttl)
 end
 for i = 3, #KEYS do
-    redis.call('ZADD', KEYS[i], expires, ARGV[4])
-    redis.call('ZREMRANGEBYSCORE', KEYS[i], '-inf', '(' .. ARGV[5])
+    redis.call('ZADD', KEYS[i], expires, ARGV[5])
+    redis.call('ZREMRANGEBYSCORE', KEYS[i], '-inf', '(' .. ARGV[6])
     local last = redis.call('ZRANGE', KEYS[i], -1, -1, 'WITHSCORES')[2]
     if last == 'inf' then
         redis.call('PERSIST', KEYS[i])
@@ -390,8 +396,12 @@ class RedisISRCache:
         Returns:
             The cached page, or None.
         """
-        raw = await self._redis.get(self._PAGE_PREFIX + key)
-        return CachedPage.from_json(raw) if raw is not None else None
+        # A page's fields are stored together, so they are all set or all missing.
+        stored = cast(
+            "tuple[bytes, bytes] | tuple[None, None]",
+            await self._redis.hmget(self._PAGE_PREFIX + key, "html", "meta"),
+        )
+        return CachedPage.from_stored(*stored) if stored[0] is not None else None
 
     async def epoch(self) -> int:
         """Get the invalidation epoch.
@@ -425,7 +435,8 @@ class RedisISRCache:
             self._PAGE_PREFIX + key,
             *(self._TAG_PREFIX + tag for tag in page.tags),
             epoch,
-            page.to_json(),
+            page.html,
+            page.meta_json(),
             ttl,
             key,
             time.time(),
@@ -533,7 +544,7 @@ class ISRManager:
         self.wait_timeout = wait_timeout
         self._background: set[asyncio.Task] = set()
 
-    async def get_html(self, path: str) -> str | None:
+    async def get_html(self, path: str) -> bytes | None:
         """Return HTML for ``path`` using ISR semantics.
 
         * Fresh cache hit -> serve immediately.
@@ -546,7 +557,7 @@ class ISRManager:
             path: The concrete request path.
 
         Returns:
-            The HTML string, or None if it could not be produced.
+            The encoded HTML, or None if it could not be produced.
         """
         key = cache_key(self.build_id, path)
         page = await self.cache.get(key)
@@ -562,7 +573,7 @@ class ISRManager:
         # Cache miss: block on a single-flight render.
         return await self._render_single_flight(key, path)
 
-    async def _render_single_flight(self, key: str, path: str) -> str | None:
+    async def _render_single_flight(self, key: str, path: str) -> bytes | None:
         """Render ``path`` once across workers, or wait for the winner.
 
         Args:
@@ -587,7 +598,7 @@ class ISRManager:
                 return page.html
         return None
 
-    async def _render_and_store(self, key: str, path: str) -> str | None:
+    async def _render_and_store(self, key: str, path: str) -> bytes | None:
         """Render ``path`` and cache the result.
 
         Args:
@@ -611,17 +622,18 @@ class ISRManager:
             if result.revalidate is not None
             else self.default_revalidate
         )
+        html = result.html.encode()
         await self.cache.set(
             key,
             CachedPage(
-                html=result.html,
+                html=html,
                 generated_at=time.time(),
                 revalidate=revalidate,
                 tags=result.tags,
             ),
             epoch,
         )
-        return result.html
+        return html
 
     def _spawn_revalidate(self, key: str, path: str) -> None:
         """Schedule a background, single-flight revalidation of ``key``.
@@ -846,7 +858,7 @@ def create_manager(
     )
 
 
-def _load_shell() -> str | None:
+def _load_shell() -> bytes | None:
     """Read the SPA shell HTML from the compiled static build, if present.
 
     Returns:
@@ -856,7 +868,7 @@ def _load_shell() -> str | None:
     for name in (constants.ReactRouter.SPA_FALLBACK, "index.html"):
         candidate = static_dir / name
         if candidate.exists():
-            return candidate.read_text()
+            return candidate.read_bytes()
     return None
 
 
@@ -887,7 +899,7 @@ def create_isr_app(
         A Starlette app.
     """
     mgr = manager if manager is not None else create_manager()
-    shell_html = shell if shell is not None else _load_shell()
+    shell_html = shell.encode() if shell is not None else _load_shell()
     revalidate_token = os.environ.get("REFLEX_ISR_REVALIDATE_TOKEN", "").encode()
 
     async def serve(request: Request) -> Response:

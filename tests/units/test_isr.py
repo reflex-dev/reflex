@@ -92,17 +92,20 @@ def _manager(renderer, **kwargs) -> ISRManager:
 def test_cached_page_staleness():
     """A page is stale once past its revalidate window; 0 means never."""
     now = time.time()
-    fresh = CachedPage(html="x", generated_at=now, revalidate=60)
+    fresh = CachedPage(html=b"x", generated_at=now, revalidate=60)
     assert not fresh.is_stale(now + 30)
     assert fresh.is_stale(now + 61)
-    never = CachedPage(html="x", generated_at=now, revalidate=0)
+    never = CachedPage(html=b"x", generated_at=now, revalidate=0)
     assert not never.is_stale(now + 10_000)
 
 
 def test_cached_page_roundtrip():
-    """CachedPage survives JSON serialization."""
-    page = CachedPage(html="<p>", generated_at=1.0, revalidate=30, tags=("a", "b"))
-    assert CachedPage.from_json(page.to_json()) == page
+    """A page survives storing its HTML and metadata apart."""
+    page = CachedPage(html=b"<p>", generated_at=1.0, revalidate=30, tags=("a", "b"))
+    meta = page.meta_json()
+
+    assert meta == '{"generated_at": 1.0, "revalidate": 30, "tags": ["a", "b"]}'
+    assert CachedPage.from_stored(b"<p>", meta.encode()) == page
 
 
 @pytest.mark.asyncio
@@ -242,9 +245,9 @@ async def test_render_overtaken_by_invalidation_is_not_cached(invalidate: str):
         await mgr.revalidate_tag("blog")
     gate.set()
 
-    assert await render == "<html>rendered</html>:/p:1"
-    assert await mgr.get_html("/p") == "<html>rendered</html>:/p:2"
-    assert await mgr.get_html("/p") == "<html>rendered</html>:/p:2"
+    assert await render == b"<html>rendered</html>:/p:1"
+    assert await mgr.get_html("/p") == b"<html>rendered</html>:/p:2"
+    assert await mgr.get_html("/p") == b"<html>rendered</html>:/p:2"
 
 
 @pytest.mark.asyncio
@@ -255,7 +258,7 @@ async def test_redis_set_rejects_render_overtaken_by_invalidation():
         pytest.skip("Test requires redis")
     cache = RedisISRCache(redis)
     key = f"test:{uuid.uuid4().hex}"
-    page = CachedPage(html="<p>", generated_at=1.0, revalidate=60)
+    page = CachedPage(html=b"<p>", generated_at=1.0, revalidate=60)
     try:
         before = await cache.epoch()
         await cache.delete(key)
@@ -266,6 +269,39 @@ async def test_redis_set_rejects_render_overtaken_by_invalidation():
         assert await cache.get(key) == page
     finally:
         await redis.delete(RedisISRCache._PAGE_PREFIX + key)
+        await redis.aclose()
+
+
+@pytest.mark.asyncio
+async def test_redis_stores_html_apart_from_metadata():
+    """A page is a hash of its raw HTML and metadata, replaced on each store."""
+    redis = prerequisites.get_redis()
+    if redis is None:
+        pytest.skip("Test requires redis")
+    cache = RedisISRCache(redis)
+    key = f"test:{uuid.uuid4().hex}"
+    page_key = RedisISRCache._PAGE_PREFIX + key
+    html = "<p>café</p>".encode()
+    try:
+        page = CachedPage(html=html, generated_at=1.0, revalidate=60, tags=("a",))
+        assert await cache.set(key, page, await cache.epoch()) is True
+        assert await redis.hgetall(page_key) == {
+            b"html": html,
+            b"meta": b'{"generated_at": 1.0, "revalidate": 60, "tags": ["a"]}',
+        }
+        assert await redis.ttl(page_key) == 60 + 86400
+
+        # A page that never goes stale replaces it and drops its expiry.
+        page = CachedPage(html=b"<p>", generated_at=2.0, revalidate=0)
+        assert await cache.set(key, page, await cache.epoch()) is True
+        assert await redis.hgetall(page_key) == {
+            b"html": b"<p>",
+            b"meta": b'{"generated_at": 2.0, "revalidate": 0, "tags": []}',
+        }
+        assert await redis.ttl(page_key) == -1
+        assert await cache.get(key) == page
+    finally:
+        await redis.delete(page_key, RedisISRCache._TAG_PREFIX + "a")
         await redis.aclose()
 
 
@@ -293,7 +329,7 @@ async def test_redis_tag_index_expires_with_its_last_page(
             revalidate: The page's revalidate window.
         """
         page = CachedPage(
-            html=key, generated_at=now, revalidate=revalidate, tags=(tag,)
+            html=key.encode(), generated_at=now, revalidate=revalidate, tags=(tag,)
         )
         assert await cache.set(key, page, await cache.epoch()) is True
 
@@ -365,7 +401,7 @@ async def test_redis_invalidate_tag_keeps_pages_stored_meanwhile_findable(
             storing = True
             keys.append(key := f"test:{uuid.uuid4().hex}")
             page = CachedPage(
-                html=key, generated_at=time.time(), revalidate=0, tags=(tag,)
+                html=key.encode(), generated_at=time.time(), revalidate=0, tags=(tag,)
             )
             assert await cache.set(key, page, await cache.epoch()) is True
             storing = False
