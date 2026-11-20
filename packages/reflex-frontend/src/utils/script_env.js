@@ -15,8 +15,7 @@ import { ReflexEvent, refs } from "$/utils/state";
  * @param {string} id The component id.
  * @returns {string} The registry key.
  */
-const refName = (id) =>
-  `ref_${String(id).replace(/[^\p{L}\p{N}_]+/gu, "_")}`;
+const refName = (id) => `ref_${String(id).replace(/[^\p{L}\p{N}_]+/gu, "_")}`;
 
 export const env = Object.freeze({
   /**
