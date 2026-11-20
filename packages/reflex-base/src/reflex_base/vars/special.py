@@ -80,9 +80,7 @@ def ref(id_: str) -> Var[str]:
         _js_expr=f"getRegisteredRef({LiteralVar.create(ref_name)!s})",
         _var_data=VarData(
             imports={
-                f"$/{constants.Dirs.STATE_PATH}": [
-                    ImportVar(tag="getRegisteredRef")
-                ]
+                f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="getRegisteredRef")]
             }
         ),
     ).to(str)
