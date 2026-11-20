@@ -1,19 +1,21 @@
 """rx.match."""
 
 import textwrap
-from collections.abc import Iterator
-from typing import Any, cast, overload
+from collections.abc import Iterator, Sequence
+from functools import lru_cache
+from typing import Any, cast, get_args, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
 from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.match_tag import MatchTag
 from reflex_base.style import Style
-from reflex_base.utils import format
+from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import MatchTypeError
 from reflex_base.utils.imports import ImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.set import SetVar, set_canonical_operation
 
 from reflex_components_core.base import Fragment
 from reflex_components_core.base.bare import Bare
@@ -65,7 +67,21 @@ class Match(Component):
         """
         match_cond_var = cls._create_condition_var(cond)
         cases, default = cls._process_cases(list(cases))
-        match_cases = cls._process_match_cases(cases)
+        match_cases, has_set_case = cls._process_match_cases(cases)
+
+        try:
+            has_set_subject = cls._cached_has_set_type(match_cond_var._var_type)
+        except TypeError:
+            has_set_subject = cls._cached_has_set_type.__wrapped__(
+                match_cond_var._var_type
+            )
+
+        if has_set_subject or has_set_case:
+            match_cond_var = cls._comparable(match_cond_var)
+            match_cases = [
+                ([cls._comparable(condition) for condition in conditions], result)
+                for conditions, result in match_cases
+            ]
 
         match_cases = cls._validate_return_types(match_cases)
 
@@ -95,7 +111,96 @@ class Match(Component):
         if match_cond_var is None:
             msg = "The condition must be set"
             raise ValueError(msg)
+        if type(match_cond_var) is Var and cls._has_set_type(match_cond_var._var_type):
+            return match_cond_var.guess_type()
         return match_cond_var
+
+    @classmethod
+    def _has_set_type(cls, var_type: types.GenericType) -> bool:
+        """Inspect a type without requiring annotation metadata to be hashable.
+
+        Args:
+            var_type: The subject or case annotation.
+
+        Returns:
+            Whether the annotation can contain a set.
+        """
+        if isinstance(var_type, type):
+            return issubclass(var_type, (set, frozenset))
+        try:
+            return cls._cached_has_set_type(var_type)
+        except TypeError:
+            return cls._cached_has_set_type.__wrapped__(var_type)
+
+    @staticmethod
+    @lru_cache(maxsize=1024)
+    def _cached_has_set_type(var_type: types.GenericType) -> bool:
+        """Check whether any member of a var's type is a set.
+
+        Args:
+            var_type: The subject or case annotation.
+
+        Returns:
+            Whether the annotation can contain a set.
+        """
+        var_type = types.resolve_type_alias(var_type)
+        members = get_args(var_type) if types.is_union(var_type) else (var_type,)
+        return any(
+            types.safe_issubclass(types.get_origin(member) or member, (set, frozenset))
+            for member in members
+        )
+
+    @classmethod
+    def _comparable(cls, var: Var) -> Var:
+        """Make a subject or case var compare the way Python's ``==`` does.
+
+        Cases match by ``JSON.stringify`` equality, and a set serializes in its
+        iteration order, so a set var is compared by its canonical form. Tag both
+        sets and other values so a list cannot equal a set's comparison keys.
+
+        Args:
+            var: The subject or case var.
+
+        Returns:
+            The var to serialize for the comparison.
+
+        Raises:
+            MatchTypeError: If a union combines sets and serialized sequences.
+        """
+        is_set = isinstance(var, SetVar)
+        if not is_set and cls._has_set_type(var._var_type):
+            var_type = types.resolve_type_alias(var._var_type)
+            if not types.is_union(var_type):
+                var = var.to(SetVar)
+                is_set = True
+            else:
+                members = get_args(var_type)
+                if any(
+                    types.safe_issubclass(types.get_origin(member) or member, Sequence)
+                    and not types.safe_issubclass(
+                        types.get_origin(member) or member, str
+                    )
+                    for member in members
+                ):
+                    msg = (
+                        "rx.match cannot distinguish sets from sequences in a union because both "
+                        "serialize to arrays. Narrow the var's type before matching."
+                    )
+                    raise MatchTypeError(msg)
+                canonical = set_canonical_operation(cast(SetVar, var))
+                return Var(
+                    _js_expr=(
+                        f"(Array.isArray({var!s}) ? [true, {canonical!s}] : [false, {var!s}])"
+                    ),
+                    _var_type=list,
+                    _var_data=canonical._get_all_var_data(),
+                )
+        return LiteralVar.create([
+            var.is_not_none()
+            if is_set and types.is_optional(var._var_type)
+            else is_set,
+            set_canonical_operation(cast(SetVar, var)) if is_set else var,
+        ])
 
     @classmethod
     def _process_cases(
@@ -154,19 +259,20 @@ class Match(Component):
     @classmethod
     def _process_match_cases(
         cls, cases: list[tuple]
-    ) -> list[tuple[list[Var], BaseComponent | Var]]:
+    ) -> tuple[list[tuple[list[Var], BaseComponent | Var]], bool]:
         """Process the individual match cases.
 
         Args:
             cases: The match cases.
 
         Returns:
-            The processed match cases.
+            The processed match cases and whether any condition is a set.
 
         Raises:
             ValueError: If the default case is not the last case or the tuple elements are less than 2.
         """
         match_cases: list[tuple[list[Var], BaseComponent | Var]] = []
+        has_set_case = False
         for case_index, case in enumerate(cases):
             # There should be at least two elements in a case tuple(a condition and return value)
             if len(case) < 2:
@@ -180,7 +286,16 @@ class Match(Component):
                 if isinstance(condition, BaseComponent):
                     msg = f"Match condition {condition_index} of case {case_index} cannot be a component."
                     raise ValueError(msg)
-                conditions_vars.append(cls._create_case_var_with_var_data(condition))
+                condition_var = cls._create_case_var_with_var_data(condition)
+                if not has_set_case:
+                    # This lookup runs for every case; avoid an extra wrapper call.
+                    try:
+                        has_set_case = cls._cached_has_set_type(condition_var._var_type)
+                    except TypeError:
+                        has_set_case = cls._cached_has_set_type.__wrapped__(
+                            condition_var._var_type
+                        )
+                conditions_vars.append(condition_var)
 
             return_value = (
                 cls._create_case_var_with_var_data(return_value)
@@ -194,7 +309,7 @@ class Match(Component):
 
             match_cases.append((conditions_vars, return_value))
 
-        return match_cases
+        return match_cases, has_set_case
 
     @classmethod
     def _validate_return_types(

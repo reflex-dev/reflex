@@ -299,10 +299,23 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
             return hinted_args(**value)
         if BaseModelV2 is not None and issubclass(hinted_args, BaseModelV2):
             return hinted_args.model_validate(value)
-    if isinstance(value, list) and (hinted_args is set or hinted_args is frozenset):
-        return set(value)
-    if isinstance(value, list) and hinted_args is tuple:
-        return tuple(value)
+    if isinstance(value, list):
+        # Sets and tuples travel as JSON arrays; rebuild the annotated type,
+        # bare (set) or parametrized (set[str]).
+        collection = types.get_origin(hinted_args) or hinted_args
+        if collection is set or collection is frozenset or collection is tuple:
+            element_hints = types.get_args(hinted_args)
+            if element_hints:
+                if collection is tuple and element_hints[-1] is not Ellipsis:
+                    return tuple(
+                        _transform_event_arg(item, hint)
+                        for item, hint in zip(value, element_hints, strict=True)
+                    )
+                element_hint = element_hints[0]
+                return collection(
+                    _transform_event_arg(item, element_hint) for item in value
+                )
+            return collection(value)
     if isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
         try:
             return hinted_args(value)

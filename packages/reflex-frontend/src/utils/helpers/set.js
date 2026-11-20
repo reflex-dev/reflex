@@ -16,7 +16,16 @@
 export const pySetKey = (x) => {
   if (typeof x === "string") return "s" + x;
   if (typeof x === "boolean") return +x;
-  if (x !== null && typeof x === "object") return "o" + JSON.stringify(x);
+  if (typeof x === "number" && !Number.isFinite(x)) return "n" + String(x);
+  if (Array.isArray(x)) return "a" + JSON.stringify(x.map(pySetKey));
+  if (x !== null && typeof x === "object") {
+    return (
+      "o" +
+      JSON.stringify(
+        Object.entries(x).map(([key, value]) => [key, pySetKey(value)]),
+      )
+    );
+  }
   return x;
 };
 
@@ -114,4 +123,38 @@ export const pySetIsDisjoint = (a, b) => {
   if (a == null || b == null) return true;
   const keys = new Set(b.map(pySetKey));
   return !a.some((x) => keys.has(pySetKey(x)));
+};
+
+/**
+ * Order set keys: numbers by value, then strings (element keys are always
+ * strings or numbers, see pySetKey) by code unit.
+ * @param {number|string} a The first key.
+ * @param {number|string} b The second key.
+ * @returns {number} The sort order of the keys.
+ */
+const compareSetKeys = (a, b) => {
+  if (typeof a === "number" && typeof b === "number") return a - b;
+  if (typeof a === "number") return -1;
+  if (typeof b === "number") return 1;
+  return a < b ? -1 : a > b ? 1 : 0;
+};
+
+/**
+ * A value of a set that is the same for every set with the same elements,
+ * whatever their order or duplicates, so `JSON.stringify` compares sets the
+ * way Python's `==` does. Null and undefined pass through, so a missing set
+ * is not equal to an empty one.
+ * @param {Array|null|undefined} arr The set.
+ * @returns {Array|null|undefined} The sorted, distinct keys of its elements.
+ */
+export const pySetCanonical = (arr) => {
+  if (arr == null) return arr;
+  // Recursive keys preserve non-finite numbers inside structured elements too.
+  return [...new Set(arr.map(pySetKey))]
+    .map((key) =>
+      key === null || (typeof key === "number" && !Number.isFinite(key))
+        ? String(key)
+        : key,
+    )
+    .sort(compareSetKeys);
 };

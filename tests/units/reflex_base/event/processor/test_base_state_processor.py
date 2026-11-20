@@ -2289,6 +2289,53 @@ def test_transform_event_arg_model_drops_non_fields_without_deprecation():
     assert not post.model_extra
 
 
+@pytest.mark.parametrize(
+    ("hint", "expected"),
+    [
+        (set, {"c", "d"}),
+        (set[str], {"c", "d"}),
+        (set[str] | None, {"c", "d"}),
+        (frozenset, frozenset({"c", "d"})),
+        (frozenset[str], frozenset({"c", "d"})),
+        (tuple, ("d", "c", "d")),
+        (tuple[str, ...], ("d", "c", "d")),
+        (list[str], ["d", "c", "d"]),
+    ],
+)
+def test_transform_event_arg_builds_collection_from_list(hint: Any, expected: Any):
+    """A list from the wire is built into the collection type of the annotation.
+
+    Args:
+        hint: The handler's annotation for the argument.
+        expected: The transformed argument.
+    """
+    value = _transform_event_arg(["d", "c", "d"], hint)
+    assert value == expected
+    assert type(value) is type(expected)
+
+
+@pytest.mark.parametrize(
+    ("hint", "value", "expected"),
+    [
+        (set[tuple[int, int]], [[1, 2], [3, 4]], {(1, 2), (3, 4)}),
+        (frozenset[tuple[int, ...]], [[1, 2]], frozenset({(1, 2)})),
+        (tuple[set[int], str], [[1, 2], "x"], ({1, 2}, "x")),
+        (set[tuple[tuple[int, ...], ...]], [[[1, 2]]], {((1, 2),)}),
+    ],
+)
+def test_transform_event_arg_nested_collections(hint: Any, value: Any, expected: Any):
+    """Rebuild nested annotated collections before constructing hashable sets.
+
+    Args:
+        hint: The nested collection annotation.
+        value: The JSON array received from the frontend.
+        expected: The reconstructed collection.
+    """
+    assert _transform_event_payload(
+        {"items": value, "count": "7"}, {"items": hint, "count": int}
+    ) == {"items": expected, "count": 7}
+
+
 class _TagsDict(TypedDict):
     tag: str
     name: str

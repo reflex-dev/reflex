@@ -1,0 +1,1 @@
+`rx.match` now compares a set subject with a set case by their elements, so a match on a set var no longer depends on the order the set was serialized in. Mixed set-or-scalar annotations are supported; a set-or-sequence union must be narrowed first because both serialize to arrays.

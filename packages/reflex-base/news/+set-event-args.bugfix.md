@@ -1,0 +1,1 @@
+An event handler argument annotated with a parametrized `set[...]`, `frozenset[...]` or `tuple[...]` now receives that type instead of a list, including nested collections such as `set[tuple[int, int]]`. A bare `frozenset` annotation receives a frozenset rather than a set.
