@@ -10,7 +10,14 @@ from typing import Any, Literal, TypedDict
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.components.literals import LiteralRowMarker
-from reflex_base.event import EventHandler, no_args_event_spec, passthrough_event_spec
+from reflex_base.components.state_context import get_event_app_wraps
+from reflex_base.constants.compiler import CompileVars, Imports
+from reflex_base.event import (
+    EventChain,
+    EventHandler,
+    no_args_event_spec,
+    passthrough_event_spec,
+)
 from reflex_base.utils import format, types
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.serializers import serializer
@@ -640,6 +647,22 @@ class DataEditor(NoSSRComponent):
 
         # Disable on_paste by default if not provided.
         props.setdefault("on_paste", False)
+
+        if (on_delete := props.get("on_delete")) is not None:
+            # Glide reads the return value of onDelete: true deletes the
+            # selection, and any value other than a boolean or undefined (such
+            # as the promise of addEvents) is taken as the selection to delete.
+            props["on_delete"] = EventChain.create(
+                on_delete,
+                args_spec=cls.get_event_triggers()["on_delete"],
+                key="on_delete",
+                invocation=FunctionStringVar.create(
+                    f"((...args) => {{ {CompileVars.ADD_EVENTS}(...args); return true; }})",
+                    _var_data=VarData(
+                        imports=Imports.EVENTS, app_wraps=get_event_app_wraps()
+                    ),
+                ),
+            )
 
         # Apply the reconstruction function to grid_selection if it's a Var
         if (grid_selection := props.get("grid_selection")) is not None and isinstance(

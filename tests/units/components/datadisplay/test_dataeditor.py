@@ -6,11 +6,13 @@ from typing import Any, cast
 
 import pandas as pd
 import pytest
+from reflex_base.components.memoize_helpers import get_memoized_event_triggers
 from reflex_base.constants import Templates
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import ArrayVar
-from reflex_components_dataeditor.dataeditor import DataEditor
+from reflex_components_dataeditor.dataeditor import DataEditor, GridSelection
 
+import reflex as rx
 from reflex.state import BaseState
 
 _TEMPLATE_PATH = Templates.Dirs.WEB_TEMPLATE / "utils/helpers/dataeditor.js"
@@ -441,3 +443,84 @@ console.log(JSON.stringify([
         _text_cell("bob@example.com"),
         {"kind": "loading"},
     ]
+
+
+def _memoized_on_delete(editor: DataEditor) -> str:
+    """Define the memoized onDelete callback of a grid as onDelete.
+
+    Args:
+        editor: The grid component.
+
+    Returns:
+        The hook that defines the memoized callback, then its binding to onDelete.
+    """
+    memo = get_memoized_event_triggers(editor)["on_delete"]
+    var_data = memo._get_all_var_data()
+    assert var_data is not None
+    hook = next(h for h in var_data.hooks if h.startswith(f"const {memo!s} ="))
+    return f"{hook};\nconst onDelete = {memo!s};"
+
+
+@pytest.mark.parametrize(
+    "define_on_delete",
+    [
+        pytest.param(
+            lambda editor: f"const onDelete = {_prop(editor, 'onDelete')};",
+            id="rendered",
+        ),
+        pytest.param(_memoized_on_delete, id="memoized"),
+    ],
+)
+def test_dataeditor_on_delete_lets_the_grid_delete(define_on_delete):
+    """The onDelete callback queues the event and returns true for Glide.
+
+    Glide reads the return value of onDelete synchronously and treats any value
+    other than a boolean or undefined, such as the promise that addEvents
+    returns, as the selection to delete.
+
+    Args:
+        define_on_delete: Builds the JS that defines the callback as onDelete.
+    """
+
+    class DeleteState(BaseState):
+        @rx.event
+        def delete(self, selection: GridSelection):
+            pass
+
+    editor = _create(columns=["Name"], data=[["Alice"]], on_delete=DeleteState.delete)
+    selection = {
+        "current": {
+            "cell": [0, 1],
+            "range": {"x": 0, "y": 1, "width": 1, "height": 1},
+            "rangeStack": [],
+        },
+        "columns": {"items": []},
+        "rows": {"items": []},
+    }
+    test_script = f"""
+const queued = [];
+const useCallback = (callback) => callback;
+const ReflexEvent = (name, payload) => ({{ name, payload }});
+const addEvents = (events, args) => {{
+  queued.push({{ events, args }});
+  return Promise.resolve();
+}};
+{define_on_delete(editor)}
+const selection = {json.dumps(selection)};
+console.log(JSON.stringify({{ result: onDelete(selection), queued }}));
+"""
+
+    assert _run_node(test_script) == {
+        "result": True,
+        "queued": [
+            {
+                "events": [
+                    {
+                        "name": f"{DeleteState.get_full_name()}.delete",
+                        "payload": {"selection": selection},
+                    }
+                ],
+                "args": [selection],
+            }
+        ],
+    }
