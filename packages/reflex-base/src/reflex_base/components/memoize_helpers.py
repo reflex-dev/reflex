@@ -248,9 +248,10 @@ def _is_structural_memoization_child(component: Component) -> bool:
 def scope_var_names(component: Component, *, recursive: bool) -> dict[str, None]:
     """Get the scoped variables that a component reads from its surroundings.
 
-    A loop variable names itself in ``VarData.deps``, and every var built
-    from it carries that name. A generated function that the
-    component moves into must receive these names as props.
+    A loop variable, like an ``@rx.memo`` parameter, names itself in
+    ``VarData.deps``, and every var built from it carries that name. A
+    generated function that the component moves into must receive these
+    names as props.
 
     Args:
         component: The component to inspect.
