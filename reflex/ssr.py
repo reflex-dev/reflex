@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl
 
 from reflex_base import constants
+from reflex_base.config import get_config
 from reflex_base.ssr import is_enabled as is_enabled
 from starlette.responses import Response
 
@@ -47,7 +48,7 @@ def _build_router_data(
 
     Args:
         app: The app, used to resolve the concrete path to a route pattern.
-        path: The concrete request path (e.g. ``/blog/hello-world``).
+        path: The browser path, below frontend_path (e.g. ``/app/blog/hello``).
         search: The URL query string (e.g. ``?q=reflex``).
         headers: The forwarded request headers.
         client_ip: The client IP address.
@@ -55,14 +56,16 @@ def _build_router_data(
     Returns:
         A ``router_data`` dict with the same shape ``process()`` produces.
     """
-    resolved_route = app.router(path) or "404"
+    # Routes and the origin are relative to frontend_path, as the client sends them.
+    page_path = path.removeprefix(get_config().frontend_path.rstrip("/")) or "/"
+    resolved_route = app.router(page_path) or "404"
     router_data = {
         constants.RouteVar.PATH: "/" + resolved_route.removeprefix("/"),
-        constants.RouteVar.ORIGIN: path + search,
+        constants.RouteVar.ORIGIN: page_path + search,
         # Route params take precedence over query params, as on the client.
         constants.RouteVar.QUERY: {
             **dict(parse_qsl(search.removeprefix("?"), keep_blank_values=True)),
-            **extract_route_params(path, resolved_route),
+            **extract_route_params(page_path, resolved_route),
         },
         constants.RouteVar.CLIENT_TOKEN: SSR_TOKEN,
         constants.RouteVar.SESSION_ID: SSR_TOKEN,

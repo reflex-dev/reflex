@@ -7,6 +7,7 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from pytest_mock import MockerFixture
 from starlette.responses import Response
 
 import reflex as rx
@@ -385,6 +386,77 @@ async def test_ssr_data_query_params():
     page = data["state"][rx.State.get_full_name()]["rx_router_page_rx_state_"]
     assert page["params"] == {"q": "reflex", "slug": "hello", "sort_by": "new"}
     assert page["raw_path"] == "/search/hello?q=reflex&slug=x&sort-by=new"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("path", "search", "page_path", "params", "loaded"),
+    [
+        (
+            "/app/blog/hello-world",
+            "?q=reflex",
+            "/blog/[slug]",
+            {"q": "reflex", "slug": "hello-world"},
+            "blog",
+        ),
+        # A route named like frontend_path loses the prefix only once.
+        ("/app/app", "", "/app", {}, "app"),
+    ],
+)
+async def test_ssr_data_frontend_path(
+    mocker: MockerFixture,
+    path: str,
+    search: str,
+    page_path: str,
+    params: dict[str, str],
+    loaded: str,
+):
+    """The loader's path includes frontend_path; routes are matched without it.
+
+    Args:
+        mocker: Patches the config to set frontend_path.
+        path: The browser path the loader posts.
+        search: The URL query string.
+        page_path: The expected route pattern.
+        params: The expected page params.
+        loaded: The page whose on_load is expected to run.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing", frontend_path="/app"),
+    )
+
+    class PrefixState(rx.State):
+        loaded: str = ""
+
+        @rx.event
+        def load(self, page: str):
+            """Record the loaded page.
+
+            Args:
+                page: The page name.
+            """
+            self.loaded = page
+
+    app = App()
+    app._state = PrefixState
+    app.add_page(
+        lambda: rx.text("post"), route="/blog/[slug]", on_load=PrefixState.load("blog")
+    )
+    app.add_page(lambda: rx.text("app"), route="/app", on_load=PrefixState.load("app"))
+
+    response = await ssr_data(app)(_make_request(path, search=search))
+
+    data = _parse_response(response)
+    assert data["state"][PrefixState.get_full_name()]["loaded_rx_state_"] == loaded
+    assert data["state"][rx.State.get_full_name()]["rx_router_page_rx_state_"] == {
+        "host": "http://localhost",
+        "path": page_path,
+        "raw_path": path + search,
+        "full_path": f"http://localhost{page_path}",
+        "full_raw_path": f"http://localhost{path}{search}",
+        "params": params,
+    }
 
 
 @pytest.mark.asyncio
