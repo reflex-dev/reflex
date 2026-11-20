@@ -82,6 +82,7 @@ const PUBLIC_API = {
     "useStateContext",
   ],
   "$/utils/react-theme": ["ThemeProvider", "useTheme"],
+  "$/utils/script_env": ["env"],
   "$/utils/helpers/array": ["default"],
   "$/utils/helpers/datetime": ["default"],
   "$/utils/helpers/debounce": ["default"],

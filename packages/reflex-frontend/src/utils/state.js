@@ -13,6 +13,7 @@ import {
 import { app, eventLoop } from "$/utils/context-registry";
 // This module's own exports, passed to server-provided scripts by runScript.
 import * as stateExports from "$/utils/state";
+import { env as scriptEnv } from "$/utils/script_env";
 import {
   CLIENT_STATE_REF,
   getClientState,
@@ -519,7 +520,8 @@ function urlFrom(string) {
  * `params` and `token`. A direct eval would see them, but it also stops the
  * minifier from mangling every name in the chunk that holds it, so the code
  * is compiled with the Function constructor and those names are passed in as
- * parameters. The eval inside the body still runs the code as a strict
+ * parameters. The script environment is passed twice: as `env`, the name
+ * scripts use, and as `__reflexEnv`, the name `rx.js.env` compiles to. The eval inside the body still runs the code as a strict
  * script, so statements keep their completion value.
  *
  * Compiled on first use: a Content Security Policy without `unsafe-eval`
@@ -542,6 +544,8 @@ const runScript = (code, addEvents, socket, navigate, params) => {
     "navigate",
     "params",
     "token",
+    "env",
+    "__reflexEnv",
     "code",
     '"use strict"; return eval(code);',
   );
@@ -552,6 +556,8 @@ const runScript = (code, addEvents, socket, navigate, params) => {
     navigate,
     params,
     token,
+    scriptEnv,
+    scriptEnv,
     code,
   );
 };

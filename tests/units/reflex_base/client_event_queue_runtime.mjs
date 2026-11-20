@@ -62,6 +62,7 @@ export async function createQueueRuntime(
     "$/utils/helpers/upload": {
       uploadFiles: uploadFiles ?? unused,
     },
+    "$/utils/script_env": { env: {} },
     ...dependencyOverrides,
   };
   // Let Node parse the unchanged module; only expose private state to tests.

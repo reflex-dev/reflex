@@ -141,6 +141,41 @@ The `callback` parameter may be an `EventHandler` with one argument, or a lambda
 If the callback is None, then no event is triggered.
 ```
 
+## The Script Environment
+
+Code run by `rx.call_script` reaches Reflex through `env`, a small API that
+stays stable as the rest of the frontend changes:
+
+| Member | What it does |
+| --- | --- |
+| `env.ref(id)` | The ref of the component with that `id`; its `current` is the element. |
+| `env.refs` | Every registered component ref. |
+| `env.addEvents(events)` | Dispatch events, as event triggers do. |
+| `env.event(name, payload)` | Build an event for `env.addEvents`. |
+| `env.library(name)` | A promise of a library bundled for dynamic components, such as `"react"`. |
+
+```python
+(rx.input(id="search"),)
+(rx.button("Focus", on_click=rx.call_script("env.ref('search').current.focus()")),)
+```
+
+To build the same calls from Python vars, use `rx.js.env`. It works in an event
+trigger and when an event handler returns it:
+
+```python
+class SearchState(rx.State):
+    @rx.event
+    def clear_later(self):
+        return rx.run_script(rx.js.env.add_events(SearchState.clear))
+
+    @rx.event
+    def clear(self): ...
+```
+
+Prefer `env` over the other names a script can see, such as `refs` or
+`ReflexEvent`: those are internals of the frontend and may change between
+Reflex versions.
+
 ## Using React Hooks
 
 To use React Hooks directly in a Reflex app, you must subclass `rx.Component`,
