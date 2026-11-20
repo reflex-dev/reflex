@@ -16,6 +16,7 @@ from typing import IO, TYPE_CHECKING
 
 import click
 from reflex_base.config import get_config
+from reflex_base.plugins.base import get_plugin
 from reflex_base.utils import console
 
 from .config import PACKAGE_CATALOG_DIR, find_package_dir, validate_locale
@@ -101,7 +102,7 @@ def _resolve_plugin() -> I18nPlugin:
     Raises:
         click.ClickException: If no I18nPlugin is configured.
     """
-    plugin = next((p for p in get_config().plugins if isinstance(p, I18nPlugin)), None)
+    plugin = get_plugin(I18nPlugin)
     if plugin is None:
         msg = (
             "No I18nPlugin configured. Add I18nPlugin(locales=[...]) to "

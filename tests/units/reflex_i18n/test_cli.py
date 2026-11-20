@@ -5,13 +5,18 @@ import types
 from pathlib import Path
 from types import SimpleNamespace
 
+import click
 import pytest
 from babel.messages.pofile import read_po, write_po
+from reflex_base.config import get_config
+from reflex_base.utils.exceptions import ConfigError
+from reflex_i18n import I18nPlugin
 from reflex_i18n.cli import (
     LocaleStats,
     _app_source_dir,
     _catalog_stats,
     _report,
+    _resolve_plugin,
     check_command,
     extract_catalog,
     extract_command,
@@ -20,6 +25,7 @@ from reflex_i18n.cli import (
     merge_into_locale,
     scan_sources,
 )
+from reflex_i18n.config import set_active_i18n_config
 from reflex_i18n.registry import MessageKey
 
 
@@ -429,3 +435,34 @@ def test_package_mode_rejects_an_uninstalled_package():
     assert result.output == (
         "Error: Cannot find the package 'no_such_i18n_package': it is not installed.\n"
     )
+
+
+def test_resolve_plugin_requires_exactly_one_i18n_plugin(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # The commands manage one plugin's catalogs, so a duplicate fails as it
+    # does for get_plugin() everywhere else rather than picking the first.
+    plugin = I18nPlugin(locales=["en"])
+    try:
+        monkeypatch.setattr(get_config(), "plugins", [plugin])
+        assert _resolve_plugin() is plugin
+
+        duplicate = I18nPlugin(locales=["de"], default_locale="de")
+        monkeypatch.setattr(get_config(), "plugins", [plugin, duplicate])
+        with pytest.raises(ConfigError) as config_error:
+            _resolve_plugin()
+        assert str(config_error.value) == (
+            "Multiple I18nPlugin instances are configured, but get_plugin() "
+            "requires an unambiguous match. Request a more specific type or "
+            "remove duplicate entries from the rxconfig plugins list."
+        )
+
+        monkeypatch.setattr(get_config(), "plugins", [])
+        with pytest.raises(click.ClickException) as click_error:
+            _resolve_plugin()
+        assert click_error.value.message == (
+            "No I18nPlugin configured. Add I18nPlugin(locales=[...]) to "
+            "rx.Config(plugins=[...]) in rxconfig.py."
+        )
+    finally:
+        set_active_i18n_config(None)
