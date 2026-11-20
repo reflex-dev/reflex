@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import select
 import signal
@@ -24,6 +25,7 @@ from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils import log
 
 from reflex import reflex
 from reflex.minify import _get_minify_json_path, clear_config_cache, get_state_full_path
@@ -2276,7 +2278,6 @@ def test_run_uses_config_ports_only_for_the_running_side(
 )
 def test_run_rejects_a_port_flag_for_the_side_that_does_not_run(
     mocker: MockerFixture,
-    caplog: pytest.LogCaptureFixture,
     argv: list[str],
     message: str,
 ):
@@ -2284,7 +2285,6 @@ def test_run_rejects_a_port_flag_for_the_side_that_does_not_run(
 
     Args:
         mocker: The pytest-mock fixture.
-        caplog: The pytest log capture fixture.
         argv: Extra ``reflex run`` arguments.
         message: The expected error message.
     """
@@ -2295,7 +2295,7 @@ def test_run_rejects_a_port_flag_for_the_side_that_does_not_run(
     result = click.testing.CliRunner().invoke(reflex.cli, ["run", *argv])
 
     assert result.exit_code == 1
-    assert message in caplog.text
+    assert result.output == f"{message}\n"
 
 
 @pytest.mark.parametrize(
@@ -2349,6 +2349,27 @@ def test_db_commands_run_without_sqlmodel(
 
     assert result.exit_code == 1, result.output
     assert "pip install reflex[db]" not in caplog.text
+
+
+def test_cli_enables_managed_logging():
+    """Invoking the CLI in-process switches this process to managed logging."""
+    result = click.testing.CliRunner().invoke(reflex.cli, ["db", "--help"])
+
+    assert result.exit_code == 0, result.output
+    assert os.environ.get(log._MANAGED_ENV_VAR) == "true"
+    assert logging.getLogger("reflex").propagate is False
+
+
+def test_managed_logging_does_not_leak_into_the_next_test():
+    """A test after an in-process CLI invocation starts without managed logging.
+
+    Runs right after test_cli_enables_managed_logging, in file order.
+    """
+    reflex_logger = logging.getLogger("reflex")
+
+    assert os.environ.get(log._MANAGED_ENV_VAR) is None
+    assert reflex_logger.handlers == []
+    assert reflex_logger.propagate is True
 
 
 @pytest.fixture

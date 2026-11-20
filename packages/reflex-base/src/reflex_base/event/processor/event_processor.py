@@ -723,7 +723,15 @@ class EventProcessor:
             f"{key[1]}, superseded by a newer invocation."
         )
         for previous in slot.values():
-            previous.cancel()
+            task = self._tasks.get(previous.txid)
+            if task is not None and task.done() and not previous.done():
+                # The run finished, and its done callback has yet to resolve
+                # the future with its outcome: only the events it chained
+                # are left to supersede.
+                for child in previous.children:
+                    child.cancel()
+            else:
+                previous.cancel()
         slot.clear()
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
@@ -1034,6 +1042,12 @@ class EventProcessor:
         else:
             task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
+        future = self._futures.get(task_ctx.txid)
+        # Before the next event starts: a handler started eagerly below can
+        # supersede this one, which must not cancel a future still unresolved.
+        handling_exception = task.done() and self._resolve_future(
+            task, task_ctx, future
+        )
         # Chain the next sequential event for this token if applicable.
         token_queue = self._token_queues.get(task_ctx.token)
         if token_queue and token_queue[0][0].ctx.txid == task_ctx.txid:
@@ -1042,8 +1056,7 @@ class EventProcessor:
                 self._dispatch_next_for_token(task_ctx.token)
             else:
                 del self._token_queues[task_ctx.token]
-        future = self._futures.get(task_ctx.txid)
-        if task.done() and self._resolve_future(task, task_ctx, future):
+        if handling_exception:
             return
         if future is not None:
             # The task is gone; clean up now in case the future resolved
@@ -1073,7 +1086,12 @@ class EventProcessor:
             from reflex.utils import telemetry
 
             tb = ex.__traceback__
-            _fail_future(future, ex)
+            if future is not None and not future.done():
+                _fail_future(future, ex)
+                if future.awaited:
+                    # The caller awaiting the event received the exception:
+                    # reporting is its failure path's, if it does not catch it.
+                    return False
             telemetry.send_error(ex, context="backend")
             is_handler_task = task.get_name().startswith(_EXCEPTION_HANDLER_TASK_PREFIX)
             if not is_handler_task and self._spawn_backend_exception_handler(
