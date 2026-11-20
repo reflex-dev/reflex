@@ -31,6 +31,9 @@ from reflex_base.components.app_wraps import (
 from reflex_base.components.client_state_context import local_client_state_names
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.memo import (
+    MemoComponentDefinition,
+    MemoParamKind,
+    _LazyBody,
     create_passthrough_component_memo,
     memo_body_hooks,
 )
@@ -42,11 +45,10 @@ from reflex_base.components.memoize_helpers import (
     is_snapshot_boundary,
     scope_var_names,
 )
-from reflex_base.components.tags.iter_tag import _loop_var_data
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import LiteralVar, Var, scoped_var_data
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.core.cond import Cond
 from reflex_components_core.core.foreach import Foreach
@@ -264,7 +266,7 @@ def _subtree_has_instance_hooks(component: Component) -> bool:
     )
 
 
-def _warn_index_keyed_item(foreach: Foreach, route: str) -> None:
+def _warn_index_keyed_item(foreach: Foreach, where: str) -> None:
     """Warn when a foreach item with hooks of its own is keyed by its index.
 
     React matches a rendered instance, and so its lifecycle events and hooks,
@@ -273,7 +275,7 @@ def _warn_index_keyed_item(foreach: Foreach, route: str) -> None:
 
     Args:
         foreach: A foreach whose item subtree has hooks of one rendered instance.
-        route: The route of the page that renders it.
+        where: What renders it, e.g. ``"on page `/`"``.
     """
     [item] = foreach.children
     var_data = foreach.iterable._get_all_var_data()
@@ -292,7 +294,7 @@ def _warn_index_keyed_item(foreach: Foreach, route: str) -> None:
         foreach.iterable
     )
     logger.warning(
-        f"The rx.foreach over `{name}` on page `{route}` renders a"
+        f"The rx.foreach over `{name}` {where} renders a"
         f" {type(item).__name__} with lifecycle events or hooks keyed by its"
         " index: after an item is removed or moved, its hooks run for the item"
         " now at that position. Set a unique, stable key on the item, such as"
@@ -303,7 +305,12 @@ def _warn_index_keyed_item(foreach: Foreach, route: str) -> None:
 
 
 def _scope_instance_hooks(
-    component: Component, page_context: PageContext, compile_context: Any
+    component: Component,
+    page_context: PageContext,
+    compile_context: Any,
+    *,
+    where: str | None = None,
+    reserved: frozenset[str] = frozenset(),
 ) -> Component:
     """Wrap each descendant that has hooks of its own in a memo component.
 
@@ -315,6 +322,9 @@ def _scope_instance_hooks(
         component: The root of the subtree; it is not wrapped itself.
         page_context: The active page context.
         compile_context: The active compile context.
+        where: What renders the subtree, for warnings; the page by default.
+        reserved: Scoped names a wrapper cannot receive as a prop. A
+            descendant that reads one is left unwrapped.
 
     Returns:
         ``component``, or a page-local clone with wrapped descendants.
@@ -324,14 +334,16 @@ def _scope_instance_hooks(
         if not isinstance(child, Component):
             children.append(child)
             continue
-        child = _scope_instance_hooks(child, page_context, compile_context)
+        child = _scope_instance_hooks(
+            child, page_context, compile_context, where=where, reserved=reserved
+        )
         if (
             child._memoization_mode.disposition != MemoizationDisposition.NEVER
             and child.tag is not None
             and _has_instance_hooks(child)
         ):
             wrapper = MemoizeStatefulPlugin._build_wrapper(
-                child, page_context, compile_context, in_loop=True
+                child, page_context, compile_context, in_loop=True, reserved=reserved
             )
             if isinstance(wrapper, Component):
                 if get_memoization_strategy(child) is not MemoizationStrategy.SNAPSHOT:
@@ -344,11 +356,98 @@ def _scope_instance_hooks(
         return component
     if isinstance(component, Foreach):
         # Its item subtree has hooks of one rendered instance.
-        _warn_index_keyed_item(component, page_context.route)
+        _warn_index_keyed_item(component, where or f"on page `{page_context.route}`")
     owned = page_context.own(component)
     owned.children = children
     owned._clear_compile_caches()
     return owned
+
+
+def _scope_branch_hooks(
+    component: Component,
+    page_context: PageContext,
+    compile_context: Any,
+    where: str,
+    reserved: frozenset[str],
+) -> Component:
+    """Wrap the descendants with hooks of their own under a branch or a loop.
+
+    Args:
+        component: The root of the subtree; it is not wrapped itself.
+        page_context: The context that owns the clones.
+        compile_context: The active compile context.
+        where: What renders the subtree, for warnings.
+        reserved: Scoped names a wrapper cannot receive as a prop.
+
+    Returns:
+        ``component``, or a clone with wrapped descendants.
+    """
+    if isinstance(component, (Cond, Match, Foreach)):
+        return _scope_instance_hooks(
+            component, page_context, compile_context, where=where, reserved=reserved
+        )
+    children = [
+        _scope_branch_hooks(child, page_context, compile_context, where, reserved)
+        if isinstance(child, Component)
+        else child
+        for child in component.children
+    ]
+    if all(new is old for new, old in zip(children, component.children, strict=True)):
+        return component
+    owned = page_context.own(component)
+    owned.children = children
+    owned._clear_compile_caches()
+    return owned
+
+
+def scope_memo_body_hooks(
+    definition: MemoComponentDefinition, compile_context: Any
+) -> MemoComponentDefinition:
+    """Scope the hooks under a branch or a loop in an ``@rx.memo`` body.
+
+    The body compiles into one function, with every descendant's hooks at its
+    top. A lifecycle event or added hook under ``rx.cond``, ``rx.match`` or
+    ``rx.foreach`` would then run when the memo mounts, whatever branch is
+    shown, and outside the loop whose variables it reads. As on a page, each
+    such descendant gets a memo wrapper of its own, which receives the memo
+    parameters and loop variables it reads as props.
+
+    A descendant that reads the rest props or ``children`` of the memo cannot
+    receive them as a prop, so it stays in the memo function.
+
+    Args:
+        definition: The ``@rx.memo`` component definition.
+        compile_context: The active compile context, which collects the
+            generated wrapper definitions.
+
+    Returns:
+        The definition, or a copy whose body has wrapped descendants.
+    """
+    component = definition.component
+    page_context = PageContext(
+        name=definition.export_name,
+        route=definition.python_name,
+        root_component=component,
+        source_module=definition.source_module,
+    )
+    scoped = _scope_branch_hooks(
+        component,
+        page_context,
+        compile_context,
+        f"in the `@rx.memo` component `{definition.python_name}`",
+        frozenset(
+            param.placeholder_name
+            for param in definition.params
+            if param.kind in (MemoParamKind.REST, MemoParamKind.CHILDREN)
+        ),
+    )
+    if scoped is component:
+        return definition
+    return dataclasses.replace(
+        definition,
+        _component=_LazyBody.ready(scoped),
+        scoped_client_state_names=tuple(sorted(page_context.client_state_names)),
+    )
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -513,6 +612,7 @@ class MemoizeStatefulPlugin(Plugin):
         page_context: PageContext,
         compile_context: Any,
         in_loop: bool = False,
+        reserved: frozenset[str] = frozenset(),
     ) -> BaseComponent | None:
         """Return the memo wrapper component for ``comp``, or ``None`` if untagged.
 
@@ -526,10 +626,11 @@ class MemoizeStatefulPlugin(Plugin):
             page_context: The active page context.
             compile_context: The active compile context.
             in_loop: Whether the wrapper is called inside a loop body.
+            reserved: Scoped names the wrapper cannot receive as a prop.
 
         Returns:
             The wrapper instance, or ``None`` if the component's render is
-            empty and has no meaningful tag.
+            empty and has no meaningful tag, or it reads a reserved name.
         """
         comp = fix_event_triggers_for_memo(comp, page_context)
         if _is_structural_memoization_child(comp):
@@ -549,6 +650,8 @@ class MemoizeStatefulPlugin(Plugin):
             if in_loop
             else ()
         )
+        if not reserved.isdisjoint(scope_vars):
+            return None
 
         # Passthrough memo definitions capture app-specific event/state vars, so
         # they must be rebuilt for each compile instead of shared globally. The
@@ -574,7 +677,7 @@ class MemoizeStatefulPlugin(Plugin):
         # Each prop keeps naming its loop variable, so an enclosing wrapper
         # that renders this one receives the variable too.
         wrapper = wrapper_factory(**{
-            name: Var(_js_expr=name, _var_data=_loop_var_data(name))
+            name: Var(_js_expr=name, _var_data=scoped_var_data(name))
             for name in scope_vars
         })
         # The wrapper has no structural children at the page level, but parents
