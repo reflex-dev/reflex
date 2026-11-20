@@ -301,10 +301,7 @@ class RegistrationContext(BaseContext):
         Returns:
             The registration context instance, or ``None``.
         """
-        try:
-            return cls.get()
-        except LookupError:
-            return None
+        return cls._context_var.get(None)
 
     @classmethod
     def register_base_state(cls, state_cls: type[BaseState]) -> type[BaseState]:
