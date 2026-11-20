@@ -29,7 +29,11 @@ from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
-from reflex_base.vars.function import ArgsFunctionOperationBuilder, FunctionVar
+from reflex_base.vars.function import (
+    ArgsFunctionOperationBuilder,
+    FunctionStringVar,
+    FunctionVar,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import deprecated
@@ -238,13 +242,11 @@ def _collect_declarations() -> Iterator[None]:
         _compile_declarations.reset(token)
 
 
-# The store's entry point on the global `refs` object, which `run_script` code
-# can reach, and the devtools handle for inspecting client state.
-_client_state_store_ref = Var(
-    _js_expr=f"refs[{json.dumps(CLIENT_STATE_REF)}]",
-    _var_data=VarData(
-        imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]},
-    ),
+# The store's `set`, on the global `refs` object that `run_script` code can reach
+# and devtools can inspect.
+_client_state_store_set = FunctionStringVar.create(
+    f"refs[{json.dumps(CLIENT_STATE_REF)}].set",
+    _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
 )
 
 
@@ -689,12 +691,10 @@ class ClientStateVar(Var):
         if isinstance(value, Var):
             # A Var is a client-side expression, which cannot survive the JSON
             # event payload -- it would arrive as its own source text. Evaluate
-            # it on the client instead, reaching the store through `refs`.
-            # Formatting the Vars keeps their imports, which a page that
-            # compiles the push into one of its triggers needs.
-            return run_script(
-                f"{_client_state_store_ref}.set({LiteralVar.create(self._state_name)}, {value})"
-            )
+            # it on the client instead, reaching the store through `refs`. The
+            # call keeps the Var's imports, which a page that compiles the push
+            # into one of its triggers needs.
+            return run_script(_client_state_store_set.call(self._state_name, value))
         return server_side(
             "_client_state_set",
             inspect.signature(_client_state_set),

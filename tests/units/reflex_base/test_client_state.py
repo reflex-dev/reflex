@@ -8,7 +8,9 @@ from reflex_base.client_state import ClientStateVar, client_state
 from reflex_base.components.client_state_context import CLIENT_STATE_APP_WRAP_PRIORITY
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants import Dirs
+from reflex_base.event import Event
 from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.function import FunctionVar
 
@@ -638,23 +640,20 @@ def test_push_var_is_evaluated_on_the_client() -> None:
     along, for a page that compiles the push into a trigger instead of receiving
     it as a script.
     """
-    from reflex_base.event import fix_events
-
     cs = client_state(0, name="counter")
     other = client_state("", name="other")
     spec = cs.push(other.global_value.to(str) + "!")
-    event = fix_events([spec], token="tok")[0]
-    assert event.name.endswith("_call_function")
-    assert str(event.payload["function"]) == (
-        '(() => refs["__client_state"].set("counter", (getClientState("other")+"!")))'
-    )
-    function = next(value for name, value in spec.args if str(name) == "function")
-    var_data = function._get_all_var_data()
-    assert var_data is not None
-    assert {lib: {i.tag for i in tags} for lib, tags in var_data.imports} == {
-        f"$/{Dirs.STATE_PATH}": {"refs"},
-        f"$/{Dirs.CLIENT_STATE_PATH}": {"getClientState", "setClientState"},
+    (event,) = Event.from_event_type(spec)
+    assert event.name == "_call_function"
+    assert event.payload == {
+        "function": '(() => (refs["__client_state"].set("counter", (getClientState("other")+"!"))))',
+        "callback": None,
     }
+    (_, function), _ = spec.args
+    assert function._get_all_var_data() == VarData.merge(
+        VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
+        other.global_value._get_all_var_data(),
+    )
 
 
 def test_backend_events_use_the_shared_store() -> None:
