@@ -12,74 +12,20 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import keyword
-import re
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
 from reflex_base.event import EventHandler, EventSpec, server_side
+from reflex_base.js.source import find_exports, find_imports
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.format import format_event_handler
 
 # The name of the frontend event that calls a function of a module.
 CALL_JS = "_call_js"
 
-_COMMENT_RE = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
-_DECLARED_EXPORT_RE = re.compile(
-    r"^[ \t]*export[ \t]+(?:async[ \t]+)?"
-    r"(?:function\b[ \t]*\*?[ \t]*|(?:const|let|var)[ \t]+)([\w$]+)",
-    re.MULTILINE,
-)
-_EXPORT_LIST_RE = re.compile(r"^[ \t]*export[ \t]*\{([^}]*)\}", re.MULTILINE)
-_SPECIFIER_RE = re.compile(r"""(?:\bfrom|\bimport)[ \t]*\(?[ \t]*["']([^"'\n]+)["']""")
 # Specifiers that do not name an npm package.
 _LOCAL_PREFIXES = (".", "/", "$/", "node:", "http://", "https://")
-
-
-def _strip_comments(source: str) -> str:
-    """Remove the comments of a JavaScript source.
-
-    Args:
-        source: The source.
-
-    Returns:
-        The source without comments.
-    """
-    return _COMMENT_RE.sub("", source)
-
-
-def find_exports(source: str) -> list[str]:
-    """Find the named exports of a JavaScript module.
-
-    Covers declared exports (``export function f``, ``export async function``,
-    ``export const f``) and export lists (``export { a, b as c }``, also when
-    re-exported ``from`` another module). A default export has no name to
-    import in Python and is left out.
-
-    Args:
-        source: The module source.
-
-    Returns:
-        The export names, in the order they appear, without duplicates.
-    """
-    source = _strip_comments(source)
-    found: dict[int, list[str]] = {}
-    for match in _DECLARED_EXPORT_RE.finditer(source):
-        found[match.start()] = [match.group(1)]
-    for match in _EXPORT_LIST_RE.finditer(source):
-        found[match.start()] = [
-            spec.split(" as ")[-1].strip()
-            for spec in match.group(1).split(",")
-            if spec.strip()
-        ]
-    return list(
-        dict.fromkeys(
-            name
-            for start in sorted(found)
-            for name in found[start]
-            if name != "default"
-        )
-    )
 
 
 def find_package_imports(source: str) -> list[str]:
@@ -92,13 +38,11 @@ def find_package_imports(source: str) -> list[str]:
         The import specifiers that name a package, such as ``canvas-confetti``
         or ``@scope/pkg/sub``, without duplicates.
     """
-    return list(
-        dict.fromkeys(
-            specifier
-            for specifier in _SPECIFIER_RE.findall(_strip_comments(source))
-            if not specifier.startswith(_LOCAL_PREFIXES)
-        )
-    )
+    return [
+        specifier
+        for specifier in find_imports(source)
+        if not specifier.startswith(_LOCAL_PREFIXES)
+    ]
 
 
 def module_key(name: str) -> str:

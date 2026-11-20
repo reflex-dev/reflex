@@ -169,6 +169,7 @@ class RegistrationContext(BaseContext):
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
             _explicit_bundled_libraries=dict(self._explicit_bundled_libraries),
+            script_modules=dict(self.script_modules),
         )
 
     def _set_config(self, config: Config) -> None:

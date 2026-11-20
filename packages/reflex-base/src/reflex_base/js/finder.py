@@ -1,28 +1,38 @@
 """Import JavaScript modules from Python.
 
 ``from my_app.scripts.party import celebrate`` finds ``my_app/scripts/party.js``
-(or ``.ts``) when no Python module of that name exists. This module only uses
-the standard library: ``import reflex`` installs the finder, and loading the
-event system is left to the first JavaScript module imported.
+(or ``.ts``) when no Python module of that name exists.
+
+``import reflex`` installs the finder, so this module stays as cheap to import
+as it can: ``os.path`` instead of ``pathlib``, and a finder and loader that
+implement the import protocol without the ``importlib.abc`` base classes, and
+no ``typing``. The event system loads with the first JavaScript module
+imported.
 """
 
 from __future__ import annotations
 
-import importlib.abc
-import importlib.machinery
+import os.path
 import sys
-from collections.abc import Sequence
-from pathlib import Path
-from types import ModuleType
+from importlib.machinery import ModuleSpec
+
+# Not imported from typing, which `import reflex` does not load otherwise.
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from importlib.abc import Loader as _LoaderBase
+    from types import ModuleType
+else:
+    _LoaderBase = object
 
 # The extensions of the files a JavaScript module may be written in.
 SCRIPT_EXTENSIONS = (".js", ".ts")
 
 
-class _ScriptLoader(importlib.abc.Loader):
+class _ScriptLoader(_LoaderBase):
     """Execute a JavaScript module by exposing its exports as functions."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: str):
         """Create the loader.
 
         Args:
@@ -30,7 +40,7 @@ class _ScriptLoader(importlib.abc.Loader):
         """
         self.path = path
 
-    def create_module(self, spec: importlib.machinery.ModuleSpec) -> None:
+    def create_module(self, spec: ModuleSpec) -> None:
         """Use the default module creation.
 
         Args:
@@ -45,12 +55,14 @@ class _ScriptLoader(importlib.abc.Loader):
         """
         # Imported here: the finder loads with `import reflex`, which must not
         # pay for the event system until a JavaScript module is imported.
+        from pathlib import Path
+
         from reflex_base.js.modules import load_module
 
-        load_module(module, self.path)
+        load_module(module, Path(self.path))
 
 
-class ScriptFinder(importlib.abc.MetaPathFinder):
+class ScriptFinder:
     """Find a JavaScript file where no Python module of the name exists."""
 
     def find_spec(
@@ -58,7 +70,7 @@ class ScriptFinder(importlib.abc.MetaPathFinder):
         fullname: str,
         path: Sequence[str] | None,
         target: ModuleType | None = None,
-    ) -> importlib.machinery.ModuleSpec | None:
+    ) -> ModuleSpec | None:
         """Find the JavaScript file for a submodule.
 
         Args:
@@ -75,11 +87,10 @@ class ScriptFinder(importlib.abc.MetaPathFinder):
         name = fullname.rpartition(".")[2]
         for entry in path:
             for extension in SCRIPT_EXTENSIONS:
-                file = Path(entry, name + extension)
-                if file.is_file():
-                    return importlib.machinery.ModuleSpec(
-                        fullname, _ScriptLoader(file), origin=str(file)
-                    )
+                # Not pathlib: see the module docstring.
+                file = os.path.join(entry, name + extension)  # noqa: PTH118
+                if os.path.isfile(file):  # noqa: PTH113
+                    return ModuleSpec(fullname, _ScriptLoader(file), origin=file)
         return None
 
 

@@ -1,9 +1,9 @@
 """Run JavaScript in the browser through a defined API."""
 
-from typing import TYPE_CHECKING
-
 from reflex_base.utils import lazy_loader
 
+# Not imported from typing, which `import reflex` does not load otherwise.
+TYPE_CHECKING = False
 if TYPE_CHECKING:
     from .environment import ScriptEnvVar, env
     from .modules import JsFunction
