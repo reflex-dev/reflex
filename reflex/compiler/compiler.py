@@ -50,7 +50,7 @@ from rich.progress import Progress
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, scope_memo_body_hooks
 from reflex.state import BaseState, code_uses_state_contexts, state_snapshot_hashes
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
@@ -1507,9 +1507,16 @@ def compile_app(
         ] = hydrate_fallback_definition
         hydrate_fallback_export = hydrate_fallback_definition.export_name
 
+    # A snapshot: evaluating a memo body may register another memo.
+    memos = [
+        scope_memo_body_hooks(memo, compile_ctx)
+        if isinstance(memo, MemoComponentDefinition)
+        else memo
+        for memo in tuple(MEMOS.values())
+    ]
     memo_component_files, memo_components_imports = compile_memo_components(
         (
-            *MEMOS.values(),
+            *memos,
             *compile_ctx.auto_memo_components.values(),
         ),
     )
