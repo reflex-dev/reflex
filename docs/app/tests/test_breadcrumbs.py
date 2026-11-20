@@ -265,6 +265,16 @@ def test_sidebar_label_finds_the_page_entry():
             "HTML Embed",
         ),
         ("/hosting/cli/vmtypes/", "VM Types", "VM Types"),
+        (
+            "/ai/integrations/custom-oidc/",
+            "Custom OIDC · Integrations · AI · Reflex Docs",
+            "Custom OIDC",
+        ),
+        (
+            "/ai/integrations/microsoft-entra-id/",
+            "Microsoft Entra ID · Integrations · AI · Reflex Docs",
+            "Microsoft Entra ID",
+        ),
     ],
 )
 def test_page_titles_and_sidebar_labels_keep_acronyms(route, title, label):
