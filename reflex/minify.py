@@ -908,6 +908,12 @@ def validate_minify_config(
             label = f"{state_path} (orphaned)"
         parent_to_pairs.setdefault(parent_key, []).append((label, entry["id"]))
 
+        # Loading goes by the recorded parent and the frontend by the actual
+        # one, so a state either one calls a root needs a valid root id.
+        root = parent_key is None or entry["parent"] is None
+        if not _is_state_id(entry["id"], root=root):
+            errors.append(_invalid_state_id_message(state_path, entry["id"], root=root))
+
         # A state sharing its parent's id makes a relative path ambiguous,
         # which misresolves substate lookups rather than failing. Checked
         # against the actual parent, which is the tree a lookup walks. An
@@ -924,11 +930,6 @@ def validate_minify_config(
                 f"'{parent_key}'. Delete {MINIFY_JSON} and re-run "
                 "'reflex minify init'."
             )
-
-    for state_path, entry in config["states"].items():
-        root = entry["parent"] is None
-        if not _is_state_id(entry["id"], root=root):
-            errors.append(_invalid_state_id_message(state_path, entry["id"], root=root))
 
     for parent_key, pairs in parent_to_pairs.items():
         parent_name = parent_key if parent_key is not None else "root"

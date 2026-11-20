@@ -1543,6 +1543,51 @@ def test_nested_state_id_may_name_a_prototype_member(temp_minify_json):
     assert sync_minify_config(config, root) == config
 
 
+def test_validate_judges_a_root_id_by_both_parents():
+    """A stale ``parent`` must not hide a root id naming a prototype member.
+
+    The app loads the file by the recorded parent, while the frontend keys a
+    state by its actual one, so the id has to suit both.
+    """
+    root = type("StaleRootParent", (BaseState,), {"__module__": __name__})
+    child = type("StaleRootChild", (root,), {"__module__": __name__})
+    root_path = get_state_full_path(root)
+    child_path = get_state_full_path(child)
+    config = generate_minify_config(root)
+    config["states"][root_path] = StateEntry(id="constructor", parent="stale.Parent")
+    config["states"][child_path] = StateEntry(id="toString", parent=None)
+    reason = (
+        "a root state id may not name an Object.prototype member, which the "
+        "frontend's state maps would inherit. Run 'reflex minify sync' to "
+        "reassign it."
+    )
+
+    assert validate_minify_config(config, root) == (
+        [
+            f"state '{root_path}' has id 'constructor'; {reason}",
+            f"state '{child_path}' has id 'toString'; {reason}",
+        ],
+        [
+            (
+                f"Stale parent for '{root_path}': config has 'stale.Parent', "
+                "actual is None. Run 'reflex minify sync' to fix."
+            ),
+            (
+                f"Stale parent for '{child_path}': config has None, actual is "
+                f"'{root_path}'. Run 'reflex minify sync' to fix."
+            ),
+        ],
+        [],
+    )
+
+    synced = sync_minify_config(config, root)
+    assert synced["states"] == {
+        root_path: StateEntry(id="a", parent=None),
+        child_path: StateEntry(id="toString", parent=root_path),
+    }
+    assert validate_minify_config(synced, root) == ([], [], [])
+
+
 def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
     """Two handlers of a state on one id would leave one unreachable.
 
