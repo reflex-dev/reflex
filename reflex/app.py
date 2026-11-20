@@ -2370,20 +2370,12 @@ class App(MiddlewareMixin, LifespanMixin):
                         await forked_context.release_lock()
                 delta = await state._get_resolved_delta()
                 state._clean()
-                # Emit to a token a browser connected with, or that has a socket
-                # (its state may have expired and lost the session id). A shared
-                # state token never has one: its linked clients get the delta
-                # through the shared state fan-out.
-                if delta and (
-                    state.rx_router_session.session_id
-                    or await self.event_namespace._token_manager.is_token_connected(
-                        token.ident
-                    )
-                ):
+                if delta:
                     # When the frontend vars are modified emit the delta to the frontend.
                     await self.event_namespace.emit_update(
                         update=StateUpdate(delta=delta),
                         token=token.ident,
+                        suppress_warnings=True,
                     )
 
     def _validate_exception_handlers(self):
@@ -2824,12 +2816,16 @@ class EventNamespace(AsyncNamespace):
             return task
         return None
 
-    async def emit_update(self, update: StateUpdate, token: str) -> None:
+    async def emit_update(
+        self, update: StateUpdate, token: str, suppress_warnings: bool = False
+    ) -> None:
         """Emit an update to the client.
 
         Args:
             update: The state update to send.
             token: The client token (tab) associated with the event.
+            suppress_warnings: Whether to skip the warning when no client is
+                connected with the token.
         """
         socket_record = self._token_manager.token_to_socket.get(token)
         if (
@@ -2839,7 +2835,7 @@ class EventNamespace(AsyncNamespace):
             if isinstance(self._token_manager, RedisTokenManager):
                 # The socket belongs to another instance of the app, send it to the lost and found.
                 await self._token_manager.emit_lost_and_found(token, update)
-            else:
+            elif not suppress_warnings:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.
                 logger.warning(

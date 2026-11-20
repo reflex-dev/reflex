@@ -87,7 +87,7 @@ from reflex.compiler.compiler import (
 )
 from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
-from reflex.istate.data import HeaderData, RouterData, SessionData, URLData
+from reflex.istate.data import HeaderData, RouterData, URLData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -4448,14 +4448,6 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
 
     app = App(_state=Base)
     app._event_namespace = AsyncMock()
-    # Modify state emits only to a token a browser connected with.
-    async with app.state_manager.modify_state(
-        BaseStateToken(ident=token, cls=Base)
-    ) as root_state:
-        root_state.rx_router_session = SessionData(session_id="sid")
-        root_state._clean()
-        # Persisting managers reset the flag after the write; memory does not.
-        root_state._was_touched = False
 
     async with app.modify_state(
         token=BaseStateToken(ident=token, cls=Sub)
@@ -4487,10 +4479,11 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
             exp_delta = {Sub.get_full_name(): {"sub_count_rx_state_": 1}}
         else:
             exp_delta = {Base.get_full_name(): {"count_rx_state_": 1}}
-        assert (
-            app._event_namespace.emit_update.call_args.kwargs["update"].delta
-            == exp_delta
-        )
+        assert app._event_namespace.emit_update.call_args.kwargs == {
+            "update": StateUpdate(delta=exp_delta),
+            "token": token,
+            "suppress_warnings": True,
+        }
     else:
         assert app._event_namespace.emit_update.call_count == 0
 
@@ -4659,8 +4652,9 @@ async def test_modify_state_emits_only_to_connected_tokens(
 
     A shared state token has no socket: its linked clients get the update
     through the shared state fan-out. A browser token that another client links
-    to, or whose state expired while it stayed connected, still gets the emit,
-    and a browser that disconnected still logs the warning.
+    to, or whose state expired while it stayed connected, still gets the emit.
+    Modify state logs no warning for a token without a socket, while a regular
+    emit to a browser that disconnected still does.
 
     Args:
         monkeypatch: Restore root metadata changed by defining a shared state.
@@ -4686,10 +4680,7 @@ async def test_modify_state_emits_only_to_connected_tokens(
     )
     event_namespace = app._event_namespace = EventNamespace("/event", app)
     event_namespace._token_manager = LocalTokenManager()
-    event_namespace.emit = AsyncMock()
-    emit_update = event_namespace.emit_update = AsyncMock(
-        wraps=event_namespace.emit_update
-    )
+    emit = event_namespace.emit = AsyncMock()
     for token in ("client", "target", "expired", "gone"):
         await event_namespace.link_token_to_sid(f"{token}-sid", token)
     await event_namespace._token_manager.disconnect_token("gone", "gone-sid")
@@ -4703,9 +4694,9 @@ async def test_modify_state_emits_only_to_connected_tokens(
             link: The token to link the counter to, if any.
 
         Returns:
-            The tokens passed to emit_update.
+            The socket ids the updates were emitted to.
         """
-        emit_update.reset_mock()
+        emit.reset_mock()
         async with app.modify_state(
             BaseStateToken(ident=token, cls=CounterState)
         ) as root_state:
@@ -4715,7 +4706,7 @@ async def test_modify_state_emits_only_to_connected_tokens(
             if count is not None:
                 counter.count = count
         await asyncio.gather(*UPDATE_OTHER_CLIENT_TASKS)
-        return [call.kwargs["token"] for call in emit_update.await_args_list]
+        return [call.kwargs["to"] for call in emit.await_args_list]
 
     def app_warnings() -> list[str]:
         """Get the warnings logged by the app.
@@ -4730,24 +4721,26 @@ async def test_modify_state_emits_only_to_connected_tokens(
         ]
 
     with caplog.at_level(logging.WARNING, logger="reflex.app"):
-        assert await modify("client", link="shared") == ["client"]
-        assert await modify("client", count=1) == ["client"]
+        assert await modify("client", link="shared") == ["client-sid"]
+        assert await modify("client", count=1) == ["client-sid"]
         # The shared token gets no emit; its linked client gets the fan-out.
-        assert await modify("shared", count=2) == ["client"]
+        assert await modify("shared", count=2) == ["client-sid"]
         # A shared token that no client linked to yet has no socket either.
         assert await modify("unlinked", count=3) == []
-        assert app_warnings() == []
 
         # A browser token that another client links to is still connected.
         await modify("target", count=4)
         await modify("client", link="target")
-        assert await modify("target", count=5) == ["target", "client"]
-        # A connected browser whose state expired has lost its session id.
+        assert await modify("target", count=5) == ["target-sid", "client-sid"]
+        # A connected browser whose state expired still gets the emit.
         state_manager._purge_token(BaseStateToken(ident="expired", cls=State))
-        assert await modify("expired", count=6) == ["expired"]
+        assert await modify("expired", count=6) == ["expired-sid"]
+
+        assert await modify("gone", count=7) == []
         assert app_warnings() == []
 
-        assert await modify("gone", count=7) == ["gone"]
+        await event_namespace.emit_update(StateUpdate(), token="gone")
+    assert emit.await_count == 0
     assert app_warnings() == ["Attempting to send delta to disconnected client 'gone'"]
 
 
