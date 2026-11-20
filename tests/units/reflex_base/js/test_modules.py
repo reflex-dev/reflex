@@ -40,13 +40,16 @@ const later = await import("dayjs");
 
 
 def test_find_package_imports():
-    """Only specifiers naming an npm package are installed."""
+    """Only specifiers naming an npm package are installed, without a query."""
     assert find_package_imports(SOURCE) == [
         "canvas-confetti",
         "@scope/pkg/style.css",
         "lodash/fp",
         "dayjs",
     ]
+    assert find_package_imports(
+        'import a from "pkg/a.css?inline";\nimport b from "pkg/a.css";\n'
+    ) == ["pkg/a.css"]
 
 
 def test_module_key_cannot_collide():
@@ -190,7 +193,14 @@ def test_a_function_is_an_event_trigger(script_package: Path):
         '"js_pkg$party", ["function"] : "celebrate", ["args"] : [1, "out"] }), '
         "({  })))], [_e], ({  }))))"
     )
-    # Like an event handler, an uncalled function takes the trigger's arguments.
+    # Like an event handler, an uncalled function takes the trigger's arguments:
+    # none, one, or several.
+    on_mount = rx.box(on_mount=celebrate)
+    assert str(LiteralVar.create(on_mount.event_triggers["on_mount"])) == (
+        '((...args) => (addEvents([(ReflexEvent("_call_js", ({ ["module"] : '
+        '"js_pkg$party", ["function"] : "celebrate", ["args"] : [] }), '
+        "({  })))], args, ({  }))))"
+    )
     uncalled = rx.input(on_change=celebrate)
     assert str(LiteralVar.create(uncalled.event_triggers["on_change"])) == (
         '((_e) => (addEvents([(ReflexEvent("_call_js", ({ ["module"] : '

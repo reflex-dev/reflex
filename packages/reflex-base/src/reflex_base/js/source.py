@@ -499,15 +499,30 @@ def find_stylesheet_references(source: str) -> list[str]:
     )
     return list(
         dict.fromkeys(
-            reference.split("?")[0].split("#")[0]
+            strip_query(reference)
             for reference in references
             if not reference.startswith(("/", "#", "data:")) and "://" not in reference
         )
     )
 
 
+def strip_query(specifier: str) -> str:
+    """Remove the query and fragment of an import specifier.
+
+    Args:
+        specifier: The specifier, such as ``./logo.png?url``.
+
+    Returns:
+        The path part, such as ``./logo.png``.
+    """
+    return specifier.split("?", 1)[0].split("#", 1)[0]
+
+
 def _resolve_local(directory: Path, specifier: str) -> Path | None:
     """Find the file a relative import names, as the bundler would.
+
+    A query or fragment, as in Vite's ``./logo.png?url``, is not part of the
+    file name; the copied module keeps it.
 
     Args:
         directory: The importing file's directory.
@@ -516,7 +531,7 @@ def _resolve_local(directory: Path, specifier: str) -> Path | None:
     Returns:
         The file, or None if there is none.
     """
-    target = directory / specifier
+    target = directory / strip_query(specifier)
     candidates = [
         target,
         *(target.with_name(target.name + ext) for ext in _RESOLVE_EXTENSIONS),
