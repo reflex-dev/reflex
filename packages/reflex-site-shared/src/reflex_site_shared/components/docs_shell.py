@@ -224,10 +224,14 @@ def docs_sidebar_leaf(
                 ),
                 rx.text(
                     title,
+                    # Show the full label on hover, since long labels truncate.
+                    title=title,
+                    # Truncate so a long label never wraps past the fixed-height row
+                    # and its active highlight.
                     class_name=rx.cond(
                         active,
-                        "m-0 pl-4 text-sm font-[475] text-foreground transition-color",
-                        "m-0 w-full text-sm font-[475] text-foreground transition-color",
+                        "m-0 min-w-0 truncate pl-4 text-sm font-[475] text-foreground transition-color",
+                        "m-0 min-w-0 w-full truncate text-sm font-[475] text-foreground transition-color",
                     ),
                 ),
                 class_name=rx.cond(
