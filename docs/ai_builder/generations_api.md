@@ -237,10 +237,14 @@ curl -X POST "$REFLEX_URL/api/v1/generations/$GENERATION_ID/resolve" \
 
 The answer starts a new generation on the same thread and answers 201 with it. Follow that new generation, not the one you resolved. With `allow` the agent carries out the action in `detail`; with `deny` it continues without it.
 
-- Repeating the same answer is safe: it answers with the generation the first answer started. A repeat that arrives while the first is still starting gets the live-run 409, whose `generation_id` is that generation.
-- `epoch` proves which card you are answering. A run that is restarted keeps its id and gets a new epoch and a new card, so an answer with an old epoch is refused with 409 and the current `epoch`. Read the generation again and answer the card it is waiting on now.
-- A card that has already been answered, here or in the AI Builder, is refused with 409.
-- Resolving needs edit access to the thread. A caller who can see the run but not edit it is refused with 403.
+How a second request is answered depends on what it repeats:
+
+- **The same decision and `epoch` again:** safe. It answers 201 with the generation the first answer started, so a retry after a timeout does not start a second run. If it arrives while the first answer is still starting, it gets the live-run 409, whose `generation_id` is that generation.
+- **A different decision, or a card answered some other way** (in the AI Builder, or by a follow-up prompt): refused with 409 and a string `detail`, because the card is closed.
+- **An old `epoch`:** a run that is restarted keeps its id and gets a new epoch and a new card. The answer is refused with 409, and `detail` is an object carrying the current `epoch`. Read the generation again and answer the card it is waiting on now.
+- **A run that is no longer `awaiting_permission`:** refused with 409, and `detail` is an object carrying the run's current `status`.
+
+The 409 shapes are under [Errors](#409-conflicts). Resolving needs edit access to the thread. A caller who can see the run but not edit it is refused with 403.
 
 In any other `awaiting_` status, a prompt ends in that same status again: an integration has to be connected, and environment variables set, in the AI Builder.
 
@@ -393,7 +397,7 @@ Every other 409 has a string `detail`:
 - An earlier request with the same `Idempotency-Key` left an app this request cannot continue. The message names that app's thread id; send follow-ups to it, or use a new key.
 - The thread is archived.
 - A browser test is running on the app. Retry when it finishes.
-- On resolve, the card has already been answered, or it changed while the answer was being sent.
+- On resolve, the card is closed: it was answered with a different decision, in the AI Builder, or by a follow-up prompt, or it changed while the answer was being sent.
 
 ### 422: invalid requests
 
