@@ -696,12 +696,94 @@ def test_orjson_serializes_clean_payload_in_one_pass(monkeypatch: pytest.MonkeyP
     assert orjson_loads(orjson_dumps_socket(payload)) == payload
 
 
-def test_orjson_none_values_stay_null():
-    """None is indistinguishable from a dropped NaN, so it takes the stdlib
-    path, but it must still serialize as null.
+def _state_update_packet(delta_values: dict) -> list:
+    """Build a socket packet carrying a ``StateUpdate``, as the app emits it.
+
+    Args:
+        delta_values: The vars of the single state in the delta.
+
+    Returns:
+        The packet.
     """
-    payload = {"a": None, "b": [None, 1.0], "c": "x"}
-    assert orjson_loads(orjson_dumps_socket(payload)) == payload
+    from reflex.state import StateUpdate
+
+    return ["event", StateUpdate(delta={"state": delta_values})]
+
+
+def test_orjson_keeps_its_output_for_none(monkeypatch: pytest.MonkeyPatch):
+    """A None puts a null in orjson's output without a non-finite float behind it.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex_base.utils import format as format_module
+
+    def _fail(_obj):
+        pytest.fail("stdlib path ran on a payload without a non-finite float")
+
+    monkeypatch.setattr(format_module, "_json_dumps_socket", _fail)
+    payload = _state_update_packet({"a": None, "b": [None, 1.0], "c": "x"})
+    assert orjson_dumps_socket(payload) == (
+        '["event",{"delta":{"state":{"a":null,"b":[null,1.0],"c":"x"}}}]'
+    )
+
+
+class _DictSubclass(dict):
+    pass
+
+
+class _ListSubclass(list):
+    pass
+
+
+class _NanEnum(Enum):
+    NAN = float("nan")
+
+
+@dataclasses.dataclass
+class _Reading:
+    value: float
+    previous: _Reading | None = None
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (float("nan"), "NaN"),
+        (_FloatSubclass("inf"), "Infinity"),
+        (_DictSubclass(v=float("nan")), '{"v":NaN}'),
+        (_ListSubclass([float("-inf")]), "[-Infinity]"),
+        (_NanEnum.NAN, "NaN"),
+        (
+            _Reading(1.0, _Reading(float("-inf"))),
+            '{"value":1.0,"previous":{"value":-Infinity,"previous":null}}',
+        ),
+        (Decimal("NaN"), "NaN"),
+    ],
+    ids=[
+        "float",
+        "float_subclass",
+        "dict_subclass",
+        "list_subclass",
+        "enum",
+        "nested_dataclass",
+        "decimal",
+    ],
+)
+def test_non_finite_float_behind_a_null_is_found(value: Any, expected: str):
+    """A non-finite float next to a None reaches the wire as a bare token.
+
+    orjson writes both as null, so the float has to be found wherever orjson
+    met it: natively, in a subclass or an Enum, or through ``default``.
+
+    Args:
+        value: A value holding a non-finite float.
+        expected: The value as the stdlib serializes it.
+    """
+    payload = _state_update_packet({"n": None, "v": value})
+    assert orjson_dumps_socket(payload) == (
+        f'["event",{{"delta":{{"state":{{"n":null,"v":{expected}}}}}}}]'
+    )
 
 
 def test_orjson_null_substring_in_string_is_safe():

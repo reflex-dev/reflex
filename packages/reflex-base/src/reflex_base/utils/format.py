@@ -5,10 +5,12 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import json
+import math
 import os
 import re
-from collections.abc import Callable
-from functools import lru_cache
+from collections.abc import Callable, Iterable
+from enum import Enum
+from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any
 
 from rich.markup import escape as escape_markup
@@ -791,10 +793,11 @@ _ORJSON_PASSTHROUGH_OPTS = (
 )
 
 
-def _orjson_default(o: Any) -> Any:
-    """Serialize a value orjson does not handle natively.
+def _orjson_default(results: list[Any], o: Any) -> Any:
+    """Serialize a value orjson does not handle natively, keeping the result.
 
     Args:
+        results: The list the result is appended to.
         o: The value orjson could not serialize.
 
     Returns:
@@ -802,9 +805,9 @@ def _orjson_default(o: Any) -> Any:
     """
     # orjson hands float subclasses to default (unlike str/int/list/dict ones);
     # the stdlib serializes them as plain numbers, so coerce to match.
-    if isinstance(o, float):
-        return float(o)
-    return _get_serialize()(o)
+    result = float(o) if isinstance(o, float) else _get_serialize()(o)
+    results.append(result)
+    return result
 
 
 def _serialize_or_raise(o: Any) -> Any:
@@ -993,6 +996,9 @@ def orjson_loads(data: str | bytes) -> Any:
 
 
 _COMPACT_SEPARATORS = (",", ":")
+_JSON_SCALAR_TYPES = frozenset({str, int, bool, type(None)})
+# Scans bytes faster than ``in`` does.
+_search_null = re.compile(rb"null").search
 
 
 def _json_dumps_socket(obj: Any) -> str:
@@ -1013,6 +1019,45 @@ def _json_dumps_socket(obj: Any) -> str:
     )
 
 
+def _has_non_finite_float(values: Iterable[Any]) -> bool:
+    """Whether a NaN or an infinity is among values or nested inside them.
+
+    Sees what orjson serializes natively; whatever it hands to ``default``
+    instead is only seen through the results of that call.
+
+    Args:
+        values: The values to search.
+
+    Returns:
+        True if a non-finite float was found.
+    """
+    for value in values:
+        cls = type(value)
+        if cls in _JSON_SCALAR_TYPES:
+            continue
+        if cls is float:
+            if not math.isfinite(value):
+                return True
+            continue
+        if cls is dict:
+            nested = value.values()
+        elif cls is list or cls is tuple:
+            nested = value
+        # orjson serializes dict and list subclasses and Enum values natively,
+        # and hands everything else to default.
+        elif isinstance(value, dict):
+            nested = value.values()
+        elif isinstance(value, list):
+            nested = value
+        elif isinstance(value, Enum):
+            nested = (value.value,)
+        else:
+            continue
+        if _has_non_finite_float(nested):
+            return True
+    return False
+
+
 def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     """Serialize obj for socket emit, preserving non-finite floats.
 
@@ -1020,10 +1065,10 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     ``json_dumps`` behavior). NaN/Infinity reach the frontend as the bare
     tokens the stdlib emits.
 
-    Tries orjson first and keeps its output only when the payload provably
-    contains no non-finite float, i.e. when no ``null`` was emitted. orjson
-    collapses NaN/Infinity to ``null``, which is indistinguishable from a
-    genuine ``None``, so an ambiguous payload is handed to the stdlib instead.
+    Tries orjson first, which writes NaN/Infinity as ``null`` like ``None``.
+    When its output holds a ``null``, the payload is searched for a non-finite
+    float, and only a payload holding one is handed to the stdlib: searching
+    costs a fraction of re-serializing.
 
     Accepts and ignores ``**kwargs`` so the callable is compatible with
     socket.io's encoder, which calls ``dumps(data, separators=(',', ':'))``.
@@ -1040,18 +1085,24 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
     if orjson is None or _orjson_registry_shadowed:
         return _json_dumps_socket(obj)
 
+    # The payload and everything default returned for orjson to serialize.
+    serialized = [obj]
     try:
         out = orjson.dumps(
-            obj, default=_orjson_default, option=_ORJSON_PASSTHROUGH_OPTS
+            obj,
+            # partial, not a closure: a closure rebuilds its annotations on
+            # every call, a tenth of a small payload's time.
+            default=partial(_orjson_default, serialized),
+            option=_ORJSON_PASSTHROUGH_OPTS,
         )
     except TypeError:
         # Payloads orjson can't represent even via default (e.g. int > 64-bit),
         # and non-str keys: orjson's option for those doubles its time.
         return _json_dumps_socket(obj)
 
-    if b"null" not in out:
-        return out.decode()
-    return _json_dumps_socket(obj)
+    if _search_null(out) and _has_non_finite_float(serialized):
+        return _json_dumps_socket(obj)
+    return out.decode()
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
