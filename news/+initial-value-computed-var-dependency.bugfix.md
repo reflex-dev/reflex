@@ -1,0 +1,1 @@
+A computed var that reads another computed var declared with `initial_value` now sees that initial value while the initial state is compiled, instead of running the other var's getter. `reflex export` and `reflex run` no longer fail when such a getter needs a database or a request. At runtime the getter still runs as before.

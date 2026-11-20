@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import builtins
 import contextlib
+import contextvars
 import copy
 import dataclasses
 import datetime
@@ -2620,6 +2621,15 @@ def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
     return isinstance(obj, FakeComputedVarBaseClass)
 
 
+# Set while the initial state dict is built, where a computed var read by another
+# one yields its initial value instead of running its getter. Holds the values
+# computed from initial values, keyed by state instance id and cache attribute,
+# which are kept out of the instance caches.
+_initial_dict_cache: contextvars.ContextVar[dict[tuple[int, str], Any] | None] = (
+    contextvars.ContextVar("_initial_dict_cache", default=None)
+)
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
@@ -3021,6 +3031,10 @@ class ComputedVar(Var[RETURN_TYPE]):
         if owner_cls is not None and type(instance) is not owner_cls:
             instance = _owner_state(instance, owner_cls)
         if not self._cache:
+            if _initial_dict_cache.get() is not None and not isinstance(
+                initial_value := self._initial_value, types.Unset
+            ):
+                return initial_value
             value = self.fget(instance)
             self._check_deprecated_return_type(instance, value)
             return value
@@ -3032,6 +3046,9 @@ class ComputedVar(Var[RETURN_TYPE]):
         if value is _NOT_CACHED or (
             self._update_interval is not None and self.needs_update(instance)
         ):
+            if (initial_cache := _initial_dict_cache.get()) is not None:
+                # A value derived from initial values must not reach the cache.
+                return self._initial_dict_value(instance, initial_cache)
             # Set cache attr on state instance.
             value = cache[cache_attr] = self.fget(instance)
             # Ensure the computed var gets serialized to redis.
@@ -3039,6 +3056,28 @@ class ComputedVar(Var[RETURN_TYPE]):
             if self._update_interval is not None:
                 # Only needs_update reads the last updated timestamp.
                 cache[self._last_updated_attr] = datetime.datetime.now()
+            self._check_deprecated_return_type(instance, value)
+        return value
+
+    def _initial_dict_value(
+        self, instance: BaseState, initial_cache: dict[tuple[int, str], Any]
+    ) -> RETURN_TYPE:
+        """Get the value of a cached computed var while the initial state dict is built.
+
+        Args:
+            instance: The instance of the owning state.
+            initial_cache: The values already computed for the initial dict.
+
+        Returns:
+            The initial value if one was given, otherwise the value computed
+            once for the initial dict.
+        """
+        if not isinstance(initial_value := self._initial_value, types.Unset):
+            return initial_value
+        key = (id(instance), self._cache_attr)
+        value = initial_cache.get(key, _NOT_CACHED)
+        if value is _NOT_CACHED:
+            value = initial_cache[key] = self.fget(instance)
             self._check_deprecated_return_type(instance, value)
         return value
 
