@@ -8,7 +8,7 @@ from pytest_codspeed import BenchmarkFixture
 from reflex.route import get_router
 
 # Each kind of lookup in _lookups is repeated this many times per measured call.
-LOOKUP_ROUNDS = 20
+LOOKUP_ROUNDS = 80
 
 
 def _routes(count: int) -> list[str]:
@@ -51,14 +51,15 @@ def _lookups(count: int) -> list[tuple[str, str | None]]:
     return lookups
 
 
-@pytest.mark.parametrize("count", [10, 100, 1000])
+# Matching walks the route trie, so its cost follows the path, not the table:
+# one large table guards against a return to scanning every route.
+@pytest.mark.parametrize("count", [1000])
 def test_route_matching(count: int, benchmark: BenchmarkFixture):
-    """Benchmark matching paths through representative route tables.
+    """Benchmark matching paths through a representative route table.
 
     The router memoizes each path, and CodSpeed calls the benchmark once before
     measuring it, so calling the router would measure only cache hits. Calling
-    the function it wraps measures the scan over the route table, which is what
-    grows with the table.
+    the function it wraps measures matching a path the router has not seen.
 
     Args:
         count: Number of routes.

@@ -16,8 +16,8 @@ unrelated changes, so its result flips between commits by several percent.
   those cannot do the repeating.
 - Measure what production pays. A benchmark called once before it is measured
   sees warm caches: the router's `lru_cache`, for instance, made
-  `test_route_matching` measure three cache hits until it called the scan it
-  wraps.
+  `test_route_matching` measure three cache hits until it called the matcher
+  the cache wraps.
 - Benchmark code that runs per event, per update or per connection. Code that
   runs once per page or at compile time belongs in the page and compilation
   benchmarks, which exercise it at a realistic size.
