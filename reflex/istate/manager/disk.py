@@ -202,17 +202,25 @@ class StateManagerDisk(StateManager):
             try:
                 with token_path.open(mode="rb") as file:
                     return token.deserialize(fp=file)
-            except StateUnreadableError as e:
-                # A corrupt file is not an expected schema change: say so once, and
-                # leave the file in place so the next save replaces it.
+            except StateSchemaMismatchError as e:
+                # A plain mismatch means the state class changed shape, which is
+                # expected in development. An unreadable file is not.
+                if not isinstance(e, StateUnreadableError):
+                    return None
                 logger.warning(
                     "Failed to load state file %s, falling back to a default state: %r",
                     token_path.name,
                     e,
                 )
-            except StateSchemaMismatchError:
-                # The state class changed shape, which is expected in development.
-                return None
+            except Exception as e:
+                # Tokens other than BaseStateToken deserialize with plain pickle,
+                # so corruption surfaces as the underlying error rather than a
+                # schema mismatch.
+                logger.warning(
+                    "Failed to load state file %s, falling back to a default state: %r",
+                    token_path.name,
+                    e,
+                )
         return None
 
     async def populate_substates(

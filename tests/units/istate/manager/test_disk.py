@@ -483,6 +483,39 @@ async def test_load_state_logs_warning_for_corrupted_file(
 
 
 @pytest.mark.asyncio
+async def test_load_state_logs_warning_for_corrupted_non_base_token(
+    tmp_path, monkeypatch, caplog
+):
+    """A corrupt file for a plain token warns instead of raising.
+
+    `StateToken` deserializes with bare pickle rather than `BaseState._deserialize`,
+    so corruption surfaces as the underlying unpickling error, not a schema
+    mismatch. It must not escape as an exception.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="corrupt_plain_client", cls=dict)
+
+    token_path = state_manager.token_path(token)
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_bytes(b"not a valid pickle file")
+
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await state_manager.load_state(token) is None
+
+    warning_logs = disk_warning_logs(caplog)
+    assert len(warning_logs) == 1
+    assert token_path.name in warning_logs[0].message
+
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
 async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, caplog):
     """A missing state file is a normal cache miss and logs nothing.
 
