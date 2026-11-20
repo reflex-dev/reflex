@@ -14,9 +14,15 @@ from pathlib import Path
 
 # Files whose imports are followed; other local files (CSS, JSON) are copied.
 SCRIPT_SOURCE_EXTENSIONS = (".js", ".ts", ".mjs", ".jsx", ".tsx")
+# Stylesheets, whose `@import` and `url(...)` references are followed.
+STYLESHEET_EXTENSION = ".css"
 # Tried in order for an import without an extension, as the bundler does.
 _RESOLVE_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx", ".mjs")
 
+_CSS_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
+_CSS_REFERENCE_RE = re.compile(
+    r"""@import\s+(?:url\(\s*)?["']?([^"')\s;]+)|url\(\s*["']?([^"')\s]+)["']?\s*\)"""
+)
 _IDENTIFIER_RE = re.compile(r"[A-Za-z_$\u0080-￿][\w$\u0080-￿]*")
 # A `/` after one of these starts a regular expression, not a division.
 _PUNCT_BEFORE_REGEX = frozenset("(,=:[!&|?{};+-*%<>~^")
@@ -475,6 +481,31 @@ def find_imports(source: str) -> list[str]:
     return list(dict.fromkeys(specifiers))
 
 
+def find_stylesheet_references(source: str) -> list[str]:
+    """Find the local files a stylesheet references.
+
+    Covers ``@import`` and ``url(...)``. Absolute paths, URLs, data URIs and
+    fragment references are not local files and are left out.
+
+    Args:
+        source: The stylesheet source.
+
+    Returns:
+        The relative references, without query or fragment, without duplicates.
+    """
+    references = (
+        import_ or url
+        for import_, url in _CSS_REFERENCE_RE.findall(_CSS_COMMENT_RE.sub("", source))
+    )
+    return list(
+        dict.fromkeys(
+            reference.split("?")[0].split("#")[0]
+            for reference in references
+            if not reference.startswith(("/", "#", "data:")) and "://" not in reference
+        )
+    )
+
+
 def _resolve_local(directory: Path, specifier: str) -> Path | None:
     """Find the file a relative import names, as the bundler would.
 
@@ -500,6 +531,9 @@ def _resolve_local(directory: Path, specifier: str) -> Path | None:
 def module_files(path: Path) -> list[Path]:
     """Find a module and every local file it imports, directly or not.
 
+    Scripts' relative imports are followed, and so are the ``@import`` and
+    ``url(...)`` references of the stylesheets among them.
+
     Args:
         path: The module.
 
@@ -510,12 +544,23 @@ def module_files(path: Path) -> list[Path]:
     pending = [path.resolve()]
     while pending:
         file = pending.pop()
-        if file.suffix not in SCRIPT_SOURCE_EXTENSIONS:
+        if file.suffix in SCRIPT_SOURCE_EXTENSIONS:
+            targets = [
+                _resolve_local(file.parent, specifier)
+                for specifier in find_imports(file.read_text(encoding="utf-8"))
+                if specifier.startswith(".")
+            ]
+        elif file.suffix == STYLESHEET_EXTENSION:
+            targets = [
+                target if (target := file.parent / reference).is_file() else None
+                for reference in find_stylesheet_references(
+                    file.read_text(encoding="utf-8")
+                )
+            ]
+        else:
+            # Images, fonts, data: nothing further to follow.
             continue
-        for specifier in find_imports(file.read_text(encoding="utf-8")):
-            if not specifier.startswith("."):
-                continue
-            target = _resolve_local(file.parent, specifier)
+        for target in targets:
             if target is not None and (target := target.resolve()) not in files:
                 files[target] = None
                 pending.append(target)

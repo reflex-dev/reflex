@@ -838,6 +838,7 @@ def test_compile_script_modules(
         'import confetti from\n  "canvas-confetti";\n'
         'import { describe } from "./helpers";\n'
         'import "./party.css";\n'
+        'import logo from "./logo.png";\n'
         "export function celebrate(count) {}\n"
     )
     helpers = scripts / "helpers.js"
@@ -849,7 +850,13 @@ def test_compile_script_modules(
     count = scripts / "formatters" / "count.ts"
     count.write_text("export const count = (n: number) => `${n}`;\n")
     css = scripts / "party.css"
-    css.write_text("canvas { pointer-events: none; }\n")
+    css.write_text('@import "./theme.css";\ncanvas { background: url(./bg.png); }\n')
+    theme = scripts / "theme.css"
+    theme.write_text("canvas { pointer-events: none; }\n")
+    background = scripts / "bg.png"
+    background.write_bytes(b"\x89PNG\r\n\x1a\n\xff\xfe")
+    logo = scripts / "logo.png"
+    logo.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x80")
     (scripts / "unused.js").write_text('import "left-pad";\n')
     typed = tmp_path / "app" / "typed.ts"
     typed.write_text("export function typed(n: number) {}\n")
@@ -858,13 +865,12 @@ def test_compile_script_modules(
         "app.scripts.party": party,
     })
 
-    outputs, package_imports = utils.compile_script_modules()
+    outputs, package_imports, copies = utils.compile_script_modules()
 
     modules_dir = web_dir / "utils" / "script_modules" / "app"
     assert outputs == [
         (str(modules_dir / "scripts" / "party.js"), party.read_text()),
         (str(modules_dir / "scripts" / "helpers.js"), helpers.read_text()),
-        (str(modules_dir / "scripts" / "party.css"), css.read_text()),
         (str(modules_dir / "scripts" / "formatters" / "count.ts"), count.read_text()),
         (str(modules_dir / "typed.ts"), typed.read_text()),
         (
@@ -880,6 +886,16 @@ def test_compile_script_modules(
         "dayjs": [rx.ImportVar(tag=None, render=False)],
         TYPESCRIPT_PACKAGE: [rx.ImportVar(tag=None, render=False)],
     }
+    # Stylesheets and binary files are copied byte for byte, with what they reference.
+    assert copies == [
+        (css.resolve(), modules_dir / "scripts" / "party.css"),
+        (logo.resolve(), modules_dir / "scripts" / "logo.png"),
+        (theme.resolve(), modules_dir / "scripts" / "theme.css"),
+        (background.resolve(), modules_dir / "scripts" / "bg.png"),
+    ]
+    utils.copy_files(copies)
+    assert (modules_dir / "scripts" / "logo.png").read_bytes() == logo.read_bytes()
+    assert (modules_dir / "scripts" / "bg.png").read_bytes() == background.read_bytes()
 
 
 def test_compile_script_modules_rejects_files_outside_the_package(
@@ -927,6 +943,7 @@ def test_compile_script_modules_without_modules(
     assert utils.compile_script_modules() == (
         [(str(tmp_path / "utils" / "scripts.js"), "export {};\n")],
         {},
+        [],
     )
 
 
@@ -1013,3 +1030,22 @@ def test_compile_script_stubs_falls_back_to_untyped(
     assert utils.compile_script_stubs() == [(str(tmp_path / "party.pyi"), untyped)]
     (tmp_path / "party.pyi").write_text(untyped)
     assert utils.compile_script_stubs() == [(str(tmp_path / "party.pyi"), untyped)]
+
+
+def test_copy_files_skips_up_to_date_targets(tmp_path: Path):
+    """A target with the same bytes is left alone; others are written.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+    """
+    source = tmp_path / "logo.png"
+    source.write_bytes(b"\x89PNG\xff")
+    target = tmp_path / "out" / "nested" / "logo.png"
+    utils.copy_files([(source, target)])
+    assert target.read_bytes() == b"\x89PNG\xff"
+    modified = target.stat().st_mtime_ns
+    utils.copy_files([(source, target)])
+    assert target.stat().st_mtime_ns == modified
+    source.write_bytes(b"\x89PNG\x00")
+    utils.copy_files([(source, target)])
+    assert target.read_bytes() == b"\x89PNG\x00"
