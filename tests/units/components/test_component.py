@@ -49,6 +49,7 @@ from reflex import (
 )
 from reflex.state import BaseState
 from reflex.utils import imports
+from tests.units.field_errors import backend_var_error
 
 
 @pytest.mark.parametrize("name", ["div", "", None])
@@ -789,13 +790,14 @@ def test_component_create_unallowed_types(children, test_component):
 
 
 def test_component_create_backend_var_child(test_component):
-    """A backend var child reports its type rather than formatting the field."""
+    """A backend var child raises the backend var format error."""
 
     class BackendChildState(BaseState):
         _secret: int = 42
 
-    with pytest.raises(ChildrenTypeError, match=r"received child of type Field\."):
+    with pytest.raises(BackendVarFormatError) as exc_info:
         test_component.create(BackendChildState._secret)
+    assert str(exc_info.value) == backend_var_error("BackendChildState._secret")
 
 
 class EventChildState(BaseState):
@@ -844,14 +846,30 @@ def test_component_create_event_child(make_child, type_name, test_component):
     ]
 
 
-def test_component_create_backend_var_prop():
-    """A backend var passed to a typed prop reports its repr, not a format error."""
+class BackendPropState(BaseState):
+    """A state with a backend var, for typed prop misuse tests."""
 
-    class BackendPropState(BaseState):
-        _size: str = "3"
+    _size: str = "3"
 
-    with pytest.raises(TypeError, match=r"got value Field\(default='3'"):
-        rx.heading("x", size=BackendPropState._size)  # pyright: ignore[reportArgumentType]
+
+@pytest.mark.parametrize(
+    "create",
+    [
+        lambda f: rx.heading("x", size=f),
+        lambda f: rx.el.div(title=f),
+        lambda f: rx.link("x", href=f),
+    ],
+    ids=["heading_size", "div_title", "link_href"],
+)
+def test_component_create_backend_var_prop(create: Callable[[Any], Component]):
+    """A backend var passed to a typed prop raises the backend var format error.
+
+    Args:
+        create: Creates a component with the backend var as a prop.
+    """
+    with pytest.raises(BackendVarFormatError) as exc_info:
+        create(BackendPropState._size)
+    assert str(exc_info.value) == backend_var_error("BackendPropState._size")
 
 
 class BackendSrcState(BaseState):

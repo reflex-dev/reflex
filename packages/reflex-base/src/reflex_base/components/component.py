@@ -947,6 +947,7 @@ class Component(BaseComponent, ABC):
         Raises:
             TypeError: If an invalid prop is passed.
             ValueError: If an event trigger passed is not valid.
+            BackendVarFormatError: If a child or typed prop is a field with no frontend var.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -991,6 +992,8 @@ class Component(BaseComponent, ABC):
 
             # Check whether the key is a component prop.
             if is_var:
+                if isinstance(value, Field):
+                    raise value._no_frontend_var_error()
                 try:
                     kwargs[key] = LiteralVar.create(value)
 
@@ -1285,6 +1288,9 @@ class Component(BaseComponent, ABC):
         for child in children:
             if isinstance(child, (tuple, list)):
                 cls._validate_children(child)
+
+            if isinstance(child, Field):
+                raise child._no_frontend_var_error()
 
             # Make sure the child is a valid type.
             if isinstance(child, dict) or not isinstance(child, ComponentChildTypes):
