@@ -11,7 +11,6 @@ from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.tagless import Tagless
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.utils.decorator import once
-from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.vars import BooleanVar, ObjectVar, Var
 from reflex_base.vars.base import GLOBAL_CACHE, VarData
 from reflex_base.vars.sequence import LiteralStringVar
@@ -102,22 +101,6 @@ class Bare(Component):
             for component in _components_from_var(self.contents):
                 hooks |= component._get_all_hooks()
         return hooks
-
-    def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
-        """Include the imports for the component.
-
-        Args:
-            collapse: Whether to collapse the imports.
-
-        Returns:
-            The imports for the component.
-        """
-        imports = super()._get_all_imports(collapse=collapse)
-        if isinstance(self.contents, Var):
-            var_data = self.contents._get_all_var_data()
-            if var_data:
-                imports |= {k: list(v) for k, v in var_data.imports}
-        return imports
 
     def _get_all_dynamic_imports(self) -> set[str]:
         """Get dynamic imports for the component.
