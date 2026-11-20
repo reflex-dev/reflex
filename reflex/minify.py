@@ -825,6 +825,8 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
         return
     references = _renamed_default_references()
     registered: set[type[BaseState]] | None = None
+    # The state each local stands for now, or None if no state goes by it.
+    live_owners: dict[str, type[BaseState] | None] = {}
     live_keys: dict[type[BaseState], set[str]] = {}
     event_labels: dict[str, str | None] = {}
     found: dict[str, tuple[str, str]] = {}
@@ -841,20 +843,20 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
             local, member = match.groups()
             if not (owners := issued_states(local)):
                 continue
-            if registered is None:
-                registered = set(RegistrationContext.get().base_states.values())
-            # An unregistered owner, e.g. one replaced by a hot reload, keeps
-            # its cached name, so only settle for one if nothing else fits.
-            matching = [c for c in owners if format_state_local(c) == local]
-            state_cls = next(
-                (c for c in matching if c in registered),
-                matching[0] if matching else None,
-            )
-            if state_cls is None:
-                labels = sorted(f"state {get_state_full_path(c)}" for c in owners)
-                found.setdefault(local, (" or ".join(labels), path))
-                continue
-            if member is None:
+            if local not in live_owners:
+                if registered is None:
+                    registered = set(RegistrationContext.get().base_states.values())
+                # An unregistered owner, e.g. one replaced by a hot reload, keeps
+                # its cached name, so only settle for one if nothing else fits.
+                matching = [c for c in owners if format_state_local(c) == local]
+                live_owners[local] = next(
+                    (c for c in matching if c in registered),
+                    matching[0] if matching else None,
+                )
+                if live_owners[local] is None:
+                    labels = sorted(f"state {get_state_full_path(c)}" for c in owners)
+                    found.setdefault(local, (" or ".join(labels), path))
+            if (state_cls := live_owners[local]) is None or member is None:
                 continue
             if state_cls not in live_keys:
                 live_keys[state_cls] = {
