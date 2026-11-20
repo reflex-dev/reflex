@@ -2,7 +2,12 @@
 
 from pathlib import Path
 
-from reflex_base.js.source import find_exports, find_imports, module_files
+from reflex_base.js.source import (
+    find_exports,
+    find_imports,
+    find_stylesheet_references,
+    module_files,
+)
 
 SOURCE = r"""
 import confetti from
@@ -99,7 +104,12 @@ def test_module_files_follows_relative_imports(tmp_path: Path):
     )
     (tmp_path / "lib" / "a.ts").write_text('import { b } from "../b.js";\n')
     (tmp_path / "b.ts").write_text('import { a } from "./lib/a.js";\n')
-    (tmp_path / "party.css").write_text('@import "./not-followed.css";\n')
+    (tmp_path / "party.css").write_text(
+        '@import "./theme.css";\nbody { background: url(img/bg.png?v=1); }\n'
+    )
+    (tmp_path / "theme.css").write_text("@import url('./missing.css');\n")
+    (tmp_path / "img").mkdir()
+    (tmp_path / "img" / "bg.png").write_bytes(b"\x89PNG")
     (tmp_path / "widgets" / "index.js").write_text("export const w = 1;\n")
     (tmp_path / "unused.js").write_text("export const u = 1;\n")
     assert module_files(module) == [
@@ -108,4 +118,24 @@ def test_module_files_follows_relative_imports(tmp_path: Path):
         (tmp_path / "b.ts").resolve(),
         (tmp_path / "party.css").resolve(),
         (tmp_path / "widgets" / "index.js").resolve(),
+        (tmp_path / "theme.css").resolve(),
+        (tmp_path / "img" / "bg.png").resolve(),
+    ]
+
+
+def test_find_stylesheet_references():
+    """Local @import and url() references, without absolute paths, URLs or data."""
+    source = """
+    /* @import "./commented.css"; */
+    @import "./theme.css";
+    @import url('fonts.css') screen;
+    @import "https://fonts.example.com/inter.css";
+    .a { background: url(./bg.png?v=2#x); }
+    .b { background: url("/static/abs.png"), url(data:image/png;base64,AAA); }
+    .c { mask: url(#clip); }
+    """
+    assert find_stylesheet_references(source) == [
+        "./theme.css",
+        "fonts.css",
+        "./bg.png",
     ]

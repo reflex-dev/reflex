@@ -1590,7 +1590,9 @@ def compile_app(
         ),
         utils._compile_bundled_libraries(),
     ])
-    script_module_outputs, script_module_imports = utils.compile_script_modules()
+    script_module_outputs, script_module_imports, script_module_copies = (
+        utils.compile_script_modules()
+    )
     compile_results.extend(script_module_outputs)
     progress.advance(task)
 
@@ -1601,6 +1603,8 @@ def compile_app(
 
     if dry_run:
         return True
+
+    utils.copy_files(script_module_copies)
 
     # Delete memo files this compile no longer emits. Done here (not before the
     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.

@@ -303,7 +303,7 @@ def _compile_bundled_libraries() -> tuple[str, str]:
 
 
 def compile_script_modules() -> tuple[
-    list[tuple[str, str]], dict[str, list[ImportVar]]
+    list[tuple[str, str]], dict[str, list[ImportVar]], list[tuple[Path, Path]]
 ]:
     """Compile the JavaScript modules the app imports from Python.
 
@@ -314,8 +314,9 @@ def compile_script_modules() -> tuple[
     module key, and a type stub is written next to it, for type checkers.
 
     Returns:
-        The (path, code) outputs, and the npm packages the modules import, to
-        install.
+        The (path, code) outputs of the scripts, the npm packages they import,
+        to install, and the (source, target) copies of the other files they
+        reference, such as stylesheets and images, which may be binary.
 
     Raises:
         ReflexRuntimeError: If a module imports a file outside its top-level
@@ -324,6 +325,7 @@ def compile_script_modules() -> tuple[
     web_dir = get_web_dir()
     modules_dir = web_dir / constants.Dirs.SCRIPT_MODULES_PATH
     outputs: list[tuple[str, str]] = []
+    copies: list[tuple[Path, Path]] = []
     package_imports: dict[str, list[ImportVar]] = {}
     index: list[str] = []
     copied: set[Path] = set()
@@ -342,7 +344,7 @@ def compile_script_modules() -> tuple[
             copied.add(file)
             target = modules_dir / file.relative_to(root)
             if file.suffix not in SCRIPT_SOURCE_EXTENSIONS:
-                outputs.append((str(target), file.read_text(encoding="utf-8")))
+                copies.append((file, target))
                 continue
             source = file.read_text(encoding="utf-8")
             outputs.append((str(target), source))
@@ -358,7 +360,21 @@ def compile_script_modules() -> tuple[
         str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS)),
         "\n".join(index) + "\n" if index else "export {};\n",
     ))
-    return outputs, package_imports
+    return outputs, package_imports, copies
+
+
+def copy_files(copies: Iterable[tuple[Path, Path]]) -> None:
+    """Copy files byte for byte, skipping those whose target is up to date.
+
+    Args:
+        copies: The (source, target) pairs.
+    """
+    for source, target in copies:
+        data = source.read_bytes()
+        if target.is_file() and target.read_bytes() == data:
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
 
 
 def _restore_bundled_libraries() -> bool:
