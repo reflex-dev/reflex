@@ -25,6 +25,7 @@ import pytest
 import pytest_asyncio
 from opentelemetry.trace import SpanKind, StatusCode
 from reflex_base import constants, otel
+from reflex_base.config import get_config
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
@@ -5582,3 +5583,172 @@ async def test_handler_cancelled_inside_the_locked_block_cancels_its_inline_runs
         BaseStateToken(ident=token, cls=State)
     )
     assert (await state.get_state(CancelInsideState)).log == ["ping"]
+
+
+@pytest.mark.parametrize(
+    ("catches", "expected_results", "expected_reported"),
+    [
+        (True, ["ValueError('boom')"], []),
+        (False, [], ["ValueError('boom')"]),
+    ],
+)
+async def test_exception_of_handler_awaited_from_background_is_the_callers(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    catches: bool,
+    expected_results: list[str],
+    expected_reported: list[str],
+):
+    """An awaited handler's exception reaches the backend handler only if uncaught.
+
+    The background task awaits with no lock held, so the handler is enqueued.
+    Its exception is raised from the await like the inline call's: caught, it
+    is not reported; uncaught, the background task's failure reports it once.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        catches: Whether the background task catches the exception.
+        expected_results: The exceptions the background task caught.
+        expected_reported: The exceptions the backend exception handler got.
+    """
+    results: list[str] = []
+    reported: list[str] = []
+
+    class BgBoomState(State):
+        total: int = 0
+
+        @event
+        def boom(self):
+            self.total += 1000
+            msg = "boom"
+            raise ValueError(msg)
+
+        @event(background=True)
+        async def run(self, catches: bool):
+            try:
+                await BgBoomState.boom()
+            except ValueError as ex:
+                if not catches:
+                    raise
+                results.append(repr(ex))
+
+    real_base_state_processor.backend_exception_handler = lambda ex: reported.append(
+        repr(ex)
+    )
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BgBoomState.run(catches))[0]
+        )
+        with contextlib.suppress(ValueError):
+            await future.wait_all()
+
+    assert results == expected_results
+    assert reported == expected_reported
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(BgBoomState)).total == 1000
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_superseding_handler_awaited_from_background_returns_finished_result(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A background task gets the result of a superseding handler run that finished.
+
+    The second task waits for the state lock the first search holds, and
+    supersedes it as soon as that search has returned. With the in-memory
+    manager that is before the first search's future was resolved.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    results: list[str] = []
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    class BgSearchState(State):
+        query: str = ""
+
+        @event(supersedes=True)
+        async def search(self, q: str) -> str:
+            if q == "first":
+                started.set()
+                await release.wait()
+            self.query = q
+            return q.upper()
+
+        @event(background=True)
+        async def run(self, q: str):
+            try:
+                result = await BgSearchState.search(q)
+            except asyncio.CancelledError:
+                result = "cancelled"
+            results.append(f"{q} -> {result}")
+
+    async with real_base_state_processor as processor:
+        first = await processor.enqueue(
+            token, Event.from_event_type(BgSearchState.run("first"))[0]
+        )
+        await asyncio.wait_for(started.wait(), timeout=5)
+        second = await processor.enqueue(
+            token, Event.from_event_type(BgSearchState.run("second"))[0]
+        )
+        # Let the second task start and queue for the lock the search holds.
+        await asyncio.sleep(0.1)
+        release.set()
+        await asyncio.wait_for(
+            asyncio.gather(first.wait_all(), second.wait_all()), timeout=5
+        )
+
+    assert results == ["first -> FIRST", "second -> SECOND"]
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(BgSearchState)).query == "second"
+
+
+async def test_returned_undecorated_state_method_raises_type_error(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """With explicit event handlers, a returned undecorated method names the decorator.
+
+    It is a mistaken event like an uncalled event creator, not a result to drop.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(get_config(), "state_explicit_event_handlers", True)
+
+    class UndecoratedReturnState(State):
+        def plain(self):
+            pass
+
+        @event
+        def returns_plain(self):
+            return UndecoratedReturnState.plain
+
+    captured: list[Exception] = []
+    real_base_state_processor.backend_exception_handler = captured.append
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(UndecoratedReturnState.returns_plain())[0]
+        )
+        with pytest.raises(
+            TypeError,
+            match=r"UndecoratedReturnState\.plain is not an event handler\. Decorate it with `@rx\.event`",
+        ):
+            await future
+        await processor.join(5)
+    assert len(captured) == 1
