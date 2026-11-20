@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pytest
@@ -75,8 +76,9 @@ def test_unique_names():
 
 def test_negative_raises():
     """Test that negative IDs raise ValueError."""
-    with pytest.raises(ValueError, match="non-negative"):
+    with pytest.raises(ValueError) as error:
         int_to_minified_name(-1)
+    assert str(error.value) == "ID must be non-negative, got -1"
 
 
 def test_minified_name_to_int_single_char():
@@ -98,8 +100,9 @@ def test_roundtrip():
 
 def test_invalid_char_raises():
     """Test that invalid characters raise ValueError."""
-    with pytest.raises(ValueError, match="Invalid character"):
+    with pytest.raises(ValueError) as error:
         minified_name_to_int("!")
+    assert str(error.value) == "Invalid character in minified name: '!'"
 
 
 def test_root_state_path():
@@ -184,26 +187,36 @@ def test_save_and_load_config(temp_minify_json, monkeypatch):
 
 _WELL_FORMED = make_config()
 
+_BLURRING_REASON = (
+    "a state id may not start or end with '_' or contain '__', which would make "
+    "two state paths read the same once dots become '__'. Run 'reflex minify "
+    "sync' to reassign it."
+)
+
 
 @pytest.mark.parametrize(
-    ("config", "match"),
+    ("config", "message"),
     [
         pytest.param(
-            {**_WELL_FORMED, "version": 999}, r"Unsupported.*version", id="version"
+            {**_WELL_FORMED, "version": 999},
+            f"Unsupported {MINIFY_JSON} version: 999. Expected {SCHEMA_VERSION}.",
+            id="version",
         ),
         pytest.param(
             {"version": SCHEMA_VERSION, "events": {}},
-            "'states' must be",
+            f"Invalid {MINIFY_JSON}: 'states' must be a dictionary.",
             id="no-states",
         ),
         pytest.param(
             {**_WELL_FORMED, "states": {"test.module.MyState": "a"}},
-            "must be an object with a string 'id'",
+            f"Invalid {MINIFY_JSON}: state 'test.module.MyState' must be an object "
+            "with a string 'id' and a 'parent': a",
             id="flat-state",
         ),
         pytest.param(
             {**_WELL_FORMED, "states": {"test.module.MyState": {"id": "a"}}},
-            "parent",
+            f"Invalid {MINIFY_JSON}: state 'test.module.MyState' must be an object "
+            "with a string 'id' and a 'parent': {'id': 'a'}",
             id="no-parent",
         ),
         *(
@@ -212,7 +225,8 @@ _WELL_FORMED = make_config()
                     **_WELL_FORMED,
                     "states": {"test.module.MyState": {"id": bad_id, "parent": None}},
                 },
-                "invalid id",
+                f"Invalid {MINIFY_JSON}: state 'test.module.MyState' has invalid "
+                f"id: {bad_id!r}",
                 id=f"state-id-{bad_id!r}",
             )
             for bad_id in ("", "1bad", "a-b", "a.b", "a b")
@@ -223,7 +237,8 @@ _WELL_FORMED = make_config()
                     **_WELL_FORMED,
                     "events": {"test.module.MyState": {"handler": bad_id}},
                 },
-                "invalid id",
+                f"Invalid {MINIFY_JSON}: event 'test.module.MyState.handler' has "
+                f"invalid id: {bad_id!r}",
                 id=f"event-id-{bad_id!r}",
             )
             for bad_id in ("", "1bad", "a-b")
@@ -236,33 +251,49 @@ _WELL_FORMED = make_config()
                     **_WELL_FORMED,
                     "states": {"test.module.MyState": {"id": state_id, "parent": None}},
                 },
-                "__",
+                f"Invalid {MINIFY_JSON}: state 'test.module.MyState' has id "
+                f"{state_id!r}; {_BLURRING_REASON}",
                 id=f"blurring-state-id-{state_id!r}",
             )
             for state_id in ("_", "_b", "a_", "a__b")
         ),
     ],
 )
-def test_config_rejects_malformed(temp_minify_json, config, match):
+def test_config_rejects_malformed(temp_minify_json, config, message):
     """A malformed ``minify.json`` is refused, naming what is wrong.
 
     Args:
         temp_minify_json: Temporary ``minify.json`` location.
         config: The malformed contents.
-        match: Part of the expected error.
+        message: The expected error.
     """
     write_config(temp_minify_json, config)
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(ValueError) as error:
         _load_minify_config_uncached()
+    assert str(error.value) == message
 
 
-@pytest.mark.parametrize("payload", ["[1, 2, 3]", '"a string"', "42", "null"])
-def test_non_object_json_raises(temp_minify_json: Path, payload: str) -> None:
-    """Valid JSON that isn't an object is rejected as a ValueError."""
+@pytest.mark.parametrize(
+    ("payload", "type_name"),
+    [("[1, 2, 3]", "list"), ('"a string"', "str"), ("42", "int"), ("null", "NoneType")],
+)
+def test_non_object_json_raises(
+    temp_minify_json: Path, payload: str, type_name: str
+) -> None:
+    """Valid JSON that isn't an object is rejected as a ValueError.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        payload: The file's contents.
+        type_name: The name of the type it parses to.
+    """
     (temp_minify_json / MINIFY_JSON).write_text(payload, encoding="utf-8")
 
-    with pytest.raises(ValueError, match="must be a JSON object"):
+    with pytest.raises(ValueError) as error:
         _load_minify_config_uncached()
+    assert str(error.value) == (
+        f"Invalid {MINIFY_JSON}: must be a JSON object, got {type_name}."
+    )
 
 
 def test_generate_for_root_state():
@@ -334,7 +365,12 @@ def test_duplicate_state_ids_detected():
 
     errors, _warnings, _missing = validate_minify_config(config, Parent)
 
-    assert any("Duplicate state_id='b'" in e for e in errors)
+    assert errors == [
+        (
+            "Duplicate state_id='b' under 'test.Parent': "
+            "['test.Parent.ChildA (orphaned)', 'test.Parent.ChildB (orphaned)']"
+        )
+    ]
 
 
 def test_validate_detects_orphan_sibling_collision():
@@ -360,9 +396,12 @@ def test_validate_detects_orphan_sibling_collision():
 
     errors, _warnings, _missing = validate_minify_config(config, OrphanCollisionParent)
 
-    assert any("Duplicate state_id='b'" in e and "(orphaned)" in e for e in errors), (
-        f"Expected orphan collision error, got: {errors}"
-    )
+    assert errors == [
+        (
+            f"Duplicate state_id='b' under '{parent_path}': "
+            f"['{live_path}', '{orphan_path} (orphaned)']"
+        )
+    ]
 
 
 def test_validate_no_cross_group_orphan_false_positive():
@@ -384,8 +423,8 @@ def test_validate_no_cross_group_orphan_false_positive():
         config, OrphanNoFalsePositiveRoot
     )
 
-    assert not errors, f"Unexpected errors: {errors}"
-    assert any("Orphaned state" in w for w in warnings)
+    assert errors == []
+    assert warnings == ["Orphaned state in config: gone.module.Gone.Child"]
 
 
 def test_validate_reports_missing_framework_states():
@@ -430,8 +469,13 @@ def test_validate_warns_stale_parent():
 
     errors, warnings, _missing = validate_minify_config(config, StaleParentParent)
 
-    assert not errors, f"Unexpected errors: {errors}"
-    assert any("Stale parent" in w and child_path in w for w in warnings)
+    assert errors == []
+    assert warnings == [
+        (
+            f"Stale parent for '{child_path}': config has 'wrong.Path', actual is "
+            f"'{parent_path}'. Run 'reflex minify sync' to fix."
+        )
+    ]
 
 
 def test_sync_adds_new_states():
@@ -559,15 +603,18 @@ def test_validate_detects_sibling_collision():
     bad_config = make_config(
         states={
             parent_path: StateEntry(id="a", parent=None),
-            child_a_path: StateEntry(id="a", parent=parent_path),
-            child_b_path: StateEntry(id="a", parent=parent_path),  # collision!
+            child_a_path: StateEntry(id="b", parent=parent_path),
+            child_b_path: StateEntry(id="b", parent=parent_path),  # collision!
         }
     )
 
     errors, _warnings, _missing = validate_minify_config(bad_config, ParentState)
-    assert any("Duplicate" in e and "'a'" in e for e in errors), (
-        f"Expected duplicate ID error, got: {errors}"
-    )
+    assert errors == [
+        (
+            f"Duplicate state_id='b' under '{parent_path}': "
+            f"['{child_a_path}', '{child_b_path}']"
+        )
+    ]
 
 
 def test_sync_reserves_orphan_ids():
@@ -1084,18 +1131,22 @@ def test_validate_detects_a_child_reusing_its_parent_id():
         pass
 
     parent_path = get_state_full_path(ValidateReuseParent)
+    child_path = get_state_full_path(ValidateReuseChild)
     config = make_config(
         states={
             parent_path: StateEntry(id="a", parent=None),
-            get_state_full_path(ValidateReuseChild): StateEntry(
-                id="a", parent=parent_path
-            ),
+            child_path: StateEntry(id="a", parent=parent_path),
         }
     )
 
     errors, _warnings, _missing = validate_minify_config(config, ValidateReuseParent)
 
-    assert any("reuses the id 'a' of its parent" in error for error in errors)
+    assert errors == [
+        (
+            f"State '{child_path}' reuses the id 'a' of its parent '{parent_path}'. "
+            f"Delete {MINIFY_JSON} and re-run 'reflex minify init'."
+        )
+    ]
 
 
 def test_sync_reserves_the_parent_id_through_a_new_subtree():
@@ -1338,18 +1389,23 @@ def test_validate_checks_the_actual_parent_not_the_recorded_one():
     class ActualChildState(ActualParentState):
         pass
 
+    parent_path = get_state_full_path(ActualParentState)
+    child_path = get_state_full_path(ActualChildState)
     config = make_config(
         states={
-            get_state_full_path(ActualParentState): StateEntry(id="a", parent=None),
-            get_state_full_path(ActualChildState): StateEntry(
-                id="a", parent="some.stale.Path"
-            ),
+            parent_path: StateEntry(id="a", parent=None),
+            child_path: StateEntry(id="a", parent="some.stale.Path"),
         }
     )
 
     errors, _warnings, _missing = validate_minify_config(config, ActualParentState)
 
-    assert any("reuses the id 'a' of its parent" in error for error in errors)
+    assert errors == [
+        (
+            f"State '{child_path}' reuses the id 'a' of its parent '{parent_path}'. "
+            f"Delete {MINIFY_JSON} and re-run 'reflex minify init'."
+        )
+    ]
 
 
 def test_find_missing_entries_flags_a_state_added_after_the_config():
@@ -1399,12 +1455,22 @@ def test_warn_if_config_stale_points_at_sync(caplog):
     class StaleWarningState(State):
         pass
 
+    path = get_state_full_path(StaleWarningState)
     resolver = minify_resolver(config, states=True, events=True)
     with temporary_resolver(resolver), caplog.at_level("WARNING"):
         warn_if_config_stale()
 
-    assert "reflex minify sync" in caplog.text
-    assert get_state_full_path(StaleWarningState) in caplog.text
+    assert caplog.record_tuples == [
+        (
+            "reflex.minify",
+            logging.WARNING,
+            (
+                f"{MINIFY_JSON} is out of date, so these names compile unminified: "
+                f"event:{path}.setvar, state:{path}. Run 'reflex minify sync' to "
+                "assign ids; 'reflex minify validate' lists every missing entry."
+            ),
+        )
+    ]
 
 
 def test_warn_if_config_stale_is_silent_when_current(caplog):
@@ -1472,17 +1538,23 @@ def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
     """
     parent = type("AmbiguousParent", (State,), {"__module__": __name__})
     type("AmbiguousChild", (parent,), {"__module__": __name__})
+    parent_path = get_state_full_path(parent)
     config = _config_with_ambiguous_ids(parent)
     write_config(temp_minify_json, config)
+    message = f"state '{parent_path}' has id '_'; {_BLURRING_REASON}"
 
     # The app refuses it; the CLI loads it to report and repair it.
-    with pytest.raises(ValueError, match="reflex minify sync"):
+    with pytest.raises(ValueError) as error:
         _load_minify_config_uncached()
+    assert str(error.value) == f"Invalid {MINIFY_JSON}: {message}"
     loaded = _load_minify_config_uncached(for_repair=True)
     assert loaded is not None
 
     errors, _warnings, _missing = validate_minify_config(loaded, parent)
-    assert sum("reflex minify sync" in error for error in errors) == 2
+    assert errors == [
+        message,
+        f"state '{parent_path}.Gone' has id 'a_'; {_BLURRING_REASON}",
+    ]
 
     synced = sync_minify_config(loaded, parent)
     ids = {path: entry["id"] for path, entry in synced["states"].items()}
@@ -1608,8 +1680,13 @@ def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
     config["events"]["gone.module.State"] = {"x": "b", "y": "b"}
     write_config(temp_minify_json, config)
 
-    with pytest.raises(ValueError, match="reflex minify sync"):
+    with pytest.raises(ValueError) as error:
         _load_minify_config_uncached()
+    assert str(error.value) == (
+        f"Invalid {MINIFY_JSON}: handlers of '{path}' share event ids ('a' by "
+        "first, second), which leaves all but one of them unreachable. Run "
+        "'reflex minify sync' to reassign them."
+    )
     loaded = _load_minify_config_uncached(for_repair=True)
     assert loaded is not None
 
