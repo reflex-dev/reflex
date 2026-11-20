@@ -30,6 +30,7 @@ const PUBLIC_API = {
     "getFormData",
     "getRefValue",
     "getRefValues",
+    "getRegisteredRef",
     "getToken",
     "hydrateClientStorage",
     "isBackendDisabled",
