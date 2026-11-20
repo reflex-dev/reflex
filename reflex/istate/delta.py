@@ -10,7 +10,6 @@ from collections.abc import Iterator, Mapping
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
-from reflex_base.utils.format import format_var_key
 from reflex_base.vars.base import AsyncComputedVar
 
 if TYPE_CHECKING:
@@ -250,10 +249,10 @@ def build_delta(state: BaseState) -> Delta:
     token = state.router.session.client_token if pending is not None else ""
     full_name = state.get_full_name()
     # A StateProxy passes itself as state; its __class__ is the wrapped state's.
-    state_cls = state.__class__
+    var_keys = state.__class__._var_keys
     subdelta: dict[str, Any] = {}
     for prop in delta_vars:
-        key = format_var_key(state_cls, prop)
+        key = var_keys[prop]
         if pending is not None and prop in always_dirty_computed_vars:
             # Uncached computed vars are recomputed for every delta; only
             # send them when the recomputed value actually changed. Nothing

@@ -691,7 +691,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
     # and after any var is added.
     _frontend_var_names: ClassVar[frozenset[str]] = frozenset()
     _interval_computed_var_names: ClassVar[frozenset[str]] = frozenset()
-    # The frontend vars by the key they go by on the wire.
+    # The key each frontend var goes by on the wire, and the vars by that key.
+    _var_keys: ClassVar[builtins.dict[str, str]] = {}
     _var_names_by_key: ClassVar[builtins.dict[str, str]] = {}
 
     # Instance bookkeeping, kept out of `__dict__`: never a field, never pickled.
@@ -1328,9 +1329,10 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         cls._frontend_var_names = frozenset(cls.base_vars).union(
             name for name, cvar in cls.computed_vars.items() if not cvar._backend
         )
-        cls._var_names_by_key = {
-            format.format_var_key(cls, name): name for name in cls._frontend_var_names
+        cls._var_keys = {
+            name: format.format_var_key(cls, name) for name in cls._frontend_var_names
         }
+        cls._var_names_by_key = {key: name for name, key in cls._var_keys.items()}
 
     @classmethod
     def _register_var_dependency(
@@ -2362,11 +2364,10 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             computed_vars = {}
         variables = {**base_vars, **computed_vars}
         # A StateProxy runs this as self; its __class__ is the wrapped state's.
-        state_cls = self.__class__
+        var_keys = self.__class__._var_keys
         d = {
             self.get_full_name(): {
-                format.format_var_key(state_cls, k): variables[k]
-                for k in sorted(variables)
+                var_keys[k]: variables[k] for k in sorted(variables)
             },
         }
         for substate_d in [

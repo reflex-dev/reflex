@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import pytest
 from reflex_base.config import Config, get_config, reload_config
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import (
     DefaultNameResolver,
     NameResolver,
@@ -464,7 +465,20 @@ def test_resolver_installed_later_renames_existing_vars(
             assert var_data.state == LateRenamedState._get_default_full_name()
         assert str(LateRenamedState.doubled) == f"{prefix}.v_doubled"
         assert LateRenamedState._var_names_by_key["v_value"] == "value"
+        # Deltas and full state dicts key the vars the way the frontend reads them.
+        state = LateRenamedState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+        full_name = LateRenamedState.get_full_name()
+        assert state.dict() == {full_name: {"v_value": "", "v_doubled": ""}}
+        state.value = "a"
+        assert state.get_delta() == {full_name: {"v_value": "a", "v_doubled": "aa"}}
     assert str(LateRenamedState.value) == default_expr
+    state = LateRenamedState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.dict() == {
+        LateRenamedState.get_full_name(): {
+            f"value{FIELD_MARKER}": "",
+            f"doubled{FIELD_MARKER}": "",
+        }
+    }
 
 
 def test_resolver_installed_later_renames_inherited_vars(
