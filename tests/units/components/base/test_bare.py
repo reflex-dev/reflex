@@ -1,4 +1,5 @@
 import pytest
+from reflex_base.components.tags.tagless import Tagless
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import ObjectVar
 from reflex_base.vars.base import Var, VarData
@@ -68,3 +69,24 @@ def test_rendered_string_form_brings_its_hooks_and_imports():
     assert comp._get_all_imports(collapse=True) == {
         "$/utils/i18n": [ImportVar(tag="useTexts"), ImportVar(tag="usePick")]
     }
+
+
+def test_string_form_is_built_once_per_contents():
+    """The string form is built once per contents and shared by the vars and the render."""
+    comp = Bare.create(Var(_js_expr="flag", _var_type=bool).guess_type())
+    assert isinstance(comp, Bare)
+    contents, rendered = comp._get_vars()
+
+    assert contents is comp.contents
+    assert tuple(map(id, comp._get_vars())) == (id(contents), id(rendered))
+    assert str(rendered) == "(JSON.stringify(flag))"
+    assert comp.render() == {"contents": "(JSON.stringify(flag))"}
+    assert comp._render() == Tagless(contents="(JSON.stringify(flag))")
+
+    comp.contents = Var(_js_expr="items", _var_type=dict).guess_type()
+
+    assert comp.render() == {"contents": "(JSON.stringify(items))"}
+    assert [str(var) for var in comp._get_vars()] == [
+        "items",
+        "(JSON.stringify(items))",
+    ]

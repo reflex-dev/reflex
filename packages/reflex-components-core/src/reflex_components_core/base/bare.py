@@ -163,23 +163,29 @@ class Bare(Component):
                 refs |= component._get_all_refs()
         return refs
 
-    def _rendered_contents(self) -> Var:
-        """The var this component renders: booleans and objects as their string form.
+    def _contents_vars(self) -> tuple[Var, ...]:
+        """The contents and, when it differs, the var rendered for them, built once.
+
+        The rendered var shows booleans and objects as their string form.
 
         Returns:
-            The rendered var.
+            The vars, the rendered one last.
         """
-        contents = (
-            Var.create(self.contents)
-            if not isinstance(self.contents, Var)
-            else self.contents
-        )
-        if isinstance(contents, (BooleanVar, ObjectVar)):
-            return contents.to_string()
-        return contents
+        contents = self.contents
+        cached = self.__dict__.get("_vars_cache")
+        # The base class's vars cache, dropped with the other compile caches;
+        # keyed on the contents too, so reassigning them never renders stale.
+        if cached is not None and cached[0] is contents:
+            return cached
+        rendered = contents if isinstance(contents, Var) else Var.create(contents)
+        if isinstance(rendered, (BooleanVar, ObjectVar)):
+            rendered = rendered.to_string()
+        cached = (contents,) if rendered is contents else (contents, rendered)
+        self._vars_cache = cached
+        return cached
 
     def _render(self) -> CommonTag:
-        return Tagless(contents=f"{self._rendered_contents()!s}")
+        return Tagless(contents=f"{self._contents_vars()[-1]!s}")
 
     def render(self) -> dict:
         """Render the component as a dictionary.
@@ -189,7 +195,7 @@ class Bare(Component):
         Returns:
             The rendered component.
         """
-        return {"contents": f"{self._rendered_contents()!s}"}
+        return {"contents": f"{self._contents_vars()[-1]!s}"}
 
     def _add_style_recursive(
         self, style: ComponentStyle, theme: Component | None = None
@@ -230,7 +236,4 @@ class Bare(Component):
         Yields:
             The contents, and the var rendered for them when that differs.
         """
-        yield self.contents
-        rendered = self._rendered_contents()
-        if rendered is not self.contents:
-            yield rendered
+        yield from self._contents_vars()
