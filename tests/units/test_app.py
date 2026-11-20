@@ -587,14 +587,24 @@ def test_api_transformer_lifespan_also_registered_warns(
     assert ("runs twice" in caplog.text) is also_registered
 
 
+@pytest.mark.parametrize(
+    ("inner_kind", "with_outer"),
+    [("fastapi", False), ("starlette", True), ("empty", False)],
+    ids=["fastapi-then-middleware", "middleware-between-apps", "default-lifespan"],
+)
 def test_api_transformer_lifespan_warning_names_wrapped_transformer(
-    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+    inner_kind: str,
+    with_outer: bool,
 ):
     """Identify the custom lifespan behind middleware that raises on startup.
 
     Args:
         mocker: The mock fixture for skipping frontend compilation.
         caplog: The log capture fixture.
+        inner_kind: Wrapped app and lifespan configuration.
+        with_outer: Whether another Starlette app mounts the wrapper.
     """
     events: list[str] = []
 
@@ -630,15 +640,27 @@ def test_api_transformer_lifespan_warning_names_wrapped_transformer(
         wrappers.append(middleware)
         return middleware
 
-    inner = Starlette(lifespan=inner_lifespan)
-    outer = Starlette(lifespan=outer_lifespan)
-    app = App(api_transformer=[inner, wrap, outer])
+    if inner_kind == "fastapi":
+        inner = pytest.importorskip("fastapi").FastAPI(lifespan=inner_lifespan)
+    else:
+        inner = Starlette(lifespan=None if inner_kind == "empty" else inner_lifespan)
+    app = App(
+        api_transformer=[inner, wrap, Starlette(lifespan=outer_lifespan)]
+        if with_outer
+        else [inner, wrap]
+    )
     mocker.patch.object(app, "_compile")
 
     with TestClient(app()):
-        assert events == ["outer startup"]
+        assert events == (["outer startup"] if with_outer else [])
 
     (wrapper,) = wrappers
+    affected = (
+        f" The lifespan of api_transformer {inner!r} ({inner_lifespan!r}) "
+        "may have been skipped."
+        if inner_kind != "empty"
+        else ""
+    )
     records = [
         record
         for record in caplog.records
@@ -651,9 +673,7 @@ def test_api_transformer_lifespan_warning_names_wrapped_transformer(
                 f"ASGI app {wrapper!r} raised during lifespan startup. "
                 "Continuing without its lifespan. If this is HTTP middleware, "
                 "pass non-HTTP scopes through "
-                "(check scope['type'] before reading scope['path']). "
-                f"The lifespan of api_transformer {inner!r} ({inner_lifespan!r}) "
-                "may have been skipped."
+                f"(check scope['type'] before reading scope['path']).{affected}"
             ),
         )
     ]

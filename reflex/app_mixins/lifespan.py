@@ -126,7 +126,14 @@ async def _run_asgi_lifespan(
             affected = ""
             if wrapped_transformer is not None:
                 context = wrapped_transformer.router.lifespan_context
-                if not isinstance(context, _DefaultLifespan):
+                if getattr(context, "__module__", None) == "fastapi.routing":
+                    # FastAPI's own context can wrap zero or more user hooks.
+                    affected = (
+                        f" Wrapped api_transformer: {wrapped_transformer!r}. "
+                        "Any startup or shutdown hooks configured on this app "
+                        "or its routers may have been skipped."
+                    )
+                elif not isinstance(context, _DefaultLifespan):
                     affected = (
                         f" The lifespan of api_transformer {wrapped_transformer!r} "
                         f"({context!r}) may have been skipped."

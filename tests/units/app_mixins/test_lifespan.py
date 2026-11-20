@@ -524,3 +524,63 @@ async def test_run_lifespan_shutdown_failure_still_stops_the_rest():
         "failing shutdown",
         "first shutdown",
     ]
+
+
+@pytest.mark.parametrize(
+    "kind", ["empty", "empty_router", "startup_handler", "router_lifespan"]
+)
+@pytest.mark.asyncio
+async def test_fastapi_framework_lifespan_warning(kind, caplog):
+    """Identify the wrapped app without presenting FastAPI internals as user hooks.
+
+    Args:
+        kind: FastAPI lifespan configuration to exercise.
+        caplog: Captured log records.
+    """
+    fastapi = pytest.importorskip("fastapi")
+    app = fastapi.FastAPI()
+    events = []
+
+    @contextlib.asynccontextmanager
+    async def lifespan(app):
+        """Record startup of the included router."""
+        events.append("router startup")
+        yield
+
+    if kind == "empty_router":
+        app.include_router(fastapi.APIRouter())
+    elif kind == "router_lifespan":
+        app.include_router(fastapi.APIRouter(lifespan=lifespan))
+    elif kind == "startup_handler":
+        app.router.add_event_handler("startup", lambda: events.append("startup"))
+
+    async def middleware(scope, receive, send):
+        """Reproduce an HTTP-only wrapper failing before it reaches the app."""
+        _ = scope["path"]
+        await app(scope, receive, send)
+
+    async with LifespanMixin()._run_lifespan(
+        Starlette(),
+        [middleware],
+        _lifespan_scope(),
+        wrapped_transformers={id(middleware): app},
+    ):
+        assert events == []
+
+    assert [
+        (record.levelno, record.getMessage())
+        for record in caplog.records
+        if record.name == "reflex.app_mixins.lifespan"
+    ] == [
+        (
+            logging.WARNING,
+            (
+                f"ASGI app {middleware!r} raised during lifespan startup. "
+                "Continuing without its lifespan. If this is HTTP middleware, "
+                "pass non-HTTP scopes through "
+                "(check scope['type'] before reading scope['path']). "
+                f"Wrapped api_transformer: {app!r}. Any startup or shutdown hooks "
+                "configured on this app or its routers may have been skipped."
+            ),
+        )
+    ]
