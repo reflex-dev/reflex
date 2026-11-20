@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -1159,6 +1160,11 @@ REGISTRY_METADATA = (
     "target_metadata = ModelRegistry.get_metadata()"
 )
 PLACEHOLDER_URL = "driver://user:pass@localhost/dbname"
+# How a hand-edited env.py fails connecting to the placeholder URL.
+NO_SUCH_MODULE_FAILURE = (
+    "Alembic failed with NoSuchModuleError: "
+    "Can't load plugin: sqlalchemy.dialects:driver"
+)
 # A column every SQLite build can add without the template's batch mode.
 NULLABLE_T2 = {
     "sqlmodel": "\n    t2: str | None = None",
@@ -1217,45 +1223,74 @@ def _db_url() -> str:
     return url
 
 
-def _assert_env_failure_reported(caplog: pytest.LogCaptureFixture, error: str) -> None:
-    """Check that the env.py failure was logged once, with its cause and the fix.
+def _set_script_location(project: Path, script_location: str) -> None:
+    """Point alembic.ini at the script directory with the given script_location.
+
+    Args:
+        project: The project directory.
+        script_location: The value to write, relative or ``%(here)s``-based.
+    """
+    ini = project / "alembic.ini"
+    text, count = re.subn(
+        r"^script_location = .*$",
+        f"script_location = {script_location}",
+        ini.read_text(),
+        flags=re.MULTILINE,
+    )
+    assert count == 1
+    ini.write_text(text)
+
+
+def _assert_env_failure_reported(
+    caplog: pytest.LogCaptureFixture, expected: str
+) -> None:
+    """Check that the env.py failure was the one error logged, with the fix.
 
     Args:
         caplog: The log capture fixture.
-        error: The exception class name the message must name.
+        expected: The first line of the message, naming the failure.
     """
-    (message,) = [message for message in _errors(caplog) if error in message]
-    assert "not the Reflex template" in message
-    assert "reflex db init" in message
+    (record,) = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert record.getMessage() == f"{expected}\n{migrations.CUSTOM_ENV_HINT}"
+    # The traceback goes to the debug log only.
+    assert record.exc_info is None
 
 
+@pytest.mark.parametrize("script_location", ["%(here)s/alembic", "alembic"])
 def test_custom_env_failure_is_reported_with_the_fix(
-    project: Path, caplog: pytest.LogCaptureFixture
+    project: Path, caplog: pytest.LogCaptureFixture, script_location: str
 ):
     """A hand-edited env.py that fails is reported with the hint, not a traceback.
 
     The startup check logs it and lets the app start, as 0.10.x, which never ran
-    env.py, did; the commands exit with status 1. env.py itself is kept.
+    env.py, did; the commands exit with status 1. env.py itself is kept. Older
+    alembic versions wrote a relative script_location to alembic.ini.
+
+    Args:
+        project: The project directory.
+        caplog: The log capture fixture.
+        script_location: The script_location to write to alembic.ini.
     """
     _db("init")
+    _set_script_location(project, script_location)
     source = _write_custom_env(project, HAND_EDITED_METADATA)
     caplog.clear()
 
     # What `reflex run` does before serving: compile with the schema check.
     _forget_app()
     prerequisites.get_compiled_app(dry_run=True, check_if_schema_up_to_date=True)
-    _assert_env_failure_reported(caplog, "NoSuchModuleError")
+    _assert_env_failure_reported(caplog, NO_SUCH_MODULE_FAILURE)
     caplog.clear()
 
     for args in (["status"], ["migrate"], ["makemigrations"]):
         result = _db(*args, exit_code=1)
         assert isinstance(result.exception, SystemExit), result.exception
-        _assert_env_failure_reported(caplog, "NoSuchModuleError")
+        _assert_env_failure_reported(caplog, NO_SUCH_MODULE_FAILURE)
         caplog.clear()
 
     # `rx.model.migrate()` at module level does not stop the app from importing.
     assert reflex.model.migrate(autogenerate=True) is False
-    _assert_env_failure_reported(caplog, "NoSuchModuleError")
+    _assert_env_failure_reported(caplog, NO_SUCH_MODULE_FAILURE)
     assert (project / "alembic" / "env.py").read_text() == source
     assert len(_versions(project)) == 1
 
@@ -1404,21 +1439,33 @@ def test_second_legacy_env_keeps_the_first_backup(
     assert env_py.read_text() == migrations.TEMPLATE_ENV_PY.read_text()
 
 
+@pytest.mark.parametrize("script_location", ["%(here)s/alembic", "alembic"])
 def test_custom_env_syntax_error_is_reported_with_the_fix(
-    project: Path, caplog: pytest.LogCaptureFixture
+    project: Path, caplog: pytest.LogCaptureFixture, script_location: str
 ):
     """A hand-edited env.py that does not compile is reported with the hint.
 
     A SyntaxError leaves no env.py frame in the traceback, only its filename.
+
+    Args:
+        project: The project directory.
+        caplog: The log capture fixture.
+        script_location: The script_location to write to alembic.ini.
     """
     _db("init")
+    _set_script_location(project, script_location)
     source = _write_custom_env(project, REGISTRY_METADATA, url=_db_url())
-    (project / "alembic" / "env.py").write_text(source + "\ndef broken(:\n")
+    source += "\ndef broken(:\n"
+    (project / "alembic" / "env.py").write_text(source)
+    with pytest.raises(SyntaxError) as error:
+        compile(source, "env.py", "exec")
     caplog.clear()
 
     _db("migrate", exit_code=1)
 
-    _assert_env_failure_reported(caplog, "SyntaxError")
+    _assert_env_failure_reported(
+        caplog, f"Alembic failed with SyntaxError: {error.value}"
+    )
 
 
 def _write_failing_revision(project: Path, name: str = "f00d_broken.py") -> None:
@@ -1439,26 +1486,46 @@ def _write_failing_revision(project: Path, name: str = "f00d_broken.py") -> None
 
 
 @pytest.mark.parametrize(
-    ("custom", "name"),
-    [(False, "f00d_broken.py"), (True, "f00d_broken.py"), (True, "env.py")],
+    ("custom", "name", "linked"),
+    [
+        (False, "f00d_broken.py", False),
+        (True, "f00d_broken.py", False),
+        (True, "env.py", False),
+        (True, "f00d_broken.py", True),
+    ],
 )
 def test_revision_script_failure_keeps_its_traceback(
-    project: Path, caplog: pytest.LogCaptureFixture, custom: bool, name: str
+    project: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    custom: bool,
+    name: str,
+    linked: bool,
 ):
     """A failing revision script is logged with its traceback and without the hint.
 
     The fault is in the script, under either env.py, so moving env.py aside
-    would not help, even when the script is itself named env.py.
+    would not help, even when the script is itself named env.py or alembic.ini
+    is reached through a symlink, while alembic loads revisions by real path.
 
     Args:
         project: The project directory.
+        monkeypatch: The monkeypatch fixture.
         caplog: The log capture fixture.
         custom: Run the revision under a working hand-edited env.py.
         name: The revision script's file name.
+        linked: Point ALEMBIC_CONFIG at alembic.ini through a symlinked directory.
     """
     _db("init")
     if custom:
         _write_custom_env(project, REGISTRY_METADATA, url=_db_url())
+    if linked:
+        link = project.parent / "link"
+        try:
+            link.symlink_to(project, target_is_directory=True)
+        except OSError:
+            pytest.skip("symlinks are not available")
+        monkeypatch.setenv(environment.ALEMBIC_CONFIG.name, str(link / "alembic.ini"))
     _write_failing_revision(project, name)
     caplog.clear()
 
