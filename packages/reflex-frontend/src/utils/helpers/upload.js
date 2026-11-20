@@ -1,4 +1,5 @@
 import env from "$/env.json";
+import { app } from "$/utils/context-registry";
 import { parseJson } from "$/utils/helpers/json";
 
 /**
@@ -160,6 +161,8 @@ export const uploadFiles = async (
     xhr.open("POST", getBackendURL(env.UPLOAD));
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
+    // Uploads bypass the socket handshake, so they carry the scheme themselves.
+    xhr.setRequestHeader("Reflex-Scheme", app.schemeDigest ?? "");
     // Instrumentation hook (installed by reflex-otel): may add trace headers.
     /** @type {Record<string, string>} */
     const trace_headers = {};

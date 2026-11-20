@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 import uuid
 from collections.abc import Callable, Generator
@@ -11,6 +12,8 @@ import pytest
 from playwright.sync_api import Browser, Page, expect
 from reflex_base.config import get_config
 
+from reflex.environment import environment
+from reflex.minify import MINIFY_JSON, SCHEMA_VERSION, clear_config_cache
 from reflex.testing import AppHarness
 
 
@@ -262,6 +265,50 @@ def linked_state(tmp_path_factory) -> Generator[AppHarness, None, None]:
         root=tmp_path_factory.mktemp("linked_state"), app_source=LinkedStateApp
     ) as harness:
         yield harness
+
+
+_MINIFIED_APP = "linked_minified"
+
+
+@pytest.fixture
+def minified_linked_state(
+    tmp_path_factory, monkeypatch: pytest.MonkeyPatch
+) -> Generator[AppHarness, None, None]:
+    """Start LinkedStateApp with its shared state names minified.
+
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture.
+        monkeypatch: pytest monkeypatch fixture.
+
+    Yields:
+        The running app harness.
+    """
+    monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "1")
+    app_root = tmp_path_factory.mktemp(_MINIFIED_APP)
+    harness = AppHarness.create(
+        root=app_root, app_name=_MINIFIED_APP, app_source=LinkedStateApp
+    )
+    # Shared states hang off the framework's SharedStateBaseInternal.
+    parent = "reflex.istate.shared.State.SharedStateBaseInternal"
+    state_path = f"{_MINIFIED_APP}.{_MINIFIED_APP}.State.SharedStateBaseInternal"
+    (app_root / MINIFY_JSON).write_text(
+        json.dumps({
+            "version": SCHEMA_VERSION,
+            "states": {
+                f"{state_path}.{name}": {"id": state_id, "parent": parent}
+                for name, state_id in (("SharedState", "s"), ("SharedNotes", "t"))
+            },
+            "events": {},
+        })
+    )
+    clear_config_cache()
+    try:
+        with harness:
+            yield harness
+    finally:
+        # Put the default names back for the tests that share this process.
+        monkeypatch.undo()
+        clear_config_cache()
 
 
 @pytest.fixture
@@ -547,3 +594,38 @@ def test_concurrent_async_vars_do_not_deadlock_linked_token(
         f"Async vars took {elapsed:.2f}s; expected under {max_acceptable_s:.2f}s "
         f"(lock_expiration={manager.lock_expiration / 1000:.2f}s)."
     )
+
+
+def test_linked_state_propagates_with_minified_state_names(
+    minified_linked_state: AppHarness, browser: Browser
+):
+    """A change one linked client makes reaches the others under minified names.
+
+    Links are keyed by the name a state has without minification, so the vars
+    a change dirtied must be handed to the other clients under that name too.
+
+    Args:
+        minified_linked_state: harness for LinkedStateApp with minified names.
+        browser: Playwright browser.
+    """
+    assert minified_linked_state.app_instance is not None
+    assert minified_linked_state.app_module is not None
+    shared_state = minified_linked_state.app_module.SharedState
+    assert shared_state.get_name() == "s"
+    assert shared_state.get_full_name() != shared_state._get_default_full_name()
+    context = browser.new_context()
+    try:
+        tabs = [
+            _linked_page(minified_linked_state, context.new_page, "") for _ in range(2)
+        ]
+        shared_token = f"shared-min-{uuid.uuid4()}"
+        for tab in tabs:
+            _submit(tab, "#token-input", shared_token)
+            expect(tab.locator("#linked-to")).to_have_text(shared_token)
+
+        counter_1, counter_2 = (tab.locator("#counter-button") for tab in tabs)
+        counter_2.click()
+        expect(counter_2).to_have_text("1")
+        expect(counter_1).to_have_text("1")
+    finally:
+        context.close()

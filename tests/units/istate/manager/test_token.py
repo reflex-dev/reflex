@@ -80,6 +80,25 @@ def test_base_state_token_str(clean_registration_context):
     assert TokState.get_full_name() in result
 
 
+def test_base_state_token_str_survives_renaming(clean_registration_context):
+    """A resolver renaming the state does not move where its session is stored.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+    from reflex.state import BaseState
+    from tests.units.name_resolvers import stub_resolver, temporary_resolver
+
+    class RenamedTokState(BaseState):
+        pass
+
+    token = BaseStateToken(ident="client-abc", cls=RenamedTokState)
+    stored_under = str(token)
+    with temporary_resolver(stub_resolver(state_name="z", target=RenamedTokState)):
+        assert RenamedTokState.get_full_name() == "z"
+        assert str(token) == stored_under
+
+
 def test_base_state_token_with_cls(clean_registration_context):
     """with_cls returns a BaseStateToken (not a plain StateToken).
 

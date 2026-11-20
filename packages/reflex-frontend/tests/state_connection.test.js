@@ -104,8 +104,9 @@ beforeEach(async () => {
     initialEvents: () => [],
     onLoadInternalEvent: () => [],
     on_load_internal_event: "on_load_internal",
-    state_name: "reflex___state____state",
-    exception_state_name: "reflex___state____frontend_event_exception_state",
+    main_state_name: "reflex___state____state",
+    handle_frontend_exception:
+      "reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception",
     stateSchema: "schema",
     clientStorage: {},
   });
