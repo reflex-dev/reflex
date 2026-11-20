@@ -789,8 +789,6 @@ def format_var_key(state_cls: type[BaseState], var_name: str) -> str:
     Returns:
         The var's resolved name, else ``var_name`` with the field marker.
     """
-    from reflex_base.registry import RegistrationContext
-
     ctx = RegistrationContext.try_get()
     resolved = (
         None if ctx is None else ctx.name_resolver.resolve_var_name(state_cls, var_name)
