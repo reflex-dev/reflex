@@ -323,7 +323,7 @@ def compile_script_modules() -> tuple[
         the source tree. ``utils/scripts.js`` re-exports each module under its
         module key.
 
-        Returns:
+    Returns:
     <<<<<<< HEAD
             The (path, code) outputs, and the npm packages to install: those the
             modules import, and typescript, which reads their types for the stubs.
@@ -333,7 +333,7 @@ def compile_script_modules() -> tuple[
             reference, such as stylesheets and images, which may be binary.
     >>>>>>> farhan/focused-darwin-dx76ek-js-modules
 
-        Raises:
+    Raises:
             ReflexRuntimeError: If a module imports a file outside its top-level
                 package's directory.
     """

@@ -647,15 +647,17 @@ def test_js_module_stub(call_script: AppHarness):
 
     module = call_script.app_path / call_script.app_name / "page_script.js"
     package_json = (call_script.app_path / ".web" / "package.json").read_bytes()
-    handler = "str | Var[str] | EventCallback[*tuple[Any, ...]]"
+    handler = "_str | _Var[_str] | _EventCallback[*_tuple[_Any, ...]]"
     assert (module.with_suffix(".pyi")).read_text() == (
         stub_header(module, module_digest(module, package_json)) + "\n"
-        "from collections.abc import Mapping, Sequence\n"
-        "from typing import Any, overload\n"
+        "from builtins import bool as _bool, float as _float, int as _int, str as _str\n"
+        "from builtins import tuple as _tuple\n"
+        "from collections.abc import Mapping as _Mapping, Sequence as _Sequence\n"
+        "from typing import Any as _Any, overload as _overload\n"
         "\n"
-        "from reflex_base.event import EventCallback, EventSpec\n"
-        "from reflex_base.vars.base import Var\n"
+        "from reflex_base.event import EventCallback as _EventCallback, EventSpec as _EventSpec\n"
+        "from reflex_base.vars.base import Var as _Var\n"
         "\n"
-        f"def setText(id: {handler}, text: {handler}, /) -> EventSpec: ...\n"
-        f"def report(handler: {handler}, value: {handler}, /) -> EventSpec: ...\n"
+        f"def setText(id: {handler}, text: {handler}, /) -> _EventSpec: ...\n"
+        f"def report(handler: {handler}, value: {handler}, /) -> _EventSpec: ...\n"
     )
