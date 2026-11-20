@@ -519,6 +519,23 @@ def test_add_style_create(component1, component2):
     assert str(c2.style["color"]) == '"black"'
 
 
+def test_add_style_from_style_instance(component1, component2):
+    """Test that a Style used as the app style still styles components by key.
+
+    Args:
+        component1: A test component.
+        component2: A test component.
+    """
+    style = Style({
+        component1: {"color": "white"},
+        component2.create: {"color": "black"},
+    })
+    c1 = component1.create()._add_style_recursive(style)
+    c2 = component2.create()._add_style_recursive(style)
+    assert {key: str(value) for key, value in c1.style.items()} == {"color": '"white"'}
+    assert {key: str(value) for key, value in c2.style.items()} == {"color": '"black"'}
+
+
 def test_get_imports(component1, component2):
     """Test getting the imports of a component.
 

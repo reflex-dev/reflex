@@ -1410,8 +1410,6 @@ class Component(BaseComponent, ABC):
             The style of the component.
         """
         component_style = None
-        if isinstance(styles, Style):
-            return component_style
         if (style := styles.get(type(self))) is not None:
             component_style = Style(style)
         if (style := styles.get(self.create)) is not None:
