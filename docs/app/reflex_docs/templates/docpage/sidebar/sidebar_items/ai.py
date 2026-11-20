@@ -71,6 +71,12 @@ def get_sidebar_items_ai_builder_overview():
                 ai_builder.organization.cloud_providers,
             ],
         ),
+        create_item(
+            "API",
+            children=[
+                ai_builder.generations_api,
+            ],
+        ),
         # create_item(
         #     "Integrations",
         #     children=[
