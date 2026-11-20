@@ -94,3 +94,21 @@ def test_legacy_unnamed_var_stays_global(legacy_call: str) -> None:
     cs.push("x")
     cs.retrieve()
     assert cs.global_value is not None
+
+
+def test_legacy_name_follows_the_name_rules() -> None:
+    """The deprecated factory validates names like the new one."""
+    with pytest.raises(ValueError, match="letter or underscore"):
+        rx._x.client_state("a$b", 0)
+
+
+def test_legacy_create_with_only_a_name_still_names_the_var(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The old class keeps reading a lone positional string as the name."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    cs = ClientStateVar.create("user_input_legacy")
+    assert cs._state_name == "user_input_legacy"
+    assert cs._is_global
+    assert "ClientStateVar.create" in caplog.text

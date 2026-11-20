@@ -833,6 +833,11 @@ def test_format_ref_drops_a_marker_of_no_known_var(key: str):
         (("my_array", None), "refs_my_array"),
         (("my_array", LiteralVar.create(0)), "refs_my_array[0]"),
         (("my_array", LiteralVar.create(1)), "refs_my_array[1]"),
+        (("item_{}".format(Var(_js_expr="someVar")), None), "refs_item_someVar"),
+        (
+            ("item_{}".format(Var(_js_expr="someVar")), LiteralVar.create(0)),
+            "refs_item_someVar[0]",
+        ),
     ],
 )
 def test_format_array_ref(input, output):

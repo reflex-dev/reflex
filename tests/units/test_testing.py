@@ -205,9 +205,7 @@ def test_app_harness_frontend_env_has_development_condition(
         app_module_path=tmp_path / "testapp.py",
     )
     monkeypatch.setattr(
-        reflex_testing.js_runtimes,
-        "get_js_package_executor",
-        lambda raise_on_none: [["bun"]],
+        reflex_testing, "_frontend_dev_command", lambda: ["bun", "run", "dev"]
     )
     fake_socket = mock.Mock(getsockname=lambda: ("127.0.0.1", 8000))
     monkeypatch.setattr(
@@ -219,13 +217,14 @@ def test_app_harness_frontend_env_has_development_condition(
     captured: dict = {}
 
     def fake_new_process(args, **kwargs):
-        captured.update(kwargs)
+        captured.update(kwargs, args=args)
         return mock.Mock()
 
     monkeypatch.setattr(
         reflex_testing.reflex.utils.processes, "new_process", fake_new_process
     )
     harness._start_frontend()
+    assert captured["args"] == ["bun", "run", "dev"]
     assert "--conditions=development" in captured["env"]["NODE_OPTIONS"]
 
 

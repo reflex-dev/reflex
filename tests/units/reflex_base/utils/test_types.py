@@ -38,6 +38,8 @@ from reflex_base.utils.types import (
     resolve_type_alias,
     typehint_issubclass,
 )
+from reflex_base.vars.base import Var
+from reflex_base.vars.number import LiteralNumberVar, NumberVar
 from typing_extensions import (
     ParamSpec,
     ReadOnly,
@@ -315,6 +317,51 @@ def test_isinstance_checks_type_parameter_bounds() -> None:
     assert _isinstance("x", constrained, nested=1, treat_var_as_type=False)
     assert not _isinstance(1.5, constrained, nested=1, treat_var_as_type=False)
     assert _isinstance(object(), forward, nested=1, treat_var_as_type=False)
+
+
+@pytest.mark.parametrize(
+    ("value", "cls", "as_type", "as_value"),
+    [
+        ([True], list[int], True, True),
+        ([1, "a"], list[int], False, False),
+        (["a", 1], list[int], False, False),
+        ([1, 1.5], list[float], True, True),
+        ([None, 1], list[int | None], True, True),
+        ([[1], [2]], list[list[int]], True, True),
+        ([[1], ["a"]], list[list[int]], False, False),
+        ([Var.create(1)], list[int], True, False),
+        ([Var.create(1)], list[Var], True, True),
+        ([Var.create(1)], list[NumberVar], False, False),
+        ([Var.create(1)], list[LiteralNumberVar], False, False),
+        ({1, 2}, set[int], True, True),
+        ({1, "a"}, set[int], False, False),
+        ((1, 2), tuple[int, ...], True, True),
+        ((1, "a"), tuple[int, ...], False, False),
+        ((1, "a"), tuple[int, str], True, True),
+        ((1, "a"), tuple[str, int], False, False),
+        ((1,), tuple[int, str], False, False),
+        ({"a": 1}, dict[str, int], True, True),
+        ({1: 1}, dict[str, int], False, False),
+        ({"a": "b"}, dict[str, int], False, False),
+    ],
+)
+def test_isinstance_checks_container_items(
+    value: Any, cls: Any, as_type: bool, as_value: bool
+) -> None:
+    """Every item of a container is checked, a Var by the value it holds.
+
+    A Var item matches a Var class only through ``isinstance(obj, Var)``: a
+    LiteralVar is checked by its wrapped value, even when its type is exactly
+    the expected class.
+
+    Args:
+        value: The container to check.
+        cls: The container type to check it against.
+        as_type: The result when Vars are treated as the type they represent.
+        as_value: The result when they are not.
+    """
+    assert _isinstance(value, cls, nested=2, treat_var_as_type=True) is as_type
+    assert _isinstance(value, cls, nested=2, treat_var_as_type=False) is as_value
 
 
 def test_isinstance_accepts_unchecked_protocol() -> None:
@@ -691,3 +738,49 @@ def test_get_typed_dict_field_types_keeps_redeclared_fields():
         "value": list[str],
         "other": Sequence[str],
     }
+
+
+def test_unserialized_property_on_sqlalchemy_dataclass():
+    """Test that plain properties on SQLAlchemy dataclasses are flagged."""
+    pytest.importorskip("sqlalchemy")
+    from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+    class Base(MappedAsDataclass, DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_property"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        first_name: Mapped[str]
+        last_name: Mapped[str]
+
+        @property
+        def double(self) -> str:
+            """The full name, which is not a mapped attribute."""
+            return f"{self.first_name} {self.last_name}"
+
+    assert is_unserialized_property(User, "double")
+
+
+def test_unserialized_property_on_sqlalchemy_model():
+    """Flag plain SQLAlchemy properties while allowing mapped attributes."""
+    pytest.importorskip("sqlalchemy")
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+    class Base(DeclarativeBase):
+        pass
+
+    class User(Base):
+        __tablename__ = "test_user_property"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        first: Mapped[str]
+
+        @property
+        def double(self) -> str:
+            """The first name twice, which is not a mapped attribute."""
+            return self.first * 2
+
+    assert is_unserialized_property(User, "double")
+    assert not is_unserialized_property(User, "first")

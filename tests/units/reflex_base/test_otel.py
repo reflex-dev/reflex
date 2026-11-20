@@ -12,8 +12,11 @@ import pytest
 from opentelemetry import context as otel_context
 from opentelemetry import trace
 from opentelemetry.sdk.metrics.export import InMemoryMetricReader
+from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.sdk.trace.sampling import ALWAYS_OFF
 from opentelemetry.trace import SpanKind, StatusCode
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.registry import RegisteredEventHandler
@@ -127,10 +130,43 @@ def test_trace_fields_inside_span(otel_exporter: InMemorySpanExporter):
     with active_tracer().start_as_current_span("outer") as span:
         fields = otel.trace_fields()
     span_context = span.get_span_context()
+    assert fields is not None
+    assert fields["trace_flags"] in {"01", "03"}
     assert fields == {
         "trace_id": f"{span_context.trace_id:032x}",
         "span_id": f"{span_context.span_id:016x}",
+        "trace_flags": f"{span_context.trace_flags:02x}",
     }
+
+
+def test_trace_fields_unsampled_span():
+    """An unsampled span still has ids, with the sampled bit of its flags clear."""
+    try:
+        otel.enable(tracer_provider=TracerProvider(sampler=ALWAYS_OFF))
+        with active_tracer().start_as_current_span("unsampled") as span:
+            fields = otel.trace_fields()
+        assert not span.is_recording()
+        assert fields is not None
+        assert fields["trace_flags"] == f"{span.get_span_context().trace_flags:02x}"
+        assert fields["trace_flags"] in {"00", "02"}
+    finally:
+        otel.disable()
+
+
+@pytest.mark.parametrize("flags", ["01", "00"])
+def test_trace_fields_follow_client_traceparent(
+    otel_exporter: InMemorySpanExporter, flags: str
+):
+    """A span under a client traceparent reports the client's sampling decision."""
+    trace_id, span_id = "4bf92f3577b34da6a3ce929d0e0e4736", "00f067aa0ba902b7"
+    parent = TraceContextTextMapPropagator().extract({
+        "traceparent": f"00-{trace_id}-{span_id}-{flags}"
+    })
+    with active_tracer().start_as_current_span("event", context=parent):
+        fields = otel.trace_fields()
+    assert fields is not None
+    assert fields["trace_id"] == trace_id
+    assert fields["trace_flags"] == flags
 
 
 def test_event_span_attributes(otel_exporter: InMemorySpanExporter):
