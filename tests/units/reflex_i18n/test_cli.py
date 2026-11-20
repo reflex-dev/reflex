@@ -313,7 +313,10 @@ def test_scan_sources_records_absolute_locations_across_drives(
         msg = "path is on mount 'C:', start on mount 'D:'"
         raise ValueError(msg)
 
-    monkeypatch.setattr("reflex_i18n.cli.os.path.relpath", relpath)
+    # Only the CLI's own binding: Babel also calls os.path.relpath per file.
+    monkeypatch.setattr(
+        "reflex_i18n.cli.os", SimpleNamespace(path=SimpleNamespace(relpath=relpath))
+    )
     lib = tmp_path / "mylib"
     lib.mkdir()
     (lib / "ui.py").write_text(
