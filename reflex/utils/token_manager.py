@@ -444,18 +444,20 @@ class RedisTokenManager(LocalTokenManager):
         self._lost_and_found_state_changed.set()
         try:
             async with self.redis.pubsub() as pubsub:
-                await pubsub.psubscribe(
-                    f"channel:{self._get_lost_and_found_key(self.instance_id)}"
-                )
-                # Messages are only delivered once redis confirms the subscription.
-                async for message in pubsub.listen():
-                    if message["type"] == "pmessage":
-                        record = pickle.loads(message["data"])
-                        await emit_update(record.update, record.token)
-                    elif message["type"] == "psubscribe":
-                        self._lost_and_found_subscribed.set()
+                try:
+                    await pubsub.psubscribe(
+                        f"channel:{self._get_lost_and_found_key(self.instance_id)}"
+                    )
+                    # Messages are only delivered once redis confirms the subscription.
+                    async for message in pubsub.listen():
+                        if message["type"] == "pmessage":
+                            record = pickle.loads(message["data"])
+                            await emit_update(record.update, record.token)
+                        elif message["type"] == "psubscribe":
+                            self._lost_and_found_subscribed.set()
+                finally:
+                    self._lost_and_found_subscribed.clear()
         finally:
-            self._lost_and_found_subscribed.clear()
             self._lost_and_found_subscription_active = False
             self._lost_and_found_wait_deadline = 0.0
             self._lost_and_found_state_changed.set()
@@ -513,7 +515,30 @@ class RedisTokenManager(LocalTokenManager):
                     return
                 self._lost_and_found_state_changed.clear()
                 if self._lost_and_found_wait_deadline <= loop.time():
-                    await self._lost_and_found_state_changed.wait()
+                    subscriber_task = self._lost_and_found_task
+
+                    if subscriber_task is None or subscriber_task.done():
+                        return
+
+                    event_task = asyncio.create_task(
+                        self._lost_and_found_state_changed.wait()
+                    )
+
+                    try:
+                        await asyncio.wait(
+                            {event_task, subscriber_task},
+                            return_when=asyncio.FIRST_COMPLETED,
+                        )
+                    finally:
+                        if not event_task.done():
+                            event_task.cancel()
+
+                        with contextlib.suppress(asyncio.CancelledError):
+                            await event_task
+
+                    if subscriber_task.done():
+                        return
+
                 continue
             if (remaining := self._lost_and_found_wait_deadline - loop.time()) <= 0:
                 if waited:
