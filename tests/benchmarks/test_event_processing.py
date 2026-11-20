@@ -241,11 +241,14 @@ def test_process_event_burst_independent_tokens(
 TABLE_STATUSES = ("open", "", "paid")
 
 
-def _make_rows(count: int) -> list[dict[str, str | int | float | bool]]:
+def _make_rows(
+    count: int, first_balance: float | None = 0.0
+) -> list[dict[str, str | int | float | bool | None]]:
     """Build a deterministic table-like payload.
 
     Args:
         count: Number of rows to generate.
+        first_balance: The first row's balance.
 
     Returns:
         A list of row dicts with mixed scalar types.
@@ -255,7 +258,7 @@ def _make_rows(count: int) -> list[dict[str, str | int | float | bool]]:
             "id": i,
             "name": f"customer_{i}",
             "email": f"user{i}@example.com",
-            "balance": i * 1.37,
+            "balance": i * 1.37 if i else first_balance,
             "active": i % 2 == 0,
             "notes": "lorem ipsum dolor sit amet " * 3,
         }
@@ -266,18 +269,19 @@ def _make_rows(count: int) -> list[dict[str, str | int | float | bool]]:
 class WireBenchState(rx.State):
     """State whose handler produces a realistic table-sized delta."""
 
-    rows: rx.Field[list[dict[str, str | int | float | bool]]] = rx.field(
+    rows: rx.Field[list[dict[str, str | int | float | bool | None]]] = rx.field(
         default_factory=list
     )
 
     @rx.event
-    def refresh_rows(self, count: int):
+    def refresh_rows(self, count: int, first_balance: float | None = 0.0):
         """Replace the rows with a freshly generated table.
 
         Args:
             count: Number of rows to generate.
+            first_balance: The first row's balance.
         """
-        self.rows = _make_rows(count)
+        self.rows = _make_rows(count, first_balance)
 
 
 def _handle_backend_exception(ex: Exception) -> None:
@@ -527,11 +531,24 @@ async def wire_event_processing_harness():
         yield run_raw_events
 
 
-@pytest.mark.parametrize("row_count", [5, 500], ids=["small_delta", "large_delta"])
+# orjson writes None and NaN alike as null, which the socket codec has to tell
+# apart, so the null-bearing deltas take a different path than the plain ones.
+@pytest.mark.parametrize(
+    ("row_count", "first_balance"),
+    [(5, 0.0), (5, None), (500, 0.0), (500, None), (500, float("nan"))],
+    ids=[
+        "small_delta",
+        "small_delta_none",
+        "large_delta",
+        "large_delta_none",
+        "large_delta_nan",
+    ],
+)
 def test_process_event_wire(
     wire_event_processing_harness,
     benchmark: BenchmarkFixture,
     row_count: int,
+    first_balance: float | None,
 ):
     """Benchmark receiving, processing, and serializing three events.
 
@@ -539,6 +556,7 @@ def test_process_event_wire(
         wire_event_processing_harness: The run_raw_events async callable.
         benchmark: The codspeed benchmark fixture.
         row_count: Rows per delta (small ~2KB, large ~200KB wire payload).
+        first_balance: The first row's balance.
     """
     run_raw_events = wire_event_processing_harness
     loop = asyncio.get_event_loop()
@@ -548,7 +566,8 @@ def test_process_event_wire(
         json.dumps({
             "name": handler_name,
             "router_data": ROUTER_DATA,
-            "payload": {"count": row_count},
+            # The socket codec decodes with the stdlib, which reads a bare NaN.
+            "payload": {"count": row_count, "first_balance": first_balance},
         })
         for _ in range(3)
     ]
