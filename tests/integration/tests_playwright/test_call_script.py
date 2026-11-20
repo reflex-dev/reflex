@@ -43,9 +43,11 @@ def CallScript():
     # A JavaScript module beside the app, imported from Python.
     Path(__file__).with_name("page_script.js").write_text(
         'import { env } from "$/utils/script_env";\n'
+        "/** @param {string} id @param {string} text */\n"
         "export function setText(id, text) {\n"
         "  document.getElementById(id).textContent = text;\n"
         "}\n"
+        "/** @param {string} handler @param {string} value */\n"
         "export async function report(handler, value) {\n"
         "  await Promise.resolve();\n"
         "  env.addEvents([env.event(handler, { value })]);\n"
@@ -633,3 +635,26 @@ def test_js_module(call_script_page: Page):
 
     call_script_page.locator("#js_module_report").click()
     expect(call_script_page.locator("#env_result")).to_have_value("from a module")
+
+
+def test_js_module_stub(call_script: AppHarness):
+    """A typed stub is written next to the module from its JSDoc.
+
+    Args:
+        call_script: harness for CallScript app.
+    """
+    from reflex_base.js.stubs import module_digest, stub_header
+
+    module = call_script.app_path / call_script.app_name / "page_script.js"
+    handler = "str | Var[str] | EventCallback[*tuple[Any, ...]]"
+    assert (module.with_suffix(".pyi")).read_text() == (
+        stub_header(module, module_digest(module)) + "\n"
+        "from collections.abc import Mapping, Sequence\n"
+        "from typing import Any, overload\n"
+        "\n"
+        "from reflex_base.event import EventCallback, EventSpec\n"
+        "from reflex_base.vars.base import Var\n"
+        "\n"
+        f"def setText(id: {handler}, text: {handler}, /) -> EventSpec: ...\n"
+        f"def report(handler: {handler}, value: {handler}, /) -> EventSpec: ...\n"
+    )

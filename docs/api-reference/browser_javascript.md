@@ -232,7 +232,23 @@ rx.button("Report", on_click=report(PartyState.done, "clicked"))
 - The `.js` and `.ts` files beside the module are bundled with it, so it can
   import them with relative paths such as `./helpers.js`.
 - Reflex writes a type stub (`party.pyi`) next to the module when it compiles
-  the app, so type checkers resolve the import.
+  the app, so type checkers resolve the import and check each call. Argument
+  types come from TypeScript annotations or, in a `.js` file, JSDoc:
+
+  ```javascript
+  /**
+   * @param {number} count
+   * @param {string} elementId
+   */
+  export function celebrate(count, elementId) {}
+  ```
+
+  becomes `def celebrate(count: float | Var[float], elementId: str | Var[str] | ..., /) -> EventSpec`.
+  A `string` parameter also takes an event handler, sent as its name.
+  Arguments without a type, or of a type with no JSON form such as an
+  `HTMLElement`, are `Any`. The stub is rewritten only when a script in the
+  module's folder changes. Pyright reports a stub without a Python module as
+  `reportMissingModuleSource`; set it to `"none"` to silence it.
 
 ## Using React Hooks
 

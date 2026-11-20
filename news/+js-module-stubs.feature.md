@@ -1,0 +1,1 @@
+The type stub Reflex writes next to an imported JavaScript module now types each function's arguments from its TypeScript annotations or JSDoc, so type checkers catch a wrong argument in Python, e.g. `celebrate("lots")` for `@param {number} count`.

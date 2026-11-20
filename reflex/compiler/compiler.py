@@ -1616,6 +1616,8 @@ def compile_app(
         app._get_frontend_packages(
             utils.merge_imports(all_imports, script_module_imports)
         )
+    # After the install: reading the modules' types needs typescript.
+    compile_results.extend(utils.compile_script_stubs())
 
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,
