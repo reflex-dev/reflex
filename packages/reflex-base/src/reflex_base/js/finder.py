@@ -3,8 +3,9 @@
 ``from my_app.scripts.party import celebrate`` finds ``my_app/scripts/party.js``
 (or ``.ts``) when no Python module of that name exists.
 
-``import reflex`` installs the finder, so this module stays as cheap to import
-as it can: ``os.path`` instead of ``pathlib``, and a finder and loader that
+``import reflex`` registers a small finder that loads this module on the first
+import no other finder found, which can happen while ``reflex`` itself loads,
+so it stays cheap: ``os.path`` instead of ``pathlib``, a finder and loader that
 implement the import protocol without the ``importlib.abc`` base classes, and
 no ``typing``. The event system loads with the first JavaScript module
 imported.
@@ -13,7 +14,6 @@ imported.
 from __future__ import annotations
 
 import os.path
-import sys
 from importlib.machinery import ModuleSpec
 
 # Not imported from typing, which `import reflex` does not load otherwise.
@@ -65,8 +65,8 @@ class _ScriptLoader(_LoaderBase):
 class ScriptFinder:
     """Find a JavaScript file where no Python module of the name exists."""
 
+    @staticmethod
     def find_spec(
-        self,
         fullname: str,
         path: Sequence[str] | None,
         target: ModuleType | None = None,
@@ -92,9 +92,3 @@ class ScriptFinder:
                 if os.path.isfile(file):  # noqa: PTH113
                     return ModuleSpec(fullname, _ScriptLoader(file), origin=file)
         return None
-
-
-def install() -> None:
-    """Let ``import`` find JavaScript modules, after every other finder."""
-    if not any(isinstance(finder, ScriptFinder) for finder in sys.meta_path):
-        sys.meta_path.append(ScriptFinder())

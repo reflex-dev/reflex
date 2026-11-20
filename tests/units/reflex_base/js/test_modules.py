@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 from reflex_base.event import EventSpec
-from reflex_base.js.finder import ScriptFinder
 from reflex_base.js.modules import (
     JsFunction,
     find_package_imports,
@@ -143,7 +142,6 @@ def test_importing_a_module_exposes_its_exports(
         script_package: a package with JavaScript modules on sys.path.
         clean_registration_context: the registry the import fills.
     """
-    assert any(isinstance(finder, ScriptFinder) for finder in sys.meta_path)
     party = importlib.import_module("js_pkg.party")
     assert party.__all__ == find_exports(SOURCE)
     assert party.celebrate == JsFunction("js_pkg.party", "celebrate")
@@ -201,8 +199,35 @@ def test_a_function_is_an_event_trigger(script_package: Path):
     )
 
 
+def test_import_reflex_registers_one_finder_and_loads_nothing():
+    """``import reflex`` registers the finder without loading a module for it.
+
+    Importing it again, as a reload or a benchmark that clears ``sys.modules``
+    does, must not register a second one.
+    """
+    output = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import importlib, sys\n"
+                "import reflex\n"
+                "for name in [n for n in sys.modules if n.startswith('reflex')]:\n"
+                "    del sys.modules[name]\n"
+                "importlib.import_module('reflex')\n"
+                "finders = [f for f in sys.meta_path if getattr(f, '__qualname__', '') == '_ScriptFinder']\n"
+                "print(len(finders), 'reflex_base.js' in sys.modules)"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert output == "1 False\n"
+
+
 def test_the_finder_imports_nothing_heavy():
-    """``import reflex`` installs the finder, so loading it stays cheap."""
+    """The real finder loads on the first import no other finder found, so it stays cheap."""
     loaded = subprocess.run(
         [
             sys.executable,
