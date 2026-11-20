@@ -111,11 +111,9 @@ class Match(Component):
         if match_cond_var is None:
             msg = "The condition must be set"
             raise ValueError(msg)
-        return (
-            match_cond_var.guess_type()
-            if type(match_cond_var) is Var
-            else match_cond_var
-        )
+        if type(match_cond_var) is Var and cls._has_set_type(match_cond_var._var_type):
+            return match_cond_var.guess_type()
+        return match_cond_var
 
     @classmethod
     def _has_set_type(cls, var_type: types.GenericType) -> bool:

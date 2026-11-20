@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import Annotated
+from typing import Annotated, Literal
 
 import pytest
 from reflex_base.components.component import Component
@@ -139,6 +139,20 @@ def test_match_vars(cases, expected):
     match_comp = Match.create(MatchState.value, *cases)
     assert isinstance(match_comp, Var)
     assert str(match_comp) == expected
+
+
+def test_match_subject_with_mixed_literals():
+    """Mixed scalar literals compile without a set comparison."""
+    result = Match.create(
+        Var(_js_expr="value", _var_type=Literal["ready", 0]),
+        ("ready", "yes"),
+        "no",
+    )
+    assert str(result) == (
+        "(() => { switch (JSON.stringify(value)) {"
+        'case JSON.stringify("ready"):  return ("yes");  break;'
+        'default:  return ("no");  break;};})()'
+    )
 
 
 def test_match_set_cases_compare_by_elements():
