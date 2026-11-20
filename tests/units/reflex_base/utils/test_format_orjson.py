@@ -609,17 +609,17 @@ def test_socket_output_always_encodes_as_utf8():
     assert orjson_dumps_socket({"path": "bad\udcff"}) == '{"path":"bad\\udcff"}'
 
 
-@pytest.mark.parametrize(
-    "value",
-    [
-        "",
-        "hello",
-        "null",
-        'with "quotes" and \\ backslash',
-        "control\nchars\t",
-        "ünïcödé ✨",
-    ],
-)
+_BARE_STRINGS = [
+    "",
+    "hello",
+    "null",
+    'with "quotes" and \\ backslash',
+    "control\nchars\t",
+    "ünïcödé ✨",
+]
+
+
+@pytest.mark.parametrize("value", _BARE_STRINGS)
 def test_orjson_dumps_bare_string_matches_stdlib(value):
     """The bare-string fast path must produce exactly what ``json_dumps`` does.
 
@@ -629,13 +629,15 @@ def test_orjson_dumps_bare_string_matches_stdlib(value):
     assert orjson_dumps(value) == json_dumps(value)
 
 
-def test_orjson_dumps_bare_string_fallback_matches_stdlib(no_orjson):
+@pytest.mark.parametrize("value", _BARE_STRINGS)
+def test_orjson_dumps_bare_string_fallback_matches_stdlib(no_orjson, value):
     """Without orjson the fast path must still emit the same string.
 
     Args:
         no_orjson: Fixture removing orjson from the format module.
+        value: The string to serialize.
     """
-    assert orjson_dumps("ünïcödé ✨") == json_dumps("ünïcödé ✨")
+    assert orjson_dumps(value) == json_dumps(value)
 
 
 def test_orjson_dumps_lone_surrogate_falls_back_to_stdlib():
@@ -643,6 +645,15 @@ def test_orjson_dumps_lone_surrogate_falls_back_to_stdlib():
 
     It must escape the surrogate rather than pass it through: every caller
     writes the result to a UTF-8 file, which a raw surrogate cannot encode.
+    """
+    assert orjson_dumps("\ud800") == '"\\ud800"'
+
+
+def test_orjson_dumps_lone_surrogate_without_orjson(no_orjson):
+    """The stdlib fast path escapes a lone surrogate the same way.
+
+    Args:
+        no_orjson: Fixture removing orjson from the format module.
     """
     assert orjson_dumps("\ud800") == '"\\ud800"'
 

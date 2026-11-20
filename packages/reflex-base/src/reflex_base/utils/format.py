@@ -899,6 +899,10 @@ def _json_dumps_like_orjson(obj: Any, **kwargs: Any) -> str:
     return _utf8_safe(json_dumps(obj, **kwargs), obj, **kwargs)
 
 
+# json.dumps builds a new encoder whenever it is given an option.
+_UTF8_STR_ENCODER = json.JSONEncoder(ensure_ascii=False)
+
+
 def orjson_dumps(obj: Any, **kwargs) -> str:
     """Serialize obj to a JSON string, using orjson when available.
 
@@ -935,7 +939,7 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
                 # orjson rejects strings that are not valid UTF-8. Escaping is
                 # the only output a UTF-8 writer downstream can accept.
                 return json.dumps(obj)
-        return _utf8_safe(json.dumps(obj, ensure_ascii=False), obj)
+        return _utf8_safe(_UTF8_STR_ENCODER.encode(obj), obj)
 
     indent = None
     if kwargs:
