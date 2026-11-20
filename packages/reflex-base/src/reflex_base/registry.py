@@ -494,8 +494,8 @@ class RegistrationContext(BaseContext):
     def set_name_resolver(self, resolver: NameResolver) -> None:
         """Install ``resolver`` and rebuild the registry under the new names.
 
-        Clears the per-class ``get_name`` / ``get_full_name`` /
-        ``get_class_substate`` lru_caches and calls :meth:`refresh_keys`.
+        Clears the ``get_name`` / ``get_full_name`` / ``_get_substate_path`` /
+        ``get_class_substate`` caches and calls :meth:`refresh_keys`.
         Uses ``object.__setattr__`` to mutate the frozen ``name_resolver``
         slot. Install the resolver before user state classes register:
         ``VarData`` and dependency metadata capture names at class-creation
@@ -506,7 +506,8 @@ class RegistrationContext(BaseContext):
                 to revert to built-in names.
         """
         object.__setattr__(self, "name_resolver", resolver)
-        for cls in self.base_states.values():
+        # Each cache is shared by all state classes, so any one clears them all.
+        if (cls := next(iter(self.base_states.values()), None)) is not None:
             cls.get_name.cache_clear()
             cls.get_full_name.cache_clear()
             cls._get_substate_path.cache_clear()
