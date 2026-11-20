@@ -17,7 +17,9 @@ SCRIPT_SOURCE_EXTENSIONS = (".js", ".ts", ".mjs", ".jsx", ".tsx")
 # Stylesheets, whose `@import` and `url(...)` references are followed.
 STYLESHEET_EXTENSION = ".css"
 # Tried in order for an import without an extension, as the bundler does.
-_RESOLVE_EXTENSIONS = (".ts", ".tsx", ".d.ts", ".js", ".jsx", ".mjs")
+_RESOLVE_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx", ".mjs")
+# The extension of the declaration file that types a runtime file.
+_DECLARATION_EXTENSION = ".d.ts"
 
 _CSS_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
 _CSS_REFERENCE_RE = re.compile(
@@ -606,6 +608,25 @@ def _resolve_local(directory: Path, specifier: str) -> Path | None:
     return next((candidate for candidate in candidates if candidate.is_file()), None)
 
 
+def _resolve_declaration(directory: Path, specifier: str) -> Path | None:
+    """Find the declaration file that types what a relative import names.
+
+    TypeScript reads ``helpers.d.ts`` for ``./helpers`` and ``./helpers.js``
+    alike, beside the runtime file or, for a types-only import, alone.
+
+    Args:
+        directory: The importing file's directory.
+        specifier: The relative specifier.
+
+    Returns:
+        The declaration file, or None if there is none.
+    """
+    target = directory / strip_query(specifier)
+    stem = target.with_suffix("") if target.suffix in _RESOLVE_EXTENSIONS else target
+    declaration = stem.with_name(stem.name + _DECLARATION_EXTENSION)
+    return declaration if declaration.is_file() else None
+
+
 def module_files(path: Path) -> list[Path]:
     """Find a module and every local file it imports, directly or not.
 
@@ -634,8 +655,14 @@ def module_files(path: Path) -> list[Path]:
                 ),
                 *find_type_references(source),
             ]
+            # The runtime file the bundler loads, and the declaration typing it.
             targets = [
-                _resolve_local(file.parent, specifier) for specifier in specifiers
+                resolved
+                for specifier in specifiers
+                for resolved in (
+                    _resolve_local(file.parent, specifier),
+                    _resolve_declaration(file.parent, specifier),
+                )
             ]
         elif file.suffix == STYLESHEET_EXTENSION:
             targets = [
