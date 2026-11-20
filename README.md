@@ -95,7 +95,7 @@ class State(rx.State):
         self.processing = True
         yield
         response = await client.images.generate(
-            model="gpt-image-1.5",
+            model="gpt-image-2.6-sunburst",
             prompt=self.prompt,
         )
         self.image_url = f"data:image/png;base64,{response.data[0].b64_json}"

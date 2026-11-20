@@ -1,0 +1,1 @@
+Component prop tables name dict value types without module paths, such as `Dict[str, str | Var | Color]` for `rx.code_block`'s `custom_style`, and wrap long types inside the Type column instead of overlapping the description.

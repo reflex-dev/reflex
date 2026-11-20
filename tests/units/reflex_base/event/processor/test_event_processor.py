@@ -19,6 +19,7 @@ from opentelemetry.trace import SpanKind
 from pytest_mock import MockerFixture
 from reflex_base import constants, otel
 from reflex_base.event.context import EventContext
+from reflex_base.event.processor import event_processor as processor_module
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
     QueueShutDown,
@@ -673,15 +674,33 @@ async def test_processor_reports_blocking_sync_handler(
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(blocking_sync_event())[0])
 
-    assert "_blocking_sync_handler" in caplog.text
     # The probe that times the block lands up to a polling gap into it, so only
     # the report of a total is checked here; test_blocking checks its length
     # with a handler that blocks once a probe is queued.
-    assert re.search(r"blocked the event loop for \d+\.\d+s in total", caplog.text)
+    messages = [
+        re.sub(
+            r"(?<=line )\d+|(?<=\.py:)\d+|(?<=for )\d+\.\d+s", "N", record.getMessage()
+        )
+        for record in caplog.records
+    ]
+    subject = "Event handler _blocking_sync_handler"
     # The stack of the event task ends at the blocking line, without loop frames.
-    assert "Blocking stack (most recent call last):" in caplog.text
-    assert "time.sleep(0.12)" in caplog.text
-    assert "base_events.py" not in caplog.text
+    assert messages == [
+        (
+            f"{subject} is blocking the event loop at "
+            f"{Path(__file__).relative_to(Path.cwd())}:N in _blocking_sync_handler "
+            "(threshold: 0.040s), including state updates such as computed vars. "
+            "Move blocking I/O to a thread pool or use a non-blocking async API.\n"
+            "Stack when the threshold was reached (most recent call last):\n"
+            f'  File "{processor_module.__file__}", line N, in _process_event_queue_entry\n'
+            "    return await self._execute_event(\n"
+            f'  File "{processor_module.__file__}", line N, in _execute_event\n'
+            "    result = registered_handler.handler.fn(**event.payload)\n"
+            f'  File "{__file__}", line N, in _blocking_sync_handler\n'
+            "    time.sleep(0.12)"
+        ),
+        f"{subject} blocked the event loop for N in total.",
+    ]
 
 
 async def test_processor_reports_innermost_app_frame(
@@ -1506,6 +1525,109 @@ async def test_superseding_event_cancels_previous_chain(
         assert ep._superseded == {}
 
     assert _CALL_LOG == [{"value": "stale_cancelled"}, {"value": "fresh"}]
+
+
+async def test_superseding_event_keeps_the_result_of_a_finished_run(
+    processor: EventProcessor,
+    token: str,
+):
+    """A run that finished before it was superseded resolves with its result.
+
+    The newer invocation is enqueued after the older handler returned and
+    before its task's done callback resolved the future. Only the events the
+    finished run chained are cancelled.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    release = asyncio.Event()
+    returning = asyncio.Event()
+
+    async def _search(value: str = "default", chain: bool = False) -> str:
+        if chain:
+            await EventContext.get().enqueue(
+                Event.from_event_type(logging_event(f"{value}_chained"))[0]
+            )
+            await release.wait()
+            # Wakes the superseding enqueue ahead of this task's done callbacks.
+            returning.set()
+        return value.upper()
+
+    _search._reflex_supersedes = True  # type: ignore[attr-defined]
+    search_event = EventHandler(fn=_search)
+    RegistrationContext.register_event_handler(search_event)
+
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(
+            token, Event.from_event_type(search_event("first", True))[0]
+        )
+
+        async def supersede() -> EventFuture:
+            await returning.wait()
+            assert ep._tasks[first.txid].done()
+            assert not first.done()
+            return await ep.enqueue(
+                token, Event.from_event_type(search_event("second"))[0]
+            )
+
+        superseding = asyncio.create_task(supersede())
+        # Park the superseding task on the gate before the handler sets it.
+        await asyncio.sleep(0)
+        release.set()
+        second = await asyncio.wait_for(superseding, timeout=1)
+        assert await asyncio.wait_for(first, timeout=1) == "FIRST"
+        assert await asyncio.wait_for(second.wait_all(), timeout=1) == "SECOND"
+        (chained,) = first.children
+        assert chained.cancelled()
+        await _drain_superseded(ep)
+        assert ep._superseded == {}
+
+    assert _CALL_LOG == []
+
+
+async def test_queued_handler_superseding_a_finished_run_keeps_its_result(
+    processor: EventProcessor,
+    token: str,
+):
+    """The next queued handler cannot cancel the finished run it follows.
+
+    The handler queued behind a superseding run starts as soon as that run's
+    task finishes (eagerly on Python 3.12+), and supersedes it before
+    suspending. The finished run still resolves with its result.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    release = asyncio.Event()
+
+    async def _search(value: str = "default") -> str:
+        if value == "first":
+            await release.wait()
+        return value.upper()
+
+    async def _search_again():
+        await EventContext.get().enqueue(
+            Event.from_event_type(search_event("second"))[0]
+        )
+
+    _search._reflex_supersedes = True  # type: ignore[attr-defined]
+    search_event = EventHandler(fn=_search)
+    search_again_event = EventHandler(fn=_search_again)
+    RegistrationContext.register_event_handler(search_event)
+    RegistrationContext.register_event_handler(search_again_event)
+
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(token, Event.from_event_type(search_event("first"))[0])
+        again = await ep.enqueue(token, Event.from_event_type(search_again_event())[0])
+        release.set()
+        assert await asyncio.wait_for(first, timeout=1) == "FIRST"
+        await asyncio.wait_for(again.wait_all(), timeout=1)
+        (second,) = again.children
+        assert second.result() == "SECOND"
 
 
 async def test_superseding_event_logs_debug_on_cancel(

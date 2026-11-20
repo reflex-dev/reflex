@@ -116,7 +116,7 @@ rx.grid(
 
 ## Example
 
-Here is a example of how to use state within a Reflex app.
+Here is an example of how to use state within a Reflex app.
 Click the text to change its color.
 
 ```python demo exec
