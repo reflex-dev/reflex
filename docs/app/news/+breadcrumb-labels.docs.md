@@ -1,0 +1,1 @@
+Docs breadcrumbs spell the current page the way the page or sidebar does, such as "Upgrading to 0.11", "Fan-Out" and "Area Chart" instead of "Upgrading To 0 11", "Fan Out" and "Areachart". Breadcrumbs, sidebar labels and generated page titles share one list of acronyms and brand names, so they read "API Reference", "MCP", "HTML", "SSO", "GitHub" and "OpenAI".
