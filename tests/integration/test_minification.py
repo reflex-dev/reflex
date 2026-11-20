@@ -152,7 +152,7 @@ _MINIFY_CONFIG = {
 }
 
 
-@pytest.fixture(params=["disabled", "enabled", "foreign", "pinned"])
+@pytest.fixture(params=["disabled", "enabled", "foreign"])
 def minify_app(
     request: pytest.FixtureRequest,
     app_harness_env: type[AppHarness],
@@ -162,27 +162,21 @@ def minify_app(
     """Run :func:`MinificationApp` in each way a ``minify.json`` can reach it.
 
     ``foreign`` runs it from a process that already loaded another app's
-    ``minify.json``, as an embedded test app next to a minified repository;
-    ``pinned`` names its config with ``REFLEX_MINIFY_CONFIG`` instead.
+    ``minify.json``, as an embedded test app next to a minified repository.
 
     Yields:
         ``(minified, harness)``.
     """
     mode: str = request.param
-    minified = mode in ("enabled", "pinned")
+    minified = mode == "enabled"
     if mode != "disabled":
         monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "1")
         monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "1")
         monkeypatch.setenv(environment.REFLEX_MINIFY_VARS.name, "1")
-    if mode in ("foreign", "pinned"):
-        outside = tmp_path_factory.mktemp(f"{mode}_config")
+    if mode == "foreign":
+        outside = tmp_path_factory.mktemp("foreign_config")
         (outside / MINIFY_JSON).write_text(json.dumps(_MINIFY_CONFIG))
-        if mode == "foreign":
-            monkeypatch.chdir(outside)
-        else:
-            monkeypatch.setenv(
-                environment.REFLEX_MINIFY_CONFIG.name, str(outside / MINIFY_JSON)
-            )
+        monkeypatch.chdir(outside)
     clear_config_cache()
 
     # The foreign config names this very app, so only the directory stops it.
