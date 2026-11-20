@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from packaging import version
-from reflex_base import constants
+from reflex_base import constants, ssr
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import cached_procedure, once
@@ -834,6 +834,10 @@ def install_frontend_packages(packages: set[str], config: Config):
             _pinned_args_from_constants(
                 constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
             )
+        )
+    if ssr.ssr_build_enabled():
+        packages.update(
+            _pinned_args_from_constants(constants.PackageJson.ISR_RENDER_DEPENDENCIES)
         )
     for plugin in config.plugins:
         development_dependencies.update(plugin.get_frontend_development_dependencies())

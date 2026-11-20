@@ -1,0 +1,207 @@
+"""Server-side rendering (SSR) backend for Reflex apps.
+
+This is the request-time half of SSR: the ``/_ssr_data`` endpoint that computes
+the hydrated initial state for a route by reusing the regular event machinery.
+It lives in the top-level ``reflex`` package because it depends on the state and
+app machinery that is not part of ``reflex_base``.
+
+The config gate (:func:`is_enabled`) and the compiler JS snippets live in
+:mod:`reflex_base.ssr` so the compiler templates can use them without importing
+``reflex``.  ``is_enabled`` is re-exported here for convenience.
+
+Everything here is a no-op unless ``config.ssr_mode`` is not ``OFF``.
+"""
+
+from __future__ import annotations
+
+import inspect
+import traceback
+from collections import deque
+from typing import TYPE_CHECKING, Any
+from urllib.parse import parse_qsl
+
+from reflex_base import constants
+from reflex_base.config import get_config
+from reflex_base.ssr import is_enabled as is_enabled
+from starlette.responses import Response
+
+from reflex.event import Event
+from reflex.istate.data import RouterData
+from reflex.istate.delta import _resolve_delta
+from reflex.route import extract_route_params
+from reflex.state import BaseState, State
+from reflex.utils import console, format
+
+if TYPE_CHECKING:
+    from starlette.requests import Request
+
+    from reflex.app import App
+
+# Sentinel token/session id used for the stateless SSR render.
+SSR_TOKEN = "__ssr__"
+
+
+def _build_router_data(
+    app: App, path: str, search: str, headers: dict[str, str], client_ip: str
+) -> dict[str, Any]:
+    """Build the ``router_data`` dict for a stateless SSR render.
+
+    Args:
+        app: The app, used to resolve the concrete path to a route pattern.
+        path: The browser path, below frontend_path (e.g. ``/app/blog/hello``).
+        search: The URL query string (e.g. ``?q=reflex``).
+        headers: The forwarded request headers.
+        client_ip: The client IP address.
+
+    Returns:
+        A ``router_data`` dict with the same shape ``process()`` produces.
+    """
+    # Routes and the origin are relative to frontend_path, as the client sends them.
+    page_path = path.removeprefix(get_config().frontend_path.rstrip("/")) or "/"
+    resolved_route = app.router(page_path) or "404"
+    router_data = {
+        constants.RouteVar.PATH: "/" + resolved_route.removeprefix("/"),
+        constants.RouteVar.ORIGIN: page_path + search,
+        # Route params take precedence over query params, as on the client.
+        constants.RouteVar.QUERY: {
+            **dict(parse_qsl(search.removeprefix("?"), keep_blank_values=True)),
+            **extract_route_params(page_path, resolved_route),
+        },
+        constants.RouteVar.CLIENT_TOKEN: SSR_TOKEN,
+        constants.RouteVar.SESSION_ID: SSR_TOKEN,
+        constants.RouteVar.HEADERS: {
+            "origin": headers.get("origin", headers.get("host", "http://localhost")),
+            **headers,
+        },
+        constants.RouteVar.CLIENT_IP: client_ip,
+    }
+    router_data[constants.RouteVar.QUERY] = format.format_query_params(router_data)
+    return router_data
+
+
+async def _run_on_load_event(state: BaseState, event: Event) -> list[Event]:
+    """Run a single resolved on_load event on the ephemeral SSR state.
+
+    Resolves the handler's target substate from ``event.name`` and invokes it
+    directly (rather than going through the session-managed event queue, which
+    needs a real client token and state manager).  Handlers mutate the state in
+    place.
+
+    Args:
+        state: The ephemeral root state instance.
+        event: The resolved on_load event (``event.name`` is the dotted handler).
+
+    Returns:
+        The backend events the handler returned or yielded. Frontend events
+        and background tasks are left to the browser's live session.
+    """
+    # e.g. "reflex___state____state.blog_state.on_load" -> substate + method.
+    *substate_path, method = event.name.split(".")
+    substate = state.get_substate(substate_path)
+    handler = substate.event_handlers[method]
+    if handler.is_background:
+        return []
+
+    result = handler.fn(substate, **event.payload)
+    if inspect.isawaitable(result):
+        result = await result
+    chained: list[Any]
+    if inspect.isasyncgen(result):
+        chained = [item async for item in result]
+    elif inspect.isgenerator(result):
+        chained = []
+        try:
+            while True:
+                chained.append(next(result))
+        except StopIteration as stop:
+            chained.append(stop.value)
+    else:
+        chained = [result]
+    return [
+        chained_event
+        for item in chained
+        for chained_event in Event.from_event_type(item, router_data=state.router_data)
+        if not chained_event.name.startswith("_")
+    ]
+
+
+async def _run_on_load_events(app: App, state: BaseState, path: str) -> None:
+    """Run the route's on_load handlers and the backend events they chain.
+
+    Args:
+        app: The app to get load events from.
+        state: The ephemeral root state instance.
+        path: The URL path (for error logging).
+    """
+    queue = deque(
+        Event.from_event_type(app.get_load_events(path), router_data=state.router_data)
+    )
+    while queue:
+        try:
+            queue.extend(await _run_on_load_event(state, queue.popleft()))
+        except Exception:
+            console.warn(
+                f"SSR on_load handler failed for {path}: {traceback.format_exc()}"
+            )
+
+
+def ssr_data(app: App):
+    """Build the ``/_ssr_data`` endpoint handler.
+
+    The handler creates an ephemeral state, applies route data, runs on_load
+    handlers, and returns the serialized state tree for server-side rendering.
+
+    Args:
+        app: The app to get SSR data for.
+
+    Returns:
+        The SSR data request handler.
+    """
+
+    async def ssr_data_handler(request: Request) -> Response:
+        """Handle an SSR data request.
+
+        Args:
+            request: The Starlette request object.
+
+        Returns:
+            Response with the serialized state as JSON.
+        """
+        body = await request.json()
+        path = body.get("path", "/")
+        search = body.get("search", "")
+        headers = body.get("headers", {})
+
+        if not app._state:
+            return Response(
+                content='{"state": null}',
+                media_type="application/json",
+            )
+
+        # Ephemeral root state — no persistent session is created.  Use State
+        # (root) rather than app._state which may be a subclass whose inherited
+        # vars can't be set without a parent.
+        state = State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+
+        router_data = _build_router_data(
+            app,
+            path,
+            search,
+            headers,
+            request.client.host if request.client else "0.0.0.0",
+        )
+        # Assigning router_data recomputes dependent DynamicRouteVars.
+        state.router_data = router_data
+        state.router = RouterData.from_router_data(router_data)
+
+        await _run_on_load_events(app, state, path)
+
+        # Async computed vars are awaited, as a hydrate sends them.
+        json_str = format.json_dumps({"state": await _resolve_delta(state.dict())})
+        return Response(
+            content=json_str,
+            media_type="application/json",
+            headers={"Cache-Control": "no-cache"},
+        )
+
+    return ssr_data_handler

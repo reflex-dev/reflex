@@ -138,14 +138,22 @@ const connectSocket = async () => {
   return socketRef;
 };
 
-/** Mount a component running the event loop, as the app's root layout does. */
-const mountEventLoop = async () => {
+/**
+ * Mount a component running the event loop, as the app's root layout does.
+ * @param {boolean} [ssrHydrated] Whether the page holds server-rendered state.
+ */
+const mountEventLoop = async (ssrHydrated) => {
   const mounted = {};
   // One object for the life of the loop, as the app's dispatch context is: the
   // loop reloads the route when it changes.
   const dispatch = {};
   const Probe = () => {
-    [mounted.addEvents, mounted.connectErrors] = state.useEventLoop(dispatch);
+    [mounted.addEvents, mounted.connectErrors] = state.useEventLoop(
+      dispatch,
+      undefined,
+      undefined,
+      ssrHydrated,
+    );
     return null;
   };
   const container = document.body.appendChild(document.createElement("div"));
@@ -238,6 +246,36 @@ test("a connection lost while the mounted loop drains leaves the rest queued", a
   expect(socket.spun).toBe(false);
   expect(sent(socket)).toEqual([]);
   expect(state.isStateful()).toBe(true);
+  await loop.unmount();
+});
+
+// The compiled hashes describe the defaults the store starts from; a store
+// seeded from server-rendered state needs the full state on its first connect.
+test.each([
+  { ssrHydrated: undefined, first: true },
+  { ssrHydrated: false, first: true },
+  { ssrHydrated: true, first: false },
+])("the first connect sends the boot event for ssrHydrated=$ssrHydrated", async ({
+  ssrHydrated,
+  first,
+}) => {
+  registry.registerApp({
+    initialEvents: (first = false) => [{ name: "hydrate", payload: { first } }],
+  });
+  const loop = await mountEventLoop(ssrHydrated);
+  const auth = [];
+  loop.socket.auth((value) => auth.push(value));
+
+  expect(auth).toEqual([
+    {
+      event: {
+        name: "hydrate",
+        payload: { first },
+        router_data: { pathname: "/", asPath: "/" },
+      },
+      state_schema: "schema",
+    },
+  ]);
   await loop.unmount();
 });
 

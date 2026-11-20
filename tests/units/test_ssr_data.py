@@ -1,0 +1,608 @@
+"""Unit tests for the /_ssr_data endpoint handler."""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+from pytest_mock import MockerFixture
+from starlette.responses import Response
+
+import reflex as rx
+from reflex.app import App
+from reflex.ssr import ssr_data
+from reflex.state import State
+
+
+@pytest.fixture(autouse=True)
+def _isolate_ssr_state(clean_registration_context):
+    """Serialize the /_ssr_data tree against only each test's own states.
+
+    The endpoint calls ``State.dict()``, which walks every registered substate;
+    with a polluted global registry it would serialize (and crash on) unrelated
+    states from other modules (e.g. test_app's DynamicState). ``clean_registration_context``
+    gives an empty substate registry, but the root ``State``'s per-class dependency
+    sets are global — reset them to match the clean context (and restore after),
+    so lookups stay consistent and nothing leaks in or out.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+
+    Yields:
+        None.
+    """
+    names = (
+        "_potentially_dirty_states",
+        "_always_dirty_substates",
+        "_var_dependencies",
+    )
+    original = {name: getattr(State, name) for name in names}
+    State._potentially_dirty_states = set()
+    State._always_dirty_substates = set()
+    State._var_dependencies = {}
+    State.get_class_substate.cache_clear()
+    try:
+        yield
+    finally:
+        for name, value in original.items():
+            setattr(State, name, value)
+        State.get_class_substate.cache_clear()
+
+
+def _make_request(
+    path: str = "/", headers: dict | None = None, search: str = ""
+) -> Mock:
+    """Create a mock Starlette Request with the given path and headers.
+
+    Args:
+        path: The URL path to include in the request body.
+        headers: Optional headers dict to include in the request body.
+        search: The URL query string (e.g. ``?q=reflex``).
+
+    Returns:
+        A mock Request object.
+    """
+    body = {"path": path, "search": search, "headers": headers or {}}
+    request = Mock()
+    request.json = AsyncMock(return_value=body)
+    request.client = Mock()
+    request.client.host = "127.0.0.1"
+    return request
+
+
+def _parse_response(response: Response) -> dict[str, Any]:
+    """Parse a Starlette Response body as JSON.
+
+    Args:
+        response: The response to parse.
+
+    Returns:
+        Parsed JSON as a dict.
+    """
+    assert isinstance(response.body, bytes)
+    return json.loads(response.body)
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_no_state():
+    """When the app has no state, the endpoint returns null state."""
+    app = App(enable_state=False)
+    app.add_page(lambda: rx.text("hello"), route="/")
+    handler = ssr_data(app)
+
+    response = await handler(_make_request("/"))
+
+    assert response.status_code == 200
+    data = _parse_response(response)
+    assert data["state"] is None
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_basic_state():
+    """The endpoint returns serialized state for a basic stateful app."""
+
+    class BasicState(rx.State):
+        title: str = "default"
+
+    app = App()
+    app._state = BasicState
+    app.add_page(lambda: rx.text(BasicState.title), route="/")
+
+    handler = ssr_data(app)
+    response = await handler(_make_request("/"))
+
+    assert response.status_code == 200
+    data = _parse_response(response)
+    assert data["state"] is not None
+
+    # The root State should be present.
+    root_name = rx.State.get_full_name()
+    assert root_name in data["state"]
+
+    # The user's substate should also be present with the default value.
+    substate_name = BasicState.get_full_name()
+    assert substate_name in data["state"]
+    assert data["state"][substate_name]["title_rx_state_"] == "default"
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_dynamic_route_params():
+    """Route params are extracted from the URL path and set on the state."""
+
+    class PostState(rx.State):
+        pass
+
+    app = App()
+    app._state = PostState
+    app.add_page(lambda: rx.text("post"), route="/blog/[slug]")
+
+    handler = ssr_data(app)
+    response = await handler(_make_request("/blog/hello-world"))
+
+    assert response.status_code == 200
+    data = _parse_response(response)
+    root_name = rx.State.get_full_name()
+    page = data["state"][root_name]["rx_router_page_rx_state_"]
+    assert page["params"] == {"slug": "hello-world"}
+    assert page["raw_path"] == "/blog/hello-world"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("path", "slug"),
+    [("/blog/hello%20world", "hello world"), ("/blog/a%2Fb", "a/b")],
+)
+async def test_ssr_data_decodes_route_params(path: str, slug: str):
+    """Escaped route params reach the state decoded, as in browser events.
+
+    Args:
+        path: The percent-encoded request path.
+        slug: The expected decoded slug.
+    """
+
+    class PostState(rx.State):
+        pass
+
+    app = App()
+    app._state = PostState
+    app.add_page(lambda: rx.text("post"), route="/blog/[slug]")
+
+    response = await ssr_data(app)(_make_request(path))
+
+    page = _parse_response(response)["state"][rx.State.get_full_name()][
+        "rx_router_page_rx_state_"
+    ]
+    assert page["path"] == "/blog/[slug]"
+    assert page["params"] == {"slug": slug}
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_on_load_runs():
+    """The on_load handler runs and mutates state before serialization."""
+
+    class LoadState(rx.State):
+        title: str = ""
+
+        @rx.event
+        def on_load_post(self):
+            """Set the title."""
+            self.title = "loaded"
+
+    app = App()
+    app._state = LoadState
+    app.add_page(
+        lambda: rx.text(LoadState.title),
+        route="/page",
+        on_load=LoadState.on_load_post,
+    )
+
+    handler = ssr_data(app)
+    response = await handler(_make_request("/page"))
+
+    assert response.status_code == 200
+    data = _parse_response(response)
+    substate_name = LoadState.get_full_name()
+    assert data["state"][substate_name]["title_rx_state_"] == "loaded"
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_on_load_payload():
+    """An on_load handler bound with arguments receives them."""
+
+    class PayloadState(rx.State):
+        post_id: int = 0
+
+        @rx.event
+        def load(self, post_id: int):
+            """Store the post id.
+
+            Args:
+                post_id: The bound post id.
+            """
+            self.post_id = post_id
+
+    app = App()
+    app._state = PayloadState
+    app.add_page(
+        lambda: rx.text(PayloadState.post_id),
+        route="/post",
+        on_load=PayloadState.load(123),
+    )
+
+    response = await ssr_data(app)(_make_request("/post"))
+
+    data = _parse_response(response)
+    assert data["state"][PayloadState.get_full_name()]["post_id_rx_state_"] == 123
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_on_load_chained_events():
+    """Backend events an on_load handler returns or yields run before serializing.
+
+    Frontend events and background tasks are left to the browser's session.
+    """
+
+    class ChainLoadState(rx.State):
+        steps: list[str] = []
+
+        @rx.event
+        def load(self):
+            """Record the step and chain a backend and a frontend event.
+
+            Returns:
+                The chained events.
+            """
+            self.steps.append("load")
+            return [ChainLoadState.returned, rx.redirect("/elsewhere")]
+
+        @rx.event
+        def returned(self):
+            """Record the step and chain events from a generator.
+
+            Returns:
+                The event chained by the generator's return.
+
+            Yields:
+                The chained events.
+            """
+            self.steps.append("returned")
+            yield ChainLoadState.yielded("first")
+            yield
+            return ChainLoadState.yielded("generator-return")  # noqa: B901
+
+        @rx.event
+        async def yielded(self, value: str):
+            """Record the chained value.
+
+            Args:
+                value: The value to record.
+            """
+            self.steps.append(value)
+
+        @rx.event(background=True)
+        async def background(self):
+            """Record a step from a background task."""
+            async with self:
+                self.steps.append("background")
+
+    class OtherChainState(rx.State):
+        touched: bool = False
+
+        @rx.event
+        async def touch(self):
+            """Mark the state and chain a background task.
+
+            Yields:
+                The background task.
+            """
+            self.touched = True
+            yield ChainLoadState.background
+
+    app = App()
+    app._state = ChainLoadState
+    app.add_page(
+        lambda: rx.text("chain"),
+        route="/chain",
+        on_load=[ChainLoadState.load, OtherChainState.touch],
+    )
+
+    response = await ssr_data(app)(_make_request("/chain"))
+
+    data = _parse_response(response)
+    assert data["state"][ChainLoadState.get_full_name()] == {
+        "steps_rx_state_": ["load", "returned", "first", "generator-return"],
+    }
+    assert data["state"][OtherChainState.get_full_name()] == {
+        "touched_rx_state_": True,
+    }
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_async_computed_var():
+    """Async computed vars are awaited, as a hydrate sends them."""
+
+    class AsyncVarState(rx.State):
+        name: str = "default"
+
+        @rx.event
+        def load(self):
+            """Set the name the computed var reads."""
+            self.name = "loaded"
+
+        @rx.var
+        async def greeting(self) -> str:
+            """Greet the name.
+
+            Returns:
+                The greeting.
+            """
+            return f"hello {self.name}"
+
+    app = App()
+    app._state = AsyncVarState
+    app.add_page(
+        lambda: rx.text(AsyncVarState.greeting),
+        route="/async-var",
+        on_load=AsyncVarState.load,
+    )
+
+    response = await ssr_data(app)(_make_request("/async-var"))
+
+    data = _parse_response(response)
+    assert data["state"][AsyncVarState.get_full_name()] == {
+        "name_rx_state_": "loaded",
+        "greeting_rx_state_": "hello loaded",
+    }
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_query_params():
+    """Query parameters reach on_load, with route params taking precedence."""
+
+    class SearchState(rx.State):
+        q: str = ""
+
+        @rx.event
+        def load(self):
+            """Copy the ``q`` query parameter."""
+            self.q = self.router.url.query_parameters.get("q", "")
+
+    app = App()
+    app._state = SearchState
+    app.add_page(
+        lambda: rx.text(SearchState.q),
+        route="/search/[slug]",
+        on_load=SearchState.load,
+    )
+
+    response = await ssr_data(app)(
+        _make_request("/search/hello", search="?q=reflex&slug=x&sort-by=new")
+    )
+
+    data = _parse_response(response)
+    assert data["state"][SearchState.get_full_name()]["q_rx_state_"] == "reflex"
+    page = data["state"][rx.State.get_full_name()]["rx_router_page_rx_state_"]
+    assert page["params"] == {"q": "reflex", "slug": "hello", "sort_by": "new"}
+    assert page["raw_path"] == "/search/hello?q=reflex&slug=x&sort-by=new"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("path", "search", "page_path", "params", "loaded"),
+    [
+        (
+            "/app/blog/hello-world",
+            "?q=reflex",
+            "/blog/[slug]",
+            {"q": "reflex", "slug": "hello-world"},
+            "blog",
+        ),
+        # A route named like frontend_path loses the prefix only once.
+        ("/app/app", "", "/app", {}, "app"),
+    ],
+)
+async def test_ssr_data_frontend_path(
+    mocker: MockerFixture,
+    path: str,
+    search: str,
+    page_path: str,
+    params: dict[str, str],
+    loaded: str,
+):
+    """The loader's path includes frontend_path; routes are matched without it.
+
+    Args:
+        mocker: Patches the config to set frontend_path.
+        path: The browser path the loader posts.
+        search: The URL query string.
+        page_path: The expected route pattern.
+        params: The expected page params.
+        loaded: The page whose on_load is expected to run.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing", frontend_path="/app"),
+    )
+
+    class PrefixState(rx.State):
+        loaded: str = ""
+
+        @rx.event
+        def load(self, page: str):
+            """Record the loaded page.
+
+            Args:
+                page: The page name.
+            """
+            self.loaded = page
+
+    app = App()
+    app._state = PrefixState
+    app.add_page(
+        lambda: rx.text("post"), route="/blog/[slug]", on_load=PrefixState.load("blog")
+    )
+    app.add_page(lambda: rx.text("app"), route="/app", on_load=PrefixState.load("app"))
+
+    response = await ssr_data(app)(_make_request(path, search=search))
+
+    data = _parse_response(response)
+    assert data["state"][PrefixState.get_full_name()]["loaded_rx_state_"] == loaded
+    assert data["state"][rx.State.get_full_name()]["rx_router_page_rx_state_"] == {
+        "host": "http://localhost",
+        "path": page_path,
+        "raw_path": path + search,
+        "full_path": f"http://localhost{page_path}",
+        "full_raw_path": f"http://localhost{path}{search}",
+        "params": params,
+    }
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_async_on_load():
+    """An async on_load handler is properly awaited."""
+
+    class AsyncLoadState(rx.State):
+        message: str = ""
+
+        @rx.event
+        async def load_data(self):
+            """Set the message asynchronously."""
+            self.message = "async-loaded"
+
+    app = App()
+    app._state = AsyncLoadState
+    app.add_page(
+        lambda: rx.text(AsyncLoadState.message),
+        route="/async",
+        on_load=AsyncLoadState.load_data,
+    )
+
+    handler = ssr_data(app)
+    response = await handler(_make_request("/async"))
+
+    assert response.status_code == 200
+    data = _parse_response(response)
+    substate_name = AsyncLoadState.get_full_name()
+    assert data["state"][substate_name]["message_rx_state_"] == "async-loaded"
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_on_load_error_graceful():
+    """If on_load raises, the endpoint returns state with defaults (no crash)."""
+
+    class ErrorState(rx.State):
+        value: str = "untouched"
+
+        @rx.event
+        def bad_handler(self):
+            """Always fail.
+
+            Raises:
+                RuntimeError: Always.
+            """
+            msg = "boom"
+            raise RuntimeError(msg)
+
+    app = App()
+    app._state = ErrorState
+    app.add_page(
+        lambda: rx.text(ErrorState.value),
+        route="/error",
+        on_load=ErrorState.bad_handler,
+    )
+
+    handler = ssr_data(app)
+    response = await handler(_make_request("/error"))
+
+    assert response.status_code == 200
+    data = _parse_response(response)
+    substate_name = ErrorState.get_full_name()
+    # State should still be returned with original defaults.
+    assert data["state"][substate_name]["value_rx_state_"] == "untouched"
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_headers_forwarded():
+    """Request headers are set on the state's router headers."""
+
+    class HeaderState(rx.State):
+        pass
+
+    app = App()
+    app._state = HeaderState
+    app.add_page(lambda: rx.text("h"), route="/")
+
+    handler = ssr_data(app)
+    response = await handler(
+        _make_request(
+            "/", headers={"user-agent": "Googlebot", "origin": "https://example.com"}
+        )
+    )
+
+    assert response.status_code == 200
+    data = _parse_response(response)
+    root_name = rx.State.get_full_name()
+    headers = data["state"][root_name]["rx_router_headers_rx_state_"]
+    assert headers["user_agent"] == "Googlebot"
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_unknown_route():
+    """An unknown path resolves to the 404 route."""
+
+    class NotFoundState(rx.State):
+        pass
+
+    app = App()
+    app._state = NotFoundState
+    app.add_page(lambda: rx.text("home"), route="/")
+
+    handler = ssr_data(app)
+    response = await handler(_make_request("/this/does/not/exist"))
+
+    assert response.status_code == 200
+    data = _parse_response(response)
+    # Should still return valid state (the 404 handler path).
+    assert data["state"] is not None
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_cache_control_header():
+    """The response includes Cache-Control: no-cache."""
+
+    class CacheState(rx.State):
+        pass
+
+    app = App()
+    app._state = CacheState
+    app.add_page(lambda: rx.text("c"), route="/")
+
+    handler = ssr_data(app)
+    response = await handler(_make_request("/"))
+
+    assert response.headers["cache-control"] == "no-cache"
+
+
+@pytest.mark.asyncio
+async def test_ssr_data_client_ip():
+    """The client IP from the request is set in the state."""
+
+    class IpState(rx.State):
+        pass
+
+    app = App()
+    app._state = IpState
+    app.add_page(lambda: rx.text("ip"), route="/")
+
+    handler = ssr_data(app)
+    request = _make_request("/")
+    request.client.host = "10.0.0.42"
+    response = await handler(request)
+
+    assert response.status_code == 200
+    data = _parse_response(response)
+    root_name = rx.State.get_full_name()
+    session = data["state"][root_name]["rx_router_session_rx_state_"]
+    assert session["client_ip"] == "10.0.0.42"

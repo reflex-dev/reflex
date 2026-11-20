@@ -4,7 +4,12 @@ from reflex_base import constants
 
 import reflex as rx
 from reflex.app import App
-from reflex.route import get_route_args, get_router, verify_route_validity
+from reflex.route import (
+    extract_route_params,
+    get_route_args,
+    get_router,
+    verify_route_validity,
+)
 
 
 @pytest.mark.parametrize(
@@ -22,6 +27,51 @@ from reflex.route import get_route_args, get_router, verify_route_validity
 )
 def test_route_args(route_name, expected):
     assert get_route_args(route_name) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "route", "expected"),
+    [
+        ("/blog/hello%20world", "blog/[slug]", {"slug": "hello world"}),
+        ("/blog/a%2Fb", "blog/[slug]", {"slug": "a/b"}),
+        ("/blog/a%2Fb", "blog/[splat]", {"splat": "a/b"}),
+        (
+            "/users/%C3%BCber/posts/1%2B1",
+            "users/[id]/posts/[pid]",
+            {"id": "über", "pid": "1+1"},
+        ),
+        ("/docs/hello%20world", "docs/[[section]]", {"section": "hello world"}),
+        ("/docs/intro", "docs/[[lang]]/[page]", {"page": "intro"}),
+        ("/docs/en/intro", "docs/[[lang]]/[page]", {"lang": "en", "page": "intro"}),
+        ("/files/a%20b/c", "files/[[...splat]]", {"splat": ["a b", "c"]}),
+        ("/files/a%2Fb/c", "files/[[...splat]]", {"splat": ["a", "b", "c"]}),
+        ("/files", "files/[[...splat]]", {}),
+    ],
+)
+def test_extract_route_params_decodes_like_react_router(
+    path: str, route: str, expected: dict
+):
+    # React Router decodes each segment, keeping an encoded slash in its value,
+    # and the client splits the splat on every slash.
+    assert extract_route_params(path, route) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "route", "expected"),
+    [
+        ("/Blog/Hello", "blog/[slug]", {"slug": "Hello"}),
+        ("/DOCS/EN/intro", "docs/[[lang]]/[page]", {"lang": "EN", "page": "intro"}),
+        ("/Files/a/B", "files/[[...splat]]", {"splat": ["a", "B"]}),
+        ("/blog/x", "Blog/[slug]", {"slug": "x"}),
+        # React Router folds ASCII case only.
+        ("/k\u0131t/x", "kit/[slug]", {}),
+        ("/\u212ait/x", "kit/[slug]", {}),
+    ],
+)
+def test_extract_route_params_ignores_case(path: str, route: str, expected: dict):
+    # get_router resolves any casing of a path to its route, so the params of
+    # that route come from the same case-insensitive match.
+    assert extract_route_params(path, route) == expected
 
 
 @pytest.mark.parametrize(
