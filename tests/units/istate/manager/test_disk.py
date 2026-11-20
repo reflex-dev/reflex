@@ -1,8 +1,10 @@
 """Tests for the disk state manager."""
 
 import asyncio
+import logging
 import math
 import os
+import pickle
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -10,6 +12,7 @@ from unittest.mock import Mock
 import pytest
 from reflex_base.constants import Env
 from reflex_base.environment import environment
+from reflex_base.utils.exceptions import StateSchemaMismatchError
 from reflex_base.vars.base import computed_var
 
 from reflex.istate.manager import disk
@@ -19,10 +22,52 @@ from reflex.state import BaseState
 from reflex.utils import prerequisites
 
 
+def disk_warning_logs(caplog: pytest.LogCaptureFixture) -> list[logging.LogRecord]:
+    """Return warning records from the disk manager.
+
+    Args:
+        caplog: The pytest log capture fixture.
+
+    Returns:
+        Captured disk manager warning records.
+    """
+    return [
+        record
+        for record in caplog.records
+        if record.name == "reflex.istate.manager.disk"
+        and record.levelno >= logging.WARNING
+    ]
+
+
 class DiskPersistState(BaseState):
     """A state for testing disk persistence."""
 
     num: float = 3.15
+
+
+@pytest.mark.asyncio
+async def test_load_state_schema_mismatch_is_silent(tmp_path, monkeypatch, caplog):
+    """Schema changes during hot reload should silently discard stale state.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="client", cls=dict)
+    manager.token_path(token).write_bytes(b"stale state")
+
+    def fail_to_deserialize(cls, data=None, fp=None):
+        """Raise the expected hot-reload schema mismatch."""
+        raise StateSchemaMismatchError
+
+    monkeypatch.setattr(StateToken, "deserialize", classmethod(fail_to_deserialize))
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await manager.load_state(token) is None
+    assert not caplog.records
+    await manager.close()
 
 
 def test_states_directory_survives_chdir(tmp_path: Path, monkeypatch):
@@ -402,3 +447,124 @@ async def test_states_from_disk_recompute_cached_vars(
         after_reload,
     )
     await reloaded_state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_logs_warning_for_corrupted_file(
+    tmp_path, monkeypatch, caplog
+):
+    """A corrupted BaseState file logs one warning and falls back to a default state.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+
+    class DiskCorruptState(BaseState):
+        count: int = 0
+
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="corrupt_client", cls=DiskCorruptState)
+    token_path = state_manager.token_path(token)
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_bytes(b"not a valid pickle file")
+
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await state_manager.load_state(token) is None
+
+    warning_logs = disk_warning_logs(caplog)
+    assert len(warning_logs) == 1
+    assert token_path.name in warning_logs[0].message
+    assert "falling back to a default state" in warning_logs[0].message
+
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_logs_warning_for_corrupted_non_base_token(
+    tmp_path, monkeypatch, caplog
+):
+    """A corrupt file for a plain token warns instead of raising.
+
+    `StateToken` deserializes with bare pickle rather than `BaseState._deserialize`,
+    so corruption surfaces as the underlying unpickling error, not a schema
+    mismatch. It must not escape as an exception.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="corrupt_plain_client", cls=dict)
+
+    token_path = state_manager.token_path(token)
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_bytes(b"not a valid pickle file")
+
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await state_manager.load_state(token) is None
+
+    warning_logs = disk_warning_logs(caplog)
+    assert len(warning_logs) == 1
+    assert token_path.name in warning_logs[0].message
+
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, caplog):
+    """A missing state file is a normal cache miss and logs nothing.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="absent_client", cls=dict)
+
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await state_manager.load_state(token) is None
+
+    assert not disk_warning_logs(caplog)
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_schema_change_is_not_an_error(tmp_path, monkeypatch, caplog):
+    """A stored state whose class gained a field is expected and logs nothing.
+
+    A field added to a state class changes ``_to_schema``, so the stored hash no
+    longer matches and the entry is discarded. That is normal development
+    behaviour, not an error worth reporting.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+
+    class DiskEvolvingState(BaseState):
+        count: int = 0
+
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="evolving_client", cls=DiskEvolvingState)
+    state = DiskEvolvingState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.count = 7
+
+    # Persist the state under a schema hash from before the field was added.
+    token_path = state_manager.token_path(token)
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_bytes(pickle.dumps(("stale-schema-hash", state)))
+
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await state_manager.load_state(token) is None
+
+    assert not disk_warning_logs(caplog)
+    await state_manager.close()

@@ -55,6 +55,7 @@ from reflex_base.utils.exceptions import (
     StateSchemaMismatchError,
     StateSerializationError,
     StateTooLargeError,
+    StateUnreadableError,
     UnretrievableVarValueError,
 )
 from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
@@ -2421,9 +2422,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         Raises:
             ValueError: If both data and fp are provided, or neither are provided.
-            StateSchemaMismatchError: If the state schema does not match the expected schema,
-                or the stored state can no longer be unpickled (e.g. a class it references
-                was moved, deleted or changed).
+            StateSchemaMismatchError: If the state schema does not match the expected schema.
+            StateUnreadableError: If the stored state can no longer be unpickled (e.g. a
+                class it references was moved, deleted or changed, or the data is corrupt).
         """
         if data is not None and fp is None:
             unpickle = functools.partial(pickle.loads, data)
@@ -2436,7 +2437,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             (substate_schema, state) = unpickle()
         except Exception as err:
             msg = f"Stored state could not be unpickled: {err!r}"
-            raise StateSchemaMismatchError(msg) from err
+            raise StateUnreadableError(msg) from err
         if (
             substate_schema != state._to_schema()
             and substate_schema != _legacy_state_schema(type(state))
