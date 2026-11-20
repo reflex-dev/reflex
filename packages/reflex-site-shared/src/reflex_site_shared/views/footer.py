@@ -278,7 +278,6 @@ def footer_index(
                                     "/docs/enterprise/overview/",
                                 ),
                                 footer_link("App Management", "/hosting/"),
-                                footer_link("Pricing", "/pricing/"),
                             ],
                         ),
                         footer_link_flex(

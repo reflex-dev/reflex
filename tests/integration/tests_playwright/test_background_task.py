@@ -125,6 +125,20 @@ def BackgroundTask():
                 assert self.counter == 3
                 await State.increment_by(await State.pick_amount(2))
 
+        @rx.event(background=True)
+        async def await_failing_handler(self):
+            try:
+                await State.failing_increment()
+            except ValueError:
+                async with self:
+                    self.counter += 10
+
+        @rx.event
+        def failing_increment(self):
+            self.counter += 1
+            msg = "caught by the awaiting background task"
+            raise ValueError(msg)
+
         @rx.event
         def increment_by(self, amount: int):
             self.counter += amount
@@ -235,6 +249,11 @@ def BackgroundTask():
                 "Await Handlers",
                 on_click=State.await_handlers,
                 id="await-handlers",
+            ),
+            rx.button(
+                "Await Failing Handler",
+                on_click=State.await_failing_handler,
+                id="await-failing-handler",
             ),
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
@@ -453,6 +472,32 @@ def test_await_handlers_from_background_task(
 
     await_handlers_button.click()
     expect(counter).to_have_text("7", timeout=5_000)
+
+
+def test_await_failing_handler_from_background_task(
+    background_task: AppHarness,
+    background_page: Page,
+    token: str,
+):
+    """An awaited handler's exception that the background task catches shows no toast.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        background_page: Playwright page.
+        token: The token for the connected client.
+    """
+    assert background_task.app_instance is not None
+
+    counter = background_page.locator("#counter")
+    expect(counter).to_have_text("0")
+
+    background_page.locator("#await-failing-handler").click()
+    # The failed handler's write is kept, then the task handles the exception.
+    expect(counter).to_have_text("11", timeout=5_000)
+    # A sequential event after it, so an error toast would have arrived by now.
+    background_page.locator("#increment").click()
+    expect(counter).to_have_text("12")
+    expect(background_page.locator("[data-sonner-toast]")).to_have_count(0)
 
 
 @pytest.mark.parametrize(

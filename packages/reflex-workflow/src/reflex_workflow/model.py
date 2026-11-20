@@ -40,6 +40,7 @@ from reflex_workflow import otel
 
 if TYPE_CHECKING:
     from sqlalchemy import ColumnElement
+    from sqlalchemy.orm import QueryableAttribute
 
     from reflex_workflow.engine.handles import RunHandle
 
@@ -107,6 +108,25 @@ WORKFLOW_COLUMNS = frozenset({
     "children_left",
     "wf_version",
 })
+
+
+class RunConflict(Exception):  # noqa: N818
+    """A run keyed with ``start(first, key=)`` clashed on a different unique column.
+
+    The key itself clashing is not this: that is a run already started for it,
+    which ``start`` answers with False.
+    """
+
+    def __init__(self, constraint: str | None) -> None:
+        """Name the constraint the new row clashed on.
+
+        Args:
+            constraint: The constraint's name, when the database reported it.
+        """
+        self.constraint = constraint
+        super().__init__(
+            f"the row clashes with an existing one on {constraint or 'a unique constraint'}"
+        )
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -837,22 +857,31 @@ class Workflow:
             raise ValueError(msg)
         REGISTRY[table] = cls
 
-    async def start(self: W, first: StepRef[W]) -> bool:
+    async def start(
+        self: W, first: StepRef[W], *, key: QueryableAttribute[Any] | None = None
+    ) -> bool:
         """Insert this row and schedule its first step.
 
-        A row that conflicts with an existing one on any unique constraint is not
-        inserted, so the same key never starts two runs.
+        Without ``key``, a row that conflicts with an existing one on any unique
+        constraint is not inserted, so the same key never starts two runs. With
+        ``key``, a single unique column such as ``Onboarding.trigger_key``, only a
+        clash on that column means the run already exists; a clash on any other
+        unique column raises ``RunConflict``.
 
         Args:
             first: The first step call, or a step that takes no arguments.
+            key: The unique column that identifies the run, if one does.
 
         Returns:
             Whether a new run was started.
+
+        Raises:
+            RunConflict: With ``key``, if the row clashes on another unique column.
         """
         # Imported here: the engine imports this module for REGISTRY and the columns.
         from reflex_workflow.engine.handles import start
 
-        return await start(self, as_call(first))
+        return await start(self, as_call(first), key=key)
 
     def as_parent(self) -> dict[str, Any]:
         """Describe this run the way its children point at it.
