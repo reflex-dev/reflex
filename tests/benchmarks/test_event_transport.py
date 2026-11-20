@@ -9,6 +9,7 @@ so the difference is the framing and dispatch layer. Socket.IO runs with
 
 import asyncio
 import json
+import logging
 from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
 from typing import Any
@@ -58,9 +59,14 @@ def _make_app(sio: Any = None) -> SimpleNamespace:
         The app double.
     """
     enqueued: list[Any] = []
+    # A resolved future, like the EventFuture enqueue returns: a dev mode
+    # namespace adds a done callback to it.
+    done = asyncio.get_running_loop().create_future()
+    done.set_result(None)
 
-    async def enqueue(token: str, event: Any) -> None:  # noqa: RUF029
+    async def enqueue(token: str, event: Any) -> asyncio.Future:  # noqa: RUF029
         enqueued.append((token, event))
+        return done
 
     return SimpleNamespace(
         _state=None,
@@ -242,13 +248,16 @@ async def socketio_outbound():
 
 
 def _benchmark_runner(
-    benchmark: BenchmarkFixture, runner: Callable[[], Awaitable[None]]
+    benchmark: BenchmarkFixture,
+    runner: Callable[[], Awaitable[None]],
+    caplog: pytest.LogCaptureFixture,
 ):
-    """Benchmark one full run of an async transport runner.
+    """Benchmark one full run of an async transport runner, which must log no error.
 
     Args:
         benchmark: The benchmark fixture.
         runner: The async callable to measure.
+        caplog: The log capture fixture.
     """
     loop = asyncio.get_event_loop()
 
@@ -256,22 +265,37 @@ def _benchmark_runner(
     def _():
         loop.run_until_complete(runner())
 
+    # The namespace logs a failing event instead of raising it.
+    assert [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno >= logging.ERROR
+    ] == []
 
-def test_transport_inbound_websocket(websocket_inbound, benchmark: BenchmarkFixture):
+
+def test_transport_inbound_websocket(
+    websocket_inbound, benchmark: BenchmarkFixture, caplog: pytest.LogCaptureFixture
+):
     """Benchmark inbound event handling on the plain WebSocket transport."""
-    _benchmark_runner(benchmark, websocket_inbound)
+    _benchmark_runner(benchmark, websocket_inbound, caplog)
 
 
-def test_transport_inbound_socketio(socketio_inbound, benchmark: BenchmarkFixture):
+def test_transport_inbound_socketio(
+    socketio_inbound, benchmark: BenchmarkFixture, caplog: pytest.LogCaptureFixture
+):
     """Benchmark inbound event handling on the Socket.IO transport."""
-    _benchmark_runner(benchmark, socketio_inbound)
+    _benchmark_runner(benchmark, socketio_inbound, caplog)
 
 
-def test_transport_outbound_websocket(websocket_outbound, benchmark: BenchmarkFixture):
+def test_transport_outbound_websocket(
+    websocket_outbound, benchmark: BenchmarkFixture, caplog: pytest.LogCaptureFixture
+):
     """Benchmark emitting state updates on the plain WebSocket transport."""
-    _benchmark_runner(benchmark, websocket_outbound)
+    _benchmark_runner(benchmark, websocket_outbound, caplog)
 
 
-def test_transport_outbound_socketio(socketio_outbound, benchmark: BenchmarkFixture):
+def test_transport_outbound_socketio(
+    socketio_outbound, benchmark: BenchmarkFixture, caplog: pytest.LogCaptureFixture
+):
     """Benchmark emitting state updates on the Socket.IO transport."""
-    _benchmark_runner(benchmark, socketio_outbound)
+    _benchmark_runner(benchmark, socketio_outbound, caplog)
