@@ -76,15 +76,15 @@ def test_use_id():
     assert vd.imports == (("react", (ImportVar(tag="useId", alias=hook_alias),)),)
 
 
-def test_ref_uses_component_registry_key_and_imports_refs():
-    """Check that ref uses the registry key and adds the required import."""
+def test_ref_uses_component_registry_key_and_imports_registered_ref():
+    """Check that ref uses the registry key and imports the stable lookup."""
     v = ref("my-grid")
 
     assert isinstance(v, StringVar)
-    assert str(v) == 'refs["ref_my_grid"]'
+    assert str(v) == 'getRegisteredRef("ref_my_grid")'
     vd = v._get_all_var_data()
     assert vd is not None
-    assert vd.imports == (("$/utils/state", (ImportVar(tag="refs"),)),)
+    assert vd.imports == (("$/utils/state", (ImportVar(tag="getRegisteredRef"),)),)
 
 
 def test_hook_var_hoisted_into_component():

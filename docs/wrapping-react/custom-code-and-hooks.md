@@ -168,4 +168,4 @@ import reflex as rx
 grid_ref = rx.vars.ref("my-grid")
 ```
 
-The returned `Var` resolves to the registered ref and carries the required `refs` import into the compiled module. Its key is derived from the same sanitized id used when Reflex registers component refs.
+The returned `Var` resolves to the registered ref and carries the required runtime import into the compiled module. Its key is derived from the same sanitized id used when Reflex registers component refs.

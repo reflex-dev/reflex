@@ -77,8 +77,12 @@ def ref(id_: str) -> Var[str]:
     """
     ref_name = format.format_ref(id_)
     return Var(
-        _js_expr=f"refs[{LiteralVar.create(ref_name)!s}]",
+        _js_expr=f"getRegisteredRef({LiteralVar.create(ref_name)!s})",
         _var_data=VarData(
-            imports={f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="refs")]}
+            imports={
+                f"$/{constants.Dirs.STATE_PATH}": [
+                    ImportVar(tag="getRegisteredRef")
+                ]
+            }
         ),
     ).to(str)
