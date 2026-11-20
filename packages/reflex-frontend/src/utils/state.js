@@ -823,6 +823,35 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
+  if (event.name === "_call_js") {
+    try {
+      // Loaded on first use: apps without scripts never fetch the chunk.
+      const scripts = await import("$/utils/scripts");
+      const fn = scripts[event.payload.module]?.[event.payload.function];
+      if (typeof fn !== "function") {
+        throw new TypeError(
+          `${event.payload.module}.${event.payload.function} is not a registered script function`,
+        );
+      }
+      const result = await fn(...event.payload.args);
+      const callback = event.payload.callback;
+      if (callback) {
+        eventLoop.addEvents([
+          ReflexEvent(
+            callback.name,
+            callback.arg ? { [callback.arg]: result } : {},
+          ),
+        ]);
+      }
+    } catch (e) {
+      console.log("_call_js", e);
+      if (window?.onerror) {
+        window.onerror(e.message, null, null, null, e);
+      }
+    }
+    return;
+  }
+
   if (event.name === "_call_script" || event.name === "_call_function") {
     try {
       const eval_result =

@@ -1590,6 +1590,9 @@ def compile_app(
         ),
         utils._compile_bundled_libraries(),
     ])
+    from reflex import _js_mvp
+
+    compile_results.extend(_js_mvp.compile_scripts(prerequisites.get_web_dir()))
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
