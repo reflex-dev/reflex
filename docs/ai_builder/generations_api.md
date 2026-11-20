@@ -277,7 +277,9 @@ The stream sends three kinds of item:
 
 On connect, the messages written so far are sent before anything new.
 
-The stream closes after the `generation` event that carries a terminal or waiting status (`finished`, `failed`, `stopped`, or any `awaiting_*`), so the last event is always the run's final state. The server also closes the stream after 30 minutes. Reconnect when that happens: the current state is sent first, and a message `id` is stable, so drop messages you already have.
+When the run reaches a terminal or waiting status (`finished`, `failed`, `stopped`, or any `awaiting_*`), the stream sends that `generation` event and then closes, so its last event is the run's final state.
+
+The server also closes a stream after 30 minutes, whatever the run is doing. That close comes without a final event, so a stream that ends while the last `generation` event you saw has a live status is not a finished run. Reconnect: the current state is sent first, and a message `id` is stable, so drop messages you already have.
 
 A generation you cannot read is refused with 404 before the stream opens.
 
@@ -379,34 +381,47 @@ Two shapes, depending on where the request was refused:
 
 ## End-to-end example
 
-This script creates an app, follows its events until the run ends or 10 minutes pass, prints the transcript, and stops the run if it is still going.
+This script creates an app and follows its events for up to 10 minutes. If the run is still going after that, it stops the run and waits for it to end. It then reads the whole transcript, once nothing more can be written to it.
 
 ```bash
 set -euo pipefail
 API="$REFLEX_URL/api/v1"
 AUTH=(-H "X-API-Token: $REFLEX_TOKEN")
+field() { python3 -c "import json,sys; v=json.load(sys.stdin)[\"$1\"]; print('' if v is None else v)"; }
+is_live() { case "$1" in preparing|queued|running|pushing) return 0 ;; *) return 1 ;; esac; }
 
 # 1. Create the app.
 created=$(curl -sf -X POST "$API/generations" "${AUTH[@]}" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: $(uuidgen)" \
   -d "{\"prompt\": \"Build a todo list app with due dates.\", \"project_id\": \"$PROJECT_ID\"}")
-GENERATION_ID=$(echo "$created" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
-THREAD_ID=$(echo "$created" | python3 -c 'import json,sys; print(json.load(sys.stdin)["thread_id"])')
+GENERATION_ID=$(echo "$created" | field id)
+THREAD_ID=$(echo "$created" | field thread_id)
 
 # 2. Follow the run. The stream ends on its own when the run ends or waits.
 curl -sN --max-time 600 "$API/generations/$GENERATION_ID/events" "${AUTH[@]}" || true
 
-# 3. Read the transcript.
-curl -sf "$API/threads/$THREAD_ID/messages" "${AUTH[@]}"
+# 3. Stop the run if it is still live, and wait until it has ended.
+status=$(curl -sf "$API/generations/$GENERATION_ID" "${AUTH[@]}" | field status)
+if is_live "$status"; then
+  curl -sf -X POST "$API/generations/$GENERATION_ID/stop" "${AUTH[@]}" > /dev/null
+  while is_live "$status"; do
+    sleep 2
+    status=$(curl -sf "$API/generations/$GENERATION_ID" "${AUTH[@]}" | field status)
+  done
+fi
+echo "Run ended with status: $status"
 
-# 4. Stop the run if it is still live.
-status=$(curl -sf "$API/generations/$GENERATION_ID" "${AUTH[@]}" \
-  | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')
-case "$status" in
-  preparing|queued|running|pushing)
-    curl -sf -X POST "$API/generations/$GENERATION_ID/stop" "${AUTH[@]}" ;;
-esac
+# 4. Read the whole transcript, a page at a time, until next_cursor is null.
+after=""
+while :; do
+  page=$(curl -sf "$API/threads/$THREAD_ID/messages?limit=200${after:+&after=$after}" "${AUTH[@]}")
+  echo "$page" | python3 -c 'import json,sys
+for m in json.load(sys.stdin)["messages"]:
+    print("[%s] %s\n" % (m["role"], m["text"]))'
+  after=$(echo "$page" | field next_cursor)
+  [ -n "$after" ] || break
+done
 ```
 
 If the run ended in `awaiting_question`, read the questions from `detail` on `GET /generations/{id}` and answer with a follow-up on `$THREAD_ID`, as in [Answer a question](#answer-a-question).
