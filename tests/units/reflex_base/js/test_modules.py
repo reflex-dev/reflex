@@ -9,11 +9,7 @@ from pathlib import Path
 import pytest
 from reflex_base.event import EventSpec
 from reflex_base.js.finder import ScriptFinder
-from reflex_base.js.modules import (
-    JsFunction,
-    find_package_imports,
-    module_key,
-)
+from reflex_base.js.modules import JsFunction, find_package_imports, module_key
 from reflex_base.js.source import find_exports
 from reflex_base.registry import RegistrationContext
 from reflex_base.vars.base import LiteralVar, Var

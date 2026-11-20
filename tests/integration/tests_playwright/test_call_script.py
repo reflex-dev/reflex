@@ -646,9 +646,10 @@ def test_js_module_stub(call_script: AppHarness):
     from reflex_base.js.stubs import module_digest, stub_header
 
     module = call_script.app_path / call_script.app_name / "page_script.js"
+    package_json = (call_script.app_path / ".web" / "package.json").read_bytes()
     handler = "str | Var[str] | EventCallback[*tuple[Any, ...]]"
     assert (module.with_suffix(".pyi")).read_text() == (
-        stub_header(module, module_digest(module)) + "\n"
+        stub_header(module, module_digest(module, package_json)) + "\n"
         "from collections.abc import Mapping, Sequence\n"
         "from typing import Any, overload\n"
         "\n"

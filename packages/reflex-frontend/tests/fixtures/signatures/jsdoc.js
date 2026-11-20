@@ -13,3 +13,6 @@ export const untyped = (a, b) => a + b;
 export const notAFunction = 3;
 
 export default function () {}
+
+/** @type {any} */
+export const anything = globalThis.somethingUntyped;

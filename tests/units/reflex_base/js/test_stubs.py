@@ -7,6 +7,7 @@ import pytest
 from reflex_base.js.stubs import (
     TYPESCRIPT_PACKAGE,
     Export,
+    Parameter,
     module_digest,
     python_type,
     render_stub,
@@ -62,92 +63,95 @@ IMPORTS = (
     ],
 )
 def test_python_type(ts_type: str, expected: str):
+    """A TypeScript type maps to the Python type of the JSON value.
+
+    Args:
+        ts_type: The TypeScript type.
+        expected: The Python type.
+    """
     assert python_type(ts_type) == expected
 
 
+def _param(
+    name: str, ts_type: str, optional: bool = False, rest: bool = False
+) -> Parameter:
+    return {"name": name, "type": ts_type, "optional": optional, "rest": rest}
+
+
+def _export(name: str, *signatures: list[Parameter], untyped: bool = False) -> Export:
+    return {
+        "name": name,
+        "signatures": [{"parameters": parameters} for parameters in signatures],
+        "untyped": untyped,
+    }
+
+
+HANDLER = "str | Var[str] | EventCallback[*tuple[Any, ...]]"
+
+
 def test_render_stub():
-    exports: list[Export] = [
-        {
-            "name": "celebrate",
-            "signatures": [
-                {
-                    "parameters": [
-                        {
-                            "name": "count",
-                            "type": "number",
-                            "optional": False,
-                            "rest": False,
-                        },
-                        {
-                            "name": "elementId",
-                            "type": "string",
-                            "optional": False,
-                            "rest": False,
-                        },
-                        {
-                            "name": "loud",
-                            "type": "boolean | undefined",
-                            "optional": True,
-                            "rest": False,
-                        },
-                    ]
-                }
+    """Each export becomes a positional-only def with Var-accepting arguments."""
+    exports = [
+        _export(
+            "celebrate",
+            [
+                _param("count", "number"),
+                _param("elementId", "string"),
+                _param("loud", "boolean | undefined", optional=True),
             ],
-        },
-        {
-            "name": "many",
-            "signatures": [
-                {
-                    "parameters": [
-                        {
-                            "name": "class",
-                            "type": "any",
-                            "optional": False,
-                            "rest": False,
-                        },
-                        {
-                            "name": "names",
-                            "type": "string",
-                            "optional": False,
-                            "rest": True,
-                        },
-                    ]
-                }
-            ],
-        },
-        {
-            "name": "pick",
-            "signatures": [
-                {
-                    "parameters": [
-                        {
-                            "name": "n",
-                            "type": "number",
-                            "optional": False,
-                            "rest": False,
-                        }
-                    ]
-                },
-                {"parameters": []},
-            ],
-        },
-        {"name": "MAX", "signatures": []},
-        {"name": "$private", "signatures": [{"parameters": []}]},
+        ),
+        _export("many", [_param("class", "any"), _param("names", "string", rest=True)]),
+        _export("pick", [_param("n", "number")], []),
+        _export("MAX"),
+        _export("anything", untyped=True),
+        _export("$private", []),
     ]
     assert render_stub(Path("party.js"), "abc", exports) == (
         stub_header(Path("party.js"), "abc") + "\n" + IMPORTS + "\n"
         "def celebrate(count: float | Var[float], "
-        "elementId: str | Var[str] | EventCallback[*tuple[Any, ...]], "
-        "loud: bool | Var[bool] = ..., /) -> EventSpec: ...\n"
-        "def many(arg0: Any, /, *names: str | Var[str] | EventCallback[*tuple[Any, ...]]) -> EventSpec: ...\n"
+        f"elementId: {HANDLER}, loud: bool | Var[bool] = ..., /) -> EventSpec: ...\n"
+        f"def many(arg0: Any, /, *names: {HANDLER}) -> EventSpec: ...\n"
         "@overload\n"
         "def pick(n: float | Var[float], /) -> EventSpec: ...\n"
         "@overload\n"
         "def pick() -> EventSpec: ...\n"
+        "def anything(*args: Any) -> EventSpec: ...\n"
+    )
+
+
+def test_renamed_parameters_do_not_collide():
+    """A parameter renamed from a non-identifier never takes another's name."""
+    exports = [
+        _export(
+            "send",
+            [_param("$value", "any"), _param("arg0", "any"), _param("arg0_", "any")],
+        )
+    ]
+    assert render_stub(Path("send.js"), "abc", exports).splitlines()[-1] == (
+        "def send(arg0__: Any, arg0: Any, arg0_: Any, /) -> EventSpec: ..."
+    )
+
+
+def test_only_trailing_optional_parameters_have_defaults():
+    """A default that a required parameter follows cannot be omitted in Python."""
+    exports = [
+        _export(
+            "send",
+            [
+                _param("prefix", "string", optional=True),
+                _param("count", "number"),
+                _param("suffix", "string | undefined", optional=True),
+            ],
+        )
+    ]
+    assert render_stub(Path("send.ts"), "abc", exports).splitlines()[-1] == (
+        f"def send(prefix: {HANDLER}, count: float | Var[float], "
+        f"suffix: {HANDLER} = ..., /) -> EventSpec: ..."
     )
 
 
 def test_render_untyped_stub():
+    """Without types, every export takes any arguments."""
     assert render_untyped_stub(Path("party.ts"), "untyped", ["go", "class"]) == (
         "# Generated by Reflex from party.ts (untyped); rewritten when it changes.\n"
         + IMPORTS
@@ -156,19 +160,41 @@ def test_render_untyped_stub():
     )
 
 
-def test_module_digest_covers_the_scripts_beside_the_module(tmp_path: Path):
+def test_module_digest_covers_imports_and_packages(tmp_path: Path):
+    """The digest changes with the module's local imports and the app's packages.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+    """
+    (tmp_path / "lib").mkdir()
     module = tmp_path / "party.js"
-    module.write_text("export function go() {}\n")
-    helper = tmp_path / "helpers.ts"
+    module.write_text('import { T } from "./lib/helpers";\nexport function go() {}\n')
+    helper = tmp_path / "lib" / "helpers.ts"
     helper.write_text("export type T = number;\n")
-    digest = module_digest(module)
+    digest = module_digest(module, b'{"a": "1"}')
     assert len(digest) == 16
-    (tmp_path / "notes.txt").write_text("not a script")
-    assert module_digest(module) == digest
+    (tmp_path / "unused.js").write_text("export const u = 1;\n")
+    assert module_digest(module, b'{"a": "1"}') == digest
+    assert module_digest(module, b'{"a": "2"}') != digest
     helper.write_text("export type T = string;\n")
-    assert module_digest(module) != digest
+    assert module_digest(module, b'{"a": "1"}') != digest
+
+
+def test_module_digest_is_the_same_on_every_machine(tmp_path: Path):
+    """The same sources in different directories give the same digest.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+    """
+    for checkout in ("one", "two"):
+        (tmp_path / checkout).mkdir()
+        (tmp_path / checkout / "party.js").write_text("export function go() {}\n")
+    assert module_digest(tmp_path / "one" / "party.js") == module_digest(
+        tmp_path / "two" / "party.js"
+    )
 
 
 def test_typescript_matches_the_frontend_package():
+    """The typescript installed to read types is the one reflex-frontend uses."""
     dev_dependencies = json.loads(FRONTEND_PACKAGE_JSON.read_text())["devDependencies"]
     assert f"typescript@{dev_dependencies['typescript']}" == TYPESCRIPT_PACKAGE

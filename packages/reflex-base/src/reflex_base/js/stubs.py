@@ -11,12 +11,13 @@ from __future__ import annotations
 
 import hashlib
 import keyword
+import os
 import re
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import TypedDict
 
-from reflex_base.js.finder import SCRIPT_EXTENSIONS
+from reflex_base.js.source import module_files
 
 # Bumped when the stub format changes, so every stub is rewritten.
 _STUB_VERSION = "1"
@@ -78,24 +79,32 @@ class Export(TypedDict):
 
     name: str
     signatures: list[Signature]
+    # Whether its type is unknown (`any`), so it may still be a function.
+    untyped: bool
 
 
-def module_digest(path: Path) -> str:
-    """Hash a module and the script files beside it, which its types may use.
+def module_digest(path: Path, dependencies: bytes = b"") -> str:
+    """Hash what a module's stub is made from.
+
+    That is the module and the local files it imports, whose types it may use,
+    and the installed packages, whose declarations it may use too.
 
     Args:
         path: The module.
+        dependencies: The app's package manifest, so an upgrade rewrites the stub.
 
     Returns:
         A short hex digest.
     """
     digest = hashlib.sha256(_STUB_VERSION.encode())
-    for file in sorted(path.parent.iterdir()):
-        if file.suffix in SCRIPT_EXTENSIONS:
-            digest.update(file.name.encode())
-            digest.update(b"\0")
-            digest.update(file.read_bytes())
-            digest.update(b"\0")
+    directory = path.resolve().parent
+    for file in module_files(path):
+        # Relative, so the same sources give the same stub on every machine.
+        digest.update(os.path.relpath(file, directory).encode())
+        digest.update(b"\0")
+        digest.update(file.read_bytes())
+        digest.update(b"\0")
+    digest.update(dependencies)
     return digest.hexdigest()[:16]
 
 
@@ -213,17 +222,35 @@ def _render_signature(name: str, signature: Signature) -> str:
     Returns:
         The ``def`` line.
     """
+    parameters = signature["parameters"]
+    rest_index = next(
+        (index for index, parameter in enumerate(parameters) if parameter["rest"]),
+        len(parameters),
+    )
+    # Python can only omit trailing arguments: a parameter with a default that a
+    # required one follows is required.
+    omittable = rest_index
+    while omittable > 0 and parameters[omittable - 1]["optional"]:
+        omittable -= 1
+    # Rename the parameters that are not Python identifiers to names no other
+    # parameter has; arguments are positional-only, so callers never see them.
+    used = {
+        parameter["name"]
+        for parameter in parameters
+        if parameter["name"].isidentifier() and not keyword.iskeyword(parameter["name"])
+    }
     params: list[str] = []
     rest = ""
-    optional = False
-    for index, parameter in enumerate(signature["parameters"]):
+    for index, parameter in enumerate(parameters[: rest_index + 1]):
         param_name = parameter["name"]
-        if not param_name.isidentifier() or keyword.iskeyword(param_name):
+        if param_name not in used:
             param_name = f"arg{index}"
+            while param_name in used:
+                param_name += "_"
+            used.add(param_name)
         if parameter["rest"]:
             rest = f"*{param_name}: {_annotation(parameter['type'])}"
             break
-        optional = optional or parameter["optional"]
         ts_type = parameter["type"]
         if parameter["optional"]:
             # The checker adds `undefined` to an optional parameter's type.
@@ -236,7 +263,8 @@ def _render_signature(name: str, signature: Signature) -> str:
                 or "undefined"
             )
         params.append(
-            f"{param_name}: {_annotation(ts_type)}" + (" = ..." if optional else "")
+            f"{param_name}: {_annotation(ts_type)}"
+            + (" = ..." if index >= omittable else "")
         )
     rendered = [*params, "/"] if params else []
     if rest:
@@ -260,7 +288,8 @@ def render_stub(path: Path, digest: str, exports: Iterable[Export]) -> str:
     """Render the stub of a module from its exports' signatures.
 
     Exports that are not functions, and those Python cannot import, are left
-    out. An export with several signatures gets one overload each.
+    out; an export of unknown type keeps untyped arguments. An export with
+    several signatures gets one overload each.
 
     Args:
         path: The module.
@@ -273,7 +302,11 @@ def render_stub(path: Path, digest: str, exports: Iterable[Export]) -> str:
     lines = [stub_header(path, digest), _IMPORTS]
     for export in exports:
         signatures = export["signatures"]
-        if not signatures or not _importable(export["name"]):
+        if not _importable(export["name"]):
+            continue
+        if not signatures:
+            if export["untyped"]:
+                lines.append(f"def {export['name']}(*args: Any) -> EventSpec: ...")
             continue
         for signature in signatures:
             if len(signatures) > 1:

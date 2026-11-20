@@ -45,13 +45,19 @@ const checker = program.getTypeChecker();
 const describeParameter = (parameter, location) => {
   const declaration = parameter.valueDeclaration;
   const rest = Boolean(declaration?.dotDotDotToken);
-  let type = checker.getTypeOfSymbolAtLocation(parameter, location);
-  if (rest && checker.isArrayType(type)) {
-    type = checker.getTypeArguments(/** @type {any} */ (type))[0];
+  const type = checker.getTypeOfSymbolAtLocation(parameter, location);
+  let typeName = checker.typeToString(type);
+  if (rest) {
+    // A rest parameter's element type; a tuple's elements have no single type.
+    typeName = checker.isArrayType(type)
+      ? checker.typeToString(
+          checker.getTypeArguments(/** @type {any} */ (type))[0],
+        )
+      : "any";
   }
   return {
     name: parameter.getName(),
-    type: checker.typeToString(type),
+    type: typeName,
     optional: Boolean(
       declaration &&
         (declaration.questionToken ||
@@ -62,23 +68,28 @@ const describeParameter = (parameter, location) => {
   };
 };
 
-/** @type {Record<string, {name: string, signatures: any[]}[]>} */
+/** @type {Record<string, {name: string, signatures: any[], untyped: boolean}[]>} */
 const result = {};
 for (const file of files) {
   const source = program.getSourceFile(file);
   const moduleSymbol = source && checker.getSymbolAtLocation(source);
   result[file] = (moduleSymbol ? checker.getExportsOfModule(moduleSymbol) : [])
     .filter((symbol) => symbol.getName() !== "default")
-    .map((symbol) => ({
-      name: symbol.getName(),
-      signatures: checker
-        .getTypeOfSymbolAtLocation(symbol, source)
-        .getCallSignatures()
-        .map((signature) => ({
+    .map((symbol) => {
+      const type = checker.getTypeOfSymbolAtLocation(symbol, source);
+      return {
+        name: symbol.getName(),
+        signatures: type.getCallSignatures().map((signature) => ({
           parameters: signature
             .getParameters()
             .map((parameter) => describeParameter(parameter, source)),
         })),
-    }));
+        // An export of unknown type, such as one from a package without
+        // declarations, may still be a function.
+        untyped: Boolean(
+          type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown),
+        ),
+      };
+    });
 }
 process.stdout.write(JSON.stringify(result));

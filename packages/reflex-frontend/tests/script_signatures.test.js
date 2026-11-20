@@ -42,16 +42,20 @@ test("reads JSDoc types, optional and rest parameters", () => {
             ],
           },
         ],
+        untyped: false,
       },
       {
         name: "many",
         signatures: [{ parameters: [param("names", "string", false, true)] }],
+        untyped: false,
       },
       {
         name: "untyped",
         signatures: [{ parameters: [param("a", "any"), param("b", "any")] }],
+        untyped: false,
       },
-      { name: "notAFunction", signatures: [] },
+      { name: "notAFunction", signatures: [], untyped: false },
+      { name: "anything", signatures: [], untyped: true },
     ],
   });
 });
@@ -71,10 +75,30 @@ test("reads TypeScript types and overloads, several files at once", () => {
           ],
         },
       ],
+      untyped: false,
     },
     {
       name: "overloaded",
       signatures: [{ parameters: [param("n", "number")] }, { parameters: [] }],
+      untyped: false,
+    },
+    {
+      // A tuple rest has no single element type.
+      name: "tupleRest",
+      signatures: [{ parameters: [param("args", "any", false, true)] }],
+      untyped: false,
+    },
+    {
+      name: "defaultFirst",
+      signatures: [
+        {
+          parameters: [
+            param("prefix", "string", true),
+            param("count", "number"),
+          ],
+        },
+      ],
+      untyped: false,
     },
   ]);
 });

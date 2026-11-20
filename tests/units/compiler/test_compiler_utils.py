@@ -935,13 +935,18 @@ def test_compile_script_stubs(
     monkeypatch: pytest.MonkeyPatch,
     clean_registration_context: RegistrationContext,
 ):
-    """Stubs are typed from the read signatures, and kept while scripts are unchanged.
+    """Stubs are typed from the read signatures, and kept while nothing changed.
 
     Args:
         tmp_path: pytest tmp_path fixture.
         monkeypatch: pytest monkeypatch fixture.
         clean_registration_context: a fresh registry of imported modules.
     """
+    web_dir = tmp_path / ".web"
+    web_dir.mkdir()
+    package_json = web_dir / "package.json"
+    package_json.write_text('{"dependencies": {"a": "1"}}')
+    monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
     party = tmp_path / "party.js"
     party.write_text("export function go(n) {}\n")
     clean_registration_context.script_modules["app.party"] = party
@@ -960,6 +965,7 @@ def test_compile_script_stubs(
                     ]
                 }
             ],
+            "untyped": False,
         }
     ]
     reads: list[list[Path]] = []
@@ -969,7 +975,7 @@ def test_compile_script_stubs(
         return {path.resolve(): exports for path in paths}
 
     monkeypatch.setattr(utils, "_read_script_signatures", read)
-    digest = module_digest(party)
+    digest = module_digest(party, package_json.read_bytes())
     typed = render_stub(party, digest, exports)  # pyright: ignore[reportArgumentType]
 
     assert utils.compile_script_stubs() == [(str(tmp_path / "party.pyi"), typed)]
@@ -978,8 +984,9 @@ def test_compile_script_stubs(
     assert utils.compile_script_stubs() == []
     assert reads == [[party]]
 
-    (tmp_path / "helpers.js").write_text("export const x = 1;\n")
-    new_digest = module_digest(party)
+    # A package upgrade can change the types: the stub is read again.
+    package_json.write_text('{"dependencies": {"a": "2"}}')
+    new_digest = module_digest(party, package_json.read_bytes())
     assert utils.compile_script_stubs() == [
         (str(tmp_path / "party.pyi"), render_stub(party, new_digest, exports))  # pyright: ignore[reportArgumentType]
     ]

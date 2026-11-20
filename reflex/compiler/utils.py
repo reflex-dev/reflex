@@ -411,16 +411,21 @@ def compile_script_stubs() -> list[tuple[str, str]]:
     """Write a type stub next to each JavaScript module the app imports.
 
     Argument types come from the module's TypeScript annotations or JSDoc. A
-    stub whose header records the current module and its sibling files is
-    kept, so typescript only runs when a script changed. When the types cannot
+    stub whose header records the current module, the local files it imports
+    and the app's packages is kept, so typescript only runs when one changed. When the types cannot
     be read, the stub has untyped arguments and is retried on the next compile.
 
     Returns:
         The (path, code) outputs for the stubs to rewrite.
     """
     stale: dict[Path, str] = {}
+    try:
+        # A package upgrade can change the types a module uses.
+        dependencies = (get_web_dir() / constants.PackageJson.PATH).read_bytes()
+    except OSError:
+        dependencies = b""
     for path in RegistrationContext.ensure_context().script_modules.values():
-        digest = module_digest(path)
+        digest = module_digest(path, dependencies)
         try:
             current = path.with_suffix(".pyi").read_text(encoding="utf-8")
         except OSError:
