@@ -214,6 +214,95 @@ def plotly_funnel_chart():
     return rx.center(rx.plotly(width="100%", data=funnel_fig))
 ```
 
+## Maps
+
+Use `rx.plotly.map` for MapLibre maps. It loads a smaller bundle supporting
+`scattermap`, `choroplethmap`, `densitymap` and ordinary `scatter` traces.
+MapLibre does not require a Mapbox access token, though your chosen tile provider
+may require its own credentials.
+
+```python demo exec defer
+map_fig = go.Figure(
+    go.Scattermap(
+        lat=[37.77, 37.78],
+        lon=[-122.42, -122.41],
+        mode="markers",
+        marker=dict(size=14),
+    )
+)
+map_fig.update_layout(
+    map=dict(
+        style="open-street-map",
+        center=dict(lat=37.77, lon=-122.42),
+        zoom=11,
+    ),
+    margin=dict(l=0, r=0, t=0, b=0),
+)
+
+
+def plotly_map():
+    return rx.plotly.map(data=map_fig, width="100%", height="400px")
+```
+
+Use the full `rx.plotly` component when a figure combines map traces with other
+trace types, such as bars or heatmaps. Locale settings, reactive data and event
+handlers work on `rx.plotly.map` as on the full component.
+
+### Migrating Mapbox figures
+
+`rx.plotly.mapbox` is deprecated as of Reflex 0.11.1 and will be removed in Reflex
+1.0. Migrate
+`go.Scattermapbox`, `go.Choroplethmapbox` and `go.Densitymapbox` to `go.Scattermap`,
+`go.Choroplethmap` and `go.Densitymap`. Plotly Express provides the corresponding
+`px.scatter_map`, `px.choropleth_map` and `px.density_map` functions.
+
+Change `layout.mapbox` to `layout.map` and remove `config.mapboxAccessToken`.
+Update numbered subplot references as well, such as `mapbox2` to `map2`. Review
+your map style and layers for Mapbox-specific URLs or credentials.
+
+Until Reflex 1.0, `rx.plotly`, `rx.plotly.map` and the deprecated
+`rx.plotly.mapbox` keep rendering existing Mapbox figures. When a figure contains
+Mapbox traces or `layout.mapbox` keys, including figures received through state
+updates, the component logs a browser warning. It then passes Plotly a copy that
+uses MapLibre trace types, subplot references and layout keys, in the figure and
+its animation frames. Your figure is not changed. Partial bundles without map
+traces, such as `rx.plotly.basic`, do not render maps.
+
+The rename does not cover everything. These still break after the upgrade, so
+change them yourself:
+
+- Buttons and sliders with Mapbox paths, such as `args=[{"mapbox.zoom": 5}]`, do
+  nothing. Use `map.zoom`.
+- `on_relayout` event data uses MapLibre keys, such as `"map.center"` and
+  `"map.zoom"`, not `"mapbox.center"` and `"mapbox.zoom"`.
+- Mapbox settings in a template are ignored. Set them in `layout.map`.
+- Styles hosted by Mapbox (`mapbox://` URLs) do not load, and the access token is
+  ignored. Use a MapLibre style or a tile service.
+- plotly.py 7 removes `go.Scattermapbox`, `px.scatter_mapbox` and the other
+  Mapbox classes. The rename cannot help there; migrate before you upgrade
+  plotly.py.
+
+### Plotly.js 4 compatibility
+
+The default component and all variants use Plotly.js 4. Mapbox figures keep
+rendering until Reflex 1.0, as described above. Other upstream changes to check
+include:
+
+- MathJax 2 is no longer supported; use MathJax 3 or 4.
+- Chart Studio options including `showLink`, `linkText`, `sendData`, `showSources`
+  and `showEditInChartStudio` are removed, as are trace `stream`, `*src`
+  attributes and `layout.hidesources`.
+- Fractional `rgb()` and `rgba()` channels are no longer interpreted as
+  percentages. Use explicit percentage channels or values from 0 to 255.
+  Invalid CSS colors and `hsv()` color strings are no longer accepted.
+- Overlaying axes now default to `tickmode="sync"`, `splom.axis.matches` defaults
+  to `True` and geographic plots fit their bounds to locations by default. Set
+  the relevant values explicitly when preserving the previous appearance.
+
+See the [Plotly.js changelog](https://github.com/plotly/plotly.js/blob/v4.3.0/CHANGELOG.md)
+for the complete list of upstream changes.
+
+
 ## Locale Configuration
 
 Use `locale` to localize Plotly number/date formatting and modebar labels:
@@ -263,7 +352,7 @@ def mountain_surface():
     )
 ```
 
-📊 **Dataset source:** [mt_bruno_elevation.csv](https://raw.githubusercontent.com/plotly/datasets/master/api_docs/mt_bruno_elevation.csv)
+**Dataset source:** [mt_bruno_elevation.csv](https://raw.githubusercontent.com/plotly/datasets/master/api_docs/mt_bruno_elevation.csv)
 
 ## Financial Charts
 

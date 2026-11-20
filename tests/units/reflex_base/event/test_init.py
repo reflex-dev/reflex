@@ -1,16 +1,22 @@
-"""Tests for the trigger-argument placeholders ``parse_args_spec`` hands out."""
+"""Tests for trigger-argument placeholders and the event chains built on them."""
 
-from typing import cast
+from typing import Any, cast
 
+from reflex_base.client_state import client_state
 from reflex_base.event import (
     EventArgVar,
+    EventChain,
+    LambdaEventCallback,
     event_arg_placeholder,
     event_args_signature,
+    no_args_event_spec,
     parse_args_spec,
     passthrough_event_spec,
 )
 from reflex_base.vars.base import Var
 from reflex_base.vars.number import NumberVar
+
+import reflex as rx
 
 
 def test_parse_args_spec_hands_out_positioned_placeholders() -> None:
@@ -59,3 +65,36 @@ def test_event_args_signature_reaches_into_a_nested_lambda() -> None:
         args_names=("item",), return_expr=field + cast("NumberVar", arg)
     )
     assert event_args_signature(nested) == ("_ev_0",)
+
+
+def test_cond_between_function_and_none_is_a_no_op_when_false() -> None:
+    """A `None` branch of a cond around a client state setter is skipped, not called."""
+    flag = client_state("", name="flag")
+    chain = Var.create(
+        EventChain.create(
+            [rx.cond(Var.create(False), flag.set("x"), None)],
+            args_spec=no_args_event_spec,
+        )
+    )
+    assert (
+        str(chain)
+        == '((...args) => ((false ? (() => (flagRxClientStateSet("x"))) : null)?.(...args)))'
+    )
+
+
+def test_cond_between_function_and_none_inside_lambda_is_a_no_op_when_false() -> None:
+    """The same cond returned from a lambda gets the optional call too."""
+    flag = client_state("", name="flag")
+    chain = Var.create(
+        EventChain.create(
+            cast(
+                "LambdaEventCallback[Any]",
+                lambda v: rx.cond(v == "go", flag.set(v), None),
+            ),
+            args_spec=passthrough_event_spec(str),
+        )
+    )
+    assert (
+        str(chain)
+        == '((_ev_0) => (((_ev_0?.valueOf?.() === "go"?.valueOf?.()) ? ((_ev_0) => (flagRxClientStateSet(_ev_0))) : null)?.(_ev_0)))'
+    )

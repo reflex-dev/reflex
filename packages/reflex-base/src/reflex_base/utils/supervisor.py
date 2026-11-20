@@ -201,26 +201,35 @@ class _OutputPump(threading.Thread):
         # Clear while a write is in progress.
         self._write_done = threading.Event()
         self._write_done.set()
+        # Set when run() ends. drain() waits on this rather than in
+        # Thread.join(timeout), which CPython 3.13 to 3.15 can turn into an
+        # untimed wait (python/cpython#161712): that would hold the drain until
+        # a lingering descendant closes the pipe.
+        self._finished = threading.Event()
 
     def run(self):
         """Forward the pipe until every writer closed it."""
         pending = b""
         traceback: list[str] = []
-        while True:
-            self.idle_since = time.monotonic()
-            chunk = os.read(self.read_fd, 1 << 16)
-            self.idle_since = None
-            if not chunk:
-                break
-            data = pending + chunk
-            # A trailing \r may be the first half of a \r\n.
-            cut = len(data) - data.endswith(b"\r")
-            *lines, pending = _LINE_END.split(data[:cut])
-            pending += data[cut:]
-            self._write(lines, traceback, final=False)
-        os.close(self.read_fd)
-        pending = pending.removesuffix(b"\r")
-        self._write([pending] if pending else [], traceback, final=True)
+        try:
+            while True:
+                self.idle_since = time.monotonic()
+                chunk = os.read(self.read_fd, 1 << 16)
+                self.idle_since = None
+                if not chunk:
+                    break
+                data = pending + chunk
+                # A trailing \r may be the first half of a \r\n.
+                cut = len(data) - data.endswith(b"\r")
+                *lines, pending = _LINE_END.split(data[:cut])
+                pending += data[cut:]
+                self._write(lines, traceback, final=False)
+            pending = pending.removesuffix(b"\r")
+            self._write([pending] if pending else [], traceback, final=True)
+        finally:
+            with contextlib.suppress(OSError):
+                os.close(self.read_fd)
+            self._finished.set()
 
     def _write(self, lines: list[bytes], traceback: list[str], final: bool):
         """Write converted lines, dropping them if the consumer is gone.
@@ -274,8 +283,7 @@ class _OutputPump(threading.Thread):
             writing_at_exit: The cumulative write time at that snapshot.
             wall_deadline: The shared monotonic deadline for shutdown.
         """
-        while self.is_alive():
-            self.join(0.05)
+        while not self._finished.wait(0.05):
             now, writing_elapsed = self.writing_snapshot()
             idle_since = self.idle_since
             # Seconds charged against the five-second active drain budget.

@@ -290,6 +290,13 @@ def _scan_detach(value: Any, memo: dict[int, Any], active: set[int]) -> Any:
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 SUPERSEDES_MARKER = "_reflex_supersedes"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+_UNDECORATED_STATE_METHOD_MARKER = "_rx_undecorated_state_method"
+# How to fix a reference to an undecorated state method; ends its error.
+_UNDECORATED_STATE_METHOD_HINT = (
+    "Decorate it with `@rx.event`: with `state_explicit_event_handlers` enabled, "
+    "undecorated methods stay plain methods. "
+    "See https://reflex.dev/docs/events/events-overview/#explicit-event-handlers"
+)
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 # Payload key listing the names of the extra bound handler args in an upload
@@ -467,6 +474,11 @@ class EventActionsMixin:
         )
 
 
+# Set on the stand-in a background handler binds to on a state instance, so a
+# returned or yielded `self.background_handler` is recognized as a mistake.
+_BOUND_BACKGROUND_TASK_MARKER = "_reflex_bound_background_task"
+
+
 def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
     """Protect against directly chaining a background task from another event handler.
 
@@ -491,17 +503,45 @@ def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
         async def _no_chain_background_task_co(*args, **kwargs):  # noqa: RUF029
             raise RuntimeError(message)
 
-        return _no_chain_background_task_co
-    if inspect.isasyncgenfunction(fn):
+        no_chain = _no_chain_background_task_co
+    elif inspect.isasyncgenfunction(fn):
 
         async def _no_chain_background_task_gen(*args, **kwargs):  # noqa: RUF029
             yield
             raise RuntimeError(message)
 
-        return _no_chain_background_task_gen
+        no_chain = _no_chain_background_task_gen
+    else:
+        msg = f"{fn} is marked as a background task, but is not async."
+        raise TypeError(msg)
+    setattr(no_chain, _BOUND_BACKGROUND_TASK_MARKER, True)
+    return no_chain
 
-    msg = f"{fn} is marked as a background task, but is not async."
-    raise TypeError(msg)
+
+def _is_bound_event_handler(value: Any) -> bool:
+    """Whether a value is an event handler accessed through a state instance.
+
+    That is what ``self.handler`` evaluates to (see ``EventHandler.__get__``):
+    returned or yielded as an event, it is a mistake for ``type(self).handler``.
+    An inherited handler accessed through a background task's state proxy is a
+    ``functools.partial`` and is not recognized.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        True for a handler's function bound to its state, or to a proxy of it,
+        and for the stand-in a background handler binds to.
+    """
+    if type(value) is not types.MethodType:
+        return getattr(value, _BOUND_BACKGROUND_TASK_MARKER, None) is True
+    func = value.__func__
+    handlers = getattr(value.__self__, "event_handlers", None)
+    return (
+        isinstance(handlers, dict)
+        and (handler := handlers.get(func.__name__)) is not None
+        and handler.fn is func
+    )
 
 
 def _base_state_type() -> type:
@@ -703,7 +743,7 @@ class EventHandler(EventActionsMixin):
                 f"`{owner.__qualname__}.{name}` stays a plain method; remove the "
                 "decorator."
             ),
-            deprecation_version="0.10.2",
+            deprecation_version="0.11.0",
             removal_version="1.0",
         )
 
@@ -780,7 +820,7 @@ class EventHandler(EventActionsMixin):
                     f"`{self.fn.__qualname__}` is called through a decorator "
                     "stacked above @rx.event; apply other decorators below it."
                 ),
-                deprecation_version="0.10.2",
+                deprecation_version="0.11.0",
                 removal_version="1.0",
             )
             return self.fn(*args, **kwargs)
@@ -2631,6 +2671,26 @@ def check_fn_match_arg_spec(
         raise EventFnArgMismatchError(msg)
 
 
+def _check_not_undecorated_state_method(value: Any, key: str | None) -> None:
+    """Reject a state method that explicit event handler mode left undecorated.
+
+    Args:
+        value: The value wired to the event trigger.
+        key: The name of the event trigger.
+
+    Raises:
+        EventHandlerValueError: If value is an undecorated state method.
+    """
+    if getattr(value, _UNDECORATED_STATE_METHOD_MARKER, False) is True:
+        from reflex_base.utils.exceptions import EventHandlerValueError
+
+        msg = (
+            f"{value.__qualname__} is wired to {key or 'an event trigger'} but is not an "
+            f"event handler. {_UNDECORATED_STATE_METHOD_HINT}"
+        )
+        raise EventHandlerValueError(msg)
+
+
 def event_sequence(events: Any) -> Sequence[Any]:
     """Get events as a sequence, wrapping a single event-like value in a list.
 
@@ -2672,11 +2732,14 @@ def call_event_fn(
         The event-like values from calling the function.
 
     Raises:
-        EventHandlerValueError: If the lambda returns an unusable value.
+        EventHandlerValueError: If fn is an undecorated state method or returns
+            an unusable value.
     """
     # Import here to avoid circular imports.
     from reflex_base.event import EventHandler, EventSpec
     from reflex_base.utils.exceptions import EventHandlerValueError
+
+    _check_not_undecorated_state_method(fn, key)
 
     parsed_args, _ = parse_args_spec(arg_spec)
 
@@ -2764,6 +2827,7 @@ def call_event_fn(
 
         # Make sure the event spec is valid.
         if not isinstance(e, (EventSpec, FunctionVar, EventVar)):
+            _check_not_undecorated_state_method(e, key)
             hint = ""
             if isinstance(e, VarOperationCall):
                 hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
@@ -3488,6 +3552,11 @@ class EventDecorator(Protocol):
 class EventNamespace:
     """A namespace for event related classes."""
 
+    # The re-exports are explicit aliases, so mypy reads `rx.event.EventSpec` as
+    # a type. A generic one is re-imported instead, so `rx.event.EventCallback[int]`
+    # is valid for every checker: pyright reads an explicit alias of a generic as
+    # already specialized, and mypy reads a plain assignment here as a variable.
+
     # Core Event Classes
     Event: TypeAlias = Event
     EventActionsMixin: TypeAlias = EventActionsMixin
@@ -3499,8 +3568,8 @@ class EventNamespace:
     LiteralEventVar: TypeAlias = LiteralEventVar
     EventChainVar: TypeAlias = EventChainVar
     LiteralEventChainVar: TypeAlias = LiteralEventChainVar
-    EventCallback: TypeAlias = EventCallback
-    LambdaEventCallback: TypeAlias = LambdaEventCallback
+    from reflex_base.event import EventCallback as EventCallback
+    from reflex_base.event import LambdaEventCallback as LambdaEventCallback
 
     # Javascript Event Classes
     JavascriptHTMLInputElement: TypeAlias = JavascriptHTMLInputElement
@@ -3513,23 +3582,26 @@ class EventNamespace:
     KeyInputInfo: TypeAlias = KeyInputInfo
     MouseEventInfo: TypeAlias = MouseEventInfo
     PointerEventInfo: TypeAlias = PointerEventInfo
-    IdentityEventReturn: TypeAlias = IdentityEventReturn
+    from reflex_base.event import IdentityEventReturn as IdentityEventReturn
 
     # File Upload
     FileUpload: TypeAlias = FileUpload
     UploadFilesChunk: TypeAlias = UploadFilesChunk
 
     # Type Aliases
-    EventType: TypeAlias = EventType
-    LAMBDA_OR_STATE: TypeAlias = LAMBDA_OR_STATE
+    from reflex_base.event import LAMBDA_OR_STATE as LAMBDA_OR_STATE
+    from reflex_base.event import EventType as EventType
+
     BASIC_EVENT_TYPES: TypeAlias = BASIC_EVENT_TYPES
-    IndividualEventType: TypeAlias = IndividualEventType
+    from reflex_base.event import IndividualEventType as IndividualEventType
 
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
     SUPERSEDES_MARKER = SUPERSEDES_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
+    _UNDECORATED_STATE_METHOD_MARKER = _UNDECORATED_STATE_METHOD_MARKER
+    _UNDECORATED_STATE_METHOD_HINT = _UNDECORATED_STATE_METHOD_HINT
     FORM_DATA = FORM_DATA
     FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
     upload_files = upload_files
@@ -3544,6 +3616,10 @@ class EventNamespace:
         resolve_upload_chunk_handler_param
     )
     _values_returned_from_event = staticmethod(_values_returned_from_event)
+    _is_bound_event_handler = staticmethod(_is_bound_event_handler)
+    _check_not_undecorated_state_method = staticmethod(
+        _check_not_undecorated_state_method
+    )
     _check_event_args_subclass_of_callback = staticmethod(
         _check_event_args_subclass_of_callback
     )
@@ -3607,36 +3683,27 @@ class EventNamespace:
             The wrapped function.
 
         Raises:
-            TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
+            TypeError: If background is True and the function is not a coroutine or async generator,
+                or the function is a handler already bound to a state. # noqa: DAR402
         """
 
-        def _build_event_actions():
-            """Build event_actions dict from decorator parameters.
+        def _explicit_event_actions() -> dict[str, Any]:
+            """Collect the event actions passed to the decorator.
 
             Returns:
-                Dict of event actions to apply, or empty dict if none specified.
+                Every action that is not None, False and 0 included.
             """
-            if not any([
-                stop_propagation,
-                prevent_default,
-                throttle,
-                debounce,
-                temporal,
-            ]):
-                return {}
-
-            event_actions = {}
-            if stop_propagation is not None:
-                event_actions["stopPropagation"] = stop_propagation
-            if prevent_default is not None:
-                event_actions["preventDefault"] = prevent_default
-            if throttle is not None:
-                event_actions["throttle"] = throttle
-            if debounce is not None:
-                event_actions["debounce"] = debounce
-            if temporal is not None:
-                event_actions["temporal"] = temporal
-            return event_actions
+            return {
+                key: value
+                for key, value in (
+                    ("stopPropagation", stop_propagation),
+                    ("preventDefault", prevent_default),
+                    ("throttle", throttle),
+                    ("debounce", debounce),
+                    ("temporal", temporal),
+                )
+                if value is not None
+            }
 
         def wrapper(func: Callable[..., Any]) -> EventCallback:
             if isinstance(func, (staticmethod, classmethod)):
@@ -3644,27 +3711,49 @@ class EventNamespace:
                 console.deprecate(
                     feature_name="@rx.event on a staticmethod or classmethod",
                     reason="The decorator has no effect there; remove it.",
-                    deprecation_version="0.10.2",
+                    deprecation_version="0.11.0",
                     removal_version="1.0",
                 )
                 return func  # pyright: ignore [reportReturnType]
-            if background is True:
-                if not inspect.iscoroutinefunction(
-                    func
-                ) and not inspect.isasyncgenfunction(func):
+            # A repeated @rx.event decorates the same function again: the
+            # markers accumulate on it and these options win where both set one.
+            inner_actions: Mapping[str, Any] = {}
+            registered = False
+            if isinstance(func, EventHandler):
+                registered = func.state is not None
+                if registered and "." in func.fn.__qualname__:
+                    # A method bound to a state: its function is that state's.
+                    msg = f"`{func.fn.__qualname__}` is already an event handler; decorate its function instead."
+                    raise TypeError(msg)
+                inner_actions = func.event_actions
+                func = func.fn
+            if background is not None:
+                if (
+                    background
+                    and not inspect.iscoroutinefunction(func)
+                    and not inspect.isasyncgenfunction(func)
+                ):
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
-                setattr(func, BACKGROUND_TASK_MARKER, True)
-            if supersedes is True:
-                setattr(func, SUPERSEDES_MARKER, True)
-            if getattr(func, "__name__", "").startswith("_"):
+                setattr(func, BACKGROUND_TASK_MARKER, background)
+            if supersedes is not None:
+                setattr(func, SUPERSEDES_MARKER, supersedes)
+            # A registered handler was checked before its rename, which
+            # starts with "_" for a module named like `__main__`.
+            if not registered and getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)
 
             # The markers stay on the function: a mixin's handler is copied
             # per concrete state from its function, and the handler reads
             # them from there.
-            event_actions = _build_event_actions()
+            event_actions = _explicit_event_actions()
+            if inner_actions:
+                # An explicit False or 0 turns off the inner decorator's action.
+                event_actions = {**inner_actions, **event_actions}
+            elif not any(event_actions.values()):
+                # Alone, actions that are all False or 0 are no actions.
+                event_actions = {}
             if event_actions:
                 setattr(func, EVENT_ACTIONS_MARKER, event_actions)
 
@@ -3691,18 +3780,22 @@ class EventNamespace:
                             f"`{qualname}` stays a plain function and is not an "
                             "event handler; remove the decorator."
                         ),
-                        deprecation_version="0.10.2",
+                        deprecation_version="0.11.0",
                         removal_version="1.0",
                     )
                     return func  # pyright: ignore [reportReturnType]
-                name = (
-                    (func.__module__ + "." + qualname)
-                    .replace(".", "_")
-                    .replace("<locals>", "_")
-                    .removeprefix("_")
-                )
-                object.__setattr__(func, "__name__", name)
-                object.__setattr__(func, "__qualname__", name)
+                if registered:
+                    # Already renamed: re-register it under the same name.
+                    name = qualname
+                else:
+                    name = (
+                        (func.__module__ + "." + qualname)
+                        .replace(".", "_")
+                        .replace("<locals>", "_")
+                        .removeprefix("_")
+                    )
+                    object.__setattr__(func, "__name__", name)
+                    object.__setattr__(func, "__qualname__", name)
                 state_cls._add_event_handler(name, func)
                 return getattr(state_cls, name)
 
