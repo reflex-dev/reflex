@@ -41,17 +41,19 @@ StateStoreContext.displayName = "StateStoreContext";
 export function useStateContext(name, fields) {
   const store = useContext(StateStoreContext);
   // The compiler passes a new array literal on each render, so key on content.
+  // Field names are Python identifiers, so they never contain a comma.
   const fieldsKey = fields?.join(",");
   const [subscribe, getSnapshot] = useMemo(() => {
+    const fieldNames = fieldsKey?.split(",");
     let last;
     return [
       (listener) => store.subscribe(name, listener),
       () => {
         const next = store.getSnapshot(name) ?? app.initialState?.[name];
         if (
-          fields !== undefined &&
+          fieldNames !== undefined &&
           last !== undefined &&
-          fields.every((field) => Object.is(last[field], next[field]))
+          fieldNames.every((field) => Object.is(last[field], next[field]))
         ) {
           return last;
         }
