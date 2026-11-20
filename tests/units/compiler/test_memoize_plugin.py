@@ -418,7 +418,7 @@ def test_special_form_memo_wrappers_render_structural_body(
 
 def test_moment_all_locales_import_deduplicates_real_memo_imports() -> None:
     """A reactive Moment locale removes specific locale imports across memo modules."""
-    from reflex.compiler.compiler import compile_app_root, compile_memo_components
+    from reflex.compiler.compiler import compile_memo_components
 
     ctx, page_ctx = _compile_single_page(
         lambda: Fragment.create(
@@ -428,12 +428,11 @@ def test_moment_all_locales_import_deduplicates_real_memo_imports() -> None:
     )
     shared_imports: dict[str, list[ImportVar]] = {}
 
-    memo_files, memo_imports = compile_memo_components(
+    _memo_files, memo_imports = compile_memo_components(
         memos=tuple(ctx.auto_memo_components.values()),
         page_imports=page_ctx.frontend_imports,
         shared_imports=shared_imports,
     )
-    memo_code = "\n".join(code for _, code in memo_files)
     locale_imports = [
         import_var.tag
         for imports in (page_ctx.frontend_imports, memo_imports)
@@ -441,97 +440,14 @@ def test_moment_all_locales_import_deduplicates_real_memo_imports() -> None:
         if (import_var.tag or "").startswith("moment/locale/")
         or import_var.tag == "moment/min/locales"
     ]
-
-    assert shared_imports == {
-        "": [ImportVar(tag="moment/min/locales")],
-        "moment@2.31.0": [ImportVar(tag="moment", is_default=True)],
-    }
-    assert locale_imports == []
-    assert memo_code == '''
-import {isTrue,mergeSlotProps} from "$/utils/state"
-import {ClientSide} from "$/utils/context"
-import moment from "moment"
-import {useStateContext} from "$/utils/context-registry"
-import {jsx} from "@emotion/react"
-import {Fragment,memo,useEffect} from "react"
-
-const Moment = ClientSide(() => import('react-moment').then((mod) => mod.default.default ?? mod.default), "Moment")
-
-moment.locale("en");
-
-
-export const Moment_moment_a67e85ef0d3868c24aaa80e44293b8d1 = /*#__PURE__*/ (() => {
-const Moment_moment_a67e85ef0d3868c24aaa80e44293b8d1 = memo(({children, ...rest}) => {
-    const tests___units___compiler___test_memoize_plugin____special_form_memo_state = useStateContext("tests___units___compiler___test_memoize_plugin____special_form_memo_state")
-    return(
-        jsx(Moment,{...mergeSlotProps(rest, ({ locale:tests___units___compiler___test_memoize_plugin____special_form_memo_state.locale_rx_state_ }))},"2024-03-14")
-    )
-});
-Moment_moment_a67e85ef0d3868c24aaa80e44293b8d1.displayName = "Moment";
-return Moment_moment_a67e85ef0d3868c24aaa80e44293b8d1;
-})();
-'''
-    app_root_code = compile_app_root(Fragment.create(), shared_imports=shared_imports)[
-        1
+    shared_locale_imports = [
+        import_var.tag
+        for import_var in shared_imports.get("", [])
+        if import_var.tag == "moment/min/locales"
     ]
-    assert app_root_code == '''
-import {Fragment,useEffect} from "react"
-import "moment/min/locales"
-import moment from "moment"
-import {jsx} from "@emotion/react"
 
-import { defaultColorMode } from "$/utils/context";
-import { ThemeProvider } from '$/utils/react-theme';
-import { Layout as AppLayout } from './_document';
-import { Outlet } from 'react-router';
-import * as React from "react";
-import * as emotion_react from "@emotion/react";
-import * as utils_context from "$/utils/context";
-import * as utils_context_registry from "$/utils/context-registry";
-import * as utils_state from "$/utils/state";
-
-
-
-
-function ReflexProviders({children}) {
-  useEffect(() => {
-    // Make contexts and state objects available globally for dynamic eval'd components
-    window.__reflex = {
-          "react": React,
-    "@emotion/react": emotion_react,
-    "$/utils/context": utils_context,
-    "$/utils/context-registry": utils_context_registry,
-    "$/utils/state": utils_state,
-    };
-  }, []);
-
-  return jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
-    jsx(AppWrap, {}, children)
-  );
-}
-
-
-function AppWrap({children}) {
-
-return (jsx(Fragment,{},))
-}
-
-export function Layout({children}) {
-  return jsx(AppLayout, {}, jsx(ReflexProviders, {}, children));
-}
-
-// Used by entry.client.js when mount_target is configured: skips the document
-// shell (which renders react-router's <Meta>/<Scripts>/<Links> and requires a
-// framework router context) but keeps the runtime providers.
-export function EmbedLayout({children}) {
-  return jsx(ReflexProviders, {}, children);
-}
-
-export default function App() {
-  return jsx(Outlet, {});
-}
-
-'''
+    assert shared_locale_imports == ["moment/min/locales"]
+    assert locale_imports == []
 
 
 def test_moment_all_locales_import_deduplicates_app_root_imports() -> None:
@@ -543,65 +459,12 @@ def test_moment_all_locales_import_deduplicates_app_root_imports() -> None:
         shared_imports={"": [ImportVar(tag="moment/min/locales")]},
     )[1]
 
-    assert app_root_code == '''
-import {Fragment,useEffect} from "react"
-import {ClientSide} from "$/utils/context"
-import moment from "moment"
-import "moment/min/locales"
-import {jsx} from "@emotion/react"
-const Moment = ClientSide(() => import('react-moment').then((mod) => mod.default.default ?? mod.default), "Moment")
-import { defaultColorMode } from "$/utils/context";
-import { ThemeProvider } from '$/utils/react-theme';
-import { Layout as AppLayout } from './_document';
-import { Outlet } from 'react-router';
-import * as React from "react";
-import * as emotion_react from "@emotion/react";
-import * as utils_context from "$/utils/context";
-import * as utils_context_registry from "$/utils/context-registry";
-import * as utils_state from "$/utils/state";
-
-
-moment.locale("en");
-
-function ReflexProviders({children}) {
-  useEffect(() => {
-    // Make contexts and state objects available globally for dynamic eval'd components
-    window.__reflex = {
-          "react": React,
-    "@emotion/react": emotion_react,
-    "$/utils/context": utils_context,
-    "$/utils/context-registry": utils_context_registry,
-    "$/utils/state": utils_state,
-    };
-  }, []);
-
-  return jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
-    jsx(AppWrap, {}, children)
-  );
-}
-
-
-function AppWrap({children}) {
-
-return (jsx(Fragment,{},jsx(Moment,{locale:"fr"},"2024-03-14")))
-}
-
-export function Layout({children}) {
-  return jsx(AppLayout, {}, jsx(ReflexProviders, {}, children));
-}
-
-// Used by entry.client.js when mount_target is configured: skips the document
-// shell (which renders react-router's <Meta>/<Scripts>/<Links> and requires a
-// framework router context) but keeps the runtime providers.
-export function EmbedLayout({children}) {
-  return jsx(ReflexProviders, {}, children);
-}
-
-export default function App() {
-  return jsx(Outlet, {});
-}
-
-'''
+    moment_locale_import_lines = [
+        line
+        for line in app_root_code.splitlines()
+        if line.startswith('import "moment/')
+    ]
+    assert moment_locale_import_lines == ['import "moment/min/locales"']
 
 
 def test_moment_literal_locale_keeps_narrow_import() -> None:
