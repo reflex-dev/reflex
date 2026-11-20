@@ -742,7 +742,7 @@ class LiteralArrayVar(
         return _literal_elements_var_data(value)
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
+    def _cached_get_all_var_data(self) -> VarData | None:
         """Get all the VarData associated with the Var.
 
         Returns:
@@ -1729,7 +1729,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         return "(" + "+".join(list_of_strs_filtered) + ")"
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
+    def _cached_get_all_var_data(self) -> VarData | None:
         """Get all the VarData asVarDatae Var.
 
         Returns:
@@ -2402,7 +2402,7 @@ class LiteralRangeVar(CachedVarOperation, LiteralVar[Sequence[int]], RangeVar):
         return f"Array.from({{ length: Math.ceil(({self._var_value.stop!s} - {self._var_value.start!s}) / {self._var_value.step!s}) }}, (_, i) => {self._var_value.start!s} + i * {self._var_value.step!s})"
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
+    def _cached_get_all_var_data(self) -> VarData | None:
         """Get all the var data.
 
         Returns:

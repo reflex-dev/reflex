@@ -364,7 +364,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         return f"({func_expr}{call}{', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
+    def _cached_get_all_var_data(self) -> VarData | None:
         """Get all the var data associated with the var.
 
         Returns:

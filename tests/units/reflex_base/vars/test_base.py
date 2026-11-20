@@ -466,7 +466,7 @@ def test_cached_var_attribute_error_is_chained() -> None:
             return "broken"
 
         @cached_property_no_lock
-        def _cached_get_all_var_data(self):  # ty:ignore[incompatible-attribute-override]
+        def _cached_get_all_var_data(self):
             msg = "the real error message"
             raise AttributeError(msg)
 

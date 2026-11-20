@@ -123,7 +123,7 @@ class LiteralColorVar(CachedVarOperation, LiteralVar[Color], ColorVar):
         )
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:  # ty:ignore[incompatible-attribute-override]
+    def _cached_get_all_var_data(self) -> VarData | None:
         """Get all the var data.
 
         Returns:
