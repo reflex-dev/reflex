@@ -155,7 +155,10 @@ def test_module_files_keeps_runtime_files_beside_declarations(tmp_path: Path):
         'import { help } from "./helpers";\n'
         'import { format } from "./format.js";\n'
         'import type { Count } from "./types";\n'
+        'import type { Shape } from "./shapes";\n'
     )
+    (tmp_path / "shapes").mkdir()
+    (tmp_path / "shapes" / "index.d.ts").write_text("export type Shape = string;\n")
     (tmp_path / "helpers.js").write_text("export const help = 1;\n")
     (tmp_path / "helpers.d.ts").write_text("export declare const help: number;\n")
     (tmp_path / "format.js").write_text("export const format = 1;\n")
@@ -168,4 +171,5 @@ def test_module_files_keeps_runtime_files_beside_declarations(tmp_path: Path):
         (tmp_path / "format.js").resolve(),
         (tmp_path / "format.d.ts").resolve(),
         (tmp_path / "types.d.ts").resolve(),
+        (tmp_path / "shapes" / "index.d.ts").resolve(),
     ]

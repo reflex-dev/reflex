@@ -612,7 +612,8 @@ def _resolve_declaration(directory: Path, specifier: str) -> Path | None:
     """Find the declaration file that types what a relative import names.
 
     TypeScript reads ``helpers.d.ts`` for ``./helpers`` and ``./helpers.js``
-    alike, beside the runtime file or, for a types-only import, alone.
+    alike, and ``types/index.d.ts`` for a directory ``./types``, beside the
+    runtime file or, for a types-only import, alone.
 
     Args:
         directory: The importing file's directory.
@@ -623,8 +624,11 @@ def _resolve_declaration(directory: Path, specifier: str) -> Path | None:
     """
     target = directory / strip_query(specifier)
     stem = target.with_suffix("") if target.suffix in _RESOLVE_EXTENSIONS else target
-    declaration = stem.with_name(stem.name + _DECLARATION_EXTENSION)
-    return declaration if declaration.is_file() else None
+    candidates = (
+        stem.with_name(stem.name + _DECLARATION_EXTENSION),
+        target / f"index{_DECLARATION_EXTENSION}",
+    )
+    return next((candidate for candidate in candidates if candidate.is_file()), None)
 
 
 def module_files(path: Path) -> list[Path]:
