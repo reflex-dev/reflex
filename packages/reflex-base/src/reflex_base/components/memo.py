@@ -50,7 +50,7 @@ from reflex_base.utils import console, format, memo_paths
 from reflex_base.utils.deterministic_hash import deterministic_hash
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
-from reflex_base.vars import VarData
+from reflex_base.vars import VarData, scoped_var_data
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import (
     ArgsFunctionOperation,
@@ -355,6 +355,10 @@ class MemoComponentDefinition(MemoDefinition):
     # optimizer's wrappers leave it False so they stay semantically invisible
     # -- notably to client state, which opens a scope per instance boundary.
     is_instance_boundary: bool = False
+    # Local client state names used by the components the compiler generated
+    # inside this memo's body (see ``scope_memo_body_hooks``). Their hooks left
+    # the body, but the scope this memo opens still has to own the names.
+    scoped_client_state_names: tuple[str, ...] = ()
     # Set for definitions the compiler's auto-memoize pass creates (see
     # ``create_passthrough_component_memo``). Instances of such a definition
     # are the auto-memo boundary itself, so the pass must not wrap them again.
@@ -954,7 +958,9 @@ def _rest_placeholder(name: str) -> RestProp:
     Returns:
         The placeholder rest prop.
     """
-    return RestProp(_js_expr=name, _var_type=dict[str, Any])
+    return RestProp(
+        _js_expr=name, _var_type=dict[str, Any], _var_data=scoped_var_data(name)
+    )
 
 
 def _var_placeholder(
@@ -963,6 +969,10 @@ def _var_placeholder(
     runtime_value: Any | None = None,
 ) -> Var:
     """Create a placeholder Var for a memo parameter.
+
+    Like a loop variable, the placeholder names itself as a dependency, so a
+    component generated inside the memo body can receive the parameter as a
+    prop.
 
     Args:
         name: The JavaScript identifier.
@@ -978,8 +988,14 @@ def _var_placeholder(
             if isinstance(runtime_value, Var)
             else LiteralVar.create(runtime_value)._var_type
         )
-        return Var(_js_expr=name, _var_type=runtime_type).guess_type()
-    return Var(_js_expr=name, _var_type=_annotation_inner_type(annotation)).guess_type()
+        return Var(
+            _js_expr=name, _var_type=runtime_type, _var_data=scoped_var_data(name)
+        ).guess_type()
+    return Var(
+        _js_expr=name,
+        _var_type=_annotation_inner_type(annotation),
+        _var_data=scoped_var_data(name),
+    ).guess_type()
 
 
 def _event_handler_placeholder(placeholder_name: str, args_spec: Any) -> Callable:
@@ -999,7 +1015,9 @@ def _event_handler_placeholder(placeholder_name: str, args_spec: Any) -> Callabl
     Returns:
         A plain callable suitable as a memo-function placeholder.
     """
-    prop_callback = Var(_js_expr=placeholder_name).to(FunctionVar)
+    prop_callback = Var(
+        _js_expr=placeholder_name, _var_data=scoped_var_data(placeholder_name)
+    ).to(FunctionVar)
     primary_spec = args_spec[0] if isinstance(args_spec, tuple) else args_spec
 
     def _placeholder(*args: Any) -> Any:
