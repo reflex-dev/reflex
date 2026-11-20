@@ -2369,8 +2369,11 @@ def test_into_component_returns_components_as_is():
 @pytest.mark.parametrize(
     ("component", "message"),
     [
-        (None, "Expected a Component or callable"),
-        (lambda: None, "Expected a Component, got None"),
+        (
+            None,
+            "Expected a Component or callable, got None of type <class 'NoneType'>",
+        ),
+        (lambda: None, "Expected a Component, got None of type <class 'NoneType'>"),
     ],
 )
 def test_into_component_rejects_non_renderables(component, message: str):
@@ -2378,10 +2381,11 @@ def test_into_component_rejects_non_renderables(component, message: str):
 
     Args:
         component: The value to convert.
-        message: The expected start of the error message.
+        message: The expected error message.
     """
-    with pytest.raises(TypeError, match=message):
+    with pytest.raises(TypeError) as err:
         compiler.into_component(component)
+    assert str(err.value) == message
 
 
 class _RefsDecl(rx.Fragment):

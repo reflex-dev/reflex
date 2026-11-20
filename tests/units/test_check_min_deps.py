@@ -92,10 +92,9 @@ def test_ty_errors_delta_cancels_shared_noise():
 
 
 def test_ty_config_mirrors_root_rule_severities():
-    config = check_min_deps._ty_config()
-
-    assert config.startswith("[rules]\n")
-    assert 'incompatible-method-override = "ignore"' in config
+    assert check_min_deps._ty_config() == (
+        '[rules]\nincompatible-method-override = "ignore"\n'
+    )
 
 
 @pytest.mark.parametrize(
