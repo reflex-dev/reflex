@@ -590,6 +590,103 @@ def test_api_transformer_lifespan_also_registered_warns(
     assert ("runs twice" in caplog.text) is also_registered
 
 
+@pytest.mark.parametrize(
+    ("inner_kind", "with_outer"),
+    [("fastapi", False), ("starlette", True), ("empty", False)],
+    ids=["fastapi-then-middleware", "middleware-between-apps", "default-lifespan"],
+)
+def test_api_transformer_lifespan_warning_names_wrapped_transformer(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+    inner_kind: str,
+    with_outer: bool,
+):
+    """Identify the custom lifespan behind middleware that raises on startup.
+
+    Args:
+        mocker: The mock fixture for skipping frontend compilation.
+        caplog: The log capture fixture.
+        inner_kind: Wrapped app and lifespan configuration.
+        with_outer: Whether another Starlette app mounts the wrapper.
+    """
+    events: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def inner_lifespan(app: Starlette):
+        """Record whether the wrapped startup hook is reached."""
+        events.append("inner startup")
+        yield
+
+    @contextlib.asynccontextmanager
+    async def outer_lifespan(app: Starlette):
+        """Record startup of a transformer with a separate lifespan target."""
+        events.append("outer startup")
+        yield
+
+    wrappers: list[ASGIApp] = []
+
+    def wrap(app: ASGIApp) -> ASGIApp:
+        """Wrap an app with middleware that assumes every scope has a path.
+
+        Args:
+            app: The ASGI app to wrap.
+
+        Returns:
+            The middleware wrapping the app.
+        """
+
+        async def middleware(scope: Scope, receive: Receive, send: Send) -> None:
+            """Read the HTTP path before calling the wrapped app."""
+            _ = scope["path"]
+            await app(scope, receive, send)
+
+        wrappers.append(middleware)
+        return middleware
+
+    if inner_kind == "fastapi":
+        inner = pytest.importorskip("fastapi").FastAPI(lifespan=inner_lifespan)
+    else:
+        inner = Starlette(lifespan=None if inner_kind == "empty" else inner_lifespan)
+    app = App(
+        api_transformer=[inner, wrap, Starlette(lifespan=outer_lifespan)]
+        if with_outer
+        else [inner, wrap]
+    )
+    mocker.patch.object(app, "_compile")
+
+    with TestClient(app()):
+        assert events == (["outer startup"] if with_outer else [])
+
+    (wrapper,) = wrappers
+    affected = (
+        f" The lifespan of api_transformer {inner!r} ({inner_lifespan!r}) "
+        "may have been skipped."
+        if inner_kind != "empty"
+        else ""
+    )
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.app_mixins.lifespan"
+    ]
+    assert [(record.levelno, record.getMessage()) for record in records] == [
+        (
+            logging.WARNING,
+            (
+                f"ASGI app {wrapper!r} raised during lifespan startup. "
+                "Continuing without its lifespan. If this is HTTP middleware, "
+                "pass non-HTTP scopes through "
+                f"(check scope['type'] before reading scope['path']).{affected}"
+            ),
+        )
+    ]
+    exc_info = records[0].exc_info
+    assert exc_info is not None
+    error = exc_info[1]
+    assert isinstance(error, KeyError)
+    assert error.args == ("path",)
+
+
 def test_api_transformer_lifespan_startup_failure_stops_the_app(
     mocker: MockerFixture,
 ):
