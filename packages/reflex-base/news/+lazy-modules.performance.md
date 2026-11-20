@@ -1,0 +1,1 @@
+On Python 3.15 and newer, the console's Rich progress, prompt and table modules and the sitemap plugin's XML module are only imported once they are used (PEP 810 lazy imports), so the `reflex` CLI starts faster. Older Python versions are unaffected.

@@ -1,5 +1,8 @@
 """Sitemap plugin for Reflex."""
 
+# Imported on first use on Python 3.15+ (PEP 810); keep them out of import-time code.
+__lazy_modules__ = ["xml.etree.ElementTree"]
+
 import datetime
 import logging
 from collections.abc import Sequence

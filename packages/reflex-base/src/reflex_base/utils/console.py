@@ -9,6 +9,9 @@ in :mod:`reflex_base.utils.log`. The interactive Rich features
 
 from __future__ import annotations
 
+# Imported on first use on Python 3.15+ (PEP 810); keep them out of import-time code.
+__lazy_modules__ = ["rich.progress", "rich.prompt", "rich.table"]
+
 import contextlib
 import datetime
 import time

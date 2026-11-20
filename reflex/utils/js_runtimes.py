@@ -1,5 +1,8 @@
 """This module provides utilities for managing JavaScript runtimes like Node.js and Bun."""
 
+# Imported on first use on Python 3.15+ (PEP 810); keep them out of import-time code.
+__lazy_modules__ = ["packaging"]
+
 import functools
 import json
 import logging

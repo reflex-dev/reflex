@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+# Imported on first use on Python 3.15+ (PEP 810); keep them out of import-time code.
+__lazy_modules__ = ["reflex.compiler", "reflex.compiler.compiler"]
+
 import asyncio
 import contextlib
 import copy
