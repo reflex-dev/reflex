@@ -152,6 +152,50 @@ def test_serialize_expired_sqlalchemy_model_warns_only_in_dev(
         )
 
 
+@pytest.mark.parametrize("expired_attribute", [None, "name"], ids=["loaded", "partial"])
+def test_serialize_loaded_sqlalchemy_model_does_not_warn_about_expiration(
+    caplog, monkeypatch, expired_attribute: str | None
+) -> None:
+    """Avoid expiration warnings for loaded and partially expired models.
+
+    Args:
+        caplog: Fixture for inspecting serialization warnings.
+        monkeypatch: Fixture for selecting development mode.
+        expired_attribute: Optional mapped column to expire before serialization.
+    """
+
+    class LoadedBase(DeclarativeBase):
+        pass
+
+    class LoadedUser(LoadedBase):
+        __tablename__ = "loaded_user_warning_check"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        name: Mapped[str]
+
+    engine = create_engine("sqlite://")
+    LoadedBase.metadata.create_all(engine)
+    with Session(engine, expire_on_commit=False) as session:
+        user = LoadedUser(name="Ada")
+        session.add(user)
+        session.commit()
+        if expired_attribute is not None:
+            session.expire(user, [expired_attribute])
+
+        monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
+        with caplog.at_level("WARNING", logger=serializers.__name__):
+            result = serializers.serialize_sqlalchemy_base(user)
+
+    expected = {"id": 1} if expired_attribute else {"id": 1, "name": "Ada"}
+    assert result == expected
+    assert not [
+        record
+        for record in caplog.records
+        if record.name == serializers.__name__ and "LoadedUser" in record.message
+    ]
+    engine.dispose()
+
+
 def test_declarative_base_serializer_handles_bidirectional_relationships():
     """Serialize bidirectional relationships without circular references."""
 
