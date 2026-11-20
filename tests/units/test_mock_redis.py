@@ -28,3 +28,24 @@ async def test_pubsub_listen_yields_pmessage_for_pattern_without_handler():
         "channel": b"__keyspace@1__:foo1",
         "data": b"set",
     }
+
+
+async def test_publish_reaches_pattern_subscribers():
+    """A published message is delivered to a pubsub whose pattern matches the channel."""
+    redis = mock_redis()
+    async with redis.pubsub() as pubsub:
+        await pubsub.psubscribe("channel:foo*")
+        messages = pubsub.listen()
+        confirmation = await anext(messages)
+        assert confirmation["type"] == "psubscribe"
+
+        await redis.publish("channel:bar", b"skipped")
+        await redis.publish("channel:foo1", b"payload")
+        message = await asyncio.wait_for(anext(messages), timeout=1)
+
+    assert message == {
+        "type": "pmessage",
+        "pattern": b"channel:foo*",
+        "channel": b"channel:foo1",
+        "data": b"payload",
+    }

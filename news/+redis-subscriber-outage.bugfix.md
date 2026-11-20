@@ -1,0 +1,1 @@
+Fix state updates produced on another backend worker not reaching already-connected clients after a Redis outage longer than a few seconds. The Redis pub/sub subscribers now retry without a limit (after 1 second, doubling up to 30), log an outage once when it starts and once when it ends, and restore the worker's socket records that expired in the meantime.

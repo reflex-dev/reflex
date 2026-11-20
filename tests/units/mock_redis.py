@@ -154,6 +154,10 @@ def mock_redis() -> Redis:
         await redis_mock.delete(key)
         return value
 
+    async def mock_publish(channel: KeyT, message: bytes) -> None:  # noqa: RUF029
+        # Unlike redis, the subscriptions that receive the message are not counted.
+        _event_log_append_notify({"channel": _key_bytes(channel), "data": message})
+
     async def mock_pexpire(key: KeyT, px: int, xx: bool = False) -> bool:  # noqa: RUF029
         _expire_keys()
         key = _key_bytes(key)
@@ -325,6 +329,7 @@ def mock_redis() -> Redis:
     redis_mock.srem = mock_srem
     redis_mock.scard = mock_scard
     redis_mock.pexpire = mock_pexpire
+    redis_mock.publish = mock_publish
     redis_mock.pipeline = pipeline
     redis_mock.eval = mock_eval
     redis_mock.pttl = pttl

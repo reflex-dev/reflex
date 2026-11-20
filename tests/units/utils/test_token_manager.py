@@ -1,19 +1,27 @@
 """Unit tests for TokenManager implementations."""
 
 import asyncio
+import dataclasses
+import logging
+import math
 import pickle
 import time
-from collections.abc import Callable, Generator
+from collections.abc import AsyncGenerator, Callable, Generator
 from contextlib import asynccontextmanager
-from typing import cast
-from unittest.mock import AsyncMock, Mock, patch
+from typing import Any, cast
+from unittest.mock import AsyncMock, Mock, call, patch
 
 import pytest
+from redis.asyncio import Redis
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import ResponseError
 
 from reflex import config
 from reflex.app import EventNamespace
 from reflex.istate.data import RouterData
 from reflex.state import StateUpdate
+from reflex.utils import token_manager
+from reflex.utils.tasks import ensure_task
 from reflex.utils.token_manager import (
     LocalTokenManager,
     RedisTokenManager,
@@ -728,6 +736,536 @@ async def test_socket_record_subscriber_restores_deleted_live_record():
     finally:
         await manager.close()
     assert pickle.loads(cast("bytes", await redis.get(key))) == record
+
+
+async def test_restore_socket_records_adopts_newer_records(
+    caplog: pytest.LogCaptureFixture,
+):
+    """A restore writes missing records back and adopts newer ones it finds instead.
+
+    Args:
+        caplog: The pytest log capture fixture.
+    """
+    redis = mock_redis()
+    manager = RedisTokenManager(redis)
+    key = manager._get_redis_key
+    own = {
+        token: SocketRecord(instance_id=manager.instance_id, sid=f"sid-{token}")
+        for token in ("lost", "kept", "claimed", "vanished")
+    }
+    foreign = SocketRecord(instance_id="other-instance", sid="sid-foreign")
+    newer = {
+        token: SocketRecord(instance_id="other-instance", sid=f"sid-newer-{token}")
+        for token in ("claimed", "vanished")
+    }
+    for token, record in {**own, "foreign": foreign}.items():
+        manager.token_to_socket[token] = record
+        manager.sid_to_token[record.sid] = token
+    for token, record in {"kept": own["kept"], **newer}.items():
+        await redis.set(key(token), pickle.dumps(record))
+    real_pipeline = redis.pipeline
+
+    def pipeline(transaction: bool = True) -> Any:
+        """Make the newer record of "vanished" disappear after the round trip.
+
+        Args:
+            transaction: Passed on to the mock pipeline.
+
+        Returns:
+            The mock pipeline.
+        """
+        restore: Any = real_pipeline(transaction=transaction)
+        execute = restore.execute
+
+        async def execute_then_disconnect() -> list[Any]:
+            results = await execute()
+            # Its socket on the other instance disconnects before the read.
+            await redis.delete(key("vanished"))
+            return results
+
+        restore.execute = execute_then_disconnect
+        return restore
+
+    redis.pipeline = pipeline  # pyright: ignore[reportAttributeAccessIssue]
+    with patch.object(
+        manager, "_get_token_owner", wraps=manager._get_token_owner
+    ) as get_token_owner:
+        await manager._restore_socket_records()
+
+        # Only the records that differ from this instance's are read again.
+        assert get_token_owner.await_args_list == [
+            call("claimed", refresh=True),
+            call("vanished", refresh=True),
+        ]
+        assert await redis.get(key("lost")) == pickle.dumps(own["lost"])
+        assert redis._internals["expire_times"][key("lost").encode()] > time.monotonic()  # pyright: ignore[reportAttributeAccessIssue]
+        assert await redis.get(key("kept")) == pickle.dumps(own["kept"])
+        assert await redis.get(key("claimed")) == pickle.dumps(newer["claimed"])
+        assert await redis.get(key("vanished")) is None
+        assert await redis.get(key("foreign")) is None
+        assert manager.token_to_socket == {
+            **own,
+            "claimed": newer["claimed"],
+            "foreign": foreign,
+        }
+        assert manager.sid_to_token == {
+            "sid-lost": "lost",
+            "sid-kept": "kept",
+            "sid-newer-claimed": "claimed",
+            "sid-vanished": "vanished",
+            "sid-foreign": "foreign",
+        }
+
+        # The socket that lost the claimed token cannot delete the newer record.
+        await manager.disconnect_token("claimed", "sid-claimed")
+        assert await redis.get(key("claimed")) == pickle.dumps(newer["claimed"])
+
+        # A restore that fails is logged once and reads nothing back.
+        failing_pipeline = Mock()
+        failing_pipeline.execute = AsyncMock(
+            side_effect=RedisConnectionError("redis down")
+        )
+        redis.pipeline = Mock(return_value=failing_pipeline)  # pyright: ignore[reportAttributeAccessIssue]
+        await manager._restore_socket_records()
+        assert get_token_owner.await_count == 2
+
+    assert [
+        (record.levelname, record.getMessage())
+        for record in caplog.records
+        if record.name == "reflex.utils.token_manager"
+    ] == [("ERROR", "Redis error restoring socket records: redis down")]
+    assert manager.token_to_socket["vanished"] == own["vanished"]
+
+
+@dataclasses.dataclass
+class RedisOutage:
+    """Switch that makes the subscribers of a mock redis fail."""
+
+    # Raised by config_set, psubscribe and listen until the limit is reached.
+    error: Exception | None = None
+    # How many times the error is raised before redis works again.
+    limit: float = math.inf
+    # How many times the error was raised.
+    failures: int = 0
+    # The most recently opened pubsub.
+    pubsub: Any = None
+
+
+def breakable_pubsub(redis: Redis) -> RedisOutage:
+    """Let a test take the pubsub of a mock redis down.
+
+    During an outage config_set and psubscribe raise its error, and listen
+    raises it in place of its next message, as redis-py does when the server
+    cannot be reached.
+
+    Args:
+        redis: The mock redis client to patch.
+
+    Returns:
+        The switch controlling the outage.
+    """
+    outage = RedisOutage()
+    real_pubsub = redis.pubsub
+    # No token is connected elsewhere, so link_token_to_sid keeps the token.
+    redis.exists = AsyncMock(return_value=False)  # pyright: ignore[reportAttributeAccessIssue]
+
+    def fail() -> None:
+        if outage.error is not None and outage.failures < outage.limit:
+            outage.failures += 1
+            raise outage.error
+
+    async def config_set(name: str, value: str) -> None:  # noqa: RUF029
+        fail()
+
+    @asynccontextmanager
+    async def pubsub() -> AsyncGenerator[Any, None]:
+        async with real_pubsub() as pubsub_mock:
+            real_psubscribe, real_listen = pubsub_mock.psubscribe, pubsub_mock.listen
+
+            async def psubscribe(*patterns: str) -> None:
+                fail()
+                await real_psubscribe(*patterns)
+
+            async def listen() -> AsyncGenerator[dict[str, Any], None]:
+                async for message in real_listen():
+                    fail()
+                    yield message
+
+            pubsub_mock.psubscribe = psubscribe  # pyright: ignore[reportAttributeAccessIssue]
+            pubsub_mock.listen = listen
+            outage.pubsub = pubsub_mock
+            yield pubsub_mock
+
+    redis.config_set = config_set  # pyright: ignore[reportAttributeAccessIssue]
+    redis.pubsub = pubsub  # pyright: ignore[reportAttributeAccessIssue]
+    return outage
+
+
+def forget(redis: Redis, key: str) -> None:
+    """Drop a key from a mock redis without a keyspace notification.
+
+    This is what a subscriber sees when a key expires while it is disconnected.
+
+    Args:
+        redis: The mock redis client.
+        key: The key to drop.
+    """
+    for internal in ("keys", "expire_times"):
+        redis._internals[internal].pop(key.encode(), None)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+async def wait_until(condition: Callable[[], bool], timeout: float = 5.0) -> None:
+    """Poll until a condition holds.
+
+    Args:
+        condition: The condition to wait for.
+        timeout: The maximum time to wait in seconds.
+    """
+    async with asyncio.timeout(timeout):
+        while not condition():  # noqa: ASYNC110
+            await asyncio.sleep(0.001)
+
+
+def subscriptions(redis: Redis, pattern: str) -> int:
+    """Count the subscriptions made to a pattern on a mock redis.
+
+    Args:
+        redis: The mock redis client.
+        pattern: The subscribed pattern.
+
+    Returns:
+        How many times the pattern was subscribed to.
+    """
+    return redis._internals["event_log"].count({  # pyright: ignore[reportAttributeAccessIssue]
+        "channel": b"psubscribe",
+        "data": pattern.encode(),
+    })
+
+
+def subscriber_logs(caplog: pytest.LogCaptureFixture) -> list[tuple[str, str, str]]:
+    """Get every record logged by the subscriber tasks and the token manager.
+
+    Args:
+        caplog: The pytest log capture fixture.
+
+    Returns:
+        The (logger name, level name, message) triples, in log order.
+    """
+    return [
+        (record.name, record.levelname, record.getMessage())
+        for record in caplog.records
+        if record.name in ("reflex.utils.tasks", "reflex.utils.token_manager")
+    ]
+
+
+def outage_logs(subscriber: str, error: str) -> list[tuple[str, str, str]]:
+    """Get the records a subscriber task logs over one outage.
+
+    Args:
+        subscriber: The name of the subscriber's coroutine function.
+        error: The message of the first error of the outage.
+
+    Returns:
+        The record for the start of the outage and the record for its end.
+    """
+    return [
+        (
+            "reflex.utils.tasks",
+            "ERROR",
+            f"{subscriber}: task error, retrying until it recovers: {error}",
+        ),
+        ("reflex.utils.tasks", "INFO", f"{subscriber}: task recovered"),
+    ]
+
+
+@pytest.fixture
+def subscriber_retry_delay(monkeypatch: pytest.MonkeyPatch) -> Callable[[float], None]:
+    """Set the delay before the subscriber tasks retry for the first time.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        A function taking the delay, in seconds, for subscribers started after it.
+    """
+
+    def set_delay(exception_delay: float) -> None:
+        def ensure_task_with_delay(*args: Any, **kwargs: Any) -> asyncio.Task:
+            return ensure_task(*args, **{**kwargs, "exception_delay": exception_delay})
+
+        monkeypatch.setattr(token_manager, "ensure_task", ensure_task_with_delay)
+
+    return set_delay
+
+
+async def test_lost_and_found_subscriber_survives_redis_outage(
+    subscriber_retry_delay: Callable[[float], None],
+    caplog: pytest.LogCaptureFixture,
+):
+    """Deltas from another instance are delivered again after a long redis outage.
+
+    Args:
+        subscriber_retry_delay: Sets the first retry delay of the subscribers.
+        caplog: The pytest log capture fixture.
+    """
+    caplog.set_level(logging.INFO, logger="reflex.utils.tasks")
+    subscriber_retry_delay(0.001)
+    redis = mock_redis()
+    outage = breakable_pubsub(redis)
+    owner, publisher = RedisTokenManager(redis), RedisTokenManager(redis)
+    channel = f"channel:{owner._get_lost_and_found_key(owner.instance_id)}"
+    expected_logs = outage_logs("_subscribe_lost_and_found_updates", "redis down")
+    emit_update = AsyncMock()
+    before, after = (
+        StateUpdate(delta={"state": {"count": 1}}),
+        StateUpdate(delta={"state": {"count": 2}}),
+    )
+
+    owner.ensure_lost_and_found_task(emit_update)
+    task = owner._lost_and_found_task
+    assert task is not None
+    try:
+        assert await owner.link_token_to_sid("token1", "sid1") is None
+        await wait_until(lambda: subscriptions(redis, channel) == 1)
+        assert await publisher.emit_lost_and_found("token1", before)
+        await wait_until(lambda: emit_update.await_count == 1)
+
+        # Redis goes away: the subscriber notices on its next read, then fails
+        # to subscribe six times, more than the default exception limit allows.
+        outage.error, outage.limit = RedisConnectionError("redis down"), 7
+        await redis.publish(channel, b"")
+        # mock_redis replays the last event before a subscription to it: make
+        # that an unrelated one, as redis does not replay anything.
+        await redis.set("unrelated", b"")
+        await wait_until(
+            lambda: task.done() or subscriber_logs(caplog)[-1:] == expected_logs[1:]
+        )
+        assert subscriber_logs(caplog) == expected_logs
+        assert outage.failures == 7
+
+        assert await publisher.emit_lost_and_found("token1", after)
+        await wait_until(lambda: emit_update.await_count == 2)
+        assert not task.done()
+    finally:
+        await owner.close()
+        await publisher.close()
+
+    assert emit_update.await_args_list == [
+        call(before, "token1"),
+        call(after, "token1"),
+    ]
+    assert subscriber_logs(caplog) == expected_logs
+
+
+async def test_socket_record_subscriber_survives_redis_outage(
+    subscriber_retry_delay: Callable[[float], None],
+    caplog: pytest.LogCaptureFixture,
+):
+    """After a long redis outage, expired records are stored again and claimed ones adopted.
+
+    Args:
+        subscriber_retry_delay: Sets the first retry delay of the subscribers.
+        caplog: The pytest log capture fixture.
+    """
+    caplog.set_level(logging.INFO, logger="reflex.utils.tasks")
+    subscriber_retry_delay(0.001)
+    redis = mock_redis()
+    outage = breakable_pubsub(redis)
+    manager = RedisTokenManager(redis)
+    pattern = f"__keyspace@1__:{manager._get_redis_key('*')}"
+    expected_logs = outage_logs("_subscribe_socket_record_updates", "redis down")
+    expired_key, claimed_key, foreign_key = (
+        manager._get_redis_key(token) for token in ("token1", "token2", "token3")
+    )
+    keys = redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+
+    try:
+        assert await manager.link_token_to_sid("token1", "sid1") is None
+        assert await manager.link_token_to_sid("token2", "sid2") is None
+        task = manager._socket_record_task
+        assert task is not None
+        await wait_until(lambda: subscriptions(redis, pattern) == 1)
+        expired_record = pickle.dumps(manager.token_to_socket["token1"])
+        # A cached record of a socket on another instance.
+        manager.token_to_socket["token3"] = SocketRecord(
+            instance_id="other-instance", sid="sid3"
+        )
+
+        # Redis goes away: the subscriber notices on its next read, then fails
+        # to subscribe six times, more than the default exception limit allows.
+        # It misses that one record is deleted and that another instance
+        # claims the other token.
+        outage.error, outage.limit = RedisConnectionError("redis down"), 7
+        await redis.delete(expired_key)
+        claim_record = SocketRecord(instance_id="other-instance", sid="sid4")
+        claim = pickle.dumps(claim_record)
+        await redis.set(claimed_key, claim)
+        # mock_redis replays the last event before a subscription to it: make
+        # that an unrelated one, as redis does not replay anything.
+        await redis.set("unrelated", b"")
+        await wait_until(
+            lambda: task.done() or subscriber_logs(caplog)[-1:] == expected_logs[1:]
+        )
+        assert subscriber_logs(caplog) == expected_logs
+        assert outage.failures == 7
+
+        await wait_until(lambda: expired_key.encode() in keys)
+        assert await redis.get(expired_key) == expired_record
+        assert redis._internals["expire_times"][expired_key.encode()] > time.monotonic()  # pyright: ignore[reportAttributeAccessIssue]
+        # A record that still exists is not overwritten.
+        assert await redis.get(claimed_key) == claim
+        # Only this instance's own records are stored.
+        assert await redis.get(foreign_key) is None
+
+        # The subscriber handles notifications again.
+        await redis.delete(expired_key)
+        await wait_until(lambda: expired_key.encode() in keys)
+        assert not task.done()
+
+        # The claim was adopted, so the socket that lost the token cannot
+        # delete it when it disconnects.
+        assert manager.token_to_socket["token2"] == claim_record
+        assert "sid2" not in manager.sid_to_token
+        await manager.disconnect_token("token2", "sid2")
+        assert await redis.get(claimed_key) == claim
+    finally:
+        await manager.close()
+
+    assert subscriber_logs(caplog) == expected_logs
+
+
+async def test_socket_record_subscriber_retries_refused_config(
+    subscriber_retry_delay: Callable[[float], None],
+    caplog: pytest.LogCaptureFixture,
+):
+    """A redis that refuses CONFIG SET is logged once and retried without a limit.
+
+    Args:
+        subscriber_retry_delay: Sets the first retry delay of the subscribers.
+        caplog: The pytest log capture fixture.
+    """
+    caplog.set_level(logging.INFO, logger="reflex.utils.tasks")
+    subscriber_retry_delay(0.001)
+    redis = mock_redis()
+    outage = breakable_pubsub(redis)
+    outage.error = ResponseError("unknown command 'CONFIG'")
+    manager = RedisTokenManager(redis)
+
+    manager._ensure_socket_record_task()
+    task = manager._socket_record_task
+    assert task is not None
+    try:
+        await wait_until(lambda: outage.failures > 5 or task.done())
+        assert subscriber_logs(caplog) == [
+            outage_logs("_subscribe_socket_record_updates", "unknown command 'CONFIG'")[
+                0
+            ]
+        ]
+        assert not task.done()
+    finally:
+        await manager.close()
+
+
+async def test_socket_record_subscriber_restores_records_on_resubscribe(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Every confirmed subscription stores this instance's missing records again.
+
+    Args:
+        caplog: The pytest log capture fixture.
+    """
+    caplog.set_level(logging.INFO, logger="reflex.utils.tasks")
+    redis = mock_redis()
+    outage = breakable_pubsub(redis)
+    manager = RedisTokenManager(redis)
+    pattern = f"__keyspace@1__:{manager._get_redis_key('*')}"
+    lost_key, marker_key = (
+        manager._get_redis_key(token) for token in ("token1", "token2")
+    )
+    keys = redis._internals["keys"]  # pyright: ignore[reportAttributeAccessIssue]
+
+    async def resubscribe() -> None:
+        """Lose a record, then resubscribe the way redis-py does after it reconnects.
+
+        Returns once the subscriber has handled a later notification, so the
+        confirmation before it has been handled too.
+        """
+        forget(redis, lost_key)
+        await outage.pubsub.psubscribe(pattern)
+        await redis.delete(marker_key)
+        await wait_until(lambda: marker_key.encode() in keys)
+
+    try:
+        assert await manager.link_token_to_sid("token1", "sid1") is None
+        assert await manager.link_token_to_sid("token2", "sid2") is None
+        task = manager._socket_record_task
+        assert task is not None
+        await wait_until(lambda: subscriptions(redis, pattern) == 1)
+        record, marker_record = (
+            pickle.dumps(manager.token_to_socket[token])
+            for token in ("token1", "token2")
+        )
+
+        await resubscribe()
+        assert await redis.get(lost_key) == record
+
+        # A restore that fails is logged once and leaves the subscriber running.
+        pipeline = redis.pipeline
+        failing_pipeline = Mock()
+        failing_pipeline.execute = AsyncMock(
+            side_effect=RedisConnectionError("redis down")
+        )
+        redis.pipeline = Mock(return_value=failing_pipeline)  # pyright: ignore[reportAttributeAccessIssue]
+        await resubscribe()
+        assert subscriber_logs(caplog) == [
+            (
+                "reflex.utils.token_manager",
+                "ERROR",
+                "Redis error restoring socket records: redis down",
+            ),
+        ]
+        assert await redis.get(lost_key) is None
+        # Both records were sent in one round trip, to expire like any other.
+        redis.pipeline.assert_called_once_with(transaction=False)
+        assert failing_pipeline.set.call_args_list == [
+            call(lost_key, record, ex=manager.token_expiration, nx=True),
+            call(marker_key, marker_record, ex=manager.token_expiration, nx=True),
+        ]
+        failing_pipeline.execute.assert_awaited_once_with()
+
+        # The next confirmed subscription restores the record.
+        redis.pipeline = pipeline  # pyright: ignore[reportAttributeAccessIssue]
+        await resubscribe()
+        assert await redis.get(lost_key) == record
+        assert not task.done()
+    finally:
+        await manager.close()
+
+    assert len(subscriber_logs(caplog)) == 1
+
+
+async def test_close_during_subscriber_retry_delay(
+    subscriber_retry_delay: Callable[[float], None],
+):
+    """Closing the manager does not wait for subscribers that are waiting to retry.
+
+    Args:
+        subscriber_retry_delay: Sets the first retry delay of the subscribers.
+    """
+    subscriber_retry_delay(30.0)
+    redis = mock_redis()
+    outage = breakable_pubsub(redis)
+    outage.error = RedisConnectionError("redis down")
+    manager = RedisTokenManager(redis)
+
+    manager.ensure_lost_and_found_task(AsyncMock())
+    manager._ensure_socket_record_task()
+    tasks = (manager._lost_and_found_task, manager._socket_record_task)
+    await wait_until(lambda: outage.failures == 2)
+
+    await asyncio.wait_for(manager.close(), timeout=1)
+
+    assert all(task is not None and task.cancelled() for task in tasks)
 
 
 @pytest.fixture

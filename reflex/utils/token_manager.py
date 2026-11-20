@@ -279,8 +279,43 @@ class RedisTokenManager(LocalTokenManager):
         else:
             self.token_to_socket.pop(token, None)
 
-    async def _subscribe_socket_record_updates(self) -> None:
-        """Subscribe to Redis keyspace notifications for socket record updates."""
+    async def _restore_socket_records(self) -> None:
+        """Store this instance's socket records that are missing from Redis.
+
+        A record that expires while the subscriber is not listening is not
+        announced again, so the records are written back once it listens. A
+        newer record stored meanwhile is kept and adopted, as when a deleted
+        record cannot be restored.
+        """
+        pipeline = self.redis.pipeline(transaction=False)
+        records: dict[str, bytes] = {}
+        for token, socket_record in self.token_to_socket.items():
+            if socket_record.instance_id == self.instance_id:
+                key = self._get_redis_key(token)
+                records[token] = record_pkl = pickle.dumps(socket_record)
+                pipeline.set(key, record_pkl, ex=self.token_expiration, nx=True)
+                pipeline.get(key)
+        try:
+            results = await pipeline.execute()
+        except Exception as e:
+            logger.error(f"Redis error restoring socket records: {e}")
+            return
+        for (token, record_pkl), stored_pkl in zip(
+            records.items(), results[1::2], strict=True
+        ):
+            if stored_pkl != record_pkl:
+                # Adopt the newer record without waiting for its set
+                # notification, which may have been sent while not listening.
+                await self._get_token_owner(token, refresh=True)
+
+    async def _subscribe_socket_record_updates(
+        self, recovered: Callable[[], None]
+    ) -> None:
+        """Subscribe to Redis keyspace notifications for socket record updates.
+
+        Args:
+            recovered: Called each time Redis confirms the subscription.
+        """
         await enable_keyspace_notifications(self.redis)
         redis_db = self.redis.get_connection_kwargs().get("db", 0)
 
@@ -289,7 +324,10 @@ class RedisTokenManager(LocalTokenManager):
                 f"__keyspace@{redis_db}__:{self._get_redis_key('*')}"
             )
             async for message in pubsub.listen():
-                if message["type"] == "pmessage":
+                if message["type"] == "psubscribe":
+                    recovered()
+                    await self._restore_socket_records()
+                elif message["type"] == "pmessage":
                     key = message["channel"].split(b":", 1)[1].decode()
                     token = key.replace(self._token_socket_record_prefix, "")
 
@@ -310,6 +348,7 @@ class RedisTokenManager(LocalTokenManager):
             task_attribute="_socket_record_task",
             coro_function=self._subscribe_socket_record_updates,
             suppress_exceptions=[Exception],
+            exception_limit=None,
         )
 
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
@@ -420,18 +459,22 @@ class RedisTokenManager(LocalTokenManager):
     async def _subscribe_lost_and_found_updates(
         self,
         emit_update: Callable[[StateUpdate, str], Coroutine[None, None, None]],
+        recovered: Callable[[], None],
     ) -> None:
         """Subscribe to Redis channel notifications for lost and found deltas.
 
         Args:
             emit_update: The function to emit state updates.
+            recovered: Called each time Redis confirms the subscription.
         """
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(
                 f"channel:{self._get_lost_and_found_key(self.instance_id)}"
             )
             async for message in pubsub.listen():
-                if message["type"] == "pmessage":
+                if message["type"] == "psubscribe":
+                    recovered()
+                elif message["type"] == "pmessage":
                     record = pickle.loads(message["data"])
                     await emit_update(record.update, record.token)
 
@@ -449,6 +492,7 @@ class RedisTokenManager(LocalTokenManager):
             task_attribute="_lost_and_found_task",
             coro_function=self._subscribe_lost_and_found_updates,
             suppress_exceptions=[Exception],
+            exception_limit=None,
             emit_update=emit_update,
         )
 
