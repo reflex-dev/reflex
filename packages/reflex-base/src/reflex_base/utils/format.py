@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 from rich.markup import escape as escape_markup
 
 from reflex_base import constants
+from reflex_base.registry import DefaultNameResolver, RegistrationContext
 from reflex_base.utils import console
 from reflex_base.utils.types import is_non_string_sequence
 
@@ -449,8 +450,6 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     Returns:
         ``(state_full_name, handler_name)`` — both resolved.
     """
-    from reflex_base.registry import DefaultNameResolver, RegistrationContext
-
     name = handler.fn.__qualname__
     if handler.state is None:
         return ("", name)
@@ -476,8 +475,6 @@ def format_event_handler(handler: EventHandler) -> str:
     Returns:
         The formatted function.
     """
-    from reflex_base.registry import RegistrationContext
-
     ctx = RegistrationContext.try_get()
     resolver = None if ctx is None else ctx.name_resolver
     cached = handler._formatted_name
