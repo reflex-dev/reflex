@@ -633,17 +633,26 @@ def test_push_plain_value_uses_json_payload() -> None:
 def test_push_var_is_evaluated_on_the_client() -> None:
     """A Var is a client-side expression, so it must not be sent as its text.
 
-    A JSON payload would deliver the literal source (``"Date.now()"``), so a Var
-    keeps the evaluated path, reaching the store through ``refs``.
+    A JSON payload would deliver the literal source, so a Var keeps the evaluated
+    path, through `global_set`. The imports of both sides come along, for a page
+    that compiles the push into a trigger instead of receiving it as a script.
     """
     from reflex_base.event import fix_events
 
     cs = client_state(0, name="counter")
-    event = fix_events([cs.push(Var("Date.now()"))], token="tok")[0]
+    other = client_state("", name="other")
+    spec = cs.push(other.global_value.to(str) + "!")
+    event = fix_events([spec], token="tok")[0]
     assert event.name.endswith("_call_function")
-    assert 'refs["__client_state"].set("counter", Date.now())' in str(
-        event.payload["function"]
+    assert str(event.payload["function"]) == (
+        '(() => (((value) => setClientState("counter", value))((getClientState("other")+"!"))))'
     )
+    function = next(value for name, value in spec.args if str(name) == "function")
+    var_data = function._get_all_var_data()
+    assert var_data is not None
+    assert {lib: {i.tag for i in tags} for lib, tags in var_data.imports} == {
+        f"$/{Dirs.CLIENT_STATE_PATH}": {"getClientState", "setClientState"}
+    }
 
 
 def test_backend_events_use_the_shared_store() -> None:
