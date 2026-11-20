@@ -122,6 +122,18 @@ rx.hstack(
 
 With this event, you can modify the value of a particular HTML element, typically an input field or another form element.
 
+The id can be built from a Var, such as the item of an `rx.foreach`, so each row targets its own input. The same holds for `rx.set_focus` and `rx.blur_focus`.
+
+```python
+rx.foreach(
+    State.rows,
+    lambda row: rx.hstack(
+        rx.input(id=f"row-{row}"),
+        rx.button("Erase", on_click=rx.set_value(f"row-{row}", "")),
+    ),
+)
+```
+
 ## rx.window_alert
 
 Create a window alert in the browser.

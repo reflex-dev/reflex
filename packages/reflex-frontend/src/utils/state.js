@@ -85,6 +85,23 @@ export const useRegisteredRef = (name) => {
   return ref;
 };
 
+/**
+ * Find the ref an event names. A component with a literal id registers its ref
+ * in `refs`, and the event carries the name it is registered under as `ref`.
+ * An id built from state or a loop variable is only known when the event runs,
+ * so the event carries it as `id` and the element is looked up by it: such an
+ * id never names a registered ref, even one spelled the same.
+ * @param {{ref?: any, id?: string}} payload The payload of the event.
+ * @returns The registered ref, a ref to the element with that id, or `ref`
+ *     itself when no ref is registered under it.
+ */
+const resolveRef = ({ ref, id }) => {
+  if (id !== undefined) {
+    return { current: document.getElementById(id) };
+  }
+  return ref in refs ? refs[ref] : ref;
+};
+
 // The client state store, for code evaluated outside this module's scope: a
 // `run_script` body pushing a value, or the devtools console. Client only, so
 // a server render never shares a store between requests.
@@ -741,12 +758,11 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name === "_set_focus") {
-    const ref =
-      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const ref = resolveRef(event.payload);
     const current = ref?.current;
     if (current === undefined || current?.focus === undefined) {
       console.error(
-        `No element found for ref ${event.payload.ref} in _set_focus`,
+        `No element found for ref ${event.payload.id ?? event.payload.ref} in _set_focus`,
       );
     } else {
       current.focus();
@@ -755,12 +771,11 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name === "_blur_focus") {
-    const ref =
-      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const ref = resolveRef(event.payload);
     const current = ref?.current;
     if (current === undefined || current?.blur === undefined) {
       console.error(
-        `No element found for ref ${event.payload.ref} in _blur_focus`,
+        `No element found for ref ${event.payload.id ?? event.payload.ref} in _blur_focus`,
       );
     } else {
       current.blur();
@@ -769,8 +784,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name === "_set_value") {
-    const ref =
-      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const ref = resolveRef(event.payload);
     if (ref.current) {
       ref.current.value = event.payload.value;
     }

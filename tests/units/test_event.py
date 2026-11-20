@@ -658,6 +658,42 @@ def test_focus_event_chain_preserves_args(func: str, qualname: str):
     )
 
 
+@pytest.mark.parametrize(
+    ("func", "qualname"), [("set_focus", "_set_focus"), ("blur_focus", "_blur_focus")]
+)
+def test_focus_id_built_from_a_var(func: str, qualname: str):
+    """An id built from a Var is sent as the id it evaluates to.
+
+    Regression for reflex-dev/reflex#7838: the Var was dropped from the ref
+    name, so every row of an ``rx.foreach`` named the same ref. The id is sent
+    as ``id``, apart from the ``ref`` name of a registered ref, so it cannot be
+    taken for one spelled the same.
+
+    Args:
+        func: The event function name.
+        qualname: The sig qual name passed to JS.
+    """
+    item = Var(_js_expr="item").to(str)
+    spec = getattr(event, func)(f"row-{item}")
+    assert (
+        format.format_event(spec) == f'ReflexEvent("{qualname}", {{id:("row-"+item)}})'
+    )
+    spec = getattr(event, func)(item)
+    assert format.format_event(spec) == f'ReflexEvent("{qualname}", {{id:item}})'
+
+
+def test_set_value_id_built_from_a_var():
+    """An id built from a Var is sent as the id it evaluates to."""
+    item = Var(_js_expr="item").to(str)
+    spec = event.set_value(f"row-{item}", item)
+    assert (
+        format.format_event(spec)
+        == 'ReflexEvent("_set_value", {id:("row-"+item),value:item})'
+    )
+    spec = event.set_value(item, "")
+    assert format.format_event(spec) == 'ReflexEvent("_set_value", {id:item,value:""})'
+
+
 def test_set_value():
     """Test the event window alert function."""
     spec = event.set_value("input1", "")
