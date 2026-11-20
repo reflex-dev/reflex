@@ -11,6 +11,7 @@ from __future__ import annotations
 import contextlib
 from collections.abc import Mapping
 
+from reflex_base.config import get_config
 from reflex_base.event.processor.scope import register_event_scope_provider
 from reflex_base.plugins.base import get_plugin
 from reflex_base.registry import RegistrationContext
@@ -54,6 +55,21 @@ def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
     if locale_cookie and locale_cookie in config.locales:
         return locale_cookie
     return negotiate_locale(accept_language, config.locales, config.fallback_locale)
+
+
+def _page_path(url_path: str) -> str:
+    """The part of a browser URL path below ``frontend_path``, as routes see it.
+
+    Args:
+        url_path: The path of the browser URL.
+
+    Returns:
+        The path without the frontend path prefix.
+    """
+    prefix = get_config().frontend_path.rstrip("/")
+    if prefix and (url_path == prefix or url_path.startswith(prefix + "/")):
+        return url_path[len(prefix) :] or "/"
+    return url_path
 
 
 class I18nState(State):
@@ -162,11 +178,14 @@ async def _locale_scope(
     if plugin is None:
         return contextlib.nullcontext()
     i18n_state = await root_state.get_state(I18nState)
-    # Record the URL's locale (the route id is the client's page path) so
-    # translated computed vars are invalidated on navigating to another prefix.
+    # Record the URL's locale so translated computed vars are invalidated on
+    # navigating to another prefix. Read the browser's path, as the provider
+    # does: an unknown page's route id is "/404", which names no locale.
     if plugin.routing is not None and (config := get_active_i18n_config()) is not None:
         route_locale = plugin.routing.locale_of(
-            i18n_state.rx_router_route_id, config.locales, config.default_locale
+            _page_path(i18n_state.rx_router_url.path),
+            config.locales,
+            config.default_locale,
         )
         if route_locale != i18n_state._route_locale:
             i18n_state._route_locale = route_locale

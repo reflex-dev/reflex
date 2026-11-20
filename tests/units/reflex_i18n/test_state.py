@@ -10,7 +10,13 @@ from reflex_base.utils import console
 from reflex_i18n import I18nConfig, I18nPlugin, PathPrefixRouting
 from reflex_i18n.config import set_active_i18n_config
 from reflex_i18n.runtime import get_locale
-from reflex_i18n.state import I18nState, _locale_scope, _resolve_locale, set_locale
+from reflex_i18n.state import (
+    I18nState,
+    _locale_scope,
+    _page_path,
+    _resolve_locale,
+    set_locale,
+)
 
 from reflex.istate.data import RouterData
 from reflex.state import State
@@ -103,13 +109,16 @@ def test_locale_depends_on_the_route_locale():
     assert deps[I18nState.get_full_name()] == {"locale_cookie", "_route_locale"}
 
 
-async def _root_on(path: str, cookie: str, accept_language: str = "") -> State:
+async def _root_on(
+    path: str, cookie: str, accept_language: str = "", url_path: str | None = None
+) -> State:
     """Build a root state on a given page, with a locale cookie set.
 
     Args:
-        path: The page path the client is on.
+        path: The route of the page the client is on.
         cookie: The locale chosen by the user, if any.
         accept_language: The client's Accept-Language header.
+        url_path: The browser's path below frontend_path, if not the route.
 
     Returns:
         The root state.
@@ -117,6 +126,7 @@ async def _root_on(path: str, cookie: str, accept_language: str = "") -> State:
     root = State()
     root.router = RouterData.from_router_data({
         constants.RouteVar.PATH: path,
+        constants.RouteVar.ORIGIN: path if url_path is None else url_path,
         constants.RouteVar.HEADERS: {"accept-language": accept_language},
     })
     (await root.get_state(I18nState)).locale_cookie = cookie
@@ -147,6 +157,46 @@ async def test_locale_scope_prefers_the_route_with_url_routing(
         assert get_locale() == "de"
     # The cached computed var was invalidated, not just the contextvar set.
     assert i18n_state.locale == "de"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("frontend_path", ["", "/app"])
+async def test_locale_scope_takes_an_unknown_pages_locale_from_the_url(
+    monkeypatch: pytest.MonkeyPatch, frontend_path: str
+):
+    # Regression: an unknown page's route id is "/404", while the provider reads
+    # the locale from the browser's path, so a localized error page mixed the
+    # default locale's dynamic text with the URL locale's static text.
+    monkeypatch.setattr(get_config(), "frontend_path", frontend_path)
+    monkeypatch.setattr(
+        get_config(),
+        "plugins",
+        [
+            I18nPlugin(
+                locales=["en", "de"], default_locale="en", routing=PathPrefixRouting()
+            )
+        ],
+    )
+    root = await _root_on("/404", cookie="en", url_path="/de/missing")
+
+    with await _locale_scope(root):
+        assert get_locale() == "de"
+
+
+@pytest.mark.parametrize(
+    ("url_path", "expected"),
+    [
+        ("/app/de/pricing", "/de/pricing"),
+        ("/app", "/"),
+        ("/app/", "/"),
+        ("/application/de", "/application/de"),
+    ],
+)
+def test_page_path_strips_the_frontend_path(
+    monkeypatch: pytest.MonkeyPatch, url_path: str, expected: str
+):
+    monkeypatch.setattr(get_config(), "frontend_path", "/app")
+    assert _page_path(url_path) == expected
 
 
 @pytest.mark.asyncio
