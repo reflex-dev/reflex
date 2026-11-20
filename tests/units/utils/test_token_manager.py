@@ -1119,6 +1119,9 @@ async def test_redis_token_manager_waits_during_resubscribe_backoff(
     try:
         await manager.ensure_lost_and_found_subscribed(AsyncMock())
         await first_subscription_failed.wait()
+        manager._lost_and_found_wait_deadline = (
+            asyncio.get_running_loop().time() - 1
+        )
         release_first_subscription.set()
         await retry_delay_started.wait()
 
