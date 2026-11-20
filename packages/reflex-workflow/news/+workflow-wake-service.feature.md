@@ -1,1 +1,0 @@
-`run_workflows(on_idle=...)` reports the instant a worker is next waiting for, on the database's clock and only when it changes, and `reflex_workflow.wake(timeout)` makes the worker in this process look now and holds until it has nothing left to take. Together they let a platform wake a deployment that suspends when idle, so its timers fire without anyone visiting the app.

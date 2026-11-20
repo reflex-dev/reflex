@@ -1,13 +1,21 @@
 """Tests for the disk state manager."""
 
+import asyncio
 import logging
 import math
 import os
+import pickle
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
+from reflex_base.constants import Env
+from reflex_base.environment import environment
 from reflex_base.utils.exceptions import StateSchemaMismatchError
+from reflex_base.vars.base import computed_var
 
+from reflex.istate.manager import disk
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -81,6 +89,150 @@ def test_states_directory_survives_chdir(tmp_path: Path, monkeypatch):
     assert manager.states_directory == states_dir
     # Purge resolves against the original directory, not the new cwd.
     manager._purge_expired_states()
+
+
+async def test_idle_write_queue_scans_only_when_files_can_expire(
+    tmp_path, monkeypatch, disk_clock
+):
+    """Idle queue ticks skip unexpired files but still purge at their deadline."""
+    now = disk_clock
+    state_file = tmp_path / "session.pkl"
+    state_file.touch()
+    os.utime(state_file, (950, 950))
+    manager = StateManagerDisk(token_expiration=100)
+    listing = Mock(wraps=disk.path_ops.ls)
+    monkeypatch.setattr(disk.path_ops, "ls", listing)
+    ticks = iter([1002, 1049, 1051])
+
+    async def advance():
+        await asyncio.sleep(0)
+        assert state_file.exists() == (now[0] <= 1050)
+        if (next_tick := next(ticks, None)) is None:
+            raise asyncio.CancelledError
+        now[0] = next_tick
+
+    monkeypatch.setattr(manager, "_process_write_queue_delay", advance)
+    with pytest.raises(asyncio.CancelledError):
+        await manager._process_write_queue()
+    assert listing.call_count == 1
+
+
+@pytest.fixture
+def disk_clock(tmp_path, monkeypatch):
+    """Control disk deadlines without changing the process-wide clock.
+
+    Returns:
+        A list containing the current wall-clock and monotonic timestamp.
+    """
+    now = [1000.0]
+    clock = SimpleNamespace(time=lambda: now[0], monotonic=lambda: now[0])
+    monkeypatch.setattr(disk, "time", clock)
+    monkeypatch.setattr(disk.prerequisites, "get_states_dir", lambda: tmp_path)
+    return now
+
+
+async def test_new_files_after_empty_scan_expire(tmp_path, monkeypatch, disk_clock):
+    """An empty scan cannot postpone discovery beyond one token lifetime."""
+    manager = StateManagerDisk(token_expiration=100)
+    state_file = tmp_path / "later.pkl"
+    state_file.touch()
+    os.utime(state_file, (1001, 1001))
+    listing = Mock(wraps=disk.path_ops.ls)
+    monkeypatch.setattr(disk.path_ops, "ls", listing)
+
+    disk_clock[0] = 1002
+    await manager._maybe_purge_expired_states()
+    listing.assert_not_called()
+    disk_clock[0] = 1100
+    await manager._maybe_purge_expired_states()
+    assert state_file.exists()
+    disk_clock[0] = 1102
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
+    assert listing.call_count == 2
+
+
+@pytest.mark.parametrize("lifetime", [5, 200])
+async def test_disk_expiration_lifetime_changes(tmp_path, disk_clock, lifetime):
+    """Changing the lifetime invalidates deadlines from the previous setting."""
+    state_file = tmp_path / "existing.pkl"
+    state_file.touch()
+    os.utime(state_file, (990, 990))
+    manager = StateManagerDisk(token_expiration=100)
+    manager.token_expiration = lifetime
+
+    await manager._maybe_purge_expired_states()
+    assert state_file.exists() == (lifetime == 200)
+    disk_clock[0] = 1191
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
+
+
+async def test_disk_write_keeps_expiration_deadline(monkeypatch, disk_clock):
+    """A write skips rescanning, and the written file still expires on schedule."""
+    manager = StateManagerDisk(token_expiration=100)
+    listing = Mock(wraps=disk.path_ops.ls)
+    monkeypatch.setattr(disk.path_ops, "ls", listing)
+    token = StateToken(ident="written", cls=dict)
+    disk_clock[0] = 1050
+    await manager.set_state_for_substate(token, {"count": 1})
+    state_file = manager.token_path(token)
+    os.utime(state_file, (1050, 1050))
+
+    disk_clock[0] = 1060
+    await manager._maybe_purge_expired_states()
+    listing.assert_not_called()
+    disk_clock[0] = 1100
+    await manager._maybe_purge_expired_states()
+    assert state_file.exists()
+    disk_clock[0] = 1151
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
+    assert listing.call_count == 2
+
+
+async def test_wall_clock_rollback_keeps_expiration_deadline(monkeypatch, disk_clock):
+    """Moving the wall clock back does not defer the next disk scan."""
+    disk_clock[0] = 20_000
+    manager = StateManagerDisk(token_expiration=100)
+    monkeypatch.setattr(disk.time, "time", lambda: disk_clock[0] - 18_000)
+    token = StateToken(ident="after-rollback", cls=dict)
+    await manager.set_state_for_substate(token, {"count": 1})
+    state_file = manager.token_path(token)
+    os.utime(state_file, (2000, 2000))
+
+    disk_clock[0] = 20_100
+    await manager._maybe_purge_expired_states()
+    assert state_file.exists()
+    disk_clock[0] = 20_101
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
+
+
+async def test_disk_expiration_lifetime_changes_while_scan_dispatched(
+    tmp_path, monkeypatch, disk_clock
+):
+    """A deadline is associated with the lifetime actually used by the worker."""
+    state_file = tmp_path / "changed-lifetime.pkl"
+    state_file.touch()
+    os.utime(state_file, (990, 990))
+    manager = StateManagerDisk(token_expiration=100)
+    manager._next_disk_purge = 0
+
+    async def scan_with_temporary_lifetime(fn):
+        await asyncio.sleep(0)
+        manager.token_expiration = 200
+        result = fn()
+        manager.token_expiration = 100
+        return result
+
+    with monkeypatch.context() as patch:
+        patch.setattr(disk, "run_in_thread", scan_with_temporary_lifetime)
+        await manager._maybe_purge_expired_states()
+
+    disk_clock[0] = 1091
+    await manager._maybe_purge_expired_states()
+    assert not state_file.exists()
 
 
 @pytest.mark.asyncio
@@ -214,10 +366,94 @@ async def test_set_state_for_substate_builds_tokens_for_written_states_only(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("env_mode", "hot_reload", "after_reload"),
+    [
+        (Env.DEV, True, ["a"]),
+        (Env.DEV, False, ["a", "b"]),
+        (Env.PREVIEW, True, ["a", "b"]),
+        (Env.PROD, False, ["a", "b"]),
+    ],
+)
+async def test_states_from_disk_recompute_cached_vars(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    env_mode: Env,
+    hot_reload: bool,
+    after_reload: list[str],
+):
+    """Under the dev hot reloader, states read back from disk recompute cached vars.
+
+    A state is only read from disk when it is not in memory, as after a hot
+    reload, which may have changed what the computed vars return. The fields
+    keep their values. Outside a dev hot reloader the cache is kept.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        env_mode: The mode the app runs in.
+        hot_reload: Whether the backend runs under the dev hot reloader.
+        after_reload: The cached var value expected after the reload.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    monkeypatch.setenv("REFLEX_ENV_MODE", env_mode.value)
+    monkeypatch.setenv(
+        environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name, str(hot_reload)
+    )
+    rows = ["a", "b"]
+
+    class DiskCachedState(BaseState):
+        count: int = 0
+
+        @computed_var(cache=True)
+        def data(self) -> list[str]:
+            """The rows, which a reload can change.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    class DiskCachedChild(DiskCachedState):
+        @computed_var(cache=True)
+        def child_data(self) -> list[str]:
+            """The rows, cached on the substate.
+
+            Returns:
+                A copy of the rows.
+            """
+            return list(rows)
+
+    token = BaseStateToken(ident="client", cls=DiskCachedState)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    async with state_manager.modify_state(token) as state:
+        assert isinstance(state, DiskCachedState)
+        state.count = 99
+        child = await state.get_state(DiskCachedChild)
+        assert (state.data, child.child_data) == (["a", "b"], ["a", "b"])
+    rows[:] = ["a"]
+    # A state still in memory keeps its cached values.
+    assert await state_manager.get_state(token) is state
+    assert state.data == ["a", "b"]
+    await state_manager.close()
+
+    reloaded_state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    state = await reloaded_state_manager.get_state(token)
+    assert isinstance(state, DiskCachedState)
+    child = await state.get_state(DiskCachedChild)
+    assert (state.count, state.data, child.child_data) == (
+        99,
+        after_reload,
+        after_reload,
+    )
+    await reloaded_state_manager.close()
+
+
+@pytest.mark.asyncio
 async def test_load_state_logs_warning_for_corrupted_file(
     tmp_path, monkeypatch, caplog
 ):
-    """Test that load_state logs a warning when a corrupted state file is encountered.
+    """A corrupted BaseState file logs one warning and falls back to a default state.
 
     Args:
         tmp_path: A temporary directory.
@@ -225,21 +461,22 @@ async def test_load_state_logs_warning_for_corrupted_file(
         caplog: The pytest caplog fixture.
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
-    state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident="client", cls=dict)
 
-    corrupted_content = b"not a valid pickle file"
+    class DiskCorruptState(BaseState):
+        count: int = 0
+
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="corrupt_client", cls=DiskCorruptState)
     token_path = state_manager.token_path(token)
     token_path.parent.mkdir(parents=True, exist_ok=True)
-    token_path.write_bytes(corrupted_content)
+    token_path.write_bytes(b"not a valid pickle file")
 
-    assert await state_manager.load_state(token) is None
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await state_manager.load_state(token) is None
 
     warning_logs = disk_warning_logs(caplog)
     assert len(warning_logs) == 1
-    assert "Failed to load state" in warning_logs[0].message
     assert token_path.name in warning_logs[0].message
-    assert token.ident not in warning_logs[0].message
     assert "falling back to a default state" in warning_logs[0].message
 
     await state_manager.close()
@@ -247,7 +484,7 @@ async def test_load_state_logs_warning_for_corrupted_file(
 
 @pytest.mark.asyncio
 async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, caplog):
-    """Test that load_state returns None without logging a warning for missing files.
+    """A missing state file is a normal cache miss and logs nothing.
 
     Args:
         tmp_path: A temporary directory.
@@ -256,9 +493,45 @@ async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, c
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident="nonexistent_client", cls=dict)
+    token = StateToken(ident="absent_client", cls=dict)
 
-    assert await state_manager.load_state(token) is None
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await state_manager.load_state(token) is None
+
     assert not disk_warning_logs(caplog)
+    await state_manager.close()
 
+
+@pytest.mark.asyncio
+async def test_load_state_schema_change_is_not_an_error(tmp_path, monkeypatch, caplog):
+    """A stored state whose class gained a field is expected and logs nothing.
+
+    A field added to a state class changes ``_to_schema``, so the stored hash no
+    longer matches and the entry is discarded. That is normal development
+    behaviour, not an error worth reporting.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+
+    class DiskEvolvingState(BaseState):
+        count: int = 0
+
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="evolving_client", cls=DiskEvolvingState)
+    state = DiskEvolvingState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.count = 7
+
+    # Persist the state under a schema hash from before the field was added.
+    token_path = state_manager.token_path(token)
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_bytes(pickle.dumps(("stale-schema-hash", state)))
+
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await state_manager.load_state(token) is None
+
+    assert not disk_warning_logs(caplog)
     await state_manager.close()

@@ -1,0 +1,1 @@
+`rx.cond(condition, client_state.set(...), None)` bound to an event trigger no longer throws `TypeError: ... is not a function` when the condition is false: a function var whose type admits `None` is now called with `?.()`, so the `None` branch is a no-op like it is for an `EventSpec` branch.

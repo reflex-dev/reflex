@@ -6,7 +6,7 @@ import re
 import textwrap
 from pathlib import Path
 from types import UnionType
-from typing import Literal, Union, _GenericAlias, get_args, get_origin
+from typing import Any, Literal, Union, _GenericAlias, get_args, get_origin
 
 import reflex as rx
 import reflex_components_internal as ui
@@ -28,7 +28,10 @@ from reflex_docs.docgen_pipeline import (
     render_inline_markdown,
     render_markdown,
 )
-from reflex_docs.pages.docs.metadata import truncate_meta_description
+from reflex_docs.pages.docs.metadata import (
+    component_title_name,
+    truncate_meta_description,
+)
 from reflex_docs.templates.docpage import docpage, h2_comp
 
 
@@ -278,6 +281,32 @@ def safe_issubclass(cls, class_or_tuple):
         return False
 
 
+def _type_label(type_: Any) -> str:
+    """Name a type the way a prop table shows it, without module paths.
+
+    Args:
+        type_: A class, union or parameterized generic.
+
+    Returns:
+        A short label, such as ``str | Var | Color``, ``dict[str, str]`` or
+        ``Literal["left", "right"]``.
+    """
+    origin = get_origin(type_)
+    if origin in (Union, UnionType):
+        return " | ".join(map(_type_label, get_args(type_)))
+    if origin is Literal:
+        values = ", ".join(
+            f'"{value}"' if isinstance(value, str) else str(value)
+            for value in get_args(type_)
+        )
+        return f"Literal[{values}]"
+    if args := get_args(type_):
+        return f"{_type_label(origin)}[{', '.join(map(_type_label, args))}]"
+    if type_ is type(None):
+        return "None"
+    return getattr(type_, "__name__", str(type_))
+
+
 def prop_docs(
     prop: PropDocumentation,
     component: type[Component],
@@ -328,10 +357,8 @@ def prop_docs(
         short_type_name = "Union"
 
     elif origin is dict:
-        key_type = args[0].__name__ if args else "Any"
-        value_type = (
-            getattr(args[1], "__name__", str(args[1])) if len(args) > 1 else "Any"
-        )
+        key_type = _type_label(args[0]) if args else "Any"
+        value_type = _type_label(args[1]) if len(args) > 1 else "Any"
         type_name = f"Dict[{key_type}, {value_type}]"
         short_type_name = "Dict"
 
@@ -1038,6 +1065,7 @@ def multi_docs(
         description=description,
         image=image,
         source_path=actual_path,
+        component_name=component_title_name([c[1] for c in component_list[1:]]),
     )
     def out():
         toc = get_docgen_toc(actual_path)
@@ -1090,6 +1118,7 @@ def multi_docs(
         description=ll_description,
         image=image,
         source_path=ll_actual_path,
+        component_name=component_title_name([c[1] for c in ll_list[1:]]),
     )
     def ll():
         ll_virtual = virtual_path.replace(".md", "-ll.md")

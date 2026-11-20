@@ -481,7 +481,6 @@ def navbar_sidebar_drawer(
                         ),
                         drawer_collapsible("Resources", resources_panel()),
                         drawer_collapsible("Solutions", solutions_panel()),
-                        drawer_link("Pricing", "/pricing/"),
                         drawer_link("Docs", "/docs/"),
                         class_name="flex flex-col flex-1 w-full overflow-y-auto min-h-0",
                     ),

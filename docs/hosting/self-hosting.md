@@ -18,6 +18,9 @@ Use `reflex deploy` for the managed workflow. Follow this page when you need to 
 - Moving from managed hosting also requires transferring persistent data, secrets, domains, and any external service configuration.
 - You operate the servers, TLS, monitoring, backups, and updates in a self-hosted environment.
 
+For multiple backend replicas, regional state, durable jobs, and recovery tests,
+see [Scaling Reflex Apps](/docs/hosting/scaling/).
+
 ## Managed vs. self-hosted
 
 | Deployment choice | Managed (`reflex deploy`) | Self-hosted |
@@ -46,14 +49,30 @@ from a single server on port `3000`. Pass `--frontend-port` or
 `--backend-port` to listen on a different port. When redis is configured,
 the server runs up to 8 backend workers by default (`2 * cpu_count + 1`, capped at 8).
 When using Granian, set `GRANIAN_WORKERS` to override the default, including to use more workers.
+Granian replaces a worker that dies; if a replaced worker dies again within a few
+seconds, it stops the server. Set `GRANIAN_RESPAWN_FAILED_WORKERS=false` to stop the
+server when any worker dies instead, for example when a process supervisor restarts it.
+Only the worker's exit is logged by default; set `GRANIAN_LOG_LEVEL=info` to see the respawn too.
+
+When using Granian on Linux, backend workers are forked from a supervisor
+process that has already imported the app, so they share its memory instead of
+each importing the app again. Set `REFLEX_BACKEND_START_METHOD=spawn` (or
+`forkserver`) for apps that are not fork-safe, for example ones that open
+database connections or start threads at import time. The same variable applies
+to the Granian `reflex run` development backend, where `REFLEX_STRICT_HOT_RELOAD=1`
+also switches to spawned workers (unless `REFLEX_BACKEND_START_METHOD` is set) so
+environment variable changes are picked up on hot reload. Neither variable
+affects the Uvicorn backend.
 
 The frontend and backend can also run as separate processes, for example to
 serve the frontend from a CDN and scale the backend independently. The
 frontend-only server only serves static files, so tell it where the backend
-is when compiling the frontend — otherwise it assumes its own port:
+is when compiling the frontend — otherwise it assumes its own port. The
+backend accepts websocket connections only from its own origin and from
+`deploy_url`, so tell it the frontend's public URL, scheme included:
 
 ```bash
-reflex run --env prod --backend-only --backend-port 8000
+REFLEX_DEPLOY_URL=http://localhost:3000 reflex run --env prod --backend-only --backend-port 8000
 REFLEX_API_URL=http://localhost:8000 reflex run --env prod --frontend-only --frontend-port 3000
 ```
 
@@ -71,6 +90,8 @@ clear the store (or point the app at a fresh one) when rolling back.
 ```md alert warning
 # Reverse Proxy and Websockets
 Because the backend uses websockets, some reverse proxy servers, like [nginx](https://nginx.org/en/docs/http/websocket.html) or [apache](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#protoupgrade), must be configured to pass the `Upgrade` header to allow backend connectivity.
+
+In prod mode the backend accepts a websocket only from the origin named by the request's `Host` header, so the proxy must also pass the original `Host` (nginx rewrites it unless configured with `proxy_set_header Host $http_host;`). A proxy that sends the original host as `X-Forwarded-Host` instead works when the backend trusts it through [`trusted_proxy_hops`](/docs/advanced-onboarding/configuration/#client-ip-behind-proxies). Otherwise set `REFLEX_DEPLOY_URL` on the backend to the public URL, e.g. `REFLEX_DEPLOY_URL=https://app.example.com`.
 ```
 
 ## API URL
@@ -79,11 +100,14 @@ The frontend connects to the backend at `api_url`. When `api_url` points at
 `localhost` (the default), the frontend substitutes the hostname it was loaded
 from, and when the page is served over HTTPS it also drops the port and
 connects to its own origin. So a single-port production deployment behind a
-TLS-terminating proxy needs no `api_url` configuration at all.
+TLS-terminating proxy that keeps the `Host` header needs no `api_url`
+configuration at all.
 
 Set `api_url` explicitly when the backend is reachable at a different address
 than the frontend, for example when the frontend is exported to a static host
-and the backend runs elsewhere:
+and the backend runs elsewhere. The backend then also needs the frontend's
+origin as `deploy_url` (e.g. `REFLEX_DEPLOY_URL=https://example.com` where the
+backend runs) to accept its websocket connections:
 
 ```python
 config = rx.Config(
@@ -129,6 +153,9 @@ to an accessible backend URL when the frontend is exported.
 REFLEX_API_URL=https://api.example.com reflex export
 ```
 
+Run the backend with `REFLEX_DEPLOY_URL` set to the URL the static frontend is
+served from, as described under [API URL](#api-url).
+
 This will create a `frontend.zip` file with your app's minified HTML,
 Javascript, and CSS build that can be uploaded to your static hosting service.
 
@@ -142,6 +169,16 @@ It is also possible to export the components without zipping. To do
 this, use the `--no-zip` parameter. This provides the frontend in the
 `.web/build/client/` directory and the backend can be found in the root directory of
 the project.
+
+Production exports that share a `.web` directory wait for one another from
+compilation through ZIP creation, on macOS, Linux, and Windows. Backend-only
+exports wait too, since they archive `.web/backend`, but never create `.web`.
+Production and preview startup hold the same lock while compiling and building
+and release it before serving. The lock lives in Reflex's per-user data
+directory (`REFLEX_DIR`), not in `.web`, so commands coordinate only when they
+share that directory. Initialization, development hot reload, and other tools
+writing to `.web` are outside this lock, so avoid running them during an
+export.
 
 The export also writes a pre-compressed `.gz` copy of the compressible text
 assets (JS, CSS, HTML, JSON, SVG, and similar), so configure the static host

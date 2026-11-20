@@ -1,6 +1,7 @@
 """Tests for the internal button component."""
 
 import pytest
+from reflex_base.utils.exceptions import BackendVarFormatError
 from reflex_components_internal.components.base.button import Button
 
 from reflex.state import BaseState
@@ -12,19 +13,14 @@ class ButtonState(BaseState):
     _secret: str = "x"
 
 
-@pytest.mark.parametrize(
-    ("validate", "match"),
-    [
-        (Button.validate_variant, r"Invalid variant: Field\(default='x'"),
-        (Button.validate_size, r"Invalid size: Field\(default='x'"),
-    ],
-)
-def test_validate_backend_var_reports_repr(validate, match: str):
-    """A backend var passed as a variant or size reports its repr.
+@pytest.mark.parametrize("validate", [Button.validate_variant, Button.validate_size])
+def test_validate_backend_var_raises_format_error(validate):
+    """A backend var passed as a variant or size raises the backend var format error.
 
     Args:
         validate: The validator under test.
-        match: The expected error message pattern.
     """
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(
+        BackendVarFormatError, match=r"Backend var 'ButtonState\._secret' exists only"
+    ):
         validate(ButtonState._secret)
