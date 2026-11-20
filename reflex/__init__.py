@@ -84,8 +84,6 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
-from importlib.util import find_spec
-
 from reflex_base.utils import lazy_loader
 from reflex_components_radix.mappings import RADIX_MAPPING
 
@@ -263,29 +261,35 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = _MAPPING
 _EXTRA_MAPPINGS: dict[str, str] = _COMPONENT_NAME_TO_PATH
 
 
-def _attach():
-    """Attach the lazy names, exporting only those `import *` can resolve.
+getattr, __dir__, _ALL = lazy_loader.attach(
+    __name__,
+    submodules=_SUBMODULES,
+    submod_attrs=_SUBMOD_ATTRS,
+    **_EXTRA_MAPPINGS,
+)
+
+
+def _exported_names() -> list[str]:
+    """The names `import *` can resolve.
 
     Without the optional reflex-i18n its names stay reachable as attributes,
     which report the missing package, but out of ``__all__``.
 
     Returns:
-        The module ``__getattr__``, ``__dir__`` and ``__all__``.
+        The names for ``__all__``.
     """
-    getattr_, dir_, all_ = lazy_loader.attach(
-        __name__,
-        submodules=_SUBMODULES,
-        submod_attrs=_SUBMOD_ATTRS,
-        **_EXTRA_MAPPINGS,
-    )
-    if find_spec("reflex_i18n") is None:
-        i18n_names = {"i18n", *_MAPPING["i18n"]}
-        all_ = [name for name in all_ if name not in i18n_names]
-    return getattr_, dir_, all_
+    from importlib.util import find_spec
 
-
-getattr, __dir__, __all__ = _attach()
+    if find_spec("reflex_i18n") is not None:
+        return list(_ALL)
+    i18n_names = {"i18n", *_MAPPING["i18n"]}
+    return [name for name in _ALL if name not in i18n_names]
 
 
 def __getattr__(name: str):
+    if name == "__all__":
+        # Built on first use: finding out whether reflex-i18n is installed
+        # searches sys.path, which a plain `import reflex` should not pay for.
+        globals()["__all__"] = exported = _exported_names()
+        return exported
     return getattr(name)

@@ -41,6 +41,27 @@ def test_i18n_names_leave_star_import_without_reflex_i18n():
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_import_reflex_does_not_look_for_reflex_i18n():
+    # Whether reflex-i18n is installed only matters to __all__, and finding out
+    # searches sys.path, so a plain `import reflex` must not pay for it.
+    code = (
+        "import importlib.util\n"
+        "looked_up = []\n"
+        "find_spec = importlib.util.find_spec\n"
+        "def spy(name, *args):\n"
+        "    looked_up.append(name)\n"
+        "    return find_spec(name, *args)\n"
+        "importlib.util.find_spec = spy\n"
+        "import reflex as rx\n"
+        "assert 'reflex_i18n' not in looked_up, looked_up\n"
+        "assert 't' in rx.__all__\n"
+        "assert looked_up.count('reflex_i18n') == 1, looked_up\n"
+        "assert 't' in rx.__all__\n"
+        "assert looked_up.count('reflex_i18n') == 1, looked_up\n"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 def test_i18n_names_exported_with_reflex_i18n():
     # The generated stub re-exports rx.t and rx.i18n through __all__.
     assert {"i18n", "t", "gettext", "I18nPlugin", "set_locale"} <= set(rx.__all__)
