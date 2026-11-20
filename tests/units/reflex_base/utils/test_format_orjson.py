@@ -530,10 +530,32 @@ def test_datetime_uses_space_separator_not_iso_t():
 # non-string dict keys
 
 
-def test_int_dict_keys_coerced_to_strings():
+def test_non_str_dict_keys_coerced_to_strings():
     """Non-string dict keys become strings, as with the stdlib."""
-    out = orjson_dumps_socket({1: "a", 2: "b"})
-    assert orjson_loads(out) == {"1": "a", "2": "b"}
+    out = orjson_dumps_socket({1: "a", 2.5: "b", False: "c", None: "d"})
+    assert out == '{"1":"a","2.5":"b","false":"c","null":"d"}'
+
+
+@pytest.mark.parametrize(
+    ("key", "type_name"),
+    [
+        (_EnumForSerializer.ACTIVE, "_EnumForSerializer"),
+        (datetime.date(2026, 4, 25), "datetime.date"),
+        (UUID(int=1), "UUID"),
+    ],
+)
+def test_dict_keys_the_stdlib_rejects_are_rejected(key: Any, type_name: str):
+    """A key type the stdlib refuses is refused whatever the backend.
+
+    Args:
+        key: A dict key that is neither str, int, float, bool nor None.
+        type_name: The key's type as the stdlib names it.
+    """
+    with pytest.raises(TypeError) as exc_info:
+        orjson_dumps_socket({key: 1})
+    assert str(exc_info.value) == (
+        f"keys must be str, int, float, bool or None, not {type_name}"
+    )
 
 
 # unknown-type fallback

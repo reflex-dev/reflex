@@ -992,9 +992,6 @@ def orjson_loads(data: str | bytes) -> Any:
     return orjson.loads(data)
 
 
-_ORJSON_SOCKET_OPTS = (
-    (orjson.OPT_NON_STR_KEYS | _ORJSON_PASSTHROUGH_OPTS) if orjson is not None else 0
-)
 _COMPACT_SEPARATORS = (",", ":")
 
 
@@ -1044,9 +1041,12 @@ def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
         return _json_dumps_socket(obj)
 
     try:
-        out = orjson.dumps(obj, default=_orjson_default, option=_ORJSON_SOCKET_OPTS)
+        out = orjson.dumps(
+            obj, default=_orjson_default, option=_ORJSON_PASSTHROUGH_OPTS
+        )
     except TypeError:
-        # Payloads orjson can't represent even via default (e.g. int > 64-bit).
+        # Payloads orjson can't represent even via default (e.g. int > 64-bit),
+        # and non-str keys: orjson's option for those doubles its time.
         return _json_dumps_socket(obj)
 
     if b"null" not in out:
