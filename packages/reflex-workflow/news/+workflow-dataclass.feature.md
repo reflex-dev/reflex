@@ -1,1 +1,0 @@
-Workflows can be mixed into models on a `MappedAsDataclass` base by importing `Workflow`, `AttemptLog` and `RateBucket` from `reflex_workflow.dataclass`, which SQLAlchemy 2.1 requires and 2.0 warns about. The engine's columns stay out of the constructor, so a model reads as it did before the mixin was added.
