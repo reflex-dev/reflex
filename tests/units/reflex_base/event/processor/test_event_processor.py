@@ -27,6 +27,7 @@ from reflex_base.event.processor.event_processor import (
 )
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.exceptions import BrowserDisconnectedError
 
 from reflex.event import Event, EventHandler, EventSpec
 from tests.units.conftest import active_tracer
@@ -2225,8 +2226,6 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
     Args:
         processor: The event processor fixture.
     """
-    from reflex_base.utils.exceptions import BrowserDisconnectedError
-
     event = Event(name="_call_script", payload={"javascript_code": "1"})
     namespace = _FakeEventNamespace("tok")
     processor.browser_call_grace_period = 0.01

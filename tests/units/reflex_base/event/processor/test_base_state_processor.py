@@ -37,6 +37,7 @@ from reflex_base.event.processor.base_state_processor import (
     _transform_event_payload,
 )
 from reflex_base.registry import RegistrationContext
+from reflex_base.utils.exceptions import BrowserDisconnectedError, EventHandlerTypeError
 from reflex_base.utils.form import FORM_DATA_ENTRIES_KEY, FormData
 from reflex_base.utils.types import Receive, Scope, Send
 
@@ -5839,8 +5840,6 @@ async def test_await_browser_call_under_the_lock_or_with_a_callback_raises(
         real_base_state_processor: The unmocked BaseStateEventProcessor.
         token: The client token.
     """
-    from reflex_base.utils.exceptions import EventHandlerTypeError
-
     calls = _record_browser_calls(real_base_state_processor, [])
     errors: dict[str, str] = {}
     lock_error = (
@@ -5898,8 +5897,6 @@ async def test_await_browser_call_without_a_frontend_raises(
         real_base_state_processor: The unmocked BaseStateEventProcessor.
         token: The client token.
     """
-    from reflex_base.utils.exceptions import BrowserDisconnectedError
-
     errors: list[str] = []
 
     class NoFrontendState(State):

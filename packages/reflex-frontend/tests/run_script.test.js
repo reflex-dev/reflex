@@ -215,6 +215,16 @@ describe("awaited script results", () => {
     });
   });
 
+  test("describes a thrown value that cannot become a string", async () => {
+    // String() throws on an object without a prototype; the backend must
+    // still receive an error rather than wait for its timeout.
+    const { outcome } = awaited(script("Promise.reject(Object.create(null))"));
+    expect(await outcome()).toEqual({
+      rid: "r1",
+      error: { name: "Error", message: "[object Object]", stack: "" },
+    });
+  });
+
   test.each([
     [
       "a DOM node",

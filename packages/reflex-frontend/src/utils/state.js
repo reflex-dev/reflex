@@ -625,15 +625,28 @@ const runEventScript = (event, socket, navigate, params) => {
 };
 
 /**
+ * Convert a value a script threw to text, which String() cannot always do.
+ * @param value The value to convert.
+ * @returns The value as text; an object without a prototype is "[object Object]".
+ */
+const toText = (value) => {
+  try {
+    return String(value);
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
+};
+
+/**
  * Describe an error a script threw, for the backend that awaits its result.
  * @param error The thrown value, which need not be an Error.
  * @param kind The kind of failure, if it is not the script's own.
  * @returns The error's name, message and stack.
  */
 const describeScriptError = (error, kind = undefined) => ({
-  name: error?.name ?? "Error",
-  message: error instanceof Error ? error.message : String(error),
-  stack: error?.stack ?? "",
+  name: toText(error?.name ?? "Error"),
+  message: toText(error instanceof Error ? error.message : error),
+  stack: toText(error?.stack ?? ""),
   ...(kind === undefined ? {} : { kind }),
 });
 
