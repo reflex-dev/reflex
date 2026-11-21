@@ -15,6 +15,10 @@ def CallScript():
     from pathlib import Path
 
     import reflex as rx
+    from reflex.utils.exceptions import (
+        BrowserResultSerializationError,
+        BrowserScriptError,
+    )
 
     inline_scripts = """
     let inline_counter = 0
@@ -48,11 +52,6 @@ def CallScript():
 
         @rx.event(background=True)
         async def await_results(self):
-            from reflex.utils.exceptions import (
-                BrowserResultSerializationError,
-                BrowserScriptError,
-            )
-
             seen: list[str] = [
                 repr(await rx.call_script("inline3()")),
                 repr(await rx.call_script("inline4()")),
