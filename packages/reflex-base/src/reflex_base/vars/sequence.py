@@ -2166,7 +2166,8 @@ class ArrayItemOperation(CachedVarOperation, Var):
         Returns:
             The array item operation.
         """
-        index_var = index if isinstance(index, Var) else LiteralNumberVar.create(index)
+        # LiteralVar.create renders a bool index as `true`, not Python's `True`.
+        index_var = index if isinstance(index, Var) else LiteralVar.create(index)
         return cls(
             _js_expr="",
             _var_type=_determine_value_of_array_index(
