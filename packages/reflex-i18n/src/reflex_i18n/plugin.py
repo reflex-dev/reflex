@@ -13,6 +13,7 @@ from reflex_base.plugins.base import (
     CommonContext,
     ExpandRoutesContext,
     Plugin,
+    PostBuildContext,
     PreCompileContext,
 )
 from reflex_base.utils.exceptions import RouteValueError
@@ -62,6 +63,24 @@ _RUNTIME_SOURCE = Path(__file__).parent / "_web" / "i18n.js"
 
 # Priority for the hreflang app-wrap; any position inside the router tree works.
 _HREFLANG_PRIORITY = 57
+
+# Language subtags written right-to-left, as in the client runtime.
+_RTL_LANGUAGES = frozenset({
+    "ar",
+    "arc",
+    "ckb",
+    "dv",
+    "fa",
+    "he",
+    "ks",
+    "ps",
+    "sd",
+    "ug",
+    "ur",
+    "yi",
+})
+
+_HTML_TAG = re.compile(r"<html\b[^>]*>", re.IGNORECASE)
 
 
 def _catalog_ident(locale: str) -> str:
@@ -150,6 +169,42 @@ def _localized_page(component: Any, locale: str) -> Any:
         )
 
     return render
+
+
+def _text_direction(locale: str) -> str:
+    """Return the writing direction of a locale's language.
+
+    Args:
+        locale: A locale tag (case-insensitive).
+
+    Returns:
+        ``rtl`` or ``ltr``.
+    """
+    language = locale.partition("-")[0].lower()
+    return "rtl" if language in _RTL_LANGUAGES else "ltr"
+
+
+def _set_document_locale(document: str, locale: str) -> str:
+    """Set ``lang`` and ``dir`` on the ``<html>`` tag of a rendered page.
+
+    Args:
+        document: The page's HTML.
+        locale: The locale the page is rendered in.
+
+    Returns:
+        The HTML with the locale's language and direction on its root.
+    """
+    match = _HTML_TAG.search(document)
+    if match is None:
+        return document
+    tag = match.group()
+    for name, value in (("lang", locale), ("dir", _text_direction(locale))):
+        attribute = f' {name}="{value}"'
+        # Validated locale tags hold no backslashes, so this is a literal repl.
+        tag, found = re.subn(rf'\s{name}="[^"]*"', attribute, tag, count=1)
+        if not found:
+            tag = f"{tag[:-1]}{attribute}>"
+    return document[: match.start()] + tag + document[match.end() :]
 
 
 @dataclasses.dataclass
@@ -298,6 +353,36 @@ class I18nPlugin(Plugin):
                 "Build them inside a page or component function instead."
             )
         context["add_save_task"](self._compile_catalogs)
+
+    def post_build(self, **context: Unpack[PostBuildContext]) -> None:
+        """Give the prerendered pages of each prefixed locale its ``lang``/``dir``.
+
+        The document root is compiled once for the whole app, so every page is
+        prerendered with the app-wide ``html_lang``; without this the locale's
+        language and direction would only apply on hydration.
+
+        Args:
+            context: The post-build context.
+        """
+        from reflex_base.config import get_config
+
+        if self.routing is None:
+            return
+        pages_dir = Path(context["static_dir"]) / get_config().frontend_path.strip("/")
+        for locale in self.locales:
+            prefix = self.routing.localize("/", locale, self.default_locale).strip("/")
+            if not prefix:
+                # Default-at-root pages keep the app's html_lang.
+                continue
+            for page in (
+                pages_dir / f"{prefix}.html",
+                *(pages_dir / prefix).rglob("*.html"),
+            ):
+                if page.is_file():
+                    page.write_text(
+                        _set_document_locale(page.read_text(encoding="utf-8"), locale),
+                        encoding="utf-8",
+                    )
 
     def _compile_catalogs(self) -> list[tuple[str, str]]:
         """Compile the per-locale catalog modules from the ``.po`` catalogs.

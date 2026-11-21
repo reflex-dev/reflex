@@ -2,16 +2,18 @@
 
 import json
 import logging
+import re
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
 
 import pytest
+from reflex_base.config import get_config
 from reflex_i18n import I18nPlugin, PathPrefixRouting, t
 from reflex_i18n.config import I18nConfig, set_active_i18n_config
 from reflex_i18n.format import _SOURCE_FMT_DATE, _SOURCE_FMT_NUMBER
-from reflex_i18n.plugin import _RUNTIME_SOURCE
+from reflex_i18n.plugin import _RTL_LANGUAGES, _RUNTIME_SOURCE, _set_document_locale
 from reflex_i18n.registry import clear_messages
 from reflex_i18n.runtime import (
     WeekdayLength,
@@ -764,3 +766,126 @@ def test_provider_reports_locale_switch_to_server(
     else:
         # The client switched as well.
         assert rendered["stateUpdates"][-1] == expected[-1]
+
+
+_PRERENDERED = '<!DOCTYPE html><html lang="en"><head></head><body></body></html>'
+_HTML_TAG_RE = re.compile(r"<html[^>]*>")
+
+
+def _html_tag(page: Path) -> str:
+    """Return the ``<html>`` opening tag of a page.
+
+    Args:
+        page: The HTML file.
+
+    Returns:
+        The tag.
+    """
+    match = _HTML_TAG_RE.search(page.read_text(encoding="utf-8"))
+    assert match is not None
+    return match[0]
+
+
+@pytest.mark.parametrize("frontend_path", ["", "/app"])
+def test_post_build_sets_the_document_locale_of_prerendered_locale_pages(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, frontend_path: str
+):
+    """Pages under a locale prefix carry its language; unprefixed ones the app's."""
+    monkeypatch.setattr(get_config(), "frontend_path", frontend_path)
+    pages_dir = tmp_path / frontend_path.strip("/")
+    pages = [
+        "index.html",
+        "pricing.html",
+        "pricing/index.html",
+        "__spa-fallback.html",
+        "de.html",
+        "de/index.html",
+        "de/pricing.html",
+        "de/pricing/index.html",
+        "ar/pricing/index.html",
+    ]
+    for page in pages:
+        (pages_dir / page).parent.mkdir(parents=True, exist_ok=True)
+        (pages_dir / page).write_text(_PRERENDERED, encoding="utf-8")
+
+    plugin = I18nPlugin(locales=["en", "de", "ar"], routing=PathPrefixRouting())
+    plugin.post_build(static_dir=tmp_path)
+
+    unchanged = '<html lang="en">'
+    german = '<html lang="de" dir="ltr">'
+    arabic = '<html lang="ar" dir="rtl">'
+    assert {page: _html_tag(pages_dir / page) for page in pages} == {
+        "index.html": unchanged,
+        "pricing.html": unchanged,
+        "pricing/index.html": unchanged,
+        "__spa-fallback.html": unchanged,
+        "de.html": german,
+        "de/index.html": german,
+        "de/pricing.html": german,
+        "de/pricing/index.html": german,
+        "ar/pricing/index.html": arabic,
+    }
+
+
+def test_post_build_prefixes_the_default_locale_without_default_at_root(
+    tmp_path: Path,
+):
+    """Without default-at-root, the default locale has a prefix of its own."""
+    page = tmp_path / "en" / "index.html"
+    page.parent.mkdir()
+    page.write_text(_PRERENDERED.replace('lang="en"', 'lang="de"'), encoding="utf-8")
+
+    plugin = I18nPlugin(
+        locales=["en", "de"], routing=PathPrefixRouting(default_at_root=False)
+    )
+    plugin.post_build(static_dir=tmp_path)
+
+    assert page.read_text(encoding="utf-8") == _PRERENDERED.replace(
+        '<html lang="en">', '<html lang="en" dir="ltr">'
+    )
+
+
+def test_post_build_leaves_cookie_mode_pages_alone(tmp_path: Path):
+    """Cookie mode has one URL per page, so no page has a locale of its own."""
+    page = tmp_path / "de" / "index.html"
+    page.parent.mkdir()
+    page.write_text(_PRERENDERED, encoding="utf-8")
+
+    I18nPlugin(locales=["en", "de"]).post_build(static_dir=tmp_path)
+
+    assert page.read_text(encoding="utf-8") == _PRERENDERED
+
+
+@pytest.mark.parametrize(
+    ("document", "locale", "expected"),
+    [
+        (
+            '<html lang="en" dir="ltr" class="dark"><body></body></html>',
+            "ar-EG",
+            '<html lang="ar-EG" dir="rtl" class="dark"><body></body></html>',
+        ),
+        (
+            '<html data-lang="en"><body lang="en"></body></html>',
+            "de",
+            '<html data-lang="en" lang="de" dir="ltr"><body lang="en"></body></html>',
+        ),
+        ("<p>no document root</p>", "de", "<p>no document root</p>"),
+    ],
+    ids=["replaces", "adds", "no_root"],
+)
+def test_set_document_locale_rewrites_only_the_root_attributes(
+    document: str, locale: str, expected: str
+):
+    """Other attributes and elements keep their values."""
+    assert _set_document_locale(document, locale) == expected
+
+
+def test_server_and_client_agree_on_right_to_left_languages():
+    """The prerendered direction matches what the client applies on hydration."""
+    match = re.search(
+        r"const RTL_LANGUAGES = new Set\(\[(.*?)\]\);",
+        _RUNTIME_SOURCE.read_text(encoding="utf-8"),
+        re.DOTALL,
+    )
+    assert match is not None
+    assert set(re.findall(r'"([a-z]+)"', match[1])) == _RTL_LANGUAGES

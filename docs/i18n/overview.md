@@ -405,10 +405,9 @@ Notes:
 - App routes must not start with a configured locale (e.g. a `/de/...` page of
   your own while `de` is configured): those URLs are reserved for the generated
   locale routes, and compilation fails with a clear error.
-- Each locale route prerenders that language's content, `hreflang` and
-  `canonical`. The `<html lang>` and `dir` attributes are applied on hydration:
-  the document root is app-wide (`rx.App(html_lang=...)`) and cannot yet vary
-  per route.
+- Each locale route prerenders that language's content, `hreflang`,
+  `canonical` and `<html lang>`/`dir`. Unprefixed pages of the default locale
+  keep the app-wide `rx.App(html_lang=...)`, so set it to your `default_locale`.
 
 ## Translation catalogs
 
