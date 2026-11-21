@@ -13,7 +13,11 @@ const modules = vi.hoisted(() => {
   const slowLoaded = new Promise((resolve) => {
     releaseSlow = resolve;
   });
-  return { seen: [], releaseSlow, slowLoaded };
+  let releaseGated = () => {};
+  const gatedLoaded = new Promise((resolve) => {
+    releaseGated = resolve;
+  });
+  return { seen: [], releaseSlow, slowLoaded, releaseGated, gatedLoaded };
 });
 
 vi.mock("$/utils/scripts", () => ({
@@ -35,6 +39,12 @@ vi.mock("$/utils/scripts", () => ({
     "app.scripts.slow": () =>
       modules.slowLoaded.then(() => ({
         ping: (value) => modules.seen.push(["ping", value]),
+      })),
+    "app.scripts.gated": () =>
+      modules.gatedLoaded.then(() => ({
+        write: (value) => {
+          globalThis.gatedValue = value;
+        },
       })),
     "app.scripts.broken": () =>
       Promise.reject(new Error("Failed to fetch the module.")),
@@ -95,6 +105,35 @@ test("the next event sees what a function did, though events overlap", async () 
   );
   await Promise.all([first, second]);
   expect(globalThis.reads).toEqual(["new"]);
+});
+
+test("an event queued while the modules load runs after the function before it", async () => {
+  // Until the modules the page loads have settled, events wait for them in
+  // the order they arrived, so the script still sees what the function did.
+  globalThis.reads = [];
+  const socket = { connected: true, emit: vi.fn() };
+  const first = queueEvents(
+    [callJsEvent("app.scripts.gated", "write", ["gated"])],
+    socket,
+    false,
+    null,
+    null,
+  );
+  const second = queueEvents(
+    [
+      {
+        name: "_call_script",
+        payload: { javascript_code: "reads.push(globalThis.gatedValue)" },
+      },
+    ],
+    socket,
+    false,
+    null,
+    null,
+  );
+  modules.releaseGated();
+  await Promise.all([first, second]);
+  expect(globalThis.reads).toEqual(["gated"]);
 });
 
 test("a function of a module still loading runs once it has loaded", async () => {
