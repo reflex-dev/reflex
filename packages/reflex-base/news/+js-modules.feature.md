@@ -1,1 +1,1 @@
-Call exported functions of the app's own JavaScript modules from Python without evaluating any code: the `_call_js` event runs a function bundled from `utils/scripts.js` by name, with JSON arguments, so it works under a Content Security Policy without `unsafe-eval`.
+The `_call_js` event calls a function of one of the app's JavaScript modules by name, with JSON arguments, so the frontend evaluates no code. `utils/scripts.js` maps each module's Python name to a function that loads it, and the page loads them as it starts.

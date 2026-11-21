@@ -1,1 +1,1 @@
-A callable taking `*args` passed to an event trigger, such as `on_mount=lambda *args: ...`, now receives all of the trigger's arguments, and works with triggers that pass none, instead of failing to compile or getting only the first argument.
+A callable passed to an event trigger gets the trigger's arguments only through its positional parameters: `lambda *args: ...` gets all of them, even none, and `lambda key, **kwargs: ...` or a keyword-only parameter no longer raises `TypeError`.

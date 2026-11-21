@@ -276,12 +276,9 @@ event handlers that take no arguments, such as `SearchState.clear`.
 
 ## JavaScript Modules
 
-For more than a line of Javascript, write it in a `.js` (or `.ts`) file in your
-app package and import its exported functions in Python. You get your editor's
-Javascript support in the file, and nothing is evaluated: the module is bundled
-with the app, and calling one of its functions sends only the function's name
-and its arguments as JSON. Apps whose Content Security Policy forbids
-`unsafe-eval` can use them.
+Write JavaScript in a `.js` or `.ts` file in your app's package and import its
+exported functions in Python, like a Python module. Each function returns an
+event: use it in an event trigger, or return or yield it from an event handler.
 
 ```javascript
 // my_app/scripts/party.js
@@ -293,46 +290,100 @@ export function celebrate(count, elementId) {
   document.getElementById(elementId).scrollIntoView();
 }
 
-export function report(handler, value) {
-  reflex.addEvents([reflex.event(handler, { value })]);
+export function measure(id, handler) {
+  const { width } = document.getElementById(id).getBoundingClientRect();
+  reflex.addEvents([reflex.event(handler, { width })]);
 }
 ```
 
 ```python
-from my_app.scripts.party import celebrate, report
+# my_app/my_app.py
+import reflex as rx
+
+from my_app.scripts.party import celebrate, measure
 
 
 class PartyState(rx.State):
     count: int = 200
+    width: float = 0
 
     @rx.event
     def finish(self):
         return celebrate(self.count, "results")
 
     @rx.event
-    def done(self, value: str): ...
+    def set_width(self, width: float):
+        self.width = width
 
 
-rx.button("🎉", on_click=celebrate(PartyState.count, "results"))
-rx.button("Report", on_click=report(PartyState.done, "clicked"))
+def index():
+    return rx.vstack(
+        rx.button("Celebrate", on_click=celebrate(PartyState.count, "results")),
+        rx.button("Finish", on_click=PartyState.finish),
+        rx.button("Measure", on_click=measure("results", PartyState.set_width)),
+        rx.text(f"Width: {PartyState.width}", id="results"),
+    )
+
+
+app = rx.App()
+app.add_page(index)
 ```
 
-- Each named export becomes a function returning an event. Use it in an event
-  trigger, or return or yield it from an event handler. Passed to a trigger
-  uncalled, like `rx.input(on_change=set_title)`, it receives the trigger's
-  arguments.
-- Arguments are sent as JSON. An event handler arrives as its full name, which
-  the function can dispatch with `reflex.addEvents([reflex.event(name, payload)])`.
-- The function's return value is not sent back to the backend; report results
-  through `reflex.addEvents`.
-- Packages the module imports, such as `canvas-confetti`, are installed with
-  the app. Pin a version with `frontend_packages` in `rxconfig.py`.
+Nothing is evaluated: the module is bundled with the app, and calling one of its
+functions sends only the module's name, the function's name and the arguments.
+Apps whose Content Security Policy forbids `unsafe-eval` can use them.
+
+### Rules
+
+- Only modules in your app's package import this way: the package that
+  `app_name` in `rxconfig.py` names. A `.js` file in another package, such as
+  a library you installed, is never imported.
+- A Python module of the same name wins over a JavaScript one.
+- Every named export that may be a function becomes a function. A `const`
+  initialized with a literal, as in `export const limit = 5`, is a value, and
+  Python cannot call it. A default export, a class and TypeScript types are
+  left out.
+- Arguments are sent as JSON. A var is sent as its value in the browser. An
+  event handler arrives as its full name, which the function dispatches with
+  `reflex.addEvents([reflex.event(name, payload)])`, as `measure` does above.
+- The function's return value is not sent back. To get a value back, pass an
+  event handler and dispatch it with the value, as `measure` does.
+- The npm packages the module imports, such as `canvas-confetti`, are installed
+  with the app. Pin a version with `frontend_packages` in `rxconfig.py`. Path
+  aliases (`@/...`), subpath imports (`#...`) and specifiers with a scheme
+  (`virtual:...`, `https://...`) are left to the bundler and not installed.
 - Local files the module imports with relative paths, such as `./helpers.js`,
   `./party.css` or `./logo.png`, are bundled with it, and so are the files they
   import, including a stylesheet's `@import` and `url(...)` references. They
-  must be inside the directory of your app's package.
+  must be inside your app's package directory, which is all of your project
+  that is copied into the compiled app.
+- In a `.jsx` or `.tsx` file, JSX is read as JSX. In a `.js` or `.ts` file,
+  `<` is never JSX, so a quote in what would be JSX text hides the code after
+  it on that line.
 - Reflex writes a type stub (`party.pyi`) next to the module when it compiles
   the app, so type checkers resolve the import.
+
+### Errors
+
+- `Cannot import nope from my_app.scripts.party: .../party.js exports no
+  function named nope (its functions: celebrate, measure).` Export the function
+  from the file, as in `export function nope() { ... }`, or fix the name you
+  import.
+- `Cannot import limit from my_app.scripts.party: .../party.js exports limit as
+  a value, not a function, and Python can only call functions.` Export a
+  function that uses the value instead.
+- `The JavaScript module my_app.scripts.party imports .../shared.js, which is
+  outside .../my_app, the directory of the app's package, and only that
+  directory is copied into the compiled app.` Move the file into your app's
+  package, or publish it as an npm package and import it by name.
+- `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
+  which does not exist in the browser.` Remove the import, and do the work that
+  needs it in a backend event handler instead.
+- In the browser, `Cannot call my_app.scripts.party.nope: the frontend has no
+  function nope in the JavaScript module my_app.scripts.party.` The module does
+  not export a function of that name, or the frontend was built before the
+  backend imported it. Export the function, or restart `reflex run` to rebuild
+  the frontend.
 
 ## Using React Hooks
 
