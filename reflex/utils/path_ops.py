@@ -189,6 +189,10 @@ def ls(path: str | Path) -> list[Path]:
 def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
     """Create a symbolic link.
 
+    If creating the symlink fails (no permission, or a cross-device link),
+    the target is copied to the link location instead, so the caller still
+    gets the content.
+
     Args:
         src: The path to the file or directory.
         dest: The path to the destination.
@@ -202,11 +206,19 @@ def ln(src: str | Path, dest: str | Path, overwrite: bool = False) -> bool:
         return False
     if not overwrite and (dest.exists() or dest.is_symlink()):
         return False
-    if src.is_dir():
-        rm(dest)
-        src.symlink_to(dest, target_is_directory=True)
-    else:
-        src.symlink_to(dest)
+    try:
+        if src.is_dir():
+            rm(dest)
+            src.symlink_to(dest, target_is_directory=True)
+        else:
+            src.symlink_to(dest)
+    except OSError:
+        # Symlinks may be unavailable on this filesystem: fall back to a
+        # plain copy so the caller still gets the content.
+        if dest.is_dir():
+            shutil.copytree(dest, src)
+        else:
+            shutil.copy2(dest, src)
     return True
 
 
@@ -364,12 +376,12 @@ def file_lock(path: str | Path) -> Iterator[Path]:
                 os.close(lock_fd)
 
 
-def _write_json_file(file_path: Path, value: dict[str, object]) -> None:
+def _write_json_file(file_path: Path, value: object) -> None:
     """Atomically replace a JSON file with a complete document.
 
     Args:
         file_path: The destination JSON file.
-        value: The complete JSON object to write.
+        value: The complete JSON value to write.
     """
     open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
     temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")
