@@ -5,6 +5,8 @@ from os.path import commonprefix
 
 from reflex.utils.format import to_snake_case
 
+from reflex_docs.utils.acronyms import uppercase_acronyms
+
 GENERIC_DESCRIPTION_TEMPLATE = "{subject}: documentation, examples, and reference for building Python web applications with Reflex."
 
 # Frontmatter components documented under a different public constructor.
@@ -128,25 +130,15 @@ def docs_metadata(
     Returns:
         The search title and description.
     """
-    acronyms = {
-        "ai": "AI",
-        "api": "API",
-        "cli": "CLI",
-        "html": "HTML",
-        "css": "CSS",
-        "mcp": "MCP",
-        "sdk": "SDK",
-    }
     parents = [
-        " ".join(acronyms.get(word, word.capitalize()) for word in part.split("-"))
+        uppercase_acronyms(" ".join(word.capitalize() for word in part.split("-")))
         for part in path.strip("/").split("/")[:-1]
     ]
     if title.lower() == "index" and parents:
         title = " ".join(
-            acronyms.get(word, word.capitalize())
-            for word in path.strip("/").split("/")[-1].split("-")
+            word.capitalize() for word in path.strip("/").split("/")[-1].split("-")
         )
-    title = " ".join(acronyms.get(word.lower(), word) for word in title.split())
+    title = uppercase_acronyms(title)
     context = [
         parent for parent in reversed(parents) if parent.lower() != title.lower()
     ]

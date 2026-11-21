@@ -27,6 +27,7 @@ from reflex_docs.pages.docs.component import multi_docs
 from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.pages.library_previews import components_previews_pages
 from reflex_docs.templates.docpage import docpage
+from reflex_docs.utils.acronyms import uppercase_acronyms
 from reflex_docs.whitelist import _check_whitelisted_path
 
 from .apiref import pages as apiref_pages
@@ -177,17 +178,18 @@ library_display_titles: dict[str, str] = {}
 doc_markdown_sources: dict[str, str] = {}
 
 
+# The heading spells the term with a hyphen, which the filename cannot.
+FAN_OUT_DOC = "docs/workflows/fan_out.md"
+
 manual_titles = {
     "docs/ai_builder/apis.md": "APIs",
     "docs/ai_builder/urls.md": "URLs",
-    "docs/ai_builder/integrations/custom_oidc.md": "Custom OIDC",
-    "docs/ai_builder/integrations/microsoft_entra_id.md": "Microsoft Entra ID",
     "docs/database/overview.md": "Database Overview",
     "docs/workflows/overview.md": "Workflows Overview",
     "docs/workflows/tutorial.md": "Tutorial: Build an Onboarding Workflow",
     "docs/workflows/runs.md": "Starting and Controlling Runs",
     "docs/workflows/events.md": "Waiting for Events",
-    "docs/workflows/fan_out.md": "Fan-Out",
+    FAN_OUT_DOC: "Fan-Out",
     "docs/workflows/concurrency.md": "Concurrency, Rate Limits, and Lanes",
     "docs/workflows/workers.md": "Running Workers",
     "docs/workflows/how_it_works.md": "How Workflows Work",
@@ -215,6 +217,14 @@ manual_titles = {
     "docs/enterprise/ag_grid/aligned-grids.md": "AG Grid Aligned Grids in Python",
     "docs/enterprise/ag_grid/tree-data.md": "AG Grid Tree Data in Python",
     "docs/enterprise/ag_grid/master-detail.md": "AG Grid Master Detail in Python",
+}
+
+
+# Short navigation labels for docs whose filename-derived label would misspell
+# the term, e.g. "Fan Out" for fan_out.md. Unlike ``manual_titles`` these feed
+# the sidebar and the previous/next links, not the page title.
+nav_titles = {
+    FAN_OUT_DOC: "Fan-Out",
 }
 
 
@@ -254,7 +264,7 @@ def resolve_doc_route(doc: str, title: str) -> ResolvedDoc | None:
     route = doc_route_from_path(doc)
     if not _check_whitelisted_path(route):
         return None
-    display_title = manual_titles.get(doc, to_title_case(title))
+    display_title = manual_titles.get(doc) or uppercase_acronyms(to_title_case(title))
     category = os.path.basename(os.path.dirname(doc)).title()
     return ResolvedDoc(route=route, display_title=display_title, category=category)
 
@@ -575,7 +585,7 @@ def register_doc(virtual_doc: str, comp):
     """Register a doc into the namespace, doc_routes, and recipes_list."""
     path = virtual_doc.split("/")[1:-1]
     title = doc_title_from_path(virtual_doc)
-    title2 = to_title_case(title)
+    title2 = nav_titles.get(virtual_doc, to_title_case(title))
     route = doc_route_from_path(virtual_doc)
 
     build_nested_namespace(
