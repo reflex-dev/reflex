@@ -7,13 +7,16 @@ from reflex_base.event import (
     EventArgVar,
     EventChain,
     LambdaEventCallback,
+    _BrowserCallSpec,
     event_arg_placeholder,
     event_args_signature,
     no_args_event_spec,
     parse_args_spec,
     passthrough_event_spec,
 )
-from reflex_base.vars.base import Var
+from reflex_base.utils.types import Unset
+from reflex_base.vars import VarData
+from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import NumberVar
 
 import reflex as rx
@@ -100,19 +103,28 @@ def test_cond_between_function_and_none_inside_lambda_is_a_no_op_when_false() ->
     )
 
 
-def test_script_events_carry_a_timeout_only_when_given():
-    """A timeout passed to a script event is in its payload; an unset one is not."""
-    assert [
-        spec._to_event().payload
-        for spec in (
-            rx.call_script("1"),
+def test_script_events_keep_their_timeout_off_the_wire():
+    """A script event's timeout stays on the spec: neither its payload nor its compiled trigger has it."""
+    hooked = Var(_js_expr="y", _var_data=VarData(hooks={"const y = 1;": None}))
+    specs = cast(
+        "list[_BrowserCallSpec]",
+        [
             rx.call_script("1", timeout=5),
+            rx.call_script(f"f({hooked})", timeout=3),
+            rx.call_script(Var(_js_expr="code"), timeout=4),
             rx.call_function("() => 1", timeout=None),
             rx.run_script("2", timeout=1.5),
-        )
-    ] == [
-        {"javascript_code": "1", "callback": None},
-        {"javascript_code": "1", "callback": None, "timeout": 5},
-        {"function": "() => 1", "callback": None, "timeout": None},
-        {"function": "(() => 2)", "callback": None, "timeout": 1.5},
+        ],
+    )
+    assert [(spec._to_event().payload, spec.timeout) for spec in specs] == [
+        ({"javascript_code": "1", "callback": None}, 5),
+        ({"javascript_code": '("f("+y+")")', "callback": None}, 3),
+        ({"javascript_code": "code", "callback": None}, 4),
+        ({"function": "() => 1", "callback": None}, None),
+        ({"function": "(() => 2)", "callback": None}, 1.5),
     ]
+    assert str(LiteralVar.create(specs[0])) == (
+        '(ReflexEvent("_call_script", ({ ["javascript_code"] : "1", '
+        '["callback"] : null }), ({  })))'
+    )
+    assert isinstance(cast("_BrowserCallSpec", rx.call_script("1")).timeout, Unset)

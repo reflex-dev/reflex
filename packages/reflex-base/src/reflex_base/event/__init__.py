@@ -2083,6 +2083,20 @@ def download(
     )
 
 
+@dataclasses.dataclass(init=True, frozen=True, kw_only=True, eq=False)
+class _BrowserCallSpec(EventSpec):
+    """The spec of a script run in the browser, whose result a background handler can await.
+
+    Attributes:
+        timeout: Seconds an awaited call waits for the result, None for no
+            limit, or Unset for ``rx.Config.browser_call_timeout``. It is not
+            one of the args, which go to the browser, since only the backend
+            uses it.
+    """
+
+    timeout: float | Unset | None = Unset()
+
+
 @lru_cache
 def _script_signature(fn: Callable) -> inspect.Signature:
     """Get the signature of a script event, without the timeout of an awaited call.
@@ -2101,28 +2115,36 @@ def _script_signature(fn: Callable) -> inspect.Signature:
     )
 
 
-def _script_kwargs(
-    callback: "EventType[Any] | None", timeout: float | Unset | None
-) -> dict[str, Any]:
-    """Build the arguments a script event takes besides its code.
+def _browser_call_spec(
+    name: str,
+    fn: Callable,
+    callback: "EventType[Any] | None",
+    timeout: float | Unset | None,
+    **kwargs: Any,
+) -> EventSpec:
+    """Build the spec of a script event, which a background handler can await.
 
     Args:
+        name: The name of the event.
+        fn: The function creating the script event.
         callback: EventHandler that will receive the result of the script.
-        timeout: Seconds to wait for the result when it is awaited; left out when unset.
+        timeout: Seconds an awaited call waits for the result.
+        **kwargs: The script, under the name the frontend reads it from.
 
     Returns:
-        The callback, as the javascript that queues it, and the timeout if set.
+        The spec of the script event.
     """
-    kwargs: dict[str, Any] = {
-        "callback": None
+    spec = server_side(
+        name,
+        _script_signature(fn),
+        **kwargs,
+        callback=None
         if callback is None
         else str(
             format.format_queue_events(callback, args_spec=lambda result: [result])
-        )
-    }
-    if not isinstance(timeout, Unset):
-        kwargs["timeout"] = timeout
-    return kwargs
+        ),
+    )
+    return _BrowserCallSpec(handler=spec.handler, args=spec.args, timeout=timeout)
 
 
 def call_script(
@@ -2155,11 +2177,8 @@ def call_script(
             # Without VarData, cast to string and eval the code in the event loop.
             javascript_code = str(Var(_js_expr=original_code))
 
-    return server_side(
-        "_call_script",
-        _script_signature(call_script),
-        javascript_code=javascript_code,
-        **_script_kwargs(callback, timeout),
+    return _browser_call_spec(
+        "_call_script", call_script, callback, timeout, javascript_code=javascript_code
     )
 
 
@@ -2187,11 +2206,8 @@ def call_function(
         Var(javascript_code) if isinstance(javascript_code, str) else javascript_code
     )
 
-    return server_side(
-        "_call_function",
-        _script_signature(call_function),
-        function=javascript_code,
-        **_script_kwargs(callback, timeout),
+    return _browser_call_spec(
+        "_call_function", call_function, callback, timeout, function=javascript_code
     )
 
 
@@ -3607,6 +3623,7 @@ class EventNamespace:
     EventHandler: TypeAlias = EventHandler
     EventSpec: TypeAlias = EventSpec
     CallableEventSpec: TypeAlias = CallableEventSpec
+    _BrowserCallSpec: TypeAlias = _BrowserCallSpec
     EventChain: TypeAlias = EventChain
     EventVar: TypeAlias = EventVar
     LiteralEventVar: TypeAlias = LiteralEventVar

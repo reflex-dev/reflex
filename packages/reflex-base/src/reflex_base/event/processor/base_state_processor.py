@@ -28,6 +28,7 @@ from reflex_base.event import (
     Event,
     EventHandler,
     EventSpec,
+    _BrowserCallSpec,
     _is_bound_event_handler,
 )
 from reflex_base.event.context import EventContext
@@ -38,7 +39,7 @@ from reflex_base.utils.exceptions import EventHandlerTypeError
 from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
 from reflex_base.utils.serializers import deserializers
-from reflex_base.utils.types import is_non_string_sequence
+from reflex_base.utils.types import Unset, is_non_string_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -579,16 +580,16 @@ def ensure_locked(
     return None
 
 
-# The frontend events whose result the backend can await.
-_BROWSER_CALL_EVENTS = frozenset({"_call_script", "_call_function"})
-
-
-async def _await_browser_call(ctx: EventContext, event: Event) -> Any:
+async def _await_browser_call(
+    ctx: EventContext, event: Event, timeout: float | Unset | None
+) -> Any:
     """Run a script in the client's browser and wait for its result.
 
     Args:
         ctx: The active EventContext of the client.
         event: The ``_call_script`` or ``_call_function`` event.
+        timeout: Seconds to wait for the result, None for no limit, or Unset
+            for ``rx.Config.browser_call_timeout``.
 
     Returns:
         The script's result.
@@ -605,20 +606,14 @@ async def _await_browser_call(ctx: EventContext, event: Event) -> Any:
             "await it in a background event handler, outside `async with self`."
         )
         raise EventHandlerTypeError(msg)
-    payload = event.payload
-    if payload.get("callback") is not None:
+    if event.payload["callback"] is not None:
         msg = (
             f"`{event.name}` was given a callback and awaited; pass either "
             "callback= or await its result, not both."
         )
         raise EventHandlerTypeError(msg)
-    # _to_event built this payload for this event alone, so it is the
-    # event's to change.
-    timeout = (
-        payload.pop("timeout")
-        if "timeout" in payload
-        else get_config().browser_call_timeout
-    )
+    if isinstance(timeout, Unset):
+        timeout = get_config().browser_call_timeout
     return await ctx.call_frontend(event, timeout)
 
 
@@ -665,8 +660,8 @@ async def execute_event_inline(spec: EventSpec) -> Any:
         raise EventHandlerTypeError(msg)
     event = spec._to_event(ctx.router_data)
     name = event.name
-    if name in _BROWSER_CALL_EVENTS:
-        return await _await_browser_call(ctx, event)
+    if isinstance(spec, _BrowserCallSpec):
+        return await _await_browser_call(ctx, event, spec.timeout)
     if spec.client_handler_name:
         msg = f"Upload event `{name}` cannot be awaited; use it as an event trigger."
         raise EventHandlerTypeError(msg)
