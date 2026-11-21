@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import Page, expect
 
+from reflex.config import get_config
 from reflex.testing import AppHarness
 
 
@@ -45,7 +46,7 @@ def CallScript():
 
     # A JavaScript module beside the app, imported from Python.
     Path(__file__).with_name("page_script.js").write_text(
-        'import { env } from "$/utils/script_env";\n'
+        'import { reflex } from "$/utils/reflex";\n'
         "/** @param {string} id @param {string} text */\n"
         "export function setText(id, text) {\n"
         "  document.getElementById(id).textContent = text;\n"
@@ -53,7 +54,7 @@ def CallScript():
         "/** @param {string} handler @param {string} value */\n"
         "export async function report(handler, value) {\n"
         "  await Promise.resolve();\n"
-        "  env.addEvents([env.event(handler, { value })]);\n"
+        "  reflex.addEvents([reflex.event(handler, { value })]);\n"
         "}\n"
     )
     page_script = importlib.import_module(__name__.rpartition(".")[0] + ".page_script")
@@ -64,7 +65,8 @@ def CallScript():
         external_counter: rx.Field[int] = rx.field(0)
         value: str = "Initial"
         last_result: rx.Field[int] = rx.field(0)
-        env_result: str = ""
+        reflex_result: str = ""
+        mounted_library: str = ""
 
         @rx.event
         def call_script_callback(self, result):
@@ -217,17 +219,46 @@ def CallScript():
             self.value = value
 
         @rx.event
-        def set_env_result(self, value: str):
-            self.env_result = value
+        def set_reflex_result(self, value: str):
+            self.reflex_result = value
+
+        @rx.event
+        def set_mounted_library(self, value: str):
+            self.mounted_library = value
 
         @rx.event
         def js_module_backend(self):
             return page_script.setText("js_module_text", "from the backend")
 
         @rx.event
-        def env_var_backend(self):
+        def js_module_then_script(self):
+            # Each yield is a message of its own, and the script must see what
+            # the module's function did.
+            yield page_script.setText("js_module_text", "written by the module")
+            yield rx.call_script(
+                "document.getElementById('js_module_text').textContent",
+                callback=CallScriptState.set_reflex_result,
+            )
+
+        @rx.event
+        def add_events_from_backend(self):
             return rx.run_script(
-                rx.js.env.add_events(CallScriptState.set_env_result("env var backend"))
+                rx.js.add_events(
+                    CallScriptState.set_reflex_result("add_events from the backend")
+                )
+            )
+
+        @rx.event
+        def ref_from_backend(self):
+            return rx.run_script(
+                rx.js.ref("reflex_target").current.value,
+                callback=CallScriptState.set_reflex_result,
+            )
+
+        @rx.event
+        def upload_url_from_backend(self):
+            return rx.call_script(
+                rx.get_upload_url("a.png"), callback=CallScriptState.set_reflex_result
             )
 
         @rx.event
@@ -389,29 +420,55 @@ def CallScript():
                 ),
                 id="call_with_var_str_cast_wrapped_inline",
             ),
-            rx.input(id="env_target", default_value="from the ref"),
-            rx.input(value=CallScriptState.env_result, id="env_result", read_only=True),
-            rx.button(
-                "env_string",
-                on_click=rx.call_script(
-                    "env.ref('env_target').current.value",
-                    callback=CallScriptState.set_env_result,
+            rx.input(
+                id="reflex_target",
+                default_value="from the ref",
+                on_mount=rx.call_script(
+                    "reflex.library('react').then((react) => typeof react.useState)",
+                    callback=CallScriptState.set_mounted_library,
                 ),
-                id="env_string",
+            ),
+            rx.input(
+                value=CallScriptState.reflex_result, id="reflex_result", read_only=True
+            ),
+            rx.input(
+                value=CallScriptState.mounted_library,
+                id="mounted_library",
+                read_only=True,
             ),
             rx.button(
-                "env_var_frontend",
+                "ref_from_string",
+                on_click=rx.call_script(
+                    "reflex.ref('reflex_target').current.value",
+                    callback=CallScriptState.set_reflex_result,
+                ),
+                id="ref_from_string",
+            ),
+            rx.button(
+                "add_events_from_frontend",
                 on_click=rx.run_script(
-                    rx.js.env.add_events(
-                        CallScriptState.set_env_result("env var frontend")
+                    rx.js.add_events(
+                        CallScriptState.set_reflex_result(
+                            "add_events from the frontend"
+                        )
                     )
                 ),
-                id="env_var_frontend",
+                id="add_events_from_frontend",
             ),
             rx.button(
-                "env_var_backend",
-                on_click=CallScriptState.env_var_backend,
-                id="env_var_backend",
+                "add_events_from_backend",
+                on_click=CallScriptState.add_events_from_backend,
+                id="add_events_from_backend",
+            ),
+            rx.button(
+                "ref_from_backend",
+                on_click=CallScriptState.ref_from_backend,
+                id="ref_from_backend",
+            ),
+            rx.button(
+                "upload_url_from_backend",
+                on_click=CallScriptState.upload_url_from_backend,
+                id="upload_url_from_backend",
             ),
             rx.text("", id="js_module_text"),
             rx.button(
@@ -425,9 +482,14 @@ def CallScript():
                 id="js_module_backend",
             ),
             rx.button(
+                "js_module_then_script",
+                on_click=CallScriptState.js_module_then_script,
+                id="js_module_then_script",
+            ),
+            rx.button(
                 "js_module_report",
                 on_click=page_script.report(
-                    CallScriptState.set_env_result, "from a module"
+                    CallScriptState.set_reflex_result, "from a module"
                 ),
                 id="js_module_report",
             ),
@@ -604,22 +666,31 @@ def test_call_script_w_var(
     expect(last_result).to_have_value("8")
 
 
-def test_script_env(call_script_page: Page):
-    """Scripts reach the script environment as `env` and through `rx.js.env`.
+def test_reflex_api(call_script_page: Page):
+    """Scripts reach Reflex through `reflex`, from strings and from `rx.js`.
 
     Args:
         call_script_page: Playwright page.
     """
-    env_result = call_script_page.locator("#env_result")
+    result = call_script_page.locator("#reflex_result")
+    expect(call_script_page.locator("#mounted_library")).to_have_value("function")
 
-    call_script_page.locator("#env_string").click()
-    expect(env_result).to_have_value("from the ref")
+    call_script_page.locator("#ref_from_string").click()
+    expect(result).to_have_value("from the ref")
 
-    call_script_page.locator("#env_var_frontend").click()
-    expect(env_result).to_have_value("env var frontend")
+    call_script_page.locator("#add_events_from_frontend").click()
+    expect(result).to_have_value("add_events from the frontend")
 
-    call_script_page.locator("#env_var_backend").click()
-    expect(env_result).to_have_value("env var backend")
+    call_script_page.locator("#add_events_from_backend").click()
+    expect(result).to_have_value("add_events from the backend")
+
+    call_script_page.locator("#reflex_target").fill("typed, read by the backend")
+    call_script_page.locator("#ref_from_backend").click()
+    expect(result).to_have_value("typed, read by the backend")
+
+    # A script from the backend still reads `env` from env.json.
+    call_script_page.locator("#upload_url_from_backend").click()
+    expect(result).to_have_value(f"{get_config().api_url}/_upload/a.png")
 
 
 def test_js_module(call_script_page: Page):
@@ -637,7 +708,12 @@ def test_js_module(call_script_page: Page):
     expect(text).to_have_text("from the backend")
 
     call_script_page.locator("#js_module_report").click()
-    expect(call_script_page.locator("#env_result")).to_have_value("from a module")
+    expect(call_script_page.locator("#reflex_result")).to_have_value("from a module")
+
+    call_script_page.locator("#js_module_then_script").click()
+    expect(call_script_page.locator("#reflex_result")).to_have_value(
+        "written by the module"
+    )
 
 
 def test_js_module_stub(call_script: AppHarness):
@@ -646,8 +722,6 @@ def test_js_module_stub(call_script: AppHarness):
     Args:
         call_script: harness for CallScript app.
     """
-    from reflex_base.js.stubs import stub_header
-
     # The module Python imported: a harness that reloads an app package of the
     # same name keeps the package's first directory.
     spec = sys.modules[f"{call_script.app_name}.page_script"].__spec__
@@ -662,11 +736,9 @@ def test_js_module_stub(call_script: AppHarness):
         module.with_suffix(".pyi").read_text(),
     )
     assert stub == (
-        stub_header(module, "<digest>") + "\n"
-        "from builtins import bool as _bool, float as _float, int as _int, str as _str\n"
-        "from builtins import tuple as _tuple\n"
-        "from collections.abc import Mapping as _Mapping, Sequence as _Sequence\n"
-        "from typing import Any as _Any, overload as _overload\n"
+        "# Generated by Reflex from page_script.js (<digest>); rewritten when it changes.\n"
+        "from builtins import str as _str, tuple as _tuple\n"
+        "from typing import Any as _Any\n"
         "\n"
         "from reflex_base.event import EventCallback as _EventCallback, EventSpec as _EventSpec\n"
         "from reflex_base.vars.base import Var as _Var\n"

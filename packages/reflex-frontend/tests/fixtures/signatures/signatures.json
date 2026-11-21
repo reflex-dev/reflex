@@ -1,0 +1,512 @@
+{
+  "jsdoc.js": [
+    {
+      "name": "celebrate",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "count",
+              "type": "float",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "elementId",
+              "type": "str",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "loud",
+              "type": "bool",
+              "optional": true,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "many",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "names",
+              "type": "str",
+              "optional": false,
+              "rest": true
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "untyped",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "a",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "b",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "notAFunction",
+      "signatures": [],
+      "untyped": false
+    },
+    {
+      "name": "anything",
+      "signatures": [],
+      "untyped": true
+    }
+  ],
+  "typed.ts": [
+    {
+      "name": "pick",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "mode",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "a"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "b"
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "maybe",
+              "type": {
+                "kind": "union",
+                "members": [
+                  "None",
+                  "str"
+                ]
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "overloaded",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "n",
+              "type": "float",
+              "optional": false,
+              "rest": false
+            }
+          ]
+        },
+        {
+          "parameters": []
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "tupleRest",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "args",
+              "type": "any",
+              "optional": false,
+              "rest": true
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "defaultFirst",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "prefix",
+              "type": "str",
+              "optional": true,
+              "rest": false
+            },
+            {
+              "name": "count",
+              "type": "float",
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    }
+  ],
+  "types.ts": [
+    {
+      "name": "literals",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "color",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "green"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "red"
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "level",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  {
+                    "kind": "literal",
+                    "value": 1
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "mode",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "a"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "b"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": 2
+                  },
+                  {
+                    "kind": "literal",
+                    "value": true
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "ratio",
+              "type": "float",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "flag",
+              "type": {
+                "kind": "literal",
+                "value": true
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "shape",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "circle"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "square"
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "containers",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "names",
+              "type": {
+                "kind": "list",
+                "item": "str"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "pair",
+              "type": {
+                "kind": "list",
+                "item": {
+                  "kind": "union",
+                  "members": [
+                    "float",
+                    "str"
+                  ]
+                }
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "empty",
+              "type": {
+                "kind": "list",
+                "item": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "counts",
+              "type": {
+                "kind": "mapping",
+                "value": "float"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "options",
+              "type": {
+                "kind": "mapping",
+                "value": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "inline",
+              "type": {
+                "kind": "mapping",
+                "value": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "partial",
+              "type": {
+                "kind": "mapping",
+                "value": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "keyed",
+              "type": {
+                "kind": "mapping",
+                "value": "any"
+              },
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "nested",
+              "type": {
+                "kind": "list",
+                "item": {
+                  "kind": "union",
+                  "members": [
+                    "None",
+                    "str"
+                  ]
+                }
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "noJsonForm",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "tags",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "lookup",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "big",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "later",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "make",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "element",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "widget",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "anything",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "both",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            },
+            {
+              "name": "either",
+              "type": "any",
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "maybe",
+      "signatures": [
+        {
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "union",
+                "members": [
+                  "None",
+                  "str"
+                ]
+              },
+              "optional": true,
+              "rest": false
+            },
+            {
+              "name": "rest",
+              "type": "any",
+              "optional": false,
+              "rest": true
+            }
+          ]
+        }
+      ],
+      "untyped": false
+    },
+    {
+      "name": "Color",
+      "signatures": [],
+      "untyped": false
+    },
+    {
+      "name": "Level",
+      "signatures": [],
+      "untyped": false
+    },
+    {
+      "name": "Widget",
+      "signatures": [],
+      "untyped": false
+    },
+    {
+      "name": "fromReexported",
+      "signatures": [
+        {
+          "parameters": []
+        }
+      ],
+      "untyped": false
+    }
+  ],
+  "script.js": []
+}

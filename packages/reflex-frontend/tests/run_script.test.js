@@ -7,6 +7,7 @@
 import { describe, expect, test, vi } from "vitest";
 
 import { eventLoop } from "$/utils/context-registry";
+import { reflex } from "$/utils/reflex";
 import { applyEvent, getToken } from "$/utils/state";
 
 const callScript = (code, callback, socket = null) =>
@@ -61,6 +62,18 @@ describe("_call_script", () => {
     );
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
     expect(seen).toEqual([["object", "object", token]]);
+  });
+
+  test("scripts see reflex, and env as the app's env.json", async () => {
+    // rx.get_upload_url compiles to getBackendURL(env.UPLOAD), so a script
+    // from the backend that links to an uploaded file reads env.json's env.
+    const seen = [];
+    await callScript(
+      '[reflex, (getBackendURL(env.UPLOAD)+"/a.png")]',
+      (result) => seen.push(result),
+    );
+    expect(seen).toEqual([[reflex, "http://localhost:8000/_upload/a.png"]]);
+    expect(seen[0][0]).toBe(reflex);
   });
 
   test("callback strings can use every helper this module exports", async () => {
@@ -119,4 +132,35 @@ describe("_call_script", () => {
     );
     expect(seen).toEqual([7]);
   });
+});
+
+test("event code that throws is logged, and reported to window.onerror", async () => {
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const onerror = vi.fn();
+  const error = new Error("The callback failed.");
+  const fail = () => {
+    throw error;
+  };
+  const callFunction = { name: "_call_function", payload: { function: fail } };
+  window.onerror = onerror;
+  await applyEvent(callFunction, null, null, null);
+  await applyEvent(
+    { name: "_client_state_get", payload: { var_name: "x", callback: fail } },
+    null,
+    null,
+    null,
+  );
+  window.onerror = null;
+  await applyEvent(callFunction, null, null, null);
+  const logged = [...log.mock.calls];
+  log.mockRestore();
+  expect(logged).toEqual([
+    ["_call_function", error],
+    ["_client_state_get", error],
+    ["_call_function", error],
+  ]);
+  expect(onerror.mock.calls).toEqual([
+    ["The callback failed.", null, null, null, error],
+    ["The callback failed.", null, null, null, error],
+  ]);
 });

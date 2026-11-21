@@ -13,7 +13,8 @@ import {
 import { app, eventLoop } from "$/utils/context-registry";
 // This module's own exports, passed to server-provided scripts by runScript.
 import * as stateExports from "$/utils/state";
-import { env as scriptEnv } from "$/utils/script_env";
+import { reflex } from "$/utils/reflex";
+import scriptModules from "$/utils/scripts";
 import {
   CLIENT_STATE_REF,
   getClientState,
@@ -517,12 +518,14 @@ function urlFrom(string) {
  * Callback strings and `rx.call_script` code reference helpers compiled
  * pages import from here (`ReflexEvent`, `pyMod`, `isTrue`, ...), and apps
  * written against the former direct eval also use `socket`, `navigate`,
- * `params` and `token`. A direct eval would see them, but it also stops the
- * minifier from mangling every name in the chunk that holds it, so the code
- * is compiled with the Function constructor and those names are passed in as
- * parameters. The script environment is passed twice: as `env`, the name
- * scripts use, and as `__reflexEnv`, the name `rx.js.env` compiles to. The eval inside the body still runs the code as a strict
- * script, so statements keep their completion value.
+ * `params` and `token`. Scripts reach Reflex through `reflex`, and
+ * `rx.get_upload_url` compiles to `getBackendURL(env.UPLOAD)`, which reads
+ * `env` from `$/env.json` as the former direct eval did. A direct eval would
+ * see these names, but it also stops the minifier from mangling every name in
+ * the chunk that holds it, so the code is compiled with the Function
+ * constructor and the names are passed in as parameters. The eval inside the
+ * body still runs the code as a strict script, so statements keep their
+ * completion value.
  *
  * Compiled on first use: a Content Security Policy without `unsafe-eval`
  * rejects the Function constructor, and apps that never send scripts must
@@ -545,7 +548,7 @@ const runScript = (code, addEvents, socket, navigate, params) => {
     "params",
     "token",
     "env",
-    "__reflexEnv",
+    "reflex",
     "code",
     '"use strict"; return eval(code);',
   );
@@ -556,31 +559,85 @@ const runScript = (code, addEvents, socket, navigate, params) => {
     navigate,
     params,
     token,
-    scriptEnv,
-    scriptEnv,
+    env,
+    reflex,
     code,
   );
 };
+
+/**
+ * The namespace of each JavaScript module the app imports from Python that has
+ * loaded, by the module's Python name.
+ * @type {Record<string, Record<string, any>>}
+ */
+const loadedScriptModules = {};
+/**
+ * The load of each of those modules that has started, by the same name.
+ * @type {Record<string, Promise<void>>}
+ */
+const scriptModuleLoads = {};
+
+/**
+ * Load a JavaScript module the app imports from Python, once.
+ * @param {string} module The module's Python name.
+ * @returns {Promise<void>} Settles once the module has loaded or failed to.
+ */
+const loadScriptModule = (module) =>
+  (scriptModuleLoads[module] ??= scriptModules[module]().then((namespace) => {
+    loadedScriptModules[module] = namespace;
+  }));
+
+// Load the app's modules with the page, so that a `_call_js` finds its module
+// loaded and calls the function without awaiting: `processEvent` may start the
+// next event while one awaits, and that event must see what the function did.
+// An app that imports no module loads nothing. A module that fails to load is
+// reported when one of its functions is called.
+if (typeof window !== "undefined") {
+  for (const module of Object.keys(scriptModules)) {
+    loadScriptModule(module).catch(() => {});
+  }
+}
 
 /**
  * Call an exported function of a JavaScript module the app imports from
  * Python. The modules are bundled, so nothing is evaluated: the event names the
  * module and the function, and carries the arguments as JSON.
  *
- * Loaded on first use, so an app that never calls one does not fetch the chunk.
+ * A function of a loaded module runs before this returns, so its effects are
+ * visible to the next event even if it returns a promise.
  * @param {{module: string, function: string, args: any[]}} payload The call.
- * @returns {Promise<any>} The function's result.
+ * @returns {any} The function's result, or a promise of it if the module had
+ * not loaded yet.
  */
-const callModuleFunction = async ({ module, function: name, args }) => {
-  /** @type {Record<string, Record<string, any>>} */
-  const modules = await import("$/utils/scripts");
-  const fn = Object.hasOwn(modules, module) ? modules[module][name] : undefined;
+const callModuleFunction = (payload) => {
+  const { module, function: name, args } = payload;
+  if (
+    !Object.hasOwn(loadedScriptModules, module) &&
+    Object.hasOwn(scriptModules, module)
+  ) {
+    return loadScriptModule(module).then(() => callModuleFunction(payload));
+  }
+  const fn = Object.hasOwn(loadedScriptModules, module)
+    ? loadedScriptModules[module][name]
+    : undefined;
   if (typeof fn !== "function") {
     throw new TypeError(
-      `${module.replaceAll("$", ".")}.${name} is not a function exported by a JavaScript module this app imports.`,
+      `Cannot call ${module}.${name}: the frontend has no function ${name} in the JavaScript module ${module}. Either the module does not export a function of that name, or the frontend was built before the backend imported it. Export a function named ${name} from the module, or restart \`reflex run\` to rebuild the frontend.`,
     );
   }
-  return await fn(...args);
+  return fn(...args);
+};
+
+/**
+ * Report an error thrown by code an event ran, as an uncaught error would be.
+ * @param {string} name The event's name, logged with the error.
+ * @param {any} error The error.
+ */
+const reportEventError = (name, error) => {
+  console.log(name, error);
+  if (window?.onerror) {
+    window.onerror(error.message, null, null, null, error);
+  }
 };
 
 /**
@@ -821,10 +878,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
         params,
       );
     } catch (e) {
-      console.log("_client_state_get", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
+      reportEventError("_client_state_get", e);
     }
     return;
   }
@@ -842,10 +896,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
         params,
       );
     } catch (e) {
-      console.log("_call_function", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
+      reportEventError("_call_function", e);
     }
     return;
   }
@@ -854,10 +905,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     try {
       await callModuleFunction(event.payload);
     } catch (e) {
-      console.log("_call_js", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
+      reportEventError("_call_js", e);
     }
     return;
   }
@@ -883,10 +931,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
       await applyResultCallback(event, eval_result, socket, navigate, params);
     } catch (e) {
-      console.log("_call_script", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
+      reportEventError("_call_script", e);
     }
     return;
   }

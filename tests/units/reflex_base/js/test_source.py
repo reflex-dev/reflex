@@ -2,11 +2,13 @@
 
 from pathlib import Path
 
+import pytest
 from reflex_base.js.source import (
-    find_exports,
-    find_imports,
     find_stylesheet_references,
     module_files,
+    parse_script,
+    read_script,
+    type_files,
 )
 
 SOURCE = r"""
@@ -26,6 +28,8 @@ export async function load() {}
 export function* steps() {}
 export const first = () => 1, second = (a, b) => [a, b];
 export let typed: Record<string, number> = {}, other = 2
+export const count = 5, label = "party", flags = [1, 2], options = { a: 1 }, none = null;
+export const total = count + 1;
 export const { pickA, pickB: renamed, ...rest } = obj;
 export const [x0, , x2 = 3] = arr;
 export const multiline = (a) =>
@@ -36,6 +40,10 @@ export { hidden, describe as describeIt, "string name" as quoted };
 export { other2 as reexported } from "lodash/fp";
 export * from "everything";
 export * as namespace from "namespaced";
+import type { Party } from "party-types";
+export type { Guest } from "guest-types";
+export type * from "all-types";
+import type, { other3 } from "type-named";
 export default function () {}
 const later = await import("dayjs");
 thing.export = 1;
@@ -43,9 +51,15 @@ thing.import("not-an-import");
 """
 
 
-def test_find_exports():
-    """Every exported function name is found, and nothing inside text or comments."""
-    assert find_exports(SOURCE) == [
+def test_parse_script():
+    """Every export and import is found, and nothing inside text or comments.
+
+    A ``const`` bound to a literal is a value; anything else may be a function.
+    Type-only imports load nothing.
+    """
+    script = parse_script(SOURCE)
+    assert script.text == SOURCE
+    assert script.functions == [
         "celebrate",
         "load",
         "steps",
@@ -53,6 +67,7 @@ def test_find_exports():
         "second",
         "typed",
         "other",
+        "total",
         "pickA",
         "renamed",
         "rest",
@@ -64,25 +79,124 @@ def test_find_exports():
         "quoted",
         "reexported",
     ]
-
-
-def test_find_imports():
-    """Static, side-effect, dynamic and re-export specifiers, across line breaks."""
-    assert find_imports(SOURCE) == [
+    assert script.values == ["count", "label", "flags", "options", "none"]
+    assert script.imports == [
         "canvas-confetti",
         "./helpers.js",
         "@scope/pkg/style.css",
         "lodash/fp",
         "everything",
         "namespaced",
+        "type-named",
         "dayjs",
     ]
 
 
-def test_a_string_with_a_comment_opener_hides_nothing():
-    """A comment opener inside a string does not swallow the code after it."""
-    source = 'const route = "/api/*";\nexport function after() {}\n/* note */\n'
-    assert find_exports(source) == ["after"]
+@pytest.mark.parametrize(
+    ("source", "functions", "values"),
+    [
+        # A comment opener inside a string hides nothing.
+        (
+            'const route = "/api/*";\nexport function after() {}\n/* note */\n',
+            ["after"],
+            [],
+        ),
+        # A slash after `++` or `--` divides; it does not start a regex.
+        ("let i = 0; const y = i++ / 2; export function after() {}", ["after"], []),
+        ("let i = 9; const y = i-- / 2; export function after() {}", ["after"], []),
+        # TypeScript: a type item of an export list exports no value.
+        ("export { type Foo, bar, type, type as t };", ["bar", "type", "t"], []),
+        # `=>` and type arguments in an annotation.
+        (
+            "export const f: () => Map<string, Map<string, number>> = () => new Map();",
+            ["f"],
+            [],
+        ),
+        # Type parameters of a generic arrow function; a comparison.
+        (
+            "export const id = <T,>(x: T) => x, two = 2, less = 1 < 2, more = 3;",
+            ["id", "less"],
+            ["two", "more"],
+        ),
+        # A statement ends at a line break that nothing continues.
+        ("export const a = 1\nexport const b = () =>\n  2\n", ["b"], ["a"]),
+        ("export let mutable = 1;", ["mutable"], []),
+        ("export function () {}\nexport function* () {}", [], []),
+        # Escaped and unterminated strings and regular expressions.
+        ("const s = 'it\\'s'; export function after() {}", ["after"], []),
+        ("export function a() {}\nconst s = 'open", ["a"], []),
+        ("export function a() {}\nconst r = /open", ["a"], []),
+        # Nested patterns, declarators without an initializer, and no names.
+        ("export const { a: { b }, c: [d, [e]] } = obj;", ["b", "d", "e"], []),
+        ("export let later, typedLater: number;", ["later", "typedLater"], []),
+        ("export let;", [], []),
+        ("export", [], []),
+        ("export const a = 1,", [], ["a"]),
+    ],
+)
+def test_parse_script_exports(source: str, functions: list[str], values: list[str]):
+    """Exports are read past regexes, divisions and TypeScript syntax.
+
+    Args:
+        source: The module source.
+        functions: The exports that may be functions.
+        values: The exports known to be values.
+    """
+    script = parse_script(source)
+    assert (script.functions, script.values) == (functions, values)
+
+
+def test_parse_script_skips_jsx():
+    """In JSX, text and attributes are not code, but expressions in braces are."""
+    source = (
+        "const el = <div title=\"it's\" onClick={() => go(1 > 0)}>it's {`a${'}'}`}"
+        "<br/><><span>/* not a comment</span></></div>; export function same() {}\n"
+        "const id = <T,>(x: T) => x;\n"
+        "export const element = <p>it's</p>;\n"
+    )
+    script = parse_script(source, jsx=True)
+    assert (script.functions, script.values) == (["same"], ["element"])
+
+
+@pytest.mark.parametrize(
+    ("source", "jsx", "functions"),
+    [
+        ("const t = `${\nexport function a() {}", False, []),
+        ("const t = `abc\nexport function a() {}", False, []),
+        ("/* open\nexport function a() {}", False, []),
+        ("export { a", False, []),
+        # A regular expression ends at the end of its line.
+        ("const r = /abc\nexport function a() {}", False, ["a"]),
+        ("const e = <div>{\nexport function a() {}", True, []),
+        ("const e = <div>text\nexport function a() {}", True, []),
+        ("const e = <div title\nexport function a() {}", True, []),
+    ],
+)
+def test_unterminated_code_runs_to_the_end(
+    source: str, jsx: bool, functions: list[str]
+):
+    """A template, comment, group or JSX element left open runs to the end.
+
+    Args:
+        source: The module source.
+        jsx: Whether it can contain JSX.
+        functions: The exports found.
+    """
+    assert parse_script(source, jsx=jsx).functions == functions
+
+
+def test_read_script_reads_jsx_by_extension(tmp_path: Path):
+    """A ``.jsx`` or ``.tsx`` file is read with JSX; a ``.js`` file is not.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+    """
+    source = "const el = <p>it's</p>; export function same() {}\n"
+    for name in ("a.jsx", "a.tsx", "a.js"):
+        (tmp_path / name).write_text(source)
+    assert [
+        read_script(tmp_path / name).functions for name in ("a.jsx", "a.tsx", "a.js")
+    ] == [["same"], ["same"], []]
 
 
 def test_module_files_follows_relative_imports(tmp_path: Path):
@@ -114,7 +228,8 @@ def test_module_files_follows_relative_imports(tmp_path: Path):
     (tmp_path / "widgets" / "index.js").write_text("export const w = 1;\n")
     (tmp_path / "unused.js").write_text("export const u = 1;\n")
     (tmp_path / "message.txt").write_text("hello\n")
-    assert module_files(module) == [
+    files = module_files(module)
+    assert list(files) == [
         module.resolve(),
         (tmp_path / "lib" / "a.ts").resolve(),
         (tmp_path / "b.ts").resolve(),
@@ -124,6 +239,11 @@ def test_module_files_follows_relative_imports(tmp_path: Path):
         (tmp_path / "theme.css").resolve(),
         (tmp_path / "img" / "bg.png").resolve(),
     ]
+    # Each script is read once, and other files are not scripts.
+    assert {file: script and script.text for file, script in files.items()} == {
+        file: file.read_text() if file.suffix in (".js", ".ts") else None
+        for file in files
+    }
 
 
 def test_find_stylesheet_references():
@@ -144,32 +264,62 @@ def test_find_stylesheet_references():
     ]
 
 
-def test_module_files_keeps_runtime_files_beside_declarations(tmp_path: Path):
-    """A declaration file is tracked beside the runtime file it describes.
+def test_parse_script_type_imports():
+    """Local files read only for types: type-only imports, JSDoc and triple-slash references.
+
+    A runtime import is not one, nor is a package's types.
+    """
+    script = parse_script(
+        '/// <reference path="globals.d.ts" />\n'
+        "/// <reference path='./more.d.ts' />\n"
+        'import type { A } from "./a";\n'
+        'export type { B } from "./b.js";\n'
+        'import type { P } from "party-types";\n'
+        'import { run } from "./run";\n'
+        '/** @param {import("./c").C} c @param {import("pkg").T} t */\n'
+        '/** @returns {import("./run").R} */\n'
+        "export function go(c, t) {}\n"
+    )
+    assert (script.imports, script.type_imports) == (
+        ["./run"],
+        ["./a", "./b.js", "globals.d.ts", "./more.d.ts", "./c"],
+    )
+
+
+def test_type_files(tmp_path: Path):
+    """Files a module reads types from are found transitively, beside its imports or not.
+
+    Files it loads, files that do not exist and files that are not scripts are
+    left out.
 
     Args:
         tmp_path: pytest tmp_path fixture.
     """
     module = tmp_path / "party.js"
     module.write_text(
-        'import { help } from "./helpers";\n'
-        'import { format } from "./format.js";\n'
+        'import { help } from "./helpers.js";\n'
+        'import confetti from "canvas-confetti";\n'
         'import type { Count } from "./types";\n'
         'import type { Shape } from "./shapes";\n'
+        'import type { Data } from "./data.json";\n'
+        'import type { Gone } from "./gone";\n'
     )
+    (tmp_path / "helpers.js").write_text("export const help = 1;\n")
+    (tmp_path / "helpers.d.ts").write_text('import { Unit } from "./units";\n')
+    (tmp_path / "units.ts").write_text("export type Unit = string;\n")
+    (tmp_path / "types.d.ts").write_text("export type Count = number;\n")
     (tmp_path / "shapes").mkdir()
     (tmp_path / "shapes" / "index.d.ts").write_text("export type Shape = string;\n")
-    (tmp_path / "helpers.js").write_text("export const help = 1;\n")
-    (tmp_path / "helpers.d.ts").write_text("export declare const help: number;\n")
-    (tmp_path / "format.js").write_text("export const format = 1;\n")
-    (tmp_path / "format.d.ts").write_text("export declare const format: number;\n")
-    (tmp_path / "types.d.ts").write_text("export type Count = number;\n")
-    assert module_files(module) == [
-        module.resolve(),
-        (tmp_path / "helpers.js").resolve(),
-        (tmp_path / "helpers.d.ts").resolve(),
-        (tmp_path / "format.js").resolve(),
-        (tmp_path / "format.d.ts").resolve(),
-        (tmp_path / "types.d.ts").resolve(),
-        (tmp_path / "shapes" / "index.d.ts").resolve(),
-    ]
+    (tmp_path / "data.json").write_text("{}\n")
+    files = module_files(module)
+    found = type_files(files)
+    assert list(files) == [module.resolve(), (tmp_path / "helpers.js").resolve()]
+    assert found == {
+        file.resolve(): read_script(file)
+        for file in [
+            tmp_path / "helpers.d.ts",
+            tmp_path / "types.d.ts",
+            tmp_path / "shapes" / "index.d.ts",
+            tmp_path / "units.ts",
+        ]
+    }

@@ -1,25 +1,16 @@
-"""Run JavaScript in the browser through a defined API."""
+"""Build calls on ``reflex``, the API browser code reaches Reflex through."""
 
 from reflex_base.utils import lazy_loader
 
 # Not imported from typing, which `import reflex` does not load otherwise.
 TYPE_CHECKING = False
 if TYPE_CHECKING:
-    from .environment import ScriptEnvVar, env
-    from .modules import JsFunction
+    from .api import add_events, library, ref
 
-    __all__ = ["JsFunction", "ScriptEnvVar", "env"]
+    __all__ = ["add_events", "library", "ref"]
 
-# Lazy, so `import reflex`, which installs the module finder, does not load the
-# event and var systems.
-_SUBMODULES: set[str] = {"environment", "finder", "modules"}
-_SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
-    "environment": ["ScriptEnvVar", "env"],
-    "modules": ["JsFunction"],
-}
-
+# Lazy: the module finder `import reflex` registers lives in this package, and
+# loading it must not load the event and var systems.
 __getattr__, __dir__, __all__ = lazy_loader.attach(
-    __name__,
-    submodules=_SUBMODULES,
-    submod_attrs=_SUBMOD_ATTRS,
+    __name__, submod_attrs={"api": ["add_events", "library", "ref"]}
 )

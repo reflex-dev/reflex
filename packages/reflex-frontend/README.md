@@ -47,24 +47,28 @@ without it appearing in its arguments. What there is, and where it is pinned:
 
 - **Module-level state in `utils/state.js`**: the event queue, the session
   token, the socket warmed up before React mounts, the record of sent
-  localStorage values. Every mounted event loop and every drain shares them.
-  A test that needs a clean copy reloads the module (`vi.resetModules()`, as
+  localStorage values, the app's JavaScript modules loaded so far. Every
+  mounted event loop and every drain shares them. A test that needs a clean
+  copy reloads the module (`vi.resetModules()`, as
   `tests/state_connection.test.js` does). Code that awaits must not assume the
   queue or the socket is as it left them.
 - **Work done on import**: `utils/state.js` creates the cookie reader, always;
   publishes the client state store on `refs`, when there is a `document`; and
-  starts a socket transport, when there is a `window`. A production build
-  evaluates every module in node to prerender pages, so anything added here has
-  to load without either. `tests/public_api.test.js` imports each module in
+  starts a socket transport and loading the JavaScript modules the app imports
+  from Python (`utils/scripts.js`), when there is a `window`. A production
+  build evaluates every module in node to prerender pages, so anything added
+  here has to load without either. `tests/public_api.test.js` imports each module in
   node to keep it that way.
 - **Script scope**: event code sent by the backend (`rx.call_script`, event
   callbacks) runs through `runScript` in `utils/state.js`, which compiles it
   with the Function constructor and passes in every export of that module, the
   late-bound `addEvents`, the `socket`, `navigate` and `params` of the event
-  being applied, and the session `token`. A direct `eval` would see every
-  module local, but it stops the minifier from mangling the chunk that holds
-  it. So a script sees those names and the globals, and nothing else. Renaming
-  an export changes what compiled callbacks can call.
+  being applied, the session `token`, `env` (the app's `$/env.json`, which
+  `rx.get_upload_url` compiles to) and `reflex` (the API in `utils/reflex.js`,
+  which `rx.js` compiles to). A direct `eval` would see every module local, but
+  it stops the minifier from mangling the chunk that holds it. So a script sees
+  those names and the globals, and nothing else. Renaming an export changes
+  what compiled callbacks can call.
 - **Globals the runtime reads**: hooks other code installs on `window`
   (`__reflex_otel`, `__reflex`, `__reflex_load`) and the per-app `$/env.json`.
   Each is declared in `types/globals.d.ts`; reading one that is not fails the

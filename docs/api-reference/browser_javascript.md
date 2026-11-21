@@ -141,98 +141,225 @@ The `callback` parameter may be an `EventHandler` with one argument, or a lambda
 If the callback is None, then no event is triggered.
 ```
 
-## The Script Environment
+## Reaching Reflex from JavaScript
 
-Code run by `rx.call_script` reaches Reflex through `env`, a small API that
-stays stable as the rest of the frontend changes:
+JavaScript you run in the browser reaches Reflex through `reflex`, an object
+whose members stay the same as the rest of the frontend changes:
 
 | Member | What it does |
 | --- | --- |
-| `env.ref(id)` | The ref of the component with that `id`; its `current` is the element. |
-| `env.refs` | Every registered component ref. |
-| `env.addEvents(events)` | Dispatch events, as event triggers do. |
-| `env.event(name, payload)` | Build an event for `env.addEvents`. |
-| `env.library(name)` | A promise of a library bundled for dynamic components, such as `"react"`. |
+| `reflex.ref(id)` | The ref of the component with that `id`; its `current` is the element. `undefined` until a component with that `id` mounts. |
+| `reflex.addEvents(events)` | Dispatch events, as an event trigger does. |
+| `reflex.event(name, payload)` | Build an event for `reflex.addEvents`: `name` is the event handler's full name, `payload` its arguments by name. |
+| `reflex.library(name)` | A promise of an npm library bundled for dynamic components, such as `"react"`. |
 
-```python
-(rx.input(id="search"),)
-(rx.button("Focus", on_click=rx.call_script("env.ref('search').current.focus()")),)
+Prefer `reflex` over the other names a script can see, such as `refs`,
+`ReflexEvent` or `addEvents`: those are internals of the frontend and may change
+between Reflex versions.
+
+### From a Script
+
+Code run by `rx.call_script` sees `reflex`:
+
+```python demo exec
+class ReflexApiState(rx.State):
+    result: str = ""
+
+    @rx.event
+    def set_result(self, result: str):
+        self.result = result
+
+
+def reflex_api_demo():
+    return rx.vstack(
+        rx.input(id="reflex_api_search", placeholder="Type something"),
+        rx.hstack(
+            rx.button(
+                "Focus",
+                on_click=rx.call_script(
+                    "reflex.ref('reflex_api_search').current.focus()"
+                ),
+            ),
+            rx.button(
+                "Read",
+                on_click=rx.call_script(
+                    "reflex.ref('reflex_api_search').current.value",
+                    callback=ReflexApiState.set_result,
+                ),
+            ),
+            rx.button(
+                "React version",
+                on_click=rx.call_script(
+                    "reflex.library('react').then((react) => react.version)",
+                    callback=ReflexApiState.set_result,
+                ),
+            ),
+        ),
+        rx.text(f"Result: {ReflexApiState.result}"),
+    )
 ```
 
-To build the same calls from Python vars, use `rx.js.env`. It works in an event
-trigger and when an event handler returns it:
+### From a JavaScript Module
+
+A JavaScript module, such as one a [wrapped component](/docs/wrapping-react/overview/)
+imports, imports `reflex` from `$/utils/reflex`:
+
+```javascript
+import { reflex } from "$/utils/reflex";
+
+export function saveSearch(handlerName) {
+  const value = reflex.ref("reflex_api_search").current.value;
+  reflex.addEvents([reflex.event(handlerName, { value })]);
+}
+```
+
+### From Python
+
+`rx.js` builds the same calls from Python, filling in the event handler's full
+name for you. Each function returns a var, which `rx.run_script` runs whether an
+event trigger uses it or an event handler returns it:
+
+| Python | JavaScript |
+| --- | --- |
+| `rx.js.ref(id)` | `reflex.ref(id)` |
+| `rx.js.add_events(*events)` | `reflex.addEvents([...])` |
+| `rx.js.library(name)` | `reflex.library(name)` |
 
 ```python
 class SearchState(rx.State):
-    @rx.event
-    def clear_later(self):
-        return rx.run_script(rx.js.env.add_events(SearchState.clear))
+    query: str = ""
 
     @rx.event
-    def clear(self): ...
+    def set_query(self, query: str):
+        self.query = query
+
+    @rx.event
+    def clear(self):
+        self.query = ""
+
+    @rx.event
+    def read_search(self):
+        # Read the input's current value from the browser.
+        return rx.run_script(
+            rx.js.ref("search").current.value, callback=SearchState.set_query
+        )
+
+
+def search():
+    return rx.vstack(
+        rx.input(id="search"),
+        rx.button("Read", on_click=SearchState.read_search),
+        rx.button("Clear", on_click=rx.run_script(rx.js.add_events(SearchState.clear))),
+        rx.text(SearchState.query),
+    )
 ```
 
-Prefer `env` over the other names a script can see, such as `refs` or
-`ReflexEvent`: those are internals of the frontend and may change between
-Reflex versions.
+`rx.js.add_events` takes events, such as `SearchState.set_query("x")`, and
+event handlers that take no arguments, such as `SearchState.clear`.
+
+### Errors
+
+- `rx.js.add_events cannot dispatch SearchState.set_query: the handler needs
+  arguments, and add_events has none to pass it.` Pass the arguments in Python:
+  `rx.js.add_events(SearchState.set_query("x"))`.
+- `reflex.library("left-pad") cannot load "left-pad": the app does not bundle it
+  for dynamic components.` Bundle it in your app's Python code with
+  `bundle_library("left-pad")` from `reflex.components.dynamic`.
+- `reflex.library("react") cannot load "react" yet: the app registers its
+  bundled libraries when it first mounts, and it has not mounted.` Call
+  `reflex.library` from an event, such as `on_mount` or `on_click`, rather than
+  while a module loads.
+- `reflex.library("$/utils/state") cannot load "$/utils/state": a name starting
+  with "$/" is a module of the app's frontend, not a bundled npm library.` Use
+  the members of `reflex` instead of Reflex internals, and import your own
+  modules from a JavaScript module.
 
 ## JavaScript Modules
 
-For more than a line of Javascript, write it in a `.js` (or `.ts`) file in your
-app package and import its exported functions in Python. You get your editor's
-Javascript support in the file, and nothing is evaluated: the module is bundled
-with the app, and calling one of its functions sends only the function's name
-and its arguments as JSON. Apps whose Content Security Policy forbids
-`unsafe-eval` can use them.
+Write JavaScript in a `.js` or `.ts` file in your app's package and import its
+exported functions in Python, like a Python module. Each function returns an
+event: use it in an event trigger, or return or yield it from an event handler.
 
 ```javascript
 // my_app/scripts/party.js
 import confetti from "canvas-confetti";
-import { env } from "$/utils/script_env";
+import { reflex } from "$/utils/reflex";
 
 export function celebrate(count, elementId) {
   confetti({ particleCount: count });
   document.getElementById(elementId).scrollIntoView();
 }
 
-export function report(handler, value) {
-  env.addEvents([env.event(handler, { value })]);
+export function measure(id, handler) {
+  const { width } = document.getElementById(id).getBoundingClientRect();
+  reflex.addEvents([reflex.event(handler, { width })]);
 }
 ```
 
 ```python
-from my_app.scripts.party import celebrate, report
+# my_app/my_app.py
+import reflex as rx
+
+from my_app.scripts.party import celebrate, measure
 
 
 class PartyState(rx.State):
     count: int = 200
+    width: float = 0
 
     @rx.event
     def finish(self):
         return celebrate(self.count, "results")
 
     @rx.event
-    def done(self, value: str): ...
+    def set_width(self, width: float):
+        self.width = width
 
 
-rx.button("🎉", on_click=celebrate(PartyState.count, "results"))
-rx.button("Report", on_click=report(PartyState.done, "clicked"))
+def index():
+    return rx.vstack(
+        rx.button("Celebrate", on_click=celebrate(PartyState.count, "results")),
+        rx.button("Finish", on_click=PartyState.finish),
+        rx.button("Measure", on_click=measure("results", PartyState.set_width)),
+        rx.text(f"Width: {PartyState.width}", id="results"),
+    )
+
+
+app = rx.App()
+app.add_page(index)
 ```
 
-- Each named export becomes a function returning an event. Use it in an event
-  trigger, or return or yield it from an event handler. Passed to a trigger
-  uncalled, like `rx.input(on_change=set_title)`, it receives the trigger's
-  arguments.
-- Arguments are sent as JSON. An event handler arrives as its full name, which
-  the function can dispatch with `env.addEvents([env.event(name, payload)])`.
-- The function's return value is not sent back to the backend; report results
-  through `env.addEvents`.
-- Packages the module imports, such as `canvas-confetti`, are installed with
-  the app. Pin a version with `frontend_packages` in `rxconfig.py`.
+Nothing is evaluated: the module is bundled with the app, and calling one of its
+functions sends only the module's name, the function's name and the arguments.
+Apps whose Content Security Policy forbids `unsafe-eval` can use them.
+
+### Rules
+
+- Only modules in your app's package import this way: the package that
+  `app_name` in `rxconfig.py` names. A `.js` file in another package, such as
+  a library you installed, is never imported.
+- A Python module of the same name wins over a JavaScript one.
+- Every named export that may be a function becomes a function. A `const`
+  initialized with a literal, as in `export const limit = 5`, is a value, and
+  Python cannot call it. A default export, a class and TypeScript types are
+  left out.
+- Arguments are sent as JSON. A var is sent as its value in the browser. An
+  event handler arrives as its full name, which the function dispatches with
+  `reflex.addEvents([reflex.event(name, payload)])`, as `measure` does above.
+- The function's return value is not sent back. To get a value back, pass an
+  event handler and dispatch it with the value, as `measure` does.
+- The npm packages the module imports, such as `canvas-confetti`, are installed
+  with the app. Pin a version with `frontend_packages` in `rxconfig.py`. Path
+  aliases (`@/...`), subpath imports (`#...`) and specifiers with a scheme
+  (`virtual:...`, `https://...`) are left to the bundler and not installed.
 - Local files the module imports with relative paths, such as `./helpers.js`,
   `./party.css` or `./logo.png`, are bundled with it, and so are the files they
   import, including a stylesheet's `@import` and `url(...)` references. They
-  must be inside the directory of your app's package.
+  must be inside your app's package directory, which is all of your project
+  that is copied into the compiled app.
+- In a `.jsx` or `.tsx` file, JSX is read as JSX. In a `.js` or `.ts` file,
+  `<` is never JSX, so a quote in what would be JSX text hides the code after
+  it on that line.
 - Reflex writes a type stub (`party.pyi`) next to the module when it compiles
   the app, so type checkers resolve the import and check each call. Argument
   types come from TypeScript annotations or, in a `.js` file, JSDoc:
@@ -251,6 +378,28 @@ rx.button("Report", on_click=report(PartyState.done, "clicked"))
   `HTMLElement`, are `Any`. The stub is rewritten only when a script in the
   module's folder changes. Pyright reports a stub without a Python module as
   `reportMissingModuleSource`; set it to `"none"` to silence it.
+
+### Errors
+
+- `Cannot import nope from my_app.scripts.party: .../party.js exports no
+  function named nope (its functions: celebrate, measure).` Export the function
+  from the file, as in `export function nope() { ... }`, or fix the name you
+  import.
+- `Cannot import limit from my_app.scripts.party: .../party.js exports limit as
+  a value, not a function, and Python can only call functions.` Export a
+  function that uses the value instead.
+- `The JavaScript module my_app.scripts.party imports .../shared.js, which is
+  outside .../my_app, the directory of the app's package, and only that
+  directory is copied into the compiled app.` Move the file into your app's
+  package, or publish it as an npm package and import it by name.
+- `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
+  which does not exist in the browser.` Remove the import, and do the work that
+  needs it in a backend event handler instead.
+- In the browser, `Cannot call my_app.scripts.party.nope: the frontend has no
+  function nope in the JavaScript module my_app.scripts.party.` The module does
+  not export a function of that name, or the frontend was built before the
+  backend imported it. Export the function, or restart `reflex run` to rebuild
+  the frontend.
 
 ## Using React Hooks
 

@@ -1,14 +1,15 @@
 """Import JavaScript modules from Python.
 
 ``from my_app.scripts.party import celebrate`` finds ``my_app/scripts/party.js``
-(or ``.ts``) when no Python module of that name exists.
+(or ``.ts``) when no Python module of that name exists and ``my_app`` is the
+app's package. Other packages' JavaScript files are never imported.
 
 ``import reflex`` registers a small finder that loads this module on the first
-import no other finder found, which can happen while ``reflex`` itself loads,
-so it stays cheap: ``os.path`` instead of ``pathlib``, a finder and loader that
-implement the import protocol without the ``importlib.abc`` base classes, and
-no ``typing``. The event system loads with the first JavaScript module
-imported.
+import of a submodule no other finder found, which can happen while ``reflex``
+itself loads, so it stays cheap: ``os.path`` instead of ``pathlib``, a loader
+that implements the import protocol without the ``importlib.abc`` base class,
+and no ``typing``. The config loads once a JavaScript file is found, and the
+event system with the first JavaScript module imported.
 """
 
 from __future__ import annotations
@@ -53,42 +54,45 @@ class _ScriptLoader(_LoaderBase):
         Args:
             module: The module to populate.
         """
-        # Imported here: the finder loads with `import reflex`, which must not
-        # pay for the event system until a JavaScript module is imported.
+        # Imported here: loading the finder must not load the event system,
+        # which only a JavaScript module being imported needs.
         from pathlib import Path
 
-        from reflex_base.js.modules import load_module
+        from reflex_base.js.modules import _load_module
 
-        load_module(module, Path(self.path))
+        _load_module(module, Path(self.path))
 
 
-class ScriptFinder:
-    """Find a JavaScript file where no Python module of the name exists."""
+def _app_package() -> str:
+    """Get the name of the app's top-level package.
 
-    @staticmethod
-    def find_spec(
-        fullname: str,
-        path: Sequence[str] | None,
-        target: ModuleType | None = None,
-    ) -> ModuleSpec | None:
-        """Find the JavaScript file for a submodule.
+    Returns:
+        The package ``rxconfig.py`` names, or an empty string without one.
+    """
+    # Imported here: the config loads only once a JavaScript file is found.
+    from reflex_base.config import get_config
 
-        Args:
-            fullname: The dotted module name.
-            path: The search path of the parent package; None for a top-level
-                module, which is never a JavaScript module.
-            target: Unused.
+    return get_config().module.partition(".")[0]
 
-        Returns:
-            The spec of the JavaScript module, or None.
-        """
-        if path is None:
-            return None
-        name = fullname.rpartition(".")[2]
-        for entry in path:
-            for extension in SCRIPT_EXTENSIONS:
-                # Not pathlib: see the module docstring.
-                file = os.path.join(entry, name + extension)  # noqa: PTH118
-                if os.path.isfile(file):  # noqa: PTH113
-                    return ModuleSpec(fullname, _ScriptLoader(file), origin=file)
-        return None
+
+def find_spec(fullname: str, path: Sequence[str]) -> ModuleSpec | None:
+    """Find the JavaScript file for a submodule of the app's package.
+
+    Args:
+        fullname: The dotted module name.
+        path: The search path of the parent package.
+
+    Returns:
+        The spec of the JavaScript module, or None if there is no such file or
+        it is outside the app's package.
+    """
+    name = fullname.rpartition(".")[2]
+    for entry in path:
+        for extension in SCRIPT_EXTENSIONS:
+            # Not pathlib: see the module docstring.
+            file = os.path.join(entry, name + extension)  # noqa: PTH118
+            if os.path.isfile(file):  # noqa: PTH113
+                if fullname.partition(".")[0] != _app_package():
+                    return None
+                return ModuleSpec(fullname, _ScriptLoader(file), origin=file)
+    return None

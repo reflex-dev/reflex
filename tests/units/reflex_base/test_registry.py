@@ -447,8 +447,8 @@ def test_fork_carries_script_modules(tmp_path: Path):
     """
     module = tmp_path / "party.js"
     with RegistrationContext.get().fork() as original:
-        original.script_modules["app.party"] = module
+        original._script_modules["app.party"] = module
         with original.fork() as forked:
-            assert forked.script_modules == {"app.party": module}
-            forked.script_modules["app.other"] = module
-        assert original.script_modules == {"app.party": module}
+            assert forked._script_modules == {"app.party": module}
+            forked._script_modules["app.other"] = module
+        assert original._script_modules == {"app.party": module}

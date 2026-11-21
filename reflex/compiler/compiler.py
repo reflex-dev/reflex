@@ -1590,9 +1590,12 @@ def compile_app(
         ),
         utils._compile_bundled_libraries(),
     ])
-    script_module_outputs, script_module_imports, script_module_copies = (
-        utils.compile_script_modules()
-    )
+    (
+        script_module_outputs,
+        script_module_imports,
+        script_module_copies,
+        script_module_sources,
+    ) = utils.compile_script_modules()
     compile_results.extend(script_module_outputs)
     progress.advance(task)
 
@@ -1620,8 +1623,10 @@ def compile_app(
         app._get_frontend_packages(
             utils.merge_imports(all_imports, script_module_imports)
         )
-    # After the install: reading the modules' types needs typescript.
-    compile_results.extend(utils.compile_script_stubs())
+    # Stubs are for type checkers during development: a production build leaves
+    # the source tree alone. After the install: reading types needs typescript.
+    if not is_prod_mode():
+        compile_results.extend(utils.compile_script_stubs(script_module_sources))
 
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,

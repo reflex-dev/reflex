@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import shutil
+import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Annotated, Literal, TypedDict
@@ -11,12 +12,8 @@ from typing import Annotated, Literal, TypedDict
 import pytest
 from reflex_base import constants
 from reflex_base.components.memo import create_passthrough_component_memo
-from reflex_base.js.stubs import (
-    TYPESCRIPT_PACKAGE,
-    module_digest,
-    render_stub,
-    render_untyped_stub,
-)
+from reflex_base.js.source import module_files, read_script
+from reflex_base.js.stubs import _TYPESCRIPT_PACKAGE, _module_digest
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_components_core.base.fragment import Fragment
@@ -860,15 +857,20 @@ def test_compile_script_modules(
     (scripts / "unused.js").write_text('import "left-pad";\n')
     typed = tmp_path / "app" / "typed.ts"
     typed.write_text("export function typed(n: number) {}\n")
-    clean_registration_context.script_modules.update({
+    # Only importlib can import a module whose name is not an identifier.
+    widget = tmp_path / "app" / 'my-"widget".js'
+    widget.write_text("export function show() {}\n")
+    clean_registration_context._script_modules.update({
         "app.typed": typed,
         "app.scripts.party": party,
+        'app.my-"widget"': widget,
     })
 
-    outputs, package_imports, copies = utils.compile_script_modules()
+    outputs, package_imports, copies, sources = utils.compile_script_modules()
 
     modules_dir = web_dir / "utils" / "script_modules" / "app"
     assert outputs == [
+        (str(modules_dir / 'my-"widget".js'), widget.read_text()),
         (str(modules_dir / "scripts" / "party.js"), party.read_text()),
         (str(modules_dir / "scripts" / "helpers.js"), helpers.read_text()),
         (str(modules_dir / "scripts" / "formatters" / "count.ts"), count.read_text()),
@@ -876,15 +878,18 @@ def test_compile_script_modules(
         (
             str(web_dir / "utils" / "scripts.js"),
             (
-                'export * as app$scripts$party from "$/utils/script_modules/app/scripts/party.js";\n'
-                'export * as app$typed from "$/utils/script_modules/app/typed.ts";\n'
+                "export default {\n"
+                '  "app.my-\\"widget\\"": () => import("$/utils/script_modules/app/my-\\"widget\\".js"),\n'
+                '  "app.scripts.party": () => import("$/utils/script_modules/app/scripts/party.js"),\n'
+                '  "app.typed": () => import("$/utils/script_modules/app/typed.ts"),\n'
+                "};\n"
             ),
         ),
     ]
     assert package_imports == {
         "canvas-confetti": [rx.ImportVar(tag=None, render=False)],
         "dayjs": [rx.ImportVar(tag=None, render=False)],
-        TYPESCRIPT_PACKAGE: [rx.ImportVar(tag=None, render=False)],
+        _TYPESCRIPT_PACKAGE: [rx.ImportVar(tag=None, render=False)],
     }
     # Stylesheets and binary files are copied byte for byte, with what they reference.
     assert copies == [
@@ -896,6 +901,24 @@ def test_compile_script_modules(
     utils.copy_files(copies)
     assert (modules_dir / "scripts" / "logo.png").read_bytes() == logo.read_bytes()
     assert (modules_dir / "scripts" / "bg.png").read_bytes() == background.read_bytes()
+    # Each module's files, for its stub, with each script read once.
+    assert {path: list(files) for path, files in sources.items()} == {
+        widget.resolve(): [widget.resolve()],
+        party.resolve(): [
+            party.resolve(),
+            helpers.resolve(),
+            css.resolve(),
+            logo.resolve(),
+            theme.resolve(),
+            background.resolve(),
+            count.resolve(),
+        ],
+        typed.resolve(): [typed.resolve()],
+    }
+    assert (
+        sources[party.resolve()][helpers.resolve()],
+        sources[party.resolve()][css.resolve()],
+    ) == (read_script(helpers), None)
 
 
 def test_compile_script_modules_rejects_files_outside_the_package(
@@ -903,7 +926,7 @@ def test_compile_script_modules_rejects_files_outside_the_package(
     monkeypatch: pytest.MonkeyPatch,
     clean_registration_context: RegistrationContext,
 ):
-    """A module may not import a file outside its top-level package's directory.
+    """A module may not import a file outside the app package's directory.
 
     Args:
         tmp_path: pytest tmp_path fixture.
@@ -911,19 +934,22 @@ def test_compile_script_modules_rejects_files_outside_the_package(
         clean_registration_context: a fresh registry of imported modules.
     """
     monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path / ".web")
-    root = tmp_path / "project"
-    (root / "app").mkdir(parents=True)
-    outside = tmp_path / "shared.js"
-    outside.write_text("export const x = 1;\n")
-    party = root / "app" / "party.js"
-    party.write_text('import { x } from "../../shared.js";\n')
-    clean_registration_context.script_modules["app.party"] = party
+    package = tmp_path / "project" / "app"
+    package.mkdir(parents=True)
+    # In the project, beside the package, but not in it.
+    outside = tmp_path / "project" / ".env"
+    outside.write_text("SECRET=1\n")
+    party = package / "party.js"
+    party.write_text('import secrets from "../.env?raw";\n')
+    clean_registration_context._script_modules["app.party"] = party
 
     with pytest.raises(ReflexRuntimeError) as error:
         utils.compile_script_modules()
     assert str(error.value) == (
         f"The JavaScript module app.party imports {outside.resolve()}, which is "
-        f"outside {root.resolve()}, the directory of its package."
+        f"outside {package.resolve()}, the directory of the app's package, and "
+        "only that directory is copied into the compiled app. Move the file "
+        "into it, or publish it as an npm package and import it by name."
     )
 
 
@@ -932,7 +958,7 @@ def test_compile_script_modules_without_modules(
     monkeypatch: pytest.MonkeyPatch,
     clean_registration_context: RegistrationContext,
 ):
-    """An app that imports no JavaScript module gets an empty index.
+    """An app that imports no JavaScript module gets an empty map, which loads nothing.
 
     Args:
         tmp_path: pytest tmp_path fixture.
@@ -941,95 +967,266 @@ def test_compile_script_modules_without_modules(
     """
     monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
     assert utils.compile_script_modules() == (
-        [(str(tmp_path / "utils" / "scripts.js"), "export {};\n")],
+        [(str(tmp_path / "utils" / "scripts.js"), "export default {};\n")],
         {},
         [],
+        {},
     )
 
 
-def test_compile_script_stubs(
+@pytest.fixture
+def stub_app(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     clean_registration_context: RegistrationContext,
-):
-    """Stubs are typed from the read signatures, and kept while nothing changed.
+) -> Path:
+    """An app whose `.web` reads types with Python running a fake signatures script.
+
+    The script is Python code under the JavaScript script's name, so the real
+    subprocess call runs it on every platform.
 
     Args:
         tmp_path: pytest tmp_path fixture.
         monkeypatch: pytest monkeypatch fixture.
         clean_registration_context: a fresh registry of imported modules.
+
+    Returns:
+        The app's package directory, holding ``party.js``.
     """
     web_dir = tmp_path / ".web"
     web_dir.mkdir()
-    package_json = web_dir / "package.json"
-    package_json.write_text('{"dependencies": {"a": "1"}}')
+    (web_dir / "package.json").write_text('{"dependencies": {"a": "1"}}')
     monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
-    party = tmp_path / "party.js"
-    party.write_text("export function go(n) {}\n")
-    clean_registration_context.script_modules["app.party"] = party
+    monkeypatch.setattr(utils.path_ops, "get_node_path", lambda: Path(sys.executable))
+    package = tmp_path / "app"
+    package.mkdir()
+    party = package / "party.js"
+    party.write_text("/** @param {number} n */\nexport function go(n) {}\n")
+    clean_registration_context._script_modules["app.party"] = party
+    return package
+
+
+def _fake_signatures(web_dir: Path, body: str):
+    """Make the fake signatures script run some Python, logging each run.
+
+    Args:
+        web_dir: The app's ``.web``.
+        body: The Python code, which can use ``sys``.
+    """
+    (web_dir / "script-signatures.js").write_text(
+        "import sys\n"
+        "with open(sys.argv[0] + '.log', 'a') as log:\n"
+        "    log.write(' '.join(sys.argv[1:]) + '\\n')\n" + body
+    )
+
+
+def _compile_stubs() -> list[tuple[str, str]]:
+    """Compile the app's modules and their stubs, writing the outputs to disk.
+
+    Returns:
+        The outputs of ``compile_script_stubs``.
+    """
+    sources = utils.compile_script_modules()[3]
+    outputs = utils.compile_script_stubs(sources)
+    for path, code in outputs:
+        Path(path).write_text(code)
+    return outputs
+
+
+def test_compile_script_stubs(stub_app: Path):
+    """A stub is typed from the module's signatures, and kept while nothing changed.
+
+    Args:
+        stub_app: the app's package directory.
+    """
+    web_dir = utils.get_web_dir()
+    party = stub_app / "party.js"
     exports = [
         {
             "name": "go",
             "signatures": [
                 {
                     "parameters": [
-                        {
-                            "name": "n",
-                            "type": "number",
-                            "optional": False,
-                            "rest": False,
-                        }
+                        {"name": "n", "type": "float", "optional": False, "rest": False}
                     ]
                 }
             ],
             "untyped": False,
         }
     ]
-    reads: list[list[Path]] = []
+    _fake_signatures(
+        web_dir, f"print({json.dumps({str(party.resolve()): exports})!r})\n"
+    )
+    record = (
+        str(web_dir / "script_stubs.json"),
+        json.dumps([str(stub_app / "party.pyi")]),
+    )
 
-    def read(paths):
-        reads.append(list(paths))
-        return {path.resolve(): exports for path in paths}
+    def stub() -> str:
+        digest = _module_digest(
+            party.resolve(),
+            module_files(party),
+            (web_dir / "package.json").read_bytes(),
+        )
+        return (
+            f"# Generated by Reflex from party.js ({digest}); rewritten when it changes.\n"
+            "from builtins import float as _float\n"
+            "\n"
+            "from reflex_base.event import EventSpec as _EventSpec\n"
+            "from reflex_base.vars.base import Var as _Var\n"
+            "\n"
+            "def go(n: _float | _Var[_float], /) -> _EventSpec: ...\n"
+        )
 
-    monkeypatch.setattr(utils, "_read_script_signatures", read)
-    digest = module_digest(party, package_json.read_bytes())
-    typed = render_stub(party, digest, exports)  # pyright: ignore[reportArgumentType]
+    assert _compile_stubs() == [record, (str(stub_app / "party.pyi"), stub())]
+    # Unchanged sources keep their stub without reading the types again.
+    assert _compile_stubs() == [record]
+    # A package upgrade can change the types: they are read again.
+    (web_dir / "package.json").write_text('{"dependencies": {"a": "2"}}')
+    assert _compile_stubs() == [record, (str(stub_app / "party.pyi"), stub())]
+    assert (web_dir / "script-signatures.js.log").read_text() == (
+        f"{party.resolve()}\n{party.resolve()}\n"
+    )
 
-    assert utils.compile_script_stubs() == [(str(tmp_path / "party.pyi"), typed)]
-    (tmp_path / "party.pyi").write_text(typed)
-    # Unchanged scripts keep their stub without reading the types again.
-    assert utils.compile_script_stubs() == []
-    assert reads == [[party]]
 
-    # A package upgrade can change the types: the stub is read again.
-    package_json.write_text('{"dependencies": {"a": "2"}}')
-    new_digest = module_digest(party, package_json.read_bytes())
-    assert utils.compile_script_stubs() == [
-        (str(tmp_path / "party.pyi"), render_stub(party, new_digest, exports))  # pyright: ignore[reportArgumentType]
+def test_compile_script_stubs_removes_stubs_of_modules_no_longer_imported(
+    stub_app: Path, clean_registration_context: RegistrationContext
+):
+    """Only stubs Reflex wrote for a module the app stopped importing are removed.
+
+    Args:
+        stub_app: the app's package directory.
+        clean_registration_context: the registry of imported modules.
+    """
+    web_dir = utils.get_web_dir()
+    party = (stub_app / "party.js").resolve()
+    _fake_signatures(web_dir, f"print({json.dumps({str(party): []})!r})\n")
+    party_stub = stub_app / "party.pyi"
+    handwritten = stub_app / "handwritten.pyi"
+    handwritten.write_text("def go() -> None: ...\n")
+    (web_dir / "script_stubs.json").write_text(
+        json.dumps([str(handwritten), str(stub_app / "gone.pyi")])
+    )
+    _compile_stubs()
+    assert party_stub.read_text().startswith("# Generated by Reflex from party.js (")
+
+    clean_registration_context._script_modules.clear()
+    assert _compile_stubs() == [(str(web_dir / "script_stubs.json"), "[]")]
+    assert (party_stub.exists(), handwritten.read_text()) == (
+        False,
+        "def go() -> None: ...\n",
+    )
+
+
+@pytest.mark.parametrize(
+    ("body", "cause"),
+    [
+        (
+            "sys.stderr.write(\"Error: Cannot find module 'typescript'\\n\")\nsys.exit(1)\n",
+            "script-signatures.js failed: Error: Cannot find module 'typescript'",
+        ),
+        (
+            "print('not JSON')\n",
+            "script-signatures.js failed: Expecting value: line 1 column 1 (char 0)",
+        ),
+    ],
+)
+def test_compile_script_stubs_warns_when_the_types_cannot_be_read(
+    stub_app: Path, monkeypatch: pytest.MonkeyPatch, body: str, cause: str
+):
+    """The stub accepts any arguments, the warning says why, and the next compile retries.
+
+    Args:
+        stub_app: the app's package directory.
+        monkeypatch: pytest monkeypatch fixture.
+        body: the fake signatures script's code.
+        cause: the cause the warning gives.
+    """
+    web_dir = utils.get_web_dir()
+    _fake_signatures(web_dir, body)
+    warnings: list[str] = []
+    monkeypatch.setattr(utils.console, "warn", warnings.append)
+    party = stub_app / "party.js"
+    untyped = (
+        "# Generated by Reflex from party.js (untyped); rewritten when it changes.\n"
+        "from typing import Any as _Any\n"
+        "\n"
+        "from reflex_base.event import EventSpec as _EventSpec\n"
+        "\n"
+        "def go(*args: _Any) -> _EventSpec: ...\n"
+    )
+    assert _compile_stubs()[1:] == [(str(stub_app / "party.pyi"), untyped)]
+    assert _compile_stubs()[1:] == [(str(stub_app / "party.pyi"), untyped)]
+    warning = (
+        "Reflex could not read the argument types of the JavaScript modules "
+        f"{party.resolve()}, so their type stubs accept any arguments: {cause}. "
+        f"The app still runs. If this repeats, delete {web_dir / 'node_modules'} "
+        "so that the next run reinstalls typescript, or report the error at "
+        "https://github.com/reflex-dev/reflex/issues."
+    )
+    assert warnings == [warning, warning]
+
+
+def test_compile_script_stubs_warns_when_reading_times_out(
+    stub_app: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A signatures script that runs too long is stopped, and the stub is untyped.
+
+    Args:
+        stub_app: the app's package directory.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    web_dir = utils.get_web_dir()
+    _fake_signatures(web_dir, "import time\ntime.sleep(30)\n")
+    monkeypatch.setattr(utils, "_SIGNATURES_TIMEOUT", 0.5)
+    warnings: list[str] = []
+    monkeypatch.setattr(utils.console, "warn", warnings.append)
+    party = stub_app / "party.js"
+    _compile_stubs()
+    command = [sys.executable, "script-signatures.js", str(party.resolve())]
+    assert warnings == [
+        (
+            "Reflex could not read the argument types of the JavaScript modules "
+            f"{party.resolve()}, so their type stubs accept any arguments: "
+            f"script-signatures.js failed: Command '{command}' timed out after 0.5 "
+            "seconds. The app still runs. If this repeats, delete "
+            f"{web_dir / 'node_modules'} so that the next run reinstalls typescript, "
+            "or report the error at https://github.com/reflex-dev/reflex/issues."
+        )
     ]
 
 
-def test_compile_script_stubs_falls_back_to_untyped(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    clean_registration_context: RegistrationContext,
+def test_compile_script_stubs_warns_without_node_or_bun(
+    stub_app: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """When the types cannot be read the stub is untyped, and retried next time.
+    """Without a JavaScript runtime the stub is untyped, and the warning says what to install.
 
     Args:
-        tmp_path: pytest tmp_path fixture.
+        stub_app: the app's package directory.
         monkeypatch: pytest monkeypatch fixture.
-        clean_registration_context: a fresh registry of imported modules.
     """
-    party = tmp_path / "party.js"
-    party.write_text("export function go(n) {}\n")
-    clean_registration_context.script_modules["app.party"] = party
-    monkeypatch.setattr(utils, "_read_script_signatures", lambda paths: None)
-    untyped = render_untyped_stub(party, "untyped", ["go"])
-
-    assert utils.compile_script_stubs() == [(str(tmp_path / "party.pyi"), untyped)]
-    (tmp_path / "party.pyi").write_text(untyped)
-    assert utils.compile_script_stubs() == [(str(tmp_path / "party.pyi"), untyped)]
+    monkeypatch.setattr(utils.path_ops, "get_node_path", lambda: None)
+    monkeypatch.setattr(utils.path_ops, "get_bun_path", lambda: None)
+    warnings: list[str] = []
+    monkeypatch.setattr(utils.console, "warn", warnings.append)
+    _compile_stubs()
+    assert warnings == [
+        (
+            "Reflex could not read the argument types of the JavaScript modules "
+            f"{(stub_app / 'party.js').resolve()}, so their type stubs accept any "
+            "arguments: reading them needs Node.js or Bun, and neither was found. "
+            f"The app still runs. Install Node.js {constants.Node.MIN_VERSION} or "
+            "newer, then run the app again."
+        )
+    ]
+    assert (stub_app / "party.pyi").read_text() == (
+        "# Generated by Reflex from party.js (untyped); rewritten when it changes.\n"
+        "from typing import Any as _Any\n"
+        "\n"
+        "from reflex_base.event import EventSpec as _EventSpec\n"
+        "\n"
+        "def go(*args: _Any) -> _EventSpec: ...\n"
+    )
 
 
 def test_copy_files_skips_up_to_date_targets(tmp_path: Path):

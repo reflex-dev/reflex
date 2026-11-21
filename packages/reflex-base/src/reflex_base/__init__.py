@@ -17,7 +17,7 @@ class _ScriptFinder:
 
     Registered here, by the package every Reflex import loads first, so that
     no module is loaded for it: the real finder, ``reflex_base.js.finder``,
-    loads on the first import no other finder found.
+    loads on the first import of a submodule no other finder found.
     """
 
     @staticmethod
@@ -39,9 +39,9 @@ class _ScriptFinder:
         """
         if path is None:
             return None
-        from reflex_base.js.finder import ScriptFinder
+        from reflex_base.js.finder import find_spec
 
-        return ScriptFinder.find_spec(fullname, path, target)
+        return find_spec(fullname, path)
 
 
 # By name, not identity: importing this module afresh, as a reload or a
