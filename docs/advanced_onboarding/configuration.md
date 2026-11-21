@@ -151,7 +151,7 @@ config = rx.Config(
 )
 ```
 
-For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The same entry of `X-Forwarded-Host` and `X-Forwarded-Proto` is used when the backend checks the origin of a WebSocket connection (see [CORS](#cors)). Proxies usually set these two headers instead of appending to them, so when one has fewer entries than `trusted_proxy_hops`, its leftmost entry is used. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
+For example, `trusted_proxy_hops=1` uses the rightmost `X-Forwarded-For` entry; `2` uses the second entry from the right. The entry is normalized to an IP address after dropping any port and IPv6 brackets, and an IPv4-mapped IPv6 address such as `::ffff:203.0.113.7` becomes its IPv4 address; if it is not a valid address, it is ignored and the connection's peer address is used. The same entry of `X-Forwarded-Host` and `X-Forwarded-Proto` is used when the backend checks the origin of a WebSocket connection (see [CORS](#cors)). Proxies usually set these two headers instead of appending to them, so when one has fewer entries than `trusted_proxy_hops`, its leftmost entry is used. The default is `0`. Do not enable forwarded-header trust if untrusted clients can connect directly to the backend or bypass the trusted proxy chain. The setting can also be provided as `REFLEX_TRUSTED_PROXY_HOPS`.
 
 ## Plugins
 

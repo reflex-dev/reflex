@@ -17,7 +17,7 @@ import weakref
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Self, TypeVar
+from typing import Any, ClassVar, Literal, Self, TypedDict, TypeVar
 from unittest import mock
 
 import pytest
@@ -25,11 +25,13 @@ from reflex_base import constants
 from reflex_base.components.component import LiteralComponentVar
 from reflex_base.constants import RouteArgType
 from reflex_base.constants.colors import Color
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.event import LiteralEventChainVar, LiteralEventVar
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import (
     BackendVarFormatError,
+    MixinVarNameConflictError,
     ReflexRuntimeError,
     StateValueError,
 )
@@ -996,6 +998,272 @@ def test_abc_mixin(state_mixin: bool, clean_registration_context):
     assert concrete_state()._value() == 7
 
 
+def _mixin_conflict_message(key: str, state: str, first: str, second: str) -> str:
+    """Build the message raised for two mixins declaring the same var.
+
+    Args:
+        key: The var name.
+        state: The name of the class combining the mixins.
+        first: The name of the mixin declaring the var first.
+        second: The name of the other mixin.
+
+    Returns:
+        The full message.
+    """
+    return (
+        f"The var `{key}` in {__name__}.{state} is declared by both "
+        f"{__name__}.{first} and {__name__}.{second}, mixins that do not inherit "
+        "from one another; declare it on the state, rename it in one of them, or "
+        "declare it in a mixin both inherit from"
+    )
+
+
+def test_mixin_var_name_conflict(clean_registration_context):
+    """Reject two mixins that do not inherit from one another declaring the same var.
+
+    Declaring it without a default conflicts too when nothing else declares it,
+    which a ClassVar on the state does not. So does declaring a backend var.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int = 2
+
+    class AnnotatingMixin(BaseState, mixin=True):
+        shared: int
+
+    class OtherAnnotatingMixin(BaseState, mixin=True):
+        shared: int
+
+    class FirstBackendMixin(BaseState, mixin=True):
+        _shared: int = 1
+
+    class SecondBackendMixin(BaseState, mixin=True):
+        _shared: int = 2
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class SubState(FirstMixin, SecondMixin, State):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "SubState", "FirstMixin", "SecondMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class RootState(FirstMixin, SecondMixin, BaseState):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "RootState", "FirstMixin", "SecondMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class CombinedMixin(FirstMixin, SecondMixin, mixin=True):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "CombinedMixin", "FirstMixin", "SecondMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class AnnotatedState(AnnotatingMixin, OtherAnnotatingMixin, State):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "AnnotatedState", "AnnotatingMixin", "OtherAnnotatingMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class ClassVarState(AnnotatingMixin, OtherAnnotatingMixin, State):
+            shared: ClassVar[int] = 1  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert str(err.value) == _mixin_conflict_message(
+        "shared", "ClassVarState", "AnnotatingMixin", "OtherAnnotatingMixin"
+    )
+
+    with pytest.raises(MixinVarNameConflictError) as err:
+
+        class BackendState(FirstBackendMixin, SecondBackendMixin, State):
+            pass
+
+    assert str(err.value) == _mixin_conflict_message(
+        "_shared", "BackendState", "FirstBackendMixin", "SecondBackendMixin"
+    )
+
+
+def test_mixin_var_without_default_types_a_mixins_var(clean_registration_context):
+    """A mixin's var without a default uses the var another mixin declares with one.
+
+    The parent state declaring the var too changes nothing: the mixin with the
+    default comes first along the MRO.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class TypingMixin(BaseState, mixin=True):
+        count: int
+
+    class ValueMixin(BaseState, mixin=True):
+        count: int = 3
+
+    class Parent(State):
+        count: int = 1
+
+    class NoParent(TypingMixin, ValueMixin, State):
+        pass
+
+    class WithParent(TypingMixin, ValueMixin, Parent):
+        pass
+
+    for state in (NoParent, WithParent):
+        assert state.get_fields()["count"]._owner is state
+        assert state.get_fields()["count"].default == 3
+
+
+def test_mixin_var_without_default_warns_on_another_type(clean_registration_context):
+    """Warn when a mixin types a var as other than the var it uses is declared.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class Point(TypedDict):
+        x: int
+
+    @dataclasses.dataclass
+    class Pair:
+        x: int = 0
+
+    class StrParent(State):
+        word: str = "a"
+
+    class IntParent(State):
+        word: int = 1
+
+    class PairParent(State):
+        point: Pair = Pair()
+
+    class IntMixin(BaseState, mixin=True):
+        word: int
+
+    class PointMixin(BaseState, mixin=True):
+        point: Point
+
+    with mock.patch("reflex_base.utils.console.warn") as warn:
+
+        class StrChild(IntMixin, StrParent):  # pyright: ignore[reportIncompatibleVariableOverride]
+            pass
+
+    warn.assert_called_once_with(
+        f"The var `word` in {__name__}.StrChild is declared as str by "
+        f"{__name__}.StrParent, but the mixin {__name__}.IntMixin types it as int; "
+        "the mixin's code uses the var declared as str"
+    )
+    with mock.patch("reflex_base.utils.console.warn") as warn:
+
+        class IntChild(IntMixin, IntParent):
+            pass
+
+        class PointChild(PointMixin, PairParent):  # pyright: ignore[reportIncompatibleVariableOverride]
+            pass
+
+    warn.assert_not_called()
+
+
+def test_mixins_may_type_a_var_the_state_declares(clean_registration_context):
+    """Mixins may each declare without a default a var the state declares.
+
+    Such a declaration only types the var for the mixin's code: the state keeps
+    the var it declares, or one a mixin declares with a default.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int
+
+    class ValueMixin(BaseState, mixin=True):
+        shared: int = 3
+
+    class Parent(State):
+        shared: int = 1
+
+    class Child(FirstMixin, SecondMixin, Parent):
+        pass
+
+    class OwnState(FirstMixin, SecondMixin, State):
+        shared: int = 2
+
+    class RedeclaringChild(FirstMixin, ValueMixin, Parent):
+        pass
+
+    assert Child.get_fields()["shared"]._owner is Parent
+    assert OwnState.get_fields()["shared"].default == 2
+    assert RedeclaringChild.get_fields()["shared"]._owner is RedeclaringChild
+    assert RedeclaringChild.get_fields()["shared"].default == 3
+
+
+def test_state_resolves_its_mixins_var_name_conflict(clean_registration_context):
+    """A state declaring the var its mixins both declare settles the conflict.
+
+    Mixins from different libraries cannot be renamed, so the combining state's
+    own declaration is the var both mixins use.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int = 2
+
+    class ResolvedState(FirstMixin, SecondMixin, State):
+        shared: int = 3
+
+    assert ResolvedState.get_fields()["shared"]._owner is ResolvedState
+    assert ResolvedState.get_fields()["shared"].default == 3
+
+
+def test_mixin_may_redeclare_a_var_of_the_parents_mixin(clean_registration_context):
+    """Only mixins combined into the same state conflict, not those of its parent.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int = 2
+
+    class Parent(FirstMixin, State):
+        pass
+
+    class Child(SecondMixin, Parent):
+        pass
+
+    assert Child.get_fields()["shared"]._owner is Child
+    assert Child.get_fields()["shared"].default == 2
+
+
 @pytest.mark.parametrize("registration", ["declared", "var"])
 def test_reserved_abc_bookkeeping(registration: str, clean_registration_context):
     """Keep rejecting a state's own ``_abc_impl``, which would clash with ABCMeta's.
@@ -1337,6 +1605,48 @@ def test_new_default_for_inherited_field_declares_a_field():
     assert child_field.default == 5
     assert child_field.outer_type_ is int
     assert "count" in Child.base_vars
+
+
+def test_field_default_from_type():
+    """A field declared without a default notes that its default comes from its type."""
+    from_type = Field(annotated_type=int)
+    assert from_type._default_from_type
+    assert from_type._replace()._default_from_type
+    assert from_type._replace(annotated_type=bool)._default_from_type
+    assert not from_type._replace(default=1)._default_from_type
+    assert not Field(default=0, annotated_type=int)._default_from_type
+    assert not Field(default_factory=list, annotated_type=list[int])._default_from_type
+
+
+def test_field_default_from_type_follows_new_type():
+    """A default that comes from the type is taken from the replacing type."""
+    from_type = Field(annotated_type=int)
+    assert from_type._replace(annotated_type=str).default == ""
+    assert from_type._replace(annotated_type=list[int]).default_value() == []
+
+
+def test_field_set_default_is_not_from_type():
+    """A default set on a field declared without one no longer comes from its type."""
+    field = Field(annotated_type=int)
+    field.set_default(5)
+    assert not field._default_from_type
+    assert field._replace().default == 5
+
+
+def test_reannotated_mixin_var_default_follows_new_type(clean_registration_context):
+    """Re-annotating a mixin's var declared without a default takes the new type's.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class IntMixin(BaseState, mixin=True):
+        value: int
+
+    class StrState(IntMixin, State):
+        value: str  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert StrState.get_fields()["value"].default == ""
 
 
 class TaggedField(Field[FIELD_TYPE]):
@@ -2427,6 +2737,28 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         assert child_field.default == 2
         assert isinstance(vars(child)["__counter__"], Field)
         assert child().__counter__ == 2
+
+
+def test_from_state_hook_subscribes_to_the_field():
+    """A state field's hook names the field, so its readers skip other changes."""
+    assert VarData.from_state("s", "a").hooks == (
+        f'const s = useStateContext("s", ["a{FIELD_MARKER}"])',
+    )
+    assert VarData.from_state("s").hooks == ('const s = useStateContext("s")',)
+
+
+@pytest.mark.parametrize("js_expr", ["value", "items_rx_state_[0]"])
+def test_var_set_state_subscribes_to_the_whole_substate(js_expr: str):
+    """The expression may read any key, so its only hook reads the whole substate.
+
+    Args:
+        js_expr: The expression read from the state.
+    """
+    var = Var(_js_expr=js_expr, _var_type=str)._var_set_state("s")
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert var_data.hooks == ('const s = useStateContext("s")',)
+    assert var_data.field_dependencies == {"s": (js_expr,)}
 
 
 def _identical(leaves: Sequence[Var], *expected: Var) -> bool:
