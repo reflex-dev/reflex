@@ -333,18 +333,32 @@ class BrowserScriptError(ReflexError):
         """Create the error from the JavaScript error the browser reported.
 
         Args:
-            name: The JavaScript error's name, such as ``TypeError``.
+            name: The JavaScript error's name, such as ``TypeError``; empty
+                when the backend, not the browser, found the error.
             message: Its message.
             stack: Its stack trace, if the browser had one.
         """
-        super().__init__(f"{name}: {message}")
+        # All three are the args, so the error survives pickling.
+        super().__init__(name, message, stack)
         self.name = name
         self.message = message
         self.stack = stack
 
+    def __str__(self) -> str:
+        """Format the error like the browser console does.
+
+        Returns:
+            ``name: message``, or the message alone when there is no name.
+        """
+        return f"{self.name}: {self.message}" if self.name else self.message
+
 
 class BrowserResultSerializationError(BrowserScriptError):
-    """Raised when an awaited browser call returns a value JSON cannot carry."""
+    """Raised when the result of an awaited browser call cannot reach the backend.
+
+    The value is not one JSON can carry, or the backend cannot read the JSON
+    the browser sent.
+    """
 
 
 class BrowserDisconnectedError(ReflexError, ConnectionError):
