@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 
 # Files whose imports are followed; other local files (CSS, JSON) are copied.
@@ -87,6 +87,8 @@ class Token:
     value: str
     # Whether a line break precedes the token.
     newline: bool
+    # For a template or JSX literal, the tokens of the expressions in it.
+    inner: tuple[Token, ...] = ()
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -129,27 +131,31 @@ def _read_string(source: str, start: int) -> tuple[str, int]:
     return source[start + 1 :], len(source)
 
 
-def _skip_expression(source: str, index: int, jsx: bool) -> int:
+def _skip_expression(source: str, index: int, jsx: bool, inner: list[Token]) -> int:
     """Skip the expression in a template's ``${...}`` or JSX's ``{...}``.
 
     Args:
         source: The source.
         index: The index after the opening brace.
         jsx: Whether the source can contain JSX.
+        inner: Receives the expression's tokens.
 
     Returns:
         The index after the closing brace.
     """
-    return _scan(source, index, jsx, nested=True)[1]
+    tokens, index = _scan(source, index, jsx, nested=True)
+    inner.extend(tokens)
+    return index
 
 
-def _skip_template(source: str, start: int, jsx: bool) -> int:
+def _skip_template(source: str, start: int, jsx: bool, inner: list[Token]) -> int:
     """Skip a template literal, including the expressions in it.
 
     Args:
         source: The source.
         start: The index of the opening backtick.
         jsx: Whether the source can contain JSX.
+        inner: Receives the tokens of its expressions.
 
     Returns:
         The index after the closing backtick.
@@ -162,17 +168,18 @@ def _skip_template(source: str, start: int, jsx: bool) -> int:
         index = (
             match.end() + 1
             if stop == "\\"
-            else _skip_expression(source, match.end(), jsx)
+            else _skip_expression(source, match.end(), jsx, inner)
         )
     return len(source)
 
 
-def _skip_jsx_tag(source: str, index: int) -> tuple[int, bool]:
+def _skip_jsx_tag(source: str, index: int, inner: list[Token]) -> tuple[int, bool]:
     """Skip a JSX tag, with its attributes.
 
     Args:
         source: The source.
         index: The index after the tag's ``<``.
+        inner: Receives the tokens of its attribute expressions.
 
     Returns:
         The index after the tag's ``>``, and whether the tag closes itself.
@@ -182,19 +189,20 @@ def _skip_jsx_tag(source: str, index: int) -> tuple[int, bool]:
         if stop == ">":
             return match.end(), source[match.start() - 1] == "/"
         index = (
-            _skip_expression(source, match.end(), jsx=True)
+            _skip_expression(source, match.end(), True, inner)
             if stop == "{"
             else _read_string(source, match.start())[1]
         )
     return len(source), True
 
 
-def _skip_jsx(source: str, index: int) -> int:
+def _skip_jsx(source: str, index: int, inner: list[Token]) -> int:
     """Skip a JSX element or fragment, with its children.
 
     Args:
         source: The source.
         index: The index of its opening ``<``.
+        inner: Receives the tokens of the expressions in it.
 
     Returns:
         The index after its closing tag.
@@ -202,10 +210,10 @@ def _skip_jsx(source: str, index: int) -> int:
     depth = 0
     while match := _JSX_STOP_RE.search(source, index):
         if match.group() == "{":
-            index = _skip_expression(source, match.end(), jsx=True)
+            index = _skip_expression(source, match.end(), True, inner)
             continue
         closing = source.startswith("</", match.start())
-        index, self_closing = _skip_jsx_tag(source, match.end())
+        index, self_closing = _skip_jsx_tag(source, match.end(), inner)
         depth += -1 if closing else 0 if self_closing else 1
         if depth == 0:
             return index
@@ -260,13 +268,14 @@ def _operand_expected(previous: Token | None) -> bool:
     return previous.kind == "name" and previous.value in _KEYWORDS_BEFORE_OPERAND
 
 
-def _skip_operand(source: str, index: int, jsx: bool) -> int | None:
+def _skip_operand(source: str, index: int, jsx: bool, inner: list[Token]) -> int | None:
     """Skip a regular expression or JSX element, where a value is expected.
 
     Args:
         source: The source.
         index: The index of a character that could start one.
         jsx: Whether the source can contain JSX.
+        inner: Receives the tokens of a JSX element's expressions.
 
     Returns:
         The index after it, or None if none starts here.
@@ -274,12 +283,12 @@ def _skip_operand(source: str, index: int, jsx: bool) -> int | None:
     if source[index] == "/":
         return _skip_regex(source, index)
     if jsx and _JSX_START_RE.match(source, index):
-        return _skip_jsx(source, index)
+        return _skip_jsx(source, index, inner)
     return None
 
 
 def _read_token(
-    source: str, index: int, previous: Token | None, jsx: bool
+    source: str, index: int, previous: Token | None, jsx: bool, inner: list[Token]
 ) -> tuple[str, str, int]:
     """Read the token at an index.
 
@@ -288,6 +297,7 @@ def _read_token(
         index: The index, where no whitespace or comment starts.
         previous: The token before, or None at the start.
         jsx: Whether the source can contain JSX.
+        inner: Receives the tokens of the expressions in a template or JSX.
 
     Returns:
         The token's kind and value, and the index after it.
@@ -297,9 +307,9 @@ def _read_token(
         value, end = _read_string(source, index)
         return "string", value, end
     if char == "`":
-        return "literal", "", _skip_template(source, index, jsx)
+        return "literal", "", _skip_template(source, index, jsx, inner)
     if _operand_expected(previous) and (
-        (end := _skip_operand(source, index, jsx)) is not None
+        (end := _skip_operand(source, index, jsx, inner)) is not None
     ):
         return "literal", "", end
     if name := _NAME_RE.match(source, index):
@@ -330,14 +340,15 @@ def _scan(source: str, index: int, jsx: bool, nested: bool) -> tuple[list[Token]
         if start >= len(source):
             return tokens, start
         newline = "\n" in source[index:start]
+        inner: list[Token] = []
         kind, value, index = _read_token(
-            source, start, tokens[-1] if tokens else None, jsx
+            source, start, tokens[-1] if tokens else None, jsx, inner
         )
         if kind == "punct" and value in "{}":
             depth += 1 if value == "{" else -1
             if nested and depth < 0:
                 return tokens, index
-        tokens.append(Token(kind, value, newline))
+        tokens.append(Token(kind, value, newline, tuple(inner)))
 
 
 def tokenize(source: str, jsx: bool = False) -> list[Token]:
@@ -371,7 +382,7 @@ def _is(token: Token | None, kind: str, value: str | None = None) -> bool:
     )
 
 
-def _at(tokens: list[Token], index: int) -> Token | None:
+def _at(tokens: Sequence[Token], index: int) -> Token | None:
     """Get the token at an index.
 
     Args:
@@ -384,7 +395,7 @@ def _at(tokens: list[Token], index: int) -> Token | None:
     return tokens[index] if 0 <= index < len(tokens) else None
 
 
-def _is_keyword(tokens: list[Token], index: int, keyword: str) -> bool:
+def _is_keyword(tokens: Sequence[Token], index: int, keyword: str) -> bool:
     """Whether a token is a keyword, and not a property of that name.
 
     Args:
@@ -663,7 +674,7 @@ def _export_names(tokens: list[Token], index: int) -> list[tuple[str, bool]]:
     return []
 
 
-def _statement_start(tokens: list[Token], index: int) -> int:
+def _statement_start(tokens: Sequence[Token], index: int) -> int:
     """Find the ``import`` or ``export`` keyword an import clause follows.
 
     Args:
@@ -680,7 +691,7 @@ def _statement_start(tokens: list[Token], index: int) -> int:
     return index
 
 
-def _import_kind(tokens: list[Token], index: int) -> str | None:
+def _import_kind(tokens: Sequence[Token], index: int) -> str | None:
     """Tell whether a string is the specifier of an import, and of which kind.
 
     Args:
@@ -711,6 +722,23 @@ def _import_kind(tokens: list[Token], index: int) -> str | None:
     return "type" if type_only else "runtime"
 
 
+def _imports(tokens: Sequence[Token]) -> Iterator[tuple[str, str]]:
+    """Yield the specifiers some tokens import from, with their kind.
+
+    Args:
+        tokens: The tokens, which may hold templates and JSX with expressions.
+
+    Yields:
+        Each specifier's ``_import_kind`` and the specifier, including those
+        inside a template's or JSX's expressions.
+    """
+    for index, token in enumerate(tokens):
+        if token.kind == "string" and (kind := _import_kind(tokens, index)):
+            yield kind, token.value
+        elif token.inner:
+            yield from _imports(token.inner)
+
+
 def parse_script(text: str, jsx: bool = False) -> ScriptSource:
     """Read the exports and imports of a module.
 
@@ -729,18 +757,17 @@ def parse_script(text: str, jsx: bool = False) -> ScriptSource:
     """
     tokens = tokenize(text, jsx)
     exports: dict[str, bool] = {}
-    imports: dict[str, None] = {}
-    type_imports: dict[str, None] = {}
-    for index, token in enumerate(tokens):
-        if token.kind == "string":
-            kind = _import_kind(tokens, index)
-            if kind == "runtime":
-                imports[token.value] = None
-            elif kind == "type" and token.value.startswith("."):
-                type_imports[token.value] = None
-        elif _is_keyword(tokens, index, "export"):
+    for index in range(len(tokens)):
+        if _is_keyword(tokens, index, "export"):
             for name, callable_ in _export_names(tokens, index + 1):
                 exports.setdefault(name, callable_)
+    imports: dict[str, None] = {}
+    type_imports: dict[str, None] = {}
+    for kind, specifier in _imports(tokens):
+        if kind == "runtime":
+            imports[specifier] = None
+        elif specifier.startswith("."):
+            type_imports[specifier] = None
     for jsdoc, reference in _TYPE_REFERENCE_RE.findall(text):
         type_imports[jsdoc or reference] = None
     exports.pop("default", None)

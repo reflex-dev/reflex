@@ -598,6 +598,12 @@ if (typeof window !== "undefined") {
   }
 }
 
+// The call of a `_call_js` whose module is still loading, until it has run.
+// `processEvent` starts an event that arrives while another awaits, so the
+// events after this call wait for it, in the order they arrived, to see what
+// its function did.
+let pendingModuleCall;
+
 /**
  * Call an exported function of a JavaScript module the app imports from
  * Python. The modules are bundled, so nothing is evaluated: the event names the
@@ -615,7 +621,15 @@ const callModuleFunction = (payload) => {
     !Object.hasOwn(loadedScriptModules, module) &&
     Object.hasOwn(scriptModules, module)
   ) {
-    return loadScriptModule(module).then(() => callModuleFunction(payload));
+    const call = loadScriptModule(module).then(() =>
+      callModuleFunction(payload),
+    );
+    pendingModuleCall = call;
+    const clear = () => {
+      pendingModuleCall = undefined;
+    };
+    call.then(clear, clear);
+    return call;
   }
   const fn = Object.hasOwn(loadedScriptModules, module)
     ? loadedScriptModules[module][name]
@@ -1078,6 +1092,13 @@ export const processEvent = async (socket, navigate, params) => {
 
   // Apply the next event in the queue.
   const event = event_queue.shift();
+
+  // An event that waited may find another call pending after it: the event
+  // before it can be a module call that now waits for its own module.
+  while (pendingModuleCall !== undefined) {
+    // The call reports its own failure.
+    await pendingModuleCall.catch(() => {});
+  }
 
   try {
     // Process events with handlers via REST and all others via websockets.

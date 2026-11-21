@@ -159,6 +159,30 @@ def test_parse_script_skips_jsx():
 
 
 @pytest.mark.parametrize(
+    ("source", "jsx", "imports"),
+    [
+        ('const t = `${(await import("./a.js")).label}`;', False, ["./a.js"]),
+        ('const t = `${`${import("./a.js")}`}`;', False, ["./a.js"]),
+        ('const e = <p title={import("./a.js")}>x</p>;', True, ["./a.js"]),
+        ('const e = <p>{import("./a.js")}</p>;', True, ["./a.js"]),
+        ('const e = <p>{`${import("./a.js")}`}</p>;', True, ["./a.js"]),
+        ('const t = `${"./a.js"}`;', False, []),
+    ],
+)
+def test_parse_script_finds_imports_inside_expressions(
+    source: str, jsx: bool, imports: list[str]
+):
+    """A dynamic import in a template's or JSX's expression is a module the source loads.
+
+    Args:
+        source: The module source.
+        jsx: Whether it can contain JSX.
+        imports: The specifiers it imports.
+    """
+    assert parse_script(source, jsx).imports == imports
+
+
+@pytest.mark.parametrize(
     ("source", "jsx", "functions"),
     [
         ("const t = `${\nexport function a() {}", False, []),
