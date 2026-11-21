@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from ._screenshot import ScreenshotPlugin as _ScreenshotPlugin
     from .base import (
         CommonContext,
+        ExpandRoutesContext,
         Plugin,
         PostBuildContext,
         PostCompileContext,
@@ -45,6 +46,7 @@ if TYPE_CHECKING:
         "CompilerHooks",
         "ComponentAndChildren",
         "EmbedPlugin",
+        "ExpandRoutesContext",
         "PageContext",
         "PageDefinition",
         "Plugin",
@@ -78,6 +80,7 @@ _SUBMOD_ATTRS: lazy_loader.SubmodAttrsType = {
     "_screenshot": [("ScreenshotPlugin", "_ScreenshotPlugin")],
     "base": [
         "CommonContext",
+        "ExpandRoutesContext",
         "Plugin",
         "PostBuildContext",
         "PostCompileContext",

@@ -27,6 +27,7 @@ from typing import Any, ClassVar, get_args, get_origin
 
 from reflex_base.components.component import DEFAULT_TRIGGERS_AND_DESC, Component
 from reflex_base.environment import interpret_boolean_env
+from reflex_base.utils.lazy_loader import exported_names
 from reflex_base.vars.base import Var
 
 
@@ -1603,7 +1604,9 @@ def _get_init_lazy_imports(mod: ModuleType, new_tree: ast.AST):
         + "\n"
     )
     text += ast.unparse(new_tree) + "\n\n"
-    text += f"__all__ = {getattr(mod, '__all__', [])!r}\n"
+    # From the mappings rather than the runtime __all__, which can leave out the
+    # names of an optional package the stub build environment does not have.
+    text += f"__all__ = {exported_names(sub_mods, sub_mod_attrs, extra_mappings)!r}\n"
     return text
 
 
