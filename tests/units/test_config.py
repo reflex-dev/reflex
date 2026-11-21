@@ -107,6 +107,24 @@ def test_event_loop_blocking_detection_can_be_disabled_from_env(
     assert config.update_from_env()["event_loop_blocking_threshold"] == 0
 
 
+def test_browser_call_timeout_can_wait_without_a_limit(
+    base_config_values, monkeypatch: pytest.MonkeyPatch
+):
+    """The awaited browser call timeout is None for no limit, or seconds from the environment."""
+    assert rx.Config(**base_config_values).browser_call_timeout == pytest.approx(30)
+    assert (
+        rx.Config(**base_config_values, browser_call_timeout=None).browser_call_timeout
+        is None
+    )
+    monkeypatch.setenv("REFLEX_BROWSER_CALL_TIMEOUT", "12.5")
+    monkeypatch.setenv("REFLEX_BROWSER_CALL_GRACE_PERIOD", "0.5")
+    updated = rx.Config(**base_config_values).update_from_env()
+    assert (
+        updated["browser_call_timeout"],
+        updated["browser_call_grace_period"],
+    ) == (12.5, 0.5)
+
+
 @pytest.mark.parametrize("trusted_proxy_hops", [-1, True, False, 1.5, "2", None])
 def test_trusted_proxy_hops_must_be_non_negative(
     base_config_values, trusted_proxy_hops
