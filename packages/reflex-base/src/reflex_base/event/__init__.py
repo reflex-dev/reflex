@@ -2114,6 +2114,23 @@ def download(
     )
 
 
+def _script_signature(fn: Callable) -> inspect.Signature:
+    """Get the signature of a script event, without the timeout of an awaited call.
+
+    The timeout is not an argument of the event: ``add_args`` must not bind to it.
+
+    Args:
+        fn: The function creating the script event.
+
+    Returns:
+        The function's signature without its ``timeout`` parameter.
+    """
+    sig = inspect.signature(fn)
+    return sig.replace(
+        parameters=[p for name, p in sig.parameters.items() if name != "timeout"]
+    )
+
+
 def _script_kwargs(
     callback: "EventType[Any] | None", timeout: float | Unset | None
 ) -> dict[str, Any]:
@@ -2170,7 +2187,7 @@ def call_script(
 
     return server_side(
         "_call_script",
-        inspect.signature(call_script),
+        _script_signature(call_script),
         javascript_code=javascript_code,
         **_script_kwargs(callback, timeout),
     )
@@ -2202,7 +2219,7 @@ def call_function(
 
     return server_side(
         "_call_function",
-        inspect.signature(call_function),
+        _script_signature(call_function),
         function=javascript_code,
         **_script_kwargs(callback, timeout),
     )

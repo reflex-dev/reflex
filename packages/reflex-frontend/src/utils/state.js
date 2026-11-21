@@ -599,13 +599,15 @@ const applyResultCallback = async (
 /**
  * Run the script of a _call_script or _call_function event.
  * @param event The event whose script to run.
- * @param addEvents The late-bound event dispatcher for the script.
  * @param socket The socket object to send events on.
  * @param navigate The navigate function from useNavigate.
  * @param params The params object from useParams.
  * @returns The script's completion value, or the function's return value.
  */
-const runEventScript = (event, addEvents, socket, navigate, params) => {
+const runEventScript = (event, socket, navigate, params) => {
+  // User code dispatches through addEvents like compiled event triggers do;
+  // late-bound so a remounted EventLoopProvider is picked up.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
   if (event.name === "_call_script") {
     return runScript(
       event.payload.javascript_code,
@@ -679,7 +681,10 @@ const sendScriptResult = async (socket, rid, run) => {
     try {
       outcome = { rid, json: serializeScriptResult(value) };
     } catch (e) {
-      outcome = { rid, error: describeScriptError(e, SERIALIZATION_ERROR_KIND) };
+      outcome = {
+        rid,
+        error: describeScriptError(e, SERIALIZATION_ERROR_KIND),
+      };
     }
   } catch (e) {
     outcome = { rid, error: describeScriptError(e) };
@@ -903,14 +908,14 @@ export const applyEvent = async (event, socket, navigate, params) => {
     if (event.rid) {
       // The backend awaits the result: an error is its to handle.
       void sendScriptResult(socket, event.rid, () =>
-        runEventScript(event, addEvents, socket, navigate, params),
+        runEventScript(event, socket, navigate, params),
       );
       return;
     }
     try {
       await applyResultCallback(
         event,
-        runEventScript(event, addEvents, socket, navigate, params),
+        runEventScript(event, socket, navigate, params),
         socket,
         navigate,
         params,
