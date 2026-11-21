@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
 from reflex_base.environment import EnvironmentVariables
 
 from agent_files._plugin import (
@@ -268,6 +269,23 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
         "[Eventhandler](https://reflex.dev/docs/api-reference/eventhandler.md)"
         in llms_txt
     )
+
+
+@pytest.mark.parametrize(
+    ("segment", "expected"),
+    [
+        ("url", "URL"),
+        ("urls", "URLs"),
+        ("ag_grid", "AG Grid"),
+        ("deploy-with-github-actions", "Deploy With GitHub Actions"),
+        ("deploy-to-gcp", "Deploy To GCP"),
+    ],
+)
+def test_format_title_keeps_acronyms_and_brand_names(segment, expected):
+    """llms.txt titles spell acronyms like the breadcrumbs and sidebar."""
+    from agent_files._plugin import _format_title
+
+    assert _format_title(segment) == expected
 
 
 def test_section_for_root_level_markdown_strips_extension():

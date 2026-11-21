@@ -1,1 +1,0 @@
-An idle worker now waits the same whether or not it can listen for notifications, and a listener that cannot reconnect backs off up to `max_idle_interval` instead of retrying every second. A database that suspends itself when nothing is querying — Neon, and other managed Postgres — is no longer held awake by a worker with nothing to do.

@@ -915,6 +915,9 @@ def towncrier_config_toml(root: Path) -> str:
         'title_format = "## {version} ({project_date})"',
         f'issue_format = "[#{{issue}}](https://github.com/{slug}/issues/{{issue}})"',
         'start_string = "<!-- towncrier release notes start -->\\n"',
+        "# towncrier's template appends the issue links to the last line of an",
+        "# entry, inside a trailing code fence; this one puts them above the block.",
+        'template = "reflex_release:changelog.md"',
     ]
     for directory, display in TOWNCRIER_TYPES:
         lines += [
