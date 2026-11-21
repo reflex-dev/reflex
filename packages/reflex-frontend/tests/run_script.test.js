@@ -240,12 +240,7 @@ describe("awaited script results", () => {
       "TypeError",
       "The script returned a function, which JSON cannot carry.",
     ],
-    [
-      "a BigInt",
-      "1n",
-      "TypeError",
-      "Do not know how to serialize a BigInt",
-    ],
+    ["a BigInt", "1n", "TypeError", "Do not know how to serialize a BigInt"],
   ])("rejects %s as a serialization error", async (_what, code, name, message) => {
     const { outcome } = awaited(script(code));
     expect(withoutStack(await outcome())).toEqual({
