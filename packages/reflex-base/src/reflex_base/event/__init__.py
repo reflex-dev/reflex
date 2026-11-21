@@ -1022,11 +1022,8 @@ class EventSpec(EventActionsMixin):
         Returns:
             A copy of the event spec, with the new args.
         """
-        return type(self)(
-            handler=self.handler,
-            client_handler_name=self.client_handler_name,
-            args=args,
-            event_actions=self.event_actions.copy(),
+        return dataclasses.replace(
+            self, args=args, event_actions=self.event_actions.copy()
         )
 
     def add_args(self, *args: Var) -> "EventSpec":

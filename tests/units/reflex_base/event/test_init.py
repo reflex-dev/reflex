@@ -128,3 +128,17 @@ def test_script_events_keep_their_timeout_off_the_wire():
         '["callback"] : null }), ({  })))'
     )
     assert isinstance(cast("_BrowserCallSpec", rx.call_script("1")).timeout, Unset)
+
+
+def test_copies_of_a_script_event_keep_its_timeout():
+    """A copy with new args or event actions is still awaitable with the same timeout."""
+    spec = cast("_BrowserCallSpec", rx.call_script("1", timeout=5))
+    copies = [
+        spec.with_args(spec.args),
+        spec.add_args(),
+        spec.stop_propagation,
+        spec.debounce(10),
+    ]
+    assert [(type(copy), copy.timeout) for copy in copies] == [
+        (_BrowserCallSpec, 5)
+    ] * 4
