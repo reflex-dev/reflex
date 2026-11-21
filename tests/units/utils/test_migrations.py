@@ -549,6 +549,61 @@ def test_callable_default_is_evaluated_for_existing_rows(project: Path):
     assert created
 
 
+ENUM_APP = SQLMODEL_APP.replace(
+    "import datetime\n", "import datetime\nimport enum\n"
+).replace(
+    "class Thing(",
+    'class Level(str, enum.Enum):\n    LOW = "low"\n    HIGH = "high"\n\n\nclass Thing(',
+)
+
+
+def test_defaults_without_an_untyped_sql_literal(
+    project: Path, caplog: pytest.LogCaptureFixture
+):
+    """An Enum default is written through its column type; a JSON default has no SQL form.
+
+    A nullable JSON column is added without a server default and a NOT NULL one
+    is refused, since the existing rows would get no value. A value the column
+    type rejects, like a naive datetime in a UTC column, keeps its untyped literal.
+    """
+    _db("init")
+    with get_engine().begin() as connection:
+        connection.execute(sa.text("INSERT INTO thing (t1) VALUES ('existing')"))
+    columns = (
+        "    t1: str\n"
+        "    level: Level = Level.HIGH\n"
+        "    tags: list | None = sqlmodel.Field(default=[], sa_type=sa.JSON)\n"
+        "    created: datetime.datetime = sqlmodel.Field(\n"
+        "        default_factory=datetime.datetime.now\n"
+        "    )"
+    )
+    _write_source(project, ENUM_APP.format(columns=columns))
+    _db("makemigrations", "--message", "defaults")
+    _db("migrate")
+    ((_, t1, level, tags, created),) = _rows()
+    assert (t1, level, tags) == ("existing", "HIGH", None)
+    assert created
+    caplog.clear()
+
+    _write_source(
+        project,
+        ENUM_APP.format(
+            columns=f"{columns}\n"
+            "    labels: list = sqlmodel.Field(default=[], sa_type=sa.JSON)"
+        ),
+    )
+    _db("makemigrations", "--message", "json", exit_code=1)
+    assert _errors(caplog) == [
+        (
+            "Cannot add the NOT NULL column 'thing.labels' with the default [], which "
+            "has no SQL literal form: the migration has no value for rows that a "
+            "database already holds. Set server_default=... or make the column "
+            "nullable."
+        )
+    ]
+    assert len(_versions(project)) == 2
+
+
 DATACLASS_APP = SQLALCHEMY_APP.replace(
     "from sqlalchemy.orm import DeclarativeBase,",
     "from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass,",
