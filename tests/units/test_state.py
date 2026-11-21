@@ -6685,8 +6685,10 @@ async def test_get_var_value_reads_into_fields(
     assert await state.get_var_value(TestState.mapping["b"][-1]) == 6
     # A key that is a var is resolved first.
     assert await state.get_var_value(TestState.mapping[TestState.map_key]) == [1, 2, 3]  # pyright: ignore[reportArgumentType]
-    # A literal resolves without any state.
+    # A literal resolves without any state, and a var it holds to its value.
     assert await state.get_var_value(rx.Var.create({"a": [1, 2]})["a"][1]) == 2
+    held = rx.Var.create([TestState.mapping])[0].to(dict[str, list[int]])
+    assert await state.get_var_value(held["b"]) == [4, 5, 6]
     # A missing key reads as None, and so does everything read past it.
     assert await state.get_var_value(TestState.array[3]) is None  # pyright: ignore[reportArgumentType]
     assert await state.get_var_value(TestState.mapping["c"][0]) is None
@@ -6762,6 +6764,42 @@ async def test_set_var_value_rejects_what_it_cannot_set(
         await state.set_var_value(var, 0)
 
     assert str(err.value) == f"Unable to set value for {var._js_expr}: {reason}."
+
+
+@pytest.mark.asyncio
+async def test_var_value_through_tuples_and_sets() -> None:
+    """Tuples and sets read like the arrays they are sent as, but are not set through.
+
+    Neither is wrapped in a MutableProxy, so a change made through one would mark
+    no field dirty and reach no frontend; set_var_value refuses it unchanged.
+    """
+
+    class TupleAndSetState(BaseState):
+        rows: rx.Field[tuple[list[int], ...]] = rx.field(([1],))
+        tags: rx.Field[set[str]] = rx.field({"x"})
+
+    state = TupleAndSetState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    row_item = TupleAndSetState.rows[0][0]
+    tag = TupleAndSetState.tags.to_array()[0]
+
+    assert await state.get_var_value(row_item) == 1
+    assert await state.get_var_value(tag) == "x"
+
+    with pytest.raises(UnsettableVarValueError) as err:
+        await state.set_var_value(row_item, 7)
+    assert str(err.value) == (
+        f"Unable to set value for {row_item._js_expr}: "
+        "the object to set it on is not tracked for changes."
+    )
+    with pytest.raises(UnsettableVarValueError) as err:
+        await state.set_var_value(tag, "y")
+    assert str(err.value) == (
+        f"Unable to set value for {tag._js_expr}: "
+        "set values do not support item assignment."
+    )
+    assert state.rows == ([1],)
+    assert state.tags == {"x"}
+    assert state.dirty_vars == set()
 
 
 @pytest.mark.asyncio

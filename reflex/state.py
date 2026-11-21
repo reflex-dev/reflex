@@ -23,6 +23,7 @@ from collections.abc import (
     MutableSequence,
     Sequence,
 )
+from collections.abc import Set as AbstractSet
 from datetime import timedelta
 from hashlib import md5
 from types import FunctionType
@@ -428,6 +429,8 @@ def _bind_attr(cls: type, name: str, value: Any) -> None:
 def _read_key(value: Any, key: Any) -> Any:
     """Read a key off a value the way the frontend reads it with optional chaining.
 
+    A set reads as the array it is serialized to.
+
     Args:
         value: The value to read from.
         key: The attribute name, mapping key or sequence index.
@@ -437,12 +440,17 @@ def _read_key(value: Any, key: Any) -> Any:
     """
     if value is None:
         return None
-    if isinstance(value, Mapping):
+    # A MutableProxy reports the class it wraps. Testing that class skips the
+    # failed check of the proxy's own type that isinstance makes first.
+    cls = value.__class__
+    if issubclass(cls, Mapping):
         return value.get(key)
-    if isinstance(value, Sequence):
-        in_range = isinstance(key, int) and -len(value) <= key < len(value)
-        return value[key] if in_range else None
-    return getattr(value, key, None)
+    if issubclass(cls, AbstractSet):
+        value = tuple(value)
+    elif not issubclass(cls, Sequence):
+        return getattr(value, key, None) if isinstance(key, str) else None
+    in_range = isinstance(key, int) and -len(value) <= key < len(value)
+    return value[key] if in_range else None
 
 
 def _router_fget(self: BaseState) -> RouterData:
@@ -1996,14 +2004,17 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # operands, so it would pass for State.a. Only a plain field or
         # computed var reference carries state + field_name on its own.
         var_data = root._var_data
-        if var_data is None or not var_data.state or not var_data.field_name:
+        if var_data is None:
             return None
-        if var_data.state == self.get_full_name():
-            return self, var_data.field_name
+        state_name, field_name = var_data.state, var_data.field_name
+        if not state_name or not field_name:
+            return None
+        if state_name == self.get_full_name():
+            return self, field_name
         other_state = await self.get_state(
-            self._get_root_state().get_class_substate(var_data.state)
+            self._get_root_state().get_class_substate(state_name)
         )
-        return other_state, var_data.field_name
+        return other_state, field_name
 
     async def get_var_value(self, var: Var[VAR_TYPE]) -> VAR_TYPE:
         """Get the value of an rx.Var, possibly from another state.
@@ -2041,7 +2052,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             if inspect.isawaitable(value):
                 value = await value
         for key in keys:
-            value = _read_key(value, await self.get_var_value(key))
+            if isinstance(key, Var):
+                key = await self.get_var_value(key)
+            value = _read_key(value, key)
+            # A literal container holds vars, which the frontend reads as their values.
+            if isinstance(value, Var):
+                value = await self.get_var_value(value)
         return value
 
     async def set_var_value(self, var: Var[VAR_TYPE], value: VAR_TYPE) -> None:
@@ -2058,7 +2074,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Raises:
             UnsettableVarValueError: If the var is no state field and reads into
                 none, if it reads into a computed var, or if the object to set
-                the value on is None.
+                the value on is None, is not tracked for changes or takes no
+                item.
         """
         root, keys = var_access_path(var)
         owner = await self._get_field_owner(root)
@@ -2075,17 +2092,28 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             setattr(state, field_name, value)
             return
 
-        *parent_keys, last_key = [await self.get_var_value(key) for key in keys]
+        *parent_keys, last_key = [
+            await self.get_var_value(key) if isinstance(key, Var) else key
+            for key in keys
+        ]
         target = getattr(state, field_name)
         for key in parent_keys:
             target = _read_key(target, key)
         if target is None:
             msg = f"Unable to set value for {var._js_expr}: the object to set it on is None."
             raise UnsettableVarValueError(msg)
+        # Only a change made through a MutableProxy marks the field dirty: one
+        # made to an object inside a tuple, for instance, reaches no frontend.
+        if not isinstance(target, MutableProxy):
+            msg = f"Unable to set value for {var._js_expr}: the object to set it on is not tracked for changes."
+            raise UnsettableVarValueError(msg)
         if isinstance(target, (MutableMapping, MutableSequence)):
             target[last_key] = value
-        else:
+        elif isinstance(last_key, str):
             setattr(target, last_key, value)
+        else:
+            msg = f"Unable to set value for {var._js_expr}: {target.__class__.__name__} values do not support item assignment."
+            raise UnsettableVarValueError(msg)
 
     def _mark_dirty_computed_vars(
         self, var_names: Iterable[str] | None = None, *, invalidate: bool = True
