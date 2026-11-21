@@ -3,10 +3,14 @@
  * @param {string} elementId
  * @param {boolean} [loud]
  */
-export function celebrate(count, elementId, loud = false) {}
+export function celebrate(count, elementId, loud = false) {
+  return [count, elementId, loud];
+}
 
 /** @param {...string} names */
-export function many(...names) {}
+export function many(...names) {
+  return names;
+}
 
 export const untyped = (a, b) => a + b;
 
