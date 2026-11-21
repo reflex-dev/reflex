@@ -54,8 +54,8 @@ class _ScriptLoader(_LoaderBase):
         Args:
             module: The module to populate.
         """
-        # Imported here: the finder loads with `import reflex`, which must not
-        # pay for the event system until a JavaScript module is imported.
+        # Imported here: loading the finder must not load the event system,
+        # which only a JavaScript module being imported needs.
         from pathlib import Path
 
         from reflex_base.js.modules import _load_module
