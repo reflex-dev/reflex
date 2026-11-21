@@ -39,7 +39,7 @@ from reflex_base.event import Event, EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import format, types
+from reflex_base.utils import format, serializers, types
 from reflex_base.utils.exceptions import (
     EventHandlerValueError,
     InvalidLockWarningThresholdError,
@@ -51,6 +51,7 @@ from reflex_base.utils.exceptions import (
     StateTooLargeError,
     StateValueError,
     UnretrievableVarValueError,
+    UnsettableVarValueError,
 )
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import Field, Var, computed_var, field
@@ -6666,19 +6667,198 @@ async def test_get_var_value(
     }
 
     # Regression for https://github.com/reflex-dev/reflex/issues/6629: a Var
-    # operation / derived var (arithmetic, indexed or item access) must not
-    # silently return the value of its first constituent field. Such vars have
-    # no retrievable value, so raise instead of returning a plausible-but-wrong one.
+    # operation must not silently return the value of its first constituent
+    # field. Arithmetic has no retrievable value, so it raises instead of
+    # returning a plausible-but-wrong one; indexed and item access resolve to
+    # the value they read.
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(TestState.num1 + TestState.num2)
-    with pytest.raises(UnretrievableVarValueError):
-        # array[0] is a Var operation at runtime, though statically typed as the element.
-        await state.get_var_value(TestState.array[0])  # pyright: ignore[reportArgumentType]
-    with pytest.raises(UnretrievableVarValueError):
-        await state.get_var_value(TestState.mapping["a"])
+    # array[0] is a Var operation at runtime, though statically typed as the element.
+    assert await state.get_var_value(TestState.array[0]) == 1  # pyright: ignore[reportArgumentType]
+    assert await state.get_var_value(TestState.mapping["a"]) == [1, 2, 3]
 
     # Computed vars are derived but state-bound, so they remain resolvable.
     assert await state.get_var_value(TestState.sum) == pytest.approx(42 + 3.15)
+
+
+@pytest.mark.asyncio
+async def test_get_var_value_reads_into_fields(
+    state_manager: StateManager, substate_token: BaseStateToken
+):
+    """A var reading into a field resolves to what it reads, as on the frontend.
+
+    Args:
+        state_manager: The state manager to use.
+        substate_token: Token for the substate used by state_manager.
+    """
+    state = await state_manager.get_state(substate_token)
+    assert isinstance(state, TestState)
+
+    assert await state.get_var_value(TestState.obj.prop2) == "hello"  # pyright: ignore[reportArgumentType]
+    assert await state.get_var_value(TestState.complex[2].prop1) == 42  # pyright: ignore[reportArgumentType]
+    assert await state.get_var_value(TestState.mapping["b"][-1]) == 6
+    # A key that is a var is resolved first.
+    assert await state.get_var_value(TestState.mapping[TestState.map_key]) == [1, 2, 3]  # pyright: ignore[reportArgumentType]
+    # A literal resolves without any state, and a var it holds to its value.
+    assert await state.get_var_value(rx.Var.create({"a": [1, 2]})["a"][1]) == 2
+    held = rx.Var.create([TestState.mapping])[0].to(dict[str, list[int]])
+    assert await state.get_var_value(held["b"]) == [4, 5, 6]
+    # A literal renders a set sorted, so its indexes read in that order.
+    assert await state.get_var_value(rx.Var.create({8, 1}).to_array()[0]) == 1
+    # A missing key reads as None, and so does everything read past it.
+    assert await state.get_var_value(TestState.array[3]) is None  # pyright: ignore[reportArgumentType]
+    assert await state.get_var_value(TestState.mapping["c"][0]) is None
+
+    child_state = await state.get_state(ChildState)
+    child_state.mapping = {"a": [7]}
+    assert await state.get_var_value(ChildState.mapping["a"][0]) == 7
+
+
+@pytest.mark.asyncio
+async def test_set_var_value(
+    state_manager: StateManager, substate_token: BaseStateToken
+):
+    """set_var_value sets what get_var_value reads and marks the field dirty.
+
+    Args:
+        state_manager: The state manager to use.
+        substate_token: Token for the substate used by state_manager.
+    """
+    state = await state_manager.get_state(substate_token)
+    assert isinstance(state, TestState)
+    state._clean()
+
+    await state.set_var_value(TestState.num1, 7)
+    assert state.num1 == 7
+    assert state.dirty_vars == {"num1", "sum"}
+
+    state._clean()
+    await state.set_var_value(TestState.obj.prop1, 7)  # pyright: ignore[reportArgumentType]
+    assert state.obj.prop1 == 7
+    assert state.dirty_vars == {"obj"}
+
+    state._clean()
+    await state.set_var_value(TestState.mapping[TestState.map_key][0], 7)  # pyright: ignore[reportArgumentType]
+    assert state.mapping == {"a": [7, 2, 3], "b": [4, 5, 6]}
+    assert state.dirty_vars == {"mapping"}
+
+    child_state = await state.get_state(ChildState)
+    child_state._clean()
+    await state.set_var_value(ChildState.count, 7)
+    assert child_state.count == 7
+    assert child_state.dirty_vars == {"count"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("var", "reason"),
+    [
+        (TestState.sum, "computed vars are read-only"),
+        (Var(_js_expr="undefined"), "not associated with any state"),
+        (TestState.num1 + TestState.num2, "not associated with any state"),
+        (TestState.mapping["c"][0], "the object to set it on is None"),
+    ],
+    ids=["computed", "no_state", "operation", "none_on_the_way"],
+)
+async def test_set_var_value_rejects_what_it_cannot_set(
+    var: Var,
+    reason: str,
+    state_manager: StateManager,
+    substate_token: BaseStateToken,
+):
+    """set_var_value raises for a var it cannot set, naming the var and why.
+
+    Args:
+        var: The var to set.
+        reason: Why the var cannot be set.
+        state_manager: The state manager to use.
+        substate_token: Token for the substate used by state_manager.
+    """
+    state = await state_manager.get_state(substate_token)
+
+    with pytest.raises(UnsettableVarValueError) as err:
+        await state.set_var_value(var, 0)
+
+    assert str(err.value) == f"Unable to set value for {var._js_expr}: {reason}."
+
+
+@pytest.mark.asyncio
+async def test_var_value_through_tuples_and_sets() -> None:
+    """Tuples and sets read like the arrays they are sent as, but are not set through.
+
+    Neither is wrapped in a MutableProxy, so a change made through one would mark
+    no field dirty and reach no frontend; set_var_value refuses it unchanged.
+    """
+
+    class TupleAndSetState(BaseState):
+        rows: rx.Field[tuple[list[int], ...]] = rx.field(default_factory=lambda: ([1],))
+        tags: rx.Field[set[str]] = rx.field(default_factory=lambda: {"x"})
+        numbers: rx.Field[set[int]] = rx.field(default_factory=lambda: {8, 1})
+
+    state = TupleAndSetState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    row_item = TupleAndSetState.rows[0][0]
+    tag = TupleAndSetState.tags.to_array()[0]
+
+    assert await state.get_var_value(row_item) == 1
+    assert await state.get_var_value(tag) == "x"
+    # State sends a set in its own order, unlike a literal, which sorts it.
+    first_number = await state.get_var_value(TupleAndSetState.numbers.to_array()[0])
+    assert first_number == serializers.serialize_set(state.get_value("numbers"))[0]
+
+    with pytest.raises(UnsettableVarValueError) as err:
+        await state.set_var_value(row_item, 7)
+    assert str(err.value) == (
+        f"Unable to set value for {row_item._js_expr}: "
+        "the object to set it on is not tracked for changes."
+    )
+    with pytest.raises(UnsettableVarValueError) as err:
+        await state.set_var_value(tag, "y")
+    assert str(err.value) == (
+        f"Unable to set value for {tag._js_expr}: "
+        "set values do not support item assignment."
+    )
+    assert state.rows == ([1],)
+    assert state.tags == {"x"}
+    assert state.dirty_vars == set()
+
+
+@pytest.mark.asyncio
+async def test_var_value_indexes_like_array_at() -> None:
+    """An index reads and sets the item ``Array.prototype.at`` reads on the frontend.
+
+    It truncates a fractional index toward zero and reads NaN as 0. An index
+    past either end reads as None, and set_var_value refuses it before anything
+    is marked dirty.
+    """
+
+    class IndexState(BaseState):
+        index: rx.Field[int | float] = rx.field(1.5)
+        items: rx.Field[list[str]] = rx.field(default_factory=lambda: ["a", "b", "c"])
+
+    state = IndexState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    item = IndexState.items[IndexState.index]
+
+    assert await state.get_var_value(item) == "b"
+    state.index = -1.5
+    assert await state.get_var_value(item) == "c"
+    state.index = math.nan
+    assert await state.get_var_value(item) == "a"
+    state.index = math.inf
+    assert await state.get_var_value(item) is None
+
+    state.index = 1.5
+    await state.set_var_value(item, "x")
+    assert state.items == ["a", "x", "c"]
+
+    state._clean()
+    past_end = IndexState.items[3]
+    with pytest.raises(UnsettableVarValueError) as err:
+        await state.set_var_value(past_end, "y")
+    assert str(err.value) == (
+        f"Unable to set value for {past_end._js_expr}: 3 is not an index of its 3 items."
+    )
+    assert state.items == ["a", "x", "c"]
+    assert state.dirty_vars == set()
 
 
 @pytest.mark.asyncio

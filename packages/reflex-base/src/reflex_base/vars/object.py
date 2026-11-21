@@ -30,6 +30,7 @@ from reflex_base.utils.types import (
 from .base import (
     CachedVarOperation,
     LiteralVar,
+    ToOperation,
     Var,
     VarData,
     cached_property_no_lock,
@@ -39,7 +40,7 @@ from .base import (
 )
 from .hybrid_property import HybridProperty
 from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
-from .sequence import ArrayVar, LiteralArrayVar, StringVar
+from .sequence import ArrayItemOperation, ArrayVar, LiteralArrayVar, StringVar
 
 OBJECT_TYPE = TypeVar("OBJECT_TYPE", covariant=True)
 
@@ -691,6 +692,38 @@ class ObjectItemOperation(CachedVarOperation, Var):
             _object=object,
             _key=key if isinstance(key, Var) else LiteralVar.create(key),
         )
+
+
+def var_access_path(var: Var) -> tuple[Var, tuple[Any, ...]]:
+    """Split a var into the var it reads from and the keys it reads on the way.
+
+    Attribute access, item access and array indexing are followed through any
+    casts; every other var ends the walk. ``State.user.tags[0]`` splits into
+    the var of the ``user`` field and ``("tags", 0)``, while a var that reads no
+    key, such as ``State.a + State.b``, is its own root with no keys.
+
+    Args:
+        var: The var to split.
+
+    Returns:
+        The var it reads from, and the keys it reads in order: a literal key as
+        its Python value, any other key as its var.
+    """
+    keys: list[Var] = []
+    while True:
+        if isinstance(var, ToOperation):
+            var = var._original
+        elif isinstance(var, ObjectItemOperation):
+            keys.append(var._key)
+            var = var._object
+        elif isinstance(var, ArrayItemOperation):
+            keys.append(var._index)
+            var = var._array
+        else:
+            break
+    return var, tuple(
+        key._var_value if isinstance(key, LiteralVar) else key for key in reversed(keys)
+    )
 
 
 @var_operation

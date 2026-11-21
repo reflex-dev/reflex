@@ -76,6 +76,7 @@ from reflex_base.vars.function import (
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.object import LiteralObjectVar, ObjectItemOperation, ObjectVar
 from reflex_base.vars.sequence import (
+    ArrayItemOperation,
     ArraySliceOperation,
     ArrayVar,
     ConcatVarOperation,
@@ -2939,6 +2940,7 @@ def test_get_leaf_vars_sorts_every_cached_operation() -> None:
 
     assert names(operations) == names({
         CustomVarOperation,
+        ArrayItemOperation,
         ArraySliceOperation,
         ObjectItemOperation,
         ConcatVarOperation,
