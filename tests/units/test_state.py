@@ -41,6 +41,7 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
+    DynamicRouteArgNotFoundError,
     EventHandlerValueError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
@@ -54,6 +55,7 @@ from reflex_base.utils.exceptions import (
 )
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import Field, Var, computed_var, field
+from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType
 
 import reflex as rx
@@ -74,6 +76,7 @@ from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
+from reflex.route import get_route_args
 from reflex.state import (
     BaseState,
     ImmutableStateError,
@@ -4453,6 +4456,125 @@ def test_router_field_names_are_reserved(name):
             (State,),
             {"__module__": __name__, "__annotations__": {name: int}, name: 1},
         )
+
+
+@pytest.fixture
+def route_arg_root(monkeypatch: pytest.MonkeyPatch) -> type[BaseState]:
+    """A fresh root state for `rx.route_arg` and `rx.route_catch_all` to resolve against.
+
+    Route args installed on `rx.State` would stay for the rest of the session,
+    and one root cannot hold both a regular `[splat]` and the catch-all.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The root state the accessors resolve against.
+    """
+
+    class RouteArgRoot(BaseState):
+        """Root state standing in for `rx.State`."""
+
+    monkeypatch.setattr("reflex.state.State", RouteArgRoot)
+    return RouteArgRoot
+
+
+def test_route_arg(route_arg_root: type[BaseState]):
+    """`rx.route_arg` returns the var a page installed for a regular or optional arg.
+
+    Args:
+        route_arg_root: The root state the accessors resolve against.
+    """
+
+    class RouteArgSubState(route_arg_root):
+        """A substate, which reads the route args of its root."""
+
+    route_arg_root.setup_dynamic_args(get_route_args("/post/[pid]/[[lang]]"))
+
+    for name in ("pid", "lang"):
+        var = rx.route_arg(name)
+        assert isinstance(var, StringVar)
+        assert var.equals(getattr(route_arg_root, name))
+        assert var.equals(getattr(RouteArgSubState, name))
+
+
+def test_route_catch_all(route_arg_root: type[BaseState]):
+    """`rx.route_catch_all` returns the var a page installed for `[[...splat]]`.
+
+    Args:
+        route_arg_root: The root state the accessors resolve against.
+    """
+    route_arg_root.setup_dynamic_args(get_route_args("/docs/[[...splat]]"))
+
+    splat = rx.route_catch_all()
+    assert isinstance(splat, ArrayVar)
+    assert splat.equals(getattr(route_arg_root, "splat"))  # noqa: B009
+
+    with pytest.raises(DynamicRouteArgNotFoundError) as err:
+        rx.route_arg("splat")
+    assert str(err.value) == (
+        "`splat` is installed as the catch-all `[[...splat]]`; use "
+        "`rx.route_catch_all()` for it."
+    )
+
+
+def test_route_catch_all_of_a_regular_arg(route_arg_root: type[BaseState]):
+    """A regular arg named `splat` is no catch-all.
+
+    Args:
+        route_arg_root: The root state the accessors resolve against.
+    """
+    route_arg_root.setup_dynamic_args(get_route_args("/post/[splat]"))
+
+    assert rx.route_arg("splat").equals(getattr(route_arg_root, "splat"))  # noqa: B009
+    with pytest.raises(DynamicRouteArgNotFoundError) as err:
+        rx.route_catch_all()
+    assert str(err.value) == (
+        "`splat` is installed as the regular dynamic route arg `[splat]`; use "
+        '`rx.route_arg("splat")` for it.'
+    )
+
+
+def test_route_arg_not_installed(route_arg_root: type[BaseState]):
+    """The accessors raise for an arg no page added so far has.
+
+    Args:
+        route_arg_root: The root state the accessors resolve against.
+    """
+    with pytest.raises(DynamicRouteArgNotFoundError) as err:
+        rx.route_arg("pid")
+    assert str(err.value) == (
+        "No dynamic route arg `pid` is installed: no page added so far has "
+        "`[pid]` in its route."
+    )
+    with pytest.raises(DynamicRouteArgNotFoundError) as err:
+        rx.route_catch_all()
+    assert str(err.value) == (
+        "No catch-all route arg is installed: no page added so far has "
+        "`[[...splat]]` in its route."
+    )
+
+
+def test_route_accessor_names_are_not_reserved(route_arg_root: type[BaseState]):
+    """A state var, event handler or route arg can be named like the accessors.
+
+    Args:
+        route_arg_root: The root state the accessors resolve against.
+    """
+
+    class RouteAccessorNamesState(BaseState):
+        """A state declaring the names of the accessors."""
+
+        route_arg: str = ""
+
+        def route_catch_all(self):
+            """An event handler named like `rx.route_catch_all`."""
+
+    assert "route_arg" in RouteAccessorNamesState.get_fields()
+    assert "route_catch_all" in RouteAccessorNamesState.event_handlers
+
+    route_arg_root.setup_dynamic_args(get_route_args("/x/[route_arg]"))
+    assert rx.route_arg("route_arg").equals(getattr(route_arg_root, "route_arg"))  # noqa: B009
 
 
 def test_router_var_dep_legacy_string() -> None:

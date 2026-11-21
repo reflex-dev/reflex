@@ -1,0 +1,1 @@
+Add `rx.route_arg(name)` and `rx.route_catch_all()`, which return the var of a page's dynamic route argument with a type that type checkers see, unlike `rx.State.name`: a `StringVar` for `[name]` and an `ArrayVar[list[str]]` for the `[[...splat]]` catch-all, for example `rx.heading(rx.route_arg("pid"))` on a page at `/post/[pid]`.

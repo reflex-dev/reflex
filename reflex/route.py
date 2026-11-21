@@ -80,7 +80,7 @@ def get_route_args(route: str) -> dict[str, str]:
     # Iterate over the route parts and check for route args.
     for part in route.split("/"):
         if part == constants.RouteRegex.SPLAT_CATCHALL:
-            _add_route_arg("splat", constants.RouteArgType.LIST)
+            _add_route_arg(constants.RouteRegex.SPLAT_ARG, constants.RouteArgType.LIST)
             break
 
         optional_argument = optional_argument_regex.match(part)
