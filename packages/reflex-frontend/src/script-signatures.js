@@ -137,8 +137,9 @@ const classify = (type) => {
     return { kind: "literal", value: type === checker.getTrueType() };
   }
   if (flags & ts.TypeFlags.StringLike) return "str";
+  // `boolean` needs no case: it is the union `true | false`, which `union`
+  // makes "bool".
   if (flags & ts.TypeFlags.NumberLike) return "float";
-  if (flags & ts.TypeFlags.BooleanLike) return "bool";
   if (
     flags &
     (ts.TypeFlags.Null | ts.TypeFlags.Undefined | ts.TypeFlags.Void)

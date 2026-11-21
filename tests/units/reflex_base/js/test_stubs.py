@@ -96,7 +96,8 @@ def test_render_stub_maps_types_without_json_form_to_any():
     """Enums are their values; containers keep item types; Set, Map, bigint and the like are Any.
 
     Types, classes, enums and ``export *`` names are not functions the module
-    exports, so the stub declares none of them.
+    exports, so the stub declares none of them; a function re-exported by
+    name is one.
     """
 
     def var(value: str) -> str:
@@ -115,6 +116,7 @@ def test_render_stub_maps_types_without_json_form_to_any():
         "from reflex_base.event import EventCallback as _EventCallback, EventSpec as _EventSpec\n"
         "from reflex_base.vars.base import Var as _Var\n"
         "\n"
+        "def aliased() -> _EventSpec: ...\n"
         "def literals("
         f"color: {color}, "
         f"level: {var('_Literal[0, 1]')}, "

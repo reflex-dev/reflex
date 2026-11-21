@@ -19,6 +19,8 @@ export type Count = number;
 export class Widget {}
 
 export * from "./reexported.js";
+export { fromReexported as aliased } from "./reexported.js";
+export type { Shape } from "./shapes";
 
 export function literals(
   color: Color,

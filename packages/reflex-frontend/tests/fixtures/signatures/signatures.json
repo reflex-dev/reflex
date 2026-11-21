@@ -487,6 +487,15 @@
       "untyped": false
     },
     {
+      "name": "aliased",
+      "signatures": [
+        {
+          "parameters": []
+        }
+      ],
+      "untyped": false
+    },
+    {
       "name": "fromReexported",
       "signatures": [
         {
