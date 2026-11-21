@@ -130,7 +130,13 @@ test("a function that throws, or a module that fails to load, is reported", asyn
   await callJs("app.scripts.party", "fails", []);
   await callJs("app.scripts.broken", "anything", []);
   expect(onerror.mock.calls).toEqual([
-    ["The party is over.", null, null, null, new RangeError("The party is over.")],
+    [
+      "The party is over.",
+      null,
+      null,
+      null,
+      new RangeError("The party is over."),
+    ],
     [
       "Failed to fetch the module.",
       null,
