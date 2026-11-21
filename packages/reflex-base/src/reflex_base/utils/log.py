@@ -63,6 +63,7 @@ PACKAGE_LOGGER_NAMES = (
     "reflex_components_lucide",
     "reflex_components_plotly",
     "reflex_components_react_player",
+    "reflex_i18n",
     "reflex_otel",
     "reflex_build_sdk",
     "reflex_workflow",
