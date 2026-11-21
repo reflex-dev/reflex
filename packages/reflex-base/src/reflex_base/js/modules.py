@@ -87,7 +87,7 @@ class JsFunction:
         """Build the event that calls the function in the browser.
 
         An event handler argument arrives as its full name, which the
-        function can dispatch with ``env.addEvents([env.event(name, payload)])``.
+        function can dispatch with ``reflex.addEvents([reflex.event(name, payload)])``.
 
         Args:
             *args: The arguments: values, Vars or event handlers. Values are

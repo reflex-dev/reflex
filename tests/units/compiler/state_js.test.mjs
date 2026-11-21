@@ -227,7 +227,7 @@ async function setup({
     "$/utils/helpers/debounce": { default() {} },
     "$/utils/helpers/throttle": { default() {} },
     "$/utils/helpers/upload": { uploadFiles() {} },
-    "$/utils/script_env": { env: {} },
+    "$/utils/reflex": { reflex: {} },
   };
   const module = new vm.SourceTextModule(source, {
     context,

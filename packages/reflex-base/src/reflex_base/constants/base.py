@@ -40,8 +40,8 @@ class Dirs(SimpleNamespace):
     CONTEXTS_PATH = UTILS + "/context"
     # The name of the client state file.
     CLIENT_STATE_PATH = UTILS + "/client_state"
-    # The name of the script environment file.
-    SCRIPT_ENV_PATH = UTILS + "/script_env"
+    # The module defining `reflex`, the API JavaScript reaches Reflex through.
+    REFLEX_API_PATH = UTILS + "/reflex"
     # The index of the JavaScript modules an app imports from Python.
     SCRIPTS_PATH = UTILS + "/scripts"
     # The directory those modules are copied to.

@@ -1,1 +1,0 @@
-Add `rx.js.env`, a var for the script environment, so `rx.run_script(rx.js.env.add_events(State.handler))` and `rx.js.env.ref("my_id")` work both in event triggers and when returned from an event handler. See [Browser Javascript](https://reflex.dev/docs/api-reference/browser-javascript/#the-script-environment).

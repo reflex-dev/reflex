@@ -23,7 +23,7 @@ import reflex as rx
 SOURCE = """
 import confetti from "canvas-confetti";
 import { describe } from "./helpers.js";
-import { env } from "$/utils/script_env";
+import { reflex } from "$/utils/reflex";
 import "@scope/pkg/style.css";
 // export function commentedOut() {}
 /* export const alsoCommentedOut = 1; */
