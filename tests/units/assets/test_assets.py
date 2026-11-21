@@ -360,6 +360,35 @@ def test_link_shared_asset_replaces_symlink_loop(tmp_path: Path) -> None:
     assert dst_file.resolve() == src_file.resolve()
 
 
+def test_link_shared_asset_copies_when_symlink_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A symlink failure falls back to copying the asset content.
+
+    On filesystems where symlinks are unavailable (no permission, or a
+    cross-device link), compiling a shared asset must not abort: the
+    destination ends up a regular file with identical content.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+
+    def failing_symlink(self: Path, target, target_is_directory: bool = False) -> None:
+        msg = "Operation not permitted"
+        raise OSError(1, msg)
+
+    monkeypatch.setattr(Path, "symlink_to", failing_symlink)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert not dst_file.is_symlink()
+    assert dst_file.is_file()
+    assert dst_file.read_text() == "script"
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
 def test_link_shared_asset_leaves_destination_on_source_error(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

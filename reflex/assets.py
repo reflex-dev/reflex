@@ -3,6 +3,7 @@
 import hashlib
 import inspect
 import logging
+import shutil
 import time
 import uuid
 from pathlib import Path
@@ -245,6 +246,10 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     there, conceding as soon as the other process turns out to have linked the
     same asset.
 
+    If creating the symlink itself fails (no permission, or a cross-device
+    link), the asset is copied instead, so compiling does not abort: the
+    destination ends up a regular file with identical content.
+
     Args:
         dst_file: The symlink to create in the app's external assets directory.
         src_file: The asset file the symlink should point at.
@@ -262,7 +267,12 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     # character is more machinery than a transient name is worth.
     tmp_file = dst_file.with_name(f".{uuid.uuid4().hex}.tmp")
     try:
-        tmp_file.symlink_to(src_file)
+        try:
+            tmp_file.symlink_to(src_file)
+        except OSError:
+            # Symlinks may be unavailable on this filesystem: fall back to a
+            # plain copy so the compile still succeeds.
+            shutil.copy2(src_file, tmp_file)
         for attempt in range(_MAX_LINK_ATTEMPTS):
             try:
                 tmp_file.replace(dst_file)

@@ -961,3 +961,29 @@ def test_update_directory_tree_reports_only_copied_files(tmp_path: Path) -> None
     update_directory_tree(source, destination, on_copy=copied.append)
 
     assert not copied
+
+
+def test_ln_copies_when_symlink_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A symlink failure falls back to copying the target content.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    target = tmp_path / "target.txt"
+    target.write_text("content")
+    link = tmp_path / "link.txt"
+
+    def failing_symlink(self: Path, target, target_is_directory: bool = False) -> None:
+        msg = "Operation not permitted"
+        raise OSError(1, msg)
+
+    monkeypatch.setattr(Path, "symlink_to", failing_symlink)
+
+    assert path_ops.ln(link, target, overwrite=True) is True
+
+    assert not link.is_symlink()
+    assert link.is_file()
+    assert link.read_text() == "content"
