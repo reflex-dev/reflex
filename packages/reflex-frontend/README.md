@@ -61,10 +61,12 @@ without it appearing in its arguments. What there is, and where it is pinned:
   callbacks) runs through `runScript` in `utils/state.js`, which compiles it
   with the Function constructor and passes in every export of that module, the
   late-bound `addEvents`, the `socket`, `navigate` and `params` of the event
-  being applied, and the session `token`. A direct `eval` would see every
-  module local, but it stops the minifier from mangling the chunk that holds
-  it. So a script sees those names and the globals, and nothing else. Renaming
-  an export changes what compiled callbacks can call.
+  being applied, the session `token`, `env` (the app's `$/env.json`, which
+  `rx.get_upload_url` compiles to) and `reflex` (the API in `utils/reflex.js`,
+  which `rx.js` compiles to). A direct `eval` would see every module local, but
+  it stops the minifier from mangling the chunk that holds it. So a script sees
+  those names and the globals, and nothing else. Renaming an export changes
+  what compiled callbacks can call.
 - **Globals the runtime reads**: hooks other code installs on `window`
   (`__reflex_otel`, `__reflex`, `__reflex_load`) and the per-app `$/env.json`.
   Each is declared in `types/globals.d.ts`; reading one that is not fails the

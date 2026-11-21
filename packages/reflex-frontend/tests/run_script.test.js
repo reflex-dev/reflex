@@ -7,6 +7,7 @@
 import { describe, expect, test, vi } from "vitest";
 
 import { eventLoop } from "$/utils/context-registry";
+import { reflex } from "$/utils/reflex";
 import { applyEvent, getToken } from "$/utils/state";
 
 const callScript = (code, callback, socket = null) =>
@@ -61,6 +62,18 @@ describe("_call_script", () => {
     );
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
     expect(seen).toEqual([["object", "object", token]]);
+  });
+
+  test("scripts see reflex, and env as the app's env.json", async () => {
+    // rx.get_upload_url compiles to getBackendURL(env.UPLOAD), so a script
+    // from the backend that links to an uploaded file reads env.json's env.
+    const seen = [];
+    await callScript(
+      '[reflex, (getBackendURL(env.UPLOAD)+"/a.png")]',
+      (result) => seen.push(result),
+    );
+    expect(seen).toEqual([[reflex, "http://localhost:8000/_upload/a.png"]]);
+    expect(seen[0][0]).toBe(reflex);
   });
 
   test("callback strings can use every helper this module exports", async () => {
