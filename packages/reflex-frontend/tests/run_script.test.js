@@ -37,6 +37,14 @@ describe("_call_script", () => {
     expect(args).toEqual([42]);
   });
 
+  test("a script dispatches events through the late-bound addEvents", async () => {
+    eventLoop.addEvents = vi.fn();
+    await callScript('addEvents([ReflexEvent("state.go", {n: 1})], [2], {})');
+    expect(eventLoop.addEvents.mock.calls).toEqual([
+      [[{ name: "state.go", payload: { n: 1 } }], [2], {}],
+    ]);
+  });
+
   test("runs strict and sees no other module-local names", async () => {
     const onerror = vi.fn();
     window.onerror = onerror;
