@@ -1,5 +1,6 @@
 """Unit tests for the included testing tools."""
 
+import gc
 import sys
 from types import ModuleType, SimpleNamespace
 from unittest import mock
@@ -56,6 +57,39 @@ def test_app_harness(tmp_path):
         assert harness.frontend_process.poll() is None
 
     assert harness.frontend_process.poll() is not None
+
+
+def test_app_harness_freezes_the_started_app_until_stopped(tmp_path, monkeypatch):
+    """The heap is frozen once the app has started, and unfrozen when it stops.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    harness = AppHarness.create(root=tmp_path)
+    frozen_while_starting = []
+
+    def start_step() -> None:
+        frozen_while_starting.append(gc.get_freeze_count())
+
+    for step in (
+        "_initialize_app",
+        "_start_backend",
+        "_start_frontend",
+        "_wait_frontend",
+    ):
+        monkeypatch.setattr(harness, step, start_step)
+    monkeypatch.setattr(harness, "_reload_state_module", lambda: None)
+
+    try:
+        harness.start()
+        frozen_while_running = gc.get_freeze_count()
+    finally:
+        harness.stop()
+
+    assert frozen_while_starting == [0, 0, 0, 0]
+    assert frozen_while_running > 0
+    assert gc.get_freeze_count() == 0
 
 
 @pytest.fixture

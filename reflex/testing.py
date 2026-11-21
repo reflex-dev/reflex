@@ -7,6 +7,7 @@ import contextlib
 import contextvars
 import dataclasses
 import functools
+import gc
 import inspect
 import logging
 import os
@@ -463,6 +464,10 @@ class AppHarness:
         self._start_backend()
         self._start_frontend()
         self._wait_frontend()
+        # The app lives until stop(): full collections skip it instead of walking
+        # it, which stalls the backend's event loop in a large app.
+        gc.collect()
+        gc.freeze()
         return self
 
     @staticmethod
@@ -537,6 +542,8 @@ class AppHarness:
             self.backend_thread.join()
         if self.frontend_output_thread is not None:
             self.frontend_output_thread.join()
+        # Let the collector free this app now that it is gone.
+        gc.unfreeze()
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.
