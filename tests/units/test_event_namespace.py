@@ -1045,7 +1045,8 @@ def test_a_replaced_event_namespace_class_is_used(
     class AuthorizingNamespace(getattr(reflex.app, name)):
         """A namespace an app customized."""
 
-    monkeypatch.setattr(reflex.app, name, AuthorizingNamespace, raising=False)
+    # In the module's dict: setattr's undo would store a lazily resolved class.
+    monkeypatch.setitem(vars(reflex.app), name, AuthorizingNamespace)
     monkeypatch.setenv("REFLEX_TRANSPORT", transport)
 
     assert isinstance(App(enable_state=True).event_namespace, AuthorizingNamespace)
@@ -1080,9 +1081,7 @@ def test_overriding_on_event_is_deprecated(
         "on_event": AuditingNamespace,
     }
     deprecate = mocker.patch("reflex.app.console.deprecate")
-    monkeypatch.setattr(
-        reflex.app, "EventNamespace", namespace_classes[override], raising=False
-    )
+    monkeypatch.setitem(vars(reflex.app), "EventNamespace", namespace_classes[override])
     monkeypatch.setenv("REFLEX_TRANSPORT", "socketio")
 
     App(enable_state=True)
@@ -1090,6 +1089,17 @@ def test_overriding_on_event_is_deprecated(
     assert [call.kwargs["feature_name"] for call in deprecate.call_args_list] == (
         ["Overriding EventNamespace.on_event"] if deprecated else []
     )
+
+
+def test_a_replaced_namespace_class_does_not_outlive_its_test():
+    """Runs after the namespace-replacing tests above: reflex.app is untouched.
+
+    A Socket.IO name left in the module shadows its lazy __getattr__, so
+    test_app_socketio_reexports_without_the_extra would find it.
+    """
+    import reflex.app
+
+    assert vars(reflex.app).keys() & reflex.app._SOCKETIO_EXPORTS.keys() == set()
 
 
 @pytest.mark.asyncio
