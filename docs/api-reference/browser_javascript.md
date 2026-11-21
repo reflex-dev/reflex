@@ -141,40 +141,138 @@ The `callback` parameter may be an `EventHandler` with one argument, or a lambda
 If the callback is None, then no event is triggered.
 ```
 
-## The Script Environment
+## Reaching Reflex from JavaScript
 
-Code run by `rx.call_script` reaches Reflex through `env`, a small API that
-stays stable as the rest of the frontend changes:
+JavaScript you run in the browser reaches Reflex through `reflex`, an object
+whose members stay the same as the rest of the frontend changes:
 
 | Member | What it does |
 | --- | --- |
-| `env.ref(id)` | The ref of the component with that `id`; its `current` is the element. |
-| `env.refs` | Every registered component ref. |
-| `env.addEvents(events)` | Dispatch events, as event triggers do. |
-| `env.event(name, payload)` | Build an event for `env.addEvents`. |
-| `env.library(name)` | A promise of a library bundled for dynamic components, such as `"react"`. |
+| `reflex.ref(id)` | The ref of the component with that `id`; its `current` is the element. `undefined` until a component with that `id` mounts. |
+| `reflex.addEvents(events)` | Dispatch events, as an event trigger does. |
+| `reflex.event(name, payload)` | Build an event for `reflex.addEvents`: `name` is the event handler's full name, `payload` its arguments by name. |
+| `reflex.library(name)` | A promise of an npm library bundled for dynamic components, such as `"react"`. |
 
-```python
-(rx.input(id="search"),)
-(rx.button("Focus", on_click=rx.call_script("env.ref('search').current.focus()")),)
+Prefer `reflex` over the other names a script can see, such as `refs`,
+`ReflexEvent` or `addEvents`: those are internals of the frontend and may change
+between Reflex versions.
+
+### From a Script
+
+Code run by `rx.call_script` sees `reflex`:
+
+```python demo exec
+class ReflexApiState(rx.State):
+    result: str = ""
+
+    @rx.event
+    def set_result(self, result: str):
+        self.result = result
+
+
+def reflex_api_demo():
+    return rx.vstack(
+        rx.input(id="reflex_api_search", placeholder="Type something"),
+        rx.hstack(
+            rx.button(
+                "Focus",
+                on_click=rx.call_script(
+                    "reflex.ref('reflex_api_search').current.focus()"
+                ),
+            ),
+            rx.button(
+                "Read",
+                on_click=rx.call_script(
+                    "reflex.ref('reflex_api_search').current.value",
+                    callback=ReflexApiState.set_result,
+                ),
+            ),
+            rx.button(
+                "React version",
+                on_click=rx.call_script(
+                    "reflex.library('react').then((react) => react.version)",
+                    callback=ReflexApiState.set_result,
+                ),
+            ),
+        ),
+        rx.text(f"Result: {ReflexApiState.result}"),
+    )
 ```
 
-To build the same calls from Python vars, use `rx.js.env`. It works in an event
-trigger and when an event handler returns it:
+### From a JavaScript Module
+
+A JavaScript module, such as one a [wrapped component](/docs/wrapping-react/overview/)
+imports, imports `reflex` from `$/utils/reflex`:
+
+```javascript
+import { reflex } from "$/utils/reflex";
+
+export function saveSearch(handlerName) {
+  const value = reflex.ref("reflex_api_search").current.value;
+  reflex.addEvents([reflex.event(handlerName, { value })]);
+}
+```
+
+### From Python
+
+`rx.js` builds the same calls from Python, filling in the event handler's full
+name for you. Each function returns a var, which `rx.run_script` runs whether an
+event trigger uses it or an event handler returns it:
+
+| Python | JavaScript |
+| --- | --- |
+| `rx.js.ref(id)` | `reflex.ref(id)` |
+| `rx.js.add_events(*events)` | `reflex.addEvents([...])` |
+| `rx.js.library(name)` | `reflex.library(name)` |
 
 ```python
 class SearchState(rx.State):
-    @rx.event
-    def clear_later(self):
-        return rx.run_script(rx.js.env.add_events(SearchState.clear))
+    query: str = ""
 
     @rx.event
-    def clear(self): ...
+    def set_query(self, query: str):
+        self.query = query
+
+    @rx.event
+    def clear(self):
+        self.query = ""
+
+    @rx.event
+    def read_search(self):
+        # Read the input's current value from the browser.
+        return rx.run_script(
+            rx.js.ref("search").current.value, callback=SearchState.set_query
+        )
+
+
+def search():
+    return rx.vstack(
+        rx.input(id="search"),
+        rx.button("Read", on_click=SearchState.read_search),
+        rx.button("Clear", on_click=rx.run_script(rx.js.add_events(SearchState.clear))),
+        rx.text(SearchState.query),
+    )
 ```
 
-Prefer `env` over the other names a script can see, such as `refs` or
-`ReflexEvent`: those are internals of the frontend and may change between
-Reflex versions.
+`rx.js.add_events` takes events, such as `SearchState.set_query("x")`, and
+event handlers that take no arguments, such as `SearchState.clear`.
+
+### Errors
+
+- `rx.js.add_events cannot dispatch SearchState.set_query: the handler needs
+  arguments, and add_events has none to pass it.` Pass the arguments in Python:
+  `rx.js.add_events(SearchState.set_query("x"))`.
+- `reflex.library("left-pad") cannot load "left-pad": the app does not bundle it
+  for dynamic components.` Bundle it in your app's Python code with
+  `bundle_library("left-pad")` from `reflex.components.dynamic`.
+- `reflex.library("react") cannot load "react" yet: the app registers its
+  bundled libraries when it first mounts, and it has not mounted.` Call
+  `reflex.library` from an event, such as `on_mount` or `on_click`, rather than
+  while a module loads.
+- `reflex.library("$/utils/state") cannot load "$/utils/state": a name starting
+  with "$/" is a module of the app's frontend, not a bundled npm library.` Use
+  the members of `reflex` instead of Reflex internals, and import your own
+  modules from a JavaScript module.
 
 ## Using React Hooks
 

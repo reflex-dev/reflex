@@ -1,1 +1,0 @@
-Add `env`, the API browser code reaches Reflex through: `rx.call_script` code can call `env.ref(id)`, `env.refs`, `env.addEvents(...)`, `env.event(...)` and `env.library(name)` instead of frontend internals, and `reflex_base.js.env` builds the same calls from Python vars.
