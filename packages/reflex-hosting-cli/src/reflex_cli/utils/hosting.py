@@ -36,6 +36,7 @@ from reflex_build_sdk import (
     APIStatusError,
     AuthenticationError,
     DeploymentFailedError,
+    DeploymentTimeoutError,
     LoginDeniedError,
     LoginTimeoutError,
     MissingTokenError,
@@ -44,7 +45,7 @@ from reflex_build_sdk import (
     ReflexBuildError,
 )
 from reflex_build_sdk._decode import json_key
-from reflex_build_sdk._deploy import status_message_outcome
+from reflex_build_sdk._deploy import report_outcome, status_message_outcome
 from reflex_build_sdk.transports import default_transport
 from reflex_build_sdk.types import DeploymentReport, LoginRequest, Me
 
@@ -1677,15 +1678,25 @@ def watch_deployment_status(
         return WatchResult(WatchOutcome.FAILED, "")
 
     last_status = ""
+    # When the deployment service stopped answering; None while it answers.
+    unreachable_since: float | None = None
 
     def note(message: str) -> None:
-        """Record and report a status the deployment reached.
+        """Record and report a new status the deployment reached.
+
+        A new status ends any outage, so the next one is given a grace period
+        of its own. A repeated one does not, and is not reported again: every
+        wait reports the current status first, even one whose report fetch
+        then fails.
 
         Args:
             message: The status message.
 
         """
-        nonlocal last_status
+        nonlocal last_status, unreachable_since
+        if message == last_status:
+            return
+        unreachable_since = None
         last_status = message
         logger.info(message)
 
@@ -1722,11 +1733,42 @@ def watch_deployment_status(
         )
         return WatchResult(WatchOutcome.UNFINISHED, last_status)
 
+    def wait_window() -> DeploymentReport | None:
+        """Wait up to one grace period for the deployment to settle.
+
+        A single endless wait could never show the service answering; a window
+        that runs out with the deployment in progress had every request in it
+        answered.
+
+        Returns:
+            The report of a deployment that settled, or None when the window
+            ran out with it still in progress.
+
+        Raises:
+            DeploymentFailedError: If the deployment failed.
+        """
+        try:
+            return client.api.deployments.wait(
+                deployment_id,
+                timeout=_WATCH_UNREACHABLE_GRACE.total_seconds(),
+                on_status=note,
+            )
+        except DeploymentTimeoutError:
+            pass
+        # The SDK reads the report only every so many polls, counted per wait,
+        # so status requests slow enough to end each window first would never
+        # reach it. Read it here, settling it as the SDK does: a recorded
+        # success only counts once the status message says so.
+        report = client.api.deployments.report(deployment_id)
+        recorded = report_outcome(report.status)
+        if recorded == "failed":
+            raise DeploymentFailedError(uuid.UUID(deployment_id), report)
+        return report if recorded == "awaiting_approval" else None
+
     with console.status("listening to status updates!"):
-        unreachable_since = None
         while True:
             try:
-                report = client.api.deployments.wait(deployment_id, on_status=note)
+                report = wait_window()
             except DeploymentFailedError as ex:
                 _report_deployment_failure(deployment_id, ex.report, str(ex))
                 return WatchResult(WatchOutcome.FAILED, narrated(ex.report.status))
@@ -1752,6 +1794,10 @@ def watch_deployment_status(
                 continue
             except ReflexBuildError as ex:
                 return stopped_following(error_message(ex))
+            if report is None:
+                # The service answered throughout, so any outage is over.
+                unreachable_since = None
+                continue
             break
     if report.status == "AwaitingApproval":
         logger.log(
