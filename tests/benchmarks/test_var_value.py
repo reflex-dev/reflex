@@ -47,7 +47,7 @@ class VarValueState(BaseState):
 
     count: rx.Field[int] = rx.field(0)
     index: rx.Field[int] = rx.field(0)
-    people: rx.Field[list[Person]] = rx.field([Person()])
+    people: rx.Field[list[Person]] = rx.field(default_factory=lambda: [Person()])
 
 
 FIELD = VarValueState.count

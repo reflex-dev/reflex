@@ -10,6 +10,7 @@ import hashlib
 import inspect
 import json
 import logging
+import math
 import operator
 import pickle
 import re
@@ -430,6 +431,26 @@ def _bind_attr(cls: type, name: str, value: Any) -> None:
 _UNSET = object()
 
 
+def _array_index(key: Any) -> int | None:
+    """Get the index ``Array.prototype.at`` reads for a key.
+
+    It truncates a number toward zero and reads NaN as 0.
+
+    Args:
+        key: The key.
+
+    Returns:
+        The index, or None for a key that is no finite number.
+    """
+    if isinstance(key, int):
+        return key
+    if isinstance(key, float):
+        if math.isnan(key):
+            return 0
+        return int(key) if math.isfinite(key) else None
+    return None
+
+
 def _read_key(value: Any, key: Any, from_literal: bool = False) -> Any:
     """Read a key off a value the way the frontend reads it with optional chaining.
 
@@ -456,8 +477,10 @@ def _read_key(value: Any, key: Any, from_literal: bool = False) -> Any:
         value = _ordered(value) if from_literal else tuple(value)
     elif not issubclass(cls, Sequence):
         return getattr(value, key, None) if isinstance(key, str) else None
-    in_range = isinstance(key, int) and -len(value) <= key < len(value)
-    return value[key] if in_range else None
+    index = _array_index(key)
+    if index is None or not -len(value) <= index < len(value):
+        return None
+    return value[index]
 
 
 def _router_fget(self: BaseState) -> RouterData:
@@ -2096,8 +2119,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Raises:
             UnsettableVarValueError: If the var is no state field and reads into
                 none, if it reads into a computed var, or if the object to set
-                the value on is None, is not tracked for changes or takes no
-                item.
+                the value on is None, is not tracked for changes, or takes no
+                item at the key.
         """
         root, keys = var_access_path(var)
         owner = await self._get_field_owner(root)
@@ -2129,8 +2152,15 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         if not isinstance(target, MutableProxy):
             msg = f"Unable to set value for {var._js_expr}: the object to set it on is not tracked for changes."
             raise UnsettableVarValueError(msg)
-        if isinstance(target, (MutableMapping, MutableSequence)):
+        if isinstance(target, MutableMapping):
             target[last_key] = value
+        elif isinstance(target, MutableSequence):
+            # Checked first, as MutableProxy marks the field dirty before it assigns.
+            index = _array_index(last_key)
+            if index is None or not -len(target) <= index < len(target):
+                msg = f"Unable to set value for {var._js_expr}: {last_key!r} is not an index of its {len(target)} items."
+                raise UnsettableVarValueError(msg)
+            target[index] = value
         elif isinstance(last_key, str):
             setattr(target, last_key, value)
         else:

@@ -6777,9 +6777,9 @@ async def test_var_value_through_tuples_and_sets() -> None:
     """
 
     class TupleAndSetState(BaseState):
-        rows: rx.Field[tuple[list[int], ...]] = rx.field(([1],))
-        tags: rx.Field[set[str]] = rx.field({"x"})
-        numbers: rx.Field[set[int]] = rx.field({8, 1})
+        rows: rx.Field[tuple[list[int], ...]] = rx.field(default_factory=lambda: ([1],))
+        tags: rx.Field[set[str]] = rx.field(default_factory=lambda: {"x"})
+        numbers: rx.Field[set[int]] = rx.field(default_factory=lambda: {8, 1})
 
     state = TupleAndSetState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     row_item = TupleAndSetState.rows[0][0]
@@ -6805,6 +6805,45 @@ async def test_var_value_through_tuples_and_sets() -> None:
     )
     assert state.rows == ([1],)
     assert state.tags == {"x"}
+    assert state.dirty_vars == set()
+
+
+@pytest.mark.asyncio
+async def test_var_value_indexes_like_array_at() -> None:
+    """An index reads and sets the item ``Array.prototype.at`` reads on the frontend.
+
+    It truncates a fractional index toward zero and reads NaN as 0. An index
+    past either end reads as None, and set_var_value refuses it before anything
+    is marked dirty.
+    """
+
+    class IndexState(BaseState):
+        index: rx.Field[int | float] = rx.field(1.5)
+        items: rx.Field[list[str]] = rx.field(default_factory=lambda: ["a", "b", "c"])
+
+    state = IndexState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    item = IndexState.items[IndexState.index]
+
+    assert await state.get_var_value(item) == "b"
+    state.index = -1.5
+    assert await state.get_var_value(item) == "c"
+    state.index = math.nan
+    assert await state.get_var_value(item) == "a"
+    state.index = math.inf
+    assert await state.get_var_value(item) is None
+
+    state.index = 1.5
+    await state.set_var_value(item, "x")
+    assert state.items == ["a", "x", "c"]
+
+    state._clean()
+    past_end = IndexState.items[3]
+    with pytest.raises(UnsettableVarValueError) as err:
+        await state.set_var_value(past_end, "y")
+    assert str(err.value) == (
+        f"Unable to set value for {past_end._js_expr}: 3 is not an index of its 3 items."
+    )
+    assert state.items == ["a", "x", "c"]
     assert state.dirty_vars == set()
 
 
