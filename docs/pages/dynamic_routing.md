@@ -21,7 +21,7 @@ The dynamic route arguments are accessible as `rx.State.id` and `rx.State.catego
 ```md alert info
 # Accessing a dynamic route argument with type checking
 
-The var is added to the root state when the page is added, so type checkers do not know `rx.State.id`. `rx.State.route_arg("id")` returns the same var as a `StringVar`, and `rx.State.route_catch_all()` returns the catch-all route's var as an `ArrayVar[list[str]]`.
+The var is added to the root state when the page is added, so type checkers do not know `rx.State.id`. `rx.route_arg("id")` returns the same var as a `StringVar`. Like `rx.State.id`, it is a var for building components, not the value: an event handler or a computed var reads the value from the state as before.
 ```
 
 Example:
@@ -30,8 +30,9 @@ Example:
 @rx.page(route="/post/[pid]")
 def post():
     """A page that updates based on the route."""
-    # Displays the dynamic part of the URL, the post ID
-    return rx.heading(rx.State.pid, as_="h2")
+    # Displays the dynamic part of the URL, the post ID. `rx.route_arg("pid")`
+    # is `rx.State.pid`, typed.
+    return rx.heading(rx.route_arg("pid"), as_="h2")
 
 
 app = rx.App()
@@ -88,6 +89,14 @@ app = rx.App()
 
 In this case, the `...splat` catch-all pattern captures any number of segments after
 `/users/`, allowing URLs like `/users/2/posts/john/` and `/users/1/posts/john/doe/` to match the route.
+
+`rx.route_catch_all()` returns the catch-all var, `rx.State.splat`, as an `ArrayVar[list[str]]`. Like `rx.route_arg`, it is a var for building components, not the value:
+
+```python
+@rx.page(route="/files/[[...splat]]")
+def files():
+    return rx.vstack(rx.foreach(rx.route_catch_all(), rx.text))
+```
 
 ```md alert
 # Catch-all routes must be named `splat` and be placed at the end of the URL pattern to ensure proper route matching.

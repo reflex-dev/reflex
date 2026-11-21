@@ -419,6 +419,22 @@ def _bind_attr(cls: type, name: str, value: Any) -> None:
     value.__set_name__(cls, name)
 
 
+def _route_arg_type(var: DynamicRouteVar) -> str:
+    """Get the route arg type a page installed a dynamic route var as.
+
+    Args:
+        var: The dynamic route var.
+
+    Returns:
+        ``RouteArgType.LIST`` for the catch-all, ``RouteArgType.SINGLE`` otherwise.
+    """
+    return (
+        constants.RouteArgType.LIST
+        if var._var_type == list[str]
+        else constants.RouteArgType.SINGLE
+    )
+
+
 def _router_fget(self: BaseState) -> RouterData:
     """Assemble the RouterData view over the per-field router vars.
 
@@ -1602,11 +1618,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             A mapping of dynamic route argument name to ``RouteArgType`` value.
         """
         return {
-            name: (
-                constants.RouteArgType.LIST
-                if computed_var._var_type == list[str]
-                else constants.RouteArgType.SINGLE
-            )
+            name: _route_arg_type(computed_var)
             for name, computed_var in cls.computed_vars.items()
             if isinstance(computed_var, DynamicRouteVar)
         }
@@ -1669,69 +1681,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         cls.computed_vars.update(dynamic_vars)
         cls.vars.update(dynamic_vars)
         cls._update_substate_vars(dynamic_vars)
-
-    @classmethod
-    def _installed_route_arg(cls, name: str, arg_type: str, kind: str) -> Any:
-        """Get the var a page installed for a dynamic route arg of the given type.
-
-        Args:
-            name: The name of the dynamic route arg.
-            arg_type: The ``RouteArgType`` the arg must have.
-            kind: How the arg appears in a route, for the error message.
-
-        Returns:
-            The var of the dynamic route arg, as class access returns it.
-
-        Raises:
-            DynamicRouteArgNotFoundError: If no added page declares the arg as `kind`.
-        """
-        var = cls.vars.get(name)
-        if not isinstance(var, DynamicRouteVar):
-            msg = f"No page added so far declares the dynamic route arg {kind}."
-            raise DynamicRouteArgNotFoundError(msg)
-        installed = (
-            constants.RouteArgType.LIST
-            if var._var_type == list[str]
-            else constants.RouteArgType.SINGLE
-        )
-        if installed != arg_type:
-            msg = f"The pages added so far declare `{name}`, but not as {kind}."
-            raise DynamicRouteArgNotFoundError(msg)
-        return getattr(cls, name)
-
-    @classmethod
-    def route_arg(cls, name: str) -> StringVar:
-        """Get the var of a dynamic route arg, typed.
-
-        Adding a page at ``/post/[pid]`` installs the var ``rx.State.pid``. Type
-        checkers cannot see that attribute, which only exists once the page is
-        added; ``rx.State.route_arg("pid")`` returns the same var as a
-        ``StringVar``. The ``[[...splat]]`` catch-all is ``route_catch_all()``.
-
-        Args:
-            name: The name of the dynamic route arg.
-
-        Returns:
-            The var of the dynamic route arg.
-        """
-        return cls._installed_route_arg(
-            name, constants.RouteArgType.SINGLE, f"[{name}]"
-        )
-
-    @classmethod
-    def route_catch_all(cls) -> ArrayVar[list[str]]:
-        """Get the var of the ``[[...splat]]`` catch-all route arg, typed.
-
-        Adding a page at ``/docs/[[...splat]]`` installs the var
-        ``rx.State.splat`` with the remaining path segments, which type checkers
-        cannot see; this returns the same var as an ``ArrayVar[list[str]]``.
-
-        Returns:
-            The var of the catch-all route arg.
-        """
-        return cls._installed_route_arg(
-            "splat", constants.RouteArgType.LIST, constants.RouteRegex.SPLAT_CATCHALL
-        )
 
     if TYPE_CHECKING or environment.REFLEX_ENV_MODE.get() != constants.Env.PROD:
 
@@ -3090,6 +3039,81 @@ def dynamic(func: Callable[[T], Component]):
         return fragment(state_class._evaluate(lambda state: func(state)))
 
     return wrapper
+
+
+def _installed_route_arg(name: str) -> tuple[Any, str] | None:
+    """Get the var a page installed on ``rx.State`` for a dynamic route arg.
+
+    Args:
+        name: The name of the dynamic route arg.
+
+    Returns:
+        The var as class access returns it and its ``RouteArgType``, or None if
+        no page added so far has the arg.
+    """
+    var = State.vars.get(name)
+    if not isinstance(var, DynamicRouteVar):
+        return None
+    return getattr(State, name), _route_arg_type(var)
+
+
+def route_arg(name: str) -> StringVar:
+    """Get the var of a dynamic route arg, such as ``pid`` in ``/post/[pid]``.
+
+    Adding the page installs the var ``rx.State.pid``, which type checkers cannot
+    see; this returns the same var, typed. Like ``rx.State.pid``, it is a var for
+    building components, not the value: an event handler or a computed var reads
+    the value from the state as before. The ``[[...splat]]`` catch-all is
+    ``route_catch_all()``.
+
+    Args:
+        name: The name of the dynamic route arg, as in ``[name]`` or the
+            optional ``[[name]]``.
+
+    Returns:
+        The var of the dynamic route arg.
+
+    Raises:
+        DynamicRouteArgNotFoundError: If no page added so far has the arg, or the
+            arg is the catch-all.
+    """
+    installed = _installed_route_arg(name)
+    if installed is None:
+        msg = f"No dynamic route arg `{name}` is installed: no page added so far has `[{name}]` in its route."
+        raise DynamicRouteArgNotFoundError(msg)
+    var, arg_type = installed
+    if arg_type != constants.RouteArgType.SINGLE:
+        msg = f"`{name}` is installed as the catch-all `{constants.RouteRegex.SPLAT_CATCHALL}`; use `rx.route_catch_all()` for it."
+        raise DynamicRouteArgNotFoundError(msg)
+    return var
+
+
+def route_catch_all() -> ArrayVar[list[str]]:
+    """Get the var of the ``[[...splat]]`` catch-all route arg.
+
+    Adding a page at ``/docs/[[...splat]]`` installs the var ``rx.State.splat``
+    with the remaining path segments, which type checkers cannot see; this
+    returns the same var, typed. Like ``rx.State.splat``, it is a var for building
+    components, not the value: an event handler or a computed var reads the value
+    from the state as before.
+
+    Returns:
+        The var of the catch-all route arg.
+
+    Raises:
+        DynamicRouteArgNotFoundError: If no page added so far has the catch-all,
+            or ``splat`` is a regular dynamic route arg.
+    """
+    name = constants.RouteRegex.SPLAT_ARG
+    installed = _installed_route_arg(name)
+    if installed is None:
+        msg = f"No catch-all route arg is installed: no page added so far has `{constants.RouteRegex.SPLAT_CATCHALL}` in its route."
+        raise DynamicRouteArgNotFoundError(msg)
+    var, arg_type = installed
+    if arg_type != constants.RouteArgType.LIST:
+        msg = f'`{name}` is installed as the regular dynamic route arg `[{name}]`; use `rx.route_arg("{name}")` for it.'
+        raise DynamicRouteArgNotFoundError(msg)
+    return var
 
 
 # sessionStorage key holding the ms timestamp of the last reload on error

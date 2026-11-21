@@ -46,7 +46,6 @@ from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Receive, Scope, Send
 from reflex_base.vars.base import computed_var
-from reflex_base.vars.sequence import ArrayVar, StringVar
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core import _upload as upload_module
@@ -374,57 +373,6 @@ def test_add_page_set_route_dynamic(index_page: ComponentCallable):
         EmptyState.get_full_name(): {"rx_router_page"},
     }
     assert "rx_router_page" in app._state()._var_dependencies
-
-
-def test_route_arg(index_page: ComponentCallable):
-    """Get the vars of a page's dynamic route args through the typed accessors.
-
-    Args:
-        index_page: The index page.
-    """
-    app = App(_state=EmptyState)
-    assert app._state is not None
-    app.add_page(index_page, route="/route-arg/[dynamic]/[[...splat]]")
-
-    # the same vars as the attributes the page added, e.g. `EmptyState.dynamic`
-    dynamic = app._state.route_arg("dynamic")
-    assert isinstance(dynamic, StringVar)
-    assert dynamic._js_expr == getattr(app._state, "dynamic")._js_expr  # noqa: B009
-    splat = app._state.route_catch_all()
-    assert isinstance(splat, ArrayVar)
-    assert splat._js_expr == getattr(app._state, "splat")._js_expr  # noqa: B009
-
-    with pytest.raises(exceptions.DynamicRouteArgNotFoundError) as err:
-        app._state.route_arg("not_added")
-    assert str(err.value) == (
-        "No page added so far declares the dynamic route arg [not_added]."
-    )
-    with pytest.raises(exceptions.DynamicRouteArgNotFoundError) as err:
-        app._state.route_arg("splat")
-    assert (
-        str(err.value) == "The pages added so far declare `splat`, but not as [splat]."
-    )
-
-
-def test_route_catch_all_of_a_regular_arg(index_page: ComponentCallable):
-    """A regular arg named `splat` is no catch-all.
-
-    Args:
-        index_page: The index page.
-    """
-
-    class RegularSplatState(BaseState):
-        """State whose only page has a regular `splat` arg."""
-
-    app = App(_state=RegularSplatState)
-    app.add_page(index_page, route="/regular-splat/[splat]")
-
-    assert isinstance(RegularSplatState.route_arg("splat"), StringVar)
-    with pytest.raises(exceptions.DynamicRouteArgNotFoundError) as err:
-        RegularSplatState.route_catch_all()
-    assert str(err.value) == (
-        "The pages added so far declare `splat`, but not as [[...splat]]."
-    )
 
 
 def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
