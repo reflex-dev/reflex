@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
 from reflex_base.context.base import BaseContext
+from reflex_base.utils.exceptions import BrowserDisconnectedError
 from reflex_base.utils.format import to_snake_case
 
 if TYPE_CHECKING:
@@ -77,6 +78,20 @@ class EmitEventProtocol(Protocol):
         ...
 
 
+class CallFrontendProtocol(Protocol):
+    """Protocol for the call_frontend function in the event context."""
+
+    async def __call__(self, token: str, event: Event, timeout: float | None) -> Any:
+        """Run a frontend event in the browser and wait for its result.
+
+        Args:
+            token: The client token whose browser runs the event.
+            event: The frontend event to run.
+            timeout: Seconds to wait for the result, or None to wait until it arrives.
+        """
+        ...
+
+
 class EmitDeltaProtocol(Protocol):
     """Protocol for the emit_delta function in the event context."""
 
@@ -118,6 +133,11 @@ class EventContext(BaseContext):
         default=None, repr=False
     )
     emit_event_impl: EmitEventProtocol | None = dataclasses.field(
+        default=None, repr=False
+    )
+    # Runs a frontend event in the browser and returns its result; None when
+    # no frontend is attached.
+    call_frontend_impl: CallFrontendProtocol | None = dataclasses.field(
         default=None, repr=False
     )
     # The app middleware an event passes through before its handler runs,
@@ -164,6 +184,7 @@ class EventContext(BaseContext):
             enqueue_impl=self.enqueue_impl,
             emit_delta_impl=self.emit_delta_impl,
             emit_event_impl=self.emit_event_impl,
+            call_frontend_impl=self.call_frontend_impl,
             middleware=self.middleware,
             router_data=router_data or self.router_data,
             otel_context=otel.capture_context(),
@@ -241,6 +262,24 @@ class EventContext(BaseContext):
         """
         if self.emit_event_impl is not None:
             await self.emit_event_impl(self.token, *events)
+
+    async def call_frontend(self, event: Event, timeout: float | None) -> Any:
+        """Run a frontend event in this client's browser and wait for its result.
+
+        Args:
+            event: The frontend event to run.
+            timeout: Seconds to wait for the result, or None to wait until it arrives.
+
+        Returns:
+            The value the browser sent back.
+
+        Raises:
+            BrowserDisconnectedError: If no frontend is attached to the app.
+        """
+        if self.call_frontend_impl is None:
+            msg = "No browser is connected to this app, so it cannot run the script."
+            raise BrowserDisconnectedError(msg)
+        return await self.call_frontend_impl(self.token, event, timeout)
 
     async def enqueue(self, *event: Event) -> Sequence[EventFuture]:
         """Enqueue an event handler to be executed.

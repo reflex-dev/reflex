@@ -203,6 +203,8 @@ class BaseConfig:
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
         event_loop_blocking_threshold: Minimum event-loop blocking duration in seconds to report in development. Set to 0 to disable detection.
+        browser_call_timeout: Seconds an awaited browser call, such as `await rx.call_script(...)` in a background event handler, waits for the browser's result before raising TimeoutError. A call's own `timeout=` overrides it.
+        browser_call_grace_period: Seconds an awaited browser call survives its tab disconnecting: a reconnect within it delivers the result, otherwise the call raises BrowserDisconnectedError.
     """
 
     app_name: str
@@ -299,6 +301,10 @@ class BaseConfig:
     transport: Literal["websocket", "polling"] = "websocket"
 
     event_loop_blocking_threshold: float = 0.2
+
+    browser_call_timeout: float = 30.0
+
+    browser_call_grace_period: float = 5.0
 
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)

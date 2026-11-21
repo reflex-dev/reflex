@@ -5752,3 +5752,170 @@ async def test_returned_undecorated_state_method_raises_type_error(
             await future
         await processor.join(5)
     assert len(captured) == 1
+
+
+def _record_browser_calls(
+    processor: BaseStateEventProcessor, results: list[Any]
+) -> list[tuple[str, str, dict[str, Any], float | None]]:
+    """Answer the processor's browser calls with the given results, in order.
+
+    Args:
+        processor: The processor whose root context sends the calls.
+        results: The values the browser returns, one per call.
+
+    Returns:
+        The calls made: token, event name, payload and timeout.
+    """
+    calls: list[tuple[str, str, dict[str, Any], float | None]] = []
+
+    async def call_frontend_impl(  # noqa: RUF029
+        token: str, event: Event, timeout: float | None
+    ) -> Any:
+        calls.append((token, event.name, event.payload, timeout))
+        return results[len(calls) - 1]
+
+    assert processor._root_context is not None
+    processor._root_context = dataclasses.replace(
+        processor._root_context, call_frontend_impl=call_frontend_impl
+    )
+    return calls
+
+
+async def test_await_browser_call_from_background_returns_the_browser_result(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A background handler awaits a script's result; the timeout is not sent to the browser.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    calls = _record_browser_calls(real_base_state_processor, [2, {"w": 800}, None])
+    results: list[Any] = []
+
+    class BrowserCallState(State):
+        @event(background=True)
+        async def run(self):
+            results.append(await rx.call_script("1 + 1"))
+            results.append(await rx.call_function("() => ({w: 800})", timeout=2))
+            results.append(await rx.run_script("null", timeout=None))
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(BrowserCallState.run())[0]
+        )
+        await future.wait_all()
+
+    assert results == [2, {"w": 800}, None]
+    assert calls == [
+        (
+            token,
+            "_call_script",
+            {"javascript_code": "1 + 1", "callback": None},
+            get_config().browser_call_timeout,
+        ),
+        (
+            token,
+            "_call_function",
+            {"function": "() => ({w: 800})", "callback": None},
+            2,
+        ),
+        (token, "_call_function", {"function": "(() => null)", "callback": None}, None),
+    ]
+
+
+async def test_await_browser_call_under_the_lock_or_with_a_callback_raises(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A browser call is not awaited while the lock is held, nor with a callback too.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex_base.utils.exceptions import EventHandlerTypeError
+
+    calls = _record_browser_calls(real_base_state_processor, [])
+    errors: dict[str, str] = {}
+    lock_error = (
+        "`_call_script` cannot be awaited while the state lock is held, as every "
+        "other event of this tab would wait for the browser's answer; await it in "
+        "a background event handler, outside `async with self`."
+    )
+
+    class LockedBrowserCallState(State):
+        @event
+        async def foreground(self):
+            try:
+                await rx.call_script("1")
+            except EventHandlerTypeError as ex:
+                errors["foreground"] = str(ex)
+
+        @event(background=True)
+        async def background(self):
+            async with self:
+                try:
+                    await rx.call_script("1")
+                except EventHandlerTypeError as ex:
+                    errors["async with self"] = str(ex)
+            try:
+                await rx.call_function("() => 1", callback=rx.console_log)
+            except EventHandlerTypeError as ex:
+                errors["callback"] = str(ex)
+
+    async with real_base_state_processor as processor:
+        for handler in (
+            LockedBrowserCallState.foreground,
+            LockedBrowserCallState.background,
+        ):
+            future = await processor.enqueue(token, Event.from_event_type(handler())[0])
+            await future.wait_all()
+
+    assert errors == {
+        "foreground": lock_error,
+        "async with self": lock_error,
+        "callback": "`_call_function` was given a callback and awaited; pass "
+        "either callback= or await its result, not both.",
+    }
+    assert calls == []
+
+
+async def test_await_browser_call_without_a_frontend_raises(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """With no frontend attached to the processor, a browser call fails at once.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex_base.utils.exceptions import BrowserDisconnectedError
+
+    errors: list[str] = []
+
+    class NoFrontendState(State):
+        @event(background=True)
+        async def run(self):
+            try:
+                await rx.call_script("1")
+            except BrowserDisconnectedError as ex:
+                errors.append(str(ex))
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(NoFrontendState.run())[0]
+        )
+        await future.wait_all()
+
+    assert errors == [
+        "No browser is connected to this app, so it cannot run the script."
+    ]

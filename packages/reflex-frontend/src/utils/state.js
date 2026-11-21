@@ -30,6 +30,11 @@ const EVENTURL = env.EVENT;
 // Socket event names (must match reflex_base/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
 const STATE_MISMATCH_EVENT = "state_mismatch";
+const RESULT_EVENT = "result";
+
+// The error kind of a script result JSON cannot carry (must match
+// SERIALIZATION_ERROR_KIND in reflex_base/event/processor/browser_calls.py).
+const SERIALIZATION_ERROR_KIND = "serialization";
 
 // sessionStorage key with the time of the last automatic reload (must match
 // LAST_RELOADED_KEY in reflex/state.py: the reload on a frontend error and the
@@ -592,6 +597,98 @@ const applyResultCallback = async (
 };
 
 /**
+ * Run the script of a _call_script or _call_function event.
+ * @param event The event whose script to run.
+ * @param addEvents The late-bound event dispatcher for the script.
+ * @param socket The socket object to send events on.
+ * @param navigate The navigate function from useNavigate.
+ * @param params The params object from useParams.
+ * @returns The script's completion value, or the function's return value.
+ */
+const runEventScript = (event, addEvents, socket, navigate, params) => {
+  if (event.name === "_call_script") {
+    return runScript(
+      event.payload.javascript_code,
+      addEvents,
+      socket,
+      navigate,
+      params,
+    );
+  }
+  const fn =
+    typeof event.payload.function === "string"
+      ? runScript(event.payload.function, addEvents, socket, navigate, params)
+      : event.payload.function;
+  return fn();
+};
+
+/**
+ * Describe an error a script threw, for the backend that awaits its result.
+ * @param error The thrown value, which need not be an Error.
+ * @param kind The kind of failure, if it is not the script's own.
+ * @returns The error's name, message and stack.
+ */
+const describeScriptError = (error, kind = undefined) => ({
+  name: error?.name ?? "Error",
+  message: error instanceof Error ? error.message : String(error),
+  stack: error?.stack ?? "",
+  ...(kind === undefined ? {} : { kind }),
+});
+
+/**
+ * Serialize a script's result as JSON for the backend that awaits it.
+ *
+ * ``undefined`` is sent as ``null``. A DOM node or the window would arrive as
+ * an empty object, so it is rejected instead, like a value JSON cannot carry.
+ * @param value The script's result.
+ * @returns The result as JSON.
+ */
+const serializeScriptResult = (value) => {
+  const json = JSON.stringify(value ?? null, (_key, item) => {
+    if (
+      item === globalThis ||
+      (typeof Node !== "undefined" && item instanceof Node)
+    ) {
+      throw new TypeError(
+        "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
+      );
+    }
+    return item;
+  });
+  if (json === undefined) {
+    throw new TypeError(
+      `The script returned a ${typeof value}, which JSON cannot carry.`,
+    );
+  }
+  return json;
+};
+
+/**
+ * Run a script the backend awaits and send its result, or its error, back.
+ *
+ * The script runs before this returns; its result is awaited and sent after,
+ * so a script waiting on the user does not hold up the event queue.
+ * @param socket The socket object to send the result on.
+ * @param rid The request id the backend awaits the result under.
+ * @param run Runs the script and returns its result.
+ */
+const sendScriptResult = async (socket, rid, run) => {
+  let outcome;
+  try {
+    const value = await run();
+    try {
+      outcome = { rid, json: serializeScriptResult(value) };
+    } catch (e) {
+      outcome = { rid, error: describeScriptError(e, SERIALIZATION_ERROR_KIND) };
+    }
+  } catch (e) {
+    outcome = { rid, error: describeScriptError(e) };
+  }
+  // Buffered by socket.io while disconnected, and sent once it reconnects.
+  socket?.emit(RESULT_EVENT, outcome);
+};
+
+/**
  * Build the update_vars_internal event for a synced localStorage var.
  *
  * The value is read when the event is sent, so it and the write count recorded
@@ -802,49 +899,24 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  if (
-    event.name === "_call_function" &&
-    typeof event.payload.function !== "string"
-  ) {
+  if (event.name === "_call_script" || event.name === "_call_function") {
+    if (event.rid) {
+      // The backend awaits the result: an error is its to handle.
+      void sendScriptResult(socket, event.rid, () =>
+        runEventScript(event, addEvents, socket, navigate, params),
+      );
+      return;
+    }
     try {
       await applyResultCallback(
         event,
-        event.payload.function(),
+        runEventScript(event, addEvents, socket, navigate, params),
         socket,
         navigate,
         params,
       );
     } catch (e) {
-      console.log("_call_function", e);
-      if (window?.onerror) {
-        window.onerror(e.message, null, null, null, e);
-      }
-    }
-    return;
-  }
-
-  if (event.name === "_call_script" || event.name === "_call_function") {
-    try {
-      const eval_result =
-        event.name === "_call_script"
-          ? runScript(
-              event.payload.javascript_code,
-              addEvents,
-              socket,
-              navigate,
-              params,
-            )
-          : runScript(
-              event.payload.function,
-              addEvents,
-              socket,
-              navigate,
-              params,
-            )();
-
-      await applyResultCallback(event, eval_result, socket, navigate, params);
-    } catch (e) {
-      console.log("_call_script", e);
+      console.log(event.name, e);
       if (window?.onerror) {
         window.onerror(e.message, null, null, null, e);
       }

@@ -44,6 +44,44 @@ def CallScript():
         external_counter: rx.Field[int] = rx.field(0)
         value: str = "Initial"
         last_result: rx.Field[int] = rx.field(0)
+        awaited: rx.Field[list[str]] = rx.field([])
+
+        @rx.event(background=True)
+        async def await_results(self):
+            from reflex.utils.exceptions import (
+                BrowserResultSerializationError,
+                BrowserScriptError,
+            )
+
+            seen: list[str] = [
+                repr(await rx.call_script("inline3()")),
+                repr(await rx.call_script("inline4()")),
+                repr(await rx.call_function("() => [1, 'two', undefined]")),
+                repr(await rx.call_script("undefined")),
+            ]
+            for code, expected in (
+                ("missing_function()", BrowserScriptError),
+                ("document.body", BrowserResultSerializationError),
+            ):
+                try:
+                    await rx.call_script(code)
+                except expected as e:
+                    seen.append(f"{type(e).__name__}: {e}")
+            try:
+                await rx.call_script("new Promise(() => {})", timeout=0.5)
+            except TimeoutError as e:
+                seen.append(f"TimeoutError: {e}")
+            async with self:
+                self.awaited = seen
+
+        @rx.event(background=True)
+        async def await_user(self):
+            # Settled by the test once another event has gone through.
+            answer = await rx.call_script(
+                "new Promise((resolve) => { window.answerAwaited = resolve })"
+            )
+            async with self:
+                self.awaited = [repr(answer)]
 
         @rx.event
         def call_script_callback(self, result):
@@ -292,6 +330,25 @@ def CallScript():
                 id="update_value",
             ),
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
+            rx.button(
+                "await_results",
+                on_click=CallScriptState.await_results,
+                id="await_results",
+            ),
+            rx.button(
+                "await_user", on_click=CallScriptState.await_user, id="await_user"
+            ),
+            rx.button(
+                "set_value_busy",
+                on_click=CallScriptState.set_value("busy"),
+                id="set_value_busy",
+            ),
+            rx.text(CallScriptState.value, id="value"),
+            rx.text_area(
+                value=CallScriptState.awaited.join("\n"),
+                id="awaited",
+                read_only=True,
+            ),
             rx.input(
                 value=CallScriptState.last_result.to_string(),
                 id="last_result",
@@ -525,3 +582,51 @@ def test_call_script_w_var(
     inline_return_button.click()
     call_with_var_str_cast_wrapped_inline_button.click()
     expect(last_result).to_have_value("8")
+
+
+def test_await_call_script(call_script: AppHarness, call_script_page: Page):
+    """A background handler awaits the value, error or timeout of a browser script.
+
+    Args:
+        call_script: harness for CallScript app.
+        call_script_page: Playwright page.
+    """
+    expected_lines = (
+        "{'inline3': 42, 'a': [1, 2, 3], 's': 'js', 'o': {'a': 1, 'b': 2}}",
+        "'async inline4'",
+        "[1, 'two', None]",
+        "None",
+        "BrowserScriptError: ReferenceError: missing_function is not defined",
+        (
+            "BrowserResultSerializationError: TypeError: The script returned a DOM "
+            "node or window, which JSON cannot carry; return the data you need from "
+            "it instead."
+        ),
+        (
+            "TimeoutError: The browser did not return a result for `_call_script` "
+            "within 0.5 seconds."
+        ),
+    )
+    call_script_page.locator("#await_results").click()
+    expect(call_script_page.locator("#awaited")).to_have_value(
+        "\n".join(expected_lines), timeout=15_000
+    )
+
+
+def test_awaited_script_does_not_hold_up_other_events(
+    call_script: AppHarness, call_script_page: Page
+):
+    """While an awaited script waits on the user, the tab's other events still run.
+
+    Args:
+        call_script: harness for CallScript app.
+        call_script_page: Playwright page.
+    """
+    call_script_page.locator("#await_user").click()
+    call_script_page.wait_for_function(
+        "() => typeof window.answerAwaited === 'function'"
+    )
+    call_script_page.locator("#set_value_busy").click()
+    expect(call_script_page.locator("#value")).to_have_text("busy")
+    call_script_page.evaluate("window.answerAwaited({answer: 'yes'})")
+    expect(call_script_page.locator("#awaited")).to_have_value("{'answer': 'yes'}")

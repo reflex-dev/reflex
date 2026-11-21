@@ -20,6 +20,7 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
+from reflex_base.config import get_config
 from reflex_base.constants import CompileVars
 from reflex_base.event import (
     _UNDECORATED_STATE_METHOD_HINT,
@@ -33,6 +34,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
+from reflex_base.utils.exceptions import EventHandlerTypeError
 from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
 from reflex_base.utils.serializers import deserializers
@@ -577,6 +579,49 @@ def ensure_locked(
     return None
 
 
+# The frontend events whose result the backend can await.
+_BROWSER_CALL_EVENTS = frozenset({"_call_script", "_call_function"})
+
+
+async def _await_browser_call(ctx: EventContext, event: Event) -> Any:
+    """Run a script in the client's browser and wait for its result.
+
+    Args:
+        ctx: The active EventContext of the client.
+        event: The ``_call_script`` or ``_call_function`` event.
+
+    Returns:
+        The script's result.
+
+    Raises:
+        EventHandlerTypeError: If the state lock is held, which would hold up
+            every other event of the client until the browser answers, or the
+            event also has a result callback.
+    """
+    if ctx.locked_root is not None:
+        msg = (
+            f"`{event.name}` cannot be awaited while the state lock is held, as "
+            "every other event of this tab would wait for the browser's answer; "
+            "await it in a background event handler, outside `async with self`."
+        )
+        raise EventHandlerTypeError(msg)
+    payload = event.payload
+    if payload.get("callback") is not None:
+        msg = (
+            f"`{event.name}` was given a callback and awaited; pass either "
+            "callback= or await its result, not both."
+        )
+        raise EventHandlerTypeError(msg)
+    # _to_event built this payload for this event alone, so it is the
+    # event's to change.
+    timeout = (
+        payload.pop("timeout")
+        if "timeout" in payload
+        else get_config().browser_call_timeout
+    )
+    return await ctx.call_frontend(event, timeout)
+
+
 async def execute_event_inline(spec: EventSpec) -> Any:
     """Run the event a spec describes from inside the active EventContext.
 
@@ -585,22 +630,24 @@ async def execute_event_inline(spec: EventSpec) -> Any:
     self`` in a background handler, ``app.modify_state``), the handler runs
     inline on the locked state tree under the caller's context: its yields
     emit deltas and the events it yields chain under the caller's event. With
-    no lock held, the event is enqueued and its future awaited.
+    no lock held, the event is enqueued and its future awaited. A script the
+    spec runs in the browser (``rx.call_script``, ``rx.call_function``,
+    ``rx.run_script``) is sent to it, and its result awaited.
 
     Args:
         spec: The event spec to execute.
 
     Returns:
-        The handler's return value.
+        The handler's return value, or the script's result.
 
     Raises:
         EventHandlerTypeError: If there is no active EventContext for a
             client (outside an event handler and ``app.modify_state``), the
-            spec is a frontend-only or upload event, or a background handler
-            is awaited while the state lock is held (which would deadlock).
+            spec is another frontend-only event or an upload event, or a
+            background handler is awaited while the state lock is held (which
+            would deadlock).
     """
     from reflex_base.registry import RegistrationContext
-    from reflex_base.utils.exceptions import EventHandlerTypeError
 
     try:
         ctx = EventContext.get()
@@ -618,6 +665,8 @@ async def execute_event_inline(spec: EventSpec) -> Any:
         raise EventHandlerTypeError(msg)
     event = spec._to_event(ctx.router_data)
     name = event.name
+    if name in _BROWSER_CALL_EVENTS:
+        return await _await_browser_call(ctx, event)
     if spec.client_handler_name:
         msg = f"Upload event `{name}` cannot be awaited; use it as an event trigger."
         raise EventHandlerTypeError(msg)
@@ -892,6 +941,7 @@ class BaseStateEventProcessor(EventProcessor):
         Args:
             token: The disconnected client token.
         """
+        super()._on_disconnect(token)
         _, on_load_name = _connect_supersedes()
         for future in self._pending_hydrates.pop(token, {}).values():
             future.cancel()

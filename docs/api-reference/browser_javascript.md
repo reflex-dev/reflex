@@ -141,6 +141,66 @@ The `callback` parameter may be an `EventHandler` with one argument, or a lambda
 If the callback is None, then no event is triggered.
 ```
 
+## Awaiting Results
+
+A [background event handler](/docs/events/background-events/) can `await` `rx.call_script`, `rx.call_function`, or
+`rx.run_script` to get the result directly, instead of passing a callback. The handler continues once the browser sends
+the value back, so the code that asks for a value and the code that uses it stay together. If the script returns a
+promise, the handler gets the value the promise resolves to.
+
+```python demo exec
+class ViewportState(rx.State):
+    viewport: str = ""
+
+    @rx.event(background=True)
+    async def measure(self):
+        size = await rx.call_script("({w: window.innerWidth, h: window.innerHeight})")
+        async with self:
+            self.viewport = f"{size['w']} x {size['h']}"
+
+
+def viewport_demo():
+    return rx.hstack(
+        rx.button("Measure Viewport", on_click=ViewportState.measure),
+        rx.text(ViewportState.viewport),
+    )
+```
+
+The result travels as JSON: objects become `dict`, arrays become `list`, and `undefined` becomes `None`. Return the
+data you need from a DOM element rather than the element itself.
+
+Await the call outside `async with self`. While the handler holds the state lock, the tab's other events would have to
+wait for the browser's answer, so awaiting there raises an error. For the same reason, a regular event handler cannot
+await a script. Pass either `callback=` or `await` the result, not both.
+
+The awaited call raises an exception when no value comes back. The Reflex exceptions are imported from
+`reflex.utils.exceptions`:
+
+- `BrowserScriptError` if the script throws, or the promise it returns is rejected. The exception
+  carries the Javascript error's `name`, `message` and `stack`.
+- `BrowserResultSerializationError` (a subclass of `BrowserScriptError`) if the value cannot be
+  sent as JSON.
+- `TimeoutError` if no result arrives within the timeout. The timeout defaults to `browser_call_timeout` in
+  `rxconfig.py` (30 seconds). Pass `timeout=` to a single call to override it, or `timeout=None` to wait as long as it
+  takes:
+
+  ```python
+  answer = await rx.call_script("askTheUser()", timeout=None)
+  ```
+
+- `BrowserDisconnectedError` (a `ConnectionError`) if the tab is not connected when the call is
+  made. The same error is raised if the tab disconnects and does not reconnect within `browser_call_grace_period`
+  (5 seconds). A tab that reconnects in time still delivers its result. A tab that reloads loses the running script, so the
+  call ends at its timeout.
+
+```md alert info
+# Awaiting results with multiple backend workers
+
+The browser sends the result to the backend worker its tab is connected to. With several workers sharing state through
+Redis, a background task awaits results only from tabs connected to its own worker. Calls to other tabs raise
+`BrowserDisconnectedError`.
+```
+
 ## Using React Hooks
 
 To use React Hooks directly in a Reflex app, you must subclass `rx.Component`,

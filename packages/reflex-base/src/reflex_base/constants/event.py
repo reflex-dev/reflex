@@ -50,6 +50,9 @@ class SocketEvent(SimpleNamespace):
     PING = "ping"
     EVENT = "event"
     CLIENT_ERROR = "client_error"
+    # Sent by the browser with the result of a call the backend awaits
+    # (must match RESULT_EVENT in packages/reflex-frontend/src/utils/state.js).
+    RESULT = "result"
     # Sent on connect when the frontend was compiled for another state tree
     # (must match STATE_MISMATCH_EVENT in packages/reflex-frontend/src/utils/state.js).
     STATE_MISMATCH = "state_mismatch"

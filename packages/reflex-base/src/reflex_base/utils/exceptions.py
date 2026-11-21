@@ -322,6 +322,35 @@ class ClientStateConflictError(ReflexError, ValueError):
     """Raised when one client state name is declared with two different defaults."""
 
 
+class BrowserScriptError(ReflexError):
+    """Raised when JavaScript the backend awaits throws in the browser.
+
+    The JavaScript error's name is not mapped to a Python exception type: a
+    JavaScript ``TypeError`` is not a Python ``TypeError``.
+    """
+
+    def __init__(self, name: str, message: str, stack: str = ""):
+        """Create the error from the JavaScript error the browser reported.
+
+        Args:
+            name: The JavaScript error's name, such as ``TypeError``.
+            message: Its message.
+            stack: Its stack trace, if the browser had one.
+        """
+        super().__init__(f"{name}: {message}")
+        self.name = name
+        self.message = message
+        self.stack = stack
+
+
+class BrowserResultSerializationError(BrowserScriptError):
+    """Raised when an awaited browser call returns a value JSON cannot carry."""
+
+
+class BrowserDisconnectedError(ReflexError, ConnectionError):
+    """Raised when the tab an awaited browser call runs in is not connected."""
+
+
 def __getattr__(name: str) -> Any:
     """Resolve the deprecated exception names, warning on use.
 

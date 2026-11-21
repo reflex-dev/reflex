@@ -5651,6 +5651,103 @@ async def test_on_event_uses_connect_time_router_data(
     assert "sid1" not in event_namespace._static_router_data
 
 
+def test_result_event_matches_handler_and_frontend():
+    """The result socket event reaches on_result, under the name state.js emits."""
+    assert f"on_{constants.SocketEvent.RESULT}" == EventNamespace.on_result.__name__
+    state_js = (Templates.Dirs.WEB_TEMPLATE / "utils/state.js").read_text()
+    (frontend_name,) = re.findall(
+        r'^const RESULT_EVENT = "(.*)";$', state_js, re.MULTILINE
+    )
+    assert frontend_name == constants.SocketEvent.RESULT
+
+
+@pytest.mark.asyncio
+async def test_on_result_settles_the_call_of_the_sending_token(
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """A result resolves the sending tab's call; a malformed or unknown one is dropped.
+
+    Args:
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+    """
+    namespace = event_namespace_with_processor_mock
+    namespace._token_manager.sid_to_token["sid1"] = "token"
+    resolve = cast(Mock, namespace.app.event_processor._browser_calls.resolve)
+    outcome = {"rid": "r1", "json": "1"}
+    await namespace.on_result("sid1", outcome)
+    resolve.assert_called_once_with("token", "r1", outcome)
+
+    resolve.reset_mock()
+    await namespace.on_result("unknown-sid", outcome)
+    await namespace.on_result("sid1")
+    await namespace.on_result("sid1", ["r1"])
+    await namespace.on_result("sid1", {"rid": 1, "json": "1"})
+    resolve.assert_not_called()
+
+
+def test_is_connected_only_for_a_socket_on_this_instance(
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """Browser calls go only to a tab whose socket is connected to this instance.
+
+    Args:
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace._token_manager
+    manager.token_to_socket["local"] = SocketRecord(
+        instance_id=manager.instance_id, sid="sid1"
+    )
+    manager.token_to_socket["remote"] = SocketRecord(instance_id="other", sid="sid2")
+    assert [
+        namespace._is_connected(token) for token in ("local", "remote", "missing")
+    ] == [True, False, False]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("duplicate", [False, True])
+async def test_link_token_to_sid_ends_the_grace_period_of_a_reconnecting_tab(
+    event_namespace_with_processor_mock: EventNamespace,
+    duplicate: bool,
+):
+    """A tab reconnecting under its token keeps its browser calls; a new tab does not.
+
+    Args:
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+        duplicate: Whether the token is a duplicate, so the tab gets a new one.
+    """
+    namespace = event_namespace_with_processor_mock
+    namespace._token_manager.link_token_to_sid = AsyncMock(
+        return_value="new-token" if duplicate else None
+    )
+    namespace.emit = AsyncMock()
+    await namespace.link_token_to_sid("sid1", "token", update_state=False)
+    on_connect = cast(Mock, namespace.app.event_processor._on_connect)
+    if duplicate:
+        on_connect.assert_not_called()
+    else:
+        on_connect.assert_called_once_with("token")
+
+
+@pytest.mark.asyncio
+async def test_on_event_ignores_a_request_id_the_client_sends(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """Only the backend sets an event's rid: a client cannot send one.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+    """
+    namespace = event_namespace_with_processor_mock
+    await namespace.on_connect("sid1", _connect_environ(token))
+    await namespace.on_event("sid1", {**_client_event_payload(), "rid": "r1"})
+    enqueue_mock = cast(AsyncMock, namespace.app.event_processor.enqueue)
+    enqueue_mock.assert_called_once()
+    assert enqueue_mock.call_args[0][1].rid is None
+
+
 @pytest.mark.asyncio
 async def test_link_token_to_sid_records_the_connecting_identity(
     token: str,
