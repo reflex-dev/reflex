@@ -360,24 +360,81 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
 - In a `.jsx` or `.tsx` file, JSX is read as JSX. In a `.js` or `.ts` file,
   `<` is never JSX, so a quote in what would be JSX text hides the code after
   it on that line.
-- Reflex writes a type stub (`party.pyi`) next to the module when it compiles
-  the app, so type checkers resolve the import and check each call. Argument
-  types come from TypeScript annotations or, in a `.js` file, JSDoc:
 
-  ```javascript
-  /**
-   * @param {number} count
-   * @param {string} elementId
-   */
-  export function celebrate(count, elementId) {}
+### Type Stubs
+
+While you develop, Reflex writes a type stub next to each module the app
+imports, `party.pyi` beside `party.js`, so type checkers resolve the import and
+check each call. Argument types come from TypeScript annotations or, in a `.js`
+file, JSDoc:
+
+```javascript
+// my_app/scripts/party.js
+/**
+ * @param {number} count
+ * @param {string} elementId
+ * @param {"left" | "right"} [side]
+ */
+export function celebrate(count, elementId, side) { /* ... */ }
+```
+
+gives this stub, shown without its imports and with each private alias, such
+as `_float`, as the name it stands for:
+
+```python
+# my_app/scripts/party.pyi
+def celebrate(
+    count: float | Var[float],
+    elementId: str | Var[str] | EventCallback[*tuple[Any, ...]],
+    side: Literal["left", "right"] | Var[Literal["left", "right"]] = ...,
+    /,
+) -> EventSpec: ...
+```
+
+so `celebrate("lots", "results")` is a type error. Arguments are positional,
+as JavaScript passes them, and each also takes a var. A function reads its
+arguments as JSON, so each type becomes the type of the JSON value Python sends:
+
+| TypeScript or JSDoc | Python |
+| --- | --- |
+| `string` | `str`, or an event handler, sent as its name |
+| `number` | `float` |
+| `boolean` | `bool` |
+| `null`, `undefined`, `void` | `None` |
+| `"a" \| "b"`, `1 \| 2`, `true` | `Literal["a", "b"]`, `Literal[1, 2]`, `Literal[True]` |
+| an enum | `Literal` of its values |
+| `T[]`, `[T, U]` | `Sequence[T]`, `Sequence[T \| U]` |
+| `Record<string, T>`, `{ [key: string]: T }` | `Mapping[str, T]` |
+| an object type or interface of your own | `Mapping[str, Any]` |
+| `A \| B` | the union of their types, `Any` if either is `Any` |
+| no type, `any`, `unknown`, `object`, `bigint`, `A & B`, a type parameter | `Any` |
+| a function, a class, `Date`, `Map`, `Set`, `Promise`, `HTMLElement` and other types of the browser or an npm package | `Any` |
+| `x?: T`, or a default value | `x: T = ...`, when no required parameter follows |
+| `...rest: T[]` | `*rest: T` |
+
+An overloaded function gets one `@overload` per signature. An export
+TypeScript knows is only a type, such as `export interface Options`, or is not
+a function, is left out of the stub.
+
+- Commit the stubs, so your editor and type checks in CI see them without
+  running the app. A stub only changes when the types do: Reflex rewrites it
+  when the module, a file it imports or reads types from (a `.d.ts` file,
+  `import type`, a JSDoc `import("./types")`), the app's frontend packages or
+  Reflex itself changes. Writing a stub does not reload the backend.
+- Stubs are written only in development. `reflex export` and `reflex run --env
+  prod` leave your source tree alone.
+- When the app stops importing a module, Reflex removes the stub it wrote for
+  it. It never removes a `.pyi` file it did not write.
+- Reflex reads the types with TypeScript, which it installs with the app's
+  frontend packages, run by Node.js or, without it, Bun.
+- Pyright reports a stub that has no Python module beside it as
+  `reportMissingModuleSource`. Turn that rule off:
+
+  ```toml
+  # pyproject.toml
+  [tool.pyright]
+  reportMissingModuleSource = "none"
   ```
-
-  becomes `def celebrate(count: float | Var[float], elementId: str | Var[str] | ..., /) -> EventSpec`.
-  A `string` parameter also takes an event handler, sent as its name.
-  Arguments without a type, or of a type with no JSON form such as an
-  `HTMLElement`, are `Any`. The stub is rewritten only when a script in the
-  module's folder changes. Pyright reports a stub without a Python module as
-  `reportMissingModuleSource`; set it to `"none"` to silence it.
 
 ### Errors
 
@@ -400,6 +457,17 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   not export a function of that name, or the frontend was built before the
   backend imported it. Export the function, or restart `reflex run` to rebuild
   the frontend.
+- `Reflex could not read the argument types of the JavaScript modules
+  .../party.js, so their type stubs accept any arguments: reading them needs
+  Node.js or Bun, and neither was found.` The app still runs, but type
+  checkers accept any arguments. Install Node.js 22.22.0 or newer, then run
+  the app again.
+- `Reflex could not read the argument types of the JavaScript modules
+  .../party.js, so their type stubs accept any arguments: script-signatures.js
+  failed: ...` The error after `failed:` says why. Reflex retries on the next
+  compile; if it keeps failing, delete `.web/node_modules` so the next run
+  reinstalls TypeScript, or report the error at
+  https://github.com/reflex-dev/reflex/issues.
 
 ## Using React Hooks
 
