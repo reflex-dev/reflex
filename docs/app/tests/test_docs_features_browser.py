@@ -426,3 +426,56 @@ def test_unknown_route_serves_docs_recovery_page(page: Page):
         "href", "/docs/"
     )
     expect(page.locator('meta[name="robots"]')).to_have_attribute("content", "noindex")
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "library/graphing/general/legend",
+        "library/graphing/general/axis",
+        "library/graphing/charts/areachart",
+        "library/graphing/charts/barchart",
+        "library/graphing/charts/linechart",
+        "library/graphing/charts/radarchart",
+        "library/graphing/charts/scatterchart",
+        "library/graphing/charts/composedchart",
+    ],
+)
+@pytest.mark.parametrize(
+    ("color_mode", "foreground"),
+    [("light", "rgb(10, 10, 10)"), ("dark", "rgb(245, 245, 245)")],
+)
+def test_recharts_legend_labels_use_reading_color(
+    page: Page, path: str, color_mode: str, foreground: str
+):
+    """Legend labels use the theme foreground; only their icons carry the series color."""
+    page.emulate_media(color_scheme=color_mode)
+    page.add_init_script(f"localStorage.setItem('theme', '{color_mode}')")
+    page.goto(f"{PREVIEW_URL}/docs/{path}/")
+    expect(page.locator("html")).to_have_class(re.compile(rf"\b{color_mode}\b"))
+    labels = page.locator(".recharts-legend-item-text")
+    expect(labels.first).to_be_visible()
+    colors = labels.evaluate_all("els => els.map(el => getComputedStyle(el).color)")
+    assert colors == [foreground] * len(colors)
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_prop_type_chips_stay_inside_their_column(page: Page, width: int):
+    """A long prop type, such as a dict of unions, wraps inside the Type column."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/library/data-display/code-block/")
+    row = page.locator("tr").filter(
+        has=page.locator("code", has_text=re.compile(r"^custom_style$"))
+    )
+    expect(row).to_have_count(1)
+    type_cell = row.locator("td").nth(1)
+    expect(type_cell).to_have_text("Dict[str, str | Var | Color]")
+    # A type name with no break opportunity must still wrap inside the column.
+    expect(type_cell.locator("code")).to_have_css("overflow-wrap", "anywhere")
+    overflow = type_cell.evaluate("""cell => {
+        const bounds = cell.getBoundingClientRect();
+        return [...cell.querySelectorAll('code')]
+            .filter(chip => chip.getBoundingClientRect().right > bounds.right + 0.5)
+            .map(chip => chip.textContent);
+    }""")
+    assert overflow == []
