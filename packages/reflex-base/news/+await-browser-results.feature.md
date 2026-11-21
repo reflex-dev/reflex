@@ -8,4 +8,4 @@ async def measure(self):
         self.width = size["w"]
 ```
 
-A script error raises `BrowserScriptError`, and a missing result raises `TimeoutError` (`browser_call_timeout` config, or `timeout=` per call). A tab that disconnects and does not reconnect within `browser_call_grace_period` raises `BrowserDisconnectedError`. See [Awaiting Results](https://reflex.dev/docs/api-reference/browser-javascript/#awaiting-results).
+A script error raises `BrowserScriptError`, a missing result `TimeoutError` (`browser_call_timeout` in `rxconfig.py`, or `timeout=` per call), and a tab that is closed, reloaded or away longer than `browser_call_grace_period` raises `BrowserDisconnectedError`. See [Awaiting Results](https://reflex.dev/docs/api-reference/browser-javascript/#awaiting-results).

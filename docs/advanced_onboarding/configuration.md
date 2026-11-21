@@ -50,10 +50,18 @@ The setting can also be overridden with `REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD`, 
 
 A background event handler can [await the result of a browser script](/docs/api-reference/browser-javascript/#awaiting-results). Two settings bound how long it waits:
 
-- `browser_call_timeout` (default `30.0`): the seconds an awaited call waits for its result before raising `TimeoutError`. A call can override it with `timeout=`.
-- `browser_call_grace_period` (default `5.0`): the seconds an awaited call waits for its tab to reconnect after a disconnect before raising `BrowserDisconnectedError`.
+```python
+config = rx.Config(
+    app_name="my_app",
+    browser_call_timeout=60.0,
+    browser_call_grace_period=10.0,
+)
+```
 
-They can also be set with `REFLEX_BROWSER_CALL_TIMEOUT` and `REFLEX_BROWSER_CALL_GRACE_PERIOD`.
+- `browser_call_timeout` (default `30.0`): the seconds an awaited call waits for its result before raising `TimeoutError`, or `None` to wait without a limit. A call can override it with `timeout=`.
+- `browser_call_grace_period` (default `5.0`): the seconds an awaited call waits for its tab to reconnect after a disconnect before raising `BrowserDisconnectedError`. A reloaded page fails its calls at once.
+
+They can also be set in seconds with `REFLEX_BROWSER_CALL_TIMEOUT` and `REFLEX_BROWSER_CALL_GRACE_PERIOD`. Waiting without a limit is set in `rxconfig.py`.
 
 ## Environment Variables
 

@@ -1,1 +1,1 @@
-The backend now receives the results of browser scripts that a background event handler awaits (`await rx.call_script(...)`), and keeps those calls alive while their tab reconnects.
+The backend receives the results of browser scripts that a background event handler awaits (`await rx.call_script(...)`), keeps those calls alive while their tab reconnects, and fails them with `BrowserDisconnectedError` as soon as the page reloads.

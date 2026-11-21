@@ -144,9 +144,8 @@ If the callback is None, then no event is triggered.
 ## Awaiting Results
 
 A [background event handler](/docs/events/background-events/) can `await` `rx.call_script`, `rx.call_function`, or
-`rx.run_script` to get the result directly, instead of passing a callback. The handler continues once the browser sends
-the value back, so the code that asks for a value and the code that uses it stay together. If the script returns a
-promise, the handler gets the value the promise resolves to.
+`rx.run_script` to get the script's result directly, instead of passing a callback. If the script returns a promise, the
+handler gets the value the promise resolves to.
 
 ```python demo exec
 class ViewportState(rx.State):
@@ -166,32 +165,66 @@ def viewport_demo():
     )
 ```
 
-The result travels as JSON: objects become `dict`, arrays become `list`, and `undefined` becomes `None`. Return the
-data you need from a DOM element rather than the element itself.
+The rules:
 
-Await the call outside `async with self`. While the handler holds the state lock, the tab's other events would have to
-wait for the browser's answer, so awaiting there raises an error. For the same reason, a regular event handler cannot
-await a script. Pass either `callback=` or `await` the result, not both.
-
-The awaited call raises an exception when no value comes back. The Reflex exceptions are imported from
-`reflex.utils.exceptions`:
-
-- `BrowserScriptError` if the script throws, or the promise it returns is rejected. The exception
-  carries the Javascript error's `name`, `message` and `stack`.
-- `BrowserResultSerializationError` (a subclass of `BrowserScriptError`) if the value cannot be
-  sent as JSON.
-- `TimeoutError` if no result arrives within the timeout. The timeout defaults to `browser_call_timeout` in
-  `rxconfig.py` (30 seconds). Pass `timeout=` to a single call to override it, or `timeout=None` to wait as long as it
-  takes:
+- Await the call in a background handler, outside `async with self`. While a handler holds the state lock, the tab's
+  other events would wait for the browser's answer, so a regular handler cannot await a script either.
+- Pass either `callback=` or `await` the result, not both.
+- The result travels as JSON: objects become `dict`, arrays become `list`, and `undefined` becomes `None`. Return the
+  data you need from a DOM element, not the element itself.
+- A call waits `browser_call_timeout` seconds for its result (30 by default, set in `rxconfig.py`). Pass `timeout=` to
+  one call to change it, or `timeout=None` to wait without a limit:
 
   ```python
   answer = await rx.call_script("askTheUser()", timeout=None)
   ```
 
-- `BrowserDisconnectedError` (a `ConnectionError`) if the tab is not connected when the call is
-  made. The same error is raised if the tab disconnects and does not reconnect within `browser_call_grace_period`
-  (5 seconds). A tab that reconnects in time still delivers its result. A tab that reloads loses the running script, so the
-  call ends at its timeout.
+- The script keeps running while the tab's socket reconnects. A tab that reconnects within `browser_call_grace_period`
+  seconds (5 by default) still delivers its result. A tab that is closed, reloaded or navigated away stops the script,
+  and the call fails.
+
+The exceptions are imported from `reflex.utils.exceptions`:
+
+```python
+from reflex.utils.exceptions import BrowserDisconnectedError, BrowserScriptError
+```
+
+Each error below gives its exact message, with the values of an example call, and its fix.
+
+- `BrowserScriptError`: the script throws, or the promise it returns is rejected. It carries the Javascript error's
+  `name`, `message` and `stack`, and reads like the browser console: ``ReferenceError: missing_function is not
+  defined``. Fix the script, or catch the error.
+- `BrowserResultSerializationError`, a subclass of `BrowserScriptError`: the result cannot reach the backend as JSON.
+  - ``TypeError: The script returned a DOM node or window, which JSON cannot carry; return the data you need from it
+    instead.``
+  - ``TypeError: The script returned a function, which JSON cannot carry; return plain data (objects, arrays, strings,
+    numbers, booleans or null) instead.`` (also for a symbol)
+  - ``The script returned a value nested too deeply for Python's JSON parser. Return a value with fewer levels of
+    nested objects and arrays.``
+  - ``The browser sent a result the backend cannot read (...). The page runs a frontend built for another version of
+    Reflex: rebuild the frontend (restart `reflex run`, or export the app again) and reload the page.``
+- `TimeoutError`: ``The browser did not return a result for `_call_script` within 30.0 seconds. If the script needs
+  longer, pass a longer `timeout=` to the call (or `timeout=None` to wait without a limit) or raise
+  `browser_call_timeout` in rxconfig.py; if it returns a promise, make sure the promise settles.``
+- `BrowserDisconnectedError`, a `ConnectionError`: the tab cannot return the result.
+  - When the call is made: `` `_call_script` cannot run in the browser tab: the tab is not connected to this backend
+    worker, because it was closed, is reconnecting, or reconnected to another worker. Catch BrowserDisconnectedError
+    where the tab may be gone; with several backend workers, route each tab to one worker (sticky sessions). ``
+  - After the grace period: ``The browser tab disconnected and did not reconnect within browser_call_grace_period (5.0
+    seconds), so the script's result is lost: the tab was closed, or lost its connection. Catch
+    BrowserDisconnectedError where the user may close the tab, or raise `browser_call_grace_period` in rxconfig.py if
+    connections drop for longer.``
+  - As soon as a reloaded page connects: ``The browser tab reloaded or left the page before the script returned a
+    result, so the script stopped. Catch BrowserDisconnectedError where the user may reload or leave the page while
+    the script runs.``
+  - Without a frontend, for example in a test: `` `_call_script` cannot run in a browser: the app is running without a
+    frontend connection (for example in a test, or a process that runs only the backend), so no tab can return a
+    result. Await browser scripts in handlers triggered from a page of the running app, and catch
+    BrowserDisconnectedError where no page may be connected. ``
+- `EventHandlerTypeError`:
+  - `` `_call_script` cannot be awaited while the state lock is held, as every other event of this tab would wait for
+    the browser's answer; await it in a background event handler, outside `async with self`. ``
+  - `` `_call_script` was given a callback and awaited; pass either callback= or await its result, not both. ``
 
 ```md alert info
 # Awaiting results with multiple backend workers
