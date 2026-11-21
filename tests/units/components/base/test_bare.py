@@ -143,7 +143,9 @@ def test_rendered_string_form_brings_its_components():
     comp = Bare.create(BoxedVar(_js_expr="data", _var_type=dict))
 
     assert comp.render()["contents"] == "box(data)"
-    assert BOX_HOOK in comp._get_all_hooks()
-    assert BOX_CODE in comp._get_all_custom_code()
-    assert comp._get_all_refs() == HookedBox.create(id="box")._get_all_refs()
-    assert comp._get_all_refs()
+    assert comp._get_all_hooks() == {
+        'const ref_box = useRegisteredRef("ref_box");': None,
+        BOX_HOOK: None,
+    }
+    assert comp._get_all_custom_code() == {BOX_CODE: None}
+    assert comp._get_all_refs() == {"ref_box": None}
