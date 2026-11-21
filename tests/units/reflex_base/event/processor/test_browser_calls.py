@@ -1,6 +1,7 @@
 """Tests for the registry of browser calls the backend awaits."""
 
 import asyncio
+import json
 from typing import Any
 
 import pytest
@@ -229,15 +230,6 @@ def _unreadable(detail: str) -> str:
             {"json": 5},
             _unreadable("the JSON object must be str, bytes or bytearray, not int"),
         ),
-        (
-            # Valid JSON, nested deeper than Python's parser can follow.
-            {"json": "[" * 100_000 + "]" * 100_000},
-            (
-                "The script returned a value nested too deeply for Python's JSON "
-                "parser. Return a value with fewer levels of nested objects and "
-                "arrays."
-            ),
-        ),
     ],
 )
 async def test_a_result_the_backend_cannot_read_raises_a_serialization_error(
@@ -254,6 +246,36 @@ async def test_a_result_the_backend_cannot_read_raises_a_serialization_error(
     calls.resolve(rid, outcome)
     with pytest.raises(BrowserResultSerializationError) as exc_info:
         await task
+    exc = exc_info.value
+    assert (exc.name, exc.message, exc.stack, str(exc)) == ("", expected, "", expected)
+    _assert_forgotten(calls)
+
+
+async def test_a_result_too_deep_to_parse_raises_a_serialization_error(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A result whose nesting exhausts the parser fails the call instead of hanging it.
+
+    The depth that exhausts it depends on the interpreter's stack, so the
+    parser is made to fail the way it does at that depth.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    def exhausted(text: str) -> Any:
+        raise RecursionError
+
+    monkeypatch.setattr(json, "loads", exhausted)
+    calls = BrowserCalls()
+    _, task, rid = await _start_call(calls)
+    calls.resolve(rid, {"json": "[[]]"})
+    with pytest.raises(BrowserResultSerializationError) as exc_info:
+        await task
+    expected = (
+        "The script returned a value nested too deeply for Python's JSON parser. "
+        "Return a value with fewer levels of nested objects and arrays."
+    )
     exc = exc_info.value
     assert (exc.name, exc.message, exc.stack, str(exc)) == ("", expected, "", expected)
     _assert_forgotten(calls)
