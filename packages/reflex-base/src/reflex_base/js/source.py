@@ -651,7 +651,7 @@ def _export_names(tokens: list[Token], index: int) -> list[tuple[str, bool]]:
     return []
 
 
-def _statement_start(tokens: list[Token], index: int) -> int | None:
+def _statement_start(tokens: list[Token], index: int) -> int:
     """Find the ``import`` or ``export`` keyword an import clause follows.
 
     Args:
@@ -659,17 +659,13 @@ def _statement_start(tokens: list[Token], index: int) -> int | None:
         index: The index of the clause's last token, before ``from``.
 
     Returns:
-        The index of the keyword, or None if the tokens are not an import
-        clause.
+        The index of the keyword.
     """
-    while index >= 0:
-        token = tokens[index]
-        if token.kind == "name" and token.value in ("import", "export"):
-            return index
-        if token.kind == "punct" and token.value not in ("{", "}", ",", "*"):
-            return None
+    while index > 0 and not (
+        tokens[index].kind == "name" and tokens[index].value in ("import", "export")
+    ):
         index -= 1
-    return None
+    return index
 
 
 def _is_runtime_import(tokens: list[Token], index: int) -> bool:
@@ -693,8 +689,6 @@ def _is_runtime_import(tokens: list[Token], index: int) -> bool:
     if not _is(_at(tokens, index - 1), "name", "from"):
         return False
     start = _statement_start(tokens, index - 2)
-    if start is None:
-        return False
     # `import type X from` loads nothing, but `import type from` and
     # `import type, { x } from` import a default export named type.
     after = _at(tokens, start + 2)

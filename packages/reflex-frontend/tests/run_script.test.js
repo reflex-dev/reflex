@@ -133,3 +133,34 @@ describe("_call_script", () => {
     expect(seen).toEqual([7]);
   });
 });
+
+test("event code that throws is logged, and reported to window.onerror", async () => {
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const onerror = vi.fn();
+  const error = new Error("The callback failed.");
+  const fail = () => {
+    throw error;
+  };
+  const callFunction = { name: "_call_function", payload: { function: fail } };
+  window.onerror = onerror;
+  await applyEvent(callFunction, null, null, null);
+  await applyEvent(
+    { name: "_client_state_get", payload: { var_name: "x", callback: fail } },
+    null,
+    null,
+    null,
+  );
+  window.onerror = null;
+  await applyEvent(callFunction, null, null, null);
+  const logged = [...log.mock.calls];
+  log.mockRestore();
+  expect(logged).toEqual([
+    ["_call_function", error],
+    ["_client_state_get", error],
+    ["_call_function", error],
+  ]);
+  expect(onerror.mock.calls).toEqual([
+    ["The callback failed.", null, null, null, error],
+    ["The callback failed.", null, null, null, error],
+  ]);
+});

@@ -129,6 +129,7 @@ def test_parse_script():
         ("export const { a: { b }, c: [d, [e]] } = obj;", ["b", "d", "e"], []),
         ("export let later, typedLater: number;", ["later", "typedLater"], []),
         ("export let;", [], []),
+        ("export", [], []),
         ("export const a = 1,", [], ["a"]),
     ],
 )
