@@ -40,9 +40,7 @@ class Browser:
             The request id of the event.
         """
         await self.received.wait()
-        rid = self.sent[0][1].rid
-        assert rid is not None
-        return rid
+        return self.sent[0][1].payload["rid"]
 
 
 async def _start_call(
@@ -64,7 +62,7 @@ async def _start_call(
 
 
 async def test_call_sends_the_event_with_a_request_id_and_returns_the_result():
-    """The browser receives the event with a rid; its JSON result is the call's value."""
+    """The browser receives the event with a rid in its payload; its JSON result is the call's value."""
     calls = BrowserCalls()
     browser, task, rid = await _start_call(calls)
     assert browser.sent == [
@@ -72,8 +70,7 @@ async def test_call_sends_the_event_with_a_request_id_and_returns_the_result():
             "tok",
             Event(
                 name="_call_script",
-                payload={"javascript_code": "1", "callback": None},
-                rid=rid,
+                payload={"javascript_code": "1", "callback": None, "rid": rid},
             ),
         )
     ]

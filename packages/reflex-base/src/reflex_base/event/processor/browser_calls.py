@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 # The ``kind`` of the error the frontend reports for a value JSON cannot carry.
 SERIALIZATION_ERROR_KIND = "serialization"
 
+# The payload key of a browser call's request id (must match state.js).
+RID_KEY = "rid"
+
 
 @dataclasses.dataclass(slots=True)
 class BrowserCalls:
@@ -66,7 +69,12 @@ class BrowserCalls:
         calls = self._pending.setdefault(token, {})
         calls[rid] = future
         try:
-            await emit(token, dataclasses.replace(event, rid=rid))
+            # Only the browser-call events carry a request id, in their
+            # payload, so no other event pays for it.
+            await emit(
+                token,
+                dataclasses.replace(event, payload={**event.payload, RID_KEY: rid}),
+            )
             try:
                 return await asyncio.wait_for(future, timeout)
             except TimeoutError:

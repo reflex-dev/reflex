@@ -918,9 +918,9 @@ export const applyEvent = async (event, socket, navigate, params) => {
   }
 
   if (event.name === "_call_script" || event.name === "_call_function") {
-    if (event.rid) {
+    if (event.payload.rid) {
       // The backend awaits the result: an error is its to handle.
-      void sendScriptResult(socket, event.rid, () =>
+      void sendScriptResult(socket, event.payload.rid, () =>
         runEventScript(event, socket, navigate, params),
       );
       return;

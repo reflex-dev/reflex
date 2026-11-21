@@ -52,6 +52,7 @@ from reflex_base.event import (
 )
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
+from reflex_base.event.processor.browser_calls import RID_KEY
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
@@ -3134,7 +3135,7 @@ class EventNamespace(AsyncNamespace):
             data: ``{"rid": <request id>, "json": <the result as JSON>}``, or
                 ``{"rid": <request id>, "error": {...}}`` when the script failed.
         """
-        if not isinstance(data, dict) or not isinstance(rid := data.get("rid"), str):
+        if not isinstance(data, dict) or not isinstance(rid := data.get(RID_KEY), str):
             logger.debug(f"Ignoring malformed result payload from SID {sid}.")
             return
         if (token := self.sid_to_token.get(sid)) is None or (

@@ -126,7 +126,12 @@ describe("awaited script results", () => {
     const socket = { emit: vi.fn() };
     return {
       socket,
-      applied: applyEvent({ ...event, rid: "r1" }, socket, null, null),
+      applied: applyEvent(
+        { ...event, payload: { ...event.payload, rid: "r1" } },
+        socket,
+        null,
+        null,
+      ),
       // The outcome the backend receives, once the script has settled.
       outcome: async () => {
         await vi.waitFor(() => expect(socket.emit).toHaveBeenCalledTimes(1));

@@ -5730,25 +5730,6 @@ async def test_link_token_to_sid_ends_the_grace_period_of_a_reconnecting_tab(
 
 
 @pytest.mark.asyncio
-async def test_on_event_ignores_a_request_id_the_client_sends(
-    token: str,
-    event_namespace_with_processor_mock: EventNamespace,
-):
-    """Only the backend sets an event's rid: a client cannot send one.
-
-    Args:
-        token: A token.
-        event_namespace_with_processor_mock: Namespace with a mocked processor.
-    """
-    namespace = event_namespace_with_processor_mock
-    await namespace.on_connect("sid1", _connect_environ(token))
-    await namespace.on_event("sid1", {**_client_event_payload(), "rid": "r1"})
-    enqueue_mock = cast(AsyncMock, namespace.app.event_processor.enqueue)
-    enqueue_mock.assert_called_once()
-    assert enqueue_mock.call_args[0][1].rid is None
-
-
-@pytest.mark.asyncio
 async def test_link_token_to_sid_records_the_connecting_identity(
     token: str,
     event_namespace_with_processor_mock: EventNamespace,

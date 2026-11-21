@@ -4,7 +4,6 @@ from typing import Any, cast
 
 from reflex_base.client_state import client_state
 from reflex_base.event import (
-    Event,
     EventArgVar,
     EventChain,
     LambdaEventCallback,
@@ -14,7 +13,6 @@ from reflex_base.event import (
     parse_args_spec,
     passthrough_event_spec,
 )
-from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import Var
 from reflex_base.vars.number import NumberVar
 
@@ -99,18 +97,6 @@ def test_cond_between_function_and_none_inside_lambda_is_a_no_op_when_false() ->
     assert (
         str(chain)
         == '((_ev_0) => (((_ev_0?.valueOf?.() === "go"?.valueOf?.()) ? ((_ev_0) => (flagRxClientStateSet(_ev_0))) : null)?.(_ev_0)))'
-    )
-
-
-def test_event_is_serialized_with_a_request_id_only_when_awaited():
-    """An event nobody awaits is sent as it always was; an awaited one carries its rid."""
-    event = Event(name="_call_script", payload={"javascript_code": "1"})
-    assert json_dumps(event) == (
-        '{"name": "_call_script", "router_data": {}, '
-        '"payload": {"javascript_code": "1"}}'
-    )
-    assert json_dumps(Event(name="_call_script", rid="r1")) == (
-        '{"name": "_call_script", "router_data": {}, "payload": {}, "rid": "r1"}'
     )
 
 

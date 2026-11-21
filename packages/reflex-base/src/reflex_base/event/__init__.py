@@ -47,7 +47,6 @@ from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
     MissingAnnotationError,
 )
-from reflex_base.utils.serializers import serializer
 from reflex_base.utils.types import (
     ArgsSpec,
     GenericType,
@@ -101,8 +100,6 @@ class Event:
         name: The event name.
         router_data: The routing data where event occurred.
         payload: The event payload.
-        rid: Correlates a frontend event with the result the browser sends
-            back, set only when the backend awaits that result.
     """
 
     name: str
@@ -110,8 +107,6 @@ class Event:
     router_data: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     payload: dict[str, Any] = dataclasses.field(default_factory=dict)
-
-    rid: str | None = None
 
     @property
     def state_cls(self) -> "type[BaseState]":
@@ -165,33 +160,7 @@ class Event:
         return out
 
 
-# The fields a client may set on an event it sends.
-_EVENT_FIELDS: set[str] = {"name", "router_data", "payload"}
-
-
-@serializer(to=dict)
-def serialize_event(event: Event) -> dict[str, Any]:
-    """Serialize an event sent to the frontend.
-
-    ``rid`` is included only when set, so an event nobody awaits is sent as
-    it always was.
-
-    Args:
-        event: The event.
-
-    Returns:
-        The serialized event.
-    """
-    serialized = {
-        "name": event.name,
-        "router_data": event.router_data,
-        "payload": event.payload,
-    }
-    if event.rid is not None:
-        serialized["rid"] = event.rid
-    return serialized
-
-
+_EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 _EMPTY_EVENTS = LiteralVar.create([])
 _EMPTY_EVENT_ACTIONS = LiteralVar.create({})
 
@@ -2114,6 +2083,7 @@ def download(
     )
 
 
+@lru_cache
 def _script_signature(fn: Callable) -> inspect.Signature:
     """Get the signature of a script event, without the timeout of an awaited call.
 

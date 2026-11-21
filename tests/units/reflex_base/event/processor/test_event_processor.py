@@ -2209,9 +2209,7 @@ class _FakeEventNamespace:
         """
         await self.sent.wait()
         self.sent.clear()
-        rid = self.updates[-1][1].events[0].rid
-        assert rid is not None
-        return rid
+        return self.updates[-1][1].events[0].payload["rid"]
 
 
 async def test_call_frontend_sends_the_event_and_awaits_its_result(
@@ -2243,7 +2241,7 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
         answered = asyncio.create_task(ctx.call_frontend(event, 1))
         rid = await namespace.next_rid()
         assert [(token, update.events) for token, update in namespace.updates] == [
-            ("tok", [dataclasses.replace(event, rid=rid)])
+            ("tok", [dataclasses.replace(event, payload={**event.payload, "rid": rid})])
         ]
         # Reconnecting within the grace period keeps the call.
         processor._on_disconnect("tok")
