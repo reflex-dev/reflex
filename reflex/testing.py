@@ -497,6 +497,8 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
+        # First, so the collector can free this app even if a step below raises.
+        gc.unfreeze()
         try:
             import psutil
         except ImportError as exc:
@@ -542,8 +544,6 @@ class AppHarness:
             self.backend_thread.join()
         if self.frontend_output_thread is not None:
             self.frontend_output_thread.join()
-        # Let the collector free this app now that it is gone.
-        gc.unfreeze()
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.

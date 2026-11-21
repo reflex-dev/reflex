@@ -59,6 +59,23 @@ def test_app_harness(tmp_path):
     assert harness.frontend_process.poll() is not None
 
 
+def _stub_start_steps(monkeypatch, harness: AppHarness, step) -> None:
+    """Replace the steps of `AppHarness.start()` with one stand-in.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture
+        harness: The harness to stub.
+        step: The stand-in each step calls.
+    """
+    for name in (
+        "_initialize_app",
+        "_start_backend",
+        "_start_frontend",
+        "_wait_frontend",
+    ):
+        monkeypatch.setattr(harness, name, step)
+
+
 def test_app_harness_freezes_the_started_app_until_stopped(tmp_path, monkeypatch):
     """The heap is frozen once the app has started, and unfrozen when it stops.
 
@@ -68,17 +85,11 @@ def test_app_harness_freezes_the_started_app_until_stopped(tmp_path, monkeypatch
     """
     harness = AppHarness.create(root=tmp_path)
     frozen_while_starting = []
-
-    def start_step() -> None:
-        frozen_while_starting.append(gc.get_freeze_count())
-
-    for step in (
-        "_initialize_app",
-        "_start_backend",
-        "_start_frontend",
-        "_wait_frontend",
-    ):
-        monkeypatch.setattr(harness, step, start_step)
+    _stub_start_steps(
+        monkeypatch,
+        harness,
+        lambda: frozen_while_starting.append(gc.get_freeze_count()),
+    )
     monkeypatch.setattr(harness, "_reload_state_module", lambda: None)
 
     try:
@@ -89,6 +100,30 @@ def test_app_harness_freezes_the_started_app_until_stopped(tmp_path, monkeypatch
 
     assert frozen_while_starting == [0, 0, 0, 0]
     assert frozen_while_running > 0
+    assert gc.get_freeze_count() == 0
+
+
+def test_app_harness_unfreezes_when_a_stop_step_raises(tmp_path, monkeypatch):
+    """A failing cleanup step does not leave the heap frozen.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    harness = AppHarness.create(root=tmp_path)
+    _stub_start_steps(monkeypatch, harness, lambda: None)
+
+    def failing_cleanup() -> None:
+        msg = "cleanup failed"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(harness, "_reload_state_module", failing_cleanup)
+    harness.start()
+
+    with pytest.raises(RuntimeError) as exc_info:
+        harness.stop()
+
+    assert exc_info.value.args == ("cleanup failed",)
     assert gc.get_freeze_count() == 0
 
 
