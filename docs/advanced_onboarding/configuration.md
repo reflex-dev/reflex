@@ -46,6 +46,15 @@ config = rx.Config(
 
 The setting can also be overridden with `REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD`, for example `REFLEX_EVENT_LOOP_BLOCKING_THRESHOLD=0` to turn detection off.
 
+## Awaited Browser Calls
+
+A background event handler can [await the result of a browser script](/docs/api-reference/browser-javascript/#awaiting-results). Two settings bound how long it waits:
+
+- `browser_call_timeout` (default `30.0`): the seconds an awaited call waits for its result before raising `TimeoutError`. A call can override it with `timeout=`.
+- `browser_call_grace_period` (default `5.0`): the seconds an awaited call waits for its tab to reconnect after a disconnect before raising `BrowserDisconnectedError`.
+
+They can also be set with `REFLEX_BROWSER_CALL_TIMEOUT` and `REFLEX_BROWSER_CALL_GRACE_PERIOD`.
+
 ## Environment Variables
 
 Any config parameter can be overridden by setting an environment variable with the `REFLEX_` prefix and the parameter name in uppercase. Environment variables take precedence over values set in `rxconfig.py`.

@@ -52,6 +52,7 @@ from reflex_base.event import (
 )
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
+from reflex_base.event.processor.browser_calls import RID_KEY
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
@@ -1261,6 +1262,7 @@ class App(MiddlewareMixin, LifespanMixin):
             middleware=self,
             backend_exception_handler=self.backend_exception_handler,
             event_loop_blocking_threshold=get_config().event_loop_blocking_threshold,
+            browser_call_grace_period=get_config().browser_call_grace_period,
         )
         async with self._event_processor.configure(
             state_manager=state_manager,
@@ -2871,6 +2873,21 @@ class EventNamespace(AsyncNamespace):
             return task
         return None
 
+    def _is_connected(self, token: str) -> bool:
+        """Whether a client is connected to this instance of the backend.
+
+        Args:
+            token: The client token.
+
+        Returns:
+            True when the token's socket is connected to this instance.
+        """
+        socket_record = self._token_manager.token_to_socket.get(token)
+        return (
+            socket_record is not None
+            and socket_record.instance_id == self._token_manager.instance_id
+        )
+
     async def emit_update(
         self, update: StateUpdate, token: str, suppress_warnings: bool = False
     ) -> None:
@@ -3110,6 +3127,23 @@ class EventNamespace(AsyncNamespace):
         # handlers (e.g. error trackers) receive client errors too.
         self.app.frontend_exception_handler(Exception(report))
 
+    async def on_result(self, sid: str, data: Any = None):
+        """Settle a browser call the backend awaits with the result the browser sent.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: ``{"rid": <request id>, "json": <the result as JSON>}``, or
+                ``{"rid": <request id>, "error": {...}}`` when the script failed.
+        """
+        if not isinstance(data, dict) or not isinstance(rid := data.get(RID_KEY), str):
+            logger.debug(f"Ignoring malformed result payload from SID {sid}.")
+            return
+        if (token := self.sid_to_token.get(sid)) is None or (
+            processor := self.app._event_processor
+        ) is None:
+            return
+        processor._browser_calls.resolve(token, rid, data)
+
     async def link_token_to_sid(
         self, sid: str, token: str, *, update_state: bool = True
     ):
@@ -3129,6 +3163,9 @@ class EventNamespace(AsyncNamespace):
         if new_token:
             # Duplicate detected, emit new token to client
             await self.emit("new_token", new_token, to=sid)
+        elif (processor := self.app._event_processor) is not None:
+            # A tab reconnecting within the grace period keeps its browser calls.
+            processor._on_connect(token)
 
         # Update client state to apply new sid/token for running background tasks.
         if update_state and self.app._state is not None:

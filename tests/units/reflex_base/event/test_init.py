@@ -98,3 +98,21 @@ def test_cond_between_function_and_none_inside_lambda_is_a_no_op_when_false() ->
         str(chain)
         == '((_ev_0) => (((_ev_0?.valueOf?.() === "go"?.valueOf?.()) ? ((_ev_0) => (flagRxClientStateSet(_ev_0))) : null)?.(_ev_0)))'
     )
+
+
+def test_script_events_carry_a_timeout_only_when_given():
+    """A timeout passed to a script event is in its payload; an unset one is not."""
+    assert [
+        spec._to_event().payload
+        for spec in (
+            rx.call_script("1"),
+            rx.call_script("1", timeout=5),
+            rx.call_function("() => 1", timeout=None),
+            rx.run_script("2", timeout=1.5),
+        )
+    ] == [
+        {"javascript_code": "1", "callback": None},
+        {"javascript_code": "1", "callback": None, "timeout": 5},
+        {"function": "() => 1", "callback": None, "timeout": None},
+        {"function": "(() => 2)", "callback": None, "timeout": 1.5},
+    ]
