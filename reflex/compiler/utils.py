@@ -15,7 +15,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import MISSING
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
@@ -32,8 +32,8 @@ from reflex_base.components.memo import (
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.js.modules import find_package_imports, module_key, render_stub
-from reflex_base.js.source import SCRIPT_SOURCE_EXTENSIONS, find_exports, module_files
+from reflex_base.js.modules import _package_imports, _render_stub
+from reflex_base.js.source import ScriptSource, module_files
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import format, imports, memo_paths, serializers, types
@@ -302,6 +302,45 @@ def _compile_bundled_libraries() -> tuple[str, str]:
     return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
 
 
+def _script_module_files(
+    modules_dir: Path,
+) -> tuple[dict[Path, tuple[Path, ScriptSource | None]], dict[str, Path]]:
+    """Find the files of the JavaScript modules the app imports from Python.
+
+    Args:
+        modules_dir: The directory the files are copied to.
+
+    Returns:
+        Each resolved file with its target and its script, or None if it is
+        not a script, and each module's file, by module name.
+
+    Raises:
+        ReflexRuntimeError: If a module imports a file outside its package's
+            directory.
+    """
+    files: dict[Path, tuple[Path, ScriptSource | None]] = {}
+    modules: dict[str, Path] = {}
+    for name, path in sorted(
+        RegistrationContext.ensure_context()._script_modules.items()
+    ):
+        package_dir = path.resolve().parents[name.count(".") - 1]
+        for file, script in module_files(path).items():
+            if not file.is_relative_to(package_dir):
+                msg = (
+                    f"The JavaScript module {name} imports {file}, which is "
+                    f"outside {package_dir}, the directory of the app's package, "
+                    "and only that directory is copied into the compiled app. "
+                    "Move the file into it, or publish it as an npm package "
+                    "and import it by name."
+                )
+                raise ReflexRuntimeError(msg)
+            files.setdefault(
+                file, (modules_dir / file.relative_to(package_dir.parent), script)
+            )
+        modules[name] = path.resolve()
+    return files, modules
+
+
 def compile_script_modules() -> tuple[
     list[tuple[str, str]], dict[str, list[ImportVar]], list[tuple[Path, Path]]
 ]:
@@ -309,56 +348,41 @@ def compile_script_modules() -> tuple[
 
     Each module and the local files it imports, directly or not, are copied
     under ``utils/script_modules`` at their paths from the directory that holds
-    the module's top-level package, so relative imports resolve as they do in
-    the source tree. ``utils/scripts.js`` re-exports each module under its
-    module key, and a type stub is written next to it, for type checkers.
+    the app's package, so relative imports resolve as they do in the source
+    tree. ``utils/scripts.js`` maps each module's Python name to a function
+    that loads it, and a type stub is written next to each module, for type
+    checkers.
 
     Returns:
-        The (path, code) outputs of the scripts, the npm packages they import,
-        to install, and the (source, target) copies of the other files they
+        The (path, code) outputs, the npm packages the scripts import, to
+        install, and the (source, target) copies of the other files they
         reference, such as stylesheets and images, which may be binary.
-
-    Raises:
-        ReflexRuntimeError: If a module imports a file outside its top-level
-            package's directory.
     """
     web_dir = get_web_dir()
-    modules_dir = web_dir / constants.Dirs.SCRIPT_MODULES_PATH
+    files, modules = _script_module_files(web_dir / constants.Dirs.SCRIPT_MODULES_PATH)
     outputs: list[tuple[str, str]] = []
     copies: list[tuple[Path, Path]] = []
     package_imports: dict[str, list[ImportVar]] = {}
-    index: list[str] = []
-    copied: set[Path] = set()
-    modules = RegistrationContext.ensure_context().script_modules
-    for name, path in sorted(modules.items()):
-        root = path.resolve().parents[name.count(".")]
-        for file in module_files(path):
-            if not file.is_relative_to(root):
-                msg = (
-                    f"The JavaScript module {name} imports {file}, which is "
-                    f"outside {root}, the directory of its package."
-                )
-                raise ReflexRuntimeError(msg)
-            if file in copied:
-                continue
-            copied.add(file)
-            target = modules_dir / file.relative_to(root)
-            if file.suffix not in SCRIPT_SOURCE_EXTENSIONS:
-                copies.append((file, target))
-                continue
-            source = file.read_text(encoding="utf-8")
-            outputs.append((str(target), source))
-            for specifier in find_package_imports(source):
-                package_imports[specifier] = [ImportVar(tag=None, render=False)]
-        specifier = (modules_dir / path.resolve().relative_to(root)).relative_to(
-            web_dir
+    for file, (target, script) in files.items():
+        if script is None:
+            copies.append((file, target))
+            continue
+        outputs.append((str(target), script.text))
+        package_imports.update(
+            (package, [ImportVar(tag=None, render=False)])
+            for package in _package_imports(file, script.imports)
         )
-        index.append(f'export * as {module_key(name)} from "$/{specifier.as_posix()}";')
-        exports = find_exports(path.read_text(encoding="utf-8"))
-        outputs.append((str(path.with_suffix(".pyi")), render_stub(path, exports)))
+    loaders = ""
+    for name, path in modules.items():
+        target, script = files[path]
+        # The module itself is a .js or .ts file, so it is a script.
+        functions = cast("ScriptSource", script).functions
+        outputs.append((str(path.with_suffix(".pyi")), _render_stub(path, functions)))
+        specifier = json.dumps(f"$/{target.relative_to(web_dir).as_posix()}")
+        loaders += f"  {json.dumps(name)}: () => import({specifier}),\n"
     outputs.append((
         str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS)),
-        "\n".join(index) + "\n" if index else "export {};\n",
+        f"export default {{\n{loaders}}};\n" if loaders else "export default {};\n",
     ))
     return outputs, package_imports, copies
 

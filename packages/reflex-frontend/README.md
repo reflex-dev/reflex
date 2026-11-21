@@ -47,15 +47,17 @@ without it appearing in its arguments. What there is, and where it is pinned:
 
 - **Module-level state in `utils/state.js`**: the event queue, the session
   token, the socket warmed up before React mounts, the record of sent
-  localStorage values. Every mounted event loop and every drain shares them.
-  A test that needs a clean copy reloads the module (`vi.resetModules()`, as
+  localStorage values, the app's JavaScript modules loaded so far. Every
+  mounted event loop and every drain shares them. A test that needs a clean
+  copy reloads the module (`vi.resetModules()`, as
   `tests/state_connection.test.js` does). Code that awaits must not assume the
   queue or the socket is as it left them.
 - **Work done on import**: `utils/state.js` creates the cookie reader, always;
   publishes the client state store on `refs`, when there is a `document`; and
-  starts a socket transport, when there is a `window`. A production build
-  evaluates every module in node to prerender pages, so anything added here has
-  to load without either. `tests/public_api.test.js` imports each module in
+  starts a socket transport and loading the JavaScript modules the app imports
+  from Python (`utils/scripts.js`), when there is a `window`. A production
+  build evaluates every module in node to prerender pages, so anything added
+  here has to load without either. `tests/public_api.test.js` imports each module in
   node to keep it that way.
 - **Script scope**: event code sent by the backend (`rx.call_script`, event
   callbacks) runs through `runScript` in `utils/state.js`, which compiles it

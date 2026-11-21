@@ -63,6 +63,7 @@ export async function createQueueRuntime(
       uploadFiles: uploadFiles ?? unused,
     },
     "$/utils/reflex": { reflex: {} },
+    "$/utils/scripts": { default: {} },
     ...dependencyOverrides,
   };
   // Let Node parse the unchanged module; only expose private state to tests.

@@ -75,7 +75,7 @@ class RegistrationContext(BaseContext):
         default_factory=dict, repr=False
     )
     # JavaScript modules imported from Python, by module name.
-    script_modules: dict[str, Path] = dataclasses.field(
+    _script_modules: dict[str, Path] = dataclasses.field(
         default_factory=dict, repr=False
     )
     _app: App | None = dataclasses.field(default=None, repr=False)
@@ -169,7 +169,7 @@ class RegistrationContext(BaseContext):
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
             _explicit_bundled_libraries=dict(self._explicit_bundled_libraries),
-            script_modules=dict(self.script_modules),
+            _script_modules=dict(self._script_modules),
         )
 
     def _set_config(self, config: Config) -> None:

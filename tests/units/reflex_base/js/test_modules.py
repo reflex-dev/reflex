@@ -1,69 +1,62 @@
-"""Tests for importing JavaScript modules from Python."""
+"""Tests for the functions of JavaScript modules imported from Python."""
 
 import importlib
-import subprocess
-import sys
-from collections.abc import Generator
 from pathlib import Path
 
 import pytest
-from reflex_base.event import EventSpec
-from reflex_base.js.modules import (
-    JsFunction,
-    find_package_imports,
-    module_key,
-    render_stub,
-)
-from reflex_base.js.source import find_exports
-from reflex_base.registry import RegistrationContext
+from reflex_base.js.modules import _JsFunction, _package_imports, _render_stub
+from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import LiteralVar, Var
 
 import reflex as rx
 
-SOURCE = """
-import confetti from "canvas-confetti";
-import { describe } from "./helpers.js";
-import { reflex } from "$/utils/reflex";
-import "@scope/pkg/style.css";
-// export function commentedOut() {}
-/* export const alsoCommentedOut = 1; */
-export function celebrate(count) {}
-export async function load() {}
-export function* steps() {}
-export const arrow = () => 1;
-function hidden() {}
-export { hidden, describe as describeIt };
-export { other as reexported } from "lodash/fp";
-export default function () {}
-const later = await import("dayjs");
-"""
 
-
-def test_find_package_imports():
+def test_package_imports():
     """Only specifiers naming an npm package are installed, without a query."""
-    assert find_package_imports(SOURCE) == [
-        "canvas-confetti",
-        "@scope/pkg/style.css",
-        "lodash/fp",
-        "dayjs",
-    ]
-    assert find_package_imports(
-        'import a from "pkg/a.css?inline";\nimport b from "pkg/a.css";\n'
-    ) == ["pkg/a.css"]
+    assert _package_imports(
+        Path("party.js"),
+        [
+            "canvas-confetti",
+            "./helpers.js",
+            "/abs.js",
+            "$/utils/reflex",
+            "#internal",
+            "@/components/button",
+            "virtual:pwa-register",
+            "https://esm.sh/lodash",
+            "@scope/pkg/style.css",
+            "pkg/a.css?inline",
+            "pkg/a.css",
+            "path",
+        ],
+    ) == ["canvas-confetti", "@scope/pkg/style.css", "pkg/a.css", "path"]
 
 
-def test_module_key_cannot_collide():
-    """Module keys are JavaScript identifiers no two module names share."""
-    assert module_key("app.scripts.party") == "app$scripts$party"
-    assert module_key("app.scripts__party") != module_key("app__scripts.party")
+@pytest.mark.parametrize("specifier", ["fs", "fs/promises", "node:path"])
+def test_package_imports_rejects_node_builtins(specifier: str):
+    """A Node.js built-in module cannot run in the browser.
+
+    Args:
+        specifier: the built-in module's specifier.
+    """
+    with pytest.raises(ReflexRuntimeError) as error:
+        _package_imports(Path("/app/party.js"), ["canvas-confetti", specifier])
+    assert str(error.value) == (
+        f"The JavaScript file /app/party.js imports {specifier!r}, a Node.js "
+        "built-in module, which does not exist in the browser. Remove the "
+        "import, and do the work that needs it in a backend event handler "
+        "instead."
+    )
 
 
 def test_calling_a_function_builds_the_call_js_event():
-    """Calling an export builds the event that names it, with JSON arguments."""
-    spec = JsFunction("app.scripts.party", "celebrate")(200, "results")
-    assert isinstance(spec, EventSpec)
+    """Calling a function builds the event that names it, with JSON arguments.
+
+    The module is named as Python names it, whatever characters that has.
+    """
+    spec = _JsFunction("app.my-widget", "celebrate")(200, "results")
     assert str(LiteralVar.create(spec)) == (
-        '(ReflexEvent("_call_js", ({ ["module"] : "app$scripts$party", '
+        '(ReflexEvent("_call_js", ({ ["module"] : "app.my-widget", '
         '["function"] : "celebrate", ["args"] : [200, "results"] }), ({  })))'
     )
 
@@ -80,10 +73,10 @@ def test_an_event_handler_argument_is_sent_as_its_name():
                 value: The value.
             """
 
-    spec = JsFunction("app.scripts.party", "report")(JsHandlerState.done, "x")
+    spec = _JsFunction("app.scripts.party", "report")(JsHandlerState.done, "x")
     name = f"{JsHandlerState.get_full_name()}.done"
     assert str(LiteralVar.create(spec)) == (
-        '(ReflexEvent("_call_js", ({ ["module"] : "app$scripts$party", '
+        '(ReflexEvent("_call_js", ({ ["module"] : "app.scripts.party", '
         f'["function"] : "report", ["args"] : ["{name}", "x"] }}), ({{  }})))'
     )
 
@@ -91,17 +84,16 @@ def test_an_event_handler_argument_is_sent_as_its_name():
 def test_var_arguments_are_compiled_into_the_event():
     """A Var argument is compiled into the event payload."""
     count = Var(_js_expr="count").to(int)
-    spec = JsFunction("app.scripts.party", "celebrate")(count)
-    literal = LiteralVar.create(spec)
-    assert str(literal) == (
-        '(ReflexEvent("_call_js", ({ ["module"] : "app$scripts$party", '
+    spec = _JsFunction("app.scripts.party", "celebrate")(count)
+    assert str(LiteralVar.create(spec)) == (
+        '(ReflexEvent("_call_js", ({ ["module"] : "app.scripts.party", '
         '["function"] : "celebrate", ["args"] : [count] }), ({  })))'
     )
 
 
 def test_render_stub_skips_names_python_cannot_import():
-    """The stub leaves out exports that are not Python identifiers."""
-    assert render_stub(Path("party.js"), ["celebrate", "$private", "class"]) == (
+    """The stub leaves out functions whose names are not Python identifiers."""
+    assert _render_stub(Path("party.js"), ["celebrate", "$private", "class"]) == (
         "# Generated by Reflex from party.js; rewritten when it changes.\n"
         "from typing import Any\n"
         "\n"
@@ -111,86 +103,18 @@ def test_render_stub_skips_names_python_cannot_import():
     )
 
 
-@pytest.fixture
-def script_package(
-    tmp_path: Path, clean_registration_context: RegistrationContext
-) -> Generator[Path, None, None]:
-    """Put a package with a JavaScript module on sys.path.
+def test_a_function_is_an_event_trigger(app_package: Path):
+    """A function works in an event trigger, called or uncalled.
 
     Args:
-        tmp_path: pytest tmp_path fixture.
-        clean_registration_context: a fresh registry for the imported module.
-
-    Yields:
-        The package directory.
+        app_package: the app package, on sys.path.
     """
-    package = tmp_path / "js_pkg"
-    package.mkdir()
-    (package / "__init__.py").write_text("")
-    (package / "party.js").write_text(SOURCE)
-    (package / "typed.ts").write_text("export function typed(n: number) {}\n")
-    sys.path.insert(0, str(tmp_path))
-    yield package
-    sys.path.remove(str(tmp_path))
-    for name in [n for n in sys.modules if n == "js_pkg" or n.startswith("js_pkg.")]:
-        del sys.modules[name]
-
-
-def test_importing_a_module_exposes_its_exports(
-    script_package: Path, clean_registration_context: RegistrationContext
-):
-    """Importing a JavaScript module exposes its exports and registers it.
-
-    Args:
-        script_package: a package with JavaScript modules on sys.path.
-        clean_registration_context: the registry the import fills.
-    """
-    party = importlib.import_module("js_pkg.party")
-    assert party.__all__ == find_exports(SOURCE)
-    assert party.celebrate == JsFunction("js_pkg.party", "celebrate")
-    assert party.__spec__ is not None
-    assert party.__spec__.origin == str(script_package / "party.js")
-    typed = importlib.import_module("js_pkg.typed")
-    assert typed.typed == JsFunction("js_pkg.typed", "typed")
-    assert clean_registration_context.script_modules == {
-        "js_pkg.party": script_package / "party.js",
-        "js_pkg.typed": script_package / "typed.ts",
-    }
-
-
-def test_a_missing_module_still_fails_to_import(script_package: Path):
-    """A name with neither a Python nor a JavaScript module still fails.
-
-    Args:
-        script_package: a package with JavaScript modules on sys.path.
-    """
-    with pytest.raises(ModuleNotFoundError):
-        importlib.import_module("js_pkg.missing")
-
-
-def test_a_python_module_wins_over_a_script_of_the_same_name(script_package: Path):
-    """The finder runs last, so a Python module shadows a script of its name.
-
-    Args:
-        script_package: a package with JavaScript modules on sys.path.
-    """
-    (script_package / "both.py").write_text("VALUE = 'python'\n")
-    (script_package / "both.js").write_text("export function VALUE() {}\n")
-    assert importlib.import_module("js_pkg.both").VALUE == "python"
-
-
-def test_a_function_is_an_event_trigger(script_package: Path):
-    """An export works in an event trigger, called or uncalled.
-
-    Args:
-        script_package: a package with JavaScript modules on sys.path.
-    """
-    from js_pkg.party import celebrate  # pyright: ignore[reportMissingImports]
+    from js_app.party import celebrate  # pyright: ignore[reportMissingImports]
 
     called = rx.button("go", on_click=celebrate(1, "out"))
     assert str(LiteralVar.create(called.event_triggers["on_click"])) == (
         '((_e) => (addEvents([(ReflexEvent("_call_js", ({ ["module"] : '
-        '"js_pkg$party", ["function"] : "celebrate", ["args"] : [1, "out"] }), '
+        '"js_app.party", ["function"] : "celebrate", ["args"] : [1, "out"] }), '
         "({  })))], [_e], ({  }))))"
     )
     # Like an event handler, an uncalled function takes the trigger's arguments:
@@ -198,58 +122,70 @@ def test_a_function_is_an_event_trigger(script_package: Path):
     on_mount = rx.box(on_mount=celebrate)
     assert str(LiteralVar.create(on_mount.event_triggers["on_mount"])) == (
         '((...args) => (addEvents([(ReflexEvent("_call_js", ({ ["module"] : '
-        '"js_pkg$party", ["function"] : "celebrate", ["args"] : [] }), '
+        '"js_app.party", ["function"] : "celebrate", ["args"] : [] }), '
         "({  })))], args, ({  }))))"
     )
     uncalled = rx.input(on_change=celebrate)
     assert str(LiteralVar.create(uncalled.event_triggers["on_change"])) == (
         '((_e) => (addEvents([(ReflexEvent("_call_js", ({ ["module"] : '
-        '"js_pkg$party", ["function"] : "celebrate", '
+        '"js_app.party", ["function"] : "celebrate", '
         '["args"] : [_e?.["target"]?.["value"]] }), ({  })))], [_e], ({  }))))'
     )
 
 
-def test_import_reflex_registers_one_finder_and_loads_nothing():
-    """``import reflex`` registers the finder without loading a module for it.
+def test_importing_a_missing_function_says_what_the_file_exports(app_package: Path):
+    """The error names the file, its functions, and the export to add.
 
-    Importing it again, as a reload or a benchmark that clears ``sys.modules``
-    does, must not register a second one.
+    Args:
+        app_package: the app package, on sys.path.
     """
-    output = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            (
-                "import importlib, sys\n"
-                "import reflex\n"
-                "for name in [n for n in sys.modules if n.startswith('reflex')]:\n"
-                "    del sys.modules[name]\n"
-                "importlib.import_module('reflex')\n"
-                "finders = [f for f in sys.meta_path if getattr(f, '__qualname__', '') == '_ScriptFinder']\n"
-                "print(len(finders), 'reflex_base.js' in sys.modules)"
-            ),
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout
-    assert output == "1 False\n"
+    with pytest.raises(ImportError) as error:
+        from js_app.party import (  # pyright: ignore[reportMissingImports]
+            nope,  # noqa: F401
+        )
+    assert str(error.value) == (
+        f"Cannot import nope from js_app.party: {app_package / 'party.js'} "
+        "exports no function named nope (its functions: celebrate, load, "
+        "arrow). Export it from party.js, as in `export function nope() { ... }`."
+    )
+    (app_package / "empty.js").write_text("export class Widget {}\n")
+    with pytest.raises(ImportError) as error:
+        from js_app.empty import (  # pyright: ignore[reportMissingImports]
+            Widget,  # noqa: F401
+        )
+    assert str(error.value) == (
+        f"Cannot import Widget from js_app.empty: {app_package / 'empty.js'} "
+        "exports no function named Widget (its functions: none). Export it "
+        "from empty.js, as in `export function Widget() { ... }`."
+    )
 
 
-def test_the_finder_imports_nothing_heavy():
-    """The real finder loads on the first import no other finder found, so it stays cheap."""
-    loaded = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            (
-                "import sys, reflex_base.js.finder; "
-                "print(sorted({'pathlib', 'typing', 'importlib.abc', 'reflex_base.event'}"
-                " & set(sys.modules)))"
-            ),
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout
-    assert loaded == "[]\n"
+def test_importing_a_value_says_only_functions_can_be_called(app_package: Path):
+    """A ``const`` bound to a literal is a value, which Python cannot call.
+
+    Args:
+        app_package: the app package, on sys.path.
+    """
+    with pytest.raises(ImportError) as error:
+        from js_app.party import (  # pyright: ignore[reportMissingImports]
+            notAFunction,  # noqa: F401
+        )
+    assert str(error.value) == (
+        f"Cannot import notAFunction from js_app.party: {app_package / 'party.js'} "
+        "exports notAFunction as a value, not a function, and Python can only "
+        "call functions. Export a function instead, as in "
+        "`export function notAFunction() { ... }`."
+    )
+
+
+def test_a_private_name_is_a_plain_attribute_error(app_package: Path):
+    """Names tools probe a module for raise the AttributeError they expect.
+
+    Args:
+        app_package: the app package, on sys.path.
+    """
+    party = importlib.import_module("js_app.party")
+    assert getattr(party, "__wrapped__", None) is None
+    with pytest.raises(AttributeError) as error:
+        _ = party._private
+    assert str(error.value) == "module 'js_app.party' has no attribute '_private'"

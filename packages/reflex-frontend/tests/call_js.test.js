@@ -1,75 +1,142 @@
 /**
  * `_call_js` calls an exported function of a JavaScript module an app imports
- * from Python. The modules are bundled and re-exported by utils/scripts.js, so
- * the event carries only names and JSON arguments, and nothing is evaluated.
+ * from Python. utils/scripts.js maps each module's Python name to a function
+ * that loads it, so the event carries only names and JSON arguments, and
+ * nothing is evaluated.
  */
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeAll, expect, test, vi } from "vitest";
 
-import { applyEvent } from "$/utils/state";
+import { applyEvent, queueEvents } from "$/utils/state";
 
-const seen = [];
+const modules = vi.hoisted(() => {
+  let releaseSlow = () => {};
+  const slowLoaded = new Promise((resolve) => {
+    releaseSlow = resolve;
+  });
+  return { seen: [], releaseSlow, slowLoaded };
+});
 
 vi.mock("$/utils/scripts", () => ({
-  app$scripts$party: {
-    celebrate: (count, id) => seen.push(["celebrate", count, id]),
-    later: async (value) => {
-      await Promise.resolve();
-      seen.push(["later", value]);
-    },
-    notAFunction: 3,
+  default: {
+    "app.scripts.party": async () => ({
+      celebrate: (count, id) => modules.seen.push(["celebrate", count, id]),
+      later: async (value) => {
+        await Promise.resolve();
+        modules.seen.push(["later", value]);
+      },
+      write: (value) => {
+        globalThis.partyValue = value;
+      },
+      fails: () => {
+        throw new RangeError("The party is over.");
+      },
+      notAFunction: 3,
+    }),
+    "app.scripts.slow": () =>
+      modules.slowLoaded.then(() => ({
+        ping: (value) => modules.seen.push(["ping", value]),
+      })),
+    "app.scripts.broken": () =>
+      Promise.reject(new Error("Failed to fetch the module.")),
   },
 }));
 
+beforeAll(async () => {
+  // Let the loads state.js starts on import settle.
+  await new Promise((resolve) => setTimeout(resolve));
+});
+
 afterEach(() => {
-  seen.length = 0;
+  modules.seen.length = 0;
   window.onerror = null;
 });
 
+const callJsEvent = (module, fn, args) => ({
+  name: "_call_js",
+  payload: { module, function: fn, args },
+});
+
 const callJs = (module, fn, args) =>
-  applyEvent(
-    { name: "_call_js", payload: { module, function: fn, args } },
-    null,
-    null,
-    null,
-  );
+  applyEvent(callJsEvent(module, fn, args), null, null, null);
 
 test("calls the named function with the arguments", async () => {
-  await callJs("app$scripts$party", "celebrate", [200, "results"]);
-  expect(seen).toEqual([["celebrate", 200, "results"]]);
+  await callJs("app.scripts.party", "celebrate", [200, "results"]);
+  expect(modules.seen).toEqual([["celebrate", 200, "results"]]);
 });
 
 test("waits for an async function before the next event", async () => {
-  await callJs("app$scripts$party", "later", ["done"]);
-  expect(seen).toEqual([["later", "done"]]);
+  await callJs("app.scripts.party", "later", ["done"]);
+  expect(modules.seen).toEqual([["later", "done"]]);
+});
+
+test("the next event sees what a function did, though events overlap", async () => {
+  // processEvent starts an event that arrives while another awaits, so the
+  // function must run before _call_js awaits anything.
+  globalThis.reads = [];
+  const socket = { connected: true, emit: vi.fn() };
+  const first = queueEvents(
+    [callJsEvent("app.scripts.party", "write", ["new"])],
+    socket,
+    false,
+    null,
+    null,
+  );
+  const second = queueEvents(
+    [
+      {
+        name: "_call_script",
+        payload: { javascript_code: "reads.push(partyValue)" },
+      },
+    ],
+    socket,
+    false,
+    null,
+    null,
+  );
+  await Promise.all([first, second]);
+  expect(globalThis.reads).toEqual(["new"]);
+});
+
+test("a function of a module still loading runs once it has loaded", async () => {
+  const call = callJs("app.scripts.slow", "ping", ["late"]);
+  await Promise.resolve();
+  expect(modules.seen).toEqual([]);
+  modules.releaseSlow();
+  await call;
+  expect(modules.seen).toEqual([["ping", "late"]]);
 });
 
 test("reports a missing module, function or non-function export", async () => {
   const onerror = vi.fn();
   window.onerror = onerror;
-  await callJs("app$scripts$party", "missing", []);
-  await callJs("app$scripts$party", "notAFunction", []);
-  await callJs("app$other", "celebrate", []);
-  expect(onerror.mock.calls.map((call) => [call[0], call[4].name])).toEqual([
-    [
-      "app.scripts.party.missing is not a function exported by a JavaScript module this app imports.",
-      "TypeError",
-    ],
-    [
-      "app.scripts.party.notAFunction is not a function exported by a JavaScript module this app imports.",
-      "TypeError",
-    ],
-    [
-      "app.other.celebrate is not a function exported by a JavaScript module this app imports.",
-      "TypeError",
-    ],
+  await callJs("app.scripts.party", "missing", []);
+  await callJs("app.scripts.party", "notAFunction", []);
+  await callJs("app.other", "celebrate", []);
+  const reported = (module, name) => {
+    const message = `Cannot call ${module}.${name}: the frontend has no function ${name} in the JavaScript module ${module}. Either the module does not export a function of that name, or the frontend was built before the backend imported it. Export a function named ${name} from the module, or restart \`reflex run\` to rebuild the frontend.`;
+    return [message, null, null, null, new TypeError(message)];
+  };
+  expect(onerror.mock.calls).toEqual([
+    reported("app.scripts.party", "missing"),
+    reported("app.scripts.party", "notAFunction"),
+    reported("app.other", "celebrate"),
   ]);
-  expect(seen).toEqual([]);
+  expect(modules.seen).toEqual([]);
 });
 
-test("a function that throws is reported, not raised", async () => {
+test("a function that throws, or a module that fails to load, is reported", async () => {
   const onerror = vi.fn();
   window.onerror = onerror;
-  await callJs("app$scripts$party", "celebrate", null);
-  expect(onerror).toHaveBeenCalledTimes(1);
-  expect(onerror.mock.calls[0][4]).toBeInstanceOf(TypeError);
+  await callJs("app.scripts.party", "fails", []);
+  await callJs("app.scripts.broken", "anything", []);
+  expect(onerror.mock.calls).toEqual([
+    ["The party is over.", null, null, null, new RangeError("The party is over.")],
+    [
+      "Failed to fetch the module.",
+      null,
+      null,
+      null,
+      new Error("Failed to fetch the module."),
+    ],
+  ]);
 });
