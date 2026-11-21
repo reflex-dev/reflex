@@ -226,6 +226,16 @@ def CallScript():
             return page_script.setText("js_module_text", "from the backend")
 
         @rx.event
+        def js_module_then_script(self):
+            # Each yield is a message of its own, and the script must see what
+            # the module's function did.
+            yield page_script.setText("js_module_text", "written by the module")
+            yield rx.call_script(
+                "document.getElementById('js_module_text').textContent",
+                callback=CallScriptState.set_reflex_result,
+            )
+
+        @rx.event
         def add_events_from_backend(self):
             return rx.run_script(
                 rx.js.add_events(
@@ -467,6 +477,11 @@ def CallScript():
                 id="js_module_backend",
             ),
             rx.button(
+                "js_module_then_script",
+                on_click=CallScriptState.js_module_then_script,
+                id="js_module_then_script",
+            ),
+            rx.button(
                 "js_module_report",
                 on_click=page_script.report(
                     CallScriptState.set_reflex_result, "from a module"
@@ -689,3 +704,8 @@ def test_js_module(call_script_page: Page):
 
     call_script_page.locator("#js_module_report").click()
     expect(call_script_page.locator("#reflex_result")).to_have_value("from a module")
+
+    call_script_page.locator("#js_module_then_script").click()
+    expect(call_script_page.locator("#reflex_result")).to_have_value(
+        "written by the module"
+    )
