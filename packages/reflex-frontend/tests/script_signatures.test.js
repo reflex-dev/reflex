@@ -52,3 +52,34 @@ test("classifies each parameter's type into the JSON value Python sends", async 
     await signatures(["jsdoc.js", "typed.ts", "types.ts", "script.js"]),
   ).toEqual(JSON.parse(readFileSync(`${fixtures}signatures.json`, "utf-8")));
 });
+
+test("a type that contains itself stops at its first repeat", async () => {
+  // The repeat has no finite JSON shape, so it accepts any value.
+  expect(await signatures(["recursive.ts"])).toEqual({
+    "recursive.ts": [
+      {
+        name: "grow",
+        signatures: [
+          {
+            parameters: [
+              {
+                name: "tree",
+                type: { kind: "mapping", value: "any" },
+                optional: false,
+                rest: false,
+              },
+              {
+                name: "nested",
+                type: { kind: "list", item: "any" },
+                optional: false,
+                rest: false,
+              },
+              { name: "depth", type: "float", optional: false, rest: false },
+            ],
+          },
+        ],
+        untyped: false,
+      },
+    ],
+  });
+});

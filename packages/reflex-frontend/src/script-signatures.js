@@ -98,6 +98,11 @@ const isOpaque = (type) => {
   );
 };
 
+// The object types being classified, outermost first. A type that contains
+// itself, such as `interface Tree { [key: string]: Tree }`, has no finite JSON
+// shape: its repeat is classified as any.
+const classifying = new Set();
+
 /**
  * Classify an object type: an array or tuple is a list, a string-keyed record
  * a mapping of its values, and another plain object a mapping.
@@ -105,6 +110,21 @@ const isOpaque = (type) => {
  * @returns {JsonType} Its JSON type.
  */
 const classifyObject = (type) => {
+  if (classifying.has(type)) return "any";
+  classifying.add(type);
+  try {
+    return classifyShape(type);
+  } finally {
+    classifying.delete(type);
+  }
+};
+
+/**
+ * Classify an object type that is not already being classified.
+ * @param {any} type The type.
+ * @returns {JsonType} Its JSON type.
+ */
+const classifyShape = (type) => {
   if (checker.isArrayType(type)) {
     return { kind: "list", item: classify(checker.getTypeArguments(type)[0]) };
   }
