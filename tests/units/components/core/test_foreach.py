@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.vars.base import Var
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.sequence import ArrayVar
 from reflex_components_core.core.foreach import (
@@ -281,6 +282,46 @@ def test_foreach_too_many_params_in_signature():
             ForEachState.colors_list,
             lambda color, index, extra: text(color),
         )
+
+
+class _BoundRenderFns:
+    """Render functions bound to a class or an instance."""
+
+    @classmethod
+    def color(cls, color: Var[str]) -> Component:
+        return text(color)
+
+    @classmethod
+    def color_with_index(cls, color: Var[str], index: NumberVar[int]) -> Component:
+        return text(color, index)
+
+    def instance_color_with_index(
+        self, color: Var[str], index: NumberVar[int]
+    ) -> Component:
+        return text(color, index)
+
+
+@pytest.mark.parametrize(
+    ("render_fn", "renders_index"),
+    [
+        (_BoundRenderFns.color, False),
+        (_BoundRenderFns.color_with_index, True),
+        (_BoundRenderFns().instance_color_with_index, True),
+    ],
+    ids=["classmethod", "classmethod-with-index", "method-with-index"],
+)
+def test_foreach_bound_method_render_fn(render_fn, renders_index: bool):
+    """Test that the bound cls/self does not count as a render function argument.
+
+    Args:
+        render_fn: The bound render function.
+        renders_index: Whether the render function takes the index.
+    """
+    component = Foreach.create(ForEachState.colors_list, render_fn)
+
+    rendered = str(component)
+    assert "color_rx_state_" in rendered
+    assert ("index_rx_state_" in rendered) is renders_index
 
 
 def test_foreach_component_styles():

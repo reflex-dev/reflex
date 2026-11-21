@@ -104,8 +104,9 @@ class IterTag(CommonTag):
 
         from reflex.compiler.compiler import _into_component_once
 
-        # Get the render function arguments.
-        args = inspect.getfullargspec(self.render_fn).args
+        # Get the render function arguments. Unlike getfullargspec, signature leaves
+        # out the cls/self of a bound method, matching Foreach's validation.
+        args = inspect.signature(self.render_fn).parameters
         arg = self.get_arg_var()
         index = self.get_index_var()
 
