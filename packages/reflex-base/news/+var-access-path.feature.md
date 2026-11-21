@@ -1,0 +1,1 @@
+Indexing an array var builds an `ArrayItemOperation` instead of an anonymous var operation, and `reflex_base.vars.object.var_access_path` splits a var such as `State.user.tags[0]` into the var it reads from and the keys it reads on the way.

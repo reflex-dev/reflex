@@ -240,7 +240,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=Sequence):
             isinstance(i, NumberVar) and i._is_strict_float()
         ):
             raise_unsupported_operand_types("[]", (type(self), type(i)))
-        return array_item_operation(self, i)
+        return ArrayItemOperation.create(self, i).guess_type()
 
     def length(self) -> NumberVar[int]:
         """Get the length of the array.
@@ -2125,30 +2125,60 @@ def _determine_value_of_array_index(
     return Any
 
 
-@var_operation
-def array_item_operation(array: ArrayVar, index: NumberVar | int):
-    """Get an item from an array.
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class ArrayItemOperation(CachedVarOperation, Var):
+    """Operation to get an item from an array."""
 
-    Args:
-        array: The array.
-        index: The index of the item.
-
-    Returns:
-        The item from the array.
-    """
-    element_type = _determine_value_of_array_index(
-        array._var_type,
-        (
-            index
-            if isinstance(index, int)
-            else (index._var_value if isinstance(index, LiteralNumberVar) else None)
-        ),
+    _array: ArrayVar = dataclasses.field(
+        default_factory=lambda: LiteralArrayVar.create([])
+    )
+    _index: NumberVar = dataclasses.field(
+        default_factory=lambda: LiteralNumberVar.create(0)
     )
 
-    return var_operation_return(
-        js_expression=f"{array!s}?.at?.({index!s})",
-        var_type=element_type,
-    )
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """The name of the operation.
+
+        Returns:
+            The name of the operation.
+        """
+        return f"{self._array!s}?.at?.({self._index!s})"
+
+    @classmethod
+    def create(
+        cls,
+        array: ArrayVar,
+        index: NumberVar | int,
+        _var_data: VarData | None = None,
+    ) -> ArrayItemOperation:
+        """Create the array item operation.
+
+        Args:
+            array: The array to get the item from.
+            index: The index of the item.
+            _var_data: Additional hooks and imports associated with the operation.
+
+        Returns:
+            The array item operation.
+        """
+        index_var = index if isinstance(index, Var) else LiteralNumberVar.create(index)
+        return cls(
+            _js_expr="",
+            _var_type=_determine_value_of_array_index(
+                array._var_type,
+                index_var._var_value
+                if isinstance(index_var, LiteralNumberVar)
+                else None,
+            ),
+            _var_data=_var_data,
+            _array=array,
+            _index=index_var,
+        )
 
 
 @var_operation

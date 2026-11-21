@@ -51,6 +51,7 @@ from reflex_base.utils.exceptions import (
     StateTooLargeError,
     StateValueError,
     UnretrievableVarValueError,
+    UnsettableVarValueError,
 )
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import Field, Var, computed_var, field
@@ -6652,19 +6653,115 @@ async def test_get_var_value(
     }
 
     # Regression for https://github.com/reflex-dev/reflex/issues/6629: a Var
-    # operation / derived var (arithmetic, indexed or item access) must not
-    # silently return the value of its first constituent field. Such vars have
-    # no retrievable value, so raise instead of returning a plausible-but-wrong one.
+    # operation must not silently return the value of its first constituent
+    # field. Arithmetic has no retrievable value, so it raises instead of
+    # returning a plausible-but-wrong one; indexed and item access resolve to
+    # the value they read.
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(TestState.num1 + TestState.num2)
-    with pytest.raises(UnretrievableVarValueError):
-        # array[0] is a Var operation at runtime, though statically typed as the element.
-        await state.get_var_value(TestState.array[0])  # pyright: ignore[reportArgumentType]
-    with pytest.raises(UnretrievableVarValueError):
-        await state.get_var_value(TestState.mapping["a"])
+    # array[0] is a Var operation at runtime, though statically typed as the element.
+    assert await state.get_var_value(TestState.array[0]) == 1  # pyright: ignore[reportArgumentType]
+    assert await state.get_var_value(TestState.mapping["a"]) == [1, 2, 3]
 
     # Computed vars are derived but state-bound, so they remain resolvable.
     assert await state.get_var_value(TestState.sum) == pytest.approx(42 + 3.15)
+
+
+@pytest.mark.asyncio
+async def test_get_var_value_reads_into_fields(
+    state_manager: StateManager, substate_token: BaseStateToken
+):
+    """A var reading into a field resolves to what it reads, as on the frontend.
+
+    Args:
+        state_manager: The state manager to use.
+        substate_token: Token for the substate used by state_manager.
+    """
+    state = await state_manager.get_state(substate_token)
+    assert isinstance(state, TestState)
+
+    assert await state.get_var_value(TestState.obj.prop2) == "hello"  # pyright: ignore[reportArgumentType]
+    assert await state.get_var_value(TestState.complex[2].prop1) == 42  # pyright: ignore[reportArgumentType]
+    assert await state.get_var_value(TestState.mapping["b"][-1]) == 6
+    # A key that is a var is resolved first.
+    assert await state.get_var_value(TestState.mapping[TestState.map_key]) == [1, 2, 3]  # pyright: ignore[reportArgumentType]
+    # A literal resolves without any state.
+    assert await state.get_var_value(rx.Var.create({"a": [1, 2]})["a"][1]) == 2
+    # A missing key reads as None, and so does everything read past it.
+    assert await state.get_var_value(TestState.array[3]) is None  # pyright: ignore[reportArgumentType]
+    assert await state.get_var_value(TestState.mapping["c"][0]) is None
+
+    child_state = await state.get_state(ChildState)
+    child_state.mapping = {"a": [7]}
+    assert await state.get_var_value(ChildState.mapping["a"][0]) == 7
+
+
+@pytest.mark.asyncio
+async def test_set_var_value(
+    state_manager: StateManager, substate_token: BaseStateToken
+):
+    """set_var_value sets what get_var_value reads and marks the field dirty.
+
+    Args:
+        state_manager: The state manager to use.
+        substate_token: Token for the substate used by state_manager.
+    """
+    state = await state_manager.get_state(substate_token)
+    assert isinstance(state, TestState)
+    state._clean()
+
+    await state.set_var_value(TestState.num1, 7)
+    assert state.num1 == 7
+    assert state.dirty_vars == {"num1", "sum"}
+
+    state._clean()
+    await state.set_var_value(TestState.obj.prop1, 7)  # pyright: ignore[reportArgumentType]
+    assert state.obj.prop1 == 7
+    assert state.dirty_vars == {"obj"}
+
+    state._clean()
+    await state.set_var_value(TestState.mapping[TestState.map_key][0], 7)  # pyright: ignore[reportArgumentType]
+    assert state.mapping == {"a": [7, 2, 3], "b": [4, 5, 6]}
+    assert state.dirty_vars == {"mapping"}
+
+    child_state = await state.get_state(ChildState)
+    child_state._clean()
+    await state.set_var_value(ChildState.count, 7)
+    assert child_state.count == 7
+    assert child_state.dirty_vars == {"count"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("var", "reason"),
+    [
+        (TestState.sum, "computed vars are read-only"),
+        (Var(_js_expr="undefined"), "not associated with any state"),
+        (TestState.num1 + TestState.num2, "not associated with any state"),
+        (TestState.mapping["c"][0], "the object to set it on is None"),
+    ],
+    ids=["computed", "no_state", "operation", "none_on_the_way"],
+)
+async def test_set_var_value_rejects_what_it_cannot_set(
+    var: Var,
+    reason: str,
+    state_manager: StateManager,
+    substate_token: BaseStateToken,
+):
+    """set_var_value raises for a var it cannot set, naming the var and why.
+
+    Args:
+        var: The var to set.
+        reason: Why the var cannot be set.
+        state_manager: The state manager to use.
+        substate_token: Token for the substate used by state_manager.
+    """
+    state = await state_manager.get_state(substate_token)
+
+    with pytest.raises(UnsettableVarValueError) as err:
+        await state.set_var_value(var, 0)
+
+    assert str(err.value) == f"Unable to set value for {var._js_expr}: {reason}."
 
 
 @pytest.mark.asyncio

@@ -246,6 +246,21 @@ This pattern is useful when you have multiple states that need to interact with 
 
 If the var is not retrievable, `get_var_value` will raise an `UnretrievableVarValueError`.
 
+The var can also read into a state var by attribute access, item access or indexing. A key that is itself a var is resolved first, and as on the frontend, a missing key or a `None` on the way reads as `None`:
+
+```python
+first_tag = await self.get_var_value(OtherState.user.tags[0])
+selected = await self.get_var_value(OtherState.rows[OtherState.selected_index])
+```
+
+`set_var_value` is the counterpart: it sets the value such a var reads. A nested value is set through the state var holding it, which marks that var dirty so the change reaches the frontend. In a background task, call it inside `async with self`, like any other state change.
+
+```python
+await self.set_var_value(OtherState.user.tags[0], "featured")
+```
+
+A var that cannot be set, such as a computed var or an operation like `OtherState.a + OtherState.b`, raises an `UnsettableVarValueError`.
+
 ## Performance Implications
 
 When an event handler is called, Reflex will load the data not only for the substate containing

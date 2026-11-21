@@ -1,0 +1,1 @@
+`get_var_value` resolves vars that read into a state var by attribute access, item access or indexing, such as `State.user.tags[0]` or `State.rows[State.index]`, and the new `set_var_value` sets the value such a var reads, marking the state var dirty.

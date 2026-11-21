@@ -14,7 +14,15 @@ import operator
 import pickle
 import re
 import sys
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import (
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Sequence,
+)
 from datetime import timedelta
 from hashlib import md5
 from types import FunctionType
@@ -56,6 +64,7 @@ from reflex_base.utils.exceptions import (
     StateSerializationError,
     StateTooLargeError,
     UnretrievableVarValueError,
+    UnsettableVarValueError,
 )
 from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex_base.utils.serializers import serializer
@@ -65,7 +74,6 @@ from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
-    ToOperation,
     Var,
     _inherited_value,
     _is_descriptor,
@@ -76,6 +84,7 @@ from reflex_base.vars.base import (
     dispatch,
     is_computed_var,
 )
+from reflex_base.vars.object import var_access_path
 from rich.markup import escape
 
 import reflex.istate.dynamic
@@ -414,6 +423,26 @@ def _bind_attr(cls: type, name: str, value: Any) -> None:
     """
     type.__setattr__(cls, name, value)
     value.__set_name__(cls, name)
+
+
+def _read_key(value: Any, key: Any) -> Any:
+    """Read a key off a value the way the frontend reads it with optional chaining.
+
+    Args:
+        value: The value to read from.
+        key: The attribute name, mapping key or sequence index.
+
+    Returns:
+        The value at the key, or None if the key is missing or the value is None.
+    """
+    if value is None:
+        return None
+    if isinstance(value, Mapping):
+        return value.get(key)
+    if isinstance(value, Sequence):
+        in_range = isinstance(key, int) and -len(value) <= key < len(value)
+        return value[key] if in_range else None
+    return getattr(value, key, None)
 
 
 def _router_fget(self: BaseState) -> RouterData:
@@ -1953,8 +1982,36 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # Slow case - fetch missing parent states from redis.
         return await self._get_state_from_redis(state_cls)
 
+    async def _get_field_owner(self, root: Var) -> tuple[BaseState, str] | None:
+        """Get the state holding the field a root var stands for, and its name.
+
+        Args:
+            root: A var as ``var_access_path`` splits it off.
+
+        Returns:
+            The state and the field name, or None if the var is no state field.
+        """
+        # The var's *own* var data, not the recursive _get_all_var_data(): an
+        # operation such as State.a + State.b merges in the var data of its
+        # operands, so it would pass for State.a. Only a plain field or
+        # computed var reference carries state + field_name on its own.
+        var_data = root._var_data
+        if var_data is None or not var_data.state or not var_data.field_name:
+            return None
+        if var_data.state == self.get_full_name():
+            return self, var_data.field_name
+        other_state = await self.get_state(
+            self._get_root_state().get_class_substate(var_data.state)
+        )
+        return other_state, var_data.field_name
+
     async def get_var_value(self, var: Var[VAR_TYPE]) -> VAR_TYPE:
-        """Get the value of an rx.Var from another state.
+        """Get the value of an rx.Var, possibly from another state.
+
+        Besides a state field or computed var, the var may read into one by
+        attribute access, item access or array indexing, as in
+        ``State.user.tags[0]`` or ``State.mapping[State.key]``. Like on the
+        frontend, a missing key or a None on the way reads as None.
 
         Args:
             var: The var to get the value for.
@@ -1970,43 +2027,65 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         if not isinstance(var, Var):
             return var
 
+        root, keys = var_access_path(var)
         unset = object()
-
-        # Fast case: this is a literal var and the value is known.
-        if (
-            var_value := getattr(var, "_var_value", unset)
-        ) is not unset and not isinstance(var_value, Var):
-            return var_value  # pyright: ignore [reportReturnType]
-
-        # Unwrap any cast wrappers and resolve via the underlying var's *own*
-        # var data, not the recursive _get_all_var_data(). For an operation or
-        # derived var (e.g. State.a + State.b or State.items[0]), the recursive
-        # merge back-fills state/field_name from the first operand, which would
-        # make us silently return that operand's value instead of the operation's
-        # result. Only a plain field or computed var reference carries
-        # state + field_name on its own var data.
-        inner_var = var
-        while isinstance(inner_var, ToOperation):
-            inner_var = inner_var._original
-        var_data = inner_var._var_data
-        if var_data is None or not var_data.state or not var_data.field_name:
-            msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
-            raise UnretrievableVarValueError(msg)
-        # Fastish case: this var belongs to this state
-        if var_data.state == self.get_full_name():
-            value = getattr(self, var_data.field_name)
+        # Fast case: the var reads from a literal whose value is known.
+        value: Any = getattr(root, "_var_value", unset)
+        if value is unset or isinstance(value, Var):
+            owner = await self._get_field_owner(root)
+            if owner is None:
+                msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
+                raise UnretrievableVarValueError(msg)
+            state, field_name = owner
+            value = getattr(state, field_name)
             if inspect.isawaitable(value):
-                return await value
-            return value
-
-        # Slow case: this var belongs to another state
-        other_state = await self.get_state(
-            self._get_root_state().get_class_substate(var_data.state)
-        )
-        value = getattr(other_state, var_data.field_name)
-        if inspect.isawaitable(value):
-            return await value
+                value = await value
+        for key in keys:
+            value = _read_key(value, await self.get_var_value(key))
         return value
+
+    async def set_var_value(self, var: Var[VAR_TYPE], value: VAR_TYPE) -> None:
+        """Set the value of an rx.Var, possibly in another state.
+
+        The counterpart of ``get_var_value``: the var may be a state field or
+        read into one, as in ``State.user.tags[0]``. A nested value is set
+        through the field, which marks the field dirty.
+
+        Args:
+            var: The var to set.
+            value: The value to set.
+
+        Raises:
+            UnsettableVarValueError: If the var is no state field and reads into
+                none, if it reads into a computed var, or if the object to set
+                the value on is None.
+        """
+        root, keys = var_access_path(var)
+        owner = await self._get_field_owner(root)
+        if owner is None:
+            msg = f"Unable to set value for {var._js_expr}: not associated with any state."
+            raise UnsettableVarValueError(msg)
+        state, field_name = owner
+        if field_name in state.computed_vars:
+            msg = (
+                f"Unable to set value for {var._js_expr}: computed vars are read-only."
+            )
+            raise UnsettableVarValueError(msg)
+        if not keys:
+            setattr(state, field_name, value)
+            return
+
+        *parent_keys, last_key = [await self.get_var_value(key) for key in keys]
+        target = getattr(state, field_name)
+        for key in parent_keys:
+            target = _read_key(target, key)
+        if target is None:
+            msg = f"Unable to set value for {var._js_expr}: the object to set it on is None."
+            raise UnsettableVarValueError(msg)
+        if isinstance(target, (MutableMapping, MutableSequence)):
+            target[last_key] = value
+        else:
+            setattr(target, last_key, value)
 
     def _mark_dirty_computed_vars(
         self, var_names: Iterable[str] | None = None, *, invalidate: bool = True
