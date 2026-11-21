@@ -1093,7 +1093,9 @@ export const processEvent = async (socket, navigate, params) => {
   // Apply the next event in the queue.
   const event = event_queue.shift();
 
-  if (pendingModuleCall !== undefined) {
+  // An event that waited may find another call pending after it: the event
+  // before it can be a module call that now waits for its own module.
+  while (pendingModuleCall !== undefined) {
     // The call reports its own failure.
     await pendingModuleCall.catch(() => {});
   }
