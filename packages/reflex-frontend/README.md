@@ -17,7 +17,10 @@ In a checkout of the repository there is no embedded copy: reflex-base reads
 `src/` in place, so the next `reflex init` copies an edit without a rebuild.
 
 Everything in `src/` ships to every app, including the build tooling an app
-runs (`compress-static.js`, the PostCSS config, the Vite plugins). Tests,
+runs (`compress-static.js`, the PostCSS config, the Vite plugins) and
+`script-signatures.js`, which reads the types of the JavaScript modules an app
+imports from Python for their stubs; its output, the contract with
+`reflex_base/js/stubs.py`, is `tests/fixtures/signatures/signatures.json`. Tests,
 fixtures and this package's own lint and type-check setup stay outside it.
 
 A change under `src/` is a change to reflex-base: its news fragment goes in

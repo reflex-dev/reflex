@@ -360,7 +360,7 @@ def _script_module_files(
                 file, (modules_dir / file.relative_to(package_dir.parent), script)
             )
         modules[name] = path.resolve()
-        sources[path.resolve()] = module_sources
+        sources[modules[name]] = module_sources
     return files, modules, sources
 
 
@@ -521,13 +521,12 @@ def compile_script_stubs(
     for path, digest in stale.items():
         # The module itself is a .js or .ts file, so it is a script.
         functions = cast("ScriptSource", sources[path][path]).functions
-        outputs.append((
-            str(path.with_suffix(".pyi")),
-            _render_stub(path, digest, functions, signatures[path])
-            if signatures is not None
-            # Never current, so the next compile tries again.
-            else _render_stub(path, "untyped", functions, None),
-        ))
+        if signatures is None:
+            # Never current, so the next compile reads the types again.
+            stub = _render_stub(path, "untyped", functions, None)
+        else:
+            stub = _render_stub(path, digest, functions, signatures[path])
+        outputs.append((str(path.with_suffix(".pyi")), stub))
     return outputs
 
 

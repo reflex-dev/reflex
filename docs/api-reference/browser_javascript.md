@@ -420,7 +420,7 @@ a function, is left out of the stub.
   running the app. A stub only changes when the types do: Reflex rewrites it
   when the module, a file it imports or reads types from (a `.d.ts` file,
   `import type`, a JSDoc `import("./types")`), the app's frontend packages or
-  Reflex itself changes. Writing a stub does not reload the backend.
+  Reflex's stub generator changes. Writing a stub does not reload the backend.
 - Stubs are written only in development. `reflex export` and `reflex run --env
   prod` leave your source tree alone.
 - When the app stops importing a module, Reflex removes the stub it wrote for
