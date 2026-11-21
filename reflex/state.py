@@ -86,6 +86,7 @@ from reflex_base.vars.base import (
     is_computed_var,
 )
 from reflex_base.vars.object import var_access_path
+from reflex_base.vars.set import _ordered
 from rich.markup import escape
 
 import reflex.istate.dynamic
@@ -426,14 +427,20 @@ def _bind_attr(cls: type, name: str, value: Any) -> None:
     value.__set_name__(cls, name)
 
 
-def _read_key(value: Any, key: Any) -> Any:
+_UNSET = object()
+
+
+def _read_key(value: Any, key: Any, from_literal: bool = False) -> Any:
     """Read a key off a value the way the frontend reads it with optional chaining.
 
-    A set reads as the array it is serialized to.
+    A set reads as the array the frontend gets: sorted where it can be if it is
+    in a literal, which renders it that way, and in its own order if it is held
+    in state, which serializes it that way.
 
     Args:
         value: The value to read from.
         key: The attribute name, mapping key or sequence index.
+        from_literal: Whether the value is read from a literal var.
 
     Returns:
         The value at the key, or None if the key is missing or the value is None.
@@ -446,7 +453,7 @@ def _read_key(value: Any, key: Any) -> Any:
     if issubclass(cls, Mapping):
         return value.get(key)
     if issubclass(cls, AbstractSet):
-        value = tuple(value)
+        value = _ordered(value) if from_literal else tuple(value)
     elif not issubclass(cls, Sequence):
         return getattr(value, key, None) if isinstance(key, str) else None
     in_range = isinstance(key, int) and -len(value) <= key < len(value)
@@ -2037,12 +2044,27 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # Oopsie case: you didn't give me a Var... so get what you give.
         if not isinstance(var, Var):
             return var
+        value, _ = await self._resolve_var_value(var)
+        return value
 
+    async def _resolve_var_value(self, var: Var) -> tuple[Any, bool]:
+        """Resolve a var to its value, and whether that value is read from a literal.
+
+        Args:
+            var: The var to resolve.
+
+        Returns:
+            The value, and whether it is read from a literal var.
+
+        Raises:
+            UnretrievableVarValueError: If the var does not have a literal value
+                or associated state.
+        """
         root, keys = var_access_path(var)
-        unset = object()
         # Fast case: the var reads from a literal whose value is known.
-        value: Any = getattr(root, "_var_value", unset)
-        if value is unset or isinstance(value, Var):
+        value: Any = getattr(root, "_var_value", _UNSET)
+        from_literal = value is not _UNSET and not isinstance(value, Var)
+        if not from_literal:
             owner = await self._get_field_owner(root)
             if owner is None:
                 msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
@@ -2054,11 +2076,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for key in keys:
             if isinstance(key, Var):
                 key = await self.get_var_value(key)
-            value = _read_key(value, key)
+            value = _read_key(value, key, from_literal)
             # A literal container holds vars, which the frontend reads as their values.
             if isinstance(value, Var):
-                value = await self.get_var_value(value)
-        return value
+                value, from_literal = await self._resolve_var_value(value)
+        return value, from_literal
 
     async def set_var_value(self, var: Var[VAR_TYPE], value: VAR_TYPE) -> None:
         """Set the value of an rx.Var, possibly in another state.

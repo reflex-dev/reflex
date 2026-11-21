@@ -39,7 +39,7 @@ from reflex_base.event import Event, EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import format, types
+from reflex_base.utils import format, serializers, types
 from reflex_base.utils.exceptions import (
     EventHandlerValueError,
     InvalidLockWarningThresholdError,
@@ -6689,6 +6689,8 @@ async def test_get_var_value_reads_into_fields(
     assert await state.get_var_value(rx.Var.create({"a": [1, 2]})["a"][1]) == 2
     held = rx.Var.create([TestState.mapping])[0].to(dict[str, list[int]])
     assert await state.get_var_value(held["b"]) == [4, 5, 6]
+    # A literal renders a set sorted, so its indexes read in that order.
+    assert await state.get_var_value(rx.Var.create({8, 1}).to_array()[0]) == 1
     # A missing key reads as None, and so does everything read past it.
     assert await state.get_var_value(TestState.array[3]) is None  # pyright: ignore[reportArgumentType]
     assert await state.get_var_value(TestState.mapping["c"][0]) is None
@@ -6777,6 +6779,7 @@ async def test_var_value_through_tuples_and_sets() -> None:
     class TupleAndSetState(BaseState):
         rows: rx.Field[tuple[list[int], ...]] = rx.field(([1],))
         tags: rx.Field[set[str]] = rx.field({"x"})
+        numbers: rx.Field[set[int]] = rx.field({8, 1})
 
     state = TupleAndSetState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     row_item = TupleAndSetState.rows[0][0]
@@ -6784,6 +6787,9 @@ async def test_var_value_through_tuples_and_sets() -> None:
 
     assert await state.get_var_value(row_item) == 1
     assert await state.get_var_value(tag) == "x"
+    # State sends a set in its own order, unlike a literal, which sorts it.
+    first_number = await state.get_var_value(TupleAndSetState.numbers.to_array()[0])
+    assert first_number == serializers.serialize_set(state.get_value("numbers"))[0]
 
     with pytest.raises(UnsettableVarValueError) as err:
         await state.set_var_value(row_item, 7)
