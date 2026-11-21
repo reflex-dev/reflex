@@ -4,6 +4,7 @@ from typing import Any, cast
 
 from reflex_base.client_state import client_state
 from reflex_base.event import (
+    CallableEventSpec,
     EventArgVar,
     EventChain,
     LambdaEventCallback,
@@ -18,6 +19,7 @@ from reflex_base.utils.types import Unset
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import NumberVar
+from reflex_components_core.core.upload import clear_selected_files
 
 import reflex as rx
 
@@ -142,3 +144,14 @@ def test_copies_of_a_script_event_keep_its_timeout():
     assert [(type(copy), copy.timeout) for copy in copies] == [
         (_BrowserCallSpec, 5)
     ] * 4
+
+
+def test_copies_of_a_callable_event_spec_keep_its_handler():
+    """Copying a CallableEventSpec, as compiling an event trigger does, builds a spec."""
+    spec = clear_selected_files
+    copy = spec.with_args(spec.args)
+    assert (type(copy), copy.handler, copy.args) == (
+        CallableEventSpec,
+        spec.handler,
+        spec.args,
+    )

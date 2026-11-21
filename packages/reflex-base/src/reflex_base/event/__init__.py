@@ -1022,8 +1022,11 @@ class EventSpec(EventActionsMixin):
         Returns:
             A copy of the event spec, with the new args.
         """
-        return dataclasses.replace(
-            self, args=args, event_actions=self.event_actions.copy()
+        return type(self)(
+            handler=self.handler,
+            client_handler_name=self.client_handler_name,
+            args=args,
+            event_actions=self.event_actions.copy(),
         )
 
     def add_args(self, *args: Var) -> "EventSpec":
@@ -2092,6 +2095,19 @@ class _BrowserCallSpec(EventSpec):
     """
 
     timeout: float | Unset | None = Unset()
+
+    def with_args(self, args: tuple[tuple[Var, Var], ...]) -> "_BrowserCallSpec":
+        """Copy the spec with updated args, keeping its timeout.
+
+        Args:
+            args: The new args to pass to the function.
+
+        Returns:
+            A copy of the spec, with the new args.
+        """
+        return dataclasses.replace(
+            self, args=args, event_actions=self.event_actions.copy()
+        )
 
 
 @lru_cache
