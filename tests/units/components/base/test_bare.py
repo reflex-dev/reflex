@@ -149,3 +149,9 @@ def test_rendered_string_form_brings_its_components():
     }
     assert comp._get_all_custom_code() == {BOX_CODE: None}
     assert comp._get_all_refs() == {"ref_box": None}
+    # the compiler reaches the box's imports through the prop traversal too
+    assert [type(c) for c in comp._get_components_in_props()] == [HookedBox]
+    assert comp._get_all_imports(collapse=True) == {
+        "$/utils/state": [ImportVar(tag="useRegisteredRef")],
+        "hooked-box": [ImportVar(tag="HookedBox")],
+    }

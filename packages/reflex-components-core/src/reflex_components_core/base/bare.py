@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 from collections.abc import Iterator, Sequence
 from typing import Any
@@ -100,28 +101,6 @@ class Bare(Component):
             hooks |= component._get_all_hooks()
         return hooks
 
-    def _get_all_dynamic_imports(self) -> set[str]:
-        """Get dynamic imports for the component.
-
-        Returns:
-            The dynamic imports.
-        """
-        dynamic_imports = super()._get_all_dynamic_imports()
-        for component in self._contents_components():
-            dynamic_imports |= component._get_all_dynamic_imports()
-        return dynamic_imports
-
-    def _get_all_custom_code(self) -> dict[str, None]:
-        """Get custom code for the component.
-
-        Returns:
-            The custom code.
-        """
-        custom_code = super()._get_all_custom_code()
-        for component in self._contents_components():
-            custom_code |= component._get_all_custom_code()
-        return custom_code
-
     def _get_all_app_wrap_components(
         self, *, ignore_ids: set[int] | None = None
     ) -> dict[tuple[int, str], Component]:
@@ -146,16 +125,22 @@ class Bare(Component):
                 )
         return app_wrap_components
 
-    def _get_all_refs(self) -> dict[str, None]:
-        """Get the refs for the children of the component.
+    @functools.cached_property
+    def _get_component_prop_property(self) -> Sequence[BaseComponent]:
+        """The components of the props and of the var rendered for the contents.
+
+        The compiler and the import, custom code, dynamic import and ref collectors
+        follow this traversal, so components a custom ``to_string()`` brings count.
 
         Returns:
-            The refs for the children.
+            Each component of the props, then the rendered var's others.
         """
-        refs = super()._get_all_refs()
-        for component in self._contents_components():
-            refs |= component._get_all_refs()
-        return refs
+        components = super()._get_component_prop_property
+        seen = {id(component) for component in components}
+        return [
+            *components,
+            *(c for c in self._contents_components() if id(c) not in seen),
+        ]
 
     def _contents_vars(self) -> tuple[Var, ...]:
         """The contents and, when it differs, the var rendered for them, built once.
