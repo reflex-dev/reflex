@@ -14,6 +14,31 @@ from reflex_base.utils.exceptions import (
 
 EVENT = Event(name="_call_script", payload={"javascript_code": "1", "callback": None})
 
+PAGE_REPLACED = (
+    "The browser tab reloaded or left the page before the script returned a "
+    "result, so the script stopped. Catch BrowserDisconnectedError where the "
+    "user may reload or leave the page while the script runs."
+)
+
+
+def grace_expired(grace_period: float) -> str:
+    """The message of a call whose tab did not reconnect in time.
+
+    Args:
+        grace_period: The grace period, in seconds.
+
+    Returns:
+        The error message.
+    """
+    return (
+        "The browser tab disconnected and did not reconnect within "
+        f"browser_call_grace_period ({grace_period} seconds), so the script's "
+        "result is lost: the tab was closed, or lost its connection. Catch "
+        "BrowserDisconnectedError where the user may close the tab, or raise "
+        "`browser_call_grace_period` in rxconfig.py if connections drop for "
+        "longer."
+    )
+
 
 class Browser:
     """Records the events sent to it, like a connected tab."""
@@ -46,7 +71,7 @@ class Browser:
 async def _start_call(
     calls: BrowserCalls, timeout: float | None = None, token: str = "tok"
 ) -> tuple[Browser, asyncio.Task[Any], str]:
-    """Start a call and wait for its event to be sent.
+    """Start a call to the tab of page ``p1`` and wait for its event to be sent.
 
     Args:
         calls: The registry.
@@ -57,8 +82,31 @@ async def _start_call(
         The browser, the task awaiting the call, and the call's request id.
     """
     browser = Browser()
-    task = asyncio.create_task(calls.call(token, EVENT, timeout, browser.emit))
+    task = asyncio.create_task(calls.call(token, "p1", EVENT, timeout, browser.emit))
     return browser, task, await browser.rid()
+
+
+async def _raised(task: asyncio.Task[Any]) -> tuple[type[BaseException], str]:
+    """Await a call that fails.
+
+    Args:
+        task: The task awaiting the call.
+
+    Returns:
+        The type and message of the exception it raised.
+    """
+    with pytest.raises(Exception) as exc_info:
+        await task
+    return type(exc_info.value), str(exc_info.value)
+
+
+def _assert_forgotten(calls: BrowserCalls) -> None:
+    """Assert the registry holds nothing of the calls made.
+
+    Args:
+        calls: The registry.
+    """
+    assert (calls._futures, calls._tabs) == ({}, {})
 
 
 async def test_call_sends_the_event_with_a_request_id_and_returns_the_result():
@@ -74,23 +122,22 @@ async def test_call_sends_the_event_with_a_request_id_and_returns_the_result():
             ),
         )
     ]
-    calls.resolve("tok", rid, {"rid": rid, "json": '{"a": [1, null]}'})
+    calls.resolve(rid, {"rid": rid, "json": '{"a": [1, null]}'})
     assert await task == {"a": [1, None]}
-    assert calls._pending == {}
+    _assert_forgotten(calls)
 
 
-async def test_a_result_from_another_token_or_request_is_ignored():
-    """Only the tab a call was sent to can answer it, and only under its rid."""
+async def test_a_result_settles_its_call_by_request_id_once():
+    """A result for an unknown rid is dropped, and the first result for a call wins."""
     calls = BrowserCalls()
     _, task, rid = await _start_call(calls)
-    calls.resolve("other", rid, {"json": "1"})
-    calls.resolve("tok", "unknown", {"json": "2"})
+    calls.resolve("unknown", {"json": "2"})
     await asyncio.sleep(0)
     assert not task.done()
-    calls.resolve("tok", rid, {"json": "3"})
+    calls.resolve(rid, {"json": "3"})
+    calls.resolve(rid, {"json": "4"})
     assert await task == 3
-    # A late duplicate after the call settled is dropped.
-    calls.resolve("tok", rid, {"json": "4"})
+    _assert_forgotten(calls)
 
 
 @pytest.mark.parametrize(
@@ -137,7 +184,7 @@ async def test_an_error_the_browser_reports_is_raised(
     """
     calls = BrowserCalls()
     _, task, rid = await _start_call(calls)
-    calls.resolve("tok", rid, {"rid": rid, "error": error})
+    calls.resolve(rid, {"rid": rid, "error": error})
     with pytest.raises(expected_type) as exc_info:
         await task
     exc = exc_info.value
@@ -145,66 +192,101 @@ async def test_an_error_the_browser_reports_is_raised(
     assert (exc.name, exc.message, exc.stack, str(exc)) == expected
 
 
+def _unreadable(detail: str) -> str:
+    """The message of a result the backend cannot read.
+
+    Args:
+        detail: Why it cannot be read.
+
+    Returns:
+        The error message.
+    """
+    return (
+        f"The browser sent a result the backend cannot read ({detail}). The page "
+        "runs a frontend built for another version of Reflex: rebuild the "
+        "frontend (restart `reflex run`, or export the app again) and reload the "
+        "page."
+    )
+
+
 @pytest.mark.parametrize(
     ("outcome", "expected"),
     [
-        ({}, "KeyError: The browser sent a malformed result: 'json'"),
+        (
+            {},
+            _unreadable(
+                "the JSON object must be str, bytes or bytearray, not NoneType"
+            ),
+        ),
         (
             {"json": "{"},
-            (
-                "JSONDecodeError: The browser sent a malformed result: Expecting "
-                "property name enclosed in double quotes: line 1 column 2 (char 1)"
+            _unreadable(
+                "Expecting property name enclosed in double quotes: line 1 column 2 "
+                "(char 1)"
             ),
         ),
         (
             {"json": 5},
+            _unreadable("the JSON object must be str, bytes or bytearray, not int"),
+        ),
+        (
+            # Valid JSON, nested deeper than Python's parser can follow.
+            {"json": "[" * 100_000 + "]" * 100_000},
             (
-                "TypeError: The browser sent a malformed result: the JSON object "
-                "must be str, bytes or bytearray, not int"
+                "The script returned a value nested too deeply for Python's JSON "
+                "parser. Return a value with fewer levels of nested objects and "
+                "arrays."
             ),
         ),
     ],
 )
-async def test_a_malformed_result_raises_a_serialization_error(
+async def test_a_result_the_backend_cannot_read_raises_a_serialization_error(
     outcome: dict[str, Any], expected: str
 ):
-    """A result without valid JSON fails the call instead of hanging it.
+    """A result the backend cannot parse fails the call instead of hanging it.
 
     Args:
-        outcome: The malformed outcome.
+        outcome: The outcome the browser sent.
         expected: The error's message.
     """
     calls = BrowserCalls()
     _, task, rid = await _start_call(calls)
-    calls.resolve("tok", rid, outcome)
+    calls.resolve(rid, outcome)
     with pytest.raises(BrowserResultSerializationError) as exc_info:
         await task
-    assert str(exc_info.value) == expected
+    exc = exc_info.value
+    assert (exc.name, exc.message, exc.stack, str(exc)) == ("", expected, "", expected)
+    _assert_forgotten(calls)
 
 
 async def test_call_times_out():
     """A call without a result within its timeout raises TimeoutError and is forgotten."""
     calls = BrowserCalls()
     with pytest.raises(TimeoutError) as exc_info:
-        await calls.call("tok", EVENT, 0.01, Browser().emit)
+        await calls.call("tok", "p1", EVENT, 0.01, Browser().emit)
     assert str(exc_info.value) == (
-        "The browser did not return a result for `_call_script` within 0.01 seconds."
+        "The browser did not return a result for `_call_script` within 0.01 "
+        "seconds. If the script needs longer, pass a longer `timeout=` to the "
+        "call (or `timeout=None` to wait without a limit) or raise "
+        "`browser_call_timeout` in rxconfig.py; if it returns a promise, make "
+        "sure the promise settles."
     )
-    assert calls._pending == {}
+    _assert_forgotten(calls)
 
 
-async def test_disconnect_fails_the_calls_after_the_grace_period():
-    """A tab that does not reconnect within the grace period fails its calls."""
+async def test_disconnect_fails_every_call_of_the_tab_after_the_grace_period():
+    """A tab that does not reconnect within the grace period fails all its calls."""
     calls = BrowserCalls()
-    _, task, _ = await _start_call(calls)
+    _, first, _ = await _start_call(calls)
+    _, second, _ = await _start_call(calls)
+    _, other_tab, other_rid = await _start_call(calls, token="other")
     calls.disconnect("tok", 0.01)
-    with pytest.raises(BrowserDisconnectedError) as exc_info:
-        await task
-    assert str(exc_info.value) == (
-        "The browser tab disconnected before returning a result."
-    )
-    assert calls._pending == {}
-    assert calls._grace_timers == {}
+    failed = (BrowserDisconnectedError, grace_expired(0.01))
+    assert [await _raised(first), await _raised(second)] == [failed, failed]
+    assert calls._tabs.keys() == {"other"}
+    calls.resolve(other_rid, {"json": "1"})
+    assert await other_tab == 1
+    _assert_forgotten(calls)
 
 
 async def test_disconnect_without_a_grace_period_fails_the_calls_at_once():
@@ -212,52 +294,98 @@ async def test_disconnect_without_a_grace_period_fails_the_calls_at_once():
     calls = BrowserCalls()
     _, task, _ = await _start_call(calls)
     calls.disconnect("tok", 0)
-    assert calls._grace_timers == {}
-    with pytest.raises(BrowserDisconnectedError):
-        await task
+    assert calls._tabs == {}
+    assert await _raised(task) == (BrowserDisconnectedError, grace_expired(0))
+    _assert_forgotten(calls)
 
 
-async def test_reconnect_within_the_grace_period_keeps_the_calls():
-    """A tab reconnecting in time still answers its calls."""
+async def test_a_result_that_came_before_the_disconnect_is_kept():
+    """A call settled just before its tab disconnects returns its result."""
+    calls = BrowserCalls()
+    _, task, rid = await _start_call(calls)
+    calls.resolve(rid, {"json": "7"})
+    calls.disconnect("tok", 0)
+    assert await task == 7
+    _assert_forgotten(calls)
+
+
+async def test_a_reconnect_of_the_page_within_the_grace_period_keeps_the_calls():
+    """The same page load reconnecting in time still answers its calls."""
     calls = BrowserCalls()
     _, task, rid = await _start_call(calls)
     calls.disconnect("tok", 0.01)
-    calls.reconnect("tok")
-    assert calls._grace_timers == {}
+    timer = calls._tabs["tok"].grace_timer
+    calls.connect("tok", "p1")
+    assert timer is not None
+    assert timer.cancelled()
+    assert calls._tabs["tok"].grace_timer is None
     await asyncio.sleep(0.02)
     assert not task.done()
-    calls.resolve("tok", rid, {"json": "true"})
+    calls.resolve(rid, {"json": "true"})
     assert await task is True
+    _assert_forgotten(calls)
 
 
-def test_disconnect_without_pending_calls_starts_no_timer():
-    """A tab with nothing pending needs no grace period."""
-    calls = BrowserCalls()
-    calls.disconnect("tok", 5)
-    assert calls._grace_timers == {}
-
-
-async def test_settled_call_ends_the_grace_period():
-    """The last call settling during the grace period cancels its timer."""
-    calls = BrowserCalls()
-    _, task, rid = await _start_call(calls)
-    calls.disconnect("tok", 5)
-    timer = calls._grace_timers["tok"]
-    calls.resolve("tok", rid, {"json": "1"})
-    assert await task == 1
-    assert calls._grace_timers == {}
-    assert timer.cancelled()
-
-
-async def test_close_cancels_pending_calls():
-    """Shutting the backend down cancels the calls still waiting."""
+async def test_a_connect_from_another_page_load_fails_the_calls_at_once():
+    """A reloaded page connecting under the token means the script stopped with the old one."""
     calls = BrowserCalls()
     _, task, _ = await _start_call(calls)
     calls.disconnect("tok", 5)
-    timer = calls._grace_timers["tok"]
-    calls.close()
-    with pytest.raises(asyncio.CancelledError):
-        await task
+    timer = calls._tabs["tok"].grace_timer
+    calls.connect("tok", "p2")
+    assert timer is not None
     assert timer.cancelled()
-    assert calls._pending == {}
-    assert calls._grace_timers == {}
+    assert await _raised(task) == (BrowserDisconnectedError, PAGE_REPLACED)
+    _assert_forgotten(calls)
+
+
+async def test_a_connect_while_the_tab_is_connected_keeps_its_calls():
+    """A connect for a tab that never disconnected, or one without calls, changes nothing."""
+    calls = BrowserCalls()
+    _, task, rid = await _start_call(calls)
+    calls.connect("tok", "p2")
+    calls.connect("unknown", "p1")
+    calls.disconnect("unknown", 5)
+    assert calls._tabs.keys() == {"tok"}
+    calls.resolve(rid, {"json": "1"})
+    assert await task == 1
+    _assert_forgotten(calls)
+
+
+async def test_a_call_ending_during_the_grace_period_cancels_its_timer():
+    """The last call settling, or its task cancelled, while the tab is away ends the grace period."""
+    calls = BrowserCalls()
+    _, settled, rid = await _start_call(calls)
+    calls.disconnect("tok", 5)
+    timer = calls._tabs["tok"].grace_timer
+    calls.resolve(rid, {"json": "1"})
+    assert await settled == 1
+    assert timer is not None
+    assert timer.cancelled()
+    _assert_forgotten(calls)
+
+    _, cancelled, _ = await _start_call(calls)
+    calls.disconnect("tok", 5)
+    timer = calls._tabs["tok"].grace_timer
+    cancelled.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await cancelled
+    assert timer is not None
+    assert timer.cancelled()
+    _assert_forgotten(calls)
+
+
+async def test_close_cancels_pending_calls():
+    """Shutting the backend down cancels the calls still waiting, and their timers."""
+    calls = BrowserCalls()
+    _, away, _ = await _start_call(calls)
+    calls.disconnect("tok", 5)
+    timer = calls._tabs["tok"].grace_timer
+    _, connected, _ = await _start_call(calls, token="other")
+    calls.close()
+    for task in (away, connected):
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    assert timer is not None
+    assert timer.cancelled()
+    _assert_forgotten(calls)

@@ -2684,6 +2684,10 @@ class EventNamespace(AsyncNamespace):
         # connect time instead of for every event on the connection.
         self._static_router_data: dict[str, dict[str, Any]] = {}
 
+        # The page load each SID connected from, dropped as soon as the socket
+        # disconnects: a script a backend task awaits stops with its page.
+        self._sid_pages: dict[str, str] = {}
+
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
@@ -2730,9 +2734,11 @@ class EventNamespace(AsyncNamespace):
             # Make sure this instance is watching for updates from other instances.
             await self._token_manager.ensure_lost_and_found_subscribed(self.emit_update)
         boot_event = frontend_schema = None
+        page = ""
         if isinstance(auth, dict):
             boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
             frontend_schema = auth.get(constants.CompileVars.CONNECT_AUTH_STATE_SCHEMA)
+            page = auth.get(constants.CompileVars.CONNECT_AUTH_PAGE, "")
         # A frontend compiled for another state tree is told so before it
         # hydrates; an older frontend sends no hash and is left alone. The
         # backend hash is cached on the state class, so this is one lookup.
@@ -2763,9 +2769,15 @@ class EventNamespace(AsyncNamespace):
         if token_list:
             # The boot event is the connection's first event: processing it
             # records the new sid and token on the state under the state lock.
-            await self.link_token_to_sid(
+            new_token = await self.link_token_to_sid(
                 sid, token_list[0], update_state=boot_event is None
             )
+            if (
+                new_token is None
+                and (processor := self.app._event_processor) is not None
+            ):
+                # The tab's browser calls survive a reconnect of their page.
+                processor._on_connect(token_list[0], page)
         else:
             logger.warning(f"No token provided in connection for session {sid}")
 
@@ -2780,6 +2792,7 @@ class EventNamespace(AsyncNamespace):
         # Headers, client IP, and session id cannot change for the lifetime of
         # the connection; compute them once instead of on every event.
         self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+        self._sid_pages[sid] = page
 
         if boot_event is not None:
             try:
@@ -2789,6 +2802,7 @@ class EventNamespace(AsyncNamespace):
                 # token link and connection data made above before the error
                 # refuses the connect.
                 self._static_router_data.pop(sid, None)
+                self._sid_pages.pop(sid, None)
                 if (linked_token := self.sid_to_token.get(sid)) is not None:
                     await self._token_manager.disconnect_token(linked_token, sid)
                 raise
@@ -2847,6 +2861,7 @@ class EventNamespace(AsyncNamespace):
             otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
         self._static_router_data.pop(sid, None)
+        self._sid_pages.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -2873,20 +2888,19 @@ class EventNamespace(AsyncNamespace):
             return task
         return None
 
-    def _is_connected(self, token: str) -> bool:
-        """Whether a client is connected to this instance of the backend.
+    def _page_of(self, token: str) -> str | None:
+        """Get the page load of a client's tab, while it is connected to this worker.
 
         Args:
             token: The client token.
 
         Returns:
-            True when the token's socket is connected to this instance.
+            The page id the tab connected with, or None when the token has no
+            socket on this worker. A socket loses its page as it disconnects,
+            before the token's link to it is cleaned up.
         """
         socket_record = self._token_manager.token_to_socket.get(token)
-        return (
-            socket_record is not None
-            and socket_record.instance_id == self._token_manager.instance_id
-        )
+        return None if socket_record is None else self._sid_pages.get(socket_record.sid)
 
     async def emit_update(
         self, update: StateUpdate, token: str, suppress_warnings: bool = False
@@ -3138,15 +3152,11 @@ class EventNamespace(AsyncNamespace):
         if not isinstance(data, dict) or not isinstance(rid := data.get(RID_KEY), str):
             logger.debug(f"Ignoring malformed result payload from SID {sid}.")
             return
-        if (token := self.sid_to_token.get(sid)) is None or (
-            processor := self.app._event_processor
-        ) is None:
-            return
-        processor._browser_calls.resolve(token, rid, data)
+        self.app.event_processor._browser_calls.resolve(rid, data)
 
     async def link_token_to_sid(
         self, sid: str, token: str, *, update_state: bool = True
-    ):
+    ) -> str | None:
         """Link a token to a session id.
 
         Args:
@@ -3156,6 +3166,9 @@ class EventNamespace(AsyncNamespace):
                 now. The connect skips it when the CONNECT packet carries the
                 boot event, which records them as the connection's first event
                 without an extra load and save of the whole state tree.
+
+        Returns:
+            The new token the tab was given when its token is a duplicate, or None.
         """
         # Use TokenManager for duplicate detection and Redis support
         new_token = await self._token_manager.link_token_to_sid(token, sid)
@@ -3163,9 +3176,6 @@ class EventNamespace(AsyncNamespace):
         if new_token:
             # Duplicate detected, emit new token to client
             await self.emit("new_token", new_token, to=sid)
-        elif (processor := self.app._event_processor) is not None:
-            # A tab reconnecting within the grace period keeps its browser calls.
-            processor._on_connect(token)
 
         # Update client state to apply new sid/token for running background tasks.
         if update_state and self.app._state is not None:
@@ -3181,3 +3191,4 @@ class EventNamespace(AsyncNamespace):
                     session := SessionData.from_router_data(state.router_data)
                 ) != state.rx_router_session:
                     state.rx_router_session = session
+        return new_token

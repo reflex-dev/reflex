@@ -235,13 +235,19 @@ class EventProcessor:
                 Raises:
                     BrowserDisconnectedError: If the client is not connected to this backend.
                 """
-                if not event_namespace._is_connected(token):
+                if (page := event_namespace._page_of(token)) is None:
                     msg = (
-                        f"The browser tab is not connected, so `{event.name}` "
-                        "cannot run in it."
+                        f"`{event.name}` cannot run in the browser tab: the tab "
+                        "is not connected to this backend worker, because it "
+                        "was closed, is reconnecting, or reconnected to another "
+                        "worker. Catch BrowserDisconnectedError where the tab may "
+                        "be gone; with several backend workers, route each tab "
+                        "to one worker (sticky sessions)."
                     )
                     raise BrowserDisconnectedError(msg)
-                return await self._browser_calls.call(token, event, timeout, emit_event)
+                return await self._browser_calls.call(
+                    token, page, event, timeout, emit_event
+                )
 
             call_frontend_impl = call_frontend
 
@@ -532,13 +538,14 @@ class EventProcessor:
         """
         self._browser_calls.disconnect(token, self.browser_call_grace_period)
 
-    def _on_connect(self, token: str) -> None:
+    def _on_connect(self, token: str, page: str) -> None:
         """Handle a client connecting, possibly again after a disconnect.
 
         Args:
             token: The connected client token.
+            page: The page load the client connected from.
         """
-        self._browser_calls.reconnect(token)
+        self._browser_calls.connect(token, page)
 
     async def enqueue_many(self, token: str, *events: Event) -> Sequence[EventFuture]:
         """Enqueue multiple events to be processed.

@@ -5914,5 +5914,11 @@ async def test_await_browser_call_without_a_frontend_raises(
         await future.wait_all()
 
     assert errors == [
-        "No browser is connected to this app, so it cannot run the script."
+        (
+            "`_call_script` cannot run in a browser: the app is running without a "
+            "frontend connection (for example in a test, or a process that runs "
+            "only the backend), so no tab can return a result. Await browser "
+            "scripts in handlers triggered from a page of the running app, and "
+            "catch BrowserDisconnectedError where no page may be connected."
+        )
     ]

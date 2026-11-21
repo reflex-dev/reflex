@@ -37,7 +37,7 @@ from reflex_base.constants import Templates
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
-from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.event.processor.event_processor import QueueShutDown
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
@@ -5661,34 +5661,41 @@ def test_result_event_matches_handler_and_frontend():
     assert frontend_name == constants.SocketEvent.RESULT
 
 
+def test_connect_page_key_matches_frontend():
+    """The page id rides in the CONNECT auth packet under the key on_connect reads."""
+    state_js = (Templates.Dirs.WEB_TEMPLATE / "utils/state.js").read_text()
+    assert re.findall(r"^ {6}(\w+): PAGE_ID,$", state_js, re.MULTILINE) == [
+        constants.CompileVars.CONNECT_AUTH_PAGE
+    ]
+
+
 @pytest.mark.asyncio
-async def test_on_result_settles_the_call_of_the_sending_token(
+async def test_on_result_settles_a_call_by_its_request_id(
     event_namespace_with_processor_mock: EventNamespace,
 ):
-    """A result resolves the sending tab's call; a malformed or unknown one is dropped.
+    """A result goes to the call with its rid from any socket; a malformed one is dropped.
 
     Args:
         event_namespace_with_processor_mock: Namespace with a mocked processor.
     """
     namespace = event_namespace_with_processor_mock
-    namespace._token_manager.sid_to_token["sid1"] = "token"
     resolve = cast(Mock, namespace.app.event_processor._browser_calls.resolve)
     outcome = {"rid": "r1", "json": "1"}
-    await namespace.on_result("sid1", outcome)
-    resolve.assert_called_once_with("token", "r1", outcome)
+    # The tab may have been given a new token since, so the sid is not consulted.
+    await namespace.on_result("unknown-sid", outcome)
+    resolve.assert_called_once_with("r1", outcome)
 
     resolve.reset_mock()
-    await namespace.on_result("unknown-sid", outcome)
     await namespace.on_result("sid1")
     await namespace.on_result("sid1", ["r1"])
     await namespace.on_result("sid1", {"rid": 1, "json": "1"})
     resolve.assert_not_called()
 
 
-def test_is_connected_only_for_a_socket_on_this_instance(
+def test_page_of_only_for_a_live_socket_on_this_instance(
     event_namespace_with_processor_mock: EventNamespace,
 ):
-    """Browser calls go only to a tab whose socket is connected to this instance.
+    """Browser calls go only to a tab whose socket is live on this instance.
 
     Args:
         event_namespace_with_processor_mock: Namespace with a mocked processor.
@@ -5699,34 +5706,96 @@ def test_is_connected_only_for_a_socket_on_this_instance(
         instance_id=manager.instance_id, sid="sid1"
     )
     manager.token_to_socket["remote"] = SocketRecord(instance_id="other", sid="sid2")
-    assert [
-        namespace._is_connected(token) for token in ("local", "remote", "missing")
-    ] == [True, False, False]
+    namespace._sid_pages["sid1"] = "p1"
+    assert [namespace._page_of(token) for token in ("local", "remote", "missing")] == [
+        "p1",
+        None,
+        None,
+    ]
+    # A socket that disconnected has no page, before its token is unlinked.
+    namespace.on_disconnect("sid1")
+    assert namespace._page_of("local") is None
+
+
+async def _start_browser_call(
+    namespace: EventNamespace, ctx: EventContext
+) -> tuple[asyncio.Task[Any], str]:
+    """Start an awaited browser call and wait for its event to reach the socket.
+
+    Args:
+        namespace: The namespace the event is emitted on.
+        ctx: The client's event context.
+
+    Returns:
+        The task awaiting the call, and its request id.
+    """
+    sent = asyncio.Event()
+    emit = cast(AsyncMock, namespace.emit)
+    emit.reset_mock(side_effect=True)
+    emit.side_effect = lambda *_args, **_kwargs: sent.set()
+    task = asyncio.create_task(
+        ctx.call_frontend(Event(name="_call_script", payload={}), None)
+    )
+    await sent.wait()
+    (update,) = [call.args[1] for call in emit.await_args_list]
+    return task, update.events[0].payload["rid"]
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("duplicate", [False, True])
-async def test_link_token_to_sid_ends_the_grace_period_of_a_reconnecting_tab(
-    event_namespace_with_processor_mock: EventNamespace,
-    duplicate: bool,
-):
-    """A tab reconnecting under its token keeps its browser calls; a new tab does not.
+async def test_browser_calls_follow_their_page_across_socket_connects():
+    """An awaited call survives its page reconnecting, and fails at once when the page is gone.
 
-    Args:
-        event_namespace_with_processor_mock: Namespace with a mocked processor.
-        duplicate: Whether the token is a duplicate, so the tab gets a new one.
+    The socket's connect and disconnect handlers tell the event processor
+    which page load each token's socket belongs to.
     """
-    namespace = event_namespace_with_processor_mock
-    namespace._token_manager.link_token_to_sid = AsyncMock(
-        return_value="new-token" if duplicate else None
-    )
+    app = App()
+    namespace = EventNamespace("/event", app)
+    namespace._token_manager = LocalTokenManager()
     namespace.emit = AsyncMock()
-    await namespace.link_token_to_sid("sid1", "token", update_state=False)
-    on_connect = cast(Mock, namespace.app.event_processor._on_connect)
-    if duplicate:
-        on_connect.assert_not_called()
-    else:
-        on_connect.assert_called_once_with("token")
+    processor = app._event_processor = EventProcessor(browser_call_grace_period=5)
+    processor.configure(event_namespace=namespace)
+    assert processor._root_context is not None
+    ctx = processor._root_context.fork(token="tok")
+    environ = {"QUERY_STRING": "token=tok"}
+    not_connected = (
+        "`_call_script` cannot run in the browser tab: the tab is not connected "
+        "to this backend worker, because it was closed, is reconnecting, or "
+        "reconnected to another worker. Catch BrowserDisconnectedError where "
+        "the tab may be gone; with several backend workers, route each tab to "
+        "one worker (sticky sessions)."
+    )
+
+    async with processor:
+        await namespace.on_connect("sid1", environ, {"page": "p1"})
+        reconnected, rid = await _start_browser_call(namespace, ctx)
+        cleanup = namespace.on_disconnect("sid1")
+        # A call made as the socket drops fails at once, before its token is
+        # unlinked.
+        with pytest.raises(exceptions.BrowserDisconnectedError) as exc_info:
+            await ctx.call_frontend(Event(name="_call_script", payload={}), None)
+        assert str(exc_info.value) == not_connected
+        # Another tab connecting with the token before then is a duplicate,
+        # given a new token: it does not fail the first tab's call.
+        await namespace.on_connect("dup", environ, {"page": "p9"})
+        assert cleanup is not None
+        await cleanup
+        await namespace.on_connect("sid2", environ, {"page": "p1"})
+        await namespace.on_result("sid2", {"rid": rid, "json": "1"})
+        assert await reconnected == 1
+
+        reloaded, _ = await _start_browser_call(namespace, ctx)
+        cleanup = namespace.on_disconnect("sid2")
+        assert cleanup is not None
+        await cleanup
+        await namespace.on_connect("sid3", environ, {"page": "p2"})
+        with pytest.raises(exceptions.BrowserDisconnectedError) as exc_info:
+            await reloaded
+        assert str(exc_info.value) == (
+            "The browser tab reloaded or left the page before the script returned "
+            "a result, so the script stopped. Catch BrowserDisconnectedError where "
+            "the user may reload or leave the page while the script runs."
+        )
+    assert processor._browser_calls._tabs == {}
 
 
 @pytest.mark.asyncio

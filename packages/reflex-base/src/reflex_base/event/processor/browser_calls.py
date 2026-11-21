@@ -24,28 +24,41 @@ SERIALIZATION_ERROR_KIND = "serialization"
 # The payload key of a browser call's request id (must match state.js).
 RID_KEY = "rid"
 
+_PAGE_REPLACED = (
+    "The browser tab reloaded or left the page before the script returned a "
+    "result, so the script stopped. Catch BrowserDisconnectedError where the "
+    "user may reload or leave the page while the script runs."
+)
+
+
+@dataclasses.dataclass(slots=True)
+class _Tab:
+    """The calls awaiting the results of one client token's tab."""
+
+    # The page load the calls were sent to: a script stops with its page.
+    page: str
+    rids: set[str] = dataclasses.field(default_factory=set)
+    # Set while the tab is disconnected; fails the calls unless it reconnects.
+    grace_timer: asyncio.TimerHandle | None = None
+
 
 @dataclasses.dataclass(slots=True)
 class BrowserCalls:
-    """The browser calls waiting for a result, per client token.
+    """The browser calls waiting for a result.
 
-    A result resolves a call only when it comes from the token the call was
-    sent to, so one tab cannot answer another tab's call.
+    A result settles the call with its request id, whichever socket it comes
+    from: the id is random and only ever sent to the tab the call runs in,
+    which may have been given a new token when it reconnected.
     """
 
-    # Client token -> request id -> the future its result resolves.
-    _pending: dict[str, dict[str, asyncio.Future[Any]]] = dataclasses.field(
-        default_factory=dict
-    )
-    # Client token -> the timer that fails its calls once the grace period
-    # after a disconnect is over.
-    _grace_timers: dict[str, asyncio.TimerHandle] = dataclasses.field(
-        default_factory=dict
-    )
+    _futures: dict[str, asyncio.Future[Any]] = dataclasses.field(default_factory=dict)
+    # Client token -> the calls sent to its tab, failed when it goes away.
+    _tabs: dict[str, _Tab] = dataclasses.field(default_factory=dict)
 
     async def call(
         self,
         token: str,
+        page: str,
         event: Event,
         timeout: float | None,
         emit: Callable[[str, Event], Awaitable[Any]],
@@ -54,6 +67,7 @@ class BrowserCalls:
 
         Args:
             token: The client token to send the event to.
+            page: The page load the token's tab connected from.
             event: The frontend event to run in the browser.
             timeout: Seconds to wait for the result, or None to wait until it arrives.
             emit: Sends an event to a client.
@@ -65,9 +79,11 @@ class BrowserCalls:
             TimeoutError: If no result arrives within the timeout.
         """
         rid = uuid.uuid4().hex
-        future = asyncio.get_running_loop().create_future()
-        calls = self._pending.setdefault(token, {})
-        calls[rid] = future
+        future = self._futures[rid] = asyncio.get_running_loop().create_future()
+        tab = self._tabs.get(token)
+        if tab is None:
+            tab = self._tabs[token] = _Tab(page)
+        tab.rids.add(rid)
         try:
             # Only the browser-call events carry a request id, in their
             # payload, so no other event pays for it.
@@ -80,32 +96,36 @@ class BrowserCalls:
             except TimeoutError:
                 msg = (
                     f"The browser did not return a result for `{event.name}` "
-                    f"within {timeout} seconds."
+                    f"within {timeout} seconds. If the script needs longer, pass "
+                    "a longer `timeout=` to the call (or `timeout=None` to wait "
+                    "without a limit) or raise `browser_call_timeout` in "
+                    "rxconfig.py; if it returns a promise, make sure the "
+                    "promise settles."
                 )
                 raise TimeoutError(msg) from None
         finally:
-            calls.pop(rid, None)
-            # The token's calls may have been failed on a disconnect already,
-            # which drops this mapping from _pending.
-            if not calls and self._pending.get(token) is calls:
-                del self._pending[token]
-                if (timer := self._grace_timers.pop(token, None)) is not None:
-                    timer.cancel()
+            del self._futures[rid]
+            tab.rids.remove(rid)
+            # A disconnect may have failed the tab's calls already, and a new
+            # call made a new _Tab for the token.
+            if not tab.rids and self._tabs.get(token) is tab:
+                del self._tabs[token]
+                if tab.grace_timer is not None:
+                    tab.grace_timer.cancel()
 
-    def resolve(self, token: str, rid: str, outcome: Mapping[str, Any]) -> None:
+    def resolve(self, rid: str, outcome: Mapping[str, Any]) -> None:
         """Settle a call with the outcome the browser reported for it.
 
-        An outcome for a call that is no longer waiting (it timed out, or the
-        token never made it) is dropped.
+        An outcome for a call that is no longer waiting (it timed out, or was
+        never made) is dropped.
 
         Args:
-            token: The client token the outcome came from.
             rid: The request id of the call.
             outcome: ``{"json": <the result as JSON>}``, or ``{"error": {"name",
                 "message", "stack", "kind"}}`` when the script failed.
         """
-        calls = self._pending.get(token)
-        if calls is None or (future := calls.pop(rid, None)) is None or future.done():
+        future = self._futures.get(rid)
+        if future is None or future.done():
             return
         error = outcome.get("error")
         if isinstance(error, Mapping):
@@ -123,65 +143,97 @@ class BrowserCalls:
             )
             return
         try:
-            future.set_result(json.loads(outcome["json"]))
-        except (KeyError, TypeError, ValueError) as e:
+            # A missing or non-string field raises the TypeError reported below.
+            future.set_result(json.loads(outcome.get("json")))  # pyright: ignore[reportArgumentType]
+        except (TypeError, ValueError) as e:
             future.set_exception(
                 BrowserResultSerializationError(
-                    type(e).__name__, f"The browser sent a malformed result: {e}"
+                    "",
+                    f"The browser sent a result the backend cannot read ({e}). "
+                    "The page runs a frontend built for another version of "
+                    "Reflex: rebuild the frontend (restart `reflex run`, or "
+                    "export the app again) and reload the page.",
+                )
+            )
+        except RecursionError:
+            future.set_exception(
+                BrowserResultSerializationError(
+                    "",
+                    "The script returned a value nested too deeply for Python's "
+                    "JSON parser. Return a value with fewer levels of nested "
+                    "objects and arrays.",
                 )
             )
 
     def disconnect(self, token: str, grace_period: float) -> None:
         """Start the grace period of a client's calls after it disconnected.
 
-        The tab may reconnect within it, and its results then still arrive.
+        Its tab may reconnect within it, and its results then still arrive.
 
         Args:
             token: The disconnected client token.
             grace_period: Seconds to wait for the client to reconnect.
         """
-        if token not in self._pending or token in self._grace_timers:
+        if (tab := self._tabs.get(token)) is None:
             return
-        if grace_period <= 0:
-            self._fail(token)
-            return
-        self._grace_timers[token] = asyncio.get_running_loop().call_later(
-            grace_period, self._fail, token
+        msg = (
+            "The browser tab disconnected and did not reconnect within "
+            f"browser_call_grace_period ({grace_period} seconds), so the script's "
+            "result is lost: the tab was closed, or lost its connection. Catch "
+            "BrowserDisconnectedError where the user may close the tab, or raise "
+            "`browser_call_grace_period` in rxconfig.py if connections drop for "
+            "longer."
         )
+        if grace_period <= 0:
+            self._fail(token, msg)
+        else:
+            tab.grace_timer = asyncio.get_running_loop().call_later(
+                grace_period, self._fail, token, msg
+            )
 
-    def reconnect(self, token: str) -> None:
+    def connect(self, token: str, page: str) -> None:
         """End the grace period of a client that connected again.
 
+        A connect from another page load means the page the calls run in
+        reloaded or navigated away, so they fail at once.
+
         Args:
-            token: The reconnected client token.
+            token: The connected client token.
+            page: The page load it connected from.
         """
-        if (timer := self._grace_timers.pop(token, None)) is not None:
-            timer.cancel()
+        tab = self._tabs.get(token)
+        # A tab that is still connected keeps its calls: another tab
+        # connecting with its token is a duplicate, given a new token.
+        if tab is None or tab.grace_timer is None:
+            return
+        if tab.page == page:
+            tab.grace_timer.cancel()
+            tab.grace_timer = None
+        else:
+            self._fail(token, _PAGE_REPLACED)
 
     def close(self) -> None:
         """Cancel every pending call, as the backend shuts down."""
-        for timer in self._grace_timers.values():
-            timer.cancel()
-        self._grace_timers.clear()
-        for calls in self._pending.values():
-            for future in calls.values():
-                future.cancel()
-        self._pending.clear()
+        for tab in self._tabs.values():
+            if tab.grace_timer is not None:
+                tab.grace_timer.cancel()
+        for future in self._futures.values():
+            future.cancel()
 
-    def _fail(self, token: str) -> None:
-        """Fail a client's calls: it did not reconnect within the grace period.
+    def _fail(self, token: str, message: str) -> None:
+        """Fail a client's calls with BrowserDisconnectedError.
 
         Args:
-            token: The disconnected client token.
+            token: The client token.
+            message: The error's message.
         """
-        self._grace_timers.pop(token, None)
-        for future in self._pending.pop(token, {}).values():
-            if not future.done():
-                future.set_exception(
-                    BrowserDisconnectedError(
-                        "The browser tab disconnected before returning a result."
-                    )
-                )
+        tab = self._tabs.pop(token)
+        if tab.grace_timer is not None:
+            tab.grace_timer.cancel()
+        for rid in tab.rids:
+            # A result may have settled the call, which has not resumed yet.
+            if not (future := self._futures[rid]).done():
+                future.set_exception(BrowserDisconnectedError(message))
 
 
 __all__ = ["BrowserCalls"]

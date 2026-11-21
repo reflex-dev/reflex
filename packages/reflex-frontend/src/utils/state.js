@@ -170,6 +170,10 @@ export const getToken = () => {
   return token;
 };
 
+// Sent on every connect, so the backend tells a reconnect of this page from a
+// reload: the scripts it awaits stop with the page that runs them.
+const PAGE_ID = generateUUID();
+
 /**
  * Get the token for the current session without saving a new one.
  *
@@ -1226,16 +1230,20 @@ export const connect = async (
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
   // an extra round trip for the connect acknowledgement. The keys are read by
-  // the backend as CompileVars.CONNECT_AUTH_EVENT and CONNECT_AUTH_STATE_SCHEMA;
-  // the state schema goes along on every (re)connect, since a reconnect can
-  // land on another backend version.
+  // the backend as CompileVars.CONNECT_AUTH_EVENT, CONNECT_AUTH_STATE_SCHEMA
+  // and CONNECT_AUTH_PAGE; the state schema goes along on every (re)connect,
+  // since a reconnect can land on another backend version.
   const bootAuth = (first) => (callback) => {
     const boot_event = withRouterData(app.initialEvents(first)[0], params);
     bootRoute = currentRouteKey();
     recordSentStorageValues(boot_event);
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(boot_event);
-    callback({ event: boot_event, state_schema: app.stateSchema });
+    callback({
+      event: boot_event,
+      state_schema: app.stateSchema,
+      page: PAGE_ID,
+    });
   };
 
   // Create the socket. A new session's token is saved here, once the app has

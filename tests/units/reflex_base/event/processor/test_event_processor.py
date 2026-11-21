@@ -31,6 +31,10 @@ from reflex_base.utils.exceptions import BrowserDisconnectedError
 
 from reflex.event import Event, EventHandler, EventSpec
 from tests.units.conftest import active_tracer
+from tests.units.reflex_base.event.processor.test_browser_calls import (
+    PAGE_REPLACED,
+    grace_expired,
+)
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -2170,26 +2174,26 @@ async def test_bare_handler_returned_future_is_awaited(
 class _FakeEventNamespace:
     """Records the updates sent to the clients it reports as connected."""
 
-    def __init__(self, *connected: str):
+    def __init__(self, **pages: str):
         """Connect the given tokens.
 
         Args:
-            connected: The connected client tokens.
+            pages: The page load each connected client token connected from.
         """
-        self.connected = set(connected)
+        self.pages = pages
         self.updates: list[tuple[str, Any]] = []
         self.sent = asyncio.Event()
 
-    def _is_connected(self, token: str) -> bool:
-        """Whether a client is connected.
+    def _page_of(self, token: str) -> str | None:
+        """Get the page load of a connected client.
 
         Args:
             token: The client token.
 
         Returns:
-            Whether the token is connected.
+            The page id, or None when the token is not connected.
         """
-        return token in self.connected
+        return self.pages.get(token)
 
     async def emit_update(self, update: Any, token: str) -> None:
         """Record an update sent to a client.
@@ -2218,14 +2222,15 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
     """The configured call_frontend sends the event with a rid and resolves with the result.
 
     Calls to a tab that is not connected fail at once; a tab disconnecting
-    fails its calls after the grace period unless it reconnects; stopping
-    the processor cancels the calls still waiting.
+    fails its calls after the grace period unless its page reconnects, and at
+    once when another page load connects; stopping the processor cancels the
+    calls still waiting.
 
     Args:
         processor: The event processor fixture.
     """
     event = Event(name="_call_script", payload={"javascript_code": "1"})
-    namespace = _FakeEventNamespace("tok")
+    namespace = _FakeEventNamespace(tok="p1")
     processor.browser_call_grace_period = 0.01
     processor.configure(event_namespace=namespace)  # pyright: ignore[reportArgumentType]
     assert processor._root_context is not None
@@ -2235,7 +2240,11 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
         with pytest.raises(BrowserDisconnectedError) as exc_info:
             await processor._root_context.fork(token="gone").call_frontend(event, 1)
         assert str(exc_info.value) == (
-            "The browser tab is not connected, so `_call_script` cannot run in it."
+            "`_call_script` cannot run in the browser tab: the tab is not "
+            "connected to this backend worker, because it was closed, is "
+            "reconnecting, or reconnected to another worker. Catch "
+            "BrowserDisconnectedError where the tab may be gone; with several "
+            "backend workers, route each tab to one worker (sticky sessions)."
         )
 
         answered = asyncio.create_task(ctx.call_frontend(event, 1))
@@ -2243,18 +2252,26 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
         assert [(token, update.events) for token, update in namespace.updates] == [
             ("tok", [dataclasses.replace(event, payload={**event.payload, "rid": rid})])
         ]
-        # Reconnecting within the grace period keeps the call.
         processor._on_disconnect("tok")
-        processor._on_connect("tok")
+        processor._on_connect("tok", "p1")
         await asyncio.sleep(0.02)
-        processor._browser_calls.resolve("tok", rid, {"json": "[1]"})
+        processor._browser_calls.resolve(rid, {"json": "[1]"})
         assert await answered == [1]
 
         abandoned = asyncio.create_task(ctx.call_frontend(event, 1))
         await namespace.next_rid()
         processor._on_disconnect("tok")
-        with pytest.raises(BrowserDisconnectedError):
+        with pytest.raises(BrowserDisconnectedError) as exc_info:
             await abandoned
+        assert str(exc_info.value) == grace_expired(0.01)
+
+        reloaded = asyncio.create_task(ctx.call_frontend(event, 1))
+        await namespace.next_rid()
+        processor._on_disconnect("tok")
+        processor._on_connect("tok", "p2")
+        with pytest.raises(BrowserDisconnectedError) as exc_info:
+            await reloaded
+        assert str(exc_info.value) == PAGE_REPLACED
 
         pending = asyncio.create_task(ctx.call_frontend(event, None))
         await namespace.next_rid()

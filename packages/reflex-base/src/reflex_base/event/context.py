@@ -135,8 +135,7 @@ class EventContext(BaseContext):
     emit_event_impl: EmitEventProtocol | None = dataclasses.field(
         default=None, repr=False
     )
-    # Runs a frontend event in the browser and returns its result; None when
-    # no frontend is attached.
+    # None when no frontend is attached.
     call_frontend_impl: CallFrontendProtocol | None = dataclasses.field(
         default=None, repr=False
     )
@@ -277,7 +276,14 @@ class EventContext(BaseContext):
             BrowserDisconnectedError: If no frontend is attached to the app.
         """
         if self.call_frontend_impl is None:
-            msg = "No browser is connected to this app, so it cannot run the script."
+            msg = (
+                f"`{event.name}` cannot run in a browser: the app is running "
+                "without a frontend connection (for example in a test, or a "
+                "process that runs only the backend), so no tab can return a "
+                "result. Await browser scripts in handlers triggered from a page "
+                "of the running app, and catch BrowserDisconnectedError where no "
+                "page may be connected."
+            )
             raise BrowserDisconnectedError(msg)
         return await self.call_frontend_impl(self.token, event, timeout)
 
