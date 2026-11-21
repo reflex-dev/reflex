@@ -1,1 +1,1 @@
-`var.to(StringVar)` and other `Var` subclasses passed as the output type are now typed as that subclass under ty as well; ty 0.0.107 inferred them as `Unknown`, so `rx.cond` typed a branch holding one as a `Component`.
+ty 0.0.92 and later now type `var.to(StringVar)`, `var.to(StringVar, str)` and other `Var` subclasses passed as the output type as that subclass, as pyright does, instead of `Unknown`.
