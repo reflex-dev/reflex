@@ -36,6 +36,10 @@ const RESULT_EVENT = "result";
 // SERIALIZATION_ERROR_KIND in reflex_base/event/processor/browser_calls.py).
 const SERIALIZATION_ERROR_KIND = "serialization";
 
+// What the backend is told when even reading what a script threw throws.
+const UNDESCRIBABLE_ERROR =
+  "The script threw a value whose name, message or stack cannot be read.";
+
 // sessionStorage key with the time of the last automatic reload (must match
 // LAST_RELOADED_KEY in reflex/state.py: the reload on a frontend error and the
 // reload on a state mismatch share one cooldown, so neither can loop).
@@ -639,16 +643,27 @@ const toText = (value) => {
 
 /**
  * Describe an error a script threw, for the backend that awaits its result.
+ *
+ * Reading the thrown value can throw as well (a getter that throws, a revoked
+ * Proxy). The backend still gets an error then, or it would wait for its
+ * timeout.
  * @param error The thrown value, which need not be an Error.
  * @param kind The kind of failure, if it is not the script's own.
  * @returns The error's name, message and stack.
  */
-const describeScriptError = (error, kind = undefined) => ({
-  name: toText(error?.name ?? "Error"),
-  message: toText(error instanceof Error ? error.message : error),
-  stack: toText(error?.stack ?? ""),
-  ...(kind === undefined ? {} : { kind }),
-});
+const describeScriptError = (error, kind = undefined) => {
+  let described;
+  try {
+    described = {
+      name: toText(error?.name ?? "Error"),
+      message: toText(error instanceof Error ? error.message : error),
+      stack: toText(error?.stack ?? ""),
+    };
+  } catch {
+    described = { name: "Error", message: UNDESCRIBABLE_ERROR, stack: "" };
+  }
+  return kind === undefined ? described : { ...described, kind };
+};
 
 /**
  * Serialize a script's result as JSON for the backend that awaits it.
@@ -672,7 +687,7 @@ const serializeScriptResult = (value) => {
   });
   if (json === undefined) {
     throw new TypeError(
-      `The script returned a ${typeof value}, which JSON cannot carry.`,
+      `The script returned a ${typeof value}, which JSON cannot carry; return plain data (objects, arrays, strings, numbers, booleans or null) instead.`,
     );
   }
   return json;

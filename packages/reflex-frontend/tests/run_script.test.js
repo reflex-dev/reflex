@@ -221,12 +221,36 @@ describe("awaited script results", () => {
   });
 
   test("describes a thrown value that cannot become a string", async () => {
-    // String() throws on an object without a prototype; the backend must
-    // still receive an error rather than wait for its timeout.
+    // String() throws on an object without a prototype.
     const { outcome } = awaited(script("Promise.reject(Object.create(null))"));
     expect(await outcome()).toEqual({
       rid: "r1",
       error: { name: "Error", message: "[object Object]", stack: "" },
+    });
+  });
+
+  test.each([
+    ["a value whose name getter throws", "({ get name() { throw 1; } })"],
+    [
+      "a revoked Proxy",
+      "(() => { const p = Proxy.revocable({}, {}); p.revoke(); return p.proxy; })()",
+    ],
+    [
+      "an Error whose message getter throws",
+      "Object.defineProperty(new Error(), 'message', { get() { throw 1; } })",
+    ],
+  ])("still answers the backend when it throws %s", async (_what, thrown) => {
+    // Reading the thrown value throws; the backend must still get an error
+    // rather than wait for its timeout.
+    const { outcome } = awaited(script(`Promise.reject(${thrown})`));
+    expect(await outcome()).toEqual({
+      rid: "r1",
+      error: {
+        name: "Error",
+        message:
+          "The script threw a value whose name, message or stack cannot be read.",
+        stack: "",
+      },
     });
   });
 
@@ -253,7 +277,13 @@ describe("awaited script results", () => {
       "a function",
       "() => 1",
       "TypeError",
-      "The script returned a function, which JSON cannot carry.",
+      "The script returned a function, which JSON cannot carry; return plain data (objects, arrays, strings, numbers, booleans or null) instead.",
+    ],
+    [
+      "a symbol",
+      "Symbol('s')",
+      "TypeError",
+      "The script returned a symbol, which JSON cannot carry; return plain data (objects, arrays, strings, numbers, booleans or null) instead.",
     ],
     ["a BigInt", "1n", "TypeError", "Do not know how to serialize a BigInt"],
   ])("rejects %s as a serialization error", async (_what, code, name, message) => {
@@ -269,7 +299,9 @@ describe("awaited script results", () => {
     window.onerror = onerror;
     const socket = { emit: vi.fn() };
     await applyEvent(script("throw new Error('boom')"), socket, null, null);
-    expect(onerror).toHaveBeenCalledTimes(1);
+    expect(onerror.mock.calls).toEqual([
+      ["boom", null, null, null, new Error("boom")],
+    ]);
     expect(socket.emit).not.toHaveBeenCalled();
   });
 });
