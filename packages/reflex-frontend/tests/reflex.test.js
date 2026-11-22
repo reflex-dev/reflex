@@ -91,6 +91,15 @@ test("library rejects a library the app does not bundle", async () => {
   );
 });
 
+test("library rejects a name the registry only inherits", async () => {
+  window.__reflex = {};
+  await expect(reflex.library("constructor")).rejects.toThrow(
+    new Error(
+      'reflex.library("constructor") cannot load "constructor": the app does not bundle it for dynamic components. Bundle it by calling bundle_library("constructor") from reflex.components.dynamic in your app\'s Python code.',
+    ),
+  );
+});
+
 test("is frozen, so a script cannot replace a member for everyone", () => {
   expect(Object.isFrozen(reflex)).toBe(true);
   expect(Object.keys(reflex)).toEqual(["ref", "addEvents", "event", "library"]);

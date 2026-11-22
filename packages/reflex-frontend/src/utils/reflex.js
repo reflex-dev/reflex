@@ -21,7 +21,8 @@ export const reflex = Object.freeze({
    * Get the ref of a component by its id.
    * @param {string} id The component id.
    * @returns {{current: any} | undefined} The ref, or undefined if no
-   *   component with that id has mounted.
+   *   component with that id has rendered. Its `current` is null until React
+   *   attaches the element.
    */
   ref: (id) => refs[refName(id)],
 
@@ -60,7 +61,11 @@ export const reflex = Object.freeze({
         `reflex.library("${name}") cannot load "${name}" yet: the app registers its bundled libraries when it first mounts, and it has not mounted. Call reflex.library from an event, such as on_mount or on_click, rather than while a module loads.`,
       );
     }
-    const module = window.__reflex[name];
+    // The registry is an object literal: `constructor` and the like are
+    // inherited, not bundled libraries.
+    const module = Object.hasOwn(window.__reflex, name)
+      ? window.__reflex[name]
+      : undefined;
     if (module === undefined) {
       throw new Error(
         `reflex.library("${name}") cannot load "${name}": the app does not bundle it for dynamic components. Bundle it by calling bundle_library("${name}") from reflex.components.dynamic in your app's Python code.`,
