@@ -8112,7 +8112,9 @@ def test_minified_state_reads_its_context_into_a_prefixed_local(
         assert str(var) == f"$rx_a__b.{key}{FIELD_MARKER}"
         var_data = var._get_all_var_data()
         assert var_data is not None
-        assert var_data.hooks == ('const $rx_a__b = useStateContext("a.b")',)
+        assert var_data.hooks == (
+            f'const $rx_a__b = useStateContext("a.b", ["{key}{FIELD_MARKER}"])',
+        )
 
 
 def test_unminified_state_keeps_its_context_local(temp_minify_json):

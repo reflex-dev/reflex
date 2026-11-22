@@ -48,17 +48,23 @@ def _blocked_total(text: str, subject: str) -> float:
     return float(match[1])
 
 
-def _track_queued_probe(
+def _track_pending_probe(
     loop: asyncio.AbstractEventLoop, monkeypatch: pytest.MonkeyPatch
 ) -> threading.Event:
-    """Return an event set after the monitor queues a responsiveness probe."""
-    probe_queued = threading.Event()
+    """Return an event set while a responsiveness probe waits for the loop to run it.
+
+    A handler that waits for it before blocking holds the loop with a probe
+    outstanding, so the probe times the whole block. A probe that already ran
+    leaves it clear: the monitor queues the next one only a polling gap later,
+    which may be well into the block on a loaded runner.
+    """
+    probe_pending = threading.Event()
     call_soon_threadsafe = loop.call_soon_threadsafe
 
     def track_probe(
         callback: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> asyncio.Handle:
-        """Queue the callback and record that a probe was queued.
+        """Queue the callback and record that a probe waits for the loop.
 
         Args:
             callback: The callback to queue.
@@ -68,12 +74,22 @@ def _track_queued_probe(
         Returns:
             The handle of the queued callback.
         """
-        handle = call_soon_threadsafe(callback, *args, **kwargs)
-        probe_queued.set()
-        return handle
+
+        def run_probe(*args: Any) -> None:
+            """Record that the probe ran, then run it.
+
+            Args:
+                *args: Positional arguments for the callback.
+            """
+            probe_pending.clear()
+            callback(*args)
+
+        # Set before queuing, so a probe the loop runs at once cannot leave it set.
+        probe_pending.set()
+        return call_soon_threadsafe(run_probe, *args, **kwargs)
 
     monkeypatch.setattr(loop, "call_soon_threadsafe", track_probe)
-    return probe_queued
+    return probe_pending
 
 
 async def _run_monitored(
@@ -94,17 +110,17 @@ async def _run_monitored(
 
 
 def _blocking(
-    probe_queued: threading.Event, duration: float
+    probe_pending: threading.Event, duration: float
 ) -> Callable[[], Coroutine[Any, Any, None]]:
-    """Create a coroutine function that blocks the loop after a probe is queued.
+    """Create a coroutine function that blocks the loop while a probe is pending.
 
     Returns:
         The blocking coroutine function.
     """
 
     async def blocking_handler():  # noqa: RUF029
-        """Block the loop for the duration after a probe is queued."""
-        assert probe_queued.wait(timeout=1)
+        """Block the loop for the duration once a probe waits for it."""
+        assert probe_pending.wait(timeout=1)
         time.sleep(duration)  # noqa: ASYNC251
 
     return blocking_handler
@@ -148,8 +164,8 @@ async def test_blocking_event_is_reported_with_handler_name(
     caplog_blocking: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
 ):
     """Name the registered handler of the blocking event task."""
-    probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
-    handler = _blocking(probe_queued, _BLOCK_SECONDS)
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
+    handler = _blocking(probe_pending, _BLOCK_SECONDS)
     registered = RegisteredEventHandler(handler=EventHandler(fn=handler), states=())
 
     await _run_monitored(
@@ -179,8 +195,8 @@ async def test_package_handler_is_reported_once_with_its_package(
     tmp_path: Path,
 ):
     """Report a handler from outside the app once, by package, from its own frame."""
-    probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
-    handler = _blocking(probe_queued, _BLOCK_SECONDS)
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
+    handler = _blocking(probe_pending, _BLOCK_SECONDS)
     registered = RegisteredEventHandler(handler=EventHandler(fn=handler), states=())
     # A frame from another file runs the handler, as the event processor does.
     namespace: dict[str, Any] = {}
@@ -200,7 +216,6 @@ async def test_package_handler_is_reported_once_with_its_package(
         )
         # The app lives elsewhere, so this module is not app code.
         monitor._app_root = f"{tmp_path}{os.sep}"
-        probe_queued.clear()
         monitor.start()
         try:
             await asyncio.create_task(
@@ -449,10 +464,10 @@ async def test_unregistered_event_is_reported_with_event_name(
     caplog_blocking: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
 ):
     """Fall back to the event name when no handler is registered for it."""
-    probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
 
     await _run_monitored(
-        _blocking(probe_queued, _BLOCK_SECONDS),
+        _blocking(probe_pending, _BLOCK_SECONDS),
         f"{EVENT_TASK_PREFIX}state.unknown|token|txid",
     )
 
@@ -463,10 +478,10 @@ async def test_blocking_just_over_threshold_is_detected(
     caplog_blocking: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
 ):
     """Account for the time between responsiveness probes."""
-    probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
 
     await _run_monitored(
-        _blocking(probe_queued, 0.055), f"{EVENT_TASK_PREFIX}state.blocking|token|txid"
+        _blocking(probe_pending, 0.055), f"{EVENT_TASK_PREFIX}state.blocking|token|txid"
     )
 
     assert "state.blocking" in caplog_blocking.text
@@ -476,9 +491,9 @@ async def test_blocking_outside_event_task_is_reported_with_task_name(
     caplog_blocking: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
 ):
     """Report blocking in a task that processes no event by the task name."""
-    probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
 
-    await _run_monitored(_blocking(probe_queued, _BLOCK_SECONDS), "other_task")
+    await _run_monitored(_blocking(probe_pending, _BLOCK_SECONDS), "other_task")
 
     assert "Task 'other_task' is blocking the event loop" in caplog_blocking.text
     assert _blocked_total(caplog_blocking.text, "Task 'other_task'") >= _BLOCK_SECONDS
@@ -791,9 +806,12 @@ async def test_blocking_import_is_logged_with_import_advice(
     app_root: Path, monkeypatch: pytest.MonkeyPatch
 ):
     """Log the import summary over the stack sampled at the threshold."""
-    probe_queued = _track_queued_probe(asyncio.get_running_loop(), monkeypatch)
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
+    in_body = threading.Event()
     monkeypatch.setitem(
-        sys.modules, "blocking_probe", SimpleNamespace(queued=probe_queued)
+        sys.modules,
+        "blocking_probe",
+        SimpleNamespace(pending=probe_pending, in_body=in_body),
     )
     _write_import_app(
         app_root,
@@ -801,8 +819,29 @@ async def test_blocking_import_is_logged_with_import_advice(
         "slow_sdk",
         "import time\n"
         "import blocking_probe\n"
-        "assert blocking_probe.queued.wait(timeout=1)\n"
+        "assert blocking_probe.pending.wait(timeout=1)\n"
+        "blocking_probe.in_body.set()\n"
         f"time.sleep({_BLOCK_SECONDS})\n",
+    )
+    describe_blocking = EventLoopBlockingMonitor._describe_blocking
+
+    def describe_in_body(monitor: EventLoopBlockingMonitor) -> Any:
+        """Sample the blocked loop once the module body runs.
+
+        Finding and compiling a new module can reach the threshold on its own on
+        a slow file system, before the body this test samples.
+
+        Args:
+            monitor: The monitor sampling the loop.
+
+        Returns:
+            The report of the blocking task.
+        """
+        in_body.wait(timeout=1)
+        return describe_blocking(monitor)
+
+    monkeypatch.setattr(
+        EventLoopBlockingMonitor, "_describe_blocking", describe_in_body
     )
     importer = importlib.import_module("importer")
     records = []
@@ -842,7 +881,7 @@ async def test_blocking_import_is_logged_with_import_advice(
         "Stack when the threshold was reached (most recent call last):"
     )
     assert stack[-2:] == [
-        f'  File "{app_root / "slow_sdk.py"}", line 4, in <module>',
+        f'  File "{app_root / "slow_sdk.py"}", line 5, in <module>',
         f"    time.sleep({_BLOCK_SECONDS})",
     ]
     assert [line for line in stack if "<frozen" in line] == []

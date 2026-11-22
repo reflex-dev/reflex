@@ -655,10 +655,13 @@ class VarData:
         else:
             state_name = state.get_full_name()
             local = format.format_state_local(state)
+        hook_args = json.dumps(state_name)
+        if field_name:
+            hook_args += f", {json.dumps([field_name + FIELD_MARKER])}"
         return VarData(
             state=state_name,
             field_name=field_name,
-            hooks={f"const {local} = useStateContext({json.dumps(state_name)})": None},
+            hooks={f"const {local} = useStateContext({hook_args})": None},
             imports={
                 f"$/{constants.Dirs.UTILS}/context-registry": [
                     ImportVar(tag="useStateContext")
@@ -1414,8 +1417,15 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return StateOperation.create(  # pyright: ignore [reportReturnType]
             formatted_state_name,
             self,
+            # The expression can read any key of the substate, so its hook
+            # subscribes to the whole substate rather than a named field.
             _var_data=VarData.merge(
-                VarData.from_state(state, self._js_expr), self._var_data
+                VarData.from_state(state),
+                VarData(
+                    state=state if isinstance(state, str) else state.get_full_name(),
+                    field_name=self._js_expr,
+                ),
+                self._var_data,
             ),
         ).guess_type()
 

@@ -25,6 +25,7 @@ from reflex_base import constants
 from reflex_base.components.component import LiteralComponentVar
 from reflex_base.constants import RouteArgType
 from reflex_base.constants.colors import Color
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.event import LiteralEventChainVar, LiteralEventVar
 from reflex_base.utils import serializers
@@ -2022,7 +2023,9 @@ def test_unregistered_state_name_is_taken_as_given():
     """A string naming no registered state keeps meaning what it says."""
     var_data = VarData.from_state("not_a_state", "field")
     assert var_data.state == "not_a_state"
-    assert var_data.hooks == ('const not_a_state = useStateContext("not_a_state")',)
+    assert var_data.hooks == (
+        f'const not_a_state = useStateContext("not_a_state", ["field{FIELD_MARKER}"])',
+    )
     assert str(Var(_js_expr="field")._var_set_state("not_a_state")) == (
         "not_a_state.field"
     )
@@ -2788,6 +2791,28 @@ def test_new_default_for_inherited_private_field_stays_a_field():
         assert child_field.default == 2
         assert isinstance(vars(child)["__counter__"], Field)
         assert child().__counter__ == 2
+
+
+def test_from_state_hook_subscribes_to_the_field():
+    """A state field's hook names the field, so its readers skip other changes."""
+    assert VarData.from_state("s", "a").hooks == (
+        f'const s = useStateContext("s", ["a{FIELD_MARKER}"])',
+    )
+    assert VarData.from_state("s").hooks == ('const s = useStateContext("s")',)
+
+
+@pytest.mark.parametrize("js_expr", ["value", "items_rx_state_[0]"])
+def test_var_set_state_subscribes_to_the_whole_substate(js_expr: str):
+    """The expression may read any key, so its only hook reads the whole substate.
+
+    Args:
+        js_expr: The expression read from the state.
+    """
+    var = Var(_js_expr=js_expr, _var_type=str)._var_set_state("s")
+    var_data = var._get_all_var_data()
+    assert var_data is not None
+    assert var_data.hooks == ('const s = useStateContext("s")',)
+    assert var_data.field_dependencies == {"s": (js_expr,)}
 
 
 def _identical(leaves: Sequence[Var], *expected: Var) -> bool:
