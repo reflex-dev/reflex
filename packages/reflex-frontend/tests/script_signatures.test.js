@@ -34,6 +34,7 @@ const signatures = async (names) => {
   try {
     vi.resetModules();
     await import("$/script-signatures.js");
+    expect(write).toHaveBeenCalledTimes(1);
     const { format, modules, files } = JSON.parse(
       String(write.mock.calls[0][0]),
     );
