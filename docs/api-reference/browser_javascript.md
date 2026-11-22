@@ -280,9 +280,10 @@ reflex.library("$/utils/state") cannot load "$/utils/state": a name starting wit
 
 ## JavaScript Modules
 
-Write JavaScript in a `.js` or `.ts` file in your app's package and import its
-exported functions in Python, like a Python module. Each function returns an
-event: use it in an event trigger, or return or yield it from an event handler.
+Write JavaScript in a `.js`, `.ts`, `.jsx` or `.tsx` file in your app's package
+and import its exported functions in Python, like a Python module. Each function
+returns an event: use it in an event trigger, or return or yield it from an
+event handler.
 
 ```javascript
 // my_app/scripts/party.js
