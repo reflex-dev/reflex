@@ -1177,11 +1177,14 @@ def _require_node(*, packages: bool = False) -> None:
 
     Args:
         packages: Whether the test also needs the frontend package's
-            dependencies, which ``npm --prefix packages/reflex-frontend ci``
-            installs.
+            dependencies, the scripts' vite and typescript, which
+            ``npm --prefix packages/reflex-frontend ci`` installs.
     """
     node_modules = FRONTEND_PACKAGE / "node_modules"
-    if shutil.which("node") and (not packages or (node_modules / "vite").is_dir()):
+    if shutil.which("node") and (
+        not packages
+        or ((node_modules / "vite").is_dir() and (node_modules / "typescript").is_dir())
+    ):
         return
     message = "Node.js is unavailable" + (
         f", or {node_modules} is not installed" if packages else ""
@@ -1627,16 +1630,6 @@ def test_parse_report_reads_the_signatures_the_real_script_prints():
     assert utils._parse_report(output, Signatures) == json.loads(output)
 
 
-# The npm packages of reflex-frontend, which has the scripts' vite and typescript.
-FRONTEND_PACKAGES = constants.Templates.Dirs.WEB_TEMPLATE.parent / "node_modules"
-
-
-@pytest.mark.skipif(
-    shutil.which("node") is None
-    or not (FRONTEND_PACKAGES / "vite").is_dir()
-    or not (FRONTEND_PACKAGES / "typescript").is_dir(),
-    reason="needs Node.js and the npm packages of reflex-frontend",
-)
 def test_compile_script_stubs_with_the_real_scripts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1650,11 +1643,14 @@ def test_compile_script_stubs_with_the_real_scripts(
         tmp_path: pytest tmp_path fixture.
         monkeypatch: pytest monkeypatch fixture.
     """
+    _require_node(packages=True)
     web_dir = tmp_path / ".web"
     web_dir.mkdir()
     for script in ("script-modules.js", "script-signatures.js"):
         shutil.copy(constants.Templates.Dirs.WEB_TEMPLATE / script, web_dir)
-    (web_dir / "node_modules").symlink_to(FRONTEND_PACKAGES, target_is_directory=True)
+    (web_dir / "node_modules").symlink_to(
+        FRONTEND_PACKAGE / "node_modules", target_is_directory=True
+    )
     (web_dir / "package.json").write_text("{}")
     monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
     package = tmp_path.resolve() / "app"
