@@ -14,7 +14,11 @@ from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
-from reflex_base.constants.compiler import PageNames
+from reflex_base.constants.compiler import (
+    MemoizationDisposition,
+    MemoizationMode,
+    PageNames,
+)
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.plugins.sitemap import SitemapPlugin
@@ -23,6 +27,7 @@ from reflex_base.utils.console import PoorProgress
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
     PageValueError,
+    ReflexRuntimeError,
     RouteValueError,
 )
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -2402,3 +2407,332 @@ def test_custom_code_may_declare_refs(auto_memoize: bool):
     assert any("const refs = {};" in code for _, code in memo_files)
     for code in modules:
         assert not _IMPORTS_REFS.search(code), code
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_enable_state_false_rejects_state_reads_in_pages_and_auto_memos(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    auto_memoize: bool,
+):
+    """State reads fail compilation when state is disabled, memoized or not.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+        auto_memoize: Whether stateful subtrees are auto-memoized.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(
+        app_name="disabled_state_test",
+        plugins=[],
+        auto_memoize=auto_memoize,
+    )
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+    class DynState(rx.State):
+        label: str = "x"
+
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.text(DynState.label), route="/")
+
+    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_enable_state_false_rejects_non_memoized_never_component(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+):
+    """A component opting out of memoization still triggers the disabled-state guard.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="disabled_state_never", plugins=[], auto_memoize=True)
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+    class NeverMemoBox(rx.Component):
+        tag = "div"
+        label: Var[str]
+        _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
+
+    class DynState(rx.State):
+        label: str = "x"
+
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: NeverMemoBox.create(label=DynState.label), route="/")
+
+    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+
+@pytest.mark.parametrize("state_in_body", [True, False])
+@pytest.mark.usefixtures("clean_registration_context", "preserve_memo_registries")
+def test_enable_state_false_rejects_explicit_memo_state_reads(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    state_in_body: bool,
+):
+    """Explicit ``@rx.memo`` components reading state fail when state is disabled.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+        state_in_body: Whether state is read inside the memo body or passed as a prop.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="disabled_state_memo", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+    class DynState(rx.State):
+        label: str = "x"
+
+    app = rx.App(enable_state=False)
+    if state_in_body:
+
+        @rx.memo
+        def stateful_memo() -> rx.Component:
+            return rx.text(DynState.label)
+
+        app.add_page(lambda: stateful_memo(), route="/")
+    else:
+
+        @rx.memo
+        def prop_memo(label: Var[str]) -> rx.Component:
+            return rx.text(label)
+
+        app.add_page(lambda: prop_memo(label=DynState.label), route="/")
+
+    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+
+@pytest.mark.parametrize(
+    "disposition",
+    [MemoizationDisposition.STATEFUL, MemoizationDisposition.NEVER],
+)
+@pytest.mark.usefixtures("clean_registration_context")
+def test_enable_state_false_rejects_prop_embedded_stateful_components(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    disposition: MemoizationDisposition,
+):
+    """Stateful components embedded inside props fail when state is disabled.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+        disposition: Memoization disposition of the outer host component.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="disabled_state_prop_comp", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+    class SlotHost(rx.Component):
+        tag = "div"
+        header: Var[Component]
+        _memoization_mode = MemoizationMode(disposition=disposition)
+
+    class DynState(rx.State):
+        label: str = "x"
+
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: SlotHost.create(header=rx.text(DynState.label)), route="/")
+
+    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+
+@pytest.mark.parametrize("memoized_wrap", [True, False])
+@pytest.mark.usefixtures("clean_registration_context")
+def test_enable_state_false_rejects_stateful_app_wraps(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    memoized_wrap: bool,
+):
+    """Stateful app wraps fail compilation when state is disabled.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+        memoized_wrap: Whether the stateful wrap is auto-memoized or stays in app root.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="disabled_state_app_wrap", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+    class NeverMemoWrap(rx.Component):
+        tag = "div"
+        label: Var[str]
+        _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.NEVER)
+
+    class DynState(rx.State):
+        label: str = "x"
+
+    wrap_factory = (
+        (lambda _stateful: rx.box(rx.text(DynState.label)))
+        if memoized_wrap
+        else (lambda _stateful: NeverMemoWrap.create(label=DynState.label))
+    )
+    app = rx.App(
+        enable_state=False,
+        extra_app_wraps={(10, "StatefulWrap"): wrap_factory},
+    )
+    app.add_page(lambda: rx.text("static"), route="/")
+
+    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_enable_state_false_rejects_stateful_hydrate_fallback(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+):
+    """A stateful hydrate fallback fails compilation when state is disabled.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="disabled_state_fallback", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+    class DynState(rx.State):
+        label: str = "x"
+
+    app = rx.App(
+        enable_state=False,
+        hydrate_fallback=lambda: rx.text(DynState.label),
+    )
+    app.add_page(lambda: rx.text("static"), route="/")
+
+    with pytest.raises(ReflexRuntimeError, match=r"enable_state=False"):
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+
+@pytest.mark.parametrize(
+    "literal_text",
+    [
+        "useContext(StateContexts",
+        "useStateContext(",
+    ],
+)
+@pytest.mark.usefixtures("clean_registration_context")
+def test_enable_state_false_allows_literal_hook_spelling_text(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    literal_text: str,
+):
+    """Literal text resembling state hook calls compiles cleanly with state disabled.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+        literal_text: Text content matching old or current hook spellings.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="disabled_state_literal", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.text(literal_text), route="/")
+
+    assert compiler.compile_app(app, dry_run=True, use_rich=False) is True
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_enable_state_false_allows_stateless_and_client_only_hooks(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+):
+    """Stateless pages with client-only state and hooks compile with state disabled.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="disabled_state_client_only", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+    class ClientHookBox(rx.Component):
+        tag = "div"
+
+        def add_imports(self) -> dict[str, str]:
+            """Import useState for the client-only hook.
+
+            Returns:
+                The React hook import.
+            """
+            return {"react": "useState"}
+
+        def add_hooks(self) -> list[str]:
+            """Add a client-only React hook with no rx.State dependency.
+
+            Returns:
+                A plain React state hook.
+            """
+            return ["const [clientOnlyCount, setClientOnlyCount] = useState(0)"]
+
+    counter = rx.client_state(0, name="counter")
+    app = rx.App(enable_state=False)
+    app.add_page(
+        lambda: rx.el.div(
+            rx.text("static"),
+            rx.text(counter.value),
+            rx.button("log", on_click=rx.console_log("hi")),
+            ClientHookBox.create(),
+        ),
+        route="/",
+    )
+
+    assert compiler.compile_app(app, dry_run=True, use_rich=False) is True
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_enable_state_true_allows_state_reads(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+):
+    """State reads compile normally when state is enabled.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    config = rx.Config(app_name="enabled_state_control", plugins=[])
+    mocker.patch("reflex_base.config._get_config", return_value=config)
+
+    class DynState(rx.State):
+        label: str = "x"
+
+    app = rx.App(enable_state=True)
+    app.add_page(lambda: rx.text(DynState.label), route="/")
+
+    assert compiler.compile_app(app, dry_run=True, use_rich=False) is True

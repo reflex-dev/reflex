@@ -41,7 +41,7 @@ from reflex_base.utils.imports import (
     ImportVar,
     ParsedImportDict,
 )
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import LiteralVar, Var, VarData
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
@@ -51,7 +51,7 @@ from rich.progress import Progress
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, scope_memo_body_hooks
-from reflex.state import BaseState, code_uses_state_contexts, state_snapshot_hashes
+from reflex.state import BaseState, state_snapshot_hashes
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -1285,6 +1285,198 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _var_data_uses_state(
+    var_data: VarData | None,
+    seen_vars: set[int],
+    seen_components: set[int],
+) -> bool:
+    """Return whether ``var_data`` carries a dependency on any ``rx.State``.
+
+    Args:
+        var_data: The ``VarData`` to inspect.
+        seen_vars: Visited ``Var`` object IDs for cycle avoidance.
+        seen_components: Visited ``BaseComponent`` object IDs for cycle avoidance.
+
+    Returns:
+        True if any state field dependency is reachable from ``var_data``.
+    """
+    if var_data is None:
+        return False
+    if any(var_data.field_dependencies):
+        return True
+    if any(_var_uses_state(dep, seen_vars, seen_components) for dep in var_data.deps):
+        return True
+    if any(
+        _component_uses_state(comp, seen_vars, seen_components)
+        for comp in var_data.components
+    ):
+        return True
+    return any(
+        _component_uses_state(wrapper, seen_vars, seen_components)
+        for _, wrapper in var_data.app_wraps
+    )
+
+
+def _var_uses_state(
+    var: Var | None,
+    seen_vars: set[int],
+    seen_components: set[int],
+) -> bool:
+    """Return whether ``var`` references any ``rx.State``.
+
+    Args:
+        var: The ``Var`` to inspect.
+        seen_vars: Visited ``Var`` object IDs for cycle avoidance.
+        seen_components: Visited ``BaseComponent`` object IDs for cycle avoidance.
+
+    Returns:
+        True if ``var`` carries a dependency on ``rx.State``.
+    """
+    if var is None:
+        return False
+    var_id = id(var)
+    if var_id in seen_vars:
+        return False
+    seen_vars.add(var_id)
+    return _var_data_uses_state(var._get_all_var_data(), seen_vars, seen_components)
+
+
+def _component_uses_state(
+    component: BaseComponent | None,
+    seen_vars: set[int],
+    seen_components: set[int],
+) -> bool:
+    """Return whether ``component`` or any reachable descendant references ``rx.State``.
+
+    Args:
+        component: The component tree root to inspect.
+        seen_vars: Visited ``Var`` object IDs for cycle avoidance.
+        seen_components: Visited ``BaseComponent`` object IDs for cycle avoidance.
+
+    Returns:
+        True if any originating ``Var``, hook, prop-embedded component, app wrap,
+        or descendant carries a dependency on ``rx.State``.
+    """
+    if component is None:
+        return False
+    comp_id = id(component)
+    if comp_id in seen_components:
+        return False
+    seen_components.add(comp_id)
+
+    if isinstance(component, Component):
+        for var in component._get_vars(include_children=False):
+            if _var_uses_state(var, seen_vars, seen_components):
+                return True
+
+        user_hooks = component._get_hooks()
+        if isinstance(user_hooks, Var) and _var_uses_state(
+            user_hooks, seen_vars, seen_components
+        ):
+            return True
+        if (
+            isinstance(user_hooks, str)
+            and constants.REFLEX_VAR_OPENING_TAG in user_hooks
+            and _var_uses_state(
+                LiteralStringVar.create(user_hooks), seen_vars, seen_components
+            )
+        ):
+            return True
+
+        for hook_str, hook_var_data in component._get_added_hooks().items():
+            if _var_data_uses_state(hook_var_data, seen_vars, seen_components):
+                return True
+            if (
+                hook_var_data is None
+                and isinstance(hook_str, str)
+                and constants.REFLEX_VAR_OPENING_TAG in hook_str
+                and _var_uses_state(
+                    LiteralStringVar.create(hook_str), seen_vars, seen_components
+                )
+            ):
+                return True
+
+        for hook_var_data in component._get_hooks_internal().values():
+            if _var_data_uses_state(hook_var_data, seen_vars, seen_components):
+                return True
+
+        for prop_component in component._get_components_in_props():
+            if _component_uses_state(prop_component, seen_vars, seen_components):
+                return True
+
+        if (
+            type(component)._get_app_wrap_components
+            is not Component._get_app_wrap_components
+        ):
+            for wrap_component in component._get_app_wrap_components().values():
+                if _component_uses_state(wrap_component, seen_vars, seen_components):
+                    return True
+
+    return any(
+        _component_uses_state(child, seen_vars, seen_components)
+        for child in component.children
+    )
+
+
+def _compiled_app_uses_state(
+    *,
+    pages: Iterable[BaseComponent],
+    app_root: BaseComponent,
+    memos: Iterable[MemoDefinition],
+    head_components: Iterable[BaseComponent] = (),
+    extra_vars: Iterable[Var | str | None] = (),
+) -> bool:
+    """Return whether any final compilation domain references ``rx.State``.
+
+    Inspects originating ``VarData`` metadata across compiled pages, the app
+    root (including app wraps), explicit and automatic memos (including hydrate
+    fallbacks), prop-embedded components, and document head entries instead of
+    matching substrings in emitted JavaScript.
+
+    Args:
+        pages: Compiled root components for all pages.
+        app_root: The compiled app root component.
+        memos: All explicit and automatic memo definitions to be emitted.
+        head_components: Components rendered in the document head.
+        extra_vars: Additional document-level values (e.g. html attributes).
+
+    Returns:
+        True if any compilation domain carries an ``rx.State`` dependency.
+    """
+    seen_vars: set[int] = set()
+    seen_components: set[int] = set()
+
+    for root in (*pages, app_root, *head_components):
+        if _component_uses_state(root, seen_vars, seen_components):
+            return True
+
+    for memo in memos:
+        if isinstance(memo, MemoComponentDefinition):
+            if _component_uses_state(memo.component, seen_vars, seen_components):
+                return True
+            if _var_uses_state(memo.wrapper, seen_vars, seen_components):
+                return True
+        elif isinstance(memo, MemoFunctionDefinition):
+            if _var_uses_state(memo.function, seen_vars, seen_components):
+                return True
+
+    for value in extra_vars:
+        if isinstance(value, Var) and _var_uses_state(
+            value, seen_vars, seen_components
+        ):
+            return True
+        if (
+            isinstance(value, str)
+            and constants.REFLEX_VAR_OPENING_TAG in value
+            and _var_uses_state(
+                LiteralStringVar.create(value), seen_vars, seen_components
+            )
+        ):
+            return True
+
+    return False
+
+
 def compile_app(
     app: App,
     *,
@@ -1460,17 +1652,6 @@ def compile_app(
 
     all_imports = compile_ctx.all_imports
 
-    if app._state is None and any(
-        code_uses_state_contexts(page_ctx.output_code or "")
-        for page_ctx in compile_ctx.compiled_pages.values()
-    ):
-        msg = (
-            "To access rx.State in frontend components, at least one "
-            "subclass of rx.State must be defined in the app."
-        )
-        raise ReflexRuntimeError(msg)
-    progress.advance(task)
-
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
     app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
@@ -1496,12 +1677,33 @@ def compile_app(
         else memo
         for memo in tuple(MEMOS.values())
     ]
-    memo_component_files, memo_components_imports = compile_memo_components(
-        (
-            *memos,
-            *compile_ctx.auto_memo_components.values(),
-        ),
+    all_memos = (
+        *memos,
+        *compile_ctx.auto_memo_components.values(),
     )
+
+    if app._state is None and _compiled_app_uses_state(
+        pages=(
+            page_ctx.root_component for page_ctx in compile_ctx.compiled_pages.values()
+        ),
+        app_root=app_root,
+        memos=all_memos,
+        head_components=app.head_components,
+        extra_vars=(
+            app.html_lang,
+            *(app.html_custom_attrs.values() if app.html_custom_attrs else ()),
+        ),
+    ):
+        progress.stop()
+        msg = (
+            "Cannot access rx.State in frontend components when state is "
+            "disabled (`enable_state=False`). Remove `enable_state=False` from "
+            "`rx.App` or remove the rx.State references."
+        )
+        raise ReflexRuntimeError(msg)
+    progress.advance(task)
+
+    memo_component_files, memo_components_imports = compile_memo_components(all_memos)
     compile_results.extend(memo_component_files)
     all_imports = utils.merge_imports(all_imports, memo_components_imports)
     progress.advance(task)
