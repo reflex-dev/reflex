@@ -1,0 +1,1 @@
+The Socket.IO transport now escapes unpaired surrogates in outgoing packets, which a non-UTF-8 file name in state could otherwise turn into a failed send, and logs event handler failures within the per-session error budget instead of raising them into python-socketio.

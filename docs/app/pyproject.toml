@@ -12,7 +12,8 @@ dependencies = [
     "plotly-express",
     "psycopg[binary]",
     "python-frontmatter",
-    "reflex[db]",
+    # socketio: xy 0.0.7's charts ride a Socket.IO namespace; see rxconfig.py.
+    "reflex[db,socketio]",
     "reflex-docgen",
     "reflex-enterprise>=0.9.9",
     "reflex-hosting-cli",

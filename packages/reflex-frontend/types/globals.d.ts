@@ -16,6 +16,8 @@ declare module "$/env.json" {
     HEALTH: string;
     ALL_ROUTES: string;
     TRANSPORT: "websocket" | "polling";
+    /** Whether events ride Socket.IO (over TRANSPORT) instead of the plain WebSocket. */
+    SOCKETIO: boolean;
     TEST_MODE: boolean;
     REFLEX_VERSION: string;
     /** Set by the embed plugin: the selector of the element to mount in. */

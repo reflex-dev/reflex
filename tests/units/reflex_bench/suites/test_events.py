@@ -21,17 +21,9 @@ from reflex_bench.drivers.events import LoadResult, Mode
 from reflex_bench.scheduler import Planned, Policy, Scheduler, plan
 from reflex_bench.suites import events as suite
 
-import reflex as rx
-from reflex.istate.shared import SharedStateBaseInternal
-from tests.units.reflex_bench.factories import make_load_result, make_subject
+from tests.units.reflex_bench.factories import STATES, make_load_result, make_subject
 
 SHAPES = ("background", "complex", "cross", "simple")
-# The playground's states as the workspace's reflex names them: the shared
-# state sits under reflex's internal parent of shared states.
-STATES = suite.PlaygroundStates(
-    bench=f"{rx.State.get_full_name()}.playground___state____bench_state",
-    board=f"{SharedStateBaseInternal.get_full_name()}.playground___state____board_state",
-)
 CHEAP = [
     "events.simple.capacity[manager=disk,sessions=10]",
     "events.simple.latency[manager=disk,sessions=10,rate=500]",

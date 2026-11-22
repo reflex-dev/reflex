@@ -24,7 +24,6 @@ export async function createQueueRuntime(
       localStorage: { clear() {}, removeItem() {} },
       sessionStorage: { clear() {}, removeItem() {} },
     },
-    "socket.io-client": { default: unused },
     mergician: { mergician: unused },
     "$/env.json": { default: {} },
     "universal-cookie": {
@@ -57,22 +56,25 @@ export async function createQueueRuntime(
       eventLoop: { addEvents: unused },
     },
     "$/utils/helpers/debounce": { default: unused },
-    "$/utils/helpers/json": { parseJson: unused },
+    "$/utils/helpers/json": {
+      parseJsonLenient: unused,
+      undefinedToNull: unused,
+    },
     "$/utils/helpers/throttle": { default: throttle ?? unused },
     "$/utils/helpers/upload": {
       uploadFiles: uploadFiles ?? unused,
     },
+    "$/utils/helpers/websocket": {
+      HYDRATION_PAYLOAD_TOO_LARGE: "hydration_payload_too_large",
+      ReflexWebSocket: unused,
+      disableChannels: unused,
+      getChannel: unused,
+      hydrationTooLargeError: unused,
+    },
     ...dependencyOverrides,
   };
-  // Let Node parse the unchanged module; only expose private state to tests.
-  const module = new SourceTextModule(
-    `import { window, document, localStorage, sessionStorage } from "test:browser";
-${source}
-export { event_queue };
-`,
-  );
   const linked = new Map();
-  await module.link((specifier) => {
+  const link = (specifier) => {
     // state.js imports itself to hand its exports to server-provided scripts.
     if (specifier === "$/utils/state") return module;
     if (!linked.has(specifier)) {
@@ -89,7 +91,29 @@ export { event_queue };
       );
     }
     return linked.get(specifier);
-  });
+  };
+  // Let Node parse the unchanged module; only expose private state to tests.
+  const module = new SourceTextModule(
+    `import { window, document, localStorage, sessionStorage } from "test:browser";
+${source}
+export { event_queue };
+`,
+    {
+      // The socket.io client is imported on demand.
+      async importModuleDynamically(specifier) {
+        const imported = link(specifier);
+        // Newer Node versions create synthetic modules already linked.
+        if (imported.status === "unlinked") {
+          await imported.link(link);
+        }
+        if (imported.status === "linked") {
+          await imported.evaluate();
+        }
+        return imported;
+      },
+    },
+  );
+  await module.link(link);
   await module.evaluate();
   return module.namespace;
 }
