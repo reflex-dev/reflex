@@ -85,6 +85,7 @@ from reflex.state import (
     _apply_client_storage_vars,
     _frontend_schema,
     _get_client_storage_delta,
+    _js_number_string,
     _load_events_for_page,
     _override_base_method,
     _shared_storage_groups,
@@ -6868,6 +6869,64 @@ async def test_var_value_indexes_like_array_at() -> None:
     )
     assert state.items == ["a", "x", "c"]
     assert state.dirty_vars == set()
+
+
+@pytest.mark.asyncio
+async def test_get_var_value_reads_literal_keys_as_js_names_them() -> None:
+    """A literal mapping is read by the property names of the JS object it renders as.
+
+    JS names each key with a string, so keys equal in Python may differ there and
+    keys that differ in Python may be one, the later entry winning.
+    """
+
+    class KeyState(BaseState):
+        flag: rx.Field[bool] = rx.field(True)
+        tiny: rx.Field[float] = rx.field(1e-7)
+
+    state = KeyState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+    flagged = rx.Var.create({1: "one", KeyState.flag: "flag"})
+    assert await state.get_var_value(flagged[1]) == "one"
+    assert await state.get_var_value(flagged["true"]) == "flag"
+    one = rx.Var.create({1: "one", "1": "string one"})
+    assert await state.get_var_value(one[1]) == "string one"
+    assert await state.get_var_value(rx.Var.create({None: "null"})["null"]) == "null"
+    tiny = rx.Var.create({KeyState.tiny: "tiny"})
+    assert await state.get_var_value(tiny["1e-7"]) == "tiny"
+
+
+@pytest.mark.parametrize(
+    ("number", "expected"),
+    [
+        (0.0, "0"),
+        (-0.0, "0"),
+        (1.0, "1"),
+        (-1.5, "-1.5"),
+        (100.0, "100"),
+        (1.5e-5, "0.000015"),
+        (0.000001, "0.000001"),
+        (1e-7, "1e-7"),
+        (1.25e-7, "1.25e-7"),
+        (5e-324, "5e-324"),
+        (1e20, "100000000000000000000"),
+        (123456789012345680000.0, "123456789012345680000"),
+        (1e21, "1e+21"),
+        (1.5e300, "1.5e+300"),
+        (2.0**60, "1152921504606847000"),
+        (0.1 + 0.2, "0.30000000000000004"),
+        (math.nan, "NaN"),
+        (math.inf, "Infinity"),
+        (-math.inf, "-Infinity"),
+    ],
+)
+def test_js_number_string(number: float, expected: str) -> None:
+    """Numbers are formatted as JS ``String(number)`` formats them.
+
+    Args:
+        number: The number.
+        expected: What node prints for ``String(number)``.
+    """
+    assert _js_number_string(number) == expected
 
 
 @pytest.mark.asyncio

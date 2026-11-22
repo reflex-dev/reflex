@@ -456,6 +456,65 @@ def _array_index(key: Any) -> int | None:
     return None
 
 
+def _js_number_string(number: float) -> str:
+    """Format a number the way JS ``Number.prototype.toString`` does.
+
+    Args:
+        number: The number.
+
+    Returns:
+        The string JS makes of the number.
+    """
+    if math.isnan(number):
+        return "NaN"
+    if math.isinf(number):
+        return "Infinity" if number > 0 else "-Infinity"
+    if number == 0:
+        return "0"
+    # repr has the shortest digits that round-trip, as JS does, in another notation.
+    _, raw_digits, exponent = decimal.Decimal(repr(abs(number))).as_tuple()
+    assert isinstance(exponent, int)
+    # The number is 0.<digits> times 10 to the power of point.
+    point = len(raw_digits) + exponent
+    digits = "".join(map(str, raw_digits)).rstrip("0")
+    sign = "-" if number < 0 else ""
+    if len(digits) <= point <= 21:
+        return sign + digits + "0" * (point - len(digits))
+    if 0 < point <= 21:
+        return f"{sign}{digits[:point]}.{digits[point:]}"
+    if -6 < point <= 0:
+        return f"{sign}0.{'0' * -point}{digits}"
+    mantissa = f"{digits[0]}.{digits[1:]}" if len(digits) > 1 else digits
+    return f"{sign}{mantissa}e{'+' if point > 0 else '-'}{abs(point - 1)}"
+
+
+def _js_property_key(key: Any) -> Any:
+    """Get the property name a JS object gives a key.
+
+    A literal renders a mapping as a JS object literal, which names each key with
+    a string: keys equal in Python, such as 1 and True, may differ there, and
+    keys that differ in Python, such as 1 and "1", may be one.
+
+    Args:
+        key: The key.
+
+    Returns:
+        The property name, or the key itself if it is no string, number, bool
+        or None.
+    """
+    if isinstance(key, str):
+        return key
+    if key is None:
+        return "null"
+    if isinstance(key, bool):
+        return "true" if key else "false"
+    if isinstance(key, int):
+        return str(int(key))
+    if isinstance(key, (float, decimal.Decimal)):
+        return _js_number_string(float(key))
+    return key
+
+
 def _read_key(value: Any, key: Any, from_literal: bool = False) -> Any:
     """Read a key off a value the way the frontend reads it with optional chaining.
 
@@ -2115,29 +2174,31 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             if isinstance(key, Var):
                 key = await self.get_var_value(key)
             if from_literal and isinstance(value, Mapping):
-                value = await self._resolve_literal_keys(value)
+                value = await self._literal_object(value)
+                key = _js_property_key(key)
             value = _read_key(value, key, from_literal)
             # A literal container holds vars, which the frontend reads as their values.
             if isinstance(value, Var):
                 value, from_literal = await self._resolve_var_value(value)
         return value, from_literal
 
-    async def _resolve_literal_keys(self, mapping: Mapping) -> Mapping:
-        """Resolve the keys of a literal mapping that are vars, as the frontend does.
+    async def _literal_object(self, mapping: Mapping) -> dict:
+        """Get the object the frontend makes of a mapping a literal var holds.
 
-        A later entry wins over an earlier one with the same key, as in a JS
-        object literal.
+        Each key that is a var is resolved, and every key is named as a JS object
+        names it. A later entry wins over an earlier one with the same name, as
+        in a JS object literal.
 
         Args:
             mapping: The mapping a literal var holds.
 
         Returns:
-            The mapping with each key that is a var replaced by its value.
+            The mapping keyed by property names.
         """
-        if not any(isinstance(key, Var) for key in mapping):
-            return mapping
         return {
-            (await self.get_var_value(key) if isinstance(key, Var) else key): item
+            _js_property_key(
+                await self.get_var_value(key) if isinstance(key, Var) else key
+            ): item
             for key, item in mapping.items()
         }
 
