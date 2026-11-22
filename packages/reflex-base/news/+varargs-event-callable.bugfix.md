@@ -1,0 +1,1 @@
+A callable passed to an event trigger gets the trigger's arguments only through its positional parameters: `lambda *args: ...` gets all of them, even none, and `lambda key, **kwargs: ...` or a keyword-only parameter no longer raises `TypeError`.

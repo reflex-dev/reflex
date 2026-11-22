@@ -2624,6 +2624,50 @@ def args_specs_from_fields(
     }
 
 
+# The parameters a trigger's arguments are passed to, in order. `*args` takes
+# any number of them, none included; keyword-only parameters and `**kwargs`
+# take none.
+_POSITIONAL_PARAMETER_KINDS = (
+    inspect.Parameter.POSITIONAL_ONLY,
+    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+)
+
+
+def _positional_parameters(
+    parameters: Mapping[str, inspect.Parameter],
+) -> list[inspect.Parameter]:
+    """Get the parameters a trigger's arguments are passed to.
+
+    Args:
+        parameters: The parameters of the function.
+
+    Returns:
+        Its positional parameters, in order.
+    """
+    return [
+        parameter
+        for parameter in parameters.values()
+        if parameter.kind in _POSITIONAL_PARAMETER_KINDS
+    ]
+
+
+def _max_positional_args(parameters: Mapping[str, inspect.Parameter]) -> int | None:
+    """Get how many of a trigger's arguments a function takes.
+
+    Args:
+        parameters: The parameters of the function.
+
+    Returns:
+        The number of its positional parameters, or None when it takes ``*args``.
+    """
+    if any(
+        parameter.kind is inspect.Parameter.VAR_POSITIONAL
+        for parameter in parameters.values()
+    ):
+        return None
+    return len(_positional_parameters(parameters))
+
+
 def check_fn_match_arg_spec(
     user_func: Callable,
     user_func_parameters: Mapping[str, inspect.Parameter],
@@ -2646,15 +2690,13 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
-    user_args = list(user_func_parameters)
+    user_args = _positional_parameters(user_func_parameters)
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
         user_args = user_args[1:]
 
     user_default_args = [
-        p.default
-        for p in user_func_parameters.values()
-        if p.default is not inspect.Parameter.empty
+        p.default for p in user_args if p.default is not inspect.Parameter.empty
     ]
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0
@@ -2748,10 +2790,8 @@ def call_event_fn(
     # Check that fn signature matches arg_spec
     check_fn_match_arg_spec(fn, parameters, parsed_args, key=key)
 
-    number_of_fn_args = len(parameters)
-
-    # Call the function with the parsed args.
-    out = fn(*[*parsed_args][:number_of_fn_args])
+    # Call the function with as many of the parsed args as it takes.
+    out = fn(*parsed_args[: _max_positional_args(parameters)])
 
     def _dispatch_mixed_event_var(event_like_var: Var) -> FunctionVar:
         """Wrap a mixed event-like Var into a callable frontend dispatcher.

@@ -6,7 +6,9 @@ from reflex_base.client_state import client_state
 from reflex_base.event import (
     EventArgVar,
     EventChain,
+    EventSpec,
     LambdaEventCallback,
+    call_event_fn,
     event_arg_placeholder,
     event_args_signature,
     no_args_event_spec,
@@ -98,3 +100,39 @@ def test_cond_between_function_and_none_inside_lambda_is_a_no_op_when_false() ->
         str(chain)
         == '((_ev_0) => (((_ev_0?.valueOf?.() === "go"?.valueOf?.()) ? ((_ev_0) => (flagRxClientStateSet(_ev_0))) : null)?.(_ev_0)))'
     )
+
+
+def test_call_event_fn_passes_every_trigger_argument_to_varargs() -> None:
+    """A callable taking ``*args`` gets all of a trigger's arguments, however many.
+
+    ``*args`` is not a required argument, so a trigger with none is valid too.
+    """
+    received: list[tuple[str, ...]] = []
+
+    def record(*args: Var) -> EventSpec:
+        received.append(tuple(str(arg) for arg in args))
+        return rx.noop()
+
+    def no_args() -> list[Var]:
+        return []
+
+    call_event_fn(record, no_args, key="on_mount")
+    call_event_fn(record, lambda a, b: [a, b], key="on_resize")
+    assert received == [(), ("_a", "_b")]
+
+
+def test_call_event_fn_passes_only_positional_arguments() -> None:
+    """Keyword-only and ``**kwargs`` parameters take none of the trigger's arguments."""
+    received: list[tuple[str, ...]] = []
+
+    def record_kwargs(key: Var, **kwargs: Any) -> EventSpec:
+        received.append((str(key), *kwargs))
+        return rx.noop()
+
+    def record_keyword_only(key: Var, *, flag: int = 1) -> EventSpec:
+        received.append((str(key), str(flag)))
+        return rx.noop()
+
+    call_event_fn(record_kwargs, lambda a, b: [a, b], key="on_key_down")
+    call_event_fn(record_keyword_only, lambda a, b: [a, b], key="on_key_down")
+    assert received == [("_a",), ("_a", "1")]
