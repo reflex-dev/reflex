@@ -177,6 +177,24 @@ describe("awaited script results", () => {
     });
   });
 
+  test("reads the getters of a result only to serialize it", async () => {
+    globalThis.reads = [];
+    try {
+      const { outcome } = awaited(
+        script(
+          '({get nodeType() { reads.push("nodeType"); return 1; }, get window() { reads.push("window"); return 2; }})',
+        ),
+      );
+      expect(await outcome()).toEqual({
+        rid: "r1",
+        json: '{"nodeType":1,"window":2}',
+      });
+      expect(globalThis.reads).toEqual(["nodeType", "window"]);
+    } finally {
+      delete globalThis.reads;
+    }
+  });
+
   test("sends undefined as null", async () => {
     const { outcome } = awaited(script("undefined"));
     expect(await outcome()).toEqual({ rid: "r1", json: "null" });

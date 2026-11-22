@@ -659,15 +659,21 @@ const describeScriptError = (error) => {
  * An iframe's nodes are instances of the iframe's own Node, not this page's,
  * so ``instanceof`` misses them. The nodeType getter of Node accepts a node of
  * any frame and throws for anything else, so data that merely has a nodeType
- * field is not taken for a node. A window is its own ``window``, which
- * acyclic data never is.
+ * field is not taken for a node. A window of any frame is tagged Window. None
+ * of this reads the value's own properties, whose getters belong to the
+ * script and run once, when the result is serialized.
  * @param item A value inside the script's result.
  * @returns True for a DOM node or a window.
  */
 const isNodeOrWindow = (item) => {
   if (typeof item !== "object" || item === null) return false;
-  if (item.window === item) return true;
-  if (typeof item.nodeType !== "number") return false;
+  if (
+    item === globalThis ||
+    Object.prototype.toString.call(item) === "[object Window]"
+  ) {
+    return true;
+  }
+  if (!("nodeType" in item)) return false;
   const { get } = /** @type {{ get: () => number }} */ (
     Object.getOwnPropertyDescriptor(Node.prototype, "nodeType")
   );
