@@ -635,6 +635,16 @@ def test_await_call_script(call_script: AppHarness, call_script_page: Page):
     )
 
 
+def _await_user(page: Page) -> None:
+    """Start the awaited script that waits for the test to answer.
+
+    Args:
+        page: Playwright page.
+    """
+    page.locator("#await_user").click()
+    page.wait_for_function("() => typeof window.answerAwaited === 'function'")
+
+
 def test_awaited_script_does_not_hold_up_other_events(
     call_script: AppHarness, call_script_page: Page
 ):
@@ -644,24 +654,11 @@ def test_awaited_script_does_not_hold_up_other_events(
         call_script: harness for CallScript app.
         call_script_page: Playwright page.
     """
-    call_script_page.locator("#await_user").click()
-    call_script_page.wait_for_function(
-        "() => typeof window.answerAwaited === 'function'"
-    )
+    _await_user(call_script_page)
     call_script_page.locator("#set_value_busy").click()
     expect(call_script_page.locator("#value")).to_have_text("busy")
     call_script_page.evaluate("window.answerAwaited({answer: 'yes'})")
     expect(call_script_page.locator("#awaited")).to_have_value("{'answer': 'yes'}")
-
-
-def _await_user(page: Page) -> None:
-    """Start the awaited script that waits for the test to answer.
-
-    Args:
-        page: Playwright page.
-    """
-    page.locator("#await_user").click()
-    page.wait_for_function("() => typeof window.answerAwaited === 'function'")
 
 
 def _drop_connection(page: Page, reconnect_after_ms: int) -> None:
