@@ -2624,35 +2624,15 @@ def args_specs_from_fields(
     }
 
 
-# The parameters a trigger's arguments are passed to, in order. `*args` takes
-# any number of them, none included; keyword-only parameters and `**kwargs`
-# take none.
-_POSITIONAL_PARAMETER_KINDS = (
-    inspect.Parameter.POSITIONAL_ONLY,
-    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+# The parameter kinds that take any number of arguments, none included.
+_VARIADIC_PARAMETER_KINDS = (
+    inspect.Parameter.VAR_POSITIONAL,
+    inspect.Parameter.VAR_KEYWORD,
 )
 
 
-def _positional_parameters(
-    parameters: Mapping[str, inspect.Parameter],
-) -> list[inspect.Parameter]:
-    """Get the parameters a trigger's arguments are passed to.
-
-    Args:
-        parameters: The parameters of the function.
-
-    Returns:
-        Its positional parameters, in order.
-    """
-    return [
-        parameter
-        for parameter in parameters.values()
-        if parameter.kind in _POSITIONAL_PARAMETER_KINDS
-    ]
-
-
 def _max_positional_args(parameters: Mapping[str, inspect.Parameter]) -> int | None:
-    """Get how many of a trigger's arguments a function takes.
+    """Get how many of a trigger's arguments a function takes by position.
 
     Args:
         parameters: The parameters of the function.
@@ -2660,12 +2640,16 @@ def _max_positional_args(parameters: Mapping[str, inspect.Parameter]) -> int | N
     Returns:
         The number of its positional parameters, or None when it takes ``*args``.
     """
-    if any(
-        parameter.kind is inspect.Parameter.VAR_POSITIONAL
-        for parameter in parameters.values()
-    ):
-        return None
-    return len(_positional_parameters(parameters))
+    count = 0
+    for parameter in parameters.values():
+        if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+            return None
+        if parameter.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            count += 1
+    return count
 
 
 def check_fn_match_arg_spec(
@@ -2690,7 +2674,13 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
-    user_args = _positional_parameters(user_func_parameters)
+    # `*args` and `**kwargs` take no argument of their own; a keyword-only
+    # parameter without a default is as required as a positional one.
+    user_args = [
+        p
+        for p in user_func_parameters.values()
+        if p.kind not in _VARIADIC_PARAMETER_KINDS
+    ]
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
         user_args = user_args[1:]

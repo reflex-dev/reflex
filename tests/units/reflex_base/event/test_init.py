@@ -2,19 +2,23 @@
 
 from typing import Any, cast
 
+import pytest
 from reflex_base.client_state import client_state
 from reflex_base.event import (
     EventArgVar,
     EventChain,
+    EventHandler,
     EventSpec,
     LambdaEventCallback,
     call_event_fn,
+    call_event_handler,
     event_arg_placeholder,
     event_args_signature,
     no_args_event_spec,
     parse_args_spec,
     passthrough_event_spec,
 )
+from reflex_base.utils.exceptions import EventFnArgMismatchError
 from reflex_base.vars.base import Var
 from reflex_base.vars.number import NumberVar
 
@@ -136,3 +140,46 @@ def test_call_event_fn_passes_only_positional_arguments() -> None:
     call_event_fn(record_kwargs, lambda a, b: [a, b], key="on_key_down")
     call_event_fn(record_keyword_only, lambda a, b: [a, b], key="on_key_down")
     assert received == [("_a",), ("_a", "1")]
+
+
+class KeywordOnlyState(rx.State):
+    """A state whose handler takes a keyword-only argument no trigger passes."""
+
+    def handle(self, value: str, *, required: str):
+        """Take the trigger's value and an argument it never sends.
+
+        Args:
+            value: The trigger's value.
+            required: An argument no trigger passes.
+        """
+
+
+def test_a_required_keyword_only_parameter_still_counts_as_required() -> None:
+    """A required keyword-only parameter fails the check, as a required positional one does.
+
+    Neither an event handler, whose arguments are sent by name, nor a callable,
+    called with the trigger's arguments by position, ever gets it.
+    """
+
+    def record(value: Var, *, required: str) -> EventSpec:
+        return rx.noop()
+
+    with pytest.raises(EventFnArgMismatchError) as handler_error:
+        call_event_handler(
+            cast(EventHandler, KeywordOnlyState.handle),
+            lambda value: [value],
+            key="on_change",
+        )
+    with pytest.raises(EventFnArgMismatchError) as callable_error:
+        call_event_fn(record, lambda value: [value], key="on_change")
+
+    assert str(handler_error.value) == (
+        "Event on_change only provides 1 arguments, but "
+        "KeywordOnlyState.handle requires at least 2 arguments to be passed to "
+        "the event handler.\nSee https://reflex.dev/docs/events/event-arguments/"
+    )
+    assert str(callable_error.value) == (
+        "Event on_change only provides 1 arguments, but "
+        f"{record} requires at least 2 arguments to be passed to "
+        "the event handler.\nSee https://reflex.dev/docs/events/event-arguments/"
+    )
