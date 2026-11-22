@@ -22,7 +22,9 @@ _LINK_RETRY_DELAY = 0.01
 # Records of shared assets copied in place of a symlink, kept under the web
 # directory so they are never published with the assets themselves.
 _EXTERNAL_COPY_RECORDS_DIR = "external_asset_copies"
-_COPY_RECORD_TMP_SUFFIX = ".tmp"
+# Records are staged outside the records directory, so cleanup never sees one
+# half written, whatever the name of the asset it records.
+_EXTERNAL_COPY_RECORDS_STAGING_DIR = "external_asset_copies_staging"
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -227,8 +229,12 @@ def _record_external_copy(dst_file: Path, src_file: Path) -> None:
     source = str(src_file.resolve())
     if _read_copy_record(record) == source:
         return
-    tmp_record = record.with_name(f".{uuid.uuid4().hex}{_COPY_RECORD_TMP_SUFFIX}")
+    staging_dir = (
+        environment.REFLEX_WEB_WORKDIR.get() / _EXTERNAL_COPY_RECORDS_STAGING_DIR
+    )
+    tmp_record = staging_dir / uuid.uuid4().hex
     try:
+        staging_dir.mkdir(parents=True, exist_ok=True)
         record.parent.mkdir(parents=True, exist_ok=True)
         tmp_record.write_text(source, encoding="utf-8")
         tmp_record.replace(record)
@@ -250,12 +256,7 @@ def _remove_stale_external_copies(external_dir: Path) -> None:
     records_dir = _external_copy_records_dir()
     if not records_dir.is_dir():
         return
-    records = [
-        p
-        for p in records_dir.rglob("*")
-        if not p.name.endswith(_COPY_RECORD_TMP_SUFFIX) and p.is_file()
-    ]
-    for record in records:
+    for record in [p for p in records_dir.rglob("*") if p.is_file()]:
         source = _read_copy_record(record)
         if source is None or Path(source).exists():
             continue

@@ -1059,25 +1059,32 @@ def test_record_external_copy_concedes_denied_replace(
     assert [p.name for p in record.parent.iterdir()] == ["module.js"]
 
 
-def test_remove_stale_external_copies_skips_staged_records(
+def test_remove_stale_external_copies_handles_tmp_named_assets(
     mock_asset_path: Path,
 ) -> None:
-    """A record still being staged by a concurrent compile is not processed.
+    """A copied asset named like a temporary file is cleaned up like any other.
 
     Args:
         mock_asset_path: The tmp cwd used for assets.
     """
-    _, dst_file, record = _stage_recorded_copy(mock_asset_path, "module")
-    staged = record.with_name(".0123abcd.tmp")
-    staged.write_text(str(mock_asset_path / "missing.js"), encoding="utf-8")
-    staged_copy = dst_file.with_name(".0123abcd.tmp")
-    staged_copy.write_text("staged")
+    src_file, dst_file, record = _stage_recorded_copy(mock_asset_path, "module")
+    tmp_src = src_file.with_name("data.tmp")
+    tmp_src.write_text("data")
+    tmp_copy = dst_file.with_name("data.tmp")
+    shutil.copyfile(tmp_src, tmp_copy)
+    _record_external_copy(tmp_copy, tmp_src)
+    staging_dir = (
+        mock_asset_path
+        / constants.Dirs.WEB
+        / assets_module._EXTERNAL_COPY_RECORDS_STAGING_DIR
+    )
 
+    tmp_src.unlink()
     remove_stale_external_asset_symlinks()
 
-    assert staged.read_text(encoding="utf-8") == str(mock_asset_path / "missing.js")
-    assert staged_copy.read_text() == "staged"
-    assert dst_file.read_text() == "module"
+    assert [p.name for p in dst_file.parent.iterdir()] == ["module.js"]
+    assert [p.name for p in record.parent.iterdir()] == ["module.js"]
+    assert list(staging_dir.iterdir()) == []
 
 
 def test_remove_stale_external_copies_keeps_concurrent_replacement(
