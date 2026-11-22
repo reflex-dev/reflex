@@ -81,8 +81,8 @@ write_file = path_ops.write_file
 # How long reading the types of the app's JavaScript modules may take.
 _SIGNATURES_TIMEOUT = 120
 
-# What a script of ``.web`` prints, as a TypedDict.
-_Report = TypeVar("_Report")
+# The type of JSON that Reflex reads back, such as a TypedDict.
+_Shape = TypeVar("_Shape")
 
 
 def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
@@ -378,23 +378,23 @@ def _run_web_script(
     )
 
 
-def _parse_report(output: str, shape: type[_Report]) -> _Report | None:
-    """Parse what a script of ``.web`` printed, if it has the shape Reflex reads.
+def _parse_json(text: str, shape: type[_Shape]) -> _Shape | None:
+    """Parse JSON that Reflex wrote, if it has the shape this version reads.
 
     Args:
-        output: What it printed.
-        shape: The TypedDict of its output.
+        text: The JSON, such as the output of a script of ``.web``.
+        shape: Its type, such as the TypedDict of that output.
 
     Returns:
-        The output, or None if it is not JSON of that shape, as a script that
-        another Reflex version left in ``.web`` can print.
+        The value, or None if the text is not JSON of that shape, as one that
+        another Reflex version wrote can be.
     """
     try:
-        report = json.loads(output)
+        value = json.loads(text)
     except ValueError:
         return None
     # Every level: the types in a signature nest as deep as the code's own do.
-    return report if types._isinstance(report, shape, nested=sys.maxsize) else None
+    return value if types._isinstance(value, shape, nested=sys.maxsize) else None
 
 
 def _unreadable_output(script: str) -> str:
@@ -439,7 +439,7 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
             f"{process.stderr.strip()}"
         )
         raise ReflexRuntimeError(msg)
-    report = _parse_report(process.stdout, _ScriptModulesReport)
+    report = _parse_json(process.stdout, _ScriptModulesReport)
     if report is None:
         raise ReflexRuntimeError(_unreadable_output(_SCRIPT_MODULES_SCRIPT))
     return report
@@ -539,7 +539,7 @@ def compile_script_modules(
     Returns:
         The (path, code) outputs; the npm packages to install, which are those
         the modules import and, in development, typescript, which reads their
-        types for ``compile_script_stubs``; the (source, target) copies of
+        types for ``write_script_stubs``; the (source, target) copies of
         their files; and what was read of each module, by its file.
 
     Raises:
@@ -622,7 +622,7 @@ def _read_script_signatures(paths: Sequence[Path]) -> Signatures | None:
     else:
         if process.returncode:
             detail = process.stderr.strip()
-        elif (signatures := _parse_report(process.stdout, Signatures)) is not None:
+        elif (signatures := _parse_json(process.stdout, Signatures)) is not None:
             return signatures
         else:
             detail = None
@@ -658,9 +658,7 @@ def _remove_orphan_stubs(modules: Iterable[str]) -> None:
             stub.unlink()
 
 
-def compile_script_stubs(
-    modules: Mapping[Path, _ScriptExports],
-) -> list[tuple[str, str]]:
+def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     """Write a type stub next to each JavaScript module the app imports.
 
     A stub declares the functions the module exports, typed from its
@@ -670,15 +668,12 @@ def compile_script_stubs(
     is current the stub is kept, so typescript only runs when a file changed;
     when the types cannot be read, the stub takes any arguments and is retried
     on the next compile. A stub Reflex wrote for a module the app no longer
-    imports is removed.
+    imports is removed. Each file is replaced whole: a compile killed while
+    writing one leaves the old file, whose header the next compile finds stale.
 
     Args:
         modules: What was read of each module, by the file Python imports, from
             ``compile_script_modules``.
-
-    Returns:
-        The (path, code) outputs: the stubs to rewrite, and the type files of
-        each module, for the next compile.
     """
     record = get_web_dir() / constants.Dirs.SCRIPT_STUBS
     try:
@@ -687,7 +682,7 @@ def compile_script_stubs(
         )
     except FileNotFoundError:
         if not modules:
-            return []
+            return
         type_files = {}
     _remove_orphan_stubs(type_files.keys() - map(str, modules))
     type_files = {str(path): type_files.get(str(path), []) for path in modules}
@@ -710,7 +705,6 @@ def compile_script_stubs(
     signatures = (
         _read_script_signatures(list(map(Path, real.values()))) if stale else None
     )
-    stubs: list[tuple[str, str]] = []
     for path in stale:
         functions = modules[path]["functions"]
         if signatures is None:
@@ -721,8 +715,8 @@ def compile_script_stubs(
             stub = _render_stub(
                 path, digest(path), functions, signatures["modules"][real[path]]
             )
-        stubs.append((str(path.with_suffix(".pyi")), stub))
-    return [(str(record), json.dumps(type_files)), *stubs]
+        write_file(path.with_suffix(".pyi"), stub, atomic=True)
+    write_file(record, json.dumps(type_files), atomic=True)
 
 
 def _restore_bundled_libraries() -> bool:

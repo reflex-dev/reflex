@@ -17,6 +17,7 @@ import threading
 import unicodedata
 from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import TextIO
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
@@ -49,18 +50,25 @@ if sys.platform != "win32":
 join = os.linesep.join
 
 
-def write_file(path: str | Path, code: str):
+def write_file(path: str | Path, code: str, *, atomic: bool = False):
     """Write the given code to the given path, skipping unchanged contents.
 
     Args:
         path: The path to write the code to.
         code: The code to write.
+        atomic: Whether to replace the file whole, so that a process killed
+            while writing it leaves the old file, never part of the new one.
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.read_text(encoding="utf-8") == code:
         return
-    path.write_text(code, encoding="utf-8")
+    if atomic:
+        # Ending as the file does, so a watcher that ignores its type, as the
+        # backend's reloader ignores a type stub, ignores the temporary file too.
+        _replace_file(path, lambda file: file.write(code), f".tmp{path.suffix}")
+    else:
+        path.write_text(code, encoding="utf-8")
 
 
 def chmod_rm(path: Path):
@@ -364,15 +372,21 @@ def file_lock(path: str | Path) -> Iterator[Path]:
                 os.close(lock_fd)
 
 
-def _write_json_file(file_path: Path, value: object) -> None:
-    """Atomically replace a JSON file with a complete document.
+def _replace_file(
+    file_path: Path, write: Callable[[TextIO], object], temp_suffix: str = ".tmp"
+) -> None:
+    """Atomically replace a file with complete content.
 
     Args:
-        file_path: The destination JSON file.
-        value: The complete JSON value to write.
+        file_path: The destination file.
+        write: Writes its complete content to an open text file.
+        temp_suffix: The end of the name of the temporary file, beside it, that
+            is written first.
     """
     open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0)
-    temp_path = file_path.with_name(f".{file_path.name}.{secrets.token_hex(8)}.tmp")
+    temp_path = file_path.with_name(
+        f".{file_path.name}.{secrets.token_hex(8)}{temp_suffix}"
+    )
     # Preserve the old Path.touch behavior by letting umask set new-file mode.
     temp_fd = os.open(temp_path, open_flags, 0o666)
 
@@ -382,7 +396,7 @@ def _write_json_file(file_path: Path, value: object) -> None:
         temp_file = os.fdopen(temp_fd, "w", encoding="utf-8")
         temp_fd = -1
         with temp_file:
-            json.dump(value, temp_file, ensure_ascii=False)
+            write(temp_file)
             temp_file.flush()
             os.fsync(temp_file.fileno())
         temp_path.replace(file_path)
@@ -393,6 +407,16 @@ def _write_json_file(file_path: Path, value: object) -> None:
         with contextlib.suppress(OSError):
             temp_path.unlink(missing_ok=True)
         raise
+
+
+def _write_json_file(file_path: Path, value: object) -> None:
+    """Atomically replace a JSON file with a complete document.
+
+    Args:
+        file_path: The destination JSON file.
+        value: The complete JSON value to write.
+    """
+    _replace_file(file_path, lambda file: json.dump(value, file, ensure_ascii=False))
 
 
 def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> None:

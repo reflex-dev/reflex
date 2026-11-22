@@ -2457,28 +2457,24 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
     copies = [(tmp_path / "party.js", tmp_path / "out" / "party.js")]
     script_imports = {"canvas-confetti": [ImportVar(tag=None, render=False)]}
     read = {tmp_path / "party.js": {"files": [str(tmp_path / "party.js")]}}
-    stubs = [(str(tmp_path / "party.pyi"), "# stub\n")]
 
     def compile_script_modules(script_modules: dict[str, _ScriptModule]):
         calls.append(("read", script_modules))
-        return list(outputs), script_imports, copies, read
+        return outputs, script_imports, copies, read
 
-    def compile_script_stubs(read):
+    def write_script_stubs(read):
         calls.append(("stubs", read))
-        return stubs
 
     mocker.patch.object(
         utils, "compile_script_modules", side_effect=compile_script_modules
     )
-    mocker.patch.object(utils, "compile_script_stubs", side_effect=compile_script_stubs)
+    mocker.patch.object(utils, "write_script_stubs", side_effect=write_script_stubs)
     mocker.patch.object(
         utils, "copy_files", side_effect=lambda c: calls.append(("copy", c))
     )
     imports = {"react": [ImportVar(tag="useState")]}
 
-    assert compiler._install_frontend_packages(app, imports) == (
-        outputs if prod else [*outputs, *stubs]
-    )
+    assert compiler._install_frontend_packages(app, imports) == outputs
     assert calls == [
         *([imports] if first_install else []),
         ("read", modules),
