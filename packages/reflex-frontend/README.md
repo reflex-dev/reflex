@@ -17,7 +17,9 @@ In a checkout of the repository there is no embedded copy: reflex-base reads
 `src/` in place, so the next `reflex init` copies an edit without a rebuild.
 
 Everything in `src/` ships to every app, including the build tooling an app
-runs (`compress-static.js`, the PostCSS config, the Vite plugins). Tests,
+runs (`compress-static.js`, `script-modules.js`, which the compiler runs to read
+the JavaScript modules an app imports from Python, the PostCSS config, the Vite
+plugins). Tests,
 fixtures and this package's own lint and type-check setup stay outside it.
 
 A change under `src/` is a change to reflex-base: its news fragment goes in
@@ -96,6 +98,8 @@ A few modules import packages that are not declared here yet.
 `vite-plugin-react-compiler.js` (babel) belong to an optional component or
 plugin, which installs the package. `app/routes.js` imports `@react-router/dev`
 and `@react-router/fs-routes`, which every app installs as dev dependencies.
+`script-modules.js` imports rolldown's parser through `vite`, another of them;
+here vitest brings both.
 
 ## Before this can be published
 

@@ -339,10 +339,18 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   `app_name` in `rxconfig.py` names. A `.js` file in another package, such as
   a library you installed, is never imported.
 - A Python module of the same name wins over a JavaScript one.
-- Every named export that may be a function becomes a function. A `const`
-  initialized with a literal, as in `export const limit = 5`, is a value, and
-  Python cannot call it. A default export, a class and TypeScript types are
-  left out.
+- Import each function by name, as in `from my_app.scripts.party import
+  celebrate`, or use it on the module (`party.celebrate`).
+  `from my_app.scripts.party import *` is not supported.
+- When the app compiles, Reflex reads the module with the bundler's parser, so
+  any JavaScript, TypeScript or JSX the bundler accepts works, and checks that
+  each name you use from Python is an exported function. An export that may
+  hold a function counts, such as `export const run = makeRunner()` or a name
+  re-exported from another file. A `const` initialized with a literal, an
+  object, an array or a class, a class and an enum are values, which Python
+  cannot call. A default export and TypeScript types are left out.
+- A name used only inside an event handler is looked up when the handler runs,
+  after the compile, so a wrong name there is reported in the browser.
 - Arguments are sent as JSON. A var is sent as its value in the browser. An
   event handler arrives as its full name, which the function dispatches with
   `reflex.addEvents([reflex.event(name, payload)])`, as `measure` does above.
@@ -357,21 +365,22 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   import, including a stylesheet's `@import` and `url(...)` references. They
   must be inside your app's package directory, which is all of your project
   that is copied into the compiled app.
-- In a `.jsx` or `.tsx` file, JSX is read as JSX. In a `.js` or `.ts` file,
-  `<` is never JSX, so a quote in what would be JSX text hides the code after
-  it on that line.
 - Reflex writes a type stub (`party.pyi`) next to the module when it compiles
   the app, so type checkers resolve the import.
 
 ### Errors
 
-- `Cannot import nope from my_app.scripts.party: .../party.js exports no
-  function named nope (its functions: celebrate, measure).` Export the function
-  from the file, as in `export function nope() { ... }`, or fix the name you
-  import.
-- `Cannot import limit from my_app.scripts.party: .../party.js exports limit as
-  a value, not a function, and Python can only call functions.` Export a
-  function that uses the value instead.
+The compile stops with these errors:
+
+- `` `nope` is used from my_app.scripts.party, but my_app/scripts/party.js
+  exports no function named nope (its functions: celebrate, measure).`` Export
+  the function from the file, as in `export function nope() { ... }`, or
+  correct the name in Python.
+- `` `limit` is used from my_app.scripts.party as a function, but
+  my_app/scripts/party.js exports limit as a value, and Python can only call
+  functions.`` Export a function that uses the value instead.
+- `Syntax error at .../party.js:3:7: Unexpected token.` Fix the code at that
+  line and column, in the module or in a file it imports.
 - `The JavaScript module my_app.scripts.party imports .../shared.js, which is
   outside .../my_app, the directory of the app's package, and only that
   directory is copied into the compiled app.` Move the file into your app's
@@ -379,11 +388,13 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
 - `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
   which does not exist in the browser.` Remove the import, and do the work that
   needs it in a backend event handler instead.
-- In the browser, `Cannot call my_app.scripts.party.nope: the frontend has no
-  function nope in the JavaScript module my_app.scripts.party.` The module does
-  not export a function of that name, or the frontend was built before the
-  backend imported it. Export the function, or restart `reflex run` to rebuild
-  the frontend.
+
+In the browser, a call fails with `Cannot call my_app.scripts.party.nope: the
+frontend has no function nope in the JavaScript module my_app.scripts.party.`
+when the module does not export a function of that name, which a name used only
+in an event handler can reach, or when the frontend was built before the
+backend imported it. Export the function, or restart `reflex run` to rebuild
+the frontend.
 
 ## Using React Hooks
 
