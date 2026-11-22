@@ -54,8 +54,10 @@ const WRAPPER_TYPES = new Set([
   "TSSatisfiesExpression",
 ]);
 const CSS_COMMENT = /\/\*[\s\S]*?\*\//g;
+// The path of an `@import` or a `url()`, quoted or bare, and each quoted path
+// of an `image-set()`. A quoted path may hold spaces.
 const CSS_REFERENCE =
-  /@import\s+(?:url\(\s*)?["']?([^"')\s;]+)|url\(\s*["']?([^"')\s]+)["']?\s*\)/g;
+  /(?:@import\s+(?:url\(\s*)?|url\(\s*|(?<=image-set\([^)]*))(?:"([^"]*)"|'([^']*)')|(?:@import\s+(?:url\(\s*)?|url\(\s*)([^"'\s);]+)/g;
 
 /**
  * Remove the query and fragment of a path, as in Vite's `./logo.png?url`.
@@ -231,7 +233,7 @@ const readStylesheet = (file) => ({
       .replace(CSS_COMMENT, "")
       .matchAll(CSS_REFERENCE),
   ]
-    .map((match) => match[1] ?? match[2])
+    .map((match) => match[1] ?? match[2] ?? match[3])
     .filter((reference) => !/^(?:[/#]|data:)|:\/\//.test(reference))
     .map((reference) => resolve(dirname(file), stripQuery(reference)))
     .filter(isFile)
