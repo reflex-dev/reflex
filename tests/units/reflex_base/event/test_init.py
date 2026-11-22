@@ -2,19 +2,23 @@
 
 from typing import Any, cast
 
+import pytest
 from reflex_base.client_state import client_state
 from reflex_base.event import (
     EventArgVar,
     EventChain,
+    EventHandler,
     EventSpec,
     LambdaEventCallback,
     call_event_fn,
+    call_event_handler,
     event_arg_placeholder,
     event_args_signature,
     no_args_event_spec,
     parse_args_spec,
     passthrough_event_spec,
 )
+from reflex_base.utils.exceptions import EventFnArgMismatchError
 from reflex_base.vars.base import Var
 from reflex_base.vars.number import NumberVar
 
@@ -136,3 +140,54 @@ def test_call_event_fn_passes_only_positional_arguments() -> None:
     call_event_fn(record_kwargs, lambda a, b: [a, b], key="on_key_down")
     call_event_fn(record_keyword_only, lambda a, b: [a, b], key="on_key_down")
     assert received == [("_a",), ("_a", "1")]
+
+
+class KeywordOnlyState(rx.State):
+    """A state whose handler takes a keyword-only argument no trigger passes."""
+
+    def handle(self, value: str, *, required: str):
+        """Take the trigger's value and an argument it never sends.
+
+        Args:
+            value: The trigger's value.
+            required: An argument no trigger passes.
+        """
+
+
+def test_a_required_keyword_only_parameter_of_a_handler_still_counts_as_required() -> (
+    None
+):
+    """An event handler's arguments are sent by name, so the trigger must supply it."""
+    with pytest.raises(EventFnArgMismatchError) as error:
+        call_event_handler(
+            cast(EventHandler, KeywordOnlyState.handle),
+            lambda value: [value],
+            key="on_change",
+        )
+
+    assert str(error.value) == (
+        "Event on_change only provides 1 arguments, but "
+        "KeywordOnlyState.handle requires at least 2 arguments to be passed to "
+        "the event handler.\nSee https://reflex.dev/docs/events/event-arguments/"
+    )
+
+
+def test_a_callable_with_a_required_keyword_only_parameter_is_rejected() -> None:
+    """A callable gets the trigger's arguments by position, so it never gets one.
+
+    It is rejected however many arguments the trigger provides.
+    """
+
+    def record(value: Var, *, required: str) -> EventSpec:
+        return rx.noop()
+
+    with pytest.raises(EventFnArgMismatchError) as error:
+        call_event_fn(record, lambda a, b: [a, b], key="on_change")
+
+    assert str(error.value) == (
+        f"Event on_change cannot pass the keyword-only argument 'required' of "
+        f"{record}: a function given to an event trigger gets the trigger's "
+        "arguments by position only. Give 'required' a default value, or move it "
+        "before the `*` so it takes one of the trigger's arguments.\n"
+        "See https://reflex.dev/docs/events/event-arguments/"
+    )

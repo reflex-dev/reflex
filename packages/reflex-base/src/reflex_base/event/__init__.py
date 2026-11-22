@@ -2624,35 +2624,15 @@ def args_specs_from_fields(
     }
 
 
-# The parameters a trigger's arguments are passed to, in order. `*args` takes
-# any number of them, none included; keyword-only parameters and `**kwargs`
-# take none.
-_POSITIONAL_PARAMETER_KINDS = (
-    inspect.Parameter.POSITIONAL_ONLY,
-    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+# The parameter kinds that take any number of arguments, none included.
+_VARIADIC_PARAMETER_KINDS = (
+    inspect.Parameter.VAR_POSITIONAL,
+    inspect.Parameter.VAR_KEYWORD,
 )
 
 
-def _positional_parameters(
-    parameters: Mapping[str, inspect.Parameter],
-) -> list[inspect.Parameter]:
-    """Get the parameters a trigger's arguments are passed to.
-
-    Args:
-        parameters: The parameters of the function.
-
-    Returns:
-        Its positional parameters, in order.
-    """
-    return [
-        parameter
-        for parameter in parameters.values()
-        if parameter.kind in _POSITIONAL_PARAMETER_KINDS
-    ]
-
-
 def _max_positional_args(parameters: Mapping[str, inspect.Parameter]) -> int | None:
-    """Get how many of a trigger's arguments a function takes.
+    """Get how many of a trigger's arguments a function takes by position.
 
     Args:
         parameters: The parameters of the function.
@@ -2660,12 +2640,47 @@ def _max_positional_args(parameters: Mapping[str, inspect.Parameter]) -> int | N
     Returns:
         The number of its positional parameters, or None when it takes ``*args``.
     """
-    if any(
-        parameter.kind is inspect.Parameter.VAR_POSITIONAL
-        for parameter in parameters.values()
-    ):
-        return None
-    return len(_positional_parameters(parameters))
+    count = 0
+    for parameter in parameters.values():
+        if parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+            return None
+        if parameter.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            count += 1
+    return count
+
+
+def _check_no_required_keyword_only(
+    fn: Callable, parameters: Mapping[str, inspect.Parameter], key: str | None
+) -> None:
+    """Reject a callable with a keyword-only parameter that has no default.
+
+    A callable gets the trigger's arguments by position, so it never gets one.
+
+    Args:
+        fn: The callable given to the event trigger.
+        parameters: Its parameters.
+        key: The name of the event trigger.
+
+    Raises:
+        EventFnArgMismatchError: If it has a required keyword-only parameter.
+    """
+    for parameter in parameters.values():
+        if (
+            parameter.kind is inspect.Parameter.KEYWORD_ONLY
+            and parameter.default is inspect.Parameter.empty
+        ):
+            msg = (
+                f"Event {key} cannot pass the keyword-only argument "
+                f"{parameter.name!r} of {fn}: a function given to an event "
+                "trigger gets the trigger's arguments by position only. Give "
+                f"{parameter.name!r} a default value, or move it before the `*` "
+                "so it takes one of the trigger's arguments.\n"
+                "See https://reflex.dev/docs/events/event-arguments/"
+            )
+            raise EventFnArgMismatchError(msg)
 
 
 def check_fn_match_arg_spec(
@@ -2690,7 +2705,13 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
-    user_args = _positional_parameters(user_func_parameters)
+    # `*args` and `**kwargs` take no argument of their own; a keyword-only
+    # parameter without a default is as required as a positional one.
+    user_args = [
+        p
+        for p in user_func_parameters.values()
+        if p.kind not in _VARIADIC_PARAMETER_KINDS
+    ]
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
         user_args = user_args[1:]
@@ -2788,6 +2809,7 @@ def call_event_fn(
     parameters = inspect.signature(fn).parameters
 
     # Check that fn signature matches arg_spec
+    _check_no_required_keyword_only(fn, parameters, key)
     check_fn_match_arg_spec(fn, parameters, parsed_args, key=key)
 
     # Call the function with as many of the parsed args as it takes.
