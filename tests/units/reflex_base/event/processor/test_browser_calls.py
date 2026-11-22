@@ -1,8 +1,11 @@
 """Tests for the registry of browser calls the backend awaits."""
 
 import asyncio
+import dataclasses
 import json
-from typing import Any
+from collections import deque
+from collections.abc import Callable, Coroutine
+from typing import Any, cast
 
 import pytest
 from reflex_base.event import Event
@@ -404,3 +407,321 @@ async def test_close_cancels_pending_calls():
     assert timer is not None
     assert timer.cancelled()
     _assert_forgotten(calls)
+
+
+TOKEN = "tok"
+
+
+class _Timer:
+    """A grace timer that fires only when the exploration fires it."""
+
+    def __init__(self, callback: Callable[..., None], args: tuple[Any, ...]):
+        """Schedule a callback.
+
+        Args:
+            callback: The function the timer calls.
+            args: Its arguments.
+        """
+        self.callback = callback
+        self.args = args
+        self.live = True
+
+    def cancel(self) -> None:
+        """Cancel the timer."""
+        self.live = False
+
+    def fire(self) -> None:
+        """Run the callback, as the event loop does when the timer is due."""
+        self.live = False
+        self.callback(*self.args)
+
+
+@dataclasses.dataclass
+class _Call:
+    """An awaited call whose coroutine is stepped by hand instead of by a task."""
+
+    coro: Coroutine[Any, Any, Any]
+    rid: str
+    future: asyncio.Future[Any]
+    page: int
+    # The _Tab its token had once it started.
+    tab: Any
+    result_sent: bool = False
+    # What the call returns or raises, known once its future settles.
+    outcome: tuple[Any, ...] | None = None
+    ended: bool = False
+
+
+class _Interleaving:
+    """One token's tab and its calls, driven one event at a time.
+
+    The socket events call BrowserCalls the way EventNamespace does: a connect
+    runs ``connect`` and then the boot event, which may refuse the connect;
+    the refusal and a disconnect both run ``disconnect``.
+    """
+
+    def __init__(self, grace: float, timers: list[_Timer]):
+        """Start with the tab connected from its first page and no calls.
+
+        Args:
+            grace: The grace period.
+            timers: Where the grace timers BrowserCalls schedules are recorded.
+        """
+        self.calls = BrowserCalls()
+        self.grace = grace
+        self.timers = timers
+        timers.clear()
+        self.socket = "connected"
+        self.page = 0
+        self.closed = False
+        self.started: list[_Call] = []
+        # The request id of the last call the tab received.
+        self.rid = ""
+
+    def actions(self) -> list[tuple[str, int]]:
+        """List the events that can happen next.
+
+        Returns:
+            Each event's name and the index of the call it concerns, or -1.
+        """
+        socket = self.socket
+        enabled = {
+            "call": not self.closed and len(self.started) < 2 and socket != "gone",
+            "disconnect": socket == "connected",
+            "reload": socket == "gone" and self.page == 0,
+            "connect": socket == "gone",
+            "boot": socket == "booting",
+            "refuse": socket == "booting",
+            "fire": any(timer.live for timer in self.timers),
+            "close": not self.closed,
+        }
+        actions = [(name, -1) for name, on in enabled.items() if on]
+        for i, call in enumerate(self.started):
+            if (
+                not call.result_sent
+                and socket == "connected"
+                and call.page == self.page
+            ):
+                actions.append(("result", i))
+            if not call.ended:
+                actions.append(("abort" if call.outcome is None else "end", i))
+        return actions
+
+    def apply(self, name: str, i: int) -> None:
+        """Run an event and check every invariant after it.
+
+        Args:
+            name: The event.
+            i: The index of the call it concerns.
+        """
+        pending = [call for call in self.started if call.outcome is None]
+        settles, outcome = self._effect(name, i, pending)
+        getattr(self, f"_{name}")(i)
+        assert [call for call in pending if call.future.done()] == settles
+        for call in settles:
+            call.outcome = outcome
+        self._check()
+
+    def _effect(
+        self, name: str, i: int, pending: list[_Call]
+    ) -> tuple[list[_Call], tuple[Any, ...]]:
+        """Predict the calls an event settles, and how they end.
+
+        Args:
+            name: The event.
+            i: The index of the call it concerns.
+            pending: The calls not settled yet.
+
+        Returns:
+            The calls it settles, and what each then returns or raises.
+        """
+        expired = ("disconnected", grace_expired(self.grace))
+        match name:
+            case "result":
+                return [c for c in pending if c is self.started[i]], ("returned", i)
+            case "abort":
+                return [self.started[i]], ("cancelled",)
+            case "close":
+                return pending, ("cancelled",)
+            case "fire":
+                return pending, expired
+            case "disconnect" | "refuse":
+                return (pending if self.grace == 0 else []), expired
+            case "connect":
+                replaced = [c for c in pending if c.page != self.page]
+                return replaced, ("disconnected", PAGE_REPLACED)
+        return [], ()
+
+    async def _emit(self, token: str, event: Event) -> None:
+        """Deliver a call's event to the tab, which keeps its request id.
+
+        Args:
+            token: The client token.
+            event: The event.
+        """
+        self.rid = event.payload["rid"]
+
+    def _call(self, i: int) -> None:
+        coro = self.calls.call(TOKEN, f"p{self.page}", EVENT, None, self._emit)
+        future = coro.send(None)
+        assert future is self.calls._futures[self.rid]
+        self.started.append(
+            _Call(coro, self.rid, future, self.page, self.calls._tabs[TOKEN])
+        )
+
+    def _result(self, i: int) -> None:
+        self.started[i].result_sent = True
+        self.calls.resolve(self.started[i].rid, {"json": str(i)})
+
+    def _abort(self, i: int) -> None:
+        # A timeout or a cancelled task cancels the future the call awaits.
+        self.started[i].future.cancel()
+
+    def _end(self, i: int) -> None:
+        call = self.started[i]
+        call.ended = True
+        assert _resume(call.coro) == call.outcome
+
+    def _disconnect(self, i: int) -> None:
+        self.socket = "gone"
+        self.calls.disconnect(TOKEN, self.grace)
+
+    _refuse = _disconnect
+
+    def _reload(self, i: int) -> None:
+        self.page += 1
+
+    def _connect(self, i: int) -> None:
+        self.socket = "booting"
+        self.calls.connect(TOKEN, f"p{self.page}")
+
+    def _boot(self, i: int) -> None:
+        self.socket = "connected"
+
+    def _fire(self, i: int) -> None:
+        next(timer for timer in self.timers if timer.live).fire()
+
+    def _close(self, i: int) -> None:
+        self.closed = True
+        self.calls.close()
+
+    def _check(self) -> None:
+        """Assert the registry holds exactly the unended calls, none stranded."""
+        unended = [call for call in self.started if not call.ended]
+        assert self.calls._futures == {call.rid: call.future for call in unended}
+        tab = self.calls._tabs.get(TOKEN)
+        in_tab = [call for call in unended if call.tab is tab]
+        if tab is not None:
+            assert tab.rids == {call.rid for call in in_tab} != set()
+            assert {call.page for call in in_tab} == {int(tab.page[1:])}
+        timer = cast("_Timer | None", tab and tab.grace_timer)
+        armed = timer is not None and timer.live
+        assert [t for t in self.timers if t.live] == ([timer] if armed else [])
+        for call in unended:
+            if call.outcome is None:
+                assert call.tab is tab
+                assert armed or (self.socket != "gone" and call.page == self.page)
+
+    def key(self) -> tuple[Any, ...]:
+        """Describe the state, so a state reached twice is explored once.
+
+        Returns:
+            Everything that decides what can happen next.
+        """
+        tab = self.calls._tabs.get(TOKEN)
+        timer = cast("_Timer | None", tab and tab.grace_timer)
+        return (
+            self.socket,
+            self.page,
+            self.closed,
+            tab and (tab.page, timer and timer.live),
+            tuple(
+                (c.page, c.result_sent, c.outcome, c.ended, c.tab is tab)
+                for c in self.started
+            ),
+        )
+
+    def discard(self) -> None:
+        """Drop the calls still running without leaving errors unretrieved."""
+        for call in self.started:
+            call.coro.close()
+            if call.future.done() and not call.future.cancelled():
+                call.future.exception()
+
+
+def _resume(coro: Coroutine[Any, Any, Any]) -> tuple[Any, ...]:
+    """Resume a call whose future settled, as its task would.
+
+    Args:
+        coro: The call's coroutine.
+
+    Returns:
+        What the call returned or raised.
+
+    Raises:
+        AssertionError: If the call awaits again.
+    """
+    try:
+        awaited = coro.send(None)
+    except StopIteration as stop:
+        return ("returned", stop.value)
+    except asyncio.CancelledError:
+        return ("cancelled",)
+    except BrowserDisconnectedError as e:
+        return ("disconnected", str(e))
+    msg = f"The call awaited {awaited!r} again after its future settled."
+    raise AssertionError(msg)
+
+
+_Path = tuple[tuple[str, int], ...]
+
+
+@pytest.mark.parametrize(("grace", "states"), [(0, (3068, 18)), (5, (4200, 20))])
+# BrowserCalls needs a running loop, although the calls are stepped by hand.
+async def test_every_interleaving_settles_each_call_once_and_forgets_it(  # noqa: RUF029
+    grace: float, states: tuple[int, int], monkeypatch: pytest.MonkeyPatch
+):
+    """Explore every order of events for one tab and two calls; the invariants hold after each.
+
+    The events: a call starts; the page it was sent to returns its result;
+    the call times out or its task is cancelled; the awaiting task resumes;
+    the tab disconnects, reloads, reconnects (and its boot event succeeds or
+    refuses the connect); the grace timer fires; the backend closes. Each
+    state is explored once, until no new state is reached.
+
+    Args:
+        grace: The grace period; zero fails the calls on the disconnect.
+        states: The number of distinct states reached, and the most events
+            it takes to reach one.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    timers: list[_Timer] = []
+
+    def schedule(delay: float, callback: Callable[..., None], *args: Any) -> _Timer:
+        assert delay == grace
+        timers.append(timer := _Timer(callback, args))
+        return timer
+
+    monkeypatch.setattr(asyncio.get_running_loop(), "call_later", schedule)
+
+    def replay(path: _Path) -> _Interleaving:
+        run = _Interleaving(grace, timers)
+        for action in path:
+            run.apply(*action)
+        return run
+
+    start = replay(())
+    seen = {start.key()}
+    # Breadth first: each state's shortest path, and the events it enables.
+    queue: deque[tuple[_Path, list[tuple[str, int]]]] = deque([((), start.actions())])
+    depth = 0
+    while queue:
+        path, actions = queue.popleft()
+        depth = len(path)
+        for action in actions:
+            run = replay((*path, action))
+            if (key := run.key()) not in seen:
+                seen.add(key)
+                queue.append(((*path, action), run.actions()))
+            run.discard()
+    assert (len(seen), depth) == states
