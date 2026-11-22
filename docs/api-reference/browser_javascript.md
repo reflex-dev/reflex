@@ -186,7 +186,12 @@ The rules:
 The exceptions are imported from `reflex.utils.exceptions`:
 
 ```python
-from reflex.utils.exceptions import BrowserDisconnectedError, BrowserScriptError
+from reflex.utils.exceptions import (
+    BrowserDisconnectedError,
+    BrowserResultSerializationError,
+    BrowserScriptError,
+    EventHandlerTypeError,
+)
 ```
 
 Each error below gives its exact message, with the values of an example call, and its fix.
