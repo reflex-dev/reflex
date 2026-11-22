@@ -2492,6 +2492,33 @@ def test_rename_imports_and_app_name_preserves_line_endings(
     assert file_path.read_bytes() == expected.encode()
 
 
+@pytest.mark.parametrize(
+    ("package", "source", "expected"),
+    [
+        (
+            ("foo",),
+            "from .foo.state import S\nfrom foo.foo.state import T\nfrom .foo_state import U\n",
+            "from .bar.state import S\nfrom bar.bar.state import T\nfrom .foo_state import U\n",
+        ),
+        (
+            ("foo", "sub", "deep"),
+            "from ...foo import app\nfrom ..foo import other\n",
+            "from ...bar import app\nfrom ..foo import other\n",
+        ),
+    ],
+)
+def test_rename_imports_of_the_app_module(temp_directory, package, source, expected):
+    """Imports of the app module and its submodules follow its rename from any package."""
+    file_path = temp_directory / "example.py"
+    file_path.write_text(source)
+
+    rename_imports_and_app_name(
+        file_path, "foo", "bar", package=package, main_module=("foo", "foo")
+    )
+
+    assert file_path.read_text() == expected
+
+
 def test_cli_rename_command(temp_directory, monkeypatch):
     # The ``cli`` group callback enables managed logging for the process;
     # snapshot the marker so it does not leak into the rest of the session.
@@ -2526,6 +2553,29 @@ from .base import *
 
 def random_component():
     return rx.fragment()
+"""
+    )
+    (foo_dir / "foo" / "components" / "views.py").write_text(
+        """
+from ..foo import State
+from ..foo_utils import helper
+"""
+    )
+    (foo_dir / "foo" / "pages.py").write_text(
+        """
+from . import foo
+from .foo import State
+from foo.foo import app
+import foo.foo as main
+"""
+    )
+    (temp_directory / "outside.py").write_text("from foo.foo import app\n")
+    (foo_dir / "linked.py").symlink_to(temp_directory / "outside.py")
+    (foo_dir / "tests").mkdir()
+    (foo_dir / "tests" / "test_app.py").write_text(
+        """
+from foo.foo import app
+from foo import foo
 """
     )
     (foo_dir / "foo" / "foo.py").touch()
@@ -2576,6 +2626,27 @@ def random_component():
     return rx.fragment()
 """
     )
+    assert (foo_dir / "bar" / "components" / "views.py").read_text() == (
+        """
+from ..bar import State
+from ..foo_utils import helper
+"""
+    )
+    assert (foo_dir / "bar" / "pages.py").read_text() == (
+        """
+from . import bar
+from .bar import State
+from bar.bar import app
+import bar.bar as main
+"""
+    )
+    assert (foo_dir / "tests" / "test_app.py").read_text() == (
+        """
+from bar.bar import app
+from bar import bar
+"""
+    )
+    assert (temp_directory / "outside.py").read_text() == "from bar.bar import app\n"
     assert (foo_dir / "bar" / "bar.py").exists()
     assert not (foo_dir / "bar" / "foo.py").exists()
     assert (foo_dir / "bar" / "bar.py").read_text() == (
