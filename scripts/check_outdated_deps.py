@@ -7,7 +7,7 @@ script, so adding or removing one is a config change:
 
     [tool.check-outdated-deps]
     backend_held = ["pydantic-core", "pyee", "redis"]
-    backend_pinned = ["pyright", "ruff"]
+    backend_pinned = ["ty", "ruff"]
     frontend_held = ["react-moment", "plotly.js"]
     frontend_pinned = ["@chakra-ui/*", "ag-grid*"]
 
