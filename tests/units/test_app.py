@@ -16,7 +16,7 @@ import threading
 import traceback
 import unittest.mock
 import uuid
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
@@ -5743,12 +5743,14 @@ async def _start_browser_call(
     return task, update.events[0].payload["rid"]
 
 
-@pytest.mark.asyncio
-async def test_browser_calls_follow_their_page_across_socket_connects():
-    """An awaited call survives its page reconnecting, and fails at once when the page is gone.
+BROWSER_CALL_ENVIRON = {"QUERY_STRING": "token=tok"}
 
-    The socket's connect and disconnect handlers tell the event processor
-    which page load each token's socket belongs to.
+
+def _namespace_with_browser_calls() -> tuple[EventNamespace, EventProcessor]:
+    """Make an event namespace whose app awaits browser calls with a real event processor.
+
+    Returns:
+        The namespace, with a recording emit, and the processor.
     """
     app = App()
     namespace = EventNamespace("/event", app)
@@ -5756,7 +5758,59 @@ async def test_browser_calls_follow_their_page_across_socket_connects():
     namespace.emit = AsyncMock()
     processor = app._event_processor = EventProcessor(browser_call_grace_period=5)
     processor.configure(event_namespace=namespace)
-    environ = {"QUERY_STRING": "token=tok"}
+    return namespace, processor
+
+
+async def _disconnect(namespace: EventNamespace, sid: str) -> None:
+    """Disconnect a socket and wait for its token to be unlinked.
+
+    Args:
+        namespace: The event namespace.
+        sid: The Socket.IO session id.
+    """
+    cleanup = namespace.on_disconnect(sid)
+    assert cleanup is not None
+    await cleanup
+
+
+async def _refused_connect(
+    namespace: EventNamespace,
+    sid: str,
+    page: str,
+    during_boot: Callable[[], Awaitable[Any]] | None = None,
+) -> None:
+    """Connect token ``tok`` from a page with a boot event that fails, refusing the connect.
+
+    Args:
+        namespace: The event namespace.
+        sid: The Socket.IO session id.
+        page: The page load the socket connects from.
+        during_boot: Run while the boot event is processed, before it fails.
+    """
+
+    async def refuse(sid: str, data: Any) -> None:
+        if during_boot is not None:
+            await during_boot()
+        msg = "bad boot event"
+        raise ValueError(msg)
+
+    namespace.on_event = AsyncMock(side_effect=refuse)
+    boot = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+    with pytest.raises(ValueError, match=r"^bad boot event$"):
+        await namespace.on_connect(
+            sid, BROWSER_CALL_ENVIRON, {"page": page, "event": boot}
+        )
+
+
+@pytest.mark.asyncio
+async def test_browser_calls_follow_their_page_across_socket_connects():
+    """An awaited call survives its page reconnecting, and fails at once when the page is gone.
+
+    The socket's connect and disconnect handlers tell the event processor
+    which page load each token's socket belongs to.
+    """
+    namespace, processor = _namespace_with_browser_calls()
+    environ = BROWSER_CALL_ENVIRON
 
     async with processor:
         await namespace.on_connect("sid1", environ, {"page": "p1"})
@@ -5773,9 +5827,7 @@ async def test_browser_calls_follow_their_page_across_socket_connects():
         assert await reconnected == 1
 
         reloaded, _ = await _start_browser_call(namespace, processor)
-        cleanup = namespace.on_disconnect("sid2")
-        assert cleanup is not None
-        await cleanup
+        await _disconnect(namespace, "sid2")
         await namespace.on_connect("sid3", environ, {"page": "p2"})
         with pytest.raises(exceptions.BrowserDisconnectedError) as exc_info:
             await reloaded
@@ -5803,52 +5855,60 @@ async def _disconnected(task: asyncio.Task[Any]) -> tuple[type[BaseException], s
 async def test_a_refused_reconnect_keeps_browser_calls_waiting_for_their_page():
     """A connect whose boot event fails counts as a disconnect for the tab's calls.
 
-    The connect resumed the calls of its page, and a call can start while the
-    boot event runs, but a refused connect never reaches on_disconnect: the
-    calls must still fail once another page connects with the token.
+    A call can start while the boot event runs, but a refused connect never
+    reaches on_disconnect: the calls must still fail once another page
+    connects with the token.
     """
-    app = App()
-    namespace = EventNamespace("/event", app)
-    namespace._token_manager = LocalTokenManager()
-    namespace.emit = AsyncMock()
-    processor = app._event_processor = EventProcessor(browser_call_grace_period=5)
-    processor.configure(event_namespace=namespace)
-    environ = {"QUERY_STRING": "token=tok"}
-    boot = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+    namespace, processor = _namespace_with_browser_calls()
     during_boot: list[asyncio.Task[Any]] = []
 
-    async def refuse_boot(sid: str, data: Any, start_call: bool) -> None:
-        if start_call:
-            during_boot.append((await _start_browser_call(namespace, processor))[0])
-        msg = "bad boot event"
-        raise ValueError(msg)
-
-    async def reconnect_refused(sid: str, page: str, start_call: bool) -> None:
-        namespace.on_event = AsyncMock(
-            side_effect=functools.partial(refuse_boot, start_call=start_call)
-        )
-        with pytest.raises(ValueError, match=r"^bad boot event$"):
-            await namespace.on_connect(sid, environ, {"page": page, "event": boot})
-
-    async def disconnect(sid: str) -> None:
-        cleanup = namespace.on_disconnect(sid)
-        assert cleanup is not None
-        await cleanup
+    async def start_call() -> None:
+        during_boot.append((await _start_browser_call(namespace, processor))[0])
 
     replaced = (exceptions.BrowserDisconnectedError, PAGE_REPLACED)
     async with processor:
-        await namespace.on_connect("sid1", environ, {"page": "p1"})
+        await namespace.on_connect("sid1", BROWSER_CALL_ENVIRON, {"page": "p1"})
         before_drop, _ = await _start_browser_call(namespace, processor)
-        await disconnect("sid1")
-        await reconnect_refused("sid2", "p1", start_call=False)
-        await namespace.on_connect("sid3", environ, {"page": "p2"})
+        await _disconnect(namespace, "sid1")
+        await _refused_connect(namespace, "sid2", "p1")
+        await namespace.on_connect("sid3", BROWSER_CALL_ENVIRON, {"page": "p2"})
         assert await _disconnected(before_drop) == replaced
 
-        await disconnect("sid3")
-        await reconnect_refused("sid4", "p2", start_call=True)
-        await namespace.on_connect("sid5", environ, {"page": "p3"})
+        await _disconnect(namespace, "sid3")
+        await _refused_connect(namespace, "sid4", "p2", during_boot=start_call)
+        await namespace.on_connect("sid5", BROWSER_CALL_ENVIRON, {"page": "p3"})
         assert await _disconnected(during_boot[0]) == replaced
     assert processor._browser_calls._tabs == {}
+
+
+@pytest.mark.asyncio
+async def test_refused_reconnects_do_not_extend_the_grace_period():
+    """The grace period runs from the disconnect until a connect is accepted.
+
+    A tab whose connects keep being refused retries faster than the grace
+    period: restarting it on each would keep its calls waiting forever.
+    """
+    namespace, processor = _namespace_with_browser_calls()
+    tabs = processor._browser_calls._tabs
+    async with processor:
+        await namespace.on_connect("sid1", BROWSER_CALL_ENVIRON, {"page": "p1"})
+        call, rid = await _start_browser_call(namespace, processor)
+        await _disconnect(namespace, "sid1")
+        timer = tabs[ClientToken("tok")].grace_timer
+        assert timer is not None
+        for sid in ("sid2", "sid3"):
+            await _refused_connect(namespace, sid, "p1")
+            assert tabs[ClientToken("tok")].grace_timer is timer
+            assert not timer.cancelled()
+        # A socket without a token is no tab coming back.
+        await namespace.on_connect("no-token", {}, {"page": "p1"})
+        assert not timer.cancelled()
+        await namespace.on_connect("sid4", BROWSER_CALL_ENVIRON, {"page": "p1"})
+        assert timer.cancelled()
+        assert tabs[ClientToken("tok")].grace_timer is None
+        await namespace.on_result("sid4", {"rid": rid, "json": "1"})
+        assert await call == 1
+    assert tabs == {}
 
 
 @pytest.mark.asyncio

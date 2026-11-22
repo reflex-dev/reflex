@@ -336,14 +336,20 @@ async def test_disconnect_without_a_grace_period_fails_the_calls_at_once():
     _assert_forgotten(calls)
 
 
-async def test_a_reconnect_of_the_page_within_the_grace_period_keeps_the_calls():
-    """The same page load reconnecting in time still answers its calls."""
+async def test_the_grace_period_runs_until_a_connect_of_the_page_is_accepted():
+    """The same page load reconnecting in time still answers its calls; a refused connect does not restart the wait."""
     calls = BrowserCalls()
     _, task, rid = await _start_call(calls)
     calls.disconnect(TOKEN, 0.01)
     timer = calls._tabs[TOKEN].grace_timer
-    calls.connect(TOKEN, P1)
     assert timer is not None
+    calls.connecting(TOKEN, P1)
+    # The connect is refused.
+    calls.disconnect(TOKEN, 0.01)
+    assert calls._tabs[TOKEN].grace_timer is timer
+    assert not timer.cancelled()
+    calls.connecting(TOKEN, P1)
+    calls.connected(TOKEN)
     assert timer.cancelled()
     assert calls._tabs[TOKEN].grace_timer is None
     await asyncio.sleep(0.02)
@@ -359,21 +365,25 @@ async def test_a_connect_from_another_page_load_fails_the_calls_at_once():
     _, task, _ = await _start_call(calls)
     calls.disconnect(TOKEN, 5)
     timer = calls._tabs[TOKEN].grace_timer
-    calls.connect(TOKEN, P2)
+    calls.connecting(TOKEN, P2)
     assert timer is not None
     assert timer.cancelled()
     assert await _raised(task) == (BrowserDisconnectedError, PAGE_REPLACED)
     _assert_forgotten(calls)
 
 
-async def test_a_connect_while_the_tab_is_connected_keeps_its_calls():
-    """A connect for a tab that never disconnected, or one without calls, changes nothing."""
+async def test_connect_events_without_a_grace_period_change_nothing():
+    """A token without calls, or a tab whose connect started its calls, is left as it is."""
     calls = BrowserCalls()
     _, task, rid = await _start_call(calls)
-    calls.connect(TOKEN, P2)
-    calls.connect(ClientToken("unknown"), P1)
-    calls.disconnect(ClientToken("unknown"), 5)
+    unknown = ClientToken("unknown")
+    calls.connecting(unknown, P1)
+    calls.connected(unknown)
+    calls.disconnect(unknown, 5)
+    calls.connecting(TOKEN, P1)
+    calls.connected(TOKEN)
     assert calls._tabs.keys() == {TOKEN}
+    assert calls._tabs[TOKEN].grace_timer is None
     calls.resolve(rid, {"json": "1"})
     assert await task == 1
     _assert_forgotten(calls)
@@ -462,8 +472,8 @@ class _Interleaving:
     """One token's tab and its calls, driven one event at a time.
 
     The socket events call BrowserCalls the way EventNamespace does: a connect
-    runs ``connect`` and then the boot event, which may refuse the connect;
-    the refusal and a disconnect both run ``disconnect``.
+    runs ``connecting`` and then the boot event, which accepts the connect
+    (``connected``) or refuses it (``disconnect``, as a disconnect does).
     """
 
     def __init__(self, grace: float, timers: list[_Timer]):
@@ -522,10 +532,15 @@ class _Interleaving:
         """
         pending = [call for call in self.started if call.outcome is None]
         settles, outcome = self._effect(name, i, pending)
+        tab = self.calls._tabs.get(TOKEN)
+        timer = _grace_timer(tab)
         getattr(self, f"_{name}")(i)
         assert [call for call in pending if call.future.done()] == settles
         for call in settles:
             call.outcome = outcome
+        if timer is not None and name != "boot" and self.calls._tabs.get(TOKEN) is tab:
+            # Only an accepted connect ends the grace period of a tab.
+            assert timer.live
         self._check()
 
     def _effect(
@@ -599,10 +614,11 @@ class _Interleaving:
 
     def _connect(self, i: int) -> None:
         self.socket = "booting"
-        self.calls.connect(TOKEN, PageId(f"p{self.page}"))
+        self.calls.connecting(TOKEN, PageId(f"p{self.page}"))
 
     def _boot(self, i: int) -> None:
         self.socket = "connected"
+        self.calls.connected(TOKEN)
 
     def _fire(self, i: int) -> None:
         next(timer for timer in self.timers if timer.live).fire()
@@ -620,13 +636,13 @@ class _Interleaving:
         if tab is not None:
             assert tab.rids == {call.rid for call in in_tab} != set()
             assert {call.page for call in in_tab} == {int(tab.page[1:])}
-        timer = cast("_Timer | None", tab and tab.grace_timer)
-        armed = timer is not None and timer.live
-        assert [t for t in self.timers if t.live] == ([timer] if armed else [])
+        timer = _grace_timer(tab)
+        assert [t for t in self.timers if t.live] == ([] if timer is None else [timer])
+        assert timer is None or self.socket != "connected"
         for call in unended:
             if call.outcome is None:
                 assert call.tab is tab
-                assert armed or (self.socket != "gone" and call.page == self.page)
+                assert timer or (self.socket != "gone" and call.page == self.page)
 
     def key(self) -> tuple[Any, ...]:
         """Describe the state, so a state reached twice is explored once.
@@ -635,12 +651,11 @@ class _Interleaving:
             Everything that decides what can happen next.
         """
         tab = self.calls._tabs.get(TOKEN)
-        timer = cast("_Timer | None", tab and tab.grace_timer)
         return (
             self.socket,
             self.page,
             self.closed,
-            tab and (tab.page, timer and timer.live),
+            tab and (tab.page, _grace_timer(tab) is not None),
             tuple(
                 (c.page, c.result_sent, c.outcome, c.ended, c.tab is tab)
                 for c in self.started
@@ -653,6 +668,19 @@ class _Interleaving:
             call.coro.close()
             if call.future.done() and not call.future.cancelled():
                 call.future.exception()
+
+
+def _grace_timer(tab: Any) -> _Timer | None:
+    """Get the grace timer of a tab, while it runs.
+
+    Args:
+        tab: The _Tab, or None.
+
+    Returns:
+        The timer, or None when the tab is gone or not in a grace period.
+    """
+    timer = cast("_Timer | None", tab and tab.grace_timer)
+    return timer if timer is not None and timer.live else None
 
 
 def _resume(coro: Coroutine[Any, Any, Any]) -> tuple[Any, ...]:
@@ -682,7 +710,7 @@ def _resume(coro: Coroutine[Any, Any, Any]) -> tuple[Any, ...]:
 _Path = tuple[tuple[str, int], ...]
 
 
-@pytest.mark.parametrize(("grace", "states"), [(0, (3068, 18)), (5, (4200, 20))])
+@pytest.mark.parametrize(("grace", "states"), [(0, (3068, 18)), (5, (4324, 20))])
 # BrowserCalls needs a running loop, although the calls are stepped by hand.
 async def test_every_interleaving_settles_each_call_once_and_forgets_it(  # noqa: RUF029
     grace: float, states: tuple[int, int], monkeypatch: pytest.MonkeyPatch

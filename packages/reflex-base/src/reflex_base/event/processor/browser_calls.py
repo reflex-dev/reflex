@@ -178,13 +178,16 @@ class BrowserCalls:
     def disconnect(self, token: ClientToken, grace_period: float) -> None:
         """Start the grace period of a client's calls after it disconnected.
 
-        Its tab may reconnect within it, and its results then still arrive.
+        Its tab may reconnect within it, and its results then still arrive. A
+        refused connect disconnects it again without restarting the grace
+        period: a tab whose connects keep failing would otherwise hold its
+        calls forever.
 
         Args:
             token: The disconnected client token.
             grace_period: Seconds to wait for the client to reconnect.
         """
-        if (tab := self._tabs.get(token)) is None:
+        if (tab := self._tabs.get(token)) is None or tab.grace_timer is not None:
             return
         msg = (
             "The browser tab disconnected and did not reconnect within "
@@ -201,26 +204,29 @@ class BrowserCalls:
                 grace_period, self._fail, token, msg
             )
 
-    def connect(self, token: ClientToken, page: PageId) -> None:
-        """End the grace period of a client that connected again.
+    def connecting(self, token: ClientToken, page: PageId) -> None:
+        """Fail a client's calls at once when it connects from another page load.
 
-        A connect from another page load means the page the calls run in
-        reloaded or navigated away, so they fail at once.
+        The page the calls run in reloaded or navigated away. Calls of the
+        same page keep waiting, in their grace period until the connect is
+        accepted.
+
+        Args:
+            token: The connecting client token.
+            page: The page load it connects from.
+        """
+        if (tab := self._tabs.get(token)) is not None and tab.page != page:
+            self._fail(token, _PAGE_REPLACED)
+
+    def connected(self, token: ClientToken) -> None:
+        """End the grace period of a client whose connect was accepted.
 
         Args:
             token: The connected client token.
-            page: The page load it connected from.
         """
-        tab = self._tabs.get(token)
-        # A tab that is still connected keeps its calls: another tab
-        # connecting with its token is a duplicate, given a new token.
-        if tab is None or tab.grace_timer is None:
-            return
-        if tab.page == page:
+        if (tab := self._tabs.get(token)) is not None and tab.grace_timer is not None:
             tab.grace_timer.cancel()
             tab.grace_timer = None
-        else:
-            self._fail(token, _PAGE_REPLACED)
 
     def close(self) -> None:
         """Cancel every pending call, as the backend shuts down.

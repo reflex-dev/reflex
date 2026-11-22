@@ -2781,8 +2781,8 @@ class EventNamespace(AsyncNamespace):
                 new_token is None
                 and (processor := self.app._event_processor) is not None
             ):
-                # The tab's browser calls survive a reconnect of their page.
-                processor._browser_calls.connect(ClientToken(token_list[0]), page)
+                # A tab that reloaded or left the page stopped its scripts.
+                processor._browser_calls.connecting(ClientToken(token_list[0]), page)
         else:
             logger.warning(f"No token provided in connection for session {sid}")
 
@@ -2805,6 +2805,18 @@ class EventNamespace(AsyncNamespace):
             except Exception:
                 await self._drop_refused_connect(sid)
                 raise
+        self._resume_browser_calls(sid)
+
+    def _resume_browser_calls(self, sid: str) -> None:
+        """End the grace period of the browser calls of a socket's token, its connect accepted.
+
+        Args:
+            sid: The Socket.IO session id.
+        """
+        if (processor := self.app._event_processor) is not None and (
+            token := self.sid_to_token.get(sid)
+        ) is not None:
+            processor._browser_calls.connected(ClientToken(token))
 
     async def _drop_refused_connect(self, sid: str) -> None:
         """Undo the token link and connection data on_connect made for a refused connect.
@@ -2820,9 +2832,8 @@ class EventNamespace(AsyncNamespace):
         if (token := self.sid_to_token.get(sid)) is None:
             return
         if (processor := self.app._event_processor) is not None:
-            # The connect resumed the tab's browser calls and the boot event
-            # may have started more: they wait for the tab again, as after a
-            # disconnect.
+            # The tab's browser calls, some maybe started by the boot event,
+            # wait for it as after a disconnect.
             processor._browser_calls.disconnect(
                 ClientToken(token), processor.browser_call_grace_period
             )
