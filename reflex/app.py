@@ -2798,14 +2798,30 @@ class EventNamespace(AsyncNamespace):
             try:
                 await self.on_event(sid, boot_event)
             except Exception:
-                # A refused connect never reaches on_disconnect, so drop the
-                # token link and connection data made above before the error
-                # refuses the connect.
-                self._static_router_data.pop(sid, None)
-                self._sid_pages.pop(sid, None)
-                if (linked_token := self.sid_to_token.get(sid)) is not None:
-                    await self._token_manager.disconnect_token(linked_token, sid)
+                await self._drop_refused_connect(sid)
                 raise
+
+    async def _drop_refused_connect(self, sid: str) -> None:
+        """Undo the token link and connection data on_connect made for a refused connect.
+
+        A refused connect never reaches on_disconnect, so this runs before the
+        error refuses it.
+
+        Args:
+            sid: The Socket.IO session id.
+        """
+        self._static_router_data.pop(sid, None)
+        self._sid_pages.pop(sid, None)
+        if (token := self.sid_to_token.get(sid)) is None:
+            return
+        if (processor := self.app._event_processor) is not None:
+            # The connect resumed the tab's browser calls and the boot event
+            # may have started more: they wait for the tab again, as after a
+            # disconnect.
+            processor._browser_calls.disconnect(
+                token, processor.browser_call_grace_period
+            )
+        await self._token_manager.disconnect_token(token, sid)
 
     def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
         """Build the connection-scoped router_data entries for a socket.

@@ -5785,6 +5785,74 @@ async def test_browser_calls_follow_their_page_across_socket_connects():
     assert processor._browser_calls._tabs == {}
 
 
+async def _disconnected(task: asyncio.Task[Any]) -> tuple[type[BaseException], str]:
+    """Wait for a browser call to fail, without hanging on one that never does.
+
+    Args:
+        task: The task awaiting the call.
+
+    Returns:
+        The type and message of the exception the call raised.
+    """
+    done, _ = await asyncio.wait([task], timeout=1)
+    assert done == {task}
+    exc = task.exception()
+    assert exc is not None
+    return type(exc), str(exc)
+
+
+@pytest.mark.asyncio
+async def test_a_refused_reconnect_keeps_browser_calls_waiting_for_their_page():
+    """A connect whose boot event fails counts as a disconnect for the tab's calls.
+
+    The connect resumed the calls of its page, and a call can start while the
+    boot event runs, but a refused connect never reaches on_disconnect: the
+    calls must still fail once another page connects with the token.
+    """
+    app = App()
+    namespace = EventNamespace("/event", app)
+    namespace._token_manager = LocalTokenManager()
+    namespace.emit = AsyncMock()
+    processor = app._event_processor = EventProcessor(browser_call_grace_period=5)
+    processor.configure(event_namespace=namespace)
+    environ = {"QUERY_STRING": "token=tok"}
+    boot = {"name": "state.hydrate_and_load", "payload": {}, "router_data": {}}
+    during_boot: list[asyncio.Task[Any]] = []
+
+    async def refuse_boot(sid: str, data: Any, start_call: bool) -> None:
+        if start_call:
+            during_boot.append((await _start_browser_call(namespace, processor))[0])
+        msg = "bad boot event"
+        raise ValueError(msg)
+
+    async def reconnect_refused(sid: str, page: str, start_call: bool) -> None:
+        namespace.on_event = AsyncMock(
+            side_effect=functools.partial(refuse_boot, start_call=start_call)
+        )
+        with pytest.raises(ValueError, match=r"^bad boot event$"):
+            await namespace.on_connect(sid, environ, {"page": page, "event": boot})
+
+    async def disconnect(sid: str) -> None:
+        cleanup = namespace.on_disconnect(sid)
+        assert cleanup is not None
+        await cleanup
+
+    replaced = (exceptions.BrowserDisconnectedError, PAGE_REPLACED)
+    async with processor:
+        await namespace.on_connect("sid1", environ, {"page": "p1"})
+        before_drop, _ = await _start_browser_call(namespace, processor)
+        await disconnect("sid1")
+        await reconnect_refused("sid2", "p1", start_call=False)
+        await namespace.on_connect("sid3", environ, {"page": "p2"})
+        assert await _disconnected(before_drop) == replaced
+
+        await disconnect("sid3")
+        await reconnect_refused("sid4", "p2", start_call=True)
+        await namespace.on_connect("sid5", environ, {"page": "p3"})
+        assert await _disconnected(during_boot[0]) == replaced
+    assert processor._browser_calls._tabs == {}
+
+
 @pytest.mark.asyncio
 async def test_link_token_to_sid_records_the_connecting_identity(
     token: str,
