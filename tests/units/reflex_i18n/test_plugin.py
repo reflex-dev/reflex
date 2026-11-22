@@ -50,6 +50,9 @@ export const useContext = (context) => context.value;
 export const useEffect = (effect) => {
   effect();
 };
+export const useLayoutEffect = (effect) => {
+  effect();
+};
 export const useRef = (current) => ({ current });
 export const useState = (initial) => [
   initial,
@@ -67,7 +70,7 @@ export const useNavigate = () => (to, options) =>
 # Renders one runtime component with browser globals from argv, runs the
 # optional action script against the module and the rendered element, and
 # prints the navigations, state updates and onLocaleChange calls they made, the
-# <html> attributes set and the action's return value.
+# <html> attributes and visibility set and the action's return value.
 _RUNTIME_DRIVER = """
 import { pathToFileURL } from "node:url";
 const [modulePath, component, env, action] = process.argv.slice(2);
@@ -81,6 +84,17 @@ Object.defineProperty(globalThis, "navigator", {
   configurable: true,
 });
 globalThis.document = { cookie: "", documentElement: {} };
+// Not enumerable, so the recorded <html> attributes leave it out.
+Object.defineProperty(globalThis.document.documentElement, "style", {
+  value: {
+    removeProperty(name) {
+      delete this[name];
+    },
+  },
+});
+// A pending timer would keep node running after the driver is done.
+const setTimer = globalThis.setTimeout;
+globalThis.setTimeout = (...args) => setTimer(...args).unref();
 globalThis.location = { protocol: "http:" };
 const mod = await import(pathToFileURL(modulePath).href);
 const rendered = mod[component]({
@@ -96,6 +110,7 @@ process.stdout.write(
     stateUpdates,
     localeChanges,
     documentElement,
+    visibility: documentElement.style.visibility ?? "",
     result,
   }),
 );
@@ -146,8 +161,9 @@ def _render_runtime(
             and the rendered element as ``rendered``.
 
     Returns:
-        The recorded ``navigations``, ``stateUpdates``, ``localeChanges`` and
-        ``documentElement`` attributes, and the action's ``result``.
+        The recorded ``navigations``, ``stateUpdates``, ``localeChanges``,
+        ``documentElement`` attributes and ``visibility``, and the action's
+        ``result``.
     """
     config = {
         "locales": locales,
@@ -400,6 +416,32 @@ def test_provider_follows_the_server_locale(
     )
     assert rendered["stateUpdates"] == expected
     assert rendered["localeChanges"] == []
+
+
+@requires_node
+@pytest.mark.parametrize(
+    ("languages", "url_routing", "expected"),
+    [
+        # The first render shows the default locale, not the visitor's.
+        (("de",), False, "hidden"),
+        # The first render already is in the visitor's locale.
+        (("en",), False, ""),
+        # The URL's locale is rendered from the start.
+        (("de",), True, ""),
+    ],
+)
+def test_provider_hides_the_page_until_the_visitors_locale_rendered(
+    tmp_path: Path, languages: tuple[str, ...], url_routing: bool, expected: str
+):
+    rendered = _render_runtime(
+        tmp_path,
+        "I18nProvider",
+        locales=["en", "de"],
+        default_locale="en",
+        url_routing=url_routing,
+        languages=languages,
+    )
+    assert rendered["visibility"] == expected
 
 
 _PICK_CASES = [
