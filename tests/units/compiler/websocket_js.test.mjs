@@ -204,15 +204,24 @@ test("a closed session is reopened on a new socket with the current auth and tok
   ]);
 });
 
-test("a session that is never acknowledged fails as a connect error", async () => {
-  const { transport, sockets, timers, events } = await setup();
+test("a session that is never acknowledged fails as a connect error at once", async () => {
+  const { transport, sockets, timers, events } = await setup({
+    closeLater: true,
+  });
   transport.connect();
   sockets[0].open();
   const [expire] = timers.keys();
   expire();
-  assert.equal(sockets[0].readyState, sockets[0].constructor.CLOSED);
-  assert.equal(events.at(-1)[0], "connect_error");
+  // Not when the browser gives up on the closing handshake, a minute later.
+  assert.equal(sockets[0].readyState, sockets[0].constructor.CLOSING);
+  assert.equal(events.length, 1);
+  const [name, error] = events[0];
+  assert.equal(name, "connect_error");
+  assert.equal(error.message, "websocket connection timed out");
   assert.equal(timers.size, 0);
+  // The retry dials a new socket.
+  transport.connect();
+  assert.equal(sockets.length, 2);
 });
 
 /**

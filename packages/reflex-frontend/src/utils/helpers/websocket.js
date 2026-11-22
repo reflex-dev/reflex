@@ -700,7 +700,13 @@ export class ReflexWebSocket extends LocalEmitter {
     clearTimeout(this._connectTimer);
     this._connectTimer = setTimeout(() => {
       if (this._ws === ws && !this.connected) {
-        ws.close();
+        // Reported now rather than from onclose, which a dead link delays by
+        // up to a minute.
+        this._teardown("transport close", undefined);
+        this._emitLocal(
+          "connect_error",
+          new Error("websocket connection timed out"),
+        );
       }
     }, this._connectTimeoutMs);
   }
