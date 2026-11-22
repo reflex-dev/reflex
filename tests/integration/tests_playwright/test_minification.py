@@ -4,22 +4,13 @@ from __future__ import annotations
 
 import json
 from collections.abc import Generator
-from typing import TYPE_CHECKING
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.environment import environment
-from reflex.minify import (
-    MINIFY_JSON,
-    SCHEMA_VERSION,
-    clear_config_cache,
-    int_to_minified_name,
-)
+from reflex.minify import MINIFY_JSON, SCHEMA_VERSION, clear_config_cache
 from reflex.testing import AppHarness
-
-if TYPE_CHECKING:
-    from selenium.webdriver.remote.webdriver import WebDriver
 
 
 def MinificationApp():
@@ -135,85 +126,35 @@ def minify_app(
         yield enabled, harness
 
 
-@pytest.fixture
-def driver(
-    minify_app: tuple[bool, AppHarness],
-) -> Generator[WebDriver, None, None]:
-    """WebDriver scoped to the parametrized :func:`minify_app`.
-
-    Yields:
-        A WebDriver pointed at the running app.
-    """
-    _enabled, harness = minify_app
-    assert harness.app_instance is not None, "app is not running"
-    drv = harness.frontend()
-    try:
-        yield drv
-    finally:
-        drv.quit()
-
-
-def _text_after_colon(text: str) -> str:
-    """Strip the ``"label: "`` prefix from a UI element's text.
-
-    Args:
-        text: The element text.
-
-    Returns:
-        The substring after the first ``": "``, or ``text`` unchanged.
-    """
-    return text.split(": ", 1)[-1] if ": " in text else text
-
-
-def test_minification(
-    minify_app: tuple[bool, AppHarness],
-    driver: WebDriver,
-) -> None:
+def test_minification(minify_app: tuple[bool, AppHarness], page: Page) -> None:
     """State and event handler names follow the minify config when enabled."""
     enabled, harness = minify_app
-    assert harness.app_instance is not None
-
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-    assert harness.poll_for_value(token_input)
-
-    root_name = driver.find_element(By.ID, "root_state_name").text
-    sub_name = driver.find_element(By.ID, "sub_state_name").text
-    increment_name = _text_after_colon(
-        driver.find_element(By.ID, "increment_handler_name").text
-    )
-    update_name = _text_after_colon(
-        driver.find_element(By.ID, "update_handler_name").text
-    )
+    assert harness.frontend_url is not None
+    page.goto(harness.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
 
     if enabled:
-        assert int_to_minified_name(10) in root_name
-        assert int_to_minified_name(11) in sub_name
-        assert increment_name.endswith(f".{int_to_minified_name(5)}")
-        assert update_name.endswith(f".{int_to_minified_name(7)}")
-        assert "increment" not in increment_name.lower()
-        assert "update_message" not in update_name.lower()
+        root, sub, increment, update_message = "k", "l", "f", "h"
     else:
-        assert "root_state" in root_name.lower()
-        assert "sub_state" in sub_name.lower()
-        assert "increment" in increment_name.lower()
-        assert "update_message" in update_name.lower()
-        assert "." in increment_name
-        assert "." in update_name
+        root = "minify_disabled___minify_disabled____root_state"
+        sub = "minify_disabled___minify_disabled____sub_state"
+        increment, update_message = "increment", "update_message"
+    expect(page.locator("#root_state_name")).to_have_text(f"Root state name: {root}")
+    expect(page.locator("#sub_state_name")).to_have_text(f"Sub state name: {sub}")
+    expect(page.locator("#increment_handler_name")).to_have_text(
+        f"Increment handler: reflex___state____state.{root}.{increment}"
+    )
+    expect(page.locator("#update_handler_name")).to_have_text(
+        f"Update handler: reflex___state____state.{root}.{sub}.{update_message}"
+    )
 
-    # Event dispatch sanity check (must work regardless of minification).
-    count = driver.find_element(By.ID, "count_value")
-    label_and_count = driver.find_element(By.ID, "label_and_count")
-    assert count.text == "0"
-    assert label_and_count.text == "count: 0"
-    driver.find_element(By.ID, "increment_btn").click()
-    AppHarness.poll_for_or_raise_timeout(lambda: count.text == "1")
-    AppHarness.poll_for_or_raise_timeout(lambda: label_and_count.text == "count: 1")
+    count = page.locator("#count_value")
+    label_and_count = page.locator("#label_and_count")
+    expect(count).to_have_text("0")
+    expect(label_and_count).to_have_text("count: 0")
+    page.locator("#increment_btn").click()
+    expect(count).to_have_text("1")
+    expect(label_and_count).to_have_text("count: 1")
 
-    if enabled:
-        # Substate handler dispatch through minified names.
-        message = driver.find_element(By.ID, "message_value")
-        driver.find_element(By.ID, "update_msg_btn").click()
-        AppHarness.poll_for_or_raise_timeout(lambda: "count is 1" in message.text)
-        assert message.text == "count is 1"
+    page.locator("#update_msg_btn").click()
+    expect(page.locator("#message_value")).to_have_text("count is 1")
