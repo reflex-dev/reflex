@@ -54,11 +54,12 @@ repos:
     require_serial: true
 - repo: local
   hooks:
+  # Always runs: a dependency bump changes no .py file but can change what ty infers.
   - id: ty
     name: ty
     entry: uv run --no-sync ty check
     language: system
-    types: [python]
+    always_run: true
     pass_filenames: false
     require_serial: true
 - repo: local
