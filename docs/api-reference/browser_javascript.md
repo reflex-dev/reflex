@@ -459,9 +459,9 @@ arguments: `def run(*args: Any)`.
 
 When the types cannot be read, the app still runs and Reflex warns
 `Reflex could not read the argument types of the JavaScript modules
-.../party.js, so their type stubs accept any arguments; the app still runs.`,
-then why. The stub takes any arguments until the types can be read, which
-Reflex retries on every compile:
+.../party.js, so their type stubs accept any arguments; the app still runs.`
+The stub takes any arguments until the types can be read, and Reflex tries
+again on every compile. The warning ends with one of these reasons:
 
 - `script-signatures.js failed. If this repeats, delete .../.web/node_modules
   so that the next run reinstalls typescript, or report the error at
