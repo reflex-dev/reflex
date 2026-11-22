@@ -355,6 +355,42 @@ def test_add_page_set_route(app: App, index_page: ComponentCallable):
     assert app._pages.keys() == {"test"}
 
 
+class _CallablePage:
+    """A page callable without a __name__."""
+
+    def __call__(self) -> Component:
+        """Render the page.
+
+        Returns:
+            The page component.
+        """
+        return rx.text("callable page")
+
+
+@pytest.mark.parametrize(
+    "component",
+    [functools.partial(rx.text, "partial page"), _CallablePage()],
+    ids=["partial", "instance"],
+)
+def test_add_page_callable_without_name_needs_route(
+    app: App, component: ComponentCallable
+):
+    """A callable without a __name__ gets no derived route.
+
+    Args:
+        app: The app to test.
+        component: The page callable without a __name__.
+    """
+    with pytest.raises(exceptions.RouteValueError) as err:
+        app.add_page(component)
+    assert (
+        str(err.value)
+        == "Route must be set if component is not a callable with a __name__."
+    )
+    app.add_page(component, route="/named")
+    assert app._unevaluated_pages.keys() == {"named"}
+
+
 def test_add_page_set_route_dynamic(index_page: ComponentCallable):
     """Test adding a page with dynamic route variable to an app.
 

@@ -1508,10 +1508,9 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         if route is not None:
             return format.format_route(route)
-        if isinstance(component, Callable):
-            return format.format_route(
-                format.to_kebab_case(format.callable_name(component))
-            )
+        name = getattr(component, "__name__", None)
+        if isinstance(name, str):
+            return format.format_route(format.to_kebab_case(name))
         return None
 
     def add_page(
@@ -1597,7 +1596,7 @@ class App(MiddlewareMixin, LifespanMixin):
         _reject_page_meta_fields(title, description, image)
         route = self._page_route_key(component, route)
         if route is None:
-            msg = "Route must be set if component is not a callable."
+            msg = "Route must be set if component is not a callable with a __name__."
             raise exceptions.RouteValueError(msg)
 
         if route == constants.Page404.SLUG:
