@@ -29,6 +29,7 @@ def MinificationApp():
 
     class RootState(rx.State):
         count: int = 0
+        label: str = "count"
 
         @rx.event
         def increment(self):
@@ -66,6 +67,8 @@ def MinificationApp():
             ),
             rx.text(f"Update handler: {update_handler_name}", id="update_handler_name"),
             rx.text(RootState.count, id="count_value"),
+            # Reads two fields of one state, which subscribe through one hook.
+            rx.text(f"{RootState.label}: {RootState.count}", id="label_and_count"),
             rx.text(SubState.message, id="message_value"),
             rx.button("Increment", on_click=RootState.increment, id="increment_btn"),
             rx.button(
@@ -201,9 +204,12 @@ def test_minification(
 
     # Event dispatch sanity check (must work regardless of minification).
     count = driver.find_element(By.ID, "count_value")
+    label_and_count = driver.find_element(By.ID, "label_and_count")
     assert count.text == "0"
+    assert label_and_count.text == "count: 0"
     driver.find_element(By.ID, "increment_btn").click()
     AppHarness.poll_for_or_raise_timeout(lambda: count.text == "1")
+    AppHarness.poll_for_or_raise_timeout(lambda: label_and_count.text == "count: 1")
 
     if enabled:
         # Substate handler dispatch through minified names.
