@@ -6336,27 +6336,43 @@ async def test_on_connect_sends_no_mismatch_without_one(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("linked_token", "has_processor"), [("abc", True), ("abc", False), (None, True)]
+)
 async def test_on_connect_unlinks_token_when_boot_event_fails(
-    event_namespace: EventNamespace,
+    event_namespace: EventNamespace, linked_token: str | None, has_processor: bool
 ):
     """A boot event that fails to process drops the sid/token link before refusing the connect.
 
+    The linked token's browser calls wait for its tab again, as after a disconnect.
+
     Args:
         event_namespace: The event namespace.
+        linked_token: The token the sid is linked to, if any.
+        has_processor: Whether the app has an event processor.
     """
     event_namespace._token_manager = Mock()
     event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
     event_namespace._token_manager.disconnect_token = AsyncMock()
-    event_namespace._token_manager.sid_to_token = {"new_sid": "abc"}
+    event_namespace._token_manager.sid_to_token = (
+        {} if linked_token is None else {"new_sid": linked_token}
+    )
     event_namespace.on_event = AsyncMock(side_effect=ValueError("bad boot event"))
+    processor = Mock(browser_call_grace_period=5) if has_processor else None
+    event_namespace.app._event_processor = processor
 
-    with pytest.raises(ValueError, match="bad boot event"):
+    with pytest.raises(ValueError, match=r"^bad boot event$"):
         await event_namespace.on_connect(
             "new_sid", {"QUERY_STRING": "token=abc"}, {"event": {"name": "x"}}
         )
-    event_namespace._token_manager.disconnect_token.assert_awaited_once_with(
-        "abc", "new_sid"
-    )
+    tokens = [] if linked_token is None else [linked_token]
+    assert event_namespace._token_manager.disconnect_token.await_args_list == [
+        unittest.mock.call(token, "new_sid") for token in tokens
+    ]
+    if processor is not None:
+        assert processor._browser_calls.disconnect.call_args_list == [
+            unittest.mock.call(token, 5) for token in tokens
+        ]
     # The connection-scoped router data cached for the refused sid goes too.
     assert "new_sid" not in event_namespace._static_router_data
 
