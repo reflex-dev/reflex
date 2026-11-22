@@ -23,8 +23,8 @@ class WidgetState(rx.State):
         Args:
             value: One of ``cards``, ``list`` and ``table``.
         """
-        if isinstance(value, str) and value in LAYOUTS:
-            self.layout = value
+        if value in LAYOUTS:
+            self.layout = value  # ty:ignore[invalid-assignment] https://github.com/astral-sh/ty/issues/5082
 
     @rx.event
     def next_shape(self):
