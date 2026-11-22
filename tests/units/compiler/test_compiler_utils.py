@@ -1786,6 +1786,59 @@ def test_write_script_stubs_keeps_a_stub_written_by_hand(
     assert not (utils.get_web_dir() / "script-signatures.js.log").exists()
 
 
+def test_write_script_stubs_keeps_a_stub_that_is_not_utf8(
+    stub_app: tuple[Path, dict[Path, Any]], monkeypatch: pytest.MonkeyPatch
+):
+    """A stub in another encoding has no header of Reflex's, so it is kept as is.
+
+    Args:
+        stub_app: the module, and what was read of it.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    party, modules = stub_app
+    stub = party.with_suffix(".pyi")
+    code = "# -*- coding: latin-1 -*-\n# café\ndef go(n: int) -> None: ...\n"
+    stub.write_bytes(code.encode("latin-1"))
+    _fake_signatures(_print_signatures("{}", repr([str(party)])))
+    warnings: list[str] = []
+    monkeypatch.setattr(utils.console, "warn", warnings.append)
+    utils.write_script_stubs(modules)
+    utils.write_script_stubs({})
+    assert stub.read_bytes() == code.encode("latin-1")
+    assert warnings == []
+
+
+def test_write_script_stubs_keeps_a_stub_it_cannot_read(
+    stub_app: tuple[Path, dict[Path, Any]], monkeypatch: pytest.MonkeyPatch
+):
+    """A stub that cannot be read is warned about and kept, and the compile goes on.
+
+    Args:
+        stub_app: the module, and what was read of it.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    party, modules = stub_app
+    # A directory, which no platform opens as a file, even for root.
+    stub = party.with_suffix(".pyi")
+    stub.mkdir()
+    with pytest.raises(OSError) as refused:
+        stub.open("rb")
+    _fake_signatures(_print_signatures("{}", repr([str(party)])))
+    warnings: list[str] = []
+    monkeypatch.setattr(utils.console, "warn", warnings.append)
+    utils.write_script_stubs(modules)
+    assert stub.is_dir()
+    assert not (utils.get_web_dir() / "script-signatures.js.log").exists()
+    assert warnings == [
+        (
+            f"Reflex could not read the type stub {stub}: "
+            f"{refused.value.strerror}. It leaves the file as it is, as it does "
+            "a stub written by hand. Make the file readable, or delete it so that "
+            "the next compile writes it."
+        )
+    ]
+
+
 def test_write_script_stubs_of_a_linked_module(
     stub_app: tuple[Path, dict[Path, Any]],
 ):

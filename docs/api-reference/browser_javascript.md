@@ -480,7 +480,11 @@ and Reflex warns `Reflex could not write the type stub .../party.pyi:
 Permission denied.` Make the directory writable, and the next compile writes
 it. When it cannot remove the stub of a module the app no longer imports, it
 warns `Reflex could not remove the type stub .../party.pyi, which it wrote for
-a JavaScript module the app no longer imports`; delete the file yourself.
+a JavaScript module the app no longer imports`; delete the file yourself. When
+it cannot read a stub, it warns `Reflex could not read the type stub
+.../party.pyi: Permission denied.` and leaves the file alone, as it does one
+you write by hand; make the file readable, or delete it so that the next
+compile writes it.
 
 ### Errors
 

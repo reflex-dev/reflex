@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Literal, TypeAlias, TypedDict
 
 from reflex_base import constants
+from reflex_base.utils import console
 
 # Installed with an app that imports a JavaScript module, to read its types.
 # Kept equal to the typescript reflex-frontend type-checks itself with.
@@ -167,6 +168,10 @@ def _stub_header(path: Path, digest: str) -> str:
 def _read_header(stub: Path) -> str | None:
     """Read the first line of a stub.
 
+    A stub that cannot be read is warned about, and read as an empty line, so
+    that it is left alone as one written by hand is. Reflex writes its stubs in
+    UTF-8, so a line in another encoding is not its header.
+
     Args:
         stub: The stub.
 
@@ -174,10 +179,17 @@ def _read_header(stub: Path) -> str | None:
         The line, or None if there is no such file.
     """
     try:
-        with stub.open(encoding="utf-8") as file:
-            return file.readline().rstrip("\n")
+        with stub.open("rb") as file:
+            return file.readline().decode(errors="replace").rstrip("\r\n")
     except FileNotFoundError:
         return None
+    except OSError as error:
+        console.warn(
+            f"Reflex could not read the type stub {stub}: {error.strerror}. It "
+            "leaves the file as it is, as it does a stub written by hand. Make "
+            "the file readable, or delete it so that the next compile writes it."
+        )
+        return ""
 
 
 def _is_generated(header: str | None) -> bool:
