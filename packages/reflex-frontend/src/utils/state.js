@@ -654,19 +654,42 @@ const describeScriptError = (error) => {
 };
 
 /**
+ * Whether a value is a DOM node or a window, of this page or of an iframe.
+ *
+ * An iframe's nodes are instances of the iframe's own Node, not this page's,
+ * so ``instanceof`` misses them. The nodeType getter of Node accepts a node of
+ * any frame and throws for anything else, so data that merely has a nodeType
+ * field is not taken for a node. A window is its own ``window``, which
+ * acyclic data never is.
+ * @param item A value inside the script's result.
+ * @returns True for a DOM node or a window.
+ */
+const isNodeOrWindow = (item) => {
+  if (typeof item !== "object" || item === null) return false;
+  if (item.window === item) return true;
+  if (typeof item.nodeType !== "number") return false;
+  const { get } = /** @type {{ get: () => number }} */ (
+    Object.getOwnPropertyDescriptor(Node.prototype, "nodeType")
+  );
+  try {
+    get.call(item);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Serialize a script's result as JSON for the backend that awaits it.
  *
- * ``undefined`` is sent as ``null``. A DOM node or the window would arrive as
+ * ``undefined`` is sent as ``null``. A DOM node or a window would arrive as
  * an empty object, so it is rejected instead, like a value JSON cannot carry.
  * @param value The script's result.
  * @returns The result as JSON.
  */
 const serializeScriptResult = (value) => {
   const json = JSON.stringify(value ?? null, (_key, item) => {
-    if (
-      item === globalThis ||
-      (typeof Node !== "undefined" && item instanceof Node)
-    ) {
+    if (isNodeOrWindow(item)) {
       throw new TypeError(
         "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
       );

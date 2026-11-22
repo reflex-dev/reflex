@@ -167,6 +167,16 @@ describe("awaited script results", () => {
     });
   });
 
+  test("sends data shaped like a DOM node as JSON", async () => {
+    const { outcome } = awaited(
+      script('({nodeType: 1, nodeName: "DIV", window: {}})'),
+    );
+    expect(await outcome()).toEqual({
+      rid: "r1",
+      json: '{"nodeType":1,"nodeName":"DIV","window":{}}',
+    });
+  });
+
   test("sends undefined as null", async () => {
     const { outcome } = awaited(script("undefined"));
     expect(await outcome()).toEqual({ rid: "r1", json: "null" });
@@ -263,6 +273,28 @@ describe("awaited script results", () => {
     [
       "the window",
       "window",
+      "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
+    ],
+    // An iframe's nodes and window come from another realm, so they are not
+    // instances of this window's Node.
+    [
+      "a DOM node of an iframe",
+      `(() => {
+        const frame = document.body.appendChild(document.createElement("iframe"));
+        const value = {el: frame.contentDocument.body};
+        frame.remove();
+        return value;
+      })()`,
+      "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
+    ],
+    [
+      "the window of an iframe",
+      `(() => {
+        const frame = document.body.appendChild(document.createElement("iframe"));
+        const value = [frame.contentWindow];
+        frame.remove();
+        return value;
+      })()`,
       "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
     ],
     [
