@@ -1,8 +1,10 @@
 """Helper functions for adding assets to the app."""
 
+import filecmp
 import hashlib
 import inspect
 import logging
+import shutil
 import time
 import uuid
 from pathlib import Path
@@ -229,6 +231,26 @@ def _links_to(dst_file: Path, src_file: Path) -> bool:
     return resolved == src_file.resolve()
 
 
+def _copies(dst_file: Path, src_file: Path) -> bool:
+    """Check whether dst_file is already a plain copy of src_file.
+
+    Args:
+        dst_file: The path to inspect.
+        src_file: The asset the copy should match.
+
+    Returns:
+        Whether dst_file is a regular file with the same contents as src_file.
+    """
+    try:
+        return (
+            not dst_file.is_symlink()
+            and dst_file.is_file()
+            and filecmp.cmp(dst_file, src_file, shallow=False)
+        )
+    except OSError:
+        return False
+
+
 def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     """Point dst_file at src_file with a symlink, regardless of what is there.
 
@@ -239,6 +261,10 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     renamed over dst_file instead, which is one atomic replace on POSIX and
     leaves no window to interleave with. Whichever process wins the race,
     dst_file is a symlink to src_file once this returns.
+
+    Where a symlink cannot be created, such as on Windows without the symlink
+    privilege or on a filesystem that does not support them, the asset is
+    copied instead, and the copy is only rewritten when its contents differ.
 
     Windows is the exception: replacing a destination that another process is
     itself replacing is denied rather than serialised, so the rename is retried
@@ -261,14 +287,23 @@ def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
     # component, and cutting a name to a byte budget without splitting a
     # character is more machinery than a transient name is worth.
     tmp_file = dst_file.with_name(f".{uuid.uuid4().hex}.tmp")
+    is_in_place = _links_to
     try:
-        tmp_file.symlink_to(src_file)
+        try:
+            tmp_file.symlink_to(src_file)
+        except OSError:
+            # No symlink privilege or support: fall back to copying the asset.
+            if _copies(dst_file, src_file):
+                # Already up to date: leave it alone so file watchers see no change.
+                return
+            is_in_place = _copies
+            shutil.copyfile(src_file, tmp_file)
         for attempt in range(_MAX_LINK_ATTEMPTS):
             try:
                 tmp_file.replace(dst_file)
             except PermissionError:  # bounded, and dwarfed by the syscall
-                if _links_to(dst_file, src_file):
-                    # The process that denied us wanted the same link.
+                if is_in_place(dst_file, src_file):
+                    # The process that denied us wanted the same asset in place.
                     return
                 if attempt == _MAX_LINK_ATTEMPTS - 1:
                     raise

@@ -452,6 +452,86 @@ def test_link_shared_asset_raises_when_replace_stays_denied(
     assert list(dst_file.parent.iterdir()) == []
 
 
+def _deny_symlinks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Make symlink creation fail as it does on Windows without the privilege.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+    """
+
+    def denied_symlink(self: Path, target, target_is_directory: bool = False):
+        msg = "A required privilege is not held by the client"
+        raise OSError(1314, msg)
+
+    monkeypatch.setattr(Path, "symlink_to", denied_symlink)
+
+
+def test_link_shared_asset_copies_when_symlinks_unavailable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The asset is copied when a symlink cannot be created.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert not dst_file.is_symlink()
+    assert dst_file.read_text() == "script"
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+def test_link_shared_asset_keeps_up_to_date_copy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An up to date copy is left alone, so file watchers see no change.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+    _link_shared_asset(dst_file, src_file)
+    inode = dst_file.stat().st_ino
+
+    def unexpected_replace(self: Path, target) -> Path:
+        msg = "An up to date copy should not be replaced"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(Path, "replace", unexpected_replace)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.stat().st_ino == inode
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+def test_link_shared_asset_refreshes_stale_copy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A copy is rewritten once the source asset changes.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    _deny_symlinks(monkeypatch)
+    _link_shared_asset(dst_file, src_file)
+
+    src_file.write_text("updated script")
+    _link_shared_asset(dst_file, src_file)
+
+    assert not dst_file.is_symlink()
+    assert dst_file.read_text() == "updated script"
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
 @pytest.mark.parametrize(
     ("path", "shared"),
     [
