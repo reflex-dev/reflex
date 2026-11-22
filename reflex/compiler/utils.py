@@ -677,13 +677,14 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     """
     record = get_web_dir() / constants.Dirs.SCRIPT_STUBS
     try:
-        type_files: dict[str, list[str]] = json.loads(
-            record.read_text(encoding="utf-8")
-        )
+        text = record.read_text(encoding="utf-8")
     except FileNotFoundError:
         if not modules:
             return
-        type_files = {}
+        text = "{}"
+    # A record of another shape, as another version can leave, reads as empty:
+    # each stub is then checked against the module's own files.
+    type_files = _parse_json(text, dict[str, list[str]]) or {}
     _remove_orphan_stubs(type_files.keys() - map(str, modules))
     type_files = {str(path): type_files.get(str(path), []) for path in modules}
     # A package upgrade can change the types a module uses.
