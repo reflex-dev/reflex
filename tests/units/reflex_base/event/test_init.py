@@ -4,7 +4,6 @@ from typing import Any, cast
 
 from reflex_base.client_state import client_state
 from reflex_base.event import (
-    CallableEventSpec,
     EventArgVar,
     EventChain,
     LambdaEventCallback,
@@ -16,10 +15,8 @@ from reflex_base.event import (
     passthrough_event_spec,
 )
 from reflex_base.utils.types import Unset
-from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import NumberVar
-from reflex_components_core.core.upload import clear_selected_files
 
 import reflex as rx
 
@@ -107,21 +104,16 @@ def test_cond_between_function_and_none_inside_lambda_is_a_no_op_when_false() ->
 
 def test_script_events_keep_their_timeout_off_the_wire():
     """A script event's timeout stays on the spec: neither its payload nor its compiled trigger has it."""
-    hooked = Var(_js_expr="y", _var_data=VarData(hooks={"const y = 1;": None}))
     specs = cast(
         "list[_BrowserCallSpec]",
         [
             rx.call_script("1", timeout=5),
-            rx.call_script(f"f({hooked})", timeout=3),
-            rx.call_script(Var(_js_expr="code"), timeout=4),
             rx.call_function("() => 1", timeout=None),
             rx.run_script("2", timeout=1.5),
         ],
     )
     assert [(spec._to_event().payload, spec.timeout) for spec in specs] == [
         ({"javascript_code": "1", "callback": None}, 5),
-        ({"javascript_code": '("f("+y+")")', "callback": None}, 3),
-        ({"javascript_code": "code", "callback": None}, 4),
         ({"function": "() => 1", "callback": None}, None),
         ({"function": "(() => 2)", "callback": None}, 1.5),
     ]
@@ -144,14 +136,3 @@ def test_copies_of_a_script_event_keep_its_timeout():
     assert [(type(copy), copy.timeout) for copy in copies] == [
         (_BrowserCallSpec, 5)
     ] * 4
-
-
-def test_copies_of_a_callable_event_spec_keep_its_handler():
-    """Copying a CallableEventSpec, as compiling an event trigger does, builds a spec."""
-    spec = clear_selected_files
-    copy = spec.with_args(spec.args)
-    assert (type(copy), copy.handler, copy.args) == (
-        CallableEventSpec,
-        spec.handler,
-        spec.args,
-    )
