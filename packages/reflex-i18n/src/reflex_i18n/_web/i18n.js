@@ -22,6 +22,7 @@ import {
   locales,
   urlRouting,
 } from "$/i18n/index.js";
+import env from "$/env.json";
 
 // gettext msgctxt separator; catalog keys are "context\u0004msgid".
 const CONTEXT_SEPARATOR = "\u0004";
@@ -42,9 +43,16 @@ const RTL_LANGUAGES = new Set([
   "yi",
 ]);
 
-// Set <html lang>/dir for a locale. Tags are case-insensitive (RFC 5646).
+// The element the app renders into: an embedded app (EmbedPlugin) owns only its
+// mount target, never the host page's <html>.
+const appRoot = () =>
+  (env.MOUNT_TARGET && document.querySelector(env.MOUNT_TARGET)) ||
+  document.documentElement;
+
+// Set lang/dir on the app's root for a locale. Tags are case-insensitive (RFC
+// 5646).
 const applyDocumentLocale = (locale) => {
-  const root = document.documentElement;
+  const root = appRoot();
   root.lang = locale;
   const language = locale.split("-")[0].toLowerCase();
   root.dir = RTL_LANGUAGES.has(language) ? "rtl" : "ltr";
@@ -138,19 +146,22 @@ const initialLocale = () => {
 };
 
 // Cookie mode renders the default locale first; for a visitor in another
-// locale the document stays hidden until that locale's catalog has rendered,
-// so the source text never flashes. The timeout shows the page anyway should
-// the catalog never arrive.
+// locale the app stays hidden until that locale's catalog has rendered, so
+// the client-rendered source text never flashes. The timeout shows the app
+// anyway should the catalog never arrive.
 const HOLD_TIMEOUT_MS = 3000;
 let holdTimer;
+let heldRoot;
 
 const releaseDocument = () => {
   clearTimeout(holdTimer);
-  document.documentElement.style.removeProperty("visibility");
+  heldRoot?.style.removeProperty("visibility");
+  heldRoot = undefined;
 };
 
 const holdDocument = () => {
-  document.documentElement.style.visibility = "hidden";
+  heldRoot = appRoot();
+  heldRoot.style.visibility = "hidden";
   clearTimeout(holdTimer);
   holdTimer = setTimeout(releaseDocument, HOLD_TIMEOUT_MS);
 };

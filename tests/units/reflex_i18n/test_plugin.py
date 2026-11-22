@@ -70,11 +70,12 @@ export const useNavigate = () => (to, options) =>
 # Renders one runtime component with browser globals from argv, runs the
 # optional action script against the module and the rendered element, and
 # prints the navigations, state updates and onLocaleChange calls they made, the
-# <html> attributes and visibility set and the action's return value.
+# attributes and visibility set on <html> and on the embed mount element, and
+# the action's return value.
 _RUNTIME_DRIVER = """
 import { pathToFileURL } from "node:url";
 const [modulePath, component, env, action] = process.argv.slice(2);
-const { pathname, languages, props } = JSON.parse(env);
+const { pathname, languages, props, mountTarget } = JSON.parse(env);
 globalThis.navigations = [];
 globalThis.stateUpdates = [];
 const localeChanges = [];
@@ -83,15 +84,21 @@ Object.defineProperty(globalThis, "navigator", {
   value: { languages, language: languages[0] },
   configurable: true,
 });
-globalThis.document = { cookie: "", documentElement: {} };
-// Not enumerable, so the recorded <html> attributes leave it out.
-Object.defineProperty(globalThis.document.documentElement, "style", {
-  value: {
-    removeProperty(name) {
-      delete this[name];
+// The style is not enumerable, so the recorded attributes leave it out.
+const element = () =>
+  Object.defineProperty({}, "style", {
+    value: {
+      removeProperty(name) {
+        delete this[name];
+      },
     },
-  },
-});
+  });
+const mountElement = element();
+globalThis.document = {
+  cookie: "",
+  documentElement: element(),
+  querySelector: (selector) => (selector === mountTarget ? mountElement : null),
+};
 // A pending timer would keep node running after the driver is done.
 const setTimer = globalThis.setTimeout;
 globalThis.setTimeout = (...args) => setTimer(...args).unref();
@@ -111,6 +118,8 @@ process.stdout.write(
     localeChanges,
     documentElement,
     visibility: documentElement.style.visibility ?? "",
+    mountElement,
+    mountVisibility: mountElement.style.visibility ?? "",
     result,
   }),
 );
@@ -141,6 +150,7 @@ def _render_runtime(
     pathname: str = "/",
     languages: tuple[str, ...] = ("en",),
     props: dict[str, Any] | None = None,
+    mount_target: str | None = None,
     action: str = "",
 ) -> dict[str, Any]:
     """Render a component of the shipped client runtime against stub modules.
@@ -157,13 +167,14 @@ def _render_runtime(
         pathname: The router location's path.
         languages: The browser's preferred languages.
         props: Extra props for the component.
+        mount_target: The embed mount target selector (EmbedPlugin), if any.
         action: JS run after the render with the runtime module as ``mod``
             and the rendered element as ``rendered``.
 
     Returns:
         The recorded ``navigations``, ``stateUpdates``, ``localeChanges``,
-        ``documentElement`` attributes and ``visibility``, and the action's
-        ``result``.
+        ``documentElement`` attributes and ``visibility``, the same for the
+        ``mountElement``, and the action's ``result``.
     """
     config = {
         "locales": locales,
@@ -180,7 +191,11 @@ def _render_runtime(
         "export const loaders = Object.fromEntries(locales.map((locale) => "
         "[locale, async () => ({ messages: new Map() })]));\n"
     )
-    stubs = {**_RUNTIME_STUBS, "$/i18n/index.js": index}
+    stubs = {
+        **_RUNTIME_STUBS,
+        "$/i18n/index.js": index,
+        "$/env.json": f"export default {json.dumps({'MOUNT_TARGET': mount_target})};\n",
+    }
     source = _RUNTIME_SOURCE.read_text(encoding="utf-8")
     for specifier, stub_source in stubs.items():
         stub = tmp_path / (specifier.replace("/", "_").replace("$", "") + ".mjs")
@@ -194,6 +209,7 @@ def _render_runtime(
         "pathname": pathname,
         "languages": list(languages),
         "props": props or {},
+        "mountTarget": mount_target,
     })
     result = subprocess.run(
         ["node", str(driver), str(module), component, env, action],
@@ -442,6 +458,23 @@ def test_provider_hides_the_page_until_the_visitors_locale_rendered(
         languages=languages,
     )
     assert rendered["visibility"] == expected
+
+
+@requires_node
+def test_embedded_provider_leaves_the_host_page_alone(tmp_path: Path):
+    """An embedded app hides and localizes its mount element, not the host's <html>."""
+    rendered = _render_runtime(
+        tmp_path,
+        "I18nProvider",
+        locales=["en", "de"],
+        default_locale="en",
+        languages=("de",),
+        mount_target="#widget",
+    )
+    assert rendered["documentElement"] == {}
+    assert rendered["visibility"] == ""
+    assert rendered["mountElement"] == {"lang": "en", "dir": "ltr"}
+    assert rendered["mountVisibility"] == "hidden"
 
 
 _PICK_CASES = [

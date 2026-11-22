@@ -302,9 +302,11 @@ Two caveats:
 On a visitor's first load, the locale is negotiated from their browser's
 `Accept-Language`, falling back to `fallback_locale`, which is `default_locale`
 unless you set it. Once they pick a language it is remembered in a cookie.
-Pages render in `default_locale` first; for a visitor in another language the
-page stays hidden until that language's messages have loaded, so the source text
-never flashes.
+Pages render in `default_locale` first. For a visitor in another language the
+app stays hidden from its first client render until that language's messages
+have loaded, or for at most 3 seconds, after which it shows the source text.
+Text prerendered into a page's HTML shows in `default_locale` until the app
+hydrates.
 
 The source language is not always the best guess for a visitor whose browser
 asks for none of your locales. An app written in German that also ships English
