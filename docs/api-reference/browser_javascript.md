@@ -144,11 +144,11 @@ If the callback is None, then no event is triggered.
 ## Reaching Reflex from JavaScript
 
 JavaScript you run in the browser reaches Reflex through `reflex`, an object
-whose members stay the same as the rest of the frontend changes:
+whose members stay the same across Reflex versions:
 
 | Member | What it does |
 | --- | --- |
-| `reflex.ref(id)` | The ref of the component with that `id`; its `current` is the element. `undefined` until a component with that `id` mounts. |
+| `reflex.ref(id)` | The ref of the component with that `id`. `undefined` until a component with that `id` renders; its `current` is `null` until React attaches the element, then the element. |
 | `reflex.addEvents(events)` | Dispatch events, as an event trigger does. |
 | `reflex.event(name, payload)` | Build an event for `reflex.addEvents`: `name` is the event handler's full name, `payload` its arguments by name. |
 | `reflex.library(name)` | A promise of an npm library bundled for dynamic components, such as `"react"`. |
@@ -259,20 +259,24 @@ event handlers that take no arguments, such as `SearchState.clear`.
 
 ### Errors
 
-- `rx.js.add_events cannot dispatch SearchState.set_query: the handler needs
-  arguments, and add_events has none to pass it.` Pass the arguments in Python:
-  `rx.js.add_events(SearchState.set_query("x"))`.
-- `reflex.library("left-pad") cannot load "left-pad": the app does not bundle it
-  for dynamic components.` Bundle it in your app's Python code with
-  `bundle_library("left-pad")` from `reflex.components.dynamic`.
-- `reflex.library("react") cannot load "react" yet: the app registers its
-  bundled libraries when it first mounts, and it has not mounted.` Call
-  `reflex.library` from an event, such as `on_mount` or `on_click`, rather than
-  while a module loads.
-- `reflex.library("$/utils/state") cannot load "$/utils/state": a name starting
-  with "$/" is a module of the app's frontend, not a bundled npm library.` Use
-  the members of `reflex` instead of Reflex internals, and import your own
-  modules from a JavaScript module.
+Each error says what went wrong and how to fix it. The messages, with example
+names:
+
+```text
+rx.js.add_events cannot dispatch SearchState.set_query: the handler needs arguments, and add_events has none to pass it. Pass them where you add it, as in rx.js.add_events(SearchState.set_query(...)).
+```
+
+```text
+reflex.library("left-pad") cannot load "left-pad": the app does not bundle it for dynamic components. Bundle it by calling bundle_library("left-pad") from reflex.components.dynamic in your app's Python code.
+```
+
+```text
+reflex.library("react") cannot load "react" yet: the app registers its bundled libraries when it first mounts, and it has not mounted. Call reflex.library from an event, such as on_mount or on_click, rather than while a module loads.
+```
+
+```text
+reflex.library("$/utils/state") cannot load "$/utils/state": a name starting with "$/" is a module of the app's frontend, not a bundled npm library. Use reflex.ref, reflex.addEvents and reflex.event instead of Reflex internals, and import your own modules from a JavaScript module.
+```
 
 ## JavaScript Modules
 
