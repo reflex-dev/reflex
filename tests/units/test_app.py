@@ -5526,6 +5526,22 @@ def test_register_channel_rejects_a_duplicate_name():
     assert str(exc_info.value) == "A channel named 'probe' is already registered."
 
 
+def _app_warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    """Get the warnings reflex.app logged.
+
+    Args:
+        caplog: The captured log records.
+
+    Returns:
+        The messages of the reflex.app warning records.
+    """
+    return [
+        record.getMessage()
+        for record in caplog.records
+        if record.name == "reflex.app" and record.levelno == logging.WARNING
+    ]
+
+
 @pytest.mark.parametrize("state", [None, State])
 def test_register_channel_skips_without_the_event_websocket(
     state: type[State] | None, caplog: pytest.LogCaptureFixture
@@ -5541,19 +5557,15 @@ def test_register_channel_skips_without_the_event_websocket(
         app = App(_state=state, enable_state=False)
     assert app.event_namespace is None
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
         app.register_channel(_ProbeChannel())
 
     assert app._channels == {}
-    assert caplog.record_tuples == [
+    assert _app_warnings(caplog) == [
         (
-            "reflex.app",
-            logging.WARNING,
-            (
-                "Channel 'probe' is not served: it needs the event websocket, "
-                "which exists only when state is enabled "
-                "(rx.App(enable_state=True), the default)."
-            ),
+            "Channel 'probe' is not served: it needs the event websocket, "
+            "which exists only when state is enabled "
+            "(rx.App(enable_state=True), the default)."
         )
     ]
 
@@ -5571,19 +5583,15 @@ def test_register_channel_skips_without_the_websocket_transport(
     assert app.event_namespace is not None
     monkeypatch.setattr(app.event_namespace, "supports_channels", False)
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.WARNING, logger="reflex.app"):
         app.register_channel(_ProbeChannel())
 
     assert app._channels == {}
-    assert caplog.record_tuples == [
+    assert _app_warnings(caplog) == [
         (
-            "reflex.app",
-            logging.WARNING,
-            (
-                "Channel 'probe' is not served: it requires the plain WebSocket "
-                "transport; remove the transport setting in rxconfig.py or set "
-                'transport="websocket".'
-            ),
+            "Channel 'probe' is not served: it requires the plain WebSocket "
+            "transport; remove the transport setting in rxconfig.py or set "
+            'transport="websocket".'
         )
     ]
 
