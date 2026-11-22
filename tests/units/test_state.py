@@ -5,6 +5,7 @@ import contextlib
 import copy
 import dataclasses
 import datetime
+import decimal
 import enum
 import functools
 import gc
@@ -6703,6 +6704,10 @@ async def test_get_var_value_reads_into_fields(
     assert await state.get_var_value(rx.Var.create({"a": [1, 2]})["a"][1]) == 2
     held = rx.Var.create([TestState.mapping])[0].to(dict[str, list[int]])
     assert await state.get_var_value(held["b"]) == [4, 5, 6]
+    # A key of a literal that is a var reads as its value, a later entry winning.
+    keyed = rx.Var.create({"a": 0, TestState.map_key: 1, "b": 2})
+    assert await state.get_var_value(keyed["a"]) == 1
+    assert await state.get_var_value(keyed["b"]) == 2
     # A literal renders a set sorted, so its indexes read in that order.
     assert await state.get_var_value(rx.Var.create({8, 1}).to_array()[0]) == 1
     # A missing key reads as None, and so does everything read past it.
@@ -6826,13 +6831,14 @@ async def test_var_value_through_tuples_and_sets() -> None:
 async def test_var_value_indexes_like_array_at() -> None:
     """An index reads and sets the item ``Array.prototype.at`` reads on the frontend.
 
-    It truncates a fractional index toward zero and reads NaN as 0. An index
-    past either end reads as None, and set_var_value refuses it before anything
-    is marked dirty.
+    It truncates a fractional index toward zero, a Decimal one too, and reads
+    NaN as 0. An index past either end reads as None, and set_var_value refuses
+    it before anything is marked dirty.
     """
 
     class IndexState(BaseState):
         index: rx.Field[int | float] = rx.field(1.5)
+        decimal_index: rx.Field[decimal.Decimal] = rx.field(decimal.Decimal("1.5"))
         items: rx.Field[list[str]] = rx.field(default_factory=lambda: ["a", "b", "c"])
 
     state = IndexState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
@@ -6845,6 +6851,9 @@ async def test_var_value_indexes_like_array_at() -> None:
     assert await state.get_var_value(item) == "a"
     state.index = math.inf
     assert await state.get_var_value(item) is None
+    # State sends a Decimal as a float.
+    decimal_item = IndexState.items[IndexState.decimal_index]  # pyright: ignore[reportArgumentType, reportCallIssue]
+    assert await state.get_var_value(decimal_item) == "b"
 
     state.index = 1.5
     await state.set_var_value(item, "x")

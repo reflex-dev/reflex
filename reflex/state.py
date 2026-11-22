@@ -5,6 +5,7 @@ from __future__ import annotations
 import builtins
 import contextlib
 import dataclasses
+import decimal
 import functools
 import hashlib
 import inspect
@@ -435,7 +436,8 @@ _UNSET = object()
 def _array_index(key: Any) -> int | None:
     """Get the index ``Array.prototype.at`` reads for a key.
 
-    It truncates a number toward zero and reads NaN as 0.
+    It truncates a number toward zero and reads NaN as 0. A Decimal reads as
+    the float state sends it as.
 
     Args:
         key: The key.
@@ -445,6 +447,8 @@ def _array_index(key: Any) -> int | None:
     """
     if isinstance(key, int):
         return key
+    if isinstance(key, decimal.Decimal):
+        key = float(key)
     if isinstance(key, float):
         if math.isnan(key):
             return 0
@@ -2110,11 +2114,32 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for key in keys:
             if isinstance(key, Var):
                 key = await self.get_var_value(key)
+            if from_literal and isinstance(value, Mapping):
+                value = await self._resolve_literal_keys(value)
             value = _read_key(value, key, from_literal)
             # A literal container holds vars, which the frontend reads as their values.
             if isinstance(value, Var):
                 value, from_literal = await self._resolve_var_value(value)
         return value, from_literal
+
+    async def _resolve_literal_keys(self, mapping: Mapping) -> Mapping:
+        """Resolve the keys of a literal mapping that are vars, as the frontend does.
+
+        A later entry wins over an earlier one with the same key, as in a JS
+        object literal.
+
+        Args:
+            mapping: The mapping a literal var holds.
+
+        Returns:
+            The mapping with each key that is a var replaced by its value.
+        """
+        if not any(isinstance(key, Var) for key in mapping):
+            return mapping
+        return {
+            (await self.get_var_value(key) if isinstance(key, Var) else key): item
+            for key, item in mapping.items()
+        }
 
     async def set_var_value(self, var: Var[VAR_TYPE], value: VAR_TYPE) -> None:
         """Set the value of an rx.Var, possibly in another state.
