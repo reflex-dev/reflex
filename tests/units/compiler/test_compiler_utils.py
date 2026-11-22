@@ -984,14 +984,14 @@ def test_compile_script_modules(
             ["celebrate"],
             [
                 {
-                    "file": "{helpers}",
+                    "file": "<helpers>",
                     "line": 3,
                     "column": 7,
                     "message": "Unexpected token",
                 }
             ],
             (
-                "Syntax error at {helpers}:3:7: Unexpected "
+                "Syntax error at <helpers>:3:7: Unexpected "
                 "token. Fix the code there: the app imports this file from Python, "
                 "directly or through another JavaScript module."
             ),
@@ -1002,9 +1002,9 @@ def test_compile_script_modules(
             ["celebrate", "launch"],
             [],
             (
-                "`nope` is used from app.scripts.party, but {party} exports no "
+                "`nope` is used from app.scripts.party, but <party> exports no "
                 "function named nope (its functions: celebrate, launch). Export it "
-                "from {party}, as in `export function nope() "
+                "from <party>, as in `export function nope() "
                 "{ ... }`, or correct the name in Python."
             ),
         ),
@@ -1014,7 +1014,7 @@ def test_compile_script_modules(
             [],
             [],
             (
-                "`limit` is used from app.scripts.party as a function, but {party} "
+                "`limit` is used from app.scripts.party as a function, but <party> "
                 "exports limit as a value, and Python can only call functions. "
                 "Export a function instead, as in `export function "
                 "limit() { ... }`."
@@ -1027,8 +1027,8 @@ def test_compile_script_modules(
             ["celebrate"],
             [],
             (
-                "The JavaScript module app.scripts.party imports {env}, which is "
-                "outside {package}, the directory of the app's package, "
+                "The JavaScript module app.scripts.party imports <env>, which is "
+                "outside <package>, the directory of the app's package, "
                 "and only that directory is copied into the compiled app. Move the "
                 "file into it, or publish it as an npm package and import it by name."
             ),
@@ -1059,10 +1059,10 @@ def test_compile_script_modules_errors(
     party = package / "scripts" / "party.js"
     # Each path as the platform writes it.
     paths = {
-        "{helpers}": str(package / "scripts" / "helpers.js"),
-        "{party}": str(Path("app", "scripts", "party.js")),
-        "{env}": str(package.parent / ".env"),
-        "{package}": str(package),
+        "<helpers>": str(package / "scripts" / "helpers.js"),
+        "<party>": str(Path("app", "scripts", "party.js")),
+        "<env>": str(package.parent / ".env"),
+        "<package>": str(package),
     }
 
     def fill(text: str) -> str:
