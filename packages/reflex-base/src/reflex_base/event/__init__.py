@@ -14,6 +14,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
     NoReturn,
@@ -572,6 +573,11 @@ class EventHandler(EventActionsMixin):
 
     state: "type[BaseState] | None" = dataclasses.field(default=None, repr=False)
 
+    # The StateProxy type, installed by reflex.istate.proxy, which binds the
+    # handlers `super()` reaches from a background task. Until then nothing is one:
+    # isinstance against () is always false.
+    _state_proxy: ClassVar[Any] = ()
+
     _type_hints: dict[str, Any] | None = dataclasses.field(
         default=None, repr=False, compare=False
     )
@@ -784,6 +790,13 @@ class EventHandler(EventActionsMixin):
         if not isinstance(instance, self.state):
             # Held by a class that is not its state, nor a substate of it.
             return self
+        if isinstance(instance, EventHandler._state_proxy):
+            # Only `super()` hands a background task's proxy to the descriptor
+            # (the proxy binds its own attributes), to run the overridden
+            # handler in the same task.
+            return EventHandler._state_proxy._bind_overridden_handler(
+                instance, self.fn, self.state
+            )
         state = (
             instance
             if type(instance) is self.state
