@@ -20,9 +20,15 @@ Everything in `src/` ships to every app, including the build tooling an app
 runs (`compress-static.js`, `script-modules.js`, which the compiler runs to read
 the JavaScript modules an app imports from Python, `script-signatures.js`, which
 reads their types for their Python stubs in development, the PostCSS config,
-the Vite plugins). The output of `script-signatures.js`, the contract with
-`reflex_base/js/stubs.py`, is `tests/fixtures/signatures/signatures.json`. Tests,
-fixtures and this package's own lint and type-check setup stay outside it.
+the Vite plugins). Tests, fixtures and this package's own lint and type-check
+setup stay outside it.
+
+`script-signatures.js` prints the `Signatures` shape that
+`reflex_base/js/stubs.py` declares and reads; that shape is the contract
+between them. `tests/fixtures/signatures/signatures.json` is a sample: what the
+script prints for the fixture modules beside it. Vitest checks that the script
+prints exactly that, and the Python tests read it as `Signatures` and render
+stubs from it, so a change to the shape on one side fails the other's tests.
 
 A change under `src/` is a change to reflex-base: its news fragment goes in
 `packages/reflex-base/news/`.
