@@ -3,9 +3,60 @@
 from collections.abc import Generator
 
 import pytest
-from playwright.sync_api import Page, WebSocketRoute, expect
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+
+# Keeps the event socket CONNECTING, as the page sees it, until released.
+# page.route_web_socket opens a held socket at once, and a plain WebSocket sends
+# its connect frame, with the route current then, as soon as it opens.
+HOLD_EVENT_SOCKETS = """
+(() => {
+  const NativeWebSocket = window.WebSocket;
+  let releases = [];
+  window.__heldEventSockets = () => releases.length;
+  window.__releaseEventSockets = () => {
+    const released = releases;
+    releases = null;
+    released.forEach((release) => release());
+    return released.length;
+  };
+  window.WebSocket = class extends NativeWebSocket {
+    constructor(url, protocols) {
+      super(url, protocols);
+      if (releases === null || !String(url).includes("/_event")) {
+        return;
+      }
+      let holding = true;
+      const queued = [];
+      const hold = (event) => {
+        if (holding) {
+          event.stopImmediatePropagation();
+          queued.push(event);
+        }
+      };
+      this.addEventListener("open", hold);
+      this.addEventListener("message", hold);
+      Object.defineProperty(this, "readyState", {
+        get: () =>
+          holding
+            ? NativeWebSocket.CONNECTING
+            : Reflect.get(NativeWebSocket.prototype, "readyState", this),
+      });
+      releases.push(() => {
+        holding = false;
+        for (const event of queued) {
+          this.dispatchEvent(
+            event.type === "open"
+              ? new Event("open")
+              : new MessageEvent("message", { data: event.data, origin: event.origin }),
+          );
+        }
+      });
+    }
+  };
+})();
+"""
 
 
 def NavigationBeforeConnectApp():
@@ -61,25 +112,18 @@ def test_navigation_before_socket_connect_uses_current_route(
     """A delayed connect must not run the old page's on_load or redirect."""
     assert navigation_before_connect_app.frontend_url is not None
     frontend_url = navigation_before_connect_app.frontend_url.rstrip("/")
-    sockets: list[WebSocketRoute] = []
     page_errors: list[str] = []
     page.on("pageerror", lambda error: page_errors.append(str(error)))
-
-    def hold_socket(socket: WebSocketRoute) -> None:
-        sockets.append(socket)
-
-    page.route_web_socket("**/_event/**", hold_socket)
+    page.add_init_script(HOLD_EVENT_SOCKETS)
 
     page.goto(f"{frontend_url}/slow")
     expect(page.get_by_role("link", name="Other")).to_be_visible()
-    if not sockets:
-        page.wait_for_event("websocket", timeout=60000)
-    assert len(sockets) == 1, page_errors
+    page.wait_for_function("window.__heldEventSockets() > 0", timeout=60000)
 
     page.get_by_role("link", name="Other").click()
     expect(page).to_have_url(f"{frontend_url}/other")
 
-    sockets[0].connect_to_server()
+    assert page.evaluate("window.__releaseEventSockets()") == 1, page_errors
 
     expect(page.locator("body")).to_contain_text("other")
     expect(page.get_by_text("other", exact=True)).to_have_count(1)
