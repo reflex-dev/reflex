@@ -351,9 +351,9 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   any JavaScript, TypeScript or JSX the bundler accepts works, and checks that
   each name you use from Python is an exported function. An export that may
   hold a function counts, such as `export const run = makeRunner()` or a name
-  re-exported from another file. A `const` initialized with a literal, an
-  object, an array or a class, a class and an enum are values, which Python
-  cannot call. A default export and TypeScript types are left out.
+  re-exported from another file. Python cannot call a value: an exported
+  class or enum, or a `const` set to a literal, an object, an array or a class
+  expression. A default export and TypeScript types are left out.
 - A name used only inside an event handler is looked up when the handler runs,
   after the compile, so a wrong name there is reported in the browser.
 - Arguments are sent as JSON. A var is sent as its value in the browser. An
