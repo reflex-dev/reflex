@@ -390,6 +390,9 @@ The compile stops with these errors:
 - `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
   which does not exist in the browser.` Remove the import, and do the work that
   needs it in a backend event handler instead.
+- `.../.web/script-modules.js printed output that this version of Reflex does
+  not read, so it is likely left over from another version.` Delete the `.web`
+  directory, and the next run writes it again.
 
 In the browser, a call fails with `Cannot call my_app.scripts.party.nope: the
 frontend has no function nope in the JavaScript module my_app.scripts.party.`

@@ -16,7 +16,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import MISSING
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
@@ -329,6 +329,8 @@ class _ScriptSyntaxError(TypedDict):
 class _ScriptModulesReport(TypedDict):
     """What ``script-modules.js`` prints."""
 
+    # The version of this shape, which the script changes with it.
+    format: Literal[1]
     modules: dict[str, _ScriptExports]
     # Per script, the specifiers it imports that are not relative paths.
     imports: dict[str, list[str]]
@@ -346,7 +348,8 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
         syntax error of each file.
 
     Raises:
-        ReflexRuntimeError: If the script fails.
+        ReflexRuntimeError: If the script fails, or prints output of another
+            shape, as one that another Reflex version left in ``.web`` can.
     """
     web_dir = get_web_dir()
     runtime = path_ops.get_node_path() or path_ops.get_bun_path()
@@ -367,7 +370,19 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
             f"{process.stderr.strip()}"
         )
         raise ReflexRuntimeError(msg)
-    return json.loads(process.stdout)
+    try:
+        report = json.loads(process.stdout)
+    except ValueError:
+        report = None
+    # Six levels reach the strings in the lists of each module's exports.
+    if not types._isinstance(report, _ScriptModulesReport, nested=6):
+        msg = (
+            f"{web_dir / _SCRIPT_MODULES_SCRIPT} printed output that this version "
+            "of Reflex does not read, so it is likely left over from another "
+            f"version. Delete {web_dir} so that the next run writes it again."
+        )
+        raise ReflexRuntimeError(msg)
+    return cast("_ScriptModulesReport", report)
 
 
 def _check_script_names(

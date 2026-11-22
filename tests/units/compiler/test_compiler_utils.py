@@ -1161,7 +1161,42 @@ def test_compile_script_modules_without_modules(
     assert runs == []
 
 
-@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+# The reflex-frontend package, whose src/ is the web template in a checkout.
+FRONTEND_PACKAGE = constants.Templates.Dirs.WEB_TEMPLATE.parent
+
+
+def _require_node(*, packages: bool = False) -> None:
+    """Skip a test that runs Node.js, or the frontend's scripts, without them.
+
+    CI installs both and sets REFLEX_TEST_REQUIRE_FRONTEND, so that a missing
+    one fails the test there instead.
+
+    Args:
+        packages: Whether the test also needs the frontend package's
+            dependencies, which ``npm --prefix packages/reflex-frontend ci``
+            installs.
+    """
+    node_modules = FRONTEND_PACKAGE / "node_modules"
+    if shutil.which("node") and (not packages or (node_modules / "vite").is_dir()):
+        return
+    message = "Node.js is unavailable" + (
+        f", or {node_modules} is not installed" if packages else ""
+    )
+    if os.environ.get("REFLEX_TEST_REQUIRE_FRONTEND"):
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+def _write_stand_in(web_dir: Path, output: str) -> None:
+    """Write a stand-in for script-modules.js that prints the given output.
+
+    Args:
+        web_dir: The web directory.
+        output: The JavaScript expression whose value it prints.
+    """
+    (web_dir / "script-modules.js").write_text(f"process.stdout.write({output});\n")
+
+
 def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """The script runs in .web on the modules, and its failure says how to recover.
 
@@ -1169,18 +1204,23 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         tmp_path: pytest tmp_path fixture.
         monkeypatch: pytest monkeypatch fixture.
     """
+    _require_node()
     web_dir = tmp_path.resolve()
     monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
-    script = web_dir / "script-modules.js"
-    script.write_text(
-        "process.stdout.write(JSON.stringify({\n"
-        "  cwd: process.cwd(), modules: process.argv.slice(2) }));\n"
+    _write_stand_in(
+        web_dir,
+        "JSON.stringify({ format: 1, modules: {}, errors: [],\n"
+        "  imports: { [process.cwd()]: process.argv.slice(2) } })",
     )
     assert utils._read_script_modules([Path("/app/a.js"), Path("/app/b.ts")]) == {
-        "cwd": str(web_dir),
-        "modules": ["/app/a.js", "/app/b.ts"],
+        "format": 1,
+        "modules": {},
+        "imports": {str(web_dir): ["/app/a.js", "/app/b.ts"]},
+        "errors": [],
     }
-    script.write_text('process.stderr.write("Error: boom\\n"); process.exit(3);\n')
+    (web_dir / "script-modules.js").write_text(
+        'process.stderr.write("Error: boom\\n"); process.exit(3);\n'
+    )
     with pytest.raises(ReflexRuntimeError) as error:
         utils._read_script_modules([Path("/app/a.js")])
     assert str(error.value) == (
@@ -1190,6 +1230,91 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "frontend packages, or report the error at "
         "https://github.com/reflex-dev/reflex/issues:\nError: boom"
     )
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        # Not JSON.
+        '"Debugger attached."',
+        # The output of another version of the script.
+        "JSON.stringify({ modules: {}, imports: {}, errors: [] })",
+        "JSON.stringify({ format: 2, modules: {}, imports: {}, errors: [] })",
+        # The right version, of another shape.
+        "JSON.stringify({ format: 1, modules: {}, imports: {} })",
+        (
+            "JSON.stringify({ format: 1, imports: {}, errors: [], modules: {\n"
+            '  "/app/a.js": { files: [1], functions: [], values: [],\n'
+            "    exportsAll: false } } })"
+        ),
+        (
+            "JSON.stringify({ format: 1, modules: {}, imports: {}, errors: [\n"
+            '  { file: "/app/a.js", line: "3", column: 1, message: "" }] })'
+        ),
+    ],
+    ids=[
+        "not-json",
+        "no-format",
+        "format-2",
+        "no-errors",
+        "file-not-a-string",
+        "line-not-a-number",
+    ],
+)
+def test_read_script_modules_rejects_output_of_another_shape(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, output: str
+):
+    """Output of another shape, as a script left in .web by another version prints, fails clearly.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+        output: the JavaScript expression the stand-in prints.
+    """
+    _require_node()
+    web_dir = tmp_path.resolve()
+    monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
+    _write_stand_in(web_dir, output)
+    with pytest.raises(ReflexRuntimeError) as error:
+        utils._read_script_modules([Path("/app/a.js")])
+    assert str(error.value) == (
+        f"{web_dir / 'script-modules.js'} printed output that this version of "
+        "Reflex does not read, so it is likely left over from another version. "
+        f"Delete {web_dir} so that the next run writes it again."
+    )
+
+
+def test_read_script_modules_contract(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """What the real script-modules.js prints is what the compiler reads.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    _require_node(packages=True)
+    # The script finds the bundler's parser from its directory, as in .web.
+    monkeypatch.setattr(
+        utils, "get_web_dir", lambda: constants.Templates.Dirs.WEB_TEMPLATE
+    )
+    fixtures = (FRONTEND_PACKAGE / "tests" / "fixtures" / "script_modules").resolve()
+    broken = tmp_path.resolve() / "broken.mjs"
+    broken.write_text("export const = 1;\n")
+    counter, helpers, format_ = (
+        fixtures / "counter.tsx",
+        fixtures / "helpers.ts",
+        fixtures / "lib" / "format.ts",
+    )
+    report = utils._read_script_modules([fixtures / "party.ts", counter, broken])
+    assert report["modules"][str(counter)] == {
+        "files": [str(counter), str(helpers), str(format_)],
+        "functions": ["Counter"],
+        "values": [],
+        "exportsAll": False,
+    }
+    assert report["imports"][str(counter)] == []
+    assert report["errors"] == [
+        {"file": str(broken), "line": 1, "column": 14, "message": "Unexpected token"}
+    ]
 
 
 def test_copy_files_skips_up_to_date_targets(tmp_path: Path):

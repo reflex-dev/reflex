@@ -6,6 +6,8 @@
  * Run from the app's .web directory, where vite is installed. Prints:
  *
  *   {
+ *     "format": 1,                 the version of this shape, which the
+ *                                  compiler checks: change it with the shape
  *     "modules": {"<module>": {
  *       "files": [file, ...],      the module and every local file it reaches
  *       "functions": [name, ...],  exports Python can call
@@ -280,4 +282,4 @@ for (const [file, { imports: specifiers, error }] of files) {
   if (specifiers) imports[file] = specifiers;
   if (error) errors.push(error);
 }
-process.stdout.write(JSON.stringify({ modules, imports, errors }));
+process.stdout.write(JSON.stringify({ format: 1, modules, imports, errors }));

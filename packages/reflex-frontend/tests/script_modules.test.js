@@ -45,6 +45,7 @@ const readModules = async (directory, names) => {
 
 test("lists each module's files, its exports, and what each script imports", async () => {
   expect(await readModules(fixtures, ["party.ts", "counter.tsx"])).toEqual({
+    format: 1,
     modules: {
       "party.ts": {
         // Followed: relative imports, also dynamic and re-exported, resolved
