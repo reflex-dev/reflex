@@ -113,10 +113,7 @@
               "name": "maybe",
               "type": {
                 "kind": "union",
-                "members": [
-                  "None",
-                  "str"
-                ]
+                "members": ["None", "str"]
               },
               "optional": false,
               "rest": false
@@ -290,10 +287,7 @@
                 "kind": "list",
                 "item": {
                   "kind": "union",
-                  "members": [
-                    "float",
-                    "str"
-                  ]
+                  "members": ["float", "str"]
                 }
               },
               "optional": false,
@@ -359,10 +353,7 @@
                 "kind": "list",
                 "item": {
                   "kind": "union",
-                  "members": [
-                    "None",
-                    "str"
-                  ]
+                  "members": ["None", "str"]
                 }
               },
               "optional": false,
@@ -444,10 +435,7 @@
               "name": "value",
               "type": {
                 "kind": "union",
-                "members": [
-                  "None",
-                  "str"
-                ]
+                "members": ["None", "str"]
               },
               "optional": true,
               "rest": false
