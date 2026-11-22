@@ -654,8 +654,35 @@ def _remove_orphan_stubs(modules: Iterable[str]) -> None:
     """
     for module in modules:
         stub = Path(module).with_suffix(".pyi")
-        if _is_generated(_read_header(stub)):
+        if not _is_generated(_read_header(stub)):
+            continue
+        try:
             stub.unlink()
+        except OSError as error:
+            console.warn(
+                f"Reflex could not remove the type stub {stub}, which it wrote for "
+                "a JavaScript module the app no longer imports: "
+                f"{error.strerror}. Delete the file."
+            )
+
+
+def _write_stub(module: Path, code: str) -> None:
+    """Write the type stub of a module, or warn that it cannot be written.
+
+    Args:
+        module: The module.
+        code: Its stub.
+    """
+    stub = module.with_suffix(".pyi")
+    try:
+        write_file(stub, code, atomic=True)
+    except OSError as error:
+        console.warn(
+            f"Reflex could not write the type stub {stub}: {error.strerror}. Type "
+            f"checkers do not see the functions of {module.name} until it is "
+            f"written; the app still runs. Make {module.parent} writable, and the "
+            "next compile writes it."
+        )
 
 
 def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
@@ -667,8 +694,10 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     types from last time, which ``.web/script_stubs.json`` keeps. While that
     is current the stub is kept, so typescript only runs when a file changed;
     when the types cannot be read, the stub takes any arguments and is retried
-    on the next compile. A stub Reflex wrote for a module the app no longer
-    imports is removed. Each file is replaced whole: a compile killed while
+    on the next compile. A stub without Reflex's header, as one written by
+    hand, is left alone, and a stub Reflex wrote for a module the app no longer
+    imports is removed. A stub that cannot be written or removed is warned
+    about. Each file is replaced whole: a compile killed while
     writing one leaves the old file, whose header the next compile finds stale.
 
     Args:
@@ -699,7 +728,10 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     stale = [
         path
         for path in modules
-        if _read_header(path.with_suffix(".pyi")) != _stub_header(path, digest(path))
+        if (header := _read_header(path.with_suffix(".pyi")))
+        != _stub_header(path, digest(path))
+        # A stub without Reflex's header is the developer's own.
+        and (header is None or _is_generated(header))
     ]
     # Each module's types are read from its real path, the first of its files.
     real = {path: modules[path]["files"][0] for path in stale}
@@ -716,7 +748,7 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
             stub = _render_stub(
                 path, digest(path), functions, signatures["modules"][real[path]]
             )
-        write_file(path.with_suffix(".pyi"), stub, atomic=True)
+        _write_stub(path, stub)
     write_file(record, json.dumps(type_files), atomic=True)
 
 
