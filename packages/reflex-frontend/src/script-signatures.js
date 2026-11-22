@@ -264,7 +264,7 @@ const reach = (file) => {
         ts.sys,
       ).resolvedModule;
       // An installed package, also when `paths` resolves it, changes with
-      // package.json, which the stub's digest covers.
+      // package.json or the lockfile, which the stub's digest covers.
       if (resolved && !resolved.resolvedFileName.includes("/node_modules/")) {
         reached.add(resolved.resolvedFileName);
       }

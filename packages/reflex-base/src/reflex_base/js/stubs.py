@@ -125,13 +125,13 @@ def _module_digest(path: Path, files: Iterable[str], dependencies: bytes) -> str
     """Hash what a module's stub is made from.
 
     That is the files the module reaches and those its types were read from,
-    the app's package manifest, whose packages' declarations it may use, and
+    what decides the installed packages, whose declarations it may use, and
     the code that makes stubs.
 
     Args:
         path: The module.
         files: Those files; a file that no longer exists changes the digest.
-        dependencies: The app's ``package.json``.
+        dependencies: The app's ``package.json`` and lockfile.
 
     Returns:
         A short hex digest.
