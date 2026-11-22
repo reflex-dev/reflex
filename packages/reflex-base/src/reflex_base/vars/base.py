@@ -2217,6 +2217,7 @@ def var_operation(
         The decorated function.
     """
     func_args = list(inspect.signature(func).parameters)
+    func_name = callable_name(func)
 
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Var[T]:
@@ -2233,7 +2234,7 @@ def var_operation(
             op_args += tuple(kwargs_vars.items())
 
         return CustomVarOperation.create(
-            name=callable_name(func),
+            name=func_name,
             args=op_args,
             return_var=func(*args_vars, **kwargs_vars),  # ty:ignore[invalid-argument-type]
         ).guess_type()
