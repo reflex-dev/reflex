@@ -34,6 +34,7 @@ import reflex_base.config
 from plotly.graph_objects import Figure
 from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.compiler.templates import _render_hooks
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventHandler, EventSpec
@@ -8115,6 +8116,11 @@ def test_minified_state_reads_its_context_into_a_prefixed_local(
         assert var_data.hooks == (
             f'const $rx_a__b = useStateContext("a.b", ["{key}{FIELD_MARKER}"])',
         )
+
+    # A component reading both declares the prefixed local once.
+    hooks = rx.text(LocalNameState.count, LocalNameState.doubled)._get_all_hooks()
+    fields = f'["count{FIELD_MARKER}", "doubled{FIELD_MARKER}"]'
+    assert _render_hooks(hooks) == f'const $rx_a__b = useStateContext("a.b", {fields})'
 
 
 def test_unminified_state_keeps_its_context_local(temp_minify_json):

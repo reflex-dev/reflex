@@ -18,8 +18,9 @@ if TYPE_CHECKING:
     from reflex_base.components.component import Component
 
 
+# The local is a JavaScript identifier: a renamed state's carries a ``$rx_`` prefix.
 _STATE_HOOK = re.compile(
-    r'const (\w+) = useStateContext\(("[^"]*")(?:, (\[[^\]]*\]))?\)'
+    r'const ([\w$]+) = useStateContext\(("[^"]*")(?:, (\[[^\]]*\]))?\)'
 )
 
 
