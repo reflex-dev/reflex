@@ -656,14 +656,20 @@ class VarData:
         if isinstance(state, str):
             state_name = store_name = state
             local = format.format_state_name(state)
+            field_key = field_name + FIELD_MARKER
         else:
             state_name = state._get_default_full_name()
             store_name = state.get_full_name()
             local = format.format_state_local(state)
+            # The key the field goes by in the store, which the resolver can rename.
+            field_key = format.format_var_key(state, field_name) if field_name else ""
+        hook_args = json.dumps(store_name)
+        if field_name:
+            hook_args += f", {json.dumps([field_key])}"
         return VarData(
             state=state_name,
             field_name=field_name,
-            hooks={f"const {local} = useStateContext({json.dumps(store_name)})": None},
+            hooks={f"const {local} = useStateContext({hook_args})": None},
             imports={
                 f"$/{constants.Dirs.UTILS}/context-registry": [
                     ImportVar(tag="useStateContext")
@@ -1419,8 +1425,19 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return StateOperation.create(  # pyright: ignore [reportReturnType]
             formatted_state_name,
             self,
+            # The expression can read any key of the substate, so its hook
+            # subscribes to the whole substate rather than a named field.
             _var_data=VarData.merge(
-                VarData.from_state(state, self._js_expr), self._var_data
+                VarData.from_state(state),
+                VarData(
+                    state=(
+                        state
+                        if isinstance(state, str)
+                        else state._get_default_full_name()
+                    ),
+                    field_name=self._js_expr,
+                ),
+                self._var_data,
             ),
         ).guess_type()
 
