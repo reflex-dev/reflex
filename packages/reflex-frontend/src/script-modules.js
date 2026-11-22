@@ -18,6 +18,9 @@
  *                                               other than relative paths
  *     "errors": [{"file", "line", "column", "message"}]  the first syntax
  *                                                        error of each file
+ *     "loops": [{"importer", "file", "link"}]  each import of a file that
+ *                                              reaches itself again, one
+ *                                              directory link deeper
  *   }
  *
  * Files are absolute paths: the module's real path, and each file it reaches
@@ -28,9 +31,9 @@
  * `export const f = make()` or one re-exported from another file, is listed as
  * a function, so that a valid call is never rejected. */
 
-import { readFileSync, realpathSync, statSync } from "node:fs";
+import { lstatSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, extname, join, resolve } from "node:path";
+import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
 // rolldown is a dependency of vite, which every app installs; resolved through
@@ -290,19 +293,79 @@ const readFile = (file) => {
 /** @type {Map<string, any>} Each file read, by path. */
 const files = new Map();
 
+/** @type {{importer: string, file: string, link: string}[]} */
+const loops = [];
+
 /**
- * Find a module and every local file it reaches, reading each file once.
+ * Find the link a directory reaches another through.
+ * @param {string} from The directory.
+ * @param {string} to A directory below it, by a path through a link.
+ * @returns {string} The first link on the path.
+ */
+const findLink = (from, to) => {
+  let path = from;
+  for (const part of relative(from, to).split(sep)) {
+    path = join(path, part);
+    if (lstatSync(path).isSymbolicLink()) break;
+  }
+  return path;
+};
+
+/**
+ * @typedef {{file: string, real: string, importer?: Read}} Read A file read,
+ * its real path, and the file whose import first reached it.
+ */
+
+/**
+ * Find where the import chain of a file reached it before, from a directory
+ * that its directory is below through a link. From there the chain repeats one
+ * link deeper, without end.
+ * @param {Read} importer The file that imports it.
+ * @param {string} file The file, by the path its import names.
+ * @param {string} real Its real path.
+ * @returns {string | undefined} The earlier directory, if there is one.
+ */
+const findRepeat = (importer, file, real) => {
+  const directory = dirname(file);
+  for (let earlier = importer; earlier; earlier = earlier.importer) {
+    const from = dirname(earlier.file);
+    if (
+      earlier.real === real &&
+      directory.startsWith(from + sep) &&
+      realpathSync(directory) === realpathSync(from)
+    ) {
+      return from;
+    }
+  }
+};
+
+/**
+ * Find a module and every local file it reaches, reading each file once. A
+ * file that reaches itself again through a directory link is added to `loops`
+ * and not followed: the copies are files, so they cannot hold every repeat.
  * @param {string} module The module.
  * @returns {string[]} The files, the module first.
  */
 const reach = (module) => {
-  const read = new Set([realpathSync(module)]);
-  const reached = new Set(read);
-  for (const file of read) {
+  const first = realpathSync(module);
+  /** @type {Map<string, Read>} */
+  const read = new Map([[first, { file: first, real: first }]]);
+  const reached = new Set([first]);
+  for (const importer of read.values()) {
+    const { file } = importer;
     if (!files.has(file)) files.set(file, readFile(file));
     for (const reference of files.get(file).references) {
+      if (reference.read && !read.has(reference.file)) {
+        const real = realpathSync(reference.file);
+        const from = findRepeat(importer, reference.file, real);
+        if (from) {
+          const link = findLink(from, dirname(reference.file));
+          loops.push({ importer: file, file: reference.file, link });
+          continue;
+        }
+        read.set(reference.file, { file: reference.file, real, importer });
+      }
       reached.add(reference.file);
-      if (reference.read) read.add(reference.file);
     }
   }
   return [...reached];
@@ -319,4 +382,6 @@ for (const [file, { imports: specifiers, error }] of files) {
   if (specifiers) imports[file] = specifiers;
   if (error) errors.push(error);
 }
-process.stdout.write(JSON.stringify({ format: 1, modules, imports, errors }));
+process.stdout.write(
+  JSON.stringify({ format: 1, modules, imports, errors, loops }),
+);

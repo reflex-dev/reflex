@@ -115,6 +115,7 @@ test("lists each module's files, its exports, and what each script imports", asy
       "counter.tsx": [],
     },
     errors: [],
+    loops: [],
   });
 });
 
@@ -155,6 +156,31 @@ test("lists a linked file where its import names it, and its imports from there"
     "near.js",
   ]);
   expect(imports).toEqual({ "party.js": [], "linked.js": [], "near.js": [] });
+});
+
+test("reports a file that reaches itself again through a directory link", async () => {
+  // `lib/up` links to the directory that holds `lib`, so `party.js` is
+  // `lib/up/party.js`, which imports `lib/up/lib/up/party.js`, and so on:
+  // copies without links cannot hold them all.
+  const directory = writeFiles({
+    "party.js": 'import "./helper.js";\nexport function go() {}\n',
+    "helper.js": 'import "./lib/up/party.js";\nimport "./lib/up/near.js";\n',
+    "near.js": 'import "./lib/up/far.js";\n',
+    "far.js": "",
+  });
+  mkdirSync(join(directory, "lib"));
+  symlinkSync("..", join(directory, "lib", "up"));
+  const { modules, loops } = await readModules(directory, ["party.js"]);
+  // A link to an ancestor is followed while it does not repeat a file.
+  expect(modules["party.js"].files).toEqual([
+    "party.js",
+    "helper.js",
+    "lib/up/near.js",
+    "lib/up/lib/up/far.js",
+  ]);
+  expect(loops).toEqual([
+    { importer: "helper.js", file: "lib/up/party.js", link: "lib/up" },
+  ]);
 });
 
 test("copies a file that Vite loads as its text or URL without reading it", async () => {
