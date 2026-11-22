@@ -34,6 +34,10 @@ def app_package(
         (package / "__init__.py").write_text("")
     (app / "party.js").write_text("export function celebrate(count) {}\n")
     (app / "typed.ts").write_text("export function typed(n: number) {}\n")
+    (app / "widget.jsx").write_text("export function show() { return <div />; }\n")
+    (app / "counter.tsx").write_text(
+        "export function count(n: number) { return <b>{n}</b>; }\n"
+    )
     (vendor / "widget.js").write_text("export function widget() {}\n")
     sys.path.insert(0, str(tmp_path))
     yield app

@@ -20,7 +20,11 @@
  *                                                        error of each file
  *   }
  *
- * Files are real paths. An export the syntax alone cannot classify, such as
+ * Files are absolute paths: the module's real path, and each file it reaches
+ * by the path its import names, so that the copy of a link is where the import
+ * looks for it and the files the link imports are found beside it. A file
+ * that Vite loads as it is, such as with `?raw`, is listed but not read. An
+ * export the syntax alone cannot classify, such as
  * `export const f = make()` or one re-exported from another file, is listed as
  * a function, so that a valid call is never rejected. */
 
@@ -68,6 +72,27 @@ const CSS_REFERENCE =
  */
 const stripQuery = (path) => path.replace(/[?#].*/s, "");
 
+const RAW_QUERY = /[?&]raw(?:&|$)/;
+const URL_QUERY = /[?&]url(?:&|$)/;
+const WORKER_QUERY = /[?&](?:shared)?worker(?:&|$)/;
+
+/**
+ * Whether Vite loads the file an import names as it is, so that it is copied
+ * but not read: `?raw` loads its text, and `?url` the URL of a script that is
+ * not a worker. A stylesheet loaded by URL is still bundled.
+ * @param {string} specifier The import's specifier.
+ * @returns {boolean} Whether the file is loaded as it is.
+ */
+const loadedAsIs = (specifier) => {
+  const query = /\?[^#]*/.exec(specifier)?.[0] ?? "";
+  return (
+    RAW_QUERY.test(query) ||
+    (URL_QUERY.test(query) &&
+      !WORKER_QUERY.test(query) &&
+      extname(stripQuery(specifier)) !== ".css")
+  );
+};
+
 /**
  * @param {string} path A path.
  * @returns {boolean} Whether it is a file.
@@ -91,8 +116,7 @@ const resolveImport = (directory, specifier) => {
   candidates.push(
     ...RESOLVE_EXTENSIONS.map((ext) => join(target, `index${ext}`)),
   );
-  const file = candidates.find(isFile);
-  return file && realpathSync(file);
+  return candidates.find(isFile);
 };
 
 /**
@@ -193,6 +217,11 @@ const readExports = (program, module) => {
 };
 
 /**
+ * @typedef {{file: string, read: boolean}} Reference A local file a file
+ * references, and whether it is read for its own references.
+ */
+
+/**
  * Parse a script.
  * @param {string} file The script.
  * @returns {any} Its local references, imports and exports, and its first
@@ -205,8 +234,12 @@ const readScript = (file) => {
   const script = {
     references: specifiers
       .filter((specifier) => specifier.startsWith("."))
-      .map((specifier) => resolveImport(dirname(file), specifier))
-      .filter(Boolean),
+      .flatMap((specifier) => {
+        const reference = resolveImport(dirname(file), specifier);
+        return reference
+          ? [{ file: reference, read: !loadedAsIs(specifier) }]
+          : [];
+      }),
     imports: specifiers.filter((specifier) => !specifier.startsWith(".")),
     exports: readExports(program, module),
     error: undefined,
@@ -227,7 +260,7 @@ const readScript = (file) => {
  * Find the local files a stylesheet references with `@import` and `url(...)`.
  * Absolute paths, URLs, data URIs and fragments are not local files.
  * @param {string} file The stylesheet.
- * @returns {{references: string[]}} The files.
+ * @returns {{references: Reference[]}} The files.
  */
 const readStylesheet = (file) => ({
   references: [
@@ -239,7 +272,7 @@ const readStylesheet = (file) => ({
     .filter((reference) => !/^(?:[/#]|data:)|:\/\//.test(reference))
     .map((reference) => resolve(dirname(file), stripQuery(reference)))
     .filter(isFile)
-    .map((path) => realpathSync(path)),
+    .map((reference) => ({ file: reference, read: true })),
 });
 
 /**
@@ -254,7 +287,7 @@ const readFile = (file) => {
   return { references: [] };
 };
 
-/** @type {Map<string, any>} Each file read, by real path. */
+/** @type {Map<string, any>} Each file read, by path. */
 const files = new Map();
 
 /**
@@ -263,10 +296,14 @@ const files = new Map();
  * @returns {string[]} The files, the module first.
  */
 const reach = (module) => {
-  const reached = new Set([realpathSync(module)]);
-  for (const file of reached) {
+  const read = new Set([realpathSync(module)]);
+  const reached = new Set(read);
+  for (const file of read) {
     if (!files.has(file)) files.set(file, readFile(file));
-    for (const reference of files.get(file).references) reached.add(reference);
+    for (const reference of files.get(file).references) {
+      reached.add(reference.file);
+      if (reference.read) read.add(reference.file);
+    }
   }
   return [...reached];
 };

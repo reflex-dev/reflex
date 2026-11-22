@@ -25,8 +25,14 @@ const modules = vi.hoisted(() => {
   const secondLoaded = new Promise((resolve) => {
     releaseSecond = resolve;
   });
+  let answer = () => {};
+  const answered = new Promise((resolve) => {
+    answer = resolve;
+  });
   return {
     seen: [],
+    answer,
+    answered,
     releaseSlow,
     slowLoaded,
     releaseGated,
@@ -49,6 +55,10 @@ vi.mock("$/utils/scripts", () => ({
       write: (value) => {
         globalThis.partyValue = value;
       },
+      ask: () =>
+        modules.answered.then((answer) =>
+          modules.seen.push(["answered", answer]),
+        ),
       fails: () => {
         throw new RangeError("The party is over.");
       },
@@ -135,6 +145,37 @@ test("the next event sees what a function did, though events overlap", async () 
   );
   await Promise.all([first, second]);
   expect(globalThis.reads).toEqual(["new"]);
+});
+
+test("a function's promise does not hold back the events after it", async () => {
+  // As a script's does not: it can wait on the user, as for the answer to a
+  // dialog, and the app keeps handling events meanwhile.
+  globalThis.reads = [];
+  const socket = { connected: true, emit: vi.fn() };
+  const asking = queueEvents(
+    [callJsEvent("app.scripts.party", "ask", [])],
+    socket,
+    false,
+    null,
+    null,
+  );
+  await queueEvents(
+    [
+      {
+        name: "_call_script",
+        payload: { javascript_code: "reads.push('next')" },
+      },
+    ],
+    socket,
+    false,
+    null,
+    null,
+  );
+  expect(globalThis.reads).toEqual(["next"]);
+  expect(modules.seen).toEqual([]);
+  modules.answer("yes");
+  await asking;
+  expect(modules.seen).toEqual([["answered", "yes"]]);
 });
 
 test("an event queued while the modules load runs after the function before it", async () => {

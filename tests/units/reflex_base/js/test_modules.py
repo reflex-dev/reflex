@@ -38,10 +38,11 @@ def test_package_imports_rejects_node_builtins(specifier: str):
     Args:
         specifier: the built-in module's specifier.
     """
+    file = Path("/app/party.js")
     with pytest.raises(ReflexRuntimeError) as error:
-        _package_imports(Path("/app/party.js"), ["canvas-confetti", specifier])
+        _package_imports(file, ["canvas-confetti", specifier])
     assert str(error.value) == (
-        f"The JavaScript file /app/party.js imports {specifier!r}, a Node.js "
+        f"The JavaScript file {file} imports {specifier!r}, a Node.js "
         "built-in module, which does not exist in the browser. Remove the "
         "import, and do the work that needs it in a backend event handler "
         "instead."

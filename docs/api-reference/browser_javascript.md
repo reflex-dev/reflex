@@ -280,9 +280,10 @@ reflex.library("$/utils/state") cannot load "$/utils/state": a name starting wit
 
 ## JavaScript Modules
 
-Write JavaScript in a `.js` or `.ts` file in your app's package and import its
-exported functions in Python, like a Python module. Each function returns an
-event: use it in an event trigger, or return or yield it from an event handler.
+Write JavaScript in a `.js`, `.ts`, `.jsx` or `.tsx` file in your app's package
+and import its exported functions in Python, like a Python module. Each function
+returns an event: use it in an event trigger, or return or yield it from an
+event handler.
 
 ```javascript
 // my_app/scripts/party.js
@@ -350,9 +351,9 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   any JavaScript, TypeScript or JSX the bundler accepts works, and checks that
   each name you use from Python is an exported function. An export that may
   hold a function counts, such as `export const run = makeRunner()` or a name
-  re-exported from another file. A `const` initialized with a literal, an
-  object, an array or a class, a class and an enum are values, which Python
-  cannot call. A default export and TypeScript types are left out.
+  re-exported from another file. Python cannot call a value: an exported
+  class or enum, or a `const` set to a literal, an object, an array or a class
+  expression. A default export and TypeScript types are left out.
 - A name used only inside an event handler is looked up when the handler runs,
   after the compile, so a wrong name there is reported in the browser.
 - Arguments are sent as JSON. A var is sent as its value in the browser. An
@@ -368,7 +369,11 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   `./party.css` or `./logo.png`, are bundled with it, and so are the files they
   import, including a stylesheet's `@import` and `url(...)` references. They
   must be inside your app's package directory, which is all of your project
-  that is copied into the compiled app.
+  that is copied into the compiled app. A file imported as text
+  (`./example.js?raw`), or a script imported as a URL (`./worklet.js?url`), is
+  copied as it is, without the files it imports. A file that is a symbolic link
+  is copied where the import names it, so the files it imports are found from
+  there.
 
 ### Type Stubs
 
@@ -495,7 +500,9 @@ The compile stops with these errors:
   directory is copied into the compiled app.` Move the file into your app's
   package, or publish it as an npm package and import it by name. A module that
   is a link to a file outside the package gets the same error, with `links to`
-  in place of `imports`.
+  in place of `imports`, and an imported file that is such a link is named with
+  its target: `imports .../helper.js, a link to .../shared.js, which is
+  outside`.
 - `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
   which does not exist in the browser.` Remove the import, and do the work that
   needs it in a backend event handler instead.

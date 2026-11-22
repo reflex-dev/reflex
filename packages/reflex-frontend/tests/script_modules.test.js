@@ -4,9 +4,16 @@
  * for the compiler. It is a command run in an app's .web, so this sets its
  * arguments, imports it and reads what it prints.
  */
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, onTestFinished, test, vi } from "vitest";
 
@@ -111,13 +118,78 @@ test("lists each module's files, its exports, and what each script imports", asy
   });
 });
 
-test("reports the position of a file's first syntax error", async () => {
-  // Written here: the repository's formatter cannot read a fixture that does
-  // not parse.
+/**
+ * Make a directory of files that is removed after the test.
+ * @param {Record<string, string>} contents Each file's text, by its path in it.
+ * @returns {string} The directory's real path.
+ */
+const writeFiles = (contents) => {
   const directory = realpathSync(
     mkdtempSync(join(tmpdir(), "script-modules-")),
   );
   onTestFinished(() => rmSync(directory, { recursive: true }));
+  for (const [path, text] of Object.entries(contents)) {
+    mkdirSync(dirname(join(directory, path)), { recursive: true });
+    writeFileSync(join(directory, path), text);
+  }
+  return directory;
+};
+
+test("lists a linked file where its import names it, and its imports from there", async () => {
+  // The compiler copies each file at its path, so the copy of a link must be
+  // where the import looks for it, and the files that copy imports beside it.
+  const directory = writeFiles({
+    "party.js":
+      'import { shout } from "./linked.js";\nexport function go() {}\n',
+    "shared/linked.js": 'export { near as shout } from "./near.js";\n',
+    "near.js": "export const near = (s) => s;\n",
+  });
+  symlinkSync(
+    join(directory, "shared", "linked.js"),
+    join(directory, "linked.js"),
+  );
+  const { modules, imports } = await readModules(directory, ["party.js"]);
+  expect(modules["party.js"].files).toEqual([
+    "party.js",
+    "linked.js",
+    "near.js",
+  ]);
+  expect(imports).toEqual({ "party.js": [], "linked.js": [], "near.js": [] });
+});
+
+test("copies a file that Vite loads as its text or URL without reading it", async () => {
+  // `?raw` loads the text and `?url` the URL of a script, so their imports
+  // never run. A stylesheet or a worker loaded by URL is still bundled.
+  const directory = writeFiles({
+    "party.js": [
+      'import text from "./example.js?raw";',
+      'import worklet from "./worklet.js?url";',
+      'import theme from "./theme.css?url";',
+      'import worker from "./worker.js?worker&url";',
+      "export function go() {}",
+    ].join("\n"),
+    "example.js": 'import fs from "node:fs";\n',
+    "worklet.js": 'import "worklet-pkg";\n',
+    "theme.css": '@import "./more.css";\n',
+    "more.css": "",
+    "worker.js": 'import "worker-pkg";\n',
+  });
+  const { modules, imports } = await readModules(directory, ["party.js"]);
+  expect(modules["party.js"].files).toEqual([
+    "party.js",
+    "example.js",
+    "worklet.js",
+    "theme.css",
+    "worker.js",
+    "more.css",
+  ]);
+  expect(imports).toEqual({ "party.js": [], "worker.js": ["worker-pkg"] });
+});
+
+test("reports the position of a file's first syntax error", async () => {
+  // Written here: the repository's formatter cannot read a fixture that does
+  // not parse.
+  const directory = writeFiles({});
   writeFileSync(
     join(directory, "broken.mjs"),
     '// é😀\nconst s = "é😀"; export const = 1;\n',

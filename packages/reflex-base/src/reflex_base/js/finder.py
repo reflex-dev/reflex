@@ -1,7 +1,7 @@
 """Import JavaScript modules from Python.
 
 ``from my_app.scripts.party import celebrate`` finds ``my_app/scripts/party.js``
-(or ``.ts``) when no Python module of that name exists and ``my_app`` is the
+(or ``.ts``, ``.jsx``, ``.tsx``) when no Python module of that name exists and ``my_app`` is the
 app's package. Other packages' JavaScript files are never imported.
 
 ``import reflex`` registers a small finder that loads this module on the first
@@ -27,7 +27,7 @@ else:
     _LoaderBase = object
 
 # The extensions of the files a JavaScript module may be written in.
-SCRIPT_EXTENSIONS = (".js", ".ts")
+SCRIPT_EXTENSIONS = (".js", ".ts", ".jsx", ".tsx")
 
 
 class _ScriptLoader(_LoaderBase):

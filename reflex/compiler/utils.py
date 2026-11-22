@@ -490,7 +490,8 @@ def _copy_targets(
 
     Args:
         module: The module's Python name.
-        files: The module and the local files it reaches, by real path.
+        files: The module, by its real path, and the local files it reaches,
+            by the paths their imports name.
         package_dir: The real path of the directory of the app's package.
         modules_dir: The directory the files are copied to.
 
@@ -503,17 +504,20 @@ def _copy_targets(
     targets: dict[Path, Path] = {}
     for index, file in enumerate(map(Path, files)):
         if not file.is_relative_to(package_dir):
-            # The module itself is outside only through a link.
-            relation = "imports" if index else "links to"
-            msg = (
-                f"The JavaScript module {module} {relation} {file}, which is "
-                f"outside {package_dir}, the directory of the app's package, "
-                "and only that directory is copied into the compiled app. "
-                "Move the file into it, or publish it as an npm package "
-                "and import it by name."
-            )
-            raise ReflexRuntimeError(msg)
-        targets[file] = modules_dir / file.relative_to(package_dir.parent)
+            # The module itself, by its real path, is outside only through a link.
+            outside = f"{'imports' if index else 'links to'} {file}"
+        elif not (real := file.resolve()).is_relative_to(package_dir):
+            outside = f"imports {file}, a link to {real}"
+        else:
+            targets[file] = modules_dir / file.relative_to(package_dir.parent)
+            continue
+        msg = (
+            f"The JavaScript module {module} {outside}, which is outside "
+            f"{package_dir}, the directory of the app's package, and only that "
+            "directory is copied into the compiled app. Move the file into it, "
+            "or publish it as an npm package and import it by name."
+        )
+        raise ReflexRuntimeError(msg)
     return targets
 
 

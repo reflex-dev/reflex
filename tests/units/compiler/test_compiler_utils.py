@@ -989,14 +989,14 @@ def test_compile_script_modules(
             ["celebrate"],
             [
                 {
-                    "file": "{project}/app/scripts/helpers.js",
+                    "file": "<helpers>",
                     "line": 3,
                     "column": 7,
                     "message": "Unexpected token",
                 }
             ],
             (
-                "Syntax error at {project}/app/scripts/helpers.js:3:7: Unexpected "
+                "Syntax error at <helpers>:3:7: Unexpected "
                 "token. Fix the code there: the app imports this file from Python, "
                 "directly or through another JavaScript module."
             ),
@@ -1007,9 +1007,9 @@ def test_compile_script_modules(
             ["celebrate", "launch"],
             [],
             (
-                "`nope` is used from app.scripts.party, but app/scripts/party.js "
-                "exports no function named nope (its functions: celebrate, launch). "
-                "Export it from app/scripts/party.js, as in `export function nope() "
+                "`nope` is used from app.scripts.party, but <party> exports no "
+                "function named nope (its functions: celebrate, launch). Export it "
+                "from <party>, as in `export function nope() "
                 "{ ... }`, or correct the name in Python."
             ),
         ),
@@ -1019,9 +1019,9 @@ def test_compile_script_modules(
             [],
             [],
             (
-                "`limit` is used from app.scripts.party as a function, but "
-                "app/scripts/party.js exports limit as a value, and Python can only "
-                "call functions. Export a function instead, as in `export function "
+                "`limit` is used from app.scripts.party as a function, but <party> "
+                "exports limit as a value, and Python can only call functions. "
+                "Export a function instead, as in `export function "
                 "limit() { ... }`."
             ),
         ),
@@ -1032,8 +1032,8 @@ def test_compile_script_modules(
             ["celebrate"],
             [],
             (
-                "The JavaScript module app.scripts.party imports {project}/.env, "
-                "which is outside {project}/app, the directory of the app's package, "
+                "The JavaScript module app.scripts.party imports <env>, which is "
+                "outside <package>, the directory of the app's package, "
                 "and only that directory is copied into the compiled app. Move the "
                 "file into it, or publish it as an npm package and import it by name."
             ),
@@ -1058,12 +1058,23 @@ def test_compile_script_modules_errors(
         files: the files the module reaches, from the project's directory.
         functions: the module's functions.
         errors: the syntax errors.
-        message: the expected error, with ``{project}`` for the project's
-            directory.
+        message: the expected error, with placeholders for the paths it names.
     """
     package, report, _ = script_app
-    project = str(package.parent)
     party = package / "scripts" / "party.js"
+    # Each path as the platform writes it.
+    paths = {
+        "<helpers>": str(package / "scripts" / "helpers.js"),
+        "<party>": str(Path("app", "scripts", "party.js")),
+        "<env>": str(package.parent / ".env"),
+        "<package>": str(package),
+    }
+
+    def fill(text: str) -> str:
+        for placeholder, path in paths.items():
+            text = text.replace(placeholder, path)
+        return text
+
     _import_script_module(monkeypatch, "app.scripts.party", party, names)
     report.update({
         "modules": {
@@ -1072,26 +1083,33 @@ def test_compile_script_modules_errors(
             )
         },
         "imports": {},
-        "errors": [
-            {**error, "file": error["file"].replace("{project}", project)}
-            for error in errors
-        ],
+        "errors": [{**error, "file": fill(error["file"])} for error in errors],
     })
     with pytest.raises(ReflexRuntimeError) as error:
         utils.compile_script_modules(_app_modules())
-    assert str(error.value) == message.replace("{project}", project)
+    assert str(error.value) == fill(message)
 
 
-def test_compile_script_modules_rejects_a_module_linked_from_outside(
+@pytest.mark.parametrize("linked", ["module", "import"])
+def test_compile_script_modules_rejects_a_link_to_outside(
     script_app: tuple[Path, dict, list[list[Path]]],
     monkeypatch: pytest.MonkeyPatch,
+    windows_platform: bool,
+    linked: str,
 ):
-    """A module that is a link to a file outside the package is outside it.
+    """A module, or a file it imports, that is a link to a file outside the package is outside it.
+
+    The module is listed by its real path, and a file it imports by the path
+    the import names.
 
     Args:
         script_app: the app package, the stand-in script's output and its runs.
         monkeypatch: pytest monkeypatch fixture.
+        windows_platform: Whether symlinks require Windows privileges.
+        linked: whether the module or the file it imports is the link.
     """
+    if windows_platform:
+        pytest.skip("Symlinks require additional privileges on Windows")
     package, report, _ = script_app
     shared = package.parent / "shared" / "vendor.js"
     shared.parent.mkdir()
@@ -1099,17 +1117,25 @@ def test_compile_script_modules_rejects_a_module_linked_from_outside(
     vendor = package / "scripts" / "vendor.js"
     vendor.parent.mkdir(parents=True)
     vendor.symlink_to(shared)
-    _import_script_module(monkeypatch, "app.scripts.vendor", vendor, {"shout"})
+    if linked == "module":
+        _import_script_module(monkeypatch, "app.scripts.vendor", vendor, {"shout"})
+        module, files = "app.scripts.vendor", [shared]
+        outside = f"links to {shared}"
+    else:
+        party = package / "scripts" / "party.js"
+        _import_script_module(monkeypatch, "app.scripts.party", party, {"shout"})
+        module, files = "app.scripts.party", [party, vendor]
+        outside = f"imports {vendor}, a link to {shared}"
     report.update({
-        "modules": {str(shared): _script_exports([shared], ["shout"])},
-        "imports": {str(shared): []},
+        "modules": {str(files[0]): _script_exports(files, ["shout"])},
+        "imports": {},
         "errors": [],
     })
     with pytest.raises(ReflexRuntimeError) as error:
         utils.compile_script_modules(_app_modules())
     assert str(error.value) == (
-        f"The JavaScript module app.scripts.vendor links to {shared}, which is "
-        f"outside {package}, the directory of the app's package, and only that "
+        f"The JavaScript module {module} {outside}, which is outside "
+        f"{package}, the directory of the app's package, and only that "
         "directory is copied into the compiled app. Move the file into it, or "
         "publish it as an npm package and import it by name."
     )
@@ -1142,9 +1168,10 @@ def test_compile_script_modules_reads_a_module_imported_in_another_context(
         with pytest.raises(ReflexRuntimeError) as error:
             utils.compile_script_modules(_app_modules())
     assert runs == [[party]]
+    shown = Path("app", "party.js")
     assert str(error.value) == (
-        "`celebrate` is used from app.party, but app/party.js exports no function "
-        "named celebrate (its functions: launch). Export it from app/party.js, as "
+        f"`celebrate` is used from app.party, but {shown} exports no function "
+        f"named celebrate (its functions: launch). Export it from {shown}, as "
         "in `export function celebrate() { ... }`, or correct the name in Python."
     )
 
@@ -1221,10 +1248,11 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "JSON.stringify({ format: 1, modules: {}, errors: [],\n"
         "  imports: { [process.cwd()]: process.argv.slice(2) } })",
     )
-    assert utils._read_script_modules([Path("/app/a.js"), Path("/app/b.ts")]) == {
+    paths = [Path("/app/a.js"), Path("/app/b.ts")]
+    assert utils._read_script_modules(paths) == {
         "format": 1,
         "modules": {},
-        "imports": {str(web_dir): ["/app/a.js", "/app/b.ts"]},
+        "imports": {str(web_dir): [str(path) for path in paths]},
         "errors": [],
     }
     (web_dir / "script-modules.js").write_text(

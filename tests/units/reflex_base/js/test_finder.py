@@ -11,7 +11,7 @@ from reflex_base.js.modules import _app_modules, _JsFunction, _ScriptModule
 
 
 def test_importing_a_module_registers_it(app_package: Path):
-    """A JavaScript or TypeScript module of the app imports, and the compiler finds it.
+    """A JavaScript, TypeScript, JSX or TSX module of the app imports, and the compiler finds it.
 
     It holds the names Python looked up, for the compiler to check.
 
@@ -21,12 +21,20 @@ def test_importing_a_module_registers_it(app_package: Path):
     party = importlib.import_module("js_app.party")
     assert party.__spec__ is not None
     assert party.__spec__.origin == str(app_package / "party.js")
+    from js_app.counter import count  # pyright: ignore[reportMissingImports]
     from js_app.typed import typed  # pyright: ignore[reportMissingImports]
+    from js_app.widget import show  # pyright: ignore[reportMissingImports]
 
-    assert typed == _JsFunction("js_app.typed", "typed")
+    assert (typed, show, count) == (
+        _JsFunction("js_app.typed", "typed"),
+        _JsFunction("js_app.widget", "show"),
+        _JsFunction("js_app.counter", "count"),
+    )
     assert _app_modules() == {
         "js_app.party": _ScriptModule(app_package / "party.js"),
         "js_app.typed": _ScriptModule(app_package / "typed.ts", {"typed"}),
+        "js_app.widget": _ScriptModule(app_package / "widget.jsx", {"show"}),
+        "js_app.counter": _ScriptModule(app_package / "counter.tsx", {"count"}),
     }
 
 
