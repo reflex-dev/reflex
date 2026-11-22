@@ -154,32 +154,40 @@ class KeywordOnlyState(rx.State):
         """
 
 
-def test_a_required_keyword_only_parameter_still_counts_as_required() -> None:
-    """A required keyword-only parameter fails the check, as a required positional one does.
-
-    Neither an event handler, whose arguments are sent by name, nor a callable,
-    called with the trigger's arguments by position, ever gets it.
-    """
-
-    def record(value: Var, *, required: str) -> EventSpec:
-        return rx.noop()
-
-    with pytest.raises(EventFnArgMismatchError) as handler_error:
+def test_a_required_keyword_only_parameter_of_a_handler_still_counts_as_required() -> (
+    None
+):
+    """An event handler's arguments are sent by name, so the trigger must supply it."""
+    with pytest.raises(EventFnArgMismatchError) as error:
         call_event_handler(
             cast(EventHandler, KeywordOnlyState.handle),
             lambda value: [value],
             key="on_change",
         )
-    with pytest.raises(EventFnArgMismatchError) as callable_error:
-        call_event_fn(record, lambda value: [value], key="on_change")
 
-    assert str(handler_error.value) == (
+    assert str(error.value) == (
         "Event on_change only provides 1 arguments, but "
         "KeywordOnlyState.handle requires at least 2 arguments to be passed to "
         "the event handler.\nSee https://reflex.dev/docs/events/event-arguments/"
     )
-    assert str(callable_error.value) == (
-        "Event on_change only provides 1 arguments, but "
-        f"{record} requires at least 2 arguments to be passed to "
-        "the event handler.\nSee https://reflex.dev/docs/events/event-arguments/"
+
+
+def test_a_callable_with_a_required_keyword_only_parameter_is_rejected() -> None:
+    """A callable gets the trigger's arguments by position, so it never gets one.
+
+    It is rejected however many arguments the trigger provides.
+    """
+
+    def record(value: Var, *, required: str) -> EventSpec:
+        return rx.noop()
+
+    with pytest.raises(EventFnArgMismatchError) as error:
+        call_event_fn(record, lambda a, b: [a, b], key="on_change")
+
+    assert str(error.value) == (
+        f"Event on_change cannot pass the keyword-only argument 'required' of "
+        f"{record}: a function given to an event trigger gets the trigger's "
+        "arguments by position only. Give 'required' a default value, or move it "
+        "before the `*` so it takes one of the trigger's arguments.\n"
+        "See https://reflex.dev/docs/events/event-arguments/"
     )

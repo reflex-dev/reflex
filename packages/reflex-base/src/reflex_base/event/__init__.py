@@ -2652,6 +2652,37 @@ def _max_positional_args(parameters: Mapping[str, inspect.Parameter]) -> int | N
     return count
 
 
+def _check_no_required_keyword_only(
+    fn: Callable, parameters: Mapping[str, inspect.Parameter], key: str | None
+) -> None:
+    """Reject a callable with a keyword-only parameter that has no default.
+
+    A callable gets the trigger's arguments by position, so it never gets one.
+
+    Args:
+        fn: The callable given to the event trigger.
+        parameters: Its parameters.
+        key: The name of the event trigger.
+
+    Raises:
+        EventFnArgMismatchError: If it has a required keyword-only parameter.
+    """
+    for parameter in parameters.values():
+        if (
+            parameter.kind is inspect.Parameter.KEYWORD_ONLY
+            and parameter.default is inspect.Parameter.empty
+        ):
+            msg = (
+                f"Event {key} cannot pass the keyword-only argument "
+                f"{parameter.name!r} of {fn}: a function given to an event "
+                "trigger gets the trigger's arguments by position only. Give "
+                f"{parameter.name!r} a default value, or move it before the `*` "
+                "so it takes one of the trigger's arguments.\n"
+                "See https://reflex.dev/docs/events/event-arguments/"
+            )
+            raise EventFnArgMismatchError(msg)
+
+
 def check_fn_match_arg_spec(
     user_func: Callable,
     user_func_parameters: Mapping[str, inspect.Parameter],
@@ -2778,6 +2809,7 @@ def call_event_fn(
     parameters = inspect.signature(fn).parameters
 
     # Check that fn signature matches arg_spec
+    _check_no_required_keyword_only(fn, parameters, key)
     check_fn_match_arg_spec(fn, parameters, parsed_args, key=key)
 
     # Call the function with as many of the parsed args as it takes.
