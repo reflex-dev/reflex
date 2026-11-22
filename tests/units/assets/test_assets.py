@@ -1000,6 +1000,115 @@ def test_remove_stale_external_asset_copies(
     ) == str((library / "valid_module.js").resolve())
 
 
+def _stage_recorded_copy(mock_asset_path: Path, name: str) -> tuple[Path, Path, Path]:
+    """Copy a source asset into assets/external/ and record it.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+        name: The module name the copy is placed under.
+
+    Returns:
+        The source asset, its copy, and the copy's record.
+    """
+    src_file = mock_asset_path / "library" / f"{name}.js"
+    src_file.parent.mkdir(exist_ok=True)
+    src_file.write_text(name)
+    dst_file = (
+        mock_asset_path
+        / constants.Dirs.APP_ASSETS
+        / constants.Dirs.EXTERNAL_APP_ASSETS
+        / name
+        / f"{name}.js"
+    )
+    dst_file.parent.mkdir(parents=True)
+    shutil.copyfile(src_file, dst_file)
+    _record_external_copy(dst_file, src_file)
+    record = (
+        mock_asset_path
+        / constants.Dirs.WEB
+        / assets_module._EXTERNAL_COPY_RECORDS_DIR
+        / name
+        / f"{name}.js"
+    )
+    return src_file, dst_file, record
+
+
+def test_record_external_copy_concedes_denied_replace(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A record replace denied by a compile recording the same source is fine.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file, record = _stage_recorded_copy(mock_asset_path, "module")
+    other_src = src_file.with_name("other.js")
+    other_src.write_text("other")
+
+    def denied_replace(self: Path, target) -> Path:
+        Path(target).write_text(str(other_src.resolve()), encoding="utf-8")
+        msg = "Access is denied"
+        raise PermissionError(13, msg)
+
+    monkeypatch.setattr(Path, "replace", denied_replace)
+
+    _record_external_copy(dst_file, other_src)
+
+    assert record.read_text(encoding="utf-8") == str(other_src.resolve())
+    assert [p.name for p in record.parent.iterdir()] == ["module.js"]
+
+
+def test_remove_stale_external_copies_skips_staged_records(
+    mock_asset_path: Path,
+) -> None:
+    """A record still being staged by a concurrent compile is not processed.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+    """
+    _, dst_file, record = _stage_recorded_copy(mock_asset_path, "module")
+    staged = record.with_name(".0123abcd.tmp")
+    staged.write_text(str(mock_asset_path / "missing.js"), encoding="utf-8")
+    staged_copy = dst_file.with_name(".0123abcd.tmp")
+    staged_copy.write_text("staged")
+
+    remove_stale_external_asset_symlinks()
+
+    assert staged.read_text(encoding="utf-8") == str(mock_asset_path / "missing.js")
+    assert staged_copy.read_text() == "staged"
+    assert dst_file.read_text() == "module"
+
+
+def test_remove_stale_external_copies_keeps_concurrent_replacement(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A copy re-recorded by a concurrent compile during cleanup is kept.
+
+    Args:
+        mock_asset_path: The tmp cwd used for assets.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file, record = _stage_recorded_copy(mock_asset_path, "module")
+    new_src = src_file.with_name("renamed.js")
+    new_src.write_text("module")
+    src_file.unlink()
+    real_exists = Path.exists
+
+    def exists_during_concurrent_copy(self: Path, *args, **kwargs) -> bool:
+        if self == src_file:
+            # Another compile copies the asset from its new source meanwhile.
+            _record_external_copy(dst_file, new_src)
+        return real_exists(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "exists", exists_during_concurrent_copy)
+
+    remove_stale_external_asset_symlinks()
+
+    assert dst_file.read_text() == "module"
+    assert record.read_text(encoding="utf-8") == str(new_src.resolve())
+
+
 def test_remove_stale_symlinks_no_external_dir(mock_asset_path: Path) -> None:
     """Test that cleanup is a no-op when assets/external/ doesn't exist."""
     external_dir = (

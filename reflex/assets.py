@@ -22,6 +22,7 @@ _LINK_RETRY_DELAY = 0.01
 # Records of shared assets copied in place of a symlink, kept under the web
 # directory so they are never published with the assets themselves.
 _EXTERNAL_COPY_RECORDS_DIR = "external_asset_copies"
+_COPY_RECORD_TMP_SUFFIX = ".tmp"
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -197,8 +198,26 @@ def _external_copy_records_dir() -> Path:
     return environment.REFLEX_WEB_WORKDIR.get() / _EXTERNAL_COPY_RECORDS_DIR
 
 
+def _read_copy_record(record: Path) -> str | None:
+    """Read the source a copy record names.
+
+    Args:
+        record: The record to read.
+
+    Returns:
+        The recorded source path, or None if the record cannot be read.
+    """
+    try:
+        return record.read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
 def _record_external_copy(dst_file: Path, src_file: Path) -> None:
     """Remember the source of a shared asset that was copied instead of linked.
+
+    The record only lets a later cleanup remove the copy once its source is
+    gone, so failing to write it is logged rather than raised.
 
     Args:
         dst_file: The copy in the app's external assets directory.
@@ -206,16 +225,18 @@ def _record_external_copy(dst_file: Path, src_file: Path) -> None:
     """
     record = _external_copy_records_dir() / dst_file.relative_to(_external_assets_dir())
     source = str(src_file.resolve())
+    if _read_copy_record(record) == source:
+        return
+    tmp_record = record.with_name(f".{uuid.uuid4().hex}{_COPY_RECORD_TMP_SUFFIX}")
     try:
-        if record.read_text(encoding="utf-8") == source:
-            return
-    except OSError:
-        pass
-    record.parent.mkdir(parents=True, exist_ok=True)
-    tmp_record = record.with_name(f".{uuid.uuid4().hex}.tmp")
-    try:
+        record.parent.mkdir(parents=True, exist_ok=True)
         tmp_record.write_text(source, encoding="utf-8")
         tmp_record.replace(record)
+    except OSError as err:
+        # Windows denies the replace while a concurrent compile replaces the
+        # same record, which then already names this source.
+        if _read_copy_record(record) != source:
+            logger.debug(f"Could not record the source of {dst_file}: {err}")
     finally:
         tmp_record.unlink(missing_ok=True)
 
@@ -229,14 +250,24 @@ def _remove_stale_external_copies(external_dir: Path) -> None:
     records_dir = _external_copy_records_dir()
     if not records_dir.is_dir():
         return
-    for record in [p for p in records_dir.rglob("*") if p.is_file()]:
-        if Path(record.read_text(encoding="utf-8")).exists():
+    records = [
+        p
+        for p in records_dir.rglob("*")
+        if not p.name.endswith(_COPY_RECORD_TMP_SUFFIX) and p.is_file()
+    ]
+    for record in records:
+        source = _read_copy_record(record)
+        if source is None or Path(source).exists():
             continue
         copy = external_dir / record.relative_to(records_dir)
+        # Re-read just before deleting: a concurrent compile that copied a new
+        # source here has rewritten the record, and its copy must stay.
+        if _read_copy_record(record) != source:
+            continue
         # A symlink there was linked since, and is the symlink cleanup's to judge.
         if copy.is_file() and not copy.is_symlink():
-            copy.unlink()
-        record.unlink()
+            copy.unlink(missing_ok=True)
+        record.unlink(missing_ok=True)
 
 
 def remove_stale_external_asset_symlinks():
