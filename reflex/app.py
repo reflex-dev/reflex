@@ -88,6 +88,7 @@ from reflex.compiler.compiler import readable_name_from_component
 from reflex.event_namespace import (
     BaseEventNamespace,
     WebsocketEventNamespace,
+    _clip,
     _trusted_forwarded_value,
 )
 from reflex.istate.manager import StateManager, StateModificationContext
@@ -563,21 +564,6 @@ def _host_authority(host: str, default_port: int) -> tuple[str | None, int] | No
     except ValueError:
         return None
     return parts.hostname, port or default_port
-
-
-_MAX_LOGGED_HEADER = 200
-
-
-def _clip(value: str | None) -> str:
-    """Quote a request header value for a log line, cut to a bounded length.
-
-    Args:
-        value: The header value, if any.
-
-    Returns:
-        The quoted, possibly shortened value.
-    """
-    return repr(value if value is None else value[:_MAX_LOGGED_HEADER])
 
 
 def _origin_matches_request(
@@ -2365,6 +2351,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     await self.event_namespace.emit_update(
                         update=StateUpdate(delta=delta),
                         token=token.ident,
+                        suppress_warnings=True,
                     )
 
     def _validate_exception_handlers(self):

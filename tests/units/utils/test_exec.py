@@ -64,7 +64,7 @@ def _run_granian_reload_test_app(app_dir: str, port_queue: Queue) -> None:
         exec_utils.run_granian_backend("127.0.0.1", 0, exec_utils.LogLevel.ERROR)
 
 
-def _request_reload_test_app(port: int, timeout: float = 5) -> tuple[int, float]:
+def _request_reload_test_app(port: int, timeout: float = 5) -> tuple[int, bytes, float]:
     """Request the reload test app and report its response time.
 
     Args:
@@ -72,17 +72,35 @@ def _request_reload_test_app(port: int, timeout: float = 5) -> tuple[int, float]
         timeout: Request timeout in seconds.
 
     Returns:
-        The HTTP response status and elapsed request time in seconds.
+        The HTTP response status, the response body (the serving worker's process
+        id) and the elapsed request time in seconds.
     """
     started = time.monotonic()
     connection = HTTPConnection("127.0.0.1", port, timeout=timeout)
     try:
         connection.request("GET", "/")
         response = connection.getresponse()
-        response.read()
-        return response.status, time.monotonic() - started
+        body = response.read()
+        return response.status, body, time.monotonic() - started
     finally:
         connection.close()
+
+
+def _wait_for_exit(pid: int, timeout: float = 20) -> None:
+    """Wait until a child process of the test server has exited and been reaped.
+
+    Args:
+        pid: The process id.
+        timeout: Seconds to keep waiting.
+    """
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return
+        assert time.monotonic() < deadline, f"process {pid} did not exit"
+        time.sleep(0.01)
 
 
 def _reload_test_app_source(startup_delay: float) -> str:
@@ -95,6 +113,7 @@ def _reload_test_app_source(startup_delay: float) -> str:
         Python source for the test app.
     """
     return f"""\
+import os
 import time
 
 time.sleep({startup_delay})
@@ -103,7 +122,7 @@ time.sleep({startup_delay})
 def app():
     async def asgi(scope, receive, send):
         await send({{"type": "http.response.start", "status": 200, "headers": []}})
-        await send({{"type": "http.response.body", "body": b"ok"}})
+        await send({{"type": "http.response.body", "body": str(os.getpid()).encode()}})
 
     return asgi
 """
@@ -455,26 +474,18 @@ def test_run_granian_backend_holds_requests_across_reload(tmp_path: Path):
     process.start()
     try:
         port = port_queue.get(timeout=20)
-        deadline = time.monotonic() + 20
-        while True:
-            try:
-                assert _request_reload_test_app(port)[0] == 200
-                break
-            except OSError:
-                assert time.monotonic() < deadline, "Granian did not start"
-                time.sleep(0.05)
+        assert _wait_for_ok_response(port), "Granian did not start"
+        old_worker = int(_request_reload_test_app(port)[1])
 
         app_file.write_text(_reload_test_app_source(1.0))
-        responses: list[tuple[int, float]] = []
-        deadline = time.monotonic() + 10
-        while time.monotonic() < deadline:
-            responses.append(_request_reload_test_app(port))
-            if responses[-1][1] > 0.5:
-                break
-            time.sleep(0.05)
+        # The old worker resets a connection it accepts as it stops, so request
+        # only once the reload has stopped it, while the new one still loads.
+        _wait_for_exit(old_worker)
+        status, body, elapsed = _request_reload_test_app(port)
 
-        assert all(status == 200 for status, _ in responses)
-        assert any(elapsed > 0.5 for _, elapsed in responses)
+        assert status == 200
+        assert int(body) != old_worker
+        assert elapsed > 0.5
     finally:
         process.terminate()
         process.join(timeout=10)
@@ -1633,6 +1644,64 @@ def test_backend_worker_target_loads_config_before_app(
     )
 
     assert result.stdout.splitlines()[-1] == "True"
+
+
+@pytest.mark.parametrize(
+    ("env_mode", "expected"),
+    [
+        (exec_utils.constants.Env.PROD, "frozen=True garbage_freed=True"),
+        (exec_utils.constants.Env.DEV, "frozen=False garbage_freed=False"),
+    ],
+)
+def test_backend_worker_freezes_the_built_app_in_prod(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    env_mode: exec_utils.constants.Env,
+    expected: str,
+):
+    """A prod worker freezes what building the app leaves alive, after collecting.
+
+    The app lives as long as the worker, so full collections need not walk it.
+    Dev workers are replaced on every reload, so they skip both.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        "import reflex as rx\n\nconfig = rx.Config(app_name='frozen_app')\n"
+    )
+    app_dir = tmp_path / "frozen_app"
+    app_dir.mkdir()
+    (app_dir / "__init__.py").touch()
+    (app_dir / "frozen_app.py").write_text(
+        "import weakref\n\n\n"
+        "class Node:\n"
+        "    pass\n\n\n"
+        "built = []\n\n\n"
+        "def app():\n"
+        "    cycle = Node()\n"
+        "    cycle.self = cycle\n"
+        "    built.append(weakref.ref(cycle))\n"
+        "    return Node()\n"
+    )
+    monkeypatch.setenv(environment.REFLEX_ENV_MODE.name, env_mode.value)
+
+    # Without automatic collections, only the factory can free the build's garbage.
+    load_target = (
+        "import gc, importlib, sys\n"
+        "gc.disable()\n"
+        "module, attr = sys.argv[1].split(':')\n"
+        "asgi = getattr(importlib.import_module(module), attr)()\n"
+        "built = importlib.import_module('frozen_app.frozen_app').built\n"
+        "frozen = not any(obj is asgi for obj in gc.get_objects())\n"
+        "print(f'frozen={frozen} garbage_freed={built[0]() is None}')"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", load_target, exec_utils.get_app_instance()],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert result.stdout.splitlines()[-1] == expected
 
 
 def test_get_reload_paths_ignores_missing_exclude_path(

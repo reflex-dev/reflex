@@ -178,7 +178,7 @@ def test_supervise_output_drains_everything_for_a_slow_consumer(
         # A consumer slower than the writer keeps the pipes full at exit.
         for line in output:
             lines.append(line)
-            time.sleep(0.015)
+            time.sleep(0.005)
         proc.wait(timeout=30)
     assert proc.returncode == 0
     assert len(lines) == 200
@@ -221,6 +221,7 @@ from pathlib import Path
 from reflex_base.utils import supervisor
 
 supervisor._DRAIN_WALL_SECONDS = 0.5
+supervisor._DRAIN_RECORD_GRACE_SECONDS = 0.2
 if not supervisor.is_output_supervised():
     sys.exit(supervisor.supervise_output([sys.executable, __file__]))
 writer = subprocess.Popen([
@@ -346,6 +347,7 @@ from reflex_base.utils import supervisor
 
 supervisor._STOP_DEADLINE_SECONDS = 1
 supervisor._DRAIN_WALL_SECONDS = 1
+supervisor._DRAIN_RECORD_GRACE_SECONDS = 0.2
 if not supervisor.is_output_supervised():
     sys.exit(supervisor.supervise_output([sys.executable, __file__]))
 Path("child.pid").write_text(str(os.getpid()))
@@ -562,6 +564,8 @@ import sys
 
 from reflex_base.utils import supervisor
 
+# The descendant never lets the pipe go idle, so the drain ends at its budget.
+supervisor._DRAIN_MAX_SECONDS = 0.5
 if not supervisor.is_output_supervised():
     sys.exit(supervisor.supervise_output([sys.executable, __file__]))
 chatter = subprocess.Popen([
