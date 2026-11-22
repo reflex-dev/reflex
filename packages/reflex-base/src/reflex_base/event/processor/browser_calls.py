@@ -7,7 +7,7 @@ import dataclasses
 import json
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NewType
 
 from reflex_base.utils.exceptions import (
     BrowserDisconnectedError,
@@ -17,6 +17,14 @@ from reflex_base.utils.exceptions import (
 
 if TYPE_CHECKING:
     from reflex_base.event import Event
+
+# The three ids a browser call is addressed by, kept apart so that passing one
+# for another is a type error.
+ClientToken = NewType("ClientToken", str)
+# The page load a tab connected from; a reload gives it a new one.
+PageId = NewType("PageId", str)
+# The random id a call's event carries and its result echoes.
+RequestId = NewType("RequestId", str)
 
 # The ``kind`` of the error the frontend reports for a value JSON cannot carry.
 SERIALIZATION_ERROR_KIND = "serialization"
@@ -36,8 +44,8 @@ class _Tab:
     """The calls awaiting the results of one client token's tab."""
 
     # The page load the calls were sent to: a script stops with its page.
-    page: str
-    rids: set[str] = dataclasses.field(default_factory=set)
+    page: PageId
+    rids: set[RequestId] = dataclasses.field(default_factory=set)
     # Set while the tab is disconnected; fails the calls unless it reconnects.
     grace_timer: asyncio.TimerHandle | None = None
 
@@ -51,14 +59,16 @@ class BrowserCalls:
     which may have been given a new token when it reconnected.
     """
 
-    _futures: dict[str, asyncio.Future[Any]] = dataclasses.field(default_factory=dict)
+    _futures: dict[RequestId, asyncio.Future[Any]] = dataclasses.field(
+        default_factory=dict
+    )
     # Client token -> the calls sent to its tab, failed when it goes away.
-    _tabs: dict[str, _Tab] = dataclasses.field(default_factory=dict)
+    _tabs: dict[ClientToken, _Tab] = dataclasses.field(default_factory=dict)
 
     async def call(
         self,
-        token: str,
-        page: str,
+        token: ClientToken,
+        page: PageId,
         event: Event,
         timeout: float | None,
         emit: Callable[[str, Event], Awaitable[Any]],
@@ -78,7 +88,7 @@ class BrowserCalls:
         Raises:
             TimeoutError: If no result arrives within the timeout.
         """
-        rid = uuid.uuid4().hex
+        rid = RequestId(uuid.uuid4().hex)
         future = self._futures[rid] = asyncio.get_running_loop().create_future()
         tab = self._tabs.get(token)
         if tab is None:
@@ -113,7 +123,7 @@ class BrowserCalls:
                 if tab.grace_timer is not None:
                     tab.grace_timer.cancel()
 
-    def resolve(self, rid: str, outcome: Mapping[str, Any]) -> None:
+    def resolve(self, rid: RequestId, outcome: Mapping[str, Any]) -> None:
         """Settle a call with the outcome the browser reported for it.
 
         An outcome for a call that is no longer waiting (it timed out, or was
@@ -165,7 +175,7 @@ class BrowserCalls:
                 )
             )
 
-    def disconnect(self, token: str, grace_period: float) -> None:
+    def disconnect(self, token: ClientToken, grace_period: float) -> None:
         """Start the grace period of a client's calls after it disconnected.
 
         Its tab may reconnect within it, and its results then still arrive.
@@ -191,7 +201,7 @@ class BrowserCalls:
                 grace_period, self._fail, token, msg
             )
 
-    def connect(self, token: str, page: str) -> None:
+    def connect(self, token: ClientToken, page: PageId) -> None:
         """End the grace period of a client that connected again.
 
         A connect from another page load means the page the calls run in
@@ -220,7 +230,7 @@ class BrowserCalls:
         for future in self._futures.values():
             future.cancel()
 
-    def _fail(self, token: str, message: str) -> None:
+    def _fail(self, token: ClientToken, message: str) -> None:
         """Fail a client's calls with BrowserDisconnectedError.
 
         Args:
@@ -236,4 +246,4 @@ class BrowserCalls:
                 future.set_exception(BrowserDisconnectedError(message))
 
 
-__all__ = ["BrowserCalls"]
+__all__ = ["BrowserCalls", "ClientToken", "PageId", "RequestId"]

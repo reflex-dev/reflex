@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from reflex.istate.manager import StateManager
     from reflex.state import BaseState
     from reflex_base.event import Event
+    from reflex_base.event.processor.browser_calls import ClientToken
     from reflex_base.event.processor.future import EventFuture
 
 
@@ -80,7 +81,9 @@ class EmitEventProtocol(Protocol):
 class CallFrontendProtocol(Protocol):
     """Protocol for the call_frontend function in the event context."""
 
-    async def __call__(self, token: str, event: Event, timeout: float | None) -> Any:
+    async def __call__(
+        self, token: ClientToken, event: Event, timeout: float | None
+    ) -> Any:
         """Run a frontend event in the browser and wait for its result.
 
         Args:

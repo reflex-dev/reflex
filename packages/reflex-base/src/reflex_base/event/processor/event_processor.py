@@ -26,7 +26,7 @@ from reflex_base.event.processor.blocking import (
     EVENT_TASK_PREFIX,
     EventLoopBlockingMonitor,
 )
-from reflex_base.event.processor.browser_calls import BrowserCalls
+from reflex_base.event.processor.browser_calls import BrowserCalls, ClientToken
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
@@ -220,7 +220,7 @@ class EventProcessor:
             emit_event_impl = emit_event
 
             async def call_frontend(
-                token: str, event: Event, timeout: float | None
+                token: ClientToken, event: Event, timeout: float | None
             ) -> Any:
                 """Run a frontend event in the browser and wait for its result.
 
@@ -536,7 +536,9 @@ class EventProcessor:
         Args:
             token: The disconnected client token.
         """
-        self._browser_calls.disconnect(token, self.browser_call_grace_period)
+        self._browser_calls.disconnect(
+            ClientToken(token), self.browser_call_grace_period
+        )
 
     async def enqueue_many(self, token: str, *events: Event) -> Sequence[EventFuture]:
         """Enqueue multiple events to be processed.

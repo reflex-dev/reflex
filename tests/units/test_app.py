@@ -38,6 +38,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
+from reflex_base.event.processor.browser_calls import ClientToken, PageId, RequestId
 from reflex_base.event.processor.event_processor import QueueShutDown
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
@@ -5707,20 +5708,17 @@ def test_page_of_only_for_a_live_socket_on_this_instance(
         instance_id=manager.instance_id, sid="sid1"
     )
     manager.token_to_socket["remote"] = SocketRecord(instance_id="other", sid="sid2")
-    namespace._sid_pages["sid1"] = "p1"
-    assert [namespace._page_of(token) for token in ("local", "remote", "missing")] == [
-        "p1",
-        None,
-        None,
-    ]
+    namespace._sid_pages["sid1"] = PageId("p1")
+    tokens = [ClientToken(token) for token in ("local", "remote", "missing")]
+    assert [namespace._page_of(token) for token in tokens] == ["p1", None, None]
     # A socket that disconnected has no page, before its token is unlinked.
     namespace.on_disconnect("sid1")
-    assert namespace._page_of("local") is None
+    assert namespace._page_of(tokens[0]) is None
 
 
 async def _start_browser_call(
     namespace: EventNamespace, processor: EventProcessor
-) -> tuple[asyncio.Task[Any], str]:
+) -> tuple[asyncio.Task[Any], RequestId]:
     """Start an awaited browser call to token ``tok`` and wait for its event to reach the socket.
 
     Args:
@@ -5738,7 +5736,7 @@ async def _start_browser_call(
     call_frontend = processor._root_context.call_frontend_impl
     assert call_frontend is not None
     task = asyncio.create_task(
-        call_frontend("tok", Event(name="_call_script", payload={}), None)
+        call_frontend(ClientToken("tok"), Event(name="_call_script", payload={}), None)
     )
     await sent.wait()
     (update,) = [call.args[1] for call in emit.await_args_list]

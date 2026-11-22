@@ -9,7 +9,12 @@ from typing import Any, cast
 
 import pytest
 from reflex_base.event import Event
-from reflex_base.event.processor.browser_calls import BrowserCalls
+from reflex_base.event.processor.browser_calls import (
+    BrowserCalls,
+    ClientToken,
+    PageId,
+    RequestId,
+)
 from reflex_base.utils.exceptions import (
     BrowserDisconnectedError,
     BrowserResultSerializationError,
@@ -17,6 +22,10 @@ from reflex_base.utils.exceptions import (
 )
 
 EVENT = Event(name="_call_script", payload={"javascript_code": "1", "callback": None})
+TOKEN = ClientToken("tok")
+OTHER_TOKEN = ClientToken("other")
+P1 = PageId("p1")
+P2 = PageId("p2")
 
 PAGE_REPLACED = (
     "The browser tab reloaded or left the page before the script returned a "
@@ -62,7 +71,7 @@ class Browser:
         self.sent.append((token, event))
         self.received.set()
 
-    async def rid(self) -> str:
+    async def rid(self) -> RequestId:
         """Wait for the first event sent and return its request id.
 
         Returns:
@@ -73,8 +82,8 @@ class Browser:
 
 
 async def _start_call(
-    calls: BrowserCalls, timeout: float | None = None, token: str = "tok"
-) -> tuple[Browser, asyncio.Task[Any], str]:
+    calls: BrowserCalls, timeout: float | None = None, token: ClientToken = TOKEN
+) -> tuple[Browser, asyncio.Task[Any], RequestId]:
     """Start a call to the tab of page ``p1`` and wait for its event to be sent.
 
     Args:
@@ -86,7 +95,7 @@ async def _start_call(
         The browser, the task awaiting the call, and the call's request id.
     """
     browser = Browser()
-    task = asyncio.create_task(calls.call(token, "p1", EVENT, timeout, browser.emit))
+    task = asyncio.create_task(calls.call(token, P1, EVENT, timeout, browser.emit))
     return browser, task, await browser.rid()
 
 
@@ -135,7 +144,7 @@ async def test_a_result_settles_its_call_by_request_id_once():
     """A result for an unknown rid is dropped, and the first result for a call wins."""
     calls = BrowserCalls()
     _, task, rid = await _start_call(calls)
-    calls.resolve("unknown", {"json": "2"})
+    calls.resolve(RequestId("unknown"), {"json": "2"})
     await asyncio.sleep(0)
     assert not task.done()
     calls.resolve(rid, {"json": "3"})
@@ -288,7 +297,7 @@ async def test_call_times_out():
     """A call without a result within its timeout raises TimeoutError and is forgotten."""
     calls = BrowserCalls()
     with pytest.raises(TimeoutError) as exc_info:
-        await calls.call("tok", "p1", EVENT, 0.01, Browser().emit)
+        await calls.call(TOKEN, P1, EVENT, 0.01, Browser().emit)
     assert str(exc_info.value) == (
         "The browser did not return a result for `_call_script` within 0.01 "
         "seconds. If the script needs longer, pass a longer `timeout=` to the "
@@ -304,11 +313,11 @@ async def test_disconnect_fails_every_call_of_the_tab_after_the_grace_period():
     calls = BrowserCalls()
     _, first, _ = await _start_call(calls)
     _, second, _ = await _start_call(calls)
-    _, other_tab, other_rid = await _start_call(calls, token="other")
-    calls.disconnect("tok", 0.01)
+    _, other_tab, other_rid = await _start_call(calls, token=OTHER_TOKEN)
+    calls.disconnect(TOKEN, 0.01)
     failed = (BrowserDisconnectedError, grace_expired(0.01))
     assert [await _raised(first), await _raised(second)] == [failed, failed]
-    assert calls._tabs.keys() == {"other"}
+    assert calls._tabs.keys() == {OTHER_TOKEN}
     calls.resolve(other_rid, {"json": "1"})
     assert await other_tab == 1
     _assert_forgotten(calls)
@@ -320,7 +329,7 @@ async def test_disconnect_without_a_grace_period_fails_the_calls_at_once():
     _, settled, rid = await _start_call(calls)
     _, unsettled, _ = await _start_call(calls)
     calls.resolve(rid, {"json": "7"})
-    calls.disconnect("tok", 0)
+    calls.disconnect(TOKEN, 0)
     assert calls._tabs == {}
     assert await settled == 7
     assert await _raised(unsettled) == (BrowserDisconnectedError, grace_expired(0))
@@ -331,12 +340,12 @@ async def test_a_reconnect_of_the_page_within_the_grace_period_keeps_the_calls()
     """The same page load reconnecting in time still answers its calls."""
     calls = BrowserCalls()
     _, task, rid = await _start_call(calls)
-    calls.disconnect("tok", 0.01)
-    timer = calls._tabs["tok"].grace_timer
-    calls.connect("tok", "p1")
+    calls.disconnect(TOKEN, 0.01)
+    timer = calls._tabs[TOKEN].grace_timer
+    calls.connect(TOKEN, P1)
     assert timer is not None
     assert timer.cancelled()
-    assert calls._tabs["tok"].grace_timer is None
+    assert calls._tabs[TOKEN].grace_timer is None
     await asyncio.sleep(0.02)
     assert not task.done()
     calls.resolve(rid, {"json": "true"})
@@ -348,9 +357,9 @@ async def test_a_connect_from_another_page_load_fails_the_calls_at_once():
     """A reloaded page connecting under the token means the script stopped with the old one."""
     calls = BrowserCalls()
     _, task, _ = await _start_call(calls)
-    calls.disconnect("tok", 5)
-    timer = calls._tabs["tok"].grace_timer
-    calls.connect("tok", "p2")
+    calls.disconnect(TOKEN, 5)
+    timer = calls._tabs[TOKEN].grace_timer
+    calls.connect(TOKEN, P2)
     assert timer is not None
     assert timer.cancelled()
     assert await _raised(task) == (BrowserDisconnectedError, PAGE_REPLACED)
@@ -361,10 +370,10 @@ async def test_a_connect_while_the_tab_is_connected_keeps_its_calls():
     """A connect for a tab that never disconnected, or one without calls, changes nothing."""
     calls = BrowserCalls()
     _, task, rid = await _start_call(calls)
-    calls.connect("tok", "p2")
-    calls.connect("unknown", "p1")
-    calls.disconnect("unknown", 5)
-    assert calls._tabs.keys() == {"tok"}
+    calls.connect(TOKEN, P2)
+    calls.connect(ClientToken("unknown"), P1)
+    calls.disconnect(ClientToken("unknown"), 5)
+    assert calls._tabs.keys() == {TOKEN}
     calls.resolve(rid, {"json": "1"})
     assert await task == 1
     _assert_forgotten(calls)
@@ -374,8 +383,8 @@ async def test_a_call_ending_during_the_grace_period_cancels_its_timer():
     """The last call settling, or its task cancelled, while the tab is away ends the grace period."""
     calls = BrowserCalls()
     _, settled, rid = await _start_call(calls)
-    calls.disconnect("tok", 5)
-    timer = calls._tabs["tok"].grace_timer
+    calls.disconnect(TOKEN, 5)
+    timer = calls._tabs[TOKEN].grace_timer
     calls.resolve(rid, {"json": "1"})
     assert await settled == 1
     assert timer is not None
@@ -383,8 +392,8 @@ async def test_a_call_ending_during_the_grace_period_cancels_its_timer():
     _assert_forgotten(calls)
 
     _, cancelled, _ = await _start_call(calls)
-    calls.disconnect("tok", 5)
-    timer = calls._tabs["tok"].grace_timer
+    calls.disconnect(TOKEN, 5)
+    timer = calls._tabs[TOKEN].grace_timer
     cancelled.cancel()
     with pytest.raises(asyncio.CancelledError):
         await cancelled
@@ -397,9 +406,9 @@ async def test_close_cancels_pending_calls():
     """Shutting the backend down cancels the calls still waiting, and their timers."""
     calls = BrowserCalls()
     _, away, _ = await _start_call(calls)
-    calls.disconnect("tok", 5)
-    timer = calls._tabs["tok"].grace_timer
-    _, connected, _ = await _start_call(calls, token="other")
+    calls.disconnect(TOKEN, 5)
+    timer = calls._tabs[TOKEN].grace_timer
+    _, connected, _ = await _start_call(calls, token=OTHER_TOKEN)
     calls.close()
     for task in (away, connected):
         with pytest.raises(asyncio.CancelledError):
@@ -407,9 +416,6 @@ async def test_close_cancels_pending_calls():
     assert timer is not None
     assert timer.cancelled()
     _assert_forgotten(calls)
-
-
-TOKEN = "tok"
 
 
 class _Timer:
@@ -441,7 +447,7 @@ class _Call:
     """An awaited call whose coroutine is stepped by hand instead of by a task."""
 
     coro: Coroutine[Any, Any, Any]
-    rid: str
+    rid: RequestId
     future: asyncio.Future[Any]
     page: int
     # The _Tab its token had once it started.
@@ -476,7 +482,7 @@ class _Interleaving:
         self.closed = False
         self.started: list[_Call] = []
         # The request id of the last call the tab received.
-        self.rid = ""
+        self.rid = RequestId("")
 
     def actions(self) -> list[tuple[str, int]]:
         """List the events that can happen next.
@@ -562,7 +568,7 @@ class _Interleaving:
         self.rid = event.payload["rid"]
 
     def _call(self, i: int) -> None:
-        coro = self.calls.call(TOKEN, f"p{self.page}", EVENT, None, self._emit)
+        coro = self.calls.call(TOKEN, PageId(f"p{self.page}"), EVENT, None, self._emit)
         future = coro.send(None)
         assert future is self.calls._futures[self.rid]
         self.started.append(
@@ -593,7 +599,7 @@ class _Interleaving:
 
     def _connect(self, i: int) -> None:
         self.socket = "booting"
-        self.calls.connect(TOKEN, f"p{self.page}")
+        self.calls.connect(TOKEN, PageId(f"p{self.page}"))
 
     def _boot(self, i: int) -> None:
         self.socket = "connected"

@@ -32,6 +32,7 @@ from reflex_base.event import (
     _is_bound_event_handler,
 )
 from reflex_base.event.context import EventContext
+from reflex_base.event.processor.browser_calls import ClientToken
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
@@ -625,7 +626,7 @@ async def _await_browser_call(
         raise BrowserDisconnectedError(msg)
     if isinstance(timeout, Unset):
         timeout = get_config().browser_call_timeout
-    return await ctx.call_frontend_impl(ctx.token, event, timeout)
+    return await ctx.call_frontend_impl(ClientToken(ctx.token), event, timeout)
 
 
 async def execute_event_inline(spec: EventSpec) -> Any:

@@ -20,6 +20,7 @@ from pytest_mock import MockerFixture
 from reflex_base import constants, otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import event_processor as processor_module
+from reflex_base.event.processor.browser_calls import ClientToken, RequestId
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
     QueueShutDown,
@@ -2202,7 +2203,7 @@ class _FakeEventNamespace:
         self.updates.append((token, update))
         self.sent.set()
 
-    async def next_rid(self) -> str:
+    async def next_rid(self) -> RequestId:
         """Wait for the next update and return the request id of its event.
 
         Returns:
@@ -2235,7 +2236,7 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
 
     async with processor:
         with pytest.raises(BrowserDisconnectedError) as exc_info:
-            await call_frontend("gone", event, 1)
+            await call_frontend(ClientToken("gone"), event, 1)
         assert str(exc_info.value) == (
             "`_call_script` cannot run in the browser tab: the tab is not "
             "connected to this backend worker, because it was closed, is "
@@ -2244,7 +2245,8 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
             "backend workers, route each tab to one worker (sticky sessions)."
         )
 
-        answered = asyncio.create_task(call_frontend("tok", event, 1))
+        token = ClientToken("tok")
+        answered = asyncio.create_task(call_frontend(token, event, 1))
         rid = await namespace.next_rid()
         assert [(token, update.events) for token, update in namespace.updates] == [
             ("tok", [dataclasses.replace(event, payload={**event.payload, "rid": rid})])
@@ -2252,14 +2254,14 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
         processor._browser_calls.resolve(rid, {"json": "[1]"})
         assert await answered == [1]
 
-        abandoned = asyncio.create_task(call_frontend("tok", event, 1))
+        abandoned = asyncio.create_task(call_frontend(token, event, 1))
         await namespace.next_rid()
         processor._on_disconnect("tok")
         with pytest.raises(BrowserDisconnectedError) as exc_info:
             await abandoned
         assert str(exc_info.value) == grace_expired(0.01)
 
-        pending = asyncio.create_task(call_frontend("tok", event, None))
+        pending = asyncio.create_task(call_frontend(token, event, None))
         await namespace.next_rid()
     with pytest.raises(asyncio.CancelledError):
         await pending

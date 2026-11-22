@@ -52,7 +52,12 @@ from reflex_base.event import (
 )
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
-from reflex_base.event.processor.browser_calls import RID_KEY
+from reflex_base.event.processor.browser_calls import (
+    RID_KEY,
+    ClientToken,
+    PageId,
+    RequestId,
+)
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
@@ -2686,7 +2691,7 @@ class EventNamespace(AsyncNamespace):
 
         # The page load each SID connected from, dropped as soon as the socket
         # disconnects: a script a backend task awaits stops with its page.
-        self._sid_pages: dict[str, str] = {}
+        self._sid_pages: dict[str, PageId] = {}
 
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
@@ -2734,11 +2739,11 @@ class EventNamespace(AsyncNamespace):
             # Make sure this instance is watching for updates from other instances.
             await self._token_manager.ensure_lost_and_found_subscribed(self.emit_update)
         boot_event = frontend_schema = None
-        page = ""
+        page = PageId("")
         if isinstance(auth, dict):
             boot_event = auth.get(constants.CompileVars.CONNECT_AUTH_EVENT)
             frontend_schema = auth.get(constants.CompileVars.CONNECT_AUTH_STATE_SCHEMA)
-            page = auth.get(constants.CompileVars.CONNECT_AUTH_PAGE, "")
+            page = PageId(auth.get(constants.CompileVars.CONNECT_AUTH_PAGE, ""))
         # A frontend compiled for another state tree is told so before it
         # hydrates; an older frontend sends no hash and is left alone. The
         # backend hash is cached on the state class, so this is one lookup.
@@ -2777,7 +2782,7 @@ class EventNamespace(AsyncNamespace):
                 and (processor := self.app._event_processor) is not None
             ):
                 # The tab's browser calls survive a reconnect of their page.
-                processor._browser_calls.connect(token_list[0], page)
+                processor._browser_calls.connect(ClientToken(token_list[0]), page)
         else:
             logger.warning(f"No token provided in connection for session {sid}")
 
@@ -2819,7 +2824,7 @@ class EventNamespace(AsyncNamespace):
             # may have started more: they wait for the tab again, as after a
             # disconnect.
             processor._browser_calls.disconnect(
-                token, processor.browser_call_grace_period
+                ClientToken(token), processor.browser_call_grace_period
             )
         await self._token_manager.disconnect_token(token, sid)
 
@@ -2904,7 +2909,7 @@ class EventNamespace(AsyncNamespace):
             return task
         return None
 
-    def _page_of(self, token: str) -> str | None:
+    def _page_of(self, token: ClientToken) -> PageId | None:
         """Get the page load of a client's tab, while it is connected to this worker.
 
         Args:
@@ -3168,7 +3173,7 @@ class EventNamespace(AsyncNamespace):
         if not isinstance(data, dict) or not isinstance(rid := data.get(RID_KEY), str):
             logger.debug(f"Ignoring malformed result payload from SID {sid}.")
             return
-        self.app.event_processor._browser_calls.resolve(rid, data)
+        self.app.event_processor._browser_calls.resolve(RequestId(rid), data)
 
     async def link_token_to_sid(
         self, sid: str, token: str, *, update_state: bool = True
