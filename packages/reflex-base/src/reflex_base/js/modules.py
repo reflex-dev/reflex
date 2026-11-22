@@ -7,6 +7,10 @@ name: the compiler copies the module into ``.web`` and ``utils/scripts.js``
 loads it by its Python module name, so only the module name, the function name
 and the JSON arguments are sent, and nothing is evaluated.
 
+The compiler finds the modules in ``sys.modules``, not in the registration
+context: Python runs a module once per process, so an app compiled again in a
+new context, as ``AppHarness`` does, imports none of them anew.
+
 Internal: what an app relies on is the import itself and the events the
 imported functions return, which ``docs/api-reference/browser_javascript.md``
 documents.
@@ -17,17 +21,20 @@ from __future__ import annotations
 import dataclasses
 import functools
 import inspect
+import sys
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
 from reflex_base.event import EventHandler, EventSpec, server_side
-from reflex_base.registry import RegistrationContext
+from reflex_base.js.finder import _app_package
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.utils.format import format_event_handler
 
 # The name of the frontend event that calls a function of a module.
 _CALL_JS = "_call_js"
+# The attribute of a JavaScript module that holds what the compiler reads of it.
+_SCRIPT_MODULE = "__reflex_script_module__"
 
 # Specifiers, other than relative paths, that do not name an npm package:
 # absolute paths, the app's own modules (`$/`), subpath imports (`#`) and a
@@ -205,7 +212,25 @@ def _load_module(module: ModuleType, path: Path) -> None:
         path: The JavaScript file.
     """
     script = _ScriptModule(path)
-    RegistrationContext.ensure_context()._script_modules[module.__name__] = script
+    setattr(module, _SCRIPT_MODULE, script)
     setattr(  # noqa: B010
         module, "__getattr__", functools.partial(_get_function, module, script.names)
+    )
+
+
+def _app_modules() -> dict[str, _ScriptModule]:
+    """Get the JavaScript modules of the app's package that are imported.
+
+    Returns:
+        The modules, by name, in the order of their names.
+    """
+    prefix = _app_package() + "."
+    return dict(
+        sorted(
+            (name, script)
+            # A copy: another thread may import while this one reads.
+            for name, module in tuple(sys.modules.items())
+            if name.startswith(prefix)
+            and (script := getattr(module, _SCRIPT_MODULE, None)) is not None
+        )
     )

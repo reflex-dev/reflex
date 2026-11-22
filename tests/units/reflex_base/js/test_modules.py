@@ -4,8 +4,7 @@ import importlib
 from pathlib import Path
 
 import pytest
-from reflex_base.js.modules import _JsFunction, _package_imports
-from reflex_base.registry import RegistrationContext
+from reflex_base.js.modules import _app_modules, _JsFunction, _package_imports
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import LiteralVar, Var
 
@@ -121,14 +120,11 @@ def test_a_function_is_an_event_trigger(app_package: Path):
     )
 
 
-def test_names_become_functions_on_first_use(
-    app_package: Path, clean_registration_context: RegistrationContext
-):
+def test_names_become_functions_on_first_use(app_package: Path):
     """Any identifier is a function, recorded for the compiler and cached.
 
     Args:
         app_package: the app package, on sys.path.
-        clean_registration_context: the registry the import fills.
     """
     party = importlib.import_module("js_app.party")
     from js_app.party import celebrate  # pyright: ignore[reportMissingImports]
@@ -136,7 +132,7 @@ def test_names_become_functions_on_first_use(
     assert celebrate == _JsFunction("js_app.party", "celebrate")
     assert party.__dict__["celebrate"] is celebrate
     assert party._private == _JsFunction("js_app.party", "_private")
-    assert clean_registration_context._script_modules["js_app.party"].names == {
+    assert _app_modules()["js_app.party"].names == {
         "celebrate",
         "_private",
     }

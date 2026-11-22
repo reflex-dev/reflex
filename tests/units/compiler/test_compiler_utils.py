@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import os
 import shutil
 import sys
-from collections.abc import Mapping
+from collections.abc import Generator, Mapping
 from copy import deepcopy
 from pathlib import Path
+from types import ModuleType
 from typing import Annotated, Any, Literal, TypedDict
 
 import pytest
 from reflex_base import constants
 from reflex_base.components.memo import create_passthrough_component_memo
-from reflex_base.js.modules import _ScriptModule
+from reflex_base.js.modules import _app_modules, _load_module, _ScriptModule
 from reflex_base.js.stubs import _TYPESCRIPT_PACKAGE, _module_digest
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
@@ -820,19 +822,21 @@ def script_app(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     clean_registration_context: RegistrationContext,
-) -> tuple[Path, dict, list[list[Path]]]:
+) -> Generator[tuple[Path, dict, list[list[Path]]], None, None]:
     """An app package that imports JavaScript modules, read by a stand-in script.
 
     Args:
         tmp_path: pytest tmp_path fixture.
         monkeypatch: pytest monkeypatch fixture.
-        clean_registration_context: a fresh registry of imported modules.
+        clean_registration_context: a fresh registry for the app's config.
 
-    Returns:
+    Yields:
         The package's directory, the output of the stand-in, which the test
         fills, and the paths each of its runs read.
     """
+    clean_registration_context._set_config(rx.Config(app_name="app"))
     monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path / ".web")
+    monkeypatch.syspath_prepend(str(tmp_path))
     report: dict = {}
     runs: list[list[Path]] = []
 
@@ -841,7 +845,27 @@ def script_app(
         return report
 
     monkeypatch.setattr(utils, "_read_script_modules", read_script_modules)
-    return tmp_path.resolve() / "app", report, runs
+    yield tmp_path.resolve() / "app", report, runs
+    for name in [n for n in sys.modules if n.partition(".")[0] == "app"]:
+        del sys.modules[name]
+
+
+def _import_script_module(
+    monkeypatch: pytest.MonkeyPatch, name: str, path: Path, names: set[str]
+) -> None:
+    """Put a JavaScript module in sys.modules, as importing it does.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture, which removes it afterwards.
+        name: The module's name.
+        path: Its file.
+        names: The names Python uses from it.
+    """
+    module = ModuleType(name)
+    _load_module(module, path)
+    for function in names:
+        getattr(module, function)
+    monkeypatch.setitem(sys.modules, name, module)
 
 
 def _script_exports(
@@ -872,7 +896,6 @@ def _script_exports(
 @pytest.mark.parametrize("prod", [False, True])
 def test_compile_script_modules(
     script_app: tuple[Path, dict, list[list[Path]]],
-    clean_registration_context: RegistrationContext,
     monkeypatch: pytest.MonkeyPatch,
     prod: bool,
 ):
@@ -883,7 +906,6 @@ def test_compile_script_modules(
 
     Args:
         script_app: the app package, the stand-in script's output and its runs.
-        clean_registration_context: a fresh registry of imported modules.
         monkeypatch: pytest monkeypatch fixture.
         prod: whether to compile in production mode.
     """
@@ -897,11 +919,11 @@ def test_compile_script_modules(
     typed = package / "typed.ts"
     # Only importlib can import a module whose name is not an identifier.
     widget = package / 'my-"widget".js'
-    clean_registration_context._script_modules.update({
-        "app.typed": _ScriptModule(typed, {"typed", "fromStar"}),
-        "app.scripts.party": _ScriptModule(party, {"celebrate"}),
-        'app.my-"widget"': _ScriptModule(widget, {"show"}),
-    })
+    _import_script_module(monkeypatch, "app.typed", typed, {"typed", "fromStar"})
+    _import_script_module(monkeypatch, "app.scripts.party", party, {"celebrate"})
+    _import_script_module(monkeypatch, 'app.my-"widget"', widget, {"show"})
+    # Another app's module, imported earlier in the process, is left out.
+    _import_script_module(monkeypatch, "other.party", party, {"celebrate"})
     report.update({
         "modules": {
             str(party): _script_exports([party, helpers, css], ["celebrate"]),
@@ -918,7 +940,9 @@ def test_compile_script_modules(
         "errors": [],
     })
 
-    outputs, package_imports, copies, modules = utils.compile_script_modules()
+    outputs, package_imports, copies, modules = utils.compile_script_modules(
+        _app_modules()
+    )
 
     assert runs == [[widget, party, typed]]
     modules_dir = web_dir / "utils" / "script_modules" / "app"
@@ -1016,7 +1040,7 @@ def test_compile_script_modules(
 )
 def test_compile_script_modules_errors(
     script_app: tuple[Path, dict, list[list[Path]]],
-    clean_registration_context: RegistrationContext,
+    monkeypatch: pytest.MonkeyPatch,
     names: set[str],
     files: list[str],
     functions: list[str],
@@ -1027,7 +1051,7 @@ def test_compile_script_modules_errors(
 
     Args:
         script_app: the app package, the stand-in script's output and its runs.
-        clean_registration_context: a fresh registry of imported modules.
+        monkeypatch: pytest monkeypatch fixture.
         names: the names Python uses.
         files: the files the module reaches, from the project's directory.
         functions: the module's functions.
@@ -1038,9 +1062,7 @@ def test_compile_script_modules_errors(
     package, report, _ = script_app
     project = str(package.parent)
     party = package / "scripts" / "party.js"
-    clean_registration_context._script_modules["app.scripts.party"] = _ScriptModule(
-        party, names
-    )
+    _import_script_module(monkeypatch, "app.scripts.party", party, names)
     report.update({
         "modules": {
             str(party): _script_exports(
@@ -1054,8 +1076,75 @@ def test_compile_script_modules_errors(
         ],
     })
     with pytest.raises(ReflexRuntimeError) as error:
-        utils.compile_script_modules()
+        utils.compile_script_modules(_app_modules())
     assert str(error.value) == message.replace("{project}", project)
+
+
+def test_compile_script_modules_rejects_a_module_linked_from_outside(
+    script_app: tuple[Path, dict, list[list[Path]]],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A module that is a link to a file outside the package is outside it.
+
+    Args:
+        script_app: the app package, the stand-in script's output and its runs.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    package, report, _ = script_app
+    shared = package.parent / "shared" / "vendor.js"
+    shared.parent.mkdir()
+    shared.write_text("export function shout() {}\n")
+    vendor = package / "scripts" / "vendor.js"
+    vendor.parent.mkdir(parents=True)
+    vendor.symlink_to(shared)
+    _import_script_module(monkeypatch, "app.scripts.vendor", vendor, {"shout"})
+    report.update({
+        "modules": {str(shared): _script_exports([shared], ["shout"])},
+        "imports": {str(shared): []},
+        "errors": [],
+    })
+    with pytest.raises(ReflexRuntimeError) as error:
+        utils.compile_script_modules(_app_modules())
+    assert str(error.value) == (
+        f"The JavaScript module app.scripts.vendor links to {shared}, which is "
+        f"outside {package}, the directory of the app's package, and only that "
+        "directory is copied into the compiled app. Move the file into it, or "
+        "publish it as an npm package and import it by name."
+    )
+
+
+def test_compile_script_modules_reads_a_module_imported_in_another_context(
+    script_app: tuple[Path, dict, list[list[Path]]],
+):
+    """A module imported once compiles, with its names, into every later compile.
+
+    Python runs a module once per process, so compiling the app again in a new
+    registration context, as AppHarness does for each app, imports nothing anew.
+
+    Args:
+        script_app: the app package, the stand-in script's output and its runs.
+    """
+    package, report, runs = script_app
+    package.mkdir()
+    (package / "__init__.py").write_text("")
+    party = package / "party.js"
+    party.write_text("export function launch() {}\n")
+    importlib.import_module("app.party").celebrate
+    report.update({
+        "modules": {str(party): _script_exports([party], ["launch"])},
+        "imports": {str(party): []},
+        "errors": [],
+    })
+    with RegistrationContext() as context:
+        context._set_config(rx.Config(app_name="app"))
+        with pytest.raises(ReflexRuntimeError) as error:
+            utils.compile_script_modules(_app_modules())
+    assert runs == [[party]]
+    assert str(error.value) == (
+        "`celebrate` is used from app.party, but app/party.js exports no function "
+        "named celebrate (its functions: launch). Export it from app/party.js, as "
+        "in `export function celebrate() { ... }`, or correct the name in Python."
+    )
 
 
 def test_compile_script_modules_without_modules(
@@ -1067,7 +1156,7 @@ def test_compile_script_modules_without_modules(
         script_app: the app package, the stand-in script's output and its runs.
     """
     _, _, runs = script_app
-    assert utils.compile_script_modules() == (
+    assert utils.compile_script_modules({}) == (
         [(str(utils.get_web_dir() / "utils" / "scripts.js"), "export default {};\n")],
         {},
         [],
@@ -1076,7 +1165,42 @@ def test_compile_script_modules_without_modules(
     assert runs == []
 
 
-@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+# The reflex-frontend package, whose src/ is the web template in a checkout.
+FRONTEND_PACKAGE = constants.Templates.Dirs.WEB_TEMPLATE.parent
+
+
+def _require_node(*, packages: bool = False) -> None:
+    """Skip a test that runs Node.js, or the frontend's scripts, without them.
+
+    CI installs both and sets REFLEX_TEST_REQUIRE_FRONTEND, so that a missing
+    one fails the test there instead.
+
+    Args:
+        packages: Whether the test also needs the frontend package's
+            dependencies, which ``npm --prefix packages/reflex-frontend ci``
+            installs.
+    """
+    node_modules = FRONTEND_PACKAGE / "node_modules"
+    if shutil.which("node") and (not packages or (node_modules / "vite").is_dir()):
+        return
+    message = "Node.js is unavailable" + (
+        f", or {node_modules} is not installed" if packages else ""
+    )
+    if os.environ.get("REFLEX_TEST_REQUIRE_FRONTEND"):
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+def _write_stand_in(web_dir: Path, output: str) -> None:
+    """Write a stand-in for script-modules.js that prints the given output.
+
+    Args:
+        web_dir: The web directory.
+        output: The JavaScript expression whose value it prints.
+    """
+    (web_dir / "script-modules.js").write_text(f"process.stdout.write({output});\n")
+
+
 def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """The script runs in .web on the modules, and its failure says how to recover.
 
@@ -1084,18 +1208,23 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         tmp_path: pytest tmp_path fixture.
         monkeypatch: pytest monkeypatch fixture.
     """
+    _require_node()
     web_dir = tmp_path.resolve()
     monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
-    script = web_dir / "script-modules.js"
-    script.write_text(
-        "process.stdout.write(JSON.stringify({\n"
-        "  cwd: process.cwd(), modules: process.argv.slice(2) }));\n"
+    _write_stand_in(
+        web_dir,
+        "JSON.stringify({ format: 1, modules: {}, errors: [],\n"
+        "  imports: { [process.cwd()]: process.argv.slice(2) } })",
     )
     assert utils._read_script_modules([Path("/app/a.js"), Path("/app/b.ts")]) == {
-        "cwd": str(web_dir),
-        "modules": ["/app/a.js", "/app/b.ts"],
+        "format": 1,
+        "modules": {},
+        "imports": {str(web_dir): ["/app/a.js", "/app/b.ts"]},
+        "errors": [],
     }
-    script.write_text('process.stderr.write("Error: boom\\n"); process.exit(3);\n')
+    (web_dir / "script-modules.js").write_text(
+        'process.stderr.write("Error: boom\\n"); process.exit(3);\n'
+    )
     with pytest.raises(ReflexRuntimeError) as error:
         utils._read_script_modules([Path("/app/a.js")])
     assert str(error.value) == (
@@ -1105,6 +1234,91 @@ def test_read_script_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "frontend packages, or report the error at "
         "https://github.com/reflex-dev/reflex/issues:\nError: boom"
     )
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        # Not JSON.
+        '"Debugger attached."',
+        # The output of another version of the script.
+        "JSON.stringify({ modules: {}, imports: {}, errors: [] })",
+        "JSON.stringify({ format: 2, modules: {}, imports: {}, errors: [] })",
+        # The right version, of another shape.
+        "JSON.stringify({ format: 1, modules: {}, imports: {} })",
+        (
+            "JSON.stringify({ format: 1, imports: {}, errors: [], modules: {\n"
+            '  "/app/a.js": { files: [1], functions: [], values: [],\n'
+            "    exportsAll: false } } })"
+        ),
+        (
+            "JSON.stringify({ format: 1, modules: {}, imports: {}, errors: [\n"
+            '  { file: "/app/a.js", line: "3", column: 1, message: "" }] })'
+        ),
+    ],
+    ids=[
+        "not-json",
+        "no-format",
+        "format-2",
+        "no-errors",
+        "file-not-a-string",
+        "line-not-a-number",
+    ],
+)
+def test_read_script_modules_rejects_output_of_another_shape(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, output: str
+):
+    """Output of another shape, as a script left in .web by another version prints, fails clearly.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+        output: the JavaScript expression the stand-in prints.
+    """
+    _require_node()
+    web_dir = tmp_path.resolve()
+    monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
+    _write_stand_in(web_dir, output)
+    with pytest.raises(ReflexRuntimeError) as error:
+        utils._read_script_modules([Path("/app/a.js")])
+    assert str(error.value) == (
+        f"{web_dir / 'script-modules.js'} printed output that this version of "
+        "Reflex does not read, so it is likely left over from another version. "
+        f"Delete {web_dir} so that the next run writes it again."
+    )
+
+
+def test_read_script_modules_contract(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """What the real script-modules.js prints is what the compiler reads.
+
+    Args:
+        tmp_path: pytest tmp_path fixture.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    _require_node(packages=True)
+    # The script finds the bundler's parser from its directory, as in .web.
+    monkeypatch.setattr(
+        utils, "get_web_dir", lambda: constants.Templates.Dirs.WEB_TEMPLATE
+    )
+    fixtures = (FRONTEND_PACKAGE / "tests" / "fixtures" / "script_modules").resolve()
+    broken = tmp_path.resolve() / "broken.mjs"
+    broken.write_text("export const = 1;\n")
+    counter, helpers, format_ = (
+        fixtures / "counter.tsx",
+        fixtures / "helpers.ts",
+        fixtures / "lib" / "format.ts",
+    )
+    report = utils._read_script_modules([fixtures / "party.ts", counter, broken])
+    assert report["modules"][str(counter)] == {
+        "files": [str(counter), str(helpers), str(format_)],
+        "functions": ["Counter"],
+        "values": [],
+        "exportsAll": False,
+    }
+    assert report["imports"][str(counter)] == []
+    assert report["errors"] == [
+        {"file": str(broken), "line": 1, "column": 14, "message": "Unexpected token"}
+    ]
 
 
 @pytest.fixture
@@ -1339,7 +1553,6 @@ FRONTEND_PACKAGES = constants.Templates.Dirs.WEB_TEMPLATE.parent / "node_modules
 def test_compile_script_stubs_with_the_real_scripts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    clean_registration_context: RegistrationContext,
 ):
     """A TypeScript and a JSDoc module are read by the scripts Reflex runs, through to their stubs.
 
@@ -1349,7 +1562,6 @@ def test_compile_script_stubs_with_the_real_scripts(
     Args:
         tmp_path: pytest tmp_path fixture.
         monkeypatch: pytest monkeypatch fixture.
-        clean_registration_context: a fresh registry of imported modules.
     """
     web_dir = tmp_path / ".web"
     web_dir.mkdir()
@@ -1372,12 +1584,10 @@ def test_compile_script_stubs_with_the_real_scripts(
         '/** @param {import("./shapes").Shape} shape @param {string} id */\n'
         "export function place(shape, id) {}\n"
     )
-    clean_registration_context._script_modules.update({
+    _, _, copies, modules = utils.compile_script_modules({
         "app.draw": _ScriptModule(draw, {"draw"}),
         "app.party": _ScriptModule(party, {"place"}),
     })
-
-    _, _, copies, modules = utils.compile_script_modules()
 
     modules_dir = web_dir / "utils" / "script_modules" / "app"
     assert copies == [

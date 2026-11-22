@@ -16,7 +16,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import MISSING
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
@@ -33,7 +33,7 @@ from reflex_base.components.memo import (
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.js.modules import _package_imports
+from reflex_base.js.modules import _package_imports, _ScriptModule
 from reflex_base.js.stubs import (
     _SIGNATURES_SCRIPT,
     _TYPESCRIPT_PACKAGE,
@@ -342,6 +342,8 @@ class _ScriptSyntaxError(TypedDict):
 class _ScriptModulesReport(TypedDict):
     """What ``script-modules.js`` prints."""
 
+    # The version of this shape, which the script changes with it.
+    format: Literal[1]
     modules: dict[str, _ScriptExports]
     # Per script, the specifiers it imports that are not relative paths.
     imports: dict[str, list[str]]
@@ -383,7 +385,8 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
         syntax error of each file.
 
     Raises:
-        ReflexRuntimeError: If the script fails.
+        ReflexRuntimeError: If the script fails, or prints output of another
+            shape, as one that another Reflex version left in ``.web`` can.
     """
     process = _run_web_script(_SCRIPT_MODULES_SCRIPT, paths)
     if process.returncode:
@@ -396,7 +399,20 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
             f"{process.stderr.strip()}"
         )
         raise ReflexRuntimeError(msg)
-    return json.loads(process.stdout)
+    try:
+        report = json.loads(process.stdout)
+    except ValueError:
+        report = None
+    # Six levels reach the strings in the lists of each module's exports.
+    if not types._isinstance(report, _ScriptModulesReport, nested=6):
+        web_dir = get_web_dir()
+        msg = (
+            f"{web_dir / _SCRIPT_MODULES_SCRIPT} printed output that this version "
+            "of Reflex does not read, so it is likely left over from another "
+            f"version. Delete {web_dir} so that the next run writes it again."
+        )
+        raise ReflexRuntimeError(msg)
+    return cast("_ScriptModulesReport", report)
 
 
 def _check_script_names(
@@ -444,8 +460,8 @@ def _copy_targets(
 
     Args:
         module: The module's Python name.
-        files: The module and the local files it reaches.
-        package_dir: The directory of the app's package.
+        files: The module and the local files it reaches, by real path.
+        package_dir: The real path of the directory of the app's package.
         modules_dir: The directory the files are copied to.
 
     Returns:
@@ -455,10 +471,12 @@ def _copy_targets(
         ReflexRuntimeError: If a file is outside the package's directory.
     """
     targets: dict[Path, Path] = {}
-    for file in map(Path, files):
+    for index, file in enumerate(map(Path, files)):
         if not file.is_relative_to(package_dir):
+            # The module itself is outside only through a link.
+            relation = "imports" if index else "links to"
             msg = (
-                f"The JavaScript module {module} imports {file}, which is "
+                f"The JavaScript module {module} {relation} {file}, which is "
                 f"outside {package_dir}, the directory of the app's package, "
                 "and only that directory is copied into the compiled app. "
                 "Move the file into it, or publish it as an npm package "
@@ -469,7 +487,9 @@ def _copy_targets(
     return targets
 
 
-def compile_script_modules() -> tuple[
+def compile_script_modules(
+    modules: Mapping[str, _ScriptModule],
+) -> tuple[
     list[tuple[str, str]],
     dict[str, list[ImportVar]],
     list[tuple[Path, Path]],
@@ -482,6 +502,9 @@ def compile_script_modules() -> tuple[
     ``utils/script_modules``, and ``utils/scripts.js`` maps each module's
     Python name to a function that loads it. An app that imports none runs
     nothing.
+
+    Args:
+        modules: The modules, by name.
 
     Returns:
         The (path, code) outputs; the npm packages to install, which are those
@@ -496,15 +519,10 @@ def compile_script_modules() -> tuple[
     """
     web_dir = get_web_dir()
     index = str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS))
-    script_modules = {
-        name: (module.names, module.path.resolve())
-        for name, module in sorted(
-            RegistrationContext.ensure_context()._script_modules.items()
-        )
-    }
-    if not script_modules:
+    if not modules:
         return [(index, "export default {};\n")], {}, [], {}
-    report = _read_script_modules([path for _, path in script_modules.values()])
+    paths = {name: module.path.resolve() for name, module in modules.items()}
+    report = _read_script_modules(list(paths.values()))
     if report["errors"]:
         error = report["errors"][0]
         msg = (
@@ -514,15 +532,19 @@ def compile_script_modules() -> tuple[
         )
         raise ReflexRuntimeError(msg)
     modules_dir = web_dir / constants.Dirs.SCRIPT_MODULES_PATH
-    modules: dict[Path, _ScriptExports] = {}
+    read: dict[Path, _ScriptExports] = {}
     copies: dict[Path, Path] = {}
     loaders = ""
-    for name, (names, path) in script_modules.items():
+    for name, module in modules.items():
+        path = paths[name]
         exports = report["modules"][str(path)]
-        package_dir = path.parents[name.count(".") - 1]
-        _check_script_names(name, names, exports, path.relative_to(package_dir.parent))
+        # From the path Python imports, which a link does not move out of it.
+        package_dir = module.path.parents[name.count(".") - 1].resolve()
         copies.update(_copy_targets(name, exports["files"], package_dir, modules_dir))
-        modules[path] = exports
+        _check_script_names(
+            name, module.names, exports, path.relative_to(package_dir.parent)
+        )
+        read[module.path] = exports
         specifier = json.dumps(f"$/{copies[path].relative_to(web_dir).as_posix()}")
         loaders += f"  {json.dumps(name)}: () => import({specifier}),\n"
     package_imports = {
@@ -533,7 +555,7 @@ def compile_script_modules() -> tuple[
     if not is_prod_mode():
         package_imports[_TYPESCRIPT_PACKAGE] = [ImportVar(tag=None, render=False)]
     outputs = [(index, f"export default {{\n{loaders}}};\n")]
-    return outputs, package_imports, list(copies.items()), modules
+    return outputs, package_imports, list(copies.items()), read
 
 
 def copy_files(copies: Iterable[tuple[Path, Path]]) -> None:
@@ -610,7 +632,7 @@ def compile_script_stubs(
     imports is removed.
 
     Args:
-        modules: What was read of each module, by its file, from
+        modules: What was read of each module, by the file Python imports, from
             ``compile_script_modules``.
 
     Returns:
@@ -635,14 +657,18 @@ def compile_script_stubs(
 
     def digest(path: Path) -> str:
         files = [*modules[path]["files"], *type_files[str(path)]]
-        return _module_digest(path, files, dependencies)
+        return _module_digest(Path(files[0]), files, dependencies)
 
     stale = [
         path
         for path in modules
         if _read_header(path.with_suffix(".pyi")) != _stub_header(path, digest(path))
     ]
-    signatures = _read_script_signatures(stale) if stale else None
+    # Each module's types are read from its real path, the first of its files.
+    real = {path: modules[path]["files"][0] for path in stale}
+    signatures = (
+        _read_script_signatures(list(map(Path, real.values()))) if stale else None
+    )
     stubs: list[tuple[str, str]] = []
     for path in stale:
         functions = modules[path]["functions"]
@@ -652,7 +678,7 @@ def compile_script_stubs(
         else:
             type_files[str(path)] = signatures["files"]
             stub = _render_stub(
-                path, digest(path), functions, signatures["modules"][str(path)]
+                path, digest(path), functions, signatures["modules"][real[path]]
             )
         stubs.append((str(path.with_suffix(".pyi")), stub))
     return [(str(record), json.dumps(type_files)), *stubs]

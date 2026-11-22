@@ -2422,7 +2422,6 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     mocker: MockerFixture,
-    clean_registration_context: RegistrationContext,
     imports_modules: bool,
     vite_installed: bool,
     first_install: bool,
@@ -2437,7 +2436,6 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
         tmp_path: The web directory.
         monkeypatch: Fixture for selecting the mode.
         mocker: Fixture for recording the install, the read and the copies.
-        clean_registration_context: The registry of imported modules.
         imports_modules: Whether the app imports a JavaScript module.
         vite_installed: Whether the web directory has vite.
         first_install: Whether the packages install before the read.
@@ -2448,22 +2446,22 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
     mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=tmp_path)
     if vite_installed:
         (tmp_path / "node_modules" / "vite").mkdir(parents=True)
-    if imports_modules:
-        clean_registration_context._script_modules["app.party"] = _ScriptModule(
-            tmp_path / "party.js"
-        )
+    modules = (
+        {"app.party": _ScriptModule(tmp_path / "party.js")} if imports_modules else {}
+    )
+    mocker.patch("reflex.compiler.compiler._app_modules", return_value=modules)
     calls = []
     app = rx.App(enable_state=False)
     mocker.patch.object(app, "_get_frontend_packages", side_effect=calls.append)
     outputs = [("utils/scripts.js", "export default {};\n")]
     copies = [(tmp_path / "party.js", tmp_path / "out" / "party.js")]
     script_imports = {"canvas-confetti": [ImportVar(tag=None, render=False)]}
-    modules = {tmp_path / "party.js": {"files": [str(tmp_path / "party.js")]}}
+    read = {tmp_path / "party.js": {"files": [str(tmp_path / "party.js")]}}
     stubs = [(str(tmp_path / "party.pyi"), "# stub\n")]
 
-    def compile_script_modules():
-        calls.append("read")
-        return list(outputs), script_imports, copies, modules
+    def compile_script_modules(script_modules: dict[str, _ScriptModule]):
+        calls.append(("read", script_modules))
+        return list(outputs), script_imports, copies, read
 
     def compile_script_stubs(read):
         calls.append(("stubs", read))
@@ -2483,8 +2481,8 @@ def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
     )
     assert calls == [
         *([imports] if first_install else []),
-        "read",
+        ("read", modules),
         ("copy", copies),
         {**imports, **script_imports},
-        *([] if prod else [("stubs", modules)]),
+        *([] if prod else [("stubs", read)]),
     ]

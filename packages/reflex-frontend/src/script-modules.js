@@ -6,6 +6,8 @@
  * Run from the app's .web directory, where vite is installed. Prints:
  *
  *   {
+ *     "format": 1,                 the version of this shape, which the
+ *                                  compiler checks: change it with the shape
  *     "modules": {"<module>": {
  *       "files": [file, ...],      the module and every local file it reaches
  *       "functions": [name, ...],  exports Python can call
@@ -54,8 +56,10 @@ const WRAPPER_TYPES = new Set([
   "TSSatisfiesExpression",
 ]);
 const CSS_COMMENT = /\/\*[\s\S]*?\*\//g;
+// The path of an `@import` or a `url()`, quoted or bare, and each quoted path
+// of an `image-set()`. A quoted path may hold spaces.
 const CSS_REFERENCE =
-  /@import\s+(?:url\(\s*)?["']?([^"')\s;]+)|url\(\s*["']?([^"')\s]+)["']?\s*\)/g;
+  /(?:@import\s+(?:url\(\s*)?|url\(\s*|(?<=image-set\([^)]*))(?:"([^"]*)"|'([^']*)')|(?:@import\s+(?:url\(\s*)?|url\(\s*)([^"'\s);]+)/g;
 
 /**
  * Remove the query and fragment of a path, as in Vite's `./logo.png?url`.
@@ -231,7 +235,7 @@ const readStylesheet = (file) => ({
       .replace(CSS_COMMENT, "")
       .matchAll(CSS_REFERENCE),
   ]
-    .map((match) => match[1] ?? match[2])
+    .map((match) => match[1] ?? match[2] ?? match[3])
     .filter((reference) => !/^(?:[/#]|data:)|:\/\//.test(reference))
     .map((reference) => resolve(dirname(file), stripQuery(reference)))
     .filter(isFile)
@@ -278,4 +282,4 @@ for (const [file, { imports: specifiers, error }] of files) {
   if (specifiers) imports[file] = specifiers;
   if (error) errors.push(error);
 }
-process.stdout.write(JSON.stringify({ modules, imports, errors }));
+process.stdout.write(JSON.stringify({ format: 1, modules, imports, errors }));

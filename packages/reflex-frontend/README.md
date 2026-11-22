@@ -103,6 +103,12 @@ and `@react-router/fs-routes`, which every app installs as dev dependencies.
 `script-modules.js` imports rolldown's parser through `vite`, another of them;
 here vitest brings both.
 
+What `script-modules.js` prints is a contract with the compiler, which reads
+it with `_read_script_modules` in `reflex/compiler/utils.py` and rejects output
+of any other `format` or shape. Change its `format` with its shape, and the
+TypedDicts there with both; `test_read_script_modules_contract` runs the real
+script through that parser.
+
 ## Before this can be published
 
 - A name. `reflex-frontend` is a placeholder and the package is `private`.

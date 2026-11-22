@@ -7,20 +7,16 @@ import sys
 from pathlib import Path
 
 import pytest
-from reflex_base.js.modules import _JsFunction, _ScriptModule
-from reflex_base.registry import RegistrationContext
+from reflex_base.js.modules import _app_modules, _JsFunction, _ScriptModule
 
 
-def test_importing_a_module_registers_it(
-    app_package: Path, clean_registration_context: RegistrationContext
-):
-    """A JavaScript or TypeScript module of the app imports, and is registered.
+def test_importing_a_module_registers_it(app_package: Path):
+    """A JavaScript or TypeScript module of the app imports, and the compiler finds it.
 
-    The registry holds the names Python looked up, for the compiler to check.
+    It holds the names Python looked up, for the compiler to check.
 
     Args:
         app_package: the app package, on sys.path.
-        clean_registration_context: the registry the import fills.
     """
     party = importlib.import_module("js_app.party")
     assert party.__spec__ is not None
@@ -28,26 +24,22 @@ def test_importing_a_module_registers_it(
     from js_app.typed import typed  # pyright: ignore[reportMissingImports]
 
     assert typed == _JsFunction("js_app.typed", "typed")
-    assert clean_registration_context._script_modules == {
+    assert _app_modules() == {
         "js_app.party": _ScriptModule(app_package / "party.js"),
         "js_app.typed": _ScriptModule(app_package / "typed.ts", {"typed"}),
     }
 
 
-def test_only_the_app_package_is_searched(
-    app_package: Path, clean_registration_context: RegistrationContext
-):
-    """Another package's JavaScript files are never imported or registered.
+def test_only_the_app_package_is_searched(app_package: Path):
+    """Another package's JavaScript files are never imported.
 
     Args:
         app_package: the app package, on sys.path.
-        clean_registration_context: the registry an import would fill.
     """
     assert importlib.util.find_spec("js_vendor.widget") is None
     with pytest.raises(ModuleNotFoundError) as error:
         importlib.import_module("js_vendor.widget")
     assert str(error.value) == "No module named 'js_vendor.widget'"
-    assert clean_registration_context._script_modules == {}
 
 
 def test_a_missing_module_still_fails_to_import(app_package: Path):

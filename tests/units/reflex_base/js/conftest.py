@@ -21,8 +21,7 @@ def app_package(
 
     Args:
         tmp_path: pytest tmp_path fixture.
-        clean_registration_context: a fresh registry for the app's config and
-            the imported modules.
+        clean_registration_context: a fresh registry for the app's config.
 
     Yields:
         The app package's directory.
