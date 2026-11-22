@@ -7,33 +7,30 @@ import sys
 from pathlib import Path
 
 import pytest
-from reflex_base.js.modules import _JsFunction
+from reflex_base.js.modules import _JsFunction, _ScriptModule
 from reflex_base.registry import RegistrationContext
 
 
-def test_importing_a_module_exposes_its_functions(
+def test_importing_a_module_registers_it(
     app_package: Path, clean_registration_context: RegistrationContext
 ):
     """A JavaScript or TypeScript module of the app imports, and is registered.
+
+    The registry holds the names Python looked up, for the compiler to check.
 
     Args:
         app_package: the app package, on sys.path.
         clean_registration_context: the registry the import fills.
     """
     party = importlib.import_module("js_app.party")
-    assert party.__all__ == ["celebrate", "load", "arrow"]
-    assert [party.celebrate, party.load, party.arrow] == [
-        _JsFunction("js_app.party", "celebrate"),
-        _JsFunction("js_app.party", "load"),
-        _JsFunction("js_app.party", "arrow"),
-    ]
     assert party.__spec__ is not None
     assert party.__spec__.origin == str(app_package / "party.js")
-    typed = importlib.import_module("js_app.typed")
-    assert typed.typed == _JsFunction("js_app.typed", "typed")
+    from js_app.typed import typed  # pyright: ignore[reportMissingImports]
+
+    assert typed == _JsFunction("js_app.typed", "typed")
     assert clean_registration_context._script_modules == {
-        "js_app.party": app_package / "party.js",
-        "js_app.typed": app_package / "typed.ts",
+        "js_app.party": _ScriptModule(app_package / "party.js"),
+        "js_app.typed": _ScriptModule(app_package / "typed.ts", {"typed"}),
     }
 
 

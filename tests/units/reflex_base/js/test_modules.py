@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from reflex_base.js.modules import _JsFunction, _package_imports, _render_stub
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import LiteralVar, Var
 
@@ -17,7 +18,6 @@ def test_package_imports():
         Path("party.js"),
         [
             "canvas-confetti",
-            "./helpers.js",
             "/abs.js",
             "$/utils/reflex",
             "#internal",
@@ -26,7 +26,7 @@ def test_package_imports():
             "https://esm.sh/lodash",
             "@scope/pkg/style.css",
             "pkg/a.css?inline",
-            "pkg/a.css",
+            "pkg/a.css#top",
             "path",
         ],
     ) == ["canvas-confetti", "@scope/pkg/style.css", "pkg/a.css", "path"]
@@ -133,59 +133,37 @@ def test_a_function_is_an_event_trigger(app_package: Path):
     )
 
 
-def test_importing_a_missing_function_says_what_the_file_exports(app_package: Path):
-    """The error names the file, its functions, and the export to add.
+def test_names_become_functions_on_first_use(
+    app_package: Path, clean_registration_context: RegistrationContext
+):
+    """Any identifier is a function, recorded for the compiler and cached.
 
     Args:
         app_package: the app package, on sys.path.
+        clean_registration_context: the registry the import fills.
     """
-    with pytest.raises(ImportError) as error:
-        from js_app.party import (  # pyright: ignore[reportMissingImports]
-            nope,  # noqa: F401
-        )
-    assert str(error.value) == (
-        f"Cannot import nope from js_app.party: {app_package / 'party.js'} "
-        "exports no function named nope (its functions: celebrate, load, "
-        "arrow). Export it from party.js, as in `export function nope() { ... }`."
-    )
-    (app_package / "empty.js").write_text("export class Widget {}\n")
-    with pytest.raises(ImportError) as error:
-        from js_app.empty import (  # pyright: ignore[reportMissingImports]
-            Widget,  # noqa: F401
-        )
-    assert str(error.value) == (
-        f"Cannot import Widget from js_app.empty: {app_package / 'empty.js'} "
-        "exports no function named Widget (its functions: none). Export it "
-        "from empty.js, as in `export function Widget() { ... }`."
-    )
+    party = importlib.import_module("js_app.party")
+    from js_app.party import celebrate  # pyright: ignore[reportMissingImports]
+
+    assert celebrate == _JsFunction("js_app.party", "celebrate")
+    assert party.__dict__["celebrate"] is celebrate
+    assert party._private == _JsFunction("js_app.party", "_private")
+    assert clean_registration_context._script_modules["js_app.party"].names == {
+        "celebrate",
+        "_private",
+    }
 
 
-def test_importing_a_value_says_only_functions_can_be_called(app_package: Path):
-    """A ``const`` bound to a literal is a value, which Python cannot call.
-
-    Args:
-        app_package: the app package, on sys.path.
-    """
-    with pytest.raises(ImportError) as error:
-        from js_app.party import (  # pyright: ignore[reportMissingImports]
-            notAFunction,  # noqa: F401
-        )
-    assert str(error.value) == (
-        f"Cannot import notAFunction from js_app.party: {app_package / 'party.js'} "
-        "exports notAFunction as a value, not a function, and Python can only "
-        "call functions. Export a function instead, as in "
-        "`export function notAFunction() { ... }`."
-    )
-
-
-def test_a_private_name_is_a_plain_attribute_error(app_package: Path):
+@pytest.mark.parametrize("name", ["__wrapped__", "not-an-identifier"])
+def test_special_names_are_plain_attribute_errors(app_package: Path, name: str):
     """Names tools probe a module for raise the AttributeError they expect.
 
     Args:
         app_package: the app package, on sys.path.
+        name: the name looked up.
     """
     party = importlib.import_module("js_app.party")
-    assert getattr(party, "__wrapped__", None) is None
+    assert getattr(party, name, None) is None
     with pytest.raises(AttributeError) as error:
-        _ = party._private
-    assert str(error.value) == "module 'js_app.party' has no attribute '_private'"
+        getattr(party, name)
+    assert str(error.value) == f"module 'js_app.party' has no attribute {name!r}"

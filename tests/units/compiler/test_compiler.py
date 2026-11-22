@@ -16,6 +16,7 @@ from reflex_base.components.memo import MEMOS
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
 from reflex_base.environment import environment
+from reflex_base.js.modules import _ScriptModule
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.registry import RegistrationContext
@@ -2402,3 +2403,67 @@ def test_custom_code_may_declare_refs(auto_memoize: bool):
     assert any("const refs = {};" in code for _, code in memo_files)
     for code in modules:
         assert not _IMPORTS_REFS.search(code), code
+
+
+@pytest.mark.parametrize(
+    ("imports_modules", "vite_installed", "first_install"),
+    [
+        # An app without modules installs once, as before.
+        (False, False, False),
+        # The first compile installs the parser before reading the modules.
+        (True, False, True),
+        # Later compiles have it.
+        (True, True, False),
+    ],
+)
+def test_install_frontend_packages_reads_modules_after_the_parser_is_installed(
+    tmp_path: Path,
+    mocker: MockerFixture,
+    clean_registration_context: RegistrationContext,
+    imports_modules: bool,
+    vite_installed: bool,
+    first_install: bool,
+):
+    """The modules are read once vite is installed, then their packages install.
+
+    Args:
+        tmp_path: The web directory.
+        mocker: Fixture for recording the install, the read and the copies.
+        clean_registration_context: The registry of imported modules.
+        imports_modules: Whether the app imports a JavaScript module.
+        vite_installed: Whether the web directory has vite.
+        first_install: Whether the packages install before the read.
+    """
+    mocker.patch("reflex.compiler.compiler.get_web_dir", return_value=tmp_path)
+    if vite_installed:
+        (tmp_path / "node_modules" / "vite").mkdir(parents=True)
+    if imports_modules:
+        clean_registration_context._script_modules["app.party"] = _ScriptModule(
+            tmp_path / "party.js"
+        )
+    calls = []
+    app = rx.App(enable_state=False)
+    mocker.patch.object(app, "_get_frontend_packages", side_effect=calls.append)
+    outputs = [("utils/scripts.js", "export default {};\n")]
+    copies = [(tmp_path / "party.js", tmp_path / "out" / "party.js")]
+    script_imports = {"canvas-confetti": [ImportVar(tag=None, render=False)]}
+
+    def compile_script_modules():
+        calls.append("read")
+        return outputs, script_imports, copies
+
+    mocker.patch.object(
+        utils, "compile_script_modules", side_effect=compile_script_modules
+    )
+    mocker.patch.object(
+        utils, "copy_files", side_effect=lambda c: calls.append(("copy", c))
+    )
+    imports = {"react": [ImportVar(tag="useState")]}
+
+    assert compiler._install_frontend_packages(app, imports) == outputs
+    assert calls == [
+        *([imports] if first_install else []),
+        "read",
+        ("copy", copies),
+        {**imports, **script_imports},
+    ]

@@ -31,7 +31,7 @@ SCRIPT_EXTENSIONS = (".js", ".ts")
 
 
 class _ScriptLoader(_LoaderBase):
-    """Execute a JavaScript module by exposing its exports as functions."""
+    """Execute a JavaScript module: register it, and make its names functions."""
 
     def __init__(self, path: str):
         """Create the loader.
@@ -49,7 +49,7 @@ class _ScriptLoader(_LoaderBase):
         """
 
     def exec_module(self, module: ModuleType) -> None:
-        """Populate the module with one function per export.
+        """Register the module, whose names become functions on first use.
 
         Args:
             module: The module to populate.

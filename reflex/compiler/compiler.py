@@ -1285,6 +1285,34 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+def _install_frontend_packages(
+    app: App, imports: ParsedImportDict
+) -> list[tuple[str, str]]:
+    """Install the frontend packages, with those the app's JavaScript modules import.
+
+    The modules are read with the bundler's parser, which the install provides,
+    so the first compile of an app that imports one installs before reading
+    them, and again with their packages. Later compiles find the parser and
+    install once, which is skipped when the packages have not changed.
+
+    Args:
+        app: The app.
+        imports: The imports of the compiled components.
+
+    Returns:
+        The outputs of the modules: ``utils/scripts.js`` and their type stubs.
+    """
+    if (
+        RegistrationContext.ensure_context()._script_modules
+        and not (get_web_dir() / "node_modules" / "vite").is_dir()
+    ):
+        app._get_frontend_packages(imports)
+    outputs, script_imports, copies = utils.compile_script_modules()
+    utils.copy_files(copies)
+    app._get_frontend_packages(utils.merge_imports(imports, script_imports))
+    return outputs
+
+
 def compile_app(
     app: App,
     *,
@@ -1590,10 +1618,6 @@ def compile_app(
         ),
         utils._compile_bundled_libraries(),
     ])
-    script_module_outputs, script_module_imports, script_module_copies = (
-        utils.compile_script_modules()
-    )
-    compile_results.extend(script_module_outputs)
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
@@ -1603,8 +1627,6 @@ def compile_app(
 
     if dry_run:
         return True
-
-    utils.copy_files(script_module_copies)
 
     # Delete memo files this compile no longer emits. Done here (not before the
     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
@@ -1617,9 +1639,7 @@ def compile_app(
         log.timing(logger, "Install Frontend Packages"),
         otel.span("reflex.compile.install_frontend_packages"),
     ):
-        app._get_frontend_packages(
-            utils.merge_imports(all_imports, script_module_imports)
-        )
+        compile_results.extend(_install_frontend_packages(app, all_imports))
 
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,
