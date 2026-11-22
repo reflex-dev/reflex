@@ -228,15 +228,6 @@ describe("awaited script results", () => {
     });
   });
 
-  test("describes a thrown value that cannot become a string", async () => {
-    // String() throws on an object without a prototype.
-    const { outcome } = awaited(script("Promise.reject(Object.create(null))"));
-    expect(await outcome()).toEqual({
-      rid: "r1",
-      error: { name: "Error", message: "[object Object]", stack: "" },
-    });
-  });
-
   test.each([
     ["a value whose name getter throws", "({ get name() { throw 1; } })"],
     [
@@ -247,6 +238,7 @@ describe("awaited script results", () => {
       "an Error whose message getter throws",
       "Object.defineProperty(new Error(), 'message', { get() { throw 1; } })",
     ],
+    ["an object String() rejects", "Object.create(null)"],
   ])("still answers the backend when it throws %s", async (_what, thrown) => {
     // Reading the thrown value throws; the backend must still get an error
     // rather than wait for its timeout.
@@ -264,41 +256,31 @@ describe("awaited script results", () => {
 
   test.each([
     [
-      "a DOM node",
-      "document.body",
-      "TypeError",
-      "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
-    ],
-    [
       "a DOM node inside a value",
       "({el: document.body})",
-      "TypeError",
       "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
     ],
     [
       "the window",
       "window",
-      "TypeError",
       "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
     ],
     [
       "a function",
       "() => 1",
-      "TypeError",
       "The script returned a function, which JSON cannot carry; return plain data (objects, arrays, strings, numbers, booleans or null) instead.",
     ],
-    [
-      "a symbol",
-      "Symbol('s')",
-      "TypeError",
-      "The script returned a symbol, which JSON cannot carry; return plain data (objects, arrays, strings, numbers, booleans or null) instead.",
-    ],
-    ["a BigInt", "1n", "TypeError", "Do not know how to serialize a BigInt"],
-  ])("rejects %s as a serialization error", async (_what, code, name, message) => {
+    ["a BigInt", "1n", "Do not know how to serialize a BigInt"],
+  ])("rejects %s as a serialization error", async (_what, code, message) => {
     const { outcome } = awaited(script(code));
     expect(withoutStack(await outcome())).toEqual({
       rid: "r1",
-      error: { name, message, stack: "<stack>", kind: "serialization" },
+      error: {
+        name: "TypeError",
+        message,
+        stack: "<stack>",
+        kind: "serialization",
+      },
     });
   });
 

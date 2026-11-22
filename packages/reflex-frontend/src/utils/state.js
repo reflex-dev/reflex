@@ -633,40 +633,24 @@ const runEventScript = (event, socket, navigate, params) => {
 };
 
 /**
- * Convert a value a script threw to text, which String() cannot always do.
- * @param value The value to convert.
- * @returns The value as text; an object without a prototype is "[object Object]".
- */
-const toText = (value) => {
-  try {
-    return String(value);
-  } catch {
-    return Object.prototype.toString.call(value);
-  }
-};
-
-/**
  * Describe an error a script threw, for the backend that awaits its result.
  *
  * Reading the thrown value can throw as well (a getter that throws, a revoked
- * Proxy). The backend still gets an error then, or it would wait for its
- * timeout.
+ * Proxy, an object without a prototype that String() rejects). The backend
+ * still gets an error then, or it would wait for its timeout.
  * @param error The thrown value, which need not be an Error.
- * @param kind The kind of failure, if it is not the script's own.
  * @returns The error's name, message and stack.
  */
-const describeScriptError = (error, kind = undefined) => {
-  let described;
+const describeScriptError = (error) => {
   try {
-    described = {
-      name: toText(error?.name ?? "Error"),
-      message: toText(error instanceof Error ? error.message : error),
-      stack: toText(error?.stack ?? ""),
+    return {
+      name: String(error?.name ?? "Error"),
+      message: String(error instanceof Error ? error.message : error),
+      stack: String(error?.stack ?? ""),
     };
   } catch {
-    described = { name: "Error", message: UNDESCRIBABLE_ERROR, stack: "" };
+    return { name: "Error", message: UNDESCRIBABLE_ERROR, stack: "" };
   }
-  return kind === undefined ? described : { ...described, kind };
 };
 
 /**
@@ -715,7 +699,7 @@ const sendScriptResult = async (socket, rid, run) => {
     } catch (e) {
       outcome = {
         rid,
-        error: describeScriptError(e, SERIALIZATION_ERROR_KIND),
+        error: { ...describeScriptError(e), kind: SERIALIZATION_ERROR_KIND },
       };
     }
   } catch (e) {
