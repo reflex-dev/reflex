@@ -116,6 +116,13 @@ def test_browser_call_timeout_can_wait_without_a_limit(
         rx.Config(**base_config_values, browser_call_timeout=None).browser_call_timeout
         is None
     )
+    # A grace period of 0 fails a disconnected tab's calls at once.
+    assert (
+        rx.Config(
+            **base_config_values, browser_call_grace_period=0
+        ).browser_call_grace_period
+        == 0
+    )
     monkeypatch.setenv("REFLEX_BROWSER_CALL_TIMEOUT", "12.5")
     monkeypatch.setenv("REFLEX_BROWSER_CALL_GRACE_PERIOD", "0.5")
     updated = rx.Config(**base_config_values).update_from_env()
@@ -123,6 +130,61 @@ def test_browser_call_timeout_can_wait_without_a_limit(
         updated["browser_call_timeout"],
         updated["browser_call_grace_period"],
     ) == (12.5, 0.5)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        *(
+            pytest.param(
+                "browser_call_timeout",
+                value,
+                f"browser_call_timeout is {value!r}, but awaited browser calls "
+                "need a positive, finite number of seconds to wait for a result. "
+                "Set browser_call_timeout in rxconfig.py to a number of seconds "
+                "such as 30, or to None to wait without a limit.",
+                id=f"timeout={value!r}",
+            )
+            for value in (0, -1, float("inf"), float("nan"), True, "30")
+        ),
+        *(
+            pytest.param(
+                "browser_call_grace_period",
+                value,
+                f"browser_call_grace_period is {value!r}, but awaited browser "
+                "calls need a non-negative, finite number of seconds to wait for "
+                "a disconnected tab to reconnect. Set browser_call_grace_period "
+                "in rxconfig.py to a number of seconds such as 5, or to 0 to fail "
+                "the calls as soon as their tab disconnects.",
+                id=f"grace_period={value!r}",
+            )
+            for value in (-1, float("inf"), float("nan"), True, None)
+        ),
+    ],
+)
+def test_browser_call_seconds_must_be_finite(
+    base_config_values, field: str, value: Any, message: str
+):
+    """An invalid browser call timeout or grace period fails at startup."""
+    with pytest.raises(ConfigError) as err:
+        rx.Config(**base_config_values, **{field: value})
+    assert str(err.value) == message
+
+
+def test_browser_call_seconds_are_checked_from_the_environment(
+    base_config_values, monkeypatch: pytest.MonkeyPatch
+):
+    """A negative grace period from the environment fails at startup too."""
+    monkeypatch.setenv("REFLEX_BROWSER_CALL_GRACE_PERIOD", "-1")
+    with pytest.raises(ConfigError) as err:
+        rx.Config(**base_config_values)
+    assert str(err.value) == (
+        "browser_call_grace_period is -1.0, but awaited browser calls need a "
+        "non-negative, finite number of seconds to wait for a disconnected tab "
+        "to reconnect. Set browser_call_grace_period in rxconfig.py to a number "
+        "of seconds such as 5, or to 0 to fail the calls as soon as their tab "
+        "disconnects."
+    )
 
 
 @pytest.mark.parametrize("trusted_proxy_hops", [-1, True, False, 1.5, "2", None])

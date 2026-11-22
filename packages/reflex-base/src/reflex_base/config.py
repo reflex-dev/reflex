@@ -317,6 +317,24 @@ _PLUGINS_ENABLED_BY_DEFAULT = [
 ]
 
 
+def _is_seconds(value: object, *, positive: bool) -> bool:
+    """Whether a config value is a finite, non-negative number of seconds.
+
+    Args:
+        value: The configured value.
+        positive: Whether 0 is rejected too.
+
+    Returns:
+        False for a bool, a non-number, a negative number, inf and nan.
+    """
+    return (
+        not isinstance(value, bool)
+        and isinstance(value, (int, float))
+        and (value > 0 if positive else value >= 0)
+        and value < math.inf
+    )
+
+
 def _is_plain_path_segment(segment: str) -> bool:
     """Whether a URL path segment maps to a single directory name on every platform.
 
@@ -441,13 +459,32 @@ class Config(BaseConfig):
             msg = "trusted_proxy_hops must be a non-negative integer."
             raise ConfigError(msg)
 
-        threshold = self.event_loop_blocking_threshold
-        if (
-            isinstance(threshold, bool)
-            or not isinstance(threshold, (int, float))
-            or not 0 <= threshold < math.inf
-        ):
+        if not _is_seconds(self.event_loop_blocking_threshold, positive=False):
             msg = "event_loop_blocking_threshold must be a non-negative finite number."
+            raise ConfigError(msg)
+
+        # A timeout of 0 would fail every call before the browser can answer.
+        if self.browser_call_timeout is not None and not _is_seconds(
+            self.browser_call_timeout, positive=True
+        ):
+            msg = (
+                f"browser_call_timeout is {self.browser_call_timeout!r}, but "
+                "awaited browser calls need a positive, finite number of seconds "
+                "to wait for a result. Set browser_call_timeout in rxconfig.py to "
+                "a number of seconds such as 30, or to None to wait without a "
+                "limit."
+            )
+            raise ConfigError(msg)
+
+        if not _is_seconds(self.browser_call_grace_period, positive=False):
+            msg = (
+                f"browser_call_grace_period is {self.browser_call_grace_period!r}, "
+                "but awaited browser calls need a non-negative, finite number of "
+                "seconds to wait for a disconnected tab to reconnect. Set "
+                "browser_call_grace_period in rxconfig.py to a number of seconds "
+                "such as 5, or to 0 to fail the calls as soon as their tab "
+                "disconnects."
+            )
             raise ConfigError(msg)
 
         # Normalize route prefixes to ensure they start with a slash.
