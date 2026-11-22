@@ -151,7 +151,7 @@ def convert_list(
     converted_value: list[Var | str | dict[str, Var | str | list | dict]] = []
     item_var_datas = []
     for responsive_item in responsive_list:
-        if not isinstance(responsive_item, Var) and isinstance(responsive_item, dict):
+        if isinstance(responsive_item, dict):
             # Recursively format nested style dictionaries.
             item, item_var_data = convert(responsive_item)
         else:
