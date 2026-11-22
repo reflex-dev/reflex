@@ -27,6 +27,7 @@ from reflex_docs.pages.docs.component import multi_docs
 from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.pages.library_previews import components_previews_pages
 from reflex_docs.templates.docpage import docpage
+from reflex_docs.utils.acronyms import uppercase_acronyms
 from reflex_docs.whitelist import _check_whitelisted_path
 
 from .apiref import pages as apiref_pages
@@ -183,8 +184,6 @@ FAN_OUT_DOC = "docs/workflows/fan_out.md"
 manual_titles = {
     "docs/ai_builder/apis.md": "APIs",
     "docs/ai_builder/urls.md": "URLs",
-    "docs/ai_builder/integrations/custom_oidc.md": "Custom OIDC",
-    "docs/ai_builder/integrations/microsoft_entra_id.md": "Microsoft Entra ID",
     "docs/database/overview.md": "Database Overview",
     "docs/workflows/overview.md": "Workflows Overview",
     "docs/workflows/tutorial.md": "Tutorial: Build an Onboarding Workflow",
@@ -265,7 +264,7 @@ def resolve_doc_route(doc: str, title: str) -> ResolvedDoc | None:
     route = doc_route_from_path(doc)
     if not _check_whitelisted_path(route):
         return None
-    display_title = manual_titles.get(doc, to_title_case(title))
+    display_title = manual_titles.get(doc) or uppercase_acronyms(to_title_case(title))
     category = os.path.basename(os.path.dirname(doc)).title()
     return ResolvedDoc(route=route, display_title=display_title, category=category)
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import functools
+
 import reflex as rx
 from reflex_site_shared.components.docs_shell import (
     docs_sidebar_category as sidebar_category,
@@ -228,6 +230,31 @@ def get_prev_next(url):
             next_link = flat_items[i + 1] if i < len(flat_items) - 1 else None
             return prev_link, next_link
     return None, None
+
+
+@functools.cache
+def _labels_by_route() -> dict[str, str]:
+    """Map each sidebar link, without slashes, to its first sidebar label.
+
+    Returns:
+        The label of each linked page.
+    """
+    labels: dict[str, str] = {}
+    for item in flat_items:
+        labels.setdefault(item.link.strip("/"), item.names)
+    return labels
+
+
+def sidebar_label(url: str) -> str | None:
+    """Get the sidebar label of a docs page.
+
+    Args:
+        url: The page's app-relative route.
+
+    Returns:
+        The label the sidebar shows for the page, or None if it has no entry.
+    """
+    return _labels_by_route().get(url.strip("/"))
 
 
 def filter_out_non_sidebar_items(items: list[SideBarBase]) -> list[SideBarItem]:

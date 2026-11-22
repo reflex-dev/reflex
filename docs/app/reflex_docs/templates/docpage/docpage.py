@@ -3,7 +3,7 @@
 import functools
 import os
 import sys
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Sequence
 from pathlib import Path
 from urllib.parse import quote
 
@@ -28,6 +28,8 @@ from reflex_site_shared.route import Route, get_path
 from reflex_site_shared.templates.docs import docs_layout_shell
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
 
+from reflex_docs.utils.acronyms import uppercase_acronyms
+
 _REGISTERED_DOC_ROUTES: set[str] = set()
 
 # The docs app lives at <repo>/docs/app; source files are linked relative to <repo>.
@@ -39,15 +41,6 @@ GITHUB_REPO_URL = "https://github.com/reflex-dev/reflex"
 
 # Normalized route -> GitHub edit URL used by the page footer.
 doc_edit_hrefs: dict[str, str] = {}
-
-# Title-cased breadcrumb labels that should be displayed as acronyms.
-_BREADCRUMB_LABEL_OVERRIDES: dict[str, str] = {
-    "Ai": "AI",
-    "Api": "API",
-    "Sdk": "SDK",
-    "Cli": "CLI",
-    "Css": "CSS",
-}
 
 
 def _normalize_doc_route(path: str) -> str:
@@ -211,11 +204,10 @@ def breadcrumb_data(path: str, title: str) -> dict:
         href = _resolve_breadcrumb_href("/" + "/".join(segments[:index]))
         if href is None or base + href in seen:
             continue
-        label = to_title_case(to_snake_case(segment), sep=" ")
         items.append({
             "@type": "ListItem",
             "position": len(items) + 1,
-            "name": _BREADCRUMB_LABEL_OVERRIDES.get(label, label),
+            "name": _breadcrumb_label(segment),
             "item": base + href,
         })
         seen.add(base + href)
@@ -233,32 +225,89 @@ def breadcrumb_data(path: str, title: str) -> dict:
     }
 
 
-def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = None):
+def _breadcrumb_label(segment: str) -> str:
+    """Turn a route segment into a breadcrumb label, keeping acronyms uppercase.
+
+    Args:
+        segment: A kebab- or snake-case route segment, such as ``api-reference``.
+
+    Returns:
+        The title-cased label, such as ``API Reference``.
+    """
+    return uppercase_acronyms(to_title_case(to_snake_case(segment), sep=" "))
+
+
+def _same_letters(label: str, segment: str) -> bool:
+    """Whether a label spells a route segment, ignoring case and punctuation.
+
+    Args:
+        label: A display name, such as ``Upgrading to 0.11``.
+        segment: A route segment, such as ``upgrading-to-0-11``.
+
+    Returns:
+        True when both have the same letters and digits in the same order.
+    """
+    return [c for c in label.lower() if c.isalnum()] == [
+        c for c in segment.lower() if c.isalnum()
+    ]
+
+
+def _breadcrumb_items(
+    path: str, names: Sequence[str] = ()
+) -> list[tuple[str, str | None]]:
+    """List the visible breadcrumb labels and their links.
+
+    Args:
+        path: The app-relative documentation path.
+        names: The current page's display names, such as its title and sidebar
+            label. The first one that spells the last route segment labels it, so
+            "upgrading-to-0-11" reads "Upgrading to 0.11"; a name with other words
+            is skipped and the segment is title-cased like its parents.
+
+    Returns:
+        A ``(label, href)`` pair per path segment. ``href`` is None for category
+        segments that have no page of their own.
+    """
+    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
+    items = []
+    current_path = ""
+    for segment in segments:
+        current_path += f"/{segment}"
+        items.append((
+            _breadcrumb_label(segment),
+            _resolve_breadcrumb_href(current_path),
+        ))
+    if items:
+        for name in names:
+            label = uppercase_acronyms(name)
+            if _same_letters(label, segments[-1]):
+                items[-1] = (label, items[-1][1])
+                break
+    return items
+
+
+def breadcrumb(
+    path: str,
+    nav_sidebar: rx.Component,
+    doc_content: str | None = None,
+    names: Sequence[str] = (),
+):
     from reflex_docs.components.docpage.navbar.buttons.sidebar import (
         docs_sidebar_drawer,
     )
 
-    # Split the path into segments, removing 'docs'.
-    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
-
     # Initialize an empty list to store the breadcrumbs and their separators
     breadcrumbs = []
 
-    # Iteratively build the href for each segment (paths are app-relative, no /docs prefix)
-    current_path = ""
-    for i, segment in enumerate(segments):
-        current_path += f"/{segment}"
-
-        label = to_title_case(to_snake_case(segment), sep=" ")
-        label = _BREADCRUMB_LABEL_OVERRIDES.get(label, label)
+    items = _breadcrumb_items(path, names)
+    for i, (label, href) in enumerate(items):
         base_class = ui.cn(
             "min-h-8 flex items-center text-sm font-[525] text-foreground last:text-muted-foreground",
-            "truncate" if i == len(segments) - 1 else "",
+            "truncate" if i == len(items) - 1 else "",
         )
 
         # Category segments (e.g. /ai, /hosting) often have no page of their own.
         # Render those as plain text so the breadcrumb doesn't link to a 404.
-        href = _resolve_breadcrumb_href(current_path)
         if href is None:
             breadcrumbs.append(rx.el.span(label, class_name=base_class))
         else:
@@ -275,7 +324,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             )
 
         # If it's not the last segment, add a separator
-        if i < len(segments) - 1:
+        if i < len(items) - 1:
             breadcrumbs.append(
                 ui.icon(
                     "ArrowRight01Icon",
@@ -431,7 +480,10 @@ def docpage(
             Returns:
                 The page with the template applied.
             """
-            from reflex_docs.templates.docpage.sidebar import get_prev_next
+            from reflex_docs.templates.docpage.sidebar import (
+                get_prev_next,
+                sidebar_label,
+            )
             from reflex_docs.templates.docpage.sidebar import sidebar as sb
             from reflex_docs.views.docs_navbar import docs_navbar
 
@@ -487,6 +539,11 @@ def docpage(
                                 path=path if show_breadcrumb else "",
                                 nav_sidebar=nav_sidebar,
                                 doc_content=doc_content,
+                                names=[
+                                    name
+                                    for name in (title, sidebar_label(path))
+                                    if name is not None
+                                ],
                             ),
                             class_name=(
                                 "docs-breadcrumb px-0 pt-0 mb-[2rem]"
