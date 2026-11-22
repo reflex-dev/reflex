@@ -31,6 +31,7 @@ from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
+from reflex_base.js.modules import _app_modules
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
@@ -1302,12 +1303,10 @@ def _install_frontend_packages(
     Returns:
         The outputs of the modules: ``utils/scripts.js`` and their type stubs.
     """
-    if (
-        RegistrationContext.ensure_context()._script_modules
-        and not (get_web_dir() / "node_modules" / "vite").is_dir()
-    ):
+    script_modules = _app_modules()
+    if script_modules and not (get_web_dir() / "node_modules" / "vite").is_dir():
         app._get_frontend_packages(imports)
-    outputs, script_imports, copies = utils.compile_script_modules()
+    outputs, script_imports, copies = utils.compile_script_modules(script_modules)
     utils.copy_files(copies)
     app._get_frontend_packages(utils.merge_imports(imports, script_imports))
     return outputs

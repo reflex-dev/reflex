@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import os
 import shutil
+import sys
+from collections.abc import Generator
 from copy import deepcopy
 from pathlib import Path
+from types import ModuleType
 from typing import Annotated, Literal, TypedDict
 
 import pytest
 from reflex_base import constants
 from reflex_base.components.memo import create_passthrough_component_memo
-from reflex_base.js.modules import _ScriptModule
+from reflex_base.js.modules import _app_modules, _load_module
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_components_core.base.fragment import Fragment
@@ -817,19 +821,21 @@ def script_app(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     clean_registration_context: RegistrationContext,
-) -> tuple[Path, dict, list[list[Path]]]:
+) -> Generator[tuple[Path, dict, list[list[Path]]], None, None]:
     """An app package that imports JavaScript modules, read by a stand-in script.
 
     Args:
         tmp_path: pytest tmp_path fixture.
         monkeypatch: pytest monkeypatch fixture.
-        clean_registration_context: a fresh registry of imported modules.
+        clean_registration_context: a fresh registry for the app's config.
 
-    Returns:
+    Yields:
         The package's directory, the output of the stand-in, which the test
         fills, and the paths each of its runs read.
     """
+    clean_registration_context._set_config(rx.Config(app_name="app"))
     monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path / ".web")
+    monkeypatch.syspath_prepend(str(tmp_path))
     report: dict = {}
     runs: list[list[Path]] = []
 
@@ -838,7 +844,27 @@ def script_app(
         return report
 
     monkeypatch.setattr(utils, "_read_script_modules", read_script_modules)
-    return tmp_path.resolve() / "app", report, runs
+    yield tmp_path.resolve() / "app", report, runs
+    for name in [n for n in sys.modules if n.partition(".")[0] == "app"]:
+        del sys.modules[name]
+
+
+def _import_script_module(
+    monkeypatch: pytest.MonkeyPatch, name: str, path: Path, names: set[str]
+) -> None:
+    """Put a JavaScript module in sys.modules, as importing it does.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture, which removes it afterwards.
+        name: The module's name.
+        path: Its file.
+        names: The names Python uses from it.
+    """
+    module = ModuleType(name)
+    _load_module(module, path)
+    for function in names:
+        getattr(module, function)
+    monkeypatch.setitem(sys.modules, name, module)
 
 
 def _script_exports(
@@ -868,13 +894,13 @@ def _script_exports(
 
 def test_compile_script_modules(
     script_app: tuple[Path, dict, list[list[Path]]],
-    clean_registration_context: RegistrationContext,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """Modules are copied with the files they reach, indexed and stubbed.
 
     Args:
         script_app: the app package, the stand-in script's output and its runs.
-        clean_registration_context: a fresh registry of imported modules.
+        monkeypatch: pytest monkeypatch fixture.
     """
     package, report, runs = script_app
     web_dir = utils.get_web_dir()
@@ -884,11 +910,11 @@ def test_compile_script_modules(
     typed = package / "typed.ts"
     # Only importlib can import a module whose name is not an identifier.
     widget = package / 'my-"widget".js'
-    clean_registration_context._script_modules.update({
-        "app.typed": _ScriptModule(typed, {"typed", "fromStar"}),
-        "app.scripts.party": _ScriptModule(party, {"celebrate"}),
-        'app.my-"widget"': _ScriptModule(widget, {"show"}),
-    })
+    _import_script_module(monkeypatch, "app.typed", typed, {"typed", "fromStar"})
+    _import_script_module(monkeypatch, "app.scripts.party", party, {"celebrate"})
+    _import_script_module(monkeypatch, 'app.my-"widget"', widget, {"show"})
+    # Another app's module, imported earlier in the process, is left out.
+    _import_script_module(monkeypatch, "other.party", party, {"celebrate"})
     report.update({
         "modules": {
             str(party): _script_exports([party, helpers, css], ["celebrate"]),
@@ -905,7 +931,7 @@ def test_compile_script_modules(
         "errors": [],
     })
 
-    outputs, package_imports, copies = utils.compile_script_modules()
+    outputs, package_imports, copies = utils.compile_script_modules(_app_modules())
 
     assert runs == [[widget, party, typed]]
     modules_dir = web_dir / "utils" / "script_modules" / "app"
@@ -1011,7 +1037,7 @@ def test_compile_script_modules(
 )
 def test_compile_script_modules_errors(
     script_app: tuple[Path, dict, list[list[Path]]],
-    clean_registration_context: RegistrationContext,
+    monkeypatch: pytest.MonkeyPatch,
     names: set[str],
     files: list[str],
     functions: list[str],
@@ -1022,7 +1048,7 @@ def test_compile_script_modules_errors(
 
     Args:
         script_app: the app package, the stand-in script's output and its runs.
-        clean_registration_context: a fresh registry of imported modules.
+        monkeypatch: pytest monkeypatch fixture.
         names: the names Python uses.
         files: the files the module reaches, from the project's directory.
         functions: the module's functions.
@@ -1033,9 +1059,7 @@ def test_compile_script_modules_errors(
     package, report, _ = script_app
     project = str(package.parent)
     party = package / "scripts" / "party.js"
-    clean_registration_context._script_modules["app.scripts.party"] = _ScriptModule(
-        party, names
-    )
+    _import_script_module(monkeypatch, "app.scripts.party", party, names)
     report.update({
         "modules": {
             str(party): _script_exports(
@@ -1049,8 +1073,42 @@ def test_compile_script_modules_errors(
         ],
     })
     with pytest.raises(ReflexRuntimeError) as error:
-        utils.compile_script_modules()
+        utils.compile_script_modules(_app_modules())
     assert str(error.value) == message.replace("{project}", project)
+
+
+def test_compile_script_modules_reads_a_module_imported_in_another_context(
+    script_app: tuple[Path, dict, list[list[Path]]],
+):
+    """A module imported once compiles, with its names, into every later compile.
+
+    Python runs a module once per process, so compiling the app again in a new
+    registration context, as AppHarness does for each app, imports nothing anew.
+
+    Args:
+        script_app: the app package, the stand-in script's output and its runs.
+    """
+    package, report, runs = script_app
+    package.mkdir()
+    (package / "__init__.py").write_text("")
+    party = package / "party.js"
+    party.write_text("export function launch() {}\n")
+    importlib.import_module("app.party").celebrate
+    report.update({
+        "modules": {str(party): _script_exports([party], ["launch"])},
+        "imports": {str(party): []},
+        "errors": [],
+    })
+    with RegistrationContext() as context:
+        context._set_config(rx.Config(app_name="app"))
+        with pytest.raises(ReflexRuntimeError) as error:
+            utils.compile_script_modules(_app_modules())
+    assert runs == [[party]]
+    assert str(error.value) == (
+        "`celebrate` is used from app.party, but app/party.js exports no function "
+        "named celebrate (its functions: launch). Export it from app/party.js, as "
+        "in `export function celebrate() { ... }`, or correct the name in Python."
+    )
 
 
 def test_compile_script_modules_without_modules(
@@ -1062,7 +1120,7 @@ def test_compile_script_modules_without_modules(
         script_app: the app package, the stand-in script's output and its runs.
     """
     _, _, runs = script_app
-    assert utils.compile_script_modules() == (
+    assert utils.compile_script_modules({}) == (
         [(str(utils.get_web_dir() / "utils" / "scripts.js"), "export default {};\n")],
         {},
         [],

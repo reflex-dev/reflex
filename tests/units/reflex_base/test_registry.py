@@ -1,13 +1,11 @@
 """Tests for RegistrationContext."""
 
 import sys
-from pathlib import Path
 from textwrap import dedent
 from typing import Any, cast
 
 import pytest
 from reflex_base.config import Config, get_config, reload_config
-from reflex_base.js.modules import _ScriptModule
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
@@ -438,18 +436,3 @@ def test_reset_compile_caches_empties_per_compile_maps(
     assert not clean_registration_context._memo_body_analyses
     assert not clean_registration_context._memoized_event_triggers
     assert not clean_registration_context._bound_event_chains
-
-
-def test_fork_carries_script_modules(tmp_path: Path):
-    """JavaScript modules imported before a fork still compile into the forked app.
-
-    Args:
-        tmp_path: pytest tmp_path fixture.
-    """
-    module = _ScriptModule(tmp_path / "party.js")
-    with RegistrationContext.get().fork() as original:
-        original._script_modules["app.party"] = module
-        with original.fork() as forked:
-            assert forked._script_modules == {"app.party": module}
-            forked._script_modules["app.other"] = module
-        assert original._script_modules == {"app.party": module}

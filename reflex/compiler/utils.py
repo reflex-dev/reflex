@@ -33,7 +33,7 @@ from reflex_base.components.memo import (
     MemoParamKind,
 )
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.js.modules import _package_imports, _render_stub
+from reflex_base.js.modules import _package_imports, _render_stub, _ScriptModule
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import format, imports, memo_paths, serializers, types
@@ -440,9 +440,9 @@ def _copy_targets(
     return targets
 
 
-def compile_script_modules() -> tuple[
-    list[tuple[str, str]], dict[str, list[ImportVar]], list[tuple[Path, Path]]
-]:
+def compile_script_modules(
+    modules: Mapping[str, _ScriptModule],
+) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]], list[tuple[Path, Path]]]:
     """Compile the JavaScript modules the app imports from Python.
 
     They are read with the bundler's parser, so the frontend packages must be
@@ -450,6 +450,9 @@ def compile_script_modules() -> tuple[
     ``utils/script_modules``, ``utils/scripts.js`` maps each module's Python
     name to a function that loads it, and a type stub is written next to each
     module, for type checkers. An app that imports none runs nothing.
+
+    Args:
+        modules: The modules, by name.
 
     Returns:
         The (path, code) outputs, the npm packages the modules import, to
@@ -463,10 +466,7 @@ def compile_script_modules() -> tuple[
     web_dir = get_web_dir()
     index = str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS))
     script_modules = {
-        name: (module.names, module.path.resolve())
-        for name, module in sorted(
-            RegistrationContext.ensure_context()._script_modules.items()
-        )
+        name: (module.names, module.path.resolve()) for name, module in modules.items()
     }
     if not script_modules:
         return [(index, "export default {};\n")], {}, []

@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from reflex_base.components.memo import _MemoBodyAnalysis
     from reflex_base.config import Config
     from reflex_base.event import EventChain, EventHandler
-    from reflex_base.js.modules import _ScriptModule
     from reflex_base.utils.types import ArgsSpec
     from reflex_base.vars.base import Var
 
@@ -72,10 +71,6 @@ class RegistrationContext(BaseContext):
         repr=False,
     )
     _explicit_bundled_libraries: dict[str, None] = dataclasses.field(
-        default_factory=dict, repr=False
-    )
-    # JavaScript modules imported from Python, by module name.
-    _script_modules: dict[str, _ScriptModule] = dataclasses.field(
         default_factory=dict, repr=False
     )
     _app: App | None = dataclasses.field(default=None, repr=False)
@@ -169,7 +164,6 @@ class RegistrationContext(BaseContext):
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
             _explicit_bundled_libraries=dict(self._explicit_bundled_libraries),
-            _script_modules=dict(self._script_modules),
         )
 
     def _set_config(self, config: Config) -> None:
