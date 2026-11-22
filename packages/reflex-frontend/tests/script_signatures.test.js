@@ -69,7 +69,8 @@ test("lists the files each module's types are read from", async () => {
   // jsdoc.js reads a type of shapes.d.ts in a JSDoc `import("./shapes")`, which
   // the bundler never loads; types.ts, from shapes.d.ts and reexported.js.
   // referencing.ts reads a global type of a `/// <reference>`d file, and a
-  // missing one is listed too, so that adding it rewrites the stub. No module
+  // missing one is listed too, so that adding it rewrites the stub; neither
+  // the npm package nor the import that resolves to no file is. No module
   // lists another's files, nor TypeScript's libraries.
   const { modules, files } = await signatures([
     "jsdoc.js",
