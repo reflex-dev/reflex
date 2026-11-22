@@ -20,7 +20,10 @@
  *                                                        error of each file
  *   }
  *
- * Files are real paths. An export the syntax alone cannot classify, such as
+ * Files are absolute paths: the module's real path, and each file it reaches
+ * by the path its import names, so that the copy of a link is where the import
+ * looks for it and the files the link imports are found beside it. An export
+ * the syntax alone cannot classify, such as
  * `export const f = make()` or one re-exported from another file, is listed as
  * a function, so that a valid call is never rejected. */
 
@@ -91,8 +94,7 @@ const resolveImport = (directory, specifier) => {
   candidates.push(
     ...RESOLVE_EXTENSIONS.map((ext) => join(target, `index${ext}`)),
   );
-  const file = candidates.find(isFile);
-  return file && realpathSync(file);
+  return candidates.find(isFile);
 };
 
 /**
@@ -238,8 +240,7 @@ const readStylesheet = (file) => ({
     .map((match) => match[1] ?? match[2] ?? match[3])
     .filter((reference) => !/^(?:[/#]|data:)|:\/\//.test(reference))
     .map((reference) => resolve(dirname(file), stripQuery(reference)))
-    .filter(isFile)
-    .map((path) => realpathSync(path)),
+    .filter(isFile),
 });
 
 /**
@@ -254,7 +255,7 @@ const readFile = (file) => {
   return { references: [] };
 };
 
-/** @type {Map<string, any>} Each file read, by real path. */
+/** @type {Map<string, any>} Each file read, by path. */
 const files = new Map();
 
 /**

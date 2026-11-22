@@ -369,7 +369,9 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   `./party.css` or `./logo.png`, are bundled with it, and so are the files they
   import, including a stylesheet's `@import` and `url(...)` references. They
   must be inside your app's package directory, which is all of your project
-  that is copied into the compiled app.
+  that is copied into the compiled app. A file that is a symbolic link is
+  copied where the import names it, so the files it imports are found from
+  there.
 - Reflex writes a type stub (`party.pyi`) next to the module when it compiles
   the app, so type checkers resolve the import.
 
@@ -391,7 +393,9 @@ The compile stops with these errors:
   directory is copied into the compiled app.` Move the file into your app's
   package, or publish it as an npm package and import it by name. A module that
   is a link to a file outside the package gets the same error, with `links to`
-  in place of `imports`.
+  in place of `imports`, and an imported file that is such a link is named with
+  its target: `imports .../helper.js, a link to .../shared.js, which is
+  outside`.
 - `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
   which does not exist in the browser.` Remove the import, and do the work that
   needs it in a backend event handler instead.

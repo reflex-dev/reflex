@@ -1085,16 +1085,26 @@ def test_compile_script_modules_errors(
     assert str(error.value) == fill(message)
 
 
-def test_compile_script_modules_rejects_a_module_linked_from_outside(
+@pytest.mark.parametrize("linked", ["module", "import"])
+def test_compile_script_modules_rejects_a_link_to_outside(
     script_app: tuple[Path, dict, list[list[Path]]],
     monkeypatch: pytest.MonkeyPatch,
+    windows_platform: bool,
+    linked: str,
 ):
-    """A module that is a link to a file outside the package is outside it.
+    """A module, or a file it imports, that is a link to a file outside the package is outside it.
+
+    The module is listed by its real path, and a file it imports by the path
+    the import names.
 
     Args:
         script_app: the app package, the stand-in script's output and its runs.
         monkeypatch: pytest monkeypatch fixture.
+        windows_platform: Whether symlinks require Windows privileges.
+        linked: whether the module or the file it imports is the link.
     """
+    if windows_platform:
+        pytest.skip("Symlinks require additional privileges on Windows")
     package, report, _ = script_app
     shared = package.parent / "shared" / "vendor.js"
     shared.parent.mkdir()
@@ -1102,17 +1112,25 @@ def test_compile_script_modules_rejects_a_module_linked_from_outside(
     vendor = package / "scripts" / "vendor.js"
     vendor.parent.mkdir(parents=True)
     vendor.symlink_to(shared)
-    _import_script_module(monkeypatch, "app.scripts.vendor", vendor, {"shout"})
+    if linked == "module":
+        _import_script_module(monkeypatch, "app.scripts.vendor", vendor, {"shout"})
+        module, files = "app.scripts.vendor", [shared]
+        outside = f"links to {shared}"
+    else:
+        party = package / "scripts" / "party.js"
+        _import_script_module(monkeypatch, "app.scripts.party", party, {"shout"})
+        module, files = "app.scripts.party", [party, vendor]
+        outside = f"imports {vendor}, a link to {shared}"
     report.update({
-        "modules": {str(shared): _script_exports([shared], ["shout"])},
-        "imports": {str(shared): []},
+        "modules": {str(files[0]): _script_exports(files, ["shout"])},
+        "imports": {},
         "errors": [],
     })
     with pytest.raises(ReflexRuntimeError) as error:
         utils.compile_script_modules(_app_modules())
     assert str(error.value) == (
-        f"The JavaScript module app.scripts.vendor links to {shared}, which is "
-        f"outside {package}, the directory of the app's package, and only that "
+        f"The JavaScript module {module} {outside}, which is outside "
+        f"{package}, the directory of the app's package, and only that "
         "directory is copied into the compiled app. Move the file into it, or "
         "publish it as an npm package and import it by name."
     )
