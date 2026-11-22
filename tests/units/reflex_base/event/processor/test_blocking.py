@@ -102,12 +102,18 @@ async def _run_monitored(
     monitor = EventLoopBlockingMonitor(
         asyncio.get_running_loop(), threshold=0.04, event_handlers=event_handlers or {}
     )
+    # The monitor leaves collections out of the total, so an automatic one during a
+    # block would shorten it below the blocked time the tests check.
+    collecting = gc.isenabled()
+    gc.disable()
     monitor.start()
     try:
         await asyncio.create_task(fn(), name=task_name)
         await asyncio.sleep(0)
     finally:
         monitor.stop()
+        if collecting:
+            gc.enable()
 
 
 def _blocking(
