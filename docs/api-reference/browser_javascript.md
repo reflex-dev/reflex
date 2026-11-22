@@ -446,13 +446,18 @@ arguments: `def run(*args: Any)`.
   reportMissingModuleSource = "none"
   ```
 
-When TypeScript cannot read the types, the app still runs and Reflex warns:
+When the types cannot be read, the app still runs and Reflex warns
 `Reflex could not read the argument types of the JavaScript modules
-.../party.js, so their type stubs accept any arguments: script-signatures.js
-failed: ...` The error after `failed:` says why. The stub takes any arguments
-until the types can be read, which Reflex retries on every compile; if it
-keeps failing, delete `.web/node_modules` so the next run reinstalls
-TypeScript, or report the error at https://github.com/reflex-dev/reflex/issues.
+.../party.js, so their type stubs accept any arguments; the app still runs.`,
+then why. The stub takes any arguments until the types can be read, which
+Reflex retries on every compile:
+
+- `script-signatures.js failed. If this repeats, delete .../.web/node_modules
+  so that the next run reinstalls typescript, or report the error at
+  https://github.com/reflex-dev/reflex/issues:` and TypeScript's error.
+- `.../.web/script-signatures.js printed output that this version of Reflex
+  does not read, so it is likely left over from another version.` Delete the
+  `.web` directory, and the next run writes it again.
 
 ### Errors
 

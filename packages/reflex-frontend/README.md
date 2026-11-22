@@ -103,11 +103,15 @@ and `@react-router/fs-routes`, which every app installs as dev dependencies.
 `script-modules.js` imports rolldown's parser through `vite`, another of them;
 here vitest brings both.
 
-What `script-modules.js` prints is a contract with the compiler, which reads
-it with `_read_script_modules` in `reflex/compiler/utils.py` and rejects output
-of any other `format` or shape. Change its `format` with its shape, and the
-TypedDicts there with both; `test_read_script_modules_contract` runs the real
-script through that parser.
+What `script-modules.js` and `script-signatures.js` print is a contract with
+the compiler, which reads it with `_read_script_modules` and
+`_read_script_signatures` in `reflex/compiler/utils.py` and rejects output of
+any other `format` or shape. Change a script's `format` with its shape, and the
+TypedDicts there (`Signatures` in `reflex_base/js/stubs.py`) with both;
+`test_read_script_modules_contract` runs the real `script-modules.js` through
+that parser, and `test_parse_report_reads_the_signatures_the_real_script_prints`
+parses `tests/fixtures/signatures/signatures.json`, which the vitest checks
+`script-signatures.js` prints.
 
 ## Before this can be published
 

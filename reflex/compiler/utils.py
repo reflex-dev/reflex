@@ -10,13 +10,14 @@ import json
 import operator
 import os
 import subprocess
+import sys
 import tempfile
 import traceback
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import MISSING
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
@@ -79,6 +80,9 @@ write_file = path_ops.write_file
 
 # How long reading the types of the app's JavaScript modules may take.
 _SIGNATURES_TIMEOUT = 120
+
+# What a script of ``.web`` prints, as a TypedDict.
+_Report = TypeVar("_Report")
 
 
 def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
@@ -374,6 +378,42 @@ def _run_web_script(
     )
 
 
+def _parse_report(output: str, shape: type[_Report]) -> _Report | None:
+    """Parse what a script of ``.web`` printed, if it has the shape Reflex reads.
+
+    Args:
+        output: What it printed.
+        shape: The TypedDict of its output.
+
+    Returns:
+        The output, or None if it is not JSON of that shape, as a script that
+        another Reflex version left in ``.web`` can print.
+    """
+    try:
+        report = json.loads(output)
+    except ValueError:
+        return None
+    # Every level: the types in a signature nest as deep as the code's own do.
+    return report if types._isinstance(report, shape, nested=sys.maxsize) else None
+
+
+def _unreadable_output(script: str) -> str:
+    """Say that a script of ``.web`` printed output of another shape, and the fix.
+
+    Args:
+        script: The script.
+
+    Returns:
+        The message.
+    """
+    web_dir = get_web_dir()
+    return (
+        f"{web_dir / script} printed output that this version of Reflex does not "
+        "read, so it is likely left over from another version. Delete "
+        f"{web_dir} so that the next run writes it again."
+    )
+
+
 def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
     """Read JavaScript modules with ``script-modules.js``, run in ``.web``.
 
@@ -399,20 +439,10 @@ def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
             f"{process.stderr.strip()}"
         )
         raise ReflexRuntimeError(msg)
-    try:
-        report = json.loads(process.stdout)
-    except ValueError:
-        report = None
-    # Six levels reach the strings in the lists of each module's exports.
-    if not types._isinstance(report, _ScriptModulesReport, nested=6):
-        web_dir = get_web_dir()
-        msg = (
-            f"{web_dir / _SCRIPT_MODULES_SCRIPT} printed output that this version "
-            "of Reflex does not read, so it is likely left over from another "
-            f"version. Delete {web_dir} so that the next run writes it again."
-        )
-        raise ReflexRuntimeError(msg)
-    return cast("_ScriptModulesReport", report)
+    report = _parse_report(process.stdout, _ScriptModulesReport)
+    if report is None:
+        raise ReflexRuntimeError(_unreadable_output(_SCRIPT_MODULES_SCRIPT))
+    return report
 
 
 def _check_script_names(
@@ -582,23 +612,34 @@ def _read_script_signatures(paths: Sequence[Path]) -> Signatures | None:
 
     Returns:
         The signatures and the files they were read from, or None if they could
-        not be read, which this warns about.
+        not be read, which this warns about: the script failed, timed out, or
+        printed output of another shape.
     """
     try:
         process = _run_web_script(_SIGNATURES_SCRIPT, paths, _SIGNATURES_TIMEOUT)
     except subprocess.TimeoutExpired as error:
         detail = str(error)
     else:
-        if not process.returncode:
-            return json.loads(process.stdout)
-        detail = process.stderr.strip()
+        if process.returncode:
+            detail = process.stderr.strip()
+        elif (signatures := _parse_report(process.stdout, Signatures)) is not None:
+            return signatures
+        else:
+            detail = None
+    reason = (
+        _unreadable_output(_SIGNATURES_SCRIPT)
+        if detail is None
+        else (
+            f"{_SIGNATURES_SCRIPT} failed. If this repeats, delete "
+            f"{get_web_dir() / 'node_modules'} so that the next run reinstalls "
+            "typescript, or report the error at "
+            f"https://github.com/reflex-dev/reflex/issues:\n{detail}"
+        )
+    )
     console.warn(
         "Reflex could not read the argument types of the JavaScript modules "
         f"{', '.join(map(str, paths))}, so their type stubs accept any "
-        f"arguments: {_SIGNATURES_SCRIPT} failed: {detail}. The app still runs. "
-        f"If this repeats, delete {get_web_dir() / 'node_modules'} so that the "
-        "next run reinstalls typescript, or report the error at "
-        "https://github.com/reflex-dev/reflex/issues."
+        f"arguments; the app still runs. {reason}"
     )
     return None
 

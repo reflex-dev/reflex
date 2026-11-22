@@ -101,6 +101,8 @@ class Signature(TypedDict):
 class Signatures(TypedDict):
     """What ``script-signatures.js`` prints."""
 
+    # The version of this shape, which the script changes with it.
+    format: Literal[1]
     # The call signatures of each module's exports, by module, then by name.
     modules: dict[str, dict[str, list[Signature]]]
     # The files TypeScript read the types from, other than its own libraries

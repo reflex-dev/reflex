@@ -1,4 +1,5 @@
 {
+  "format": 1,
   "modules": {
     "jsdoc.js": {
       "celebrate": [

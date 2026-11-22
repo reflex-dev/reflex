@@ -16,6 +16,8 @@
  * Run from the app's .web directory, where typescript is installed. Prints:
  *
  *   {
+ *     "format": 1,               the version of this shape, which the
+ *                                compiler checks: change it with the shape
  *     "modules": {"<module>": {"<export>": [{"parameters": [
  *       {"name": string, "type": type, "optional": boolean, "rest": boolean}
  *     ]}, ...]}},                one signature per overload; none if it has
@@ -245,4 +247,4 @@ const read = program
       !source.fileName.includes("/node_modules/"),
   )
   .map((source) => source.fileName);
-process.stdout.write(JSON.stringify({ modules, files: read }));
+process.stdout.write(JSON.stringify({ format: 1, modules, files: read }));

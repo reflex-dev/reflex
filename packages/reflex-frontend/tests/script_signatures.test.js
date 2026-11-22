@@ -18,7 +18,7 @@ const fixtures = fileURLToPath(
 /**
  * Run the script on fixture files.
  * @param {string[]} names The fixtures' file names.
- * @returns {Promise<{modules: Record<string, unknown>, files: string[]}>} Its
+ * @returns {Promise<{format: number, modules: Record<string, unknown>, files: string[]}>} Its
  * output, with file names in place of paths.
  */
 const signatures = async (names) => {
@@ -34,8 +34,11 @@ const signatures = async (names) => {
   try {
     vi.resetModules();
     await import("$/script-signatures.js");
-    const { modules, files } = JSON.parse(String(write.mock.calls[0][0]));
+    const { format, modules, files } = JSON.parse(
+      String(write.mock.calls[0][0]),
+    );
     return {
+      format,
       modules: Object.fromEntries(
         Object.entries(modules).map(([file, exports]) => [
           basename(file),
@@ -69,6 +72,7 @@ test("lists the files the types were read from, without libraries", async () => 
 test("a type that contains itself stops at its first repeat", async () => {
   // The repeat has no finite JSON shape, so it accepts any value.
   expect(await signatures(["recursive.ts"])).toEqual({
+    format: 1,
     modules: {
       "recursive.ts": {
         Tree: [],

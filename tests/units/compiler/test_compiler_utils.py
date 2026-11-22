@@ -16,7 +16,7 @@ import pytest
 from reflex_base import constants
 from reflex_base.components.memo import create_passthrough_component_memo
 from reflex_base.js.modules import _app_modules, _load_module, _ScriptModule
-from reflex_base.js.stubs import _TYPESCRIPT_PACKAGE, _module_digest
+from reflex_base.js.stubs import _TYPESCRIPT_PACKAGE, Signatures, _module_digest
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_components_core.base.fragment import Fragment
@@ -1395,6 +1395,7 @@ def test_compile_script_stubs(stub_app: tuple[Path, dict[Path, Any]]):
     _fake_signatures(
         "print({!r})\n".format(
             json.dumps({
+                "format": 1,
                 "modules": {str(party): {"go": [{"parameters": [parameter]}]}},
                 "files": [str(party), str(shapes)],
             })
@@ -1445,7 +1446,9 @@ def test_compile_script_stubs_removes_stubs_of_modules_no_longer_imported(
     party, modules = stub_app
     web_dir = utils.get_web_dir()
     _fake_signatures(
-        f"print({json.dumps({'modules': {str(party): {}}, 'files': []})!r})\n"
+        "print({!r})\n".format(
+            json.dumps({"format": 1, "modules": {str(party): {}}, "files": []})
+        )
     )
     # No module and no stub written before: nothing to record.
     assert utils.compile_script_stubs({}) == []
@@ -1474,8 +1477,35 @@ def test_compile_script_stubs_removes_stubs_of_modules_no_longer_imported(
     )
 
 
+# Why the types of a module could not be read, and the fix, after a stand-in
+# for script-signatures.js printed output of another shape.
+_UNREADABLE_SIGNATURES = (
+    "{web_dir}/script-signatures.js printed output that this version of Reflex "
+    "does not read, so it is likely left over from another version. Delete "
+    "{web_dir} so that the next run writes it again."
+)
+
+
+def _print_signatures(modules: str, files: str = "[]", format_: str = "1") -> str:
+    """Make the fake signatures script print output for the module ``party``.
+
+    Args:
+        modules: The Python expression of the signatures of its exports.
+        files: The Python expression of the files its types were read from.
+        format_: The Python expression of the output's format.
+
+    Returns:
+        The script's code, which prints the output.
+    """
+    return (
+        "import json\n"
+        f"print(json.dumps({{'format': {format_}, 'files': {files}, "
+        f"'modules': {{sys.argv[1]: {modules}}}}}))\n"
+    )
+
+
 @pytest.mark.parametrize(
-    ("body", "timeout", "detail"),
+    ("body", "timeout", "reason"),
     [
         (
             (
@@ -1483,13 +1513,61 @@ def test_compile_script_stubs_removes_stubs_of_modules_no_longer_imported(
                 "sys.exit(1)\n"
             ),
             utils._SIGNATURES_TIMEOUT,
-            "Error: Cannot find module 'typescript'",
+            (
+                "script-signatures.js failed. If this repeats, delete "
+                "{web_dir}/node_modules so that the next run reinstalls typescript, "
+                "or report the error at https://github.com/reflex-dev/reflex/issues:\n"
+                "Error: Cannot find module 'typescript'"
+            ),
         ),
         (
             "import time\ntime.sleep(30)\n",
             0.5,
-            "Command '{command}' timed out after 0.5 seconds",
+            (
+                "script-signatures.js failed. If this repeats, delete "
+                "{web_dir}/node_modules so that the next run reinstalls typescript, "
+                "or report the error at https://github.com/reflex-dev/reflex/issues:\n"
+                "Command '{command}' timed out after 0.5 seconds"
+            ),
         ),
+        ("print('Debugger attached.')\n", 1, _UNREADABLE_SIGNATURES),
+        # The output of another version of the script.
+        (
+            'print(\'{"modules": {}, "files": []}\')\n',
+            1,
+            _UNREADABLE_SIGNATURES,
+        ),
+        (_print_signatures("{}", format_="2"), 1, _UNREADABLE_SIGNATURES),
+        # The right version, of another shape: files not strings, a parameter
+        # without `rest`, a type of an unknown kind deep in another.
+        (_print_signatures("{}", files="[1]"), 1, _UNREADABLE_SIGNATURES),
+        (
+            _print_signatures(
+                "{'go': [{'parameters': [{'name': 'n', 'type': 'float', "
+                "'optional': False}]}]}"
+            ),
+            1,
+            _UNREADABLE_SIGNATURES,
+        ),
+        (
+            _print_signatures(
+                "{'go': [{'parameters': [{'name': 'n', 'optional': False, "
+                "'rest': False, 'type': {'kind': 'list', 'item': {'kind': "
+                "'union', 'members': ['str', {'kind': 'set', 'item': 'str'}]}}}]}]}"
+            ),
+            1,
+            _UNREADABLE_SIGNATURES,
+        ),
+    ],
+    ids=[
+        "fails",
+        "times-out",
+        "not-json",
+        "no-format",
+        "format-2",
+        "files-not-strings",
+        "no-rest",
+        "nested-unknown-kind",
     ],
 )
 def test_compile_script_stubs_warns_when_the_types_cannot_be_read(
@@ -1497,7 +1575,7 @@ def test_compile_script_stubs_warns_when_the_types_cannot_be_read(
     monkeypatch: pytest.MonkeyPatch,
     body: str,
     timeout: float,
-    detail: str,
+    reason: str,
 ):
     """The stub accepts any arguments, the warning says why, and the next compile retries.
 
@@ -1506,7 +1584,8 @@ def test_compile_script_stubs_warns_when_the_types_cannot_be_read(
         monkeypatch: pytest monkeypatch fixture.
         body: the fake signatures script's code.
         timeout: how long the script may run.
-        detail: what the warning says went wrong, with ``{command}`` for the
+        reason: why the warning says the types could not be read, with
+            ``{web_dir}`` for the web directory and ``{command}`` for the
             command that ran.
     """
     party, modules = stub_app
@@ -1531,13 +1610,21 @@ def test_compile_script_stubs_warns_when_the_types_cannot_be_read(
     command = [sys.executable, "script-signatures.js", str(party)]
     warning = (
         "Reflex could not read the argument types of the JavaScript modules "
-        f"{party}, so their type stubs accept any arguments: script-signatures.js "
-        f"failed: {detail.format(command=command)}. The app still runs. If this "
-        f"repeats, delete {web_dir / 'node_modules'} so that the next run "
-        "reinstalls typescript, or report the error at "
-        "https://github.com/reflex-dev/reflex/issues."
+        f"{party}, so their type stubs accept any arguments; the app still runs. "
+        + reason.format(web_dir=web_dir, command=command)
     )
     assert warnings == [warning, warning]
+
+
+def test_parse_report_reads_the_signatures_the_real_script_prints():
+    """The output script-signatures.js prints for its fixtures has the shape read.
+
+    Its vitest checks that the script prints the fixture.
+    """
+    output = (
+        FRONTEND_PACKAGE / "tests" / "fixtures" / "signatures" / "signatures.json"
+    ).read_text()
+    assert utils._parse_report(output, Signatures) == json.loads(output)
 
 
 # The npm packages of reflex-frontend, which has the scripts' vite and typescript.
