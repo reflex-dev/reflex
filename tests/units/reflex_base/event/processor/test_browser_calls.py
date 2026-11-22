@@ -312,22 +312,15 @@ async def test_disconnect_fails_every_call_of_the_tab_after_the_grace_period():
 
 
 async def test_disconnect_without_a_grace_period_fails_the_calls_at_once():
-    """A grace period of zero fails the calls on the disconnect itself."""
+    """A grace period of zero fails the calls on the disconnect itself, except one already settled."""
     calls = BrowserCalls()
-    _, task, _ = await _start_call(calls)
-    calls.disconnect("tok", 0)
-    assert calls._tabs == {}
-    assert await _raised(task) == (BrowserDisconnectedError, grace_expired(0))
-    _assert_forgotten(calls)
-
-
-async def test_a_result_that_came_before_the_disconnect_is_kept():
-    """A call settled just before its tab disconnects returns its result."""
-    calls = BrowserCalls()
-    _, task, rid = await _start_call(calls)
+    _, settled, rid = await _start_call(calls)
+    _, unsettled, _ = await _start_call(calls)
     calls.resolve(rid, {"json": "7"})
     calls.disconnect("tok", 0)
-    assert await task == 7
+    assert calls._tabs == {}
+    assert await settled == 7
+    assert await _raised(unsettled) == (BrowserDisconnectedError, grace_expired(0))
     _assert_forgotten(calls)
 
 

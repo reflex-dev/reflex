@@ -213,10 +213,10 @@ class BrowserCalls:
             self._fail(token, _PAGE_REPLACED)
 
     def close(self) -> None:
-        """Cancel every pending call, as the backend shuts down."""
-        for tab in self._tabs.values():
-            if tab.grace_timer is not None:
-                tab.grace_timer.cancel()
+        """Cancel every pending call, as the backend shuts down.
+
+        Each call forgets itself and cancels its tab's grace timer as it ends.
+        """
         for future in self._futures.values():
             future.cancel()
 
