@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import logging
 import os
 import sys
@@ -110,9 +111,14 @@ class EventLoopBlockingMonitor:
         self._app_root = f"{Path.cwd()}{os.sep}"
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
+        # Seconds spent in finished garbage collections, and when the running one
+        # started. Only the collecting thread writes it, as one tuple, so the
+        # monitor thread always reads a consistent pair.
+        self._collections: tuple[float, float | None] = (0.0, None)
 
     def start(self) -> None:
         """Start the single monitor thread for this event processor."""
+        gc.callbacks.append(self._time_collection)
         self._thread = threading.Thread(
             target=self._run,
             name="reflex-event-loop-monitor",
@@ -126,6 +132,33 @@ class EventLoopBlockingMonitor:
         if self._thread is not None:
             self._thread.join(timeout=1)
             self._thread = None
+        if self._time_collection in gc.callbacks:
+            gc.callbacks.remove(self._time_collection)
+
+    def _time_collection(self, phase: str, info: dict[str, int]) -> None:
+        """Add up the time spent in garbage collections, called by the collector.
+
+        Args:
+            phase: "start" before a collection, "stop" after it.
+            info: Details about the collection, unused.
+        """
+        total, started = self._collections
+        if phase == "start":
+            self._collections = (total, time.perf_counter())
+        elif started is not None:
+            self._collections = (total + time.perf_counter() - started, None)
+
+    def _clock(self) -> float:
+        """Read a clock that stands still while the garbage collector runs.
+
+        A collection holds up the loop in whichever task allocates when it starts,
+        so it is not that task's blocking.
+
+        Returns:
+            Seconds of the performance counter, minus garbage collection.
+        """
+        total, started = self._collections
+        return (time.perf_counter() if started is None else started) - total
 
     def _describe_blocking(self) -> _BlockingReport | None:
         """Describe the task that runs on the blocked loop.
@@ -258,7 +291,7 @@ class EventLoopBlockingMonitor:
         interval = min(max(self.threshold / 10, 0.001), 0.01)
         while not self._stop.wait(interval):
             responsive = threading.Event()
-            started = time.perf_counter()
+            started = self._clock()
             try:
                 self.loop.call_soon_threadsafe(responsive.set)
             except RuntimeError:
@@ -270,7 +303,7 @@ class EventLoopBlockingMonitor:
             while not responsive.wait(interval):
                 if self._stop.is_set():
                     break
-                elapsed = time.perf_counter() - started
+                elapsed = self._clock() - started
                 if (
                     subject is None
                     and elapsed + interval >= self.threshold
@@ -289,5 +322,5 @@ class EventLoopBlockingMonitor:
                 logger.warning(
                     "%s blocked the event loop for %.3fs in total.",
                     subject,
-                    time.perf_counter() - started,
+                    self._clock() - started,
                 )

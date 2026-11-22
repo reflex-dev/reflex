@@ -1,6 +1,7 @@
 """Tests for development-time event-loop blocking detection."""
 
 import asyncio
+import gc
 import importlib
 import logging
 import os
@@ -513,6 +514,34 @@ async def test_awaiting_event_is_not_reported(
 
     await _run_monitored(
         yielding_handler, f"{EVENT_TASK_PREFIX}state.yielding|token|txid"
+    )
+
+    assert "the event loop" not in caplog_blocking.text
+
+
+async def test_garbage_collection_is_not_reported(
+    caplog_blocking: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Do not blame the task that a slow garbage collection interrupts."""
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
+
+    class _SlowGarbage:
+        """A reference cycle whose finalizer holds up the collection."""
+
+        def __init__(self) -> None:
+            self.cycle = self
+
+        def __del__(self) -> None:
+            time.sleep(_BLOCK_SECONDS)
+
+    async def collecting_handler():  # noqa: RUF029
+        """Hold the loop in a garbage collection once a probe waits for it."""
+        _SlowGarbage()
+        assert probe_pending.wait(timeout=1)
+        gc.collect()
+
+    await _run_monitored(
+        collecting_handler, f"{EVENT_TASK_PREFIX}state.collecting|token|txid"
     )
 
     assert "the event loop" not in caplog_blocking.text
