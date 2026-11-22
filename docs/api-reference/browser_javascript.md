@@ -503,6 +503,13 @@ The compile stops with these errors:
   in place of `imports`, and an imported file that is such a link is named with
   its target: `imports .../helper.js, a link to .../shared.js, which is
   outside`.
+- `The JavaScript file .../party.js imports .../loop/party.js through
+  .../loop, a link back to a directory its imports were already in, so the
+  same files are imported again one link deeper, without end.` A link to a
+  directory that holds it, such as `loop` pointing to `.`, lets an import reach
+  the same file again at a longer path, and each copy of the file would need
+  its own. Import the file by a path that does not go through the link, or
+  replace the link with a real directory.
 - `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
   which does not exist in the browser.` Remove the import, and do the work that
   needs it in a backend event handler instead.
