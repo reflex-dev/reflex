@@ -18,8 +18,8 @@ const fixtures = fileURLToPath(
 /**
  * Run the script on fixture files.
  * @param {string[]} names The fixtures' file names.
- * @returns {Promise<{format: number, modules: Record<string, unknown>, files: string[]}>} Its
- * output, with file names in place of paths.
+ * @returns {Promise<{format: number, modules: Record<string, unknown>, files: Record<string, string[]>}>}
+ * Its output, with file names in place of paths.
  */
 const signatures = async (names) => {
   const argv = process.argv;
@@ -45,7 +45,12 @@ const signatures = async (names) => {
           exports,
         ]),
       ),
-      files: files.map((file) => basename(file)),
+      files: Object.fromEntries(
+        Object.entries(files).map(([file, read]) => [
+          basename(file),
+          read.map((name) => basename(name)),
+        ]),
+      ),
     };
   } finally {
     write.mockRestore();
@@ -60,13 +65,47 @@ test("classifies each parameter's type into the JSON value Python sends", async 
   ).toEqual(JSON.parse(readFileSync(`${fixtures}signatures.json`, "utf-8")));
 });
 
-test("lists the files the types were read from, without libraries", async () => {
+test("lists the files each module's types are read from", async () => {
   // jsdoc.js reads a type of shapes.d.ts in a JSDoc `import("./shapes")`, which
-  // the bundler never loads.
-  expect((await signatures(["jsdoc.js"])).files).toEqual([
-    "shapes.d.ts",
+  // the bundler never loads; types.ts, from shapes.d.ts and reexported.js.
+  // referencing.ts reads a global type of a `/// <reference>`d file, and a
+  // missing one is listed too, so that adding it rewrites the stub. No module
+  // lists another's files, nor TypeScript's libraries.
+  const { modules, files } = await signatures([
     "jsdoc.js",
+    "types.ts",
+    "referencing.ts",
   ]);
+  expect(files).toEqual({
+    "jsdoc.js": ["jsdoc.js", "shapes.d.ts"],
+    "types.ts": ["types.ts", "shapes.d.ts", "reexported.js"],
+    "referencing.ts": [
+      "referencing.ts",
+      "typed.ts",
+      "greetings.d.ts",
+      "missing.d.ts",
+    ],
+  });
+  expect(modules["referencing.ts"]).toEqual({
+    greet: [
+      {
+        parameters: [
+          {
+            name: "greeting",
+            type: {
+              kind: "union",
+              members: [
+                { kind: "literal", value: "hey" },
+                { kind: "literal", value: "hi" },
+              ],
+            },
+            optional: false,
+            rest: false,
+          },
+        ],
+      },
+    ],
+  });
 });
 
 test("a type that contains itself stops at its first repeat", async () => {
@@ -98,6 +137,6 @@ test("a type that contains itself stops at its first repeat", async () => {
         ],
       },
     },
-    files: ["recursive.ts"],
+    files: { "recursive.ts": ["recursive.ts"] },
   });
 });

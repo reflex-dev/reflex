@@ -711,7 +711,7 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
             # Never current, so the next compile reads the types again.
             stub = _render_stub(path, "untyped", functions, {})
         else:
-            type_files[str(path)] = signatures["files"]
+            type_files[str(path)] = signatures["files"][real[path]]
             stub = _render_stub(
                 path, digest(path), functions, signatures["modules"][real[path]]
             )

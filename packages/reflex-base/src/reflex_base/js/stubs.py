@@ -105,9 +105,9 @@ class Signatures(TypedDict):
     format: Literal[1]
     # The call signatures of each module's exports, by module, then by name.
     modules: dict[str, dict[str, list[Signature]]]
-    # The files TypeScript read the types from, other than its own libraries
-    # and installed packages.
-    files: list[str]
+    # The files each module's types are read from, by module: it and the local
+    # files it reaches.
+    files: dict[str, list[str]]
 
 
 @functools.cache

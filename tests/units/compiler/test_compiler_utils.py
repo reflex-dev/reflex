@@ -1409,7 +1409,7 @@ def test_write_script_stubs(stub_app: tuple[Path, dict[Path, Any]]):
             json.dumps({
                 "format": 1,
                 "modules": {str(party): {"go": [{"parameters": [parameter]}]}},
-                "files": [str(party), str(shapes)],
+                "files": {str(party): [str(party), str(shapes)]},
             })
         )
     )
@@ -1555,7 +1555,11 @@ def test_write_script_stubs_removes_stubs_of_modules_no_longer_imported(
     web_dir = utils.get_web_dir()
     _fake_signatures(
         "print({!r})\n".format(
-            json.dumps({"format": 1, "modules": {str(party): {}}, "files": []})
+            json.dumps({
+                "format": 1,
+                "modules": {str(party): {}},
+                "files": {str(party): []},
+            })
         )
     )
     # No module and no stub written before: nothing to record.
@@ -1607,7 +1611,7 @@ def _print_signatures(modules: str, files: str = "[]", format_: str = "1") -> st
     """
     return (
         "import json\n"
-        f"print(json.dumps({{'format': {format_}, 'files': {files}, "
+        f"print(json.dumps({{'format': {format_}, 'files': {{sys.argv[1]: {files}}}, "
         f"'modules': {{sys.argv[1]: {modules}}}}}))\n"
     )
 
@@ -1742,7 +1746,8 @@ def test_write_script_stubs_with_the_real_scripts(
     """A TypeScript and a JSDoc module are read by the scripts Reflex runs, through to their stubs.
 
     A declaration file only their types read is not copied into the app, and
-    a change to it rewrites the stubs.
+    a change to it rewrites the stubs; a change to one module rewrites only its
+    own.
 
     Args:
         tmp_path: pytest tmp_path fixture.
@@ -1782,10 +1787,14 @@ def test_write_script_stubs_with_the_real_scripts(
         (draw, modules_dir / "draw.ts"),
         (party, modules_dir / "party.js"),
     ]
-    type_files = [str(shapes), str(draw), str(party)]
+    # Each module's own: neither lists the other.
+    type_files = {
+        draw: [str(draw), str(shapes)],
+        party: [str(party), str(shapes)],
+    }
     record = (
         str(web_dir / "script_stubs.json"),
-        json.dumps({str(draw): type_files, str(party): type_files}),
+        json.dumps({str(path): files for path, files in type_files.items()}),
     )
 
     def stubs(shape: str) -> list[tuple[str, str]]:
@@ -1803,7 +1812,8 @@ def test_write_script_stubs_with_the_real_scripts(
             (
                 str(path.with_suffix(".pyi")),
                 header.format(
-                    path.name, _module_digest(path, [str(path), *type_files], b"{}")
+                    path.name,
+                    _module_digest(path, [str(path), *type_files[path]], b"{}"),
                 )
                 + body,
             )
@@ -1832,6 +1842,9 @@ def test_write_script_stubs_with_the_real_scripts(
     assert _write_stubs(modules) == [record]
     shapes.write_text('export type Shape = "circle" | "star";\n')
     assert _write_stubs(modules) == [*stubs('"circle", "star"'), record]
+    # A change to one module leaves the other's stub as it is.
+    draw.write_text(draw.read_text() + "// edited\n")
+    assert _write_stubs(modules) == [stubs('"circle", "star"')[0], record]
 
 
 def test_copy_files_skips_up_to_date_targets(tmp_path: Path):

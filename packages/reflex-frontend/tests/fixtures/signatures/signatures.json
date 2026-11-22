@@ -469,12 +469,10 @@
     },
     "script.js": {}
   },
-  "files": [
-    "shapes.d.ts",
-    "jsdoc.js",
-    "typed.ts",
-    "reexported.js",
-    "types.ts",
-    "script.js"
-  ]
+  "files": {
+    "jsdoc.js": ["jsdoc.js", "shapes.d.ts"],
+    "typed.ts": ["typed.ts"],
+    "types.ts": ["types.ts", "shapes.d.ts", "reexported.js"],
+    "script.js": ["script.js"]
+  }
 }

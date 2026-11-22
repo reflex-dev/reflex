@@ -22,19 +22,21 @@
  *       {"name": string, "type": type, "optional": boolean, "rest": boolean}
  *     ]}, ...]}},                one signature per overload; none if it has
  *                                no known call signature
- *     "files": [file, ...]       the files the types were read from, other than
- *                                TypeScript's libraries and installed packages
+ *     "files": {"<module>": [file, ...]}
+ *                                the files its types are read from: it and
+ *                                the local files it reaches through imports,
+ *                                JSDoc `import()` types and references
  *   } */
 
 import { createRequire } from "node:module";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 const require = createRequire(import.meta.url);
 const ts = require("typescript");
 
 const web = process.cwd();
 const files = process.argv.slice(2);
-const program = ts.createProgram(files, {
+const options = {
   allowJs: true,
   noEmit: true,
   skipLibCheck: true,
@@ -53,7 +55,8 @@ const program = ts.createProgram(files, {
       join(web, "node_modules", "*"),
     ],
   },
-});
+};
+const program = ts.createProgram(files, options);
 const checker = program.getTypeChecker();
 
 /** @typedef {string | {kind: string, [key: string]: any}} JsonType */
@@ -239,12 +242,39 @@ for (const file of files) {
     ),
   );
 }
-const read = program
-  .getSourceFiles()
-  .filter(
-    (source) =>
-      !program.isSourceFileDefaultLibrary(source) &&
-      !source.fileName.includes("/node_modules/"),
-  )
-  .map((source) => source.fileName);
+/**
+ * List the files a module's types are read from: the module and the local
+ * files it reaches, each once. Per module, so that a change to one module's
+ * files leaves the others' stubs current.
+ * @param {string} file The module.
+ * @returns {string[]} The files, the module first. A referenced file that does
+ * not exist is listed, so that adding it changes them.
+ */
+const reach = (file) => {
+  const reached = new Set([program.getSourceFile(file).fileName]);
+  for (const name of reached) {
+    /** @type {any} `imports`, which holds JSDoc `import()` types too, is internal. */
+    const source = program.getSourceFile(name);
+    if (!source) continue;
+    for (const specifier of source.imports) {
+      const resolved = ts.resolveModuleName(
+        specifier.text,
+        name,
+        options,
+        ts.sys,
+      ).resolvedModule;
+      // An installed package, also when `paths` resolves it, changes with
+      // package.json, which the stub's digest covers.
+      if (resolved && !resolved.resolvedFileName.includes("/node_modules/")) {
+        reached.add(resolved.resolvedFileName);
+      }
+    }
+    for (const reference of source.referencedFiles) {
+      reached.add(resolve(dirname(name), reference.fileName));
+    }
+  }
+  return [...reached];
+};
+
+const read = Object.fromEntries(files.map((file) => [file, reach(file)]));
 process.stdout.write(JSON.stringify({ format: 1, modules, files: read }));
