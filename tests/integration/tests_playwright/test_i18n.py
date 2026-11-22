@@ -3,7 +3,7 @@
 from collections.abc import Generator
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page, Route, expect
 
 from reflex.testing import AppHarness
 
@@ -297,6 +297,51 @@ def test_client_follows_a_locale_the_server_chose(i18n_app: AppHarness, page: Pa
     expect(page.locator("#computed-greeting")).to_have_text("Willkommen")
     cookies = {c.get("name"): c.get("value") for c in page.context.cookies()}
     assert cookies.get("reflex_locale") == "de"
+
+
+def test_first_paint_never_shows_the_source_text(i18n_app: AppHarness, page: Page):
+    """A visitor in a non-default locale never sees the source text painted.
+
+    Args:
+        i18n_app: Running harness for the i18n app.
+        page: Playwright page.
+    """
+    assert i18n_app.frontend_url is not None
+    page.context.add_cookies([
+        {"name": "reflex_locale", "value": "de", "url": i18n_app.frontend_url}
+    ])
+    # Checked right before every frame is painted.
+    page.add_init_script("""
+        window.sourceTextPainted = false;
+        const check = () => {
+            const hello = document.getElementById("static-hello");
+            if (
+                hello?.textContent === "Hello" &&
+                getComputedStyle(document.documentElement).visibility !== "hidden"
+            ) {
+                window.sourceTextPainted = true;
+            }
+            requestAnimationFrame(check);
+        };
+        requestAnimationFrame(check);
+    """)
+    # Held back so the page renders its source text before the catalog arrives.
+    held_catalogs: list[Route] = []
+
+    def hold_catalog(route: Route) -> None:
+        held_catalogs.append(route)
+
+    page.route("**/i18n/de.js*", hold_catalog)
+    page.goto(i18n_app.frontend_url)
+
+    expect(page.locator("#static-hello")).to_have_text("Hello")
+    expect(page.locator("#static-hello")).to_be_hidden()
+    for route in held_catalogs:
+        route.continue_()
+
+    expect(page.locator("#static-hello")).to_have_text("Hallo")
+    expect(page.locator("#static-hello")).to_be_visible()
+    assert page.evaluate("window.sourceTextPainted") is False
 
 
 def test_picked_translation_follows_the_locale(i18n_app: AppHarness, page: Page):

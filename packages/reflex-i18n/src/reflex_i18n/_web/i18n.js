@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -136,6 +137,24 @@ const initialLocale = () => {
   );
 };
 
+// Cookie mode renders the default locale first; for a visitor in another
+// locale the document stays hidden until that locale's catalog has rendered,
+// so the source text never flashes. The timeout shows the page anyway should
+// the catalog never arrive.
+const HOLD_TIMEOUT_MS = 3000;
+let holdTimer;
+
+const releaseDocument = () => {
+  clearTimeout(holdTimer);
+  document.documentElement.style.removeProperty("visibility");
+};
+
+const holdDocument = () => {
+  document.documentElement.style.visibility = "hidden";
+  clearTimeout(holdTimer);
+  holdTimer = setTimeout(releaseDocument, HOLD_TIMEOUT_MS);
+};
+
 export const I18nContext = createContext({
   locale: defaultLocale,
   catalog: undefined,
@@ -189,19 +208,38 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
   onLocaleChangeRef.current = onLocaleChange;
   // Cookie mode starts from the default locale so the server/first render is
   // deterministic and never touches document/navigator; the cookie- and
-  // browser-based locale is resolved client-side in the effect below.
+  // browser-based locale is resolved client-side in the layout effect below.
   const [cookieLocale, setCookieLocale] = useState(defaultLocale);
   // With URL routing the path is authoritative (mirroring the server), so
   // the cookie and browser preferences never override what the URL names.
   const locale = urlRouting
     ? (pathLocale(pathname) ?? defaultLocale)
     : cookieLocale;
-  const [catalog, setCatalog] = useState(undefined);
+  // The catalog together with the locale it was loaded for.
+  const [loaded, setLoaded] = useState({
+    locale: undefined,
+    catalog: undefined,
+  });
+  const holdingRef = useRef(false);
 
-  useEffect(() => {
-    if (!urlRouting) {
-      setCookieLocale(initialLocale());
+  // A layout effect runs before the first paint, so the document is hidden
+  // before the default-locale render could show.
+  useLayoutEffect(() => {
+    if (urlRouting) {
+      return;
     }
+    const initial = initialLocale();
+    if (initial !== defaultLocale) {
+      holdingRef.current = true;
+      holdDocument();
+    }
+    setCookieLocale(initial);
+    return () => {
+      if (holdingRef.current) {
+        holdingRef.current = false;
+        releaseDocument();
+      }
+    };
   }, []);
 
   // Once hydrated, the server's locale wins: it is the one server-side
@@ -218,7 +256,7 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
     loaders[locale]()
       .then((module_) => {
         if (!cancelled) {
-          setCatalog(module_);
+          setLoaded({ locale, catalog: module_ });
         }
       })
       .catch((error) => {
@@ -226,7 +264,7 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
         // falls back to the source msgids rather than keeping the previous
         // locale's catalog. Surface it instead of an unhandled rejection.
         if (!cancelled) {
-          setCatalog(undefined);
+          setLoaded({ locale, catalog: undefined });
         }
         console.error(
           `Failed to load i18n catalog for locale "${locale}".`,
@@ -241,6 +279,15 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
       cancelled = true;
     };
   }, [locale]);
+
+  // Runs once the held locale's catalog is committed, so the revealed
+  // document already shows the translated text.
+  useEffect(() => {
+    if (holdingRef.current && loaded.locale === locale) {
+      holdingRef.current = false;
+      releaseDocument();
+    }
+  }, [loaded, locale]);
 
   const setLocale = useCallback(
     (nextLocale, { notifyServer = true } = {}) => {
@@ -274,7 +321,7 @@ export function I18nProvider({ children, onLocaleChange, serverLocale }) {
 
   return createElement(
     I18nContext.Provider,
-    { value: { locale, catalog, setLocale } },
+    { value: { locale, catalog: loaded.catalog, setLocale } },
     children,
   );
 }
