@@ -4,24 +4,15 @@ from __future__ import annotations
 
 import json
 from collections.abc import Generator
-from typing import TYPE_CHECKING
 
 import pytest
+from playwright.sync_api import Page, expect
 from reflex_base.registry import RegistrationContext
-from selenium.webdriver.common.by import By
 
 from reflex.environment import environment
-from reflex.minify import (
-    MINIFY_JSON,
-    SCHEMA_VERSION,
-    clear_config_cache,
-    int_to_minified_name,
-)
+from reflex.minify import MINIFY_JSON, SCHEMA_VERSION, clear_config_cache
 from reflex.state import State
 from reflex.testing import AppHarness
-
-if TYPE_CHECKING:
-    from selenium.webdriver.remote.webdriver import WebDriver
 
 
 def MinificationApp():
@@ -207,107 +198,52 @@ def minify_app(
         clear_config_cache()
 
 
-@pytest.fixture
-def driver(
-    minify_app: tuple[bool, AppHarness],
-) -> Generator[WebDriver, None, None]:
-    """WebDriver scoped to the parametrized :func:`minify_app`.
+def test_minification(minify_app: tuple[bool, AppHarness], page: Page) -> None:
+    """State, event handler and var names follow the minify config when enabled."""
+    minified, harness = minify_app
+    assert harness.frontend_url is not None
+    page.goto(harness.frontend_url)
+    expect(page.locator("#token")).not_to_have_value("", timeout=15_000)
 
-    Yields:
-        A WebDriver pointed at the running app.
-    """
-    _enabled, harness = minify_app
-    assert harness.app_instance is not None, "app is not running"
-    drv = harness.frontend()
-    try:
-        yield drv
-    finally:
-        drv.quit()
-
-
-def _text_after_colon(text: str) -> str:
-    """Strip the ``"label: "`` prefix from a UI element's text.
-
-    Args:
-        text: The element text.
-
-    Returns:
-        The substring after the first ``": "``, or ``text`` unchanged.
-    """
-    return text.split(": ", 1)[-1] if ": " in text else text
-
-
-def test_minification(
-    minify_app: tuple[bool, AppHarness],
-    driver: WebDriver,
-) -> None:
-    """State and event handler names follow the minify config when enabled."""
-    enabled, harness = minify_app
-    assert harness.app_instance is not None
-
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-    assert harness.poll_for_value(token_input)
-
-    root_name = driver.find_element(By.ID, "root_state_name").text
-    sub_name = driver.find_element(By.ID, "sub_state_name").text
-    increment_name = _text_after_colon(
-        driver.find_element(By.ID, "increment_handler_name").text
-    )
-    update_name = _text_after_colon(
-        driver.find_element(By.ID, "update_handler_name").text
-    )
-
-    count_key = _text_after_colon(driver.find_element(By.ID, "count_key").text)
-
-    if enabled:
-        assert root_name.endswith(int_to_minified_name(10))
-        assert sub_name.endswith(int_to_minified_name(11))
-        assert (
-            increment_name == f"a.{int_to_minified_name(10)}.{int_to_minified_name(5)}"
-        )
-        assert update_name.endswith(f".{int_to_minified_name(7)}")
-        assert "increment" not in increment_name.lower()
-        assert "update_message" not in update_name.lower()
-        assert count_key == "$rx_a__k.c"
+    app_name = harness.app_name
+    default_root = f"{app_name}___{app_name}____root_state"
+    if minified:
+        framework, root, sub = "a", "k", "l"
+        increment, update_message = "f", "h"
+        count_key = "$rx_a__k.c"
     else:
-        assert count_key.endswith(".count_rx_state_")
-        assert increment_name.startswith("reflex___state____state.")
-        assert "root_state" in root_name.lower()
-        assert "sub_state" in sub_name.lower()
-        assert "increment" in increment_name.lower()
-        assert "update_message" in update_name.lower()
-        assert "." in increment_name
-        assert "." in update_name
+        framework = "reflex___state____state"
+        root, sub = default_root, f"{app_name}___{app_name}____sub_state"
+        increment, update_message = "increment", "update_message"
+        count_key = f"{framework}__{root}.count_rx_state_"
+    expect(page.locator("#root_state_name")).to_have_text(f"Root state name: {root}")
+    expect(page.locator("#sub_state_name")).to_have_text(f"Sub state name: {sub}")
+    expect(page.locator("#increment_handler_name")).to_have_text(
+        f"Increment handler: {framework}.{root}.{increment}"
+    )
+    expect(page.locator("#update_handler_name")).to_have_text(
+        f"Update handler: {framework}.{root}.{sub}.{update_message}"
+    )
+    expect(page.locator("#count_key")).to_have_text(f"Count key: {count_key}")
 
-    # Event dispatch sanity check (must work regardless of minification).
-    count = driver.find_element(By.ID, "count_value")
-    doubled = driver.find_element(By.ID, "doubled_value")
-    label_and_count = driver.find_element(By.ID, "label_and_count")
-    assert count.text == "0"
-    assert label_and_count.text == "count: 0"
-    driver.find_element(By.ID, "increment_btn").click()
-    AppHarness.poll_for_or_raise_timeout(lambda: count.text == "1")
-    AppHarness.poll_for_or_raise_timeout(lambda: doubled.text == "2")
-    AppHarness.poll_for_or_raise_timeout(lambda: label_and_count.text == "count: 1")
+    count = page.locator("#count_value")
+    label_and_count = page.locator("#label_and_count")
+    expect(count).to_have_text("0")
+    expect(label_and_count).to_have_text("count: 0")
+    page.locator("#increment_btn").click()
+    expect(count).to_have_text("1")
+    expect(page.locator("#doubled_value")).to_have_text("2")
+    expect(label_and_count).to_have_text("count: 1")
 
     # The cookie is stored under the name it has without minification, so
     # turning minification on or off keeps what browsers already hold.
-    cookie = driver.find_element(By.ID, "cookie_value")
-    driver.find_element(By.ID, "cookie_btn").click()
-    AppHarness.poll_for_or_raise_timeout(lambda: cookie.text == "tok-1")
-    app_name = harness.app_name
-    stored = driver.get_cookie(
-        f"reflex___state____state.{app_name}___{app_name}____root_state"
-        ".token_cookie_rx_state_"
+    page.locator("#cookie_btn").click()
+    expect(page.locator("#cookie_value")).to_have_text("tok-1")
+    cookies = {c.get("name"): c.get("value") for c in page.context.cookies()}
+    assert (
+        cookies[f"reflex___state____state.{default_root}.token_cookie_rx_state_"]
+        == "tok-1"
     )
-    assert stored is not None
-    assert stored["value"] == "tok-1"
 
-    if enabled:
-        # Substate handler dispatch through minified names.
-        message = driver.find_element(By.ID, "message_value")
-        driver.find_element(By.ID, "update_msg_btn").click()
-        AppHarness.poll_for_or_raise_timeout(lambda: "count is 1" in message.text)
-        assert message.text == "count is 1"
+    page.locator("#update_msg_btn").click()
+    expect(page.locator("#message_value")).to_have_text("count is 1")
