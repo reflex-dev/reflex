@@ -84,6 +84,8 @@ def test_app_harness_freezes_the_started_app_until_stopped(tmp_path, monkeypatch
         monkeypatch: pytest monkeypatch fixture
     """
     harness = AppHarness.create(root=tmp_path)
+    # Python 3.12 starts with its immortal tuples frozen.
+    frozen_before = gc.get_freeze_count()
     frozen_while_starting = []
     _stub_start_steps(
         monkeypatch,
@@ -98,8 +100,8 @@ def test_app_harness_freezes_the_started_app_until_stopped(tmp_path, monkeypatch
     finally:
         harness.stop()
 
-    assert frozen_while_starting == [0, 0, 0, 0]
-    assert frozen_while_running > 0
+    assert frozen_while_starting == [frozen_before] * 4
+    assert frozen_while_running > frozen_before
     assert gc.get_freeze_count() == 0
 
 
