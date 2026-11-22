@@ -1085,7 +1085,8 @@ export const processEvent = async (socket, navigate, params) => {
     return;
   }
 
-  // Only proceed if we're not already processing an event.
+  // Stop when nothing is queued. A drain that is already running does not stop
+  // this one: each applies the events it takes off the queue.
   if (event_queue.length === 0) {
     return;
   }
