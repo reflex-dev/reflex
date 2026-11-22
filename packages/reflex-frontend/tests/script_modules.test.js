@@ -157,6 +157,35 @@ test("lists a linked file where its import names it, and its imports from there"
   expect(imports).toEqual({ "party.js": [], "linked.js": [], "near.js": [] });
 });
 
+test("copies a file that Vite loads as its text or URL without reading it", async () => {
+  // `?raw` loads the text and `?url` the URL of a script, so their imports
+  // never run. A stylesheet or a worker loaded by URL is still bundled.
+  const directory = writeFiles({
+    "party.js": [
+      'import text from "./example.js?raw";',
+      'import worklet from "./worklet.js?url";',
+      'import theme from "./theme.css?url";',
+      'import worker from "./worker.js?worker&url";',
+      "export function go() {}",
+    ].join("\n"),
+    "example.js": 'import fs from "node:fs";\n',
+    "worklet.js": 'import "worklet-pkg";\n',
+    "theme.css": '@import "./more.css";\n',
+    "more.css": "",
+    "worker.js": 'import "worker-pkg";\n',
+  });
+  const { modules, imports } = await readModules(directory, ["party.js"]);
+  expect(modules["party.js"].files).toEqual([
+    "party.js",
+    "example.js",
+    "worklet.js",
+    "theme.css",
+    "worker.js",
+    "more.css",
+  ]);
+  expect(imports).toEqual({ "party.js": [], "worker.js": ["worker-pkg"] });
+});
+
 test("reports the position of a file's first syntax error", async () => {
   // Written here: the repository's formatter cannot read a fixture that does
   // not parse.

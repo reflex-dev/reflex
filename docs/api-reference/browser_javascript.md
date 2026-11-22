@@ -369,8 +369,10 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   `./party.css` or `./logo.png`, are bundled with it, and so are the files they
   import, including a stylesheet's `@import` and `url(...)` references. They
   must be inside your app's package directory, which is all of your project
-  that is copied into the compiled app. A file that is a symbolic link is
-  copied where the import names it, so the files it imports are found from
+  that is copied into the compiled app. A file imported as text
+  (`./example.js?raw`), or a script imported as a URL (`./worklet.js?url`), is
+  copied as it is, without the files it imports. A file that is a symbolic link
+  is copied where the import names it, so the files it imports are found from
   there.
 - Reflex writes a type stub (`party.pyi`) next to the module when it compiles
   the app, so type checkers resolve the import.
