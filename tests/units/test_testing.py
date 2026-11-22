@@ -2,7 +2,9 @@
 
 import asyncio
 import contextlib
+import os
 import socket
+import stat
 import sys
 import threading
 import time
@@ -315,10 +317,13 @@ def _accepted_nodelay(client: socket.socket) -> int:
     peer = client.getsockname()
     for fd in Path("/dev/fd").iterdir():
         try:
+            # fromfd leaks its copy of an fd that is not a socket.
+            if not stat.S_ISSOCK(os.fstat(int(fd.name)).st_mode):
+                continue
             sock = socket.fromfd(int(fd.name), socket.AF_INET, socket.SOCK_STREAM)
         except OSError:  # closed since the listing
             continue
-        # Not every fd is a connected socket.
+        # Not every socket is connected.
         with sock, contextlib.suppress(OSError):
             if sock.getpeername() == peer:
                 return sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
@@ -335,6 +340,30 @@ def test_embedded_server_connections_use_tcp_nodelay():
             client.sendall(b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n")
             assert client.recv(1024).startswith(b"HTTP/1.1 200")
             assert _accepted_nodelay(client)
+
+
+@pytest.mark.skipif(IS_WINDOWS, reason="Finds the accepted socket through /dev/fd.")
+def test_finding_the_accepted_socket_leaves_other_fds_alone():
+    """Scanning the fds opens no lasting copy of one.
+
+    A copy of a pipe's write end keeps its reader from seeing EOF: the
+    multiprocessing resource tracker then never exits, and interpreter exit
+    waits for it.
+    """
+    read_end, write_end = os.pipe()
+    os.set_blocking(read_end, False)
+    with (
+        socket.create_server(("127.0.0.1", 0)) as listener,
+        socket.create_connection(listener.getsockname()) as client,
+    ):
+        accepted, _ = listener.accept()
+        with accepted:
+            _accepted_nodelay(client)
+    os.close(write_end)
+    try:
+        assert os.read(read_end, 1) == b""
+    finally:
+        os.close(read_end)
 
 
 def test_poll_for_servers_waits_for_the_backend_itself(tmp_path):
