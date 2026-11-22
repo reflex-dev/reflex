@@ -20,3 +20,8 @@ export default function () {}
 
 /** @type {any} */
 export const anything = globalThis.somethingUntyped;
+
+/** @param {import("./shapes").Shape} shape */
+export function draw(shape) {
+  return shape;
+}

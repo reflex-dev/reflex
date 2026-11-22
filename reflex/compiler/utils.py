@@ -12,11 +12,11 @@ import os
 import subprocess
 import tempfile
 import traceback
-from collections.abc import Collection, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import MISSING
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args, get_origin
 from urllib.parse import urlparse
 
 from reflex_base import constants
@@ -34,12 +34,10 @@ from reflex_base.components.memo import (
 )
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.js.modules import _package_imports
-from reflex_base.js.source import ScriptSource, module_files
 from reflex_base.js.stubs import (
     _SIGNATURES_SCRIPT,
     _TYPESCRIPT_PACKAGE,
-    Export,
-    _exports_by_file,
+    Signatures,
     _is_generated,
     _module_digest,
     _read_header,
@@ -317,101 +315,225 @@ def _compile_bundled_libraries() -> tuple[str, str]:
     return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
 
 
-def _script_module_files(
-    modules_dir: Path,
-) -> tuple[
-    dict[Path, tuple[Path, ScriptSource | None]],
-    dict[str, Path],
-    dict[Path, dict[Path, ScriptSource | None]],
-]:
-    """Find the files of the JavaScript modules the app imports from Python.
+# The script in ``.web`` that reads JavaScript modules with the bundler's parser.
+_SCRIPT_MODULES_SCRIPT = "script-modules.js"
+
+
+class _ScriptExports(TypedDict):
+    """What ``script-modules.js`` reads of one module."""
+
+    # The module and every local file it reaches, the module first.
+    files: list[str]
+    functions: list[str]
+    values: list[str]
+    # Whether an `export * from` exports names the module does not list.
+    exportsAll: bool
+
+
+class _ScriptSyntaxError(TypedDict):
+    """The first syntax error of a file."""
+
+    file: str
+    line: int
+    column: int
+    message: str
+
+
+class _ScriptModulesReport(TypedDict):
+    """What ``script-modules.js`` prints."""
+
+    modules: dict[str, _ScriptExports]
+    # Per script, the specifiers it imports that are not relative paths.
+    imports: dict[str, list[str]]
+    errors: list[_ScriptSyntaxError]
+
+
+def _run_web_script(
+    script: str, paths: Iterable[Path], timeout: float | None = None
+) -> subprocess.CompletedProcess[str]:
+    """Run a script of ``.web`` on JavaScript modules, with Node.js or Bun.
 
     Args:
+        script: The script, such as ``script-modules.js``.
+        paths: The modules.
+        timeout: How long it may run, in seconds; unlimited if None.
+
+    Returns:
+        The finished process, with its output.
+    """
+    runtime = path_ops.get_node_path() or path_ops.get_bun_path()
+    return subprocess.run(
+        [str(runtime), script, *map(str, paths)],
+        cwd=get_web_dir(),
+        capture_output=True,
+        encoding="utf-8",
+        timeout=timeout,
+        check=False,
+    )
+
+
+def _read_script_modules(paths: Sequence[Path]) -> _ScriptModulesReport:
+    """Read JavaScript modules with ``script-modules.js``, run in ``.web``.
+
+    Args:
+        paths: The modules.
+
+    Returns:
+        Each module's files and exports, each script's imports and the first
+        syntax error of each file.
+
+    Raises:
+        ReflexRuntimeError: If the script fails.
+    """
+    process = _run_web_script(_SCRIPT_MODULES_SCRIPT, paths)
+    if process.returncode:
+        msg = (
+            "Reflex could not read the JavaScript modules the app imports from "
+            f"Python: {_SCRIPT_MODULES_SCRIPT} failed. If this repeats, delete "
+            f"{get_web_dir() / 'node_modules'} so that the next run reinstalls the "
+            "frontend packages, or report the error at "
+            "https://github.com/reflex-dev/reflex/issues:\n"
+            f"{process.stderr.strip()}"
+        )
+        raise ReflexRuntimeError(msg)
+    return json.loads(process.stdout)
+
+
+def _check_script_names(
+    module: str, names: set[str], exports: _ScriptExports, shown: Path
+) -> None:
+    """Check that a JavaScript module exports a function of each name Python uses.
+
+    Args:
+        module: The module's Python name.
+        names: The names Python looked up on it.
+        exports: Its exports.
+        shown: Its file, as the error names it.
+
+    Raises:
+        ReflexRuntimeError: If a name is exported as a value, or not exported.
+    """
+    for name in sorted(names.difference(exports["functions"])):
+        if name in exports["values"]:
+            msg = (
+                f"`{name}` is used from {module} as a function, but {shown} "
+                f"exports {name} as a value, and Python can only call functions. "
+                f"Export a function instead, as in `export function {name}() "
+                "{ ... }`."
+            )
+        elif exports["exportsAll"]:
+            continue
+        else:
+            functions = ", ".join(exports["functions"]) or "none"
+            msg = (
+                f"`{name}` is used from {module}, but {shown} exports no "
+                f"function named {name} (its functions: {functions}). Export it "
+                f"from {shown}, as in `export function {name}() {{ ... }}`, or "
+                "correct the name in Python."
+            )
+        raise ReflexRuntimeError(msg)
+
+
+def _copy_targets(
+    module: str, files: list[str], package_dir: Path, modules_dir: Path
+) -> dict[Path, Path]:
+    """Map the files of a JavaScript module to where they are copied.
+
+    They are copied at their paths from the directory that holds the app's
+    package, so relative imports resolve as they do in the source tree.
+
+    Args:
+        module: The module's Python name.
+        files: The module and the local files it reaches.
+        package_dir: The directory of the app's package.
         modules_dir: The directory the files are copied to.
 
     Returns:
-        Each resolved file with its target and its script, or None if it is
-        not a script; each module's file, by module name; and each module's
-        files with their scripts, by the module's file.
+        The target of each file.
 
     Raises:
-        ReflexRuntimeError: If a module imports a file outside its package's
-            directory.
+        ReflexRuntimeError: If a file is outside the package's directory.
     """
-    files: dict[Path, tuple[Path, ScriptSource | None]] = {}
-    modules: dict[str, Path] = {}
-    sources: dict[Path, dict[Path, ScriptSource | None]] = {}
-    for name, path in sorted(
-        RegistrationContext.ensure_context()._script_modules.items()
-    ):
-        package_dir = path.resolve().parents[name.count(".") - 1]
-        module_sources = module_files(path)
-        for file, script in module_sources.items():
-            if not file.is_relative_to(package_dir):
-                msg = (
-                    f"The JavaScript module {name} imports {file}, which is "
-                    f"outside {package_dir}, the directory of the app's package, "
-                    "and only that directory is copied into the compiled app. "
-                    "Move the file into it, or publish it as an npm package "
-                    "and import it by name."
-                )
-                raise ReflexRuntimeError(msg)
-            files.setdefault(
-                file, (modules_dir / file.relative_to(package_dir.parent), script)
+    targets: dict[Path, Path] = {}
+    for file in map(Path, files):
+        if not file.is_relative_to(package_dir):
+            msg = (
+                f"The JavaScript module {module} imports {file}, which is "
+                f"outside {package_dir}, the directory of the app's package, "
+                "and only that directory is copied into the compiled app. "
+                "Move the file into it, or publish it as an npm package "
+                "and import it by name."
             )
-        modules[name] = path.resolve()
-        sources[modules[name]] = module_sources
-    return files, modules, sources
+            raise ReflexRuntimeError(msg)
+        targets[file] = modules_dir / file.relative_to(package_dir.parent)
+    return targets
 
 
 def compile_script_modules() -> tuple[
     list[tuple[str, str]],
     dict[str, list[ImportVar]],
     list[tuple[Path, Path]],
-    dict[Path, dict[Path, ScriptSource | None]],
+    dict[Path, _ScriptExports],
 ]:
     """Compile the JavaScript modules the app imports from Python.
 
-    Each module and the local files it imports, directly or not, are copied
-    under ``utils/script_modules`` at their paths from the directory that holds
-    the app's package, so relative imports resolve as they do in the source
-    tree. ``utils/scripts.js`` maps each module's Python name to a function
-    that loads it.
+    They are read with the bundler's parser, so the frontend packages must be
+    installed. Each module and the local files it reaches are copied under
+    ``utils/script_modules``, and ``utils/scripts.js`` maps each module's
+    Python name to a function that loads it. An app that imports none runs
+    nothing.
 
     Returns:
         The (path, code) outputs; the npm packages to install, which are those
-        the scripts import and, in development, typescript, which reads their
-        types for ``compile_script_stubs``; the (source, target) copies of the
-        other files they reference, such as stylesheets and images, which may
-        be binary; and each module's files, by the module's file.
+        the modules import and, in development, typescript, which reads their
+        types for ``compile_script_stubs``; the (source, target) copies of
+        their files; and what was read of each module, by its file.
+
+    Raises:
+        ReflexRuntimeError: If a file does not parse, and as the checks this
+            calls do, if Python uses a name a module does not export as a
+            function, or a module reaches a file outside the app's package.
     """
     web_dir = get_web_dir()
-    files, modules, sources = _script_module_files(
-        web_dir / constants.Dirs.SCRIPT_MODULES_PATH
-    )
-    outputs: list[tuple[str, str]] = []
-    copies: list[tuple[Path, Path]] = []
-    package_imports: dict[str, list[ImportVar]] = {}
-    for file, (target, script) in files.items():
-        if script is None:
-            copies.append((file, target))
-            continue
-        outputs.append((str(target), script.text))
-        package_imports.update(
-            (package, [ImportVar(tag=None, render=False)])
-            for package in _package_imports(file, script.imports)
+    index = str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS))
+    script_modules = {
+        name: (module.names, module.path.resolve())
+        for name, module in sorted(
+            RegistrationContext.ensure_context()._script_modules.items()
         )
-    if modules and not is_prod_mode():
-        package_imports[_TYPESCRIPT_PACKAGE] = [ImportVar(tag=None, render=False)]
+    }
+    if not script_modules:
+        return [(index, "export default {};\n")], {}, [], {}
+    report = _read_script_modules([path for _, path in script_modules.values()])
+    if report["errors"]:
+        error = report["errors"][0]
+        msg = (
+            f"Syntax error at {error['file']}:{error['line']}:{error['column']}: "
+            f"{error['message']}. Fix the code there: the app imports this file "
+            "from Python, directly or through another JavaScript module."
+        )
+        raise ReflexRuntimeError(msg)
+    modules_dir = web_dir / constants.Dirs.SCRIPT_MODULES_PATH
+    modules: dict[Path, _ScriptExports] = {}
+    copies: dict[Path, Path] = {}
     loaders = ""
-    for name, path in modules.items():
-        specifier = json.dumps(f"$/{files[path][0].relative_to(web_dir).as_posix()}")
+    for name, (names, path) in script_modules.items():
+        exports = report["modules"][str(path)]
+        package_dir = path.parents[name.count(".") - 1]
+        _check_script_names(name, names, exports, path.relative_to(package_dir.parent))
+        copies.update(_copy_targets(name, exports["files"], package_dir, modules_dir))
+        modules[path] = exports
+        specifier = json.dumps(f"$/{copies[path].relative_to(web_dir).as_posix()}")
         loaders += f"  {json.dumps(name)}: () => import({specifier}),\n"
-    outputs.append((
-        str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS)),
-        f"export default {{\n{loaders}}};\n" if loaders else "export default {};\n",
-    ))
-    return outputs, package_imports, copies, sources
+    package_imports = {
+        package: [ImportVar(tag=None, render=False)]
+        for file, specifiers in report["imports"].items()
+        for package in _package_imports(Path(file), specifiers)
+    }
+    if not is_prod_mode():
+        package_imports[_TYPESCRIPT_PACKAGE] = [ImportVar(tag=None, render=False)]
+    outputs = [(index, f"export default {{\n{loaders}}};\n")]
+    return outputs, package_imports, list(copies.items()), modules
 
 
 def copy_files(copies: Iterable[tuple[Path, Path]]) -> None:
@@ -428,10 +550,8 @@ def copy_files(copies: Iterable[tuple[Path, Path]]) -> None:
         target.write_bytes(data)
 
 
-def _read_script_signatures(
-    paths: Collection[Path],
-) -> dict[Path, dict[str, Export]] | None:
-    """Read the signatures of the functions JavaScript modules export.
+def _read_script_signatures(paths: Sequence[Path]) -> Signatures | None:
+    """Read the signatures of the exports of JavaScript modules.
 
     Runs ``script-signatures.js`` in ``.web``, where typescript is installed.
 
@@ -439,95 +559,103 @@ def _read_script_signatures(
         paths: The modules.
 
     Returns:
-        The exports of each module by resolved path, then by name, or None if
-        they could not be read, which this warns about.
+        The signatures and the files they were read from, or None if they could
+        not be read, which this warns about.
     """
-    web_dir = get_web_dir()
-    runtime = path_ops.get_node_path() or path_ops.get_bun_path()
-    if runtime is None:
-        cause = "reading them needs Node.js or Bun, and neither was found"
-        fix = (
-            f"Install Node.js {constants.Node.MIN_VERSION} or newer, then run "
-            "the app again."
-        )
+    try:
+        process = _run_web_script(_SIGNATURES_SCRIPT, paths, _SIGNATURES_TIMEOUT)
+    except subprocess.TimeoutExpired as error:
+        detail = str(error)
     else:
-        try:
-            process = subprocess.run(
-                [str(runtime), _SIGNATURES_SCRIPT, *map(str, paths)],
-                cwd=web_dir,
-                capture_output=True,
-                encoding="utf-8",
-                timeout=_SIGNATURES_TIMEOUT,
-                check=True,
-            )
-            return _exports_by_file(json.loads(process.stdout))
-        except subprocess.CalledProcessError as error:
-            detail = error.stderr.strip()
-        except (OSError, subprocess.TimeoutExpired, ValueError) as error:
-            detail = str(error)
-        cause = f"{_SIGNATURES_SCRIPT} failed: {detail}"
-        fix = (
-            f"If this repeats, delete {web_dir / 'node_modules'} so that the "
-            "next run reinstalls typescript, or report the error at "
-            "https://github.com/reflex-dev/reflex/issues."
-        )
+        if not process.returncode:
+            return json.loads(process.stdout)
+        detail = process.stderr.strip()
     console.warn(
         "Reflex could not read the argument types of the JavaScript modules "
         f"{', '.join(map(str, paths))}, so their type stubs accept any "
-        f"arguments: {cause}. The app still runs. {fix}"
+        f"arguments: {_SIGNATURES_SCRIPT} failed: {detail}. The app still runs. "
+        f"If this repeats, delete {get_web_dir() / 'node_modules'} so that the "
+        "next run reinstalls typescript, or report the error at "
+        "https://github.com/reflex-dev/reflex/issues."
     )
     return None
 
 
+def _remove_orphan_stubs(modules: Iterable[str]) -> None:
+    """Remove the stubs Reflex wrote for modules the app no longer imports.
+
+    A stub that has no header of Reflex's, such as one written by hand, is kept.
+
+    Args:
+        modules: Those modules.
+    """
+    for module in modules:
+        stub = Path(module).with_suffix(".pyi")
+        if _is_generated(_read_header(stub)):
+            stub.unlink()
+
+
 def compile_script_stubs(
-    sources: Mapping[Path, Mapping[Path, ScriptSource | None]],
+    modules: Mapping[Path, _ScriptExports],
 ) -> list[tuple[str, str]]:
     """Write a type stub next to each JavaScript module the app imports.
 
-    Argument types come from the module's TypeScript annotations or JSDoc. A
-    stub whose header records the digest of what it is made from is kept, so
-    typescript only runs for a module when that changed; when the types cannot
-    be read, the stub has untyped arguments and is retried on the next compile.
-    A stub Reflex wrote for a module the app no longer imports is removed.
+    A stub declares the functions the module exports, typed from its
+    TypeScript annotations or JSDoc. Its header records the digest of the
+    files it is made from: the module's files and those TypeScript read its
+    types from last time, which ``.web/script_stubs.json`` keeps. While that
+    is current the stub is kept, so typescript only runs when a file changed;
+    when the types cannot be read, the stub takes any arguments and is retried
+    on the next compile. A stub Reflex wrote for a module the app no longer
+    imports is removed.
 
     Args:
-        sources: Each module's files, by the module's file, from
+        modules: What was read of each module, by its file, from
             ``compile_script_modules``.
 
     Returns:
-        The (path, code) outputs: the stubs to rewrite, and the list of stubs,
-        so the next compile knows which to remove.
+        The (path, code) outputs: the stubs to rewrite, and the type files of
+        each module, for the next compile.
     """
-    web_dir = get_web_dir()
+    record = get_web_dir() / constants.Dirs.SCRIPT_STUBS
+    try:
+        type_files: dict[str, list[str]] = json.loads(
+            record.read_text(encoding="utf-8")
+        )
+    except FileNotFoundError:
+        if not modules:
+            return []
+        type_files = {}
+    _remove_orphan_stubs(type_files.keys() - map(str, modules))
+    type_files = {str(path): type_files.get(str(path), []) for path in modules}
     # A package upgrade can change the types a module uses.
     dependencies = (
-        (web_dir / constants.PackageJson.PATH).read_bytes() if sources else b""
+        (get_web_dir() / constants.PackageJson.PATH).read_bytes() if modules else b""
     )
-    stale: dict[Path, str] = {}
-    for path, files in sources.items():
-        digest = _module_digest(path, files, dependencies)
-        if _read_header(path.with_suffix(".pyi")) != _stub_header(path, digest):
-            stale[path] = digest
-    stubs = [str(path.with_suffix(".pyi")) for path in sources]
-    record = web_dir / constants.Dirs.SCRIPT_STUBS
-    if record.is_file():
-        for stub in set(json.loads(record.read_text(encoding="utf-8"))) - set(stubs):
-            if _is_generated(_read_header(Path(stub))):
-                Path(stub).unlink()
-    outputs = [(str(record), json.dumps(stubs))]
-    if not stale:
-        return outputs
-    signatures = _read_script_signatures(stale)
-    for path, digest in stale.items():
-        # The module itself is a .js or .ts file, so it is a script.
-        functions = cast("ScriptSource", sources[path][path]).functions
+
+    def digest(path: Path) -> str:
+        files = [*modules[path]["files"], *type_files[str(path)]]
+        return _module_digest(path, files, dependencies)
+
+    stale = [
+        path
+        for path in modules
+        if _read_header(path.with_suffix(".pyi")) != _stub_header(path, digest(path))
+    ]
+    signatures = _read_script_signatures(stale) if stale else None
+    stubs: list[tuple[str, str]] = []
+    for path in stale:
+        functions = modules[path]["functions"]
         if signatures is None:
             # Never current, so the next compile reads the types again.
-            stub = _render_stub(path, "untyped", functions, None)
+            stub = _render_stub(path, "untyped", functions, {})
         else:
-            stub = _render_stub(path, digest, functions, signatures[path])
-        outputs.append((str(path.with_suffix(".pyi")), stub))
-    return outputs
+            type_files[str(path)] = signatures["files"]
+            stub = _render_stub(
+                path, digest(path), functions, signatures["modules"][str(path)]
+            )
+        stubs.append((str(path.with_suffix(".pyi")), stub))
+    return [(str(record), json.dumps(type_files)), *stubs]
 
 
 def _restore_bundled_libraries() -> bool:

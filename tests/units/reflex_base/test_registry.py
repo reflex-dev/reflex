@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import pytest
 from reflex_base.config import Config, get_config, reload_config
+from reflex_base.js.modules import _ScriptModule
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
@@ -445,7 +446,7 @@ def test_fork_carries_script_modules(tmp_path: Path):
     Args:
         tmp_path: pytest tmp_path fixture.
     """
-    module = tmp_path / "party.js"
+    module = _ScriptModule(tmp_path / "party.js")
     with RegistrationContext.get().fork() as original:
         original._script_modules["app.party"] = module
         with original.fork() as forked:

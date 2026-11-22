@@ -1,0 +1,11 @@
+/* @import "./commented.css"; */
+@import "./theme.css";
+.a {
+  background: url(img/bg.png?v=1#top);
+}
+.b {
+  background: url("/static/abs.png"), url(data:image/png;base64,AAA);
+  mask: url(#clip);
+  border-image: url("https://example.com/b.png");
+  cursor: url('./missing.cur');
+}

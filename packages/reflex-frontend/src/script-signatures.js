@@ -1,6 +1,6 @@
-/* Print the call signatures of the functions JavaScript modules export, as
- * JSON, for the Python type stubs Reflex writes next to modules an app imports
- * from Python. Types come from TypeScript annotations or, in a .js file, JSDoc.
+/* Print the call signatures of the exports of JavaScript modules, as JSON, for
+ * the Python type stubs Reflex writes next to modules an app imports from
+ * Python. Types come from TypeScript annotations or, in a .js file, JSDoc.
  *
  * Arguments reach the browser as JSON, so each parameter's type is classified
  * here into the JSON value Python can send for it ("any" for a type JSON has
@@ -13,7 +13,16 @@
  *        | {kind: "union", members: type[]}    (two or more, sorted)
  *
  * Usage: node script-signatures.js <module>...
- * Run from the app's .web directory, where typescript is installed. */
+ * Run from the app's .web directory, where typescript is installed. Prints:
+ *
+ *   {
+ *     "modules": {"<module>": {"<export>": [{"parameters": [
+ *       {"name": string, "type": type, "optional": boolean, "rest": boolean}
+ *     ]}, ...]}},                one signature per overload; none if it has
+ *                                no known call signature
+ *     "files": [file, ...]       the files the types were read from, other than
+ *                                TypeScript's libraries and installed packages
+ *   } */
 
 import { createRequire } from "node:module";
 import { join } from "node:path";
@@ -207,42 +216,33 @@ const describeParameter = (parameter, location) => {
   return { name: parameter.getName(), type: described, optional, rest };
 };
 
-/**
- * Whether an export is a value, which the module has at runtime, and not only
- * a type, such as `export type Foo` or `export interface Bar`.
- * @param {any} symbol The exported symbol.
- * @returns {boolean} Whether it is a value.
- */
-const isValue = (symbol) => {
-  const target =
-    symbol.flags & ts.SymbolFlags.Alias
-      ? checker.getAliasedSymbol(symbol)
-      : symbol;
-  return Boolean(target.flags & ts.SymbolFlags.Value);
-};
-
-/** @type {Record<string, {name: string, signatures: any[], untyped: boolean}[]>} */
-const result = {};
+/** @type {Record<string, Record<string, any[]>>} */
+const modules = {};
 for (const file of files) {
   const source = program.getSourceFile(file);
   const moduleSymbol = checker.getSymbolAtLocation(source);
-  result[file] = (moduleSymbol ? checker.getExportsOfModule(moduleSymbol) : [])
-    .filter((symbol) => symbol.getName() !== "default" && isValue(symbol))
-    .map((symbol) => {
-      const type = checker.getTypeOfSymbolAtLocation(symbol, source);
-      return {
-        name: symbol.getName(),
-        signatures: type.getCallSignatures().map((signature) => ({
-          parameters: signature
-            .getParameters()
-            .map((parameter) => describeParameter(parameter, source)),
-        })),
-        // An export of unknown type, such as one from a package without
-        // declarations, may still be a function.
-        untyped: Boolean(
-          type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown),
-        ),
-      };
-    });
+  modules[file] = Object.fromEntries(
+    (moduleSymbol ? checker.getExportsOfModule(moduleSymbol) : []).map(
+      (symbol) => [
+        symbol.getName(),
+        checker
+          .getTypeOfSymbolAtLocation(symbol, source)
+          .getCallSignatures()
+          .map((signature) => ({
+            parameters: signature
+              .getParameters()
+              .map((parameter) => describeParameter(parameter, source)),
+          })),
+      ],
+    ),
+  );
 }
-process.stdout.write(JSON.stringify(result));
+const read = program
+  .getSourceFiles()
+  .filter(
+    (source) =>
+      !program.isSourceFileDefaultLibrary(source) &&
+      !source.fileName.includes("/node_modules/"),
+  )
+  .map((source) => source.fileName);
+process.stdout.write(JSON.stringify({ modules, files: read }));

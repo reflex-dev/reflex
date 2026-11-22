@@ -9,16 +9,6 @@ from reflex_base.registry import RegistrationContext
 
 import reflex as rx
 
-# The source of js_app/party.js.
-PARTY_SOURCE = """
-import confetti from "canvas-confetti";
-export function celebrate(count) {}
-export async function load() {}
-export const arrow = () => 1;
-export const notAFunction = 5;
-export default function () {}
-"""
-
 
 @pytest.fixture
 def app_package(
@@ -43,7 +33,7 @@ def app_package(
     for package in (app, vendor):
         package.mkdir()
         (package / "__init__.py").write_text("")
-    (app / "party.js").write_text(PARTY_SOURCE)
+    (app / "party.js").write_text("export function celebrate(count) {}\n")
     (app / "typed.ts").write_text("export function typed(n: number) {}\n")
     (vendor / "widget.js").write_text("export function widget() {}\n")
     sys.path.insert(0, str(tmp_path))

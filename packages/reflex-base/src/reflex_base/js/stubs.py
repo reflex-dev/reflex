@@ -2,9 +2,10 @@
 
 A stub sits next to its module (``party.js`` gets ``party.pyi``), so type
 checkers resolve ``from my_app.scripts.party import celebrate`` and check the
-call. ``script-signatures.js``, run in the app's ``.web``, reads each export's
-parameters from TypeScript annotations or JSDoc and classifies their types into
-the JSON values Python can send; this module renders them.
+call. A stub declares the functions the compiler found the module exports.
+``script-signatures.js``, run in the app's ``.web``, reads their parameters
+from TypeScript annotations or JSDoc and classifies their types into the JSON
+values Python can send; this module renders them.
 
 Internal: what an app relies on is the stub itself, which
 ``docs/api-reference/browser_javascript.md`` documents.
@@ -22,7 +23,6 @@ from pathlib import Path
 from typing import Literal, TypeAlias, TypedDict
 
 from reflex_base import constants
-from reflex_base.js.source import ScriptSource, type_files
 
 # Installed with an app that imports a JavaScript module, to read its types.
 # Kept equal to the typescript reflex-frontend type-checks itself with.
@@ -98,13 +98,14 @@ class Signature(TypedDict):
     parameters: list[Parameter]
 
 
-class Export(TypedDict):
-    """An export and its call signatures; none when it is not a function."""
+class Signatures(TypedDict):
+    """What ``script-signatures.js`` prints."""
 
-    name: str
-    signatures: list[Signature]
-    # Whether its type is unknown (`any`), so it may still be a function.
-    untyped: bool
+    # The call signatures of each module's exports, by module, then by name.
+    modules: dict[str, dict[str, list[Signature]]]
+    # The files TypeScript read the types from, other than its own libraries
+    # and installed packages.
+    files: list[str]
 
 
 @functools.cache
@@ -118,34 +119,31 @@ def _renderer_digest() -> bytes:
     return hashlib.sha256(Path(__file__).read_bytes() + script.read_bytes()).digest()
 
 
-def _module_digest(
-    path: Path, files: Mapping[Path, ScriptSource | None], dependencies: bytes
-) -> str:
+def _module_digest(path: Path, files: Iterable[str], dependencies: bytes) -> str:
     """Hash what a module's stub is made from.
 
-    That is the scripts the module loads, the files it reads types from, the
-    app's package manifest, whose packages' declarations it may use, and the
-    code that makes stubs.
+    That is the files the module reaches and those its types were read from,
+    the app's package manifest, whose packages' declarations it may use, and
+    the code that makes stubs.
 
     Args:
         path: The module.
-        files: Its files, from ``module_files``.
+        files: Those files; a file that no longer exists changes the digest.
         dependencies: The app's ``package.json``.
 
     Returns:
         A short hex digest.
     """
     digest = hashlib.sha256(_renderer_digest())
-    directory = path.resolve().parent
-    scripts = [
-        *((file, script) for file, script in files.items() if script is not None),
-        *type_files(files).items(),
-    ]
-    for file, script in scripts:
-        # Relative, so the same sources give the same stub on every machine.
-        digest.update(os.path.relpath(file, directory).encode())
-        digest.update(b"\0")
-        digest.update(script.text.encode())
+    # Relative, so the same sources give the same stub on every machine.
+    for name in sorted({os.path.relpath(file, path.parent) for file in files}):
+        try:
+            content = (path.parent / name).read_bytes()
+        except FileNotFoundError:
+            digest.update(name.encode() + b"\1")
+            continue
+        digest.update(name.encode() + b"\0")
+        digest.update(content)
         digest.update(b"\0")
     digest.update(dependencies)
     return digest.hexdigest()[:16]
@@ -220,11 +218,35 @@ def _render_literal(value: str | int | bool) -> str:
     return repr(value)
 
 
+def _render_union(members: list[JsonType], used: set[str]) -> str:
+    """Render the Python type of a union of JSON values.
+
+    Its literals are merged into one ``Literal``, after the other members and
+    before ``None``.
+
+    Args:
+        members: The union's members.
+        used: The names the stub uses, which this adds to.
+
+    Returns:
+        The type.
+    """
+    rendered: list[str] = []
+    literals: list[str] = []
+    for member in members:
+        if isinstance(member, dict) and member["kind"] == "literal":
+            literals.append(_render_literal(member["value"]))
+        elif member != "None":
+            rendered.append(_render_type(member, used))
+    if literals:
+        rendered.append(f"{_use('Literal', used)}[{', '.join(literals)}]")
+    if "None" in members:
+        rendered.append("None")
+    return " | ".join(rendered)
+
+
 def _render_type(type_: JsonType, used: set[str]) -> str:
     """Render the Python type of a JSON value.
-
-    A union's literals are merged into one ``Literal``, after the other
-    members and before ``None``.
 
     Args:
         type_: The JSON type.
@@ -242,19 +264,7 @@ def _render_type(type_: JsonType, used: set[str]) -> str:
     if type_["kind"] == "mapping":
         key = _use("str", used)
         return f"{_use('Mapping', used)}[{key}, {_render_type(type_['value'], used)}]"
-    members: list[str] = []
-    literals: list[str] = []
-    for member in type_["members"]:
-        if isinstance(member, str) or member["kind"] != "literal":
-            if member != "None":
-                members.append(_render_type(member, used))
-        else:
-            literals.append(_render_literal(member["value"]))
-    if literals:
-        members.append(f"{_use('Literal', used)}[{', '.join(literals)}]")
-    if "None" in type_["members"]:
-        members.append("None")
-    return " | ".join(members)
+    return _render_union(type_["members"], used)
 
 
 def _annotation(type_: JsonType, used: set[str]) -> str:
@@ -342,10 +352,16 @@ def _importable(name: str) -> bool:
         name: The export name.
 
     Returns:
-        Whether it is an identifier, not a keyword, and not one of the stub's
-        own names for the types it uses.
+        Whether it is an identifier, not a keyword, not a special name, which
+        the module does not provide, and not one of the stub's own names for
+        the types it uses.
     """
-    return name.isidentifier() and not keyword.iskeyword(name) and name not in _ALIASES
+    return (
+        name.isidentifier()
+        and not keyword.iskeyword(name)
+        and not name.startswith("__")
+        and name not in _ALIASES
+    )
 
 
 def _render_imports(used: set[str]) -> list[str]:
@@ -369,65 +385,39 @@ def _render_stub(
     path: Path,
     digest: str,
     functions: Iterable[str],
-    exports: Mapping[str, Export] | None,
+    signatures: Mapping[str, list[Signature]],
 ) -> str:
     """Render the stub of a module.
 
-    It declares the functions the module exports that Python can import. An
-    export TypeScript knows is not a value, such as a type, is left out, so is
-    one it knows is not a function; one of unknown type, or of a module whose
-    types could not be read, has untyped arguments. An export with several
-    signatures gets one overload each.
+    It declares the functions the module exports that Python can import. One
+    TypeScript has no signature for, such as one of unknown type or of a module
+    whose types could not be read, takes any arguments; one with several gets
+    an overload each.
 
     Args:
         path: The module.
         digest: Its ``_module_digest``.
-        functions: The names it exports that may be functions, from
-            ``parse_script``.
-        exports: Its exports by name, from ``script-signatures.js``, or None if
-            they could not be read.
+        functions: The names it exports as functions, as the compiler found.
+        signatures: The signatures of its exports by name, from
+            ``script-signatures.js``.
 
     Returns:
         The ``.pyi`` source.
     """
     used: set[str] = set()
     definitions: list[str] = []
-    for name in functions:
-        if not _importable(name):
-            continue
-        if exports is None:
-            signatures, untyped = [], True
-        elif name in exports:
-            signatures, untyped = exports[name]["signatures"], exports[name]["untyped"]
-        else:
-            continue
-        if untyped:
+    for name in filter(_importable, functions):
+        overloads = signatures.get(name, [])
+        if not overloads:
             any_ = _use("Any", used)
             definitions.append(
                 f"def {name}(*args: {any_}) -> {_use('EventSpec', used)}: ..."
             )
-        for signature in signatures:
-            if len(signatures) > 1:
+        for signature in overloads:
+            if len(overloads) > 1:
                 definitions.append(f"@{_use('overload', used)}")
             definitions.append(_render_signature(name, signature, used))
     lines = [_stub_header(path, digest)]
     if definitions:
         lines.extend([*_render_imports(used), "", *definitions])
     return "\n".join(lines) + "\n"
-
-
-def _exports_by_file(
-    output: Mapping[str, list[Export]],
-) -> dict[Path, dict[str, Export]]:
-    """Key the output of ``script-signatures.js`` by resolved path and name.
-
-    Args:
-        output: The parsed JSON.
-
-    Returns:
-        The exports of each module, by name.
-    """
-    return {
-        Path(file).resolve(): {export["name"]: export for export in exports}
-        for file, exports in output.items()
-    }

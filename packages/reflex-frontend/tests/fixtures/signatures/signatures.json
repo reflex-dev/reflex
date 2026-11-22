@@ -1,8 +1,7 @@
 {
-  "jsdoc.js": [
-    {
-      "name": "celebrate",
-      "signatures": [
+  "modules": {
+    "jsdoc.js": {
+      "celebrate": [
         {
           "parameters": [
             {
@@ -26,11 +25,7 @@
           ]
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "many",
-      "signatures": [
+      "many": [
         {
           "parameters": [
             {
@@ -42,11 +37,36 @@
           ]
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "untyped",
-      "signatures": [
+      "default": [
+        {
+          "parameters": []
+        }
+      ],
+      "draw": [
+        {
+          "parameters": [
+            {
+              "name": "shape",
+              "type": {
+                "kind": "union",
+                "members": [
+                  {
+                    "kind": "literal",
+                    "value": "circle"
+                  },
+                  {
+                    "kind": "literal",
+                    "value": "square"
+                  }
+                ]
+              },
+              "optional": false,
+              "rest": false
+            }
+          ]
+        }
+      ],
+      "untyped": [
         {
           "parameters": [
             {
@@ -64,23 +84,11 @@
           ]
         }
       ],
-      "untyped": false
+      "notAFunction": [],
+      "anything": []
     },
-    {
-      "name": "notAFunction",
-      "signatures": [],
-      "untyped": false
-    },
-    {
-      "name": "anything",
-      "signatures": [],
-      "untyped": true
-    }
-  ],
-  "typed.ts": [
-    {
-      "name": "pick",
-      "signatures": [
+    "typed.ts": {
+      "pick": [
         {
           "parameters": [
             {
@@ -105,7 +113,10 @@
               "name": "maybe",
               "type": {
                 "kind": "union",
-                "members": ["None", "str"]
+                "members": [
+                  "None",
+                  "str"
+                ]
               },
               "optional": false,
               "rest": false
@@ -113,11 +124,7 @@
           ]
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "overloaded",
-      "signatures": [
+      "overloaded": [
         {
           "parameters": [
             {
@@ -132,11 +139,7 @@
           "parameters": []
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "tupleRest",
-      "signatures": [
+      "tupleRest": [
         {
           "parameters": [
             {
@@ -148,11 +151,7 @@
           ]
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "defaultFirst",
-      "signatures": [
+      "defaultFirst": [
         {
           "parameters": [
             {
@@ -169,14 +168,10 @@
             }
           ]
         }
-      ],
-      "untyped": false
-    }
-  ],
-  "types.ts": [
-    {
-      "name": "literals",
-      "signatures": [
+      ]
+    },
+    "types.ts": {
+      "literals": [
         {
           "parameters": [
             {
@@ -277,11 +272,7 @@
           ]
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "containers",
-      "signatures": [
+      "containers": [
         {
           "parameters": [
             {
@@ -299,7 +290,10 @@
                 "kind": "list",
                 "item": {
                   "kind": "union",
-                  "members": ["float", "str"]
+                  "members": [
+                    "float",
+                    "str"
+                  ]
                 }
               },
               "optional": false,
@@ -365,7 +359,10 @@
                 "kind": "list",
                 "item": {
                   "kind": "union",
-                  "members": ["None", "str"]
+                  "members": [
+                    "None",
+                    "str"
+                  ]
                 }
               },
               "optional": false,
@@ -374,11 +371,7 @@
           ]
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "noJsonForm",
-      "signatures": [
+      "noJsonForm": [
         {
           "parameters": [
             {
@@ -444,18 +437,17 @@
           ]
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "maybe",
-      "signatures": [
+      "maybe": [
         {
           "parameters": [
             {
               "name": "value",
               "type": {
                 "kind": "union",
-                "members": ["None", "str"]
+                "members": [
+                  "None",
+                  "str"
+                ]
               },
               "optional": true,
               "rest": false
@@ -469,41 +461,31 @@
           ]
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "Color",
-      "signatures": [],
-      "untyped": false
-    },
-    {
-      "name": "Level",
-      "signatures": [],
-      "untyped": false
-    },
-    {
-      "name": "Widget",
-      "signatures": [],
-      "untyped": false
-    },
-    {
-      "name": "aliased",
-      "signatures": [
+      "Color": [],
+      "Level": [],
+      "Options": [],
+      "Count": [],
+      "Widget": [],
+      "aliased": [
         {
           "parameters": []
         }
       ],
-      "untyped": false
-    },
-    {
-      "name": "fromReexported",
-      "signatures": [
+      "Shape": [],
+      "fromReexported": [
         {
           "parameters": []
         }
-      ],
-      "untyped": false
-    }
-  ],
-  "script.js": []
+      ]
+    },
+    "script.js": {}
+  },
+  "files": [
+    "shapes.d.ts",
+    "jsdoc.js",
+    "typed.ts",
+    "reexported.js",
+    "types.ts",
+    "script.js"
+  ]
 }

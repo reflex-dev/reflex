@@ -339,10 +339,18 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   `app_name` in `rxconfig.py` names. A `.js` file in another package, such as
   a library you installed, is never imported.
 - A Python module of the same name wins over a JavaScript one.
-- Every named export that may be a function becomes a function. A `const`
-  initialized with a literal, as in `export const limit = 5`, is a value, and
-  Python cannot call it. A default export, a class and TypeScript types are
-  left out.
+- Import each function by name, as in `from my_app.scripts.party import
+  celebrate`, or use it on the module (`party.celebrate`).
+  `from my_app.scripts.party import *` is not supported.
+- When the app compiles, Reflex reads the module with the bundler's parser, so
+  any JavaScript, TypeScript or JSX the bundler accepts works, and checks that
+  each name you use from Python is an exported function. An export that may
+  hold a function counts, such as `export const run = makeRunner()` or a name
+  re-exported from another file. A `const` initialized with a literal, an
+  object, an array or a class, a class and an enum are values, which Python
+  cannot call. A default export and TypeScript types are left out.
+- A name used only inside an event handler is looked up when the handler runs,
+  after the compile, so a wrong name there is reported in the browser.
 - Arguments are sent as JSON. A var is sent as its value in the browser. An
   event handler arrives as its full name, which the function dispatches with
   `reflex.addEvents([reflex.event(name, payload)])`, as `measure` does above.
@@ -357,9 +365,6 @@ Apps whose Content Security Policy forbids `unsafe-eval` can use them.
   import, including a stylesheet's `@import` and `url(...)` references. They
   must be inside your app's package directory, which is all of your project
   that is copied into the compiled app.
-- In a `.jsx` or `.tsx` file, JSX is read as JSX. In a `.js` or `.ts` file,
-  `<` is never JSX, so a quote in what would be JSX text hides the code after
-  it on that line.
 
 ### Type Stubs
 
@@ -412,21 +417,26 @@ arguments as JSON, so each type becomes the type of the JSON value Python sends:
 | `x?: T`, or a default value | `x: T = ...`, when no required parameter follows |
 | `...rest: T[]` | `*rest: T` |
 
-An overloaded function gets one `@overload` per signature. An export
-TypeScript knows is only a type, such as `export interface Options`, or is not
-a function, is left out of the stub.
+The stub declares the functions the compile finds the module exports, as the
+rules above count them; the names an `export * from "./more"` adds are not
+among them, so re-export those by name (`export { go } from "./more"`) to
+import them in a type-checked file. An overloaded function gets one
+`@overload` per signature. A function TypeScript has no signature for, such as
+`export const run = makeRunner()` when `makeRunner` has no types, takes any
+arguments: `def run(*args: Any)`.
 
 - Commit the stubs, so your editor and type checks in CI see them without
   running the app. A stub only changes when the types do: Reflex rewrites it
   when the module, a file it imports or reads types from (a `.d.ts` file,
   `import type`, a JSDoc `import("./types")`), the app's frontend packages or
   Reflex's stub generator changes. Writing a stub does not reload the backend.
+  Delete a stub to have the next compile write it again.
 - Stubs are written only in development. `reflex export` and `reflex run --env
   prod` leave your source tree alone.
 - When the app stops importing a module, Reflex removes the stub it wrote for
   it. It never removes a `.pyi` file it did not write.
 - Reflex reads the types with TypeScript, which it installs with the app's
-  frontend packages, run by Node.js or, without it, Bun.
+  frontend packages in development.
 - Pyright reports a stub that has no Python module beside it as
   `reportMissingModuleSource`. Turn that rule off:
 
@@ -436,15 +446,27 @@ a function, is left out of the stub.
   reportMissingModuleSource = "none"
   ```
 
+When TypeScript cannot read the types, the app still runs and Reflex warns:
+`Reflex could not read the argument types of the JavaScript modules
+.../party.js, so their type stubs accept any arguments: script-signatures.js
+failed: ...` The error after `failed:` says why. The stub takes any arguments
+until the types can be read, which Reflex retries on every compile; if it
+keeps failing, delete `.web/node_modules` so the next run reinstalls
+TypeScript, or report the error at https://github.com/reflex-dev/reflex/issues.
+
 ### Errors
 
-- `Cannot import nope from my_app.scripts.party: .../party.js exports no
-  function named nope (its functions: celebrate, measure).` Export the function
-  from the file, as in `export function nope() { ... }`, or fix the name you
-  import.
-- `Cannot import limit from my_app.scripts.party: .../party.js exports limit as
-  a value, not a function, and Python can only call functions.` Export a
-  function that uses the value instead.
+The compile stops with these errors:
+
+- `` `nope` is used from my_app.scripts.party, but my_app/scripts/party.js
+  exports no function named nope (its functions: celebrate, measure).`` Export
+  the function from the file, as in `export function nope() { ... }`, or
+  correct the name in Python.
+- `` `limit` is used from my_app.scripts.party as a function, but
+  my_app/scripts/party.js exports limit as a value, and Python can only call
+  functions.`` Export a function that uses the value instead.
+- `Syntax error at .../party.js:3:7: Unexpected token.` Fix the code at that
+  line and column, in the module or in a file it imports.
 - `The JavaScript module my_app.scripts.party imports .../shared.js, which is
   outside .../my_app, the directory of the app's package, and only that
   directory is copied into the compiled app.` Move the file into your app's
@@ -452,22 +474,13 @@ a function, is left out of the stub.
 - `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
   which does not exist in the browser.` Remove the import, and do the work that
   needs it in a backend event handler instead.
-- In the browser, `Cannot call my_app.scripts.party.nope: the frontend has no
-  function nope in the JavaScript module my_app.scripts.party.` The module does
-  not export a function of that name, or the frontend was built before the
-  backend imported it. Export the function, or restart `reflex run` to rebuild
-  the frontend.
-- `Reflex could not read the argument types of the JavaScript modules
-  .../party.js, so their type stubs accept any arguments: reading them needs
-  Node.js or Bun, and neither was found.` The app still runs, but type
-  checkers accept any arguments. Install Node.js 22.22.0 or newer, then run
-  the app again.
-- `Reflex could not read the argument types of the JavaScript modules
-  .../party.js, so their type stubs accept any arguments: script-signatures.js
-  failed: ...` The error after `failed:` says why. Reflex retries on the next
-  compile; if it keeps failing, delete `.web/node_modules` so the next run
-  reinstalls TypeScript, or report the error at
-  https://github.com/reflex-dev/reflex/issues.
+
+In the browser, a call fails with `Cannot call my_app.scripts.party.nope: the
+frontend has no function nope in the JavaScript module my_app.scripts.party.`
+when the module does not export a function of that name, which a name used only
+in an event handler can reach, or when the frontend was built before the
+backend imported it. Export the function, or restart `reflex run` to rebuild
+the frontend.
 
 ## Using React Hooks
 

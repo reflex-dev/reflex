@@ -17,9 +17,10 @@ In a checkout of the repository there is no embedded copy: reflex-base reads
 `src/` in place, so the next `reflex init` copies an edit without a rebuild.
 
 Everything in `src/` ships to every app, including the build tooling an app
-runs (`compress-static.js`, the PostCSS config, the Vite plugins) and
-`script-signatures.js`, which reads the types of the JavaScript modules an app
-imports from Python for their stubs; its output, the contract with
+runs (`compress-static.js`, `script-modules.js`, which the compiler runs to read
+the JavaScript modules an app imports from Python, `script-signatures.js`, which
+reads their types for their Python stubs in development, the PostCSS config,
+the Vite plugins). The output of `script-signatures.js`, the contract with
 `reflex_base/js/stubs.py`, is `tests/fixtures/signatures/signatures.json`. Tests,
 fixtures and this package's own lint and type-check setup stay outside it.
 
@@ -99,6 +100,8 @@ A few modules import packages that are not declared here yet.
 `vite-plugin-react-compiler.js` (babel) belong to an optional component or
 plugin, which installs the package. `app/routes.js` imports `@react-router/dev`
 and `@react-router/fs-routes`, which every app installs as dev dependencies.
+`script-modules.js` imports rolldown's parser through `vite`, another of them;
+here vitest brings both.
 
 ## Before this can be published
 

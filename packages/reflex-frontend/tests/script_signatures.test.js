@@ -18,7 +18,8 @@ const fixtures = fileURLToPath(
 /**
  * Run the script on fixture files.
  * @param {string[]} names The fixtures' file names.
- * @returns {Promise<Record<string, unknown>>} Its output, by file name.
+ * @returns {Promise<{modules: Record<string, unknown>, files: string[]}>} Its
+ * output, with file names in place of paths.
  */
 const signatures = async (names) => {
   const argv = process.argv;
@@ -33,13 +34,16 @@ const signatures = async (names) => {
   try {
     vi.resetModules();
     await import("$/script-signatures.js");
-    const output = JSON.parse(String(write.mock.calls[0][0]));
-    return Object.fromEntries(
-      Object.entries(output).map(([file, exports]) => [
-        basename(file),
-        exports,
-      ]),
-    );
+    const { modules, files } = JSON.parse(String(write.mock.calls[0][0]));
+    return {
+      modules: Object.fromEntries(
+        Object.entries(modules).map(([file, exports]) => [
+          basename(file),
+          exports,
+        ]),
+      ),
+      files: files.map((file) => basename(file)),
+    };
   } finally {
     write.mockRestore();
     process.argv = argv;
@@ -53,13 +57,23 @@ test("classifies each parameter's type into the JSON value Python sends", async 
   ).toEqual(JSON.parse(readFileSync(`${fixtures}signatures.json`, "utf-8")));
 });
 
+test("lists the files the types were read from, without libraries", async () => {
+  // jsdoc.js reads a type of shapes.d.ts in a JSDoc `import("./shapes")`, which
+  // the bundler never loads.
+  expect((await signatures(["jsdoc.js"])).files).toEqual([
+    "shapes.d.ts",
+    "jsdoc.js",
+  ]);
+});
+
 test("a type that contains itself stops at its first repeat", async () => {
   // The repeat has no finite JSON shape, so it accepts any value.
   expect(await signatures(["recursive.ts"])).toEqual({
-    "recursive.ts": [
-      {
-        name: "grow",
-        signatures: [
+    modules: {
+      "recursive.ts": {
+        Tree: [],
+        Nested: [],
+        grow: [
           {
             parameters: [
               {
@@ -78,8 +92,8 @@ test("a type that contains itself stops at its first repeat", async () => {
             ],
           },
         ],
-        untyped: false,
       },
-    ],
+    },
+    files: ["recursive.ts"],
   });
 });
