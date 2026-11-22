@@ -384,7 +384,9 @@ The compile stops with these errors:
 - `The JavaScript module my_app.scripts.party imports .../shared.js, which is
   outside .../my_app, the directory of the app's package, and only that
   directory is copied into the compiled app.` Move the file into your app's
-  package, or publish it as an npm package and import it by name.
+  package, or publish it as an npm package and import it by name. A module that
+  is a link to a file outside the package gets the same error, with `links to`
+  in place of `imports`.
 - `The JavaScript file .../party.js imports 'fs', a Node.js built-in module,
   which does not exist in the browser.` Remove the import, and do the work that
   needs it in a backend event handler instead.

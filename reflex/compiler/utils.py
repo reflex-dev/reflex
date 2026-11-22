@@ -415,8 +415,8 @@ def _copy_targets(
 
     Args:
         module: The module's Python name.
-        files: The module and the local files it reaches.
-        package_dir: The directory of the app's package.
+        files: The module and the local files it reaches, by real path.
+        package_dir: The real path of the directory of the app's package.
         modules_dir: The directory the files are copied to.
 
     Returns:
@@ -426,10 +426,12 @@ def _copy_targets(
         ReflexRuntimeError: If a file is outside the package's directory.
     """
     targets: dict[Path, Path] = {}
-    for file in map(Path, files):
+    for index, file in enumerate(map(Path, files)):
         if not file.is_relative_to(package_dir):
+            # The module itself is outside only through a link.
+            relation = "imports" if index else "links to"
             msg = (
-                f"The JavaScript module {module} imports {file}, which is "
+                f"The JavaScript module {module} {relation} {file}, which is "
                 f"outside {package_dir}, the directory of the app's package, "
                 "and only that directory is copied into the compiled app. "
                 "Move the file into it, or publish it as an npm package "
@@ -465,12 +467,10 @@ def compile_script_modules(
     """
     web_dir = get_web_dir()
     index = str(web_dir / (constants.Dirs.SCRIPTS_PATH + constants.Ext.JS))
-    script_modules = {
-        name: (module.names, module.path.resolve()) for name, module in modules.items()
-    }
-    if not script_modules:
+    if not modules:
         return [(index, "export default {};\n")], {}, []
-    report = _read_script_modules([path for _, path in script_modules.values()])
+    paths = {name: module.path.resolve() for name, module in modules.items()}
+    report = _read_script_modules(list(paths.values()))
     if report["errors"]:
         error = report["errors"][0]
         msg = (
@@ -483,14 +483,18 @@ def compile_script_modules(
     outputs: list[tuple[str, str]] = []
     copies: dict[Path, Path] = {}
     loaders = ""
-    for name, (names, path) in script_modules.items():
+    for name, module in modules.items():
+        path = paths[name]
         exports = report["modules"][str(path)]
-        package_dir = path.parents[name.count(".") - 1]
-        _check_script_names(name, names, exports, path.relative_to(package_dir.parent))
+        # From the path Python imports, which a link does not move out of it.
+        package_dir = module.path.parents[name.count(".") - 1].resolve()
         copies.update(_copy_targets(name, exports["files"], package_dir, modules_dir))
+        _check_script_names(
+            name, module.names, exports, path.relative_to(package_dir.parent)
+        )
         outputs.append((
-            str(path.with_suffix(".pyi")),
-            _render_stub(path, exports["functions"]),
+            str(module.path.with_suffix(".pyi")),
+            _render_stub(module.path, exports["functions"]),
         ))
         specifier = json.dumps(f"$/{copies[path].relative_to(web_dir).as_posix()}")
         loaders += f"  {json.dumps(name)}: () => import({specifier}),\n"

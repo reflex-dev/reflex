@@ -1077,6 +1077,39 @@ def test_compile_script_modules_errors(
     assert str(error.value) == message.replace("{project}", project)
 
 
+def test_compile_script_modules_rejects_a_module_linked_from_outside(
+    script_app: tuple[Path, dict, list[list[Path]]],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A module that is a link to a file outside the package is outside it.
+
+    Args:
+        script_app: the app package, the stand-in script's output and its runs.
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    package, report, _ = script_app
+    shared = package.parent / "shared" / "vendor.js"
+    shared.parent.mkdir()
+    shared.write_text("export function shout() {}\n")
+    vendor = package / "scripts" / "vendor.js"
+    vendor.parent.mkdir(parents=True)
+    vendor.symlink_to(shared)
+    _import_script_module(monkeypatch, "app.scripts.vendor", vendor, {"shout"})
+    report.update({
+        "modules": {str(shared): _script_exports([shared], ["shout"])},
+        "imports": {str(shared): []},
+        "errors": [],
+    })
+    with pytest.raises(ReflexRuntimeError) as error:
+        utils.compile_script_modules(_app_modules())
+    assert str(error.value) == (
+        f"The JavaScript module app.scripts.vendor links to {shared}, which is "
+        f"outside {package}, the directory of the app's package, and only that "
+        "directory is copied into the compiled app. Move the file into it, or "
+        "publish it as an npm package and import it by name."
+    )
+
+
 def test_compile_script_modules_reads_a_module_imported_in_another_context(
     script_app: tuple[Path, dict, list[list[Path]]],
 ):
