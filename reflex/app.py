@@ -2777,7 +2777,7 @@ class EventNamespace(AsyncNamespace):
                 and (processor := self.app._event_processor) is not None
             ):
                 # The tab's browser calls survive a reconnect of their page.
-                processor._on_connect(token_list[0], page)
+                processor._browser_calls.connect(token_list[0], page)
         else:
             logger.warning(f"No token provided in connection for session {sid}")
 

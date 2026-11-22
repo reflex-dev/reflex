@@ -35,7 +35,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
-from reflex_base.utils.exceptions import EventHandlerTypeError
+from reflex_base.utils.exceptions import BrowserDisconnectedError, EventHandlerTypeError
 from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
 from reflex_base.utils.serializers import deserializers
@@ -598,6 +598,7 @@ async def _await_browser_call(
         EventHandlerTypeError: If the state lock is held, which would hold up
             every other event of the client until the browser answers, or the
             event also has a result callback.
+        BrowserDisconnectedError: If no frontend is attached to the app.
     """
     if ctx.locked_root is not None:
         msg = (
@@ -612,9 +613,19 @@ async def _await_browser_call(
             "callback= or await its result, not both."
         )
         raise EventHandlerTypeError(msg)
+    if ctx.call_frontend_impl is None:
+        msg = (
+            f"`{event.name}` cannot run in a browser: the app is running "
+            "without a frontend connection (for example in a test, or a "
+            "process that runs only the backend), so no tab can return a "
+            "result. Await browser scripts in handlers triggered from a page "
+            "of the running app, and catch BrowserDisconnectedError where no "
+            "page may be connected."
+        )
+        raise BrowserDisconnectedError(msg)
     if isinstance(timeout, Unset):
         timeout = get_config().browser_call_timeout
-    return await ctx.call_frontend(event, timeout)
+    return await ctx.call_frontend_impl(ctx.token, event, timeout)
 
 
 async def execute_event_inline(spec: EventSpec) -> Any:

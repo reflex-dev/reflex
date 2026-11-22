@@ -538,15 +538,6 @@ class EventProcessor:
         """
         self._browser_calls.disconnect(token, self.browser_call_grace_period)
 
-    def _on_connect(self, token: str, page: str) -> None:
-        """Handle a client connecting, possibly again after a disconnect.
-
-        Args:
-            token: The connected client token.
-            page: The page load the client connected from.
-        """
-        self._browser_calls.connect(token, page)
-
     async def enqueue_many(self, token: str, *events: Event) -> Sequence[EventFuture]:
         """Enqueue multiple events to be processed.
 

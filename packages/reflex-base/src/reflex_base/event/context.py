@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
 from reflex_base.context.base import BaseContext
-from reflex_base.utils.exceptions import BrowserDisconnectedError
 from reflex_base.utils.format import to_snake_case
 
 if TYPE_CHECKING:
@@ -261,31 +260,6 @@ class EventContext(BaseContext):
         """
         if self.emit_event_impl is not None:
             await self.emit_event_impl(self.token, *events)
-
-    async def call_frontend(self, event: Event, timeout: float | None) -> Any:
-        """Run a frontend event in this client's browser and wait for its result.
-
-        Args:
-            event: The frontend event to run.
-            timeout: Seconds to wait for the result, or None to wait until it arrives.
-
-        Returns:
-            The value the browser sent back.
-
-        Raises:
-            BrowserDisconnectedError: If no frontend is attached to the app.
-        """
-        if self.call_frontend_impl is None:
-            msg = (
-                f"`{event.name}` cannot run in a browser: the app is running "
-                "without a frontend connection (for example in a test, or a "
-                "process that runs only the backend), so no tab can return a "
-                "result. Await browser scripts in handlers triggered from a page "
-                "of the running app, and catch BrowserDisconnectedError where no "
-                "page may be connected."
-            )
-            raise BrowserDisconnectedError(msg)
-        return await self.call_frontend_impl(self.token, event, timeout)
 
     async def enqueue(self, *event: Event) -> Sequence[EventFuture]:
         """Enqueue an event handler to be executed.

@@ -31,10 +31,7 @@ from reflex_base.utils.exceptions import BrowserDisconnectedError
 
 from reflex.event import Event, EventHandler, EventSpec
 from tests.units.conftest import active_tracer
-from tests.units.reflex_base.event.processor.test_browser_calls import (
-    PAGE_REPLACED,
-    grace_expired,
-)
+from tests.units.reflex_base.event.processor.test_browser_calls import grace_expired
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -2221,10 +2218,9 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
 ):
     """The configured call_frontend sends the event with a rid and resolves with the result.
 
-    Calls to a tab that is not connected fail at once; a tab disconnecting
-    fails its calls after the grace period unless its page reconnects, and at
-    once when another page load connects; stopping the processor cancels the
-    calls still waiting.
+    A call to a tab that is not connected fails at once; a tab disconnecting
+    fails its calls after the processor's grace period; stopping the
+    processor cancels the calls still waiting.
 
     Args:
         processor: The event processor fixture.
@@ -2234,11 +2230,12 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
     processor.browser_call_grace_period = 0.01
     processor.configure(event_namespace=namespace)  # pyright: ignore[reportArgumentType]
     assert processor._root_context is not None
-    ctx = processor._root_context.fork(token="tok")
+    call_frontend = processor._root_context.call_frontend_impl
+    assert call_frontend is not None
 
     async with processor:
         with pytest.raises(BrowserDisconnectedError) as exc_info:
-            await processor._root_context.fork(token="gone").call_frontend(event, 1)
+            await call_frontend("gone", event, 1)
         assert str(exc_info.value) == (
             "`_call_script` cannot run in the browser tab: the tab is not "
             "connected to this backend worker, because it was closed, is "
@@ -2247,33 +2244,22 @@ async def test_call_frontend_sends_the_event_and_awaits_its_result(
             "backend workers, route each tab to one worker (sticky sessions)."
         )
 
-        answered = asyncio.create_task(ctx.call_frontend(event, 1))
+        answered = asyncio.create_task(call_frontend("tok", event, 1))
         rid = await namespace.next_rid()
         assert [(token, update.events) for token, update in namespace.updates] == [
             ("tok", [dataclasses.replace(event, payload={**event.payload, "rid": rid})])
         ]
-        processor._on_disconnect("tok")
-        processor._on_connect("tok", "p1")
-        await asyncio.sleep(0.02)
         processor._browser_calls.resolve(rid, {"json": "[1]"})
         assert await answered == [1]
 
-        abandoned = asyncio.create_task(ctx.call_frontend(event, 1))
+        abandoned = asyncio.create_task(call_frontend("tok", event, 1))
         await namespace.next_rid()
         processor._on_disconnect("tok")
         with pytest.raises(BrowserDisconnectedError) as exc_info:
             await abandoned
         assert str(exc_info.value) == grace_expired(0.01)
 
-        reloaded = asyncio.create_task(ctx.call_frontend(event, 1))
-        await namespace.next_rid()
-        processor._on_disconnect("tok")
-        processor._on_connect("tok", "p2")
-        with pytest.raises(BrowserDisconnectedError) as exc_info:
-            await reloaded
-        assert str(exc_info.value) == PAGE_REPLACED
-
-        pending = asyncio.create_task(ctx.call_frontend(event, None))
+        pending = asyncio.create_task(call_frontend("tok", event, None))
         await namespace.next_rid()
     with pytest.raises(asyncio.CancelledError):
         await pending

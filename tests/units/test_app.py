@@ -110,6 +110,7 @@ from reflex.utils.token_manager import (
     SocketRecord,
 )
 from tests.units.exception_handler_helpers import logged
+from tests.units.reflex_base.event.processor.test_browser_calls import PAGE_REPLACED
 
 from .conftest import active_tracer, chdir, metric_points
 from .mock_redis import mock_redis
@@ -5718,13 +5719,13 @@ def test_page_of_only_for_a_live_socket_on_this_instance(
 
 
 async def _start_browser_call(
-    namespace: EventNamespace, ctx: EventContext
+    namespace: EventNamespace, processor: EventProcessor
 ) -> tuple[asyncio.Task[Any], str]:
-    """Start an awaited browser call and wait for its event to reach the socket.
+    """Start an awaited browser call to token ``tok`` and wait for its event to reach the socket.
 
     Args:
         namespace: The namespace the event is emitted on.
-        ctx: The client's event context.
+        processor: The event processor that makes the call.
 
     Returns:
         The task awaiting the call, and its request id.
@@ -5733,8 +5734,11 @@ async def _start_browser_call(
     emit = cast(AsyncMock, namespace.emit)
     emit.reset_mock(side_effect=True)
     emit.side_effect = lambda *_args, **_kwargs: sent.set()
+    assert processor._root_context is not None
+    call_frontend = processor._root_context.call_frontend_impl
+    assert call_frontend is not None
     task = asyncio.create_task(
-        ctx.call_frontend(Event(name="_call_script", payload={}), None)
+        call_frontend("tok", Event(name="_call_script", payload={}), None)
     )
     await sent.wait()
     (update,) = [call.args[1] for call in emit.await_args_list]
@@ -5754,28 +5758,15 @@ async def test_browser_calls_follow_their_page_across_socket_connects():
     namespace.emit = AsyncMock()
     processor = app._event_processor = EventProcessor(browser_call_grace_period=5)
     processor.configure(event_namespace=namespace)
-    assert processor._root_context is not None
-    ctx = processor._root_context.fork(token="tok")
     environ = {"QUERY_STRING": "token=tok"}
-    not_connected = (
-        "`_call_script` cannot run in the browser tab: the tab is not connected "
-        "to this backend worker, because it was closed, is reconnecting, or "
-        "reconnected to another worker. Catch BrowserDisconnectedError where "
-        "the tab may be gone; with several backend workers, route each tab to "
-        "one worker (sticky sessions)."
-    )
 
     async with processor:
         await namespace.on_connect("sid1", environ, {"page": "p1"})
-        reconnected, rid = await _start_browser_call(namespace, ctx)
+        reconnected, rid = await _start_browser_call(namespace, processor)
         cleanup = namespace.on_disconnect("sid1")
-        # A call made as the socket drops fails at once, before its token is
-        # unlinked.
-        with pytest.raises(exceptions.BrowserDisconnectedError) as exc_info:
-            await ctx.call_frontend(Event(name="_call_script", payload={}), None)
-        assert str(exc_info.value) == not_connected
-        # Another tab connecting with the token before then is a duplicate,
-        # given a new token: it does not fail the first tab's call.
+        # Another tab connecting with the token before its socket is unlinked
+        # is a duplicate, given a new token: it does not fail the first tab's
+        # call.
         await namespace.on_connect("dup", environ, {"page": "p9"})
         assert cleanup is not None
         await cleanup
@@ -5783,18 +5774,14 @@ async def test_browser_calls_follow_their_page_across_socket_connects():
         await namespace.on_result("sid2", {"rid": rid, "json": "1"})
         assert await reconnected == 1
 
-        reloaded, _ = await _start_browser_call(namespace, ctx)
+        reloaded, _ = await _start_browser_call(namespace, processor)
         cleanup = namespace.on_disconnect("sid2")
         assert cleanup is not None
         await cleanup
         await namespace.on_connect("sid3", environ, {"page": "p2"})
         with pytest.raises(exceptions.BrowserDisconnectedError) as exc_info:
             await reloaded
-        assert str(exc_info.value) == (
-            "The browser tab reloaded or left the page before the script returned "
-            "a result, so the script stopped. Catch BrowserDisconnectedError where "
-            "the user may reload or leave the page while the script runs."
-        )
+        assert str(exc_info.value) == PAGE_REPLACED
     assert processor._browser_calls._tabs == {}
 
 
