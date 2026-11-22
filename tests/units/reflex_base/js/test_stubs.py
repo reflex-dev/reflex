@@ -104,7 +104,7 @@ def test_render_stub_from_typescript():
 
 
 def test_render_stub_maps_types_without_json_form_to_any():
-    """Enums are their values; containers keep item types; Set, Map, bigint and the like are Any.
+    """Enums are their values; containers keep item types, each also a Var; Set, Map, bigint and the like are Any.
 
     The stub declares only the functions the compiler lists: a function
     re-exported by name is one, the names of an ``export *`` are not.
@@ -112,6 +112,10 @@ def test_render_stub_maps_types_without_json_form_to_any():
 
     def var(value: str) -> str:
         return f"{value} | _Var[{value}]"
+
+    def container(shape: str, item: str) -> str:
+        # An item may be a Var too, as may the whole container.
+        return f"{shape.format(var(item))} | _Var[{shape.format(item)}]"
 
     color = var('_Literal["green", "red"]')
     mode = var('_Literal["a", "b", 2, True]')
@@ -135,15 +139,15 @@ def test_render_stub_maps_types_without_json_form_to_any():
         f"flag: {var('_Literal[True]')}, "
         f"shape: {shape}, /) -> _EventSpec: ...\n"
         "def containers("
-        f"names: {var('_Sequence[_str]')}, "
-        f"pair: {var('_Sequence[_float | _str]')}, "
+        f"names: {container('_Sequence[{}]', '_str')}, "
+        f"pair: {container('_Sequence[{}]', '_float | _str')}, "
         f"empty: {var('_Sequence[_Any]')}, "
-        f"counts: {var('_Mapping[_str, _float]')}, "
+        f"counts: {container('_Mapping[_str, {}]', '_float')}, "
         f"options: {var('_Mapping[_str, _Any]')}, "
         f"inline: {var('_Mapping[_str, _Any]')}, "
         f"partial: {var('_Mapping[_str, _Any]')}, "
         f"keyed: {var('_Mapping[_str, _Any]')}, "
-        f"nested: {var('_Sequence[_str | None]')}, /) -> _EventSpec: ...\n"
+        f"nested: {container('_Sequence[{}]', '_str | None')}, /) -> _EventSpec: ...\n"
         "def noJsonForm(tags: _Any, lookup: _Any, big: _Any, later: _Any, "
         "make: _Any, element: _Any, widget: _Any, anything: _Any, both: _Any, "
         "either: _Any, /) "

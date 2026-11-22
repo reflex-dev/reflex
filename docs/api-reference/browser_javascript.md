@@ -397,8 +397,9 @@ def celebrate(
 ```
 
 so `celebrate("lots", "results")` is a type error. Arguments are positional,
-as JavaScript passes them, and each also takes a var. A function reads its
-arguments as JSON, so each type becomes the type of the JSON value Python sends:
+as JavaScript passes them, and each also takes a var, as does each item of a
+list and each value of a mapping. A function reads its arguments as JSON, so
+each type becomes the type of the JSON value Python sends:
 
 | TypeScript or JSDoc | Python |
 | --- | --- |

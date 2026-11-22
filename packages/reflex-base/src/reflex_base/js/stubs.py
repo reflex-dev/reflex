@@ -220,7 +220,9 @@ def _render_literal(value: str | int | bool) -> str:
     return repr(value)
 
 
-def _render_union(members: list[JsonType], used: set[str]) -> str:
+def _render_union(
+    members: list[JsonType], used: set[str], items_take_vars: bool = False
+) -> str:
     """Render the Python type of a union of JSON values.
 
     Its literals are merged into one ``Literal``, after the other members and
@@ -229,6 +231,7 @@ def _render_union(members: list[JsonType], used: set[str]) -> str:
     Args:
         members: The union's members.
         used: The names the stub uses, which this adds to.
+        items_take_vars: Whether the items of its containers may be Vars.
 
     Returns:
         The type.
@@ -239,7 +242,7 @@ def _render_union(members: list[JsonType], used: set[str]) -> str:
         if isinstance(member, dict) and member["kind"] == "literal":
             literals.append(_render_literal(member["value"]))
         elif member != "None":
-            rendered.append(_render_type(member, used))
+            rendered.append(_render_type(member, used, items_take_vars))
     if literals:
         rendered.append(f"{_use('Literal', used)}[{', '.join(literals)}]")
     if "None" in members:
@@ -247,12 +250,14 @@ def _render_union(members: list[JsonType], used: set[str]) -> str:
     return " | ".join(rendered)
 
 
-def _render_type(type_: JsonType, used: set[str]) -> str:
+def _render_type(type_: JsonType, used: set[str], items_take_vars: bool = False) -> str:
     """Render the Python type of a JSON value.
 
     Args:
         type_: The JSON type.
         used: The names the stub uses, which this adds to.
+        items_take_vars: Whether each item of a list and value of a mapping
+            may also be a Var, which the event sends as the value it holds.
 
     Returns:
         The type.
@@ -262,11 +267,29 @@ def _render_type(type_: JsonType, used: set[str]) -> str:
     if type_["kind"] == "literal":
         return f"{_use('Literal', used)}[{_render_literal(type_['value'])}]"
     if type_["kind"] == "list":
-        return f"{_use('Sequence', used)}[{_render_type(type_['item'], used)}]"
+        item = _render_item(type_["item"], used, items_take_vars)
+        return f"{_use('Sequence', used)}[{item}]"
     if type_["kind"] == "mapping":
-        key = _use("str", used)
-        return f"{_use('Mapping', used)}[{key}, {_render_type(type_['value'], used)}]"
-    return _render_union(type_["members"], used)
+        value = _render_item(type_["value"], used, items_take_vars)
+        return f"{_use('Mapping', used)}[{_use('str', used)}, {value}]"
+    return _render_union(type_["members"], used, items_take_vars)
+
+
+def _render_item(type_: JsonType, used: set[str], takes_var: bool) -> str:
+    """Render the type of an item of a list or a value of a mapping.
+
+    Args:
+        type_: The item's JSON type.
+        used: The names the stub uses, which this adds to.
+        takes_var: Whether the item may also be a Var.
+
+    Returns:
+        The type.
+    """
+    item = _render_type(type_, used, takes_var)
+    if not takes_var or type_ == "any":
+        return item
+    return f"{item} | {_use('Var', used)}[{_render_type(type_, used)}]"
 
 
 def _annotation(type_: JsonType, used: set[str]) -> str:
@@ -283,8 +306,8 @@ def _annotation(type_: JsonType, used: set[str]) -> str:
     """
     if type_ == "any":
         return _use("Any", used)
-    value = _render_type(type_, used)
-    annotation = f"{value} | {_use('Var', used)}[{value}]"
+    value = _render_type(type_, used, items_take_vars=True)
+    annotation = f"{value} | {_use('Var', used)}[{_render_type(type_, used)}]"
     if type_ == "str" or (
         not isinstance(type_, str)
         and type_["kind"] == "union"
