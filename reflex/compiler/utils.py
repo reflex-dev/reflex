@@ -697,8 +697,8 @@ def write_script_stubs(modules: Mapping[Path, _ScriptExports]) -> None:
     on the next compile. A stub without Reflex's header, as one written by
     hand, is left alone, and a stub Reflex wrote for a module the app no longer
     imports is removed. A stub that cannot be written or removed is warned
-    about. Each file is replaced whole: a compile killed while
-    writing one leaves the old file, whose header the next compile finds stale.
+    about. Each file is replaced whole: a compile killed while writing one
+    leaves the old file, whose header the next compile finds stale.
 
     Args:
         modules: What was read of each module, by the file Python imports, from
