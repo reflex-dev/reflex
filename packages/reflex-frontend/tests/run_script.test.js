@@ -195,6 +195,15 @@ describe("awaited script results", () => {
     }
   });
 
+  test("runs no Symbol.toStringTag of a result", async () => {
+    const { outcome } = awaited(
+      script(
+        "({count: 0, get [Symbol.toStringTag]() { this.count++; throw new Error('tag read'); }})",
+      ),
+    );
+    expect(await outcome()).toEqual({ rid: "r1", json: '{"count":0}' });
+  });
+
   test("sends undefined as null", async () => {
     const { outcome } = awaited(script("undefined"));
     expect(await outcome()).toEqual({ rid: "r1", json: "null" });
@@ -309,9 +318,9 @@ describe("awaited script results", () => {
       "the window of an iframe",
       `(() => {
         const frame = document.body.appendChild(document.createElement("iframe"));
-        const value = [frame.contentWindow];
-        frame.remove();
-        return value;
+        // Removed once the result is sent, so the frame is on the page then.
+        setTimeout(() => frame.remove());
+        return [frame.contentWindow];
       })()`,
       "The script returned a DOM node or window, which JSON cannot carry; return the data you need from it instead.",
     ],
