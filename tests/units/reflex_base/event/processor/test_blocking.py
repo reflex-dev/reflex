@@ -544,7 +544,64 @@ async def test_garbage_collection_is_not_reported(
         collecting_handler, f"{EVENT_TASK_PREFIX}state.collecting|token|txid"
     )
 
-    assert "the event loop" not in caplog_blocking.text
+    assert caplog_blocking.messages == []
+
+
+async def test_blocking_during_another_threads_collection_is_reported(
+    caplog_blocking: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Report a block while a collection on another thread waits in a finalizer."""
+    probe_pending = _track_pending_probe(asyncio.get_running_loop(), monkeypatch)
+    finalizing = threading.Event()
+    unblocked = threading.Event()
+
+    class _WaitingGarbage:
+        """A reference cycle whose finalizer waits without holding the interpreter."""
+
+        def __init__(self) -> None:
+            self.cycle = self
+
+        def __del__(self) -> None:
+            finalizing.set()
+            unblocked.wait(timeout=5)
+
+    def collect() -> None:
+        """Collect a waiting reference cycle."""
+        _WaitingGarbage()
+        gc.collect()
+
+    collector = threading.Thread(target=collect)
+
+    async def blocking_handler():  # noqa: RUF029
+        """Block the loop while the other thread's collection runs a finalizer."""
+        try:
+            collector.start()
+            assert finalizing.wait(timeout=5)
+            assert probe_pending.wait(timeout=1)
+            time.sleep(_BLOCK_SECONDS)  # noqa: ASYNC251
+        finally:
+            unblocked.set()
+
+    try:
+        await _run_monitored(blocking_handler, "blocking_task")
+    finally:
+        collector.join(timeout=5)
+
+    location = f"{Path(__file__).relative_to(Path.cwd())}:N in blocking_handler"
+    assert [
+        re.sub(r"(?<=:)\d+(?= in )|(?<=line )\d+|(?<=for )\d+\.\d+(?=s)", "N", message)
+        for message in caplog_blocking.messages
+    ] == [
+        (
+            f"Task 'blocking_task' is blocking the event loop at {location} "
+            "(threshold: 0.040s). Move blocking I/O to a thread pool or use a "
+            "non-blocking async API.\n"
+            "Stack when the threshold was reached (most recent call last):\n"
+            f'  File "{__file__}", line N, in blocking_handler\n'
+            "    time.sleep(_BLOCK_SECONDS)  # noqa: ASYNC251"
+        ),
+        "Task 'blocking_task' blocked the event loop for Ns in total.",
+    ]
 
 
 async def test_hung_event_is_reported_while_still_blocked(
@@ -601,7 +658,11 @@ async def test_stop_as_the_loop_responds_still_reports_the_total(
     monkeypatch.setattr(
         blocking,
         "threading",
-        SimpleNamespace(Event=_OvertakenEvent, Thread=threading.Thread),
+        SimpleNamespace(
+            Event=_OvertakenEvent,
+            Thread=threading.Thread,
+            get_ident=threading.get_ident,
+        ),
     )
 
     async def hung_handler():  # noqa: RUF029

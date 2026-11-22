@@ -111,10 +111,14 @@ class EventLoopBlockingMonitor:
         self._app_root = f"{Path.cwd()}{os.sep}"
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
-        # Seconds spent in finished garbage collections, and when the running one
-        # started. Only the collecting thread writes it, as one tuple, so the
-        # monitor thread always reads a consistent pair.
-        self._collections: tuple[float, float | None] = (0.0, None)
+        # Seconds finished garbage collections held up the loop, when the running
+        # one started, and whether it runs on the loop thread. Only the collecting
+        # thread writes it, as one tuple, so the monitor thread always reads a
+        # consistent snapshot.
+        self._collections: tuple[float, float | None, bool] = (0.0, None, False)
+        # The start of another thread's running collection and when the monitor
+        # first ran during it. Only the monitor thread writes it.
+        self._seen_collection: tuple[float, float] | None = None
 
     def start(self) -> None:
         """Start the single monitor thread for this event processor."""
@@ -136,29 +140,49 @@ class EventLoopBlockingMonitor:
             gc.callbacks.remove(self._time_collection)
 
     def _time_collection(self, phase: str, info: dict[str, int]) -> None:
-        """Add up the time spent in garbage collections, called by the collector.
+        """Add up how long garbage collections hold up the loop, called by the collector.
+
+        A collection on the loop thread holds it up until the collection ends,
+        finalizers included. One on another thread only holds it up until the
+        monitor runs during it, which shows that the collection let go of the
+        interpreter, as a finalizer waiting for I/O does.
 
         Args:
             phase: "start" before a collection, "stop" after it.
             info: Details about the collection, unused.
         """
-        total, started = self._collections
+        total, started, _ = self._collections
+        now = time.perf_counter()
         if phase == "start":
-            self._collections = (total, time.perf_counter())
+            self._collections = (
+                total,
+                now,
+                threading.get_ident() == self._loop_thread_id,
+            )
         elif started is not None:
-            self._collections = (total + time.perf_counter() - started, None)
+            seen = self._seen_collection
+            held_until = seen[1] if seen is not None and seen[0] == started else now
+            self._collections = (total + held_until - started, None, False)
 
     def _clock(self) -> float:
-        """Read a clock that stands still while the garbage collector runs.
+        """Read a clock that stands still while garbage collection holds up the loop.
 
         A collection holds up the loop in whichever task allocates when it starts,
-        so it is not that task's blocking.
+        so it is not that task's blocking. Only the monitor thread reads it.
 
         Returns:
             Seconds of the performance counter, minus garbage collection.
         """
-        total, started = self._collections
-        return (time.perf_counter() if started is None else started) - total
+        total, started, on_loop_thread = self._collections
+        now = time.perf_counter()
+        if started is None:
+            return now - total
+        if on_loop_thread:
+            return started - total
+        seen = self._seen_collection
+        if seen is None or seen[0] != started:
+            seen = self._seen_collection = (started, now)
+        return now - total - (seen[1] - started)
 
     def _describe_blocking(self) -> _BlockingReport | None:
         """Describe the task that runs on the blocked loop.

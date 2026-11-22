@@ -1,1 +1,1 @@
-The development event-loop blocking monitor no longer counts time spent in garbage collection. A long full collection pauses the loop in whichever task happens to allocate, so it was reported as that task blocking the loop, with a stack and advice unrelated to the pause. The reported total leaves out collections too.
+The development event-loop blocking monitor no longer reports time spent in garbage collection as blocking by the task it interrupts, neither against the threshold nor in the reported total.
