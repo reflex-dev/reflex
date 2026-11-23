@@ -495,58 +495,66 @@ def ag_grid_simple_with_state():
 
 ## AG Grid with Data from a Database
 
-In this example, we will use a database to store the data. The data is loaded from a csv file and inserted into the database when the page is loaded using the `insert_dataframe_to_db` event handler.
+In this example, the grid reads its rows from a database table and writes cell edits back to it. It follows the SQLAlchemy models and async sessions described in the [database overview](/docs/database/overview/); create the `country` table with the [`reflex db` migration commands](/docs/database/tables/) before running it.
 
-The data is then fetched from the database and displayed in the grid using the `data` computed var.
+When the page loads, the `load_countries` event handler fills the table from a CSV file if it is empty, then loads the rows into state.
 
-When a cell value is changed, the data is updated in the database using the `cell_value_changed` event handler.
+When a cell value is changed, the `cell_value_changed` event handler updates that row in the database and in state.
 
 ```python
+import pandas as pd
 import reflex as rx
 import reflex_enterprise as rxe
-import pandas as pd
-from sqlmodel import select
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
+
+engine = create_async_engine(rx.config.get_config().async_db_url)
+Session = async_sessionmaker(engine, expire_on_commit=False)
 
 
-class Country(rx.Model, table=True):
-    country: str
-    population: int
-    continent: str
+class Base(MappedAsDataclass, DeclarativeBase):
+    """Base class for the app's tables."""
+
+
+class Country(Base):
+    __tablename__ = "country"
+
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    country: Mapped[str]
+    population: Mapped[int]
+    continent: Mapped[str]
 
 
 class AGGridDatabaseState(rx.State):
-    countries: list[Country]
+    countries: list[Country] = []
 
-    # Insert data from a csv loaded dataframe to the database (Do this on the page load)
+    # Seed the table from the CSV on first load, then load its rows into state.
     @rx.event
-    def insert_dataframe_to_db(self):
-        data = pd.read_csv("data/gapminder2007.csv")
-        with rx.session() as session:
-            for _, row in data.iterrows():
-                db_record = Country(
-                    country=row["country"],
-                    population=row["pop"],
-                    continent=row["continent"],
+    async def load_countries(self):
+        async with Session() as session:
+            if not await session.scalar(select(func.count()).select_from(Country)):
+                data = pd.read_csv("data/gapminder2007.csv")
+                session.add_all(
+                    Country(
+                        country=row["country"],
+                        population=int(row["pop"]),
+                        continent=row["continent"],
+                    )
+                    for _, row in data.iterrows()
                 )
-                session.add(db_record)
-            session.commit()
-
-    # Fetch data from the database using a computed variable
-    @rx.var
-    def data(self) -> list[dict]:
-        with rx.session() as session:
-            results = session.exec(select(Country)).all()
-            self.countries = [result.dict() for result in results]
-        return self.countries
+                await session.commit()
+            result = await session.scalars(select(Country).order_by(Country.id))
+            self.countries = list(result)
 
     # Update the database when a cell value is changed
     @rx.event
-    def cell_value_changed(self, row, col_field, new_value):
-        self.countries[row][col_field] = new_value
-        with rx.session() as session:
-            country = Country(**self.countries[row])
-            session.merge(country)
-            session.commit()
+    async def cell_value_changed(self, row: int, col_field: str, new_value):
+        async with Session() as session:
+            country = await session.get(Country, self.countries[row].id)
+            setattr(country, col_field, new_value)
+            await session.commit()
+        self.countries[row] = country
         yield rx.toast(
             f"Cell value changed, Row: {row}, Column: {col_field}, New Value: {new_value}"
         )
@@ -574,7 +582,7 @@ column_defs = [
 def index():
     return rxe.ag_grid(
         id="ag_grid_basic_editing",
-        row_data=AGGridDatabaseState.data,
+        row_data=AGGridDatabaseState.countries,
         column_defs=column_defs,
         on_cell_value_changed=AGGridDatabaseState.cell_value_changed,
         width="100%",
@@ -584,7 +592,7 @@ def index():
 
 # Add state and page to the app.
 app = rx.App()
-app.add_page(index, on_load=AGGridDatabaseState.insert_dataframe_to_db)
+app.add_page(index, on_load=AGGridDatabaseState.load_countries)
 ```
 
 ## Using AG Grid Enterprise
@@ -775,4 +783,4 @@ In Reflex to handle this returned value it is necessary to pass a `callback` as 
 
 ## Migration notes
 
-The upcoming reflex-enterprise 0.9.7 release upgrades AG Grid to 36.2.0. Read the [migration guide for reflex-enterprise 0.9.7](/docs/enterprise/ag-grid/upgrading-to-36-2/) for changes to custom CSS, overlays, column definitions, and integrated charts.
+reflex-enterprise 0.9.7 upgraded AG Grid to 36.2.0. Read the [migration guide for reflex-enterprise 0.9.7](/docs/enterprise/ag-grid/upgrading-to-36-2/) for changes to custom CSS, overlays, column definitions, and integrated charts.
