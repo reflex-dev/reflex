@@ -91,44 +91,61 @@ def get_ai_builder_integrations():
     from reflex_docs.pages.docs import ai_builder
 
     return [
+        create_item("Overview", children=[ai_builder.integrations.overview]),
         create_item(
-            "First Class Integrations",
+            "AI Models",
             children=[
-                ai_builder.integrations.overview,
                 ai_builder.integrations.anthropic,
-                ai_builder.integrations.auth0,
-                ai_builder.integrations.aws,
-                ai_builder.integrations.azure_auth,
                 ai_builder.integrations.cartesia,
-                ai_builder.integrations.clerk,
                 ai_builder.integrations.cohere,
-                ai_builder.integrations.custom_oidc,
-                ai_builder.integrations.database,
-                ai_builder.integrations.databricks,
-                ai_builder.integrations.descope,
                 ai_builder.integrations.gemini,
-                ai_builder.integrations.github,
-                ai_builder.integrations.google,
-                ai_builder.integrations.google_auth,
                 ai_builder.integrations.groq,
-                ai_builder.integrations.hubspot,
                 ai_builder.integrations.hugging_face,
-                ai_builder.integrations.keycloak,
-                ai_builder.integrations.linear,
-                ai_builder.integrations.microsoft_entra_id,
-                ai_builder.integrations.notion,
-                ai_builder.integrations.okta,
-                ai_builder.integrations.okta_auth,
                 ai_builder.integrations.openai,
                 ai_builder.integrations.perplexity,
                 ai_builder.integrations.replicate,
-                ai_builder.integrations.resend,
                 ai_builder.integrations.roboflow,
-                ai_builder.integrations.stripe,
+            ],
+        ),
+        create_item(
+            "Authentication",
+            children=[
+                ai_builder.integrations.auth0,
+                ai_builder.integrations.clerk,
+                ai_builder.integrations.custom_oidc,
+                ai_builder.integrations.google,
+                ai_builder.integrations.keycloak,
+                ai_builder.integrations.microsoft_entra_id,
+                ai_builder.integrations.okta,
+            ],
+        ),
+        create_item(
+            "Data Infrastructure",
+            children=[
+                ai_builder.integrations.aws,
+                ai_builder.integrations.database,
+                ai_builder.integrations.databricks,
+                ai_builder.integrations.hubspot,
+                ai_builder.integrations.notion,
                 ai_builder.integrations.supabase,
+            ],
+        ),
+        create_item(
+            "Communication",
+            children=[
+                ai_builder.integrations.circleback,
+                ai_builder.integrations.resend,
                 ai_builder.integrations.twilio,
             ],
         ),
+        create_item(
+            "Developer Tools",
+            children=[
+                ai_builder.integrations.github,
+                ai_builder.integrations.linear,
+            ],
+        ),
+        create_item("Payments", children=[ai_builder.integrations.stripe]),
         create_item(
             "Python Libraries",
             children=[
@@ -175,6 +192,16 @@ def get_ai_builder_integrations():
             "Figma",
             children=[
                 ai_builder.figma,
+            ],
+        ),
+        # Superseded cards, kept for projects that still have such a connection.
+        create_item(
+            "Legacy",
+            children=[
+                ai_builder.integrations.azure_auth,
+                ai_builder.integrations.descope,
+                ai_builder.integrations.google_auth,
+                ai_builder.integrations.okta_auth,
             ],
         ),
     ]

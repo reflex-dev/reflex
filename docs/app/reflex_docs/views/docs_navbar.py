@@ -10,8 +10,9 @@ from reflex_site_shared.constants import (
     XY_GITHUB_STARS,
 )
 
+from reflex_docs import sections
 from reflex_docs.components.docpage.navbar.buttons.sidebar import navbar_sidebar_button
-from reflex_docs.pages.docs import getting_started, hosting
+from reflex_docs.pages.docs import cloud, getting_started
 from reflex_docs.views.docs_announcement_banner import docs_announcement_banner
 from reflex_docs.views.search import search_bar
 
@@ -91,52 +92,22 @@ def logo() -> rx.Component:
 
 
 def menu_item(
-    text: str, href: str, active_str: str = "", external: bool = False
+    text: str,
+    href: str,
+    active: rx.Var[bool] | bool = False,
+    external: bool = False,
 ) -> rx.Component:
     """Render a section link using the docs router or an explicit external URL.
 
     Args:
         text: Visible section name.
         href: Destination relative to the docs mount, or a complete external path.
-        active_str: Route segment used to identify the active section.
+        active: Whether the current page belongs to this section.
         external: Whether the destination must bypass the docs router.
 
     Returns:
         A navigation item containing one focusable link.
     """
-    router_path = rx.State.router.page.path
-
-    # For paths starting with "/" (like Start), use exact match
-    # For "framework", it's the default - active when in /docs but not matching other sections
-    # For other segments (like "ai"), use contains
-    if active_str.startswith("/"):
-        if active_str == "/":
-            active = (router_path == "/") | (router_path == "/index")
-        else:
-            active = router_path == active_str
-    elif active_str == "framework":
-        is_overview = (router_path == "/") | (router_path == "/index")
-        is_ai_builder = (
-            (router_path == "/ai")
-            | (router_path == "/docs/ai")
-            | router_path.startswith("/ai/")
-            | router_path.startswith("/docs/ai/")
-        )
-        is_hosting = router_path.contains("hosting")
-        is_xy = router_path.startswith("/xy/") | router_path.startswith("/docs/xy/")
-        active = ~is_overview & ~is_ai_builder & ~is_hosting & ~is_xy
-    elif active_str == "ai":
-        active = (
-            (router_path == "/ai")
-            | (router_path == "/docs/ai")
-            | router_path.startswith("/ai/")
-            | router_path.startswith("/docs/ai/")
-        )
-    elif active_str == "xy":
-        active = router_path.startswith("/xy/") | router_path.startswith("/docs/xy/")
-    else:
-        active = router_path.contains(active_str)
-
     anchor = rx.el.elements.a if external else rx.el.a
 
     return ui.navigation_menu.item(
@@ -158,19 +129,27 @@ def menu_item(
     )
 
 
-def navigation_menu() -> rx.Component:
+def navigation_menu(active_tab: rx.Var[str] | str = "") -> rx.Component:
     """Render the docs section links, search, and responsive navigation actions.
+
+    Args:
+        active_tab: The navbar tab of the current page (see ``reflex_docs.sections``),
+            or an empty string when no section is current.
 
     Returns:
         The navigation menu holding the section links and header actions.
     """
     return ui.navigation_menu.root(
         ui.navigation_menu.list(
-            menu_item("Overview", "/", "/"),
-            menu_item("Build with AI", "/ai/", "ai"),
-            menu_item("Framework", getting_started.introduction.path, "framework"),
-            menu_item("Cloud", hosting.deploy_quick_start.path, "hosting"),
-            menu_item("XY", "/docs/xy/", "xy", external=True),
+            menu_item("Overview", "/", active_tab == sections.OVERVIEW),
+            menu_item("Build with AI", "/ai/", active_tab == sections.AI),
+            menu_item(
+                "Framework",
+                getting_started.introduction.path,
+                active_tab == sections.FRAMEWORK,
+            ),
+            menu_item("Cloud", cloud.overview.path, active_tab == sections.CLOUD),
+            menu_item("XY", "/docs/xy/", active_tab == sections.XY, external=True),
             class_name="docs-navbar-sections hidden xl:flex m-0 h-full list-none flex-row items-center gap-1",
             custom_attrs={"role": "menubar"},
         ),
@@ -233,8 +212,15 @@ def navigation_menu() -> rx.Component:
 
 
 @rx.memo
-def docs_navbar() -> rx.Component:
+def docs_navbar(active_tab: rx.vars.StringVar[str]) -> rx.Component:
     """Render the compact docs header with the marketing announcement treatment.
+
+    The current tab is a prop computed per route at build time, so prerendered
+    HTML marks it without waiting for the router to hydrate.
+
+    Args:
+        active_tab: The navbar tab of the current page (see ``reflex_docs.sections``),
+            or an empty string when no section is current.
 
     Returns:
         The fixed header frame with the announcement banner above the navbar.
@@ -244,7 +230,7 @@ def docs_navbar() -> rx.Component:
         rx.el.header(
             rx.el.div(
                 logo(),
-                navigation_menu(),
+                navigation_menu(active_tab),
                 class_name="docs-navbar-inner mx-auto flex h-full w-full min-w-0 flex-row items-center justify-between gap-6",
             ),
             class_name="docs-navbar-header relative [&_nav]:!static [&_ul]:!static flex h-16 w-full items-center",

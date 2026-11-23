@@ -1,5 +1,6 @@
 """Tests for the docs sidebar structure and prev/next chain."""
 
+import inspect
 from pathlib import Path
 
 import pytest
@@ -140,7 +141,9 @@ def test_single_page_group_label_uses_foreground(title, active):
     )
     label = component.children[0].children[0].children[0]
     assert label.tag == "p"
-    assert "text-foreground" in str(label.class_name).strip('"').split()
+    classes = str(label.class_name).strip('"').split()
+    assert "text-foreground" in classes
+    assert "docs-sidebar-group-label" in classes
 
 
 @pytest.mark.parametrize(
@@ -230,3 +233,171 @@ def test_workflow_sidebar_labels_match_page_headings():
     ]
     _, next_ = get_prev_next("/workflows/schedules/")
     assert next_ is not None and next_.names == "Fan-Out"
+
+
+def test_utility_methods_list_exception_handlers():
+    """Exception Handlers is reachable from the Utility Methods group."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import backend
+
+    utility = next(item for item in backend if item.names == "Utility Methods")
+    assert [(child.names, child.link) for child in utility.children] == [
+        ("Router Attributes", "/utility-methods/router-attributes/"),
+        ("Lifespan Tasks", "/utility-methods/lifespan-tasks/"),
+        ("Exception Handlers", "/utility-methods/exception-handlers/"),
+        ("Other Methods", "/utility-methods/other-methods/"),
+    ]
+
+
+def test_cloud_sidebar_opens_with_the_cloud_overview():
+    """The Cloud overview leads the Cloud sidebar and its prev/next chain."""
+    from reflex_docs.templates.docpage.sidebar.sidebar import get_prev_next
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.learn import hosting
+
+    assert [(child.names, child.link) for child in hosting[0].children] == [
+        ("Overview", "/hosting/overview/")
+    ]
+    prev, next_ = get_prev_next("/hosting/deploy-quick-start/")
+    assert prev is not None
+    assert (prev.alt_name_for_next_prev, prev.link) == (
+        "Cloud Overview",
+        "/hosting/overview/",
+    )
+    assert next_ is not None and next_.link == "/hosting/project-members/"
+
+
+def test_integrations_are_grouped_with_legacy_cards_last():
+    """Integration cards sit in category groups; superseded cards close the list."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.ai import (
+        get_ai_builder_integrations,
+    )
+
+    groups = {
+        item.names: [child.link.split("/")[-2] for child in item.children]
+        for item in get_ai_builder_integrations()
+    }
+    assert groups == {
+        "Overview": ["overview"],
+        "AI Models": [
+            "anthropic",
+            "cartesia",
+            "cohere",
+            "gemini",
+            "groq",
+            "hugging-face",
+            "openai",
+            "perplexity",
+            "replicate",
+            "roboflow",
+        ],
+        "Authentication": [
+            "auth0",
+            "clerk",
+            "custom-oidc",
+            "google",
+            "keycloak",
+            "microsoft-entra-id",
+            "okta",
+        ],
+        "Data Infrastructure": [
+            "aws",
+            "database",
+            "databricks",
+            "hubspot",
+            "notion",
+            "supabase",
+        ],
+        "Communication": ["circleback", "resend", "twilio"],
+        "Developer Tools": ["github", "linear"],
+        "Payments": ["stripe"],
+        "Python Libraries": ["python-libraries"],
+        "APIs": ["apis"],
+        "Webhooks": ["webhooks"],
+        "URLs": ["urls"],
+        "Databases": ["database"],
+        "Files": ["files"],
+        "Images": ["images"],
+        "Figma": ["figma"],
+        "Legacy": ["azure-auth", "descope", "google-auth", "okta-auth"],
+    }
+    assert list(groups)[-1] == "Legacy"
+
+
+def test_every_integration_card_is_in_the_sidebar():
+    """Each integration page that has a card is listed in the Integrations sidebar."""
+    from reflex_docs.pages.integrations.integration_list import get_integration_path
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.ai import (
+        get_ai_builder_integrations,
+    )
+
+    listed = {
+        child.link
+        for item in get_ai_builder_integrations()
+        for child in item.children
+        if child.link.startswith("/ai/integrations/")
+    }
+    cards = {next(iter(card.values()))["path"] for card in get_integration_path()}
+    assert listed == cards | {"/ai/integrations/overview/"}
+
+
+@pytest.mark.parametrize(
+    ("url", "section"),
+    [
+        ("/wrapping-react/library-and-tags/", "framework"),
+        ("/docs/library/forms/button/low/", "components"),
+        ("/changelog/reflex-hosting-cli/", "api-reference"),
+        ("/hosting/overview/", "cloud"),
+    ],
+)
+def test_sidebar_receives_the_route_section(url, section):
+    """The sidebar picks its content from the section computed at build time."""
+    from reflex_docs.templates.docpage.sidebar.sidebar import sidebar
+
+    rendered = sidebar(url=url).children[0]
+    assert str(rendered.section) == f'"{section}"'
+
+
+def _sidebar_body() -> str:
+    """Render the sidebar memo body with every section's branch.
+
+    Returns:
+        The rendered component tree.
+    """
+    import reflex as rx
+
+    from reflex_docs.templates.docpage.sidebar.sidebar import sidebar_comp
+
+    params = inspect.signature(sidebar_comp.__wrapped__).parameters
+    args = {name: rx.Var.create([]) for name in params}
+    args["url"] = rx.Var.create("/hosting/overview/")
+    args["section"] = rx.Var.create("cloud")
+    return str(sidebar_comp.__wrapped__(**args))
+
+
+def test_sidebar_categories_use_the_navbar_section_names():
+    """The Cloud sidebar has no one-item category repeating its heading, and the
+    guides' category is named Framework like its navbar tab.
+    """
+    body = _sidebar_body()
+    assert body.count('"Navigate to Cloud"') == 0
+    assert body.count('"Navigate to Learn"') == 0
+    assert body.count('"Navigate to Framework"') == 1
+
+
+@pytest.mark.parametrize(
+    ("stylesheet", "selector"),
+    [
+        ("docs-theme.css", ".docs-sidebar"),
+        ("docs-header-theme.css", ".docs-sidebar-drawer"),
+    ],
+)
+def test_group_labels_outweigh_page_links(stylesheet, selector):
+    """Collapsible and direct-link group labels are heavier than page links."""
+    css = (Path(__file__).parents[1] / "assets" / stylesheet).read_text()
+    assert (
+        f"{selector} p,\n{selector} h3,\n{selector} summary {{ font-weight: 400; }}"
+        in css
+    )
+    assert (
+        f"{selector} summary p,\n{selector} .docs-sidebar-group-label {{ font-weight: 500; }}"
+        in css
+    )
