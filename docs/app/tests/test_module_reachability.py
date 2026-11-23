@@ -7,7 +7,11 @@ from pathlib import Path
 APP_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = APP_ROOT / "reflex_docs"
 DOCS_ROOT = APP_ROOT.parent
-MARKDOWN_IMPORT = re.compile(r"^\s*(?:from|import)\s+(reflex_docs[\w.]*)", re.MULTILINE)
+MARKDOWN_IMPORT = re.compile(
+    r"^\s*(?:import\s+(reflex_docs[\w.]*)"
+    r"|from\s+(reflex_docs[\w.]*)\s+import\s+(?:\(([^)]*)\)|([\w \t,]+)))",
+    re.MULTILINE,
+)
 
 
 def _module_name(path: Path) -> str:
@@ -47,6 +51,29 @@ def _imported_names(source: str, module: str, is_package: bool) -> set[str]:
     return names
 
 
+def _markdown_imported_names(markdown: str) -> set[str]:
+    """Collect the docs app names a Markdown file's code imports.
+
+    Args:
+        markdown: The Markdown source.
+
+    Returns:
+        Imported module names and ``module.attribute`` names.
+    """
+    names = set()
+    for module, package, grouped, inline in MARKDOWN_IMPORT.findall(markdown):
+        if module:
+            names.add(module)
+            continue
+        names.add(package)
+        names.update(
+            f"{package}.{alias.split()[0]}"
+            for alias in (grouped or inline).split(",")
+            if alias.strip()
+        )
+    return names
+
+
 def _reachable(modules: dict[str, set[str]], roots: set[str]) -> set[str]:
     """Walk the import graph from the roots, including each module's parents.
 
@@ -70,6 +97,29 @@ def _reachable(modules: dict[str, set[str]], roots: set[str]) -> set[str]:
     return seen
 
 
+def test_markdown_imports_include_imported_submodules():
+    """A Markdown block importing a submodule from its package keeps it reachable."""
+    markdown = (
+        "```python exec\n"
+        "import reflex_docs.views\n"
+        "from reflex_docs.pages import gallery as g, landing\n"
+        "from reflex_docs.components import (\n"
+        "    hint,\n"
+        "    button,\n"
+        ")\n"
+        "```\n"
+    )
+    assert _markdown_imported_names(markdown) == {
+        "reflex_docs.views",
+        "reflex_docs.pages",
+        "reflex_docs.pages.gallery",
+        "reflex_docs.pages.landing",
+        "reflex_docs.components",
+        "reflex_docs.components.hint",
+        "reflex_docs.components.button",
+    }
+
+
 def test_every_docs_app_module_is_reachable():
     """Unimported modules are dead code; delete them instead of shipping them."""
     modules = {
@@ -88,5 +138,5 @@ def test_every_docs_app_module_is_reachable():
             entry.name == "__init__.py",
         )
     for markdown in DOCS_ROOT.rglob("*.md"):
-        roots.update(MARKDOWN_IMPORT.findall(markdown.read_text(encoding="utf-8")))
+        roots |= _markdown_imported_names(markdown.read_text(encoding="utf-8"))
     assert sorted(set(modules) - _reachable(modules, roots)) == []
