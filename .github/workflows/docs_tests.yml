@@ -14,6 +14,8 @@ on:
       - 'packages/reflex-components-*/**'
       - 'packages/reflex-docgen/**'
       - 'packages/reflex-hosting-cli/**'
+      - 'packages/reflex-build-sdk/**'
+      - 'packages/hatch-reflex-pyi/**'
       - 'packages/reflex-site-shared/**'
       - 'packages/integrations-docs/**'
       - 'packages/*/CHANGELOG.md'
@@ -50,8 +52,10 @@ jobs:
         with:
           # Everything the docs app and its tests import or read: the framework
           # and the components it documents, the frontend runtime reflex-base
-          # embeds, docgen, the hosting CLI behind the cloud CLI reference, the
-          # shared site packages, and the changelogs the changelog pages render.
+          # embeds, docgen, the hosting CLI behind the cloud CLI reference and
+          # the build SDK it imports, the shared site packages, the build
+          # backend the component packages install with, and the changelogs
+          # the changelog pages render.
           paths: |
             docs/**
             reflex/**
@@ -60,6 +64,8 @@ jobs:
             packages/reflex-components-*/**
             packages/reflex-docgen/**
             packages/reflex-hosting-cli/**
+            packages/reflex-build-sdk/**
+            packages/hatch-reflex-pyi/**
             packages/reflex-site-shared/**
             packages/integrations-docs/**
             packages/*/CHANGELOG.md
