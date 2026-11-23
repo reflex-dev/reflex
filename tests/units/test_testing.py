@@ -348,7 +348,13 @@ def test_app_harness_preserves_newly_imported_shared_module_states(
 def test_app_harness_restarts_multi_module_app_without_reimporting_states(
     tmp_path, harness_mocks, monkeypatch
 ):
-    """Restarting an app restores cached state submodules without re-importing them."""
+    """Restarting an app restores cached state submodules without re-importing them.
+
+    Args:
+        tmp_path: Temporary directory for generated app files.
+        harness_mocks: Mocked app initialization dependencies.
+        monkeypatch: Pytest fixture for registration and import isolation.
+    """
     import reflex as rx
     from reflex.state import all_base_state_classes
 
@@ -393,6 +399,21 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
                 "        self.count += 1\n",
                 state_module.__dict__,
             )
+        else:
+            app_module.__dict__.update(
+                rx=rx,
+                AppState=package_module.AppState,
+                ChildState=state_module.ChildState,
+            )
+            exec(
+                "class MainState(AppState):\n"
+                "    @rx.var(cache=True)\n"
+                "    async def child_count(self) -> int:\n"
+                "        child = await self.get_state(ChildState)\n"
+                "        return child.count\n",
+                app_module.__dict__,
+            )
+            app_module.MainState._init_var_dependency_dicts()
         return app_info
 
     harness_mocks.get_and_validate_app.side_effect = load_or_check_app
@@ -427,6 +448,7 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
         context = RegistrationContext.get()
         assert context.base_states[app_state.get_full_name()] is app_state
         assert context.base_states[child_state.get_full_name()] is child_state
+        assert "child_count" in app_module.MainState.computed_vars
         assert state_module.CachedMixin.get_full_name() not in context.base_states
         assert any(
             handler.handler is child_state.event_handlers["increment"]
@@ -443,7 +465,12 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
 def test_app_harness_reloads_cached_child_when_parent_module_reloads(
     tmp_path, monkeypatch
 ):
-    """A cached child state must inherit from the reloaded app parent state."""
+    """A cached child state must inherit from the reloaded app parent state.
+
+    Args:
+        tmp_path: Temporary directory for app modules.
+        monkeypatch: Pytest fixture for import-path and registration isolation.
+    """
     from reflex.state import reload_state_module
 
     app_package = f"parent_reload_{tmp_path.name.replace('-', '_')}"
@@ -454,7 +481,7 @@ def test_app_harness_reloads_cached_child_when_parent_module_reloads(
         "import reflex as rx\n"
         "class ParentState(rx.State):\n"
         "    count: int = 0\n"
-        "from .states import ChildState\n"
+        "from .states import ChildState, SiblingState\n"
     )
     (package_dir / "states.py").write_text(
         "import reflex as rx\n"
@@ -463,6 +490,8 @@ def test_app_harness_reloads_cached_child_when_parent_module_reloads(
         "    @rx.var(cache=False)\n"
         "    def child_value(self) -> int:\n"
         "        return self.count + 1\n"
+        "class SiblingState(ParentState):\n"
+        "    sibling_count: int = 0\n"
     )
     monkeypatch.syspath_prepend(str(tmp_path))
     base = RegistrationContext()
@@ -495,6 +524,7 @@ def test_app_harness_reloads_cached_child_when_parent_module_reloads(
         context = RegistrationContext.get()
         assert child_state.get_parent_state() is parent_state
         assert main_module.ChildState is child_state
+        assert main_module.SiblingState is states_module.SiblingState
         assert harness.app_instance is not None
         assert harness.app_instance._state is child_state
         assert context.base_states[child_state.get_full_name()] is child_state

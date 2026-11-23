@@ -313,6 +313,8 @@ class AppHarness:
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
+            app_package = config.module.partition(".")[0]
+            self._restore_cached_app_module_states(app_package)
             # Ensure we compile generated apps, and reload pre-existing app modules
             # that were already imported so they can re-register memo definitions.
             should_reload_app = (
@@ -323,7 +325,7 @@ class AppHarness:
                     reload=should_reload_app
                 )
             )
-            self._restore_cached_app_module_states(config.module.partition(".")[0])
+            self._restore_cached_app_module_states(app_package)
             self.app_asgi = self.app_instance()
 
     def _reload_state_module(self):
@@ -357,7 +359,11 @@ class AppHarness:
             self._cached_app_state_modules.setdefault(key, set()).update(module_names)
 
     def _restore_cached_app_module_states(self, app_package: str) -> None:
-        """Re-register cached state classes from this app's submodules."""
+        """Re-register cached state classes from this app's submodules.
+
+        Args:
+            app_package: Top-level package name for the app being initialized.
+        """
         key = (str(self.app_path.resolve()), app_package)
         module_names = self._cached_app_state_modules.get(key, set())
         if not module_names:
@@ -367,19 +373,7 @@ class AppHarness:
         stale_module_names: set[str] = set()
         stale_classes: set[type[BaseState]] = set()
         for module_name in module_names:
-            module = sys.modules.get(module_name)
-            if module is None:
-                continue
-            for state_cls in vars(module).values():
-                if (
-                    not isinstance(state_cls, type)
-                    or not issubclass(state_cls, BaseState)
-                    or state_cls._mixin
-                    or state_cls.__module__ != module_name
-                    or state_cls.__qualname__ != state_cls.__name__
-                    or getattr(module, state_cls.__name__, None) is not state_cls
-                ):
-                    continue
+            for state_cls in self._get_app_module_state_classes(module_name):
                 parent_state = state_cls.get_parent_state()
                 registered_parent = (
                     context.base_states.get(parent_state.get_full_name())
@@ -393,19 +387,24 @@ class AppHarness:
                     stale_module_names.add(module_name)
                     stale_classes.add(state_cls)
 
+        stale_module_classes = {
+            module_name: self._get_app_module_state_classes(module_name)
+            for module_name in stale_module_names
+        }
         for module_name in stale_module_names:
             module = sys.modules[module_name]
             reload_state_module(module=module_name)
             importlib.reload(module)
 
         if stale_classes:
-            replacements = {
-                id(old_class): getattr(
-                    sys.modules[old_class.__module__], old_class.__name__
-                )
-                for old_class in stale_classes
-                if hasattr(sys.modules[old_class.__module__], old_class.__name__)
-            }
+            replacements = {}
+            for old_classes in stale_module_classes.values():
+                for old_class in old_classes:
+                    module = sys.modules[old_class.__module__]
+                    if (
+                        replacement := getattr(module, old_class.__name__, None)
+                    ) is not None:
+                        replacements[id(old_class)] = replacement
             app_package_prefix = f"{app_package}."
             for module_name, module in tuple(sys.modules.items()):
                 if module is None or not (
@@ -424,20 +423,7 @@ class AppHarness:
 
         restored: dict[str, type[BaseState]] = {}
         for module_name in module_names:
-            module = sys.modules.get(module_name)
-            if module is None:
-                continue
-            for state_cls in vars(module).values():
-                if (
-                    not isinstance(state_cls, type)
-                    or not issubclass(state_cls, BaseState)
-                    or state_cls._mixin
-                    or state_cls.__module__ != module_name
-                    or state_cls.__qualname__ != state_cls.__name__
-                    or getattr(module, state_cls.__name__, None) is not state_cls
-                ):
-                    continue
-
+            for state_cls in self._get_app_module_state_classes(module_name):
                 parent_state: type[BaseState] | None = state_cls
                 while parent_state is not None:
                     full_name = parent_state.get_full_name()
@@ -454,6 +440,30 @@ class AppHarness:
                 state_cls._var_dependencies = {}
             for state_cls in sorted(restored.values(), key=lambda cls: len(cls.mro())):
                 state_cls._init_var_dependency_dicts()
+
+    @staticmethod
+    def _get_app_module_state_classes(module_name: str) -> tuple[type[BaseState], ...]:
+        """Return top-level, registered state classes defined by a cached app module.
+
+        Args:
+            module_name: Fully qualified module name to inspect.
+
+        Returns:
+            State classes defined in the loaded module, excluding mixins and aliases.
+        """
+        module = sys.modules.get(module_name)
+        if module is None:
+            return ()
+        return tuple(
+            state_cls
+            for state_cls in vars(module).values()
+            if isinstance(state_cls, type)
+            and issubclass(state_cls, BaseState)
+            and not state_cls._mixin
+            and state_cls.__module__ == module_name
+            and state_cls.__qualname__ == state_cls.__name__
+            and getattr(module, state_cls.__name__, None) is state_cls
+        )
 
     def _preserve_new_shared_module_states(self) -> None:
         """Keep module-level shared states registered for later harness apps.

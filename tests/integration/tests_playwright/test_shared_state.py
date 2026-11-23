@@ -60,7 +60,13 @@ def test_shared_state(shared_state: AppHarness, page: Page) -> None:
 def test_shared_module_state_is_available_to_a_second_app(
     tmp_path, monkeypatch, page: Page
 ) -> None:
-    """A module first imported by one app remains usable by the next app."""
+    """A module first imported by one app remains usable by the next app.
+
+    Args:
+        tmp_path: Temporary directory for generated app packages.
+        monkeypatch: Pytest fixture for import-path and registration isolation.
+        page: Playwright page used to verify both app runs.
+    """
     import sys
 
     package_name = f"harness_shared_{uuid4().hex}"
