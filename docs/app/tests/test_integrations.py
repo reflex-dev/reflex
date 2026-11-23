@@ -7,7 +7,7 @@ import integrations_docs
 import pytest
 from reflex_site_shared.integrations import (
     RAW_DOC_IMAGES_PREFIX,
-    _integrations_doc_images_url,
+    integrations_doc_images_url,
     rewrite_integration_doc_images_in_source,
 )
 
@@ -28,7 +28,7 @@ def test_rewrite_source_replaces_all_doc_image_urls() -> None:
         f"![two]({RAW_DOC_IMAGES_PREFIX}descope.webp)\n"
     )
     rewritten = rewrite_integration_doc_images_in_source(source)
-    local_prefix = _integrations_doc_images_url()
+    local_prefix = integrations_doc_images_url()
     assert RAW_DOC_IMAGES_PREFIX not in rewritten
     assert f"({local_prefix}okta_auth_1.png)" in rewritten
     assert f"({local_prefix}descope.webp)" in rewritten

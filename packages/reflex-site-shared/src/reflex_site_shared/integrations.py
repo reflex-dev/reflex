@@ -59,7 +59,7 @@ def _integrations_logos_url() -> str:
 
 
 @once
-def _integrations_doc_images_url() -> str:
+def integrations_doc_images_url() -> str:
     """Return the public URL prefix for the integrations_docs screenshots directory.
 
     Returns:
@@ -108,4 +108,4 @@ def rewrite_integration_doc_images_in_source(source: str) -> str:
     """
     if RAW_DOC_IMAGES_PREFIX not in source:
         return source
-    return source.replace(RAW_DOC_IMAGES_PREFIX, _integrations_doc_images_url())
+    return source.replace(RAW_DOC_IMAGES_PREFIX, integrations_doc_images_url())

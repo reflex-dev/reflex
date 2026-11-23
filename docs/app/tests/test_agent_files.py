@@ -169,7 +169,7 @@ def test_generate_markdown_file_content_serves_integration_images_locally(
     """Integration screenshots point at the copies the docs site serves."""
     _patch_config(monkeypatch, deploy_url="https://reflex.dev")
     monkeypatch.setattr(
-        "agent_files._plugin._integrations_doc_images_url",
+        "agent_files._plugin.integrations_doc_images_url",
         lambda: "/docs/external/integrations_docs/docs/",
     )
     source = tmp_path / "okta_auth.md"

@@ -11,7 +11,7 @@ from reflex_base.config import get_config
 from reflex_base.plugins import CommonContext, Plugin
 from reflex_site_shared.integrations import (
     RAW_DOC_IMAGES_PREFIX,
-    _integrations_doc_images_url,
+    integrations_doc_images_url,
 )
 from reflex_site_shared.utils.url import public_url
 from typing_extensions import Unpack
@@ -277,7 +277,7 @@ def generate_markdown_file_content(entry: MarkdownFileEntry) -> str:
         # site serves the packaged copies.
         images_url = (get_config().deploy_url or "").rstrip("/")
         source = source.replace(
-            RAW_DOC_IMAGES_PREFIX, images_url + _integrations_doc_images_url()
+            RAW_DOC_IMAGES_PREFIX, images_url + integrations_doc_images_url()
         )
     component_reference = _component_api_reference_markdown(entry.source_path)
     body = source.rstrip()
