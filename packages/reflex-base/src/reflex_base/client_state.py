@@ -29,7 +29,11 @@ from reflex_base.utils.exceptions import ClientStateConflictError, VarTypeError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
-from reflex_base.vars.function import ArgsFunctionOperationBuilder, FunctionVar
+from reflex_base.vars.function import (
+    ArgsFunctionOperationBuilder,
+    FunctionStringVar,
+    FunctionVar,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import deprecated
@@ -238,14 +242,11 @@ def _collect_declarations() -> Iterator[None]:
         _compile_declarations.reset(token)
 
 
-# The store's entry point on the global `refs` object. This is the only binding
-# reachable from the scope `run_script` code is evaluated in, and doubles as the
-# devtools handle for inspecting client state.
-_client_state_store_ref = Var(
-    _js_expr=f"refs[{json.dumps(CLIENT_STATE_REF)}]",
-    _var_data=VarData(
-        imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]},
-    ),
+# The store's `set`, on the global `refs` object that `run_script` code can reach
+# and devtools can inspect.
+_client_state_store_set = FunctionStringVar.create(
+    f"refs[{json.dumps(CLIENT_STATE_REF)}].set",
+    _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
 )
 
 
@@ -602,9 +603,9 @@ class ClientStateVar(Var):
 
         Unlike `value` this needs no hook, so it can be used in any javascript
         scope that has the page's imports -- a wrapped library's callback or
-        `add_custom_code`. It is a point-in-time read with no reactivity; prefer
-        `value` inside components. Code passed to `rx.call_script` runs in the
-        runtime module instead; it reaches the store through ``refs``.
+        `add_custom_code` -- and in `rx.call_script` code, which runs in the
+        runtime module, or a Var passed to `push`. It is a point-in-time read
+        with no reactivity; prefer `value` inside components.
 
         Returns:
             An accessor for the client state variable.
@@ -623,8 +624,8 @@ class ClientStateVar(Var):
         """Set the client state variable from JS outside a React component.
 
         Unlike `set` this needs no hook, so the returned function can be handed
-        to a wrapped library as a plain callback. Every subscribed component
-        re-renders.
+        to a wrapped library as a plain callback, or called from `rx.call_script`
+        code. Every subscribed component re-renders.
 
         Returns:
             A function Var which sets the value when called.
@@ -690,11 +691,10 @@ class ClientStateVar(Var):
         if isinstance(value, Var):
             # A Var is a client-side expression, which cannot survive the JSON
             # event payload -- it would arrive as its own source text. Evaluate
-            # it on the client instead, reaching the store through `refs` (the
-            # only binding in scope where run_script's code is evaluated).
-            return run_script(
-                f"{_client_state_store_ref!s}.set({LiteralVar.create(self._state_name)!s}, {value!s})"
-            )
+            # it on the client instead, reaching the store through `refs`. The
+            # call keeps the Var's imports, which a page that compiles the push
+            # into one of its triggers needs.
+            return run_script(_client_state_store_set.call(self._state_name, value))
         return server_side(
             "_client_state_set",
             inspect.signature(_client_state_set),

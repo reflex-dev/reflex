@@ -230,9 +230,21 @@ Reads through `global_value` are a point-in-time snapshot with no reactivity, so
 subscribed to that var, exactly like `set` does. Both require a **named** client state
 var, since the name is what identifies the value.
 
-`rx.call_script` is the one place these do not work: its code is evaluated inside the
-Reflex runtime module, so your page's imports are not in scope there. Reach the store
-through the runtime's `refs` object instead:
+Both also work in code passed to `rx.call_script`, and in a Var passed to `push`, which
+the browser evaluates the same way. So an event handler can write one var with a value
+read from another on the client:
+
+```python
+picker_label = rx.client_state("", name="picker_label")
+
+
+class PickerState(rx.State):
+    @rx.event
+    def label_picked_color(self):
+        return picker_label.push(picker_color.global_value.to(str) + " picked")
+```
+
+Hand-written script code reaches the same store through the runtime's `refs` object:
 
 ```python
 rx.call_script('refs["__client_state"].set("picker_color", "#ffffff")')
