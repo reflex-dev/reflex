@@ -62,7 +62,7 @@ The [config reference](/docs/api-reference/config/) lists the environment variab
 
 Reflex and its hosting CLI use [HTTPX2](https://pydantic.dev/docs/httpx2/) for HTTP requests. HTTPS verification uses the operating system's certificate store. Set `SSL_CERT_FILE` or `SSL_CERT_DIR` to use a custom CA bundle or certificate directory. Downloads continue to honor `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, and `NO_PROXY`.
 
-Reflex no longer installs the original `httpx` package as a runtime dependency. For application code that you want to migrate, declare HTTPX2 in your own dependencies:
+Reflex no longer uses the original `httpx` package, but still installs it until Reflex 1.0. If your code imports `httpx`, declare it as a dependency or migrate. To migrate, declare HTTPX2 in your own dependencies:
 
 ```bash
 uv add "httpx2>=2.15.1,<3.0"
@@ -74,7 +74,7 @@ Then change your imports:
 import httpx2 as httpx
 ```
 
-If your application or an SDK still uses the original `httpx`, keep it as an explicit dependency. Installing `sniffio` also avoids repeated failed imports in `httpcore` when handling async requests:
+If your application or an SDK still uses the original `httpx`, declare it as an explicit dependency. Installing `sniffio` also avoids repeated failed imports in `httpcore` when handling async requests:
 
 ```bash
 uv add httpx sniffio
