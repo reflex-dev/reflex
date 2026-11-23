@@ -165,10 +165,6 @@ In this tutorial you'll learn how to:
 
 ## Setting up Your Project
 
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=175&end=445
-# Video: Example of Setting up the Chat App
-```
-
 We will start by creating a new project and setting up our development environment. If you haven't installed [uv](https://docs.astral.sh/uv/) yet, see the [installation guide](/docs/getting-started/installation/). Then create a new project directory and scaffold a Reflex app:
 
 ```bash

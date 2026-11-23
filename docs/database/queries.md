@@ -1,5 +1,4 @@
-# Queries
-
+# Database Queries
 Queries are used to retrieve data from a database.
 
 A query is a request for information from a database table or combination of

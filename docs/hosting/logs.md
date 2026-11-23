@@ -1,5 +1,4 @@
-# Logs
-
+# App Logs
 Use the hosted app's **Logs** page to inspect runtime output.
 
 ## Runtime Logs in the Dashboard

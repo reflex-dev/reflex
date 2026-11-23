@@ -2,8 +2,7 @@
 import reflex as rx
 ```
 
-# Props
-
+# Component Props
 Props modify the behavior and appearance of a component. They are passed in as keyword arguments to a component.
 
 ## Component Props

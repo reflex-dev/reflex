@@ -60,7 +60,7 @@ reflex cloud scan --json
 
 `--fail-on` sets the exit code, so a scan can block a merge or deploy when issues are found. Pass a token with `--token` and add `--no-interactive` so the command never prompts.
 
-Create a `REFLEX_AUTH_TOKEN` in the tokens tab of the Cloud UI (see the [tokens docs](/docs/hosting/tokens/#tokens)) and store it as a repository secret.
+Create a `REFLEX_AUTH_TOKEN` in the tokens tab of the Cloud UI (see the [tokens docs](/docs/hosting/tokens/)) and store it as a repository secret.
 
 This GitHub Actions workflow fails the build on any `high` or `critical` finding:
 

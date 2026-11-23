@@ -3,8 +3,7 @@ components:
   - rx.recharts.GraphingTooltip
 ---
 
-# Tooltip
-
+# Chart Tooltip
 ```python exec
 import reflex as rx
 ```

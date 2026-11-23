@@ -1,5 +1,4 @@
-# Theming
-
+# React Flow Theming
 You can customize the appearance of the Flow component using CSS. The Flow component comes with a default theme, which you can override with your own styles.
 
 ## CSS Variables

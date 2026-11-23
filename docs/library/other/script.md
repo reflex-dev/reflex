@@ -11,7 +11,7 @@ import reflex as rx
 
 The Script component can be used to include inline javascript or javascript files by URL.
 
-It uses the [`next/script` component](https://nextjs.org/docs/app/api-reference/components/script) to inject the script and can be safely used with conditional rendering to allow script side effects to be controlled by the state.
+It renders a `<script>` element through [React Helmet](https://github.com/nfl/react-helmet), which places it in the document head, and can be safely used with conditional rendering to allow script side effects to be controlled by the state.
 
 ```python
 rx.script("console.log('inline javascript')")

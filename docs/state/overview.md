@@ -25,14 +25,9 @@ def definition(title, *children):
     )
 ```
 
-# State
-
+# State Overview
 State allows us to create interactive apps that can respond to user input.
 It defines the variables that can change over time, and the functions that can modify them.
-
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=1206&end=1869
-# Video: State Overview
-```
 
 ## State Basics
 

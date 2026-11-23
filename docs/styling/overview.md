@@ -2,8 +2,7 @@
 import reflex as rx
 ```
 
-# Styling
-
+# Styling Overview
 Reflex components can be styled using the full power of [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS).
 
 There are three main ways to add style to your app and they take precedence in the following order:

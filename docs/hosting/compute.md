@@ -2,8 +2,7 @@
 import reflex as rx
 ```
 
-# Compute
-
+# Compute Usage
 ## How compute usage works
 
 Reflex Cloud measures compute while an app instance is running. Usage depends on:

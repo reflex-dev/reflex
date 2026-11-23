@@ -255,10 +255,6 @@ frontend and each row renders with `rx.foreach(UserState.users, ...)`. See
 [Queries](/docs/database/queries/) for updates, deletes, raw SQL, and long
 queries in background tasks.
 
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=6835&end=8225
-# Video: Tutorial of Database Model with Forms, Model Field Changes and Migrations, and adding a DateTime Field
-```
-
 ## Migrating existing apps
 
 `rx.Model` and `rx.session()` are deprecated as of Reflex 0.9.2 and will be

@@ -2,8 +2,7 @@
 meta_description: Write reflex-workflow steps that update a run, call other services, and return what happens next. Configure retries and backoff, and make steps safe to repeat.
 ---
 
-# Steps
-
+# Workflow Steps
 A step is an async method of a workflow that does one piece of work and returns what the run does next. This page covers what a step can change, what it can return, how failures are retried, and how to make a step safe to run twice.
 
 ## Define a step

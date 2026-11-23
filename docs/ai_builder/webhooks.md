@@ -3,8 +3,7 @@ tags: AI Builder
 description: Send app events to an external service through an incoming webhook without exposing its URL in client-side code or logs.
 ---
 
-# Webhooks
-
+# Outgoing Webhooks
 Use an outgoing webhook when an event in your app should send data to a service that provides an incoming webhook URL.
 
 ## Create and store the webhook

@@ -2,8 +2,7 @@
 import reflex as rx
 ```
 
-# Pages
-
+# Pages Overview
 Pages map components to different URLs in your app. This section covers creating pages, handling URL arguments, accessing query parameters, managing page metadata, and handling page load events.
 
 ## Adding a Page
@@ -39,10 +38,6 @@ In this example we create three pages:
 
 ```md alert
 # Index is a special exception where it is available at both `/` and `/index`. All other pages are only available at their specified route.
-```
-
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=3853&end=4083
-# Video: Pages and URL Routes
 ```
 
 ## Page Decorator
@@ -88,10 +83,6 @@ rx.link("Open in new tab", href="https://reflex.dev/", is_external=True)
 ```
 
 Check out the [link docs](/docs/library/typography/link/) to learn more.
-
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=4083&end=4423
-# Video: Link-based Navigation
-```
 
 ### Redirect
 
@@ -143,10 +134,6 @@ def redirect_example():
             "Redirect to new page in State", on_click=Redirect2ExampleState.change_page
         ),
     )
-```
-
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=4423&end=4903
-# Video: Redirecting to a New Page
 ```
 
 ## Nested Routes

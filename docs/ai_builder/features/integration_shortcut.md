@@ -3,8 +3,7 @@ tags: AI Builder
 description: Add built-in or custom integrations to a Reflex project and make them available to Builder apps.
 ---
 
-# Integrations
-
+# Reflex Build Integrations
 ```python exec
 import reflex as rx
 ```

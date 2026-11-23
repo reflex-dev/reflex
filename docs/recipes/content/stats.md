@@ -2,8 +2,7 @@
 import reflex as rx
 ```
 
-# Stats
-
+# Stats Cards
 Stats cards are used to display key metrics or data points. They are typically used in dashboards or admin panels.
 
 ## Variant 1

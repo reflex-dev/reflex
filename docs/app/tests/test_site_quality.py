@@ -1,9 +1,11 @@
 """Regression checks for shared documentation presentation."""
 
+from pathlib import Path
 from typing import Literal, get_args
 
 import pytest
 import reflex as rx
+from reflex_docgen.markdown import DirectiveBlock, HeadingBlock, parse_document
 
 from reflex_docs.pages.docs.source import stacked_description_rows
 from reflex_docs.pages.docs_landing.views.ai_builder import card
@@ -183,3 +185,77 @@ def test_dict_prop_value_types_use_short_names(type_, label):
     from reflex_docs.pages.docs.component import _type_label
 
     assert _type_label(get_args(type_)[1]) == label
+
+
+DOCS = Path(__file__).resolve().parents[2]
+# The ```md <name>``` directives the docs renderer styles; any other name
+# falls back to rendering its contents as plain Markdown.
+RENDERED_DIRECTIVES = {
+    "alert",
+    "definition",
+    "faq",
+    "faq-section",
+    "quote",
+    "section",
+    "tabs",
+    "tutorial-intro",
+    "video",
+}
+
+
+def _markdown_pages():
+    """Yield every authored docs page, outside the docs app itself."""
+    for page in sorted(DOCS.rglob("*.md")):
+        if DOCS / "app" not in page.parents:
+            yield page
+
+
+def _directive_names(blocks):
+    """Yield the names of the directives in blocks, nested ones included."""
+    for block in blocks:
+        if isinstance(block, DirectiveBlock):
+            yield block.name
+        yield from _directive_names(getattr(block, "children", ()))
+
+
+def test_docs_use_only_rendered_directives():
+    """A directive the renderer does not know is shown as unstyled text."""
+    unknown = sorted(
+        (str(page.relative_to(DOCS)), name)
+        for page in _markdown_pages()
+        for name in set(_directive_names(parse_document(page.read_text()).blocks))
+        if name not in RENDERED_DIRECTIVES
+    )
+    assert unknown == []
+
+
+def test_docs_drop_retired_references():
+    """Pages no longer describe Next.js internals or embed the retired 2024 video."""
+    retired = ("ITOZkzjtjUA", "next/script", "NextJS app", ".web/pages")
+    found = sorted(
+        (str(page.relative_to(DOCS)), text)
+        for page in _markdown_pages()
+        for text in retired
+        if text in page.read_text()
+    )
+    assert found == []
+
+
+def test_page_headings_are_unique():
+    """Two pages never share an H1; a low-level ``-ll`` variant shares its page's."""
+    pages = {}
+    for page in _markdown_pages():
+        if page.name.endswith("-ll.md"):
+            continue
+        heading = next(
+            (
+                block
+                for block in parse_document(page.read_text()).blocks
+                if isinstance(block, HeadingBlock) and block.level == 1
+            ),
+            None,
+        )
+        if heading is not None:
+            title = "".join(getattr(span, "text", "") for span in heading.children)
+            pages.setdefault(title, []).append(str(page.relative_to(DOCS)))
+    assert {title: paths for title, paths in pages.items() if len(paths) > 1} == {}

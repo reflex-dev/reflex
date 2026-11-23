@@ -1,5 +1,4 @@
-# Relationships
-
+# Database Relationships
 Foreign key relationships are used to link two tables together. For example,
 the `Post` model may have a field, `user_id`, with a foreign key of `user.id`,
 referencing a `User` model. This would allow us to automatically query the `Post` objects

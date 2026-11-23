@@ -2,8 +2,7 @@
 import reflex as rx
 ```
 
-# Assets
-
+# Assets Overview
 Static files such as images and stylesheets can be placed in `assets/` folder of the project. These files can be referenced within your app.
 
 ```md alert

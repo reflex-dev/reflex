@@ -172,10 +172,6 @@ Including controls by `id` is deprecated and will be removed in Reflex 0.12. Fro
 - A control whose `id` equals its `name` submits its own value instead of the one read through its `id`. A checkbox or switch then submits `"on"` or nothing rather than `True` or `False`; declare it as a `bool` field of a [TypedDict](#validating-form-data-with-a-typeddict) to keep reading a bool.
 ```
 
-```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040
-# Video: Forms
-```
-
 ## Fields with the Same Name
 
 Several controls can share a `name`, such as a group of checkboxes. A `dict`
