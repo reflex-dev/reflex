@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
 
-import httpx
+import httpx2
 import pytest
 import pytest_asyncio
 from opentelemetry import trace
@@ -1739,7 +1739,7 @@ async def _post_failing_upload(
     handler: str,
     token: str,
     processor: BaseStateEventProcessor,
-) -> tuple[httpx.Response, list[tuple[Exception, list[str]]]]:
+) -> tuple[httpx2.Response, list[tuple[Exception, list[str]]]]:
     """POST an upload to a failing handler through a real ASGI app.
 
     The transport re-raises any exception that escapes the app, which the
@@ -1765,8 +1765,8 @@ async def _post_failing_upload(
             Route("/_upload", upload(Mock(event_processor=processor)), methods=["POST"])
         ]
     )
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=api), base_url="http://test"
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=api), base_url="http://test"
     ) as client:
         response = await client.post(
             "/_upload",

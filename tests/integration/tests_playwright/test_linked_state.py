@@ -6,7 +6,7 @@ import time
 import uuid
 from collections.abc import Callable, Generator
 
-import httpx
+import httpx2
 import pytest
 from playwright.sync_api import Browser, Page, expect
 from reflex_base.config import get_config
@@ -459,7 +459,7 @@ def test_modify_shared_state_by_shared_token(
     shared_token = f"api-test-{uuid.uuid4()}"
     page1 = _open_linked_page(linked_state, tab_factory, shared_token)
     page2 = _open_linked_page(linked_state, tab_factory, shared_token)
-    response = httpx.get(f"{get_config().api_url}/api/set-counter/{shared_token}/42")
+    response = httpx2.get(f"{get_config().api_url}/api/set-counter/{shared_token}/42")
     assert response.status_code == 200
     for page in (page1, page2):
         expect(page.locator("#counter-button")).to_have_text("42")
