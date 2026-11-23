@@ -11,7 +11,7 @@ Nothing is generated for you to maintain. Your app talks to Reflex as a standard
 
 ```md alert info
 # Plan availability
-Building apps in the AI Builder requires the Pro or Enterprise plan; a Free account cannot build or deploy apps. Both plans include **choosing who can sign in**. If those options are marked unavailable on your plan, [contact sales](https://reflex.dev/pricing/).
+Building apps in the AI Builder requires the Pro or Enterprise plan; a Free account cannot build or deploy apps in the AI Builder. Both plans include **choosing who can sign in**. If those options are marked unavailable on your plan, [contact sales](https://reflex.dev/pricing/).
 ```
 
 ## Add sign-in to your app

@@ -21,7 +21,7 @@ The full [End-User License Agreement (EULA)](https://raw.githubusercontent.com/r
 
 ```md alert info
 # What a Free account can use
-On a Free account, `reflex-enterprise` works in development and in self-hosted production, with a "Built with Reflex" badge shown in the bottom right corner of the app.
+On a Free account, the features marked Free under Self-hosted Tier in the table below work in development and in self-hosted production, with a "Built with Reflex" badge shown in the bottom right corner of the app.
 Deploying to Reflex Cloud requires the Pro plan or above. The hosted [Reflex MCP server](/docs/ai/integrations/mcp-overview/) requires the Enterprise plan.
 For more information on the badge, visit [Built with Reflex](/docs/enterprise/built-with-reflex/).
 ```
