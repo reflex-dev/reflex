@@ -539,9 +539,7 @@ class AGGridDatabaseState(rx.State):
     async def load_countries(self):
         async with Session() as session:
             if not await session.scalar(select(func.count()).select_from(Country)):
-                data = await asyncio.to_thread(
-                    pd.read_csv, "data/gapminder2007.csv"
-                )
+                data = await asyncio.to_thread(pd.read_csv, "data/gapminder2007.csv")
                 session.add_all(
                     Country(
                         country=row["country"],
