@@ -9,7 +9,7 @@ APP_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = APP_ROOT / "reflex_docs"
 DOCS_ROOT = APP_ROOT.parent
 PYTHON_BLOCK = re.compile(
-    r"^([ \t]*)```python[^\n]*\n(.*?)^\1```", re.MULTILINE | re.DOTALL
+    r"^([ \t]*)(`{3,})python[^\n]*\n(.*?)^\1\2(?!`)", re.MULTILINE | re.DOTALL
 )
 
 
@@ -62,7 +62,7 @@ def _markdown_imported_names(markdown: str) -> set[str]:
         Imported module names and ``module.attribute`` names.
     """
     names = set()
-    for _, code in PYTHON_BLOCK.findall(markdown):
+    for _, _, code in PYTHON_BLOCK.findall(markdown):
         try:
             names |= _imported_names(textwrap.dedent(code), "markdown", False)
         except SyntaxError:
@@ -111,6 +111,10 @@ def test_markdown_imports_include_every_import_form():
         "```python\n"
         "from reflex_docs.models import (\n"
         "```\n"
+        "````python demo\n"
+        "from reflex_docs.templates import docpage\n"
+        'rx.markdown("""```python\nprint()\n```""")\n'
+        "````\n"
     )
     assert _markdown_imported_names(markdown) == {
         "os",
@@ -123,6 +127,8 @@ def test_markdown_imports_include_every_import_form():
         "reflex_docs.components.button",
         "reflex_docs.utils",
         "reflex_docs.utils.*",
+        "reflex_docs.templates",
+        "reflex_docs.templates.docpage",
     }
 
 
