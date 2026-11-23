@@ -7,6 +7,7 @@ import contextlib
 import contextvars
 import dataclasses
 import functools
+import importlib
 import inspect
 import logging
 import os
@@ -309,7 +310,6 @@ class AppHarness:
             self._modules_before_app_load = set(sys.modules)
             # ensure config and app are reloaded when testing different app
             config = reload_config()
-            self._restore_cached_app_module_states(config.module.partition(".")[0])
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
@@ -323,6 +323,7 @@ class AppHarness:
                     reload=should_reload_app
                 )
             )
+            self._restore_cached_app_module_states(config.module.partition(".")[0])
             self.app_asgi = self.app_instance()
 
     def _reload_state_module(self):
@@ -363,6 +364,64 @@ class AppHarness:
             return
 
         context = RegistrationContext.get()
+        stale_module_names: set[str] = set()
+        stale_classes: set[type[BaseState]] = set()
+        for module_name in module_names:
+            module = sys.modules.get(module_name)
+            if module is None:
+                continue
+            for state_cls in vars(module).values():
+                if (
+                    not isinstance(state_cls, type)
+                    or not issubclass(state_cls, BaseState)
+                    or state_cls._mixin
+                    or state_cls.__module__ != module_name
+                    or state_cls.__qualname__ != state_cls.__name__
+                    or getattr(module, state_cls.__name__, None) is not state_cls
+                ):
+                    continue
+                parent_state = state_cls.get_parent_state()
+                registered_parent = (
+                    context.base_states.get(parent_state.get_full_name())
+                    if parent_state is not None
+                    else None
+                )
+                if (
+                    registered_parent is not None
+                    and registered_parent is not parent_state
+                ):
+                    stale_module_names.add(module_name)
+                    stale_classes.add(state_cls)
+
+        for module_name in stale_module_names:
+            module = sys.modules[module_name]
+            reload_state_module(module=module_name)
+            importlib.reload(module)
+
+        if stale_classes:
+            replacements = {
+                id(old_class): getattr(
+                    sys.modules[old_class.__module__], old_class.__name__
+                )
+                for old_class in stale_classes
+                if hasattr(sys.modules[old_class.__module__], old_class.__name__)
+            }
+            app_package_prefix = f"{app_package}."
+            for module_name, module in tuple(sys.modules.items()):
+                if module is None or not (
+                    module_name == app_package
+                    or module_name.startswith(app_package_prefix)
+                ):
+                    continue
+                for name, value in vars(module).items():
+                    if (replacement := replacements.get(id(value))) is not None:
+                        setattr(module, name, replacement)
+
+            if self.app_instance is not None:
+                app_state = getattr(self.app_instance, "_state", None)
+                if (replacement := replacements.get(id(app_state))) is not None:
+                    self.app_instance._state = replacement
+
         restored: dict[str, type[BaseState]] = {}
         for module_name in module_names:
             module = sys.modules.get(module_name)

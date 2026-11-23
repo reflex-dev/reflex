@@ -1,5 +1,6 @@
 """Unit tests for the included testing tools."""
 
+import importlib
 import sys
 from types import ModuleType, SimpleNamespace
 from unittest import mock
@@ -391,20 +392,6 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
                 "        self.count += 1\n",
                 state_module.__dict__,
             )
-        else:
-            app_state = package_module.AppState
-            child_state = state_module.ChildState
-            mixin_state = state_module.CachedMixin
-            context = RegistrationContext.get()
-            assert context.base_states[app_state.get_full_name()] is app_state
-            assert context.base_states[child_state.get_full_name()] is child_state
-            assert mixin_state.get_full_name() not in context.base_states
-            assert any(
-                handler.handler is child_state.event_handlers["increment"]
-                for handler in context.event_handlers.values()
-            )
-            assert all_base_state_classes[app_state.get_full_name()] is None
-            assert app_state.get_name() in rx.State._always_dirty_substates
         return app_info
 
     harness_mocks.get_and_validate_app.side_effect = load_or_check_app
@@ -434,10 +421,88 @@ def test_app_harness_restarts_multi_module_app_without_reimporting_states(
     restarted.app_module_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         restarted._initialize_app()
+        app_state = package_module.AppState
+        child_state = state_module.ChildState
+        context = RegistrationContext.get()
+        assert context.base_states[app_state.get_full_name()] is app_state
+        assert context.base_states[child_state.get_full_name()] is child_state
+        assert state_module.CachedMixin.get_full_name() not in context.base_states
+        assert any(
+            handler.handler is child_state.event_handlers["increment"]
+            for handler in context.event_handlers.values()
+        )
+        assert all_base_state_classes[app_state.get_full_name()] is None
+        assert app_state.get_name() in rx.State._always_dirty_substates
     finally:
         if RegistrationContext.get() is not outer_context:
             restarted.stop()
         assert RegistrationContext.get() is outer_context
+
+
+def test_app_harness_reloads_cached_child_when_parent_module_reloads(
+    tmp_path, monkeypatch
+):
+    """A cached child state must inherit from the reloaded app parent state."""
+    from reflex.state import reload_state_module
+
+    app_package = f"parent_reload_{tmp_path.name.replace('-', '_')}"
+    package_dir = tmp_path / app_package
+    package_dir.mkdir()
+    (package_dir / "__init__.py").write_text("")
+    (package_dir / "main.py").write_text(
+        "import reflex as rx\n"
+        "class ParentState(rx.State):\n"
+        "    count: int = 0\n"
+        "from .states import ChildState\n"
+    )
+    (package_dir / "states.py").write_text(
+        "import reflex as rx\n"
+        "from .main import ParentState\n"
+        "class ChildState(ParentState):\n"
+        "    @rx.var(cache=False)\n"
+        "    def child_value(self) -> int:\n"
+        "        return self.count + 1\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    base = RegistrationContext()
+    monkeypatch.setattr(AppHarness, "_base_registration_context", base)
+    monkeypatch.setattr(AppHarness, "_cached_app_state_modules", {})
+    active = base.fork()
+    active_token = RegistrationContext.set(active)
+    restart_token = None
+    module_names = (f"{app_package}.main", f"{app_package}.states", app_package)
+    try:
+        main_module = importlib.import_module(f"{app_package}.main")
+        states_module = importlib.import_module(f"{app_package}.states")
+        harness = AppHarness.create(root=tmp_path, app_name=app_package)
+        harness.app_module = main_module
+        harness._cache_app_state_modules(app_package)
+        harness._reload_state_module()
+
+        RegistrationContext.reset(active_token)
+        active_token = None
+        restart_token = RegistrationContext.set(base.fork())
+        main_module = importlib.reload(main_module)
+        harness.app_module = main_module
+        harness.app_instance = SimpleNamespace(_state=states_module.ChildState)
+        harness._restore_cached_app_module_states(app_package)
+
+        child_state = states_module.ChildState
+        parent_state = main_module.ParentState
+        context = RegistrationContext.get()
+        assert child_state.get_parent_state() is parent_state
+        assert main_module.ChildState is child_state
+        assert harness.app_instance._state is child_state
+        assert context.base_states[child_state.get_full_name()] is child_state
+        assert child_state.get_name() in parent_state._always_dirty_substates
+    finally:
+        for module_name in module_names:
+            reload_state_module(module=module_name)
+            sys.modules.pop(module_name, None)
+        if restart_token is not None:
+            RegistrationContext.reset(restart_token)
+        elif active_token is not None:
+            RegistrationContext.reset(active_token)
 
 
 def _harness_state(module: str) -> type:
