@@ -4,6 +4,9 @@ from typing import Literal, get_args
 
 import pytest
 import reflex as rx
+from reflex_components_core.el.elements.tables import Td, Tr
+from reflex_components_radix.themes.typography.code import Code
+from reflex_components_radix.themes.typography.heading import Heading
 
 from reflex_docs.pages.docs.source import stacked_description_rows
 from reflex_docs.pages.docs_landing.views.ai_builder import card
@@ -230,11 +233,9 @@ def _prop_names(table: rx.Component) -> list[str]:
     pending, names = [table], []
     while pending:
         node = pending.pop(0)
-        if isinstance(node, rx.el.tr.__self__) and isinstance(
-            node.children[0], rx.el.td.__self__
-        ):
+        if isinstance(node, Tr) and isinstance(node.children[0], Td):
             cell = node.children[0]
-            while not isinstance(cell, rx.code.__self__):
+            while not isinstance(cell, Code):
                 cell = cell.children[0]
             names.append(str(cell.children[0].contents).strip('"'))
             continue
@@ -274,7 +275,7 @@ def test_component_reference_headings_nest_under_api_reference():
         node = pending.pop(0)
         if node.tag == h3_tag:
             headings.append(("h3", str(node.text)))
-        elif isinstance(node, rx.heading.__self__):
+        elif isinstance(node, Heading):
             headings.append((str(node.as_), str(node.children[0].contents)))
         pending.extend(node.children)
     assert headings == [

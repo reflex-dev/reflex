@@ -5,8 +5,12 @@ from typing import cast
 
 import pytest
 from reflex_base.components.component import BaseComponent
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.el.elements.sectioning import H4
+from reflex_components_core.react_router.dom import ReactRouterLink
 from reflex_components_internal.components.base.input import InputRoot
 from reflex_components_internal.components.base.textarea import Textarea
+from reflex_components_radix.themes.typography.link import Link
 from reflex_site_shared.components import docs_shell
 from reflex_site_shared.components.docs_shell import (
     DocsFeedbackState,
@@ -228,6 +232,31 @@ def test_shared_sidebar_rows_keep_official_structure() -> None:
     assert "open:true" in group
 
 
+def _footer_link_groups(footer: BaseComponent) -> list[tuple[str, list[str]]]:
+    """Collect each footer link group's heading and link destinations, in order.
+
+    Args:
+        footer: The rendered footer.
+
+    Returns:
+        ``(heading, hrefs)`` per link group, with values as rendered vars.
+    """
+    groups, pending = [], [footer]
+    while pending:
+        node = pending.pop(0)
+        if node.children and isinstance(node.children[0], H4):
+            heading = cast(Bare, node.children[0].children[0])
+            hrefs = []
+            for link in node.children[1:]:
+                target = link.children[0] if isinstance(link, Link) else link
+                href = target.to if isinstance(target, ReactRouterLink) else target.href
+                hrefs.append(str(href))
+            groups.append((str(heading.contents), hrefs))
+            continue
+        pending.extend(node.children)
+    return groups
+
+
 def test_official_docs_footer_content_is_shared() -> None:
     """Keep the complete official footer available to package docs sites."""
     component = docs_page_footer(
@@ -239,29 +268,61 @@ def test_official_docs_footer_content_is_shared() -> None:
     assert "https://github.com/example/project/issues/new" in str(component)
     assert "Raise an issue" in rendered
     assert "Edit this page" in rendered
-    assert "Get started" not in rendered
-    assert "Documentation" in rendered
-    assert "Resources" in rendered
     assert "Social link for Github" in rendered
     assert "Social link for Forum" in rendered
     assert "Pynecone, Inc." in rendered
     # The docs navbar already links the "Get started" destinations.
-    assert "/getting-started/introduction/" not in rendered
-
-    external_rendered = str(_docs_external_page_footer_memo._definition.component)
-    assert "Get started" in external_rendered
-    assert "https://reflex.dev/docs/getting-started/introduction/" in external_rendered
-    assert "https://reflex.dev/docs/ai/" in external_rendered
-    for path in (
-        "/api-reference/app/",
-        "/ai/integrations/agent-toolkit/",
-        "/enterprise/overview/",
-    ):
-        assert f"https://reflex.dev/docs{path}" in external_rendered
-        assert f"https://reflex.dev/docs{path}" not in rendered
-        assert path in rendered
-    for path in ("/", "/blog/", "/faq/"):
-        assert f'href:"https://reflex.dev{path}"' in rendered
+    assert _footer_link_groups(component) == [
+        (
+            '"Documentation"',
+            [
+                '"/library/"',
+                '"/api-reference/app/"',
+                '"/ai/integrations/agent-toolkit/"',
+                '"/enterprise/overview/"',
+            ],
+        ),
+        (
+            '"Resources"',
+            [
+                '"https://reflex.dev/"',
+                '"https://reflex.dev/blog/"',
+                '"/changelog/"',
+                '"https://reflex.dev/faq/"',
+            ],
+        ),
+    ]
+    assert _footer_link_groups(
+        _docs_external_page_footer_memo._definition.component
+    ) == [
+        (
+            '"Get started"',
+            [
+                '"https://reflex.dev/docs/"',
+                '"https://reflex.dev/docs/ai/"',
+                '"https://reflex.dev/docs/getting-started/introduction/"',
+                '"https://reflex.dev/docs/hosting/deploy-quick-start/"',
+            ],
+        ),
+        (
+            '"Documentation"',
+            [
+                '"https://reflex.dev/docs/library/"',
+                '"https://reflex.dev/docs/api-reference/app/"',
+                '"https://reflex.dev/docs/ai/integrations/agent-toolkit/"',
+                '"https://reflex.dev/docs/enterprise/overview/"',
+            ],
+        ),
+        (
+            '"Resources"',
+            [
+                '"https://reflex.dev/"',
+                '"https://reflex.dev/blog/"',
+                '"https://reflex.dev/docs/changelog/"',
+                '"https://reflex.dev/faq/"',
+            ],
+        ),
+    ]
 
 
 def test_footer_theme_and_social_controls_can_wrap() -> None:
