@@ -105,9 +105,9 @@ async def _run_monitored(
     # The monitor leaves collections out of the total, so an automatic one during a
     # block would shorten it below the blocked time the tests check.
     collecting = gc.isenabled()
-    gc.disable()
-    monitor.start()
     try:
+        gc.disable()
+        monitor.start()
         await asyncio.create_task(fn(), name=task_name)
         await asyncio.sleep(0)
     finally:
