@@ -1,7 +1,34 @@
-import { createElement, useEffect, useRef, useState } from "react";
+import { Component, createElement, useEffect, useRef, useState } from "react";
 
 // Demos already shown in this session remount at once, e.g. after a tab switch.
 const loadedDemos = new Set();
+
+const placeholderStyle = {
+  minHeight: "450px",
+  display: "grid",
+  placeItems: "center",
+  color: "var(--muted-foreground)",
+  fontSize: "0.875rem",
+};
+
+/** Replace a preview that throws, e.g. without WebGL, instead of the whole page. */
+class PreviewErrorBoundary extends Component {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed
+      ? createElement(
+          "p",
+          { style: placeholderStyle },
+          "This preview could not load in this browser.",
+        )
+      : this.props.children;
+  }
+}
 
 /** Mount expensive previews near the viewport once the browser has idle time. */
 export function DeferredDemo({ children, style, demoId, ...props }) {
@@ -54,18 +81,10 @@ export function DeferredDemo({ children, style, demoId, ...props }) {
       style: { width: "100%", minHeight: "450px", ...style },
     },
     ready
-      ? children
+      ? createElement(PreviewErrorBoundary, null, children)
       : createElement(
           "p",
-          {
-            style: {
-              minHeight: "450px",
-              display: "grid",
-              placeItems: "center",
-              color: "var(--muted-foreground)",
-              fontSize: "0.875rem",
-            },
-          },
+          { style: placeholderStyle },
           "Interactive preview loads as you scroll.",
         ),
   );

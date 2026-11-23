@@ -104,6 +104,29 @@ def test_spline_preview_loads_automatically(page: Page, idle_callback: bool):
     expect(page.locator(".docs-demo-preview canvas")).to_be_visible()
 
 
+def test_spline_preview_falls_back_without_webgl(page: Page):
+    """A browser without WebGL keeps the page and shows a fallback for the demo."""
+    page.set_viewport_size({"width": 1440, "height": 600})
+    page.add_init_script("""
+        const getContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function (type, ...args) {
+            return type.includes("webgl") ? null : getContext.call(this, type, ...args);
+        };
+    """)
+    page.goto(f"{PREVIEW_URL}/docs/wrapping-react/overview/", wait_until="networkidle")
+    preview = page.locator(".docs-demo-preview").first
+    with page.expect_response("**/scene.splinecode"):
+        preview.scroll_into_view_if_needed()
+    expect(preview).to_have_text("This preview could not load in this browser.")
+    expect(page.locator("h1")).to_have_text("Wrapping React")
+    expect(page.locator(".docs-demo-preview canvas")).to_have_count(0)
+    tabs = page.locator('[role="tablist"]').first
+    tabs.get_by_role("tab", name="Code", exact=True).click()
+    expect(
+        page.get_by_text("class Spline(rx.NoSSRComponent):", exact=False)
+    ).to_be_visible()
+
+
 @pytest.mark.parametrize("width", [320, 375, 768, 1440])
 @pytest.mark.parametrize("route", ["/docs/", "/docs/getting-started/introduction/"])
 def test_editorial_header_stays_in_viewport(page: Page, width: int, route: str):
