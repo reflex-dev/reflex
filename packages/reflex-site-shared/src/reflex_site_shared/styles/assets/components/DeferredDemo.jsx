@@ -19,6 +19,10 @@ class PreviewErrorBoundary extends Component {
     return { failed: true };
   }
 
+  componentDidCatch(error) {
+    console.error("Docs preview failed to render:", error);
+  }
+
   render() {
     return this.state.failed
       ? createElement(

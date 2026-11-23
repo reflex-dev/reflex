@@ -560,6 +560,8 @@ class AGGridDatabaseState(rx.State):
             return
         async with Session() as session:
             country = await session.get(Country, self.countries[row].id)
+            if country is None:
+                return
             setattr(country, col_field, new_value)
             await session.commit()
         self.countries[row] = country

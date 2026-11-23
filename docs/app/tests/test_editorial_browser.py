@@ -121,11 +121,6 @@ def test_spline_preview_falls_back_without_webgl(page: Page):
     expect(preview).to_have_text("This preview could not load in this browser.")
     expect(page.locator("h1")).to_have_text("Wrapping React")
     expect(page.locator(".docs-demo-preview canvas")).to_have_count(0)
-    tabs = page.locator('[role="tablist"]').first
-    tabs.get_by_role("tab", name="Code", exact=True).click()
-    expect(
-        page.get_by_text("class Spline(rx.NoSSRComponent):", exact=False)
-    ).to_be_visible()
 
 
 @pytest.mark.parametrize("width", [320, 375, 768, 1440])

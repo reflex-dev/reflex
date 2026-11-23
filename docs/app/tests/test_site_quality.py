@@ -230,6 +230,19 @@ def _plain_text(spans):
     )
 
 
+def _page_title(page):
+    """Return the text of a page's first H1, or None when it has none."""
+    heading = next(
+        (
+            block
+            for block in parse_document(page.read_text()).blocks
+            if isinstance(block, HeadingBlock) and block.level == 1
+        ),
+        None,
+    )
+    return None if heading is None else _plain_text(heading.children)
+
+
 def test_docs_use_only_rendered_directives():
     """A directive the renderer does not know is shown as unstyled text."""
     unknown = sorted(
@@ -254,20 +267,21 @@ def test_docs_drop_retired_references():
 
 
 def test_page_headings_are_unique():
-    """Two pages never share an H1; a low-level ``-ll`` variant shares its page's."""
+    """Two pages never share an H1; a low-level ``-ll`` variant repeats its page's."""
+    titles = {page: _page_title(page) for page in _markdown_pages()}
     pages = {}
-    for page in _markdown_pages():
+    for page, title in titles.items():
         if page.name.endswith("-ll.md"):
             continue
-        heading = next(
-            (
-                block
-                for block in parse_document(page.read_text()).blocks
-                if isinstance(block, HeadingBlock) and block.level == 1
-            ),
-            None,
-        )
-        if heading is not None:
-            title = _plain_text(heading.children)
+        if title is not None:
             pages.setdefault(title, []).append(str(page.relative_to(DOCS)))
     assert {title: paths for title, paths in pages.items() if len(paths) > 1} == {}
+    low_level = {
+        str(page.relative_to(DOCS)): (
+            title,
+            titles[page.with_name(page.name[:-6] + ".md")],
+        )
+        for page, title in titles.items()
+        if page.name.endswith("-ll.md")
+    }
+    assert {path: pair for path, pair in low_level.items() if pair[0] != pair[1]} == {}
