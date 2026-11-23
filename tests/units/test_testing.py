@@ -3,6 +3,7 @@
 import importlib
 import sys
 from types import ModuleType, SimpleNamespace
+from typing import cast
 from unittest import mock
 
 import pytest
@@ -484,7 +485,9 @@ def test_app_harness_reloads_cached_child_when_parent_module_reloads(
         restart_token = RegistrationContext.set(base.fork())
         main_module = importlib.reload(main_module)
         harness.app_module = main_module
-        harness.app_instance = SimpleNamespace(_state=states_module.ChildState)
+        harness.app_instance = cast(
+            reflex.App, SimpleNamespace(_state=states_module.ChildState)
+        )
         harness._restore_cached_app_module_states(app_package)
 
         child_state = states_module.ChildState
@@ -492,6 +495,7 @@ def test_app_harness_reloads_cached_child_when_parent_module_reloads(
         context = RegistrationContext.get()
         assert child_state.get_parent_state() is parent_state
         assert main_module.ChildState is child_state
+        assert harness.app_instance is not None
         assert harness.app_instance._state is child_state
         assert context.base_states[child_state.get_full_name()] is child_state
         assert child_state.get_name() in parent_state._always_dirty_substates
