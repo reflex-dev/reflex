@@ -17,10 +17,6 @@ class RadioCardsRoot(RadixThemesComponent):
     tag = "RadioCards.Root"
     _is_form_control = True
 
-    as_child: Var[bool] = field(
-        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
-    )
-
     size: Var[Responsive[Literal["1", "2", "3"]]] = field(
         doc='The size of the checkbox cards: "1" | "2" | "3"'
     )
@@ -82,10 +78,6 @@ class RadioCardsItem(RadixThemesComponent):
     """Item element for RadioCards component."""
 
     tag = "RadioCards.Item"
-
-    as_child: Var[bool] = field(
-        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
-    )
 
     value: Var[str] = field(doc="The value given as data when submitted with a name.")
 

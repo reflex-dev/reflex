@@ -4,7 +4,7 @@ meta_description: Connect Reflex apps to AI models, databases, and business tool
 
 # AI Integrations Overview
 
-Reflex apps connect to AI models, databases, and external tools through packaged integrations, Python libraries, and APIs. **AI integrations** include OpenAI, Anthropic, Google Gemini, and orchestration tools such as LangChain. **API integrations** let your app work with operational systems such as Snowflake, Supabase, Salesforce, AWS, and GitHub using the appropriate connector or client.
+Reflex apps connect to AI models, databases, and external tools through packaged integrations, Python libraries, and APIs. **AI integrations** include OpenAI, Anthropic, and Google Gemini; orchestration libraries such as LangChain work as ordinary Python libraries. **API integrations** let your app work with operational systems such as Snowflake, Supabase, Salesforce, AWS, and GitHub using the appropriate connector or client.
 
 In Reflex Build, use the [integrations workflow](/docs/ai/features/integration-shortcut/) to configure supported services. Where there is no packaged integration, use a Python SDK or REST API. [MCP servers](/docs/ai/integrations/mcp-overview/) can give the Builder agent access to tools and context; an app's runtime connection still needs the appropriate client, credentials, and network access.
 
@@ -30,9 +30,9 @@ LangChain is an orchestration library, not a model provider. Provider credential
 ## Integration categories
 
 - **Databases:** MySQL, PostgreSQL, SQL Server, and SQLite through SQLAlchemy-compatible connections; use service clients for warehouses and other data systems.
-- **AI:** OpenAI, Anthropic, Gemini, and LangChain for assistants and AI-powered business workflows.
-- **Communication and business tools:** Twilio, Resend, and Airtable for messaging, email, and operational data.
-- **Authentication:** Okta, Google, Azure, and Descope for supported sign-in and single sign-on workflows.
+- **AI:** OpenAI, Anthropic, Gemini, Groq, and other model providers for assistants and AI-powered business workflows.
+- **Communication and business tools:** Twilio, Resend, Stripe, and HubSpot for messaging, email, payments, and CRM data.
+- **Authentication:** Google, Okta, Microsoft Entra ID, Auth0, Clerk, Keycloak, or any other OpenID Connect provider for sign-in and single sign-on.
 
 ## Browse integrations
 

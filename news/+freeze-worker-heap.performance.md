@@ -1,0 +1,1 @@
+Production backend workers now freeze the Python heap once the app is built, so full garbage collections skip the app's long-lived objects. This covers workers that build the app themselves (spawned granian workers, uvicorn and gunicorn), which previously walked the whole app on every full collection.

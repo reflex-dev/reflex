@@ -61,6 +61,8 @@ event args:
 
 The `id` links the upload component to these special Vars and event args, so they must all reference the same value. Pass it as a string literal or module-level constant — a state var cannot be used as an upload `id`.
 
+Upload handlers can also run from a toast's `action` or `cancel` button or an `rx.call_script` callback. Pass `rx.upload_files(upload_id=id)` to the handler as usual. The callback uploads the files selected for that ID when it runs, so replacing or clearing the selection after a toast opens updates what its button uploads.
+
 ## File Storage Functions
 
 Reflex provides two key functions for handling uploaded files:
@@ -441,7 +443,7 @@ rx.upload.root(
 
 ## Handling the Upload
 
-For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://www.starlette.io/requests/#request-files) instances. Each file exposes its original filename as `file.name`. You can read the files and save them anywhere as shown in the example.
+For uploads, your event handler should be an async function that accepts a single argument, `files: list[UploadFile]`, which will contain [Starlette UploadFile](https://starlette.dev/requests/#request-files) instances. Each file exposes its original filename as `file.name`. You can read the files and save them anywhere as shown in the example.
 
 ```md alert warning
 # Upload handlers are regular event handlers.

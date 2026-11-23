@@ -1068,9 +1068,16 @@ def _generate_namespace_call_functiondef(
     })
 
     clz = classes[clz_name]
+    stub_as_class = getattr(clz, "_stub_as_class", False)
 
     if not hasattr(clz.__call__, "__self__"):
-        return _generate_staticmethod_call_functiondef(node, clz, type_hint_globals)
+        definition = _generate_staticmethod_call_functiondef(
+            node, clz, type_hint_globals
+        )
+        if definition is None or not stub_as_class:
+            return definition
+        definition.args.args.insert(0, ast.arg(arg="cls"))
+        return _as_namespace_constructor(definition)
 
     # Determine which class is wrapped by the namespace __call__ method
     component_clz = clz.__call__.__self__
@@ -1087,12 +1094,29 @@ def _generate_namespace_call_functiondef(
         lineno=node.lineno,
         decorator_list=[],
     )
+    if stub_as_class:
+        # Keep the leading ``cls`` argument for ``__new__``.
+        return _as_namespace_constructor(definition)
     definition.name = "__call__"
 
     # Turn the definition into a staticmethod
     del definition.args.args[0]  # remove `cls` arg
     definition.decorator_list = [ast.Name(id="staticmethod")]
 
+    return definition
+
+
+def _as_namespace_constructor(definition: ast.FunctionDef) -> ast.FunctionDef:
+    """Turn a namespace's call definition into the ``__new__`` of its class stub.
+
+    Args:
+        definition: The call definition, taking ``cls`` as its first argument.
+
+    Returns:
+        The definition as an undecorated ``__new__``.
+    """
+    definition.name = "__new__"
+    definition.decorator_list = []
     return definition
 
 
@@ -1336,6 +1360,17 @@ class StubGenerator(ast.NodeTransformer):
             # Remove annotated assignments in Component classes (props)
             return None
 
+        # A namespace stubbed as a class is bound to the class, not an instance.
+        if (
+            self.current_class is None
+            and isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Name)
+            and not node.value.args
+            and not node.value.keywords
+            and getattr(self.classes.get(node.value.func.id), "_stub_as_class", False)
+        ):
+            node.value = node.value.func
+
         # remove dunder method assignments for lazy_loader.attach
         for target in node.targets:
             if isinstance(target, ast.Tuple):
@@ -1439,7 +1474,7 @@ def _write_pyi_file(module_path: Path, source: str) -> None:
     )
 
     pyi_path = module_path.with_suffix(".pyi")
-    pyi_path.write_text(pyi_content)
+    pyi_path.write_text(pyi_content, encoding="utf-8")
     logger.info(f"Wrote {relpath}")
 
 
@@ -1737,7 +1772,7 @@ class PyiGenerator:
             # Hash only after ruff post-processing, so the registry reflects the
             # final on-disk content rather than the intermediate generator output.
             hashes = [
-                md5(file_path.read_text().encode()).hexdigest()
+                md5(file_path.read_text(encoding="utf-8").encode()).hexdigest()
                 for file_path in file_paths
             ]
             if prune_stale:

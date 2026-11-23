@@ -1,0 +1,1 @@
+`rx.form.control` now accepts `rx.text_area`, `rx.el.input`, `rx.el.textarea` and `rx.el.select` as its child, besides `rx.input` and `rx.debounce_input`, and renders a child as the control without `as_child=True`.

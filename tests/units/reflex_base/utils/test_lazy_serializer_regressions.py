@@ -7,28 +7,37 @@ from pathlib import Path
 
 import pytest
 
+# Seconds a script may run before it dumps every thread's stack and exits. A
+# script takes about a second, yet a cold interpreter on a Windows runner has
+# taken over 30, and a hang in the import locks these tests exercise looks the
+# same from outside: the stacks tell the two apart.
+_SCRIPT_DUMP_SECONDS = 60
 
-def _run_script(
-    script: str,
-    *,
-    cwd: Path | None = None,
-    timeout: int = 15,
-) -> None:
+# Seconds the parent waits for a script that could not even dump its stacks.
+_SCRIPT_TIMEOUT = _SCRIPT_DUMP_SECONDS + 30
+
+
+def _run_script(script: str, *, cwd: Path | None = None) -> None:
     """Run an isolated script and report its captured failure output.
 
     Args:
         script: The Python source to execute in a fresh interpreter.
         cwd: The working directory for a temporary application fixture.
-        timeout: The maximum subprocess lifetime in seconds.
     """
     result = subprocess.run(
-        [sys.executable, "-c", script],
+        [
+            sys.executable,
+            "-c",
+            "import faulthandler\n"
+            f"faulthandler.dump_traceback_later({_SCRIPT_DUMP_SECONDS}, exit=True)\n"
+            + script,
+        ],
         cwd=cwd,
         env={**os.environ, "REFLEX_TELEMETRY_ENABLED": "false"},
         capture_output=True,
         text=True,
         check=False,
-        timeout=timeout,
+        timeout=_SCRIPT_TIMEOUT,
     )
     assert result.returncode == 0, result.stdout + result.stderr
 
@@ -74,7 +83,8 @@ with Session(engine) as session:
     session.add(Team(id=1, name="Avengers", heroes=[Hero(id=2, name="Thor", team_id=1)]))
     session.commit()
     teams = list(session.exec(select(Team).options(selectinload(Team.heroes))))
-
+assert serializers.get_serializer(SQLModel) is serializers.serialize_sqlmodel
+assert serializers.get_serializer(Team) is serializers.serialize_sqlmodel
 CUSTOM_REGISTRATION
 
 if COMPATIBILITY_IMPORT:
@@ -129,8 +139,113 @@ def custom(value: CUSTOM_TYPE) -> dict:
         script
         .replace("CUSTOM_REGISTRATION", custom_registration)
         .replace("COMPATIBILITY_IMPORT", repr(compatibility_import))
-        .replace("CUSTOM_ENABLED", repr(custom_type is not None)),
-        timeout=30,
+        .replace("CUSTOM_ENABLED", repr(custom_type is not None))
+    )
+
+
+def test_declarative_base_relationships_from_cold_state() -> None:
+    """DeclarativeBase models serialize loaded relationships from a cold process."""
+    pytest.importorskip("sqlalchemy")
+
+    _run_script(
+        """
+import json
+from typing import Any
+
+import reflex as rx
+from sqlalchemy import ForeignKey, create_engine, select
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    Session,
+    mapped_column,
+    relationship,
+    selectinload,
+)
+
+from reflex_base.utils import serializers
+from reflex_base.utils.format import json_dumps
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Team(Base):
+    __tablename__ = "team"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    private_note: Mapped[str] = mapped_column(deferred=True)
+    heroes: Mapped[list["Hero"]] = relationship()
+
+
+class Hero(Base):
+    __tablename__ = "hero"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    team_id: Mapped[int] = mapped_column(ForeignKey("team.id"))
+
+
+engine = create_engine("sqlite://")
+Base.metadata.create_all(engine)
+
+with Session(engine) as session:
+    session.add(
+        Team(
+            id=1,
+            name="Avengers",
+            private_note="Internal note",
+            heroes=[Hero(id=2, name="Thor", team_id=1)],
+        )
+    )
+    session.commit()
+
+    teams = list(
+        session.scalars(
+            select(Team).options(selectinload(Team.heroes))
+        )
+    )
+    session.expunge_all()
+
+assert serializers.get_serializer(Team) is serializers.serialize_sqlalchemy_base
+assert serializers.get_serializer_type(Team) is dict
+
+app = rx.App()
+
+
+class State(rx.State):
+    teams: list[Team] = []
+
+    @rx.event
+    def load(self):
+        self.teams = teams
+
+
+state = State(_reflex_internal_init=True)
+State.load.fn(state)
+
+payload = json_dumps(state.get_delta())
+decoded = json.loads(payload)
+
+assert "Avengers" in payload
+assert "Thor" in payload
+assert "private_note" not in payload
+
+# An unloaded relationship must be omitted even after the instance
+# has been detached from its session.
+with Session(engine) as session:
+    unloaded_team = session.scalar(select(Team))
+    assert unloaded_team is not None
+    session.expunge(unloaded_team)
+
+detached_payload = json.loads(json_dumps(unloaded_team))
+assert "heroes" not in detached_payload
+assert "private_note" not in detached_payload
+
+engine.dispose()
+"""
     )
 
 
@@ -303,8 +418,7 @@ finally:
     if not finished:
         os.kill(pid, signal.SIGKILL)
         os.waitpid(pid, 0)
-""".replace("OPERATION", repr(operation)).replace("IMPORT_TARGET", repr(import_target)),
-        timeout=30,
+""".replace("OPERATION", repr(operation)).replace("IMPORT_TARGET", repr(import_target))
     )
 
 

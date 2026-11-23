@@ -40,8 +40,7 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.istate.shared import SharedState as SharedState  # To register it.
 from reflex.state import reload_state_module
-from reflex.utils import js_runtimes
-from reflex.utils.exec import _with_development_condition
+from reflex.utils.exec import _frontend_dev_command, _with_development_condition
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
 
@@ -407,11 +406,7 @@ class AppHarness:
 
         # Start the frontend.
         self.frontend_process = reflex.utils.processes.new_process(
-            [
-                *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
-                "run",
-                "dev",
-            ],
+            _frontend_dev_command(),
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
             # The development condition lets react-router's dev CLI skip the
             # relaunch it otherwise needs to enable that condition.

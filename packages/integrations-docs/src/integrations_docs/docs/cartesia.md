@@ -9,9 +9,9 @@ The **Cartesia Integration** allows your app to generate **high-quality, realist
 
 ## Step 1: Obtain a Cartesia API Key
 
-1. Go to the [Cartesia Console](https://www.cartesia.ai/).  
-2. Log in or create an account.  
-3. Navigate to **API Keys** in your account settings.  
+1. Go to the [Cartesia Playground](https://play.cartesia.ai/).
+2. Log in or create an account.
+3. Open the [API Keys](https://play.cartesia.ai/keys) page.  
 4. Click **New**, give it a descriptive name (e.g., “AI Builder”), and copy it.  
    - Example: `sk_car_xxxxxxxxxxxxx`
 
@@ -19,9 +19,9 @@ The **Cartesia Integration** allows your app to generate **high-quality, realist
 
 ## Step 2: Configure the Integration in Your App
 
-1. Open your app and go to **Integrations → Add Cartesia**.  
-2. Paste your **Cartesia API Key** in the input field.  
-3. Click **Connect** to validate and save your integration.  
+1. In Reflex Build, open the **Integrations** tab and select the **Cartesia** card.
+2. Click **Add connection** and paste your API key into **CARTESIA_API_KEY**.
+3. Click **Connect** to save the connection.
 
 Once connected, your app can convert text to speech seamlessly in real time or through workflows.
 
