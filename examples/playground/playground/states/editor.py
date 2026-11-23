@@ -117,7 +117,7 @@ class ProductEditState(rx.State):
             return rx.toast.error("Fix the highlighted fields.")
         with rx.session() as session:
             if self.product is None:
-                product = Product(listed_day=0, **values)  # pyright: ignore[reportArgumentType]
+                product = Product(listed_day=0, **values)  # ty:ignore[invalid-argument-type]
             else:
                 product = session.get(Product, self.product.id)
                 if product is None:

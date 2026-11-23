@@ -1,5 +1,7 @@
 """Custom switch component."""
 
+from typing import Annotated
+
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportVar
@@ -43,7 +45,7 @@ class SwitchRoot(SwitchBaseComponent):
     checked: Var[bool]
 
     # Event handler called when the switch is activated or deactivated.
-    on_checked_change: EventHandler[passthrough_event_spec(bool)]
+    on_checked_change: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Whether the component renders a native <button> element when replacing it via the render prop. Set to false if the rendered element is not a button (e.g. <div>). Defaults to True.
     native_button: Var[bool]

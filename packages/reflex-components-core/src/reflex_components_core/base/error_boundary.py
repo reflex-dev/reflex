@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler, set_clipboard
 from reflex_base.vars.base import Var
@@ -39,7 +41,7 @@ class ErrorBoundary(Component):
     library = "react-error-boundary@6.1.6"
     tag = "ErrorBoundary"
 
-    on_error: EventHandler[on_error_spec] = field(
+    on_error: Annotated[EventHandler, on_error_spec] = field(
         doc="Fired when the boundary catches an error."
     )
 

@@ -188,7 +188,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def partial(self, *args: Var | Any) -> FunctionVar: ...
 
-    def partial(self, *args: Var | Any) -> FunctionVar:  # pyright: ignore [reportInconsistentOverload]
+    def partial(self, *args: Var | Any) -> FunctionVar:
         """Partially apply the function with the given arguments.
 
         Args:
@@ -262,7 +262,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def call(self, *args: Var | Any) -> Var: ...
 
-    def call(self, *args: Var | Any) -> Var:  # pyright: ignore [reportInconsistentOverload]
+    def call(self, *args: Var | Any) -> Var:
         """Call the function with the given arguments.
 
         Args:
@@ -292,7 +292,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
     def create(
         cls,
         func: str,
-        _var_type: type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],
+        _var_type: type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],  # ty:ignore[invalid-parameter-default]
         _var_data: VarData | None = None,
     ) -> FunctionStringVar[OTHER_CALLABLE_TYPE]: ...
 
@@ -311,7 +311,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
         func: str,
         _var_type: type[OTHER_CALLABLE_TYPE] | type[EventChain] = ReflexCallable[
             Any, Any
-        ],
+        ],  # ty:ignore[invalid-parameter-default]
         _var_data: VarData | None = None,
     ) -> FunctionStringVar:
         """Create a new function var from a string.
@@ -397,7 +397,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         """
         func_type = value_inside_optional(func._var_type)
         function_return_type = (
-            func_type.__args__[-1] if getattr(func_type, "__args__", None) else Any
+            func_type.__args__[-1] if getattr(func_type, "__args__", None) else Any  # ty:ignore[missing-union-attribute]
         )
         if (
             function_return_type is not Any

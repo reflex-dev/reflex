@@ -6,7 +6,7 @@ import dataclasses
 import functools
 import logging
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Generic, cast
@@ -277,7 +277,7 @@ class StateManagerDisk(StateManager):
         if state is None:
             state = token.cls()
         self.states[token.cache_key] = state
-        return cast(TOKEN_TYPE, state)
+        return state
 
     async def set_state_for_substate(
         self, token: StateToken[TOKEN_TYPE], substate: TOKEN_TYPE
@@ -470,7 +470,7 @@ class StateManagerDisk(StateManager):
     @contextlib.asynccontextmanager
     async def modify_state(
         self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[TOKEN_TYPE]:
+    ) -> AsyncGenerator[TOKEN_TYPE, None]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:

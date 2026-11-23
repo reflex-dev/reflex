@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.event import EventHandler, input_event, key_event
@@ -105,23 +105,25 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
 
     list: Var[str] = field(doc="References a datalist for suggested options")
 
-    on_change: EventHandler[input_event] = field(
+    on_change: Annotated[EventHandler, input_event] = field(
         doc="Fired when the value of the textarea changes."
     )
 
-    on_focus: EventHandler[input_event] = field(
+    on_focus: Annotated[EventHandler, input_event] = field(
         doc="Fired when the textarea is focused."
     )
 
-    on_blur: EventHandler[input_event] = field(
+    on_blur: Annotated[EventHandler, input_event] = field(
         doc="Fired when the textarea is blurred."
     )
 
-    on_key_down: EventHandler[key_event] = field(
+    on_key_down: Annotated[EventHandler, key_event] = field(
         doc="Fired when a key is pressed down."
     )
 
-    on_key_up: EventHandler[key_event] = field(doc="Fired when a key is released.")
+    on_key_up: Annotated[EventHandler, key_event] = field(
+        doc="Fired when a key is released."
+    )
 
     @classmethod
     def create(cls, *children, **props) -> Component:

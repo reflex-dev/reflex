@@ -8,7 +8,7 @@ callbacks that record the deltas.
 import asyncio
 import json
 import traceback
-from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
+from collections.abc import AsyncGenerator, Awaitable, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
 from unittest import mock
@@ -93,7 +93,7 @@ def event_processing_harness():
             emitted_deltas.clear()
 
             async with processor as p:
-                async for _ in asyncio.as_completed([
+                async for _ in asyncio.as_completed([  # ty:ignore[not-iterable]
                     await p.enqueue(token, event) for token in tokens
                 ]):
                     pass
@@ -298,7 +298,7 @@ def _table_events() -> list[Event]:
 async def _event_pipeline(
     events: list[Event],
     on_delta: Callable[[Mapping[str, Mapping[str, Any]]], Any],
-) -> AsyncIterator[Callable[[], Awaitable[None]]]:
+) -> AsyncGenerator[Callable[[], Awaitable[None]], None]:
     """Wire a ``BaseStateEventProcessor`` to an in-memory state manager.
 
     Args:
@@ -346,7 +346,7 @@ async def _event_pipeline(
             async with processor as p:
                 async for _ in asyncio.as_completed([
                     await p.enqueue("benchmark-token", event) for event in events
-                ]):
+                ]):  # ty:ignore[not-iterable]
                     pass
             assert emitted == len(events)
 
@@ -420,7 +420,7 @@ async def test_table_event_deltas():
         assert delta["status" + FIELD_MARKER] == status
         assert delta["sort_reverse" + FIELD_MARKER] == reverse
         assert delta["filtered_orders" + FIELD_MARKER] == expected
-        assert delta["total_amount" + FIELD_MARKER] == sum(
+        assert delta["total_amount" + FIELD_MARKER] == sum(  # ty:ignore[no-matching-overload]
             row["amount"] for row in expected
         )
 

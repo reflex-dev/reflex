@@ -198,7 +198,7 @@ def MemoEdgeCasesApp():
     class MemoHookState(rx.State):
         """State for hooks under a branch or a loop in an ``@rx.memo`` body."""
 
-        show: bool = True
+        show: rx.Field[bool] = rx.field(True)
         items: list[str] = ["alpha", "beta"]
         mounted: rx.Field[list[str]] = rx.field(default_factory=list)
         unmounted: rx.Field[list[str]] = rx.field(default_factory=list)
@@ -346,7 +346,7 @@ def MemoEdgeCasesApp():
             rx.form(
                 rx.input(name="note"),
                 rx.button("save", type="submit", class_name="loop-submit"),
-                on_submit=lambda form_data: LoopState.handle_submit(index, form_data),
+                on_submit=lambda form_data: LoopState.handle_submit(index, form_data),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
             ),
         )
 

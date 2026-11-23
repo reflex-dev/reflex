@@ -1,5 +1,7 @@
 """Custom collapsible component."""
 
+from typing import Annotated
+
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.imports import ImportVar
@@ -38,7 +40,7 @@ class CollapsibleRoot(CollapsibleBaseComponent):
     open: Var[bool]
 
     # Event handler called when the panel is opened or closed.
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # Whether the component should ignore user interaction. Defaults to False.
     disabled: Var[bool]

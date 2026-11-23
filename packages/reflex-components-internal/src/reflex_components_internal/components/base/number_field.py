@@ -1,6 +1,6 @@
 """Custom number field component."""
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
@@ -99,10 +99,14 @@ class NumberFieldRoot(NumberFieldBaseComponent):
     format: Var[dict[str, Any]]
 
     # Event handler called when the numeric value changes.
-    on_value_change: EventHandler[passthrough_event_spec(int | float | None, dict)]
+    on_value_change: Annotated[
+        EventHandler, passthrough_event_spec(int | float | None, dict)
+    ]
 
     # Event handler called when the numeric value is committed.
-    on_value_committed: EventHandler[passthrough_event_spec(int | float | None, dict)]
+    on_value_committed: Annotated[
+        EventHandler, passthrough_event_spec(int | float | None, dict)
+    ]
 
     # The locale used to format the input value.
     locale: Var[str | list[str]]

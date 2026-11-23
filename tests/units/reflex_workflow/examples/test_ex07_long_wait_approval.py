@@ -91,7 +91,7 @@ async def read_directly(
 
 async def test_a_complete_request_waits_for_a_decision_and_is_filed(database):
     async with worker(database):
-        request_id = await submitted(COMPLETE)
+        request_id = await submitted(COMPLETE)  # ty:ignore[invalid-argument-type]
         await eventually(reaches(request_id, "awaiting-decision"))
 
         assert (
@@ -109,7 +109,7 @@ async def test_a_complete_request_waits_for_a_decision_and_is_filed(database):
 
 async def test_a_rejected_request_is_never_filed(database):
     async with worker(database):
-        request_id = await submitted(COMPLETE)
+        request_id = await submitted(COMPLETE)  # ty:ignore[invalid-argument-type]
         await eventually(reaches(request_id, "awaiting-decision"))
 
         assert (

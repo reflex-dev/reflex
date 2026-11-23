@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar
+from typing import Annotated, Any, ClassVar
 
 from reflex_base.components.component import Component, field
 from reflex_base.constants import EventTriggers
@@ -57,7 +57,7 @@ class DebounceInput(Component):
 
     element: Var[type[Component]] = field(doc="The element to wrap")
 
-    on_change: EventHandler[no_args_event_spec] = field(
+    on_change: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the input value changes"
     )
 
@@ -151,7 +151,7 @@ class DebounceInput(Component):
         component._get_style = child._get_style
         component.event_triggers.update(child.event_triggers)
         component.children = child.children
-        component._rename_props = child._rename_props  # pyright: ignore[reportAttributeAccessIssue]
+        component._rename_props = child._rename_props  # ty:ignore[invalid-attribute-access]
         outer_get_all_custom_code = component._get_all_custom_code
         component._get_all_custom_code = lambda: (
             outer_get_all_custom_code() | (child._get_all_custom_code())

@@ -76,7 +76,7 @@ def FormSubmit(
                     rx.input(
                         id="debounce_input",
                         debounce_timeout=0,
-                        on_change=rx.console_log,
+                        on_change=rx.console_log,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     ),
                     rx.button("Submit", type_="submit"),
                     id=form_content_wrapper_id,
@@ -157,7 +157,7 @@ def FormSubmitName(
                     rx.input(
                         name="debounce_input",
                         debounce_timeout=0,
-                        on_change=rx.console_log,
+                        on_change=rx.console_log,  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     ),
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),

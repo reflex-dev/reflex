@@ -14,6 +14,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
     NoReturn,
@@ -54,6 +55,7 @@ from reflex_base.utils.types import (
     is_non_string_sequence,
     is_optional,
     safe_issubclass,
+    set_signature,
     typehint_issubclass,
     value_inside_optional,
 )
@@ -492,7 +494,7 @@ def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
     Raises:
         TypeError: If the background task is not async.
     """
-    name = fn.__name__
+    name = format.callable_name(fn)
     call = f"{type(state).__name__}.{name}"
     message = (
         f"Cannot directly call background task {name!r}, use "
@@ -645,16 +647,17 @@ class EventHandler(EventActionsMixin):
         return parameters
 
     @classmethod
-    def __class_getitem__(cls, args_spec: str) -> Annotated:
+    def __class_getitem__(cls, args_spec: Callable | Sequence[Callable]) -> Annotated:  # ty:ignore[invalid-type-form]
         """Get a typed EventHandler.
 
         Args:
-            args_spec: The args_spec of the EventHandler.
+            args_spec: The args spec of the EventHandler: a single spec callable
+                or a sequence of them, attached to the resulting ``Annotated``.
 
         Returns:
             The EventHandler class item.
         """
-        return Annotated[cls, args_spec]
+        return Annotated[cls, args_spec]  # ty:ignore[invalid-type-form]
 
     @cached_property
     def is_background(self) -> bool:
@@ -928,7 +931,7 @@ class EventSpec(EventActionsMixin):
         args: The arguments to pass to the function.
     """
 
-    handler: EventHandler = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
+    handler: EventHandler = dataclasses.field(default=None)  # ty:ignore[invalid-assignment]
 
     client_handler_name: str = dataclasses.field(default="")
 
@@ -1128,7 +1131,7 @@ class EventChain(EventActionsMixin):
 
     args_spec: Callable | Sequence[Callable] | None = dataclasses.field(default=None)
 
-    invocation: Var | None = dataclasses.field(default=None)
+    invocation: FunctionVar | None = dataclasses.field(default=None)
 
     @classmethod
     def create(
@@ -1483,7 +1486,7 @@ class IdentityEventReturn(Generic[T], Protocol):
 
 
 @overload
-def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
+def passthrough_event_spec(
     event_type: type[T], /
 ) -> Callable[[Var[T]], tuple[Var[T]]]: ...
 
@@ -1495,10 +1498,24 @@ def passthrough_event_spec(
 
 
 @overload
+def passthrough_event_spec(
+    event_type: types.UnionType, /
+) -> Callable[[Var[Any]], tuple[Var[Any]]]: ...
+
+
+@overload
+def passthrough_event_spec(
+    event_type_1: types.UnionType | type[T],
+    event_type2: types.UnionType | type[U],
+    /,
+) -> Callable[[Var[Any], Var[Any]], tuple[Var[Any], Var[Any]]]: ...
+
+
+@overload
 def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]: ...
 
 
-def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:  # pyright: ignore [reportInconsistentOverload]
+def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:
     """A helper function that returns the input event as output.
 
     Args:
@@ -1511,22 +1528,23 @@ def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:  # 
     def inner(*values: Var[T]) -> tuple[Var[T], ...]:
         return values
 
-    inner_type = tuple(Var[event_type] for event_type in event_types)
-    return_annotation = tuple[inner_type]
+    inner_type = tuple(Var[event_type] for event_type in event_types)  # ty:ignore[invalid-type-form]
+    return_annotation = tuple[inner_type]  # ty:ignore[invalid-type-form]
 
-    inner.__signature__ = inspect.signature(inner).replace(  # pyright: ignore [reportFunctionMemberAccess]
+    new_signature = inspect.signature(inner).replace(
         parameters=[
             inspect.Parameter(
                 f"ev_{i}",
                 kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                annotation=Var[event_type],
+                annotation=Var[event_type],  # ty:ignore[invalid-type-form]
             )
             for i, event_type in enumerate(event_types)
         ],
         return_annotation=return_annotation,
     )
+    set_signature(inner, new_signature)
     for i, event_type in enumerate(event_types):
-        inner.__annotations__[f"ev_{i}"] = Var[event_type]
+        inner.__annotations__[f"ev_{i}"] = Var[event_type]  # ty:ignore[invalid-type-form]
     inner.__annotations__["return"] = return_annotation
 
     return inner
@@ -1731,7 +1749,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
         return None
 
     fn.__qualname__ = name
-    fn.__signature__ = sig  # pyright: ignore [reportFunctionMemberAccess]
+    set_signature(fn, sig)
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
@@ -2960,7 +2978,7 @@ class EventVar(ObjectVar, python_types=(EventSpec, EventHandler)):
 class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
     """A literal event var."""
 
-    _var_value: EventSpec = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
+    _var_value: EventSpec = dataclasses.field(default=None)  # ty:ignore[invalid-assignment]
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -2989,6 +3007,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             EventFnArgMismatchError: If the event handler takes arguments.
         """
         if isinstance(value, EventHandler):
+            handler = value
 
             def no_args():
                 return ()
@@ -2996,7 +3015,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             try:
                 value = call_event_handler(value, no_args)
             except EventFnArgMismatchError:
-                msg = f"Event handler {value.fn.__qualname__} used inside of a rx.cond() must not take any arguments."
+                msg = f"Event handler {format.callable_qualname(handler.fn)} used inside of a rx.cond() must not take any arguments."
                 raise EventFnArgMismatchError(msg) from None
 
         return cls(
@@ -3047,7 +3066,7 @@ class EventChainVar(BuilderFunctionVar, python_types=EventChain):
 class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainVar):
     """A literal event chain var."""
 
-    _var_value: EventChain = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
+    _var_value: EventChain = dataclasses.field(default=None)  # ty:ignore[invalid-assignment]
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -3080,7 +3099,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             if isinstance(value.args_spec, Sequence)
             else value.args_spec
         )
-        sig = inspect.signature(arg_spec)  # pyright: ignore [reportArgumentType]
+        sig = inspect.signature(arg_spec)  # ty:ignore[invalid-argument-type]
         arg_vars = ()
         if sig.parameters:
             arg_def = tuple(f"_{p}" for p in sig.parameters)
@@ -3215,7 +3234,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         Args:
             func: The function to be wrapped.
         """
-        self.func = func
+        self.func = func  # ty:ignore[invalid-assignment]
 
     @overload
     def __call__(
@@ -3423,7 +3442,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         value8: V8 | Var[V8],
     ) -> "EventCallback[V9, *Q]": ...
 
-    def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
+    def __call__(self, *values) -> "EventCallback":
         """Call the function with the values.
 
         Args:
@@ -3432,7 +3451,7 @@ class EventCallback(Generic[*P], EventActionsMixin):
         Returns:
             The function with the values.
         """
-        return self.func(*values)  # pyright: ignore [reportArgumentType]
+        return self.func(*values)
 
     @overload
     def __get__(
@@ -3551,6 +3570,12 @@ class EventDecorator(Protocol):
 
 class EventNamespace:
     """A namespace for event related classes."""
+
+    if TYPE_CHECKING:
+        event: ClassVar["type[EventNamespace]"]
+        __path__: ClassVar[Any]
+        __spec__: ClassVar[Any]
+        __package__: ClassVar[str | None]
 
     # The re-exports are explicit aliases, so mypy reads `rx.event.EventSpec` as
     # a type. A generic one is re-imported instead, so `rx.event.EventCallback[int]`
@@ -3714,7 +3739,7 @@ class EventNamespace:
                     deprecation_version="0.11.0",
                     removal_version="1.0",
                 )
-                return func  # pyright: ignore [reportReturnType]
+                return func  # ty:ignore[invalid-explicit-return]
             # A repeated @rx.event decorates the same function again: the
             # markers accumulate on it and these options win where both set one.
             inner_actions: Mapping[str, Any] = {}
@@ -3783,7 +3808,7 @@ class EventNamespace:
                         deprecation_version="0.11.0",
                         removal_version="1.0",
                     )
-                    return func  # pyright: ignore [reportReturnType]
+                    return func  # ty:ignore[invalid-explicit-return]
                 if registered:
                     # Already renamed: re-register it under the same name.
                     name = qualname
@@ -3801,11 +3826,11 @@ class EventNamespace:
 
             # A method: bound to its state class by __set_name__ when the
             # class body is executed.
-            return EventHandler(fn=func, event_actions=event_actions)  # pyright: ignore [reportReturnType]
+            return EventHandler(fn=func, event_actions=event_actions)  # ty:ignore[invalid-explicit-return]
 
         if func is not None:
             return wrapper(func)
-        return wrapper  # pyright: ignore [reportReturnType]
+        return wrapper
 
     get_event = staticmethod(get_event)
     get_hydrate_event = staticmethod(get_hydrate_event)
@@ -3858,7 +3883,7 @@ class EventNamespace:
     __file__ = __file__
 
     @property
-    def BaseState(self) -> "type[BaseState]":  # noqa: N802
+    def BaseState(self) -> "type[BaseState]":  # noqa: N802  # ty:ignore[invalid-type-form]
         """The BaseState class.
 
         A reference to BaseState is needed for doc generation when resolving
@@ -3874,9 +3899,9 @@ class EventNamespace:
 
 
 event = EventNamespace
-event.event = event  # pyright: ignore[reportAttributeAccessIssue]
+event.event = event
 _this = sys.modules[__name__]
-event.__path__ = _this.__path__  # pyright: ignore[reportAttributeAccessIssue]
-event.__spec__ = _this.__spec__  # pyright: ignore[reportAttributeAccessIssue]
-event.__package__ = _this.__package__  # pyright: ignore[reportAttributeAccessIssue]
-sys.modules[__name__] = event  # pyright: ignore[reportArgumentType]
+event.__path__ = _this.__path__
+event.__spec__ = _this.__spec__
+event.__package__ = _this.__package__
+sys.modules[__name__] = event  # ty:ignore[invalid-assignment]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from types import SimpleNamespace
-from typing import Any, ClassVar, Literal, cast
+from typing import Annotated, Any, ClassVar, Literal, cast
 
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler
@@ -109,7 +109,7 @@ class SegmentedControlRoot(RadixThemesComponent):
         doc="The current value of the segmented control."
     )
 
-    on_change: EventHandler[on_value_change] = field(
+    on_change: Annotated[EventHandler, on_value_change] = field(
         doc="Handles the `onChange` event for the SegmentedControl component."
     )
 

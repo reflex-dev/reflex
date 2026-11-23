@@ -25,10 +25,10 @@ def test_custom_component_declare_event_handlers_in_fields():
             }
 
     class TestComponent(Component):
-        on_a: EventHandler[lambda e0: [e0]]
-        on_b: EventHandler[input_event]
-        on_c: EventHandler[no_args_event_spec]
-        on_d: EventHandler[no_args_event_spec]
+        on_a: EventHandler[lambda e0: [e0]]  # ty:ignore[invalid-type-form]
+        on_b: EventHandler[input_event]  # ty:ignore[invalid-type-form]
+        on_c: EventHandler[no_args_event_spec]  # ty:ignore[invalid-type-form]
+        on_d: EventHandler[no_args_event_spec]  # ty:ignore[invalid-type-form]
 
     custom_component = ReferenceComponent.create()
     test_component = TestComponent.create()

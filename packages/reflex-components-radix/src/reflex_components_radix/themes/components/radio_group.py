@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -65,7 +65,7 @@ class RadioGroupRoot(RadixThemesComponent):
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    on_change: EventHandler[passthrough_event_spec(str)] = field(
+    on_change: Annotated[EventHandler, passthrough_event_spec(str)] = field(
         doc="Fired when the value of the radio group changes."
     )
 

@@ -24,7 +24,7 @@ import asyncio
 import contextlib
 import dataclasses
 import traceback
-from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+from collections.abc import AsyncGenerator, Awaitable, Callable, Mapping
 from dataclasses import MISSING
 from typing import Any
 from unittest import mock
@@ -297,7 +297,7 @@ class SharedStateHarness:
 async def _shared_state_app(
     scenario: Scenario,
     on_update: Callable[[str, Mapping[str, Mapping[str, Any]]], Any],
-) -> AsyncIterator[SharedStateHarness]:
+) -> AsyncGenerator[SharedStateHarness, None]:
     """Wire an app, an in-memory state manager and an event processor together.
 
     The app carries a real ``EventNamespace`` with a connected socket record

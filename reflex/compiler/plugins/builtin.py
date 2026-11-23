@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
 from reflex_base.components.app_wraps import _ingest_component_var_app_wraps
@@ -20,6 +20,9 @@ from reflex_components_core.base.fragment import Fragment
 
 from reflex.compiler import utils
 
+if TYPE_CHECKING:
+    from reflex_base.plugins.compiler import PageComponent
+
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class DefaultPagePlugin(Plugin):
@@ -27,7 +30,7 @@ class DefaultPagePlugin(Plugin):
 
     def eval_page(
         self,
-        page_fn: Any,
+        page_fn: PageComponent,
         /,
         *,
         page: PageDefinition,
@@ -57,7 +60,7 @@ class DefaultPagePlugin(Plugin):
             if (description := getattr(page, "description", None)) is not None:
                 meta_args["description"] = description
 
-            utils.add_meta(component, **meta_args)
+            utils.add_meta(component, **meta_args)  # ty:ignore[invalid-argument-type]
         except Exception as err:
             if hasattr(err, "add_note"):
                 err.add_note(f"Happened while evaluating page {page.route!r}")
@@ -149,7 +152,7 @@ class ApplyStylePlugin(Plugin):
         /,
         *,
         page_context: PageContext,
-        compile_context: Any,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
     ) -> BaseComponent | None:
         """Apply the non-recursive portion of ``_add_style_recursive``.
@@ -212,7 +215,7 @@ class DefaultCollectorPlugin(Plugin):
         /,
         *,
         page_context: PageContext,
-        compile_context: Any,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
     ) -> None:
         """Collect imports and page artifacts for the active component node."""

@@ -165,7 +165,7 @@ def UploadFile():
             upload_control(),
             rx.button(
                 "Upload",
-                on_click=lambda: UploadState.handle_upload(rx.upload_files()),
+                on_click=lambda: UploadState.handle_upload(rx.upload_files()),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870 https://github.com/astral-sh/ty/issues/4098
                 id="upload_button",
             ),
             rx.box(

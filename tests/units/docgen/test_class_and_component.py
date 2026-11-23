@@ -49,7 +49,7 @@ def test_get_component_event_handlers_returns_default_descriptions():
 
 
 class _ComponentWithCustomTrigger(Component):
-    on_custom: EventHandler[no_args_event_spec] = field(
+    on_custom: EventHandler[no_args_event_spec] = field(  # ty:ignore[invalid-type-form]
         doc="Custom event fired on test."
     )
 
@@ -394,7 +394,7 @@ def test_field_doc_takes_priority():
             name: From docstring.
         """
 
-        name: str = dataclasses.field(default="x", doc="From field.doc")
+        name: str = dataclasses.field(default="x", doc="From field.doc")  # ty:ignore[no-matching-overload]
 
     doc = generate_class_documentation(_DataclassWithFieldDoc)
     fields_by_name = {f.name: f for f in doc.fields}

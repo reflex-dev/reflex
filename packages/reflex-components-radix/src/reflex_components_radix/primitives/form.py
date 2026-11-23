@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.event import EventHandler, no_args_event_spec
@@ -33,7 +33,7 @@ class FormRoot(FormComponent, HTMLForm):
 
     alias = "RadixFormRoot"
 
-    on_clear_server_errors: EventHandler[no_args_event_spec] = field(
+    on_clear_server_errors: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the errors are cleared."
     )
 

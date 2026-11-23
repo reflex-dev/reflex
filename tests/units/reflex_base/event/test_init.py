@@ -24,8 +24,8 @@ def test_parse_args_spec_hands_out_positioned_placeholders() -> None:
     placeholders, _annotations = parse_args_spec(passthrough_event_spec(int, str))
     args = [event_arg_placeholder(placeholder) for placeholder in placeholders]
     assert all(isinstance(arg, EventArgVar) for arg in args)
-    assert [arg._js_expr for arg in args] == ["_ev_0", "_ev_1"]  # pyright: ignore [reportOptionalMemberAccess]
-    assert all(arg._signature == ("_ev_0", "_ev_1") for arg in args)  # pyright: ignore [reportOptionalMemberAccess]
+    assert [arg._js_expr for arg in args] == ["_ev_0", "_ev_1"]  # ty:ignore[missing-union-attribute]
+    assert all(arg._signature == ("_ev_0", "_ev_1") for arg in args)  # ty:ignore[missing-union-attribute]
     # The caller holds the typed cast, which is still recognized as the placeholder.
     assert placeholders[0]._var_type is int
 

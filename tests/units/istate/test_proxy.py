@@ -493,7 +493,7 @@ async def test_inherited_mutable_var_marks_its_owner(
         (token, {InheritedListState.get_full_name(): {"items" + FIELD_MARKER: [1]}}),
     ]
     async with state_manager.modify_state(state_token) as root:
-        assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+        assert root.items == [1]  # ty:ignore[missing-attribute]
 
 
 @pytest.mark.asyncio
@@ -520,7 +520,7 @@ async def test_inherited_handler_is_guarded_by_the_proxy(
     async with proxy:
         proxy.add_item(1)
     async with state_manager.modify_state(state_token) as root:
-        assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+        assert root.items == [1]  # ty:ignore[missing-attribute]
 
 
 @pytest.mark.asyncio
@@ -549,9 +549,9 @@ async def test_inherited_handler_runs_on_its_state(
     async with proxy:
         bump()
     async with state_manager.modify_state(state_token) as root:
-        assert root.count == 2  # pyright: ignore [reportAttributeAccessIssue]
+        assert root.count == 2  # ty:ignore[missing-attribute]
         substate = root.get_substate(RedeclaringSubState.get_full_name().split("."))
-        assert substate.count == 10  # pyright: ignore [reportAttributeAccessIssue]
+        assert substate.count == 10  # ty:ignore[missing-attribute]
 
 
 @pytest.mark.asyncio
@@ -1406,7 +1406,7 @@ def test_interval_computed_vars_resolve_through_state_proxy(
         def timed(self) -> int:
             return self.base
 
-    state = IntervalState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state = IntervalState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     proxy = StateProxy(state)
     assert proxy._expired_computed_vars() == {"timed"}
     assert IntervalState._interval_computed_var_names == frozenset({"timed"})
@@ -1424,7 +1424,7 @@ def test_subclass_overrides_a_framework_method():
     def get_value(self, key: str):
         return f"shadow:{key}"
 
-    get_value.__override_base_method__ = True  # pyright: ignore [reportFunctionMemberAccess]
+    get_value.__override_base_method__ = True  # ty:ignore[missing-attribute]
 
     ShadowState = type(
         "ShadowState",
@@ -1591,7 +1591,7 @@ async def test_proxy_context_sets_and_clears_locked_root(
     async with state_proxy as mutable:
         locked_root = attached_mock_event_context.locked_root
         assert locked_root is not None
-        assert locked_root is mutable.__wrapped__._get_root_state()  # pyright: ignore[reportAttributeAccessIssue]
+        assert locked_root is mutable.__wrapped__._get_root_state()
     assert attached_mock_event_context.locked_root is None
 
 

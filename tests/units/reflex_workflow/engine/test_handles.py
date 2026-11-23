@@ -307,7 +307,7 @@ def _refusal(cls: type[Workflow], key: object) -> str:
         The exception's type and message.
     """
     with pytest.raises((TypeError, ValueError)) as raised:
-        handles.key_column(cls, key)  # pyright: ignore[reportArgumentType]
+        handles.key_column(cls, key)  # ty:ignore[invalid-argument-type]
     return f"{type(raised.value).__name__}: {raised.value}"
 
 

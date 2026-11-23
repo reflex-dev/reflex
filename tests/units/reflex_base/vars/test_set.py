@@ -25,7 +25,7 @@ def _tags() -> SetVar[set[str]]:
 def test_set_literal_is_a_set_var():
     """A set literal renders as a sorted array and is typed by its elements."""
     var = LiteralVar.create({"b", "a"})
-    typing.assert_type(var, LiteralSetVar[set[str]])
+    typing.assert_type(var, LiteralSetVar[set[str]])  # ty:ignore[type-assertion-failure]
     assert isinstance(var, LiteralSetVar)
     assert var._var_type == set[str]
     assert str(var) == '["a", "b"]'
@@ -223,11 +223,11 @@ def test_set_concatenation_fallbacks():
     tags = _tags()
     other = Var(_js_expr="state.other").to(set[str])
     items = Var(_js_expr="state.items").to(list[str])
-    assert str(tags + other) == "[...state.tags, ...state.other]"  # pyright: ignore[reportDeprecated]
-    assert str(items + tags) == "[...state.items, ...state.tags]"  # pyright: ignore[reportDeprecated]
-    assert str(tags + items) == "[...state.tags, ...state.items]"  # pyright: ignore[reportDeprecated]
+    assert str(tags + other) == "[...state.tags, ...state.other]"  # ty:ignore[deprecated]
+    assert str(items + tags) == "[...state.items, ...state.tags]"  # ty:ignore[deprecated]
+    assert str(tags + items) == "[...state.tags, ...state.items]"  # ty:ignore[deprecated]
     with pytest.raises(VarTypeError):
-        _ = items + 1  # pyright: ignore[reportOperatorIssue]
+        _ = items + 1  # ty:ignore[unsupported-operator]
 
 
 def test_array_comparisons_with_a_set_operand_are_reflected(mocker):
@@ -235,10 +235,10 @@ def test_array_comparisons_with_a_set_operand_are_reflected(mocker):
     deprecate = mocker.patch("reflex_base.vars.set.console.deprecate")
     tags = _tags()
     items = Var(_js_expr="state.items").to(list[str])
-    assert str(items < tags) == "(compareArrays(state.tags, state.items) > 0)"  # pyright: ignore[reportOperatorIssue]
-    assert str(items <= tags) == "(compareArrays(state.tags, state.items) >= 0)"  # pyright: ignore[reportOperatorIssue]
-    assert str(items > tags) == "(compareArrays(state.tags, state.items) < 0)"  # pyright: ignore[reportOperatorIssue]
-    assert str(items >= tags) == "(compareArrays(state.tags, state.items) <= 0)"  # pyright: ignore[reportOperatorIssue]
+    assert str(items < tags) == "(compareArrays(state.tags, state.items) > 0)"
+    assert str(items <= tags) == "(compareArrays(state.tags, state.items) >= 0)"
+    assert str(items > tags) == "(compareArrays(state.tags, state.items) < 0)"
+    assert str(items >= tags) == "(compareArrays(state.tags, state.items) <= 0)"
     assert [call.kwargs["feature_name"] for call in deprecate.call_args_list] == [
         "SetVar.__gt__",
         "SetVar.__ge__",
@@ -246,7 +246,7 @@ def test_array_comparisons_with_a_set_operand_are_reflected(mocker):
         "SetVar.__le__",
     ]
     with pytest.raises(VarTypeError):
-        _ = items < 1  # pyright: ignore[reportOperatorIssue]
+        _ = items < 1  # ty:ignore[unsupported-operator]
 
 
 def test_set_array_operations_are_deprecated(mocker):
@@ -254,7 +254,7 @@ def test_set_array_operations_are_deprecated(mocker):
     deprecate = mocker.patch("reflex_base.vars.set.console.deprecate")
     tags = _tags()
 
-    assert str(tags[0]) == "state.tags?.at?.(0)"  # pyright: ignore[reportDeprecated]
+    assert str(tags[0]) == "state.tags?.at?.(0)"
     deprecate.assert_called_once()
     assert deprecate.call_args.kwargs["feature_name"] == "SetVar.__getitem__"
     assert ".to_array()" in deprecate.call_args.kwargs["reason"]
@@ -262,21 +262,19 @@ def test_set_array_operations_are_deprecated(mocker):
     deprecate.reset_mock()
     assert re.fullmatch(
         r"state\.tags\.map\(\(\((\w+)\) => \1\.toUpperCase\(\)\)\)",
-        str(tags.map(lambda item: item.upper())),  # pyright: ignore[reportDeprecated]
+        str(tags.map(lambda item: item.upper())),  # ty:ignore[deprecated]
     )
     assert deprecate.call_args.kwargs["feature_name"] == "SetVar.map"
 
     deprecate.reset_mock()
-    assert str(tags.join(",")) == 'state.tags.join(",")'  # pyright: ignore[reportDeprecated]
-    assert str(tags.reverse()) == "state.tags.slice().reverse()"  # pyright: ignore[reportDeprecated]
-    assert str(tags * 2) == (  # pyright: ignore[reportDeprecated]
-        "Array.from({ length: 2 }).flatMap(() => state.tags)"
-    )
-    assert str(tags + tags.to_array()) == "[...state.tags, ...state.tags]"  # pyright: ignore[reportDeprecated]
-    assert str(tags.filter(lambda item: item == "a")).startswith("state.tags.filter(")  # pyright: ignore[reportDeprecated]
-    assert str(tags.reduce(operator.add, "")).startswith("state.tags.reduce(")  # pyright: ignore[reportDeprecated]
-    assert str(tags.flat_map(lambda item: item)).startswith("pyFlatMap(state.tags")  # pyright: ignore[reportDeprecated]
-    assert str(tags.pluck("a")).startswith("state.tags.map(")  # pyright: ignore[reportDeprecated]
+    assert str(tags.join(",")) == 'state.tags.join(",")'  # ty:ignore[deprecated]
+    assert str(tags.reverse()) == "state.tags.slice().reverse()"  # ty:ignore[deprecated]
+    assert str(tags * 2) == ("Array.from({ length: 2 }).flatMap(() => state.tags)")  # ty:ignore[deprecated]
+    assert str(tags + tags.to_array()) == "[...state.tags, ...state.tags]"  # ty:ignore[deprecated]
+    assert str(tags.filter(lambda item: item == "a")).startswith("state.tags.filter(")  # ty:ignore[deprecated]
+    assert str(tags.reduce(operator.add, "")).startswith("state.tags.reduce(")  # ty:ignore[deprecated]
+    assert str(tags.flat_map(lambda item: item)).startswith("pyFlatMap(state.tags")  # ty:ignore[deprecated]
+    assert str(tags.pluck("a")).startswith("state.tags.map(")  # ty:ignore[deprecated]
     assert deprecate.call_count == 8
 
 
@@ -287,19 +285,19 @@ def test_set_comparison_and_field_contains_fallbacks(mocker):
     other = Var(_js_expr="state.other").to(set[str])
     count = Var(_js_expr="state.count").to(int)
 
-    assert str(tags < other) == "(compareArrays(state.tags, state.other) < 0)"  # pyright: ignore[reportDeprecated]
-    assert str(tags <= ["a"]) == '(compareArrays(state.tags, ["a"]) <= 0)'  # pyright: ignore[reportDeprecated]
-    assert str(tags > other) == "(compareArrays(state.tags, state.other) > 0)"  # pyright: ignore[reportDeprecated]
-    assert str(tags >= other) == "(compareArrays(state.tags, state.other) >= 0)"  # pyright: ignore[reportDeprecated]
-    assert str(tags.contains("a", "name")) == (  # pyright: ignore[reportDeprecated]
+    assert str(tags < other) == "(compareArrays(state.tags, state.other) < 0)"
+    assert str(tags <= ["a"]) == '(compareArrays(state.tags, ["a"]) <= 0)'
+    assert str(tags > other) == "(compareArrays(state.tags, state.other) > 0)"
+    assert str(tags >= other) == "(compareArrays(state.tags, state.other) >= 0)"
+    assert str(tags.contains("a", "name")) == (  # ty:ignore[deprecated]
         'state.tags.some(obj => obj["name"] === "a")'
     )
     # `number * set` is left out of the static types; it only warns at runtime.
-    number_times_set = str(count * tags)  # pyright: ignore[reportOperatorIssue]
+    number_times_set = str(count * tags)
     assert number_times_set == (
         "Array.from({ length: state.count }).flatMap(() => state.tags)"
     )
-    assert str(tags * count) == number_times_set  # pyright: ignore[reportDeprecated]
+    assert str(tags * count) == number_times_set  # ty:ignore[deprecated]
     assert deprecate.call_count == 7
     assert deprecate.call_args_list[4].kwargs["feature_name"] == (
         "SetVar.contains(field)"
@@ -422,13 +420,13 @@ def test_optional_set_deprecated_array_operations_treat_none_as_empty(mocker):
     """The deprecated array operations go through the null-safe array view."""
     mocker.patch("reflex_base.vars.set.console.deprecate")
     maybe = _maybe()
-    assert str(maybe.join(",")) == '(state.maybe ?? []).join(",")'  # pyright: ignore[reportDeprecated]
-    assert str(maybe.contains("a", "name")) == (  # pyright: ignore[reportDeprecated]
+    assert str(maybe.join(",")) == '(state.maybe ?? []).join(",")'  # ty:ignore[deprecated]
+    assert str(maybe.contains("a", "name")) == (  # ty:ignore[deprecated]
         '(state.maybe ?? []).some(obj => obj["name"] === "a")'
     )
     items = Var(_js_expr="state.items").to(list[str])
-    assert str(maybe + items) == "[...(state.maybe ?? []), ...state.items]"  # pyright: ignore[reportDeprecated]
-    assert str(items + maybe) == "[...state.items, ...(state.maybe ?? [])]"  # pyright: ignore[reportDeprecated]
+    assert str(maybe + items) == "[...(state.maybe ?? []), ...state.items]"  # ty:ignore[deprecated]
+    assert str(items + maybe) == "[...state.items, ...(state.maybe ?? [])]"  # ty:ignore[deprecated]
 
 
 def test_optional_set_fields_of_state_and_objects_treat_none_as_empty():

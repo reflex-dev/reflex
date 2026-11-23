@@ -1,6 +1,6 @@
 """Custom tabs component."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
@@ -62,7 +62,7 @@ class TabsRoot(TabsBaseComponent):
     value: Var[str | int]
 
     # Callback invoked when new value is being set.
-    on_value_change: EventHandler[passthrough_event_spec(str | dict)]
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(str | dict)]
 
     # The component orientation (layout flow direction). Defaults to "horizontal".
     orientation: Var[LiteralOrientation]

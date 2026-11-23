@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, ClassVar, TypedDict
+from typing import Annotated, Any, ClassVar, TypedDict
 
 from reflex_base.components.component import field
 from reflex_base.constants import EventTriggers
@@ -176,31 +176,31 @@ class Axis(Recharts):
         doc='The text anchor of axis. Default: "middle"'
     )
 
-    on_click: EventHandler[no_args_event_spec] = field(
+    on_click: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of click on the ticks of this axis"
     )
 
-    on_mouse_down: EventHandler[no_args_event_spec] = field(
+    on_mouse_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousedown on the ticks of this axis"
     )
 
-    on_mouse_up: EventHandler[no_args_event_spec] = field(
+    on_mouse_up: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseup on the ticks of this axis"
     )
 
-    on_mouse_move: EventHandler[no_args_event_spec] = field(
+    on_mouse_move: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousemove on the ticks of this axis"
     )
 
-    on_mouse_out: EventHandler[no_args_event_spec] = field(
+    on_mouse_out: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseout on the ticks of this axis"
     )
 
-    on_mouse_enter: EventHandler[no_args_event_spec] = field(
+    on_mouse_enter: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseenter on the ticks of this axis"
     )
 
-    on_mouse_leave: EventHandler[no_args_event_spec] = field(
+    on_mouse_leave: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseleave on the ticks of this axis"
     )
 
@@ -388,43 +388,43 @@ class Cartesian(Recharts):
         doc="The name of data. This option will be used in tooltip and legend to represent the component. If no value was set to this option, the value of dataKey will be used alternatively."
     )
 
-    on_animation_start: EventHandler[no_args_event_spec] = field(
+    on_animation_start: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of animation start"
     )
 
-    on_animation_end: EventHandler[no_args_event_spec] = field(
+    on_animation_end: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of animation end"
     )
 
-    on_click: EventHandler[no_args_event_spec] = field(
+    on_click: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of click on the component in this group"
     )
 
-    on_mouse_down: EventHandler[no_args_event_spec] = field(
+    on_mouse_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousedown on the component in this group"
     )
 
-    on_mouse_up: EventHandler[no_args_event_spec] = field(
+    on_mouse_up: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseup on the component in this group"
     )
 
-    on_mouse_move: EventHandler[no_args_event_spec] = field(
+    on_mouse_move: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousemove on the component in this group"
     )
 
-    on_mouse_over: EventHandler[no_args_event_spec] = field(
+    on_mouse_over: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseover on the component in this group"
     )
 
-    on_mouse_out: EventHandler[no_args_event_spec] = field(
+    on_mouse_out: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseout on the component in this group"
     )
 
-    on_mouse_enter: EventHandler[no_args_event_spec] = field(
+    on_mouse_enter: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseenter on the component in this group"
     )
 
-    on_mouse_leave: EventHandler[no_args_event_spec] = field(
+    on_mouse_leave: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseleave on the component in this group"
     )
 
@@ -667,35 +667,35 @@ class Scatter(Recharts):
         doc='The type of easing function. Default: "ease"'
     )
 
-    on_click: EventHandler[no_args_event_spec] = field(
+    on_click: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of click on the component in this group"
     )
 
-    on_mouse_down: EventHandler[no_args_event_spec] = field(
+    on_mouse_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousedown on the component in this group"
     )
 
-    on_mouse_up: EventHandler[no_args_event_spec] = field(
+    on_mouse_up: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseup on the component in this group"
     )
 
-    on_mouse_move: EventHandler[no_args_event_spec] = field(
+    on_mouse_move: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousemove on the component in this group"
     )
 
-    on_mouse_over: EventHandler[no_args_event_spec] = field(
+    on_mouse_over: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseover on the component in this group"
     )
 
-    on_mouse_out: EventHandler[no_args_event_spec] = field(
+    on_mouse_out: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseout on the component in this group"
     )
 
-    on_mouse_enter: EventHandler[no_args_event_spec] = field(
+    on_mouse_enter: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseenter on the component in this group"
     )
 
-    on_mouse_leave: EventHandler[no_args_event_spec] = field(
+    on_mouse_leave: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseleave on the component in this group"
     )
 
@@ -749,43 +749,43 @@ class Funnel(Recharts):
     # Valid children components
     _valid_children: ClassVar[list[str]] = ["LabelList", "Cell"]
 
-    on_animation_start: EventHandler[no_args_event_spec] = field(
+    on_animation_start: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of animation start"
     )
 
-    on_animation_end: EventHandler[no_args_event_spec] = field(
+    on_animation_end: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of animation end"
     )
 
-    on_click: EventHandler[no_args_event_spec] = field(
+    on_click: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of click on the component in this group"
     )
 
-    on_mouse_down: EventHandler[no_args_event_spec] = field(
+    on_mouse_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousedown on the component in this group"
     )
 
-    on_mouse_up: EventHandler[no_args_event_spec] = field(
+    on_mouse_up: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseup on the component in this group"
     )
 
-    on_mouse_move: EventHandler[no_args_event_spec] = field(
+    on_mouse_move: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousemove on the component in this group"
     )
 
-    on_mouse_over: EventHandler[no_args_event_spec] = field(
+    on_mouse_over: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseover on the component in this group"
     )
 
-    on_mouse_out: EventHandler[no_args_event_spec] = field(
+    on_mouse_out: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseout on the component in this group"
     )
 
-    on_mouse_enter: EventHandler[no_args_event_spec] = field(
+    on_mouse_enter: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseenter on the component in this group"
     )
 
-    on_mouse_leave: EventHandler[no_args_event_spec] = field(
+    on_mouse_leave: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseleave on the component in this group"
     )
 
@@ -901,35 +901,35 @@ class ReferenceDot(Reference):
     # Valid children components
     _valid_children: ClassVar[list[str]] = ["Label"]
 
-    on_click: EventHandler[no_args_event_spec] = field(
+    on_click: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of click on the component in this chart"
     )
 
-    on_mouse_down: EventHandler[no_args_event_spec] = field(
+    on_mouse_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousedown on the component in this chart"
     )
 
-    on_mouse_up: EventHandler[no_args_event_spec] = field(
+    on_mouse_up: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseup on the component in this chart"
     )
 
-    on_mouse_over: EventHandler[no_args_event_spec] = field(
+    on_mouse_over: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseover on the component in this chart"
     )
 
-    on_mouse_out: EventHandler[no_args_event_spec] = field(
+    on_mouse_out: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseout on the component in this chart"
     )
 
-    on_mouse_enter: EventHandler[no_args_event_spec] = field(
+    on_mouse_enter: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseenter on the component in this chart"
     )
 
-    on_mouse_move: EventHandler[no_args_event_spec] = field(
+    on_mouse_move: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mousemove on the component in this chart"
     )
 
-    on_mouse_leave: EventHandler[no_args_event_spec] = field(
+    on_mouse_leave: Annotated[EventHandler, no_args_event_spec] = field(
         doc="The customized event handler of mouseleave on the component in this chart"
     )
 

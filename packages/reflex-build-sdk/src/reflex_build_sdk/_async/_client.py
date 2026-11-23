@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Mapping
 from types import TracebackType
-from typing import Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from reflex_build_sdk._async.resources.apps import AsyncApps
 from reflex_build_sdk._async.resources.auth import AsyncAuth
@@ -24,6 +24,9 @@ from reflex_build_sdk._base import (
 from reflex_build_sdk._errors import status_error_from_response
 from reflex_build_sdk.transports._base import AsyncTransport, TransportError
 from reflex_build_sdk.transports._defaults import async_default_transport
+
+if TYPE_CHECKING:
+    from typing_extensions import TypeForm
 
 T = TypeVar("T")
 
@@ -127,7 +130,7 @@ class AsyncReflexBuild(BaseClient):
         self,
         method: str,
         path: str,
-        cast: type[T],
+        cast: TypeForm[T],
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,

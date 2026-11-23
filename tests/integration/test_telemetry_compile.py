@@ -35,6 +35,7 @@ def TelemetryCompileApp(events_log_path: str = ""):
     import json
     import os
     from pathlib import Path
+    from typing import Any
 
     import reflex as rx
     from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
@@ -49,14 +50,20 @@ def TelemetryCompileApp(events_log_path: str = ""):
     sink = Path(events_log_path)
     sink.parent.mkdir(parents=True, exist_ok=True)
 
-    def _capture(event, properties=None, **_kwargs):
+    def _capture(
+        event: str,
+        telemetry_enabled: bool | None = None,
+        *,
+        properties: dict[str, Any] | None = None,
+        **_kwargs: Any,
+    ) -> bool:
         with sink.open("a") as fh:
             fh.write(
                 json.dumps({"event": event, "properties": properties or {}}) + "\n"
             )
         return True
 
-    telemetry.send = _capture
+    telemetry.send = _capture  # ty:ignore[invalid-assignment]
 
     class StorageRoot(rx.State):
         token: str = Cookie()

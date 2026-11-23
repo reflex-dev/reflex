@@ -147,14 +147,14 @@ def test_parse_bun_outdated_empty_when_nothing_outdated():
 def test_pinned_packages_are_suppressed_but_never_stale():
     """A package we do not drive stays suppressed even once it reaches latest.
 
-    `pyright` and `ruff` are pinned by policy rather than blocked on anything, so being at
+    `ty` and `ruff` are pinned by policy rather than blocked on anything, so being at
     their latest version does not mean the entry can be removed.
     """
     reportable, suppressed, stale = check_outdated_deps.partition(
         outdated=["ruff"],
-        installed=["ruff", "pyright"],
+        installed=["ruff", "ty"],
         held=[],
-        pinned=["ruff", "pyright"],
+        pinned=["ruff", "ty"],
     )
     assert reportable == []
     assert suppressed == ["ruff"]

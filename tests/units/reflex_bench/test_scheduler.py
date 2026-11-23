@@ -55,7 +55,7 @@ def _recorder(
     hooks = ("setup_cache", "setup", "prepare", "sample", "conclude", "cleanup")
     recorder = type("Recorder", (), {name: hook(name) for name in hooks})
     arguments = {"id": "t.rec", "metrics": {"wall": WALL}, **define}
-    bench = Benchmark.define(recorder, **arguments)
+    bench = Benchmark.define(recorder, **arguments)  # ty:ignore[invalid-argument-type]
     return Planned(bench, bench.expand()[0])
 
 

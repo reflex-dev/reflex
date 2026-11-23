@@ -54,7 +54,7 @@ def app_summary(name: str = "test-app", **fields) -> AppSummary:
     Returns:
         The app.
     """
-    return AppSummary(**{
+    return AppSummary(**{  # ty:ignore[invalid-argument-type]
         "id": _APP_ID,
         "name": name,
         "description": "",
@@ -75,7 +75,7 @@ def app(name: str = "test-app", **fields) -> App:
     Returns:
         The app.
     """
-    return App(**{
+    return App(**{  # ty:ignore[invalid-argument-type]
         "id": _APP_ID,
         "name": name,
         "description": "",
@@ -109,7 +109,7 @@ def deployment_record(**fields) -> DeploymentRecord:
     Returns:
         The deployment.
     """
-    return DeploymentRecord(**{
+    return DeploymentRecord(**{  # ty:ignore[invalid-argument-type]
         "id": _DEPLOYMENT_ID,
         "url": "https://example.com",
         "backend_url": "https://api.example.com",

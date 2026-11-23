@@ -123,7 +123,7 @@ def ClientStateApp():
             rx.text(other.value, id="other-value"),
             # A trigger argument used inside a compound value.
             rx.input(
-                on_change=lambda value: suffixed.set(value.to(str) + "!"),
+                on_change=lambda value: suffixed.set(value.to(str) + "!"),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                 id="suffix-input",
             ),
             rx.text(suffixed.value, id="suffix-value"),

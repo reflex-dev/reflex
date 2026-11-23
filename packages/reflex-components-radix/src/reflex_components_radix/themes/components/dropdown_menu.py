@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
 from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -53,7 +53,7 @@ class DropdownMenuRoot(RadixThemesComponent):
 
     _invalid_children: ClassVar[list[str]] = ["DropdownMenuItem"]
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."
     )
 
@@ -139,23 +139,23 @@ class DropdownMenuContent(RadixThemesComponent):
         doc="Whether to hide the content when the trigger becomes fully occluded. Defaults to False."
     )
 
-    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_close_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the dialog is closed."
     )
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer is down outside the dialog."
     )
 
-    on_focus_outside: EventHandler[no_args_event_spec] = field(
+    on_focus_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when focus moves outside the dialog."
     )
 
-    on_interact_outside: EventHandler[no_args_event_spec] = field(
+    on_interact_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer interacts outside the dialog."
     )
 
@@ -195,7 +195,7 @@ class DropdownMenuSub(RadixThemesComponent):
         doc="The open state of the submenu when it is initially rendered. Use when you do not need to control its open state."
     )
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."
     )
 
@@ -243,19 +243,19 @@ class DropdownMenuSubContent(RadixThemesComponent):
 
     _valid_parents: ClassVar[list[str]] = ["DropdownMenuSub"]
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer is down outside the dialog."
     )
 
-    on_focus_outside: EventHandler[no_args_event_spec] = field(
+    on_focus_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when focus moves outside the dialog."
     )
 
-    on_interact_outside: EventHandler[no_args_event_spec] = field(
+    on_interact_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer interacts outside the dialog."
     )
 
@@ -288,7 +288,7 @@ class DropdownMenuItem(RadixThemesComponent):
         "DropdownMenuSubContent",
     ]
 
-    on_select: EventHandler[no_args_event_spec] = field(
+    on_select: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the item is selected."
     )
 

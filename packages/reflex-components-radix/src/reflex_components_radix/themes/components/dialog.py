@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex_base.components.component import ComponentNamespace, field
 from reflex_base.constants.compiler import MemoizationMode
@@ -22,7 +22,7 @@ class DialogRoot(RadixThemesComponent):
 
     open: Var[bool] = field(doc="The controlled open state of the dialog.")
 
-    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+    on_open_change: Annotated[EventHandler, passthrough_event_spec(bool)] = field(
         doc="Fired when the open state changes."
     )
 
@@ -54,23 +54,23 @@ class DialogContent(elements.Div, RadixThemesComponent):
         doc='DialogContent size "1" - "4"'
     )
 
-    on_open_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_open_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the dialog is opened."
     )
 
-    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+    on_close_auto_focus: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the dialog is closed."
     )
 
-    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+    on_escape_key_down: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the escape key is pressed."
     )
 
-    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+    on_pointer_down_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer is down outside the dialog."
     )
 
-    on_interact_outside: EventHandler[no_args_event_spec] = field(
+    on_interact_outside: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the pointer interacts outside the dialog."
     )
 

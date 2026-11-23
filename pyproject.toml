@@ -108,7 +108,6 @@ dev = [
   "psutil",
   "psycopg[binary]",
   "pydantic",
-  "pyright",
   "pytest-asyncio",
   "pytest-benchmark",
   "pytest-codspeed",
@@ -169,32 +168,11 @@ path = "scripts/hatch_build.py"
 dependencies = ["plotly", "ruff"]
 require-runtime-dependencies = true
 
-[tool.pyright]
-extraPaths = [
-  "packages/reflex-bench/src",
-  "packages/reflex-code/src",
-  "packages/reflex-components/src",
-  "packages/reflex-dataeditor/src",
-  "packages/reflex-gridjs/src",
-  "packages/reflex-lucide/src",
-  "packages/reflex-markdown/src",
-  "packages/reflex-moment/src",
-  "packages/reflex-plotly/src",
-  "packages/reflex-radix/src",
-  "packages/reflex-release/src",
-  "packages/reflex-react-player/src",
-  "packages/reflex-react-router/src",
-  "packages/reflex-recharts/src",
-  "packages/reflex-sonner/src",
-  "packages/reflex-components-internal/src",
-  "packages/reflex-otel/src",
-  "packages/reflex-build-sdk/src",
-  "packages/reflex-site-shared/src",
-  "packages/reflex-workflow/src",
-  # The workflow examples are read from the repository rather than installed.
-  "packages/reflex-workflow",
-  "packages/integrations-docs/src",
-]
+[tool.ty.environment]
+# The workflow examples are read from the repository rather than installed.
+extra-paths = ["packages/reflex-workflow"]
+
+[tool.ty.src]
 exclude = [
   ".venv",
   "**/__pycache__",
@@ -206,7 +184,17 @@ exclude = [
   "packages/integrations-docs",
   "packages/reflex-ui-shared",
 ]
-reportIncompatibleMethodOverride = false
+
+[tool.ty.rules]
+incompatible-method-override = "ignore"
+
+# The calls in this file must fail type checking; an ignore that stops being used
+# means one of them type-checks now.
+[[tool.ty.overrides]]
+include = ["tests/units/reflex_workflow/test_model.py"]
+
+[tool.ty.overrides.rules]
+unused-ignore-comment = "error"
 
 [tool.ruff]
 target-version = "py311"
@@ -495,7 +483,7 @@ backend_held = [
 ]
 backend_pinned = [
     # Linters are pinned deliberately and bumped on their own cadence.
-    "pyright",
+    "ty",
     "ruff",
 ]
 frontend_held = [
@@ -558,6 +546,9 @@ reflex-hosting-cli = false
 pillow = "2026-10-21T00:00:00Z"
 certifi = "2026-10-21T00:00:00Z"
 virtualenv = "2026-10-23T00:00:00Z"
+# Keep the type checker itself resolvable at its latest release; ty ships frequent
+# fixes the migration depends on.
+ty = false
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true

@@ -255,7 +255,7 @@ _STATE_MANAGER_FEATURE: dict[str, FeatureName] = {
     "redis": "state_manager_redis",
 }
 
-_STORAGE_FEATURE: dict[type[ClientStorageBase], FeatureName] = {
+_STORAGE_FEATURE: dict[type, FeatureName] = {
     Cookie: "cookie_count",
     LocalStorage: "local_storage_count",
     SessionStorage: "session_storage_count",

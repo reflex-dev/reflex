@@ -21,7 +21,7 @@ import tempfile
 import time
 import uuid
 import webbrowser
-from collections.abc import Iterator, Mapping
+from collections.abc import Generator, Mapping
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -346,7 +346,7 @@ def error_message(error: Exception) -> str:
 
 
 @contextlib.contextmanager
-def reporting_api_errors() -> Iterator[None]:
+def reporting_api_errors() -> Generator[None, None, None]:
     """Report what the Reflex Build API refused, and exit, instead of raising.
 
     A command's body is wrapped in this so a refusal reads as the sentence the
@@ -428,7 +428,7 @@ class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
             return False
 
 
-webbrowser.BackgroundBrowser = SilentBackgroundBrowser
+webbrowser.BackgroundBrowser = SilentBackgroundBrowser  # ty:ignore[invalid-assignment]
 
 
 class TokenSource(str, Enum):
@@ -855,7 +855,7 @@ def identity_as_dict(me: Me) -> dict[str, Any]:
 
 
 @contextlib.contextmanager
-def upload_client(client: AuthenticatedClient) -> Iterator[ReflexBuild]:
+def upload_client(client: AuthenticatedClient) -> Generator[ReflexBuild, None, None]:
     """Build a client whose timeouts suit pushing a build's archives.
 
     The SDK's defaults are sized for API calls. An archive is not one: it is

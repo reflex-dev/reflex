@@ -168,7 +168,7 @@ class TasksState(rx.State):
             value: One of ``all``, ``open`` and ``done``.
         """
         if value in FILTERS:
-            self.filter = value
+            self.filter = value  # ty:ignore[invalid-assignment] https://github.com/astral-sh/ty/issues/5082
 
     @rx.event
     def set_note(self, tag: str, text: str):

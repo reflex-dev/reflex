@@ -6,7 +6,7 @@ import dataclasses
 import logging
 from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, Literal, TypedDict
+from typing import Annotated, Any, Literal, TypedDict
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.components.literals import LiteralRowMarker
@@ -406,59 +406,59 @@ class DataEditor(NoSSRComponent):
 
     theme: Var[DataEditorTheme | dict] = field(doc="global theme")
 
-    on_cell_activated: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
-        doc="Fired when a cell is activated."
-    )
+    on_cell_activated: Annotated[
+        EventHandler, passthrough_event_spec(tuple[int, int])
+    ] = field(doc="Fired when a cell is activated.")
 
-    on_cell_clicked: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
-        doc="Fired when a cell is clicked."
-    )
+    on_cell_clicked: Annotated[
+        EventHandler, passthrough_event_spec(tuple[int, int])
+    ] = field(doc="Fired when a cell is clicked.")
 
-    on_cell_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
-        doc="Fired when a cell is right-clicked."
-    )
+    on_cell_context_menu: Annotated[
+        EventHandler, passthrough_event_spec(tuple[int, int])
+    ] = field(doc="Fired when a cell is right-clicked.")
 
-    on_cell_edited: EventHandler[passthrough_event_spec(tuple[int, int], GridCell)] = (
-        field(doc="Fired when a cell is edited.")
-    )
+    on_cell_edited: Annotated[
+        EventHandler, passthrough_event_spec(tuple[int, int], GridCell)
+    ] = field(doc="Fired when a cell is edited.")
 
-    on_group_header_clicked: EventHandler[
-        passthrough_event_spec(tuple[int, int], GridCell)
+    on_group_header_clicked: Annotated[
+        EventHandler, passthrough_event_spec(tuple[int, int], GridCell)
     ] = field(doc="Fired when a group header is clicked.")
 
-    on_group_header_context_menu: EventHandler[
-        passthrough_event_spec(int, GroupHeaderClickedEventArgs)
+    on_group_header_context_menu: Annotated[
+        EventHandler, passthrough_event_spec(int, GroupHeaderClickedEventArgs)
     ] = field(doc="Fired when a group header is right-clicked.")
 
-    on_group_header_renamed: EventHandler[passthrough_event_spec(str, str)] = field(
-        doc="Fired when a group header is renamed."
-    )
+    on_group_header_renamed: Annotated[
+        EventHandler, passthrough_event_spec(str, str)
+    ] = field(doc="Fired when a group header is renamed.")
 
-    on_header_clicked: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
-        doc="Fired when a header is clicked."
-    )
+    on_header_clicked: Annotated[
+        EventHandler, passthrough_event_spec(tuple[int, int])
+    ] = field(doc="Fired when a header is clicked.")
 
-    on_header_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])] = (
-        field(doc="Fired when a header is right-clicked.")
-    )
+    on_header_context_menu: Annotated[
+        EventHandler, passthrough_event_spec(tuple[int, int])
+    ] = field(doc="Fired when a header is right-clicked.")
 
-    on_header_menu_click: EventHandler[passthrough_event_spec(int, Rectangle)] = field(
-        doc="Fired when a header menu item is clicked."
-    )
+    on_header_menu_click: Annotated[
+        EventHandler, passthrough_event_spec(int, Rectangle)
+    ] = field(doc="Fired when a header menu item is clicked.")
 
-    on_item_hovered: EventHandler[passthrough_event_spec(tuple[int, int])] = field(
-        doc="Fired when an item is hovered."
-    )
+    on_item_hovered: Annotated[
+        EventHandler, passthrough_event_spec(tuple[int, int])
+    ] = field(doc="Fired when an item is hovered.")
 
-    on_delete: EventHandler[passthrough_event_spec(GridSelection)] = field(
+    on_delete: Annotated[EventHandler, passthrough_event_spec(GridSelection)] = field(
         doc="Fired when a selection is deleted."
     )
 
-    on_finished_editing: EventHandler[
-        passthrough_event_spec(GridCell | None, tuple[int, int])
+    on_finished_editing: Annotated[
+        EventHandler, passthrough_event_spec(GridCell | None, tuple[int, int])
     ] = field(doc="Fired when editing is finished.")
 
-    on_row_appended: EventHandler[no_args_event_spec] = field(
+    on_row_appended: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when a row is appended."
     )
 
@@ -466,23 +466,23 @@ class DataEditor(NoSSRComponent):
         doc="The current grid selection state (columns, rows, and current cell/range). Must be used when on_grid_selection_change is used otherwise updates will not be reflected in the grid."
     )
 
-    on_grid_selection_change: EventHandler[passthrough_event_spec(GridSelection)] = (
-        field(
-            doc="Fired when the grid selection changes. Will pass the current selection, the selected columns and the selected rows."
-        )
+    on_grid_selection_change: Annotated[
+        EventHandler, passthrough_event_spec(GridSelection)
+    ] = field(
+        doc="Fired when the grid selection changes. Will pass the current selection, the selected columns and the selected rows."
     )
 
-    on_selection_cleared: EventHandler[no_args_event_spec] = field(
+    on_selection_cleared: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the selection is cleared."
     )
 
-    on_column_resize: EventHandler[passthrough_event_spec(GridColumn, int)] = field(
-        doc="Fired when a column is resized."
-    )
+    on_column_resize: Annotated[
+        EventHandler, passthrough_event_spec(GridColumn, int)
+    ] = field(doc="Fired when a column is resized.")
 
     show_search: Var[bool] = field(doc="Shows search bar.")
 
-    on_search_close: EventHandler[no_args_event_spec] = field(
+    on_search_close: Annotated[EventHandler, no_args_event_spec] = field(
         doc="Fired when the search close button is clicked."
     )
 

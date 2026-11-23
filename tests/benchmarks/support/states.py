@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import cast
 
@@ -53,7 +53,7 @@ class PerformanceState(rx.State):
 
 
 @contextmanager
-def isolated_performance_registry() -> Iterator[None]:
+def isolated_performance_registry() -> Generator[None, None, None]:
     """Register only ``PerformanceState`` for deterministic cold construction.
 
     A state manager builds a token's root state by instantiating the whole
@@ -82,7 +82,7 @@ def initialized_state(size: int) -> PerformanceState:
         Initialized performance state.
     """
     state = PerformanceState(
-        _reflex_internal_init=True  # pyright: ignore [reportCallIssue]
+        _reflex_internal_init=True  # ty:ignore[unknown-argument]
     )
     state.numbers = list(range(size))
     state.mapping = {f"key_{index}": index for index in range(size)}
@@ -106,7 +106,9 @@ def get_performance_state(root_state: BaseState) -> PerformanceState:
 
 
 @contextmanager
-def computed_fanout_state(fanout: int) -> Iterator[tuple[BaseState, tuple[str, ...]]]:
+def computed_fanout_state(
+    fanout: int,
+) -> Generator[tuple[BaseState, tuple[str, ...]], None, None]:
     """Create a state whose scalar value feeds a requested number of vars.
 
     Args:
@@ -143,7 +145,7 @@ def computed_fanout_state(fanout: int) -> Iterator[tuple[BaseState, tuple[str, .
 
 
 @contextmanager
-def state_tree(shape: str) -> Iterator[BaseState]:
+def state_tree(shape: str) -> Generator[BaseState, None, None]:
     """Build an isolated registered state hierarchy.
 
     Args:

@@ -3,7 +3,7 @@
 import contextlib
 import os
 import shutil
-from collections.abc import Iterator
+from collections.abc import Generator
 from pathlib import Path
 from typing import NoReturn
 from urllib.parse import urljoin
@@ -98,7 +98,9 @@ def bun_runtime(
 
 
 @contextlib.contextmanager
-def _started(harness_cls: type[AppHarness], root: Path) -> Iterator[AppHarness]:
+def _started(
+    harness_cls: type[AppHarness], root: Path
+) -> Generator[AppHarness, None, None]:
     """Run NodelessApp in a harness that is stopped even when it fails to start.
 
     `__enter__` *is* `start()`, so a failure to bring the frontend up skips

@@ -1,5 +1,7 @@
 """Base class for all plugins."""
 
+from __future__ import annotations
+
 from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 from pathlib import Path
@@ -22,7 +24,12 @@ if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
     from reflex_base.components.component import BaseComponent, Component
     from reflex_base.event import EventType
-    from reflex_base.plugins.compiler import ComponentAndChildren, PageContext
+    from reflex_base.plugins.compiler import (
+        CompileContext,
+        ComponentAndChildren,
+        PageComponent,
+        PageContext,
+    )
     from reflex_base.vars.base import Var
 
 
@@ -58,7 +65,7 @@ class PreCompileContext(CommonContext):
     add_save_task: AddTaskProtocol
     add_modify_task: Callable[[str, Callable[[str], str]], None]
     radix_themes_plugin: Any
-    unevaluated_pages: Sequence["UnevaluatedPage"]
+    unevaluated_pages: Sequence[UnevaluatedPage]
 
 
 class AddPageProtocol(Protocol):
@@ -71,14 +78,14 @@ class AddPageProtocol(Protocol):
 
     def __call__(
         self,
-        component: "Component | Callable[[], Any] | None" = None,
+        component: Component | Callable[[], Any] | None = None,
         route: str | None = None,
         *,
-        title: "str | Var | None" = None,
-        description: "str | Var | None" = None,
+        title: str | Var | None = None,
+        description: str | Var | None = None,
         image: str = ...,
-        on_load: "EventType[()] | None" = None,
-        meta: Sequence["Mapping[str, Any] | Component"] = ...,
+        on_load: EventType[()] | None = None,
+        meta: Sequence[Mapping[str, Any] | Component] = ...,
         context: dict[str, Any] | None = None,
         **extra_page_args: Any,
     ) -> None:
@@ -101,7 +108,7 @@ class AddPageProtocol(Protocol):
 class RegisterRouteContext(CommonContext):
     """Context for the ``register_route`` hook."""
 
-    app_type: type["App"]
+    app_type: type[App]
     add_page: AddPageProtocol
     has_app_page: Callable[[str], bool]
 
@@ -109,7 +116,7 @@ class RegisterRouteContext(CommonContext):
 class PostCompileContext(CommonContext):
     """Context for post-compile hooks."""
 
-    app: "App"
+    app: App
 
 
 class PostBuildContext(CommonContext):
@@ -251,10 +258,10 @@ class Plugin:
 
     def eval_page(
         self,
-        page_fn: Any,
+        page_fn: PageComponent,
         /,
         **kwargs: Any,
-    ) -> "PageContext | None":
+    ) -> PageContext | None:
         """Evaluate a page-like object into a page context.
 
         Args:
@@ -268,7 +275,7 @@ class Plugin:
 
     def compile_page(
         self,
-        page_ctx: "PageContext",
+        page_ctx: PageContext,
         /,
         **kwargs: Any,
     ) -> None:
@@ -277,13 +284,13 @@ class Plugin:
 
     def enter_component(
         self,
-        comp: "BaseComponent",
+        comp: BaseComponent,
         /,
         *,
-        page_context: "PageContext",
-        compile_context: Any,
+        page_context: PageContext,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
-    ) -> "BaseComponent | ComponentAndChildren | None":
+    ) -> BaseComponent | ComponentAndChildren | None:
         """Inspect or transform a component before visiting its descendants.
 
         Args:
@@ -299,14 +306,14 @@ class Plugin:
 
     def leave_component(
         self,
-        comp: "BaseComponent",
-        children: tuple["BaseComponent", ...],
+        comp: BaseComponent,
+        children: tuple[BaseComponent, ...],
         /,
         *,
-        page_context: "PageContext",
-        compile_context: Any,
+        page_context: PageContext,
+        compile_context: CompileContext,
         in_prop_tree: bool = False,
-    ) -> "BaseComponent | ComponentAndChildren | None":
+    ) -> BaseComponent | ComponentAndChildren | None:
         """Inspect or transform a component after visiting its descendants.
 
         Args:

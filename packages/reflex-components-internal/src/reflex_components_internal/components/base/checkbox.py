@@ -1,5 +1,7 @@
 """Checkbox component from base-ui components."""
 
+from typing import Annotated
+
 from reflex_components_core.el.elements.forms import Label
 
 from reflex.components.component import ComponentNamespace
@@ -43,7 +45,7 @@ class CheckboxRoot(CheckboxBaseComponent):
     checked: Var[bool]
 
     # Event handler called when the checkbox is ticked or unticked.
-    on_checked_change: EventHandler[passthrough_event_spec(bool, dict)]
+    on_checked_change: Annotated[EventHandler, passthrough_event_spec(bool, dict)]
 
     # Whether the checkbox is in a mixed state: neither ticked, nor unticked. Defaults to False.
     indeterminate: Var[bool]
@@ -123,7 +125,7 @@ class HighLevelCheckbox(CheckboxRoot):
         """
         class_name = props.pop("class_name", "")
         if label := props.pop("label", None):
-            return Label.create(  # pyright: ignore[reportReturnType]
+            return Label.create(
                 CheckboxRoot.create(
                     CheckboxIndicator.create(),
                     *children,
@@ -131,7 +133,7 @@ class HighLevelCheckbox(CheckboxRoot):
                 ),
                 label,
                 class_name=cn(ClassNames.LABEL, class_name),
-            )
+            )  # ty:ignore[invalid-explicit-return]
         return CheckboxRoot.create(
             CheckboxIndicator.create(),
             *children,

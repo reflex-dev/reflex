@@ -6,7 +6,7 @@ from __future__ import annotations
 import time
 from collections.abc import Mapping
 from types import TracebackType
-from typing import Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from reflex_build_sdk._base import (
     DEFAULT_MAX_RETRIES,
@@ -25,6 +25,9 @@ from reflex_build_sdk._sync.resources.security_reviews import SecurityReviews
 from reflex_build_sdk._sync.resources.usage import Usage
 from reflex_build_sdk.transports._base import Transport, TransportError
 from reflex_build_sdk.transports._defaults import default_transport
+
+if TYPE_CHECKING:
+    from typing_extensions import TypeForm
 
 T = TypeVar("T")
 
@@ -128,7 +131,7 @@ class ReflexBuild(BaseClient):
         self,
         method: str,
         path: str,
-        cast: type[T],
+        cast: TypeForm[T],
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,

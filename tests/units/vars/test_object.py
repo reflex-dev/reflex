@@ -122,6 +122,24 @@ class ObjectState(rx.State):
 
     base_list: rx.Field[list[Base]] = rx.field([Base()])
 
+    @rx.var
+    def base_computed(self) -> Base:
+        """A computed var returning a pydantic model.
+
+        Returns:
+            The pydantic model.
+        """
+        return self.base
+
+    @rx.var
+    async def base_computed_async(self) -> Base:
+        """An async computed var returning a pydantic model.
+
+        Returns:
+            The pydantic model.
+        """
+        return self.base
+
 
 @pytest.mark.parametrize("type_", [Base, Bare, SqlaModel, Dataclass])
 def test_var_create(type_: type[Base | Bare | SqlaModel | Dataclass]) -> None:
@@ -308,6 +326,10 @@ def test_typing() -> None:
     _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
     _ = assert_type(list_var_0, ObjectVar[Base])
+    computed_var = ObjectState.base_computed
+    _ = assert_type(computed_var, ObjectVar[Base])
+    computed_var = ObjectState.base_computed_async
+    _ = assert_type(computed_var, ObjectVar[Base])
 
     # Sqla
     var = ObjectState.sqlamodel
@@ -469,7 +491,7 @@ def test_dataclass_field_implemented_by_property() -> None:
 
     @dataclasses.dataclass
     class Temperature:
-        celsius: float = 0.0  # pyright: ignore[reportRedeclaration, reportAssignmentType]
+        celsius: float = 0.0
 
         @property
         def celsius(self) -> float:  # noqa: F811
@@ -480,7 +502,7 @@ def test_dataclass_field_implemented_by_property() -> None:
             self._celsius = 0.0 if isinstance(value, property) else value
 
     class TemperatureState(rx.State):
-        temperature: rx.Field[Temperature] = rx.field(Temperature(21.5))
+        temperature: rx.Field[Temperature] = rx.field(Temperature(21.5))  # ty:ignore[too-many-positional-arguments]
 
     assert TemperatureState.temperature.celsius._var_type is float
 

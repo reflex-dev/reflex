@@ -1,7 +1,7 @@
 """Radio component from Radix Themes."""
 
 from types import SimpleNamespace
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
 from reflex_base.components.component import field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -69,7 +69,7 @@ class RadioCardsRoot(RadixThemesComponent):
         doc="When true, keyboard navigation will loop from last item to first, and vice versa."
     )
 
-    on_value_change: EventHandler[passthrough_event_spec(str)] = field(
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(str)] = field(
         doc="Event handler called when the value changes."
     )
 

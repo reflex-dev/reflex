@@ -15,7 +15,7 @@ import stat
 import sys
 import threading
 import unicodedata
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator, Mapping
 from pathlib import Path
 
 from reflex_base.config import get_config
@@ -312,7 +312,7 @@ def _lock_descriptor(descriptor: int) -> None:
 
 
 @contextlib.contextmanager
-def file_lock(path: str | Path) -> Iterator[Path]:
+def file_lock(path: str | Path) -> Generator[Path, None, None]:
     """Lock a file or directory across processes, or proceed unlocked if unavailable.
 
     The lock is a sidecar in Reflex's per-user data directory, so it never
@@ -395,7 +395,7 @@ def _write_json_file(file_path: Path, value: object) -> None:
         raise
 
 
-def update_json_file(file_path: str | Path, update_dict: dict[str, object]) -> None:
+def update_json_file(file_path: str | Path, update_dict: Mapping[str, object]) -> None:
     """Update the contents of a json file.
 
     Args:

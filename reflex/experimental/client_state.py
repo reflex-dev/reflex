@@ -73,7 +73,7 @@ class ClientStateVar(_ClientStateVar):
     __slots__ = ()
 
     @classmethod
-    def create(  # pyright: ignore [reportIncompatibleMethodOverride]
+    def create(
         cls,
         var_name: str | None = None,
         default: Any = NoValue,

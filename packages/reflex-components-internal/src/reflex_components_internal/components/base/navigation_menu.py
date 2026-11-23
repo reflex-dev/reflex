@@ -1,6 +1,6 @@
 """Custom navigation menu component."""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.event import EventHandler, passthrough_event_spec
@@ -56,7 +56,7 @@ class NavigationMenuRoot(NavigationMenuBaseComponent):
     default_value: Var[str]
 
     # Callback fired when the value changes.
-    on_value_change: EventHandler[passthrough_event_spec(str, dict)]
+    on_value_change: Annotated[EventHandler, passthrough_event_spec(str, dict)]
 
     # The orientation of the navigation menu.
     orientation: Var[LiteralNavigationMenuOrientation]
@@ -68,7 +68,7 @@ class NavigationMenuRoot(NavigationMenuBaseComponent):
     close_delay: Var[int]
 
     # Event handler called after any animations complete when the navigation menu is closed.
-    on_open_change_complete: EventHandler[passthrough_event_spec(bool)]
+    on_open_change_complete: Annotated[EventHandler, passthrough_event_spec(bool)]
 
     # The render prop.
     render_: Var[Component]

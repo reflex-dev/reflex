@@ -9,7 +9,7 @@ import itertools
 import json
 import re
 import sys
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Generator, Iterable
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any
 
@@ -18,8 +18,8 @@ from reflex_base.constants import Dirs
 from reflex_base.constants.state import CAMEL_CASE_CLIENT_STATE_MARKER, CLIENT_STATE_REF
 from reflex_base.event import (
     EventChain,
-    EventHandler,
     EventSpec,
+    EventType,
     event_args_signature,
     run_script,
     server_side,
@@ -226,7 +226,7 @@ def _check_declarations(hooks: Iterable[str]) -> None:
 
 
 @contextlib.contextmanager
-def _collect_declarations() -> Iterator[None]:
+def _collect_declarations() -> Generator[None, None, None]:
     """Compare client state declarations across every body rendered inside.
 
     A fresh record per compile, so a declaration edited before a hot reload
@@ -282,7 +282,7 @@ class ClientStateSetter(FunctionVar[Any]):
     # The type of the value being set, used to type lambda updater placeholders.
     _value_type: Any = dataclasses.field(default=Any)
 
-    def __call__(self, value: Any = NoValue) -> Var:  # pyright: ignore [reportIncompatibleMethodOverride]
+    def __call__(self, value: Any = NoValue) -> Var:
         """Bind a value to this setter.
 
         Args:
@@ -641,7 +641,7 @@ class ClientStateVar(Var):
             _var_data=self._escape_var_data,
         ).to(FunctionVar)
 
-    def retrieve(self, callback: EventHandler | Callable | None = None) -> EventSpec:
+    def retrieve(self, callback: EventType[Any] | None = None) -> EventSpec:
         """Pass the value of the client state variable to a backend EventHandler.
 
         The event handler must `yield` or `return` the EventSpec to trigger the event.

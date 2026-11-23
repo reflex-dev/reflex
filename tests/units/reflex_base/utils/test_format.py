@@ -53,7 +53,7 @@ def test_format_data_editor_column_deprecated(mocker: MockerFixture):
     """
     deprecate = mocker.patch("reflex_base.utils.console.deprecate")
 
-    assert format.format_data_editor_column("Name") == {
+    assert format.format_data_editor_column("Name") == {  # ty:ignore[deprecated]
         "title": "Name",
         "id": "name",
         "type": "str",
