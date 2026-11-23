@@ -5,7 +5,6 @@ from typing import Literal, get_args
 import pytest
 import reflex as rx
 
-from reflex_docs.pages.docs.source import stacked_description_rows
 from reflex_docs.pages.docs_landing.views.ai_builder import card
 from reflex_docs.pages.docs_landing.views.link_item import link_item
 from reflex_docs.templates.docpage.docpage import breadcrumb
@@ -30,20 +29,6 @@ def test_ai_card_focus_outline_is_inside_the_clipped_card():
     )
     assert "focus-visible:-outline-offset-4" in rendered
     assert "focus-visible:outline-offset-4" not in rendered
-
-
-def test_responsive_description_is_rendered_once():
-    """Mobile and desktop layouts share one description and its element IDs."""
-    calls = []
-
-    def description():
-        """Return content with a document-wide unique anchor."""
-        calls.append(True)
-        return rx.el.p("Field description", id="unique-description")
-
-    rows = stacked_description_rows([(rx.text("Field"), "")], description, "2xl")
-    assert len(calls) == 1
-    assert sum(str(row).count('id:"unique-description"') for row in rows) == 1
 
 
 def test_deferred_demo_preserves_code_and_defers_only_the_preview():

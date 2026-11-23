@@ -267,19 +267,6 @@ html .ReflexSearch-overlay :is(.ReflexSearch-escape, .ReflexSearch-hit, .ReflexS
   cursor: not-allowed;
 }
 
-.docs-hint {
-  background: var(--foreground);
-  border: 1px solid var(--foreground);
-  border-radius: 8px;
-  color: var(--background);
-  box-shadow: none;
-  padding: 6px 10px;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.5;
-}
-
 /* Footers use body typography, including utility text inherited from the
    older monospace shell. Keep service-status colors and theme states intact. */
 .docs-page-footer,
@@ -369,8 +356,7 @@ html .ReflexSearch-overlay :is(.ReflexSearch-escape, .ReflexSearch-hit, .ReflexS
   .docs-page-actions-menu,
   .docs-page-actions-menu > div > :is(a, button),
   [data-slot="popover-popup"]:has(> .docs-feedback-content),
-  .docs-feedback-content :is(input, textarea, button),
-  .docs-hint {
+  .docs-feedback-content :is(input, textarea, button) {
     transition: none;
     animation: none;
   }
