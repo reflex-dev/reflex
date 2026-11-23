@@ -1,5 +1,7 @@
 """Tests for the generated Reflex Cloud CLI reference pages."""
 
+import re
+
 from reflex_docs.pages.docs.cloud_cliref import (
     CommandDoc,
     InlineCode,
@@ -42,6 +44,20 @@ def test_apps_page_toc_lists_common_options_then_each_command():
         (2, "reflex cloud apps rollback"),
         (2, "reflex cloud apps describe"),
     ]
+
+    # Map each section to the flags it lists: the common ones appear only once.
+    flags = {}
+    for section in modules["apps"].split("## ")[1:]:
+        title, _, body = section.partition("\n")
+        flags[title] = re.findall(r"^\* `([^`]+)`", body, flags=re.MULTILINE)
+    common = flags.pop("Common options")
+    assert common == [
+        "--token TEXT",
+        "--json, -j / --no-json",
+        "--interactive, -i / --no-interactive",
+        "--help",
+    ]
+    assert [flag for own in flags.values() for flag in own if flag in common] == []
 
 
 def test_category_markdown_factors_out_options_every_command_shares(monkeypatch):
