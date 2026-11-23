@@ -52,6 +52,7 @@ from reflex_base.event import (
 )
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
+from reflex_base.event.processor.scope import event_scope
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
@@ -2427,18 +2428,28 @@ class App(MiddlewareMixin, LifespanMixin):
             async with self.state_manager.modify_state_with_links(
                 token, previous_dirty_vars=previous_dirty_vars, **context
             ) as state:
+                root_state = state._get_root_state()
                 # No other event handler can modify the state while in this context.
+                # Like an event, the block runs in the client's event scope (e.g.
+                # its i18n locale), also for the handlers it awaits.
                 if forked_context is None:
-                    yield state
+                    async with event_scope(root_state):
+                        yield state
                 else:
                     # An awaited handler runs inline on the locked tree. A plain
                     # try/finally: this is also the shared-state fan-out path.
-                    forked_context.set_locked_root(state._get_root_state())
+                    forked_context.set_locked_root(root_state)
                     try:
-                        yield state
+                        async with event_scope(root_state):
+                            yield state
                     finally:
                         await forked_context.release_lock()
-                delta = await state._get_resolved_delta()
+                # Re-derived from the state the block changed, as computed vars
+                # are recomputed during delta resolution. A provider suppressing
+                # a resolution error leaves nothing to send.
+                delta = {}
+                async with event_scope(root_state):
+                    delta = await state._get_resolved_delta()
                 state._clean()
                 if delta:
                     # When the frontend vars are modified emit the delta to the frontend.
