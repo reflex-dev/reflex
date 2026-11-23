@@ -51,7 +51,6 @@ from reflex_base.utils.exceptions import (
     StateTooLargeError,
     StateValueError,
     UnretrievableVarValueError,
-    VarTypeError,
 )
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import Field, Var, computed_var, field
@@ -5721,50 +5720,14 @@ def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
         _ = FactoryState()._n  # pyright: ignore [reportCallIssue]
 
 
-def test_state_var_dataclasses_field_default():
-    """A state var default of dataclasses.field(...) compiles and resets (#7017)."""
+def test_state_var_dataclasses_field_default_raises():
+    """A state var default of dataclasses.field(...) raises a clear error (#7017)."""
+    with pytest.raises(
+        StateValueError, match=r"DataclassesFieldState\.model.*rx\.field"
+    ):
 
-    class DataclassesFieldState(BaseState):
-        model: ModelDC = dataclasses.field(default_factory=ModelDC)
-        _tags: list[str] = dataclasses.field(default_factory=list)
-
-    state = DataclassesFieldState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
-    assert state.model == ModelDC()
-    assert state._tags == []
-    assert DataclassesFieldState.__fields__["_tags"].default_value() == []
-
-    state._tags.append("x")
-    state.reset()
-    assert state.model == ModelDC()
-    assert state._tags == []
-
-
-def test_state_dataclasses_field_without_backend_default():
-    """An annotated backend field uses its type default when bare."""
-
-    class BareBackendState(BaseState):
-        _n: int = dataclasses.field()
-
-    state = BareBackendState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
-    assert state._n == 0
-    assert BareBackendState.__fields__["_n"].default == 0
-
-
-@pytest.mark.usefixtures("forked_registration_context")
-def test_state_unannotated_dataclasses_field_matches_rx_field():
-    """An unannotated dataclasses.field(...) state var is typed like rx.field(...)."""
-
-    class UnannotatedFieldState(BaseState):
-        n = dataclasses.field(default=3)
-
-    assert UnannotatedFieldState.__fields__["n"].annotated_type is int
-    assert UnannotatedFieldState(_reflex_internal_init=True).n == 3  # pyright: ignore [reportCallIssue]
-
-    # A factory gives no type to infer, so the var needs an annotation.
-    with pytest.raises(VarTypeError, match="items"):
-
-        class UntypedFactoryState(BaseState):
-            items = dataclasses.field(default_factory=list)
+        class DataclassesFieldState(BaseState):
+            model: ModelDC = dataclasses.field(default_factory=ModelDC)
 
 
 def test_assignment_through_property_setter():
