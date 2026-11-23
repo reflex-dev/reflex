@@ -1,5 +1,6 @@
 """Regression checks for shared documentation presentation."""
 
+from pathlib import Path
 from typing import Literal, get_args
 
 import pytest
@@ -118,6 +119,35 @@ def test_multi_component_reference_shares_only_identical_html_props():
     override = str(component_docs((OverrideTitle, "OverrideTitle"), {}, shared))
     assert '"title"' in override
     assert '"access_key"' not in override
+
+
+def test_html_layout_page_lists_plain_elements_in_one_table():
+    """Elements with nothing of their own share a table, not a heading apiece."""
+    from reflex_docs.pages.docs import get_components_from_frontmatter
+    from reflex_docs.pages.docs.component import api_reference
+
+    components = get_components_from_frontmatter(
+        str(Path(__file__).parents[2] / "library" / "html" / "layout.md")
+    )
+    toc, section = api_reference(components, {})
+    assert toc == [
+        (1, "API Reference"),
+        (2, "Shared HTML props"),
+        (2, "rx.el.blockquote"),
+        (2, "rx.el.Del"),
+        (2, "rx.el.details"),
+        (2, "rx.el.dialog"),
+        (2, "rx.el.html"),
+        (2, "rx.el.link"),
+        (2, "rx.el.ol"),
+        (2, "rx.el.script"),
+        (2, "rx.el.title"),
+        (2, "Other elements"),
+    ]
+    rendered = str(rx.fragment(*section))
+    # A plain element keeps its anchor, now on its table row.
+    assert rendered.count('id:"rx.el.article"') == 1
+    assert rendered.count('"Event Triggers"') == 9
 
 
 def test_state_catalog_offers_real_guides_instead_of_an_empty_grid():

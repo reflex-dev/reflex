@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import functools
 import inspect
 from collections.abc import Callable, Sequence
 from importlib.util import find_spec
@@ -10,7 +11,7 @@ import click
 import reflex as rx
 from reflex.reflex import cli
 
-from reflex_docs.docgen_pipeline import render_markdown
+from reflex_docs.docgen_pipeline import render_markdown_with_toc
 from reflex_docs.templates.docpage import docpage, h1_comp
 
 
@@ -47,6 +48,12 @@ class InlineText(InlineElement):
 class InlineCode(InlineText):
     def into_text(self) -> str:
         return f"`{super().into_text()}`"
+
+
+@dataclasses.dataclass(frozen=True)
+class InlineStrong(InlineText):
+    def into_text(self) -> str:
+        return f"**{super().into_text()}**"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -166,96 +173,108 @@ def sort_subcommands(
     )
 
 
-# Dictionary to store the parsed documentation
-cli_to_doc = {}
+@dataclasses.dataclass(frozen=True)
+class CommandDoc:
+    """A documented command, kept in parts so a page can lay several out together."""
+
+    help: str | None
+    usage: str
+    options: tuple[InlineElement, ...]
+
+
+# Documentation for every command, keyed by its full name.
+cli_to_doc: dict[str, CommandDoc] = {}
+
+
+def usage_line(command: CommandInfoDict, prefix: str | None, name: str) -> str:
+    """Build the console usage line for a command.
+
+    Args:
+        command: The command's click info dict.
+        prefix: The names of the parent commands, if any.
+        name: The command's own name.
+
+    Returns:
+        The usage line, including the shell prompt.
+    """
+    params = command["params"]
+    options = (
+        " [OPTIONS]"
+        if any(param.get("param_type_name") != "argument" for param in params)
+        else ""
+    )
+    arguments = "".join(
+        " " + param["name"].upper()
+        for param in params
+        if param.get("param_type_name") == "argument" and param["name"]
+    )
+    return (
+        f"${' ' + prefix.strip() if prefix else ''} {name.strip()}{options}{arguments}"
+    )
+
+
+def option_item(
+    param: ParamsInfoDict | OptionInfoDict, help_text: str
+) -> InlineElement:
+    """Describe one option as a list item.
+
+    Args:
+        param: The option's click info dict.
+        help_text: The option's help text.
+
+    Returns:
+        The option's flags and type in code, followed by its help text.
+    """
+    secondary = (
+        " / " + ", ".join(param["secondary_opts"]) if param["secondary_opts"] else ""
+    )
+    choices = param["type"].get("choices")
+    if choices is not None:
+        type_label = " [" + "|".join(choices) + "]"
+    elif param["type"]["name"] != "boolean":
+        type_label = " " + param["type"]["name"].upper()
+    else:
+        type_label = ""
+    return InlineTextCollection((
+        InlineCode(", ".join(param["opts"]) + secondary + type_label),
+        InlineText(": " + help_text),
+    ))
 
 
 def process(
     command: CommandInfoDict | MultiCommandInfoDict,
     prefix: str | None,
     override_name: str | None,
-) -> Element:
-    """Convert a Click command to a Markdown element."""
+) -> None:
+    """Record a click command and its subcommands in ``cli_to_doc``.
+
+    Args:
+        command: The command's click info dict.
+        prefix: The names of the parent commands, if any.
+        override_name: The name the command is registered under.
+    """
     actual_name = override_name or command["name"]
     full_name = prefix + " " + actual_name if prefix and actual_name else actual_name
-    cli_to_doc[full_name] = Section((
-        Paragraph(InlineText(command["help"])) if command["help"] else Empty(),
-        Section((
-            Header(3, InlineText("Usage")),
-            CodeBlock(
-                "$"
-                + (" " + prefix.strip() if prefix else "")
-                + " "
-                + actual_name.strip()
-                + (
-                    " [OPTIONS]"
-                    if command["params"]
-                    and any(
-                        param.get("param_type_name") != "argument"
-                        for param in command["params"]
-                    )
-                    else ""
-                )
-                + (
-                    " " + " ".join(arguments)
-                    if (
-                        arguments := [
-                            param["name"].upper()
-                            for param in command["params"]
-                            if param.get("param_type_name") == "argument"
-                            and param["name"]
-                        ]
-                    )
-                    else ""
-                ),
-                language="console",
-            ),
-        ))
-        if actual_name
-        else Empty(),
-        Section((
-            Header(3, InlineText("Options")),
-            List(
-                tuple(
-                    InlineTextCollection((
-                        InlineCode(
-                            ", ".join(param["opts"])
-                            + (
-                                " / " + ", ".join(param["secondary_opts"])
-                                if param["secondary_opts"]
-                                else ""
-                            )
-                            + (
-                                (
-                                    " " + param["type"]["name"].upper()
-                                    if param["type"]["name"] != "boolean"
-                                    else ""
-                                )
-                                if (choices := param["type"].get("choices")) is None
-                                else " [" + "|".join(choices) + "]"
-                            )
-                        ),
-                        InlineText(": " + option_help),
-                    ))
-                    for param in command["params"]
-                    if (option_help := param.get("help")) is not None
-                ),
-                ordered=False,
-            ),
-        ))
-        if command["params"]
-        else Empty(),
-    )).into_text()
+    cli_to_doc[full_name] = CommandDoc(
+        help=command["help"],
+        usage=usage_line(command, prefix, actual_name) if actual_name else "",
+        options=tuple(
+            option_item(param, option_help)
+            for param in command["params"]
+            if (option_help := param.get("help")) is not None
+        ),
+    )
     for name, sub_command in sort_subcommands(command.get("commands", {})).items():
-        process(
-            sub_command,
-            (prefix + " " + actual_name if prefix and actual_name else actual_name),
-            name,
-        )
+        process(sub_command, full_name, name)
 
 
-def process_command(command: click.Command, name: str) -> str:
-    """Convert a Click command to a Markdown text representation."""
+def process_command(command: click.Command, name: str) -> None:
+    """Record a click command tree in ``cli_to_doc``.
+
+    Args:
+        command: The root click command.
+        name: The name the root command is invoked as.
+    """
     with click.Context(command) as ctx:
         process(ctx.to_info_dict()["command"], None, name)
 
@@ -328,26 +347,92 @@ categories = {
     "config": prefix(REFLEX_CLOUD_PREFIX, ["config"]),
 }
 
-# Dictionary to store the combined documentation for each category
-modules: dict[str, str] = {}
-
-# Extract and combine documentation for each category
-for category, commands in categories.items():
-    docs_list = [
-        f"## {command}\n\n{cli_to_doc[command]}"
-        for command in commands
-        if command in cli_to_doc
-    ]
-    modules[category] = "\n\n".join(docs_list)
+COMMON_OPTIONS_TITLE = "Common options"
 
 
-def generate_docs(source: str, title: str):
+def command_markdown(
+    name: str, doc: CommandDoc, common: frozenset[InlineElement]
+) -> str:
+    """Render one command's section, leaving out the page's common options.
+
+    Args:
+        name: The command's full name.
+        doc: The command's documentation.
+        common: Options documented once for the whole page.
+
+    Returns:
+        The command's markdown section.
+    """
+    options = tuple(option for option in doc.options if option not in common)
+    return Section((
+        Header(2, InlineText(name)),
+        Paragraph(InlineText(doc.help)) if doc.help else Empty(),
+        CodeBlock(doc.usage, language="console") if doc.usage else Empty(),
+        Section((Paragraph(InlineStrong("Options")), List(options)))
+        if options
+        else Empty(),
+    )).into_text()
+
+
+def category_markdown(commands: Sequence[str]) -> str:
+    """Render a reference page documenting one or more commands.
+
+    Options every command on the page accepts are listed once, in a common
+    options section, instead of under each command.
+
+    Args:
+        commands: Full names of the commands on the page.
+
+    Returns:
+        The page's markdown.
+    """
+    docs = {name: cli_to_doc[name] for name in commands if name in cli_to_doc}
+    common: tuple[InlineElement, ...] = ()
+    if len(docs) > 1:
+        first, *rest = docs.values()
+        common = tuple(
+            option
+            for option in first.options
+            if all(option in doc.options for doc in rest)
+        )
+    common_set = frozenset(common)
+    sections = [command_markdown(name, doc, common_set) for name, doc in docs.items()]
+    if common:
+        sections.insert(
+            0,
+            Section((
+                Header(2, InlineText(COMMON_OPTIONS_TITLE)),
+                Paragraph(
+                    InlineText("Every command on this page accepts these options.")
+                ),
+                List(common),
+            )).into_text(),
+        )
+    return "\n\n".join(sections)
+
+
+# The combined markdown for each category page.
+modules: dict[str, str] = {
+    category: category_markdown(commands) for category, commands in categories.items()
+}
+
+
+def generate_docs(
+    source: str, title: str
+) -> tuple[tuple[list[tuple[int, str]], str], rx.Component]:
+    """Render a CLI reference page with its table of contents.
+
+    Args:
+        source: The page's markdown.
+        title: The page title.
+
+    Returns:
+        The ``(toc, source)`` pair the docpage template reads, and the page body.
+    """
+    toc, body = render_markdown_with_toc(source)
     # Emit a single page-level <h1> (mirrors the API-reference generator) so the
     # per-command sections stay <h2> and the page has exactly one <h1> for SEO.
-    return rx.box(
-        h1_comp(text=title),
-        render_markdown(text=source),
-    )
+    return (toc, source), rx.box(h1_comp(text=title), body)
 
 
 def command_source_path(name: str) -> str | None:
@@ -380,7 +465,7 @@ _TITLES = {"vmtypes": "VM Types"}
 pages = []
 for module_name, module_value in modules.items():
     title = _TITLES.get(module_name) or module_name.replace("_", " ").title()
-    docs = generate_docs(module_value, title)
+    docs = functools.partial(generate_docs, module_value, title)
     sources = {
         source
         for name in categories[module_name]

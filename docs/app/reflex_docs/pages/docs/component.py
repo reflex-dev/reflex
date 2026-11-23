@@ -1,5 +1,6 @@
 """Utility functions for the component docs page."""
 
+import functools
 import hashlib
 import os
 import re
@@ -111,6 +112,18 @@ _PROPS_TABLE_COMPACT_CELL_CLASS = (
     "[mask-image:linear-gradient(to_bottom,black_82%,transparent)] "
     "[-webkit-mask-image:linear-gradient(to_bottom,black_82%,transparent)]"
 )
+# A page documents each component several times over (shared props, plainness
+# and its own section), so generate each component's documentation once.
+component_documentation = functools.cache(generate_documentation)
+
+# Display names for components whose class name is a Python keyword.
+_COMPONENT_DISPLAY_NAMES = {"rx.el.Del": "rx.el.del"}
+
+_DEFAULT_EVENT_TRIGGERS_URL = "https://reflex.dev/docs/api-reference/event-triggers/"
+
+OTHER_ELEMENTS_TITLE = "Other elements"
+
+
 _API_HEADING_CLASS = (
     "docs-heading font-heading text-2xl font-normal leading-tight "
     "tracking-[-0.025em] text-foreground"
@@ -821,7 +834,7 @@ def generate_event_triggers(
             rx.heading("Event Triggers", as_="h3", class_name=_API_HEADING_CLASS),
             rx.link(
                 "See the full list of default event triggers",
-                href="https://reflex.dev/docs/api-reference/event-triggers/",
+                href=_DEFAULT_EVENT_TRIGGERS_URL,
                 class_name=_API_LINK_CLASS,
                 is_external=True,
             ),
@@ -832,7 +845,7 @@ def generate_event_triggers(
         rx.heading("Event Triggers", as_="h3", class_name=_API_HEADING_CLASS),
         rx.link(
             "See the full list of default event triggers",
-            href="https://reflex.dev/docs/api-reference/event-triggers/",
+            href=_DEFAULT_EVENT_TRIGGERS_URL,
             class_name=_API_LINK_CLASS,
             is_external=True,
         ),
@@ -904,7 +917,7 @@ def shared_html_props(
     if len(components) < 2:
         return ()
     props_by_component = [
-        {prop.name: prop for prop in generate_documentation(component).props}
+        {prop.name: prop for prop in component_documentation(component).props}
         for component in components
     ]
     return tuple(
@@ -921,14 +934,8 @@ def component_docs(
 ) -> rx.Component:
     """Generates documentation for a given component."""
     component = component_tuple[0]
-    doc = generate_documentation(component)
-
-    # Map for component display name overrides (e.g., for Python reserved keywords)
-    component_display_name_map = {
-        "rx.el.Del": "rx.el.del",
-    }
-
-    comp_display_name = component_display_name_map.get(
+    doc = component_documentation(component)
+    comp_display_name = _COMPONENT_DISPLAY_NAMES.get(
         component_tuple[1], component_tuple[1]
     )
 
@@ -964,6 +971,150 @@ def component_docs(
     )
 
 
+def is_plain_html_element(
+    component: type[Component], shared_props: tuple[PropDocumentation, ...]
+) -> bool:
+    """Whether an HTML element has nothing to document beyond its description.
+
+    Args:
+        component: The component class.
+        shared_props: HTML props documented once for the whole page.
+
+    Returns:
+        True for an HTML element whose props are all shared and which has no
+        event triggers or valid-children rules of its own.
+    """
+    if not shared_props or not issubclass(component, BaseHTML):
+        return False
+    doc = component_documentation(component)
+    return (
+        not component._valid_children
+        and all(prop in shared_props for prop in doc.props)
+        and all(handler.is_inherited for handler in doc.event_handlers)
+    )
+
+
+def other_elements_table(component_list: list) -> rx.Component:
+    """List plain HTML elements in one table instead of a section apiece.
+
+    Each row keeps the anchor the element's own heading used to have.
+
+    Args:
+        component_list: ``(component, name)`` pairs of plain HTML elements.
+
+    Returns:
+        The section, or an empty fragment when there are no elements.
+    """
+    if not component_list:
+        return rx.fragment()
+    rows = []
+    for component, name in component_list:
+        display_name = _COMPONENT_DISPLAY_NAMES.get(name, name)
+        rows.append(
+            rx.el.tr(
+                docs_api_cell(
+                    rx.code(
+                        display_name, class_name="code-style text-nowrap leading-normal"
+                    ),
+                    "w-[30%]",
+                ),
+                docs_api_cell(
+                    render_inline_markdown(
+                        component_documentation(component).description or "",
+                        class_name="text-sm font-normal text-muted-foreground whitespace-normal leading-6 break-words",
+                    ),
+                    "w-[70%]",
+                ),
+                id=display_name.lower(),
+                class_name="scroll-mt-32",
+            )
+        )
+    return rx.el.div(
+        h2_comp(text=OTHER_ELEMENTS_TITLE),
+        rx.el.p(
+            "These elements add no props or event triggers of their own. Each "
+            "accepts the ",
+            rx.el.a(
+                "shared HTML props",
+                href="#shared-html-props",
+                class_name="docs-text-link underline underline-offset-4",
+            ),
+            " and the ",
+            rx.el.a(
+                "default event triggers",
+                href=_DEFAULT_EVENT_TRIGGERS_URL,
+                class_name="docs-text-link underline underline-offset-4",
+            ),
+            ".",
+            class_name="mb-4 text-sm leading-6 text-muted-foreground",
+        ),
+        docs_api_table(
+            *rows, headers=("Element", "Description"), widths=("w-[30%]", "w-[70%]")
+        ),
+    )
+
+
+def shared_reference(props: tuple[PropDocumentation, ...]) -> rx.Component:
+    """Render the common reference once, retaining it in prerendered HTML.
+
+    Args:
+        props: The HTML props shared by the page's components.
+
+    Returns:
+        The shared props section, or an empty fragment when there are none.
+    """
+    if not props:
+        return rx.fragment()
+    return rx.el.div(
+        h2_comp(text="Shared HTML props"),
+        rx.el.p(
+            "Components linked to this section accept these HTML props. "
+            "Component-specific additions and overrides are listed below.",
+            class_name="mb-4 text-sm leading-6 text-muted-foreground",
+        ),
+        generate_props(props, BaseHTML, {}),
+    )
+
+
+def api_reference(
+    component_list: list, previews: dict[str, str]
+) -> tuple[list[tuple[int, str]], list[rx.Component]]:
+    """Build a page's API reference and its table of contents entries.
+
+    HTML elements with nothing of their own to document share one table, so a
+    page of many such elements is not a heading apiece.
+
+    Args:
+        component_list: The ``(component, name)`` pairs the page documents.
+        previews: Interactive previews keyed by component name.
+
+    Returns:
+        The table of contents entries and the section's components, both empty
+        when the page documents no components.
+    """
+    if not component_list:
+        return [], []
+    shared = shared_html_props([component for component, _ in component_list])
+    detailed, plain = [], []
+    for item in component_list:
+        (plain if is_plain_html_element(item[0], shared) else detailed).append(item)
+    toc = [(1, "API Reference")]
+    if shared:
+        toc.append((2, "Shared HTML props"))
+    toc.extend((2, name) for _, name in detailed)
+    if plain:
+        toc.append((2, OTHER_ELEMENTS_TITLE))
+    return toc, [
+        h2_comp(text="API Reference"),
+        shared_reference(shared),
+        rx.box(
+            *(component_docs(item, previews, shared) for item in detailed),
+            class_name="flex flex-col",
+        ),
+        other_elements_table(plain),
+    ]
+
+
 def multi_docs(
     path: str,
     virtual_path: str,
@@ -976,33 +1127,11 @@ def multi_docs(
     ll_component_list: list | None = None,
     source: str | None = None,
 ):
-    shared = shared_html_props([item[0] for item in component_list[1:]])
-    components = [
-        component_docs(component_tuple, previews, shared)
-        for component_tuple in component_list[1:]
-    ]
+    api_toc, api_ref_section = api_reference(component_list[1:], previews)
     ll_actual_path = actual_path.replace(".md", "-ll.md")
     ll_doc_exists = os.path.exists(ll_actual_path)
     ll_list = ll_component_list if ll_component_list is not None else component_list
-    ll_shared = shared_html_props([item[0] for item in ll_list[1:]])
-    ll_components = [
-        component_docs(component_tuple, previews, ll_shared)
-        for component_tuple in ll_list[1:]
-    ]
-
-    def shared_reference(props):
-        """Render the common reference once, retaining it in prerendered HTML."""
-        if not props:
-            return rx.fragment()
-        return rx.el.div(
-            h2_comp(text="Shared HTML props"),
-            rx.el.p(
-                "Components linked to this section accept these HTML props. "
-                "Component-specific additions and overrides are listed below.",
-                class_name="mb-4 text-sm leading-6 text-muted-foreground",
-            ),
-            generate_props(props, BaseHTML, {}),
-        )
+    ll_api_toc, ll_api_ref_section = api_reference(ll_list[1:], previews)
 
     active_class_name = "flex min-h-10 w-28 items-center justify-center rounded-full bg-primary px-4 py-2 text-center text-sm font-normal text-primary-foreground"
 
@@ -1075,22 +1204,7 @@ def multi_docs(
             if source is not None
             else Path(actual_path).read_text(encoding="utf-8")
         )
-        # Append API Reference headings for the component list
-        if components:
-            toc.append((1, "API Reference"))
-        if shared:
-            toc.append((2, "Shared HTML props"))
-        for component_tuple in component_list[1:]:
-            toc.append((2, component_tuple[1]))
-        api_ref_section = (
-            [
-                h2_comp(text="API Reference"),
-                shared_reference(shared),
-                rx.box(*components, class_name="flex flex-col"),
-            ]
-            if components
-            else []
-        )
+        toc.extend(api_toc)
         body, faq_script = render_docgen_document(
             virtual_filepath=virtual_path, actual_filepath=actual_path
         )
@@ -1124,28 +1238,14 @@ def multi_docs(
         ll_virtual = virtual_path.replace(".md", "-ll.md")
         toc = get_docgen_toc(ll_actual_path)
         doc_content = Path(ll_actual_path).read_text(encoding="utf-8")
-        if ll_components:
-            toc.append((1, "API Reference"))
-        if ll_shared:
-            toc.append((2, "Shared HTML props"))
-        for component_tuple in ll_list[1:]:
-            toc.append((2, component_tuple[1]))
-        api_ref_section = (
-            [
-                h2_comp(text="API Reference"),
-                shared_reference(ll_shared),
-                rx.box(*ll_components, class_name="flex flex-col"),
-            ]
-            if ll_components
-            else []
-        )
+        toc.extend(ll_api_toc)
         body, faq_script = render_docgen_document(
             virtual_filepath=ll_virtual, actual_filepath=ll_actual_path
         )
         return (toc, doc_content), rx.box(
             links("ll", ll_doc_exists, path),
             body,
-            *api_ref_section,
+            *ll_api_ref_section,
             *([faq_script] if faq_script is not None else []),
             class_name="flex flex-col w-full",
         )

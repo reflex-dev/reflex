@@ -20,6 +20,7 @@ from reflex_site_shared.meta.meta import (
     to_cdn_image_url,
 )
 
+from reflex_docs.changelogs import UNPUBLISHED_CHANGELOGS
 from reflex_docs.pages import page404, routes
 from reflex_docs.redirects import DocsRedirectMiddleware
 from reflex_docs.templates.docpage.docpage import breadcrumb_data
@@ -261,6 +262,11 @@ redirects.extend([
     ("/custom-components/overview/", "/wrapping-react/overview/"),
     ("/custom-components/command-reference/", "/wrapping-react/overview/"),
     ("/custom-components/prerequisites-for-publishing/", "/wrapping-react/overview/"),
+    # Changelog pages that are no longer published point at the changelog index.
+    *(
+        (f"/changelog/{package}/", "/changelog/")
+        for package in sorted(UNPUBLISHED_CHANGELOGS)
+    ),
 ])
 
 

@@ -5,6 +5,7 @@ from pathlib import Path, PurePosixPath
 from reflex_docs.changelogs import (
     ENTERPRISE_PACKAGE,
     TOWNCRIER_MARKER,
+    UNPUBLISHED_CHANGELOGS,
     changelog_page_title,
     discover_changelogs,
     discover_repo_changelogs,
@@ -44,6 +45,25 @@ def test_discover_repo_changelogs(tmp_path):
         "reflex": tmp_path / "CHANGELOG.md",
         "foo": foo / "CHANGELOG.md",
     }
+
+
+def test_discover_repo_changelogs_skips_tooling_packages(tmp_path):
+    """Packages used only to build and release Reflex get no changelog page."""
+    (tmp_path / "CHANGELOG.md").write_text("## v1.0.0\n")
+    for name in ("reflex-otel", *UNPUBLISHED_CHANGELOGS):
+        package = tmp_path / "packages" / name
+        package.mkdir(parents=True)
+        (package / "CHANGELOG.md").write_text("## v0.1.0\n")
+
+    assert discover_repo_changelogs(tmp_path) == {
+        "reflex": tmp_path / "CHANGELOG.md",
+        "reflex-otel": tmp_path / "packages" / "reflex-otel" / "CHANGELOG.md",
+    }
+    assert {
+        "hatch-reflex-pyi",
+        "reflex-docgen",
+        "reflex-release",
+    } == UNPUBLISHED_CHANGELOGS
 
 
 def test_discover_repo_changelogs_real_repo():

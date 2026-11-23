@@ -78,10 +78,9 @@ def test_environment_variables_use_shared_fields_and_member_navigation():
     from reflex_docs.pages.docs.env_vars import EnvVarDocs, env_vars_page
 
     fields = EnvVarDocs.get_documented_fields()
-    toc, page = env_vars_page()
+    _toc, page = env_vars_page()
     rendered = str(page)
     assert fields
     for field in fields:
-        assert (3, field.name) in toc
-        assert f'id:"{field.name.lower()}"' in rendered
+        assert rendered.count(f'id:"{field.name.lower()}"') == 1
     assert "Default: " in rendered
