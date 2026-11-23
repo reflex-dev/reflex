@@ -23,6 +23,7 @@ on:
       - 'pyproject.toml'
       - 'uv.lock'
       - '.github/workflows/docs_tests.yml'
+      - '.github/actions/setup_build_env/**'
 
 permissions:
   contents: read
@@ -73,6 +74,7 @@ jobs:
             pyproject.toml
             uv.lock
             .github/workflows/docs_tests.yml
+            .github/actions/setup_build_env/**
 
   docs-tests:
     needs: changes
