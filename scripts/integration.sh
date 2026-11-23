@@ -51,4 +51,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-python scripts/wait_for_listening_port.py $check_ports --timeout=900 --server-pid "$pid"
+python scripts/wait_for_listening_port.py $check_ports --timeout=900 --server-pid "$pid" || exit
+
+# Run checks that need the live server (e.g. browser tests) before it is stopped.
+if [ -n "${RUN_WHILE_SERVING:-}" ]; then
+  bash -c "$RUN_WHILE_SERVING"
+fi

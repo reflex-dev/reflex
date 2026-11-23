@@ -15,15 +15,24 @@ pytestmark = pytest.mark.skipif(
 def test_spline_preview_waits_for_visibility_and_idle(page: Page, width: int):
     """Load the 3D preview only near the viewport, after the browser becomes idle."""
     page.set_viewport_size({"width": width, "height": 600})
+    # Hold only the preview's idle callbacks: code blocks highlight in idle time
+    # too, and those go to the native scheduler. Negative ids keep the held
+    # callbacks apart from the native ones.
     page.add_init_script("""
         window.previewIdleCallbacks = new Map();
         let nextId = 0;
-        window.requestIdleCallback = callback => {
-            const id = ++nextId;
+        const request = window.requestIdleCallback.bind(window);
+        const cancel = window.cancelIdleCallback.bind(window);
+        window.requestIdleCallback = (callback, options) => {
+            if (!new Error().stack.includes("/DeferredDemo")) {
+                return request(callback, options);
+            }
+            const id = --nextId;
             window.previewIdleCallbacks.set(id, callback);
             return id;
         };
-        window.cancelIdleCallback = id => window.previewIdleCallbacks.delete(id);
+        window.cancelIdleCallback = id =>
+            id < 0 ? window.previewIdleCallbacks.delete(id) : cancel(id);
     """)
     scripts = []
     scenes = []
@@ -49,7 +58,6 @@ def test_spline_preview_waits_for_visibility_and_idle(page: Page, width: int):
     # Beyond the viewport and the observer's 200px margin.
     assert preview.bounding_box()["y"] >= 800
     assert page.evaluate(pending) == 0
-    initial_scripts = len(scripts)
 
     preview.scroll_into_view_if_needed()
     page.wait_for_function(f"{pending} > 0")
@@ -61,14 +69,18 @@ def test_spline_preview_waits_for_visibility_and_idle(page: Page, width: int):
     tabs = page.locator('[role="tablist"]').first
     tabs.get_by_role("tab", name="Code", exact=True).click()
     page.wait_for_function(f"{pending} === 0")
+    # Shiki's inline style marks the finished highlight, whose own chunks are
+    # then loaded and cannot be mistaken for the preview's below.
     expect(
-        page.get_by_text("class Spline(rx.NoSSRComponent):", exact=False)
+        page.locator("pre.shiki[style]").filter(
+            has_text="class Spline(rx.NoSSRComponent):"
+        )
     ).to_be_visible()
     tabs.get_by_role("tab", name="View", exact=True).click()
     preview.scroll_into_view_if_needed()
     page.wait_for_function(f"{pending} > 0")
     assert scenes == []
-    assert len(scripts) == initial_scripts
+    initial_scripts = len(scripts)
 
     with page.expect_response("**/scene.splinecode") as scene:
         page.evaluate("""() => {
