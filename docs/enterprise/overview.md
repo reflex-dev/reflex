@@ -56,7 +56,7 @@ categories_data = [
             {
                 "feature": "use_single_port",
                 "description": "Enable single-port deployment by proxying backend to frontend",
-                "cloud_tier": "Pro",
+                "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
                 "link": "/enterprise/single-port-proxy",
             },
@@ -126,7 +126,7 @@ categories_data = [
             {
                 "feature": "reflex_app fixture",
                 "description": "Boot the app under test with reflex run and drive it with browser tooling",
-                "cloud_tier": "Pro",
+                "cloud_tier": "Free",
                 "self_hosted_tier": "Free",
                 "link": "/enterprise/testing",
             },
