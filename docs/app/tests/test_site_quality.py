@@ -216,6 +216,18 @@ def _directive_names(blocks):
         if isinstance(block, DirectiveBlock):
             yield block.name
         yield from _directive_names(getattr(block, "children", ()))
+        for item in getattr(block, "items", ()):
+            yield from _directive_names(item.children)
+
+
+def _plain_text(spans):
+    """Return the text of inline spans, including code and nested formatting."""
+    return "".join(
+        getattr(span, "text", None)
+        or getattr(span, "code", None)
+        or _plain_text(getattr(span, "children", ()))
+        for span in spans
+    )
 
 
 def test_docs_use_only_rendered_directives():
@@ -256,6 +268,6 @@ def test_page_headings_are_unique():
             None,
         )
         if heading is not None:
-            title = "".join(getattr(span, "text", "") for span in heading.children)
+            title = _plain_text(heading.children)
             pages.setdefault(title, []).append(str(page.relative_to(DOCS)))
     assert {title: paths for title, paths in pages.items() if len(paths) > 1} == {}

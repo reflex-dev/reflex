@@ -3,6 +3,7 @@ import reflex as rx
 ```
 
 # Cloud Billing
+
 ## Overview
 
 Reflex Cloud billing combines organization seats and app compute. Organization admins manage billing from **Billing** in the organization sidebar.

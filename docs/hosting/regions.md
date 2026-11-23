@@ -46,6 +46,7 @@ COUNTRIES_CODES = {
 ```
 
 # Hosting Regions
+
 Regions are the locations where Reflex runs your app. Add regions closer to your users to improve latency and availability.
 
 ## Manage regions in Reflex Build

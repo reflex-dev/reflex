@@ -1,4 +1,5 @@
 # React Flow Nodes
+
 Nodes are the fundamental building blocks of a flow. This page explains how to define and customize nodes in Reflex Flow.
 
 ## The Node Type

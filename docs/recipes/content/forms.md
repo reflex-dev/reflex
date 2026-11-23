@@ -3,6 +3,7 @@ import reflex as rx
 ```
 
 # Form Recipes
+
 Forms are a common way to gather information from users. Below are some examples.
 
 For more details, see the [form docs page](/docs/library/forms/form/).

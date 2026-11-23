@@ -4,6 +4,7 @@ description: Attach supported documents and structured data to a Reflex Build pr
 ---
 
 # Attaching Files
+
 Select the attachment control to upload a file as context for the Reflex Build agent. You can also drag a file directly into the chat.
 
 This page covers documents and structured data. See [Images](/docs/ai/images/) for image attachments.

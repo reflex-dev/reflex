@@ -4,6 +4,7 @@ components:
 ---
 
 # Chart Tooltip
+
 ```python exec
 import reflex as rx
 ```

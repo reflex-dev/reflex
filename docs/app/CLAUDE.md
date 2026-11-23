@@ -15,7 +15,8 @@ agent-readable exports in more detail.
 ## Where things live
 
 ```
-docs/                       # content: every *.md outside docs/app/ and docs/package/ is a page
+docs/                       # content: *.md outside docs/app/ and docs/package/ are pages;
+                            #   *-style.md and *-ll.md are helpers for a component page, not pages
   app/                      # this app
     rxconfig.py             # app config: frontend_path, plugins, frontend packages
     reflex_docs/
@@ -99,6 +100,6 @@ before committing.
 - Code examples teach the current APIs: SQLAlchemy models with async sessions
   (see `docs/database/overview.md`), not the deprecated `rx.Model`/`rx.session()`.
 - User-facing changes need a fragment in `news/` (see the root `CLAUDE.md`).
-  Changes to `packages/reflex-site-shared` need one in that package's `news/`.
-- Before committing: `uv run pytest tests/`, `uv run reflex compile`, and
-  `uv run pre-commit run --all-files` from the repo root.
+  `packages/reflex-site-shared` is an internal package and takes no fragments.
+- Before committing: run `uv run pytest tests/` and `uv run reflex compile` from
+  `docs/app/`, then `uv run pre-commit run --all-files` from the repo root.

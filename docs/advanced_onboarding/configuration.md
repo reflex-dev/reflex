@@ -1,5 +1,6 @@
 
 # App Configuration
+
 Reflex apps can be configured using a configuration file, environment variables, and command line arguments.
 
 ## Configuration File

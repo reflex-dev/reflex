@@ -115,8 +115,9 @@ def test_spline_preview_falls_back_without_webgl(page: Page):
     """)
     page.goto(f"{PREVIEW_URL}/docs/wrapping-react/overview/", wait_until="networkidle")
     preview = page.locator(".docs-demo-preview").first
-    with page.expect_response("**/scene.splinecode"):
+    with page.expect_response("**/scene.splinecode") as scene:
         preview.scroll_into_view_if_needed()
+    assert scene.value.ok
     expect(preview).to_have_text("This preview could not load in this browser.")
     expect(page.locator("h1")).to_have_text("Wrapping React")
     expect(page.locator(".docs-demo-preview canvas")).to_have_count(0)

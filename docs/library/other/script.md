@@ -40,6 +40,5 @@ This code renders to something like the following to enable stat counting with a
 <script
   src="//gc.zgo.at/count.js"
   data-goatcounter="https://reflextoys.goatcounter.com/count"
-  data-nscript="afterInteractive"
 ></script>
 ```

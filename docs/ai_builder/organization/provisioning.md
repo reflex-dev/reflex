@@ -4,6 +4,7 @@ description: Configure SCIM directory sync to provision and remove organization 
 ---
 
 # SCIM Provisioning
+
 **Directory sync (SCIM)** lets your identity provider create and remove organization members automatically. When someone is disabled in your directory, Reflex ends their organization membership and active sessions as part of deprovisioning.
 
 Use SCIM when your organization manages workforce access centrally and needs account changes in Reflex to follow the same lifecycle.

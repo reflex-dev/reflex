@@ -1,4 +1,5 @@
 # React Flow Edges
+
 Edges connect nodes together in a flow. This page explains how to define, customize, and interact with edges in Reflex Flow.
 
 ## The Edge Type

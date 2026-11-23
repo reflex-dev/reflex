@@ -3,7 +3,8 @@ tags: AI Builder
 description: Attach images as visual context, add image assets to an app, or ask the Reflex Build agent to generate an original visual.
 ---
 
-# Images in Prompts
+# Working with Images
+
 ## Attach an Image as Context
 
 Select the attachment control, drag an image into chat, or paste one from the clipboard. Describe the part of the image that matters and whether it is a visual reference, content to extract, or an existing asset to preserve.

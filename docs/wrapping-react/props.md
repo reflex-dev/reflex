@@ -3,6 +3,7 @@ title: Props
 ---
 
 # Props for Wrapped Components
+
 When wrapping a React component, you want to define the props that will be accepted by the component.
 This is done by defining the props and annotating them with a `rx.Var`.
 

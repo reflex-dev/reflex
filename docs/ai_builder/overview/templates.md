@@ -1,4 +1,5 @@
 # App Templates
+
 Templates give you a working starting point that you can adapt with prompts or direct code edits.
 
 ```python exec

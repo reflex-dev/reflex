@@ -4,6 +4,7 @@ description: Review AI credit and Cloud resource usage across projects, members,
 ---
 
 # Organization Usage
+
 The organization **Usage** pages show AI credit consumption and Cloud resource usage. Use the project and time filters to investigate changes without mixing unrelated workloads.
 
 ## AI usage

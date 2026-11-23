@@ -535,6 +535,13 @@ async def test_ag_grid_database_example(monkeypatch, tmp_path):
         )
     ]
     assert len(events) == 1
+    ignored = [
+        event
+        async for event in module.AGGridDatabaseState.cell_value_changed.fn(
+            state, 1, "id", 7
+        )
+    ]
+    assert ignored == []
     assert to_json(state.countries[1]) == {
         "id": 2,
         "country": "Peru",

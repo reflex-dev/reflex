@@ -4,6 +4,7 @@ description: Connect your own cloud provider account to a Reflex organization so
 ---
 
 # Organization Cloud Providers
+
 ```python exec
 import reflex as rx
 ```
@@ -23,7 +24,7 @@ The organization-managed connection on this page currently supports **Google Clo
 
 ```md alert info
 # Managed connection and self-service deployment are different
-An organization admin can connect GCP once so members deploy to it through the normal managed Reflex workflow. Separately, Enterprise customers can run `reflex cloud gcp-standalone --gcp` from their own machine. The self-service command uses the operator's local `gcloud` credentials and does not create an organization-level connection.
+An organization admin can connect GCP once so members deploy to it through the normal managed Reflex workflow. Separately, Enterprise customers can run `reflex cloud gcp-standalone --gcp --gcp-project <GCP_PROJECT_ID>` from their own machine. The self-service command uses the operator's local `gcloud` credentials and does not create an organization-level connection.
 ```
 
 ## Connecting Google Cloud

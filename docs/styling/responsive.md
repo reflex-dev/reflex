@@ -13,6 +13,7 @@ cell_style = {
 ```
 
 # Responsive Design
+
 Reflex apps can be made responsive to look good on mobile, tablet, and desktop.
 
 You can pass a list of values to any style property to specify its value on different screen sizes.

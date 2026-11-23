@@ -4,6 +4,7 @@ description: Use a public URL as visual reference material or extract specific p
 ---
 
 # URLs in Prompts
+
 Paste a public URL into the chat when the agent needs a page as a visual reference or a source of content. State which result you want instead of sending the URL by itself.
 
 ## Use a page as a visual reference

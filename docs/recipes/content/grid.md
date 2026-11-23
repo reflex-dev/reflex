@@ -3,6 +3,7 @@ import reflex as rx
 ```
 
 # Responsive Grid
+
 A simple responsive grid layout. We specify the number of columns to the `grid_template_columns` property as a list. The grid will automatically adjust the number of columns based on the screen size.
 
 For details, see the [responsive docs page](/docs/styling/responsive/).

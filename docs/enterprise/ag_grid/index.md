@@ -502,6 +502,8 @@ When the page loads, the `load_countries` event handler fills the table from a C
 When a cell value is changed, the `cell_value_changed` event handler updates that row in the database and in state.
 
 ```python
+import asyncio
+
 import pandas as pd
 import reflex as rx
 import reflex_enterprise as rxe
@@ -526,6 +528,9 @@ class Country(Base):
     continent: Mapped[str]
 
 
+EDITABLE_COLUMNS = {"population", "continent"}
+
+
 class AGGridDatabaseState(rx.State):
     countries: list[Country] = []
 
@@ -534,7 +539,9 @@ class AGGridDatabaseState(rx.State):
     async def load_countries(self):
         async with Session() as session:
             if not await session.scalar(select(func.count()).select_from(Country)):
-                data = pd.read_csv("data/gapminder2007.csv")
+                data = await asyncio.to_thread(
+                    pd.read_csv, "data/gapminder2007.csv"
+                )
                 session.add_all(
                     Country(
                         country=row["country"],
@@ -550,6 +557,9 @@ class AGGridDatabaseState(rx.State):
     # Update the database when a cell value is changed
     @rx.event
     async def cell_value_changed(self, row: int, col_field: str, new_value):
+        # The event comes from the browser: accept only the editable columns.
+        if col_field not in EDITABLE_COLUMNS:
+            return
         async with Session() as session:
             country = await session.get(Country, self.countries[row].id)
             setattr(country, col_field, new_value)
