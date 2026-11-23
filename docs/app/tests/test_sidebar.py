@@ -356,11 +356,35 @@ def test_sidebar_receives_the_route_section(url, section):
     assert str(rendered.section) == f'"{section}"'
 
 
-def _sidebar_body() -> str:
-    """Render the sidebar memo body with every section's branch.
+def _category_labels(component) -> list[str]:
+    """Collect sidebar category names, including those in every conditional branch.
+
+    Args:
+        component: The root of a rendered component tree.
 
     Returns:
-        The rendered component tree.
+        The name of each category link, in tree order.
+    """
+    label = getattr(component, "custom_attrs", {}).get("aria-label")
+    labels = [label.removeprefix("Navigate to ")] if label else []
+    for child in (
+        *getattr(component, "children", ()),
+        *(
+            branch
+            for branch in (
+                getattr(component, "comp1", None),
+                getattr(component, "comp2", None),
+            )
+            if branch is not None
+        ),
+    ):
+        labels.extend(_category_labels(child))
+    return labels
+
+
+def test_sidebar_categories_use_the_navbar_section_names():
+    """No sidebar repeats a one-item Cloud category above its Cloud heading, and the
+    guides' category is named Framework like its navbar tab.
     """
     import reflex as rx
 
@@ -370,17 +394,34 @@ def _sidebar_body() -> str:
     args = {name: rx.Var.create([]) for name in params}
     args["url"] = rx.Var.create("/hosting/overview/")
     args["section"] = rx.Var.create("cloud")
-    return str(sidebar_comp.__wrapped__(**args))
+
+    assert _category_labels(sidebar_comp.__wrapped__(**args)) == [
+        "Build with AI",
+        "AI Builder",
+        "Agent Toolkit",
+        "Framework",
+        "Components",
+        "API Reference",
+        "Enterprise",
+    ]
 
 
-def test_sidebar_categories_use_the_navbar_section_names():
-    """The Cloud sidebar has no one-item category repeating its heading, and the
-    guides' category is named Framework like its navbar tab.
+def _css_rule(css: str, selectors: str) -> str:
+    """Find the declarations of the stylesheet rule with exactly these selectors.
+
+    Args:
+        css: The stylesheet source.
+        selectors: The rule's complete selector list, one selector per line.
+
+    Returns:
+        The rule's declarations, stripped of surrounding whitespace.
     """
-    body = _sidebar_body()
-    assert body.count('"Navigate to Cloud"') == 0
-    assert body.count('"Navigate to Learn"') == 0
-    assert body.count('"Navigate to Framework"') == 1
+    rules = {
+        head.strip(): body.strip()
+        for head, sep, body in (rule.partition("{") for rule in css.split("}"))
+        if sep
+    }
+    return rules[selectors]
 
 
 @pytest.mark.parametrize(
@@ -393,11 +434,9 @@ def test_sidebar_categories_use_the_navbar_section_names():
 def test_group_labels_outweigh_page_links(stylesheet, selector):
     """Collapsible and direct-link group labels are heavier than page links."""
     css = (Path(__file__).parents[1] / "assets" / stylesheet).read_text()
-    assert (
-        f"{selector} p,\n{selector} h3,\n{selector} summary {{ font-weight: 400; }}"
-        in css
+    assert _css_rule(css, f"{selector} p,\n{selector} h3,\n{selector} summary") == (
+        "font-weight: 400;"
     )
-    assert (
-        f"{selector} summary p,\n{selector} .docs-sidebar-group-label {{ font-weight: 500; }}"
-        in css
-    )
+    assert _css_rule(
+        css, f"{selector} summary p,\n{selector} .docs-sidebar-group-label"
+    ) == ("font-weight: 500;")
