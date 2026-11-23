@@ -27,7 +27,7 @@ from .catalog import (
     default_plural_expr_js,
     load_catalog,
 )
-from .component import HreflangLinks, LocaleRoute, _provider
+from .component import HreflangLinks, LocalePage, LocaleRoute, _provider
 from .config import I18nConfig, get_active_catalog_dirs, set_active_i18n_config
 from .format import (
     _fmt_date,
@@ -160,13 +160,17 @@ def _localized_page(component: Any, locale: str) -> Any:
         """
         # into_component normalizes the page exactly as an un-fanned page
         # would be (handles callables, ComponentState, memo).
+        from reflex_base.config import get_config
+
         from reflex.compiler.compiler import into_component
 
-        return LocaleRoute.create(
-            into_component(component),
-            locale=locale,
-            catalog=_catalog_var(locale),
-        )
+        page = into_component(component)
+        # Auto-memoization already gives each stateful component a function
+        # below LocaleRoute; sealing the whole page would undo its per-component
+        # re-renders.
+        if not get_config().auto_memoize:
+            page = LocalePage.create(page)
+        return LocaleRoute.create(page, locale=locale, catalog=_catalog_var(locale))
 
     return render
 

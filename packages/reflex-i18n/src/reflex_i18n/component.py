@@ -7,10 +7,12 @@ from typing import Any
 
 from reflex_base.components.component import Component
 from reflex_base.constants import CompileVars
+from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.event import EventHandler, passthrough_event_spec
 from reflex_base.plugins.base import get_plugin
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import ternary_operation
+from reflex_components_core.base.fragment import Fragment
 
 # Outside the ErrorBoundary (55) so error fallback UI can translate too.
 _PROVIDER_PRIORITY = 58
@@ -85,6 +87,19 @@ class LocaleRoute(Component):
 
     # The statically-imported catalog module for ``locale``.
     catalog: Var[Any]
+
+
+class LocalePage(Fragment):
+    """A localized page sealed into a function component inside its ``LocaleRoute``.
+
+    Without auto-memoization the compiler moves the page's Var hooks into the
+    page function, which renders above ``LocaleRoute`` and so outside its
+    catalog; as a snapshot boundary this keeps them below it.
+    """
+
+    _memoization_mode = MemoizationMode(
+        disposition=MemoizationDisposition.ALWAYS, recursive=False
+    )
 
 
 class HreflangLinks(Component):

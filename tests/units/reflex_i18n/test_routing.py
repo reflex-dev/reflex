@@ -7,7 +7,7 @@ from reflex_i18n import I18nConfig, PathPrefixRouting
 from reflex_i18n.catalog import compile_index_module
 from reflex_i18n.component import LocaleRoute
 from reflex_i18n.config import set_active_i18n_config
-from reflex_i18n.plugin import I18nPlugin, _catalog_ident, _catalog_var
+from reflex_i18n.plugin import I18nPlugin, _catalog_ident, _catalog_var, _localized_page
 
 import reflex as rx
 
@@ -160,6 +160,35 @@ def test_expand_routes_fans_out_non_default_locales():
         assert str(rendered.catalog) == str(_catalog_var(locale))
         page_text = "Pricing" if route.endswith("/pricing") else "Home"
         assert page_text in str(rendered.children[0])
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_localized_page_renders_its_hooks_inside_its_locale_route(
+    monkeypatch: pytest.MonkeyPatch, auto_memoize: bool
+):
+    """A localized page's translations read LocaleRoute's catalog, memoized or not."""
+    from reflex_base.config import get_config
+
+    from reflex.app import UnevaluatedPage
+    from reflex.compiler.plugins import (
+        CompileContext,
+        CompilerHooks,
+        default_page_plugins,
+    )
+
+    monkeypatch.setattr(get_config(), "auto_memoize", auto_memoize)
+    page = UnevaluatedPage(
+        component=_localized_page(lambda: rx.text(rx.t("Hello")), "de"), route="/de"
+    )
+    ctx = CompileContext(
+        pages=[page],
+        hooks=CompilerHooks(plugins=default_page_plugins(auto_memoize=auto_memoize)),
+    )
+    with ctx:
+        ctx.compile()
+    # The page function renders LocaleRoute, so its own hooks run outside the
+    # catalog.
+    assert not ctx.compiled_pages["/de"].hooks
 
 
 def test_expand_routes_noop_without_routing():
