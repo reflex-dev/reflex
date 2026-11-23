@@ -295,10 +295,35 @@ def test_mobile_menu_preserves_primary_docs_destinations(navbar):
         "/docs/",
         "/docs/ai/",
         "/docs/getting-started/introduction/",
-        "/docs/hosting/deploy-quick-start/",
+        "/docs/hosting/overview/",
         "/docs/xy/",
     ):
         assert ("anchor", path) in links
+
+
+@pytest.mark.parametrize(
+    ("tab", "expected"),
+    [
+        ("overview", ["Overview"]),
+        ("ai", ["Build with AI"]),
+        ("framework", ["Framework"]),
+        ("cloud", ["Cloud"]),
+        ("xy", ["XY"]),
+        ("", []),
+    ],
+)
+def test_mobile_menu_marks_only_the_current_tab(navbar, tab, expected):
+    """The mobile menu marks the same build-time tab as the desktop links."""
+    from reflex_docs.components.docpage.navbar.buttons.sidebar import (
+        navbar_sidebar_button,
+    )
+
+    panel = navbar_sidebar_button(tab).children[1]
+    assert [
+        str(link.children[0].contents).strip('"')
+        for link in panel.children
+        if str(link.custom_attrs["aria-current"]) == '(true ? "page" : null)'
+    ] == expected
 
 
 def test_docs_announcement_preserves_link_and_dismissal():

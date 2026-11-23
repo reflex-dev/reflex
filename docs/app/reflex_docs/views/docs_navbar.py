@@ -183,7 +183,7 @@ def navigation_menu(active_tab: rx.Var[str] | str = "") -> rx.Component:
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
-                navbar_sidebar_button(),
+                navbar_sidebar_button(active_tab),
                 class_name="docs-navbar-mobile xl:hidden flex",
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
