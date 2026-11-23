@@ -98,37 +98,84 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     )
 
 
+_DOTTED_NAME = r"\w+(?:\.\w+)*"
+_IMPORT_ITEM = rf"{_DOTTED_NAME}(?:\s+as\s+\w+)?"
+_IMPORT_STATEMENT = re.compile(
+    rf"(?<![\w.])(?:from[ \t]+(?P<dots>\.*)(?P<module>{_DOTTED_NAME})?[ \t]+)?import[ \t]+"
+    rf"(?P<names>\([^)]*\)|\*|{_IMPORT_ITEM}(?:[ \t]*,[ \t]*{_IMPORT_ITEM})*)"
+)
+_IMPORTED_NAME = re.compile(rf"#[^\n]*|(?P<name>{_DOTTED_NAME})(?P<alias>\s+as\s+\w+)?")
+
+
 def _rename_main_module_imports(
     content: str,
     package: tuple[str, ...],
-    main_module: tuple[str, ...],
-    new_main_module: tuple[str, ...],
+    renames: dict[tuple[str, ...], tuple[str, ...]],
 ) -> str:
     """Point the imports of the app module in a file at the module's new path.
 
-    Both absolute imports and imports relative to the file's package are renamed,
-    including imports of the module's submodules when it is a package.
+    Absolute imports and imports relative to the file's package are renamed,
+    including imports of the module's submodules when it is a package and
+    imports of the module by name from its parent package.
 
     Args:
         content: The source of the file.
         package: The path parts of the package holding the file, from the app root.
-        main_module: The parts of the app module's import path.
-        new_main_module: The parts of its import path after the rename.
+        renames: The renamed module paths, each mapped to its path after the rename.
 
     Returns:
         The source with the imports of the app module renamed.
     """
-    parent = main_module[:-1]
-    modules = {".".join(main_module): ".".join(new_main_module)}
-    # A file in the module's package or below can import it relatively.
-    if package[: len(parent)] == parent:
-        dots = "." * (len(package) - len(parent) + 1)
-        modules[dots + main_module[-1]] = dots + new_main_module[-1]
-    for old, new in modules.items():
-        content = re.sub(
-            rf"(\b(?:from|import)\s+){re.escape(old)}(?!\w)", rf"\g<1>{new}", content
+
+    def rename(path: tuple[str, ...]) -> tuple[str, ...]:
+        for old in sorted(renames, key=len, reverse=True):
+            if path[: len(old)] == old:
+                return renames[old] + path[len(old) :]
+        return path
+
+    def rename_statement(statement: re.Match[str]) -> str:
+        dots, module = statement.group("dots", "module")
+        start = statement.start()
+        text = statement.group()
+        names_start = statement.start("names") - start
+
+        if dots is None:
+            # `import a.b as c, d`: each name is an absolute module path.
+            def rename_module(name: re.Match[str]) -> str:
+                if not name.group("name"):
+                    return name.group()
+                path = rename(tuple(name.group("name").split(".")))
+                return ".".join(path) + (name.group("alias") or "")
+
+            return text[:names_start] + _IMPORTED_NAME.sub(
+                rename_module, statement.group("names")
+            )
+
+        if len(dots) > len(package) + 1:
+            return text
+        base = package[: len(package) + 1 - len(dots)] if dots else ()
+        path = base + (tuple(module.split(".")) if module else ())
+
+        # `from x import y`: y is renamed when it is a renamed module of x.
+        def rename_name(name: re.Match[str]) -> str:
+            if not name.group("name") or "." in name.group("name"):
+                return name.group()
+            new_name = rename((*path, name.group("name")))[-1]
+            return new_name + (name.group("alias") or "")
+
+        names = _IMPORTED_NAME.sub(rename_name, statement.group("names"))
+        if module is None:
+            return text[:names_start] + names
+        # Renaming keeps each path the same length, so the dots stay valid.
+        new_module = ".".join(rename(path)[len(base) :])
+        return (
+            text[: statement.start("module") - start]
+            + new_module
+            + text[statement.end("module") - start : names_start]
+            + names
         )
-    return content
+
+    return _IMPORT_STATEMENT.sub(rename_statement, content)
 
 
 def rename_imports_and_app_name(
@@ -158,11 +205,20 @@ def rename_imports_and_app_name(
         content = source.read()
 
     if old_name in main_module:
-        content = _rename_main_module_imports(
+        new_main_module = tuple(
+            new_name if part == old_name else part for part in main_module
+        )
+        # The module's file and the directories named old_name above it are renamed.
+        renames = {
+            main_module[: i + 1]: new_main_module[: i + 1]
+            for i, part in enumerate(main_module)
+            if part == old_name
+        }
+        content = _rename_main_module_imports(content, package, renames)
+        content = re.sub(
+            rf"""(\bapp_module_import\s*=\s*["']){re.escape(".".join(main_module))}(["'])""",
+            rf"\g<1>{'.'.join(new_main_module)}\g<2>",
             content,
-            package,
-            main_module,
-            tuple(new_name if part == old_name else part for part in main_module),
         )
 
     # Replace `from old_name.` or `from old_name` with `from new_name`

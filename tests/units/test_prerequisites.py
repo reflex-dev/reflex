@@ -29,7 +29,7 @@ from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
 )
-from reflex.utils.rename import rename_imports_and_app_name
+from reflex.utils.rename import process_directory, rename_imports_and_app_name
 from reflex.utils.telemetry import CpuInfo, get_cpu_info
 
 runner = CliRunner()
@@ -2493,30 +2493,96 @@ def test_rename_imports_and_app_name_preserves_line_endings(
 
 
 @pytest.mark.parametrize(
-    ("package", "source", "expected"),
+    ("main_module", "package", "source", "expected"),
     [
         (
+            ("foo", "foo"),
             ("foo",),
-            "from .foo.state import S\nfrom foo.foo.state import T\nfrom .foo_state import U\n",
-            "from .bar.state import S\nfrom bar.bar.state import T\nfrom .foo_state import U\n",
+            "from .foo.state import S\nfrom foo.foo.state import T\nfrom .foo_state import U\nfrom .foo import *\n",
+            "from .bar.state import S\nfrom bar.bar.state import T\nfrom .foo_state import U\nfrom .bar import *\n",
         ),
         (
+            ("foo", "foo"),
             ("foo", "sub", "deep"),
             "from ...foo import app\nfrom ..foo import other\n",
             "from ...bar import app\nfrom ..foo import other\n",
         ),
+        (
+            ("foo", "foo"),
+            (),
+            "from foo import helper, foo\nfrom other import helper, foo\nimport os, foo.foo\n",
+            "from bar import helper, bar\nfrom other import helper, foo\nimport os, bar.bar\n",
+        ),
+        (
+            ("foo", "foo"),
+            ("foo",),
+            "from . import (\n    helper,\n    foo as main,  # the app\n)\n",
+            "from . import (\n    helper,\n    bar as main,  # the app\n)\n",
+        ),
+        (
+            ("foo", "pkg", "foo"),
+            ("foo",),
+            "from .pkg.foo import app\nfrom .pkg import helper, foo\nfrom .pkg.other import x\n",
+            "from .pkg.bar import app\nfrom .pkg import helper, bar\nfrom .pkg.other import x\n",
+        ),
+        (
+            ("foo", "pkg", "foo"),
+            ("tests",),
+            "from foo.pkg import helper, foo\nfrom foo.pkg.foo import app\n",
+            "from bar.pkg import helper, bar\nfrom bar.pkg.bar import app\n",
+        ),
     ],
 )
-def test_rename_imports_of_the_app_module(temp_directory, package, source, expected):
+def test_rename_imports_of_the_app_module(
+    temp_directory, main_module, package, source, expected
+):
     """Imports of the app module and its submodules follow its rename from any package."""
     file_path = temp_directory / "example.py"
     file_path.write_text(source)
 
     rename_imports_and_app_name(
-        file_path, "foo", "bar", package=package, main_module=("foo", "foo")
+        file_path, "foo", "bar", package=package, main_module=main_module
     )
 
     assert file_path.read_text() == expected
+
+
+def test_rename_app_module_import_in_config(temp_directory):
+    """A custom app_module_import in rxconfig.py follows the app module's rename."""
+    file_path = temp_directory / "rxconfig.py"
+    file_path.write_text(
+        'config = rx.Config(app_name="foo", app_module_import="foo.pkg.foo")\n'
+    )
+
+    rename_imports_and_app_name(
+        file_path, "foo", "bar", main_module=("foo", "pkg", "foo")
+    )
+
+    assert file_path.read_text() == (
+        'config = rx.Config(app_name="bar", app_module_import="bar.pkg.bar")\n'
+    )
+
+
+def test_process_directory_renames_imports_in_a_linked_file(
+    temp_directory, windows_platform: bool
+):
+    """A file linked from outside the app gets its imports of the app module renamed.
+
+    Args:
+        temp_directory: The directory to create the app in.
+        windows_platform: Whether symlinks require Windows privileges.
+    """
+    if windows_platform:
+        pytest.skip("Symlinks require additional privileges on Windows")
+    app_dir = temp_directory / "app"
+    app_dir.mkdir()
+    outside = temp_directory / "outside.py"
+    outside.write_text("from foo.foo import app\n")
+    (app_dir / "linked.py").symlink_to(outside)
+
+    process_directory(app_dir, "foo", "bar", main_module=("foo", "foo"))
+
+    assert outside.read_text() == "from bar.bar import app\n"
 
 
 def test_cli_rename_command(temp_directory, monkeypatch):
@@ -2569,8 +2635,6 @@ from foo.foo import app
 import foo.foo as main
 """
     )
-    (temp_directory / "outside.py").write_text("from foo.foo import app\n")
-    (foo_dir / "linked.py").symlink_to(temp_directory / "outside.py")
     (foo_dir / "tests").mkdir()
     (foo_dir / "tests" / "test_app.py").write_text(
         """
@@ -2646,7 +2710,6 @@ from bar.bar import app
 from bar import bar
 """
     )
-    assert (temp_directory / "outside.py").read_text() == "from bar.bar import app\n"
     assert (foo_dir / "bar" / "bar.py").exists()
     assert not (foo_dir / "bar" / "foo.py").exists()
     assert (foo_dir / "bar" / "bar.py").read_text() == (
