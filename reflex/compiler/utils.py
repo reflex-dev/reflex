@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import contextlib
 import copy
 import json
 import operator
@@ -299,21 +300,38 @@ def _compile_bundled_libraries() -> tuple[str, str]:
     return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
 
 
-def _restore_bundled_libraries() -> None:
-    """Restore the registry emitted by the most recent frontend compile."""
+def _restore_bundled_libraries() -> bool:
+    """Restore the registry saved by the most recent compile.
+
+    Returns:
+        Whether a valid registry was restored.
+    """
     path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
     try:
         bundled_libraries = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return
+        return False
     if not isinstance(bundled_libraries, list) or not all(
         isinstance(library, str) for library in bundled_libraries
     ):
-        return
+        return False
     context = RegistrationContext.ensure_context()
     context.bundled_libraries[:] = list(
         dict.fromkeys([*bundled_libraries, *context.bundled_libraries])
     )
+    return True
+
+
+def _save_bundled_libraries() -> None:
+    """Save a registry derived by a backend start so later starts restore it."""
+    path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
+    # The registry only saves work: when a concurrent reader blocks the
+    # replacement (Windows), the next start derives the libraries again.
+    with contextlib.suppress(OSError):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path_ops._write_json_file(
+            path, RegistrationContext.ensure_context().bundled_libraries
+        )
 
 
 def _compile_client_storage_field(
@@ -642,15 +660,20 @@ def compile_experimental_component_memo(
     # var itself, so a custom wrapper brings its own imports and ``None``
     # pulls in nothing.
     wrapper = definition.wrapper
-    if (
-        definition.is_instance_boundary
-        and f"$/{constants.Dirs.CLIENT_STATE_PATH}" in imports
+    if definition.is_instance_boundary and (
+        f"$/{constants.Dirs.CLIENT_STATE_PATH}" in imports
+        or definition.scoped_client_state_names
     ):
         # This memo is a real component instance boundary and its body uses
         # client state, so wrap it in a client state scope: names it declares are
         # owned per instance, and its descendants resolve to the same slots.
         # Gated on actual usage so pages don't pay a provider per memo.
-        wrapper = scoped_memo_wrapper(wrapper, local_client_state_names(hooks))
+        owns = local_client_state_names(hooks)
+        if definition.scoped_client_state_names:
+            # The wrappers generated inside the body took their hooks with
+            # them, but their names still belong to this scope.
+            owns = sorted({*owns, *definition.scoped_client_state_names})
+        wrapper = scoped_memo_wrapper(wrapper, owns)
     if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)

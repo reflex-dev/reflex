@@ -18,6 +18,7 @@ class Onboarding(Base, Workflow):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[str] = mapped_column(String, unique=True)
+    trigger_key: Mapped[str | None] = mapped_column(String, unique=True)
     email: Mapped[str] = mapped_column(String)
     nudges: Mapped[int] = mapped_column(default=0)
     status: Mapped[str] = mapped_column(String, default="welcoming")
@@ -52,6 +53,12 @@ type error, and so is passing one workflow's step to another.
   row that hits a unique constraint is not inserted, so a key never starts two runs. It
   returns whether a run was started, and a row the database keyed itself is given that
   key, so `row.id` addresses the run that was just started.
+- **Start a run keyed on an outside event**: `await row.start(Onboarding.welcome,
+  key=Onboarding.trigger_key)` inserts with `ON CONFLICT (trigger_key) DO NOTHING`, so
+  `False` means exactly "a run with this key already exists" (a resent webhook), and a
+  clash on any *other* unique column raises `RunConflict`, naming the constraint ("this
+  user is already onboarding"). `key=` must name a single column that is unique on its
+  own; a nullable one lets rows started some other way leave it empty.
 - **Stop a run**: `await Onboarding.by(Onboarding.user_id == u).cancel()` ends every
   matching run where it stands — nothing scheduled, no wait, no held event — and what
   the run has already done stays. A cancelled run counts as finished to the run that
@@ -382,9 +389,13 @@ mapping it entirely if you do not want it: a deployment without one pays nothing
 ## In a Reflex app
 
 `rx.Model` is a SQLModel, and a step on one is an unannotated attribute that pydantic
-refuses, so workflows are declared on a `DeclarativeBase` of their own. Register it so
-`reflex db makemigrations` sees the tables, and build the session factory on Reflex's
-own async engine so the app has one pool:
+refuses, so workflows are declared on a `DeclarativeBase`, such as the one the app's
+other tables use (with the `reflex_workflow.dataclass` mixins if it is a
+`MappedAsDataclass`). `reflex db makemigrations` finds a base by itself when the module
+that defines it holds it under its own name; an app that registers its bases with
+`rx.ModelRegistry.register` registers this one too, since once any base is registered
+the others are left out of migrations.
+Build the session factory on Reflex's own async engine so the app has one pool:
 
 ```python
 import reflex as rx
@@ -396,9 +407,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
     pass
-
-
-rx.ModelRegistry.register(Base)
 
 
 class Expense(Base, Workflow):
@@ -567,11 +575,26 @@ arrives calls it, and the request is held open until the worker has run the
 work or has nothing left to take. Holding it open is the point on hosts that
 only give an instance CPU while it is answering a request.
 
+In a Reflex app, the route goes on a FastAPI app passed as `api_transformer`, in
+the process that runs the worker:
+
 ```python
-@app.api.get("/wake")
+from datetime import timedelta
+
+import reflex as rx
+import reflex_workflow
+from fastapi import FastAPI, Response
+
+api = FastAPI()
+
+
+@api.post("/wake")
 async def wake_workflows() -> Response:
     caught_up = await reflex_workflow.wake(timedelta(seconds=50))
     return Response(status_code=200 if caught_up else 503)
+
+
+app = rx.App(api_transformer=api)
 ```
 
 It returns True once the worker has made a pass that claimed nothing, with none
