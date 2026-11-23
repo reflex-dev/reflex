@@ -241,14 +241,6 @@ def CallScript():
             )
 
         @rx.event
-        def add_events_from_backend(self):
-            return rx.run_script(
-                rx.js.add_events(
-                    CallScriptState.set_reflex_result("add_events from the backend")
-                )
-            )
-
-        @rx.event
         def ref_from_backend(self):
             return rx.run_script(
                 rx.js.ref("reflex_target").current.value,
@@ -445,20 +437,13 @@ def CallScript():
                 id="ref_from_string",
             ),
             rx.button(
-                "add_events_from_frontend",
-                on_click=rx.run_script(
-                    rx.js.add_events(
-                        CallScriptState.set_reflex_result(
-                            "add_events from the frontend"
-                        )
-                    )
+                "add_events_from_string",
+                on_click=rx.call_script(
+                    "reflex.addEvents([reflex.event("
+                    f"'{CallScriptState.get_full_name()}.set_reflex_result', "
+                    "{value: 'addEvents from a script'})])"
                 ),
-                id="add_events_from_frontend",
-            ),
-            rx.button(
-                "add_events_from_backend",
-                on_click=CallScriptState.add_events_from_backend,
-                id="add_events_from_backend",
+                id="add_events_from_string",
             ),
             rx.button(
                 "ref_from_backend",
@@ -678,11 +663,8 @@ def test_reflex_api(call_script_page: Page):
     call_script_page.locator("#ref_from_string").click()
     expect(result).to_have_value("from the ref")
 
-    call_script_page.locator("#add_events_from_frontend").click()
-    expect(result).to_have_value("add_events from the frontend")
-
-    call_script_page.locator("#add_events_from_backend").click()
-    expect(result).to_have_value("add_events from the backend")
+    call_script_page.locator("#add_events_from_string").click()
+    expect(result).to_have_value("addEvents from a script")
 
     call_script_page.locator("#reflex_target").fill("typed, read by the backend")
     call_script_page.locator("#ref_from_backend").click()
