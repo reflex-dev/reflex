@@ -5,12 +5,9 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "email-validator",
-    "fastapi",
     "openai",
-    "orjson",
     "pandas",
-    "plotly-express",
-    "psycopg[binary]",
+    "plotly",
     "python-frontmatter",
     "reflex[db]",
     "reflex-docgen",
@@ -37,7 +34,6 @@ dev = [
     "pytest-playwright",
     "pytest",
     "ruff",
-    "uvicorn",
 ]
 
 [build-system]
