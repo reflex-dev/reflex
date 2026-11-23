@@ -2,15 +2,14 @@
 
 import ast
 import re
+import textwrap
 from pathlib import Path
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = APP_ROOT / "reflex_docs"
 DOCS_ROOT = APP_ROOT.parent
-MARKDOWN_IMPORT = re.compile(
-    r"^\s*(?:import\s+(reflex_docs[\w.]*)"
-    r"|from\s+(reflex_docs[\w.]*)\s+import\s+(?:\(([^)]*)\)|([\w \t,]+)))",
-    re.MULTILINE,
+PYTHON_BLOCK = re.compile(
+    r"^([ \t]*)```python[^\n]*\n(.*?)^\1```", re.MULTILINE | re.DOTALL
 )
 
 
@@ -52,7 +51,9 @@ def _imported_names(source: str, module: str, is_package: bool) -> set[str]:
 
 
 def _markdown_imported_names(markdown: str) -> set[str]:
-    """Collect the docs app names a Markdown file's code imports.
+    """Collect the names a Markdown file's Python code blocks import.
+
+    Blocks that are not valid Python are display-only snippets and are skipped.
 
     Args:
         markdown: The Markdown source.
@@ -61,16 +62,11 @@ def _markdown_imported_names(markdown: str) -> set[str]:
         Imported module names and ``module.attribute`` names.
     """
     names = set()
-    for module, package, grouped, inline in MARKDOWN_IMPORT.findall(markdown):
-        if module:
-            names.add(module)
+    for _, code in PYTHON_BLOCK.findall(markdown):
+        try:
+            names |= _imported_names(textwrap.dedent(code), "markdown", False)
+        except SyntaxError:
             continue
-        names.add(package)
-        names.update(
-            f"{package}.{alias.split()[0]}"
-            for alias in (grouped or inline).split(",")
-            if alias.strip()
-        )
     return names
 
 
@@ -97,19 +93,27 @@ def _reachable(modules: dict[str, set[str]], roots: set[str]) -> set[str]:
     return seen
 
 
-def test_markdown_imports_include_imported_submodules():
-    """A Markdown block importing a submodule from its package keeps it reachable."""
+def test_markdown_imports_include_every_import_form():
+    """Every import form in a Markdown code block keeps its docs modules reachable."""
     markdown = (
         "```python exec\n"
-        "import reflex_docs.views\n"
+        "import os, reflex_docs.views\n"
         "from reflex_docs.pages import gallery as g, landing\n"
         "from reflex_docs.components import (\n"
         "    hint,\n"
         "    button,\n"
         ")\n"
         "```\n"
+        "- Indented block:\n"
+        "  ```python\n"
+        "  from reflex_docs.utils import *\n"
+        "  ```\n"
+        "```python\n"
+        "from reflex_docs.models import (\n"
+        "```\n"
     )
     assert _markdown_imported_names(markdown) == {
+        "os",
         "reflex_docs.views",
         "reflex_docs.pages",
         "reflex_docs.pages.gallery",
@@ -117,6 +121,8 @@ def test_markdown_imports_include_imported_submodules():
         "reflex_docs.components",
         "reflex_docs.components.hint",
         "reflex_docs.components.button",
+        "reflex_docs.utils",
+        "reflex_docs.utils.*",
     }
 
 
