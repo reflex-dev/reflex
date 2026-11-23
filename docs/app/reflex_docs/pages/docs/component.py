@@ -4,6 +4,7 @@ import hashlib
 import os
 import re
 import textwrap
+from collections.abc import Sequence
 from pathlib import Path
 from types import UnionType
 from typing import Any, Literal, Union, _GenericAlias, get_args, get_origin
@@ -32,7 +33,7 @@ from reflex_docs.pages.docs.metadata import (
     component_title_name,
     truncate_meta_description,
 )
-from reflex_docs.templates.docpage import docpage, h2_comp
+from reflex_docs.templates.docpage import docpage, h2_comp, h3_comp
 
 
 def get_code_style(color: str):
@@ -112,8 +113,8 @@ _PROPS_TABLE_COMPACT_CELL_CLASS = (
     "[-webkit-mask-image:linear-gradient(to_bottom,black_82%,transparent)]"
 )
 _API_HEADING_CLASS = (
-    "docs-heading font-heading text-2xl font-normal leading-tight "
-    "tracking-[-0.025em] text-foreground"
+    "docs-heading font-heading text-lg font-medium leading-tight "
+    "tracking-[-0.015em] text-foreground"
 )
 _API_LINK_CLASS = (
     "docs-text-link text-sm font-normal leading-6 text-foreground "
@@ -489,6 +490,35 @@ def prop_docs(
     )
 
 
+def props_table(
+    props: Sequence[PropDocumentation], component: type[Component]
+) -> rx.Component:
+    """Render the reference table for a component's props.
+
+    Args:
+        props: The props to list, in display order. Event triggers are skipped.
+        component: The component the props belong to.
+
+    Returns:
+        The props table.
+    """
+    rows: list[rx.Component] = []
+    for prop in props:
+        if prop.name.startswith("on_"):  # ignore event trigger props
+            continue
+        cells, is_long_row, expanded_name, expanded = prop_docs(prop, component)
+        row_props = {
+            "class_name": ui.cn(
+                "border-b border-border-subtle last:border-b-0 transition-colors hover:bg-muted",
+                "group cursor-pointer" if is_long_row else "",
+            )
+        }
+        if is_long_row and expanded_name is not None and expanded is not None:
+            row_props["on_click"] = PropDocsState.setvar(expanded_name, ~expanded)
+        rows.append(rx.el.tr(*cells, **row_props))
+    return docs_api_table(*rows)
+
+
 def generate_props(
     props: tuple[PropDocumentation, ...],
     component: type[Component],
@@ -498,7 +528,7 @@ def generate_props(
     prop_list = list(props)
     if len(prop_list) == 0:
         return rx.box(
-            rx.heading("Props", as_="h3", class_name=_API_HEADING_CLASS),
+            rx.heading("Props", as_="h4", class_name=_API_HEADING_CLASS),
             rx.text(
                 "No component specific props",
                 class_name="text-sm font-normal leading-6 text-muted-foreground",
@@ -561,26 +591,6 @@ def generate_props(
             control = render_select(prop, component, prop_dict)
             if not isinstance(control, Fragment):
                 interactive_controls.append((prop, control))
-
-    rows: list[rx.Component] = []
-    for prop in prop_list:
-        if prop.name.startswith("on_"):  # ignore event trigger props
-            continue
-        cells, is_long_row, expanded_name, expanded = prop_docs(prop, component)
-        row_props = {
-            "class_name": ui.cn(
-                "border-b border-border-subtle last:border-b-0 transition-colors hover:bg-muted",
-                "group cursor-pointer" if is_long_row else "",
-            )
-        }
-        if is_long_row and expanded_name is not None and expanded is not None:
-            row_props["on_click"] = PropDocsState.setvar(expanded_name, ~expanded)
-        rows.append(
-            rx.el.tr(
-                *cells,
-                **row_props,
-            )
-        )
 
     comp: rx.Component
     try:
@@ -804,10 +814,10 @@ def generate_props(
         controls_panel,
         rx.heading(
             "Props",
-            as_="h3",
+            as_="h4",
             class_name=f"{_API_HEADING_CLASS} mt-4 mb-2 text-left self-start",
         ),
-        docs_api_table(*rows),
+        props_table(prop_list, component),
     )
 
 
@@ -818,7 +828,7 @@ def generate_event_triggers(
 
     if not custom_handlers:
         return rx.box(
-            rx.heading("Event Triggers", as_="h3", class_name=_API_HEADING_CLASS),
+            rx.heading("Event Triggers", as_="h4", class_name=_API_HEADING_CLASS),
             rx.link(
                 "See the full list of default event triggers",
                 href="https://reflex.dev/docs/api-reference/event-triggers/",
@@ -829,7 +839,7 @@ def generate_event_triggers(
         )
     table_header_class_name = "w-auto justify-start px-4 py-3 text-left text-sm font-normal text-muted-foreground"
     return rx.box(
-        rx.heading("Event Triggers", as_="h3", class_name=_API_HEADING_CLASS),
+        rx.heading("Event Triggers", as_="h4", class_name=_API_HEADING_CLASS),
         rx.link(
             "See the full list of default event triggers",
             href="https://reflex.dev/docs/api-reference/event-triggers/",
@@ -891,7 +901,7 @@ def generate_valid_children(comp: type[Component]) -> rx.Component:
         for child in comp._valid_children
     ]
     return rx.box(
-        rx.heading("Valid Children", as_="h3", class_name=_API_HEADING_CLASS),
+        rx.heading("Valid Children", as_="h4", class_name=_API_HEADING_CLASS),
         rx.box(*valid_children, class_name="flex flex-row gap-2 flex-wrap"),
         class_name="pb-6 w-full items-start flex flex-col gap-4",
     )
@@ -914,12 +924,86 @@ def shared_html_props(
     )
 
 
+def split_props(
+    component: type[Component], props: Sequence[PropDocumentation]
+) -> tuple[tuple[PropDocumentation, ...], tuple[PropDocumentation, ...]]:
+    """Order a component's own props first and set its global HTML attributes apart.
+
+    Each prop is ranked by the class in the component's MRO that declares it: the
+    component and its non-HTML ancestors come first, nearest first, followed by
+    attributes of the HTML element it renders. Global attributes that BaseHTML
+    declares and the component does not override are returned separately.
+
+    Args:
+        component: The documented component.
+        props: The component's props, in declaration order.
+
+    Returns:
+        The ordered own props and the inherited global HTML attributes.
+    """
+    mro = component.__mro__
+    owners: dict[str, int] = {}
+    for index, cls in enumerate(mro):
+        for name in vars(cls).get("_own_fields", ()):
+            owners.setdefault(name, index)
+
+    def rank(prop: PropDocumentation) -> tuple[bool, int]:
+        owner = owners[prop.name]
+        return mro[owner] is not component and issubclass(mro[owner], BaseHTML), owner
+
+    own = sorted(
+        (prop for prop in props if mro[owners[prop.name]] is not BaseHTML), key=rank
+    )
+    return tuple(own), tuple(
+        prop for prop in props if mro[owners[prop.name]] is BaseHTML
+    )
+
+
+def html_attributes_disclosure(
+    label: str, props: Sequence[PropDocumentation]
+) -> rx.Component:
+    """Collapse a table of HTML attributes behind a disclosure.
+
+    The rows stay in the prerendered page, so they remain searchable.
+
+    Args:
+        label: The disclosure summary, followed by the number of attributes.
+        props: The attributes to list.
+
+    Returns:
+        The disclosure, or an empty fragment when there are no attributes.
+    """
+    if not props:
+        return rx.fragment()
+    return rx.el.details(
+        rx.el.summary(
+            f"{label} ({len(props)})",
+            class_name=(
+                "cursor-pointer py-2 text-sm font-medium text-foreground "
+                "focus-visible:outline-2 focus-visible:outline-offset-2 "
+                "focus-visible:outline-ring"
+            ),
+        ),
+        props_table(props, BaseHTML),
+        class_name="docs-html-attributes mb-4 w-full",
+    )
+
+
 def component_docs(
     component_tuple: tuple[type[Component], str],
     previews: dict[str, str],
     shared_props: tuple[PropDocumentation, ...] = (),
 ) -> rx.Component:
-    """Generates documentation for a given component."""
+    """Generate the API reference for one component.
+
+    Args:
+        component_tuple: The component class and its public name.
+        previews: Preview factories for interactive examples, by class name.
+        shared_props: HTML attributes listed once for the whole page.
+
+    Returns:
+        The component's heading, description, props, children and triggers.
+    """
     component = component_tuple[0]
     doc = generate_documentation(component)
 
@@ -932,20 +1016,17 @@ def component_docs(
         component_tuple[1], component_tuple[1]
     )
 
-    inherited_props = tuple(prop for prop in doc.props if prop in shared_props)
-    props = generate_props(
-        tuple(prop for prop in doc.props if prop not in inherited_props),
-        component,
-        previews,
-        comp_display_name,
-    )
+    own_props, global_props = split_props(component, doc.props)
+    inherited_props = tuple(prop for prop in global_props if prop not in shared_props)
+    props = generate_props(own_props, component, previews, comp_display_name)
     triggers = generate_event_triggers(doc.event_handlers)
     children = generate_valid_children(component)
 
     return rx.box(
-        h2_comp(text=comp_display_name),
+        h3_comp(text=comp_display_name),
         rx.box(render_markdown(doc.description or ""), class_name="pb-2"),
         props,
+        html_attributes_disclosure("Inherited HTML attributes", inherited_props),
         rx.el.p(
             "Also accepts the ",
             rx.el.a(
@@ -956,12 +1037,34 @@ def component_docs(
             ".",
             class_name="mb-4 text-sm text-muted-foreground",
         )
-        if inherited_props
+        if len(inherited_props) < len(global_props)
         else rx.fragment(),
         children,
         triggers,
         class_name="pb-8 w-full text-left",
     )
+
+
+def api_reference_toc(names: Sequence[str], has_shared: bool) -> list[tuple[int, str]]:
+    """List the on-page TOC entries of a library page's API reference.
+
+    Each component, and the shared HTML props section, nests under the
+    "API Reference" heading, matching the h2/h3 levels they render with.
+
+    Args:
+        names: The public names of the documented components.
+        has_shared: Whether the page lists shared HTML props.
+
+    Returns:
+        ``(level, text)`` entries, empty when no component is documented.
+    """
+    if not names:
+        return []
+    return [
+        (2, "API Reference"),
+        *((3, name) for name in names),
+        *([(3, "Shared HTML props")] if has_shared else []),
+    ]
 
 
 def multi_docs(
@@ -995,13 +1098,14 @@ def multi_docs(
         if not props:
             return rx.fragment()
         return rx.el.div(
-            h2_comp(text="Shared HTML props"),
+            h3_comp(text="Shared HTML props"),
             rx.el.p(
                 "Components linked to this section accept these HTML props. "
-                "Component-specific additions and overrides are listed below.",
-                class_name="mb-4 text-sm leading-6 text-muted-foreground",
+                "Component-specific additions and overrides are listed with each "
+                "component.",
+                class_name="mb-2 text-sm leading-6 text-muted-foreground",
             ),
-            generate_props(props, BaseHTML, {}),
+            html_attributes_disclosure("Shared HTML attributes", props),
         )
 
     active_class_name = "flex min-h-10 w-28 items-center justify-center rounded-full bg-primary px-4 py-2 text-center text-sm font-normal text-primary-foreground"
@@ -1075,18 +1179,14 @@ def multi_docs(
             if source is not None
             else Path(actual_path).read_text(encoding="utf-8")
         )
-        # Append API Reference headings for the component list
-        if components:
-            toc.append((1, "API Reference"))
-        if shared:
-            toc.append((2, "Shared HTML props"))
-        for component_tuple in component_list[1:]:
-            toc.append((2, component_tuple[1]))
+        toc.extend(
+            api_reference_toc([item[1] for item in component_list[1:]], bool(shared))
+        )
         api_ref_section = (
             [
                 h2_comp(text="API Reference"),
-                shared_reference(shared),
                 rx.box(*components, class_name="flex flex-col"),
+                shared_reference(shared),
             ]
             if components
             else []
@@ -1124,17 +1224,14 @@ def multi_docs(
         ll_virtual = virtual_path.replace(".md", "-ll.md")
         toc = get_docgen_toc(ll_actual_path)
         doc_content = Path(ll_actual_path).read_text(encoding="utf-8")
-        if ll_components:
-            toc.append((1, "API Reference"))
-        if ll_shared:
-            toc.append((2, "Shared HTML props"))
-        for component_tuple in ll_list[1:]:
-            toc.append((2, component_tuple[1]))
+        toc.extend(
+            api_reference_toc([item[1] for item in ll_list[1:]], bool(ll_shared))
+        )
         api_ref_section = (
             [
                 h2_comp(text="API Reference"),
-                shared_reference(ll_shared),
                 rx.box(*ll_components, class_name="flex flex-col"),
+                shared_reference(ll_shared),
             ]
             if ll_components
             else []

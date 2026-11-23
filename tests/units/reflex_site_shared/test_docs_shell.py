@@ -239,19 +239,20 @@ def test_official_docs_footer_content_is_shared() -> None:
     assert "https://github.com/example/project/issues/new" in str(component)
     assert "Raise an issue" in rendered
     assert "Edit this page" in rendered
-    assert "Get started" in rendered
+    assert "Get started" not in rendered
     assert "Documentation" in rendered
     assert "Resources" in rendered
     assert "Social link for Github" in rendered
     assert "Social link for Forum" in rendered
     assert "Pynecone, Inc." in rendered
-    assert "https://reflex.dev/docs/getting-started/introduction/" not in rendered
-    assert "/getting-started/introduction/" in rendered
+    # The docs navbar already links the "Get started" destinations.
+    assert "/getting-started/introduction/" not in rendered
 
     external_rendered = str(_docs_external_page_footer_memo._definition.component)
+    assert "Get started" in external_rendered
     assert "https://reflex.dev/docs/getting-started/introduction/" in external_rendered
+    assert "https://reflex.dev/docs/ai/" in external_rendered
     for path in (
-        "/ai/",
         "/api-reference/app/",
         "/ai/integrations/agent-toolkit/",
         "/enterprise/overview/",

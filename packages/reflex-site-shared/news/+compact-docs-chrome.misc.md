@@ -1,0 +1,1 @@
+Documentation demos no longer show a "Start Building Now!" link above their tabs, and the docs page footer is more compact: link groups render as rows, and the in-docs footer drops the "Get started" links its navbar already provides.
