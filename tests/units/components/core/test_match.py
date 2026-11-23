@@ -1,6 +1,5 @@
 import re
-from collections.abc import Sequence
-from typing import Annotated, Literal
+from typing import Any
 
 import pytest
 from reflex_base.components.component import Component
@@ -141,26 +140,12 @@ def test_match_vars(cases, expected):
     assert str(match_comp) == expected
 
 
-def test_match_subject_with_mixed_literals():
-    """Mixed scalar literals compile without a set comparison."""
-    result = Match.create(
-        Var(_js_expr="value", _var_type=Literal["ready", 0]),
-        ("ready", "yes"),
-        "no",
-    )
-    assert str(result) == (
-        "(() => { switch (JSON.stringify(value)) {"
-        'case JSON.stringify("ready"):  return ("yes");  break;'
-        'default:  return ("no");  break;};})()'
-    )
+def test_match_set_case_compares_by_elements():
+    """A set case matches a set subject whatever order the subject arrives in.
 
-
-def test_match_set_cases_compare_by_elements():
-    """A set subject and set cases are compared by their elements, not their order.
-
-    A set reaches the frontend in its iteration order, which depends on the hash
-    seed, so both sets are made canonical before the JSON comparison. Type tags
-    keep lists distinct from a set's comparison keys, as in Python.
+    A state set is serialized in its hash-seed dependent iteration order, so the
+    subject is swapped for the set case it equals before the JSON comparison.
+    The cases themselves compile as before.
     """
     tags = f"{MatchState.get_name()}.tags{FIELD_MARKER}"
     match_var = Match.create(
@@ -168,15 +153,16 @@ def test_match_set_cases_compare_by_elements():
     )
     assert isinstance(match_var, Var)
     assert str(match_var) == (
-        f"(() => {{ switch (JSON.stringify([true, pySetCanonical({tags})])) {{"
-        'case JSON.stringify([true, pySetCanonical(["c", "d"])]):  return ("cd");  break;'
-        'case JSON.stringify([false, ["c", "d"]]):  return ("list");  break;'
+        f'(() => {{ switch (JSON.stringify(pySetMatch({tags}, [["c", "d"]]))) {{'
+        'case JSON.stringify(["c", "d"]):  return ("cd");  break;'
+        'case JSON.stringify(["c", "d"]):  return ("list");  break;'
         'default:  return ("other");  break;};})()'
     )
     var_data = match_var._get_all_var_data()
     assert var_data is not None
-    assert dict(var_data.imports)["$/utils/helpers/set.js"] == (
-        ImportVar(tag="pySetCanonical", install=False),
+    assert (
+        ImportVar(tag="pySetMatch", install=False)
+        in dict(var_data.imports)["$/utils/helpers/set.js"]
     )
 
     match_comp = rx.match(
@@ -184,142 +170,39 @@ def test_match_set_cases_compare_by_elements():
     )
     assert isinstance(match_comp, Component)
     match_child = match_comp.render()["children"][0]
-    assert match_child["cond"] == f"[true, pySetCanonical({tags})]"
-    assert [conditions for conditions, _ in match_child["match_cases"]] == [
-        ['[true, pySetCanonical(["c", "d"])]']
-    ]
-    assert match_comp._get_all_imports()["$/utils/helpers/set.js"] == [
-        ImportVar(tag="pySetCanonical", install=False)
-    ]
+    assert match_child["cond"] == f'pySetMatch({tags}, [["c", "d"]])'
+    assert match_child["match_cases"][0][0] == ['["c", "d"]']
+    assert (
+        ImportVar(tag="pySetMatch", install=False)
+        in (match_comp._get_all_imports()["$/utils/helpers/set.js"])
+    )
 
 
-def test_match_generic_set_var_uses_its_annotation():
-    """A generic Var annotated as a set uses the same comparison as a SetVar."""
+def test_match_set_case_with_untyped_subject():
+    """A subject not typed as a set still matches a set case it equals."""
     result = Match.create(
-        Var(_js_expr="tags", _var_type=set[int]), ({1, 2}, "matched"), "other"
-    )
-    assert str(result) == (
-        "(() => { switch (JSON.stringify([true, pySetCanonical(tags)])) {"
-        'case JSON.stringify([true, pySetCanonical([1, 2])]):  return ("matched");  break;'
-        'default:  return ("other");  break;};})()'
-    )
-
-
-def test_match_optional_set_matches_none():
-    """A missing optional set uses the same tag as a literal None case."""
-    result = Match.create(
-        Var(_js_expr="tags", _var_type=set[str] | None),
-        (None, "missing"),
-        ({"a"}, "present"),
-        "other",
-    )
-    assert str(result) == (
-        "(() => { switch (JSON.stringify([isNotNullOrUndefined(tags), pySetCanonical(tags)])) {"
-        'case JSON.stringify([false, null]):  return ("missing");  break;'
-        'case JSON.stringify([true, pySetCanonical(["a"])]):  return ("present");  break;'
-        'default:  return ("other");  break;};})()'
-    )
-
-
-@pytest.mark.parametrize(
-    "var_type", [set[int] | str, frozenset[int] | str, set[int] | str | None]
-)
-def test_match_mixed_set_subject(var_type):
-    """Mixed set subjects choose their comparison tag from the runtime value."""
-    result = Match.create(
-        Var(_js_expr="tags", _var_type=var_type),
-        ({1, 2}, "set"),
+        Var(_js_expr="item", _var_type=Any),
         ("ready", "string"),
-        (None, "missing"),
+        ({1, 2}, "set"),
+        (MatchState.tags, "state set"),
         "other",
     )
+    tags = f"{MatchState.get_name()}.tags{FIELD_MARKER}"
     assert str(result) == (
-        "(() => { switch (JSON.stringify((Array.isArray(tags) ? "
-        "[true, pySetCanonical(tags)] : [false, tags]))) {"
-        'case JSON.stringify([true, pySetCanonical([1, 2])]):  return ("set");  break;'
-        'case JSON.stringify([false, "ready"]):  return ("string");  break;'
-        'case JSON.stringify([false, null]):  return ("missing");  break;'
-        'default:  return ("other");  break;};})()'
-    )
-    var_data = result._get_all_var_data()
-    assert var_data is not None
-    assert dict(var_data.imports)["$/utils/helpers/set.js"] == (
-        ImportVar(tag="pySetCanonical", install=False),
-    )
-
-
-@pytest.mark.parametrize("subject_type", [set[int] | str, str])
-def test_match_mixed_set_case(subject_type):
-    """A mixed set case enables normalization without a literal set case."""
-    result = Match.create(
-        Var(_js_expr="subject", _var_type=subject_type),
-        (Var(_js_expr="caseValue", _var_type=set[int] | str), "matched"),
-        "other",
-    )
-    subject = (
-        "(Array.isArray(subject) ? [true, pySetCanonical(subject)] : [false, subject])"
-        if subject_type is not str
-        else "[false, subject]"
-    )
-    assert str(result) == (
-        f"(() => {{ switch (JSON.stringify({subject})) {{"
-        "case JSON.stringify((Array.isArray(caseValue) ? [true, pySetCanonical(caseValue)] "
-        ': [false, caseValue])):  return ("matched");  break;'
+        f"(() => {{ switch (JSON.stringify(pySetMatch(item, [[1, 2], {tags}]))) {{"
+        'case JSON.stringify("ready"):  return ("string");  break;'
+        'case JSON.stringify([1, 2]):  return ("set");  break;'
+        f'case JSON.stringify({tags}):  return ("state set");  break;'
         'default:  return ("other");  break;};})()'
     )
 
 
-@pytest.mark.parametrize("as_case", [False, True])
-@pytest.mark.parametrize("sequence_type", [list[int], tuple[int, ...], Sequence[int]])
-def test_match_rejects_ambiguous_set_sequence_union(as_case, sequence_type):
-    """Serialized arrays cannot identify a set within a set-or-list union."""
-    mixed = Var(_js_expr="values", _var_type=set[int] | sequence_type)
-    with pytest.raises(MatchTypeError) as error:
-        Match.create(
-            {1} if as_case else mixed, (mixed if as_case else {1}, "set"), "other"
-        )
-    assert str(error.value) == (
-        "rx.match cannot distinguish sets from sequences in a union because both serialize "
-        "to arrays. Narrow the var's type before matching."
-    )
-
-
-@pytest.mark.parametrize("as_case", [False, True])
-def test_match_custom_set_var_with_tuple_elements(as_case):
-    """A custom var's set element type is not mistaken for a union member."""
-
-    class CustomSetVar(Var[set[tuple[int, int]]]):
-        """A set annotation retained by a custom var subclass."""
-
-    custom = CustomSetVar(_js_expr="pairs", _var_type=set[tuple[int, int]])
-    result = Match.create(
-        {(1, 2)} if as_case else custom,
-        (custom if as_case else {(1, 2)}, "matched"),
-        "other",
-    )
-    subject = "[[1, 2]]" if as_case else "pairs"
-    case = "pairs" if as_case else "[[1, 2]]"
-    assert str(result) == (
-        f"(() => {{ switch (JSON.stringify([true, pySetCanonical({subject})])) {{"
-        f'case JSON.stringify([true, pySetCanonical({case})]):  return ("matched");  break;'
-        'default:  return ("other");  break;};})()'
-    )
-
-
-@pytest.mark.parametrize("with_set", [False, True])
-def test_match_case_with_unhashable_annotation_metadata(with_set):
-    """Valid Annotated case types do not require their metadata to be hashable."""
-    annotation = (
-        Annotated[set[int], []] if with_set else Annotated[str, {"label": "Tag"}]
-    )
-    case = Var(_js_expr="caseValue", _var_type=annotation)
-    subject = {1, 2} if with_set else Var(_js_expr="subject", _var_type=str)
-    result = Match.create(subject, (case, "matched"), "other")
-    subject_expr = "[true, pySetCanonical([1, 2])]" if with_set else "subject"
-    case_expr = "[true, pySetCanonical(caseValue)]" if with_set else "caseValue"
-    assert str(result) == (
-        f"(() => {{ switch (JSON.stringify({subject_expr})) {{"
-        f'case JSON.stringify({case_expr}):  return ("matched");  break;'
+def test_match_set_subject_without_set_case_is_unchanged():
+    """Only a set case changes the compiled match; a set subject alone does not."""
+    tags = f"{MatchState.get_name()}.tags{FIELD_MARKER}"
+    assert str(Match.create(MatchState.tags, (["c", "d"], "list"), "other")) == (
+        f"(() => {{ switch (JSON.stringify({tags})) {{"
+        'case JSON.stringify(["c", "d"]):  return ("list");  break;'
         'default:  return ("other");  break;};})()'
     )
 

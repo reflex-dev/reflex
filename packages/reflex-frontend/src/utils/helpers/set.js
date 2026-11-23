@@ -16,16 +16,7 @@
 export const pySetKey = (x) => {
   if (typeof x === "string") return "s" + x;
   if (typeof x === "boolean") return +x;
-  if (typeof x === "number" && !Number.isFinite(x)) return "n" + String(x);
-  if (Array.isArray(x)) return "a" + JSON.stringify(x.map(pySetKey));
-  if (x !== null && typeof x === "object") {
-    return (
-      "o" +
-      JSON.stringify(
-        Object.entries(x).map(([key, value]) => [key, pySetKey(value)]),
-      )
-    );
-  }
+  if (x !== null && typeof x === "object") return "o" + JSON.stringify(x);
   return x;
 };
 
@@ -126,35 +117,23 @@ export const pySetIsDisjoint = (a, b) => {
 };
 
 /**
- * Order set keys: numbers by value, then strings (element keys are always
- * strings or numbers, see pySetKey) by code unit.
- * @param {number|string} a The first key.
- * @param {number|string} b The second key.
- * @returns {number} The sort order of the keys.
+ * The match subject in the form of the first set case it equals, so the
+ * `JSON.stringify` comparison of `rx.match` treats a set case as Python's `==`
+ * does, whatever order the subject's elements arrive in. Any other subject,
+ * including an array with repeated elements, is returned as is.
+ * @param {*} x The match subject.
+ * @param {Array} cases The set cases, each an array or null.
+ * @returns {*} The set case equal to x, or x.
  */
-const compareSetKeys = (a, b) => {
-  if (typeof a === "number" && typeof b === "number") return a - b;
-  if (typeof a === "number") return -1;
-  if (typeof b === "number") return 1;
-  return a < b ? -1 : a > b ? 1 : 0;
-};
-
-/**
- * A value of a set that is the same for every set with the same elements,
- * whatever their order or duplicates, so `JSON.stringify` compares sets the
- * way Python's `==` does. Null and undefined pass through, so a missing set
- * is not equal to an empty one.
- * @param {Array|null|undefined} arr The set.
- * @returns {Array|null|undefined} The sorted, distinct keys of its elements.
- */
-export const pySetCanonical = (arr) => {
-  if (arr == null) return arr;
-  // Recursive keys preserve non-finite numbers inside structured elements too.
-  return [...new Set(arr.map(pySetKey))]
-    .map((key) =>
-      key === null || (typeof key === "number" && !Number.isFinite(key))
-        ? String(key)
-        : key,
-    )
-    .sort(compareSetKeys);
+export const pySetMatch = (x, cases) => {
+  if (!Array.isArray(x)) return x;
+  const keys = new Set(x.map(pySetKey));
+  if (keys.size !== x.length) return x;
+  return (
+    cases.find((c) => {
+      if (c == null) return false;
+      const other = new Set(c.map(pySetKey));
+      return other.size === keys.size && [...other].every((k) => keys.has(k));
+    }) ?? x
+  );
 };

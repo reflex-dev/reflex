@@ -585,19 +585,23 @@ def set_contains_operation(
 
 
 @var_operation
-def set_canonical_operation(value: SetVar) -> CustomVarOperationReturn[list]:
-    """Get a form of a set that serializes the same for every set with its elements.
+def set_match_operation(subject: Var, cases: ArrayVar) -> CustomVarOperationReturn[Any]:
+    """Swap an ``rx.match`` subject for the first set case it equals.
 
-    Two sets with the same elements give equal ``JSON.stringify`` output in any
-    order, which is how ``rx.match`` compares a set subject with a set case.
+    ``rx.match`` compares the JSON of the subject with the JSON of each case,
+    and a set serializes in its iteration order, so a subject equal to a set
+    case takes that case's form before the comparison.
 
     Args:
-        value: The set.
+        subject: The match subject.
+        cases: The set cases of the match.
 
     Returns:
-        The set canonical operation.
+        The set match operation.
     """
-    return _set_helper_operation("pySetCanonical", value, var_type=list)
+    return _set_helper_operation(
+        "pySetMatch", subject, cases, var_type=subject._var_type
+    )
 
 
 @var_operation

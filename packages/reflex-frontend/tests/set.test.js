@@ -9,12 +9,12 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  pySetCanonical,
   pySetDifference,
   pySetHas,
   pySetIntersection,
   pySetIsDisjoint,
   pySetIsSubset,
+  pySetMatch,
   pySetSymmetricDifference,
   pySetUnion,
 } from "$/utils/helpers/set";
@@ -91,37 +91,41 @@ describe.each([null, undefined])("a %s set is empty", (none) => {
   });
 });
 
-test("canonical sets compare by their elements", () => {
-  const same = (a, b) =>
-    JSON.stringify(pySetCanonical(a)) === JSON.stringify(pySetCanonical(b));
-  expect(pySetCanonical(["d", "c", "d"])).toEqual(["sc", "sd"]);
-  expect(same(["c", "d"], ["d", "c"])).toBe(true);
-  expect(same(["c", "d"], ["c"])).toBe(false);
-  expect(same([[1, 2], "a"], ["a", [1, 2]])).toBe(true);
-  expect(same([true, 2], [2, 1])).toBe(true);
-  expect(same(["1"], [1])).toBe(false);
-  expect(same([null], [NaN])).toBe(false);
-  expect(
-    pySetCanonical([10, 9, "b", null, NaN, Infinity, -Infinity, 9]),
-  ).toEqual([9, 10, "n-Infinity", "nInfinity", "nNaN", "null", "sb"]);
-  expect(pySetCanonical([])).toEqual([]);
+test("a set matches the set case it equals, whatever its order", () => {
+  // The switch that rx.match compiles to for a set case.
+  const match = (tags) => {
+    switch (
+      JSON.stringify(
+        pySetMatch(tags, [
+          ["c", "d"],
+          [[1, 2], "a"],
+        ]),
+      )
+    ) {
+      case JSON.stringify(["c", "d"]):
+        return "cd";
+      case JSON.stringify([[1, 2], "a"]):
+        return "pair";
+      default:
+        return "other";
+    }
+  };
+  expect(match(["c", "d"])).toBe("cd");
+  expect(match(["d", "c"])).toBe("cd");
+  expect(match(["d", "c", "d"])).toBe("other");
+  expect(match(["a", [1, 2]])).toBe("pair");
+  expect(match(["c"])).toBe("other");
+  expect(match(["c", "d", "e"])).toBe("other");
+  expect(match("cd")).toBe("other");
+  expect(match(null)).toBe("other");
 });
 
-test("canonical structured set elements preserve non-finite numbers", () => {
-  expect(pySetCanonical([[NaN], [null], [Infinity], [-Infinity]])).toEqual([
-    'a["n-Infinity"]',
-    'a["nInfinity"]',
-    'a["nNaN"]',
-    "a[null]",
-  ]);
-  expect(pySetHas([[NaN]], [null])).toBe(false);
-  expect(pySetHas([[true]], [1])).toBe(true);
-  expect(pySetHas([{ value: [NaN] }], { value: [null] })).toBe(false);
-});
-
-test.each([
-  null,
-  undefined,
-])("a %s set stays missing when made canonical", (none) => {
-  expect(pySetCanonical(none)).toBe(none);
+test("a set case matches by Python equality", () => {
+  expect(pySetMatch([true, 2], [[1, 2]])).toEqual([1, 2]);
+  expect(pySetMatch(["1"], [[1]])).toEqual(["1"]);
+  expect(pySetMatch([[1, 2]], [["o[1,2]"]])).toEqual([[1, 2]]);
+  expect(pySetMatch([NaN], [[null]])).toEqual([NaN]);
+  expect(pySetMatch([], [null, []])).toEqual([]);
+  const value = { a: 1 };
+  expect(pySetMatch(value, [[]])).toBe(value);
 });

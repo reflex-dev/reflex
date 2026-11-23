@@ -14,7 +14,7 @@ from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
 from types import FunctionType, MethodType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args
 
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
@@ -265,6 +265,32 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     raise TypeError(msg)
 
 
+def _transform_set_arg(
+    value: list, origin: type[set | frozenset], hinted_args: Any
+) -> set | frozenset | list:
+    """Build the set or frozenset an argument is annotated with from its array.
+
+    Args:
+        value: The received array.
+        origin: set or frozenset.
+        hinted_args: The type hint for the argument.
+
+    Returns:
+        The set, or the array unchanged when its elements stay unhashable.
+    """
+    try:
+        return origin(value)
+    except TypeError:
+        pass
+    # Arrays and objects are unhashable until the element hint turns them into
+    # tuples, frozensets or dataclasses.
+    (element_hint,) = get_args(hinted_args) or (Any,)
+    try:
+        return origin([_transform_event_arg(x, element_hint) for x in value])
+    except (TypeError, ValueError):
+        return value
+
+
 def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     """Transform an event argument based on its type hint.
 
@@ -300,22 +326,11 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
         if BaseModelV2 is not None and issubclass(hinted_args, BaseModelV2):
             return hinted_args.model_validate(value)
     if isinstance(value, list):
-        # Sets and tuples travel as JSON arrays; rebuild the annotated type,
-        # bare (set) or parametrized (set[str]).
-        collection = types.get_origin(hinted_args) or hinted_args
-        if collection is set or collection is frozenset or collection is tuple:
-            element_hints = types.get_args(hinted_args)
-            if element_hints:
-                if collection is tuple and element_hints[-1] is not Ellipsis:
-                    return tuple(
-                        _transform_event_arg(item, hint)
-                        for item, hint in zip(value, element_hints, strict=True)
-                    )
-                element_hint = element_hints[0]
-                return collection(
-                    _transform_event_arg(item, element_hint) for item in value
-                )
-            return collection(value)
+        origin = types.get_origin(hinted_args) or hinted_args
+        if origin is tuple:
+            return tuple(value)
+        if origin is set or origin is frozenset:
+            return _transform_set_arg(value, origin, hinted_args)
     if isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
         try:
             return hinted_args(value)

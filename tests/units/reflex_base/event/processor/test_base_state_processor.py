@@ -2233,6 +2233,56 @@ class _TagsRecord:
     name: str
 
 
+@dataclasses.dataclass(frozen=True)
+class _Point:
+    x: int
+    y: int
+
+
+@pytest.mark.parametrize(
+    ("value", "hint", "expected"),
+    [
+        (["c", "d", "c"], set[str], {"c", "d"}),
+        (["c", "d"], frozenset[str], frozenset({"c", "d"})),
+        (["c", "d"], frozenset, frozenset({"c", "d"})),
+        (["c", "d"], set[str] | None, {"c", "d"}),
+        (None, set[str] | None, None),
+        ([[1, 2], [1, 2], [3, 4]], set[tuple[int, int]], {(1, 2), (3, 4)}),
+        ([{"x": 1, "y": 2}], frozenset[_Point], frozenset({_Point(1, 2)})),
+        ([["a"], ["b", "a"]], set[frozenset[str]], {frozenset("a"), frozenset("ab")}),
+        ([1, 2], tuple[int, int], (1, 2)),
+        ([1, 2, 3], tuple[int, ...], (1, 2, 3)),
+        ([1, 2, 3], tuple[int], (1, 2, 3)),
+        ([1, "a", "b"], tuple[int, *tuple[str, ...]], (1, "a", "b")),
+        ([[1, 2]], set[Any], [[1, 2]]),
+        ([[1, 2]], set, [[1, 2]]),
+        (["c", "d"], list[str], ["c", "d"]),
+    ],
+)
+def test_transform_event_arg_collections(value: Any, hint: Any, expected: Any):
+    """A JSON array becomes the set, frozenset or tuple its annotation names.
+
+    Unhashable elements are converted by the element annotation; when that
+    still leaves them unhashable, the array arrives unchanged.
+
+    Args:
+        value: The received argument.
+        hint: The handler's annotation for the argument.
+        expected: The transformed argument.
+    """
+    result = _transform_event_arg(value, hint)
+    assert result == expected
+    assert type(result) is type(expected)
+
+
+def test_transform_event_payload_unhashable_set_keeps_other_args():
+    """An array that cannot become a set leaves the other arguments coerced."""
+    payload = _transform_event_payload(
+        {"tags": [[1, 2]], "names": ["a"]}, {"tags": set, "names": frozenset[str]}
+    )
+    assert payload == {"tags": [[1, 2]], "names": frozenset({"a"})}
+
+
 def test_transform_event_payload_decodes_unannotated_form_data():
     """Form data reaches an unannotated handler arg as a dict."""
     payload = _transform_event_payload(
@@ -2287,53 +2337,6 @@ def test_transform_event_arg_model_drops_non_fields_without_deprecation():
     assert isinstance(post, Post)
     assert (post.title, post.likes) == ("hi", 2)
     assert not post.model_extra
-
-
-@pytest.mark.parametrize(
-    ("hint", "expected"),
-    [
-        (set, {"c", "d"}),
-        (set[str], {"c", "d"}),
-        (set[str] | None, {"c", "d"}),
-        (frozenset, frozenset({"c", "d"})),
-        (frozenset[str], frozenset({"c", "d"})),
-        (tuple, ("d", "c", "d")),
-        (tuple[str, ...], ("d", "c", "d")),
-        (list[str], ["d", "c", "d"]),
-    ],
-)
-def test_transform_event_arg_builds_collection_from_list(hint: Any, expected: Any):
-    """A list from the wire is built into the collection type of the annotation.
-
-    Args:
-        hint: The handler's annotation for the argument.
-        expected: The transformed argument.
-    """
-    value = _transform_event_arg(["d", "c", "d"], hint)
-    assert value == expected
-    assert type(value) is type(expected)
-
-
-@pytest.mark.parametrize(
-    ("hint", "value", "expected"),
-    [
-        (set[tuple[int, int]], [[1, 2], [3, 4]], {(1, 2), (3, 4)}),
-        (frozenset[tuple[int, ...]], [[1, 2]], frozenset({(1, 2)})),
-        (tuple[set[int], str], [[1, 2], "x"], ({1, 2}, "x")),
-        (set[tuple[tuple[int, ...], ...]], [[[1, 2]]], {((1, 2),)}),
-    ],
-)
-def test_transform_event_arg_nested_collections(hint: Any, value: Any, expected: Any):
-    """Rebuild nested annotated collections before constructing hashable sets.
-
-    Args:
-        hint: The nested collection annotation.
-        value: The JSON array received from the frontend.
-        expected: The reconstructed collection.
-    """
-    assert _transform_event_payload(
-        {"items": value, "count": "7"}, {"items": hint, "count": int}
-    ) == {"items": expected, "count": 7}
 
 
 class _TagsDict(TypedDict):
