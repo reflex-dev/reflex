@@ -44,15 +44,20 @@ const RTL_LANGUAGES = new Set([
 ]);
 
 // The element the app renders into: an embedded app (EmbedPlugin) owns only its
-// mount target, never the host page's <html>.
+// mount target, never the host page's <html>, so it has no root while the host
+// page lacks that element.
 const appRoot = () =>
-  (env.MOUNT_TARGET && document.querySelector(env.MOUNT_TARGET)) ||
-  document.documentElement;
+  env.MOUNT_TARGET
+    ? document.querySelector(env.MOUNT_TARGET)
+    : document.documentElement;
 
 // Set lang/dir on the app's root for a locale. Tags are case-insensitive (RFC
 // 5646).
 const applyDocumentLocale = (locale) => {
   const root = appRoot();
+  if (!root) {
+    return;
+  }
   root.lang = locale;
   const language = locale.split("-")[0].toLowerCase();
   root.dir = RTL_LANGUAGES.has(language) ? "rtl" : "ltr";
@@ -161,6 +166,9 @@ const releaseDocument = () => {
 
 const holdDocument = () => {
   heldRoot = appRoot();
+  if (!heldRoot) {
+    return;
+  }
   heldRoot.style.visibility = "hidden";
   clearTimeout(holdTimer);
   holdTimer = setTimeout(releaseDocument, HOLD_TIMEOUT_MS);

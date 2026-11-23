@@ -151,6 +151,7 @@ def _render_runtime(
     languages: tuple[str, ...] = ("en",),
     props: dict[str, Any] | None = None,
     mount_target: str | None = None,
+    mount_present: bool = True,
     action: str = "",
 ) -> dict[str, Any]:
     """Render a component of the shipped client runtime against stub modules.
@@ -168,6 +169,8 @@ def _render_runtime(
         languages: The browser's preferred languages.
         props: Extra props for the component.
         mount_target: The embed mount target selector (EmbedPlugin), if any.
+        mount_present: Whether the page has an element matching the mount
+            target.
         action: JS run after the render with the runtime module as ``mod``
             and the rendered element as ``rendered``.
 
@@ -209,7 +212,7 @@ def _render_runtime(
         "pathname": pathname,
         "languages": list(languages),
         "props": props or {},
-        "mountTarget": mount_target,
+        "mountTarget": mount_target if mount_present else None,
     })
     result = subprocess.run(
         ["node", str(driver), str(module), component, env, action],
@@ -475,6 +478,24 @@ def test_embedded_provider_leaves_the_host_page_alone(tmp_path: Path):
     assert rendered["visibility"] == ""
     assert rendered["mountElement"] == {"lang": "en", "dir": "ltr"}
     assert rendered["mountVisibility"] == "hidden"
+
+
+@requires_node
+def test_embedded_provider_without_its_mount_element_leaves_the_host_page_alone(
+    tmp_path: Path,
+):
+    """An embedded app whose mount element is gone changes nothing on the host page."""
+    rendered = _render_runtime(
+        tmp_path,
+        "I18nProvider",
+        locales=["en", "de"],
+        default_locale="en",
+        languages=("de",),
+        mount_target="#widget",
+        mount_present=False,
+    )
+    assert rendered["documentElement"] == {}
+    assert rendered["visibility"] == ""
 
 
 _PICK_CASES = [
