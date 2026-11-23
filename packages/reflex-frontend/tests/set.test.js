@@ -14,6 +14,7 @@ import {
   pySetIntersection,
   pySetIsDisjoint,
   pySetIsSubset,
+  pySetKey,
   pySetMatch,
   pySetSymmetricDifference,
   pySetUnion,
@@ -52,6 +53,24 @@ test("set elements compare by value", () => {
       ],
     ),
   ).toEqual([[5, 6]]);
+});
+
+test("structured elements compare their elements as Python does", () => {
+  expect(pySetHas([[true]], [1])).toBe(true);
+  expect(pySetHas([{ value: [false] }], { value: [0] })).toBe(true);
+  expect(pySetUnion([[true]], [[1]])).toEqual([[true]]);
+  expect(pySetIntersection([[true]], [[1]])).toEqual([[true]]);
+  expect(pySetHas([["1"]], [1])).toBe(false);
+  expect(pySetHas([[NaN]], [null])).toBe(false);
+  expect(pySetHas([[Infinity]], [null])).toBe(false);
+  expect(pySetHas([["o"]], {})).toBe(false);
+});
+
+test("a structured key grows with the element, not with its depth", () => {
+  let nested = "leaf";
+  for (let i = 0; i < 40; i++) nested = [nested];
+  expect(pySetKey(nested).length).toBeLessThan(200);
+  expect(pySetHas([nested], nested)).toBe(true);
 });
 
 describe.each([null, undefined])("a %s set is empty", (none) => {

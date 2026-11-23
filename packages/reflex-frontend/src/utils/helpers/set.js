@@ -5,18 +5,40 @@
 // empty set.
 
 /**
+ * The JSON value a structured element is keyed by: strings get a prefix,
+ * booleans become the numbers they equal in Python, non-finite numbers are
+ * spelled out (JSON writes them as null), and objects are tagged so they never
+ * equal an array.
+ * @param {*} x A structured element or one of its parts.
+ * @returns {*} The JSON value of x.
+ */
+const pySetKeyValue = (x) => {
+  if (typeof x === "string") return "s" + x;
+  if (typeof x === "boolean") return +x;
+  if (typeof x === "number" && !Number.isFinite(x)) return "n" + x;
+  if (Array.isArray(x)) return x.map(pySetKeyValue);
+  if (x !== null && typeof x === "object") {
+    return ["o", Object.entries(x).map(([k, v]) => [k, pySetKeyValue(v)])];
+  }
+  return x;
+};
+
+/**
  * Key a set element by value, so structured elements (tuples, dataclasses)
  * compare the way Python compares them rather than by object identity.
  * Numbers and null are their own key, booleans are keyed as the numbers
- * they equal in Python (True == 1, False == 0), and strings and objects get
- * distinct prefixes so a string can never share a key with an object's JSON.
+ * they equal in Python (True == 1, False == 0), also inside structured
+ * elements, and strings and structured elements get distinct prefixes so a
+ * string can never share a key with an element's JSON.
  * @param {*} x The set element.
  * @returns {*} The key of the element.
  */
 export const pySetKey = (x) => {
   if (typeof x === "string") return "s" + x;
   if (typeof x === "boolean") return +x;
-  if (x !== null && typeof x === "object") return "o" + JSON.stringify(x);
+  if (x !== null && typeof x === "object") {
+    return "o" + JSON.stringify(pySetKeyValue(x));
+  }
   return x;
 };
 
