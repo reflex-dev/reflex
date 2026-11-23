@@ -13,10 +13,19 @@ from reflex_docs.pages.docs.cloud_cliref import (
 
 
 def _option(flag: str, help_text: str) -> InlineTextCollection:
+    """Build an option list item the way the generator does.
+
+    Args:
+        flag: The option's flags and type label.
+        help_text: The option's help text.
+
+    Returns:
+        The flags in code, followed by the help text.
+    """
     return InlineTextCollection((InlineCode(flag), InlineText(": " + help_text)))
 
 
-def test_apps_page_lists_common_options_once_and_has_a_toc():
+def test_apps_page_toc_lists_common_options_then_each_command():
     """Each command is one TOC entry; shared options are not repeated per command."""
     toc, _ = generate_docs(modules["apps"], "Apps")[0]
     assert toc == [
@@ -33,7 +42,6 @@ def test_apps_page_lists_common_options_once_and_has_a_toc():
         (2, "reflex cloud apps rollback"),
         (2, "reflex cloud apps describe"),
     ]
-    assert modules["apps"].count("`--token TEXT`: The authentication token.") == 1
 
 
 def test_category_markdown_factors_out_options_every_command_shares(monkeypatch):

@@ -1,5 +1,7 @@
 """Tests for the shared API reference layout."""
 
+import re
+
 import pytest
 import reflex as rx
 from reflex_docgen import MethodDocumentation, generate_class_documentation
@@ -81,6 +83,8 @@ def test_environment_variables_use_shared_fields_and_member_navigation():
     _toc, page = env_vars_page()
     rendered = str(page)
     assert fields
-    for field in fields:
-        assert rendered.count(f'id:"{field.name.lower()}"') == 1
+    # Every variable keeps exactly one anchor, listed section by section.
+    assert sorted(re.findall(r'id:"([^"]+)"', rendered)) == sorted(
+        field.name.lower() for field in fields
+    )
     assert "Default: " in rendered

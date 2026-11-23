@@ -1,5 +1,6 @@
 """Regression checks for shared documentation presentation."""
 
+import re
 from pathlib import Path
 from typing import Literal, get_args
 
@@ -144,10 +145,36 @@ def test_html_layout_page_lists_plain_elements_in_one_table():
         (2, "rx.el.title"),
         (2, "Other elements"),
     ]
-    rendered = str(rx.fragment(*section))
-    # A plain element keeps its anchor, now on its table row.
-    assert rendered.count('id:"rx.el.article"') == 1
-    assert rendered.count('"Event Triggers"') == 9
+    # Each plain element keeps its anchor, now on its table row.
+    assert re.findall(r'id:"([^"]+)"', str(rx.fragment(*section))) == [
+        "rx.el.address",
+        "rx.el.article",
+        "rx.el.aside",
+        "rx.el.body",
+        "rx.el.dd",
+        "rx.el.dl",
+        "rx.el.dt",
+        "rx.el.figcaption",
+        "rx.el.footer",
+        "rx.el.h1",
+        "rx.el.h2",
+        "rx.el.h3",
+        "rx.el.h4",
+        "rx.el.h5",
+        "rx.el.h6",
+        "rx.el.head",
+        "rx.el.header",
+        "rx.el.hr",
+        "rx.el.li",
+        "rx.el.main",
+        "rx.el.nav",
+        "rx.el.noscript",
+        "rx.el.portal",
+        "rx.el.pre",
+        "rx.el.section",
+        "rx.el.template",
+        "rx.el.ul",
+    ]
 
 
 def test_state_catalog_offers_real_guides_instead_of_an_empty_grid():

@@ -1013,7 +1013,7 @@ def other_elements_table(component_list: list) -> rx.Component:
         rows.append(
             rx.el.tr(
                 docs_api_cell(
-                    rx.code(
+                    rx.el.code(
                         display_name, class_name="code-style text-nowrap leading-normal"
                     ),
                     "w-[30%]",
