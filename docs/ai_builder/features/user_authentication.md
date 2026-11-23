@@ -62,7 +62,7 @@ The **Who can sign in** setting decides which accounts the app will admit:
 ```python eval
 rx.image(
     src="https://web.reflex-assets.dev/app_auth_audience_picker.webp",
-    alt="The open 'Who can sign in' menu, listing Anyone, Project members, Invite only and Just the team. Anyone is selected with a tick; the other three are dimmed and each carries a small Pro badge.",
+    alt="The open 'Who can sign in' menu, listing Anyone, Project members, Invite only and Just the team. Anyone is selected with a tick; the other three are dimmed and each carries a small Enterprise badge.",
     class_name="rounded-md h-auto mb-4",
     border=f"0.81px solid {rx.color('slate', 5)}",
 )
