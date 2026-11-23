@@ -215,14 +215,13 @@ export function saveSearch(handlerName) {
 
 ### From Python
 
-`rx.js` builds the same calls from Python, filling in the event handler's full
-name for you. Each function returns a var, which `rx.run_script` runs whether an
-event trigger uses it or an event handler returns it:
+`rx.js` builds the same calls from Python. Each function returns a var, which
+`rx.run_script` runs whether an event trigger uses it or an event handler
+returns it:
 
 | Python | JavaScript |
 | --- | --- |
 | `rx.js.ref(id)` | `reflex.ref(id)` |
-| `rx.js.add_events(*events)` | `reflex.addEvents([...])` |
 | `rx.js.library(name)` | `reflex.library(name)` |
 
 ```python
@@ -232,10 +231,6 @@ class SearchState(rx.State):
     @rx.event
     def set_query(self, query: str):
         self.query = query
-
-    @rx.event
-    def clear(self):
-        self.query = ""
 
     @rx.event
     def read_search(self):
@@ -249,22 +244,18 @@ def search():
     return rx.vstack(
         rx.input(id="search"),
         rx.button("Read", on_click=SearchState.read_search),
-        rx.button("Clear", on_click=rx.run_script(rx.js.add_events(SearchState.clear))),
         rx.text(SearchState.query),
     )
 ```
 
-`rx.js.add_events` takes events, such as `SearchState.set_query("x")`, and
-event handlers that take no arguments, such as `SearchState.clear`.
+Python has no `reflex.addEvents`: dispatch events from Python as usual, with an
+event trigger or by returning them from an event handler. `reflex.addEvents` is
+for JavaScript that sends a value it computed back to Python.
 
 ### Errors
 
 Each error says what went wrong and how to fix it. The messages, with example
 names:
-
-```text
-rx.js.add_events cannot dispatch SearchState.set_query: the handler needs arguments, and add_events has none to pass it. Pass them where you add it, as in rx.js.add_events(SearchState.set_query(...)).
-```
 
 ```text
 reflex.library("left-pad") cannot load "left-pad": the app does not bundle it for dynamic components. Bundle it by calling bundle_library("left-pad") from reflex.components.dynamic in your app's Python code.
