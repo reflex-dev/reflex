@@ -51,6 +51,7 @@ from reflex_base.utils.exceptions import (
     StateTooLargeError,
     StateValueError,
     UnretrievableVarValueError,
+    VarTypeError,
 )
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import Field, Var, computed_var, field
@@ -5749,54 +5750,21 @@ def test_state_dataclasses_field_without_backend_default():
     assert BareBackendState.__fields__["_n"].default == 0
 
 
-def test_state_unannotated_dataclasses_factory():
-    """An unannotated dataclass field factory produces a serializable state var."""
+@pytest.mark.usefixtures("forked_registration_context")
+def test_state_unannotated_dataclasses_field_matches_rx_field():
+    """An unannotated dataclasses.field(...) state var is typed like rx.field(...)."""
 
     class UnannotatedFieldState(BaseState):
-        items = dataclasses.field(default_factory=list)
+        n = dataclasses.field(default=3)
 
-    state = UnannotatedFieldState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
-    assert state.items == []
-    state.items.append("x")
-    state.reset()
-    assert state.items == []
+    assert UnannotatedFieldState.__fields__["n"].annotated_type is int
+    assert UnannotatedFieldState(_reflex_internal_init=True).n == 3  # pyright: ignore [reportCallIssue]
 
+    # A factory gives no type to infer, so the var needs an annotation.
+    with pytest.raises(VarTypeError, match="items"):
 
-@pytest.mark.usefixtures("forked_registration_context")
-@pytest.mark.parametrize("name", ["items", "_items"])
-def test_state_unannotated_dataclasses_mutable_default_is_copied(name):
-    """Mutable dataclass defaults stay isolated and reset to their original value.
-
-    Args:
-        name: A frontend or backend field name.
-    """
-    default = {"nested": []}
-    state_cls = type(
-        "MutableDataclassesFieldState",
-        (BaseState,),
-        {"__module__": __name__, name: dataclasses.field(default=default)},
-    )
-    first = state_cls(_reflex_internal_init=True)
-    second = state_cls(_reflex_internal_init=True)
-    getattr(first, name)["nested"].append("changed")
-    assert getattr(first, name) == {"nested": ["changed"]}
-    assert getattr(second, name) == default == {"nested": []}
-    first.reset()
-    assert getattr(first, name) == {"nested": []}
-    getattr(first, name)["nested"].append("again")
-    assert getattr(second, name) == default == {"nested": []}
-
-
-def test_state_unannotated_dataclasses_custom_factory_requires_annotation():
-    """A custom dataclass factory without an annotation raises a clear error."""
-
-    def make_items() -> list:
-        return []
-
-    with pytest.raises(StateValueError, match="add a type annotation"):
-
-        class CustomFactoryState(BaseState):
-            items = dataclasses.field(default_factory=make_items)
+        class UntypedFactoryState(BaseState):
+            items = dataclasses.field(default_factory=list)
 
 
 def test_assignment_through_property_setter():
