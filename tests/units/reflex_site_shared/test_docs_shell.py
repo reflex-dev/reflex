@@ -7,7 +7,6 @@ import pytest
 from reflex_base.components.component import BaseComponent
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.el.elements.sectioning import H4
-from reflex_components_core.react_router.dom import ReactRouterLink
 from reflex_components_internal.components.base.input import InputRoot
 from reflex_components_internal.components.base.textarea import Textarea
 from reflex_components_radix.themes.typography.link import Link
@@ -248,8 +247,9 @@ def _footer_link_groups(footer: BaseComponent) -> list[tuple[str, list[str]]]:
             heading = cast(Bare, node.children[0].children[0])
             hrefs = []
             for link in node.children[1:]:
+                # Internal links wrap a router link that carries the destination.
                 target = link.children[0] if isinstance(link, Link) else link
-                href = target.to if isinstance(target, ReactRouterLink) else target.href
+                href = target.to if isinstance(link, Link) else target.href  # pyright: ignore [reportAttributeAccessIssue]
                 hrefs.append(str(href))
             groups.append((str(heading.contents), hrefs))
             continue
