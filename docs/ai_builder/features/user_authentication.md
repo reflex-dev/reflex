@@ -11,7 +11,7 @@ Nothing is generated for you to maintain. Your app talks to Reflex as a standard
 
 ```md alert info
 # Plan availability
-Building apps in the AI Builder, and adding sign-in to them, requires the Pro or Enterprise plan; a Free account cannot build or deploy apps. **Choosing who can sign in** is included in both: until you narrow it, an app signs in anyone with a Reflex account. If the sign-in options are marked unavailable on a plan that should carry them, [contact sales](https://reflex.dev/pricing/).
+Building apps in the AI Builder requires the Pro or Enterprise plan; a Free account cannot build or deploy apps. Both plans include **choosing who can sign in**. If those options are marked unavailable on your plan, [contact sales](https://reflex.dev/pricing/).
 ```
 
 ## Add sign-in to your app
@@ -42,8 +42,8 @@ Either route sets two environment variables on the app, `OIDC_ISSUER_URI` and `O
 Once it is on, the tab shows the app's issuer and client id, the callback addresses the app signs in at, and the sections below.
 
 ```md alert warning
-# Until you narrow the audience, anyone with a Reflex account can sign in
-"Add sign-in" means the app knows who someone is, not that it admits only people you chose. Until you narrow the audience, every Reflex account is allowed in, so adding sign-in on its own does not make an app private.
+# By default, anyone with a Reflex account can sign in
+"Add sign-in" means the app knows who someone is, not that it admits only people you chose. Adding sign-in on its own does not make an app private: choose who can sign in below.
 ```
 
 ## Choose who can sign in
