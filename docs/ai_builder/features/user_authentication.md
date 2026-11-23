@@ -11,7 +11,7 @@ Nothing is generated for you to maintain. Your app talks to Reflex as a standard
 
 ```md alert info
 # Plan availability
-Building apps in the AI Builder requires the Pro or Enterprise plan; a Free account cannot build or deploy apps in the AI Builder. Both plans include **choosing who can sign in**. If those options are marked unavailable on your plan, [contact sales](https://reflex.dev/pricing/).
+Building apps in the AI Builder requires the Enterprise plan; a Free account cannot build or deploy apps in the AI Builder. The Enterprise plan includes **choosing who can sign in**. If those options are marked unavailable on your plan, [contact sales](https://reflex.dev/pricing/).
 ```
 
 ## Add sign-in to your app
@@ -57,7 +57,7 @@ The **Who can sign in** setting decides which accounts the app will admit:
 | **Invite only** | The addresses you invite, plus anyone who can edit the app |
 | **Just the team** | Only people who can edit the app |
 
-**Anyone** is what every app starts on. The other three require the Pro or Enterprise plan.
+**Anyone** is what every app starts on. The other three require the Enterprise plan.
 
 ```python eval
 rx.image(
