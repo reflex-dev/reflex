@@ -119,7 +119,7 @@ rx.el.h1(
 
 ```python eval
 rx.el.span(
-    "Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
+    "Advanced UI components and features to enhance your Reflex applications. Available for free in self-hosted apps with the 'Built with Reflex' badge, or without the badge with an enterprise license. Deploying to Reflex Cloud requires the Pro plan or above.",
     class_name="font-[475] text-muted-foreground max-w-[80%] text-sm",
 )
 ```

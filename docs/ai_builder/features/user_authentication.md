@@ -11,7 +11,7 @@ Nothing is generated for you to maintain. Your app talks to Reflex as a standard
 
 ```md alert info
 # Plan availability
-Sign-in itself is available on every plan. **Choosing who can sign in** requires the Pro or Enterprise plan: on lower plans an app signs in anyone with a Reflex account, and the other options are shown with a Pro badge. If they are marked unavailable on a plan that should carry them, [contact sales](https://reflex.dev/pricing/).
+Building apps in the AI Builder, and adding sign-in to them, requires the Pro or Enterprise plan; a Free account cannot build or deploy apps. **Choosing who can sign in** is included in both: until you narrow it, an app signs in anyone with a Reflex account. If the sign-in options are marked unavailable on a plan that should carry them, [contact sales](https://reflex.dev/pricing/).
 ```
 
 ## Add sign-in to your app
@@ -42,8 +42,8 @@ Either route sets two environment variables on the app, `OIDC_ISSUER_URI` and `O
 Once it is on, the tab shows the app's issuer and client id, the callback addresses the app signs in at, and the sections below.
 
 ```md alert warning
-# On the Free plan, anyone with a Reflex account can sign in
-"Add sign-in" means the app knows who someone is, not that it admits only people you chose. Until you narrow the audience, every Reflex account is allowed in, so adding sign-in on its own does not make an app private. Narrowing it requires the Pro or Enterprise plan.
+# Until you narrow the audience, anyone with a Reflex account can sign in
+"Add sign-in" means the app knows who someone is, not that it admits only people you chose. Until you narrow the audience, every Reflex account is allowed in, so adding sign-in on its own does not make an app private.
 ```
 
 ## Choose who can sign in
@@ -111,7 +111,7 @@ Neither timestamp means "signed in". A person appears here when they approve the
 
 Blocking refuses a person whatever else would admit them, and ends the sessions they are holding. Unblocking lets them sign in again; it does not restore the old session.
 
-Use it to remove somebody who is abusing an app. Blocking is available on every plan.
+Use it to remove somebody who is abusing an app. Blocking is available on every plan that can build apps.
 
 ```md alert warning
 # A block can take up to 30 minutes to reach a running session
