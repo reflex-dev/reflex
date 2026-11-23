@@ -948,6 +948,15 @@ def split_props(
             owners.setdefault(name, index)
 
     def rank(prop: PropDocumentation) -> tuple[bool, int]:
+        """Rank a prop by the class that declares it.
+
+        Args:
+            prop: The prop to rank.
+
+        Returns:
+            Whether an HTML ancestor of the component declares it, then that
+            class's MRO index, so the nearest non-HTML declarations sort first.
+        """
         owner = owners[prop.name]
         return mro[owner] is not component and issubclass(mro[owner], BaseHTML), owner
 

@@ -7,10 +7,17 @@ import reflex as rx
 from reflex_components_core.el.elements.tables import Td, Tr
 from reflex_components_radix.themes.typography.code import Code
 from reflex_components_radix.themes.typography.heading import Heading
+from reflex_docgen import generate_documentation
 
+from reflex_docs.pages.docs.component import (
+    api_reference_toc,
+    component_docs,
+    split_props,
+)
 from reflex_docs.pages.docs.source import stacked_description_rows
 from reflex_docs.pages.docs_landing.views.ai_builder import card
 from reflex_docs.pages.docs_landing.views.link_item import link_item
+from reflex_docs.templates.docpage import h3_comp
 from reflex_docs.templates.docpage.docpage import breadcrumb
 
 
@@ -229,7 +236,14 @@ GLOBAL_HTML_ATTRIBUTES = [
 
 
 def _prop_names(table: rx.Component) -> list[str]:
-    """Read the prop names from a props table, in row order."""
+    """Read the prop names from a props table, in row order.
+
+    Args:
+        table: A rendered props table.
+
+    Returns:
+        The name in each body row's first cell.
+    """
     pending, names = [table], []
     while pending:
         node = pending.pop(0)
@@ -245,10 +259,6 @@ def _prop_names(table: rx.Component) -> list[str]:
 
 def test_button_props_list_its_own_props_before_global_html_attributes():
     """Component props lead the table; global attributes are collapsed after them."""
-    from reflex_docgen import generate_documentation
-
-    from reflex_docs.pages.docs.component import component_docs, split_props
-
     button = type(rx.button())
     own, global_attrs = split_props(button, generate_documentation(button).props)
     assert [prop.name for prop in own] == BUTTON_OWN_PROPS
@@ -266,9 +276,6 @@ def test_button_props_list_its_own_props_before_global_html_attributes():
 
 def test_component_reference_headings_nest_under_api_reference():
     """Component headings sit one level below API Reference, on the page and in the TOC."""
-    from reflex_docs.pages.docs.component import api_reference_toc, component_docs
-    from reflex_docs.templates.docpage import h3_comp
-
     h3_tag = h3_comp(text="").tag
     headings, pending = [], [component_docs((type(rx.button()), "rx.button"), {})]
     while pending:
