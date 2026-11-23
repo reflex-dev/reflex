@@ -212,8 +212,8 @@ def event_log(state_manager_redis: StateManagerRedis) -> list[dict[str, Any]]:
 def event_log_on_update(state_manager_redis: StateManagerRedis) -> asyncio.Event:
     """Get the event for new event records being added to the redis event log.
 
-    Test is responsible for calling `.clear` before an operation when it needs
-    to detect a new event added afterward.
+    Wait for the events an operation causes with ``_wait_for_keyspace_events``:
+    the next event to arrive may not be the one a test expects.
 
     Args:
         state_manager_redis: The StateManagerRedis.
@@ -222,6 +222,58 @@ def event_log_on_update(state_manager_redis: StateManagerRedis) -> asyncio.Event
         The event that is set when new events are added to the redis event log.
     """
     return state_manager_redis.redis._internals["event_log_on_update"]  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def _count_keyspace_events(
+    event_log: list[dict[str, Any]], key_suffix: bytes, operation: bytes
+) -> int:
+    """Count the logged keyspace events of an operation on matching keys.
+
+    Args:
+        event_log: The redis event log.
+        key_suffix: The end of the keys to count events of.
+        operation: The operation, such as ``b"set"`` or ``b"del"``.
+
+    Returns:
+        The number of matching events.
+    """
+    return sum(
+        1
+        for ev in event_log
+        if ev["channel"].endswith(key_suffix) and ev["data"] == operation
+    )
+
+
+async def _wait_for_keyspace_events(
+    event_log: list[dict[str, Any]],
+    event_log_on_update: asyncio.Event,
+    key_suffix: bytes,
+    operation: bytes,
+    count: int,
+) -> int:
+    """Wait until the event log holds a number of events of an operation.
+
+    A real redis delivers keyspace events on a connection of their own, so the
+    next logged event may be any of those an operation causes, not the one a
+    test expects.
+
+    Args:
+        event_log: The redis event log.
+        event_log_on_update: The event set when the event log grows.
+        key_suffix: The end of the keys to count events of.
+        operation: The operation, such as ``b"set"`` or ``b"del"``.
+        count: The number of events to wait for.
+
+    Returns:
+        The number of matching events, which may exceed count.
+    """
+    async with asyncio.timeout(5):
+        while (
+            logged := _count_keyspace_events(event_log, key_suffix, operation)
+        ) < count:
+            event_log_on_update.clear()
+            await event_log_on_update.wait()
+    return logged
 
 
 @pytest.mark.asyncio
@@ -517,8 +569,6 @@ async def test_modify_oplock(
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
 
-    event_log_on_update.clear()
-
     # Initial modify should set count to 1
     async with state_manager_redis.modify_state(
         BaseStateToken(ident=token, cls=root_state),
@@ -535,12 +585,9 @@ async def test_modify_oplock(
     assert state_lock_1 is not None
     assert not state_lock_1.locked()
 
-    await event_log_on_update.wait()
-    lock_events_before = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
+    lock_events_before = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"set", 1
+    )
     assert lock_events_before == 1
 
     # The second modify should NOT trigger another redis lock
@@ -550,16 +597,11 @@ async def test_modify_oplock(
         new_state.count = 2
         assert state_lock_1.locked()
 
-    lock_events_after = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
+    lock_events_after = _count_keyspace_events(event_log, b"lock", b"set")
 
     assert lock_events_before == lock_events_after
 
     # Contend the lock from another state manager
-    event_log_on_update.clear()
     async with state_manager_2.modify_state(
         BaseStateToken(ident=token, cls=root_state),
     ) as new_state:
@@ -581,51 +623,37 @@ async def test_modify_oplock(
     assert token not in state_manager_redis._cached_states
 
     # There should have been another redis lock taken.
-    await event_log_on_update.wait()
-    lock_events_after_2 = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
+    lock_events_after_2 = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"set", lock_events_after + 1
+    )
     assert lock_events_after_2 == lock_events_after + 1
 
     # And there should have been a lock release.
-    unlock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"del"
-    ])
+    unlock_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"del", 1
+    )
     assert unlock_events == 1
 
     # And a single token set.
-    token_set_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(root_state.get_full_name().encode())
-        and ev["data"] == b"set"
-    ])
+    state_key_suffix = root_state.get_full_name().encode()
+    token_set_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, state_key_suffix, b"set", 1
+    )
     assert token_set_events == 1
 
     # Now close the contender to release its lease.
-    event_log_on_update.clear()
     await state_manager_2.close()
-    await event_log_on_update.wait()
 
     # Both locks should have been released.
-    unlock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"del"
-    ])
+    unlock_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"del", 2
+    )
     assert unlock_events == 2
 
     # And both tokens should have been set.
-    token_set_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(root_state.get_full_name().encode())
-        and ev["data"] == b"set"
-    ])
+    token_set_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, state_key_suffix, b"set", 2
+    )
     assert token_set_events == 2
 
 
@@ -1164,7 +1192,6 @@ async def test_oplock_hold_oplock_after_cancel(
         await lease_task
 
     # Modify the state again, this should get a new lock and lease
-    event_log_on_update.clear()
     async with state_manager_redis.modify_state(
         BaseStateToken(ident=token, cls=root_state),
     ) as new_state:
@@ -1172,12 +1199,9 @@ async def test_oplock_hold_oplock_after_cancel(
         new_state.count += 1
 
     # There should have been two redis lock acquisitions.
-    await event_log_on_update.wait()
-    lock_events = len([
-        ev
-        for ev in event_log
-        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
-    ])
+    lock_events = await _wait_for_keyspace_events(
+        event_log, event_log_on_update, b"lock", b"set", 2
+    )
     assert lock_events == 2
 
     await state_manager_redis.close()
