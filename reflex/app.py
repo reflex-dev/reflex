@@ -86,6 +86,7 @@ from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 from typing_extensions import Unpack, evaluate_forward_ref
 
+from reflex import ssr
 from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
@@ -1397,6 +1398,12 @@ class App(MiddlewareMixin, LifespanMixin):
             health,
             methods=["GET"],
         )
+        if ssr.is_enabled():
+            self._api.add_route(
+                config.prepend_backend_path(str(constants.Endpoint.SSR_DATA)),
+                ssr.ssr_data(self),
+                methods=["POST"],
+            )
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""

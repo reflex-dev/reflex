@@ -1,0 +1,1 @@
+Add the experimental, default-off `ssr_mode` config option with the frontend templates that render pages on the server, and the `isr_render_url`, `isr_revalidate` and `isr_build_id` options that configure incremental static regeneration, which renders and caches pages per path without the query string.

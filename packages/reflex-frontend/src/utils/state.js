@@ -1100,6 +1100,7 @@ const handleStateMismatch = (info) => {
  * @param client_storage The client storage object from context.js
  * @param navigate The navigate function from React Router
  * @param params The params object from React Router
+ * @param ssrHydrated Whether the store starts from server-rendered state
  */
 export const connect = async (
   socket,
@@ -1109,6 +1110,7 @@ export const connect = async (
   client_storage = {},
   navigate,
   params,
+  ssrHydrated = false,
 ) => {
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
@@ -1157,7 +1159,8 @@ export const connect = async (
   cancelWarmup();
   // Socket.IO calls this when the namespace connection is sent, so route data
   // reflects any navigation that happened while the transport was connecting.
-  socket.current.auth = bootAuth(true);
+  // Server-rendered state is not the compiled defaults the hashes describe.
+  socket.current.auth = bootAuth(!ssrHydrated);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -1652,6 +1655,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
  * @param dispatch The reducer dispatch function to update state.
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
+ * @param ssrHydrated Whether the store starts from server-rendered state
  *
  * @returns [addEvents, connectErrors] -
  *   addEvents is used to queue an event, and
@@ -1661,6 +1665,7 @@ export const useEventLoop = (
   dispatch,
   initial_events = () => [],
   client_storage = {},
+  ssrHydrated = false,
 ) => {
   const socket = useRef(null);
   const location = useLocation();
@@ -1710,6 +1715,7 @@ export const useEventLoop = (
           client_storage,
           navigate,
           params,
+          ssrHydrated,
         );
       }
     } catch (error) {
@@ -1728,6 +1734,7 @@ export const useEventLoop = (
     navigate,
     params,
     mounted,
+    ssrHydrated,
   ]);
 
   // Function to add new events to the event queue.

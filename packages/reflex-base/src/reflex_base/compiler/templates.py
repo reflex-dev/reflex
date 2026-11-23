@@ -7,7 +7,7 @@ import re
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
-from reflex_base import constants
+from reflex_base import constants, ssr
 from reflex_base.utils import memo_paths
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import VarData
@@ -227,6 +227,59 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
+    if ssr.is_enabled():
+        ssr_imports = (
+            'import { data as ssrData, useLoaderData } from "react-router";\n'
+            'import { getBackendURL } from "$/utils/state";\n'
+            'import { SSRStateContext } from "$/utils/context";\n'
+            'import env from "$/env.json";'
+        )
+        ssr_loader = """
+export async function loader({ request }) {
+  // Fetch on_load-hydrated state from the Python /_ssr_data endpoint so the
+  // server-rendered HTML already contains real data.
+  try {
+    const url = new URL(request.url);
+    const res = await fetch(getBackendURL(env.SSR_DATA), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("cookie") ? { Cookie: request.headers.get("cookie") } : {}),
+      },
+      body: JSON.stringify({
+        path: url.pathname,
+        search: url.search,
+        headers: Object.fromEntries(request.headers),
+      }),
+    });
+    if (res.ok) return res.json();
+  } catch (e) {
+    console.error("SSR data fetch failed:", e);
+  }
+  // The page renders with default state; the error status keeps it out of
+  // caches (the ISR render tier keeps the stale page or serves the shell).
+  return ssrData({ state: null }, { status: 503 });
+}
+
+// The client reads the loader's state only on mount and the live session runs
+// on_load, so client-side navigations skip the loader instead of running the
+// page's on_load handlers a second time on the backend.
+export function shouldRevalidate() {
+  return false;
+}
+"""
+        layout_body = (
+            "const loaderData = useLoaderData();\n"
+            "  const ssrState = loaderData?.state ?? null;\n"
+            "  return jsx(AppLayout, {}, "
+            "jsx(SSRStateContext.Provider, {value: ssrState}, "
+            "jsx(ReflexProviders, {}, children)));"
+        )
+    else:
+        ssr_imports = ""
+        ssr_loader = ""
+        layout_body = "return jsx(AppLayout, {}, jsx(ReflexProviders, {}, children));"
+
     window_imports_effect = f"""useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
     window.__reflex = {{
@@ -274,11 +327,12 @@ import {{ defaultColorMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
+{ssr_imports}
 {import_window_libraries}
 {lazy_imports_setup}
 
 {custom_code_str}
-
+{ssr_loader}
 function ReflexProviders({{children}}) {{
   {window_imports_effect}
 
@@ -294,7 +348,7 @@ return ({_RenderUtils.render(render)})
 }}
 
 export function Layout({{children}}) {{
-  return jsx(AppLayout, {{}}, jsx(ReflexProviders, {{}}, children));
+  {layout_body}
 }}
 
 // Used by entry.client.js when mount_target is configured: skips the document
@@ -358,6 +412,7 @@ def context_template(
     Returns:
         Rendered context file content as string.
     """
+    ssr_enabled = ssr.is_enabled()
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
@@ -429,6 +484,29 @@ export const initialEvents = () => []
 """
     )
 
+    if ssr_enabled:
+        ssr_context_str = "\nexport const SSRStateContext = createContext(null);"
+        # A store that starts from SSR state no longer matches the compiled
+        # hashes, so the event loop sends its first hydrate without them.
+        ssr_hydrated_str = (
+            "\n  const ssrHydrated = useContext(SSRStateContext) !== null"
+        )
+        ssr_hydrated_arg = "\n    ssrHydrated,"
+        ssr_state_hook = "\n  const ssrState = useContext(SSRStateContext);"
+        # Server-rendered substates take precedence over the compiled defaults.
+        client_initial_state = (
+            "ssrState ? Object.fromEntries(Object.entries(initialState).map("
+            "([name, value]) => [name, ssrState[name] ?? value])) : initialState"
+        )
+        server_state_store = (
+            "ssrState ? { ...serverStateStore, getSnapshot: "
+            "(name) => ssrState[name] ?? initialState[name] } : serverStateStore"
+        )
+    else:
+        ssr_context_str = ssr_hydrated_str = ssr_hydrated_arg = ssr_state_hook = ""
+        client_initial_state = "initialState"
+        server_state_store = "serverStateStore"
+
     disable_owner_stacks_str = (
         r"""
 // Disable React dev-build owner-stack capture: the per-element Error()
@@ -457,7 +535,7 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useState, createElement, useEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ {"createContext, " if ssr_enabled else ""}useContext, useMemo, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, StateStoreContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
@@ -467,7 +545,7 @@ export const initialState = {initial_state_json}
 export const initialStateHashes = {"[]" if not initial_state_hashes else json_dumps(initial_state_hashes)}
 export const stateSchema = {json.dumps(state_schema)}
 
-export const defaultColorMode = {default_color_mode}
+export const defaultColorMode = {default_color_mode}{ssr_context_str}
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
 {state_str}
@@ -532,11 +610,11 @@ export function ClientSide(component, name) {{
 }}
 
 export function EventLoopProvider({{ children }}) {{
-  const dispatch = useContext(DispatchContext)
+  const dispatch = useContext(DispatchContext){ssr_hydrated_str}
   const [addEventsLocal, connectErrors] = useEventLoop(
     dispatch,
     initialEvents,
-    clientStorage,
+    clientStorage,{ssr_hydrated_arg}
   )
   // Publish the dispatchers so JSX literals constructed outside the
   // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
@@ -611,8 +689,8 @@ function StateStoreProviders({{ children, store }}) {{
   );
 }}
 
-function ClientStateProvider({{ children }}) {{
-  const [store] = useState(() => createStateStore(initialState));
+function ClientStateProvider({{ children }}) {{{ssr_state_hook}
+  const [store] = useState(() => createStateStore({client_initial_state}));
   useEffect(() => store.mergeInitialState(initialState), [store, initialState]);
   return createElement(StateStoreProviders, {{ children, store }});
 }}
@@ -625,8 +703,8 @@ const serverStateStore = {{
   subscribe: () => () => {{}},
 }};
 
-function ServerStateProvider({{ children }}) {{
-  return createElement(StateStoreProviders, {{ children, store: serverStateStore }});
+function ServerStateProvider({{ children }}) {{{ssr_state_hook}
+  return createElement(StateStoreProviders, {{ children, store: {server_state_store} }});
 }}
 
 export const StateProvider =

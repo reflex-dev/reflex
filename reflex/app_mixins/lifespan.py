@@ -8,6 +8,7 @@ import dataclasses
 import functools
 import inspect
 import logging
+import sys
 import time
 from collections.abc import Callable, Coroutine, Sequence
 from typing import TYPE_CHECKING, TypeVar, overload
@@ -266,6 +267,9 @@ class LifespanMixin(AppMixin):
         else:
             await state_manager.close()
         await prerequisites.close_health_redis()
+        # Only an app that imported reflex.isr can hold its revalidation client.
+        if (isr := sys.modules.get("reflex.isr")) is not None:
+            await isr.close_redis()
 
     @contextlib.asynccontextmanager
     async def _run_lifespan(
