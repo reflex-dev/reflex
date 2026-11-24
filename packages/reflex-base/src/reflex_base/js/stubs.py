@@ -458,10 +458,25 @@ def _render_stub(
             definitions.append(
                 f"def {name}(*args: {any_}) -> {_use('EventSpec', used)}: ..."
             )
+        # Parameters are positional-only, so overloads whose types are the same
+        # in Python, whatever their names, are one: a type checker rejects the
+        # second. The first is kept, as TypeScript tries overloads in order.
+        unique: dict[str, str] = {}
         for signature in overloads:
-            if len(overloads) > 1:
+            anonymous: Signature = {
+                "parameters": [
+                    {**parameter, "name": f"p{index}"}
+                    for index, parameter in enumerate(signature["parameters"])
+                ]
+            }
+            unique.setdefault(
+                _render_signature(name, anonymous, used),
+                _render_signature(name, signature, used),
+            )
+        for definition in unique.values():
+            if len(unique) > 1:
                 definitions.append(f"@{_use('overload', used)}")
-            definitions.append(_render_signature(name, signature, used))
+            definitions.append(definition)
     lines = [_stub_header(path, digest)]
     if definitions:
         lines.extend([*_render_imports(used), "", *definitions])
